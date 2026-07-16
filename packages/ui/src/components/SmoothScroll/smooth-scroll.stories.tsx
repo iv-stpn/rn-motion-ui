@@ -56,15 +56,10 @@ function ScrollTopButton({ onPress }: { onPress?: () => void }) {
 
 function Demo() {
   return (
-    <View
-      style={{ width: 360, height: 280, borderRadius: 16, borderWidth: 1, borderColor: '#e5e5e5', overflow: 'hidden' }}
-    >
+    <View style={{ width: 360, height: 280, borderRadius: 16, borderWidth: 1, borderColor: '#e5e5e5', overflow: 'hidden' }}>
       <SmoothScroll testID="smooth-scroll" contentContainerStyle={{ padding: 12, gap: 10 }}>
         {SECTIONS.map((n) => (
-          <View
-            key={n}
-            style={{ borderRadius: 10, backgroundColor: '#f4f4f5', paddingHorizontal: 12, paddingVertical: 16 }}
-          >
+          <View key={n} style={{ borderRadius: 10, backgroundColor: '#f4f4f5', paddingHorizontal: 12, paddingVertical: 16 }}>
             <Text style={{ color: '#71717a', fontSize: 14 }}>Section {n}</Text>
           </View>
         ))}

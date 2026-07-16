@@ -82,7 +82,7 @@ export function MorphingModal({
   if (!rendered) return null;
 
   return (
-    <Modal transparent visible={rendered} animationType="none" onRequestClose={onClose}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={onClose}>
       <AnimatePresence onExitComplete={() => setRendered(false)}>
         {open ? (
           <View key="morphing-modal" style={{ flex: 1 }} testID={testID}>
@@ -93,19 +93,12 @@ export function MorphingModal({
               transition={{ type: 'timing', duration: 200, easing: EASE_OUT }}
               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
             >
-              <Pressable
-                accessibilityLabel="Close"
-                onPress={onClose}
-                className="bg-foreground/20"
-                style={{ flex: 1 }}
-              />
+              <Pressable accessibilityLabel="Close" onPress={onClose} className="bg-foreground/20" style={{ flex: 1 }} />
             </MotiView>
             <View
               pointerEvents="box-none"
               className={
-                placement === 'bottom'
-                  ? 'flex-1 items-center justify-end px-4 pb-8'
-                  : 'flex-1 items-center justify-center px-4'
+                placement === 'bottom' ? 'flex-1 items-center justify-end px-4 pb-8' : 'flex-1 items-center justify-center px-4'
               }
             >
               <MotiView

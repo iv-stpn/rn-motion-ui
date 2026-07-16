@@ -18,7 +18,7 @@ const meta = {
       <RadioGroupItem value="starter" label="Starter — free" />
       <RadioGroupItem value="pro" label="Pro — $12/mo" />
       <RadioGroupItem value="team" label="Team — $29/mo" />
-      <RadioGroupItem value="legacy" label="Legacy plan" disabled />
+      <RadioGroupItem value="legacy" label="Legacy plan" disabled={true} />
     </RadioGroup>
   ),
 } satisfies Meta<typeof RadioGroup>;
@@ -46,7 +46,7 @@ export const Interactive: Story = {
         <RadioGroupItem value="starter" label="Starter — free" />
         <RadioGroupItem value="pro" label="Pro — $12/mo" />
         <RadioGroupItem value="team" label="Team — $29/mo" />
-        <RadioGroupItem value="legacy" label="Legacy plan" disabled />
+        <RadioGroupItem value="legacy" label="Legacy plan" disabled={true} />
       </RadioGroup>
     );
   },

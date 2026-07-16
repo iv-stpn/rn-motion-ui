@@ -35,14 +35,13 @@ export function Switch({ checked, onCheckedChange, disabled, label, style, acces
 
   // Disabled + pressed → a short horizontal shake to signal "can't toggle".
   useEffect(() => {
-    if (disabled && pressed && !reduce) {
+    if (disabled && pressed && !reduce)
       Animated.sequence([
         Animated.timing(shakeX, { toValue: -2, duration: 60, useNativeDriver: true }),
         Animated.timing(shakeX, { toValue: 2, duration: 60, useNativeDriver: true }),
         Animated.timing(shakeX, { toValue: -1, duration: 60, useNativeDriver: true }),
         Animated.timing(shakeX, { toValue: 0, duration: 60, useNativeDriver: true }),
       ]).start();
-    }
   }, [disabled, pressed, reduce, shakeX]);
 
   return (

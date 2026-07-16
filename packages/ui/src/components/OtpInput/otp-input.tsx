@@ -140,7 +140,7 @@ export function OTPInput({
           textContentType="oneTimeCode"
           autoComplete="one-time-code"
           maxLength={length}
-          caretHidden
+          caretHidden={true}
           onChangeText={handleChange}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
@@ -152,15 +152,7 @@ export function OTPInput({
         <Animated.View className="flex-row items-center gap-2" style={{ transform: [{ translateX: shakeX }] }}>
           {chars.map((char, i) => {
             const isActive = i === activeIndex;
-            const state = showSuccess
-              ? 'success'
-              : status === 'error'
-                ? 'error'
-                : isActive
-                  ? 'active'
-                  : char
-                    ? 'filled'
-                    : 'idle';
+            const state = showSuccess ? 'success' : status === 'error' ? 'error' : isActive ? 'active' : char ? 'filled' : 'idle';
             return (
               // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length slot grid, never reordered.
               <View key={i} className={slot({ state })}>

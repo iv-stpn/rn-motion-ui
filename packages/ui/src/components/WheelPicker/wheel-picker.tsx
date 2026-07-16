@@ -36,7 +36,7 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 const DEG = Math.PI / 180;
 // Physics tuned for an iOS-like flick in whole-row units (mirrors the reference).
-const DECELERATION = 0.00042; // rows/ms², how fast a flick bleeds off
+const DECELERATION = 0.000_42; // rows/ms², how fast a flick bleeds off
 const MAX_VELOCITY = 0.18; // rows/ms, caps a hard fling
 const WHEEL_SENS = 0.012; // rows per pixel of wheel delta
 const WHEEL_SETTLE = 120; // ms of wheel idle before snapping to a row
@@ -221,7 +221,7 @@ export function WheelPicker({
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_e: GestureResponderEvent, g: PanResponderGestureState) =>
-        !disabledRef.current && !reduceRef.current && Math.abs(g.dy) > 3,
+        !(disabledRef.current || reduceRef.current) && Math.abs(g.dy) > 3,
       onPanResponderGrant: () => {
         cancelAnimation(scroll);
         draggingRef.current = true;
@@ -315,7 +315,7 @@ export function WheelPicker({
   // Reduced motion: no drum, no physics. A plain snap-scroll list of pressable
   // rows with a centre band — the value is emitted on tap or when the scroll
   // settles on a row.
-  if (reduce) {
+  if (reduce)
     return (
       <View
         accessibilityRole="adjustable"
@@ -347,9 +347,7 @@ export function WheelPicker({
                 accessibilityRole="button"
                 onPress={disabled ? undefined : () => emit(options.indexOf(option))}
                 className={
-                  v === currentValue
-                    ? 'text-center font-medium text-foreground'
-                    : 'text-center font-medium text-muted-foreground'
+                  v === currentValue ? 'text-center font-medium text-foreground' : 'text-center font-medium text-muted-foreground'
                 }
                 style={{ height: itemHeight, lineHeight: itemHeight }}
               >
@@ -360,7 +358,6 @@ export function WheelPicker({
         </ScrollView>
       </View>
     );
-  }
 
   return (
     <View

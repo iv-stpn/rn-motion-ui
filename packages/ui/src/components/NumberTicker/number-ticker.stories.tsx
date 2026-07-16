@@ -9,7 +9,7 @@ const meta = {
   component: NumberTicker,
   parameters: { layout: 'centered' },
   args: {
-    value: 48273,
+    value: 48_273,
     duration: 0.9,
     stagger: 0.04,
     startOnView: true,
@@ -45,7 +45,7 @@ export const WithAffixes: Story = {
 
 export const Live: Story = {
   render: (args) => {
-    const [value, setValue] = useState(48273);
+    const [value, setValue] = useState(48_273);
     useEffect(() => {
       const id = setInterval(() => setValue((v) => v + Math.floor(Math.random() * 50)), 2500);
       return () => clearInterval(id);

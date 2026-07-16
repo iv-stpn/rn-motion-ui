@@ -91,9 +91,7 @@ export function TabsList({ children }: { children: ReactNode }) {
             translateY: variant === 'underline' ? active.y + active.height - 2 : active.y,
             height: variant === 'underline' ? 2 : active.height,
           }}
-          transition={
-            reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 170, damping: 24, mass: 1.2 }
-          }
+          transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 170, damping: 24, mass: 1.2 }}
           pointerEvents="none"
           className="bg-primary"
           style={{

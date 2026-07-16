@@ -48,14 +48,7 @@ function cellClass(i: number, count: number) {
   return 'items-center justify-center px-3 py-6';
 }
 
-export function BloomMenu({
-  items,
-  onSelect,
-  title = 'Create',
-  triggerLabel = 'Create',
-  style,
-  testID,
-}: BloomMenuProps) {
+export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'Create', style, testID }: BloomMenuProps) {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   const morph = reduce ? { type: 'timing' as const, duration: 150 } : SPRING_FOLDER;

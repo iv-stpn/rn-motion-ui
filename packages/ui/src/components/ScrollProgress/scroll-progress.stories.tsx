@@ -44,10 +44,7 @@ function Demo({ variant }: { variant: 'bar' | 'circle' }) {
       )}
       <ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ padding: 12, gap: 10 }}>
         {ROWS.map((n) => (
-          <View
-            key={n}
-            style={{ borderRadius: 10, backgroundColor: '#f4f4f5', paddingHorizontal: 12, paddingVertical: 16 }}
-          >
+          <View key={n} style={{ borderRadius: 10, backgroundColor: '#f4f4f5', paddingHorizontal: 12, paddingVertical: 16 }}>
             <Text style={{ color: '#71717a', fontSize: 14 }}>Section {n}</Text>
           </View>
         ))}

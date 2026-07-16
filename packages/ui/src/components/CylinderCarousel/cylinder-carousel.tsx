@@ -186,14 +186,10 @@ export function CylinderCarousel({
         const { gap: pg, dragSpeed: ds, snap: sn, reduce: rm } = paramsRef.current;
         // Convert px/ms → items/s; negate because dragging right scrolls back.
         const velocity = (-g.vx * ds * 1000) / pg;
-        const projected =
-          scroll.value + Math.max(-MAX_FLICK_ITEMS, Math.min(MAX_FLICK_ITEMS, velocity * FLICK_MOMENTUM));
+        const projected = scroll.value + Math.max(-MAX_FLICK_ITEMS, Math.min(MAX_FLICK_ITEMS, velocity * FLICK_MOMENTUM));
         const target = sn ? Math.round(projected) : projected;
-        if (rm) {
-          scroll.value = target;
-        } else {
-          scroll.value = withSpring(target, { ...GLIDE_SPRING, velocity });
-        }
+        if (rm) scroll.value = target;
+        else scroll.value = withSpring(target, { ...GLIDE_SPRING, velocity });
       },
 
       // Release dragging lock if another responder takes over.
@@ -222,16 +218,12 @@ export function CylinderCarousel({
 
       // Debounce snap: wait for wheel events to stop before snapping.
       if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
-      if (sn) {
+      if (sn)
         wheelTimeoutRef.current = setTimeout(() => {
           const target = Math.round(scroll.value);
-          if (rm) {
-            scroll.value = target;
-          } else {
-            scroll.value = withSpring(target, GLIDE_SPRING);
-          }
+          if (rm) scroll.value = target;
+          else scroll.value = withSpring(target, GLIDE_SPRING);
         }, 150);
-      }
     };
 
     node.addEventListener('wheel', onWheel, { passive: false });
@@ -346,9 +338,8 @@ function CylinderItem({
     // Concave: perspective projection through the inside of the cylinder wall.
     // Convex: linear spacing (outside of the cylinder).
     let x: number;
-    if (convex) {
-      x = o * gap;
-    } else {
+    if (convex) x = o * gap;
+    else {
       const th = Math.max(-THETA_CLAMP, Math.min(THETA_CLAMP, o * alpha));
       x = (projection * Math.sin(th)) / (Math.cos(th) + k);
     }

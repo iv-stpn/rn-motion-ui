@@ -1,11 +1,5 @@
 import { createContext, type ReactNode, type RefObject, useCallback, useContext, useMemo, useRef } from 'react';
-import {
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  ScrollView,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, type StyleProp, type ViewStyle } from 'react-native';
 import { type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
@@ -49,13 +43,7 @@ export interface SmoothScrollProps {
  * preserved so scroll-driven children (ScrollReveal, ScrollProgress)
  * keep working.
  */
-export function SmoothScroll({
-  children,
-  orientation = 'vertical',
-  style,
-  contentContainerStyle,
-  testID,
-}: SmoothScrollProps) {
+export function SmoothScroll({ children, orientation = 'vertical', style, contentContainerStyle, testID }: SmoothScrollProps) {
   const reduce = useReducedMotion();
   const scrollRef = useRef<ScrollView>(null);
   const scrollY = useSharedValue(0);
@@ -68,9 +56,7 @@ export function SmoothScroll({
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const { contentSize, layoutMeasurement, contentOffset } = e.nativeEvent;
       const offset = horizontal ? contentOffset.x : contentOffset.y;
-      const max = horizontal
-        ? contentSize.width - layoutMeasurement.width
-        : contentSize.height - layoutMeasurement.height;
+      const max = horizontal ? contentSize.width - layoutMeasurement.width : contentSize.height - layoutMeasurement.height;
       scrollY.value = offset;
       progress.value = max > 0 ? offset / max : 0;
     },
@@ -86,10 +72,7 @@ export function SmoothScroll({
     [reduce, horizontal],
   );
 
-  const api = useMemo<SmoothScrollApi>(
-    () => ({ scrollRef, scrollY, progress, scrollTo }),
-    [scrollY, progress, scrollTo],
-  );
+  const api = useMemo<SmoothScrollApi>(() => ({ scrollRef, scrollY, progress, scrollTo }), [scrollY, progress, scrollTo]);
 
   return (
     <SmoothScrollContext.Provider value={api}>

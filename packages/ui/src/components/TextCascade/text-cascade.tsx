@@ -45,13 +45,12 @@ export function TextCascade({ text, className, style, accessibilityLabel, testID
   // Fall back to a sensible roll distance before the first measure lands.
   const roll = rollHeight || 24;
 
-  if (reduce) {
+  if (reduce)
     return (
       <View testID={testID} accessibilityRole="text" accessibilityLabel={accessibilityLabel ?? text} style={style}>
         <Text className={className}>{text}</Text>
       </View>
     );
-  }
 
   return (
     <View

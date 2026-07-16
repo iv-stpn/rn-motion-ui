@@ -120,10 +120,7 @@ export function Input({
     <View className="gap-1.5" style={style}>
       {label ? <Text className="px-1 text-sm font-medium text-foreground">{label}</Text> : null}
 
-      <Animated.View
-        className={field({ state })}
-        style={{ opacity: disabled ? 0.6 : 1, transform: [{ translateX: shakeX }] }}
-      >
+      <Animated.View className={field({ state })} style={{ opacity: disabled ? 0.6 : 1, transform: [{ translateX: shakeX }] }}>
         {leftIcon ? (
           <View pointerEvents="none" className="absolute bottom-0 left-3 top-0 z-10 items-center justify-center">
             {leftIcon}

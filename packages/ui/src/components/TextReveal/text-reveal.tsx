@@ -69,13 +69,7 @@ export function TextReveal({
   let unitIndex = 0;
 
   return (
-    <View
-      ref={ref}
-      testID={testID}
-      accessibilityRole={isHeader ? 'header' : 'text'}
-      accessibilityLabel={label}
-      style={style}
-    >
+    <View ref={ref} testID={testID} accessibilityRole={isHeader ? 'header' : 'text'} accessibilityLabel={label} style={style}>
       {lines.map((line, lineIdx) => {
         const units = split === 'word' ? line.split(' ') : Array.from(line);
         return (

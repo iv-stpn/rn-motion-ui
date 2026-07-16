@@ -9,7 +9,7 @@ const meta = {
   component: AnimatedNumber,
   parameters: { layout: 'centered' },
   args: {
-    value: 129480,
+    value: 129_480,
     duration: 1.2,
     startOnView: true,
     className: 'text-4xl font-semibold text-foreground',
@@ -33,7 +33,7 @@ export const Default: Story = {
 
 export const Currency: Story = {
   args: {
-    value: 129480,
+    value: 129_480,
     format: (n: number) => `$${Math.round(n).toLocaleString()}`,
   },
   render: (args) => (
@@ -47,7 +47,7 @@ export const Currency: Story = {
 
 export const Live: Story = {
   render: (args) => {
-    const [value, setValue] = useState(48273);
+    const [value, setValue] = useState(48_273);
     useEffect(() => {
       const id = setInterval(() => setValue((v) => v + Math.floor(Math.random() * 500)), 2000);
       return () => clearInterval(id);

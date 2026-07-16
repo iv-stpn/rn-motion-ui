@@ -119,7 +119,7 @@ export const DateOfBirth: Story = {
 export const Disabled: Story = {
   render: (args) => (
     <View style={{ width: 200 }}>
-      <WheelPicker {...args} defaultValue="Medium" disabled accessibilityLabel="Size" />
+      <WheelPicker {...args} defaultValue="Medium" disabled={true} accessibilityLabel="Size" />
     </View>
   ),
 };

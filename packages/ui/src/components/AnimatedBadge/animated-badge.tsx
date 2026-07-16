@@ -112,7 +112,7 @@ export function AnimatedBadge({
       ) : null}
       {showIcon ? (
         <View style={{ width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
-          <AnimatePresence exitBeforeEnter>
+          <AnimatePresence exitBeforeEnter={true}>
             <MotiView
               key={s}
               from={reduce ? { opacity: 0 } : { opacity: 0.7, translateY: 8, scale: 0.9 }}
@@ -135,9 +135,9 @@ export function AnimatedBadge({
           </AnimatePresence>
         </View>
       ) : null}
-      {children != null ? (
+      {children == null ? null : (
         <View style={{ overflow: 'hidden' }}>
-          <AnimatePresence exitBeforeEnter>
+          <AnimatePresence exitBeforeEnter={true}>
             <MotiView
               key={contentKey}
               from={reduce ? { opacity: 0 } : { opacity: 0.76, translateY: 10 }}
@@ -149,7 +149,7 @@ export function AnimatedBadge({
             </MotiView>
           </AnimatePresence>
         </View>
-      ) : null}
+      )}
     </View>
   );
 }

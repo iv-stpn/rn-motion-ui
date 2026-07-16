@@ -137,7 +137,7 @@ function TextSlot({
         // and the button's overflow:hidden shaves the trailing glyph of the visible
         // (plain-Text) label. Keep them structurally identical so they can't diverge.
         <View onLayout={onSizerLayout} style={{ opacity: 0, paddingRight: TEXT_BUFFER }}>
-          {textLabel !== null ? <Text className={textClass}>{textLabel}</Text> : children}
+          {textLabel === null ? children : <Text className={textClass}>{textLabel}</Text>}
         </View>
       )}
 

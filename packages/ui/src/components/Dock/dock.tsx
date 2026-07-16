@@ -43,9 +43,7 @@ export function Dock({ children, size = 44, style, testID }: DockProps) {
   const register = useCallback((id: string, layout: LayoutRectangle) => {
     setLayouts((prev) => {
       const existing = prev[id];
-      if (existing && existing.x === layout.x && existing.width === layout.width && existing.y === layout.y) {
-        return prev;
-      }
+      if (existing && existing.x === layout.x && existing.width === layout.width && existing.y === layout.y) return prev;
       return { ...prev, [id]: layout };
     });
   }, []);
@@ -120,7 +118,7 @@ export function DockItem({ children, onPress, active, accessibilityLabel, style,
 
   const sharedStyle = { width: size, height: size };
 
-  if (onPress) {
+  if (onPress)
     return (
       <MotiView
         onLayout={onLayout}
@@ -143,7 +141,6 @@ export function DockItem({ children, onPress, active, accessibilityLabel, style,
         </Pressable>
       </MotiView>
     );
-  }
 
   // Children carry their own control (and its accessible name).
   return (
@@ -170,7 +167,7 @@ export interface DockSeparatorProps {
 export function DockSeparator({ style }: DockSeparatorProps) {
   return (
     <View
-      accessibilityElementsHidden
+      accessibilityElementsHidden={true}
       importantForAccessibility="no-hide-descendants"
       className="mx-1 h-6 w-px self-center bg-border"
       style={style}

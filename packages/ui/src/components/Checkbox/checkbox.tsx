@@ -73,14 +73,7 @@ export function Checkbox({
                 transition={{ type: 'timing', duration: reduce ? 0 : 160 }}
               >
                 <Svg width={12} height={12} viewBox="0 0 24 24">
-                  <Path
-                    d={path}
-                    fill="none"
-                    stroke="#fafafa"
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <Path d={path} fill="none" stroke="#fafafa" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
                 </Svg>
               </MotiView>
             ) : null}

@@ -26,27 +26,18 @@ export interface TextShimmerProps {
  * each character animates its opacity in a staggered dim→bright→dim loop, so a
  * band of brightness sweeps left→right — the same shimmer read, RN-native.
  */
-export function TextShimmer({
-  children,
-  as,
-  duration = 2.5,
-  className,
-  style,
-  accessibilityLabel,
-  testID,
-}: TextShimmerProps) {
+export function TextShimmer({ children, as, duration = 2.5, className, style, accessibilityLabel, testID }: TextShimmerProps) {
   const reduce = useReducedMotion();
   const isHeader = typeof as === 'string' && /^h[1-6]$/.test(as);
   const role = isHeader ? 'header' : 'text';
 
   // Non-string content (or reduced motion) can't be split per character.
-  if (typeof children !== 'string' || reduce) {
+  if (typeof children !== 'string' || reduce)
     return (
       <View testID={testID} accessibilityRole={role} accessibilityLabel={accessibilityLabel} style={style}>
         <Text className={className}>{children}</Text>
       </View>
     );
-  }
 
   const chars = Array.from(children);
   const perChar = (duration * 1000) / Math.max(chars.length, 1);

@@ -136,7 +136,7 @@ export function OverflowActions({
               aria-hidden keeps the duplicate buttons out of the accessibility tree
               so queries like findByRole('button', { name }) don't match twice. */}
           <View
-            aria-hidden
+            aria-hidden={true}
             pointerEvents="none"
             onLayout={(e) => setOverflowWidth(e.nativeEvent.layout.width)}
             className={group({ size })}
@@ -153,11 +153,7 @@ export function OverflowActions({
           </View>
         </MotiView>
 
-        <MotiView
-          animate={{ scale: togglePressed && !reduce ? 0.96 : 1 }}
-          transition={SPRING_PRESS}
-          style={{ marginLeft: gap }}
-        >
+        <MotiView animate={{ scale: togglePressed && !reduce ? 0.96 : 1 }} transition={SPRING_PRESS} style={{ marginLeft: gap }}>
           <Pressable
             accessibilityRole="button"
             aria-expanded={isExpanded}
@@ -167,7 +163,7 @@ export function OverflowActions({
             onPress={() => setExpanded(!isExpanded)}
             className={toggle({ size })}
           >
-            <AnimatePresence exitBeforeEnter>
+            <AnimatePresence exitBeforeEnter={true}>
               <MotiView
                 key={isExpanded ? 'close' : 'open'}
                 from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
@@ -215,7 +211,7 @@ function ActionButton({
         className={action({ size })}
         style={{ opacity: item.disabled ? 0.45 : 1 }}
       >
-        {item.icon != null ? item.icon : null}
+        {item.icon == null ? null : item.icon}
         {typeof item.label === 'string' || typeof item.label === 'number' ? (
           <Text className="font-medium text-foreground" style={{ fontSize: size === 'sm' ? 12 : 14 }}>
             {item.label}

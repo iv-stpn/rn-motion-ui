@@ -1,13 +1,5 @@
 import { AnimatePresence, MotiView } from 'moti';
-import {
-  Children,
-  createContext,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-  useContext,
-  useState,
-} from 'react';
+import { Children, createContext, isValidElement, type ReactElement, type ReactNode, useContext, useState } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
@@ -43,17 +35,7 @@ export interface DynamicIslandProps {
   testID?: string;
 }
 
-function Slot({
-  keyId,
-  children,
-  className,
-  width,
-}: {
-  keyId: string;
-  children: ReactNode;
-  className?: string;
-  width?: number;
-}) {
+function Slot({ keyId, children, className, width }: { keyId: string; children: ReactNode; className?: string; width?: number }) {
   const reduce = useReducedMotion();
   return (
     <MotiView
@@ -106,19 +88,16 @@ export function DynamicIsland({ view, compact, children, style, accessibilityLab
           onLayout={(e) => setSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
           style={{ position: 'absolute', top: 0, left: 0, opacity: 0 }}
         >
-          <View
-            className={activeClass}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-          >
+          <View className={activeClass} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
             {activeContent}
           </View>
         </View>
         <AnimatePresence>
-          {activeContent != null ? (
+          {activeContent == null ? null : (
             <Slot key={slotKey} keyId={slotKey} className={activeClass} width={size?.width}>
               {activeContent}
             </Slot>
-          ) : null}
+          )}
         </AnimatePresence>
       </MotiView>
     </IslandContext.Provider>

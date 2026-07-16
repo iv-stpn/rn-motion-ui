@@ -55,11 +55,7 @@ function StatusBadge({ status }: { status: Person['status'] }) {
         paddingVertical: 2,
         alignSelf: 'flex-start',
         backgroundColor:
-          status === 'active'
-            ? 'rgba(5,150,105,0.1)'
-            : status === 'invited'
-              ? 'rgba(217,119,6,0.1)'
-              : 'rgba(220,38,38,0.1)',
+          status === 'active' ? 'rgba(5,150,105,0.1)' : status === 'invited' ? 'rgba(217,119,6,0.1)' : 'rgba(220,38,38,0.1)',
       }}
     >
       <Text

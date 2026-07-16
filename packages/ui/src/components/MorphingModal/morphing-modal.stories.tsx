@@ -54,11 +54,7 @@ function MorphingModalDemo({ placement }: { placement: 'bottom' | 'center' }) {
         {view === 'options' ? (
           <View>
             <Header title="Options" onClose={() => setView(null)} />
-            <Row
-              icon={<Lock size={16} color="#111111" />}
-              label="View Private Key"
-              onPress={() => setView('private-key')}
-            />
+            <Row icon={<Lock size={16} color="#111111" />} label="View Private Key" onPress={() => setView('private-key')} />
             <Row
               icon={<ScrollText size={16} color="#111111" />}
               label="View Recovery Phrase"
@@ -79,9 +75,7 @@ function MorphingModalDemo({ placement }: { placement: 'bottom' | 'center' }) {
         ) : view === 'recovery' ? (
           <View style={{ gap: 8 }}>
             <Text className="text-xl font-semibold text-foreground">Recovery Phrase</Text>
-            <Text className="text-sm text-muted-foreground">
-              12 words you can use to restore your wallet on any device.
-            </Text>
+            <Text className="text-sm text-muted-foreground">12 words you can use to restore your wallet on any device.</Text>
             <Button variant="secondary" onPress={() => setView('options')}>
               Back
             </Button>

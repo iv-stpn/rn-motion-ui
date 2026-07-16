@@ -118,7 +118,7 @@ export function FeedbackWidget({
         className="overflow-hidden border border-border bg-background shadow-lg"
         style={{ position: 'absolute', bottom: 0, ...(left ? { left: 0 } : { right: 0 }) }}
       >
-        <AnimatePresence exitBeforeEnter>
+        <AnimatePresence exitBeforeEnter={true}>
           {open ? (
             <MotiView
               key="panel"
@@ -128,7 +128,7 @@ export function FeedbackWidget({
               transition={reduce ? { type: 'timing', duration: 120 } : SPRING_PANEL}
               style={{ width: 300, padding: 8 }}
             >
-              <AnimatePresence exitBeforeEnter>
+              <AnimatePresence exitBeforeEnter={true}>
                 {status === 'sent' ? (
                   <SentView key="sent" reduce={reduce} />
                 ) : status === 'error' ? (
@@ -224,7 +224,7 @@ function FormView({
           onChangeText={onChangeMessage}
           placeholder={placeholder}
           placeholderTextColor="rgba(128,128,128,0.6)"
-          multiline
+          multiline={true}
           numberOfLines={3}
           accessibilityLabel={title}
           testID="feedback-input"
@@ -285,9 +285,7 @@ function SentView({ reduce }: { reduce: boolean }) {
           <MotiView
             from={reduce ? { scale: 1 } : { scale: 0 }}
             animate={{ scale: 1 }}
-            transition={
-              reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 500, damping: 22, delay: 40 }
-            }
+            transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 500, damping: 22, delay: 40 }}
             className="h-12 w-12 items-center justify-center rounded-full"
             style={{ backgroundColor: SUCCESS_COLOR }}
           >

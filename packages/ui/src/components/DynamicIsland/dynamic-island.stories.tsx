@@ -71,6 +71,7 @@ function IslandDemo() {
             </>
           }
         >
+          {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
           <DynamicIslandView id="call" className="gap-4">
             <View style={{ gap: 2 }}>
               <Text style={{ color: '#fafafa', fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>INCOMING CALL</Text>
@@ -86,6 +87,7 @@ function IslandDemo() {
             </View>
           </DynamicIslandView>
 
+          {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
           <DynamicIslandView id="timer" className="gap-3">
             <Timer size={16} color="#d99a00" />
             <Text style={{ color: '#fafafa', fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>TIMER</Text>
@@ -94,6 +96,7 @@ function IslandDemo() {
             </Text>
           </DynamicIslandView>
 
+          {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
           <DynamicIslandView id="music" className="gap-3">
             <Music size={14} color="#fafafa" />
             <View style={{ gap: 1 }}>
@@ -155,6 +158,7 @@ export const Compact: Story = {
         </>
       }
     >
+      {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
       <DynamicIslandView id="music" className="gap-3">
         <Music size={14} color="#fafafa" />
         <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '600' }}>Midnight City</Text>

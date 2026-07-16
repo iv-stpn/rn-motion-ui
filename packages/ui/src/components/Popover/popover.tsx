@@ -173,7 +173,7 @@ export function PopoverContent({ children, accessibilityLabel, style, testID }: 
   const enterY = reduce ? 0 : side === 'bottom' ? -8 : 8;
 
   return (
-    <Modal transparent visible={rendered} animationType="none" onRequestClose={() => setOpen(false)}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={() => setOpen(false)}>
       <AnimatePresence onExitComplete={() => setRendered(false)}>
         {open ? (
           <View key="popover-overlay" style={{ flex: 1 }}>
@@ -189,9 +189,7 @@ export function PopoverContent({ children, accessibilityLabel, style, testID }: 
               from={{ opacity: 0, scale: reduce ? 1 : 0.96, translateY: enterY }}
               animate={{ opacity: measured ? 1 : 0, scale: 1, translateY: 0 }}
               exit={{ opacity: 0, scale: reduce ? 1 : 0.96, translateY: enterY }}
-              transition={
-                reduce ? { type: 'timing', duration: 120 } : { type: 'spring', stiffness: 300, damping: 26, mass: 0.8 }
-              }
+              transition={reduce ? { type: 'timing', duration: 120 } : { type: 'spring', stiffness: 300, damping: 26, mass: 0.8 }}
               className="max-w-xs border border-border bg-card p-4"
               style={[{ position: 'absolute', left, top, borderRadius: panelRadius }, style]}
             >

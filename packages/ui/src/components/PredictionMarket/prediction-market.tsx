@@ -114,18 +114,13 @@ function buildQuote({
   const shares = order.mode === 'buy' ? amount / price : amount;
   const payout = order.mode === 'buy' ? shares : amount * price;
 
-  if (amount <= 0) {
-    return { valid: false, amount, price, shares: 0, payout: 0, error: 'Enter an amount' };
-  }
-  if (order.mode === 'buy' && amount < minTrade) {
+  if (amount <= 0) return { valid: false, amount, price, shares: 0, payout: 0, error: 'Enter an amount' };
+  if (order.mode === 'buy' && amount < minTrade)
     return { valid: false, amount, price, shares, payout, error: `Minimum ${formatCompactCurrency(minTrade)}` };
-  }
-  if (order.mode === 'buy' && amount > balance) {
+  if (order.mode === 'buy' && amount > balance)
     return { valid: false, amount, price, shares, payout, error: 'Insufficient balance' };
-  }
-  if (order.mode === 'sell' && amount > position) {
+  if (order.mode === 'sell' && amount > position)
     return { valid: false, amount, price, shares, payout, error: 'Not enough shares' };
-  }
   return { valid: true, amount, price, shares, payout };
 }
 
@@ -175,10 +170,7 @@ function useControllableOrder({
 function AmountChip({ label, onPress, disabled }: { label: string; onPress: () => void; disabled: boolean }) {
   const [pressed, setPressed] = useState(false);
   return (
-    <MotiView
-      animate={{ scale: pressed ? 0.95 : 1 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 0.6 }}
-    >
+    <MotiView animate={{ scale: pressed ? 0.95 : 1 }} transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 0.6 }}>
       <Pressable
         onPress={onPress}
         onPressIn={() => setPressed(true)}
@@ -254,11 +246,12 @@ export function PredictionMarket({
     [order, setOrder],
   );
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
+    },
+    [],
+  );
 
   const addAmount = (increment: number) => {
     const next = parseAmount(order.amount) + increment;
@@ -277,7 +270,7 @@ export function PredictionMarket({
     if (!authenticated) return;
 
     if (!quote.valid) {
-      if (!reduce) {
+      if (!reduce)
         shakeX.value = withSequence(
           withTiming(-5, { duration: 50 }),
           withTiming(5, { duration: 60 }),
@@ -286,7 +279,6 @@ export function PredictionMarket({
           withTiming(-1, { duration: 50 }),
           withTiming(0, { duration: 60 }),
         );
-      }
       return;
     }
 
@@ -303,7 +295,7 @@ export function PredictionMarket({
   const isPlacing = status === 'placing';
   const isFilled = status === 'filled';
 
-  const buttonLabel = isFilled ? 'Trade filled' : !quote.valid ? (quote.error ?? 'Enter an amount') : 'Trade';
+  const buttonLabel = isFilled ? 'Trade filled' : quote.valid ? 'Trade' : (quote.error ?? 'Enter an amount');
 
   return (
     <View
@@ -348,11 +340,7 @@ export function PredictionMarket({
       {/* Body */}
       <View style={{ gap: 16, padding: 12 }}>
         {/* Outcome selector */}
-        <Tabs
-          value={selectedOutcome?.id ?? ''}
-          onValueChange={(outcomeId) => setOrderValue({ outcomeId })}
-          variant="pill"
-        >
+        <Tabs value={selectedOutcome?.id ?? ''} onValueChange={(outcomeId) => setOrderValue({ outcomeId })} variant="pill">
           <TabsList>
             {outcomes.map((outcome) => (
               <TabsTrigger key={outcome.id} value={outcome.id}>
@@ -453,7 +441,7 @@ export function PredictionMarket({
               startOnView={false}
               duration={0.45}
               stagger={0}
-              blur
+              blur={true}
               className="font-semibold text-emerald-500"
               style={{ alignSelf: 'flex-end' }}
               format={(cents) => formatCurrency(cents / 100)}

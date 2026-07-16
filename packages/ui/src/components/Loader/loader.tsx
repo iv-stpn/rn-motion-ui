@@ -195,9 +195,8 @@ function Scramble({ size, speed, color, reduce }: PartProps) {
       () => {
         const reveal = tick % total;
         let s = '';
-        for (let i = 0; i < SCRAMBLE_TARGET.length; i++) {
+        for (let i = 0; i < SCRAMBLE_TARGET.length; i++)
           s += i < reveal ? SCRAMBLE_TARGET[i] : SCRAMBLE_GLYPHS[Math.floor(Math.random() * SCRAMBLE_GLYPHS.length)];
-        }
         setText(s);
         tick++;
       },
@@ -376,9 +375,7 @@ function Helix({ size, speed, color, reduce }: PartProps) {
           <MotiView
             key={`row-${top}`}
             from={{ translateX: amp, scale: 1, opacity: 1 }}
-            animate={
-              reduce ? { opacity: 0.6, translateX: 0, scale: 1 } : { translateX: -amp, scale: 0.5, opacity: 0.45 }
-            }
+            animate={reduce ? { opacity: 0.6, translateX: 0, scale: 1 } : { translateX: -amp, scale: 0.5, opacity: 0.45 }}
             transition={{ type: 'timing', duration: speed * 500, loop: true, repeatReverse: true, delay }}
             style={{
               position: 'absolute',

@@ -131,26 +131,25 @@ export function ActionSwapText({
   const core: CoreAnimation = animation === 'cascade' ? 'roll' : animation;
   const roll = rollHeight || ROLL_FALLBACK;
 
-  if (reduce) {
+  if (reduce)
     return (
       <View testID={testID} style={style}>
-        {label !== null ? <Text className={textClassName}>{label}</Text> : children}
+        {label === null ? children : <Text className={textClassName}>{label}</Text>}
       </View>
     );
-  }
 
   return (
     <View testID={testID} style={[{ overflow: 'hidden' }, style]}>
       {/* Hidden sizer establishes the slot width/height for the current label.
           String labels size a Text; arbitrary nodes size a wrapping View. */}
-      {label !== null ? (
-        <Text className={textClassName} onLayout={onLayout} style={{ opacity: 0 }} importantForAccessibility="no">
-          {label}
-        </Text>
-      ) : (
+      {label === null ? (
         <View onLayout={onLayout} style={{ opacity: 0 }} importantForAccessibility="no">
           {children}
         </View>
+      ) : (
+        <Text className={textClassName} onLayout={onLayout} style={{ opacity: 0 }} importantForAccessibility="no">
+          {label}
+        </Text>
       )}
       {cascade && label !== null ? (
         <AnimatePresence initial={false}>
@@ -187,7 +186,7 @@ export function ActionSwapText({
             exitTransition={core === 'blur' ? BLUR_EXIT : ROLL_EXIT}
             style={{ position: 'absolute', left: 0, top: 0 }}
           >
-            {label !== null ? <Text className={textClassName}>{label}</Text> : children}
+            {label === null ? children : <Text className={textClassName}>{label}</Text>}
           </MotiView>
         </AnimatePresence>
       )}
@@ -199,16 +198,12 @@ export function ActionSwapIcon({ value, children, animation = 'blur', size = 16,
   // Icons are single elements — cascade maps to its closest motion, roll.
   const core: CoreAnimation = animation === 'cascade' ? 'roll' : animation;
 
-  if (reduce) {
+  if (reduce)
     return (
-      <View
-        testID={testID}
-        style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}
-      >
+      <View testID={testID} style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
         {children}
       </View>
     );
-  }
 
   return (
     <View
@@ -268,11 +263,7 @@ export function ActionSwapButton({
     (iconOnly && typeof activeItem.label === 'string' ? activeItem.label : undefined);
 
   return (
-    <MotiView
-      animate={{ scale: pressed && !reduce && !disabled ? pressScale : 1 }}
-      transition={SPRING_PRESS}
-      style={style}
-    >
+    <MotiView animate={{ scale: pressed && !reduce && !disabled ? pressScale : 1 }} transition={SPRING_PRESS} style={style}>
       <Pressable
         accessibilityRole="button"
         aria-disabled={!!disabled}
@@ -294,11 +285,11 @@ export function ActionSwapButton({
             {activeItem.icon ?? null}
           </ActionSwapIcon>
         ) : null}
-        {!iconOnly ? (
+        {iconOnly ? null : (
           <ActionSwapText value={activeItem.id} animation={animation} textClassName={labelClass({ variant, size })}>
             {activeItem.label}
           </ActionSwapText>
-        ) : null}
+        )}
       </Pressable>
     </MotiView>
   );

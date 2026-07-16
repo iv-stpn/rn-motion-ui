@@ -122,9 +122,7 @@ function useScramble(text: string, reduce: boolean) {
         const settled = Math.floor(progress * chars.length);
         setDisplay(
           chars
-            .map((ch, i) =>
-              i < settled || ch === ' ' ? ch : (GLYPHS[Math.floor(Math.random() * GLYPHS.length)] ?? ch),
-            )
+            .map((ch, i) => (i < settled || ch === ' ' ? ch : (GLYPHS[Math.floor(Math.random() * GLYPHS.length)] ?? ch)))
             .join(''),
         );
       }
@@ -159,10 +157,10 @@ export function NotFoundGlitch({
       {/* Large code with chromatic ghost layers. */}
       <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
         {/* Ghost layers for chromatic aberration (RN fallback: MotiText opacity+translateX) */}
-        {!reduce ? (
+        {reduce ? null : (
           <>
             <MotiText
-              accessibilityElementsHidden
+              accessibilityElementsHidden={true}
               from={{ opacity: 0, translateX: 0 }}
               animate={{ opacity: 0.7, translateX: 3 }}
               transition={{ type: 'timing', duration: 150 }}
@@ -178,7 +176,7 @@ export function NotFoundGlitch({
               {display}
             </MotiText>
             <MotiText
-              accessibilityElementsHidden
+              accessibilityElementsHidden={true}
               from={{ opacity: 0, translateX: 0 }}
               animate={{ opacity: 0.7, translateX: -3 }}
               transition={{ type: 'timing', duration: 150 }}
@@ -194,7 +192,7 @@ export function NotFoundGlitch({
               {display}
             </MotiText>
           </>
-        ) : null}
+        )}
         <Text
           accessibilityRole="header"
           testID="not-found-code"
@@ -268,12 +266,8 @@ export function NotFoundMagnetic({
 function MagneticChar({ ch, reduce }: { ch: string; reduce: boolean }) {
   const [pressed, setPressed] = useState(false);
   return (
-    <Pressable accessibilityElementsHidden onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}>
-      <MotiView
-        animate={{ scale: pressed && !reduce ? 1.15 : 1 }}
-        transition={SPRING_PRESS}
-        style={{ paddingHorizontal: 4 }}
-      >
+    <Pressable accessibilityElementsHidden={true} onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}>
+      <MotiView animate={{ scale: pressed && !reduce ? 1.15 : 1 }} transition={SPRING_PRESS} style={{ paddingHorizontal: 4 }}>
         <Text
           style={{
             fontSize: 100,
@@ -324,7 +318,7 @@ export function NotFoundSpotlight({
       >
         {/* Dim base layer */}
         <Text
-          accessibilityElementsHidden
+          accessibilityElementsHidden={true}
           style={{
             position: 'absolute',
             fontSize: 96,
@@ -341,9 +335,7 @@ export function NotFoundSpotlight({
           from={{ opacity: reduce ? 0.9 : 0.6 }}
           animate={{ opacity: 0.95 }}
           transition={
-            reduce
-              ? { type: 'timing', duration: 0 }
-              : { type: 'timing', duration: 1800, loop: true, repeatReverse: true }
+            reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 1800, loop: true, repeatReverse: true }
           }
         >
           <Text
@@ -558,9 +550,7 @@ export function NotFoundTerminal({
               from={{ opacity: 0 }}
               animate={{ opacity: reduce ? 1 : 1 }}
               transition={
-                reduce
-                  ? { type: 'timing', duration: 0 }
-                  : { type: 'timing', duration: 600, loop: true, repeatReverse: true }
+                reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 600, loop: true, repeatReverse: true }
               }
               style={{ width: 8, height: 16, backgroundColor: 'rgba(255,255,255,0.8)', marginLeft: 2, borderRadius: 1 }}
             />

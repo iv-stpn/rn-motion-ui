@@ -72,7 +72,7 @@ export function Marquee({ children, direction = 'left', speed = 20, gap = 16, st
           ))}
         </View>
         {/* Second track fills the gap as the first scrolls away. */}
-        <View aria-hidden style={{ flexDirection: vertical ? 'column' : 'row', gap }}>
+        <View aria-hidden={true} style={{ flexDirection: vertical ? 'column' : 'row', gap }}>
           {items.map((child, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static duplicated slots, order never mutates
             <View key={i}>{child}</View>

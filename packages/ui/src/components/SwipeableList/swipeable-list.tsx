@@ -121,7 +121,7 @@ function SwipeActionButton({
           : null}
         {/* sr-only equivalent: label is set on the Pressable above */}
       </View>
-      <Text className="sr-only" style={{ position: 'absolute', opacity: 0 }} accessibilityElementsHidden>
+      <Text className="sr-only" style={{ position: 'absolute', opacity: 0 }} accessibilityElementsHidden={true}>
         {action.label}
       </Text>
     </Pressable>
@@ -267,9 +267,7 @@ function SwipeableListRow({
 
   // When another row opens (openId changes away from this row's id), close this row.
   useEffect(() => {
-    if (openId !== item.id && openSideRef.current !== null) {
-      snapTo(null);
-    }
+    if (openId !== item.id && openSideRef.current !== null) snapTo(null);
   }, [openId, item.id, snapTo]);
 
   // Ref for handlers, updated every render so PanResponder sees current values.
@@ -302,9 +300,7 @@ function SwipeableListRow({
       onPanResponderGrant: () => {
         // If a different row is open, close it.
         const { itemId, setOpenId: setOpen } = handlersRef.current;
-        if (openIdRef.current !== null && openIdRef.current !== itemId) {
-          setOpen(null);
-        }
+        if (openIdRef.current !== null && openIdRef.current !== itemId) setOpen(null);
         // Stop any in-flight spring.
         translateX.stopAnimation();
       },
@@ -315,11 +311,8 @@ function SwipeableListRow({
         let next = base + gs.dx;
 
         // Elastic resistance beyond full reveal.
-        if (next > lw) {
-          next = lw + (next - lw) * OVERSCROLL_DAMPING;
-        } else if (next < -rw) {
-          next = -rw + (next + rw) * OVERSCROLL_DAMPING;
-        }
+        if (next > lw) next = lw + (next - lw) * OVERSCROLL_DAMPING;
+        else if (next < -rw) next = -rw + (next + rw) * OVERSCROLL_DAMPING;
 
         translateX.setValue(next);
         currentXRef.current = next;
@@ -381,11 +374,8 @@ function SwipeableListRow({
       let next = currentXRef.current - px;
 
       // Same elastic resistance past a full reveal as the drag path.
-      if (next > lw) {
-        next = lw + (next - lw) * OVERSCROLL_DAMPING;
-      } else if (next < -rw) {
-        next = -rw + (next + rw) * OVERSCROLL_DAMPING;
-      }
+      if (next > lw) next = lw + (next - lw) * OVERSCROLL_DAMPING;
+      else if (next < -rw) next = -rw + (next + rw) * OVERSCROLL_DAMPING;
 
       translateX.setValue(next);
       currentXRef.current = next;
@@ -449,25 +439,13 @@ function SwipeableListRow({
         {/* Left actions */}
         <View className="flex-row overflow-hidden rounded-l-2xl" style={{ height: '100%' }}>
           {leftActions.map((action) => (
-            <SwipeActionButton
-              key={action.id}
-              action={action}
-              actionWidth={actionWidth}
-              side="left"
-              onAction={handleAction}
-            />
+            <SwipeActionButton key={action.id} action={action} actionWidth={actionWidth} side="left" onAction={handleAction} />
           ))}
         </View>
         {/* Right actions */}
         <View className="ml-auto flex-row overflow-hidden rounded-r-2xl" style={{ height: '100%' }}>
           {rightActions.map((action) => (
-            <SwipeActionButton
-              key={action.id}
-              action={action}
-              actionWidth={actionWidth}
-              side="right"
-              onAction={handleAction}
-            />
+            <SwipeActionButton key={action.id} action={action} actionWidth={actionWidth} side="right" onAction={handleAction} />
           ))}
         </View>
       </View>

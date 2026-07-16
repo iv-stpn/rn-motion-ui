@@ -141,7 +141,7 @@ export function CommandPalette({
   let cursor = 0;
 
   return (
-    <Modal transparent visible={rendered} animationType="none" onRequestClose={() => setOpen(false)}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={() => setOpen(false)}>
       <AnimatePresence onExitComplete={() => setRendered(false)}>
         {open ? (
           <View key="command-overlay" style={{ flex: 1 }} testID={testID}>
@@ -176,7 +176,7 @@ export function CommandPalette({
                 <View className="flex-row items-center gap-3 border-b border-border px-4">
                   <Search size={16} color="#71717a" />
                   <TextInput
-                    autoFocus
+                    autoFocus={true}
                     value={query}
                     onChangeText={updateQuery}
                     placeholder={placeholder}
@@ -249,9 +249,7 @@ export function CommandPalette({
                               ) : null}
                               <Text
                                 numberOfLines={1}
-                                className={
-                                  isActive ? 'flex-1 text-sm text-foreground' : 'flex-1 text-sm text-muted-foreground'
-                                }
+                                className={isActive ? 'flex-1 text-sm text-foreground' : 'flex-1 text-sm text-muted-foreground'}
                               >
                                 {it.label}
                               </Text>

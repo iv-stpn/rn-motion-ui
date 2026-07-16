@@ -105,8 +105,7 @@ function getFileIcon(item: FileUploadItem): IconComponent {
     return FileSpreadsheet;
   if (type.includes('pdf') || type.startsWith('text/') || ['pdf', 'doc', 'docx', 'md', 'txt'].includes(ext ?? ''))
     return FileText;
-  if (['css', 'html', 'js', 'jsx', 'json', 'mdx', 'ts', 'tsx', 'xml', 'yaml', 'yml'].includes(ext ?? ''))
-    return FileCode2;
+  if (['css', 'html', 'js', 'jsx', 'json', 'mdx', 'ts', 'tsx', 'xml', 'yaml', 'yml'].includes(ext ?? '')) return FileCode2;
   return FileIcon;
 }
 
@@ -149,7 +148,7 @@ function StatusIcon({ status, reduce }: { status: FileUploadStatus; reduce: bool
   const color = COLOR[status];
 
   return (
-    <AnimatePresence exitBeforeEnter>
+    <AnimatePresence exitBeforeEnter={true}>
       <MotiView
         key={status}
         from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 4 }}
@@ -237,10 +236,7 @@ function FileUploadRow({
       <View className="border border-border bg-background p-3 rounded-2xl">
         <View className="flex-row items-center" style={{ gap: 12 }}>
           {/* Leading icon */}
-          <View
-            className="bg-muted items-center justify-center rounded-xl"
-            style={{ width: 44, height: 44, flexShrink: 0 }}
-          >
+          <View className="bg-muted items-center justify-center rounded-xl" style={{ width: 44, height: 44, flexShrink: 0 }}>
             <LeadingIcon size={20} color="#71717a" />
           </View>
 
@@ -364,10 +360,7 @@ export function FileUpload({
         </Text>
       </View>
 
-      <View
-        className="border border-border rounded-full"
-        style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 8 }}
-      >
+      <View className="border border-border rounded-full" style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 8 }}>
         <Text className="text-xs font-medium text-foreground">{browseLabel}</Text>
       </View>
     </>
@@ -385,10 +378,7 @@ export function FileUpload({
         </Text>
       </View>
 
-      <View
-        className="border border-border rounded-full"
-        style={{ flexShrink: 0, paddingHorizontal: 14, paddingVertical: 8 }}
-      >
+      <View className="border border-border rounded-full" style={{ flexShrink: 0, paddingHorizontal: 14, paddingVertical: 8 }}>
         <Text className="text-xs font-medium text-foreground">{browseLabel}</Text>
       </View>
     </>

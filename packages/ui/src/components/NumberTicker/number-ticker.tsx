@@ -114,13 +114,12 @@ export function NumberTicker({
       {prefix ? <Text className={className}>{prefix}</Text> : null}
       {measured
         ? glyphs.map(({ char, id }, i) => {
-            if (!/\d/.test(char)) {
+            if (!/\d/.test(char))
               return (
                 <Text key={id} className={className}>
                   {char}
                 </Text>
               );
-            }
             return (
               <Digit
                 key={id}
@@ -151,11 +150,7 @@ interface DigitProps {
 function Digit({ digit, delay, duration, box, className, digitClassName }: DigitProps) {
   const reduce = useReducedMotion();
   return (
-    <View
-      className={digitClassName}
-      style={{ width: box.w, height: box.h, overflow: 'hidden' }}
-      importantForAccessibility="no"
-    >
+    <View className={digitClassName} style={{ width: box.w, height: box.h, overflow: 'hidden' }} importantForAccessibility="no">
       <MotiView
         from={{ translateY: 0 }}
         animate={{ translateY: -digit * box.h }}

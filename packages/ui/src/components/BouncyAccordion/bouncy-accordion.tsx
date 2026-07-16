@@ -116,9 +116,7 @@ function BouncyAccordionRow({
             height. The inner block is always laid out so onLayout can measure it. */}
         <MotiView
           animate={{ height: open && item.description ? contentHeight : 0 }}
-          transition={
-            reduce ? { type: 'timing', duration: 0 } : open ? CONTENT_OPEN_TRANSITION : CONTENT_CLOSE_TRANSITION
-          }
+          transition={reduce ? { type: 'timing', duration: 0 } : open ? CONTENT_OPEN_TRANSITION : CONTENT_CLOSE_TRANSITION}
           className="overflow-hidden"
         >
           <MotiView

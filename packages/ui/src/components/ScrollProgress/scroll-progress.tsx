@@ -50,21 +50,12 @@ function useSmoothed(progress: SharedValue<number>, spring: boolean) {
   return useDerivedValue(() => (spring && !reduce ? withSpring(progress.value, PROGRESS_SPRING) : progress.value));
 }
 
-function ScrollProgressBar({
-  progress,
-  spring = true,
-  height = 3,
-  color = '#111111',
-  style,
-  testID,
-}: ScrollProgressBarProps) {
+function ScrollProgressBar({ progress, spring = true, height = 3, color = '#111111', style, testID }: ScrollProgressBarProps) {
   const value = useSmoothed(progress, spring);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: Math.max(0, Math.min(1, value.value)) }] }));
   return (
     <View testID={testID} style={[{ height, width: '100%', overflow: 'hidden' }, style]}>
-      <Animated.View
-        style={[{ height, width: '100%', backgroundColor: color, transformOrigin: 'left' }, animatedStyle]}
-      />
+      <Animated.View style={[{ height, width: '100%', backgroundColor: color, transformOrigin: 'left' }, animatedStyle]} />
     </View>
   );
 }
@@ -87,15 +78,7 @@ function ScrollProgressCircle({
   return (
     <View testID={testID} style={style}>
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeOpacity={0.15}
-          strokeWidth={thickness}
-        />
+        <Circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeOpacity={0.15} strokeWidth={thickness} />
         <AnimatedCircle
           cx={size / 2}
           cy={size / 2}

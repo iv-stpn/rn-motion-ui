@@ -33,7 +33,7 @@ export const Interactive: Story = {
       <View style={{ gap: 12 }}>
         <Switch {...args} checked={on} onCheckedChange={setOn} label="Enable notifications" />
         <Switch {...args} checked={false} onCheckedChange={() => {}} label="Off" />
-        <Switch {...args} checked disabled onCheckedChange={() => {}} label="Disabled" />
+        <Switch {...args} checked={true} disabled={true} onCheckedChange={() => {}} label="Disabled" />
       </View>
     );
   },

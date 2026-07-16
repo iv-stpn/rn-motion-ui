@@ -2,7 +2,14 @@
 // lucide-react v1.16.0 icon geometry (ISC) rendered via react-native-svg, so the
 // same icon set works on native + react-native-web without the (uncached) RN pkg.
 import type { StyleProp, ViewStyle } from 'react-native';
-import { Svg, Circle as SvgCircle, Line as SvgLine, Path as SvgPath, Polyline as SvgPolyline, Rect as SvgRect } from 'react-native-svg';
+import {
+  Svg,
+  Circle as SvgCircle,
+  Line as SvgLine,
+  Path as SvgPath,
+  Polyline as SvgPolyline,
+  Rect as SvgRect,
+} from 'react-native-svg';
 
 export interface IconProps {
   /** Square edge length in px. */
@@ -2427,4 +2434,3 @@ export function X({ size = 24, color = 'currentColor', strokeWidth = 2, style, a
     </Svg>
   );
 }
-

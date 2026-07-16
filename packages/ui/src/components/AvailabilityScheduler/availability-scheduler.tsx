@@ -1,15 +1,6 @@
 import { AnimatePresence, MotiView } from 'moti';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  type LayoutChangeEvent,
-  Modal,
-  Pressable,
-  ScrollView,
-  type StyleProp,
-  Text,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { type LayoutChangeEvent, Modal, Pressable, ScrollView, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { CONTENT_TRANSITION, SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 import { Check, Copy, Plus, X } from '../../lib/icons';
@@ -120,7 +111,7 @@ function TimePickerModal({
   const wheelOptions = useMemo(() => options.map((o) => ({ label: o.label, value: o.value })), [options]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onShow={onShow} onRequestClose={onClose}>
+    <Modal visible={visible} transparent={true} animationType="slide" onShow={onShow} onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} onPress={onClose}>
         <View>
           <Pressable onPress={(e) => e.stopPropagation()}>
@@ -135,13 +126,7 @@ function TimePickerModal({
               </Text>
 
               <View style={{ paddingHorizontal: 48, paddingVertical: 8 }}>
-                <WheelPicker
-                  options={wheelOptions}
-                  value={pending}
-                  onValueChange={setPending}
-                  visibleCount={5}
-                  itemHeight={44}
-                />
+                <WheelPicker options={wheelOptions} value={pending} onValueChange={setPending} visibleCount={5} itemHeight={44} />
               </View>
 
               <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 24, paddingTop: 8 }}>
@@ -200,13 +185,7 @@ function TimeButton({
           {label12(value)}
         </Text>
       </Pressable>
-      <TimePickerModal
-        visible={open}
-        value={value}
-        options={options}
-        onSelect={onChange}
-        onClose={() => setOpen(false)}
-      />
+      <TimePickerModal visible={open} value={value} options={options} onSelect={onChange} onClose={() => setOpen(false)} />
     </>
   );
 }
@@ -243,7 +222,7 @@ function CopyModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} onPress={onClose}>
         <View>
           <Pressable onPress={(e) => e.stopPropagation()}>
@@ -255,12 +234,7 @@ function CopyModal({
               <Text className="py-2 text-sm font-medium text-muted-foreground">Copy times to</Text>
 
               {others.map((d) => (
-                <Checkbox
-                  key={d.key}
-                  checked={picked.has(d.key)}
-                  onCheckedChange={() => toggle(d.key)}
-                  label={d.label}
-                />
+                <Checkbox key={d.key} checked={picked.has(d.key)} onCheckedChange={() => toggle(d.key)} label={d.label} />
               ))}
 
               <View style={{ flexDirection: 'row', gap: 12, paddingTop: 16 }}>
@@ -329,11 +303,8 @@ function DayRow({
   }, []);
 
   const setEnabled = (enabled: boolean) => {
-    if (enabled && state.ranges.length === 0) {
-      onChange({ enabled, ranges: [{ id: nextId(), start: '09:00', end: '17:00' }] });
-    } else {
-      onChange({ ...state, enabled });
-    }
+    if (enabled && state.ranges.length === 0) onChange({ enabled, ranges: [{ id: nextId(), start: '09:00', end: '17:00' }] });
+    else onChange({ ...state, enabled });
   };
 
   const updateRange = (id: string, patch: Partial<TimeRange>) => {
@@ -485,7 +456,7 @@ function DayRow({
         >
           {renderBody()}
         </View>
-        <AnimatePresence exitBeforeEnter>
+        <AnimatePresence exitBeforeEnter={true}>
           <MotiView
             key={state.enabled ? 'ranges' : 'unavailable'}
             from={reduce ? { opacity: 0 } : { opacity: 0, translateY: -4 }}
@@ -505,14 +476,7 @@ function DayRow({
 
 // ─── AvailabilityScheduler ─────────────────────────────────────────────────
 
-export function AvailabilityScheduler({
-  value,
-  defaultValue,
-  onChange,
-  step = 30,
-  style,
-  testID,
-}: AvailabilitySchedulerProps) {
+export function AvailabilityScheduler({ value, defaultValue, onChange, step = 30, style, testID }: AvailabilitySchedulerProps) {
   const reduce = useReducedMotion();
   const options = useMemo(() => buildOptions(step), [step]);
   const idRef = useRef(0);
@@ -540,7 +504,7 @@ export function AvailabilityScheduler({
     (from: DayKey, targets: DayKey[]) => {
       const source = week[from];
       const next = { ...week };
-      for (const t of targets) {
+      for (const t of targets)
         next[t] = {
           enabled: source.enabled,
           ranges: source.ranges.map((r) => ({
@@ -548,7 +512,6 @@ export function AvailabilityScheduler({
             id: `${t}-c${idRef.current++}`,
           })),
         };
-      }
       commit(next);
     },
     [commit, week],

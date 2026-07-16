@@ -61,7 +61,7 @@ export function BottomSheet({
   const canCollapse = snap > 0;
 
   return (
-    <Modal transparent visible={rendered} animationType="none" onRequestClose={() => onOpenChange(false)}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={() => onOpenChange(false)}>
       <AnimatePresence onExitComplete={() => setRendered(false)}>
         {open ? (
           <View key="bottom-sheet" style={{ flex: 1 }} testID={testID}>

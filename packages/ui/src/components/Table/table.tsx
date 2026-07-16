@@ -84,18 +84,14 @@ type ParsedWidth = { type: 'px'; value: number } | { type: 'fr'; value: number }
 function parseColumnWidth(w: number | string | undefined): ParsedWidth {
   if (w == null) return { type: 'fr', value: 1 };
   if (typeof w === 'number') return { type: 'px', value: w };
-  if (w.endsWith('px')) return { type: 'px', value: parseFloat(w) };
-  if (w.endsWith('fr')) return { type: 'fr', value: parseFloat(w) };
+  if (w.endsWith('px')) return { type: 'px', value: Number.parseFloat(w) };
+  if (w.endsWith('fr')) return { type: 'fr', value: Number.parseFloat(w) };
   return { type: 'fr', value: 1 };
 }
 
 const CHECKBOX_COL_WIDTH = 44;
 
-function computeColumnWidths<T>(
-  columns: TableColumn<T>[],
-  containerWidth: number,
-  selectable: boolean,
-): Record<string, number> {
+function computeColumnWidths<T>(columns: TableColumn<T>[], containerWidth: number, selectable: boolean): Record<string, number> {
   let totalFixed = selectable ? CHECKBOX_COL_WIDTH : 0;
   let totalFr = 0;
 
@@ -109,11 +105,8 @@ function computeColumnWidths<T>(
   const remaining = Math.max(0, containerWidth - totalFixed);
   const result: Record<string, number> = {};
   for (const { key, p } of parsed) {
-    if (p.type === 'px') {
-      result[key] = p.value;
-    } else {
-      result[key] = totalFr > 0 ? (remaining * p.value) / totalFr : 0;
-    }
+    if (p.type === 'px') result[key] = p.value;
+    else result[key] = totalFr > 0 ? (remaining * p.value) / totalFr : 0;
   }
   return result;
 }
@@ -131,11 +124,8 @@ function sortRows<T>(rows: Array<{ row: T; id: string }>, sort: SortState | null
     if (av == null) return 1;
     if (bv == null) return -1;
     let cmp: number;
-    if (typeof av === 'number' && typeof bv === 'number') {
-      cmp = av - bv;
-    } else {
-      cmp = String(av).localeCompare(String(bv));
-    }
+    if (typeof av === 'number' && typeof bv === 'number') cmp = av - bv;
+    else cmp = String(av).localeCompare(String(bv));
     return sort.direction === 'asc' ? cmp : -cmp;
   });
 }
@@ -182,9 +172,8 @@ function useColumnReorder<T>({
     columns.forEach((column, i) => {
       if (present.has(column.key)) return;
       let at = resultKeys.length;
-      if (i === 0) {
-        at = 0;
-      } else {
+      if (i === 0) at = 0;
+      else {
         const prev = columns[i - 1] as TableColumn<T>;
         const idx = resultKeys.indexOf(prev.key);
         at = idx === -1 ? i : idx + 1;
@@ -283,15 +272,7 @@ function useColumnReorder<T>({
 
 // ─── Internal: Editable Cell ─────────────────────────────────────────────────
 
-function EditableCellInput({
-  value,
-  onCommit,
-  testID,
-}: {
-  value: string;
-  onCommit: (next: string) => void;
-  testID?: string;
-}) {
+function EditableCellInput({ value, onCommit, testID }: { value: string; onCommit: (next: string) => void; testID?: string }) {
   const [draft, setDraft] = useState(value);
 
   return (
@@ -305,22 +286,14 @@ function EditableCellInput({
       testID={testID}
       style={styles.editableInput}
       autoCapitalize="none"
-      blurOnSubmit
+      blurOnSubmit={true}
     />
   );
 }
 
 // ─── Internal: Skeleton row item ─────────────────────────────────────────────
 
-function SkeletonCellPulse({
-  width,
-  align,
-  reduce,
-}: {
-  width: number;
-  align: TableColumn<unknown>['align'];
-  reduce: boolean;
-}) {
+function SkeletonCellPulse({ width, align, reduce }: { width: number; align: TableColumn<unknown>['align']; reduce: boolean }) {
   return (
     <View
       style={[
@@ -428,11 +401,11 @@ export function Table<T>({
   const toggleSort = useCallback(
     (key: string) => {
       const next: SortState | null =
-        activeSort?.key !== key
-          ? { key, direction: 'asc' }
-          : activeSort.direction === 'asc'
+        activeSort?.key === key
+          ? activeSort.direction === 'asc'
             ? { key, direction: 'desc' }
-            : null;
+            : null
+          : { key, direction: 'asc' };
       if (!isControlledSort) setInternalSort(next);
       onSortChange?.(next);
     },
@@ -497,9 +470,7 @@ export function Table<T>({
         {/* Header content lifts (scale + fade) while its column is being dragged. */}
         <MotiView
           style={styles.headerInner}
-          animate={
-            reduce ? { opacity: isDragging ? 0.5 : 1 } : { scale: isDragging ? 1.04 : 1, opacity: isDragging ? 0.5 : 1 }
-          }
+          animate={reduce ? { opacity: isDragging ? 0.5 : 1 } : { scale: isDragging ? 1.04 : 1, opacity: isDragging ? 0.5 : 1 }}
           transition={{ type: 'timing', duration: reduce ? 0 : 180 }}
         >
           {/* Reorder grip — a PanResponder here claims the drag so it never sorts. */}
@@ -528,8 +499,7 @@ export function Table<T>({
               style={[
                 styles.headerLabelRow,
                 {
-                  justifyContent:
-                    column.align === 'right' ? 'flex-end' : column.align === 'center' ? 'center' : 'flex-start',
+                  justifyContent: column.align === 'right' ? 'flex-end' : column.align === 'center' ? 'center' : 'flex-start',
                 },
               ]}
             >
@@ -636,13 +606,13 @@ export function Table<T>({
                   column.cell(row)
                 ) : column.editable && !column.cell ? (
                   <EditableCellInput
-                    value={rawValue != null ? String(rawValue) : ''}
+                    value={rawValue == null ? '' : String(rawValue)}
                     onCommit={(v) => onCellEdit?.(id, column.key, v)}
                     testID={`${testID ?? 'table'}-cell-${id}-${column.key}`}
                   />
                 ) : (
                   <Text style={[styles.cellText, { textAlign }]} numberOfLines={1}>
-                    {rawValue != null ? String(rawValue) : ''}
+                    {rawValue == null ? '' : String(rawValue)}
                   </Text>
                 )}
               </View>
@@ -720,12 +690,7 @@ export function Table<T>({
             {orderedColumns.map((col) => {
               const colWidth = colWidths[col.key] ?? 0;
               return (
-                <SkeletonCellPulse
-                  key={col.key}
-                  width={containerWidth > 0 ? colWidth : 80}
-                  align={col.align}
-                  reduce={reduce}
-                />
+                <SkeletonCellPulse key={col.key} width={containerWidth > 0 ? colWidth : 80} align={col.align} reduce={reduce} />
               );
             })}
           </View>
@@ -759,9 +724,7 @@ export function Table<T>({
       {/* ── Sticky Header ── */}
       <View style={[styles.headerRow, { height: rowHeight }]}>
         {selectable ? (
-          <View
-            style={[styles.headerCell, { width: CHECKBOX_COL_WIDTH, justifyContent: 'center', alignItems: 'center' }]}
-          >
+          <View style={[styles.headerCell, { width: CHECKBOX_COL_WIDTH, justifyContent: 'center', alignItems: 'center' }]}>
             <Checkbox
               checked={allSelected}
               indeterminate={someSelected}
@@ -794,7 +757,7 @@ export function Table<T>({
         onEndReachedThreshold={onEndReachedThreshold}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
-        removeClippedSubviews
+        removeClippedSubviews={true}
         testID={`${testID ?? 'table'}-list`}
       />
     </View>

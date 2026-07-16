@@ -3,8 +3,8 @@ import type { Insets, PressableProps, ViewStyle } from 'react-native';
 import type Animated from 'react-native-reanimated';
 import type { DerivedValue } from 'react-native-reanimated';
 
-import type { MotiView } from '../../components';
-import type { MotiAnimationProp, MotiTransition } from '../../core';
+import type { MotiView } from '../../components/view';
+import type { MotiAnimationProp, MotiTransition } from '../../core/types';
 
 export type MotiPressableInteractionState = {
   hovered: boolean;

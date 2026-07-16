@@ -6,3 +6,4 @@ export const HoveredContext = createContext({
 } as SharedValue<boolean>);
 
 export const useIsHovered = () => useContext(HoveredContext);
+export { useIsHovered as useMotiHover };

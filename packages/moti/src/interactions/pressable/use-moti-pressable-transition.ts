@@ -1,6 +1,6 @@
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import type { MotiTransition } from '../../core';
+import type { MotiTransition } from '../../core/types';
 import { type MotiPressableInteractionIds, useMotiPressableContext } from './context';
 import type { MotiPressableInteractionState } from './types';
 import { useFactory } from './use-validate-factory-or-id';
@@ -24,7 +24,7 @@ export function useMotiPressableTransition(
   const { factory, id } = useFactory<Factory>('useMotiPressableTransition', factoryOrId, maybeFactoryOrDeps, maybeDeps);
 
   // RNR4: useDerivedValue no longer accepts a dependency array.
-  return useDerivedValue<MotiTransition>(() => {
-    return context && factory(context.containers[id]?.value ?? { hovered: false, pressed: false });
-  });
+  return useDerivedValue<MotiTransition>(
+    () => context && factory(context.containers[id]?.value ?? { hovered: false, pressed: false }),
+  );
 }

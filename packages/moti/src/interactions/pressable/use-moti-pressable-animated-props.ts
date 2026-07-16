@@ -19,15 +19,10 @@ export function useMotiPressableAnimatedProps<Props extends object>(
 ) {
   const context = useMotiPressableContext();
 
-  const { factory, id } = useFactory<Factory<Props>>(
-    'useMotiPressableAnimatedProps',
-    factoryOrId,
-    maybeFactoryOrDeps,
-    maybeDeps,
-  );
+  const { factory, id } = useFactory<Factory<Props>>('useMotiPressableAnimatedProps', factoryOrId, maybeFactoryOrDeps, maybeDeps);
 
   // RNR4: useAnimatedProps no longer accepts a dependency array.
-  return useAnimatedProps<Props>(() => {
-    return context ? factory(context.containers[id]?.value ?? { hovered: false, pressed: false }) : ({} as Props);
-  });
+  return useAnimatedProps<Props>(() =>
+    context ? factory(context.containers[id]?.value ?? { hovered: false, pressed: false }) : ({} as Props),
+  );
 }

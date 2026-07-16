@@ -73,11 +73,9 @@ function animationDelay<Animate>(_key: string, transition: MotiTransition<Animat
   'worklet';
   const key = _key as keyof Animate;
   let delayMs: TransitionConfig['delay'] = defaultDelay;
-  if (transition?.[key as keyof MotiTransition<Animate>]?.delay != null) {
+  if (transition?.[key as keyof MotiTransition<Animate>]?.delay != null)
     delayMs = (transition[key as keyof MotiTransition<Animate>] as TransitionConfig).delay;
-  } else if (transition?.delay != null) {
-    delayMs = transition.delay;
-  }
+  else if (transition?.delay != null) delayMs = transition.delay;
   return { delayMs };
 }
 
@@ -105,26 +103,17 @@ function animationConfig<Animate>(styleProp: string, transition: MotiTransition<
   // biome-ignore lint/suspicious/noExplicitAny: per-key access on a complex transition union type — the key is dynamic and can't be narrowed statically
   const styleSpecificTransition = (transition as any)?.[key];
 
-  if (styleSpecificTransition?.type) {
-    animationType = styleSpecificTransition.type;
-  } else if (transition?.type) {
-    animationType = transition.type;
-  }
+  if (styleSpecificTransition?.type) animationType = styleSpecificTransition.type;
+  else if (transition?.type) animationType = transition.type;
 
   const loop = styleSpecificTransition?.loop ?? transition?.loop;
   if (loop != null) repeatCount = loop ? -1 : 0;
 
-  if (styleSpecificTransition?.repeat != null) {
-    repeatCount = styleSpecificTransition.repeat;
-  } else if (transition?.repeat != null) {
-    repeatCount = transition.repeat;
-  }
+  if (styleSpecificTransition?.repeat != null) repeatCount = styleSpecificTransition.repeat;
+  else if (transition?.repeat != null) repeatCount = transition.repeat;
 
-  if (styleSpecificTransition?.repeatReverse != null) {
-    repeatReverse = styleSpecificTransition.repeatReverse;
-  } else if (transition?.repeatReverse != null) {
-    repeatReverse = transition.repeatReverse;
-  }
+  if (styleSpecificTransition?.repeatReverse != null) repeatReverse = styleSpecificTransition.repeatReverse;
+  else if (transition?.repeatReverse != null) repeatReverse = transition.repeatReverse;
 
   let config: Record<string, unknown> = {};
   let reduceMotion = ReduceMotion.System;
@@ -136,8 +125,7 @@ function animationConfig<Animate>(styleProp: string, transition: MotiTransition<
       (styleSpecificTransition as WithTimingConfig | undefined)?.duration ??
       (transition as WithTimingConfig | undefined)?.duration;
     const easing =
-      (styleSpecificTransition as WithTimingConfig | undefined)?.easing ??
-      (transition as WithTimingConfig | undefined)?.easing;
+      (styleSpecificTransition as WithTimingConfig | undefined)?.easing ?? (transition as WithTimingConfig | undefined)?.easing;
     const timingReduceMotion =
       (styleSpecificTransition as WithTimingConfig | undefined)?.reduceMotion ??
       (transition as WithTimingConfig | undefined)?.reduceMotion;
@@ -156,41 +144,23 @@ function animationConfig<Animate>(styleProp: string, transition: MotiTransition<
       const styleSpecificConfig = styleSpecificTransition?.[configKey];
       // biome-ignore lint/suspicious/noExplicitAny: spring config key access on the transition union — narrowing would require exhaustive type guards
       const transitionConfigForKey = (transition as any)?.[configKey];
-      if (configKey === 'reduceMotion') {
-        if (transitionConfigForKey || styleSpecificConfig) {
-          reduceMotion = transitionConfigForKey ?? styleSpecificConfig;
-        }
-      }
-      if (styleSpecificConfig != null) {
-        config[configKey] = styleSpecificConfig;
-      } else if (transitionConfigForKey != null) {
-        config[configKey] = transitionConfigForKey;
-      }
+      if (configKey === 'reduceMotion' && (transitionConfigForKey || styleSpecificConfig))
+        reduceMotion = transitionConfigForKey ?? styleSpecificConfig;
+      if (styleSpecificConfig != null) config[configKey] = styleSpecificConfig;
+      else if (transitionConfigForKey != null) config[configKey] = transitionConfigForKey;
     }
   } else if (animationType === 'decay') {
     animation = withDecay;
     config = {};
-    const configKeys: (keyof WithDecayConfig)[] = [
-      'clamp',
-      'velocity',
-      'deceleration',
-      'velocityFactor',
-      'reduceMotion',
-    ];
+    const configKeys: (keyof WithDecayConfig)[] = ['clamp', 'velocity', 'deceleration', 'velocityFactor', 'reduceMotion'];
     for (const configKey of configKeys) {
       const styleSpecificConfig = styleSpecificTransition?.[configKey];
       // biome-ignore lint/suspicious/noExplicitAny: spring config key access on the transition union — narrowing would require exhaustive type guards
       const transitionConfigForKey = (transition as any)?.[configKey];
-      if (configKey === 'reduceMotion') {
-        if (transitionConfigForKey || styleSpecificConfig) {
-          reduceMotion = transitionConfigForKey ?? styleSpecificConfig;
-        }
-      }
-      if (styleSpecificConfig != null) {
-        config[configKey] = styleSpecificConfig;
-      } else if (transitionConfigForKey != null) {
-        config[configKey] = transitionConfigForKey;
-      }
+      if (configKey === 'reduceMotion' && (transitionConfigForKey || styleSpecificConfig))
+        reduceMotion = transitionConfigForKey ?? styleSpecificConfig;
+      if (styleSpecificConfig != null) config[configKey] = styleSpecificConfig;
+      else if (transitionConfigForKey != null) config[configKey] = transitionConfigForKey;
     }
   } else if (animationType === 'no-animation') {
     animation = (value: unknown) => value;
@@ -226,11 +196,11 @@ const getSequenceArray = (
     if (shouldPush) {
       let stepDelay = delayMs;
       let stepValue: unknown = step;
-      let stepConfig = Object.assign({}, config);
+      let stepConfig = { ...config };
       let stepAnimation = animation;
 
       if (typeof step === 'object' && step !== null) {
-        const stepTransition = Object.assign({}, step) as Record<string, unknown>;
+        const stepTransition = { ...step } as Record<string, unknown>;
         delete stepTransition.delay;
         delete stepTransition.value;
 
@@ -239,32 +209,27 @@ const getSequenceArray = (
           stepTransition as MotiTransition<unknown>,
         );
 
-        stepConfig = Object.assign({}, stepConfig, inlineStepConfig);
+        stepConfig = { ...stepConfig, ...inlineStepConfig };
         stepAnimation = inlineAnimation;
         stepOnDidAnimate = (step as SequenceItemObject<unknown>).onDidAnimate;
 
-        if ((step as SequenceItemObject<unknown>).delay != null) {
+        if ((step as SequenceItemObject<unknown>).delay != null)
           stepDelay = (step as SequenceItemObject<unknown>).delay as number;
-        }
         stepValue = (step as SequenceItemObject<unknown>).value;
       }
 
       const sequenceValue = stepAnimation(stepValue, stepConfig, (completed = false, maybeValue: unknown) => {
         'worklet';
         callback(completed, maybeValue, { attemptedSequenceValue: stepValue });
-        if (stepOnDidAnimate) {
+        if (stepOnDidAnimate)
           runOnJS(stepOnDidAnimate as (...args: unknown[]) => void)(completed, maybeValue, {
             attemptedSequenceItemValue: stepValue,
             attemptedSequenceArray: maybeValue,
           });
-        }
       });
 
-      if (stepDelay != null) {
-        sequence.push(withDelay(stepDelay, sequenceValue as ReturnType<typeof withTiming>));
-      } else {
-        sequence.push(sequenceValue);
-      }
+      if (stepDelay == null) sequence.push(sequenceValue);
+      else sequence.push(withDelay(stepDelay, sequenceValue as ReturnType<typeof withTiming>));
     }
   }
 
@@ -295,10 +260,7 @@ export function useMotify<Animate>({
 
   const { custom, reanimatedSafeToUnmount, reanimatedOnDidAnimate } = useMemo(
     () => ({
-      custom: () => {
-        'worklet';
-        return presenceContext?.custom;
-      },
+      custom: () => presenceContext?.custom,
       reanimatedSafeToUnmount: () => {
         safeToUnmount?.();
       },
@@ -324,11 +286,9 @@ export function useMotify<Animate>({
 
     let animateStyle: Animate;
 
-    if (animateProp && 'value' in (animateProp as object)) {
+    if (animateProp && 'value' in (animateProp as object))
       animateStyle = ((animateProp as { value: Animate }).value || {}) as Animate;
-    } else {
-      animateStyle = (animateProp || {}) as Animate;
-    }
+    else animateStyle = (animateProp || {}) as Animate;
 
     debug('style', animateStyle);
 
@@ -336,28 +296,19 @@ export function useMotify<Animate>({
     // biome-ignore lint/suspicious/noExplicitAny: exit prop can be a style object, boolean, or a custom() factory — no single concrete type covers all three
     let exitStyle: any = exitProp || {};
 
-    if (typeof exitStyle === 'function') {
-      exitStyle = (exitStyle as (c?: unknown) => Animate)(custom());
-    }
+    if (typeof exitStyle === 'function') exitStyle = (exitStyle as (c?: unknown) => Animate)(custom());
 
     const isExiting = !isPresent && hasExitStyle;
 
     let mergedStyles: Animate = {} as Animate;
-    if (stylePriority === 'state') {
-      mergedStyles = Object.assign({}, animateStyle, variantStyle);
-    } else {
-      mergedStyles = Object.assign({}, variantStyle, animateStyle);
-    }
+    if (stylePriority === 'state') mergedStyles = { ...animateStyle, ...variantStyle };
+    else mergedStyles = { ...variantStyle, ...animateStyle };
 
-    if (!isMounted.value && !disableInitialAnimation && Object.keys(initialStyle as object).length) {
+    if (!(isMounted.value || disableInitialAnimation) && Object.keys(initialStyle as object).length)
       mergedStyles = initialStyle as Animate;
-    } else {
-      mergedStyles = Object.assign({}, initialStyle, mergedStyles);
-    }
+    else mergedStyles = { ...initialStyle, ...mergedStyles };
 
-    if (isExiting && exitStyle && typeof exitStyle !== 'boolean') {
-      mergedStyles = Object.assign({}, exitStyle) as Animate;
-    }
+    if (isExiting && exitStyle && typeof exitStyle !== 'boolean') mergedStyles = { ...exitStyle } as Animate;
 
     const exitingStyleProps: Record<string, boolean> = {};
     const disabledExitStyles = new Set([
@@ -376,26 +327,20 @@ export function useMotify<Animate>({
     });
 
     let transition: MotiTransition<Animate> | undefined;
-    if (transitionProp && 'value' in (transitionProp as object)) {
+    if (transitionProp && 'value' in (transitionProp as object))
       transition = (transitionProp as { value: MotiTransition<Animate> }).value;
-    } else {
-      transition = transitionProp as MotiTransition<Animate> | undefined;
-    }
+    else transition = transitionProp as MotiTransition<Animate> | undefined;
 
-    if (variantStyle.transition) {
-      transition = Object.assign({}, transition, variantStyle.transition);
-    }
+    if (variantStyle.transition) transition = { ...transition, ...variantStyle.transition };
 
     if (isExiting && exitTransitionProp) {
       let exitTransition: MotiTransition<Animate> | undefined;
-      if (exitTransitionProp && 'value' in (exitTransitionProp as object)) {
+      if (exitTransitionProp && 'value' in (exitTransitionProp as object))
         exitTransition = (exitTransitionProp as { value: MotiTransition<Animate> }).value;
-      } else if (typeof exitTransitionProp === 'function') {
+      else if (typeof exitTransitionProp === 'function')
         exitTransition = (exitTransitionProp as (c?: unknown) => MotiTransition<Animate>)(custom());
-      } else {
-        exitTransition = exitTransitionProp as MotiTransition<Animate>;
-      }
-      transition = Object.assign({}, transition, exitTransition);
+      else exitTransition = exitTransitionProp as MotiTransition<Animate>;
+      transition = { ...transition, ...exitTransition };
     }
 
     Object.keys(mergedStyles as object).forEach((key) => {
@@ -415,15 +360,12 @@ export function useMotify<Animate>({
         recentValue: unknown,
         info?: { attemptedSequenceValue?: unknown; transformKey?: string },
       ) => {
-        if (onDidAnimate) {
+        if (onDidAnimate)
           runOnJS(reanimatedOnDidAnimate as (...args: unknown[]) => void)(key, completed, recentValue, {
             attemptedValue: value,
             attemptedSequenceItemValue: info?.attemptedSequenceValue,
           });
-        }
-        if (inlineOnDidAnimate) {
-          runOnJS(inlineOnDidAnimate)(completed, recentValue, { attemptedValue: value });
-        }
+        if (inlineOnDidAnimate) runOnJS(inlineOnDidAnimate)(completed, recentValue, { attemptedValue: value });
         if (isExiting) {
           exitingStyleProps[key] = false;
           const areStylesExiting = Object.values(exitingStyleProps).some(Boolean);
@@ -436,9 +378,7 @@ export function useMotify<Animate>({
       if (value == null || value === false) return;
 
       if (key === 'transform') {
-        if (!Array.isArray(value)) {
-          console.error(`[${PackageName}]: Invalid transform value. Needs to be an array.`);
-        } else {
+        if (Array.isArray(value))
           (value as unknown[]).forEach((transformObject) => {
             final.transform = final.transform || [];
             const transformKey = Object.keys(transformObject as object)[0] as string;
@@ -452,19 +392,15 @@ export function useMotify<Animate>({
                   sequence[0] as ReturnType<typeof withTiming>,
                   ...(sequence.slice(1) as ReturnType<typeof withTiming>[]),
                 );
-                if (shouldRepeat) {
-                  finalValue = withRepeat(finalValue, repeatCount, repeatReverse, callback);
-                }
+                if (shouldRepeat) finalValue = withRepeat(finalValue, repeatCount, repeatReverse, callback);
                 transform[transformKey] = finalValue;
               }
             } else {
-              if ((transition as Record<string, Record<string, unknown>>)?.[transformKey]?.delay != null) {
+              if ((transition as Record<string, Record<string, unknown>>)?.[transformKey]?.delay != null)
                 delayMs = (transition as Record<string, Record<string, number>>)[transformKey]?.delay;
-              }
               let configKey = transformKey;
-              if (transition && 'transform' in (transition as object) && !(configKey in (transition as object))) {
+              if (transition && 'transform' in (transition as object) && !(configKey in (transition as object)))
                 configKey = 'transform';
-              }
 
               const {
                 animation: tAnim,
@@ -475,34 +411,19 @@ export function useMotify<Animate>({
               } = animationConfig(configKey, transition);
 
               let finalValue = tAnim(transformValue, tConfig, callback);
-              if (tShouldRepeat) {
-                finalValue = withRepeat(
-                  finalValue as ReturnType<typeof withTiming>,
-                  tRepeatCount,
-                  tRepeatReverse,
-                  undefined,
-                );
-              }
-              if (delayMs != null) {
-                transform[transformKey] = withDelay(delayMs, finalValue as ReturnType<typeof withTiming>);
-              } else {
-                transform[transformKey] = finalValue;
-              }
+              if (tShouldRepeat)
+                finalValue = withRepeat(finalValue as ReturnType<typeof withTiming>, tRepeatCount, tRepeatReverse, undefined);
+              if (delayMs == null) transform[transformKey] = finalValue;
+              else transform[transformKey] = withDelay(delayMs, finalValue as ReturnType<typeof withTiming>);
             }
 
-            if (Object.keys(transform).length && Array.isArray(final.transform)) {
-              (final.transform as unknown[]).push(transform);
-            }
+            if (Object.keys(transform).length && Array.isArray(final.transform)) (final.transform as unknown[]).push(transform);
           });
-        }
+        else console.error(`[${PackageName}]: Invalid transform value. Needs to be an array.`);
       } else if (Array.isArray(value)) {
         const sequence = getSequenceArray(key, value, delayMs, config, animation, callback);
-        let finalValue = withSequence(
-          ...(sequence as [ReturnType<typeof withTiming>, ...ReturnType<typeof withTiming>[]]),
-        );
-        if (shouldRepeat) {
-          finalValue = withRepeat(finalValue, repeatCount, repeatReverse, undefined);
-        }
+        let finalValue = withSequence(...(sequence as [ReturnType<typeof withTiming>, ...ReturnType<typeof withTiming>[]]));
+        if (shouldRepeat) finalValue = withRepeat(finalValue, repeatCount, repeatReverse, undefined);
 
         if (isTransform(key)) {
           final.transform = final.transform || [];
@@ -511,71 +432,52 @@ export function useMotify<Animate>({
             transform[key] = finalValue;
             (final.transform as unknown[]).push(transform);
           }
-        } else {
-          if (sequence.length) final[key] = finalValue;
-        }
+        } else if (sequence.length) final[key] = finalValue;
       } else if (isTransform(key)) {
         final.transform = final.transform || [];
 
-        if ((transition as Record<string, Record<string, unknown>>)?.[key]?.delay != null) {
+        if ((transition as Record<string, Record<string, unknown>>)?.[key]?.delay != null)
           delayMs = (transition as Record<string, Record<string, number>>)[key]?.delay;
-        }
 
         const transform: Record<string, unknown> = {};
         let finalValue = animation(value, config, callback);
-        if (shouldRepeat) {
+        if (shouldRepeat)
           finalValue = withRepeat(finalValue as ReturnType<typeof withTiming>, repeatCount, repeatReverse, undefined);
-        }
-        if (delayMs != null) {
-          transform[key] = withDelay(delayMs, finalValue as ReturnType<typeof withTiming>);
-        } else {
-          transform[key] = finalValue;
-        }
+        if (delayMs == null) transform[key] = finalValue;
+        else transform[key] = withDelay(delayMs, finalValue as ReturnType<typeof withTiming>);
         (final.transform as unknown[]).push(transform);
       } else if (typeof value === 'object') {
         final[key] = {};
         for (const innerStyleKey in value) {
           let finalValue = animation(value, config, callback);
-          if (shouldRepeat) {
+          if (shouldRepeat)
             finalValue = withRepeat(finalValue as ReturnType<typeof withTiming>, repeatCount, repeatReverse, undefined);
-          }
-          if (delayMs != null) {
+          if (delayMs == null) (final[key] as Record<string, unknown>)[innerStyleKey] = finalValue;
+          else
             (final[key] as Record<string, unknown>)[innerStyleKey] = withDelay(
               delayMs,
               finalValue as ReturnType<typeof withTiming>,
             );
-          } else {
-            (final[key] as Record<string, unknown>)[innerStyleKey] = finalValue;
-          }
         }
       } else {
         let finalValue = animation(value, config, callback);
-        if (shouldRepeat) {
+        if (shouldRepeat)
           finalValue = withRepeat(finalValue as ReturnType<typeof withTiming>, repeatCount, repeatReverse, undefined);
-        }
-        if (delayMs != null && typeof delayMs === 'number') {
+        if (delayMs != null && typeof delayMs === 'number')
           final[key] = withDelay(delayMs, finalValue as ReturnType<typeof withTiming>);
-        } else {
-          final[key] = finalValue;
-        }
+        else final[key] = finalValue;
       }
     });
 
-    if (!(final.transform as unknown[])?.length) {
-      delete (final as Record<string, unknown>).transform;
-    }
+    if (!(final.transform as unknown[])?.length) delete (final as Record<string, unknown>).transform;
 
     return final as Record<string, unknown>;
   });
 
   useEffect(
     function allowUnMountIfMissingExit() {
-      if (fromProp && isMounted.value === false) {
-        isMounted.value = true;
-      }
-      if (!isPresent && !hasExitStyle) {
-        reanimatedSafeToUnmount();
-      }
+      if (fromProp && isMounted.value === false) isMounted.value = true;
+      if (!(isPresent || hasExitStyle)) reanimatedSafeToUnmount();
     },
     [hasExitStyle, isPresent, reanimatedSafeToUnmount, isMounted.value, isMounted, fromProp],
   );

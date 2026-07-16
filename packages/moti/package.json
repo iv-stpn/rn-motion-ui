@@ -13,24 +13,137 @@
   "license": "MIT",
   "author": "Ivan Stepanian <ivanivan1233@gmail.com>",
   "sideEffects": false,
-  "source": "./src/index.tsx",
-  "main": "./src/index.tsx",
-  "types": "./src/index.tsx",
   "exports": {
-    ".": {
-      "source": "./src/index.tsx",
-      "types": "./src/index.tsx",
-      "default": "./src/index.tsx"
+    "./view": {
+      "source": "./src/components/view.tsx",
+      "types": "./src/components/view.tsx",
+      "default": "./src/components/view.tsx"
     },
-    "./interactions": {
-      "source": "./src/interactions/index.ts",
-      "types": "./src/interactions/index.ts",
-      "default": "./src/interactions/index.ts"
+    "./text": {
+      "source": "./src/components/text.tsx",
+      "types": "./src/components/text.tsx",
+      "default": "./src/components/text.tsx"
     },
-    "./svg": {
-      "source": "./src/svg/index.ts",
-      "types": "./src/svg/index.ts",
-      "default": "./src/svg/index.ts"
+    "./image": {
+      "source": "./src/components/image.tsx",
+      "types": "./src/components/image.tsx",
+      "default": "./src/components/image.tsx"
+    },
+    "./scroll-view": {
+      "source": "./src/components/scroll-view.tsx",
+      "types": "./src/components/scroll-view.tsx",
+      "default": "./src/components/scroll-view.tsx"
+    },
+    "./safe-area-view": {
+      "source": "./src/components/safe-area-view.tsx",
+      "types": "./src/components/safe-area-view.tsx",
+      "default": "./src/components/safe-area-view.tsx"
+    },
+    "./progress": {
+      "source": "./src/components/progress.tsx",
+      "types": "./src/components/progress.tsx",
+      "default": "./src/components/progress.tsx"
+    },
+    "./motify": {
+      "source": "./src/core/motify.tsx",
+      "types": "./src/core/motify.tsx",
+      "default": "./src/core/motify.tsx"
+    },
+    "./motify-svg": {
+      "source": "./src/svg/motify-svg.tsx",
+      "types": "./src/svg/motify-svg.tsx",
+      "default": "./src/svg/motify-svg.tsx"
+    },
+    "./use-motify": {
+      "source": "./src/core/use-motify.ts",
+      "types": "./src/core/use-motify.ts",
+      "default": "./src/core/use-motify.ts"
+    },
+    "./use-animation-state": {
+      "source": "./src/core/use-animator.ts",
+      "types": "./src/core/use-animator.ts",
+      "default": "./src/core/use-animator.ts"
+    },
+    "./use-dynamic-animation": {
+      "source": "./src/core/use-dynamic-animation.ts",
+      "types": "./src/core/use-dynamic-animation.ts",
+      "default": "./src/core/use-dynamic-animation.ts"
+    },
+    "./types": {
+      "source": "./src/core/types.ts",
+      "types": "./src/core/types.ts",
+      "default": "./src/core/types.ts"
+    },
+    "./color-keys": {
+      "source": "./src/core/constants/color-keys.ts",
+      "types": "./src/core/constants/color-keys.ts",
+      "default": "./src/core/constants/color-keys.ts"
+    },
+    "./package-name": {
+      "source": "./src/core/constants/package-name.ts",
+      "types": "./src/core/constants/package-name.ts",
+      "default": "./src/core/constants/package-name.ts"
+    },
+    "./presence": {
+      "source": "./src/presence/AnimatePresence.tsx",
+      "types": "./src/presence/AnimatePresence.tsx",
+      "default": "./src/presence/AnimatePresence.tsx"
+    },
+    "./pressable": {
+      "source": "./src/interactions/pressable/pressable.tsx",
+      "types": "./src/interactions/pressable/pressable.tsx",
+      "default": "./src/interactions/pressable/pressable.tsx"
+    },
+    "./pressable-context": {
+      "source": "./src/interactions/pressable/context.tsx",
+      "types": "./src/interactions/pressable/context.tsx",
+      "default": "./src/interactions/pressable/context.tsx"
+    },
+    "./pressable-types": {
+      "source": "./src/interactions/pressable/types.ts",
+      "types": "./src/interactions/pressable/types.ts",
+      "default": "./src/interactions/pressable/types.ts"
+    },
+    "./merge": {
+      "source": "./src/interactions/pressable/merge.ts",
+      "types": "./src/interactions/pressable/merge.ts",
+      "default": "./src/interactions/pressable/merge.ts"
+    },
+    "./hover": {
+      "react-native": "./src/interactions/pressable/hoverable.native.tsx",
+      "source": "./src/interactions/pressable/hoverable.tsx",
+      "types": "./src/interactions/pressable/hoverable.tsx",
+      "default": "./src/interactions/pressable/hoverable.tsx"
+    },
+    "./hover-context": {
+      "source": "./src/interactions/pressable/hoverable-context.tsx",
+      "types": "./src/interactions/pressable/hoverable-context.tsx",
+      "default": "./src/interactions/pressable/hoverable-context.tsx"
+    },
+    "./use-moti-pressable": {
+      "source": "./src/interactions/pressable/use-pressable.ts",
+      "types": "./src/interactions/pressable/use-pressable.ts",
+      "default": "./src/interactions/pressable/use-pressable.ts"
+    },
+    "./use-moti-pressables": {
+      "source": "./src/interactions/pressable/use-pressables.ts",
+      "types": "./src/interactions/pressable/use-pressables.ts",
+      "default": "./src/interactions/pressable/use-pressables.ts"
+    },
+    "./use-moti-pressable-animated-props": {
+      "source": "./src/interactions/pressable/use-moti-pressable-animated-props.ts",
+      "types": "./src/interactions/pressable/use-moti-pressable-animated-props.ts",
+      "default": "./src/interactions/pressable/use-moti-pressable-animated-props.ts"
+    },
+    "./use-moti-pressable-interpolate": {
+      "source": "./src/interactions/pressable/use-moti-pressable-interpolate.ts",
+      "types": "./src/interactions/pressable/use-moti-pressable-interpolate.ts",
+      "default": "./src/interactions/pressable/use-moti-pressable-interpolate.ts"
+    },
+    "./use-moti-pressable-transition": {
+      "source": "./src/interactions/pressable/use-moti-pressable-transition.ts",
+      "types": "./src/interactions/pressable/use-moti-pressable-transition.ts",
+      "default": "./src/interactions/pressable/use-moti-pressable-transition.ts"
     }
   },
   "files": [

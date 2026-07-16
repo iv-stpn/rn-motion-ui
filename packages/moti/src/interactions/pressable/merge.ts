@@ -10,11 +10,8 @@ export function mergeAnimateProp(
   let final: Record<string, unknown> = {};
   for (const animate of [prop, extra]) {
     if (animate) {
-      if (typeof animate === 'function') {
-        final = Object.assign(final, animate(interaction));
-      } else {
-        final = Object.assign(final, animate);
-      }
+      if (typeof animate === 'function') final = Object.assign(final, animate(interaction));
+      else final = Object.assign(final, animate);
     }
   }
 

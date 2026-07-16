@@ -39,9 +39,7 @@ export default function motify<Props extends object, Ref, Animate = ViewStyle | 
       );
     });
 
-    Motified.displayName = `Moti.${
-      ComponentWithoutAnimation.displayName || ComponentWithoutAnimation.name || 'NoName'
-    }`;
+    Motified.displayName = `Moti.${ComponentWithoutAnimation.displayName || ComponentWithoutAnimation.name || 'NoName'}`;
 
     return Motified;
   };

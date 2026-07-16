@@ -67,31 +67,23 @@ export const MotiPressable = forwardRef<View, MotiPressableProps>(function MotiP
   }));
 
   const transition = useDerivedValue(() => {
-    if (typeof transitionProp === 'function') {
-      return transitionProp(interaction.value);
-    }
+    if (typeof transitionProp === 'function') return transitionProp(interaction.value);
     return transitionProp ?? {};
   });
 
   const __state = useDerivedValue(() => {
-    if (typeof animate === 'function') {
-      return animate(interaction.value);
-    }
+    if (typeof animate === 'function') return animate(interaction.value);
     return animate;
   });
 
   const state = useMemo(() => ({ __state }), [__state]);
 
-  const updateInteraction =
-    (event: keyof MotiPressableInteractionState, enabled: boolean, callback?: () => void) => () => {
-      'worklet';
-      if (event === 'hovered') {
-        hovered.value = enabled;
-      } else if (event === 'pressed') {
-        pressed.value = enabled;
-      }
-      if (callback) runOnJS(callback)();
-    };
+  const updateInteraction = (event: keyof MotiPressableInteractionState, enabled: boolean, callback?: () => void) => () => {
+    'worklet';
+    if (event === 'hovered') hovered.value = enabled;
+    else if (event === 'pressed') pressed.value = enabled;
+    if (callback) runOnJS(callback)();
+  };
 
   const child = (
     <MotiView
@@ -109,11 +101,10 @@ export const MotiPressable = forwardRef<View, MotiPressableProps>(function MotiP
 
   const context = useMotiPressableContext();
 
-  if (!dangerouslySilenceDuplicateIdsWarning && id && context?.containers && id in context.containers) {
+  if (!dangerouslySilenceDuplicateIdsWarning && id && context?.containers && id in context.containers)
     console.error(
       `[MotiPressable] Duplicate id "${id}" used. A <MotiPressable id="${id}" /> is already a parent of this component.`,
     );
-  }
 
   const node: ReactNode = (
     <Hoverable

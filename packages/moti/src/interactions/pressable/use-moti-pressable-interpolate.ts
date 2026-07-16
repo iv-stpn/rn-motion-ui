@@ -20,15 +20,8 @@ export function useInterpolateMotiPressable<Props>(
 ): Readonly<SharedValue<Props>> {
   const context = useMotiPressableContext();
 
-  const { factory, id } = useFactory<Factory<Props>>(
-    'useMotiPressableAnimatedProps',
-    factoryOrId,
-    maybeFactoryOrDeps,
-    maybeDeps,
-  );
+  const { factory, id } = useFactory<Factory<Props>>('useMotiPressableAnimatedProps', factoryOrId, maybeFactoryOrDeps, maybeDeps);
 
   // RNR4: useDerivedValue no longer accepts a dependency array.
-  return useDerivedValue<Props>(() => {
-    return context && factory(context.containers[id]?.value ?? { hovered: false, pressed: false });
-  });
+  return useDerivedValue<Props>(() => context && factory(context.containers[id]?.value ?? { hovered: false, pressed: false }));
 }

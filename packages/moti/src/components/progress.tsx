@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import motify from '../../core/motify';
-import type { MotiTransitionProp } from '../../core/types';
-import useDynamicAnimation from '../../core/use-dynamic-animation';
+import motify from '../core/motify';
+import type { MotiTransitionProp } from '../core/types';
+import useDynamicAnimation from '../core/use-dynamic-animation';
 
 const MotiView = motify(View)();
 
@@ -47,12 +47,11 @@ export function MotiProgressBar({
 }: MotiProgressBarProps) {
   const barState = useDynamicAnimation(() => ({ translateX: '-100%' }));
 
-  if (!transition) {
+  if (!transition)
     console.error(
       `[moti] <ProgressBar /> "transition" prop must be undefined or a Moti transition object, but received: ${typeof transition}.`,
       transition,
     );
-  }
 
   const transitionString = JSON.stringify(transition);
   const _transition = useMemo<typeof transition>(() => JSON.parse(transitionString), [transitionString]);
@@ -71,9 +70,7 @@ export function MotiProgressBar({
     function animateOnProgressChange() {
       const percent = Math.round(progress * 100);
       const translateX = `${percent - 100}%`;
-      if (barState.current?.translateX !== translateX) {
-        barState.animateTo((current) => ({ ...current, translateX }));
-      }
+      if (barState.current?.translateX !== translateX) barState.animateTo((current) => ({ ...current, translateX }));
     },
     [barState, progress],
   );
@@ -88,26 +85,22 @@ export function MotiProgressBar({
       const isDev = typeof __DEV__ === 'undefined' || __DEV__;
       if (silenceRenderWarnings || !isDev) return;
 
-      if (containerStyle !== unnecessaryRerenders.current.containerStyle.previousValue) {
+      if (containerStyle !== unnecessaryRerenders.current.containerStyle.previousValue)
         unnecessaryRerenders.current.containerStyle.changes += 1;
-      }
-      if (style !== unnecessaryRerenders.current.style.previousValue) {
-        unnecessaryRerenders.current.style.changes += 1;
-      }
+      if (style !== unnecessaryRerenders.current.style.previousValue) unnecessaryRerenders.current.style.changes += 1;
 
       const warningProps: { changes: number; prop: string }[] = [];
       Object.entries(unnecessaryRerenders.current).forEach(([prop, { changes }]) => {
         if (changes > 5) warningProps.push({ prop, changes });
       });
 
-      if (warningProps.length) {
+      if (warningProps.length)
         console.warn(
           `[moti] <MotiProgress /> is re-rendering often due to: ${warningProps
             .map((w) => `"${w.prop}: ${w.changes} re-renders"`)
             .join(', ')}. Memoize these props with useMemo or define them outside render.`,
-          `Pass silenceRenderWarnings={true} to suppress this warning.`,
+          'Pass silenceRenderWarnings={true} to suppress this warning.',
         );
-      }
     },
     [containerStyle, silenceRenderWarnings, style],
   );

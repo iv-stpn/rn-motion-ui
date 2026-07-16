@@ -15,13 +15,7 @@ import type {
   TranslateYTransform,
   ViewStyle,
 } from 'react-native';
-import type {
-  DerivedValue,
-  SharedValue,
-  WithDecayConfig,
-  WithSpringConfig,
-  WithTimingConfig,
-} from 'react-native-reanimated';
+import type { DerivedValue, SharedValue, WithDecayConfig, WithSpringConfig, WithTimingConfig } from 'react-native-reanimated';
 
 export type Transforms = PerspectiveTransform &
   RotateTransform &
@@ -83,9 +77,7 @@ export type SequenceItemObject<Value> = {
 export type SequenceItem<Value> = Value | SequenceItemObject<Value>;
 
 export type StyleValueWithSequenceArraysWithoutTransform<T> = {
-  [key in Exclude<keyof T, 'transform' | keyof Transforms>]:
-    | T[key]
-    | SequenceItem<T[ExcludeArrayType<ExcludeObject<key>>]>[];
+  [key in Exclude<keyof T, 'transform' | keyof Transforms>]: T[key] | SequenceItem<T[ExcludeArrayType<ExcludeObject<key>>]>[];
 } & {
   [key in Extract<keyof T, keyof Transforms>]?: T[key] | (string & {}) | SequenceItem<T[key] | (string & {})>[];
 };
@@ -118,8 +110,7 @@ type OrDerivedValue<T> = T | DerivedValue<T>;
 
 type FallbackAnimateProp = StyleValueWithReplacedTransforms<ImageStyle & TextStyle & ViewStyle>;
 
-export type MotiTransition<Animate = FallbackAnimateProp> = TransitionConfig &
-  Partial<Record<keyof Animate, TransitionConfig>>;
+export type MotiTransition<Animate = FallbackAnimateProp> = TransitionConfig & Partial<Record<keyof Animate, TransitionConfig>>;
 
 export type MotiTransitionProp<Animate = FallbackAnimateProp> = OrDerivedValue<MotiTransition<Animate>>;
 
@@ -154,9 +145,7 @@ export interface MotiProps<
   from?: Animate | boolean;
   exit?: AnimateWithTransforms | boolean | ((custom?: unknown) => AnimateWithTransforms);
   transition?: MotiTransitionProp<AnimateWithTransforms>;
-  exitTransition?:
-    | MotiTransitionProp<AnimateWithTransforms>
-    | ((custom?: unknown) => MotiTransition<AnimateWithTransforms>);
+  exitTransition?: MotiTransitionProp<AnimateWithTransforms> | ((custom?: unknown) => MotiTransition<AnimateWithTransforms>);
   delay?: number;
   state?: { __state: SharedValue<unknown> | DerivedValue<unknown> };
   stylePriority?: 'state' | 'animate';
@@ -204,9 +193,7 @@ export type DynamicStyleProp<
 export type UseDynamicAnimationState<Animate = FallbackAnimateProp> = {
   __state: SharedValue<unknown>;
   current: null | DynamicStyleProp;
-  animateTo: (
-    key: DynamicStyleProp<Animate> | ((currentState: DynamicStyleProp<Animate>) => DynamicStyleProp<Animate>),
-  ) => void;
+  animateTo: (key: DynamicStyleProp<Animate> | ((currentState: DynamicStyleProp<Animate>) => DynamicStyleProp<Animate>)) => void;
 };
 
 export type ExcludeFunctionKeys<T> = {

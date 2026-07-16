@@ -52,9 +52,8 @@ export function Hoverable({ onHoverIn, onHoverOut, children, childRef }: Hoverab
   useEffect(
     function disableHoverOnClickOutside() {
       const listener = (event: MouseEvent) => {
-        if (localRef.current && event.target instanceof HTMLElement && !localRef.current.contains(event.target)) {
+        if (localRef.current && event.target instanceof HTMLElement && !localRef.current.contains(event.target))
           isHovered.value = false;
-        }
       };
       document.addEventListener('mousedown', listener);
       return () => document.removeEventListener('mousedown', listener);
@@ -67,11 +66,8 @@ export function Hoverable({ onHoverIn, onHoverOut, children, childRef }: Hoverab
     () => isHovered.value,
     (hovered, previouslyHovered) => {
       if (hovered !== previouslyHovered) {
-        if (hovered) {
-          hoverIn.current?.();
-        } else {
-          hoverOut.current?.();
-        }
+        if (hovered) hoverIn.current?.();
+        else hoverOut.current?.();
       }
     },
   );
@@ -96,3 +92,5 @@ export function Hoverable({ onHoverIn, onHoverOut, children, childRef }: Hoverab
     </HoveredContext.Provider>
   );
 }
+
+export { Hoverable as MotiHover };

@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 
-import type { DynamicStyleProp, ExcludeFunctionKeys, UseDynamicAnimationState } from '../types';
+import type { DynamicStyleProp, ExcludeFunctionKeys, UseDynamicAnimationState } from './types';
 
 const fallback = () => ({});
 
@@ -10,12 +10,8 @@ export default function useDynamicAnimation<
   _Animate = ViewStyle | TextStyle | ImageStyle,
   Animate = ExcludeFunctionKeys<_Animate>,
 >(initialState: () => DynamicStyleProp<Animate> = fallback) {
-  const initializer = useRef<{ value: DynamicStyleProp<Animate> }>(
-    null as unknown as { value: DynamicStyleProp<Animate> },
-  );
-  if (initializer.current === null) {
-    initializer.current = { value: initialState() };
-  }
+  const initializer = useRef<{ value: DynamicStyleProp<Animate> }>(null as unknown as { value: DynamicStyleProp<Animate> });
+  if (initializer.current === null) initializer.current = { value: initialState() };
 
   const __state = useSharedValue(initializer.current.value);
 

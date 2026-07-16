@@ -24,23 +24,18 @@ export function motifySvg<
       ComponentWithoutAnimation as unknown as React.ComponentType<object>,
     );
 
-    const Motified = forwardRef<React.ElementRef<C>, Props & MotiProps<Animate> & AdditionalProps>(
-      function Moti(props, _ref) {
-        const animated = useMotify<Animate>(props as MotiProps<Animate>);
+    const Motified = forwardRef<React.ElementRef<C>, Props & MotiProps<Animate> & AdditionalProps>(function Moti(props, _ref) {
+      const animated = useMotify<Animate>(props as MotiProps<Animate>);
 
-        if ((props as AdditionalProps).animatedProps !== undefined) {
-          console.warn(
-            `Moti: You passed animatedProps to a Moti SVG component. This will have no effect. Use the animate prop instead.`,
-          );
-        }
+      if ((props as AdditionalProps).animatedProps !== undefined)
+        console.warn(
+          'Moti: You passed animatedProps to a Moti SVG component. This will have no effect. Use the animate prop instead.',
+        );
 
-        return <AnimatedComponent {...(props as object)} animatedProps={animated.style} />;
-      },
-    );
+      return <AnimatedComponent {...(props as object)} animatedProps={animated.style} />;
+    });
 
-    Motified.displayName = `MotiSvg.${
-      ComponentWithoutAnimation.displayName || ComponentWithoutAnimation.name || 'NoName'
-    }`;
+    Motified.displayName = `MotiSvg.${ComponentWithoutAnimation.displayName || ComponentWithoutAnimation.name || 'NoName'}`;
 
     return Motified;
   };

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
-import { PackageName } from '../constants';
-import type { InternalControllerState, UseAnimationState, UseAnimationStateConfig, Variants } from '../types';
+import { PackageName } from './constants/package-name';
+import type { InternalControllerState, UseAnimationState, UseAnimationStateConfig, Variants } from './types';
 
 export default function useAnimationState<V extends Variants<V>>(
   _variants: V,
@@ -20,7 +20,7 @@ export default function useAnimationState<V extends Variants<V>>(
     [_variants],
   );
 
-  if (controller.current == null) {
+  if (controller.current == null)
     controller.current = {
       __state,
       transitionTo(nextStateOrFunction) {
@@ -30,24 +30,19 @@ export default function useAnimationState<V extends Variants<V>>(
           if (value) __state.value = value as InternalControllerState<V>;
         };
 
-        if (typeof nextStateOrFunction === 'function') {
-          runTransition(nextStateOrFunction(this.current as keyof V));
-        } else {
-          runTransition(nextStateOrFunction);
-        }
+        if (typeof nextStateOrFunction === 'function') runTransition(nextStateOrFunction(this.current as keyof V));
+        else runTransition(nextStateOrFunction);
       },
       get current(): keyof V {
         return selectedVariant.current as keyof V;
       },
     };
-  }
 
   useEffect(
     function maybeTransitionOnMount() {
       if (variants.current[to]) {
-        if (variants.current[from]) {
-          controller.current?.transitionTo(to);
-        } else {
+        if (variants.current[from]) controller.current?.transitionTo(to);
+        else
           console.error(
             `🐼 [${PackageName}]: Called useAnimationState with a "to" variant, but you are missing a "from" variant. A "from" variant is required if you are using "to". Instead, you passed these variants: "${Object.keys(
               variants.current,
@@ -55,7 +50,6 @@ export default function useAnimationState<V extends Variants<V>>(
               ', ',
             )}". If you want to just use the "to" value without "from", you shouldn't use this hook. Instead, just pass your values to a ${PackageName} component's "animate" prop.`,
           );
-        }
       }
     },
     [from, to],

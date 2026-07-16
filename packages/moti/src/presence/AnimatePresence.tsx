@@ -52,9 +52,7 @@ export function AnimatePresence({ children, custom, initial = true, onExitComple
 
   // Build a key → element map for the current render
   const currentMap = new Map<string, ReactElement>();
-  for (const child of validChildren) {
-    currentMap.set(getChildKey(child), child);
-  }
+  for (const child of validChildren) currentMap.set(getChildKey(child), child);
 
   // Persistent store of every element we have ever rendered, so we can
   // re-render exiting children even after they leave the parent tree.
@@ -75,23 +73,20 @@ export function AnimatePresence({ children, custom, initial = true, onExitComple
   // Detect which keys just disappeared and aren't already exiting.
   const newExits: string[] = [];
   for (const key of prevCurrentKeys) {
-    if (!currentMap.has(key) && !exitingKeys.has(key)) {
-      newExits.push(key);
-    }
+    if (!(currentMap.has(key) || exitingKeys.has(key))) newExits.push(key);
   }
 
   // Flush state updates synchronously inside render (React's safe pattern
   // for derived state — triggers an immediate additional render pass).
-  if (!setsEqual(prevCurrentKeys, currentKeySet)) {
-    setPrevCurrentKeys(currentKeySet);
-  }
-  if (newExits.length > 0) {
+  // biome-ignore lint/plugin: intentional derived-state-in-render (React's getDerivedStateFromProps equivalent); guarded by setsEqual so it converges and cannot loop
+  if (!setsEqual(prevCurrentKeys, currentKeySet)) setPrevCurrentKeys(currentKeySet);
+  if (newExits.length > 0)
+    // biome-ignore lint/plugin: intentional derived-state-in-render; only fires when keys actually leave, converging to a stable exiting set
     setExitingKeys((prev) => {
       const next = new Set(prev);
       for (const key of newExits) next.add(key);
       return next;
     });
-  }
 
   // Render current children first, then any still-exiting children.
   const keysToRender = [...currentKeySet, ...exitingKeys].filter(
@@ -107,16 +102,16 @@ export function AnimatePresence({ children, custom, initial = true, onExitComple
 
     const isPresent = currentMap.has(key);
 
-    const safeToUnmount = !isPresent
-      ? () => {
+    const safeToUnmount = isPresent
+      ? null
+      : () => {
           setExitingKeys((prev) => {
             const next = new Set(prev);
             next.delete(key);
             if (next.size === 0) onExitComplete?.();
             return next;
           });
-        }
-      : null;
+        };
 
     return (
       <PresenceContext.Provider

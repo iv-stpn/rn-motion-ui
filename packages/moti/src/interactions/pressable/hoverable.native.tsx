@@ -11,7 +11,7 @@ export function Hoverable({
   onHoverOut?: () => void;
   childRef?: React.Ref<unknown>;
 }) {
-  return (
-    <HoveredContext.Provider value={useSharedValue(false)}>{React.Children.only(children)}</HoveredContext.Provider>
-  );
+  return <HoveredContext.Provider value={useSharedValue(false)}>{React.Children.only(children)}</HoveredContext.Provider>;
 }
+
+export { Hoverable as MotiHover };

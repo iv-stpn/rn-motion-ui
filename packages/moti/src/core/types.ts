@@ -131,7 +131,7 @@ export type InlineOnDidAnimate<Value> = (
   },
 ) => void;
 
-type ExcludeArrayType<T> = T extends any[] ? never : T;
+type ExcludeArrayType<T> = T extends unknown[] ? never : T;
 type ExcludeObject<T> = T extends object ? never : T;
 
 type StyleValueWithCallbacks<Animate> = {
@@ -152,13 +152,13 @@ export interface MotiProps<
   onDidAnimate?: OnDidAnimate<AnimateWithTransforms>;
   animate?: OrDerivedValue<Animate>;
   from?: Animate | boolean;
-  exit?: AnimateWithTransforms | boolean | ((custom?: any) => AnimateWithTransforms);
+  exit?: AnimateWithTransforms | boolean | ((custom?: unknown) => AnimateWithTransforms);
   transition?: MotiTransitionProp<AnimateWithTransforms>;
   exitTransition?:
     | MotiTransitionProp<AnimateWithTransforms>
-    | ((custom?: any) => MotiTransition<AnimateWithTransforms>);
+    | ((custom?: unknown) => MotiTransition<AnimateWithTransforms>);
   delay?: number;
-  state?: Pick<UseAnimationState<any>, '__state'>;
+  state?: { __state: SharedValue<unknown> | DerivedValue<unknown> };
   stylePriority?: 'state' | 'animate';
   animateInitialState?: boolean;
 }
@@ -179,7 +179,7 @@ export type Variants<
 
 export type UseAnimationState<V> = {
   current: null | keyof V;
-  __state: SharedValue<any> | DerivedValue<any>;
+  __state: SharedValue<unknown> | DerivedValue<unknown>;
   transitionTo: (key: keyof V | ((currentState: keyof V) => keyof V)) => void;
 };
 
@@ -202,7 +202,7 @@ export type DynamicStyleProp<
 > = NonNullable<StyleValueWithSequenceArrays<AnimateWithTransforms>> & WithTransition;
 
 export type UseDynamicAnimationState<Animate = FallbackAnimateProp> = {
-  __state: SharedValue<any>;
+  __state: SharedValue<unknown>;
   current: null | DynamicStyleProp;
   animateTo: (
     key: DynamicStyleProp<Animate> | ((currentState: DynamicStyleProp<Animate>) => DynamicStyleProp<Animate>),
@@ -210,5 +210,6 @@ export type UseDynamicAnimationState<Animate = FallbackAnimateProp> = {
 };
 
 export type ExcludeFunctionKeys<T> = {
+  // biome-ignore lint/suspicious/noExplicitAny: standard TS idiom for function detection in mapped types — unknown[] breaks due to parameter contravariance
   [K in keyof T as T[K] extends (...a: any[]) => any ? never : K]?: T[K];
 };

@@ -34,7 +34,7 @@ export default function motify<Props extends object, Ref, Animate = ViewStyle | 
       const style = (props as Record<string, unknown>).style;
 
       return (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: animated component props and ref don't unify cleanly across RN/Reanimated generic types
         <Component {...(props as any)} style={style ? [style, animated.style] : animated.style} ref={ref as any} />
       );
     });

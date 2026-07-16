@@ -34,10 +34,10 @@ export default function useDynamicAnimation<
         'worklet';
         const nextStyle =
           typeof nextStateOrFunction === 'function'
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ? // biome-ignore lint/suspicious/noExplicitAny: worklet function cast — shared value type isn't narrowable without any
               (nextStateOrFunction as (s: any) => any)(__state.value)
             : nextStateOrFunction;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: shared value assignment — generic Animate can't be expressed as the SharedValue's inferred type
         __state.value = nextStyle as any;
       },
     } as UseDynamicAnimationState<Animate>;

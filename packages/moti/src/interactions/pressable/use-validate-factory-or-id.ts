@@ -10,7 +10,7 @@ type Returns<Factory> = {
 
 type HookName = 'useMotiPressableAnimatedProps' | 'useMotiPressable' | 'useMotiPressableTransition';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Factory must use any[] — unknown[] breaks the constraint due to parameter contravariance
 export function useFactory<Factory extends (...args: any[]) => any>(
   hookName: HookName,
   factoryOrId: Factory | MotiPressableInteractionIds['id'],

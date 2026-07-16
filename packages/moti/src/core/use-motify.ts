@@ -102,6 +102,7 @@ function animationConfig<Animate>(styleProp: string, transition: MotiTransition<
   let animationType: Required<TransitionConfig>['type'] = 'spring';
   if (isColor(key) || key === 'opacity') animationType = 'timing';
 
+  // biome-ignore lint/suspicious/noExplicitAny: per-key access on a complex transition union type — the key is dynamic and can't be narrowed statically
   const styleSpecificTransition = (transition as any)?.[key];
 
   if (styleSpecificTransition?.type) {
@@ -127,7 +128,7 @@ function animationConfig<Animate>(styleProp: string, transition: MotiTransition<
 
   let config: Record<string, unknown> = {};
   let reduceMotion = ReduceMotion.System;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: holds withTiming/withSpring/withDecay which have incompatible signatures; any is the only practical union here
   let animation: (...args: any[]) => any = (...props) => props;
 
   if (animationType === 'timing') {
@@ -153,6 +154,7 @@ function animationConfig<Animate>(styleProp: string, transition: MotiTransition<
     config = {};
     for (const configKey of withSpringConfigKeys) {
       const styleSpecificConfig = styleSpecificTransition?.[configKey];
+      // biome-ignore lint/suspicious/noExplicitAny: spring config key access on the transition union — narrowing would require exhaustive type guards
       const transitionConfigForKey = (transition as any)?.[configKey];
       if (configKey === 'reduceMotion') {
         if (transitionConfigForKey || styleSpecificConfig) {
@@ -177,6 +179,7 @@ function animationConfig<Animate>(styleProp: string, transition: MotiTransition<
     ];
     for (const configKey of configKeys) {
       const styleSpecificConfig = styleSpecificTransition?.[configKey];
+      // biome-ignore lint/suspicious/noExplicitAny: spring config key access on the transition union — narrowing would require exhaustive type guards
       const transitionConfigForKey = (transition as any)?.[configKey];
       if (configKey === 'reduceMotion') {
         if (transitionConfigForKey || styleSpecificConfig) {
@@ -330,7 +333,7 @@ export function useMotify<Animate>({
     debug('style', animateStyle);
 
     const initialStyle = fromProp || {};
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: exit prop can be a style object, boolean, or a custom() factory — no single concrete type covers all three
     let exitStyle: any = exitProp || {};
 
     if (typeof exitStyle === 'function') {
@@ -405,10 +408,7 @@ export function useMotify<Animate>({
         value = (value as { value: unknown }).value;
       }
 
-      const { animation, config, reduceMotion, shouldRepeat, repeatCount, repeatReverse } = animationConfig(
-        key,
-        transition,
-      );
+      const { animation, config, shouldRepeat, repeatCount, repeatReverse } = animationConfig(key, transition);
 
       const callback = (
         completed = false,

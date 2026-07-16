@@ -3,7 +3,8 @@ import React, { createContext, type ReactElement, type ReactNode, useContext, us
 export type PresenceContextValue = {
   isPresent: boolean;
   safeToUnmount: (() => void) | null;
-  custom?: any;
+  /** Arbitrary user data forwarded to exit variant functions. */
+  custom?: unknown;
   initial?: boolean;
 };
 
@@ -18,7 +19,7 @@ export function usePresence(): [boolean, (() => void) | null] {
 export type AnimatePresenceProps = {
   children?: ReactNode;
   /** Custom data passed to exit variant functions as the first argument. */
-  custom?: any;
+  custom?: unknown;
   /**
    * When `false`, children present on the first render will not animate in.
    * @default true

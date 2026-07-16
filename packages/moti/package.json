@@ -1,0 +1,58 @@
+{
+  "name": "@rn-motion-ui/moti",
+  "version": "0.1.0",
+  "description": "Moti reimplementation for react-native-reanimated 4 and react-native 0.86+",
+  "keywords": [
+    "react-native",
+    "ios",
+    "android",
+    "web",
+    "animation",
+    "reanimated"
+  ],
+  "license": "MIT",
+  "author": "Ivan Stepanian <ivanivan1233@gmail.com>",
+  "sideEffects": false,
+  "source": "./src/index.tsx",
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "exports": {
+    ".": {
+      "source": "./src/index.tsx",
+      "types": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    },
+    "./interactions": {
+      "source": "./src/interactions/index.ts",
+      "types": "./src/interactions/index.ts",
+      "default": "./src/interactions/index.ts"
+    },
+    "./svg": {
+      "source": "./src/svg/index.ts",
+      "types": "./src/svg/index.ts",
+      "default": "./src/svg/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.76.0",
+    "react-native-reanimated": ">=4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.10",
+    "react": "19.1.0",
+    "react-native": "0.86.0",
+    "react-native-reanimated": "4.0.0",
+    "typescript": "^7"
+  }
+}

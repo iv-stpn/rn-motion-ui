@@ -1,0 +1,74 @@
+{
+  "name": "@rn-motion-ui/rn",
+  "version": "0.2.0",
+  "description": "Animated React Native + React Native Web UI components, styled with Tailwind via uniwind and powered by Moti/Reanimated.",
+  "keywords": [
+    "react-native",
+    "react-native-web",
+    "ui",
+    "components",
+    "moti",
+    "reanimated",
+    "tailwind",
+    "uniwind",
+    "animation"
+  ],
+  "license": "MIT",
+  "author": "Ivan Stepanian <ivanivan1233@gmail.com>",
+  "homepage": "https://github.com/iv-stpn/beui#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iv-stpn/beui.git",
+    "directory": "packages/ui"
+  },
+  "bugs": {
+    "url": "https://github.com/iv-stpn/beui/issues"
+  },
+  "sideEffects": false,
+  "source": "./src/index.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "react-native-svg": "^15.15.5"
+  },
+  "peerDependencies": {
+    "moti": ">=0.29.0",
+    "react": ">=18.0.0",
+    "react-native": ">=0.76.0",
+    "react-native-gesture-handler": ">=2.0.0",
+    "react-native-reanimated": ">=3.16.0"
+  },
+  "devDependencies": {
+    "@storybook/react": "10.5.0",
+    "@types/react": "19.1.10",
+    "moti": "0.30.0",
+    "react": "19.1.0",
+    "react-native": "0.86.0",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "3.19.5",
+    "react-native-web": "0.21.2",
+    "storybook": "10.5.0",
+    "tailwindcss": "4.3.2",
+    "typescript": "^7",
+    "uniwind": "1.10.0"
+  }
+}

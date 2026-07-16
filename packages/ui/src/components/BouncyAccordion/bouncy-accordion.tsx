@@ -1,0 +1,188 @@
+import { MotiView } from 'moti';
+import { type ReactNode, useCallback, useState } from 'react';
+import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { ChevronDown } from '../../lib/icons';
+
+export type BouncyAccordionItem = {
+  id: string;
+  title: string;
+  description?: string;
+  /** Leading icon element. Pass an explicit `color` — RN icons don't inherit currentColor. */
+  icon?: ReactNode;
+  disabled?: boolean;
+};
+
+export interface BouncyAccordionProps {
+  items: BouncyAccordionItem[];
+  value?: string | null;
+  defaultValue?: string | null;
+  onValueChange?: (value: string | null) => void;
+  collapsible?: boolean;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+}
+
+// Bouncy springs mirror the web bounce values (dampingRatio ≈ 1 − bounce).
+// The gap/radius spring stays lightly damped so connected rows move together.
+const ROW_TRANSITION = { type: 'spring', stiffness: 240, damping: 19, mass: 1 } as const;
+const CONTENT_OPEN_TRANSITION = { type: 'spring', stiffness: 220, damping: 20, mass: 1 } as const;
+const CONTENT_CLOSE_TRANSITION = { type: 'spring', stiffness: 260, damping: 24, mass: 1 } as const;
+const CHEVRON_TRANSITION = { type: 'spring', stiffness: 300, damping: 25, mass: 1 } as const;
+const DESCRIPTION_TRANSITION = { type: 'timing', duration: 180 } as const;
+
+function useControllableValue(
+  value: string | null | undefined,
+  defaultValue: string | null,
+  onValueChange?: (v: string | null) => void,
+) {
+  const [internal, setInternal] = useState<string | null>(defaultValue);
+  const controlled = value !== undefined;
+  const current = controlled ? value : internal;
+  const setValue = useCallback(
+    (next: string | null) => {
+      if (!controlled) setInternal(next);
+      onValueChange?.(next);
+    },
+    [controlled, onValueChange],
+  );
+  return [current, setValue] as const;
+}
+
+function BouncyAccordionRow({
+  item,
+  open,
+  startsGroup,
+  endsGroup,
+  separatedFromPrevious,
+  reduce,
+  onToggle,
+}: {
+  item: BouncyAccordionItem;
+  open: boolean;
+  startsGroup: boolean;
+  endsGroup: boolean;
+  separatedFromPrevious: boolean;
+  reduce: boolean;
+  onToggle: () => void;
+}) {
+  const [contentHeight, setContentHeight] = useState(0);
+  const onContentLayout = useCallback((e: LayoutChangeEvent) => {
+    setContentHeight(e.nativeEvent.layout.height);
+  }, []);
+
+  const topRadius = startsGroup ? 28 : 0;
+  const bottomRadius = endsGroup ? 28 : 0;
+
+  return (
+    <MotiView
+      animate={{ marginTop: separatedFromPrevious ? 12 : 0 }}
+      transition={reduce ? { type: 'timing', duration: 0 } : ROW_TRANSITION}
+    >
+      <MotiView
+        animate={{
+          borderTopLeftRadius: topRadius,
+          borderTopRightRadius: topRadius,
+          borderBottomLeftRadius: bottomRadius,
+          borderBottomRightRadius: bottomRadius,
+        }}
+        transition={reduce ? { type: 'timing', duration: 0 } : ROW_TRANSITION}
+        className="overflow-hidden bg-card"
+        style={{ opacity: item.disabled ? 0.5 : 1 }}
+      >
+        <Pressable
+          accessibilityRole="button"
+          aria-expanded={open}
+          aria-disabled={!!item.disabled}
+          accessibilityLabel={item.title}
+          disabled={item.disabled}
+          onPress={onToggle}
+          className="min-h-[54px] w-full flex-row items-center gap-4 px-5"
+        >
+          {item.icon ? <View className="h-7 w-7 shrink-0 items-center justify-center">{item.icon}</View> : null}
+          <Text numberOfLines={1} className="min-w-0 flex-1 text-[15px] font-medium text-foreground">
+            {item.title}
+          </Text>
+          <MotiView
+            animate={{ rotate: open ? '180deg' : '0deg' }}
+            transition={reduce ? { type: 'timing', duration: 0 } : CHEVRON_TRANSITION}
+            className="h-6 w-6 shrink-0 items-center justify-center"
+          >
+            <ChevronDown size={16} color="#71717a" />
+          </MotiView>
+        </Pressable>
+
+        {/* Animated clip: outer height springs between 0 and the measured content
+            height. The inner block is always laid out so onLayout can measure it. */}
+        <MotiView
+          animate={{ height: open && item.description ? contentHeight : 0 }}
+          transition={
+            reduce ? { type: 'timing', duration: 0 } : open ? CONTENT_OPEN_TRANSITION : CONTENT_CLOSE_TRANSITION
+          }
+          className="overflow-hidden"
+        >
+          <MotiView
+            animate={{ opacity: open ? 1 : 0 }}
+            transition={reduce ? { type: 'timing', duration: 0 } : DESCRIPTION_TRANSITION}
+            onLayout={onContentLayout}
+            className="px-5 pb-5"
+            style={{ position: 'absolute', left: 0, right: 0, top: 0 }}
+          >
+            <Text className="text-[15px] leading-6 text-muted-foreground">{item.description}</Text>
+          </MotiView>
+        </MotiView>
+      </MotiView>
+    </MotiView>
+  );
+}
+
+export function BouncyAccordion({
+  items,
+  value,
+  defaultValue = null,
+  onValueChange,
+  collapsible = true,
+  style,
+  testID,
+}: BouncyAccordionProps) {
+  const reduce = useReducedMotion();
+  const [activeValue, setActiveValue] = useControllableValue(value, defaultValue, onValueChange);
+  const activeIndex = items.findIndex((item) => item.id === activeValue);
+
+  const toggleItem = useCallback(
+    (id: string) => {
+      if (activeValue === id) {
+        if (collapsible) setActiveValue(null);
+        return;
+      }
+      setActiveValue(id);
+    },
+    [activeValue, collapsible, setActiveValue],
+  );
+
+  return (
+    <View testID={testID} className="w-full" style={style}>
+      {items.map((item, index) => {
+        const open = activeValue === item.id;
+        const previousIsOpen = activeIndex === index - 1;
+        const nextIsOpen = activeIndex === index + 1;
+        const startsGroup = open || index === 0 || previousIsOpen;
+        const endsGroup = open || index === items.length - 1 || nextIsOpen;
+        const separatedFromPrevious = index > 0 && (open || previousIsOpen);
+
+        return (
+          <BouncyAccordionRow
+            key={item.id}
+            item={item}
+            open={open}
+            startsGroup={startsGroup}
+            endsGroup={endsGroup}
+            separatedFromPrevious={separatedFromPrevious}
+            reduce={reduce}
+            onToggle={() => toggleItem(item.id)}
+          />
+        );
+      })}
+    </View>
+  );
+}

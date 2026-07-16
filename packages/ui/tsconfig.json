@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["react", "react-native"]
+  },
+  "include": ["src", "uniwind-env.d.ts"],
+  "exclude": ["node_modules", "lib"]
+}

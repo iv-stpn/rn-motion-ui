@@ -1,0 +1,30 @@
+{
+  "name": "rn-motion-ui",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "storybook/*"
+  ],
+  "scripts": {
+    "build:storybook": "bun run --cwd storybook/web build-storybook",
+    "typecheck": "bun run --cwd packages/ui typecheck && bun run --cwd storybook/web typecheck && bun run --cwd storybook/native typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "bun run test:storybook",
+    "test:storybook": "bun run --cwd storybook/web test",
+    "storybook": "bun run --cwd storybook/web storybook",
+    "storybook:native": "bun run --cwd storybook/native start",
+    "storybook:native:build:android": "bun run --cwd storybook/native build:android",
+    "storybook:native:build:ios": "bun run --cwd storybook/native build:ios",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish",
+    "prepare": "bunx husky"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.3",
+    "@changesets/cli": "2.31.0",
+    "typescript": "^7"
+  }
+}

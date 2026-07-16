@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "rn-motion-ui Example",
+    "slug": "rn-motion-ui-example",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.rnbeuiexample"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "@rn-motion-ui/example",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "build:android": "export NODE_ENV=development && expo prebuild -p android --no-install --no-clean && cd android && ./gradlew :app:assembleDebug -x lint -x test",
+    "build:ios": "expo run:ios",
+    "storybook-generate": "sb-rn-get-stories --config-path .rnstorybook",
+    "typecheck": "bun run storybook-generate && tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@rn-motion-ui/rn": "workspace:*",
+    "@storybook/addon-ondevice-actions": "10.5.0",
+    "@storybook/addon-ondevice-backgrounds": "10.5.0",
+    "@storybook/addon-ondevice-controls": "10.5.0",
+    "@storybook/react": "10.5.0",
+    "@storybook/react-native": "10.5.0",
+    "expo": "57.0.4",
+    "expo-status-bar": "57.0.0",
+    "moti": "0.30.0",
+    "react": "19.1.0",
+    "react-native": "0.86.0",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.0",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-worklets": "0.10.2",
+    "storybook": "10.5.0",
+    "tailwindcss": "4.3.2",
+    "uniwind": "1.10.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.10",
+    "babel-preset-expo": "57.0.2",
+    "typescript": "^7"
+  }
+}

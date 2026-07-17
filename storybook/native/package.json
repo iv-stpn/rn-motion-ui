@@ -22,7 +22,7 @@
     "@storybook/react-native": "10.5.0",
     "expo": "57.0.4",
     "expo-status-bar": "57.0.0",
-    "moti": "0.30.0",
+    "@rn-motion-ui/moti": "workspace:*",
     "react": "19.1.0",
     "react-native": "0.86.0",
     "react-native-gesture-handler": "2.32.0",

@@ -1,5 +1,7 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: feedback flow, sent view, and star-rating sub-components collocated by design
-import { AnimatePresence, MotiText, MotiView } from 'moti';
+import { AnimatePresence } from '@rn-motion-ui/moti/presence';
+import { MotiText } from '@rn-motion-ui/moti/text';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';

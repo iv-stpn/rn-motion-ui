@@ -85,14 +85,14 @@
       "default": "./src/core/constants/package-name.ts"
     },
     "./presence": {
-      "source": "./src/presence/AnimatePresence.tsx",
-      "types": "./src/presence/AnimatePresence.tsx",
-      "default": "./src/presence/AnimatePresence.tsx"
+      "source": "./src/presence/animate-presence.tsx",
+      "types": "./src/presence/animate-presence.tsx",
+      "default": "./src/presence/animate-presence.tsx"
     },
     "./presence-context": {
-      "source": "./src/presence/AnimatePresenceContext.tsx",
-      "types": "./src/presence/AnimatePresenceContext.tsx",
-      "default": "./src/presence/AnimatePresenceContext.tsx"
+      "source": "./src/presence/animate-presence-context.tsx",
+      "types": "./src/presence/animate-presence-context.tsx",
+      "default": "./src/presence/animate-presence-context.tsx"
     },
     "./pressable": {
       "source": "./src/interactions/pressable/pressable.tsx",

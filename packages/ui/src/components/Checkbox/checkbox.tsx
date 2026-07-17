@@ -1,5 +1,6 @@
+import { AnimatePresence } from '@rn-motion-ui/moti/presence';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
-import { AnimatePresence, MotiView } from 'moti';
 import { useCallback, useState } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';

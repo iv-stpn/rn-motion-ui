@@ -1,4 +1,4 @@
-import { MotiView } from 'moti';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, type RefObject, useCallback, useState } from 'react';
 import { Pressable, type ScrollView, type StyleProp, Text, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';

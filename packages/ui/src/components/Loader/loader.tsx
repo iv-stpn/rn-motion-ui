@@ -1,5 +1,5 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: all loader variants (spinner, dots, helix, …) collocated for consistent import
-import { MotiView } from 'moti';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { useEffect, useState } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';

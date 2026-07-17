@@ -1,4 +1,5 @@
-import { AnimatePresence, MotiView } from 'moti';
+import { AnimatePresence } from '@rn-motion-ui/moti/presence';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Dimensions, Modal, Pressable, ScrollView, Text, View } from 'react-native';

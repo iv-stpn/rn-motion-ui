@@ -1,5 +1,6 @@
+import { AnimatePresence } from '@rn-motion-ui/moti/presence';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
-import { AnimatePresence, MotiView } from 'moti';
 import { type ReactNode, useCallback, useRef, useState } from 'react';
 import {
   Animated,

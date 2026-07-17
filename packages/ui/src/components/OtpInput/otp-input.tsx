@@ -1,5 +1,7 @@
+import { AnimatePresence } from '@rn-motion-ui/moti/presence';
+import { MotiText } from '@rn-motion-ui/moti/text';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
-import { AnimatePresence, MotiText, MotiView } from 'moti';
 import { useCallback, useRef, useState } from 'react';
 import { Animated, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';

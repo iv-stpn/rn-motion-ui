@@ -1,5 +1,6 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: all-in-one scheduler — state, helpers, and rendering are tightly coupled
-import { AnimatePresence, MotiView } from 'moti';
+import { AnimatePresence } from '@rn-motion-ui/moti/presence';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type GestureResponderEvent,

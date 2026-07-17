@@ -1,4 +1,4 @@
-import { MotiView } from 'moti';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback } from 'react';
 import type { GestureResponderHandlers } from 'react-native';
 import { Pressable, Text, TextInput, View } from 'react-native';

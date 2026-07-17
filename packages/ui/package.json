@@ -330,11 +330,11 @@
   },
   "dependencies": {
     "@rn-motion-ui/hooks": "workspace:*",
+    "@rn-motion-ui/moti": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "react-native-svg": "^15.15.5"
   },
   "peerDependencies": {
-    "moti": ">=0.29.0",
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
     "react-native-gesture-handler": ">=2.0.0",
@@ -343,7 +343,6 @@
   "devDependencies": {
     "@storybook/react": "10.5.0",
     "@types/react": "19.1.10",
-    "moti": "0.30.0",
     "react": "19.1.0",
     "react-native": "0.86.0",
     "react-native-gesture-handler": "2.32.0",

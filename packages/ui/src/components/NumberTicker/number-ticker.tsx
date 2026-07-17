@@ -1,4 +1,4 @@
-import { MotiView } from 'moti';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useArmOnView } from '../../hooks/use-arm-on-view';

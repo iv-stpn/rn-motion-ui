@@ -1,5 +1,6 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: terminal-stage sub-components and animation variants collocated by design
-import { MotiText, MotiView } from 'moti';
+import { MotiText } from '@rn-motion-ui/moti/text';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback, useState } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';

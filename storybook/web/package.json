@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@rn-motion-ui/rn": "workspace:*",
-    "moti": "^0.30.0",
+    "@rn-motion-ui/moti": "workspace:*",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.86.0",

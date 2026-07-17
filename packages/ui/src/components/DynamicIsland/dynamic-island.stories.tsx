@@ -1,5 +1,5 @@
+import { MotiView } from '@rn-motion-ui/moti/view';
 import type { Meta, StoryObj } from '@storybook/react';
-import { MotiView } from 'moti';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';

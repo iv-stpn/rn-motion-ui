@@ -36,13 +36,13 @@ export function animationConfig<Animate>(styleProp: string, transition: MotiTran
   const loop = styleSpecificTransition?.loop ?? transition?.loop;
   if (loop !== null) repeatCount = loop ? -1 : 0;
 
-  if (styleSpecificTransition?.repeat !== null) repeatCount = styleSpecificTransition.repeat;
-  else if (transition !== undefined && transition.repeat !== null && transition.repeat !== undefined)
-    repeatCount = transition.repeat;
+  if (styleSpecificTransition?.repeat !== undefined && styleSpecificTransition.repeat !== null)
+    repeatCount = styleSpecificTransition.repeat;
+  else if (transition?.repeat !== undefined && transition.repeat !== null) repeatCount = transition.repeat;
 
-  if (styleSpecificTransition?.repeatReverse !== null) repeatReverse = styleSpecificTransition.repeatReverse;
-  else if (transition !== undefined && transition.repeatReverse !== null && transition.repeatReverse !== undefined)
-    repeatReverse = transition.repeatReverse;
+  if (styleSpecificTransition?.repeatReverse !== undefined && styleSpecificTransition.repeatReverse !== null)
+    repeatReverse = styleSpecificTransition.repeatReverse;
+  else if (transition?.repeatReverse !== undefined && transition.repeatReverse !== null) repeatReverse = transition.repeatReverse;
 
   let config: Record<string, unknown> = {};
   let reduceMotion = ReduceMotion.System;

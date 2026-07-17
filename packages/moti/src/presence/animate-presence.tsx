@@ -30,9 +30,29 @@ export type AnimatePresenceProps = {
   initial?: boolean;
   /** Called once all exiting children have completed their exit animations. */
   onExitComplete?: () => void;
+  /**
+   * When `true`, a new child will not animate in until all exiting children
+   * have completed their exit animations.
+   * @default false
+   */
+  exitBeforeEnter?: boolean;
+  /**
+   * Whether an exiting child's presence should continue to affect layout
+   * while it exits. Accepted for API compatibility; not yet implemented.
+   */
+  presenceAffectsLayout?: boolean;
 };
 
-export function AnimatePresence({ children, custom, initial = true, onExitComplete }: AnimatePresenceProps) {
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: AnimatePresence orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining complexity is setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: AnimatePresence orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining lines are setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
+export function AnimatePresence({
+  children,
+  custom,
+  initial = true,
+  onExitComplete,
+  exitBeforeEnter = false,
+  presenceAffectsLayout: _presenceAffectsLayout,
+}: AnimatePresenceProps) {
   const validChildren = getValidChildren(children);
 
   // Build a key → element map for the current render
@@ -51,6 +71,10 @@ export function AnimatePresence({ children, custom, initial = true, onExitComple
   // via React's getDerivedStateFromProps-equivalent hook pattern.
   const [prevCurrentKeys, setPrevCurrentKeys] = useState<ReadonlySet<string>>(new Set());
 
+  // When exitBeforeEnter=true, keys that want to enter but must wait for
+  // all exits to complete before becoming visible.
+  const [heldKeys, setHeldKeys] = useState<ReadonlySet<string>>(new Set());
+
   const isFirstRender = useRef(true);
 
   const currentKeySet: ReadonlySet<string> = new Set(currentMap.keys());
@@ -59,6 +83,12 @@ export function AnimatePresence({ children, custom, initial = true, onExitComple
   const newExits: string[] = [];
   for (const key of prevCurrentKeys) {
     if (!(currentMap.has(key) || exitingKeys.has(key))) newExits.push(key);
+  }
+
+  // Detect which keys just appeared for the first time.
+  const newEntries: string[] = [];
+  for (const key of currentKeySet) {
+    if (!prevCurrentKeys.has(key)) newEntries.push(key);
   }
 
   // Flush state updates synchronously inside render (React's safe pattern
@@ -73,10 +103,35 @@ export function AnimatePresence({ children, custom, initial = true, onExitComple
       return next;
     });
 
-  // Render current children first, then any still-exiting children.
-  const keysToRender = [...currentKeySet, ...exitingKeys].filter(
-    (key, i, arr) => arr.indexOf(key) === i, // deduplicate
-  );
+  // When exitBeforeEnter, hold new entries if exits are still in progress.
+  if (exitBeforeEnter && newEntries.length > 0 && exitingKeys.size > 0)
+    // biome-ignore lint/plugin: intentional derived-state-in-render; guarded so it only fires when new keys arrive while exits are active, converges to stable held set
+    setHeldKeys((prev) => {
+      const next = new Set(prev);
+      for (const key of newEntries) next.add(key);
+      return next;
+    });
+
+  // Release held keys once all exits have completed.
+  if (exitBeforeEnter && exitingKeys.size === 0 && heldKeys.size > 0)
+    // biome-ignore lint/plugin: intentional derived-state-in-render; only fires when exits drain and held keys remain, converges immediately to empty set
+    setHeldKeys(new Set());
+
+  const hasActiveExits = exitingKeys.size > 0;
+
+  // When exitBeforeEnter is active and exits are in progress, exclude held
+  // keys from the render set so new children wait their turn.
+  const keysToRender: string[] = [];
+  const seen = new Set<string>();
+  for (const key of currentKeySet) {
+    if (!(exitBeforeEnter && hasActiveExits && heldKeys.has(key))) {
+      keysToRender.push(key);
+      seen.add(key);
+    }
+  }
+  for (const key of exitingKeys) {
+    if (!seen.has(key)) keysToRender.push(key);
+  }
 
   const firstRender = isFirstRender.current;
   isFirstRender.current = false;

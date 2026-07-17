@@ -1,4 +1,4 @@
-import { MotiView } from 'moti';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import type { ReactNode } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useInView } from '../../hooks/use-in-view';

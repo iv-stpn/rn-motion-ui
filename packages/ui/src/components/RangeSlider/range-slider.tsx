@@ -1,4 +1,4 @@
-import { MotiView } from 'moti';
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   type AccessibilityActionEvent,

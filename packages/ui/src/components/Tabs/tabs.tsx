@@ -1,5 +1,5 @@
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
-import { MotiView } from 'moti';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, Text, View } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';

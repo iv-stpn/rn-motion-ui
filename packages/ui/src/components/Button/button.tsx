@@ -1,5 +1,5 @@
+import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { MotiView } from 'moti';
 import { Children, isValidElement, type ReactNode, useCallback, useRef, useState } from 'react';
 import {
   type GestureResponderEvent,

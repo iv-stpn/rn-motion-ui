@@ -34,21 +34,7 @@ const meta = {
   },
 } satisfies Meta<typeof Loader>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Spinner: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    // The accessible progressbar role is always present regardless of variant.
-    await expect(await canvas.findByLabelText('Loading')).toBeInTheDocument();
-  },
-};
-
-export const Dots: Story = { args: { variant: 'dots' } };
-export const Bars: Story = { args: { variant: 'bars' } };
-export const Percent: Story = { args: { variant: 'percent' } };
-export const Scramble: Story = { args: { variant: 'scramble' } };
 
 const GALLERY: LoaderVariant[] = [
   'spinner',
@@ -67,6 +53,21 @@ const GALLERY: LoaderVariant[] = [
   'ascii-blocks',
   'ascii-bounce',
 ];
+
+export default meta;
+
+export const Spinner: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The accessible progressbar role is always present regardless of variant.
+    await expect(await canvas.findByLabelText('Loading')).toBeInTheDocument();
+  },
+};
+
+export const Dots: Story = { args: { variant: 'dots' } };
+export const Bars: Story = { args: { variant: 'bars' } };
+export const Percent: Story = { args: { variant: 'percent' } };
+export const Scramble: Story = { args: { variant: 'scramble' } };
 
 export const Gallery: Story = {
   render: (args) => (

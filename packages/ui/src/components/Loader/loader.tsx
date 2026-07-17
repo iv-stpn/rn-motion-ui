@@ -1,9 +1,12 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: all loader variants (spinner, dots, helix, …) collocated for consistent import
 import { MotiView } from 'moti';
 import { useEffect, useState } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { useInterval } from '../../hooks/use-interval';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
+// biome-ignore lint/style/useExportsLast: variant union before frame constants — collocated for readability
 export type LoaderVariant =
   | 'spinner'
   | 'dots'
@@ -30,7 +33,7 @@ const ASCII_SETS: Record<string, string[]> = {
   'ascii-bounce': ['⠁', '⠂', '⠄', '⡀', '⢀', '⠠', '⠐', '⠈'],
 };
 
-export interface LoaderProps {
+export type LoaderProps = {
   /** Which animation to render. */
   variant?: LoaderVariant;
   /** Base square size in px. Everything scales from this. */
@@ -43,7 +46,7 @@ export interface LoaderProps {
   label?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 export function Loader({
   variant = 'spinner',
@@ -56,6 +59,7 @@ export function Loader({
 }: LoaderProps) {
   const reduce = useReducedMotion();
   const shared = { size, speed, color, reduce };
+  const asciiFrames = ASCII_SETS[variant];
   return (
     <View
       accessibilityRole="progressbar"
@@ -69,7 +73,7 @@ export function Loader({
       {variant === 'bars' && <Bars {...shared} />}
       {variant === 'dot-matrix' && <DotMatrix {...shared} />}
       {variant === 'dither' && <Dither {...shared} />}
-      {ASCII_SETS[variant] && <Ascii frames={ASCII_SETS[variant]} {...shared} />}
+      {asciiFrames !== undefined && <Ascii frames={asciiFrames} {...shared} />}
       {variant === 'comet' && <Comet {...shared} />}
       {variant === 'scramble' && <Scramble {...shared} />}
       {variant === 'newton' && <Newton {...shared} />}
@@ -79,12 +83,12 @@ export function Loader({
   );
 }
 
-interface PartProps {
+type PartProps = {
   size: number;
   speed: number;
   color: string;
   reduce: boolean;
-}
+};
 
 function Spinner({ size, speed, color, reduce }: PartProps) {
   const stroke = Math.max(2, size * 0.09);
@@ -167,11 +171,8 @@ function Bars({ size, speed, color, reduce }: PartProps) {
 
 function Ascii({ frames, size, speed, color, reduce }: PartProps & { frames: string[] }) {
   const [frame, setFrame] = useState(0);
-  useEffect(() => {
-    const step = ((reduce ? speed * 2.5 : speed) / frames.length) * 1000;
-    const id = setInterval(() => setFrame((f) => (f + 1) % frames.length), step);
-    return () => clearInterval(id);
-  }, [frames.length, speed, reduce]);
+  const step = ((reduce ? speed * 2.5 : speed) / frames.length) * 1000;
+  useInterval(() => setFrame((f) => (f + 1) % frames.length), step);
   return (
     <Text style={{ fontSize: size, lineHeight: size * 1.1, color, fontVariant: ['tabular-nums'] }}>
       {frames[frame % frames.length]}
@@ -184,6 +185,7 @@ const SCRAMBLE_GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<>/*#@';
 
 function Scramble({ size, speed, color, reduce }: PartProps) {
   const [text, setText] = useState(SCRAMBLE_TARGET);
+  // biome-ignore lint/plugin: looping scramble animation uses setInterval with tick-based state — not expressible without useEffect
   useEffect(() => {
     if (reduce) {
       setText(SCRAMBLE_TARGET);
@@ -195,10 +197,10 @@ function Scramble({ size, speed, color, reduce }: PartProps) {
       () => {
         const reveal = tick % total;
         let s = '';
-        for (let i = 0; i < SCRAMBLE_TARGET.length; i++)
+        for (let i = 0; i < SCRAMBLE_TARGET.length; i += 1)
           s += i < reveal ? SCRAMBLE_TARGET[i] : SCRAMBLE_GLYPHS[Math.floor(Math.random() * SCRAMBLE_GLYPHS.length)];
         setText(s);
-        tick++;
+        tick += 1;
       },
       (speed / SCRAMBLE_TARGET.length) * 1000 * 0.55,
     );
@@ -213,6 +215,7 @@ function Scramble({ size, speed, color, reduce }: PartProps) {
 
 function Percent({ size, speed, color, reduce }: PartProps) {
   const [p, setP] = useState(0);
+  // biome-ignore lint/plugin: JS-thread percentage counter uses setInterval with internal mutable timing state — not expressible without useEffect
   useEffect(() => {
     const dur = (reduce ? speed * 2 : speed) * 1000;
     const state = { t: 0 };
@@ -227,7 +230,7 @@ function Percent({ size, speed, color, reduce }: PartProps) {
   }, [speed, reduce]);
   return (
     <View className="items-center" style={{ gap: size * 0.14, width: size * 1.4 }}>
-      <Text style={{ fontSize: size * 0.42, color, fontWeight: '500', fontVariant: ['tabular-nums'] }}>{p}%</Text>
+      <Text style={{ fontSize: size * 0.42, color, fontWeight: '500', fontVariant: ['tabular-nums'] }}>{`${p}%`}</Text>
       <View
         className="w-full overflow-hidden"
         style={{ height: Math.max(3, size * 0.1), borderRadius: 999, backgroundColor: `${color}26` }}

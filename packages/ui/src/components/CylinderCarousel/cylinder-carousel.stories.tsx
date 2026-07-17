@@ -37,9 +37,11 @@ const meta = {
   },
 } satisfies Meta<typeof CylinderCarousel>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
+const DRAG_HINT = 'Drag to roll';
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Ball({ label, color }: { label: string; color: string }) {
   return (
     <View
@@ -58,26 +60,8 @@ function Ball({ label, color }: { label: string; color: string }) {
   );
 }
 
-export const Default: Story = {
-  render: (args) => (
-    <View style={{ width: 480, paddingVertical: 24 }}>
-      <CylinderCarousel {...args} testID="cylinder" height={200}>
-        {SLIDES.map((s) => (
-          <Ball key={s.label} label={s.label} color={s.color} />
-        ))}
-      </CylinderCarousel>
-      <Text style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: '#71717a' }}>Drag to roll</Text>
-    </View>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(await canvas.findByTestId('cylinder')).toBeInTheDocument();
-    // All items are mounted (positioned around the ring).
-    await expect(await canvas.findByText('Aurora')).toBeInTheDocument();
-  },
-};
-
 // Mirrors the web preview's concave/convex toggle.
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function VariantDemo() {
   const [variant, setVariant] = useState<'concave' | 'convex'>('concave');
   return (
@@ -86,6 +70,7 @@ function VariantDemo() {
         {(['concave', 'convex'] as const).map((v) => (
           <Text
             key={v}
+            // biome-ignore lint/performance/noJsxPropsBind: story demo handler
             onPress={() => setVariant(v)}
             testID={`variant-${v}`}
             style={{
@@ -110,6 +95,27 @@ function VariantDemo() {
     </View>
   );
 }
+
+export default meta;
+
+export const Default: Story = {
+  render: (args) => (
+    <View style={{ width: 480, paddingVertical: 24 }}>
+      <CylinderCarousel {...args} testID="cylinder" height={200}>
+        {SLIDES.map((s) => (
+          <Ball key={s.label} label={s.label} color={s.color} />
+        ))}
+      </CylinderCarousel>
+      <Text style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: '#71717a' }}>{DRAG_HINT}</Text>
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByTestId('cylinder')).toBeInTheDocument();
+    // All items are mounted (positioned around the ring).
+    await expect(await canvas.findByText('Aurora')).toBeInTheDocument();
+  },
+};
 
 export const ConcaveConvex: Story = {
   render: () => <VariantDemo />,

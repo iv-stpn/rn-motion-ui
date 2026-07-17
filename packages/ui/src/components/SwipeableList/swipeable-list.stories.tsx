@@ -86,8 +86,8 @@ const meta = {
   },
 } satisfies Meta<typeof SwipeableList>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+export default meta;
 
 // -- Stories -----------------------------------------------------------------
 

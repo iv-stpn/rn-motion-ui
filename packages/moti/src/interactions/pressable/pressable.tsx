@@ -1,13 +1,16 @@
-import { forwardRef, type ReactNode, useMemo } from 'react';
-import { Pressable, type View } from 'react-native';
-import { runOnJS, useDerivedValue, useSharedValue } from 'react-native-reanimated';
-
+import { hasKey } from '@rn-motion-ui/utils/typeguards';
+import { type ReactNode, useMemo } from 'react';
+import { Pressable } from 'react-native';
+import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
+import { runOnJS } from 'react-native-worklets';
 import { View as MotiView } from '../../components/view';
 import { INTERACTION_CONTAINER_ID, MotiPressableContext, useMotiPressableContext } from './context';
 import { Hoverable } from './hoverable';
 import type { MotiPressableInteractionState, MotiPressableProps } from './types';
 
-export const MotiPressable = forwardRef<View, MotiPressableProps>(function MotiPressable(props, ref) {
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: MotiPressable wires hover/press shared values, accessibility, and child rendering in one component — factoring out sub-helpers would require prop-drilling the shared values
+export function MotiPressable(props: MotiPressableProps) {
+  const { ref } = props;
   const {
     animate,
     from,
@@ -95,13 +98,14 @@ export const MotiPressable = forwardRef<View, MotiPressableProps>(function MotiP
       style={style}
       onLayout={onLayout}
     >
+      {/* biome-ignore lint/suspicious/noLeakedRender: children is ReactNode — safe alternate branch */}
       {typeof children === 'function' ? children(interaction) : children}
     </MotiView>
   );
 
   const context = useMotiPressableContext();
 
-  if (!dangerouslySilenceDuplicateIdsWarning && id && context?.containers && id in context.containers)
+  if (!dangerouslySilenceDuplicateIdsWarning && id && context?.containers && hasKey(id, context.containers))
     console.error(
       `[MotiPressable] Duplicate id "${id}" used. A <MotiPressable id="${id}" /> is already a parent of this component.`,
     );
@@ -166,4 +170,4 @@ export const MotiPressable = forwardRef<View, MotiPressableProps>(function MotiP
       {node}
     </MotiPressableContext.Provider>
   );
-});
+}

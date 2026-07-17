@@ -4,9 +4,9 @@ import type { MotiPressableInteractionState } from './types';
 
 export const INTERACTION_CONTAINER_ID = '__INTERACTION_CONTAINER_ID' as const;
 
-export interface MotiPressableInteractionIds {
+export type MotiPressableInteractionIds = {
   id: string;
-}
+};
 
 export type MotiPressableContext = {
   containers: Record<

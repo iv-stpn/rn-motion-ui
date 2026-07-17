@@ -19,9 +19,9 @@ const meta = {
   args: { scrollRef: createRef<ScrollView>(), to: 0, children: 'Top', onPress: fn() },
 } satisfies Meta<typeof ScrollTo>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Demo({ onPress }: { onPress: () => void }) {
   const scrollRef = useRef<ScrollView>(null);
   const [tops, setTops] = useState<Record<string, number>>({});
@@ -53,8 +53,19 @@ function Demo({ onPress }: { onPress: () => void }) {
   );
 }
 
+export default meta;
+
 export const Nav: Story = {
-  render: (args) => <Demo onPress={args.onPress ?? (() => {})} />,
+  render: (args) => (
+    <Demo
+      onPress={
+        args.onPress ??
+        (() => {
+          /* noop */
+        })
+      }
+    />
+  ),
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByTestId('nav-pricing');

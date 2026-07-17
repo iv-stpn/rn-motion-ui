@@ -1,8 +1,9 @@
 import { cva } from 'class-variance-authority';
 import { MotiView } from 'moti';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Animated, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { THUMB_SPRING } from '../../lib/ease';
 
 // Track colour swaps on checked; the thumb translate/squish stay inline (animated).
@@ -13,7 +14,8 @@ const track = cva('h-7 w-12 flex-row items-center rounded-full px-1', {
   defaultVariants: { checked: false },
 });
 
-export interface SwitchProps {
+// biome-ignore lint/style/useExportsLast: props type before thumb animation constants — collocated for readability
+export type SwitchProps = {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
@@ -21,11 +23,13 @@ export interface SwitchProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
 // Thumb travels 20px (track 48 − padding 8 − thumb 20). Kept as an Animated.Value
 // so the disabled-shake sequence can drive x directly.
 const TRAVEL = 20;
+// Shorter 4-step shake for the toggle: constrained travel (2px) for a subtle signal.
+const SWITCH_SHAKE_STEPS = [-2, 2, -1, 0] as const;
 
 export function Switch({ checked, onCheckedChange, disabled, label, style, accessibilityLabel, testID }: SwitchProps) {
   const reduce = useReducedMotion();
@@ -34,28 +38,26 @@ export function Switch({ checked, onCheckedChange, disabled, label, style, acces
   const squish = pressed && !disabled && !reduce;
 
   // Disabled + pressed → a short horizontal shake to signal "can't toggle".
-  useEffect(() => {
-    if (disabled && pressed && !reduce)
-      Animated.sequence([
-        Animated.timing(shakeX, { toValue: -2, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeX, { toValue: 2, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeX, { toValue: -1, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeX, { toValue: 0, duration: 60, useNativeDriver: true }),
-      ]).start();
-  }, [disabled, pressed, reduce, shakeX]);
+  useShakeAnimation({ trigger: Boolean(disabled && pressed), reduce, shakeX, steps: SWITCH_SHAKE_STEPS, duration: 60 });
+
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
+  const handleToggle = useCallback(() => {
+    if (!disabled) onCheckedChange(!checked);
+  }, [disabled, onCheckedChange, checked]);
 
   return (
     <View className="flex-row items-center" style={[{ gap: 12 }, style]}>
       <Pressable
         accessibilityRole="switch"
         aria-checked={checked}
-        aria-disabled={!!disabled}
+        aria-disabled={Boolean(disabled)}
         accessibilityLabel={accessibilityLabel ?? label}
         testID={testID ?? 'switch'}
         disabled={disabled}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
-        onPress={() => !disabled && onCheckedChange(!checked)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handleToggle}
       >
         <Animated.View
           className={track({ checked })}
@@ -88,11 +90,7 @@ export function Switch({ checked, onCheckedChange, disabled, label, style, acces
         </Animated.View>
       </Pressable>
       {label ? (
-        <Text
-          className="text-sm text-foreground"
-          style={{ opacity: disabled ? 0.6 : 1 }}
-          onPress={() => !disabled && onCheckedChange(!checked)}
-        >
+        <Text className="text-foreground text-sm" style={{ opacity: disabled ? 0.6 : 1 }} onPress={handleToggle}>
           {label}
         </Text>
       ) : null}

@@ -4,9 +4,12 @@ import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useInView } from '../../hooks/use-in-view';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
+const HEADER_REGEX = /^h[1-6]$/;
+
 export type TextRevealSplit = 'word' | 'char';
 
-export interface TextRevealProps {
+// biome-ignore lint/style/useExportsLast: props type before DEFAULT_SPRING constant — collocated for readability
+export type TextRevealProps = {
   /** A single line, or an array rendered as stacked lines. */
   text: string | string[];
   /**
@@ -36,9 +39,14 @@ export interface TextRevealProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
 const DEFAULT_SPRING = { stiffness: 140, damping: 26, mass: 1.2 };
+
+function unitAnimate(shouldAnimate: boolean, reduce: boolean, yOffset: number) {
+  if (shouldAnimate) return reduce ? { opacity: 1 } : { opacity: 1, translateY: 0 };
+  return reduce ? { opacity: 0 } : { opacity: 0, translateY: yOffset };
+}
 
 export function TextReveal({
   text,
@@ -62,7 +70,7 @@ export function TextReveal({
 
   const lines = Array.isArray(text) ? text : [text];
   const s = { ...DEFAULT_SPRING, ...spring };
-  const isHeader = typeof as === 'string' && /^h[1-6]$/.test(as);
+  const isHeader = typeof as === 'string' && HEADER_REGEX.test(as);
   const label = accessibilityLabel ?? lines.join(' ');
 
   // Global unit counter so the stagger runs continuously across every line.
@@ -84,15 +92,7 @@ export function TextReveal({
                   // biome-ignore lint/suspicious/noArrayIndexKey: units are positional slots within a line; order never changes
                   key={`unit-${i}-${unit}`}
                   from={reduce ? { opacity: 0 } : { opacity: 0, translateY: yOffset }}
-                  animate={
-                    shouldAnimate
-                      ? reduce
-                        ? { opacity: 1 }
-                        : { opacity: 1, translateY: 0 }
-                      : reduce
-                        ? { opacity: 0 }
-                        : { opacity: 0, translateY: yOffset }
-                  }
+                  animate={unitAnimate(shouldAnimate, reduce, yOffset)}
                   transition={
                     reduce
                       ? { type: 'timing', duration: 250, delay: d * 0.3 }

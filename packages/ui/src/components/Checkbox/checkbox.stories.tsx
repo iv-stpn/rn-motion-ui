@@ -11,8 +11,8 @@ const meta = {
   args: { checked: false, label: 'Accept terms and conditions', onCheckedChange: fn() },
 } satisfies Meta<typeof Checkbox>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {

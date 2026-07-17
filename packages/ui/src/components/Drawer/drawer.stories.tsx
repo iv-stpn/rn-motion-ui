@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { Button } from '../Button/button';
@@ -15,31 +15,37 @@ const meta = {
   },
 } satisfies Meta<typeof Drawer>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
+const OPEN_LABEL = 'Open drawer';
+const DRAWER_TITLE = 'Drawer';
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function DrawerDemo({ side }: { side: 'left' | 'right' }) {
   const [open, setOpen] = useState(false);
+  const openDrawer = useCallback(() => setOpen(true), []);
   return (
     <View style={{ gap: 12 }}>
-      <Button onPress={() => setOpen(true)}>Open drawer</Button>
+      <Button onPress={openDrawer}>{OPEN_LABEL}</Button>
       <Drawer open={open} onOpenChange={setOpen} side={side} accessibilityLabel="Demo drawer">
         <View style={{ gap: 8, padding: 24 }}>
-          <Text className="text-sm font-semibold text-foreground">Drawer</Text>
-          <Text className="text-sm text-muted-foreground">Slides in from the {side}. Tap outside to close.</Text>
+          <Text className="font-semibold text-foreground text-sm">{DRAWER_TITLE}</Text>
+          <Text className="text-muted-foreground text-sm">{`Slides in from the ${side}. Tap outside to close.`}</Text>
         </View>
       </Drawer>
     </View>
   );
 }
 
+export default meta;
+
 export const Right: Story = {
   render: () => <DrawerDemo side="right" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Tapping the trigger opens the drawer; its panel mounts in the RN Modal.
-    await userEvent.click(await canvas.findByText('Open drawer'));
-    await expect(await screen.findByText('Drawer')).toBeTruthy();
+    await userEvent.click(await canvas.findByText(OPEN_LABEL));
+    await expect(await screen.findByText(DRAWER_TITLE)).toBeTruthy();
   },
 };
 

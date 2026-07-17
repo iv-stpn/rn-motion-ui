@@ -25,14 +25,296 @@
     "url": "https://github.com/iv-stpn/beui/issues"
   },
   "sideEffects": false,
-  "source": "./src/index.ts",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "source": "./src/index.ts",
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+    "./action-swap": {
+      "source": "./src/components/ActionSwap/action-swap.tsx",
+      "types": "./src/components/ActionSwap/action-swap.tsx",
+      "default": "./src/components/ActionSwap/action-swap.tsx"
+    },
+    "./animated-badge": {
+      "source": "./src/components/AnimatedBadge/animated-badge.tsx",
+      "types": "./src/components/AnimatedBadge/animated-badge.tsx",
+      "default": "./src/components/AnimatedBadge/animated-badge.tsx"
+    },
+    "./animated-number": {
+      "source": "./src/components/AnimatedNumber/animated-number.tsx",
+      "types": "./src/components/AnimatedNumber/animated-number.tsx",
+      "default": "./src/components/AnimatedNumber/animated-number.tsx"
+    },
+    "./availability-scheduler": {
+      "source": "./src/components/AvailabilityScheduler/availability-scheduler.tsx",
+      "types": "./src/components/AvailabilityScheduler/availability-scheduler.tsx",
+      "default": "./src/components/AvailabilityScheduler/availability-scheduler.tsx"
+    },
+    "./bloom-menu": {
+      "source": "./src/components/BloomMenu/bloom-menu.tsx",
+      "types": "./src/components/BloomMenu/bloom-menu.tsx",
+      "default": "./src/components/BloomMenu/bloom-menu.tsx"
+    },
+    "./bottom-sheet": {
+      "source": "./src/components/BottomSheet/bottom-sheet.tsx",
+      "types": "./src/components/BottomSheet/bottom-sheet.tsx",
+      "default": "./src/components/BottomSheet/bottom-sheet.tsx"
+    },
+    "./bouncy-accordion": {
+      "source": "./src/components/BouncyAccordion/bouncy-accordion.tsx",
+      "types": "./src/components/BouncyAccordion/bouncy-accordion.tsx",
+      "default": "./src/components/BouncyAccordion/bouncy-accordion.tsx"
+    },
+    "./button": {
+      "source": "./src/components/Button/button.tsx",
+      "types": "./src/components/Button/button.tsx",
+      "default": "./src/components/Button/button.tsx"
+    },
+    "./checkbox": {
+      "source": "./src/components/Checkbox/checkbox.tsx",
+      "types": "./src/components/Checkbox/checkbox.tsx",
+      "default": "./src/components/Checkbox/checkbox.tsx"
+    },
+    "./command-palette": {
+      "source": "./src/components/CommandPalette/command-palette.tsx",
+      "types": "./src/components/CommandPalette/command-palette.tsx",
+      "default": "./src/components/CommandPalette/command-palette.tsx"
+    },
+    "./cylinder-carousel": {
+      "source": "./src/components/CylinderCarousel/cylinder-carousel.tsx",
+      "types": "./src/components/CylinderCarousel/cylinder-carousel.tsx",
+      "default": "./src/components/CylinderCarousel/cylinder-carousel.tsx"
+    },
+    "./dock": {
+      "source": "./src/components/Dock/dock.tsx",
+      "types": "./src/components/Dock/dock.tsx",
+      "default": "./src/components/Dock/dock.tsx"
+    },
+    "./drawer": {
+      "source": "./src/components/Drawer/drawer.tsx",
+      "types": "./src/components/Drawer/drawer.tsx",
+      "default": "./src/components/Drawer/drawer.tsx"
+    },
+    "./dynamic-island": {
+      "source": "./src/components/DynamicIsland/dynamic-island.tsx",
+      "types": "./src/components/DynamicIsland/dynamic-island.tsx",
+      "default": "./src/components/DynamicIsland/dynamic-island.tsx"
+    },
+    "./ease": {
+      "source": "./src/lib/ease.ts",
+      "types": "./src/lib/ease.ts",
+      "default": "./src/lib/ease.ts"
+    },
+    "./feedback-widget": {
+      "source": "./src/components/FeedbackWidget/feedback-widget.tsx",
+      "types": "./src/components/FeedbackWidget/feedback-widget.tsx",
+      "default": "./src/components/FeedbackWidget/feedback-widget.tsx"
+    },
+    "./file-upload": {
+      "source": "./src/components/FileUpload/file-upload.tsx",
+      "types": "./src/components/FileUpload/file-upload.tsx",
+      "default": "./src/components/FileUpload/file-upload.tsx"
+    },
+    "./icons": {
+      "source": "./src/lib/icons.tsx",
+      "types": "./src/lib/icons.tsx",
+      "default": "./src/lib/icons.tsx"
+    },
+    "./input": {
+      "source": "./src/components/Input/input.tsx",
+      "types": "./src/components/Input/input.tsx",
+      "default": "./src/components/Input/input.tsx"
+    },
+    "./loader": {
+      "source": "./src/components/Loader/loader.tsx",
+      "types": "./src/components/Loader/loader.tsx",
+      "default": "./src/components/Loader/loader.tsx"
+    },
+    "./marquee": {
+      "source": "./src/components/Marquee/marquee.tsx",
+      "types": "./src/components/Marquee/marquee.tsx",
+      "default": "./src/components/Marquee/marquee.tsx"
+    },
+    "./morphing-modal": {
+      "source": "./src/components/MorphingModal/morphing-modal.tsx",
+      "types": "./src/components/MorphingModal/morphing-modal.tsx",
+      "default": "./src/components/MorphingModal/morphing-modal.tsx"
+    },
+    "./not-found": {
+      "source": "./src/components/NotFound/not-found.tsx",
+      "types": "./src/components/NotFound/not-found.tsx",
+      "default": "./src/components/NotFound/not-found.tsx"
+    },
+    "./number-ticker": {
+      "source": "./src/components/NumberTicker/number-ticker.tsx",
+      "types": "./src/components/NumberTicker/number-ticker.tsx",
+      "default": "./src/components/NumberTicker/number-ticker.tsx"
+    },
+    "./otp-input": {
+      "source": "./src/components/OtpInput/otp-input.tsx",
+      "types": "./src/components/OtpInput/otp-input.tsx",
+      "default": "./src/components/OtpInput/otp-input.tsx"
+    },
+    "./overflow-actions": {
+      "source": "./src/components/OverflowActions/overflow-actions.tsx",
+      "types": "./src/components/OverflowActions/overflow-actions.tsx",
+      "default": "./src/components/OverflowActions/overflow-actions.tsx"
+    },
+    "./popover": {
+      "source": "./src/components/Popover/popover.tsx",
+      "types": "./src/components/Popover/popover.tsx",
+      "default": "./src/components/Popover/popover.tsx"
+    },
+    "./prediction-market": {
+      "source": "./src/components/PredictionMarket/prediction-market.tsx",
+      "types": "./src/components/PredictionMarket/prediction-market.tsx",
+      "default": "./src/components/PredictionMarket/prediction-market.tsx"
+    },
+    "./radio": {
+      "source": "./src/components/Radio/radio.tsx",
+      "types": "./src/components/Radio/radio.tsx",
+      "default": "./src/components/Radio/radio.tsx"
+    },
+    "./range-slider": {
+      "source": "./src/components/RangeSlider/range-slider.tsx",
+      "types": "./src/components/RangeSlider/range-slider.tsx",
+      "default": "./src/components/RangeSlider/range-slider.tsx"
+    },
+    "./scroll-progress": {
+      "source": "./src/components/ScrollProgress/scroll-progress.tsx",
+      "types": "./src/components/ScrollProgress/scroll-progress.tsx",
+      "default": "./src/components/ScrollProgress/scroll-progress.tsx"
+    },
+    "./scroll-reveal": {
+      "source": "./src/components/ScrollReveal/scroll-reveal.tsx",
+      "types": "./src/components/ScrollReveal/scroll-reveal.tsx",
+      "default": "./src/components/ScrollReveal/scroll-reveal.tsx"
+    },
+    "./scroll-to": {
+      "source": "./src/components/ScrollTo/scroll-to.tsx",
+      "types": "./src/components/ScrollTo/scroll-to.tsx",
+      "default": "./src/components/ScrollTo/scroll-to.tsx"
+    },
+    "./smooth-scroll": {
+      "source": "./src/components/SmoothScroll/smooth-scroll.tsx",
+      "types": "./src/components/SmoothScroll/smooth-scroll.tsx",
+      "default": "./src/components/SmoothScroll/smooth-scroll.tsx"
+    },
+    "./stateful-button": {
+      "source": "./src/components/Button/stateful-button.tsx",
+      "types": "./src/components/Button/stateful-button.tsx",
+      "default": "./src/components/Button/stateful-button.tsx"
+    },
+    "./swipeable-list": {
+      "source": "./src/components/SwipeableList/swipeable-list.tsx",
+      "types": "./src/components/SwipeableList/swipeable-list.tsx",
+      "default": "./src/components/SwipeableList/swipeable-list.tsx"
+    },
+    "./switch": {
+      "source": "./src/components/Switch/switch.tsx",
+      "types": "./src/components/Switch/switch.tsx",
+      "default": "./src/components/Switch/switch.tsx"
+    },
+    "./table": {
+      "source": "./src/components/Table/table.tsx",
+      "types": "./src/components/Table/table.tsx",
+      "default": "./src/components/Table/table.tsx"
+    },
+    "./table-header": {
+      "source": "./src/components/Table/table-header.tsx",
+      "types": "./src/components/Table/table-header.tsx",
+      "default": "./src/components/Table/table-header.tsx"
+    },
+    "./table-row": {
+      "source": "./src/components/Table/table-row.tsx",
+      "types": "./src/components/Table/table-row.tsx",
+      "default": "./src/components/Table/table-row.tsx"
+    },
+    "./table-styles": {
+      "source": "./src/components/Table/table-styles.ts",
+      "types": "./src/components/Table/table-styles.ts",
+      "default": "./src/components/Table/table-styles.ts"
+    },
+    "./table-types": {
+      "source": "./src/components/Table/table-types.ts",
+      "types": "./src/components/Table/table-types.ts",
+      "default": "./src/components/Table/table-types.ts"
+    },
+    "./table-utils": {
+      "source": "./src/components/Table/table-utils.ts",
+      "types": "./src/components/Table/table-utils.ts",
+      "default": "./src/components/Table/table-utils.ts"
+    },
+    "./tabs": {
+      "source": "./src/components/Tabs/tabs.tsx",
+      "types": "./src/components/Tabs/tabs.tsx",
+      "default": "./src/components/Tabs/tabs.tsx"
+    },
+    "./text-cascade": {
+      "source": "./src/components/TextCascade/text-cascade.tsx",
+      "types": "./src/components/TextCascade/text-cascade.tsx",
+      "default": "./src/components/TextCascade/text-cascade.tsx"
+    },
+    "./text-reveal": {
+      "source": "./src/components/TextReveal/text-reveal.tsx",
+      "types": "./src/components/TextReveal/text-reveal.tsx",
+      "default": "./src/components/TextReveal/text-reveal.tsx"
+    },
+    "./text-shimmer": {
+      "source": "./src/components/TextShimmer/text-shimmer.tsx",
+      "types": "./src/components/TextShimmer/text-shimmer.tsx",
+      "default": "./src/components/TextShimmer/text-shimmer.tsx"
+    },
+    "./use-arm-on-view": {
+      "source": "./src/hooks/use-arm-on-view.ts",
+      "types": "./src/hooks/use-arm-on-view.ts",
+      "default": "./src/hooks/use-arm-on-view.ts"
+    },
+    "./use-column-reorder": {
+      "source": "./src/components/Table/use-column-reorder.ts",
+      "types": "./src/components/Table/use-column-reorder.ts",
+      "default": "./src/components/Table/use-column-reorder.ts"
+    },
+    "./use-hover-capable": {
+      "source": "./src/hooks/use-hover-capable.ts",
+      "types": "./src/hooks/use-hover-capable.ts",
+      "default": "./src/hooks/use-hover-capable.ts"
+    },
+    "./use-in-view": {
+      "source": "./src/hooks/use-in-view.ts",
+      "types": "./src/hooks/use-in-view.ts",
+      "default": "./src/hooks/use-in-view.ts"
+    },
+    "./use-interval": {
+      "source": "./src/hooks/use-interval.ts",
+      "types": "./src/hooks/use-interval.ts",
+      "default": "./src/hooks/use-interval.ts"
+    },
+    "./use-modal-render": {
+      "source": "./src/hooks/use-modal-render.ts",
+      "types": "./src/hooks/use-modal-render.ts",
+      "default": "./src/hooks/use-modal-render.ts"
+    },
+    "./use-reduced-motion": {
+      "source": "./src/hooks/use-reduced-motion.ts",
+      "types": "./src/hooks/use-reduced-motion.ts",
+      "default": "./src/hooks/use-reduced-motion.ts"
+    },
+    "./use-scramble": {
+      "source": "./src/hooks/use-scramble.ts",
+      "types": "./src/hooks/use-scramble.ts",
+      "default": "./src/hooks/use-scramble.ts"
+    },
+    "./use-shake-animation": {
+      "source": "./src/hooks/use-shake-animation.ts",
+      "types": "./src/hooks/use-shake-animation.ts",
+      "default": "./src/hooks/use-shake-animation.ts"
+    },
+    "./use-table": {
+      "source": "./src/components/Table/use-table.ts",
+      "types": "./src/components/Table/use-table.ts",
+      "default": "./src/components/Table/use-table.ts"
+    },
+    "./wheel-picker": {
+      "source": "./src/components/WheelPicker/wheel-picker.tsx",
+      "types": "./src/components/WheelPicker/wheel-picker.tsx",
+      "default": "./src/components/WheelPicker/wheel-picker.tsx"
     }
   },
   "files": [
@@ -47,6 +329,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@rn-motion-ui/hooks": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "react-native-svg": "^15.15.5"
   },
@@ -55,7 +338,7 @@
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
     "react-native-gesture-handler": ">=2.0.0",
-    "react-native-reanimated": ">=3.16.0"
+    "react-native-reanimated": ">=4.0.0"
   },
   "devDependencies": {
     "@storybook/react": "10.5.0",
@@ -64,8 +347,9 @@
     "react": "19.1.0",
     "react-native": "0.86.0",
     "react-native-gesture-handler": "2.32.0",
-    "react-native-reanimated": "3.19.5",
+    "react-native-reanimated": "4.5.2",
     "react-native-web": "0.21.2",
+    "react-native-worklets": "0.11.1",
     "storybook": "10.5.0",
     "tailwindcss": "4.3.2",
     "typescript": "^7",

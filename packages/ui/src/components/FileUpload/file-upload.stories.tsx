@@ -51,8 +51,8 @@ const meta = {
   },
 } satisfies Meta<typeof FileUpload>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+export default meta;
 
 // -- Stories -----------------------------------------------------------------
 

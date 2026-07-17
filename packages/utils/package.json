@@ -1,0 +1,28 @@
+{
+  "name": "@rn-motion-ui/utils",
+  "version": "0.1.0",
+  "description": "Shared TypeScript utilities for rn-motion-ui",
+  "license": "MIT",
+  "author": "Ivan Stepanian <ivanivan1233@gmail.com>",
+  "sideEffects": false,
+  "exports": {
+    "./typeguards": {
+      "source": "./src/typeguards.ts",
+      "types": "./src/typeguards.ts",
+      "default": "./src/typeguards.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^7"
+  }
+}

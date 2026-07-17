@@ -1,10 +1,13 @@
 import { AnimatePresence, MotiText, MotiView } from 'moti';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_SWAP } from '../../lib/ease';
 
-export interface TextCascadeProps {
+// Enter stagger between letters (ms). Left-to-right slot roll.
+const CASCADE_STAGGER = 25;
+
+export type TextCascadeProps = {
   /** Current text. Changing it cascades the letters to the new value. */
   text: string;
   /** Text styling (size/weight/colour) applied to every letter + the sizer. */
@@ -12,10 +15,7 @@ export interface TextCascadeProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
-
-// Enter stagger between letters (ms). Left-to-right slot roll.
-const CASCADE_STAGGER = 25;
+};
 
 /**
  * Letter-by-letter slot roll: the old label slides up and out while the new
@@ -36,10 +36,13 @@ export function TextCascade({ text, className, style, accessibilityLabel, testID
   const isFirst = firstRender.current;
   firstRender.current = false;
 
-  const onLayout = (e: LayoutChangeEvent) => {
-    const h = e.nativeEvent.layout.height;
-    if (h && h !== rollHeight) setRollHeight(h);
-  };
+  const onLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const h = e.nativeEvent.layout.height;
+      if (h && h !== rollHeight) setRollHeight(h);
+    },
+    [rollHeight],
+  );
 
   const letters = Array.from(text);
   // Fall back to a sensible roll distance before the first measure lands.
@@ -81,6 +84,7 @@ export function TextCascade({ text, className, style, accessibilityLabel, testID
               animate={{ opacity: 1, translateY: 0 }}
               transition={{ ...SPRING_SWAP, delay: isFirst ? 0 : i * CASCADE_STAGGER }}
             >
+              {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
               {char === ' ' ? ' ' : char}
             </MotiText>
           ))}

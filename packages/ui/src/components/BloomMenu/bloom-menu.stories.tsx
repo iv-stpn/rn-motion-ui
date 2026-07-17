@@ -20,8 +20,8 @@ const meta = {
   args: { items: ITEMS, onSelect: fn(), title: 'Create', triggerLabel: 'Create' },
 } satisfies Meta<typeof BloomMenu>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+export default meta;
 
 export const Default: Story = {
   render: (args) => (

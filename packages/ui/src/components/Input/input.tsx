@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { AnimatePresence, MotiView } from 'moti';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useRef, useState } from 'react';
 import {
   Animated,
   type KeyboardTypeOptions,
@@ -12,12 +12,19 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { Check } from '../../lib/icons';
 
 // Success green mirrors the --color-success token (oklch(70% 0.18 155)); the
 // icon takes a raw colour prop, so we can't drive it through a className.
 const SUCCESS_COLOR = '#22c55e';
 const PLACEHOLDER_COLOR = 'rgba(128,128,128,0.6)';
+
+function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focused' | 'idle' {
+  if (hasError) return 'error';
+  if (focused) return 'focused';
+  return 'idle';
+}
 
 // Border colour swaps by state; error wins over focus, focus over idle. Ring
 // utilities from the web original are dropped (no box-shadow ring on RN).
@@ -41,7 +48,7 @@ const inputBox = cva('h-full flex-1 bg-transparent text-base text-foreground', {
   defaultVariants: { left: false, right: false },
 });
 
-export interface InputProps {
+export type InputProps = {
   label?: string;
   value?: string;
   defaultValue?: string;
@@ -62,8 +69,9 @@ export interface InputProps {
   inputStyle?: StyleProp<TextStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: label float, focus, error, password-reveal, and prefix/suffix all interleave
 export function Input({
   label,
   value: valueProp,
@@ -96,33 +104,52 @@ export function Input({
   const errorMessage = typeof error === 'string' ? error : null;
   // Right edge shows the success check, otherwise the caller's right icon.
   const rightSlot = success ? null : rightIcon;
-  const state = hasError ? 'error' : focused ? 'focused' : 'idle';
+  const state = resolveInputState(hasError, focused);
 
   // Shake the field when an error appears (mirrors the web keyframe sequence).
-  useEffect(() => {
-    if (reduce || !hasError) return;
-    Animated.sequence([
-      Animated.timing(shakeX, { toValue: -6, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 6, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: -4, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 4, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: -2, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 0, duration: 65, useNativeDriver: true }),
-    ]).start();
-  }, [hasError, reduce, shakeX]);
+  useShakeAnimation({ trigger: hasError, reduce, shakeX });
 
-  const handleChange = (next: string) => {
-    if (!controlled) setInternal(next);
-    onChange?.(next);
-  };
+  const handleChange = useCallback(
+    (next: string) => {
+      if (!controlled) setInternal(next);
+      onChange?.(next);
+    },
+    [controlled, onChange],
+  );
+
+  const handleFocus = useCallback(() => {
+    setFocused(true);
+    onFocus?.();
+  }, [onFocus]);
+
+  const handleBlur = useCallback(() => {
+    setFocused(false);
+    onBlur?.();
+  }, [onBlur]);
+
+  let rightElement: ReactNode = null;
+  if (success)
+    rightElement = (
+      <MotiView
+        pointerEvents="none"
+        className="absolute top-0 right-3.5 bottom-0 items-center justify-center"
+        from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'timing', duration: reduce ? 0 : 250 }}
+      >
+        <Check size={20} color={SUCCESS_COLOR} strokeWidth={2.5} />
+      </MotiView>
+    );
+  else if (rightSlot)
+    rightElement = <View className="absolute top-0 right-3 bottom-0 z-10 items-center justify-center">{rightSlot}</View>;
 
   return (
     <View className="gap-1.5" style={style}>
-      {label ? <Text className="px-1 text-sm font-medium text-foreground">{label}</Text> : null}
+      {label ? <Text className="px-1 font-medium text-foreground text-sm">{label}</Text> : null}
 
       <Animated.View className={field({ state })} style={{ opacity: disabled ? 0.6 : 1, transform: [{ translateX: shakeX }] }}>
         {leftIcon ? (
-          <View pointerEvents="none" className="absolute bottom-0 left-3 top-0 z-10 items-center justify-center">
+          <View pointerEvents="none" className="absolute top-0 bottom-0 left-3 z-10 items-center justify-center">
             {leftIcon}
           </View>
         ) : null}
@@ -136,33 +163,15 @@ export function Input({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           onChangeText={handleChange}
-          onFocus={() => {
-            setFocused(true);
-            onFocus?.();
-          }}
-          onBlur={() => {
-            setFocused(false);
-            onBlur?.();
-          }}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           accessibilityLabel={accessibilityLabel ?? label}
           testID={testID ?? 'input'}
-          className={inputBox({ left: !!leftIcon, right: !!(rightSlot || success) })}
+          className={inputBox({ left: Boolean(leftIcon), right: Boolean(rightSlot || success) })}
           style={inputStyle}
         />
 
-        {success ? (
-          <MotiView
-            pointerEvents="none"
-            className="absolute bottom-0 right-3.5 top-0 items-center justify-center"
-            from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'timing', duration: reduce ? 0 : 250 }}
-          >
-            <Check size={20} color={SUCCESS_COLOR} strokeWidth={2.5} />
-          </MotiView>
-        ) : rightSlot ? (
-          <View className="absolute bottom-0 right-3 top-0 z-10 items-center justify-center">{rightSlot}</View>
-        ) : null}
+        {rightElement}
       </Animated.View>
 
       <AnimatePresence initial={false}>
@@ -174,7 +183,7 @@ export function Input({
             exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -4 }}
             transition={{ type: 'timing', duration: 200 }}
           >
-            <Text accessibilityRole="alert" className="px-1 text-xs text-destructive">
+            <Text accessibilityRole="alert" className="px-1 text-destructive text-xs">
               {errorMessage}
             </Text>
           </MotiView>

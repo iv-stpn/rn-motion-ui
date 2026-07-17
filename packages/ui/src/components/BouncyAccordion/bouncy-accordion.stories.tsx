@@ -59,8 +59,8 @@ const meta = {
   ],
 } satisfies Meta<typeof BouncyAccordion>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {

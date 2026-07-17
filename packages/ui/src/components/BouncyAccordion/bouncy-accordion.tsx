@@ -13,7 +13,8 @@ export type BouncyAccordionItem = {
   disabled?: boolean;
 };
 
-export interface BouncyAccordionProps {
+// biome-ignore lint/style/useExportsLast: props type before spring constants — collocated for readability
+export type BouncyAccordionProps = {
   items: BouncyAccordionItem[];
   value?: string | null;
   defaultValue?: string | null;
@@ -21,10 +22,11 @@ export interface BouncyAccordionProps {
   collapsible?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 // Bouncy springs mirror the web bounce values (dampingRatio ≈ 1 − bounce).
 // The gap/radius spring stays lightly damped so connected rows move together.
+const noMotion = { type: 'timing', duration: 0 } as const;
 const ROW_TRANSITION = { type: 'spring', stiffness: 240, damping: 19, mass: 1 } as const;
 const CONTENT_OPEN_TRANSITION = { type: 'spring', stiffness: 220, damping: 20, mass: 1 } as const;
 const CONTENT_CLOSE_TRANSITION = { type: 'spring', stiffness: 260, damping: 24, mass: 1 } as const;
@@ -64,15 +66,19 @@ function BouncyAccordionRow({
   endsGroup: boolean;
   separatedFromPrevious: boolean;
   reduce: boolean;
-  onToggle: () => void;
+  onToggle: (id: string) => void;
 }) {
   const [contentHeight, setContentHeight] = useState(0);
   const onContentLayout = useCallback((e: LayoutChangeEvent) => {
     setContentHeight(e.nativeEvent.layout.height);
   }, []);
+  const handleToggle = useCallback(() => onToggle(item.id), [onToggle, item.id]);
 
   const topRadius = startsGroup ? 28 : 0;
   const bottomRadius = endsGroup ? 28 : 0;
+  const openContentTransition = open ? CONTENT_OPEN_TRANSITION : CONTENT_CLOSE_TRANSITION;
+  const contentTransition = reduce ? noMotion : openContentTransition;
+  const descTransition = reduce ? noMotion : DESCRIPTION_TRANSITION;
 
   return (
     <MotiView
@@ -93,14 +99,14 @@ function BouncyAccordionRow({
         <Pressable
           accessibilityRole="button"
           aria-expanded={open}
-          aria-disabled={!!item.disabled}
+          aria-disabled={Boolean(item.disabled)}
           accessibilityLabel={item.title}
           disabled={item.disabled}
-          onPress={onToggle}
+          onPress={handleToggle}
           className="min-h-[54px] w-full flex-row items-center gap-4 px-5"
         >
           {item.icon ? <View className="h-7 w-7 shrink-0 items-center justify-center">{item.icon}</View> : null}
-          <Text numberOfLines={1} className="min-w-0 flex-1 text-[15px] font-medium text-foreground">
+          <Text numberOfLines={1} className="min-w-0 flex-1 font-medium text-[15px] text-foreground">
             {item.title}
           </Text>
           <MotiView
@@ -116,17 +122,17 @@ function BouncyAccordionRow({
             height. The inner block is always laid out so onLayout can measure it. */}
         <MotiView
           animate={{ height: open && item.description ? contentHeight : 0 }}
-          transition={reduce ? { type: 'timing', duration: 0 } : open ? CONTENT_OPEN_TRANSITION : CONTENT_CLOSE_TRANSITION}
+          transition={contentTransition}
           className="overflow-hidden"
         >
           <MotiView
             animate={{ opacity: open ? 1 : 0 }}
-            transition={reduce ? { type: 'timing', duration: 0 } : DESCRIPTION_TRANSITION}
+            transition={descTransition}
             onLayout={onContentLayout}
             className="px-5 pb-5"
             style={{ position: 'absolute', left: 0, right: 0, top: 0 }}
           >
-            <Text className="text-[15px] leading-6 text-muted-foreground">{item.description}</Text>
+            <Text className="text-[15px] text-muted-foreground leading-6">{item.description}</Text>
           </MotiView>
         </MotiView>
       </MotiView>
@@ -177,7 +183,7 @@ export function BouncyAccordion({
             endsGroup={endsGroup}
             separatedFromPrevious={separatedFromPrevious}
             reduce={reduce}
-            onToggle={() => toggleItem(item.id)}
+            onToggle={toggleItem}
           />
         );
       })}

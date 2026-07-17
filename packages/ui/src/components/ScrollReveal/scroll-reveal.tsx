@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import Animated, {
   Extrapolation,
@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
-export interface ScrollRevealProps {
+export type ScrollRevealProps = {
   children: ReactNode;
   /** Scroll offset (px) of the enclosing scroll area — a reanimated shared value. */
   scrollY: SharedValue<number>;
@@ -27,7 +27,7 @@ export interface ScrollRevealProps {
   once?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 /**
  * Reveals its child (fade + slide up) as it scrolls into the viewport, driven by
@@ -55,10 +55,13 @@ export function ScrollReveal({
   const measured = useSharedValue(false);
   const latched = useSharedValue(0);
 
-  const onLayout = (e: LayoutChangeEvent) => {
-    layoutY.value = e.nativeEvent.layout.y;
-    measured.value = true;
-  };
+  const onLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      layoutY.value = e.nativeEvent.layout.y;
+      measured.value = true;
+    },
+    [layoutY, measured],
+  );
 
   // progress 0→1 as the element's top rises from the viewport bottom to `amount`.
   const progress = useDerivedValue(() => {

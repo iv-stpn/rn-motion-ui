@@ -20,7 +20,7 @@ const THUMB_W = 6;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-export interface RangeSliderProps {
+export type RangeSliderProps = {
   value?: number;
   defaultValue?: number;
   onValueChange?: (value: number) => void;
@@ -33,8 +33,9 @@ export interface RangeSliderProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: dual-thumb gesture math and clamping logic cannot be split without passing excess refs
 export function RangeSlider({
   value,
   defaultValue = 0,
@@ -140,13 +141,13 @@ export function RangeSlider({
       {/* fill — from the left edge to the thumb */}
       <MotiView
         pointerEvents="none"
-        className="absolute bottom-0 left-0 top-0 bg-foreground/15"
+        className="absolute top-0 bottom-0 left-0 bg-foreground/15"
         animate={{ width: fillW }}
         transition={glide}
       />
 
       {/* ticks — slight inset so the end dots don't clip */}
-      <View pointerEvents="none" className="absolute bottom-0 left-2 right-2 top-0">
+      <View pointerEvents="none" className="absolute top-0 right-2 bottom-0 left-2">
         {ticks.map((t) => {
           const tp = max > min ? ((t - min) / (max - min)) * 100 : 0;
           return (

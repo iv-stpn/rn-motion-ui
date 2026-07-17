@@ -1,10 +1,12 @@
 import { AnimatePresence, MotiView } from 'moti';
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, Modal, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { Dimensions, type LayoutChangeEvent, Modal, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 export type PopoverSide = 'top' | 'bottom';
 export type PopoverAlign = 'start' | 'center' | 'end';
+// biome-ignore lint/style/useExportsLast: type collocated with sibling Popover type exports for readability
 export type PopoverTriggerMode = 'click' | 'hover';
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -35,7 +37,7 @@ function usePopover(component: string) {
   return ctx;
 }
 
-export interface PopoverProps {
+export type PopoverProps = {
   children: ReactNode;
   /** Controlled open state. */
   open?: boolean;
@@ -56,7 +58,7 @@ export interface PopoverProps {
   gooStrength?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 export function Popover({
   children,
@@ -100,12 +102,12 @@ export function Popover({
   );
 }
 
-export interface PopoverTriggerProps {
+export type PopoverTriggerProps = {
   children: ReactNode;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 export function PopoverTrigger({ children, accessibilityLabel, style, testID }: PopoverTriggerProps) {
   const { toggle, setRect, open } = usePopover('PopoverTrigger');
@@ -130,7 +132,7 @@ export function PopoverTrigger({ children, accessibilityLabel, style, testID }: 
       style={style}
     >
       {typeof children === 'string' || typeof children === 'number' ? (
-        <Text className="text-sm font-medium text-foreground">{children}</Text>
+        <Text className="font-medium text-foreground text-sm">{children}</Text>
       ) : (
         children
       )}
@@ -138,54 +140,67 @@ export function PopoverTrigger({ children, accessibilityLabel, style, testID }: 
   );
 }
 
-export interface PopoverContentProps {
+function alignLeft(align: PopoverAlign, rect: Rect, panelW: number): number {
+  if (align === 'start') return rect.x;
+  if (align === 'end') return rect.x + rect.w - panelW;
+  return rect.x + rect.w / 2 - panelW / 2;
+}
+
+function resolveEnterY(reduce: boolean, side: PopoverSide): number {
+  if (reduce) return 0;
+  return side === 'bottom' ? -8 : 8;
+}
+
+export type PopoverContentProps = {
   children: ReactNode;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 export function PopoverContent({ children, accessibilityLabel, style, testID }: PopoverContentProps) {
   const { open, setOpen, rect, side, align, gap, panelRadius, reduce } = usePopover('PopoverContent');
-  const [rendered, setRendered] = useState(open);
+  const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
   const [panel, setPanel] = useState({ w: 0, h: 0 });
 
-  useEffect(() => {
-    if (open) setRendered(true);
-  }, [open]);
+  const handleClose = useCallback(() => setOpen(false), [setOpen]);
+  const handleLayout = useCallback(
+    (e: LayoutChangeEvent) => setPanel({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height }),
+    [],
+  );
 
   if (!rendered) return null;
 
   const screen = Dimensions.get('window');
-  const measured = panel.w > 0 && panel.h > 0 && rect != null;
+  const measured = panel.w > 0 && panel.h > 0 && rect !== null;
 
   // Position the panel in window coords relative to the measured trigger rect.
   let left = 0;
   let top = 0;
   if (rect) {
-    left = align === 'start' ? rect.x : align === 'end' ? rect.x + rect.w - panel.w : rect.x + rect.w / 2 - panel.w / 2;
+    left = alignLeft(align, rect, panel.w);
     top = side === 'bottom' ? rect.y + rect.h + gap : rect.y - gap - panel.h;
     // Keep the panel on screen.
     left = Math.max(8, Math.min(left, screen.width - panel.w - 8));
     top = Math.max(8, Math.min(top, screen.height - panel.h - 8));
   }
 
-  const enterY = reduce ? 0 : side === 'bottom' ? -8 : 8;
+  const enterY = resolveEnterY(reduce, side);
 
   return (
-    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={() => setOpen(false)}>
-      <AnimatePresence onExitComplete={() => setRendered(false)}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose}>
+      <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="popover-overlay" style={{ flex: 1 }}>
             <Pressable
               accessibilityLabel="Close"
-              onPress={() => setOpen(false)}
+              onPress={handleClose}
               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
             />
             <MotiView
               accessibilityLabel={accessibilityLabel}
               testID={testID}
-              onLayout={(e) => setPanel({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
+              onLayout={handleLayout}
               from={{ opacity: 0, scale: reduce ? 1 : 0.96, translateY: enterY }}
               animate={{ opacity: measured ? 1 : 0, scale: 1, translateY: 0 }}
               exit={{ opacity: 0, scale: reduce ? 1 : 0.96, translateY: enterY }}

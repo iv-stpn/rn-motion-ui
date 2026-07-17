@@ -11,6 +11,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_LAYOUT, SPRING_PANEL } from '../../lib/ease';
 import { Search } from '../../lib/icons';
@@ -36,8 +37,13 @@ const PANEL_SHADOW = {
   elevation: 24,
 } as const;
 
+const ESC_LABEL = 'ESC';
+
+/** Props passed to a command palette icon renderer. */
+export type CommandIconProps = { size?: number; color?: string };
+
 /** Icon renderer matching the `../../lib/icons` signature. */
-export type CommandIcon = (props: { size?: number; color?: string }) => ReactNode;
+export type CommandIcon = (props: CommandIconProps) => ReactNode;
 
 export type CommandItem = {
   id: string;
@@ -50,7 +56,8 @@ export type CommandItem = {
   onSelect: () => void;
 };
 
-export interface CommandPaletteProps {
+// biome-ignore lint/style/useExportsLast: props type before fuzzyMatch helper — collocated for readability
+export type CommandPaletteProps = {
   items: CommandItem[];
   /** Kept for web parity; on RN there is no window shortcut, so this is a no-op. */
   shortcut?: string;
@@ -61,7 +68,7 @@ export interface CommandPaletteProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
 function fuzzyMatch(needle: string, hay: string) {
   if (!needle) return true;
@@ -69,12 +76,73 @@ function fuzzyMatch(needle: string, hay: string) {
   const h = hay.toLowerCase();
   let i = 0;
   for (const ch of h) {
-    if (ch === n[i]) i++;
+    if (ch === n[i]) i += 1;
     if (i === n.length) return true;
   }
   return false;
 }
 
+type CommandRowProps = {
+  item: CommandItem;
+  index: number;
+  isActive: boolean;
+  hasIcons: boolean;
+  reduce: boolean;
+  onActivate: (index: number) => void;
+  onSelect: (item: CommandItem) => void;
+};
+
+function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSelect }: CommandRowProps) {
+  const Icon = item.icon;
+  const handlePressIn = useCallback(() => onActivate(index), [onActivate, index]);
+  const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
+
+  let iconSlot: ReactNode = null;
+  if (Icon) iconSlot = <Icon size={16} color={isActive ? '#111111' : '#71717a'} />;
+  else if (hasIcons) iconSlot = <View style={{ width: 16, height: 16 }} />;
+
+  return (
+    <Pressable
+      accessibilityRole="menuitem"
+      accessibilityLabel={item.label}
+      onPressIn={handlePressIn}
+      onPress={handlePress}
+      className="relative flex-row items-center gap-3 rounded-md px-2 py-2"
+    >
+      {isActive ? (
+        <MotiView
+          key={`hl-${item.id}`}
+          pointerEvents="none"
+          className="bg-primary/5"
+          from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            borderRadius: 6,
+          }}
+        />
+      ) : null}
+      {iconSlot}
+      <Text numberOfLines={1} className={isActive ? 'flex-1 text-foreground text-sm' : 'flex-1 text-muted-foreground text-sm'}>
+        {item.label}
+      </Text>
+      {item.badge ? <View className="shrink-0">{item.badge}</View> : null}
+      {item.hint ? (
+        <Text className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          {item.hint}
+        </Text>
+      ) : null}
+    </Pressable>
+  );
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: search + keyboard + item selection state handled in one render pass
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: search + keyboard + item selection state handled in one render pass
 export function CommandPalette({
   items,
   placeholder = 'Type a command or search…',
@@ -90,7 +158,7 @@ export function CommandPalette({
   const [internalOpen, setInternalOpen] = useState(false);
   const controlled = controlledOpen !== undefined;
   const open = controlled ? controlledOpen : internalOpen;
-  const [rendered, setRendered] = useState(open);
+  const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
 
@@ -102,9 +170,9 @@ export function CommandPalette({
     [controlled, onOpenChange],
   );
 
+  // biome-ignore lint/plugin: query and active cursor must reset on each open — this responds to the open event, not derivable from render-time state
   useEffect(() => {
     if (open) {
-      setRendered(true);
       setQuery('');
       setActive(0);
     }
@@ -127,22 +195,31 @@ export function CommandPalette({
 
   const grouped = useMemo(() => {
     const map = new Map<string, CommandItem[]>();
-    filtered.forEach((it) => {
+    for (const it of filtered) {
       const g = it.group ?? 'Results';
       const groupItems = map.get(g) ?? [];
       groupItems.push(it);
       map.set(g, groupItems);
-    });
+    }
     return Array.from(map.entries());
   }, [filtered]);
+
+  const handleClose = useCallback(() => setOpen(false), [setOpen]);
+  const handleSelect = useCallback(
+    (item: CommandItem) => {
+      item.onSelect();
+      setOpen(false);
+    },
+    [setOpen],
+  );
 
   if (!rendered) return null;
 
   let cursor = 0;
 
   return (
-    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={() => setOpen(false)}>
-      <AnimatePresence onExitComplete={() => setRendered(false)}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose}>
+      <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="command-overlay" style={{ flex: 1 }} testID={testID}>
             <MotiView
@@ -152,12 +229,7 @@ export function CommandPalette({
               transition={{ type: 'timing', duration: reduce ? 100 : 160 }}
               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
             >
-              <Pressable
-                accessibilityLabel="Close"
-                onPress={() => setOpen(false)}
-                className="bg-background/60"
-                style={{ flex: 1 }}
-              />
+              <Pressable accessibilityLabel="Close" onPress={handleClose} className="bg-background/60" style={{ flex: 1 }} />
             </MotiView>
             <View
               pointerEvents="box-none"
@@ -173,7 +245,7 @@ export function CommandPalette({
                 className="w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card"
                 style={[PANEL_SHADOW, style]}
               >
-                <View className="flex-row items-center gap-3 border-b border-border px-4">
+                <View className="flex-row items-center gap-3 border-border border-b px-4">
                   <Search size={16} color="#71717a" />
                   <TextInput
                     autoFocus={true}
@@ -182,15 +254,15 @@ export function CommandPalette({
                     placeholder={placeholder}
                     placeholderTextColor="#71717a"
                     accessibilityLabel={placeholder}
-                    className="h-12 flex-1 text-sm text-foreground"
+                    className="h-12 flex-1 text-foreground text-sm"
                   />
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Close"
-                    onPress={() => setOpen(false)}
+                    onPress={handleClose}
                     className="rounded border border-border bg-background px-1.5 py-0.5"
                   >
-                    <Text className="text-[10px] text-muted-foreground">ESC</Text>
+                    <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
                   </Pressable>
                 </View>
                 <ScrollView
@@ -200,66 +272,28 @@ export function CommandPalette({
                 >
                   {filtered.length === 0 ? (
                     <View className="p-8">
-                      <Text className="text-center text-sm text-muted-foreground">{emptyMessage}</Text>
+                      <Text className="text-center text-muted-foreground text-sm">{emptyMessage}</Text>
                     </View>
                   ) : (
                     grouped.map(([group, list]) => (
                       <View key={group} className="mb-1">
-                        <Text className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <Text className="px-2 py-1.5 font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                           {group}
                         </Text>
                         {list.map((it) => {
-                          const idx = cursor++;
-                          const isActive = idx === active;
-                          const Icon = it.icon;
+                          const idx = cursor;
+                          cursor += 1;
                           return (
-                            <Pressable
+                            <CommandRow
                               key={it.id}
-                              accessibilityRole="menuitem"
-                              accessibilityLabel={it.label}
-                              onPressIn={() => setActive(idx)}
-                              onPress={() => {
-                                it.onSelect();
-                                setOpen(false);
-                              }}
-                              className="relative flex-row items-center gap-3 rounded-md px-2 py-2"
-                            >
-                              {isActive ? (
-                                <MotiView
-                                  key={`hl-${it.id}`}
-                                  pointerEvents="none"
-                                  className="bg-primary/5"
-                                  from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
-                                  style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    borderRadius: 6,
-                                  }}
-                                />
-                              ) : null}
-                              {Icon ? (
-                                <Icon size={16} color={isActive ? '#111111' : '#71717a'} />
-                              ) : hasIcons ? (
-                                <View style={{ width: 16, height: 16 }} />
-                              ) : null}
-                              <Text
-                                numberOfLines={1}
-                                className={isActive ? 'flex-1 text-sm text-foreground' : 'flex-1 text-sm text-muted-foreground'}
-                              >
-                                {it.label}
-                              </Text>
-                              {it.badge ? <View className="shrink-0">{it.badge}</View> : null}
-                              {it.hint ? (
-                                <Text className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                  {it.hint}
-                                </Text>
-                              ) : null}
-                            </Pressable>
+                              item={it}
+                              index={idx}
+                              isActive={idx === active}
+                              hasIcons={hasIcons}
+                              reduce={reduce}
+                              onActivate={setActive}
+                              onSelect={handleSelect}
+                            />
                           );
                         })}
                       </View>

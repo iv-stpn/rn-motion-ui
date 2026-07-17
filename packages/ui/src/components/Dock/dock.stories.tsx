@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Calendar, GitBranch, Home, Mail, Music, Settings, Sparkles } from '../../lib/icons';
 import { Dock, DockItem, DockSeparator } from './dock';
@@ -14,7 +14,6 @@ const meta = {
   },
 } satisfies Meta<typeof Dock>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
 const ITEMS = [
@@ -25,8 +24,13 @@ const ITEMS = [
   { id: 'discover', icon: Sparkles, label: 'Discover' },
 ] as const;
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function DockDemo({ onSelect }: { onSelect?: (id: string) => void }) {
   const [active, setActive] = useState('home');
+  const selectSettings = useCallback(() => {
+    setActive('settings');
+    onSelect?.('settings');
+  }, [onSelect]);
   return (
     <Dock>
       {ITEMS.map(({ id, icon: Icon, label }) => (
@@ -34,6 +38,7 @@ function DockDemo({ onSelect }: { onSelect?: (id: string) => void }) {
           key={id}
           accessibilityLabel={label}
           active={active === id}
+          // biome-ignore lint/performance/noJsxPropsBind: story demo handler
           onPress={() => {
             setActive(id);
             onSelect?.(id);
@@ -43,14 +48,7 @@ function DockDemo({ onSelect }: { onSelect?: (id: string) => void }) {
         </DockItem>
       ))}
       <DockSeparator />
-      <DockItem
-        accessibilityLabel="Settings"
-        active={active === 'settings'}
-        onPress={() => {
-          setActive('settings');
-          onSelect?.('settings');
-        }}
-      >
+      <DockItem accessibilityLabel="Settings" active={active === 'settings'} onPress={selectSettings}>
         <Settings size={20} color="#111111" />
       </DockItem>
       <DockItem accessibilityLabel="Repository">
@@ -59,6 +57,8 @@ function DockDemo({ onSelect }: { onSelect?: (id: string) => void }) {
     </Dock>
   );
 }
+
+export default meta;
 
 export const Default: Story = {
   render: () => <DockDemo />,

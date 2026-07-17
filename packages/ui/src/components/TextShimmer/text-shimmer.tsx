@@ -3,7 +3,9 @@ import type { ReactNode } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
-export interface TextShimmerProps {
+const HEADER_REGEX = /^h[1-6]$/;
+
+export type TextShimmerProps = {
   /** A plain string shimmers per character; anything else renders statically. */
   children: ReactNode;
   /**
@@ -18,7 +20,7 @@ export interface TextShimmerProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
 /**
  * RN fallback: the web original clipped a moving linear-gradient to the text
@@ -28,7 +30,7 @@ export interface TextShimmerProps {
  */
 export function TextShimmer({ children, as, duration = 2.5, className, style, accessibilityLabel, testID }: TextShimmerProps) {
   const reduce = useReducedMotion();
-  const isHeader = typeof as === 'string' && /^h[1-6]$/.test(as);
+  const isHeader = typeof as === 'string' && HEADER_REGEX.test(as);
   const role = isHeader ? 'header' : 'text';
 
   // Non-string content (or reduced motion) can't be split per character.
@@ -65,6 +67,7 @@ export function TextShimmer({ children, as, duration = 2.5, className, style, ac
             delay: i * perChar,
           }}
         >
+          {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
           {char === ' ' ? ' ' : char}
         </MotiText>
       ))}

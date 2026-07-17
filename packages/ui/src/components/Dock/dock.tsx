@@ -27,14 +27,15 @@ const BORDER_WIDTH = 1;
 // Gap between the pill edge and the item edge on every side.
 const PILL_INSET = 2;
 
-export interface DockProps {
+export type DockProps = {
   children: ReactNode;
   /** Size of each item in px. */
   size?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
+// biome-ignore lint/style/useExportsLast: type LayoutEvent (private) must stay adjacent to DockItem below; hoisting all private types above would scatter the context-private/component-public grouping
 export function Dock({ children, size = 44, style, testID }: DockProps) {
   const reduce = useReducedMotion();
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
@@ -48,8 +49,12 @@ export function Dock({ children, size = 44, style, testID }: DockProps) {
     });
   }, []);
 
-  const setActive = useCallback((id: string, active: boolean) => {
-    setActiveId((prev) => (active ? id : prev === id ? null : prev));
+  const setActive = useCallback((id: string, isActive: boolean) => {
+    setActiveId((prev) => {
+      if (isActive) return id;
+      if (prev === id) return null;
+      return prev;
+    });
   }, []);
 
   const ctx = useMemo<DockContextValue>(
@@ -90,7 +95,9 @@ export function Dock({ children, size = 44, style, testID }: DockProps) {
   );
 }
 
-export interface DockItemProps {
+type LayoutEvent = { nativeEvent: { layout: LayoutRectangle } };
+
+export type DockItemProps = {
   children: ReactNode;
   /** When set, the item renders as a pressable button. Omit when children carry their own control. */
   onPress?: () => void;
@@ -98,7 +105,7 @@ export interface DockItemProps {
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 export function DockItem({ children, onPress, active, accessibilityLabel, style, testID }: DockItemProps) {
   const dock = useContext(DockContext);
@@ -106,15 +113,15 @@ export function DockItem({ children, onPress, active, accessibilityLabel, style,
   const size = dock?.size ?? 44;
   const [pressed, setPressed] = useState(false);
 
-  // Report active state up so the shared pill can glide to this item.
+  // biome-ignore lint/plugin: reporting active state to the parent context must happen as a side effect — calling setActive during render would be setState-in-render
   useEffect(() => {
-    dock?.setActive(id, !!active);
+    dock?.setActive(id, Boolean(active));
   }, [dock, id, active]);
 
-  const onLayout = useCallback(
-    (e: { nativeEvent: { layout: LayoutRectangle } }) => dock?.register(id, e.nativeEvent.layout),
-    [dock, id],
-  );
+  const onLayout = useCallback((e: LayoutEvent) => dock?.register(id, e.nativeEvent.layout), [dock, id]);
+
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
 
   const sharedStyle = { width: size, height: size };
 
@@ -128,11 +135,11 @@ export function DockItem({ children, onPress, active, accessibilityLabel, style,
       >
         <Pressable
           accessibilityRole="button"
-          aria-selected={!!active}
+          aria-selected={Boolean(active)}
           accessibilityLabel={accessibilityLabel}
           testID={testID}
-          onPressIn={() => setPressed(true)}
-          onPressOut={() => setPressed(false)}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
           onPress={onPress}
           className="flex-1 items-center justify-center rounded-full"
           style={style}
@@ -160,9 +167,9 @@ export function DockItem({ children, onPress, active, accessibilityLabel, style,
   );
 }
 
-export interface DockSeparatorProps {
+export type DockSeparatorProps = {
   style?: StyleProp<ViewStyle>;
-}
+};
 
 export function DockSeparator({ style }: DockSeparatorProps) {
   return (

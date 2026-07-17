@@ -14,6 +14,7 @@ export type ActionSwapItem = {
 
 export type ActionSwapButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 export type ActionSwapButtonSize = 'sm' | 'md' | 'lg' | 'icon';
+// biome-ignore lint/style/useExportsLast: CoreAnimation narrows this type and must stay immediately below it for readability
 export type ActionSwapAnimation = 'blur' | 'roll' | 'cascade';
 
 /** Animations with a single-element variant set (cascade animates per letter). */
@@ -67,7 +68,7 @@ const labelClass = cva('font-medium', {
   defaultVariants: { variant: 'secondary', size: 'md' },
 });
 
-export interface ActionSwapTextProps {
+export type ActionSwapTextProps = {
   value: string;
   children: ReactNode;
   animation?: ActionSwapAnimation;
@@ -76,9 +77,9 @@ export interface ActionSwapTextProps {
   /** Applied to the rendered text (colour/size/weight). */
   textClassName?: string;
   testID?: string;
-}
+};
 
-export interface ActionSwapIconProps {
+export type ActionSwapIconProps = {
   value: string;
   children: ReactNode;
   animation?: ActionSwapAnimation;
@@ -86,7 +87,7 @@ export interface ActionSwapIconProps {
   size?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 export interface ActionSwapButtonProps extends VariantProps<typeof container> {
   items: ActionSwapItem[];
@@ -105,6 +106,7 @@ export interface ActionSwapButtonProps extends VariantProps<typeof container> {
   testID?: string;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ActionSwapText handles cascade/blur/roll animation variants with reduce-motion and string/node content branches — each path is a distinct rendering mode
 export function ActionSwapText({
   value,
   children,
@@ -170,6 +172,7 @@ export function ActionSwapText({
                 animate={{ opacity: 1, translateY: 0 }}
                 transition={{ ...SPRING_SWAP, delay: i * CASCADE_STAGGER }}
               >
+                {/* biome-ignore lint/suspicious/noLeakedRender: char is always a string character — safe alternate branch */}
                 {char === ' ' ? ' ' : char}
               </MotiText>
             ))}
@@ -227,6 +230,7 @@ export function ActionSwapIcon({ value, children, animation = 'blur', size = 16,
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ActionSwapButton computes the active item, handles controlled/uncontrolled state, disabled state, and icon/label rendering — each branch is essential
 export function ActionSwapButton({
   items,
   value,
@@ -255,6 +259,14 @@ export function ActionSwapButton({
   const hasIcon = items.some((item) => item.icon);
   const nextItem = cycle && items.length > 0 ? items[(activeIndex + 1) % items.length] : undefined;
 
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
+  const handlePress = useCallback(() => {
+    if (disabled || !cycle || !nextItem) return;
+    if (value === undefined) setInternalValue(nextItem.id);
+    onValueChange?.(nextItem.id, nextItem);
+  }, [disabled, cycle, nextItem, value, onValueChange]);
+
   if (!activeItem) return null;
 
   const accessibleLabel =
@@ -266,17 +278,13 @@ export function ActionSwapButton({
     <MotiView animate={{ scale: pressed && !reduce && !disabled ? pressScale : 1 }} transition={SPRING_PRESS} style={style}>
       <Pressable
         accessibilityRole="button"
-        aria-disabled={!!disabled}
+        aria-disabled={Boolean(disabled)}
         accessibilityLabel={accessibleLabel}
         testID={testID ?? 'action-swap-button'}
         disabled={disabled}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
-        onPress={() => {
-          if (disabled || !cycle || !nextItem) return;
-          if (value === undefined) setInternalValue(nextItem.id);
-          onValueChange?.(nextItem.id, nextItem);
-        }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
         className={container({ variant, size })}
         style={{ opacity: disabled ? 0.5 : 1 }}
       >

@@ -5,10 +5,11 @@ import { Marquee } from './marquee';
 
 const LOGOS = ['Vercel', 'Linear', 'Stripe', 'Figma', 'GitHub', 'Notion', 'Loom', 'Raycast'];
 
+// biome-ignore lint/style/useComponentExportOnlyModules: Chip is a local story helper, intentionally unexported
 function Chip({ label }: { label: string }) {
   return (
     <View className="h-12 items-center justify-center rounded-lg border border-border bg-card px-6">
-      <Text className="text-sm font-medium text-foreground">{label}</Text>
+      <Text className="font-medium text-foreground text-sm">{label}</Text>
     </View>
   );
 }
@@ -31,8 +32,8 @@ const meta = {
   ],
 } satisfies Meta<typeof Marquee>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+export default meta;
 
 export const Horizontal: Story = {
   render: (args) => (

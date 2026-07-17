@@ -1,6 +1,7 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: file item, icon resolution, upload zone, and progress collocated by design
 import { AnimatePresence, MotiView } from 'moti';
 import { type ReactElement, useCallback, useState } from 'react';
-import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../lib/ease';
 import {
@@ -35,7 +36,8 @@ export type FileUploadItem = {
   error?: string;
 };
 
-export interface FileUploadProps {
+// biome-ignore lint/style/useExportsLast: props type before internal constants — collocated for readability
+export type FileUploadProps = {
   value?: FileUploadItem[];
   defaultValue?: FileUploadItem[];
   onValueChange?: (items: FileUploadItem[]) => void;
@@ -53,12 +55,13 @@ export interface FileUploadProps {
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 // -- Constants ---------------------------------------------------------------
 
 const ROW_TRANSITION = { type: 'timing', duration: 220, easing: EASE_OUT } as const;
 const FAST_TRANSITION = { type: 'timing', duration: 160, easing: EASE_OUT } as const;
+const FILE_META_SEPARATOR = ' · ';
 
 const STATUS_LABEL: Record<FileUploadStatus, string> = {
   queued: 'Queued',
@@ -90,8 +93,10 @@ function fileKind(item: FileUploadItem) {
   return 'FILE';
 }
 
-type IconComponent = (props: { size: number; color: string }) => ReactElement | null;
+type IconComponentProps = { size: number; color: string };
+type IconComponent = (props: IconComponentProps) => ReactElement | null;
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: MIME type + extension lookup — each branch is a distinct file category
 function getFileIcon(item: FileUploadItem): IconComponent {
   const ext = item.name.includes('.') ? item.name.split('.').pop()?.toLowerCase() : undefined;
   const type = item.type ?? '';
@@ -137,7 +142,29 @@ function useControllableUpload({
 
 // -- StatusIcon --------------------------------------------------------------
 
-function StatusIcon({ status, reduce }: { status: FileUploadStatus; reduce: boolean }) {
+type StatusIconProps = { status: FileUploadStatus; reduce: boolean };
+
+type StatusIconContentProps = { status: FileUploadStatus; color: string; reduce: boolean };
+
+function StatusIconContent({ status, color, reduce }: StatusIconContentProps) {
+  if (status === 'success') return <CheckCircle2 size={16} color={color} />;
+  if (status === 'error') return <AlertCircle size={16} color={color} />;
+  if (status === 'uploading') {
+    return (
+      // Spinning loader — moti loop.
+      <MotiView
+        from={{ rotate: '0deg' }}
+        animate={{ rotate: reduce ? '0deg' : '360deg' }}
+        transition={{ type: 'timing', duration: 800, loop: !reduce, repeatReverse: false }}
+      >
+        <Loader2 size={16} color={color} />
+      </MotiView>
+    );
+  }
+  return <FileIcon size={16} color={color} />;
+}
+
+function StatusIcon({ status, reduce }: StatusIconProps) {
   // Status-specific colours (resolved hex values matching Tailwind tokens).
   const COLOR: Record<FileUploadStatus, string> = {
     queued: '#71717a',
@@ -158,22 +185,7 @@ function StatusIcon({ status, reduce }: { status: FileUploadStatus; reduce: bool
         style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}
         accessibilityLabel={STATUS_LABEL[status]}
       >
-        {status === 'success' ? (
-          <CheckCircle2 size={16} color={color} />
-        ) : status === 'error' ? (
-          <AlertCircle size={16} color={color} />
-        ) : status === 'uploading' ? (
-          // Spinning loader — moti loop.
-          <MotiView
-            from={{ rotate: '0deg' }}
-            animate={{ rotate: reduce ? '0deg' : '360deg' }}
-            transition={{ type: 'timing', duration: 800, loop: !reduce, repeatReverse: false }}
-          >
-            <Loader2 size={16} color={color} />
-          </MotiView>
-        ) : (
-          <FileIcon size={16} color={color} />
-        )}
+        <StatusIconContent status={status} color={color} reduce={reduce} />
       </MotiView>
     </AnimatePresence>
   );
@@ -181,8 +193,11 @@ function StatusIcon({ status, reduce }: { status: FileUploadStatus; reduce: bool
 
 // -- ProgressBar -------------------------------------------------------------
 
-function ProgressBar({ progress, status, reduce }: { progress: number; status: FileUploadStatus; reduce: boolean }) {
+type ProgressBarProps = { progress: number; status: FileUploadStatus; reduce: boolean };
+
+function ProgressBar({ progress, status, reduce }: ProgressBarProps) {
   const [barWidth, setBarWidth] = useState(0);
+  const handleLayout = useCallback((e: LayoutChangeEvent) => setBarWidth(e.nativeEvent.layout.width), []);
   const ratio = progress / 100;
   // To simulate transform-origin: left via scaleX, we offset translateX by
   // -(barWidth * (1 - ratio) / 2). When ratio=1 offset=0; when ratio=0 the
@@ -196,7 +211,7 @@ function ProgressBar({ progress, status, reduce }: { progress: number; status: F
       accessibilityValue={{ min: 0, max: 100, now: Math.round(progress) }}
       accessibilityLabel="Upload progress"
       style={{ marginTop: 12, height: 6, borderRadius: 999, overflow: 'hidden', backgroundColor: '#e4e4e7' }}
-      onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
+      onLayout={handleLayout}
     >
       <MotiView
         animate={{ scaleX: ratio, translateX }}
@@ -223,6 +238,8 @@ function FileUploadRow({
   const progress = clampProgress(item.progress, status);
   const showProgress = status === 'uploading' || status === 'success';
   const LeadingIcon = getFileIcon(item);
+  const handleRetry = useCallback(() => onRetry(item), [onRetry, item]);
+  const handleRemove = useCallback(() => onRemove(item), [onRemove, item]);
 
   return (
     <MotiView
@@ -233,10 +250,10 @@ function FileUploadRow({
       style={{ overflow: 'hidden', borderRadius: 16 }}
       testID={`file-row-${item.id}`}
     >
-      <View className="border border-border bg-background p-3 rounded-2xl">
+      <View className="rounded-2xl border border-border bg-background p-3">
         <View className="flex-row items-center" style={{ gap: 12 }}>
           {/* Leading icon */}
-          <View className="bg-muted items-center justify-center rounded-xl" style={{ width: 44, height: 44, flexShrink: 0 }}>
+          <View className="items-center justify-center rounded-xl bg-muted" style={{ width: 44, height: 44, flexShrink: 0 }}>
             <LeadingIcon size={20} color="#71717a" />
           </View>
 
@@ -245,24 +262,26 @@ function FileUploadRow({
             <View className="flex-row items-start justify-between" style={{ gap: 12 }}>
               {/* Name + meta */}
               <View style={{ minWidth: 0, flex: 1 }}>
-                <Text className="text-sm font-medium text-foreground" numberOfLines={1}>
+                <Text className="font-medium text-foreground text-sm" numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text className="text-xs text-muted-foreground" style={{ marginTop: 2 }}>
-                  {fileKind(item)} · {formatBytes(item.size)}
+                <Text className="text-muted-foreground text-xs" style={{ marginTop: 2 }}>
+                  {fileKind(item)}
+                  {FILE_META_SEPARATOR}
+                  {formatBytes(item.size)}
                   {status === 'error' && item.error ? ` · ${item.error}` : null}
                 </Text>
               </View>
 
               {/* Status icon + actions */}
               <View className="flex-row items-center" style={{ gap: 4, flexShrink: 0 }}>
-                <StatusIcon status={status} reduce={!!reduce} />
+                <StatusIcon status={status} reduce={Boolean(reduce)} />
 
                 {status === 'error' ? (
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Retry ${item.name}`}
-                    onPress={() => onRetry(item)}
+                    onPress={handleRetry}
                     style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 14 }}
                     testID={`retry-${item.id}`}
                   >
@@ -273,7 +292,7 @@ function FileUploadRow({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Remove ${item.name}`}
-                  onPress={() => onRemove(item)}
+                  onPress={handleRemove}
                   style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 14 }}
                   testID={`remove-${item.id}`}
                 >
@@ -282,7 +301,7 @@ function FileUploadRow({
               </View>
             </View>
 
-            {showProgress ? <ProgressBar progress={progress} status={status} reduce={!!reduce} /> : null}
+            {showProgress ? <ProgressBar progress={progress} status={status} reduce={Boolean(reduce)} /> : null}
           </View>
         </View>
       </View>
@@ -292,6 +311,7 @@ function FileUploadRow({
 
 // -- FileUpload --------------------------------------------------------------
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: controlled + uncontrolled mode, drag-over, and error state handled together
 export function FileUpload({
   value,
   defaultValue,
@@ -341,45 +361,52 @@ export function FileUpload({
     onFilesAdded?.([]);
   }, [isDisabled, onFilesAdded]);
 
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
+
   const dropzoneContent = centered ? (
     // Centered variant: icon stacked above text + browse button.
     <>
       <MotiView
         animate={reduce ? undefined : { translateY: pressed ? -2 : 0 }}
         transition={FAST_TRANSITION}
-        className="bg-muted items-center justify-center rounded-[22px] border border-border"
+        className="items-center justify-center rounded-[22px] border border-border bg-muted"
         style={{ width: 64, height: 64 }}
       >
         <UploadCloud size={28} color="#18181b" />
       </MotiView>
 
       <View style={{ alignItems: 'center', maxWidth: 280, marginTop: 12 }}>
-        <Text className="text-base font-semibold text-foreground">{maxReached ? 'Upload limit reached' : title}</Text>
-        <Text className="text-xs text-muted-foreground" style={{ marginTop: 4, textAlign: 'center', lineHeight: 20 }}>
+        {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
+        <Text className="font-semibold text-base text-foreground">{maxReached ? 'Upload limit reached' : title}</Text>
+        <Text className="text-muted-foreground text-xs" style={{ marginTop: 4, textAlign: 'center', lineHeight: 20 }}>
+          {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
           {maxReached ? `${items.length} of ${maxFiles} files added` : description}
         </Text>
       </View>
 
-      <View className="border border-border rounded-full" style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 8 }}>
-        <Text className="text-xs font-medium text-foreground">{browseLabel}</Text>
+      <View className="rounded-full border border-border" style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 8 }}>
+        <Text className="font-medium text-foreground text-xs">{browseLabel}</Text>
       </View>
     </>
   ) : (
     // Default (row) variant: icon + text inline with browse button on the right.
     <>
-      <View className="bg-muted items-center justify-center rounded-[20px]" style={{ width: 56, height: 56 }}>
+      <View className="items-center justify-center rounded-[20px] bg-muted" style={{ width: 56, height: 56 }}>
         <UploadCloud size={24} color="#18181b" />
       </View>
 
       <View style={{ flex: 1, minWidth: 0, marginLeft: 16 }}>
-        <Text className="text-sm font-semibold text-foreground">{maxReached ? 'Upload limit reached' : title}</Text>
-        <Text className="text-xs text-muted-foreground" style={{ marginTop: 2 }}>
+        {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
+        <Text className="font-semibold text-foreground text-sm">{maxReached ? 'Upload limit reached' : title}</Text>
+        <Text className="text-muted-foreground text-xs" style={{ marginTop: 2 }}>
+          {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
           {maxReached ? `${items.length} of ${maxFiles} files added` : description}
         </Text>
       </View>
 
-      <View className="border border-border rounded-full" style={{ flexShrink: 0, paddingHorizontal: 14, paddingVertical: 8 }}>
-        <Text className="text-xs font-medium text-foreground">{browseLabel}</Text>
+      <View className="rounded-full border border-border" style={{ flexShrink: 0, paddingHorizontal: 14, paddingVertical: 8 }}>
+        <Text className="font-medium text-foreground text-xs">{browseLabel}</Text>
       </View>
     </>
   );
@@ -392,13 +419,13 @@ export function FileUpload({
         accessibilityLabel={maxReached ? 'Upload limit reached' : title}
         aria-disabled={isDisabled}
         disabled={isDisabled}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         onPress={handleBrowsePress}
         style={{ opacity: isDisabled ? 0.55 : 1 }}
       >
         <View
-          className="w-full overflow-hidden rounded-3xl border border-dashed border-border bg-background"
+          className="w-full overflow-hidden rounded-3xl border border-border border-dashed bg-background"
           style={[
             centered
               ? {

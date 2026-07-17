@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { MotiView } from 'moti';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
+import { useInterval } from '../../hooks/use-interval';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { Music, Phone, PhoneOff, Timer } from '../../lib/icons';
 import { Button } from '../Button/button';
@@ -20,11 +21,22 @@ const meta = {
   },
 } satisfies Meta<typeof DynamicIsland>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+const CLOCK = '9:41';
+const INCOMING_CALL = 'INCOMING CALL';
+const CALLER = 'Saurabh';
+const TIMER_LABEL = 'TIMER';
+const TRACK_TITLE = 'Midnight City';
+const TRACK_ARTIST = 'M83';
+const CALL_ACTION = 'Call';
+const TIMER_ACTION = 'Timer';
+const MUSIC_ACTION = 'Music';
+const DISMISS_ACTION = 'Dismiss';
 
 const BAR_DELAYS = [0, 180, 90, 270];
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function EqBars() {
   const reduce = useReducedMotion();
   return (
@@ -48,15 +60,20 @@ function formatClock(totalSeconds: number) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function IslandDemo() {
   const [view, setView] = useState<IslandView>(null);
   const [seconds, setSeconds] = useState(154);
 
-  useEffect(() => {
-    if (view !== 'timer') return;
-    const id = setInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), 1000);
-    return () => clearInterval(id);
-  }, [view]);
+  useInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), view === 'timer' ? 1000 : null);
+
+  const dismiss = useCallback(() => setView(null), []);
+  const showCall = useCallback(() => setView('call'), []);
+  const showTimer = useCallback(() => {
+    setSeconds(154);
+    setView('timer');
+  }, []);
+  const showMusic = useCallback(() => setView('music'), []);
 
   return (
     <View style={{ alignItems: 'center', gap: 16 }}>
@@ -67,21 +84,21 @@ function IslandDemo() {
           compact={
             <>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#3fa653' }} />
-              <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '500' }}>9:41</Text>
+              <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '500' }}>{CLOCK}</Text>
             </>
           }
         >
           {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
           <DynamicIslandView id="call" className="gap-4">
             <View style={{ gap: 2 }}>
-              <Text style={{ color: '#fafafa', fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>INCOMING CALL</Text>
-              <Text style={{ color: '#fafafa', fontSize: 14, fontWeight: '600' }}>Saurabh</Text>
+              <Text style={{ color: '#fafafa', fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>{INCOMING_CALL}</Text>
+              <Text style={{ color: '#fafafa', fontSize: 14, fontWeight: '600' }}>{CALLER}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Button variant="ghost" size="icon" accessibilityLabel="Decline" onPress={() => setView(null)}>
+              <Button variant="ghost" size="icon" accessibilityLabel="Decline" onPress={dismiss}>
                 <PhoneOff size={14} color="#fafafa" />
               </Button>
-              <Button variant="ghost" size="icon" accessibilityLabel="Accept" onPress={() => setView(null)}>
+              <Button variant="ghost" size="icon" accessibilityLabel="Accept" onPress={dismiss}>
                 <Phone size={14} color="#fafafa" />
               </Button>
             </View>
@@ -90,7 +107,7 @@ function IslandDemo() {
           {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
           <DynamicIslandView id="timer" className="gap-3">
             <Timer size={16} color="#d99a00" />
-            <Text style={{ color: '#fafafa', fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>TIMER</Text>
+            <Text style={{ color: '#fafafa', fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>{TIMER_LABEL}</Text>
             <Text style={{ color: '#fafafa', fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
               {formatClock(seconds)}
             </Text>
@@ -100,8 +117,8 @@ function IslandDemo() {
           <DynamicIslandView id="music" className="gap-3">
             <Music size={14} color="#fafafa" />
             <View style={{ gap: 1 }}>
-              <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '600' }}>Midnight City</Text>
-              <Text style={{ color: '#fafafa', fontSize: 10, opacity: 0.6 }}>M83</Text>
+              <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '600' }}>{TRACK_TITLE}</Text>
+              <Text style={{ color: '#fafafa', fontSize: 10, opacity: 0.6 }}>{TRACK_ARTIST}</Text>
             </View>
             <EqBars />
           </DynamicIslandView>
@@ -109,29 +126,24 @@ function IslandDemo() {
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <Button size="sm" variant="secondary" onPress={() => setView('call')}>
-          Call
+        <Button size="sm" variant="secondary" onPress={showCall}>
+          {CALL_ACTION}
         </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          onPress={() => {
-            setSeconds(154);
-            setView('timer');
-          }}
-        >
-          Timer
+        <Button size="sm" variant="secondary" onPress={showTimer}>
+          {TIMER_ACTION}
         </Button>
-        <Button size="sm" variant="secondary" onPress={() => setView('music')}>
-          Music
+        <Button size="sm" variant="secondary" onPress={showMusic}>
+          {MUSIC_ACTION}
         </Button>
-        <Button size="sm" variant="ghost" onPress={() => setView(null)}>
-          Dismiss
+        <Button size="sm" variant="ghost" onPress={dismiss}>
+          {DISMISS_ACTION}
         </Button>
       </View>
     </View>
   );
 }
+
+export default meta;
 
 export const Default: Story = {
   render: () => <IslandDemo />,
@@ -139,8 +151,8 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     // Tapping "Call" expands the island to the call view. "Saurabh" renders in
     // both the offscreen measurer and the visible slot, so match all.
-    await userEvent.click(await canvas.findByText('Call'));
-    const matches = await screen.findAllByText('Saurabh');
+    await userEvent.click(await canvas.findByText(CALL_ACTION));
+    const matches = await screen.findAllByText(CALLER);
     await expect(matches.length).toBeGreaterThan(0);
   },
 };
@@ -154,14 +166,14 @@ export const Compact: Story = {
       compact={
         <>
           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#3fa653' }} />
-          <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '500' }}>9:41</Text>
+          <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '500' }}>{CLOCK}</Text>
         </>
       }
     >
       {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
       <DynamicIslandView id="music" className="gap-3">
         <Music size={14} color="#fafafa" />
-        <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '600' }}>Midnight City</Text>
+        <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '600' }}>{TRACK_TITLE}</Text>
       </DynamicIslandView>
     </DynamicIsland>
   ),

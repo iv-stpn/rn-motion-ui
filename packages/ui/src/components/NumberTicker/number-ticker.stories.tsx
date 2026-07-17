@@ -1,5 +1,6 @@
+import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
 import type { Meta, StoryObj } from '@storybook/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { NumberTicker } from './number-ticker';
@@ -24,8 +25,12 @@ const meta = {
   },
 } satisfies Meta<typeof NumberTicker>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+const ACTIVE_USERS_LABEL = 'Active users';
+const LIVE_HINT = 'live · updates every 2.5s';
+
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {
@@ -46,15 +51,15 @@ export const WithAffixes: Story = {
 export const Live: Story = {
   render: (args) => {
     const [value, setValue] = useState(48_273);
-    useEffect(() => {
+    useMountEffect(() => {
       const id = setInterval(() => setValue((v) => v + Math.floor(Math.random() * 50)), 2500);
       return () => clearInterval(id);
-    }, []);
+    });
     return (
       <View style={{ alignItems: 'center', gap: 12 }}>
-        <Text style={{ fontSize: 12, color: '#71717a' }}>Active users</Text>
+        <Text style={{ fontSize: 12, color: '#71717a' }}>{ACTIVE_USERS_LABEL}</Text>
         <NumberTicker {...args} value={value} />
-        <Text style={{ fontSize: 12, color: '#71717a' }}>live · updates every 2.5s</Text>
+        <Text style={{ fontSize: 12, color: '#71717a' }}>{LIVE_HINT}</Text>
       </View>
     );
   },

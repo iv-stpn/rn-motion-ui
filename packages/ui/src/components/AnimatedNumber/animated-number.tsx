@@ -4,7 +4,7 @@ import { useInView } from '../../hooks/use-in-view';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT_FN } from '../../lib/ease';
 
-export interface AnimatedNumberProps {
+export type AnimatedNumberProps = {
   value: number;
   /** Roll duration in seconds. */
   duration?: number;
@@ -16,7 +16,7 @@ export interface AnimatedNumberProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
 /**
  * Counts the displayed value up to the target. The web original drove this with
@@ -38,6 +38,7 @@ export function AnimatedNumber({
   const [display, setDisplay] = useState(0);
   const fromRef = useRef(0);
 
+  // biome-ignore lint/plugin: rAF-driven eased counter — requestAnimationFrame loop cannot be expressed without useEffect
   useEffect(() => {
     if (startOnView && !inView) return;
     if (reduce) {

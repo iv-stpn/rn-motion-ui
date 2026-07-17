@@ -62,16 +62,14 @@ export type TransitionConfig = TransitionConfigWithoutRepeats & {
   repeatReverse?: boolean;
 };
 
+export type SequenceItemAnimateInfo<Value> = {
+  attemptedSequenceArray: Value;
+  attemptedSequenceItemValue: Value;
+};
+
 export type SequenceItemObject<Value> = {
   value: Value;
-  onDidAnimate?: (
-    finished: boolean,
-    maybeValue: Value | undefined,
-    info: {
-      attemptedSequenceArray: Value;
-      attemptedSequenceItemValue: Value;
-    },
-  ) => void;
+  onDidAnimate?: (finished: boolean, maybeValue: Value | undefined, info: SequenceItemAnimateInfo<Value>) => void;
 } & TransitionConfigWithoutRepeats;
 
 export type SequenceItem<Value> = Value | SequenceItemObject<Value>;
@@ -90,20 +88,23 @@ export type StyleValueWithSequenceArrays<T> = Partial<
   StyleValueWithSequenceArraysWithoutTransform<T> & StyleValueWithSequenceArraysWithTransform
 >;
 
+export type OnDidAnimateEvent<Animate, Key extends keyof Animate> = {
+  attemptedValue: Animate[Key];
+  attemptedSequenceItemValue?: Animate[Key];
+};
+
 export type OnDidAnimate<Animate = ImageStyle & TextStyle & ViewStyle, Key extends keyof Animate = keyof Animate> = (
   styleProp: Key,
   finished: boolean,
   value: Animate[Key] | undefined,
-  event: {
-    attemptedValue: Animate[Key];
-    attemptedSequenceItemValue?: Animate[Key];
-  },
+  event: OnDidAnimateEvent<Animate, Key>,
 ) => void;
 
 export type StyleValueWithReplacedTransforms<StyleProp> = Omit<StyleProp, keyof Transforms> & MotiTranformProps;
 
 export type MotiAnimationProp<Animate> = MotiProps<Animate>['animate'];
 export type MotiFromProp<Animate> = MotiProps<Animate>['from'];
+// biome-ignore lint/style/useExportsLast: helper private types follow that must stay adjacent to the exports they feed (OrDerivedValue, FallbackAnimateProp); restructuring the whole file to satisfy this rule would harm readability
 export type MotiExitProp<Animate> = MotiProps<Animate>['exit'];
 
 type OrDerivedValue<T> = T | DerivedValue<T>;
@@ -114,12 +115,14 @@ export type MotiTransition<Animate = FallbackAnimateProp> = TransitionConfig & P
 
 export type MotiTransitionProp<Animate = FallbackAnimateProp> = OrDerivedValue<MotiTransition<Animate>>;
 
+export type InlineOnDidAnimateEvent<Value> = {
+  attemptedValue: Value;
+};
+
 export type InlineOnDidAnimate<Value> = (
   finished: boolean,
   value: Value | undefined,
-  event: {
-    attemptedValue: Value;
-  },
+  event: InlineOnDidAnimateEvent<Value>,
 ) => void;
 
 type ExcludeArrayType<T> = T extends unknown[] ? never : T;
@@ -134,12 +137,12 @@ type StyleValueWithCallbacks<Animate> = {
       };
 };
 
-export interface MotiProps<
+export type MotiProps<
   AnimateType = ImageStyle & TextStyle & ViewStyle,
   AnimateWithTransforms = StyleValueWithReplacedTransforms<AnimateType>,
   AnimateWithSequences = StyleValueWithSequenceArrays<AnimateWithTransforms>,
   Animate = StyleValueWithCallbacks<AnimateWithSequences>,
-> {
+> = {
   onDidAnimate?: OnDidAnimate<AnimateWithTransforms>;
   animate?: OrDerivedValue<Animate>;
   from?: Animate | boolean;
@@ -147,10 +150,12 @@ export interface MotiProps<
   transition?: MotiTransitionProp<AnimateWithTransforms>;
   exitTransition?: MotiTransitionProp<AnimateWithTransforms> | ((custom?: unknown) => MotiTransition<AnimateWithTransforms>);
   delay?: number;
-  state?: { __state: SharedValue<unknown> | DerivedValue<unknown> };
+  // biome-ignore lint/suspicious/noExplicitAny: SharedValue/DerivedValue are invariant in T (modify is contravariant); `any` is required here so concrete SharedValue<V> satisfies this structural boundary
+  state?: { __state: SharedValue<any> | DerivedValue<any> };
+
   stylePriority?: 'state' | 'animate';
   animateInitialState?: boolean;
-}
+};
 
 export type InternalControllerState<V> = number | V[keyof V];
 
@@ -168,15 +173,12 @@ export type Variants<
 
 export type UseAnimationState<V> = {
   current: null | keyof V;
-  __state: SharedValue<unknown> | DerivedValue<unknown>;
+  // biome-ignore lint/suspicious/noExplicitAny: SharedValue/DerivedValue are invariant in T (modify is contravariant); `any` is required so concrete SharedValue<V> satisfies this boundary
+  __state: SharedValue<any> | DerivedValue<any>;
   transitionTo: (key: keyof V | ((currentState: keyof V) => keyof V)) => void;
 };
 
-export type UseAnimationStateConfig<
-  Variants,
-  FromKey extends keyof Variants = keyof Variants,
-  ToKey extends keyof Variants = keyof Variants,
-> = {
+export type UseAnimationStateConfig<V, FromKey extends keyof V = keyof V, ToKey extends keyof V = keyof V> = {
   from?: FromKey;
   to?: ToKey;
 };
@@ -191,7 +193,8 @@ export type DynamicStyleProp<
 > = NonNullable<StyleValueWithSequenceArrays<AnimateWithTransforms>> & WithTransition;
 
 export type UseDynamicAnimationState<Animate = FallbackAnimateProp> = {
-  __state: SharedValue<unknown>;
+  // biome-ignore lint/suspicious/noExplicitAny: same invariance constraint as UseAnimationState.__state
+  __state: SharedValue<any>;
   current: null | DynamicStyleProp;
   animateTo: (key: DynamicStyleProp<Animate> | ((currentState: DynamicStyleProp<Animate>) => DynamicStyleProp<Animate>)) => void;
 };

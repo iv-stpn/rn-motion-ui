@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { useCallback } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, Text, View } from 'react-native';
 import { makeMutable, useSharedValue } from 'react-native-reanimated';
 import { expect, within } from 'storybook/test';
@@ -15,20 +16,23 @@ const meta = {
   args: { progress: makeMutable(0) },
 } satisfies Meta<typeof ScrollProgress>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
 // A self-contained demo: an internal ScrollView drives the shared progress value
 // that both the bar and circle read.
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Demo({ variant }: { variant: 'bar' | 'circle' }) {
   const progress = useSharedValue(0);
-  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentSize, layoutMeasurement, contentOffset } = e.nativeEvent;
-    const max = contentSize.height - layoutMeasurement.height;
-    // Writing a shared value from the JS thread is valid on web (no worklet
-    // needed); the component reads it via useDerivedValue/useAnimatedProps.
-    progress.value = max > 0 ? contentOffset.y / max : 0;
-  };
+  const onScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentSize, layoutMeasurement, contentOffset } = e.nativeEvent;
+      const max = contentSize.height - layoutMeasurement.height;
+      // Writing a shared value from the JS thread is valid on web (no worklet
+      // needed); the component reads it via useDerivedValue/useAnimatedProps.
+      progress.value = max > 0 ? contentOffset.y / max : 0;
+    },
+    [progress],
+  );
 
   return (
     <View
@@ -45,13 +49,15 @@ function Demo({ variant }: { variant: 'bar' | 'circle' }) {
       <ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ padding: 12, gap: 10 }}>
         {ROWS.map((n) => (
           <View key={n} style={{ borderRadius: 10, backgroundColor: '#f4f4f5', paddingHorizontal: 12, paddingVertical: 16 }}>
-            <Text style={{ color: '#71717a', fontSize: 14 }}>Section {n}</Text>
+            <Text style={{ color: '#71717a', fontSize: 14 }}>{`Section ${n}`}</Text>
           </View>
         ))}
       </ScrollView>
     </View>
   );
 }
+
+export default meta;
 
 export const Bar: Story = {
   render: () => <Demo variant="bar" />,

@@ -1,11 +1,22 @@
 import { MotiView } from 'moti';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useArmOnView } from '../../hooks/use-arm-on-view';
 import { useInView } from '../../hooks/use-in-view';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../lib/ease';
 
-export interface NumberTickerProps {
+const DIGITS = Array.from({ length: 10 }, (_, n) => n);
+const MEASURE_GLYPH = '0';
+const NUMBER_REGEX = /\d/;
+
+function formatNumber(value: number, format?: (value: number) => string, locale?: boolean): string {
+  if (format) return format(value);
+  if (locale) return value.toLocaleString();
+  return value.toString();
+}
+
+export type NumberTickerProps = {
   value: number;
   /** Digits to pad to (left). */
   pad?: number;
@@ -33,10 +44,9 @@ export interface NumberTickerProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
-const DIGITS = Array.from({ length: 10 }, (_, n) => n);
-
+// biome-ignore lint/style/useExportsLast: component exported before internal Digit helper — collocated for readability
 export function NumberTicker({
   value,
   pad,
@@ -55,17 +65,13 @@ export function NumberTicker({
   testID,
 }: NumberTickerProps) {
   const [ref, inView] = useInView({ once: true, amount: 0.6 });
-  const [armed, setArmed] = useState(!startOnView);
+  const armed = useArmOnView(startOnView, inView);
   // Measured "0" glyph box — the roll needs concrete px, not the web's `1ch`/`em`.
   const [box, setBox] = useState({ w: 0, h: 0 });
 
-  useEffect(() => {
-    if (startOnView && inView) setArmed(true);
-  }, [startOnView, inView]);
-
   const text = useMemo(() => {
     const rounded = Math.round(value);
-    const formatted = format ? format(rounded) : locale ? rounded.toLocaleString() : rounded.toString();
+    const formatted = formatNumber(rounded, format, locale);
     return pad ? formatted.padStart(pad, '0') : formatted;
   }, [value, pad, format, locale]);
 
@@ -80,6 +86,7 @@ export function NumberTicker({
 
   // Stagger is an entrance flourish; once revealed, live updates roll at once.
   const [entered, setEntered] = useState(false);
+  // biome-ignore lint/plugin: entrance stagger requires a setTimeout that fires after the animation completes — not derivable from render-time state
   useEffect(() => {
     if (!armed || entered) return;
     const total = (duration + glyphs.length * stagger) * 1000;
@@ -87,10 +94,13 @@ export function NumberTicker({
     return () => clearTimeout(t);
   }, [armed, entered, duration, stagger, glyphs.length]);
 
-  const onMeasure = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width && height && (width !== box.w || height !== box.h)) setBox({ w: width, h: height });
-  };
+  const onMeasure = useCallback(
+    (e: LayoutChangeEvent) => {
+      const { width, height } = e.nativeEvent.layout;
+      if (width && height && (width !== box.w || height !== box.h)) setBox({ w: width, h: height });
+    },
+    [box.w, box.h],
+  );
 
   const measured = box.h > 0;
 
@@ -109,12 +119,12 @@ export function NumberTicker({
         importantForAccessibility="no"
         style={{ position: 'absolute', opacity: 0 }}
       >
-        0
+        {MEASURE_GLYPH}
       </Text>
       {prefix ? <Text className={className}>{prefix}</Text> : null}
       {measured
         ? glyphs.map(({ char, id }, i) => {
-            if (!/\d/.test(char))
+            if (!NUMBER_REGEX.test(char))
               return (
                 <Text key={id} className={className}>
                   {char}
@@ -138,14 +148,14 @@ export function NumberTicker({
   );
 }
 
-interface DigitProps {
+type DigitProps = {
   digit: number;
   delay: number;
   duration: number;
   box: { w: number; h: number };
   className?: string;
   digitClassName?: string;
-}
+};
 
 function Digit({ digit, delay, duration, box, className, digitClassName }: DigitProps) {
   const reduce = useReducedMotion();

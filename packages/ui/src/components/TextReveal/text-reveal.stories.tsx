@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { TextReveal, type TextRevealSplit } from './text-reveal';
@@ -25,8 +25,11 @@ const meta = {
   },
 } satisfies Meta<typeof TextReveal>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+const REPLAY_LABEL = 'Replay';
+
+export default meta;
 
 export const Words: Story = {
   play: async ({ canvasElement }) => {
@@ -49,15 +52,16 @@ export const MultiLine: Story = {
 export const Replay: Story = {
   render: (args) => {
     const [key, setKey] = useState(0);
+    const replay = useCallback(() => setKey((k) => k + 1), []);
     return (
       <View style={{ alignItems: 'center', gap: 24 }}>
         <TextReveal {...args} key={key} />
         <Pressable
-          onPress={() => setKey((k) => k + 1)}
+          onPress={replay}
           accessibilityRole="button"
           className="h-9 items-center justify-center rounded-full border border-border bg-card px-4"
         >
-          <Text className="text-xs font-medium text-foreground">Replay</Text>
+          <Text className="font-medium text-foreground text-xs">{REPLAY_LABEL}</Text>
         </Pressable>
       </View>
     );

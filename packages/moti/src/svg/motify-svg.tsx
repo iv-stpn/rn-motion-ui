@@ -20,19 +20,19 @@ export function motifySvg<
   Animate = ExcludeFunctionKeys<Omit<Props, 'children'>>,
 >(ComponentWithoutAnimation: C) {
   const withAnimations = () => {
-    const AnimatedComponent = Animated.createAnimatedComponent(
-      ComponentWithoutAnimation as unknown as React.ComponentType<object>,
-    );
+    // biome-ignore lint/plugin: createAnimatedComponent's parameter type doesn't unify with the ComponentClass generic C; a widening assertion is required
+    const AnimatedComponent = Animated.createAnimatedComponent(ComponentWithoutAnimation as React.ComponentType<object>);
 
+    // biome-ignore lint/suspicious/noReactForwardRef: package targets React >=18 where forwardRef is required; ref-as-prop is React 19+ only
     const Motified = forwardRef<React.ElementRef<C>, Props & MotiProps<Animate> & AdditionalProps>(function Moti(props, _ref) {
-      const animated = useMotify<Animate>(props as MotiProps<Animate>);
+      const animated = useMotify<Animate>(props);
 
-      if ((props as AdditionalProps).animatedProps !== undefined)
+      if (props.animatedProps !== undefined)
         console.warn(
           'Moti: You passed animatedProps to a Moti SVG component. This will have no effect. Use the animate prop instead.',
         );
 
-      return <AnimatedComponent {...(props as object)} animatedProps={animated.style} />;
+      return <AnimatedComponent {...props} animatedProps={animated.style} />;
     });
 
     Motified.displayName = `MotiSvg.${ComponentWithoutAnimation.displayName || ComponentWithoutAnimation.name || 'NoName'}`;

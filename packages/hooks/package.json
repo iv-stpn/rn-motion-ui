@@ -1,0 +1,33 @@
+{
+  "name": "@rn-motion-ui/hooks",
+  "version": "0.1.0",
+  "description": "Reusable React hooks for rn-motion-ui",
+  "license": "MIT",
+  "author": "Ivan Stepanian <ivanivan1233@gmail.com>",
+  "sideEffects": false,
+  "exports": {
+    "./use-mount-effect": {
+      "source": "./src/use-mount-effect.ts",
+      "types": "./src/use-mount-effect.ts",
+      "default": "./src/use-mount-effect.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.10",
+    "react": "19.1.0",
+    "typescript": "^7"
+  }
+}

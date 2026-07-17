@@ -1,5 +1,6 @@
+import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
 import type { Meta, StoryObj } from '@storybook/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { TextShimmer } from './text-shimmer';
@@ -18,8 +19,12 @@ const meta = {
   },
 } satisfies Meta<typeof TextShimmer>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+// Mirrors text-animation.preview.tsx: swap between two shimmer strings on a timer.
+const PHRASES = ['Loading with shimmer', 'Almost there…'];
+
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {
@@ -32,16 +37,13 @@ export const Faster: Story = {
   args: { children: 'Faster shimmer', duration: 1.5, className: 'text-sm text-foreground' },
 };
 
-// Mirrors text-animation.preview.tsx: swap between two shimmer strings on a timer.
-const PHRASES = ['Loading with shimmer', 'Almost there…'];
-
 export const Swapping: Story = {
   render: (args) => {
     const [i, setI] = useState(0);
-    useEffect(() => {
+    useMountEffect(() => {
       const id = setInterval(() => setI((c) => (c + 1) % PHRASES.length), 3000);
       return () => clearInterval(id);
-    }, []);
+    });
     return (
       <View style={{ minHeight: 40, alignItems: 'center', justifyContent: 'center' }}>
         <TextShimmer {...args} duration={1.8}>

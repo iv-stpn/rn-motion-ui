@@ -1,4 +1,4 @@
-import { Children, type ReactNode, useEffect, useState } from 'react';
+import { Children, type ReactNode, useCallback, useEffect, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -12,7 +12,7 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 export type MarqueeDirection = 'left' | 'right' | 'up' | 'down';
 
-export interface MarqueeProps {
+export type MarqueeProps = {
   children: ReactNode;
   /** Scroll direction. */
   direction?: MarqueeDirection;
@@ -22,7 +22,7 @@ export interface MarqueeProps {
   gap?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 /**
  * Infinite marquee. Two identical tracks translate in lockstep; when the first
@@ -40,6 +40,7 @@ export function Marquee({ children, direction = 'left', speed = 20, gap = 16, st
   const offset = useSharedValue(0);
   const items = Children.toArray(children);
 
+  // biome-ignore lint/plugin: Reanimated withRepeat loop must be started and cancelled as a side effect — not expressible as derived state
   useEffect(() => {
     if (!size || reduce) {
       offset.value = 0;
@@ -57,10 +58,13 @@ export function Marquee({ children, direction = 'left', speed = 20, gap = 16, st
     vertical ? { transform: [{ translateY: offset.value }] } : { transform: [{ translateX: offset.value }] },
   );
 
-  const onLayout = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    setSize(vertical ? height : width);
-  };
+  const onLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const { width, height } = e.nativeEvent.layout;
+      setSize(vertical ? height : width);
+    },
+    [vertical],
+  );
 
   return (
     <View testID={testID} style={[{ overflow: 'hidden' }, style]} className="relative">

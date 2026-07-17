@@ -1,6 +1,17 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: all-in-one scheduler — state, helpers, and rendering are tightly coupled
 import { AnimatePresence, MotiView } from 'moti';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type LayoutChangeEvent, Modal, Pressable, ScrollView, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import {
+  type GestureResponderEvent,
+  type LayoutChangeEvent,
+  Modal,
+  Pressable,
+  ScrollView,
+  type StyleProp,
+  Text,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { CONTENT_TRANSITION, SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 import { Check, Copy, Plus, X } from '../../lib/icons';
@@ -10,12 +21,22 @@ import { WheelPicker } from '../WheelPicker/wheel-picker';
 
 // ─── types (re-exported) ───────────────────────────────────────────────────
 
+const LABEL_SELECT_TIME = 'Select time';
+const LABEL_CANCEL = 'Cancel';
+const LABEL_DONE = 'Done';
+const LABEL_COPY_TIMES_TO = 'Copy times to';
+const LABEL_EVERY_DAY = 'Every day';
+const LABEL_APPLY = 'Apply';
+const LABEL_SEPARATOR = '–';
+const LABEL_UNAVAILABLE = 'Unavailable';
+
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 export type TimeRange = { id: string; start: string; end: string };
 export type DayAvailability = { enabled: boolean; ranges: TimeRange[] };
 export type WeekAvailability = Record<DayKey, DayAvailability>;
 
-export interface AvailabilitySchedulerProps {
+// biome-ignore lint/style/useExportsLast: props type before time helper functions — collocated for readability
+export type AvailabilitySchedulerProps = {
   value?: WeekAvailability;
   defaultValue?: WeekAvailability;
   onChange?: (value: WeekAvailability) => void;
@@ -23,7 +44,7 @@ export interface AvailabilitySchedulerProps {
   step?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 // ─── time helpers ──────────────────────────────────────────────────────────
 
@@ -39,6 +60,7 @@ const toValue = (mins: number) => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 };
 
+// biome-ignore lint/style/useComponentExportOnlyModules: label12 is a formatting utility exported alongside the component for consumers; extracting it would fracture the public API
 export const label12 = (v: string) => {
   const [h, m] = v.split(':').map(Number);
   const ap = (h ?? 0) < 12 ? 'AM' : 'PM';
@@ -48,6 +70,7 @@ export const label12 = (v: string) => {
 
 type TimeOption = { value: string; label: string };
 
+// biome-ignore lint/style/useComponentExportOnlyModules: buildOptions is a utility exported alongside the component for consumers to generate time picker options; extracting it to a separate file would fracture the public API of this component
 export function buildOptions(step: number): TimeOption[] {
   const out: TimeOption[] = [];
   for (let m = 0; m < 24 * 60; m += step) {
@@ -68,6 +91,7 @@ const WEEKDAYS: { key: DayKey; label: string }[] = [
 ];
 
 /** Default: Mon–Fri 9–5, weekend off. */
+// biome-ignore lint/style/useComponentExportOnlyModules: defaultWeek is a utility factory exported with the component so consumers can seed the scheduler without importing from a separate module
 export function defaultWeek(): WeekAvailability {
   const workday = (day: DayKey): DayAvailability => ({
     enabled: true,
@@ -88,6 +112,9 @@ export function defaultWeek(): WeekAvailability {
   };
 }
 
+// Stop touch propagation so taps inside the sheet don't dismiss it.
+const stopPropagation = (e: GestureResponderEvent) => e.stopPropagation();
+
 // ─── TimePickerModal ───────────────────────────────────────────────────────
 
 function TimePickerModal({
@@ -106,23 +133,28 @@ function TimePickerModal({
   const [pending, setPending] = useState(value);
 
   // Reset pending selection when modal opens with a new value
-  const onShow = () => setPending(value);
+  const onShow = useCallback(() => setPending(value), [value]);
 
   const wheelOptions = useMemo(() => options.map((o) => ({ label: o.label, value: o.value })), [options]);
+
+  const handleDone = useCallback(() => {
+    onSelect(pending);
+    onClose();
+  }, [onSelect, pending, onClose]);
 
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onShow={onShow} onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} onPress={onClose}>
         <View>
-          <Pressable onPress={(e) => e.stopPropagation()}>
+          <Pressable onPress={stopPropagation}>
             <View className="rounded-t-3xl bg-card" style={{ paddingBottom: 16 }}>
               {/* Handle bar */}
               <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
                 <View className="bg-border" style={{ width: 36, height: 4, borderRadius: 2 }} />
               </View>
 
-              <Text className="text-center text-base font-semibold text-foreground" style={{ paddingVertical: 8 }}>
-                Select time
+              <Text className="text-center font-semibold text-base text-foreground" style={{ paddingVertical: 8 }}>
+                {LABEL_SELECT_TIME}
               </Text>
 
               <View style={{ paddingHorizontal: 48, paddingVertical: 8 }}>
@@ -136,18 +168,15 @@ function TimePickerModal({
                   className="flex-1 items-center justify-center rounded-full border border-border bg-card"
                   style={{ height: 44 }}
                 >
-                  <Text className="text-sm font-medium text-foreground">Cancel</Text>
+                  <Text className="font-medium text-foreground text-sm">{LABEL_CANCEL}</Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => {
-                    onSelect(pending);
-                    onClose();
-                  }}
+                  onPress={handleDone}
                   className="flex-1 items-center justify-center rounded-full bg-primary"
                   style={{ height: 44 }}
                 >
-                  <Text className="text-sm font-medium text-primary-foreground">Done</Text>
+                  <Text className="font-medium text-primary-foreground text-sm">{LABEL_DONE}</Text>
                 </Pressable>
               </View>
             </View>
@@ -172,25 +201,42 @@ function TimeButton({
   testID?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const openModal = useCallback(() => setOpen(true), []);
+  const closeModal = useCallback(() => setOpen(false), []);
   return (
     <>
       <Pressable
         accessibilityRole="button"
         testID={testID}
-        onPress={() => setOpen(true)}
+        onPress={openModal}
         className="items-center justify-center rounded-lg border border-border bg-card"
         style={{ height: 36, paddingHorizontal: 10, minWidth: 96 }}
       >
-        <Text className="text-sm text-foreground" style={{ fontVariant: ['tabular-nums'] }}>
+        <Text className="text-foreground text-sm" style={{ fontVariant: ['tabular-nums'] }}>
           {label12(value)}
         </Text>
       </Pressable>
-      <TimePickerModal visible={open} value={value} options={options} onSelect={onChange} onClose={() => setOpen(false)} />
+      <TimePickerModal visible={open} value={value} options={options} onSelect={onChange} onClose={closeModal} />
     </>
   );
 }
 
 // ─── CopyModal ─────────────────────────────────────────────────────────────
+
+function CopyDayCheckbox({
+  day,
+  label,
+  checked,
+  onToggle,
+}: {
+  day: DayKey;
+  label: string;
+  checked: boolean;
+  onToggle: (day: DayKey) => void;
+}) {
+  const handleToggle = useCallback(() => onToggle(day), [onToggle, day]);
+  return <Checkbox checked={checked} onCheckedChange={handleToggle} label={label} />;
+}
 
 function CopyModal({
   visible,
@@ -204,56 +250,63 @@ function CopyModal({
   onClose: () => void;
 }) {
   const [picked, setPicked] = useState<Set<DayKey>>(new Set());
-  const others = WEEKDAYS.filter((d) => d.label !== fromLabel);
+  const others = useMemo(() => WEEKDAYS.filter((d) => d.label !== fromLabel), [fromLabel]);
 
-  const toggle = (k: DayKey) =>
+  const toggle = useCallback((k: DayKey) => {
     setPicked((prev) => {
       const next = new Set(prev);
       if (next.has(k)) next.delete(k);
       else next.add(k);
       return next;
     });
+  }, []);
 
-  const apply = (targets: DayKey[]) => {
-    if (!targets.length) return;
-    onApply(targets);
-    setPicked(new Set());
-    onClose();
-  };
+  const apply = useCallback(
+    (targets: DayKey[]) => {
+      if (!targets.length) return;
+      onApply(targets);
+      setPicked(new Set());
+      onClose();
+    },
+    [onApply, onClose],
+  );
+
+  const applyEveryDay = useCallback(() => apply(others.map((d) => d.key)), [apply, others]);
+  const applyPicked = useCallback(() => apply([...picked]), [apply, picked]);
 
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} onPress={onClose}>
         <View>
-          <Pressable onPress={(e) => e.stopPropagation()}>
+          <Pressable onPress={stopPropagation}>
             <View className="rounded-t-3xl bg-card" style={{ paddingBottom: 20, paddingHorizontal: 20 }}>
               <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
                 <View className="bg-border" style={{ width: 36, height: 4, borderRadius: 2 }} />
               </View>
 
-              <Text className="py-2 text-sm font-medium text-muted-foreground">Copy times to</Text>
+              <Text className="py-2 font-medium text-muted-foreground text-sm">{LABEL_COPY_TIMES_TO}</Text>
 
               {others.map((d) => (
-                <Checkbox key={d.key} checked={picked.has(d.key)} onCheckedChange={() => toggle(d.key)} label={d.label} />
+                <CopyDayCheckbox key={d.key} day={d.key} label={d.label} checked={picked.has(d.key)} onToggle={toggle} />
               ))}
 
               <View style={{ flexDirection: 'row', gap: 12, paddingTop: 16 }}>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => apply(others.map((d) => d.key))}
+                  onPress={applyEveryDay}
                   className="flex-1 items-center justify-center rounded-full border border-border bg-card"
                   style={{ height: 44 }}
                 >
-                  <Text className="text-xs font-medium text-muted-foreground">Every day</Text>
+                  <Text className="font-medium text-muted-foreground text-xs">{LABEL_EVERY_DAY}</Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => apply([...picked])}
+                  onPress={applyPicked}
                   disabled={picked.size === 0}
                   className="flex-1 items-center justify-center rounded-full bg-primary"
                   style={{ height: 44, opacity: picked.size === 0 ? 0.4 : 1 }}
                 >
-                  <Text className="text-xs font-semibold text-primary-foreground">Apply</Text>
+                  <Text className="font-semibold text-primary-foreground text-xs">{LABEL_APPLY}</Text>
                 </Pressable>
               </View>
             </View>
@@ -264,8 +317,52 @@ function CopyModal({
   );
 }
 
+// ─── RangeRow ──────────────────────────────────────────────────────────────
+
+function RangeRow({
+  range,
+  options,
+  reduce,
+  onUpdate,
+  onRemove,
+}: {
+  range: TimeRange;
+  options: TimeOption[];
+  reduce: boolean;
+  onUpdate: (id: string, patch: Partial<TimeRange>) => void;
+  onRemove: (id: string) => void;
+}) {
+  const handleStartChange = useCallback((v: string) => onUpdate(range.id, { start: v }), [onUpdate, range.id]);
+  const handleEndChange = useCallback((v: string) => onUpdate(range.id, { end: v }), [onUpdate, range.id]);
+  const handleRemove = useCallback(() => onRemove(range.id), [onRemove, range.id]);
+
+  return (
+    <MotiView
+      from={reduce ? { opacity: 0 } : { opacity: 0, translateX: -8 }}
+      animate={{ opacity: 1, translateX: 0 }}
+      exit={reduce ? { opacity: 0 } : { opacity: 0, translateX: -8 }}
+      transition={SPRING_LAYOUT}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+    >
+      <TimeButton value={range.start} options={options} onChange={handleStartChange} testID={`time-start-${range.id}`} />
+      <Text className="text-muted-foreground text-sm">{LABEL_SEPARATOR}</Text>
+      <TimeButton value={range.end} options={options} onChange={handleEndChange} testID={`time-end-${range.id}`} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Remove time range"
+        onPress={handleRemove}
+        className="h-8 w-8 items-center justify-center rounded-lg"
+      >
+        <X size={16} color="#6b7280" />
+      </Pressable>
+    </MotiView>
+  );
+}
+
 // ─── DayRow ────────────────────────────────────────────────────────────────
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: time-range drag logic requires branching across all edge cases
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: time-range drag logic — each branch handles a distinct interaction state
 function DayRow({
   day,
   label,
@@ -280,13 +377,20 @@ function DayRow({
   state: DayAvailability;
   options: TimeOption[];
   reduce: boolean;
-  onChange: (next: DayAvailability) => void;
-  onCopy: (targets: DayKey[]) => void;
+  onChange: (day: DayKey, next: DayAvailability) => void;
+  onCopy: (day: DayKey, targets: DayKey[]) => void;
 }) {
   const idRef = useRef(0);
-  const nextId = () => `${day}-n${idRef.current++}`;
+  const nextId = useCallback(() => {
+    const n = idRef.current;
+    idRef.current += 1;
+    return `${day}-n${n}`;
+  }, [day]);
   const [copyOpen, setCopyOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const emitChange = useCallback((next: DayAvailability) => onChange(day, next), [onChange, day]);
+  const emitCopy = useCallback((targets: DayKey[]) => onCopy(day, targets), [onCopy, day]);
 
   // Natural height of the body (ranges or the "Unavailable" label), measured
   // offscreen so the visible clip has an explicit target to spring toward.
@@ -295,6 +399,7 @@ function DayRow({
   // their height instead of unfurling from 0 on mount. `readyRef` flips one
   // commit *after* the first height lands, so that first change stays instant.
   const readyRef = useRef(false);
+  // biome-ignore lint/plugin: arming the spring one commit after the first height measurement requires a side effect — setting readyRef during render would fire too early
   useEffect(() => {
     if (bodyHeight !== null) readyRef.current = true;
   }, [bodyHeight]);
@@ -302,34 +407,49 @@ function DayRow({
     setBodyHeight(e.nativeEvent.layout.height);
   }, []);
 
-  const setEnabled = (enabled: boolean) => {
-    if (enabled && state.ranges.length === 0) onChange({ enabled, ranges: [{ id: nextId(), start: '09:00', end: '17:00' }] });
-    else onChange({ ...state, enabled });
-  };
+  const setEnabled = useCallback(
+    (enabled: boolean) => {
+      if (enabled && state.ranges.length === 0) emitChange({ enabled, ranges: [{ id: nextId(), start: '09:00', end: '17:00' }] });
+      else emitChange({ ...state, enabled });
+    },
+    [emitChange, nextId, state],
+  );
 
-  const updateRange = (id: string, patch: Partial<TimeRange>) => {
-    onChange({ ...state, ranges: state.ranges.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
-  };
+  const updateRange = useCallback(
+    (id: string, patch: Partial<TimeRange>) => {
+      emitChange({ ...state, ranges: state.ranges.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
+    },
+    [emitChange, state],
+  );
 
-  const addRange = () => {
-    const last = state.ranges[state.ranges.length - 1];
+  const addRange = useCallback(() => {
+    const last = state.ranges.at(-1);
     const start = last ? Math.min(toMinutes(last.end) + 60, 24 * 60 - 60) : 540;
-    onChange({
+    emitChange({
       enabled: true,
       ranges: [...state.ranges, { id: nextId(), start: toValue(start), end: toValue(start + 60) }],
     });
-  };
+  }, [emitChange, nextId, state]);
 
-  const removeRange = (id: string) => {
-    const ranges = state.ranges.filter((r) => r.id !== id);
-    onChange({ enabled: ranges.length > 0, ranges });
-  };
+  const removeRange = useCallback(
+    (id: string) => {
+      const ranges = state.ranges.filter((r) => r.id !== id);
+      emitChange({ enabled: ranges.length > 0, ranges });
+    },
+    [emitChange, state],
+  );
 
-  const handleCopyApply = (targets: DayKey[]) => {
-    onCopy(targets);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
-  };
+  const openCopy = useCallback(() => setCopyOpen(true), []);
+  const closeCopy = useCallback(() => setCopyOpen(false), []);
+
+  const handleCopyApply = useCallback(
+    (targets: DayKey[]) => {
+      emitCopy(targets);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    },
+    [emitCopy],
+  );
 
   // The body content at natural size. Rendered twice: once in the offscreen
   // measurer (drives the clip's height target) and once as the visible layer.
@@ -338,52 +458,23 @@ function DayRow({
       <View style={{ marginTop: 10, gap: 8 }}>
         <AnimatePresence>
           {state.ranges.map((r) => (
-            <MotiView
-              key={r.id}
-              from={reduce ? { opacity: 0 } : { opacity: 0, translateX: -8 }}
-              animate={{ opacity: 1, translateX: 0 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, translateX: -8 }}
-              transition={SPRING_LAYOUT}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-            >
-              <TimeButton
-                value={r.start}
-                options={options}
-                onChange={(v) => updateRange(r.id, { start: v })}
-                testID={`time-start-${r.id}`}
-              />
-              <Text className="text-sm text-muted-foreground">–</Text>
-              <TimeButton
-                value={r.end}
-                options={options}
-                onChange={(v) => updateRange(r.id, { end: v })}
-                testID={`time-end-${r.id}`}
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Remove time range"
-                onPress={() => removeRange(r.id)}
-                className="h-8 w-8 items-center justify-center rounded-lg"
-              >
-                <X size={16} color="#6b7280" />
-              </Pressable>
-            </MotiView>
+            <RangeRow key={r.id} range={r} options={options} reduce={reduce} onUpdate={updateRange} onRemove={removeRange} />
           ))}
         </AnimatePresence>
       </View>
     ) : (
       <View style={{ marginTop: 6 }}>
-        <Text className="text-sm text-muted-foreground">Unavailable</Text>
+        <Text className="text-muted-foreground text-sm">{LABEL_UNAVAILABLE}</Text>
       </View>
     );
 
   return (
-    <View className="border-b border-border" style={{ paddingVertical: 16 }}>
+    <View className="border-border border-b" style={{ paddingVertical: 16 }}>
       {/* Header row: switch + label + actions */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Switch checked={state.enabled} onCheckedChange={setEnabled} testID={`switch-${day}`} />
-          <Text className="text-sm font-medium text-foreground">{label}</Text>
+          <Text className="font-medium text-foreground text-sm">{label}</Text>
         </View>
 
         {/* Action buttons */}
@@ -409,7 +500,7 @@ function DayRow({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Copy ${label} hours to other days`}
-            onPress={() => setCopyOpen(true)}
+            onPress={openCopy}
             className="h-8 w-8 items-center justify-center rounded-lg"
           >
             <AnimatePresence>
@@ -469,7 +560,7 @@ function DayRow({
         </AnimatePresence>
       </MotiView>
 
-      <CopyModal visible={copyOpen} fromLabel={label} onApply={handleCopyApply} onClose={() => setCopyOpen(false)} />
+      <CopyModal visible={copyOpen} fromLabel={label} onApply={handleCopyApply} onClose={closeCopy} />
     </View>
   );
 }
@@ -507,10 +598,11 @@ export function AvailabilityScheduler({ value, defaultValue, onChange, step = 30
       for (const t of targets)
         next[t] = {
           enabled: source.enabled,
-          ranges: source.ranges.map((r) => ({
-            ...r,
-            id: `${t}-c${idRef.current++}`,
-          })),
+          ranges: source.ranges.map((r) => {
+            const n = idRef.current;
+            idRef.current += 1;
+            return { ...r, id: `${t}-c${n}` };
+          }),
         };
       commit(next);
     },
@@ -532,8 +624,8 @@ export function AvailabilityScheduler({ value, defaultValue, onChange, step = 30
           state={week[key]}
           options={options}
           reduce={reduce}
-          onChange={(next) => setDay(key, next)}
-          onCopy={(targets) => copyDay(key, targets)}
+          onChange={setDay}
+          onCopy={copyDay}
         />
       ))}
     </ScrollView>

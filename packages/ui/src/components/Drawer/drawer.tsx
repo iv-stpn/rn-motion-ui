@@ -1,6 +1,7 @@
 import { AnimatePresence, MotiView } from 'moti';
-import { type ReactNode, useEffect, useState } from 'react';
-import { Modal, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type ReactNode, useCallback, useState } from 'react';
+import { type LayoutChangeEvent, Modal, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_PANEL } from '../../lib/ease';
 
@@ -11,7 +12,7 @@ export type DrawerSide = 'left' | 'right';
 // animationType="none") and animates the panel + backdrop with moti. Drag is
 // dropped — close via the backdrop tap or a close control (documented). The
 // slide uses the same SPRING_PANEL feel as the web SPRING_PANEL transition.
-export interface DrawerProps {
+export type DrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   side?: DrawerSide;
@@ -21,8 +22,9 @@ export interface DrawerProps {
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: gesture + spring + backdrop + keyboard interactions interleave unavoidably
 export function Drawer({
   open,
   onOpenChange,
@@ -34,22 +36,24 @@ export function Drawer({
   testID,
 }: DrawerProps) {
   const reduce = useReducedMotion();
-  const [rendered, setRendered] = useState(open);
+  const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
   // Panel width drives the offscreen slide distance; measured on first layout,
   // falls back to a wide default so it starts fully offscreen before measure.
   const [width, setWidth] = useState(360);
 
-  useEffect(() => {
-    if (open) setRendered(true);
-  }, [open]);
+  const handleRequestClose = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const handleBackdropPress = useCallback(() => {
+    if (dismissable) onOpenChange(false);
+  }, [dismissable, onOpenChange]);
+  const handleLayout = useCallback((e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width), []);
 
   if (!rendered) return null;
 
   const offscreen = side === 'right' ? width : -width;
 
   return (
-    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={() => onOpenChange(false)}>
-      <AnimatePresence onExitComplete={() => setRendered(false)}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleRequestClose}>
+      <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="drawer" style={{ flex: 1 }} testID={testID}>
             <MotiView
@@ -62,27 +66,27 @@ export function Drawer({
               <Pressable
                 accessibilityLabel="Close"
                 disabled={!dismissable}
-                onPress={() => dismissable && onOpenChange(false)}
+                onPress={handleBackdropPress}
                 className="bg-foreground/40"
                 style={{ flex: 1 }}
               />
             </MotiView>
             <MotiView
               accessibilityLabel={accessibilityLabel}
-              onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+              onLayout={handleLayout}
               from={reduce ? { opacity: 0, translateX: 0 } : { translateX: offscreen }}
               animate={reduce ? { opacity: 1, translateX: 0 } : { translateX: 0 }}
               exit={reduce ? { opacity: 0, translateX: 0 } : { translateX: offscreen }}
               transition={reduce ? { type: 'timing', duration: 200 } : SPRING_PANEL}
               className={
                 side === 'right'
-                  ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-l border-border bg-background'
-                  : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-r border-border bg-background'
+                  ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l bg-background'
+                  : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r bg-background'
               }
               style={style}
             >
               {typeof children === 'string' || typeof children === 'number' ? (
-                <Text className="text-sm text-foreground">{children}</Text>
+                <Text className="text-foreground text-sm">{children}</Text>
               ) : (
                 children
               )}

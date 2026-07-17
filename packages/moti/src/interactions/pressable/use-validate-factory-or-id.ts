@@ -11,6 +11,7 @@ type Returns<Factory> = {
 type HookName = 'useMotiPressableAnimatedProps' | 'useMotiPressable' | 'useMotiPressableTransition';
 
 // biome-ignore lint/suspicious/noExplicitAny: Factory must use any[] — unknown[] breaks the constraint due to parameter contravariance
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: factory-or-id overload dispatch — each branch handles a distinct call signature; reducing branches would require a different API
 export function useFactory<Factory extends (...args: any[]) => any>(
   hookName: HookName,
   factoryOrId: Factory | MotiPressableInteractionIds['id'],
@@ -24,11 +25,12 @@ export function useFactory<Factory extends (...args: any[]) => any>(
   let deps: Deps;
 
   if (typeof factoryOrId === 'function') {
-    factory = factoryOrId as Factory;
+    factory = factoryOrId;
+    // biome-ignore lint/plugin: in this branch the 2nd arg is deps by contract, but its type is still Factory | Deps — a function isn't assignable to Deps and a typeof guard would drop a mis-passed value instead of preserving current behavior
     deps = maybeFactoryOrDeps as Deps;
   } else if (typeof maybeFactoryOrDeps === 'function') {
-    id = factoryOrId as string;
-    factory = maybeFactoryOrDeps as Factory;
+    id = factoryOrId;
+    factory = maybeFactoryOrDeps;
     deps = maybeDeps;
   } else
     throw new Error(

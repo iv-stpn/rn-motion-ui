@@ -14,7 +14,7 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 // Soft follow so the indicator trails the scroll smoothly instead of snapping.
 const PROGRESS_SPRING = { stiffness: 120, damping: 30, mass: 0.6 };
 
-interface CommonProps {
+type CommonProps = {
   /** A reanimated shared value in [0,1] tracking scroll progress. */
   progress: SharedValue<number>;
   /** Spring-smooth the value. Disabled automatically under reduced motion. */
@@ -22,7 +22,7 @@ interface CommonProps {
   style?: StyleProp<ViewStyle>;
   color?: string;
   testID?: string;
-}
+};
 
 export interface ScrollProgressBarProps extends CommonProps {
   variant?: 'bar';
@@ -40,6 +40,7 @@ export interface ScrollProgressCircleProps extends CommonProps {
 
 export type ScrollProgressProps = ScrollProgressBarProps | ScrollProgressCircleProps;
 
+// biome-ignore lint/style/useExportsLast: component exported before useSmoothed helper — collocated for readability
 export function ScrollProgress(props: ScrollProgressProps) {
   if (props.variant === 'circle') return <ScrollProgressCircle {...props} />;
   return <ScrollProgressBar {...props} />;

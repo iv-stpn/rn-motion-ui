@@ -21,23 +21,9 @@ const meta = {
   },
 } satisfies Meta<typeof WheelPicker>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  render: (args) => (
-    <View style={{ width: 200 }}>
-      <WheelPicker {...args} defaultValue="Medium" accessibilityLabel="Size" />
-    </View>
-  ),
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    // Tapping a row snaps to it and emits the new value (drag-scroll isn't
-    // reproducible in jsdom/Chromium, so the row press stands in for a flick).
-    await userEvent.click(await canvas.findByText('X-Large'));
-    await expect(args.onValueChange).toHaveBeenCalledWith('X-Large');
-  },
-};
+const BORN_LABEL = 'Born';
 
 const MONTHS = [
   'January',
@@ -59,6 +45,23 @@ function daysIn(month: number, year: number) {
   return new Date(year, month + 1, 0).getDate();
 }
 
+export default meta;
+
+export const Default: Story = {
+  render: (args) => (
+    <View style={{ width: 200 }}>
+      <WheelPicker {...args} defaultValue="Medium" accessibilityLabel="Size" />
+    </View>
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    // Tapping a row snaps to it and emits the new value (drag-scroll isn't
+    // reproducible in jsdom/Chromium, so the row press stands in for a flick).
+    await userEvent.click(await canvas.findByText('X-Large'));
+    await expect(args.onValueChange).toHaveBeenCalledWith('X-Large');
+  },
+};
+
 export const DateOfBirth: Story = {
   render: () => {
     const [month, setMonth] = useState('June');
@@ -70,17 +73,15 @@ export const DateOfBirth: Story = {
     const days = Array.from({ length: dayCount }, (_, i) => String(i + 1));
 
     // A short month can strand the day past the end — pull it back.
+    // biome-ignore lint/plugin: mount-only by design
     useEffect(() => {
       if (Number(day) > dayCount) setDay(String(dayCount));
     }, [day, dayCount]);
 
     return (
       <View style={{ alignItems: 'center', gap: 16 }}>
-        <Text className="text-sm text-muted-foreground">
-          Born{' '}
-          <Text className="font-medium text-foreground">
-            {month} {day}, {year}
-          </Text>
+        <Text className="text-muted-foreground text-sm">
+          {BORN_LABEL} <Text className="font-medium text-foreground">{`${month} ${day}, ${year}`}</Text>
         </Text>
         <View className="flex-row items-stretch gap-1 rounded-3xl border border-border bg-background p-2">
           <WheelPicker

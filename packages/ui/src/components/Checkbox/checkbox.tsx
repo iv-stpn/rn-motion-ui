@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { AnimatePresence, MotiView } from 'moti';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
@@ -20,7 +20,7 @@ const box = cva('h-5 w-5 shrink-0 items-center justify-center rounded-md border-
   defaultVariants: { marked: false },
 });
 
-export interface CheckboxProps {
+export type CheckboxProps = {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
@@ -29,8 +29,9 @@ export interface CheckboxProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: animated checked/indeterminate/disabled states share interleaved conditions
 export function Checkbox({
   checked,
   onCheckedChange,
@@ -43,20 +44,26 @@ export function Checkbox({
 }: CheckboxProps) {
   const reduce = useReducedMotion();
   const [pressed, setPressed] = useState(false);
-  const showMark = checked || !!indeterminate;
+  const showMark = checked || Boolean(indeterminate);
   const path = indeterminate ? INDETERMINATE_PATH : CHECK_PATH;
+
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
+  const handlePress = useCallback(() => {
+    if (!disabled) onCheckedChange(!checked);
+  }, [disabled, onCheckedChange, checked]);
 
   return (
     <Pressable
       accessibilityRole="checkbox"
       aria-checked={indeterminate ? 'mixed' : checked}
-      aria-disabled={!!disabled}
+      aria-disabled={Boolean(disabled)}
       accessibilityLabel={accessibilityLabel ?? label}
       testID={testID ?? 'checkbox'}
       disabled={disabled}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      onPress={() => !disabled && onCheckedChange(!checked)}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={handlePress}
       className="flex-row items-center"
       style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}
     >
@@ -80,7 +87,7 @@ export function Checkbox({
           </AnimatePresence>
         </View>
       </MotiView>
-      {label ? <Text className="select-none text-sm text-foreground">{label}</Text> : null}
+      {label ? <Text className="select-none text-foreground text-sm">{label}</Text> : null}
     </Pressable>
   );
 }

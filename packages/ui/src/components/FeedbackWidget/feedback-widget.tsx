@@ -1,3 +1,4 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: feedback flow, sent view, and star-rating sub-components collocated by design
 import { AnimatePresence, MotiText, MotiView } from 'moti';
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
@@ -24,6 +25,15 @@ const SUCCESS_COLOR = '#22c55e';
 // appears inside a still-expanding panel (mirrors the web widget's staged focus).
 const MORPH_OPEN_MS = 320;
 
+const CANCEL_LABEL = 'Cancel';
+const SENDING_LABEL = 'Sending';
+const SUBMIT_LABEL = 'Submit';
+const SENT_TITLE = 'Thanks!';
+const SENT_BODY = 'Your feedback helps us build something better.';
+const ERROR_TITLE = 'Something went wrong';
+const ERROR_BODY = "We couldn't send your feedback. Please try again.";
+const RETRY_LABEL = 'Try again';
+
 // Celebration sprinkles that burst from the success icon.
 const SPRINKLES = Array.from({ length: 8 }, (_, i) => {
   const angle = (i / 8) * Math.PI * 2;
@@ -34,11 +44,12 @@ const SPRINKLES = Array.from({ length: 8 }, (_, i) => {
   };
 });
 
-export interface FeedbackData {
+export type FeedbackData = {
   message: string;
-}
+};
 
-export interface FeedbackWidgetProps {
+// biome-ignore lint/style/useExportsLast: props type before internal SentViewProps — collocated for readability
+export type FeedbackWidgetProps = {
   /** Called on submit. May be async; the button shows a sending state until it resolves. */
   onSubmit?: (data: FeedbackData) => void | Promise<void>;
   position?: 'bottom-right' | 'bottom-left';
@@ -48,8 +59,55 @@ export interface FeedbackWidgetProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
+};
+
+type SentViewProps = { reduce: boolean };
+type ErrorViewProps = { reduce: boolean; onRetry: () => void };
+
+type RenderFeedbackContentArgs = {
+  status: Status;
+  reduce: boolean;
+  inputRef: RefObject<TextInput | null>;
+  title: string;
+  placeholder: string;
+  message: string;
+  busy: boolean;
+  setMessage: (v: string) => void;
+  close: () => void;
+  submit: () => void;
+};
+
+function renderFeedbackContent({
+  status,
+  reduce,
+  inputRef,
+  title,
+  placeholder,
+  message,
+  busy,
+  setMessage,
+  close,
+  submit,
+}: RenderFeedbackContentArgs): ReactNode {
+  if (status === 'sent') return <SentView key="sent" reduce={reduce} />;
+  if (status === 'error') return <ErrorView key="error" reduce={reduce} onRetry={submit} />;
+  return (
+    <FormView
+      key="form"
+      inputRef={inputRef}
+      reduce={reduce}
+      title={title}
+      placeholder={placeholder}
+      message={message}
+      busy={busy}
+      onChangeMessage={setMessage}
+      onClose={close}
+      onSubmit={submit}
+    />
+  );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-step submit flow with async state, error, and reduced-motion branches
 export function FeedbackWidget({
   onSubmit,
   position = 'bottom-right',
@@ -82,10 +140,10 @@ export function FeedbackWidget({
     setMessage('');
   }, [clearCloseTimer]);
 
+  // biome-ignore lint/plugin: cleanup-only effect — cancels the auto-close timer on unmount to prevent setState after unmount
   useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
 
-  // Arm the field once the open morph has settled — focusing mid-expansion
-  // would surface the caret inside a still-springing panel (mirrors web).
+  // biome-ignore lint/plugin: deferred focus waits for the open-morph animation to settle before focusing the input — a setTimeout side effect
   useEffect(() => {
     if (status !== 'open') return;
     const t = setTimeout(() => inputRef.current?.focus(), reduce ? 0 : MORPH_OPEN_MS);
@@ -105,6 +163,11 @@ export function FeedbackWidget({
       setStatus('error');
     }
   }, [busy, message, onSubmit, clearCloseTimer, close]);
+
+  const handleOpen = useCallback(() => {
+    clearCloseTimer();
+    setStatus('open');
+  }, [clearCloseTimer]);
 
   return (
     <View
@@ -129,24 +192,18 @@ export function FeedbackWidget({
               style={{ width: 300, padding: 8 }}
             >
               <AnimatePresence exitBeforeEnter={true}>
-                {status === 'sent' ? (
-                  <SentView key="sent" reduce={reduce} />
-                ) : status === 'error' ? (
-                  <ErrorView key="error" reduce={reduce} onRetry={submit} />
-                ) : (
-                  <FormView
-                    key="form"
-                    inputRef={inputRef}
-                    reduce={reduce}
-                    title={title}
-                    placeholder={placeholder}
-                    message={message}
-                    busy={busy}
-                    onChangeMessage={setMessage}
-                    onClose={close}
-                    onSubmit={submit}
-                  />
-                )}
+                {renderFeedbackContent({
+                  status,
+                  reduce,
+                  inputRef,
+                  title,
+                  placeholder,
+                  message,
+                  busy,
+                  setMessage,
+                  close,
+                  submit,
+                })}
               </AnimatePresence>
             </MotiView>
           ) : (
@@ -161,10 +218,7 @@ export function FeedbackWidget({
                 accessibilityRole="button"
                 accessibilityLabel={accessibilityLabel ?? title}
                 testID="feedback-trigger"
-                onPress={() => {
-                  clearCloseTimer();
-                  setStatus('open');
-                }}
+                onPress={handleOpen}
                 className="h-12 w-12 items-center justify-center"
               >
                 {icon ?? <MessageSquare size={20} color="#111111" />}
@@ -207,7 +261,7 @@ function FormView({
     >
       <View className="rounded-[16px] bg-muted px-4 py-3.5" style={{ minHeight: 150 }}>
         <View className="flex-row items-start justify-between gap-3">
-          <Text className="text-sm font-semibold text-foreground">{title}</Text>
+          <Text className="font-semibold text-foreground text-sm">{title}</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close"
@@ -228,14 +282,14 @@ function FormView({
           numberOfLines={3}
           accessibilityLabel={title}
           testID="feedback-input"
-          className="mt-2 w-full bg-transparent text-sm text-foreground"
+          className="mt-2 w-full bg-transparent text-foreground text-sm"
           style={{ minHeight: 60, textAlignVertical: 'top' }}
         />
       </View>
-      <View className="flex-row items-center gap-2 px-1 pb-1 pt-2">
+      <View className="flex-row items-center gap-2 px-1 pt-2 pb-1">
         <View style={{ flex: 1 }}>
           <Button variant="secondary" size="md" onPress={onClose} disabled={busy} style={{ width: '100%' }}>
-            Cancel
+            {CANCEL_LABEL}
           </Button>
         </View>
         <View style={{ flex: 1 }}>
@@ -247,7 +301,8 @@ function FormView({
             disabled={busy || message.trim().length === 0}
             style={{ width: '100%' }}
           >
-            {busy ? 'Sending' : 'Submit'}
+            {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
+            {busy ? SENDING_LABEL : SUBMIT_LABEL}
           </Button>
         </View>
       </View>
@@ -255,7 +310,7 @@ function FormView({
   );
 }
 
-function SentView({ reduce }: { reduce: boolean }) {
+function SentView({ reduce }: SentViewProps) {
   return (
     <MotiView
       from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
@@ -307,16 +362,14 @@ function SentView({ reduce }: { reduce: boolean }) {
             </MotiView>
           </MotiView>
         </View>
-        <Text className="text-sm font-semibold text-foreground">Thanks!</Text>
-        <MotiText className="text-center text-xs leading-relaxed text-muted-foreground">
-          Your feedback helps us build something better.
-        </MotiText>
+        <Text className="font-semibold text-foreground text-sm">{SENT_TITLE}</Text>
+        <MotiText className="text-center text-muted-foreground text-xs leading-relaxed">{SENT_BODY}</MotiText>
       </View>
     </MotiView>
   );
 }
 
-function ErrorView({ reduce, onRetry }: { reduce: boolean; onRetry: () => void }) {
+function ErrorView({ reduce, onRetry }: ErrorViewProps) {
   return (
     <MotiView
       from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
@@ -328,13 +381,11 @@ function ErrorView({ reduce, onRetry }: { reduce: boolean; onRetry: () => void }
         <View className="h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
           <AlertCircle size={20} color="#e5484d" />
         </View>
-        <Text className="mt-3 text-sm font-semibold text-foreground">Something went wrong</Text>
-        <Text className="mt-1 text-center text-xs leading-relaxed text-muted-foreground">
-          We couldn't send your feedback. Please try again.
-        </Text>
+        <Text className="mt-3 font-semibold text-foreground text-sm">{ERROR_TITLE}</Text>
+        <Text className="mt-1 text-center text-muted-foreground text-xs leading-relaxed">{ERROR_BODY}</Text>
         <View className="mt-4">
           <Button variant="primary" size="sm" onPress={onRetry}>
-            Try again
+            {RETRY_LABEL}
           </Button>
         </View>
       </View>

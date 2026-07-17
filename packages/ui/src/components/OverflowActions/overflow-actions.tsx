@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 import { AnimatePresence, MotiView } from 'moti';
 import { type ReactNode, useCallback, useState } from 'react';
-import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_PRESS } from '../../lib/ease';
 import { MoreHorizontal, X } from '../../lib/icons';
@@ -26,7 +26,8 @@ export type OverflowActionItem = {
   accessibilityLabel?: string;
 };
 
-export interface OverflowActionsProps {
+// biome-ignore lint/style/useExportsLast: props type before spring constants — collocated for readability
+export type OverflowActionsProps = {
   primaryActions: OverflowActionItem[];
   overflowActions: OverflowActionItem[];
   expanded?: boolean;
@@ -41,7 +42,7 @@ export interface OverflowActionsProps {
   closeLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 // Softer than the app defaults so the group stays attached to the toggle.
 const SHELL_SPRING = { type: 'spring', stiffness: 220, damping: 17, mass: 0.85 } as const;
@@ -67,6 +68,7 @@ const toggle = cva('shrink-0 items-center justify-center rounded-full bg-primary
   defaultVariants: { size: 'md' },
 });
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: primary + overflow tray + outside-press all share a single open/close guard
 export function OverflowActions({
   primaryActions,
   overflowActions,
@@ -108,6 +110,11 @@ export function OverflowActions({
     [onAction, collapseOnAction, setExpanded],
   );
 
+  const handleOverflowLayout = useCallback((e: LayoutChangeEvent) => setOverflowWidth(e.nativeEvent.layout.width), []);
+  const handleTogglePressIn = useCallback(() => setTogglePressed(true), []);
+  const handleTogglePressOut = useCallback(() => setTogglePressed(false), []);
+  const handleTogglePress = useCallback(() => setExpanded(!isExpanded), [setExpanded, isExpanded]);
+
   const spring = reduce ? { type: 'timing' as const, duration: 0 } : SHELL_SPRING;
 
   return (
@@ -138,7 +145,7 @@ export function OverflowActions({
           <View
             aria-hidden={true}
             pointerEvents="none"
-            onLayout={(e) => setOverflowWidth(e.nativeEvent.layout.width)}
+            onLayout={handleOverflowLayout}
             className={group({ size })}
             style={{ position: 'absolute', left: 0, top: 0, opacity: 0 }}
           >
@@ -158,9 +165,9 @@ export function OverflowActions({
             accessibilityRole="button"
             aria-expanded={isExpanded}
             accessibilityLabel={isExpanded ? closeLabel : openLabel}
-            onPressIn={() => setTogglePressed(true)}
-            onPressOut={() => setTogglePressed(false)}
-            onPress={() => setExpanded(!isExpanded)}
+            onPressIn={handleTogglePressIn}
+            onPressOut={handleTogglePressOut}
+            onPress={handleTogglePress}
             className={toggle({ size })}
           >
             <AnimatePresence exitBeforeEnter={true}>
@@ -197,21 +204,24 @@ function ActionButton({
   onAction: (item: OverflowActionItem) => void;
 }) {
   const [pressed, setPressed] = useState(false);
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
+  const handlePress = useCallback(() => onAction(item), [onAction, item]);
 
   return (
     <MotiView animate={{ scale: pressed && !reduce ? 0.97 : 1 }} transition={SPRING_PRESS}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={item.accessibilityLabel ?? (typeof item.label === 'string' ? item.label : undefined)}
-        aria-disabled={!!item.disabled}
+        aria-disabled={Boolean(item.disabled)}
         disabled={item.disabled}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
-        onPress={() => onAction(item)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
         className={action({ size })}
         style={{ opacity: item.disabled ? 0.45 : 1 }}
       >
-        {item.icon == null ? null : item.icon}
+        {item.icon === null ? null : item.icon}
         {typeof item.label === 'string' || typeof item.label === 'number' ? (
           <Text className="font-medium text-foreground" style={{ fontSize: size === 'sm' ? 12 : 14 }}>
             {item.label}

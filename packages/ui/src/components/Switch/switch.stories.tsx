@@ -11,8 +11,13 @@ const meta = {
   args: { checked: false, label: 'Enable notifications', onCheckedChange: fn() },
 } satisfies Meta<typeof Switch>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+const noop = () => {
+  /* static demo */
+};
+
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {
@@ -32,8 +37,8 @@ export const Interactive: Story = {
     return (
       <View style={{ gap: 12 }}>
         <Switch {...args} checked={on} onCheckedChange={setOn} label="Enable notifications" />
-        <Switch {...args} checked={false} onCheckedChange={() => {}} label="Off" />
-        <Switch {...args} checked={true} disabled={true} onCheckedChange={() => {}} label="Disabled" />
+        <Switch {...args} checked={false} onCheckedChange={noop} label="Off" />
+        <Switch {...args} checked={true} disabled={true} onCheckedChange={noop} label="Disabled" />
       </View>
     );
   },

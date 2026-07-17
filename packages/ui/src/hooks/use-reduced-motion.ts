@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
+import { useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
 /**
@@ -8,16 +9,18 @@ import { AccessibilityInfo } from 'react-native';
 export function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
 
-  useEffect(() => {
+  useMountEffect(() => {
     if (typeof AccessibilityInfo !== 'undefined') {
-      AccessibilityInfo.isReduceMotionEnabled?.()
+      AccessibilityInfo.isReduceMotionEnabled()
         .then(setReduced)
-        .catch(() => {});
+        .catch(() => {
+          /* ignore: reduce-motion query is best-effort */
+        });
 
-      const subscription = AccessibilityInfo.addEventListener?.('reduceMotionChanged', (enabled: boolean) => setReduced(enabled));
-      return () => subscription?.remove();
+      const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled: boolean) => setReduced(enabled));
+      return () => subscription.remove();
     }
-  }, []);
+  });
 
   return reduced;
 }

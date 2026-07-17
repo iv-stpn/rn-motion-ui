@@ -1,7 +1,8 @@
 import { AnimatePresence, MotiView } from 'moti';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Dimensions, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { DRAWER, EASE_DRAWER } from '../../lib/ease';
 
@@ -12,7 +13,7 @@ export type SnapPoint = number | 'auto';
 // `Modal` and animates the panel + scrim up with moti (same EASE_DRAWER glide).
 // Drag is dropped — snap between points with the header buttons and dismiss via
 // the backdrop tap (documented). snapPoints are still honoured as fixed heights.
-export interface BottomSheetProps {
+export type BottomSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Heights (0-1 = fraction of viewport, or "auto"). First entry is default. */
@@ -25,8 +26,9 @@ export interface BottomSheetProps {
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: gesture + spring + keyboard state must all branch together
 export function BottomSheet({
   open,
   onOpenChange,
@@ -40,15 +42,24 @@ export function BottomSheet({
   testID,
 }: BottomSheetProps) {
   const reduce = useReducedMotion();
-  const [rendered, setRendered] = useState(open);
+  const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
   const [snap, setSnap] = useState(defaultSnap);
 
+  // biome-ignore lint/plugin: snap must reset to defaultSnap each time the sheet opens — this responds to the `open` event, not derivable from render-time state
   useEffect(() => {
-    if (open) {
-      setRendered(true);
-      setSnap(defaultSnap);
-    }
+    if (open) setSnap(defaultSnap);
   }, [open, defaultSnap]);
+
+  const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const handleToggleSnap = useCallback(() => {
+    setSnap((s) => {
+      const canExpand = s < snapPoints.length - 1;
+      const canCollapse = s > 0;
+      if (canExpand) return s + 1;
+      if (canCollapse) return s - 1;
+      return s;
+    });
+  }, [snapPoints.length]);
 
   if (!rendered) return null;
 
@@ -58,11 +69,10 @@ export function BottomSheet({
   const heightStyle: ViewStyle =
     snapValue === 'auto' ? { maxHeight: screen.height * 0.92 } : { height: screen.height * snapValue };
   const canExpand = snap < snapPoints.length - 1;
-  const canCollapse = snap > 0;
 
   return (
-    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={() => onOpenChange(false)}>
-      <AnimatePresence onExitComplete={() => setRendered(false)}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose}>
+      <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="bottom-sheet" style={{ flex: 1 }} testID={testID}>
             <MotiView
@@ -72,12 +82,7 @@ export function BottomSheet({
               transition={{ type: 'timing', duration: DRAWER.duration, easing: EASE_DRAWER }}
               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
             >
-              <Pressable
-                accessibilityLabel="Close"
-                onPress={() => onOpenChange(false)}
-                className="bg-foreground/40"
-                style={{ flex: 1 }}
-              />
+              <Pressable accessibilityLabel="Close" onPress={handleClose} className="bg-foreground/40" style={{ flex: 1 }} />
             </MotiView>
             <MotiView
               accessibilityLabel={accessibilityLabel ?? title}
@@ -89,20 +94,20 @@ export function BottomSheet({
                   ? { type: 'timing', duration: 180, easing: EASE_DRAWER }
                   : { type: 'timing', duration: DRAWER.duration, easing: EASE_DRAWER }
               }
-              className="absolute bottom-0 left-0 right-0 mx-auto max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-border bg-background"
+              className="absolute right-0 bottom-0 left-0 mx-auto max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-border bg-background"
               style={[heightStyle, style]}
             >
-              <View className="flex-col items-center px-4 pb-2 pt-3">
+              <View className="flex-col items-center px-4 pt-3 pb-2">
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={canExpand ? 'Expand sheet' : 'Collapse sheet'}
-                  onPress={() => setSnap(canExpand ? snap + 1 : canCollapse ? snap - 1 : snap)}
+                  onPress={handleToggleSnap}
                   className="h-1.5 w-10 rounded-full bg-muted-foreground/40"
                 />
                 {title || description ? (
                   <View className="mt-3 w-full">
-                    {title ? <Text className="text-base font-semibold text-foreground">{title}</Text> : null}
-                    {description ? <Text className="mt-0.5 text-sm text-muted-foreground">{description}</Text> : null}
+                    {title ? <Text className="font-semibold text-base text-foreground">{title}</Text> : null}
+                    {description ? <Text className="mt-0.5 text-muted-foreground text-sm">{description}</Text> : null}
                   </View>
                 ) : null}
               </View>

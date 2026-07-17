@@ -6,6 +6,11 @@ import useDynamicAnimation from '../core/use-dynamic-animation';
 
 const MotiView = motify(View)();
 
+const styles = StyleSheet.create({
+  container: { width: '100%', overflow: 'hidden' },
+  bar: { width: '100%', height: '100%' },
+});
+
 export type MotiProgressBarProps = {
   /** Number between 0–1. @required */
   progress: number;
@@ -66,6 +71,7 @@ export function MotiProgressBar({
     [borderRadius, color, style],
   );
 
+  // biome-ignore lint/plugin: driving the bar animation in response to progress changes requires an imperative side effect on the animation state
   useEffect(
     function animateOnProgressChange() {
       const percent = Math.round(progress * 100);
@@ -80,6 +86,7 @@ export function MotiProgressBar({
     style: { previousValue: style, changes: 0 },
   });
 
+  // biome-ignore lint/plugin: tracking style identity changes for a dev-only warning requires reading previous values as a side effect
   useEffect(
     function checkUnnecessaryRerenders() {
       const isDev = typeof __DEV__ === 'undefined' || __DEV__;
@@ -90,9 +97,9 @@ export function MotiProgressBar({
       if (style !== unnecessaryRerenders.current.style.previousValue) unnecessaryRerenders.current.style.changes += 1;
 
       const warningProps: { changes: number; prop: string }[] = [];
-      Object.entries(unnecessaryRerenders.current).forEach(([prop, { changes }]) => {
+      for (const [prop, { changes }] of Object.entries(unnecessaryRerenders.current)) {
         if (changes > 5) warningProps.push({ prop, changes });
-      });
+      }
 
       if (warningProps.length)
         console.warn(
@@ -114,8 +121,3 @@ export function MotiProgressBar({
     [_transition, barState, outerStyle, progressStyle],
   );
 }
-
-const styles = StyleSheet.create({
-  container: { width: '100%', overflow: 'hidden' },
-  bar: { width: '100%', height: '100%' },
-});

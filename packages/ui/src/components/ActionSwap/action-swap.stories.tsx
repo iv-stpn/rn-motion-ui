@@ -31,8 +31,8 @@ const meta = {
   },
 } satisfies Meta<typeof ActionSwapButton>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+export default meta;
 
 export const Blur: Story = {
   play: async ({ canvasElement, args }) => {

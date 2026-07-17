@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { OTPInput, type OTPStatus } from './otp-input';
@@ -23,8 +23,9 @@ const meta = {
   },
 } satisfies Meta<typeof OTPInput>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {
@@ -51,6 +52,14 @@ export const Interactive: Story = {
   render: (args) => {
     const [value, setValue] = useState('');
     const [status, setStatus] = useState<OTPStatus>('idle');
+    const handleChange = useCallback(
+      (v: string) => {
+        setValue(v);
+        if (status !== 'idle') setStatus('idle');
+      },
+      [status],
+    );
+    const handleComplete = useCallback((v: string) => setStatus(v === CODE ? 'success' : 'error'), []);
     return (
       <View style={{ alignItems: 'center' }}>
         <OTPInput
@@ -61,11 +70,8 @@ export const Interactive: Story = {
           errorMessage="Wrong code, try again."
           value={value}
           status={status}
-          onChange={(v) => {
-            setValue(v);
-            if (status !== 'idle') setStatus('idle');
-          }}
-          onComplete={(v) => setStatus(v === CODE ? 'success' : 'error')}
+          onChange={handleChange}
+          onComplete={handleComplete}
         />
       </View>
     );

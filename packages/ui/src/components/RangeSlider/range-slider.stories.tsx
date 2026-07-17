@@ -24,8 +24,11 @@ const meta = {
   ],
 } satisfies Meta<typeof RangeSlider>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+const DRAG_HINT = 'Drag the handle';
+
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {
@@ -45,8 +48,8 @@ export const Interactive: Story = {
     return (
       <View style={{ gap: 12 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text className="text-sm text-muted-foreground">Drag the handle</Text>
-          <Text className="text-sm text-foreground" style={{ fontVariant: ['tabular-nums'] }}>
+          <Text className="text-muted-foreground text-sm">{DRAG_HINT}</Text>
+          <Text className="text-foreground text-sm" style={{ fontVariant: ['tabular-nums'] }}>
             {value}
           </Text>
         </View>

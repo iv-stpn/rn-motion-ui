@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { AnimatePresence, MotiView } from 'moti';
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
@@ -18,7 +18,8 @@ function useRadioGroup() {
   return ctx;
 }
 
-export interface RadioGroupProps {
+// biome-ignore lint/style/useExportsLast: props type before layout constants — collocated for readability
+export type RadioGroupProps = {
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
@@ -26,7 +27,7 @@ export interface RadioGroupProps {
   orientation?: 'vertical' | 'horizontal';
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 // Layout swaps the flex direction; horizontal wraps like the web original.
 const group = cva('gap-3', {
@@ -65,14 +66,14 @@ export function RadioGroup({
   );
 }
 
-export interface RadioGroupItemProps {
+export type RadioGroupItemProps = {
   value: string;
   label?: string;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
 // Border swaps to primary when selected; the inner dot animates in via moti.
 const control = cva('h-5 w-5 shrink-0 items-center justify-center rounded-full border-2', {
@@ -94,17 +95,23 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
   const [pressed, setPressed] = useState(false);
   const selected = groupValue === value;
 
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
+  const handlePress = useCallback(() => {
+    if (!disabled) setValue(value);
+  }, [disabled, setValue, value]);
+
   return (
     <Pressable
       accessibilityRole="radio"
       aria-checked={selected}
-      aria-disabled={!!disabled}
+      aria-disabled={Boolean(disabled)}
       accessibilityLabel={accessibilityLabel ?? label}
       testID={testID}
       disabled={disabled}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      onPress={() => !disabled && setValue(value)}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={handlePress}
       className="flex-row items-center"
       style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}
     >
@@ -136,7 +143,7 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
           ) : null}
         </AnimatePresence>
       </MotiView>
-      {label ? <Text className="select-none text-sm text-foreground">{label}</Text> : null}
+      {label ? <Text className="select-none text-foreground text-sm">{label}</Text> : null}
     </Pressable>
   );
 }

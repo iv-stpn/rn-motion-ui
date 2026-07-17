@@ -1,13 +1,16 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: terminal-stage sub-components and animation variants collocated by design
 import { MotiText, MotiView } from 'moti';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useScramble } from '../../hooks/use-scramble';
 import { SPRING_PANEL, SPRING_PRESS } from '../../lib/ease';
 import { TextReveal } from '../TextReveal/text-reveal';
 
 // ─── Shared types ──────────────────────────────────────────────────────────
 
-export interface NotFoundProps {
+// biome-ignore lint/style/useExportsLast: props type before DEFAULT_CODE constant — collocated for readability
+export type NotFoundProps = {
   code?: string;
   title?: string;
   description?: string;
@@ -18,11 +21,14 @@ export interface NotFoundProps {
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 const DEFAULT_CODE = '404';
 const DEFAULT_TITLE = 'Page not found';
 const DEFAULT_DESCRIPTION = 'The page you are looking for moved, vanished, or never existed.';
+
+const LABEL_OUT_OF_DECK = 'out of the deck';
+const LABEL_TERMINAL_PROMPT = '~/beui';
 
 // ─── NotFoundActions ───────────────────────────────────────────────────────
 
@@ -36,29 +42,34 @@ function NotFoundActions({
   const [pressedHome, setPressedHome] = useState(false);
   const [pressedBrowse, setPressedBrowse] = useState(false);
 
+  const handleHomePressIn = useCallback(() => setPressedHome(true), []);
+  const handleHomePressOut = useCallback(() => setPressedHome(false), []);
+  const handleBrowsePressIn = useCallback(() => setPressedBrowse(true), []);
+  const handleBrowsePressOut = useCallback(() => setPressedBrowse(false), []);
+
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'center' }}>
       <MotiView animate={{ scale: pressedHome && !reduce ? 0.96 : 1 }} transition={SPRING_PRESS}>
         <Pressable
           accessibilityRole="button"
-          onPressIn={() => setPressedHome(true)}
-          onPressOut={() => setPressedHome(false)}
+          onPressIn={handleHomePressIn}
+          onPressOut={handleHomePressOut}
           onPress={onHome}
           className="h-11 items-center justify-center rounded-full bg-primary px-6"
         >
-          <Text className="text-sm font-medium text-primary-foreground">{homeLabel}</Text>
+          <Text className="font-medium text-primary-foreground text-sm">{homeLabel}</Text>
         </Pressable>
       </MotiView>
 
       <MotiView animate={{ scale: pressedBrowse && !reduce ? 0.96 : 1 }} transition={SPRING_PRESS}>
         <Pressable
           accessibilityRole="button"
-          onPressIn={() => setPressedBrowse(true)}
-          onPressOut={() => setPressedBrowse(false)}
+          onPressIn={handleBrowsePressIn}
+          onPressOut={handleBrowsePressOut}
           onPress={onBrowse}
           className="h-11 items-center justify-center rounded-full border border-border bg-card px-6"
         >
-          <Text className="text-sm font-medium text-foreground">{browseLabel}</Text>
+          <Text className="font-medium text-foreground text-sm">{browseLabel}</Text>
         </Pressable>
       </MotiView>
     </View>
@@ -97,46 +108,6 @@ function NotFoundStage({
 }
 
 // ─── NotFoundGlitch ────────────────────────────────────────────────────────
-
-const GLYPHS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#%&@$?';
-const SCRAMBLE_MS = 700;
-const TICK_MS = 45;
-
-function useScramble(text: string, reduce: boolean) {
-  const [display, setDisplay] = useState(text);
-
-  useEffect(() => {
-    if (reduce) {
-      setDisplay(text);
-      return;
-    }
-    const chars = text.split('');
-    const start = Date.now();
-    let last = 0;
-
-    const id = setInterval(() => {
-      const now = Date.now();
-      if (now - last >= TICK_MS) {
-        last = now;
-        const progress = Math.min((now - start) / SCRAMBLE_MS, 1);
-        const settled = Math.floor(progress * chars.length);
-        setDisplay(
-          chars
-            .map((ch, i) => (i < settled || ch === ' ' ? ch : (GLYPHS[Math.floor(Math.random() * GLYPHS.length)] ?? ch)))
-            .join(''),
-        );
-      }
-      if (now - start >= SCRAMBLE_MS) {
-        clearInterval(id);
-        setDisplay(text);
-      }
-    }, TICK_MS);
-
-    return () => clearInterval(id);
-  }, [text, reduce]);
-
-  return display;
-}
 
 export function NotFoundGlitch({
   code = DEFAULT_CODE,
@@ -209,8 +180,8 @@ export function NotFoundGlitch({
       </View>
 
       <View style={{ alignItems: 'center', gap: 8 }}>
-        <Text className="text-lg font-semibold text-foreground">{title}</Text>
-        <Text className="text-sm text-muted-foreground" style={{ maxWidth: 320, textAlign: 'center' }}>
+        <Text className="font-semibold text-foreground text-lg">{title}</Text>
+        <Text className="text-muted-foreground text-sm" style={{ maxWidth: 320, textAlign: 'center' }}>
           {description}
         </Text>
       </View>
@@ -252,8 +223,8 @@ export function NotFoundMagnetic({
       </View>
 
       <View style={{ alignItems: 'center', gap: 8 }}>
-        <Text className="text-lg font-semibold text-foreground">{title}</Text>
-        <Text className="text-sm text-muted-foreground" style={{ maxWidth: 320, textAlign: 'center' }}>
+        <Text className="font-semibold text-foreground text-lg">{title}</Text>
+        <Text className="text-muted-foreground text-sm" style={{ maxWidth: 320, textAlign: 'center' }}>
           {description}
         </Text>
       </View>
@@ -263,10 +234,14 @@ export function NotFoundMagnetic({
   );
 }
 
-function MagneticChar({ ch, reduce }: { ch: string; reduce: boolean }) {
+type MagneticCharProps = { ch: string; reduce: boolean };
+
+function MagneticChar({ ch, reduce }: MagneticCharProps) {
   const [pressed, setPressed] = useState(false);
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
   return (
-    <Pressable accessibilityElementsHidden={true} onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}>
+    <Pressable accessibilityElementsHidden={true} onPressIn={handlePressIn} onPressOut={handlePressOut}>
       <MotiView animate={{ scale: pressed && !reduce ? 1.15 : 1 }} transition={SPRING_PRESS} style={{ paddingHorizontal: 4 }}>
         <Text
           style={{
@@ -355,8 +330,8 @@ export function NotFoundSpotlight({
       </View>
 
       <View style={{ alignItems: 'center', gap: 8 }}>
-        <Text className="text-lg font-semibold text-foreground">{title}</Text>
-        <Text className="text-sm text-muted-foreground" style={{ maxWidth: 320, textAlign: 'center' }}>
+        <Text className="font-semibold text-foreground text-lg">{title}</Text>
+        <Text className="text-muted-foreground text-sm" style={{ maxWidth: 320, textAlign: 'center' }}>
           {description}
         </Text>
       </View>
@@ -381,14 +356,16 @@ export function NotFoundStacked({
 }: NotFoundProps) {
   const reduce = useReducedMotion();
   const [pressed, setPressed] = useState(false);
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
 
   return (
     <NotFoundStage style={style} testID={testID ?? 'not-found-stacked'}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${code} stacked card`}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         style={{ width: 256, height: 176, position: 'relative' }}
       >
         {/* Back card 1 */}
@@ -446,13 +423,13 @@ export function NotFoundStacked({
           >
             {code}
           </Text>
-          <Text className="text-xs font-medium uppercase tracking-wide text-muted-foreground">out of the deck</Text>
+          <Text className="font-medium text-muted-foreground text-xs uppercase tracking-wide">{LABEL_OUT_OF_DECK}</Text>
         </MotiView>
       </Pressable>
 
       <View style={{ alignItems: 'center', gap: 8 }}>
-        <Text className="text-lg font-semibold text-foreground">{title}</Text>
-        <Text className="text-sm text-muted-foreground" style={{ maxWidth: 320, textAlign: 'center' }}>
+        <Text className="font-semibold text-foreground text-lg">{title}</Text>
+        <Text className="text-muted-foreground text-sm" style={{ maxWidth: 320, textAlign: 'center' }}>
           {description}
         </Text>
       </View>
@@ -509,7 +486,7 @@ export function NotFoundTerminal({
           <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#ff5f57' }} />
           <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#febc2e' }} />
           <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#28c840' }} />
-          <Text style={{ marginLeft: 8, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>~/beui</Text>
+          <Text style={{ marginLeft: 8, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{LABEL_TERMINAL_PROMPT}</Text>
         </View>
 
         {/* Terminal lines */}
@@ -559,8 +536,8 @@ export function NotFoundTerminal({
       </View>
 
       <View style={{ alignItems: 'center', gap: 8 }}>
-        <Text className="text-lg font-semibold text-foreground">{title}</Text>
-        <Text className="text-sm text-muted-foreground" style={{ maxWidth: 320, textAlign: 'center' }}>
+        <Text className="font-semibold text-foreground text-lg">{title}</Text>
+        <Text className="text-muted-foreground text-sm" style={{ maxWidth: 320, textAlign: 'center' }}>
           {description}
         </Text>
       </View>

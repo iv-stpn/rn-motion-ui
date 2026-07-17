@@ -33,9 +33,9 @@ const meta = {
   },
 } satisfies Meta<typeof OverflowActions>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Demo({ size }: { size?: 'sm' | 'md' }) {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -50,6 +50,8 @@ function Demo({ size }: { size?: 'sm' | 'md' }) {
     />
   );
 }
+
+export default meta;
 
 export const Default: Story = {
   render: () => <Demo />,

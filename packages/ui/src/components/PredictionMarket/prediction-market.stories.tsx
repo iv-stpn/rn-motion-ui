@@ -20,8 +20,8 @@ const meta = {
   },
 } satisfies Meta<typeof PredictionMarket>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {
@@ -34,7 +34,7 @@ export const Default: Story = {
     expect(sellTab).toBeTruthy();
 
     // Tap the 'No' outcome tab
-    const noTab = canvas.getByRole('tab', { name: /No/ });
+    const noTab = canvas.getByRole('tab', { name: 'No' });
     await userEvent.click(noTab);
 
     // Type an amount in the input

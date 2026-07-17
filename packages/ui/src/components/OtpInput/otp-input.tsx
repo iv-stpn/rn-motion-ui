@@ -1,16 +1,18 @@
 import { cva } from 'class-variance-authority';
 import { AnimatePresence, MotiText, MotiView } from 'moti';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Animated, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { Check } from '../../lib/icons';
 
+// biome-ignore lint/style/useExportsLast: status type before slot constants — collocated for readability
 export type OTPStatus = 'idle' | 'error' | 'success';
 
 // Success green mirrors the --color-success token; the icon takes a raw colour.
 const SUCCESS_COLOR = '#22c55e';
 
-export interface OTPInputProps {
+export type OTPInputProps = {
   /** Number of slots. Default 6. */
   length?: number;
   value?: string;
@@ -32,9 +34,14 @@ export interface OTPInputProps {
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
+
+// Slightly tighter travel than Input (5/3/1 px) — the slot grid is smaller.
+const OTP_SHAKE_STEPS = [-5, 5, -3, 3, -1, 0] as const;
 
 // Slot border reflects one resolved state: success > error > active > filled > idle.
+type SlotState = 'success' | 'error' | 'active' | 'filled' | 'idle';
+
 const slot = cva('relative h-14 w-12 items-center justify-center overflow-hidden rounded-xl border', {
   variants: {
     state: {
@@ -63,6 +70,33 @@ function sanitize(raw: string, length: number) {
   return raw.replace(/\D/g, '').slice(0, length);
 }
 
+function resolveHintText({
+  showSuccess,
+  successMessage,
+  status,
+  errorMessage,
+  hint,
+}: {
+  showSuccess: boolean;
+  successMessage: string | undefined;
+  status: OTPStatus;
+  errorMessage: string | undefined;
+  hint: string | undefined;
+}): string | undefined {
+  if (showSuccess) return successMessage;
+  if (status === 'error') return errorMessage;
+  return hint;
+}
+
+function resolveSlotState(showSuccess: boolean, status: OTPStatus, isActive: boolean, char: string): SlotState {
+  if (showSuccess) return 'success';
+  if (status === 'error') return 'error';
+  if (isActive) return 'active';
+  if (char) return 'filled';
+  return 'idle';
+}
+
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: slot-rendering, keyboard handling, and shake animation need shared closure state
 export function OTPInput({
   length = 6,
   value: controlledValue,
@@ -97,37 +131,36 @@ export function OTPInput({
   const chars = Array.from({ length }, (_, i) => value[i] ?? '');
   const activeIndex = focused ? Math.min(value.length, length - 1) : -1;
 
-  const commit = (next: string) => {
-    const wasComplete = value.length >= length;
-    if (!controlled) setInternal(next);
-    onChange?.(next);
-    if (!wasComplete && next.length >= length) onComplete?.(next);
-  };
+  const commit = useCallback(
+    (next: string) => {
+      const wasComplete = value.length >= length;
+      if (!controlled) setInternal(next);
+      onChange?.(next);
+      if (!wasComplete && next.length >= length) onComplete?.(next);
+    },
+    [value.length, length, controlled, onChange, onComplete],
+  );
 
-  const handleChange = (raw: string) => {
-    if (disabled) return;
-    commit(sanitize(raw, length));
-  };
+  const handleChange = useCallback(
+    (raw: string) => {
+      if (disabled) return;
+      commit(sanitize(raw, length));
+    },
+    [disabled, commit, length],
+  );
+
+  const handleFocus = useCallback(() => setFocused(true), []);
+  const handleBlur = useCallback(() => setFocused(false), []);
 
   // Error shake — replays on every transition into "error" (mirrors web keyframes).
-  useEffect(() => {
-    if (status !== 'error' || reduce) return;
-    Animated.sequence([
-      Animated.timing(shakeX, { toValue: -5, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 5, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: -3, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 3, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: -1, duration: 65, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 0, duration: 65, useNativeDriver: true }),
-    ]).start();
-  }, [status, reduce, shakeX]);
+  useShakeAnimation({ trigger: status === 'error', reduce, shakeX, steps: OTP_SHAKE_STEPS });
 
   const showSuccess = status === 'success';
-  const text = showSuccess ? successMessage : status === 'error' ? errorMessage : hint;
+  const text = resolveHintText({ showSuccess, successMessage, status, errorMessage, hint });
 
   return (
     <View className="gap-2" style={style}>
-      {label ? <Text className="text-sm font-medium text-foreground">{label}</Text> : null}
+      {label ? <Text className="font-medium text-foreground text-sm">{label}</Text> : null}
 
       <View className="flex-row items-center self-start" style={{ opacity: disabled ? 0.5 : 1 }}>
         {/* Transparent input owns focus + the keyboard; slots are presentational. */}
@@ -142,58 +175,62 @@ export function OTPInput({
           maxLength={length}
           caretHidden={true}
           onChangeText={handleChange}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           accessibilityLabel={accessibilityLabel}
           testID={testID ?? 'otp-input'}
           style={{ position: 'absolute', inset: 0, opacity: 0, zIndex: 20 }}
         />
 
         <Animated.View className="flex-row items-center gap-2" style={{ transform: [{ translateX: shakeX }] }}>
-          {chars.map((char, i) => {
-            const isActive = i === activeIndex;
-            const state = showSuccess ? 'success' : status === 'error' ? 'error' : isActive ? 'active' : char ? 'filled' : 'idle';
-            return (
-              // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length slot grid, never reordered.
-              <View key={i} className={slot({ state })}>
-                {isActive && !showSuccess && !reduce ? (
-                  // Blinking caret — vertically centred (slot 56, caret 24 → top 16),
-                  // trailing the digit when filled, centred in an empty slot.
-                  <MotiView
-                    pointerEvents="none"
-                    from={{ opacity: 1 }}
-                    animate={{ opacity: 0 }}
-                    transition={{ type: 'timing', duration: 500, loop: true, repeatReverse: true }}
-                    className="absolute h-6 w-px bg-foreground"
-                    style={char ? { top: 16, right: 10 } : { top: 16, left: 23 }}
-                  />
-                ) : null}
-
-                <AnimatePresence>
-                  {char ? (
-                    // Absolutely centred so enter/exit overlap in place — no reflow.
-                    <MotiText
-                      key={char}
-                      from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 14 }}
-                      animate={{ opacity: 1, translateY: 0 }}
-                      exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -14 }}
-                      transition={{ type: 'timing', duration: reduce ? 0 : 220 }}
-                      className="text-xl font-semibold text-foreground"
-                      style={{
-                        position: 'absolute',
-                        width: '100%',
-                        height: '100%',
-                        textAlign: 'center',
-                        lineHeight: 56,
-                      }}
-                    >
-                      {mask ? '•' : char}
-                    </MotiText>
+          {chars.map(
+            // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: each slot resolves 4 independent visual states (active, filled, error, success)
+            (char, i) => {
+              const isActive = i === activeIndex;
+              const state = resolveSlotState(showSuccess, status, isActive, char);
+              return (
+                // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length slot grid, never reordered.
+                <View key={i} className={slot({ state })}>
+                  {isActive && !showSuccess && !reduce ? (
+                    // Blinking caret — vertically centred (slot 56, caret 24 → top 16),
+                    // trailing the digit when filled, centred in an empty slot.
+                    <MotiView
+                      pointerEvents="none"
+                      from={{ opacity: 1 }}
+                      animate={{ opacity: 0 }}
+                      transition={{ type: 'timing', duration: 500, loop: true, repeatReverse: true }}
+                      className="absolute h-6 w-px bg-foreground"
+                      style={char ? { top: 16, right: 10 } : { top: 16, left: 23 }}
+                    />
                   ) : null}
-                </AnimatePresence>
-              </View>
-            );
-          })}
+
+                  <AnimatePresence>
+                    {char ? (
+                      // Absolutely centred so enter/exit overlap in place — no reflow.
+                      <MotiText
+                        key={char}
+                        from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 14 }}
+                        animate={{ opacity: 1, translateY: 0 }}
+                        exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -14 }}
+                        transition={{ type: 'timing', duration: reduce ? 0 : 220 }}
+                        className="font-semibold text-foreground text-xl"
+                        style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          textAlign: 'center',
+                          lineHeight: 56,
+                        }}
+                      >
+                        {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
+                        {mask ? '•' : char}
+                      </MotiText>
+                    ) : null}
+                  </AnimatePresence>
+                </View>
+              );
+            },
+          )}
         </Animated.View>
 
         <AnimatePresence>

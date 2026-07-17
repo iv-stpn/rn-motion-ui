@@ -1,36 +1,8 @@
-import React, { createContext, type ReactElement, type ReactNode, useContext, useRef, useState } from 'react';
-
-export type PresenceContextValue = {
-  isPresent: boolean;
-  safeToUnmount: (() => void) | null;
-  /** Arbitrary user data forwarded to exit variant functions. */
-  custom?: unknown;
-  initial?: boolean;
-};
-
-export const PresenceContext = createContext<PresenceContextValue | null>(null);
-
-export function usePresence(): [boolean, (() => void) | null] {
-  const context = useContext(PresenceContext);
-  if (!context) return [true, null];
-  return [context.isPresent, context.safeToUnmount];
-}
-
-export type AnimatePresenceProps = {
-  children?: ReactNode;
-  /** Custom data passed to exit variant functions as the first argument. */
-  custom?: unknown;
-  /**
-   * When `false`, children present on the first render will not animate in.
-   * @default true
-   */
-  initial?: boolean;
-  /** Called once all exiting children have completed their exit animations. */
-  onExitComplete?: () => void;
-};
+import React, { type ReactElement, type ReactNode, useRef, useState } from 'react';
+import { PresenceContext } from './animate-presence-context';
 
 function getChildKey(child: ReactElement): string {
-  return String(child.key ?? '');
+  return child.key ?? '';
 }
 
 function getValidChildren(children: ReactNode): ReactElement[] {
@@ -46,6 +18,19 @@ function setsEqual<T>(a: ReadonlySet<T>, b: ReadonlySet<T>): boolean {
   for (const item of a) if (!b.has(item)) return false;
   return true;
 }
+
+export type AnimatePresenceProps = {
+  children?: ReactNode;
+  /** Custom data passed to exit variant functions as the first argument. */
+  custom?: unknown;
+  /**
+   * When `false`, children present on the first render will not animate in.
+   * @default true
+   */
+  initial?: boolean;
+  /** Called once all exiting children have completed their exit animations. */
+  onExitComplete?: () => void;
+};
 
 export function AnimatePresence({ children, custom, initial = true, onExitComplete }: AnimatePresenceProps) {
   const validChildren = getValidChildren(children);

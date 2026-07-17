@@ -36,14 +36,14 @@ const list = cva('flex-row items-center', {
   defaultVariants: { variant: 'pill' },
 });
 
-export interface TabsProps {
+export type TabsProps = {
   defaultValue?: string;
   value?: string;
   onValueChange?: (v: string) => void;
   variant?: Variant;
   children: ReactNode;
   testID?: string;
-}
+};
 
 export function Tabs({ defaultValue, value, onValueChange, variant = 'pill', children, testID }: TabsProps) {
   const reduce = useReducedMotion();
@@ -75,9 +75,17 @@ export function Tabs({ defaultValue, value, onValueChange, variant = 'pill', chi
   );
 }
 
-export function TabsList({ children }: { children: ReactNode }) {
+export type TabsListProps = { children: ReactNode };
+
+// biome-ignore lint/style/useExportsLast: component exported before TabsTrigger helper — collocated for readability
+export function TabsList({ children }: TabsListProps) {
   const { variant, value, layouts, reduce } = useTabs();
   const active = layouts[value];
+
+  let indicatorBorderRadius: number;
+  if (variant === 'pill') indicatorBorderRadius = 9999;
+  else if (variant === 'segment') indicatorBorderRadius = 8;
+  else indicatorBorderRadius = 0;
 
   return (
     <View className={list({ variant })} style={{ position: 'relative', alignSelf: 'flex-start' }}>
@@ -98,7 +106,7 @@ export function TabsList({ children }: { children: ReactNode }) {
             position: 'absolute',
             left: 0,
             top: 0,
-            borderRadius: variant === 'pill' ? 9999 : variant === 'segment' ? 8 : 0,
+            borderRadius: indicatorBorderRadius,
           }}
         />
       ) : null}
@@ -107,7 +115,9 @@ export function TabsList({ children }: { children: ReactNode }) {
   );
 }
 
-export function TabsTrigger({ value, children }: { value: string; children: ReactNode }) {
+type TabsTriggerProps = { value: string; children: ReactNode };
+
+export function TabsTrigger({ value, children }: TabsTriggerProps) {
   const { value: current, setValue, variant, register } = useTabs();
   const active = current === value;
 
@@ -115,17 +125,18 @@ export function TabsTrigger({ value, children }: { value: string; children: Reac
     (e: NativeSyntheticEvent<{ layout: Layout }>) => register(value, e.nativeEvent.layout),
     [register, value],
   );
+  const onPress = useCallback(() => setValue(value), [setValue, value]);
 
   return (
     <Pressable
       accessibilityRole="tab"
       aria-selected={active}
-      onPress={() => setValue(value)}
+      onPress={onPress}
       onLayout={onLayout}
-      className={variant === 'underline' ? 'px-3 pb-2.5 pt-1' : 'px-3.5 py-1.5'}
+      className={variant === 'underline' ? 'px-3 pt-1 pb-2.5' : 'px-3.5 py-1.5'}
     >
       <Text
-        className={active ? 'text-sm font-medium text-primary-foreground' : 'text-sm font-medium text-muted-foreground'}
+        className={active ? 'font-medium text-primary-foreground text-sm' : 'font-medium text-muted-foreground text-sm'}
         // Underline variant keeps dark text (indicator is a thin line, not a fill).
         style={variant === 'underline' && active ? { color: '#111111' } : undefined}
       >
@@ -135,7 +146,9 @@ export function TabsTrigger({ value, children }: { value: string; children: Reac
   );
 }
 
-export function TabsContent({ value, children }: { value: string; children: ReactNode }) {
+type TabsContentProps = { value: string; children: ReactNode };
+
+export function TabsContent({ value, children }: TabsContentProps) {
   const { value: current, reduce } = useTabs();
   if (current !== value) return null;
   return (

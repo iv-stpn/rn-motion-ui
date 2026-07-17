@@ -1,6 +1,15 @@
 import { AnimatePresence, MotiView } from 'moti';
-import { Children, createContext, isValidElement, type ReactElement, type ReactNode, useContext, useState } from 'react';
-import { type StyleProp, View, type ViewStyle } from 'react-native';
+import {
+  Children,
+  createContext,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from 'react';
+import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 type Size = { width: number; height: number };
@@ -23,7 +32,8 @@ const SHELL_SPRING = { type: 'spring', stiffness: 200, damping: 24, mass: 1 } as
 // Content gets a touch more life than the shell (web: bounce 0.35).
 const CONTENT_SPRING = { type: 'spring', stiffness: 260, damping: 22, mass: 0.9 } as const;
 
-export interface DynamicIslandProps {
+// biome-ignore lint/style/useExportsLast: props type before internal Slot helper — collocated for readability
+export type DynamicIslandProps = {
   /** Active view id. `null` shows the compact pill. */
   view: string | null;
   /** Compact pill content, shown when no view is active. */
@@ -33,7 +43,7 @@ export interface DynamicIslandProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
 function Slot({ keyId, children, className, width }: { keyId: string; children: ReactNode; className?: string; width?: number }) {
   const reduce = useReducedMotion();
@@ -57,6 +67,11 @@ export function DynamicIsland({ view, compact, children, style, accessibilityLab
   const reduce = useReducedMotion();
   const [size, setSize] = useState<Size | null>(null);
   const expanded = view !== null;
+
+  const onMeasure = useCallback(
+    (e: LayoutChangeEvent) => setSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height }),
+    [],
+  );
 
   // Walk children to find the active view's content + className (declarative API).
   const views = Children.toArray(children).filter(
@@ -83,17 +98,13 @@ export function DynamicIsland({ view, compact, children, style, accessibilityLab
       >
         {/* Offscreen measurer: renders the active content at natural size so the
             shell has an explicit target to spring toward. */}
-        <View
-          pointerEvents="none"
-          onLayout={(e) => setSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
-          style={{ position: 'absolute', top: 0, left: 0, opacity: 0 }}
-        >
+        <View pointerEvents="none" onLayout={onMeasure} style={{ position: 'absolute', top: 0, left: 0, opacity: 0 }}>
           <View className={activeClass} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
             {activeContent}
           </View>
         </View>
         <AnimatePresence>
-          {activeContent == null ? null : (
+          {activeContent === null ? null : (
             <Slot key={slotKey} keyId={slotKey} className={activeClass} width={size?.width}>
               {activeContent}
             </Slot>
@@ -104,12 +115,12 @@ export function DynamicIsland({ view, compact, children, style, accessibilityLab
   );
 }
 
-export interface DynamicIslandViewProps {
+export type DynamicIslandViewProps = {
   /** Matches the parent `view` prop when active. */
   id: string;
   children: ReactNode;
   className?: string;
-}
+};
 
 /**
  * Declarative descriptor consumed by <DynamicIsland>: the parent reads its

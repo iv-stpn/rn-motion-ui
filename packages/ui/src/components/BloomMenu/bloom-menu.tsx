@@ -12,9 +12,13 @@ import { Plus, X } from '../../lib/icons';
 // / outside-tap close is dropped (no window listeners on RN) — close via the X
 // header button or by selecting an item (documented).
 
-/** Icon renderer matching the `../../lib/icons` signature. */
-export type BloomIcon = (props: { size?: number; color?: string }) => ReactNode;
+/** Props passed to a bloom menu icon renderer. */
+export type BloomIconProps = { size?: number; color?: string };
 
+/** Icon renderer matching the `../../lib/icons` signature. */
+export type BloomIcon = (props: BloomIconProps) => ReactNode;
+
+// biome-ignore lint/style/useExportsLast: type collocated with sibling BloomIcon export for readability
 export type BloomMenuItem = { label: string; icon: BloomIcon };
 
 const TRIGGER_W = 144;
@@ -26,7 +30,7 @@ const COLS = 3;
 // Folder-open feel: a touch of overshoot as the panel expands, kept subtle.
 const SPRING_FOLDER = { type: 'spring', stiffness: 300, damping: 26, mass: 0.9 } as const;
 
-export interface BloomMenuProps {
+export type BloomMenuProps = {
   items: BloomMenuItem[];
   onSelect?: (label: string) => void;
   /** Header label shown above the grid. Default "Create". */
@@ -35,7 +39,7 @@ export interface BloomMenuProps {
   triggerLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 function cellClass(i: number, count: number) {
   const rows = Math.ceil(count / COLS);
@@ -46,6 +50,40 @@ function cellClass(i: number, count: number) {
   if (borderR) return 'items-center justify-center px-3 py-6 border-r border-border';
   if (borderB) return 'items-center justify-center px-3 py-6 border-b border-border';
   return 'items-center justify-center px-3 py-6';
+}
+
+type BloomCellProps = {
+  item: BloomMenuItem;
+  className: string;
+  reduce: boolean;
+  dist: number;
+  onSelect: (label: string) => void;
+};
+
+function BloomCell({ item, className, reduce, dist, onSelect }: BloomCellProps) {
+  const handlePress = useCallback(() => onSelect(item.label), [onSelect, item.label]);
+  const Icon = item.icon;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
+      onPress={handlePress}
+      className={className}
+      style={{ width: PANEL_W / COLS }}
+    >
+      <MotiView
+        from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={
+          reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 440, damping: 34, delay: 100 + dist * 70 }
+        }
+        style={{ alignItems: 'center', gap: 8 }}
+      >
+        <Icon size={20} color="#111111" />
+        <Text className="font-medium text-foreground text-sm">{item.label}</Text>
+      </MotiView>
+    </Pressable>
+  );
 }
 
 export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'Create', style, testID }: BloomMenuProps) {
@@ -62,6 +100,9 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
     },
     [onSelect],
   );
+
+  const handleOpen = useCallback(() => setOpen(true), []);
+  const handleClose = useCallback(() => setOpen(false), []);
 
   return (
     <View testID={testID} className="self-start" style={[{ position: 'relative' }, style]}>
@@ -95,9 +136,9 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
               style={{ width: PANEL_W, borderRadius: 16 }}
             >
               {/* header */}
-              <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
-                <Text className="text-sm font-medium text-muted-foreground">{title}</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={() => setOpen(false)}>
+              <View className="flex-row items-center justify-between border-border border-b px-4 py-3">
+                <Text className="font-medium text-muted-foreground text-sm">{title}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={handleClose}>
                   <X size={16} color="#71717a" />
                 </Pressable>
               </View>
@@ -110,30 +151,15 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
                   const col = i % COLS;
                   const row = Math.floor(i / COLS);
                   const dist = Math.hypot(col - (COLS - 1) / 2, row - (rows - 1) / 2);
-                  const Icon = item.icon;
                   return (
-                    <Pressable
+                    <BloomCell
                       key={item.label}
-                      accessibilityRole="button"
-                      accessibilityLabel={item.label}
-                      onPress={() => select(item.label)}
+                      item={item}
                       className={cellClass(i, items.length)}
-                      style={{ width: PANEL_W / COLS }}
-                    >
-                      <MotiView
-                        from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={
-                          reduce
-                            ? { type: 'timing', duration: 0 }
-                            : { type: 'spring', stiffness: 440, damping: 34, delay: 100 + dist * 70 }
-                        }
-                        style={{ alignItems: 'center', gap: 8 }}
-                      >
-                        <Icon size={20} color="#111111" />
-                        <Text className="text-sm font-medium text-foreground">{item.label}</Text>
-                      </MotiView>
-                    </Pressable>
+                      reduce={reduce}
+                      dist={dist}
+                      onSelect={select}
+                    />
                   );
                 })}
               </View>
@@ -150,11 +176,11 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
                 accessibilityRole="button"
                 aria-expanded={open}
                 accessibilityLabel={triggerLabel}
-                onPress={() => setOpen(true)}
+                onPress={handleOpen}
                 className="flex-row items-center justify-center gap-2 border border-border bg-card"
                 style={{ width: TRIGGER_W, height: TRIGGER_H, borderRadius: 16 }}
               >
-                <Text className="text-sm font-medium text-foreground">{triggerLabel}</Text>
+                <Text className="font-medium text-foreground text-sm">{triggerLabel}</Text>
                 <Plus size={16} color="#111111" />
               </Pressable>
             </MotiView>

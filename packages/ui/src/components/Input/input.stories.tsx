@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Eye, EyeOff, Mail, Search } from '../../lib/icons';
@@ -12,8 +12,9 @@ const meta = {
   args: { label: 'Email', placeholder: 'you@example.com', onChange: fn() },
 } satisfies Meta<typeof Input>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {
@@ -56,6 +57,7 @@ export const Interactive: Story = {
     const [query, setQuery] = useState('Ada');
     const [show, setShow] = useState(false);
     const emailError = email.length > 0 && !email.includes('@') ? 'Enter a valid email address.' : undefined;
+    const toggleShow = useCallback(() => setShow((s) => !s), []);
 
     return (
       <View style={{ gap: 20, width: 288 }}>
@@ -80,7 +82,7 @@ export const Interactive: Story = {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={show ? 'Hide password' : 'Show password'}
-              onPress={() => setShow((s) => !s)}
+              onPress={toggleShow}
             >
               {show ? <EyeOff size={16} color="#737373" /> : <Eye size={16} color="#737373" />}
             </Pressable>

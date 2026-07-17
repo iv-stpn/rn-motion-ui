@@ -1,9 +1,11 @@
 import { AnimatePresence, MotiView } from 'moti';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { type LayoutChangeEvent, Modal, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_PANEL } from '../../lib/ease';
 
+// biome-ignore lint/style/useExportsLast: placement type before INSTANT constant — collocated for readability
 export type MorphingModalPlacement = 'bottom' | 'center';
 
 // RN FALLBACK vs web: the web modal blurs the backdrop (`backdrop-filter`) and
@@ -20,7 +22,12 @@ export type MorphingModalPlacement = 'bottom' | 'center';
 // target doesn't apply; a raw `useAnimatedStyle` throws there.)
 const INSTANT = { type: 'timing' as const, duration: 0 };
 
-export interface MorphingModalProps {
+function resolveEnterY(reduce: boolean, placement: MorphingModalProps['placement']): 0 | 20 | 40 {
+  if (reduce) return 0;
+  return placement === 'bottom' ? 40 : 20;
+}
+
+export type MorphingModalProps = {
   /** Which view is currently shown. `null` closes the modal. */
   viewId: string | null;
   onClose: () => void;
@@ -30,8 +37,9 @@ export interface MorphingModalProps {
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: shared-element transition requires coordinating clip, position, and opacity branches
 export function MorphingModal({
   viewId,
   onClose,
@@ -43,8 +51,8 @@ export function MorphingModal({
 }: MorphingModalProps) {
   const open = viewId !== null;
   const reduce = useReducedMotion();
-  const [rendered, setRendered] = useState(open);
-  const enterY = reduce ? 0 : placement === 'bottom' ? 40 : 20;
+  const { rendered, onExitComplete } = useModalRender(open);
+  const enterY = resolveEnterY(reduce, placement);
   const enterScale = reduce ? 1 : 0.97;
 
   // Measured content height drives the panel morph. `null` means "not yet
@@ -63,27 +71,24 @@ export function MorphingModal({
     [viewId],
   );
 
+  // biome-ignore lint/plugin: morph state must reset on each open so the first height measurement snaps in rather than springing from a stale value
   useEffect(() => {
     if (open) {
-      // Fresh open: forget the previous session's height so the first measure
-      // snaps in instead of springing from a stale value.
       setContentHeight(null);
       setMorphing(false);
-      setRendered(true);
     }
   }, [open]);
 
-  // Once the first measurement has landed, enable springy morphing for
-  // subsequent swaps. Height is unchanged on this render, so nothing animates.
+  // biome-ignore lint/plugin: arming springy morphing after the first measurement cannot be derived from render-time state — it responds to contentHeight settling from null
   useEffect(() => {
-    if (contentHeight != null && !morphing) setMorphing(true);
+    if (contentHeight !== null && !morphing) setMorphing(true);
   }, [contentHeight, morphing]);
 
   if (!rendered) return null;
 
   return (
     <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={onClose}>
-      <AnimatePresence onExitComplete={() => setRendered(false)}>
+      <AnimatePresence onExitComplete={onExitComplete}>
         {open ? (
           <View key="morphing-modal" style={{ flex: 1 }} testID={testID}>
             <MotiView
@@ -116,7 +121,7 @@ export function MorphingModal({
                  * card grows; the cross-fade masks the reveal.
                  */}
                 <MotiView
-                  animate={contentHeight == null ? {} : { height: contentHeight }}
+                  animate={contentHeight === null ? {} : { height: contentHeight }}
                   transition={reduce || !morphing ? INSTANT : SPRING_PANEL}
                   style={{ overflow: 'hidden' }}
                 >
@@ -138,7 +143,7 @@ export function MorphingModal({
                     >
                       <View className="p-5">
                         {typeof children === 'string' || typeof children === 'number' ? (
-                          <Text className="text-sm text-foreground">{children}</Text>
+                          <Text className="text-foreground text-sm">{children}</Text>
                         ) : (
                           children
                         )}

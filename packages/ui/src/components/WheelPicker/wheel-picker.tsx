@@ -1,6 +1,10 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: scroll physics, item layout, and accessibility all share animation values
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  type AccessibilityActionEvent,
   type GestureResponderEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   PanResponder,
   type PanResponderGestureState,
   Platform,
@@ -12,7 +16,6 @@ import {
 } from 'react-native';
 import Animated, {
   cancelAnimation,
-  runOnJS,
   type SharedValue,
   useAnimatedReaction,
   useAnimatedStyle,
@@ -20,6 +23,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { runOnJS } from 'react-native-worklets';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // RN vs web: the reference wheel is a CSS 3D drum — rows seated on a cylinder via
@@ -47,9 +51,10 @@ const SETTLE_SPRING = { stiffness: 100, damping: 18, mass: 1 } as const;
 // browser wheel/keyboard globals aren't declared here.
 type WebWheelEvent = { deltaY: number; deltaMode: number; preventDefault: () => void };
 type WebKeyEvent = { key: string; preventDefault: () => void };
+type PassiveListenerOptions = { passive: boolean };
 type WebNode = {
   addEventListener: {
-    (t: 'wheel', l: (e: WebWheelEvent) => void, o?: { passive: boolean }): void;
+    (t: 'wheel', l: (e: WebWheelEvent) => void, o?: PassiveListenerOptions): void;
     (t: 'keydown', l: (e: WebKeyEvent) => void): void;
   };
   removeEventListener: {
@@ -59,9 +64,100 @@ type WebNode = {
   tabIndex: number;
 };
 
+// Narrow the row host node to its DOM shape by probing for the listener methods,
+// so no cast is needed to reach the web-only wheel/keyboard API.
+function isWebNode(node: unknown): node is WebNode {
+  return (
+    node !== null &&
+    typeof node === 'object' &&
+    typeof Reflect.get(node, 'addEventListener') === 'function' &&
+    typeof Reflect.get(node, 'removeEventListener') === 'function'
+  );
+}
+
+// Web-only style props (userSelect/touchAction and a `grab` cursor) aren't in RN's
+// ViewStyle. Typed as `object` so it stays assignable to the ViewStyle style array
+// (ViewStyle's props are all optional) without an `as` assertion at the call site.
+const WEB_CONTAINER_STYLE: object = { userSelect: 'none', touchAction: 'none', cursor: 'grab' };
+
+type WheelPickerRowProps = {
+  label: string;
+  index: number;
+  scroll: SharedValue<number>;
+  itemHeight: number;
+  itemAngle: number;
+  radius: number;
+  hideBeyond: number;
+  /** Top of the centre window (px) — where a row with offset 0 seats. */
+  center: number;
+  onPress?: () => void;
+};
+
+// One row on the drum wall. Its angular offset from the front is `θ = (index −
+// scroll)·itemAngle`; from that: translateY = R·sinθ bunches it toward the
+// horizon, rotateX(−θ) tilts it onto the wall, scale/opacity ≈ cosθ foreshortens
+// and fades it. Past the horizon (|offset| > hideBeyond, θ ≥ 90°) it stops
+// painting so the back of the drum never bleeds through the front.
+function WheelPickerRow({
+  label,
+  index,
+  scroll,
+  itemHeight,
+  itemAngle,
+  radius,
+  hideBeyond,
+  center,
+  onPress,
+}: WheelPickerRowProps) {
+  const animatedStyle = useAnimatedStyle(() => {
+    const offset = index - scroll.value;
+    if (Math.abs(offset) > hideBeyond) return { opacity: 0, display: 'none' as const };
+    const theta = offset * itemAngle * DEG;
+    const cos = Math.cos(theta);
+    return {
+      display: 'flex' as const,
+      opacity: Math.max(0, cos),
+      transform: [
+        { perspective: 600 },
+        { translateY: radius * Math.sin(theta) },
+        { rotateX: `${-offset * itemAngle}deg` },
+        { scale: Math.max(MIN_SCALE, cos) },
+      ],
+    };
+  });
+
+  return (
+    <Animated.View
+      pointerEvents="box-none"
+      style={[
+        { position: 'absolute', left: 0, right: 0, top: center, height: itemHeight, justifyContent: 'center' },
+        animatedStyle,
+      ]}
+    >
+      <Text
+        accessibilityRole="button"
+        onPress={onPress}
+        className="text-center font-medium text-foreground"
+        style={{ height: itemHeight, lineHeight: itemHeight }}
+      >
+        {label}
+      </Text>
+    </Animated.View>
+  );
+}
+
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
+
+function optionValue(option: WheelPickerOption) {
+  return typeof option === 'string' ? option : option.value;
+}
+function optionLabel(option: WheelPickerOption) {
+  return typeof option === 'string' ? option : option.label;
+}
+
 export type WheelPickerOption = string | { label: string; value: string };
 
-export interface WheelPickerProps {
+export type WheelPickerProps = {
   options: WheelPickerOption[];
   value?: string;
   defaultValue?: string;
@@ -74,16 +170,9 @@ export interface WheelPickerProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
-
-function optionValue(option: WheelPickerOption) {
-  return typeof option === 'string' ? option : option.value;
-}
-function optionLabel(option: WheelPickerOption) {
-  return typeof option === 'string' ? option : option.label;
-}
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: scroll physics, snapping, and accessibility require shared animation refs
 export function WheelPicker({
   options,
   value,
@@ -213,6 +302,20 @@ export function WheelPicker({
 
   const step = useCallback((by: number) => glideTo(Math.round(scroll.value) + by), [glideTo, scroll]);
 
+  const handleMomentumScrollEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => emit(Math.round(e.nativeEvent.contentOffset.y / itemHeight)),
+    [emit, itemHeight],
+  );
+
+  const handleAccessibilityAction = useCallback(
+    (e: AccessibilityActionEvent) => {
+      if (disabled) return;
+      if (e.nativeEvent.actionName === 'increment') step(1);
+      else if (e.nativeEvent.actionName === 'decrement') step(-1);
+    },
+    [disabled, step],
+  );
+
   // Drag. Taps fall through (onStart returns false) so a row press still selects;
   // only a real vertical move captures the responder and drives the drum. dy is
   // the total travel since grant, so subtracting it from the start position never
@@ -255,10 +358,11 @@ export function WheelPicker({
   const containerRef = useRef<View>(null);
   const wheelSettle = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // biome-ignore lint/plugin: non-passive DOM wheel/keyboard listener must be attached imperatively as a side effect — the RN synthetic handler is passive and can't block scroll
   useEffect(() => {
     if (Platform.OS !== 'web' || disabled || reduce) return;
-    const node = containerRef.current as unknown as WebNode | null;
-    if (!node?.addEventListener) return;
+    const node = containerRef.current;
+    if (!isWebNode(node)) return;
     node.tabIndex = 0;
 
     const onWheel = (e: WebWheelEvent) => {
@@ -295,6 +399,7 @@ export function WheelPicker({
   // Follow controlled/value changes from outside — but never mid-gesture, and not
   // when the spring is already settling on that same row.
   // biome-ignore lint/correctness/useExhaustiveDependencies: sync only on external value change
+  // biome-ignore lint/plugin: syncing an externally-controlled value to an Animated shared value requires a side effect
   useEffect(() => {
     if (interactingRef.current) return;
     emitted.current = currentValue;
@@ -303,6 +408,7 @@ export function WheelPicker({
     glideTo(target);
   }, [currentValue]);
 
+  // biome-ignore lint/plugin: cleanup-only effect — cancels in-flight Reanimated animation and pending timeout on unmount
   useEffect(
     () => () => {
       cancelAnimation(scroll);
@@ -336,7 +442,7 @@ export function WheelPicker({
           snapToInterval={itemHeight}
           decelerationRate="fast"
           contentOffset={{ x: 0, y: currentIndex * itemHeight }}
-          onMomentumScrollEnd={(e) => emit(Math.round(e.nativeEvent.contentOffset.y / itemHeight))}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
           contentContainerStyle={{ paddingTop: pad, paddingBottom: pad }}
         >
           {options.map((option) => {
@@ -366,17 +472,13 @@ export function WheelPicker({
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ text: currentValue }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-      onAccessibilityAction={(e) => {
-        if (disabled) return;
-        if (e.nativeEvent.actionName === 'increment') step(1);
-        else if (e.nativeEvent.actionName === 'decrement') step(-1);
-      }}
+      onAccessibilityAction={handleAccessibilityAction}
       testID={testID ?? 'wheel-picker'}
       className="relative overflow-hidden rounded-3xl bg-muted"
       style={[
         { height, opacity: disabled ? 0.5 : 1 },
         // Web: block page scroll / text selection so the drag drives the drum.
-        Platform.OS === 'web' && ({ userSelect: 'none', touchAction: 'none', cursor: 'grab' } as object),
+        Platform.OS === 'web' && WEB_CONTAINER_STYLE,
         style,
       ]}
       {...pan.panHandlers}
@@ -388,7 +490,7 @@ export function WheelPicker({
         style={{ top: pad, height: itemHeight }}
       />
       {options.map((option, i) => (
-        <Row
+        <WheelPickerRow
           key={optionValue(option)}
           label={optionLabel(option)}
           index={i}
@@ -402,60 +504,5 @@ export function WheelPicker({
         />
       ))}
     </View>
-  );
-}
-interface RowProps {
-  label: string;
-  index: number;
-  scroll: SharedValue<number>;
-  itemHeight: number;
-  itemAngle: number;
-  radius: number;
-  hideBeyond: number;
-  /** Top of the centre window (px) — where a row with offset 0 seats. */
-  center: number;
-  onPress?: () => void;
-}
-
-// One row on the drum wall. Its angular offset from the front is `θ = (index −
-// scroll)·itemAngle`; from that: translateY = R·sinθ bunches it toward the
-// horizon, rotateX(−θ) tilts it onto the wall, scale/opacity ≈ cosθ foreshortens
-// and fades it. Past the horizon (|offset| > hideBeyond, θ ≥ 90°) it stops
-// painting so the back of the drum never bleeds through the front.
-function Row({ label, index, scroll, itemHeight, itemAngle, radius, hideBeyond, center, onPress }: RowProps) {
-  const animatedStyle = useAnimatedStyle(() => {
-    const offset = index - scroll.value;
-    if (Math.abs(offset) > hideBeyond) return { opacity: 0, display: 'none' as const };
-    const theta = offset * itemAngle * DEG;
-    const cos = Math.cos(theta);
-    return {
-      display: 'flex' as const,
-      opacity: Math.max(0, cos),
-      transform: [
-        { perspective: 600 },
-        { translateY: radius * Math.sin(theta) },
-        { rotateX: `${-offset * itemAngle}deg` },
-        { scale: Math.max(MIN_SCALE, cos) },
-      ],
-    };
-  });
-
-  return (
-    <Animated.View
-      pointerEvents="box-none"
-      style={[
-        { position: 'absolute', left: 0, right: 0, top: center, height: itemHeight, justifyContent: 'center' },
-        animatedStyle,
-      ]}
-    >
-      <Text
-        accessibilityRole="button"
-        onPress={onPress}
-        className="text-center font-medium text-foreground"
-        style={{ height: itemHeight, lineHeight: itemHeight }}
-      >
-        {label}
-      </Text>
-    </Animated.View>
   );
 }

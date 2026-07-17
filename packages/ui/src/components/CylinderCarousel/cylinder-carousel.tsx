@@ -1,4 +1,5 @@
-import { Children, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+// biome-ignore lint/style/noExcessiveLinesPerFile: carousel geometry, item render, and auto-rotate logic are tightly coupled
+import { Children, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type GestureResponderEvent,
   type LayoutChangeEvent,
@@ -33,14 +34,31 @@ const THETA_CLAMP = (95 * Math.PI) / 180;
 // Minimal web-only wheel types — the RN package tsconfig omits the DOM lib, so
 // the browser `WheelEvent`/`addEventListener` globals aren't available here.
 type WebWheelEvent = { deltaX: number; deltaY: number; preventDefault: () => void };
+type PassiveListenerOptions = { passive: boolean };
 type WebWheelTarget = {
-  addEventListener: (type: 'wheel', listener: (e: WebWheelEvent) => void, opts?: { passive: boolean }) => void;
+  addEventListener: (type: 'wheel', listener: (e: WebWheelEvent) => void, opts?: PassiveListenerOptions) => void;
   removeEventListener: (type: 'wheel', listener: (e: WebWheelEvent) => void) => void;
 };
 
+// On web the host node exposes DOM wheel listeners; narrow to that shape by
+// probing for the methods at runtime instead of asserting with a cast.
+function isWheelTarget(node: unknown): node is WebWheelTarget {
+  return (
+    node !== null &&
+    typeof node === 'object' &&
+    typeof Reflect.get(node, 'addEventListener') === 'function' &&
+    typeof Reflect.get(node, 'removeEventListener') === 'function'
+  );
+}
+
+// Web-only style props (userSelect/touchAction) aren't in RN's ViewStyle; type
+// the constant once so usage sites stay cast-free.
+type WebViewStyle = ViewStyle & { userSelect?: string; touchAction?: string };
+const WEB_STAGE_STYLE: WebViewStyle = { userSelect: 'none', touchAction: 'pan-y' };
+
 export type CylinderCarouselVariant = 'concave' | 'convex';
 
-export interface CylinderCarouselProps {
+export type CylinderCarouselProps = {
   /** Each top-level child becomes one item on the cylinder wall. */
   children: ReactNode;
   /** Item box size in px (square). */
@@ -70,7 +88,7 @@ export interface CylinderCarouselProps {
   height?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 /**
  * A rotating cylinder carousel.
@@ -85,6 +103,8 @@ export interface CylinderCarouselProps {
  * is drag (PanResponder) + wheel on web — there is no hover on touch. `snap`,
  * `autoRotate`, `variant`, `minScale`, `arc` and `onIndexChange` are preserved.
  */
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: 3-D geometry, gesture, and layout logic integrated in one component
+// biome-ignore lint/style/useExportsLast: component exported before internal CylinderItem helper — collocated for readability
 export function CylinderCarousel({
   children,
   itemSize = 200,
@@ -107,7 +127,7 @@ export function CylinderCarousel({
   const count = items.length;
 
   const [width, setWidth] = useState(0);
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+  const onLayout = useCallback((e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width), []);
 
   const scroll = useSharedValue(defaultIndex);
   const draggingRef = useRef(false);
@@ -204,10 +224,11 @@ export function CylinderCarousel({
   const viewRef = useRef<View>(null);
   const wheelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // biome-ignore lint/plugin: non-passive DOM wheel listener must be attached imperatively as a side effect — the RN synthetic handler is passive and can't prevent page scroll
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    const node = viewRef.current as unknown as WebWheelTarget | null;
-    if (!node?.addEventListener) return;
+    const node: unknown = viewRef.current;
+    if (!isWheelTarget(node)) return;
 
     const onWheel = (e: WebWheelEvent) => {
       e.preventDefault();
@@ -234,6 +255,7 @@ export function CylinderCarousel({
   }, [scroll]);
 
   // Auto-roll: increment the shared value each frame while idle.
+  // biome-ignore lint/plugin: requestAnimationFrame loop driving the auto-rotate cannot be expressed without useEffect
   useEffect(() => {
     if (!autoRotate || reduce || count === 0) return;
     let raf = 0;
@@ -241,7 +263,7 @@ export function CylinderCarousel({
     const tick = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
-      if (!draggingRef.current) scroll.value = scroll.value + autoRotateSpeed * dt;
+      if (!draggingRef.current) scroll.value += autoRotateSpeed * dt;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -259,7 +281,7 @@ export function CylinderCarousel({
         style,
         // Web: prevent text selection and yield horizontal pointer events to
         // PanResponder so drag gestures aren't cancelled by the browser.
-        Platform.OS === 'web' && ({ userSelect: 'none', touchAction: 'pan-y' } as object),
+        Platform.OS === 'web' && WEB_STAGE_STYLE,
       ]}
       {...settle.panHandlers}
     >

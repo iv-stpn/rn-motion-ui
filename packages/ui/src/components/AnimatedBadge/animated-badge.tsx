@@ -6,6 +6,7 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { AlertTriangle, Check, Circle, Info, LoaderCircle, X } from '../../lib/icons';
 
 export type AnimatedBadgeStatus = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'loading';
+// biome-ignore lint/style/useExportsLast: these type aliases are used directly by the cva constants below; moving them after inverts the natural dependency order
 export type AnimatedBadgeSize = 'sm' | 'md';
 
 // cva drives the static container/label styling; the icon/text roll swaps stay
@@ -54,7 +55,9 @@ const ICON_COLOR: Record<AnimatedBadgeStatus, string> = {
   loading: '#111111',
 };
 
-const ICONS: Record<AnimatedBadgeStatus, (p: { size: number; color: string }) => ReactNode> = {
+type BadgeIconProps = { size: number; color: string };
+
+const ICONS: Record<AnimatedBadgeStatus, (p: BadgeIconProps) => ReactNode> = {
   neutral: Circle,
   info: Info,
   success: Check,
@@ -75,6 +78,7 @@ export interface AnimatedBadgeProps extends VariantProps<typeof container> {
   testID?: string;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: AnimatedBadge renders pulse, icon swap, and label swap with reduce-motion and loading-spin variants — each branch is a distinct visual mode
 export function AnimatedBadge({
   status = 'neutral',
   size = 'md',
@@ -135,7 +139,7 @@ export function AnimatedBadge({
           </AnimatePresence>
         </View>
       ) : null}
-      {children == null ? null : (
+      {children === null ? null : (
         <View style={{ overflow: 'hidden' }}>
           <AnimatePresence exitBeforeEnter={true}>
             <MotiView

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ArrowUp } from '../../lib/icons';
@@ -16,7 +17,6 @@ const meta = {
   },
 } satisfies Meta<typeof SmoothScroll>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Module-level spy: SmoothScroll has no onPress prop, so the play test asserts
@@ -24,17 +24,19 @@ type Story = StoryObj<typeof meta>;
 const onScrollTop = fn();
 
 // Uses the useSmoothScroll() hook to glide the container back to the top.
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ScrollTopButton({ onPress }: { onPress?: () => void }) {
   const { scrollTo } = useSmoothScroll();
+  const handlePress = useCallback(() => {
+    scrollTo(0);
+    onPress?.();
+  }, [scrollTo, onPress]);
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Scroll to top"
       testID="scroll-top"
-      onPress={() => {
-        scrollTo(0);
-        onPress?.();
-      }}
+      onPress={handlePress}
       style={{
         position: 'absolute',
         right: 12,
@@ -54,13 +56,14 @@ function ScrollTopButton({ onPress }: { onPress?: () => void }) {
   );
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Demo() {
   return (
     <View style={{ width: 360, height: 280, borderRadius: 16, borderWidth: 1, borderColor: '#e5e5e5', overflow: 'hidden' }}>
       <SmoothScroll testID="smooth-scroll" contentContainerStyle={{ padding: 12, gap: 10 }}>
         {SECTIONS.map((n) => (
           <View key={n} style={{ borderRadius: 10, backgroundColor: '#f4f4f5', paddingHorizontal: 12, paddingVertical: 16 }}>
-            <Text style={{ color: '#71717a', fontSize: 14 }}>Section {n}</Text>
+            <Text style={{ color: '#71717a', fontSize: 14 }}>{`Section ${n}`}</Text>
           </View>
         ))}
         <ScrollTopButton onPress={onScrollTop} />
@@ -68,6 +71,8 @@ function Demo() {
     </View>
   );
 }
+
+export default meta;
 
 export const Contained: Story = {
   render: () => <Demo />,

@@ -23,7 +23,7 @@ npm install react react-native react-native-reanimated react-native-gesture-hand
 | --- | --- |
 | `react` | `>=18.0.0` |
 | `react-native` | `>=0.76.0` |
-| `react-native-reanimated` | `>=3.16.0` (3.x and 4.x both work) |
+| `react-native-reanimated` | `>=4.0.0` |
 | `react-native-gesture-handler` | `>=2.0.0` |
 | `moti` | `>=0.29.0` |
 

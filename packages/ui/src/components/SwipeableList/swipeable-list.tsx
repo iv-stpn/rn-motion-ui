@@ -1,3 +1,4 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: row gesture, wheel fallback, and list orchestration are tightly coupled
 import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
@@ -29,25 +30,55 @@ export type SwipeableListItem = {
   disabled?: boolean;
 };
 
-export interface SwipeableListProps {
+export type SwipeActionPayload = { item: SwipeableListItem; action: SwipeAction; side: SwipeSide };
+
+// biome-ignore lint/style/useExportsLast: props type before internal WheelEvent types — collocated for readability
+export type SwipeableListProps = {
   items: SwipeableListItem[];
-  onAction?: (payload: { item: SwipeableListItem; action: SwipeAction; side: SwipeSide }) => void;
+  onAction?: (payload: SwipeActionPayload) => void;
   actionWidth?: number;
   revealThreshold?: number;
   closeOnAction?: boolean;
   testID?: string;
   style?: StyleProp<ViewStyle>;
-}
+};
 
 // Minimal web-only wheel types — the RN package tsconfig omits the DOM lib, so
 // the browser `WheelEvent`/`addEventListener` globals aren't available here.
 type WebWheelEvent = { deltaX: number; deltaY: number; deltaMode: number; preventDefault: () => void };
+type PassiveListenerOptions = { passive: boolean };
 type WebWheelTarget = {
-  addEventListener: (type: 'wheel', listener: (e: WebWheelEvent) => void, opts?: { passive: boolean }) => void;
+  addEventListener: (type: 'wheel', listener: (e: WebWheelEvent) => void, opts?: PassiveListenerOptions) => void;
   removeEventListener: (type: 'wheel', listener: (e: WebWheelEvent) => void) => void;
 };
 
+// On web the row's host node exposes DOM wheel listeners; narrow to that shape
+// without a cast by probing for the methods at runtime.
+function isWheelTarget(node: unknown): node is WebWheelTarget {
+  return (
+    node !== null &&
+    typeof node === 'object' &&
+    typeof Reflect.get(node, 'addEventListener') === 'function' &&
+    typeof Reflect.get(node, 'removeEventListener') === 'function'
+  );
+}
+
+// -- Helpers -----------------------------------------------------------------
+
+function swipeToValue(side: SwipeSide | null, lw: number, rw: number): number {
+  if (side === 'left') return lw;
+  if (side === 'right') return -rw;
+  return 0;
+}
+
 // -- Constants ---------------------------------------------------------------
+
+// react-native-web honours these CSS-only props at runtime, but they aren't part
+// of RN's ViewStyle. Type them once here so the web-only style objects validate
+// at declaration instead of needing an inline cast.
+type WebViewStyle = ViewStyle & { touchAction?: string; userSelect?: string };
+const WEB_ROW_STYLE: WebViewStyle = { touchAction: 'pan-y' };
+const WEB_SURFACE_STYLE: WebViewStyle = { userSelect: 'none', touchAction: 'pan-y' };
 
 // Spring on release — matches web feel (Animated.spring uses tension/friction).
 const SPRING_CONFIG = { tension: 200, friction: 26, useNativeDriver: true } as const;
@@ -103,14 +134,15 @@ function SwipeActionButton({
   onAction: (action: SwipeAction, side: SwipeSide) => void;
 }) {
   const tone = action.tone ?? 'neutral';
+  const handlePress = useCallback(() => onAction(action, side), [onAction, action, side]);
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={action.label}
-      aria-disabled={!!action.disabled}
+      aria-disabled={Boolean(action.disabled)}
       disabled={action.disabled}
-      onPress={() => onAction(action, side)}
+      onPress={handlePress}
       style={{ width: actionWidth, alignItems: 'center', justifyContent: 'center', height: '100%' }}
     >
       <View className={BADGE_BG({ tone })} style={{ width: 36, height: 36 }}>
@@ -130,6 +162,7 @@ function SwipeActionButton({
 
 // -- SwipeableListRow --------------------------------------------------------
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: gesture, wheel, and rendering are unified to share PanResponder and animation values
 function SwipeableListRow({
   item,
   actionWidth,
@@ -166,23 +199,16 @@ function SwipeableListRow({
   const reduceRef = useRef(reduce);
   const openIdRef = useRef(openId);
 
-  useEffect(() => {
-    leftWidthRef.current = leftWidth;
-  }, [leftWidth]);
-  useEffect(() => {
-    rightWidthRef.current = rightWidth;
-  }, [rightWidth]);
-  useEffect(() => {
-    revealThresholdRef.current = revealThreshold;
-  }, [revealThreshold]);
-  useEffect(() => {
-    reduceRef.current = reduce;
-  }, [reduce]);
-  useEffect(() => {
-    openIdRef.current = openId;
-  }, [openId]);
+  // Sync props into refs so PanResponder callbacks always read the latest value
+  // without needing a stale-closure workaround. Direct assignment during render
+  // is the correct pattern — no useEffect needed.
+  leftWidthRef.current = leftWidth;
+  rightWidthRef.current = rightWidth;
+  revealThresholdRef.current = revealThreshold;
+  reduceRef.current = reduce;
+  openIdRef.current = openId;
 
-  // Subscribe to translateX to keep currentXRef in sync (PanResponder release needs it).
+  // biome-ignore lint/plugin: subscribing to Animated.Value via addListener is an imperative side effect — not expressible without useEffect
   useEffect(() => {
     const id = translateX.addListener(({ value }) => {
       currentXRef.current = value;
@@ -195,7 +221,7 @@ function SwipeableListRow({
     (side: SwipeSide | null, vx = 0) => {
       const lw = leftWidthRef.current;
       const rw = rightWidthRef.current;
-      const toValue = side === 'left' ? lw : side === 'right' ? -rw : 0;
+      const toValue = swipeToValue(side, lw, rw);
       openSideRef.current = side;
 
       if (reduceRef.current) {
@@ -216,6 +242,7 @@ function SwipeableListRow({
   // Shared by drag release (PanResponder) and web wheel settle so both gestures
   // open/close by the exact same rules.
   const resolveSwipe = useCallback(
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: swipe velocity + threshold + left/right width produce inherently complex branching
     (x: number, vx: number) => {
       const lw = leftWidthRef.current;
       const rw = rightWidthRef.current;
@@ -266,6 +293,7 @@ function SwipeableListRow({
   );
 
   // When another row opens (openId changes away from this row's id), close this row.
+  // biome-ignore lint/plugin: closing a sibling row when openId changes is an imperative side effect on the animation value — not expressible without useEffect
   useEffect(() => {
     if (openId !== item.id && openSideRef.current !== null) snapTo(null);
   }, [openId, item.id, snapTo]);
@@ -274,7 +302,7 @@ function SwipeableListRow({
   const handlersRef = useRef({
     snapTo,
     resolveSwipe,
-    setOpenId: setOpenId as (id: string | null) => void,
+    setOpenId,
     onAction,
     itemId: item.id,
     itemDisabled: item.disabled,
@@ -307,7 +335,7 @@ function SwipeableListRow({
       onPanResponderMove: (_, gs) => {
         const lw = leftWidthRef.current;
         const rw = rightWidthRef.current;
-        const base = openSideRef.current === 'left' ? lw : openSideRef.current === 'right' ? -rw : 0;
+        const base = swipeToValue(openSideRef.current, lw, rw);
         let next = base + gs.dx;
 
         // Elastic resistance beyond full reveal.
@@ -347,11 +375,13 @@ function SwipeableListRow({
   const wheelSettleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wheelingRef = useRef(false);
 
+  // biome-ignore lint/plugin: non-passive DOM wheel listener must be attached imperatively as a side effect — the RN synthetic handler is passive and can't block scroll
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    const node = rowRef.current as unknown as WebWheelTarget | null;
-    if (!node?.addEventListener) return;
+    const node = rowRef.current;
+    if (!isWheelTarget(node)) return;
 
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: trackpad scroll direction, delta accumulation, and open/close state all branch together
     const onWheel = (e: WebWheelEvent) => {
       if (handlersRef.current.itemDisabled) return;
       // Reveal is horizontal. Only claim horizontal-dominant scroll (trackpad
@@ -401,18 +431,18 @@ function SwipeableListRow({
       {item.leading ? <View style={{ flexShrink: 0 }}>{item.leading}</View> : null}
       <View className="flex-1" style={{ minWidth: 0 }}>
         {item.title ? (
-          <Text className="text-sm font-medium text-foreground" numberOfLines={1}>
+          <Text className="font-medium text-foreground text-sm" numberOfLines={1}>
             {item.title}
           </Text>
         ) : null}
         {item.description ? (
-          <Text className="text-xs text-muted-foreground" style={{ marginTop: 2 }} numberOfLines={1}>
+          <Text className="text-muted-foreground text-xs" style={{ marginTop: 2 }} numberOfLines={1}>
             {item.description}
           </Text>
         ) : null}
       </View>
       {item.meta ? (
-        <Text className="text-xs font-medium text-muted-foreground" style={{ flexShrink: 0 }}>
+        <Text className="font-medium text-muted-foreground text-xs" style={{ flexShrink: 0 }}>
           {item.meta}
         </Text>
       ) : null}
@@ -427,7 +457,7 @@ function SwipeableListRow({
         { opacity: item.disabled ? 0.6 : 1 },
         // Web: keep vertical page scroll but let the wheel handler claim
         // horizontal intent (it calls preventDefault only when it acts).
-        Platform.OS === 'web' && ({ touchAction: 'pan-y' } as object),
+        Platform.OS === 'web' && WEB_ROW_STYLE,
       ]}
       testID={`swipeable-row-${item.id}`}
     >
@@ -461,7 +491,7 @@ function SwipeableListRow({
           },
           // Web: prevent text selection and yield horizontal pointer events to
           // PanResponder so drag gestures aren't cancelled by the browser.
-          Platform.OS === 'web' && ({ userSelect: 'none', touchAction: 'pan-y' } as object),
+          Platform.OS === 'web' && WEB_SURFACE_STYLE,
         ]}
         {...panResponder.panHandlers}
       >
@@ -504,4 +534,5 @@ export function SwipeableList({
 }
 
 // Export tone colour helper so stories can apply icon colours matching the badge.
+// biome-ignore lint/style/useComponentExportOnlyModules: SWIPE_TONE_ICON_COLOR is a styling constant needed by consumers; extracting it to a separate file would break colocation with the badge colour map it mirrors
 export { ICON_COLOR as SWIPE_TONE_ICON_COLOR };

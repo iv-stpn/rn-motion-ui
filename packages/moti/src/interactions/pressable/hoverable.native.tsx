@@ -14,4 +14,5 @@ export function Hoverable({
   return <HoveredContext.Provider value={useSharedValue(false)}>{React.Children.only(children)}</HoveredContext.Provider>;
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: MotiHover is a component alias for Hoverable
 export { Hoverable as MotiHover };

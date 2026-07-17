@@ -1,5 +1,7 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: outcome editing, probability bar, and input handling collocated for state sharing
+import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
 import { MotiView } from 'moti';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
@@ -33,7 +35,8 @@ export type PredictionMarketQuote = {
   error?: string;
 };
 
-export interface PredictionMarketProps {
+// biome-ignore lint/style/useExportsLast: props type before internal constants — collocated for readability
+export type PredictionMarketProps = {
   outcomes?: PredictionMarketOutcome[];
   value?: PredictionMarketOrderValue;
   defaultValue?: Partial<PredictionMarketOrderValue>;
@@ -47,7 +50,7 @@ export interface PredictionMarketProps {
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -60,6 +63,13 @@ const MODES: { id: PredictionMarketMode; label: string }[] = [
   { id: 'buy', label: 'Buy' },
   { id: 'sell', label: 'Sell' },
 ];
+
+const LABEL_DOLLAR_SIGN = '$';
+const LABEL_CONNECT = 'Connect';
+
+function isPredictionMarketMode(value: string): value is PredictionMarketMode {
+  return value === 'buy' || value === 'sell';
+}
 
 const DEFAULT_QUICK_AMOUNTS = [10, 50, 100, 500];
 
@@ -124,7 +134,7 @@ function buildQuote({
   return { valid: true, amount, price, shares, payout };
 }
 
-function amountFontSize(value: string): number {
+function amountFontSize(value: string) {
   const len = value.replace(/\D/g, '').length;
   if (len >= 10) return 28;
   if (len >= 8) return 32;
@@ -167,14 +177,18 @@ function useControllableOrder({
 
 // ─── Quick-amount chip ────────────────────────────────────────────────────────
 
-function AmountChip({ label, onPress, disabled }: { label: string; onPress: () => void; disabled: boolean }) {
+type AmountChipProps = { label: string; onPress: () => void; disabled: boolean };
+
+function AmountChip({ label, onPress, disabled }: AmountChipProps) {
   const [pressed, setPressed] = useState(false);
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
   return (
     <MotiView animate={{ scale: pressed ? 0.95 : 1 }} transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 0.6 }}>
       <Pressable
         onPress={onPress}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         disabled={disabled}
         accessibilityRole="button"
         style={{
@@ -193,8 +207,26 @@ function AmountChip({ label, onPress, disabled }: { label: string; onPress: () =
   );
 }
 
+// Binds its own amount to the stable onSelect so the list never creates a
+// per-chip arrow in the parent's render.
+function QuickAmountChip({
+  amount,
+  label,
+  disabled,
+  onSelect,
+}: {
+  amount: number;
+  label: string;
+  disabled: boolean;
+  onSelect: (amount: number) => void;
+}) {
+  const handlePress = useCallback(() => onSelect(amount), [onSelect, amount]);
+  return <AmountChip label={label} onPress={handlePress} disabled={disabled} />;
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: real-time probability rebalance requires all outcome state in one closure
 export function PredictionMarket({
   outcomes = DEFAULT_OUTCOMES,
   value,
@@ -246,27 +278,40 @@ export function PredictionMarket({
     [order, setOrder],
   );
 
-  useEffect(
-    () => () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  useMountEffect(() => () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  });
+
+  const addAmount = useCallback(
+    (increment: number) => {
+      const next = parseAmount(order.amount) + increment;
+      setOrderValue({ amount: String(next) });
     },
-    [],
+    [order.amount, setOrderValue],
   );
 
-  const addAmount = (increment: number) => {
-    const next = parseAmount(order.amount) + increment;
-    setOrderValue({ amount: String(next) });
-  };
-
-  const setMax = () => {
+  const setMax = useCallback(() => {
     if (order.mode === 'buy') {
       setOrderValue({ amount: String(Math.floor(balance)) });
       return;
     }
     setOrderValue({ amount: position.toFixed(position % 1 === 0 ? 0 : 2) });
-  };
+  }, [order.mode, balance, position, setOrderValue]);
 
-  const submit = () => {
+  const handleModeChange = useCallback(
+    (mode: string) => {
+      if (isPredictionMarketMode(mode)) setOrderValue({ mode, amount: '' });
+    },
+    [setOrderValue],
+  );
+
+  const handleOutcomeChange = useCallback((outcomeId: string) => setOrderValue({ outcomeId }), [setOrderValue]);
+
+  const handleAmountChange = useCallback((text: string) => setOrderValue({ amount: sanitizeAmount(text) }), [setOrderValue]);
+
+  const formatPayout = useCallback((cents: number) => formatCurrency(cents / 100), []);
+
+  const submit = useCallback(() => {
     if (!authenticated) return;
 
     if (!quote.valid) {
@@ -289,13 +334,16 @@ export function PredictionMarket({
       // Reset after 1.5s
       timeoutRef.current = setTimeout(() => setStatus('idle'), 1500);
     }, 650);
-  };
+  }, [authenticated, quote, reduce, shakeX, onTrade, order]);
 
   const fontSize = amountFontSize(order.amount);
   const isPlacing = status === 'placing';
   const isFilled = status === 'filled';
 
-  const buttonLabel = isFilled ? 'Trade filled' : quote.valid ? 'Trade' : (quote.error ?? 'Enter an amount');
+  let buttonLabel: string;
+  if (isFilled) buttonLabel = 'Trade filled';
+  else if (quote.valid) buttonLabel = 'Trade';
+  else buttonLabel = quote.error ?? 'Enter an amount';
 
   return (
     <View
@@ -322,11 +370,7 @@ export function PredictionMarket({
           paddingTop: 16,
         }}
       >
-        <Tabs
-          value={order.mode}
-          onValueChange={(mode) => setOrderValue({ mode: mode as PredictionMarketMode, amount: '' })}
-          variant="underline"
-        >
+        <Tabs value={order.mode} onValueChange={handleModeChange} variant="underline">
           <TabsList>
             {MODES.map((mode) => (
               <TabsTrigger key={mode.id} value={mode.id}>
@@ -340,7 +384,7 @@ export function PredictionMarket({
       {/* Body */}
       <View style={{ gap: 16, padding: 12 }}>
         {/* Outcome selector */}
-        <Tabs value={selectedOutcome?.id ?? ''} onValueChange={(outcomeId) => setOrderValue({ outcomeId })} variant="pill">
+        <Tabs value={selectedOutcome?.id ?? ''} onValueChange={handleOutcomeChange} variant="pill">
           <TabsList>
             {outcomes.map((outcome) => (
               <TabsTrigger key={outcome.id} value={outcome.id}>
@@ -366,13 +410,13 @@ export function PredictionMarket({
                     lineHeight: fontSize * 1.1,
                   }}
                 >
-                  $
+                  {LABEL_DOLLAR_SIGN}
                 </Text>
               ) : null}
               <TextInput
                 accessibilityLabel={order.mode === 'buy' ? 'Amount' : 'Shares'}
                 value={order.amount}
-                onChangeText={(text) => setOrderValue({ amount: sanitizeAmount(text) })}
+                onChangeText={handleAmountChange}
                 placeholder="0"
                 placeholderTextColor="rgba(17,17,17,0.35)"
                 inputMode="decimal"
@@ -393,10 +437,11 @@ export function PredictionMarket({
           {/* Quick amount chips */}
           <View style={{ marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
             {quickAmounts.map((amount) => (
-              <AmountChip
+              <QuickAmountChip
                 key={amount}
+                amount={amount}
                 label={`+${order.mode === 'buy' ? formatCompactCurrency(amount) : amount}`}
-                onPress={() => addAmount(amount)}
+                onSelect={addAmount}
                 disabled={isPlacing}
               />
             ))}
@@ -444,7 +489,7 @@ export function PredictionMarket({
               blur={true}
               className="font-semibold text-emerald-500"
               style={{ alignSelf: 'flex-end' }}
-              format={(cents) => formatCurrency(cents / 100)}
+              format={formatPayout}
               accessibilityLabel={`Payout ${formatCurrency(quote.payout)}`}
             />
           </View>
@@ -465,7 +510,7 @@ export function PredictionMarket({
       ) : (
         <View style={{ paddingHorizontal: 16, paddingBottom: 20 }}>
           <Button variant="primary" size="lg" onPress={submit} style={{ borderRadius: 16 }} testID="connect-button">
-            Connect
+            {LABEL_CONNECT}
           </Button>
         </View>
       )}

@@ -10,6 +10,7 @@ export type ScrollToOptions = {
   immediate?: boolean;
 };
 
+// biome-ignore lint/style/useExportsLast: API type before SmoothScrollContext constant — collocated for readability
 export type SmoothScrollApi = {
   /** Ref of the underlying ScrollView; drive it imperatively if needed. */
   scrollRef: RefObject<ScrollView | null>;
@@ -23,13 +24,13 @@ export type SmoothScrollApi = {
 
 const SmoothScrollContext = createContext<SmoothScrollApi | null>(null);
 
-export interface SmoothScrollProps {
+export type SmoothScrollProps = {
   children: ReactNode;
   orientation?: 'vertical' | 'horizontal';
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   testID?: string;
-}
+};
 
 /**
  * A scroll container that exposes its live scroll state (offset + 0..1 progress)
@@ -66,7 +67,7 @@ export function SmoothScroll({ children, orientation = 'vertical', style, conten
   const scrollTo = useCallback(
     (target: number, options?: ScrollToOptions) => {
       const to = target + (options?.offset ?? 0);
-      const animated = !reduce && !options?.immediate;
+      const animated = !(reduce || options?.immediate);
       scrollRef.current?.scrollTo(horizontal ? { x: to, animated } : { y: to, animated });
     },
     [reduce, horizontal],
@@ -95,6 +96,7 @@ export function SmoothScroll({ children, orientation = 'vertical', style, conten
  * Read the enclosing <SmoothScroll> state. Throws when used outside a provider
  * (unlike the web version, RN has no window-level scroll to fall back to).
  */
+// biome-ignore lint/style/useComponentExportOnlyModules: useSmoothScroll is the public API for this component; splitting it into a separate file would break the co-location of context + hook + component
 export function useSmoothScroll(): SmoothScrollApi {
   const ctx = useContext(SmoothScrollContext);
   if (!ctx) throw new Error('useSmoothScroll must be used inside <SmoothScroll>');

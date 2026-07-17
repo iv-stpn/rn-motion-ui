@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { useCallback } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, Text, View } from 'react-native';
 import { makeMutable, useSharedValue } from 'react-native-reanimated';
 import { expect, within } from 'storybook/test';
@@ -6,6 +7,8 @@ import { ScrollReveal } from './scroll-reveal';
 
 const CARDS = ['Spring slide', 'Fade in', 'Staggered reveal', 'Reveal once'];
 const VIEWPORT = 300;
+const SCROLL_HINT = 'Scroll down';
+const END_HINT = 'End';
 
 const meta = {
   title: 'Components/ScrollReveal',
@@ -20,16 +23,19 @@ const meta = {
   },
 } satisfies Meta<typeof ScrollReveal>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Demo({ once }: { once: boolean }) {
   const scrollY = useSharedValue(0);
   // Writing a shared value from the JS thread is valid on web (no worklet plugin
   // needed); ScrollReveal reads it via useDerivedValue/useAnimatedStyle.
-  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollY.value = e.nativeEvent.contentOffset.y;
-  };
+  const onScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollY.value = e.nativeEvent.contentOffset.y;
+    },
+    [scrollY],
+  );
 
   return (
     <View
@@ -44,7 +50,7 @@ function Demo({ once }: { once: boolean }) {
       }}
     >
       <ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ padding: 24, gap: 48 }}>
-        <Text style={{ textAlign: 'center', color: '#71717a', fontSize: 14 }}>Scroll down</Text>
+        <Text style={{ textAlign: 'center', color: '#71717a', fontSize: 14 }}>{SCROLL_HINT}</Text>
         {CARDS.map((label) => (
           <ScrollReveal key={label} scrollY={scrollY} viewportHeight={VIEWPORT} once={once} testID={`reveal-${label}`}>
             <View style={{ borderRadius: 12, backgroundColor: '#f4f4f5', paddingHorizontal: 16, paddingVertical: 48 }}>
@@ -52,11 +58,13 @@ function Demo({ once }: { once: boolean }) {
             </View>
           </ScrollReveal>
         ))}
-        <Text style={{ textAlign: 'center', color: '#71717a', fontSize: 14 }}>End</Text>
+        <Text style={{ textAlign: 'center', color: '#71717a', fontSize: 14 }}>{END_HINT}</Text>
       </ScrollView>
     </View>
   );
 }
+
+export default meta;
 
 export const RevealOnce: Story = {
   render: () => <Demo once={true} />,

@@ -17,8 +17,20 @@ const meta = {
   },
 } satisfies Meta<typeof Button>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+// ─── StatefulButton ──────────────────────────────────────────────────────────
+// StatefulButton wraps Button with idle → loading → success/error transitions.
+type StatefulStory = StoryObj<typeof StatefulButton>;
+
+const statefulArgs = { children: 'Submit', state: 'idle', onPress: fn() } as const;
+
+const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' };
+const CONTINUE_LABEL = 'Continue';
+const DOWNLOAD_LABEL = 'Download';
+const SUBMIT_LABEL = 'Submit';
+
+export default meta;
 
 export const Primary: Story = {
   play: async ({ canvasElement, args }) => {
@@ -40,13 +52,13 @@ export const Sizes: Story = {
   render: (args) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
       <Button {...args} size="sm">
-        Small
+        {SIZE_LABELS.sm}
       </Button>
       <Button {...args} size="md">
-        Medium
+        {SIZE_LABELS.md}
       </Button>
       <Button {...args} size="lg">
-        Large
+        {SIZE_LABELS.lg}
       </Button>
     </View>
   ),
@@ -56,12 +68,12 @@ export const WithIcons: Story = {
   render: (args) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
       <Button {...args} variant="primary">
-        Continue
+        {CONTINUE_LABEL}
         <ArrowRight size={16} color="#fafafa" />
       </Button>
       <Button {...args} variant="secondary">
         <Download size={16} color="#111111" />
-        Download
+        {DOWNLOAD_LABEL}
       </Button>
       <Button {...args} variant="secondary" size="icon" accessibilityLabel="Delete">
         <Trash2 size={16} color="#111111" />
@@ -69,13 +81,6 @@ export const WithIcons: Story = {
     </View>
   ),
 };
-
-// ─── StatefulButton ──────────────────────────────────────────────────────────
-// StatefulButton wraps Button with idle → loading → success/error transitions.
-
-type StatefulStory = StoryObj<typeof StatefulButton>;
-
-const statefulArgs = { children: 'Submit', state: 'idle', onPress: fn() } as const;
 
 export const StatefulIdle: StatefulStory = {
   args: statefulArgs,
@@ -132,16 +137,16 @@ export const StatefulAllStates: StatefulStory = {
   render: (args) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
       <StatefulButton {...args} state="idle">
-        Submit
+        {SUBMIT_LABEL}
       </StatefulButton>
       <StatefulButton {...args} state="loading">
-        Submit
+        {SUBMIT_LABEL}
       </StatefulButton>
       <StatefulButton {...args} state="success">
-        Submit
+        {SUBMIT_LABEL}
       </StatefulButton>
       <StatefulButton {...args} state="error">
-        Submit
+        {SUBMIT_LABEL}
       </StatefulButton>
     </View>
   ),

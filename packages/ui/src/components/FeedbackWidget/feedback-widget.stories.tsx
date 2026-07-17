@@ -11,7 +11,6 @@ const meta = {
   args: { position: 'bottom-right' },
 } satisfies Meta<typeof FeedbackWidget>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -35,22 +34,25 @@ function useFailThenRecoverSubmit() {
 }
 
 /** Faux app surface so the floating triggers have context. */
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function AppSurface({ children, hint }: { children: ReactNode; hint: string }) {
   return (
     <View className="flex-1 bg-background" style={{ minHeight: 380 }}>
-      <View className="border-b border-border px-5 py-3">
+      <View className="border-border border-b px-5 py-3">
         <View className="h-2.5 w-24 rounded-full bg-muted-foreground/20" />
       </View>
       <View style={{ gap: 12, padding: 20 }}>
         <View className="h-2.5 w-3/4 rounded-full bg-muted-foreground/15" />
         <View className="h-2.5 w-1/2 rounded-full bg-muted-foreground/15" />
         <View className="h-20 w-full rounded-xl bg-muted-foreground/[0.06]" />
-        <Text className="text-sm text-muted-foreground">{hint}</Text>
+        <Text className="text-muted-foreground text-sm">{hint}</Text>
       </View>
       {children}
     </View>
   );
 }
+
+export default meta;
 
 /**
  * Two live widgets: the bottom-right one submits successfully, the bottom-left

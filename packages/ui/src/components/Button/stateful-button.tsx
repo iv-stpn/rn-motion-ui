@@ -14,6 +14,7 @@ import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
 
+// biome-ignore lint/style/useExportsLast: props interface before CASCADE_STAGGER constant — collocated for readability
 export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loading'> {
   state?: ButtonState;
   children: ReactNode;
@@ -54,7 +55,8 @@ const ICON_COLOR: Record<ButtonVariant, string> = {
 // IconSlot — animated width collapse / expand for state icons
 // ---------------------------------------------------------------------------
 
-function IconSlot({ keyId, children, reduce }: { keyId: string; children: ReactNode; reduce: boolean }) {
+type IconSlotProps = { keyId: string; children: ReactNode; reduce: boolean };
+function IconSlot({ keyId, children, reduce }: IconSlotProps) {
   return (
     <MotiView
       key={keyId}
@@ -125,6 +127,7 @@ function TextSlot({
               // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity
               key={index}
             >
+              {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
               {char === ' ' ? ' ' : char}
             </Text>
           ))}
@@ -170,6 +173,7 @@ function TextSlot({
                   animate={{ opacity: 1, translateY: 0 }}
                   transition={{ ...SPRING_SWAP, delay: index * CASCADE_STAGGER }}
                 >
+                  {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
                   <Text className={textClass}>{char === ' ' ? ' ' : char}</Text>
                 </MotiView>
               ))}
@@ -186,6 +190,7 @@ function TextSlot({
               style={{ position: 'absolute', left: 0, top: 0 }}
               importantForAccessibility="no-hide-descendants"
             >
+              {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
               {typeof children === 'string' ? <Text className={textClass}>{children}</Text> : children}
             </MotiView>
           </AnimatePresence>
@@ -198,6 +203,21 @@ function TextSlot({
 // ---------------------------------------------------------------------------
 // StatefulButton
 // ---------------------------------------------------------------------------
+
+type ResolveStateTextArgs = {
+  state: ButtonState;
+  loadingText: ReactNode;
+  successText: ReactNode;
+  errorText: ReactNode;
+  children: ReactNode;
+};
+
+function resolveStateText({ state, loadingText, successText, errorText, children }: ResolveStateTextArgs): ReactNode {
+  if (state === 'loading') return loadingText;
+  if (state === 'success') return successText;
+  if (state === 'error') return errorText;
+  return children;
+}
 
 export function StatefulButton({
   state = 'idle',
@@ -216,8 +236,7 @@ export function StatefulButton({
   const v = variant ?? 'primary';
   const iconColor = ICON_COLOR[v];
 
-  const stateText =
-    state === 'loading' ? loadingText : state === 'success' ? successText : state === 'error' ? errorText : children;
+  const stateText = resolveStateText({ state, loadingText, successText, errorText, children });
 
   // Key used to distinguish text transitions; falls back to state name for nodes.
   const textKey = typeof stateText === 'string' ? `${state}-${stateText}` : state;

@@ -1,5 +1,6 @@
+import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
 import type { Meta, StoryObj } from '@storybook/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { AnimatedNumber } from './animated-number';
@@ -20,8 +21,14 @@ const meta = {
   },
 } satisfies Meta<typeof AnimatedNumber>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+
+const MRR_LABEL = 'Monthly recurring revenue';
+const MRR_DELTA = '+12.4% vs last month';
+const ACTIVE_USERS_LABEL = 'Active users';
+const formatCount = (n: number) => Math.round(n).toLocaleString();
+
+export default meta;
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {
@@ -38,9 +45,9 @@ export const Currency: Story = {
   },
   render: (args) => (
     <View style={{ alignItems: 'center', gap: 8 }}>
-      <Text className="text-xs text-muted-foreground">Monthly recurring revenue</Text>
+      <Text className="text-muted-foreground text-xs">{MRR_LABEL}</Text>
       <AnimatedNumber {...args} />
-      <Text className="text-xs text-success">+12.4% vs last month</Text>
+      <Text className="text-success text-xs">{MRR_DELTA}</Text>
     </View>
   ),
 };
@@ -48,14 +55,14 @@ export const Currency: Story = {
 export const Live: Story = {
   render: (args) => {
     const [value, setValue] = useState(48_273);
-    useEffect(() => {
+    useMountEffect(() => {
       const id = setInterval(() => setValue((v) => v + Math.floor(Math.random() * 500)), 2000);
       return () => clearInterval(id);
-    }, []);
+    });
     return (
       <View style={{ alignItems: 'center', gap: 8 }}>
-        <Text className="text-xs text-muted-foreground">Active users</Text>
-        <AnimatedNumber {...args} value={value} duration={0.8} format={(n) => Math.round(n).toLocaleString()} />
+        <Text className="text-muted-foreground text-xs">{ACTIVE_USERS_LABEL}</Text>
+        <AnimatedNumber {...args} value={value} duration={0.8} format={formatCount} />
       </View>
     );
   },

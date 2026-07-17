@@ -17,8 +17,8 @@ const meta = {
   args: sharedArgs,
 } satisfies Meta;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
+export default meta;
 
 export const Glitch: Story = {
   render: (args) => <NotFoundGlitch {...args} />,

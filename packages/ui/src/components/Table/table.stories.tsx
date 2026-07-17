@@ -1,5 +1,7 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: stories + interaction tests for a complex data-grid kept together for easy editing
+import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Switch } from '../Switch/switch';
@@ -23,7 +25,7 @@ const STATUSES: Person['status'][] = ['active', 'invited', 'suspended'];
 
 function buildPeople(count: number): Person[] {
   const out: Person[] = [];
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < count; i += 1) {
     // modulo guarantees in-bounds; ?? '' satisfies noUncheckedIndexedAccess
     const first = FIRST[i % FIRST.length] ?? '';
     const last = LAST[(i * 7) % LAST.length] ?? '';
@@ -46,6 +48,13 @@ const STATUS_COLORS: Record<Person['status'], string> = {
   suspended: '#dc2626',
 };
 
+function statusBgColor(status: string): 'rgba(5,150,105,0.1)' | 'rgba(217,119,6,0.1)' | 'rgba(220,38,38,0.1)' {
+  if (status === 'active') return 'rgba(5,150,105,0.1)';
+  if (status === 'invited') return 'rgba(217,119,6,0.1)';
+  return 'rgba(220,38,38,0.1)';
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function StatusBadge({ status }: { status: Person['status'] }) {
   return (
     <View
@@ -54,8 +63,7 @@ function StatusBadge({ status }: { status: Person['status'] }) {
         paddingHorizontal: 8,
         paddingVertical: 2,
         alignSelf: 'flex-start',
-        backgroundColor:
-          status === 'active' ? 'rgba(5,150,105,0.1)' : status === 'invited' ? 'rgba(217,119,6,0.1)' : 'rgba(220,38,38,0.1)',
+        backgroundColor: statusBgColor(status),
       }}
     >
       <Text
@@ -96,7 +104,7 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
     sortable: true,
     align: 'right',
     width: '100px',
-    cell: (row) => <Text style={{ fontSize: 13, textAlign: 'right', color: '#111' }}>${row.mrr.toLocaleString()}</Text>,
+    cell: (row) => <Text style={{ fontSize: 13, textAlign: 'right', color: '#111' }}>{`$${row.mrr.toLocaleString()}`}</Text>,
   },
 ];
 
@@ -105,6 +113,7 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
 // and TableColumn<unknown> that occurs when Meta infers T = unknown from the
 // raw generic component.
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TablePerson(props: TableProps<Person>) {
   return <Table {...props} />;
 }
@@ -126,62 +135,7 @@ const meta = {
   },
 } satisfies Meta<typeof TablePerson>;
 
-export default meta;
 type Story = StoryObj<typeof meta>;
-
-// ─── Default ─────────────────────────────────────────────────────────────────
-// 1000 rows, sort by mrr desc initially, selectable
-
-export const Default: Story = {
-  args: {
-    data: buildPeople(1000),
-    columns: DEFAULT_COLUMNS,
-    selectable: true,
-    defaultSort: { key: 'mrr', direction: 'desc' },
-    height: 420,
-    rowHeight: 52,
-    testID: 'table-default',
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    // Headers are visible
-    await canvas.findByText('Name');
-    await canvas.findByText('MRR');
-
-    // Clicking a sortable header cycles the sort
-    const nameHeader = await canvas.findByTestId('table-default-header-name');
-    await userEvent.click(nameHeader);
-    expect(nameHeader).toBeTruthy();
-  },
-};
-
-// ─── Reorderable ───────────────────────────────────────────────────────────────
-// Drag a header grip left/right to reorder columns; a line marks the drop spot.
-
-export const Reorderable: Story = {
-  args: {
-    data: buildPeople(50),
-    columns: DEFAULT_COLUMNS,
-    selectable: true,
-    reorderable: true,
-    defaultSort: { key: 'mrr', direction: 'desc' },
-    height: 420,
-    rowHeight: 52,
-    testID: 'table-reorder',
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    // Every column exposes a reorder grip (rendered only when reorderable).
-    const grip = await canvas.findByTestId('table-reorder-grip-name');
-    expect(grip).toBeTruthy();
-
-    // Grip and sort trigger are distinct: the grip drags, the header taps to sort.
-    const nameHeader = await canvas.findByTestId('table-reorder-header-name');
-    expect(nameHeader).toBeTruthy();
-  },
-};
 
 // ─── Async ────────────────────────────────────────────────────────────────────
 // Infinite scroll with simulated 700 ms pages
@@ -192,7 +146,7 @@ const MAX_PAGES = 8;
 function buildPage(page: number): Person[] {
   const out: Person[] = [];
   const start = page * PAGE_SIZE;
-  for (let n = start; n < start + PAGE_SIZE; n++) {
+  for (let n = start; n < start + PAGE_SIZE; n += 1) {
     const first = FIRST[n % FIRST.length] ?? '';
     const last = LAST[(n * 7) % LAST.length] ?? '';
     const status = STATUSES[(n * 5) % STATUSES.length] ?? 'active';
@@ -208,6 +162,7 @@ function buildPage(page: number): Person[] {
   return out;
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function AsyncTableStory() {
   const [rows, setRows] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -228,9 +183,7 @@ function AsyncTableStory() {
   }, []);
 
   // loadMore is stable (useCallback with empty deps); safe to list here
-  useEffect(() => {
-    loadMore();
-  }, [loadMore]);
+  useMountEffect(loadMore);
 
   const columns = useMemo<TableColumn<Person>[]>(
     () => [
@@ -252,24 +205,29 @@ function AsyncTableStory() {
         header: 'MRR',
         align: 'right',
         width: '90px',
-        cell: (r) => <Text style={{ fontSize: 13, textAlign: 'right', color: '#111' }}>${r.mrr.toLocaleString()}</Text>,
+        cell: (r) => <Text style={{ fontSize: 13, textAlign: 'right', color: '#111' }}>{`$${r.mrr.toLocaleString()}`}</Text>,
       },
     ],
     [],
   );
 
+  const getRowId = useCallback((row: Person) => row.id, []);
+
+  let statusLabel: string;
+  if (loading) statusLabel = 'Loading…';
+  else if (pageRef.current >= MAX_PAGES) statusLabel = 'All loaded';
+  else statusLabel = 'Scroll for more';
+
   return (
     <View style={{ flex: 1, padding: 16 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text style={{ fontSize: 12, color: '#6b7280' }}>{rows.length} loaded</Text>
-        <Text style={{ fontSize: 12, color: '#6b7280' }}>
-          {loading ? 'Loading…' : pageRef.current >= MAX_PAGES ? 'All loaded' : 'Scroll for more'}
-        </Text>
+        <Text style={{ fontSize: 12, color: '#6b7280' }}>{`${rows.length} loaded`}</Text>
+        <Text style={{ fontSize: 12, color: '#6b7280' }}>{statusLabel}</Text>
       </View>
       <Table
         data={rows}
         columns={columns}
-        getRowId={(row) => row.id}
+        getRowId={getRowId}
         height={420}
         rowHeight={52}
         onEndReached={loadMore}
@@ -280,21 +238,6 @@ function AsyncTableStory() {
     </View>
   );
 }
-
-export const Async: Story = {
-  render: () => <AsyncTableStory />,
-  args: {
-    // render override supplies its own data; placeholders satisfy Story typing
-    data: [],
-    columns: [],
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    // Headers should be visible immediately (before data loads)
-    await canvas.findByText('Name');
-    await canvas.findByText('Email');
-  },
-};
 
 // ─── Editable ─────────────────────────────────────────────────────────────────
 // Editable cells, column rename, insert / delete rows + columns
@@ -308,6 +251,7 @@ const INITIAL_ROWS: EditRow[] = [
   { id: 'r4', name: 'Kai Reyes', role: 'Member', team: 'Platform' },
 ];
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function EditableTableStory() {
   const [rows, setRows] = useState<EditRow[]>(INITIAL_ROWS);
   const [keys, setKeys] = useState<string[]>(['name', 'role', 'team']);
@@ -365,12 +309,14 @@ function EditableTableStory() {
     setKeys((prev) => prev.filter((k) => k !== key));
     setRows((prev) =>
       prev.map((row) => {
-        const next = { ...row };
-        delete next[key];
-        return next;
+        const entries = new Map(Object.entries(row));
+        entries.delete(key);
+        return { ...Object.fromEntries(entries), id: row.id };
       }),
     );
   }, []);
+
+  const getRowId = useCallback((row: EditRow) => row.id, []);
 
   const columns = useMemo<TableColumn<EditRow>[]>(
     () =>
@@ -403,7 +349,7 @@ function EditableTableStory() {
       <Table
         data={rows}
         columns={columns}
-        getRowId={(row) => row.id}
+        getRowId={getRowId}
         rowHeight={48}
         height={bodyHeight}
         onCellEdit={editable ? onCellEdit : undefined}
@@ -417,6 +363,77 @@ function EditableTableStory() {
     </View>
   );
 }
+
+export default meta;
+
+// ─── Default ─────────────────────────────────────────────────────────────────
+// 1000 rows, sort by mrr desc initially, selectable
+
+export const Default: Story = {
+  args: {
+    data: buildPeople(1000),
+    columns: DEFAULT_COLUMNS,
+    selectable: true,
+    defaultSort: { key: 'mrr', direction: 'desc' },
+    height: 420,
+    rowHeight: 52,
+    testID: 'table-default',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Headers are visible
+    await canvas.findByText('Name');
+    await canvas.findByText('MRR');
+
+    // Clicking a sortable header cycles the sort
+    const nameHeader = await canvas.findByTestId('table-default-header-name');
+    await userEvent.click(nameHeader);
+    expect(nameHeader).toBeTruthy();
+  },
+};
+
+// ─── Reorderable ───────────────────────────────────────────────────────────────
+// Drag a header grip left/right to reorder columns; a line marks the drop spot.
+
+export const Reorderable: Story = {
+  args: {
+    data: buildPeople(50),
+    columns: DEFAULT_COLUMNS,
+    selectable: true,
+    reorderable: true,
+    defaultSort: { key: 'mrr', direction: 'desc' },
+    height: 420,
+    rowHeight: 52,
+    testID: 'table-reorder',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Every column exposes a reorder grip (rendered only when reorderable).
+    const grip = await canvas.findByTestId('table-reorder-grip-name');
+    expect(grip).toBeTruthy();
+
+    // Grip and sort trigger are distinct: the grip drags, the header taps to sort.
+    const nameHeader = await canvas.findByTestId('table-reorder-header-name');
+    expect(nameHeader).toBeTruthy();
+  },
+};
+
+export const Async: Story = {
+  render: () => <AsyncTableStory />,
+  args: {
+    // render override supplies its own data; placeholders satisfy Story typing
+    data: [],
+    columns: [],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Headers should be visible immediately (before data loads)
+    await canvas.findByText('Name');
+    await canvas.findByText('Email');
+  },
+};
 
 export const Editable: Story = {
   render: () => <EditableTableStory />,

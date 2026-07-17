@@ -1,9 +1,9 @@
 import { MotiView } from 'moti';
-import { type ReactNode, type RefObject, useState } from 'react';
+import { type ReactNode, type RefObject, useCallback, useState } from 'react';
 import { Pressable, type ScrollView, type StyleProp, Text, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
-export interface ScrollToProps {
+export type ScrollToProps = {
   /** The ScrollView to drive. Pass the same ref given to your <ScrollView>. */
   scrollRef: RefObject<ScrollView | null>;
   /** Target offset in px along the scroll axis. */
@@ -20,7 +20,7 @@ export interface ScrollToProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-}
+};
 
 /**
  * Button that smooth-scrolls a ScrollView to a target offset via its imperative
@@ -47,12 +47,15 @@ export function ScrollTo({
   const reduce = useReducedMotion();
   const [pressed, setPressed] = useState(false);
 
-  const handlePress = () => {
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
+
+  const handlePress = useCallback(() => {
     const target = to + offset;
     const animated = !reduce;
     scrollRef.current?.scrollTo(horizontal ? { x: target, animated } : { y: target, animated });
     onPress?.();
-  };
+  }, [to, offset, reduce, scrollRef, horizontal, onPress]);
 
   return (
     <MotiView
@@ -62,16 +65,16 @@ export function ScrollTo({
     >
       <Pressable
         accessibilityRole="button"
-        aria-disabled={!!disabled}
+        aria-disabled={Boolean(disabled)}
         accessibilityLabel={accessibilityLabel}
         testID={testID ?? 'scroll-to'}
         disabled={disabled}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         onPress={handlePress}
       >
         {typeof children === 'string' || typeof children === 'number' ? (
-          <Text className="text-sm font-medium text-foreground">{children}</Text>
+          <Text className="font-medium text-foreground text-sm">{children}</Text>
         ) : (
           children
         )}

@@ -2,6 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { PredictionMarket } from './prediction-market';
 
+// Outcome tabs render `label + price` (e.g. "No 83.4¢"), so match the label
+// prefix instead of the full accessible name.
+const NO_OUTCOME_TAB = /^No\b/;
+
 const meta = {
   title: 'Components/PredictionMarket',
   component: PredictionMarket,
@@ -33,8 +37,9 @@ export const Default: Story = {
     expect(buyTab).toBeTruthy();
     expect(sellTab).toBeTruthy();
 
-    // Tap the 'No' outcome tab
-    const noTab = canvas.getByRole('tab', { name: 'No' });
+    // Tap the 'No' outcome tab. Its accessible name includes the price (e.g.
+    // "No 83.4¢"), so match on the label prefix rather than the full string.
+    const noTab = canvas.getByRole('tab', { name: NO_OUTCOME_TAB });
     await userEvent.click(noTab);
 
     // Type an amount in the input

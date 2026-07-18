@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '../../lib/ease';
+import { EASE_IN_OUT, EASE_OUT, SPRING_CASCADE, SPRING_PRESS } from '../../lib/ease';
 
 export type ActionSwapItem = {
   id: string;
@@ -32,9 +32,11 @@ const BLUR_EXIT = { type: 'timing', duration: 200, easing: EASE_IN_OUT } as cons
 const ROLL_TRANSITION = { type: 'timing', duration: 240, easing: EASE_OUT } as const;
 const ROLL_EXIT = { type: 'timing', duration: 180, easing: EASE_IN_OUT } as const;
 
-// Cascade rolls the label one letter at a time, left to right.
-const CASCADE_STAGGER = 25; // ms between letters
-const CASCADE_EXIT = { type: 'timing', duration: 160, easing: EASE_OUT } as const;
+// Cascade rolls the label one letter at a time, left to right. Each letter
+// enters from below and exits upward with the same left→right stagger, so the
+// old letters drop away as the new ones land — a true per-letter roll rather
+// than a whole-block slide.
+const CASCADE_STAGGER = 45; // ms between letters
 
 // Fallback roll distance before the slot has been measured (px).
 const ROLL_FALLBACK = 18;
@@ -159,10 +161,11 @@ export function ActionSwapText({
         <AnimatePresence initial={false}>
           <MotiView
             key={`cascade-${value}`}
+            // The container holds still; each letter enters from below and exits
+            // upward, staggered left→right. The parent has no exit of its own so
+            // the leaving letters drop away individually rather than as a block.
             from={{ opacity: 1, translateY: 0 }}
             animate={{ opacity: 1, translateY: 0 }}
-            exit={{ opacity: 0, translateY: -roll }}
-            transition={CASCADE_EXIT}
             style={{ position: 'absolute', left: 0, top: 0, flexDirection: 'row' }}
           >
             {Array.from(label).map((char, i) => (
@@ -172,7 +175,14 @@ export function ActionSwapText({
                 className={textClassName}
                 from={{ opacity: 0, translateY: roll }}
                 animate={{ opacity: 1, translateY: 0 }}
-                transition={{ ...SPRING_SWAP, delay: i * CASCADE_STAGGER }}
+                exit={{ opacity: 0, translateY: -roll }}
+                transition={{ ...SPRING_CASCADE, delay: i * CASCADE_STAGGER }}
+                // Exit on timing (not the enter spring): opacity is always timing,
+                // so a spring exit leaves translateY finishing later — and presence
+                // re-renders interrupt the spring before its completion callback
+                // fires, so the letter never reports safeToUnmount and old layers
+                // pile up while cycling. Timing makes both keys finish together.
+                exitTransition={{ type: 'timing', duration: 220, easing: EASE_OUT, delay: i * CASCADE_STAGGER }}
               >
                 {/* biome-ignore lint/suspicious/noLeakedRender: char is always a string character — safe alternate branch */}
                 {char === ' ' ? ' ' : char}

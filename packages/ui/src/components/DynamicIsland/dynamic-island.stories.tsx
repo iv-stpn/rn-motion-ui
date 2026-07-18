@@ -88,7 +88,7 @@ function IslandDemo() {
             </>
           }
         >
-          {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
+          {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
           <DynamicIslandView id="call" className="gap-4">
             <View style={{ gap: 2 }}>
               <Text style={{ color: '#fafafa', fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>{INCOMING_CALL}</Text>
@@ -104,7 +104,7 @@ function IslandDemo() {
             </View>
           </DynamicIslandView>
 
-          {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
+          {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
           <DynamicIslandView id="timer" className="gap-3">
             <Timer size={16} color="#d99a00" />
             <Text style={{ color: '#fafafa', fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>{TIMER_LABEL}</Text>
@@ -113,7 +113,7 @@ function IslandDemo() {
             </Text>
           </DynamicIslandView>
 
-          {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
+          {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
           <DynamicIslandView id="music" className="gap-3">
             <Music size={14} color="#fafafa" />
             <View style={{ gap: 1 }}>
@@ -149,8 +149,7 @@ export const Default: Story = {
   render: () => <IslandDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // Tapping "Call" expands the island to the call view. "Saurabh" renders in
-    // both the offscreen measurer and the visible slot, so match all.
+    // Tapping "Call" expands the island from the compact pill to the call view.
     await userEvent.click(await canvas.findByText(CALL_ACTION));
     const matches = await screen.findAllByText(CALLER);
     await expect(matches.length).toBeGreaterThan(0);
@@ -170,7 +169,7 @@ export const Compact: Story = {
         </>
       }
     >
-      {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — DynamicIslandView renders null; `id` is a view descriptor the parent matches against its `view` prop */}
+      {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView id="music" className="gap-3">
         <Music size={14} color="#fafafa" />
         <Text style={{ color: '#fafafa', fontSize: 12, fontWeight: '600' }}>{TRACK_TITLE}</Text>

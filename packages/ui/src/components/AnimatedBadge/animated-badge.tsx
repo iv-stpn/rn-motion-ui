@@ -10,24 +10,18 @@ export type AnimatedBadgeStatus = 'neutral' | 'info' | 'success' | 'warning' | '
 // biome-ignore lint/style/useExportsLast: these type aliases are used directly by the cva constants below; moving them after inverts the natural dependency order
 export type AnimatedBadgeSize = 'sm' | 'md';
 
-// cva drives the static container/label styling; the icon/text roll swaps stay
-// on MotiView + AnimatePresence (animated layer).
+// cva drives only the static container/label layout (height, padding, gap,
+// radius, border width). Background + border *colour* now animate on the root
+// MotiView (see BADGE_BG / BADGE_BORDER) — moti interpolates concrete colour
+// values, not a className swap, so the colours live there rather than here.
 const container = cva('flex-row shrink-0 items-center overflow-hidden rounded-full border', {
   variants: {
-    status: {
-      neutral: 'border-border bg-card',
-      info: 'border-primary/30 bg-primary/10',
-      success: 'border-success/30 bg-success/10',
-      warning: 'border-warning/30 bg-warning/10',
-      danger: 'border-destructive/30 bg-destructive/10',
-      loading: 'border-primary/30 bg-primary/10',
-    },
     size: {
       sm: 'h-6 gap-1.5 px-2',
       md: 'h-8 gap-2 px-3',
     },
   },
-  defaultVariants: { status: 'neutral', size: 'md' },
+  defaultVariants: { size: 'md' },
 });
 
 const labelClass = cva('font-medium', {
@@ -56,6 +50,29 @@ const ICON_COLOR: Record<AnimatedBadgeStatus, string> = {
   loading: '#111111',
 };
 
+// Animated container fill + border colours. The original cva classes used
+// Tailwind tokens (bg-primary/10, border-success/30, …); moti can't interpolate
+// a className swap, so we mirror those tokens as rgba values (hues match
+// ICON_COLOR and the oklch theme) and let the root MotiView cross-fade them
+// when `status` changes.
+const BADGE_BG: Record<AnimatedBadgeStatus, string> = {
+  neutral: '#f4f4f5',
+  info: 'rgba(17,17,17,0.10)',
+  success: 'rgba(63,166,83,0.10)',
+  warning: 'rgba(217,154,0,0.10)',
+  danger: 'rgba(229,72,77,0.10)',
+  loading: 'rgba(17,17,17,0.10)',
+};
+
+const BADGE_BORDER: Record<AnimatedBadgeStatus, string> = {
+  neutral: 'rgba(17,17,17,0.06)',
+  info: 'rgba(17,17,17,0.30)',
+  success: 'rgba(63,166,83,0.30)',
+  warning: 'rgba(217,154,0,0.30)',
+  danger: 'rgba(229,72,77,0.30)',
+  loading: 'rgba(17,17,17,0.30)',
+};
+
 type BadgeIconProps = { size: number; color: string };
 
 const ICONS: Record<AnimatedBadgeStatus, (p: BadgeIconProps) => ReactNode> = {
@@ -68,6 +85,7 @@ const ICONS: Record<AnimatedBadgeStatus, (p: BadgeIconProps) => ReactNode> = {
 };
 
 export interface AnimatedBadgeProps extends VariantProps<typeof container> {
+  status?: AnimatedBadgeStatus;
   children?: ReactNode;
   /** Override the leading icon. */
   icon?: ReactNode;
@@ -99,12 +117,17 @@ export function AnimatedBadge({
   const contentKey = typeof children === 'string' || typeof children === 'number' ? String(children) : s;
 
   return (
-    <View
+    <MotiView
       testID={testID}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="text"
-      className={container({ status, size })}
+      className={container({ size })}
       style={style}
+      animate={{ backgroundColor: BADGE_BG[s], borderColor: BADGE_BORDER[s] }}
+      transition={{
+        backgroundColor: { type: 'timing', duration: 300 },
+        borderColor: { type: 'timing', duration: 300 },
+      }}
     >
       {doPulse ? (
         <MotiView
@@ -122,8 +145,9 @@ export function AnimatedBadge({
               key={s}
               from={reduce ? { opacity: 0 } : { opacity: 0.7, translateY: 8, scale: 0.9 }}
               animate={{ opacity: 1, translateY: 0, scale: 1 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0.5, translateY: -8, scale: 0.96 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 210, damping: 24, mass: 0.85 }}
+              exitTransition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 160 }}
             >
               {s === 'loading' && !reduce && !icon ? (
                 <MotiView
@@ -147,14 +171,15 @@ export function AnimatedBadge({
               key={contentKey}
               from={reduce ? { opacity: 0 } : { opacity: 0.76, translateY: 10 }}
               animate={{ opacity: 1, translateY: 0 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0.5, translateY: -10 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -10 }}
               transition={{ type: 'spring', stiffness: 210, damping: 24, mass: 0.85 }}
+              exitTransition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 160 }}
             >
               <Text className={labelClass({ status, size })}>{children}</Text>
             </MotiView>
           </AnimatePresence>
         </View>
       )}
-    </View>
+    </MotiView>
   );
 }

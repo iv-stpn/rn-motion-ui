@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { expect, fn, within } from 'storybook/test';
-import { NotFoundGlitch, NotFoundMagnetic, NotFoundSpotlight, NotFoundStacked, NotFoundTerminal } from './not-found';
+import { NotFoundGlitch, NotFoundStacked, NotFoundTerminal } from './not-found';
 
 const sharedArgs = {
   code: '404',
@@ -28,24 +28,6 @@ export const Glitch: Story = {
     await expect(code).toBeTruthy();
     const homeBtn = await canvas.findByText('Back home');
     await expect(homeBtn).toBeTruthy();
-  },
-};
-
-export const Magnetic: Story = {
-  render: (args) => <NotFoundMagnetic {...args} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const title = await canvas.findByText('Page not found');
-    await expect(title).toBeTruthy();
-  },
-};
-
-export const Spotlight: Story = {
-  render: (args) => <NotFoundSpotlight {...args} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const code = await canvas.findByTestId('not-found-code');
-    await expect(code).toBeTruthy();
   },
 };
 

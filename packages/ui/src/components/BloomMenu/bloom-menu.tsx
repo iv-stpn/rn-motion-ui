@@ -110,9 +110,11 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
       {/* Spacer reserves the trigger footprint in normal flow. */}
       <View style={{ width: TRIGGER_W, height: TRIGGER_H }} />
 
-      {/* Centering box sized to the OPEN panel, centred on the trigger so the
-          morph grows from the middle outward. box-none lets taps fall through
-          the empty margins to the page. */}
+      {/* Positioning context for the morph. The trigger and panel are rendered
+          as absolute inset:0 overlays that each centre their own content, so
+          they cross-fade/scale in place rather than stacking in flow — which is
+          what pushed the trigger down during the open hand-off. box-none lets
+          taps fall through the empty margins to the page. */}
       <View
         pointerEvents="box-none"
         style={{
@@ -121,8 +123,6 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
           top: TRIGGER_H / 2 - BOX_H / 2,
           width: PANEL_W,
           height: BOX_H,
-          alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
         <AnimatePresence>
@@ -133,36 +133,38 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
               animate={{ opacity: 1, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
               transition={morph}
-              className="overflow-hidden border border-border bg-card"
-              style={{ width: PANEL_W, borderRadius: 16 }}
+              pointerEvents="box-none"
+              style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}
             >
-              {/* header */}
-              <View className="flex-row items-center justify-between border-border border-b px-4 py-3">
-                <Text className="font-medium text-muted-foreground text-sm">{title}</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={handleClose}>
-                  <X size={16} color="#71717a" />
-                </Pressable>
-              </View>
+              <View className="overflow-hidden border border-border bg-card" style={{ width: PANEL_W, borderRadius: 16 }}>
+                {/* header */}
+                <View className="flex-row items-center justify-between border-border border-b px-4 py-3">
+                  <Text className="font-medium text-muted-foreground text-sm">{title}</Text>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={handleClose}>
+                    <X size={16} color="#71717a" />
+                  </Pressable>
+                </View>
 
-              {/* grid */}
-              <View className="flex-row flex-wrap">
-                {items.map((item, i) => {
-                  // Radial stagger: delay each cell by its distance from the grid
-                  // centre so the bloom reads as centre-out, not row-by-row.
-                  const col = i % COLS;
-                  const row = Math.floor(i / COLS);
-                  const dist = Math.hypot(col - (COLS - 1) / 2, row - (rows - 1) / 2);
-                  return (
-                    <BloomCell
-                      key={item.label}
-                      item={item}
-                      className={cellClass(i, items.length)}
-                      reduce={reduce}
-                      dist={dist}
-                      onSelect={select}
-                    />
-                  );
-                })}
+                {/* grid */}
+                <View className="flex-row flex-wrap">
+                  {items.map((item, i) => {
+                    // Radial stagger: delay each cell by its distance from the grid
+                    // centre so the bloom reads as centre-out, not row-by-row.
+                    const col = i % COLS;
+                    const row = Math.floor(i / COLS);
+                    const dist = Math.hypot(col - (COLS - 1) / 2, row - (rows - 1) / 2);
+                    return (
+                      <BloomCell
+                        key={item.label}
+                        item={item}
+                        className={cellClass(i, items.length)}
+                        reduce={reduce}
+                        dist={dist}
+                        onSelect={select}
+                      />
+                    );
+                  })}
+                </View>
               </View>
             </MotiView>
           ) : (
@@ -172,6 +174,8 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
               animate={{ opacity: 1, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
               transition={morph}
+              pointerEvents="box-none"
+              style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}
             >
               <Pressable
                 accessibilityRole="button"

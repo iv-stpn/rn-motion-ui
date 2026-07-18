@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { type ReactNode, useRef } from 'react';
+import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
+import { Button } from '../Button/button';
 import { FeedbackWidget } from './feedback-widget';
 
 const meta = {
@@ -49,6 +50,37 @@ function AppSurface({ children, hint }: { children: ReactNode; hint: string }) {
       </View>
       {children}
     </View>
+  );
+}
+
+type InteractiveOutcome = 'success' | 'fail';
+const SUCCEEDS_LABEL = 'Succeeds';
+const FAILS_LABEL = 'Fails then recovers';
+
+/** Manual playground: pick the submit outcome, then drive the widget yourself.
+ *  No `play` function, so nothing auto-clicks — open the trigger, type, submit,
+ *  and (on failure) tap Try again to see the recovery. */
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function InteractiveDemo() {
+  const [outcome, setOutcome] = useState<InteractiveOutcome>('success');
+  const selectSuccess = useCallback(() => setOutcome('success'), []);
+  const selectFail = useCallback(() => setOutcome('fail'), []);
+  const success = useSuccessSubmit();
+  const failThenRecover = useFailThenRecoverSubmit();
+  const onSubmit = outcome === 'fail' ? failThenRecover : success;
+
+  return (
+    <AppSurface hint="Pick a submit outcome, then tap the message icon in the corner to open the panel and send feedback.">
+      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingTop: 8 }}>
+        <Button size="sm" variant={outcome === 'success' ? 'primary' : 'secondary'} onPress={selectSuccess}>
+          {SUCCEEDS_LABEL}
+        </Button>
+        <Button size="sm" variant={outcome === 'fail' ? 'primary' : 'secondary'} onPress={selectFail}>
+          {FAILS_LABEL}
+        </Button>
+      </View>
+      <FeedbackWidget position="bottom-right" onSubmit={onSubmit} testID="feedback-widget" />
+    </AppSurface>
   );
 }
 
@@ -123,4 +155,8 @@ export const BottomLeft: Story = {
       </AppSurface>
     );
   },
+};
+
+export const Interactive: Story = {
+  render: () => <InteractiveDemo />,
 };

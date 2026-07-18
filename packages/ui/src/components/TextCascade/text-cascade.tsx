@@ -1,13 +1,5 @@
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiText } from '@rn-motion-ui/moti/text';
-import { MotiView } from '@rn-motion-ui/moti/view';
-import { useCallback, useRef, useState } from 'react';
-import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { SPRING_SWAP } from '../../lib/ease';
-
-// Enter stagger between letters (ms). Left-to-right slot roll.
-const CASCADE_STAGGER = 25;
+import { type StyleProp, View, type ViewStyle } from 'react-native';
+import { ActionSwapText } from '../ActionSwap/action-swap';
 
 export type TextCascadeProps = {
   /** Current text. Changing it cascades the letters to the new value. */
@@ -20,43 +12,17 @@ export type TextCascadeProps = {
 };
 
 /**
- * Letter-by-letter slot roll: the old label slides up and out while the new
- * one lands from below, staggered left→right.
+ * Letter-by-letter slot roll for standalone text — the old letters drop away
+ * as the new ones land, left to right. Same motion as the action-swap
+ * cascade variant, with a text-first API.
  *
- * RN fallbacks vs the web original:
- * - Web blurred each glyph mid-roll (`filter: blur`); RN has no text blur, so
- *   the blur is dropped and the roll relies on translateY + opacity.
- * - Web smoothly tweened container width between labels; here the hidden sizer
- *   sets width per label (no width tween). The per-letter cascade is preserved.
- * - Web staggered the *exit* per letter too; here the leaving layer exits as a
- *   whole (fade + slide up) while the entering letters cascade individually.
+ * Delegates to `ActionSwapText` (`animation="cascade"`) so the cascade stays
+ * in lockstep with the action-swap button. The wrapper only adds the
+ * `text`/`className` API and an accessible label; see action-swap for the
+ * per-letter motion and its RN fallbacks (no glyph blur, width snaps per
+ * label, leaving layer exits as a whole while entering letters cascade).
  */
 export function TextCascade({ text, className, style, accessibilityLabel, testID }: TextCascadeProps) {
-  const reduce = useReducedMotion();
-  const [rollHeight, setRollHeight] = useState(0);
-  const firstRender = useRef(true);
-  const isFirst = firstRender.current;
-  firstRender.current = false;
-
-  const onLayout = useCallback(
-    (e: LayoutChangeEvent) => {
-      const h = e.nativeEvent.layout.height;
-      if (h && h !== rollHeight) setRollHeight(h);
-    },
-    [rollHeight],
-  );
-
-  const letters = Array.from(text);
-  // Fall back to a sensible roll distance before the first measure lands.
-  const roll = rollHeight || 24;
-
-  if (reduce)
-    return (
-      <View testID={testID} accessibilityRole="text" accessibilityLabel={accessibilityLabel ?? text} style={style}>
-        <Text className={className}>{text}</Text>
-      </View>
-    );
-
   return (
     <View
       testID={testID}
@@ -64,34 +30,9 @@ export function TextCascade({ text, className, style, accessibilityLabel, testID
       accessibilityLabel={accessibilityLabel ?? text}
       style={[{ overflow: 'hidden' }, style]}
     >
-      {/* Hidden sizer: defines the container's width/height for this label. */}
-      <Text className={className} onLayout={onLayout} style={{ opacity: 0 }} importantForAccessibility="no">
+      <ActionSwapText value={text} animation="cascade" textClassName={className}>
         {text}
-      </Text>
-      <AnimatePresence initial={false}>
-        <MotiView
-          key={text}
-          from={{ opacity: 1, translateY: 0 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          exit={{ opacity: 0, translateY: -roll }}
-          transition={{ type: 'timing', duration: 160 }}
-          style={{ position: 'absolute', left: 0, top: 0, flexDirection: 'row' }}
-        >
-          {letters.map((char, i) => (
-            <MotiText
-              // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity — the letter at a position is what rolls.
-              key={i}
-              className={className}
-              from={isFirst ? { opacity: 1, translateY: 0 } : { opacity: 0, translateY: roll }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ ...SPRING_SWAP, delay: isFirst ? 0 : i * CASCADE_STAGGER }}
-            >
-              {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
-              {char === ' ' ? ' ' : char}
-            </MotiText>
-          ))}
-        </MotiView>
-      </AnimatePresence>
+      </ActionSwapText>
     </View>
   );
 }

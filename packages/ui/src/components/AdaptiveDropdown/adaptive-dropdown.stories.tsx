@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { expect, screen, userEvent, within } from 'storybook/test';
 import { Bell, ChevronDown, Moon, Settings, User } from '../../lib/icons';
 import { AdaptiveDropdown } from './adaptive-dropdown';
 
@@ -80,6 +81,14 @@ export const Default: Story = {
       ))}
     </AdaptiveDropdown>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Click the trigger to open the dropdown panel.
+    await userEvent.click(await canvas.findByText(MENU_LABEL));
+    // Panel content mounts in a Modal — use screen to query outside the canvas.
+    await expect(await screen.findByText('Profile')).toBeTruthy();
+    await expect(await screen.findByText('Notifications')).toBeTruthy();
+  },
 };
 
 /** Header with title and close button. */

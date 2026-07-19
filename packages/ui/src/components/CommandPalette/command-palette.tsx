@@ -1,8 +1,11 @@
+import { useModalRender } from '@rn-motion-ui/hooks/use-modal-render';
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   type StyleProp,
@@ -12,8 +15,6 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import { useModalRender } from '../../hooks/use-modal-render';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_LAYOUT, SPRING_PANEL } from '../../lib/ease';
 import { Search } from '../../lib/icons';
 
@@ -31,12 +32,12 @@ import { Search } from '../../lib/icons';
 
 // Mirrors the web `shadow-2xl` so the panel reads as floating above the scrim.
 const PANEL_SHADOW = {
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 24 },
-  shadowOpacity: 0.25,
-  shadowRadius: 40,
+  ...Platform.select({
+    default: { shadowColor: '#000', shadowOffset: { width: 0, height: 24 }, shadowOpacity: 0.25, shadowRadius: 40 },
+    web: { boxShadow: '0px 24px 40px rgba(0, 0, 0, 0.25)' },
+  }),
   elevation: 24,
-} as const;
+};
 
 const ESC_LABEL = 'ESC';
 
@@ -113,7 +114,6 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
       {isActive ? (
         <MotiView
           key={`hl-${item.id}`}
-          pointerEvents="none"
           className="bg-primary/5"
           from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -125,6 +125,7 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
             right: 0,
             bottom: 0,
             borderRadius: 6,
+            pointerEvents: 'none',
           }}
         />
       ) : null}
@@ -233,9 +234,8 @@ export function CommandPalette({
               <Pressable accessibilityLabel="Close" onPress={handleClose} className="bg-surface/60" style={{ flex: 1 }} />
             </MotiView>
             <View
-              pointerEvents="box-none"
               className="flex-1 items-center px-4"
-              style={{ paddingTop: Math.round(windowHeight * 0.18) }}
+              style={{ paddingTop: Math.round(windowHeight * 0.18), pointerEvents: 'box-none' }}
             >
               <MotiView
                 accessibilityLabel={accessibilityLabel}

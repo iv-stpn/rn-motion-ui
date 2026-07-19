@@ -1,4 +1,5 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: scroll physics, item layout, and accessibility all share animation values
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type AccessibilityActionEvent,
@@ -24,7 +25,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // RN vs web: the reference wheel is a CSS 3D drum — rows seated on a cylinder via
 // `translateZ`, the whole list spun with `rotateX` — driven by a hand-rolled
@@ -128,9 +128,16 @@ function WheelPickerRow({
 
   return (
     <Animated.View
-      pointerEvents="box-none"
       style={[
-        { position: 'absolute', left: 0, right: 0, top: center, height: itemHeight, justifyContent: 'center' },
+        {
+          pointerEvents: 'box-none',
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: center,
+          height: itemHeight,
+          justifyContent: 'center',
+        },
         animatedStyle,
       ]}
     >
@@ -432,9 +439,8 @@ export function WheelPicker({
         style={[{ height, opacity: disabled ? 0.5 : 1 }, style]}
       >
         <View
-          pointerEvents="none"
           className="absolute inset-x-2 z-10 rounded-xl bg-foreground/[0.06]"
-          style={{ top: pad, height: itemHeight }}
+          style={{ pointerEvents: 'none', top: pad, height: itemHeight }}
         />
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -485,9 +491,8 @@ export function WheelPicker({
     >
       {/* Centre band: a rounded, inset selection pill seating the front row. */}
       <View
-        pointerEvents="none"
         className="absolute inset-x-2 z-10 rounded-xl bg-foreground/[0.06]"
-        style={{ top: pad, height: itemHeight }}
+        style={{ pointerEvents: 'none', top: pad, height: itemHeight }}
       />
       {options.map((option, i) => (
         <WheelPickerRow

@@ -1,3 +1,4 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Children, isValidElement, type ReactNode, useCallback, useRef, useState } from 'react';
@@ -11,7 +12,6 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
 // biome-ignore lint/style/useExportsLast: type collocated with sibling ButtonVariant export for readability
@@ -181,7 +181,6 @@ export function Button({
                 from={{ scale: 0, opacity: 0.3 }}
                 animate={{ scale: 1, opacity: 0 }}
                 transition={{ type: 'timing', duration: 600 }}
-                pointerEvents="none"
                 style={{
                   position: 'absolute',
                   left: rp.x - rp.size / 2,
@@ -190,6 +189,7 @@ export function Button({
                   height: rp.size,
                   borderRadius: rp.size / 2,
                   backgroundColor: v === 'primary' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.12)',
+                  pointerEvents: 'none',
                 }}
               />
             ))

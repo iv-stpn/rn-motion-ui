@@ -1,8 +1,8 @@
+import { useInView } from '@rn-motion-ui/hooks/use-in-view';
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import type { ReactNode } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useInView } from '../../hooks/use-in-view';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 const HEADER_REGEX = /^h[1-6]$/;
 

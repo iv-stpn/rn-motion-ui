@@ -1,11 +1,11 @@
+import { usePageVisible } from '@rn-motion-ui/hooks/use-page-visible';
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiText } from '@rn-motion-ui/moti/text';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { usePageVisible } from '../../hooks/use-page-visible';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '../../lib/ease';
 
 export type ActionSwapItem = {

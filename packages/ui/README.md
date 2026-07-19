@@ -1,6 +1,6 @@
 # @rn-motion-ui/rn
 
-Animated React Native + React Native Web UI components, styled with [Tailwind](https://tailwindcss.com/) via [uniwind](https://github.com/nativewind/uniwind) and powered by [Moti](https://moti.fyi/) / [Reanimated](https://docs.swmansion.com/react-native-reanimated/).
+Animated React Native + React Native Web UI components, styled with [Tailwind](https://tailwindcss.com/) via [uniwind](https://github.com/nativewind/uniwind) and powered by the internal [@rn-motion-ui/moti](../moti/) / [Reanimated](https://docs.swmansion.com/react-native-reanimated/).
 
 The components are written as React Native primitives, so they run on native (iOS/Android via Expo or bare RN) and on the web through `react-native-web`.
 
@@ -16,7 +16,7 @@ npm install @rn-motion-ui/rn
 Install these in your app (they are not bundled):
 
 ```sh
-npm install react react-native react-native-reanimated react-native-gesture-handler moti
+npm install react react-native react-native-reanimated react-native-gesture-handler
 ```
 
 | Peer | Supported range |
@@ -25,7 +25,6 @@ npm install react react-native react-native-reanimated react-native-gesture-hand
 | `react-native` | `>=0.76.0` |
 | `react-native-reanimated` | `>=4.0.0` |
 | `react-native-gesture-handler` | `>=2.0.0` |
-| `moti` | `>=0.29.0` |
 
 ## Consumer setup
 
@@ -53,8 +52,12 @@ Alias `react-native` → `react-native-web`, run the Reanimated Babel plugin thr
 
 ## Usage
 
+Each component is a **subpath export** — import directly from the component's path:
+
 ```tsx
-import { Button, Switch, Tabs } from '@rn-motion-ui/rn';
+import { Button } from '@rn-motion-ui/rn/button';
+import { Switch } from '@rn-motion-ui/rn/switch';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@rn-motion-ui/rn/tabs';
 
 export function Example() {
   return (
@@ -64,6 +67,70 @@ export function Example() {
   );
 }
 ```
+
+There is no barrel `index` export by design — this keeps bundlers from pulling in components you don't use.
+
+## Available exports
+
+| Subpath | Component / hook |
+| --- | --- |
+| `/button` | `Button` |
+| `/stateful-button` | `StatefulButton` |
+| `/switch` | `Switch` |
+| `/checkbox` | `Checkbox` |
+| `/radio` | `Radio` |
+| `/input` | `Input` |
+| `/tabs` | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` |
+| `/loader` | `Loader` |
+| `/animated-badge` | `AnimatedBadge` |
+| `/animated-number` | `AnimatedNumber` |
+| `/number-ticker` | `NumberTicker` |
+| `/text-cascade` | `TextCascade` |
+| `/text-reveal` | `TextReveal` |
+| `/text-rolling` | `TextRolling` |
+| `/text-shimmer` | `TextShimmer` |
+| `/marquee` | `Marquee` |
+| `/scroll-reveal` | `ScrollReveal` |
+| `/scroll-progress` | `ScrollProgress` |
+| `/scroll-to` | `ScrollTo` |
+| `/smooth-scroll` | `SmoothScroll` |
+| `/dock` | `Dock` |
+| `/popover` | `Popover` |
+| `/drawer` | `Drawer` |
+| `/bottom-sheet` | `BottomSheet` |
+| `/full-sheet` | `FullSheet` |
+| `/morphing-modal` | `MorphingModal` |
+| `/action-feedback-modal` | `ActionFeedbackModal` |
+| `/adaptive-dropdown` | `AdaptiveDropdown` |
+| `/multi-step-menu` | `MultiStepMenu` |
+| `/bloom-menu` | `BloomMenu` |
+| `/overflow-actions` | `OverflowActions` |
+| `/bouncy-accordion` | `BouncyAccordion` |
+| `/dynamic-island` | `DynamicIsland` |
+| `/action-swap` | `ActionSwap` |
+| `/swipeable-list` | `SwipeableList` |
+| `/range-slider` | `RangeSlider` |
+| `/cylinder-carousel` | `CylinderCarousel` |
+| `/wheel-picker` | `WheelPicker` |
+| `/command-palette` | `CommandPalette` |
+| `/otp-input` | `OtpInput` |
+| `/file-upload` | `FileUpload` |
+| `/feedback-widget` | `FeedbackWidget` |
+| `/prediction-market` | `PredictionMarket` |
+| `/availability-scheduler` | `AvailabilityScheduler` |
+| `/table` | `Table` |
+| `/not-found` | `NotFound` |
+| `/icons` | icon components |
+| `/ease` | easing constants |
+| `/use-in-view` | `useInView` |
+| `/use-arm-on-view` | `useArmOnView` |
+| `/use-page-visible` | `usePageVisible` |
+| `/use-reduced-motion` | `useReducedMotion` |
+| `/use-hover-capable` | `useHoverCapable` |
+| `/use-interval` | `useInterval` |
+| `/use-modal-render` | `useModalRender` |
+| `/use-scramble` | `useScramble` |
+| `/use-shake-animation` | `useShakeAnimation` |
 
 ## License
 

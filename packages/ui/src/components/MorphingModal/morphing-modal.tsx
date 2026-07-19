@@ -1,9 +1,9 @@
+import { useModalRender } from '@rn-motion-ui/hooks/use-modal-render';
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { type LayoutChangeEvent, Modal, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useModalRender } from '../../hooks/use-modal-render';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_PANEL } from '../../lib/ease';
 
 // biome-ignore lint/style/useExportsLast: placement type before INSTANT constant — collocated for readability
@@ -102,7 +102,7 @@ export function MorphingModal({
               <Pressable accessibilityLabel="Close" onPress={onClose} className="bg-foreground/20" style={{ flex: 1 }} />
             </MotiView>
             <View
-              pointerEvents="box-none"
+              style={{ pointerEvents: 'box-none' }}
               className={
                 placement === 'bottom' ? 'flex-1 items-center justify-end px-4 pb-8' : 'flex-1 items-center justify-center px-4'
               }

@@ -1,9 +1,9 @@
+import { useArmOnView } from '@rn-motion-ui/hooks/use-arm-on-view';
+import { useInView } from '@rn-motion-ui/hooks/use-in-view';
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useArmOnView } from '../../hooks/use-arm-on-view';
-import { useInView } from '../../hooks/use-in-view';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../lib/ease';
 
 const DIGITS = Array.from({ length: 10 }, (_, n) => n);

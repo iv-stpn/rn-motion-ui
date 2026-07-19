@@ -15,14 +15,14 @@
   ],
   "license": "MIT",
   "author": "Ivan Stepanian <ivanivan1233@gmail.com>",
-  "homepage": "https://github.com/iv-stpn/beui#readme",
+  "homepage": "https://github.com/iv-stpn/rn-motion-ui#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iv-stpn/beui.git",
+    "url": "git+https://github.com/iv-stpn/rn-motion-ui.git",
     "directory": "packages/ui"
   },
   "bugs": {
-    "url": "https://github.com/iv-stpn/beui/issues"
+    "url": "https://github.com/iv-stpn/rn-motion-ui/issues"
   },
   "sideEffects": false,
   "exports": {
@@ -281,50 +281,15 @@
       "types": "./src/components/TextShimmer/text-shimmer.tsx",
       "default": "./src/components/TextShimmer/text-shimmer.tsx"
     },
-    "./use-arm-on-view": {
-      "source": "./src/hooks/use-arm-on-view.ts",
-      "types": "./src/hooks/use-arm-on-view.ts",
-      "default": "./src/hooks/use-arm-on-view.ts"
+    "./text-rolling": {
+      "source": "./src/components/TextRolling/text-rolling.tsx",
+      "types": "./src/components/TextRolling/text-rolling.tsx",
+      "default": "./src/components/TextRolling/text-rolling.tsx"
     },
     "./use-column-reorder": {
       "source": "./src/components/Table/use-column-reorder.ts",
       "types": "./src/components/Table/use-column-reorder.ts",
       "default": "./src/components/Table/use-column-reorder.ts"
-    },
-    "./use-hover-capable": {
-      "source": "./src/hooks/use-hover-capable.ts",
-      "types": "./src/hooks/use-hover-capable.ts",
-      "default": "./src/hooks/use-hover-capable.ts"
-    },
-    "./use-in-view": {
-      "source": "./src/hooks/use-in-view.ts",
-      "types": "./src/hooks/use-in-view.ts",
-      "default": "./src/hooks/use-in-view.ts"
-    },
-    "./use-interval": {
-      "source": "./src/hooks/use-interval.ts",
-      "types": "./src/hooks/use-interval.ts",
-      "default": "./src/hooks/use-interval.ts"
-    },
-    "./use-modal-render": {
-      "source": "./src/hooks/use-modal-render.ts",
-      "types": "./src/hooks/use-modal-render.ts",
-      "default": "./src/hooks/use-modal-render.ts"
-    },
-    "./use-reduced-motion": {
-      "source": "./src/hooks/use-reduced-motion.ts",
-      "types": "./src/hooks/use-reduced-motion.ts",
-      "default": "./src/hooks/use-reduced-motion.ts"
-    },
-    "./use-scramble": {
-      "source": "./src/hooks/use-scramble.ts",
-      "types": "./src/hooks/use-scramble.ts",
-      "default": "./src/hooks/use-scramble.ts"
-    },
-    "./use-shake-animation": {
-      "source": "./src/hooks/use-shake-animation.ts",
-      "types": "./src/hooks/use-shake-animation.ts",
-      "default": "./src/hooks/use-shake-animation.ts"
     },
     "./use-table": {
       "source": "./src/components/Table/use-table.ts",
@@ -339,6 +304,7 @@
   },
   "files": [
     "src",
+    "!src/**/*.stories.tsx",
     "README.md",
     "LICENSE"
   ],

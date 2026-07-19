@@ -1,7 +1,7 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { createContext, type ReactNode, type RefObject, useCallback, useContext, useMemo, useRef } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, type StyleProp, type ViewStyle } from 'react-native';
 import { type SharedValue, useSharedValue } from 'react-native-reanimated';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 export type ScrollToOptions = {
   /** Extra px offset from the target (e.g. to clear a sticky header). */

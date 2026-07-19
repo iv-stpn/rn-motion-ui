@@ -1,11 +1,11 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
+import { useShakeAnimation } from '@rn-motion-ui/hooks/use-shake-animation';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiText } from '@rn-motion-ui/moti/text';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { useCallback, useRef, useState } from 'react';
 import { Animated, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { Check } from '../../lib/icons';
 
 // biome-ignore lint/style/useExportsLast: status type before slot constants — collocated for readability
@@ -197,12 +197,11 @@ export function OTPInput({
                     // Blinking caret — vertically centred (slot 56, caret 24 → top 16),
                     // trailing the digit when filled, centred in an empty slot.
                     <MotiView
-                      pointerEvents="none"
                       from={{ opacity: 1 }}
                       animate={{ opacity: 0 }}
                       transition={{ type: 'timing', duration: 500, loop: true, repeatReverse: true }}
                       className="absolute h-6 w-px bg-foreground"
-                      style={char ? { top: 16, right: 10 } : { top: 16, left: 23 }}
+                      style={[{ pointerEvents: 'none' }, char ? { top: 16, right: 10 } : { top: 16, left: 23 }]}
                     />
                   ) : null}
 
@@ -239,13 +238,12 @@ export function OTPInput({
           {showSuccess ? (
             <MotiView
               key="success"
-              pointerEvents="none"
               from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
               transition={{ type: 'spring', stiffness: 500, damping: 28 }}
               className="absolute"
-              style={{ right: -28, top: 18 }}
+              style={{ pointerEvents: 'none', right: -28, top: 18 }}
             >
               <Check size={20} color={SUCCESS_COLOR} strokeWidth={3} />
             </MotiView>

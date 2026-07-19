@@ -1,3 +1,4 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { type ReactNode, useCallback } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import Animated, {
@@ -8,7 +9,6 @@ import Animated, {
   useDerivedValue,
   useSharedValue,
 } from 'react-native-reanimated';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 export type ScrollRevealProps = {
   children: ReactNode;

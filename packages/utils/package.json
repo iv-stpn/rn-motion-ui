@@ -4,6 +4,15 @@
   "description": "Shared TypeScript utilities for rn-motion-ui",
   "license": "MIT",
   "author": "Ivan Stepanian <ivanivan1233@gmail.com>",
+  "homepage": "https://github.com/iv-stpn/rn-motion-ui#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iv-stpn/rn-motion-ui.git",
+    "directory": "packages/utils"
+  },
+  "bugs": {
+    "url": "https://github.com/iv-stpn/rn-motion-ui/issues"
+  },
   "sideEffects": false,
   "exports": {
     "./typeguards": {
@@ -14,7 +23,8 @@
   },
   "files": [
     "src",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "publishConfig": {
     "access": "public"

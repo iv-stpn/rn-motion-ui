@@ -1,4 +1,5 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: all-in-one scheduler — state, helpers, and rendering are tightly coupled
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -13,7 +14,6 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { CONTENT_TRANSITION, SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 import { Check, Copy, Plus, X } from '../../lib/icons';
 import { Checkbox } from '../Checkbox/checkbox';
@@ -542,9 +542,8 @@ function DayRow({
       >
         {/* Offscreen measurer at natural size — feeds the spring its target. */}
         <View
-          pointerEvents="none"
           onLayout={onBodyLayout}
-          style={{ position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 }}
+          style={[{ position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 }, { pointerEvents: 'none' }]}
         >
           {renderBody()}
         </View>

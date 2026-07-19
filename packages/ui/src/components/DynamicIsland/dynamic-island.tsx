@@ -1,9 +1,9 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { PresenceContext } from '@rn-motion-ui/moti/presence-context';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../lib/ease';
 
 type Size = { width: number; height: number };

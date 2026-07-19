@@ -1,10 +1,10 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { useCallback, useState } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_PRESS } from '../../lib/ease';
 
 const CHECK_PATH = 'M5 13l4 4L19 7';

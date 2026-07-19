@@ -117,7 +117,7 @@ export function BottomSheet({
       accessibilityViewIsModal={true}
       aria-modal={true}
     >
-      <View className="flex-1" pointerEvents="box-none">
+      <View className="flex-1" style={{ pointerEvents: 'box-none' }}>
         <Animated.View
           renderToHardwareTextureAndroid={IS_ANDROID}
           style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.45)', pointerEvents: 'none' }, backdropStyle]}

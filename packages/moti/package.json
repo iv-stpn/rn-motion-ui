@@ -12,6 +12,15 @@
   ],
   "license": "MIT",
   "author": "Ivan Stepanian <ivanivan1233@gmail.com>",
+  "homepage": "https://github.com/iv-stpn/rn-motion-ui#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iv-stpn/rn-motion-ui.git",
+    "directory": "packages/moti"
+  },
+  "bugs": {
+    "url": "https://github.com/iv-stpn/rn-motion-ui/issues"
+  },
   "sideEffects": false,
   "exports": {
     "./view": {
@@ -152,8 +161,13 @@
     }
   },
   "files": [
-    "src",
-    "README.md"
+    "src/components",
+    "src/core",
+    "src/interactions",
+    "src/presence",
+    "src/svg",
+    "README.md",
+    "LICENSE"
   ],
   "publishConfig": {
     "access": "public"
@@ -171,10 +185,14 @@
   },
   "devDependencies": {
     "@types/react": "19.1.10",
+    "@types/react-dom": "19.1.6",
+    "jsdom": "26",
     "react": "19.1.0",
+    "react-dom": "19.1.0",
     "react-native": "0.86.0",
     "react-native-reanimated": "4.5.2",
     "react-native-worklets": "0.11.1",
-    "typescript": "^7"
+    "typescript": "^7",
+    "vitest": "4.1.10"
   }
 }

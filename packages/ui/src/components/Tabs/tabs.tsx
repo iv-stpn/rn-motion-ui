@@ -1,8 +1,8 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, Text, View } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 type Variant = 'pill' | 'underline' | 'segment';
 
@@ -102,9 +102,9 @@ export function TabsList({ children }: TabsListProps) {
             height: variant === 'underline' ? 2 : active.height,
           }}
           transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 170, damping: 24, mass: 1.2 }}
-          pointerEvents="none"
           className={variant === 'underline' ? 'bg-primary' : 'bg-white'}
           style={{
+            pointerEvents: 'none',
             position: 'absolute',
             left: 0,
             top: 0,

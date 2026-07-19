@@ -1,6 +1,7 @@
-import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
 import { useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
+
+import { useMountEffect } from './use-mount-effect';
 
 /**
  * React Native equivalent of framer-motion's useReducedMotion.

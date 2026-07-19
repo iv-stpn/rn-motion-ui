@@ -1,9 +1,9 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_PRESS } from '../../lib/ease';
 import { MoreHorizontal, X } from '../../lib/icons';
 
@@ -145,10 +145,9 @@ export function OverflowActions({
               so queries like findByRole('button', { name }) don't match twice. */}
           <View
             aria-hidden={true}
-            pointerEvents="none"
             onLayout={handleOverflowLayout}
             className={group({ size })}
-            style={{ position: 'absolute', left: 0, top: 0, opacity: 0 }}
+            style={{ pointerEvents: 'none', position: 'absolute', left: 0, top: 0, opacity: 0 }}
           >
             {overflowActions.map((item) => (
               <ActionButton key={item.id} item={item} size={size} reduce={reduce} onAction={handleAction} />

@@ -1,10 +1,10 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: all loader variants (spinner, dots, helix, …) collocated for consistent import
+import { useInterval } from '@rn-motion-ui/hooks/use-interval';
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { useEffect, useState } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { useInterval } from '../../hooks/use-interval';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // biome-ignore lint/style/useExportsLast: variant union before frame constants — collocated for readability
 export type LoaderVariant =

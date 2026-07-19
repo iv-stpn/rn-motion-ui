@@ -1,3 +1,4 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
@@ -10,7 +11,6 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 
 type RadioCtx = {
@@ -105,9 +105,8 @@ export function RadioGroup({
               translateY: activeLayout.y + (activeLayout.height - DOT_SIZE) / 2,
             }}
             transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
-            pointerEvents="none"
             className="h-2.5 w-2.5 rounded-full bg-primary"
-            style={{ position: 'absolute', left: 0, top: 0 }}
+            style={{ pointerEvents: 'none', position: 'absolute', left: 0, top: 0 }}
           />
         ) : null}
         {children}

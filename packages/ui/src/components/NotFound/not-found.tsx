@@ -1,10 +1,10 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: terminal-stage sub-components and animation variants collocated by design
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
+import { useScramble } from '@rn-motion-ui/hooks/use-scramble';
 import { MotiText } from '@rn-motion-ui/moti/text';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback, useState } from 'react';
-import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { useScramble } from '../../hooks/use-scramble';
+import { Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { SPRING_PANEL, SPRING_PRESS } from '../../lib/ease';
 import { TextReveal } from '../TextReveal/text-reveal';
 
@@ -229,10 +229,10 @@ export function NotFoundStacked({
           transition={SPRING_PANEL}
           className="absolute inset-0 rounded-3xl border border-border bg-card"
           style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.08,
-            shadowRadius: 3,
+            ...Platform.select({
+              default: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3 },
+              web: { boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)' },
+            }),
             elevation: 2,
           }}
         />
@@ -246,10 +246,10 @@ export function NotFoundStacked({
           transition={SPRING_PANEL}
           className="absolute inset-0 rounded-3xl border border-border bg-card"
           style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.08,
-            shadowRadius: 3,
+            ...Platform.select({
+              default: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3 },
+              web: { boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)' },
+            }),
             elevation: 2,
           }}
         />
@@ -260,10 +260,10 @@ export function NotFoundStacked({
           className="absolute inset-0 items-center justify-center rounded-3xl border border-border bg-card"
           style={{
             gap: 4,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.12,
-            shadowRadius: 8,
+            ...Platform.select({
+              default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8 },
+              web: { boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.12)' },
+            }),
             elevation: 4,
           }}
         >
@@ -315,10 +315,10 @@ export function NotFoundTerminal({
           width: '100%',
           maxWidth: 448,
           backgroundColor: '#0a0a0a',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.2,
-          shadowRadius: 12,
+          ...Platform.select({
+            default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
+            web: { boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)' },
+          }),
           elevation: 6,
         }}
       >

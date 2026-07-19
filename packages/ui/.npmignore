@@ -1,0 +1,2 @@
+# Storybook story files are dev-only; consumers don't need them.
+**/*.stories.tsx

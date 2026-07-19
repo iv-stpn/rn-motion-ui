@@ -1,8 +1,8 @@
+import { useModalRender } from '@rn-motion-ui/hooks/use-modal-render';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback, useEffect, useMemo } from 'react';
 import { Modal, Text, TouchableOpacity, View } from 'react-native';
-import { useModalRender } from '../../hooks/use-modal-render';
 import { Check, X } from '../../lib/icons';
 import { Button } from '../Button/button';
 import { Loader } from '../Loader/loader';

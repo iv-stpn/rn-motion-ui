@@ -176,8 +176,10 @@ export function Table<T>(props: TableProps<T>) {
         {/* Drop indicator: a line at the insertion boundary while dragging */}
         {dragKey && dropIndex !== null && containerWidth > 0 ? (
           <View
-            pointerEvents="none"
-            style={[styles.dropIndicator, { left: Math.min(boundaries[dropIndex] ?? 0, containerWidth - 2) }]}
+            style={[
+              styles.dropIndicator,
+              { pointerEvents: 'none', left: Math.min(boundaries[dropIndex] ?? 0, containerWidth - 2) },
+            ]}
           />
         ) : null}
       </View>

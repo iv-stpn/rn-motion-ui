@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2023"],
-    "types": ["react"]
+    "types": ["react", "react-native"]
   },
   "include": ["src"],
   "exclude": ["node_modules"]

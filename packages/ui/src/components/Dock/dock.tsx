@@ -1,7 +1,7 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useState } from 'react';
 import { type LayoutRectangle, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 
 // RN FALLBACK vs web: the web dock scales items on cursor proximity (magnify on
@@ -84,9 +84,8 @@ export function Dock({ children, size = 44, style, testID }: DockProps) {
               height: active.height - PILL_INSET * 2,
             }}
             transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
-            pointerEvents="none"
             className="bg-primary/5"
-            style={{ position: 'absolute', left: 0, top: 0, borderRadius: 12 }}
+            style={{ position: 'absolute', left: 0, top: 0, borderRadius: 12, pointerEvents: 'none' }}
           />
         ) : null}
         {children}

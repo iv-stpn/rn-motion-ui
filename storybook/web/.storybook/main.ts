@@ -31,7 +31,15 @@ const config: StorybookConfig = {
     // `@react-native/normalize-colors` served without a synthesized `default` export.
     // Force-optimize react-native-web so esbuild/rolldown inlines those CJS deps again.
     viteConfig.optimizeDeps ??= {};
-    viteConfig.optimizeDeps.include = [...(viteConfig.optimizeDeps.include ?? []), 'react-native-web'];
+    viteConfig.optimizeDeps.include = [
+      ...(viteConfig.optimizeDeps.include ?? []),
+      'react-native-web',
+      // Pre-bundle addon-docs so Vite's dep-optimizer doesn't race with
+      // Storybook's own cache writes. Without this, a cold or concurrent run
+      // can fail with "Failed to fetch dynamically imported module …/
+      // node_modules/.cache/storybook/…/@storybook_addon-docs…".
+      '@storybook/addon-docs',
+    ];
     return viteConfig;
   },
 };

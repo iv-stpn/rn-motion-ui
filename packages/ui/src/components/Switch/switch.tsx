@@ -1,9 +1,9 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
+import { useShakeAnimation } from '@rn-motion-ui/hooks/use-shake-animation';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { useCallback, useRef, useState } from 'react';
-import { Animated, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { useShakeAnimation } from '../../hooks/use-shake-animation';
+import { Animated, Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { THUMB_SPRING } from '../../lib/ease';
 
 // Track colour swaps on checked; the thumb translate/squish stay inline (animated).
@@ -80,10 +80,10 @@ export function Switch({ checked, onCheckedChange, disabled, label, style, acces
               height: 20,
               borderRadius: 10,
               backgroundColor: '#ffffff',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.2,
-              shadowRadius: 3,
+              ...Platform.select({
+                default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3 },
+                web: { boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.2)' },
+              }),
               elevation: 3,
             }}
           />

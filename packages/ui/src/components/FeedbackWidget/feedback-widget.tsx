@@ -1,11 +1,11 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: feedback flow, sent view, and star-rating sub-components collocated by design
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiText } from '@rn-motion-ui/moti/text';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_PANEL } from '../../lib/ease';
 import { AlertCircle, MessageSquare, X } from '../../lib/icons';
 import { Button } from '../Button/button';
@@ -174,8 +174,10 @@ export function FeedbackWidget({
   return (
     <View
       testID={testID ?? 'feedback-widget'}
-      pointerEvents="box-none"
-      style={[{ position: 'absolute', bottom: 16, zIndex: 30, ...(left ? { left: 16 } : { right: 16 }) }, style]}
+      style={[
+        { position: 'absolute', bottom: 16, zIndex: 30, pointerEvents: 'box-none', ...(left ? { left: 16 } : { right: 16 }) },
+        style,
+      ]}
     >
       <MotiView
         animate={{ borderRadius: open ? 20 : 40 }}

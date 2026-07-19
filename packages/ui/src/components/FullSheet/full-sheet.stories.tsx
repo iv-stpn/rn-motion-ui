@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
+import { expect, screen, userEvent, within } from 'storybook/test';
 import { Button } from '../Button/button';
 import { FullSheet } from './full-sheet';
 
@@ -46,6 +47,15 @@ export const WithHeader: Story = {
         </FullSheet>
       </View>
     );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Open the sheet.
+    await userEvent.click(await canvas.findByRole('button', { name: OPEN_SHEET_LABEL }));
+    // Sheet content mounts inside a Modal — use screen to query outside the canvas.
+    await expect(await screen.findByText('Settings')).toBeTruthy();
+    // Close via the X button (accessibilityLabel="Close" → aria-label="Close").
+    await userEvent.click(await screen.findByLabelText('Close'));
   },
 };
 

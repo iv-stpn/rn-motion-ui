@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { Text, useWindowDimensions, View } from 'react-native';
+import { expect, userEvent, within } from 'storybook/test';
 import { Bell, Moon, ShieldCheck, User } from '../../lib/icons';
 import { Button } from '../Button/button';
 import { MenuRow, type MultiStepHelpers, MultiStepMenu, type MultiStepSection } from './multi-step-menu';
@@ -189,6 +190,15 @@ export const WideScreen: Story = {
         />
       </View>
     );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Menu renders immediately — close button confirms the panel is open.
+    await expect(await canvas.findByLabelText('Close')).toBeTruthy();
+    // Click the Notifications sidebar item by its visible text.
+    await userEvent.click(await canvas.findByText('Notifications'));
+    // Verify the Notifications section body (unique text) is now shown.
+    await expect(await canvas.findByText(NOTIFICATIONS_BODY)).toBeTruthy();
   },
 };
 

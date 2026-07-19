@@ -1,3 +1,4 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   type AccessibilityActionEvent,
@@ -9,7 +10,6 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Animated, { useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // Smooth glide for thumb/fill — critically damped, no overshoot (web SPRING_GLIDE).
 const SPRING_GLIDE = { stiffness: 700, damping: 50, mass: 0.5 };
@@ -153,13 +153,12 @@ export function RangeSlider({
       {/* fill — from the left edge to the thumb, scaled from the left so it shares
           the transform pipeline (and the exact same smoothed value) as the thumb */}
       <Animated.View
-        pointerEvents="none"
         className="absolute top-0 bottom-0 left-0 w-full bg-foreground/15"
-        style={[{ transformOrigin: 'left' }, fillStyle]}
+        style={[{ pointerEvents: 'none', transformOrigin: 'left' }, fillStyle]}
       />
 
       {/* ticks — slight inset so the end dots don't clip */}
-      <View pointerEvents="none" className="absolute top-0 right-2 bottom-0 left-2">
+      <View style={{ pointerEvents: 'none' }} className="absolute top-0 right-2 bottom-0 left-2">
         {ticks.map((t) => {
           const tp = max > min ? ((t - min) / (max - min)) * 100 : 0;
           return (
@@ -174,9 +173,8 @@ export function RangeSlider({
 
       {/* vertical bar thumb — contained at both ends via the [0, trackW - THUMB_W] mapping */}
       <Animated.View
-        pointerEvents="none"
         className="absolute h-5 rounded-sm bg-foreground"
-        style={[{ left: 0, width: THUMB_W, top: 10 }, thumbStyle]}
+        style={[{ pointerEvents: 'none', left: 0, width: THUMB_W, top: 10 }, thumbStyle]}
       />
     </View>
   );

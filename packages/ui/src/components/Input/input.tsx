@@ -1,3 +1,5 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
+import { useShakeAnimation } from '@rn-motion-ui/hooks/use-shake-animation';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
@@ -12,8 +14,6 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { Check } from '../../lib/icons';
 
 // Success green mirrors the --color-success token (oklch(70% 0.18 155)); the
@@ -132,7 +132,7 @@ export function Input({
   if (success)
     rightElement = (
       <MotiView
-        pointerEvents="none"
+        style={{ pointerEvents: 'none' }}
         className="absolute top-0 right-3.5 bottom-0 items-center justify-center"
         from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -150,7 +150,7 @@ export function Input({
 
       <Animated.View className={field({ state })} style={{ opacity: disabled ? 0.6 : 1, transform: [{ translateX: shakeX }] }}>
         {leftIcon ? (
-          <View pointerEvents="none" className="absolute top-0 bottom-0 left-3 z-10 items-center justify-center">
+          <View style={{ pointerEvents: 'none' }} className="absolute top-0 bottom-0 left-3 z-10 items-center justify-center">
             {leftIcon}
           </View>
         ) : null}

@@ -27,9 +27,9 @@
     "@changesets/cli": "2.31.0",
     "@iv-stpn/biome-config": "1.2.13",
     "biome-drizzle-best-practices-plugin": "2.0.0",
-    "biome-one-liner-plugin": "1.3.2",
+    "biome-one-liner-plugin": "1.4.8",
     "biome-react-best-practices-plugin": "2.0.0",
-    "biome-typescript-best-practices-plugin": "1.2.0",
+    "biome-typescript-best-practices-plugin": "1.2.3",
     "typescript": "^7"
   }
 }

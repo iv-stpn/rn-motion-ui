@@ -1,3 +1,4 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import Animated, {
   type SharedValue,
@@ -7,7 +8,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 

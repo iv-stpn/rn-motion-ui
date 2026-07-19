@@ -1,7 +1,7 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { MotiText } from '@rn-motion-ui/moti/text';
 import type { ReactNode } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 const HEADER_REGEX = /^h[1-6]$/;
 

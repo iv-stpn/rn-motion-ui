@@ -1,9 +1,9 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { AlertTriangle, Check, Circle, Info, LoaderCircle, X } from '../../lib/icons';
 
 export type AnimatedBadgeStatus = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'loading';
@@ -131,11 +131,13 @@ export function AnimatedBadge({
     >
       {doPulse ? (
         <MotiView
-          pointerEvents="none"
           from={{ opacity: 0.08, scale: 0.94 }}
           animate={{ opacity: 0.16, scale: 1.08 }}
           transition={{ type: 'timing', duration: 800, loop: true, repeatReverse: true }}
-          style={{ position: 'absolute', inset: 0, borderRadius: 999, backgroundColor: ICON_COLOR[s] }}
+          style={[
+            { position: 'absolute', inset: 0, borderRadius: 999, backgroundColor: ICON_COLOR[s] },
+            { pointerEvents: 'none' },
+          ]}
         />
       ) : null}
       {showIcon ? (

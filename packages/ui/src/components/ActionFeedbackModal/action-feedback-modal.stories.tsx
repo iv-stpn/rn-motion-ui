@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { expect, screen } from 'storybook/test';
 import { Button } from '../Button/button';
 import { ActionFeedbackModal, type ActionFeedbackState } from './action-feedback-modal';
 
@@ -28,6 +29,11 @@ export default meta;
 /** Spinner with an optional loading message. */
 export const Loading: Story = {
   args: { visible: true, state: 'loading', loadingMessage: 'Saving changes…', tagline: 'This may take a moment' },
+  play: async () => {
+    // Modal is already visible via args — verify its loading content is present.
+    await expect(await screen.findByText('Saving changes…')).toBeTruthy();
+    await expect(await screen.findByText('This may take a moment')).toBeTruthy();
+  },
 };
 
 /** Success state — auto-closes after 2.5 s in the real component. */
@@ -49,6 +55,12 @@ export const ErrorState: Story = {
     errorTitle: 'Upload failed',
     errorMessage: 'The file could not be uploaded. Check your connection and try again.',
     dismissLabel: 'Got it',
+  },
+  play: async () => {
+    // Modal is already visible — verify the error title is present.
+    await expect(await screen.findByText('Upload failed')).toBeTruthy();
+    // Verify the dismiss button is present and interactive.
+    await expect(await screen.findByRole('button', { name: 'Got it' })).toBeTruthy();
   },
 };
 

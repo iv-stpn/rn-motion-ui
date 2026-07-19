@@ -163,8 +163,7 @@ export function TableRow<T>({
       <MotiView
         animate={{ opacity: isSelected ? 1 : 0 }}
         transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, styles.selectedBg]}
+        style={[StyleSheet.absoluteFill, styles.selectedBg, { pointerEvents: 'none' }]}
       />
 
       {selectable ? (

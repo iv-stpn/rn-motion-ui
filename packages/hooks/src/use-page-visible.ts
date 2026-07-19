@@ -1,6 +1,7 @@
-import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
 import { useState } from 'react';
 import { AppState } from 'react-native';
+
+import { useMountEffect } from './use-mount-effect';
 
 /**
  * Whether the page/app is currently in the foreground. On web,

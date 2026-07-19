@@ -1,7 +1,7 @@
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { Plus, X } from '../../lib/icons';
 
 // RN FALLBACK vs web: the web menu morphs a single `layoutId` box from the
@@ -133,16 +133,18 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
           equally, like the web's translate(-50%,-50%) container. box-none lets
           taps fall through the empty margins to the page. */}
       <View
-        pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          left: TRIGGER_W / 2 - PANEL_W / 2,
-          top: TRIGGER_H / 2 - BOX_H / 2,
-          width: PANEL_W,
-          height: BOX_H,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        style={[
+          {
+            position: 'absolute',
+            left: TRIGGER_W / 2 - PANEL_W / 2,
+            top: TRIGGER_H / 2 - BOX_H / 2,
+            width: PANEL_W,
+            height: BOX_H,
+            alignItems: 'center',
+            justifyContent: 'center',
+          },
+          { pointerEvents: 'box-none' },
+        ]}
       >
         {/* The shared-layout card: one element whose frame springs between the
             trigger and the panel, carrying the border/background/radius across
@@ -159,7 +161,11 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
               chrome (hairlines) stays opaque — like the web's clip-path over an
               opaque grid, the card's clip alone reveals it. Only the header and
               the cells fade. When closed it hides behind the trigger face. */}
-          <View aria-hidden={!open} pointerEvents={open ? 'auto' : 'none'} onLayout={onPanelLayout} style={{ width: PANEL_W }}>
+          <View
+            aria-hidden={!open}
+            onLayout={onPanelLayout}
+            style={[{ width: PANEL_W }, { pointerEvents: open ? 'auto' : 'none' }]}
+          >
             {/* header: fades in slightly after the morph starts (web: delay 0.12s) */}
             <MotiView
               animate={{ opacity: open ? 1 : 0 }}
@@ -201,11 +207,13 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
               masks the panel's hairlines while the menu is closed. */}
           <MotiView
             aria-hidden={open}
-            pointerEvents={open ? 'none' : 'auto'}
             animate={{ opacity: open ? 0 : 1 }}
             transition={open ? { type: 'timing', duration: 120 } : { type: 'timing', duration: 150, delay: reduce ? 0 : 80 }}
             className="bg-card"
-            style={{ position: 'absolute', top: 1, left: 1, right: 1, bottom: 1, borderRadius: 15 }}
+            style={[
+              { position: 'absolute', top: 1, left: 1, right: 1, bottom: 1, borderRadius: 15 },
+              { pointerEvents: open ? 'none' : 'auto' },
+            ]}
           >
             <Pressable
               accessibilityRole="button"

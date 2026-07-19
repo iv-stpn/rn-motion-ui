@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
+import { expect, screen, userEvent, within } from 'storybook/test';
 import { Button } from '../Button/button';
 import { BottomSheet } from './bottom-sheet';
 
@@ -57,6 +58,15 @@ export default meta;
 /** Drag the handle or tap the overlay to dismiss. */
 export const Default: Story = {
   render: () => <OpenButton />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Open the sheet.
+    await userEvent.click(await canvas.findByRole('button', { name: OPEN_SHEET_LABEL }));
+    // Sheet content mounts inside a Modal — use screen to query outside the canvas.
+    await expect(await screen.findByText(BOTTOM_SHEET_TITLE)).toBeTruthy();
+    // Verify the dismiss button is present and interactive.
+    await expect(await screen.findByRole('button', { name: DISMISS_LABEL })).toBeTruthy();
+  },
 };
 
 /** Content tall enough to trigger internal scroll. */

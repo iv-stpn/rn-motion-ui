@@ -3,12 +3,12 @@
 // may briefly snap vs. the web's synchronous useLayoutEffect measure.
 // aria-busy is approximated via accessibilityLiveRegion="polite" on the content row.
 
+import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_SWAP } from '../../lib/ease';
 import { Check, X } from '../../lib/icons';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
@@ -152,8 +152,15 @@ function TextSlot({
           shaved horizontally. pointerEvents:'none' lets taps fall through to the
           button. */}
       <View
-        pointerEvents="none"
-        style={{ position: 'absolute', left: 0, top: 0, bottom: 0, right: -CLIP_SLACK, overflow: 'hidden' }}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          right: -CLIP_SLACK,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+        }}
       >
         {cascade ? (
           <AnimatePresence initial={false}>

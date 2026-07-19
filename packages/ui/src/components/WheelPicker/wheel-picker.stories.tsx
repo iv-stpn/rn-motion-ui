@@ -83,7 +83,7 @@ export const DateOfBirth: Story = {
         <Text className="text-muted-foreground text-sm">
           {BORN_LABEL} <Text className="font-medium text-foreground">{`${month} ${day}, ${year}`}</Text>
         </Text>
-        <View className="flex-row items-stretch gap-1 rounded-3xl border border-border bg-background p-2">
+        <View className="flex-row items-stretch gap-1 rounded-3xl border border-border bg-surface p-2">
           <WheelPicker
             options={MONTHS}
             value={month}

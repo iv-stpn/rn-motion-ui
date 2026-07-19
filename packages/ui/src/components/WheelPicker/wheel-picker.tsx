@@ -23,7 +23,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { runOnJS } from 'react-native-worklets';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // RN vs web: the reference wheel is a CSS 3D drum — rows seated on a cylinder via
@@ -265,7 +265,7 @@ export function WheelPicker({
       const idx = Math.round(Math.max(0, Math.min(s, last)));
       if (idx !== lastEmitted.value) {
         lastEmitted.value = idx;
-        runOnJS(emit)(idx);
+        scheduleOnRN(emit, idx);
       }
     },
   );

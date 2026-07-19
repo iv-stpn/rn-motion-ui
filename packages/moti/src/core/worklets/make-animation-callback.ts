@@ -1,4 +1,4 @@
-import { runOnJS } from 'react-native-worklets';
+import { scheduleOnRN } from 'react-native-worklets';
 import type { InlineOnDidAnimate } from '../types';
 
 type MakeAnimationCallbackOptions = {
@@ -35,15 +35,15 @@ export function makeAnimationCallback({
     'worklet';
     if (hasOnDidAnimate)
       // biome-ignore lint/plugin: runOnJS needs a concrete parameter list; the memoized callback's variadic Parameters<> type isn't expressible here
-      runOnJS(reanimatedOnDidAnimate as (...args: unknown[]) => void)(key, completed, recentValue, {
+      scheduleOnRN(reanimatedOnDidAnimate as (...args: unknown[]) => void, key, completed, recentValue, {
         attemptedValue: value,
         attemptedSequenceItemValue: info?.attemptedSequenceValue,
       });
-    if (inlineOnDidAnimate) runOnJS(inlineOnDidAnimate)(completed, recentValue, { attemptedValue: value });
+    if (inlineOnDidAnimate) scheduleOnRN(inlineOnDidAnimate, completed, recentValue, { attemptedValue: value });
     if (isExiting) {
       exitingStyleProps[key] = false;
       const areStylesExiting = Object.values(exitingStyleProps).some(Boolean);
-      if (!areStylesExiting) runOnJS(reanimatedSafeToUnmount)();
+      if (!areStylesExiting) scheduleOnRN(reanimatedSafeToUnmount);
     }
   };
 }

@@ -1,124 +1,146 @@
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
-import { Dimensions, Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { useModalRender } from '../../hooks/use-modal-render';
-import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { DRAWER, EASE_DRAWER } from '../../lib/ease';
+import { Modal, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
-export type SnapPoint = number | 'auto';
+const HANDLE_HEIGHT = 28;
+const IS_ANDROID = Platform.OS === 'android';
 
-// RN FALLBACK vs web: the web sheet is a `position:fixed` portal with vaul-style
-// drag-to-snap / fling-to-dismiss and body-scroll locking. RN uses a full-screen
-// `Modal` and animates the panel + scrim up with moti (same EASE_DRAWER glide).
-// Drag is dropped — snap between points with the header buttons and dismiss via
-// the backdrop tap (documented). snapPoints are still honoured as fixed heights.
+const styles = StyleSheet.create({
+  sheetContainer: {
+    zIndex: 1,
+    ...(IS_ANDROID ? { elevation: 24 } : null),
+  },
+});
+
+function SheetHandle() {
+  return (
+    <View className="items-center justify-center" style={{ height: HANDLE_HEIGHT }}>
+      <View className="h-1 w-12 rounded-full bg-border/80" />
+    </View>
+  );
+}
+
+/** Manages mount state + translateY for a slide-from-bottom sheet. */
+function useSlideSheetPresence(visible: boolean, screenHeight: number, onAfterClose?: () => void) {
+  const [isMounted, setIsMounted] = useState(visible);
+  const translateY = useSharedValue(visible ? 0 : screenHeight);
+
+  // biome-ignore lint/plugin: slide animation tied to `visible` — effect intentionally omits stable refs
+  // biome-ignore lint/correctness/useExhaustiveDependencies: screenHeight and onAfterClose are stable refs — only `visible` drives the effect
+  useEffect(() => {
+    if (visible) {
+      setIsMounted(true);
+      translateY.value = withSpring(0, { damping: 32, stiffness: 300, mass: 0.75 });
+    } else if (isMounted)
+      translateY.value = withSpring(
+        screenHeight,
+        { damping: 40, stiffness: 300, mass: 0.75, overshootClamping: true },
+        (finished) => {
+          if (finished) {
+            scheduleOnRN(setIsMounted, false);
+            if (onAfterClose) scheduleOnRN(onAfterClose);
+          }
+        },
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
+  return { isMounted, translateY };
+}
+
 export type BottomSheetProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  /** Heights (0-1 = fraction of viewport, or "auto"). First entry is default. */
-  snapPoints?: SnapPoint[];
-  /** Index into snapPoints used when the sheet opens. Default 0. */
-  defaultSnap?: number;
-  title?: string;
-  description?: string;
-  children?: ReactNode;
-  accessibilityLabel?: string;
-  style?: StyleProp<ViewStyle>;
-  testID?: string;
+  visible: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  containerClassName?: string;
+  onAfterClose?: () => void;
+  /** When true, the sheet stretches to full screen height instead of capping at 90%. */
+  fullSheet?: boolean;
+  /** When false, clicking the overlay will not close the sheet. Defaults to true. */
+  closeOnOverlayClick?: boolean;
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: gesture + spring + keyboard state must all branch together
 export function BottomSheet({
-  open,
-  onOpenChange,
-  snapPoints = [0.5, 0.92],
-  defaultSnap = 0,
-  title,
-  description,
+  visible,
+  onClose,
   children,
-  accessibilityLabel,
-  style,
-  testID,
+  containerClassName,
+  onAfterClose,
+  fullSheet,
+  closeOnOverlayClick = true,
 }: BottomSheetProps) {
-  const reduce = useReducedMotion();
-  const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
-  const [snap, setSnap] = useState(defaultSnap);
+  const { height } = useWindowDimensions();
+  const { isMounted, translateY } = useSlideSheetPresence(visible, height, onAfterClose);
+  const dragStartY = useSharedValue(0);
 
-  // biome-ignore lint/plugin: snap must reset to defaultSnap each time the sheet opens — this responds to the `open` event, not derivable from render-time state
-  useEffect(() => {
-    if (open) setSnap(defaultSnap);
-  }, [open, defaultSnap]);
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
-  const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
-  const handleToggleSnap = useCallback(() => {
-    setSnap((s) => {
-      const canExpand = s < snapPoints.length - 1;
-      const canCollapse = s > 0;
-      if (canExpand) return s + 1;
-      if (canCollapse) return s - 1;
-      return s;
+  const backdropStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(translateY.value, [0, height], [1, 0], Extrapolation.CLAMP);
+    return { opacity };
+  });
+
+  const handleGesture = Gesture.Pan()
+    .onBegin(() => {
+      dragStartY.value = translateY.value;
+    })
+    .onUpdate((event) => {
+      translateY.value = Math.max(0, dragStartY.value + event.translationY);
+    })
+    .onEnd((event) => {
+      const shouldDismiss = translateY.value > height * 0.18 || event.velocityY > 1200;
+      if (shouldDismiss) {
+        scheduleOnRN(onClose);
+        return;
+      }
+      translateY.value = withSpring(0, { damping: 40, stiffness: 300, overshootClamping: true });
     });
-  }, [snapPoints.length]);
 
-  if (!rendered) return null;
+  const handleOverlayPress = useCallback(() => {
+    if (closeOnOverlayClick) onClose();
+  }, [closeOnOverlayClick, onClose]);
 
-  const screen = Dimensions.get('window');
-  const snapValue = snapPoints[snap] ?? snapPoints[0] ?? 0.5;
-  // "auto" caps at 92% of the viewport; numeric values are a fraction of it.
-  const heightStyle: ViewStyle =
-    snapValue === 'auto' ? { maxHeight: screen.height * 0.92 } : { height: screen.height * snapValue };
-  const canExpand = snap < snapPoints.length - 1;
+  if (!isMounted) return null;
 
   return (
-    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose}>
-      <AnimatePresence onExitComplete={handleExitComplete}>
-        {open ? (
-          <View key="bottom-sheet" style={{ flex: 1 }} testID={testID}>
-            <MotiView
-              from={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ type: 'timing', duration: DRAWER.duration, easing: EASE_DRAWER }}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            >
-              <Pressable accessibilityLabel="Close" onPress={handleClose} className="bg-foreground/40" style={{ flex: 1 }} />
-            </MotiView>
-            <MotiView
-              accessibilityLabel={accessibilityLabel ?? title}
-              from={reduce ? { opacity: 0, translateY: 0 } : { translateY: screen.height }}
-              animate={reduce ? { opacity: 1, translateY: 0 } : { translateY: 0 }}
-              exit={reduce ? { opacity: 0, translateY: 0 } : { translateY: screen.height }}
-              transition={
-                reduce
-                  ? { type: 'timing', duration: 180, easing: EASE_DRAWER }
-                  : { type: 'timing', duration: DRAWER.duration, easing: EASE_DRAWER }
-              }
-              className="absolute right-0 bottom-0 left-0 mx-auto max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-border bg-background"
-              style={[heightStyle, style]}
-            >
-              <View className="flex-col items-center px-4 pt-3 pb-2">
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={canExpand ? 'Expand sheet' : 'Collapse sheet'}
-                  onPress={handleToggleSnap}
-                  className="h-1.5 w-10 rounded-full bg-muted-foreground/40"
-                />
-                {title || description ? (
-                  <View className="mt-3 w-full">
-                    {title ? <Text className="font-semibold text-base text-foreground">{title}</Text> : null}
-                    {description ? <Text className="mt-0.5 text-muted-foreground text-sm">{description}</Text> : null}
-                  </View>
-                ) : null}
+    <Modal
+      visible={isMounted}
+      transparent={true}
+      animationType="none"
+      statusBarTranslucent={true}
+      hardwareAccelerated={IS_ANDROID}
+      onRequestClose={onClose}
+      accessibilityViewIsModal={true}
+      aria-modal={true}
+    >
+      <View className="flex-1" pointerEvents="box-none">
+        <Animated.View
+          renderToHardwareTextureAndroid={IS_ANDROID}
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.45)', pointerEvents: 'none' }, backdropStyle]}
+        />
+        <View className="flex-1 justify-end">
+          {fullSheet ? null : <Pressable onPress={handleOverlayPress} className="flex-1" />}
+          <GestureDetector gesture={handleGesture}>
+            <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>
+              <View
+                // biome-ignore lint/nursery/useSortedClasses: dynamic class — cannot sort across template-literal segments
+                className={`w-full overflow-hidden bg-surface${fullSheet ? '' : ' rounded-t-2xl'}`}
+                style={{
+                  maxHeight: fullSheet ? height : Math.round(height * 0.9),
+                  height: fullSheet ? height : undefined,
+                }}
+              >
+                {fullSheet ? null : <SheetHandle />}
+                <View className={`min-h-0 flex-1${containerClassName ? ` ${containerClassName}` : ''}`}>{children}</View>
               </View>
-              <ScrollView className="flex-1 px-4 pb-6" contentContainerStyle={{ paddingBottom: 24 }}>
-                {children}
-              </ScrollView>
-            </MotiView>
-          </View>
-        ) : null}
-      </AnimatePresence>
+            </Animated.View>
+          </GestureDetector>
+        </View>
+      </View>
     </Modal>
   );
 }

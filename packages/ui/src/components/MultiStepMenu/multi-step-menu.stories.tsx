@@ -1,0 +1,254 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { useCallback, useState } from 'react';
+import { Text, useWindowDimensions, View } from 'react-native';
+import { Bell, Moon, ShieldCheck, User } from '../../lib/icons';
+import { Button } from '../Button/button';
+import { MenuRow, type MultiStepHelpers, MultiStepMenu, type MultiStepSection } from './multi-step-menu';
+
+const EMPTY_SECTIONS: MultiStepSection[] = [];
+
+const meta = {
+  title: 'Components/MultiStepMenu',
+  component: MultiStepMenu,
+  parameters: { layout: 'fullscreen' },
+  // All required props are managed by each story's render fn; stubs satisfy the type checker
+  args: {
+    isWideScreen: false,
+    onClose: () => undefined,
+    sections: EMPTY_SECTIONS,
+    sidebar: () => null,
+    smallScreenMenu: () => null,
+    rootTitle: '',
+  },
+} satisfies Meta<typeof MultiStepMenu>;
+
+type Story = StoryObj<typeof meta>;
+
+const SETTINGS_ROOT_TITLE = 'Settings';
+const OPEN_SETTINGS_LABEL = 'Open settings';
+
+// ── Shared fixture data ────────────────────────────────────────────────────
+
+const ACCOUNT_TITLE = 'Account Settings';
+const ACCOUNT_BODY = 'Manage your profile, email, and password.';
+const NOTIFICATIONS_TITLE = 'Notifications';
+const NOTIFICATIONS_BODY = 'Choose which alerts you receive and how.';
+const APPEARANCE_TITLE = 'Appearance';
+const APPEARANCE_BODY = 'Light, dark, or system theme.';
+const ADVANCED_APPEARANCE_LABEL = 'Advanced options →';
+const ADVANCED_TITLE = 'Advanced Appearance';
+const ADVANCED_BODY = 'Font size, contrast, motion settings.';
+const PRIVACY_TITLE = 'Privacy & Security';
+const PRIVACY_BODY = 'Two-factor auth, connected apps, and data.';
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function AppearanceSection({ helpers }: { helpers: MultiStepHelpers }) {
+  const navigateAdvanced = useCallback(() => helpers.navigate('appearance/advanced'), [helpers]);
+  return (
+    <View style={{ gap: 12 }}>
+      <Text style={{ fontWeight: '600', fontSize: 16 }}>{APPEARANCE_TITLE}</Text>
+      <Text style={{ color: '#6b7280', lineHeight: 22 }}>{APPEARANCE_BODY}</Text>
+      <Button variant="secondary" size="sm" onPress={navigateAdvanced}>
+        {ADVANCED_APPEARANCE_LABEL}
+      </Button>
+    </View>
+  );
+}
+
+const sections: MultiStepSection[] = [
+  {
+    path: 'account',
+    title: 'Account',
+    render: () => (
+      <View style={{ gap: 12 }}>
+        <Text style={{ fontWeight: '600', fontSize: 16 }}>{ACCOUNT_TITLE}</Text>
+        <Text style={{ color: '#6b7280', lineHeight: 22 }}>{ACCOUNT_BODY}</Text>
+      </View>
+    ),
+  },
+  {
+    path: 'notifications',
+    title: 'Notifications',
+    render: () => (
+      <View style={{ gap: 12 }}>
+        <Text style={{ fontWeight: '600', fontSize: 16 }}>{NOTIFICATIONS_TITLE}</Text>
+        <Text style={{ color: '#6b7280', lineHeight: 22 }}>{NOTIFICATIONS_BODY}</Text>
+      </View>
+    ),
+  },
+  {
+    path: 'appearance',
+    title: 'Appearance',
+    render: (helpers) => <AppearanceSection helpers={helpers} />,
+    subsections: [
+      {
+        path: 'advanced',
+        title: 'Advanced Appearance',
+        render: () => (
+          <View style={{ gap: 8 }}>
+            <Text style={{ fontWeight: '600', fontSize: 16 }}>{ADVANCED_TITLE}</Text>
+            <Text style={{ color: '#6b7280' }}>{ADVANCED_BODY}</Text>
+          </View>
+        ),
+      },
+    ],
+  },
+  {
+    path: 'privacy',
+    title: 'Privacy & Security',
+    render: () => (
+      <View style={{ gap: 8 }}>
+        <Text style={{ fontWeight: '600', fontSize: 16 }}>{PRIVACY_TITLE}</Text>
+        <Text style={{ color: '#6b7280' }}>{PRIVACY_BODY}</Text>
+      </View>
+    ),
+  },
+];
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function Sidebar({ helpers }: { helpers: MultiStepHelpers }) {
+  const navAccount = useCallback(() => helpers.navigate(['account']), [helpers]);
+  const navNotifications = useCallback(() => helpers.navigate(['notifications']), [helpers]);
+  const navAppearance = useCallback(() => helpers.navigate(['appearance']), [helpers]);
+  const navPrivacy = useCallback(() => helpers.navigate(['privacy']), [helpers]);
+  return (
+    <View style={{ gap: 4, paddingTop: 8 }}>
+      <MenuRow
+        icon={User}
+        label="Account"
+        iconBackgroundColor="#3b82f6"
+        active={helpers.path[0] === 'account'}
+        onPress={navAccount}
+      />
+      <MenuRow
+        icon={Bell}
+        label="Notifications"
+        iconBackgroundColor="#f59e0b"
+        active={helpers.path[0] === 'notifications'}
+        onPress={navNotifications}
+      />
+      <MenuRow
+        icon={Moon}
+        label="Appearance"
+        iconBackgroundColor="#8b5cf6"
+        active={helpers.path[0] === 'appearance'}
+        onPress={navAppearance}
+      />
+      <MenuRow
+        icon={ShieldCheck}
+        label="Privacy & Security"
+        iconBackgroundColor="#10b981"
+        active={helpers.path[0] === 'privacy'}
+        onPress={navPrivacy}
+      />
+    </View>
+  );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function SmallScreenMenuItems({ helpers }: { helpers: MultiStepHelpers }) {
+  const navAccount = useCallback(() => helpers.navigate('account'), [helpers]);
+  const navNotifications = useCallback(() => helpers.navigate('notifications'), [helpers]);
+  const navAppearance = useCallback(() => helpers.navigate('appearance'), [helpers]);
+  const navPrivacy = useCallback(() => helpers.navigate('privacy'), [helpers]);
+  return (
+    <View style={{ gap: 4 }}>
+      <MenuRow icon={User} label="Account" iconBackgroundColor="#3b82f6" onPress={navAccount} />
+      <MenuRow icon={Bell} label="Notifications" iconBackgroundColor="#f59e0b" onPress={navNotifications} />
+      <MenuRow icon={Moon} label="Appearance" iconBackgroundColor="#8b5cf6" onPress={navAppearance} />
+      <MenuRow icon={ShieldCheck} label="Privacy & Security" iconBackgroundColor="#10b981" onPress={navPrivacy} />
+    </View>
+  );
+}
+
+const renderSidebar = (h: MultiStepHelpers) => <Sidebar helpers={h} />;
+const renderSmallScreenMenu = (h: MultiStepHelpers) => <SmallScreenMenuItems helpers={h} />;
+const renderNull = () => null;
+
+export default meta;
+
+// ── Stories ────────────────────────────────────────────────────────────────
+
+/** Wide-screen layout (sidebar + content pane). */
+export const WideScreen: Story = {
+  render: () => {
+    const [open, setOpen] = useState(true);
+    const handleOpen = useCallback(() => setOpen(true), []);
+    const handleClose = useCallback(() => setOpen(false), []);
+    if (!open) return <Button onPress={handleOpen}>{OPEN_SETTINGS_LABEL}</Button>;
+    return (
+      <View style={{ width: 700, height: 480, padding: 24 }}>
+        <MultiStepMenu
+          isWideScreen={true}
+          sections={sections}
+          sidebar={renderSidebar}
+          smallScreenMenu={renderNull}
+          rootTitle={SETTINGS_ROOT_TITLE}
+          defaultPath={['account']}
+          onClose={handleClose}
+        />
+      </View>
+    );
+  },
+};
+
+/** Small-screen layout (stacked navigation, full-height panes). */
+export const SmallScreen: Story = {
+  render: () => {
+    const [open, setOpen] = useState(false);
+    const handleOpen = useCallback(() => setOpen(true), []);
+    const handleClose = useCallback(() => setOpen(false), []);
+    return (
+      <View style={{ padding: 24 }}>
+        <Button onPress={handleOpen}>{OPEN_SETTINGS_LABEL}</Button>
+        {open ? (
+          <View style={{ position: 'absolute', inset: 0, backgroundColor: '#fff' }}>
+            <MultiStepMenu
+              isWideScreen={false}
+              sections={sections}
+              sidebar={renderNull}
+              smallScreenMenu={renderSmallScreenMenu}
+              rootTitle={SETTINGS_ROOT_TITLE}
+              onClose={handleClose}
+            />
+          </View>
+        ) : null}
+      </View>
+    );
+  },
+};
+
+/** Responsive — switches layout based on window width. */
+export const Responsive: Story = {
+  render: () => {
+    const { width } = useWindowDimensions();
+    const isWideScreen = width >= 640;
+    const [open, setOpen] = useState(false);
+    const handleOpen = useCallback(() => setOpen(true), []);
+    const handleClose = useCallback(() => setOpen(false), []);
+    return (
+      <View style={{ flex: 1, padding: 24 }}>
+        <Button onPress={handleOpen}>{OPEN_SETTINGS_LABEL}</Button>
+        {open ? (
+          <View
+            style={
+              isWideScreen
+                ? { width: 700, height: 480, marginTop: 16 }
+                : { position: 'absolute', inset: 0, backgroundColor: '#fff' }
+            }
+          >
+            <MultiStepMenu
+              isWideScreen={isWideScreen}
+              sections={sections}
+              sidebar={renderSidebar}
+              smallScreenMenu={renderSmallScreenMenu}
+              rootTitle={SETTINGS_ROOT_TITLE}
+              defaultPath={['account']}
+              onClose={handleClose}
+            />
+          </View>
+        ) : null}
+      </View>
+    );
+  },
+};

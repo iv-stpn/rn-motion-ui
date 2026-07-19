@@ -134,7 +134,7 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
       </Text>
       {item.badge ? <View className="shrink-0">{item.badge}</View> : null}
       {item.hint ? (
-        <Text className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        <Text className="rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] text-muted-foreground">
           {item.hint}
         </Text>
       ) : null}
@@ -230,7 +230,7 @@ export function CommandPalette({
               transition={{ type: 'timing', duration: reduce ? 100 : 160 }}
               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
             >
-              <Pressable accessibilityLabel="Close" onPress={handleClose} className="bg-background/60" style={{ flex: 1 }} />
+              <Pressable accessibilityLabel="Close" onPress={handleClose} className="bg-surface/60" style={{ flex: 1 }} />
             </MotiView>
             <View
               pointerEvents="box-none"
@@ -261,7 +261,7 @@ export function CommandPalette({
                     accessibilityRole="button"
                     accessibilityLabel="Close"
                     onPress={handleClose}
-                    className="rounded border border-border bg-background px-1.5 py-0.5"
+                    className="rounded border border-border bg-surface px-1.5 py-0.5"
                   >
                     <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
                   </Pressable>

@@ -15,7 +15,7 @@ const box = cva('h-5 w-5 shrink-0 items-center justify-center rounded-md border-
   variants: {
     marked: {
       true: 'border-primary bg-primary',
-      false: 'border-muted-foreground/50 bg-background',
+      false: 'border-muted-foreground/50 bg-surface',
     },
   },
   defaultVariants: { marked: false },

@@ -60,7 +60,7 @@ const group = cva('flex-row items-center', {
   variants: { size: { sm: 'gap-1', md: 'gap-1.5' } },
   defaultVariants: { size: 'md' },
 });
-const action = cva('flex-row shrink-0 items-center justify-center rounded-full bg-background', {
+const action = cva('flex-row shrink-0 items-center justify-center rounded-full bg-surface', {
   variants: { size: { sm: 'h-8 gap-1.5 px-3', md: 'h-9 gap-2 px-3.5' } },
   defaultVariants: { size: 'md' },
 });

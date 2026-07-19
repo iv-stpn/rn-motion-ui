@@ -251,7 +251,7 @@ function FileUploadRow({
       style={{ overflow: 'hidden', borderRadius: 16 }}
       testID={`file-row-${item.id}`}
     >
-      <View className="rounded-2xl border border-border bg-background p-3">
+      <View className="rounded-2xl border border-border bg-surface p-3">
         <View className="flex-row items-center" style={{ gap: 12 }}>
           {/* Leading icon */}
           <View className="items-center justify-center rounded-xl bg-muted" style={{ width: 44, height: 44, flexShrink: 0 }}>
@@ -426,7 +426,7 @@ export function FileUpload({
         style={{ opacity: isDisabled ? 0.55 : 1 }}
       >
         <View
-          className="w-full overflow-hidden rounded-3xl border border-border border-dashed bg-background"
+          className="w-full overflow-hidden rounded-3xl border border-border border-dashed bg-surface"
           style={[
             centered
               ? {

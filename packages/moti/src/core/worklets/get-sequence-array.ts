@@ -1,5 +1,5 @@
 import { withDelay, type withTiming } from 'react-native-reanimated';
-import { runOnJS } from 'react-native-worklets';
+import { scheduleOnRN } from 'react-native-worklets';
 import type { MotiTransition, SequenceItem, SequenceItemObject } from '../types';
 import { animationConfig } from './animation-config';
 
@@ -88,7 +88,7 @@ export function getSequenceArray({ sequenceKey, sequenceArray, delayMs, config, 
         callback(completed, maybeValue, { attemptedSequenceValue: stepValue });
         if (stepOnDidAnimate)
           // biome-ignore lint/plugin: runOnJS needs a concrete variadic signature; the onDidAnimate field's type isn't callable-compatible without an assertion
-          runOnJS(stepOnDidAnimate as (...args: unknown[]) => void)(completed, maybeValue, {
+          scheduleOnRN(stepOnDidAnimate as (...args: unknown[]) => void, completed, maybeValue, {
             attemptedSequenceItemValue: stepValue,
             attemptedSequenceArray: maybeValue,
           });

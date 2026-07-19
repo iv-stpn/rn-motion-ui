@@ -7,7 +7,7 @@
 /* Design tokens — mirrored from the web library's theme (oklch), exposed as
    Tailwind color utilities (bg-primary, text-muted-foreground, border-border, …). */
 @theme {
-  --color-background: oklch(99% 0 0);
+  --color-surface: oklch(99% 0 0);
   --color-foreground: oklch(15% 0 0);
   --color-card: oklch(97% 0 0);
   --color-muted: oklch(97% 0 0);

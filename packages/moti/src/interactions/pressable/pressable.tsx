@@ -2,7 +2,7 @@ import { hasKey } from '@rn-motion-ui/utils/typeguards';
 import { type ReactNode, useMemo } from 'react';
 import { Pressable } from 'react-native';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
-import { runOnJS } from 'react-native-worklets';
+import { scheduleOnRN } from 'react-native-worklets';
 import { View as MotiView } from '../../components/view';
 import { INTERACTION_CONTAINER_ID, MotiPressableContext, useMotiPressableContext } from './context';
 import { Hoverable } from './hoverable';
@@ -85,7 +85,7 @@ export function MotiPressable(props: MotiPressableProps) {
     'worklet';
     if (event === 'hovered') hovered.value = enabled;
     else if (event === 'pressed') pressed.value = enabled;
-    if (callback) runOnJS(callback)();
+    if (callback) scheduleOnRN(callback);
   };
 
   const child = (

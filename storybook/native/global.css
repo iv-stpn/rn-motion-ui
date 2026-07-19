@@ -8,7 +8,7 @@
    Tailwind color utilities (bg-primary, text-muted-foreground, border-border, …).
    Kept in sync with storybook/web/global.css. */
 @theme {
-  --color-background: oklch(99% 0 0);
+  --color-surface: oklch(99% 0 0);
   --color-foreground: oklch(15% 0 0);
   --color-card: oklch(97% 0 0);
   --color-muted: oklch(97% 0 0);

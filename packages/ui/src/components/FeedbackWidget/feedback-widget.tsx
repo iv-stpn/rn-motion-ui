@@ -180,7 +180,7 @@ export function FeedbackWidget({
       <MotiView
         animate={{ borderRadius: open ? 20 : 40 }}
         transition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 320, easing: EASE_OUT }}
-        className="overflow-hidden border border-border bg-background shadow-lg"
+        className="overflow-hidden border border-border bg-surface shadow-lg"
         style={{ position: 'absolute', bottom: 0, ...(left ? { left: 0 } : { right: 0 }) }}
       >
         <AnimatePresence exitBeforeEnter={true}>

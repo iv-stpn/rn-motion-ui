@@ -37,15 +37,6 @@ export const SPRING_SWAP = {
   mass: 0.55,
 };
 
-/** Per-letter cascade roll — softer than SPRING_SWAP so each letter settles a
- *  beat slower, giving the left→right sweep room to read. */
-export const SPRING_CASCADE = {
-  type: 'spring' as const,
-  stiffness: 300,
-  damping: 28,
-  mass: 0.75,
-};
-
 /** Overlay panel entrances — modals and sheets summoned by pointer. */
 export const SPRING_PANEL = {
   type: 'spring' as const,

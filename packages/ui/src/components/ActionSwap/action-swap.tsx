@@ -4,8 +4,9 @@ import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { usePageVisible } from '../../hooks/use-page-visible';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { EASE_IN_OUT, EASE_OUT, SPRING_CASCADE, SPRING_PRESS } from '../../lib/ease';
+import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '../../lib/ease';
 
 export type ActionSwapItem = {
   id: string;
@@ -33,10 +34,12 @@ const ROLL_TRANSITION = { type: 'timing', duration: 240, easing: EASE_OUT } as c
 const ROLL_EXIT = { type: 'timing', duration: 180, easing: EASE_IN_OUT } as const;
 
 // Cascade rolls the label one letter at a time, left to right. Each letter
-// enters from below and exits upward with the same left→right stagger, so the
-// old letters drop away as the new ones land — a true per-letter roll rather
-// than a whole-block slide.
-const CASCADE_STAGGER = 45; // ms between letters
+// enters from below on SPRING_SWAP and exits upward on a short tween, and the
+// exits are staggered at half the enter rate so the tail of the old label
+// lingers briefly — mirroring the web reference (0.025 s stagger, spring in,
+// 0.16 s ease-out exit at half stagger).
+const CASCADE_STAGGER = 25; // ms between letters (web original: 0.025 s)
+const CASCADE_EXIT_DURATION = 160; // ms (web original: 0.16 s)
 
 // Fallback roll distance before the slot has been measured (px).
 const ROLL_FALLBACK = 18;
@@ -120,6 +123,7 @@ export function ActionSwapText({
   testID,
 }: ActionSwapTextProps) {
   const reduce = useReducedMotion();
+  const pageVisible = usePageVisible();
   const [rollHeight, setRollHeight] = useState(0);
 
   const onLayout = useCallback(
@@ -136,8 +140,16 @@ export function ActionSwapText({
   const cascade = animation === 'cascade' && label !== null && !reduce;
   const core: CoreAnimation = animation === 'cascade' ? 'roll' : animation;
   const roll = rollHeight || ROLL_FALLBACK;
+  // Cascade letters travel 105% of the line box (web: y "105%"/"-105%") so
+  // ascenders/descenders fully clear the clip before fading.
+  const cascadeRoll = Math.round(roll * 1.05);
 
-  if (reduce)
+  // Reduced motion renders statically — and so does a hidden page: rAF is
+  // paused in background tabs, so swaps arriving while hidden would queue
+  // animations that all replay from their initial state on return. Rendering
+  // the settled label instead lands background swaps instantly, and the swap
+  // picks up from the current value once the page is visible again.
+  if (reduce || !pageVisible)
     return (
       <View testID={testID} style={style}>
         {label === null ? children : <Text className={textClassName}>{label}</Text>}
@@ -173,16 +185,21 @@ export function ActionSwapText({
                 // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity — the letter at a position is what rolls.
                 key={i}
                 className={textClassName}
-                from={{ opacity: 0, translateY: roll }}
+                from={{ opacity: 0, translateY: cascadeRoll }}
                 animate={{ opacity: 1, translateY: 0 }}
-                exit={{ opacity: 0, translateY: -roll }}
-                transition={{ ...SPRING_CASCADE, delay: i * CASCADE_STAGGER }}
-                // Exit on timing (not the enter spring): opacity is always timing,
-                // so a spring exit leaves translateY finishing later — and presence
-                // re-renders interrupt the spring before its completion callback
-                // fires, so the letter never reports safeToUnmount and old layers
-                // pile up while cycling. Timing makes both keys finish together.
-                exitTransition={{ type: 'timing', duration: 220, easing: EASE_OUT, delay: i * CASCADE_STAGGER }}
+                exit={{ opacity: 0, translateY: -cascadeRoll }}
+                transition={{ ...SPRING_SWAP, delay: i * CASCADE_STAGGER }}
+                // Exit on a timing tween (web parity: 0.16 s ease-out at half the
+                // enter stagger). A spring exit would also break presence: re-renders
+                // interrupt the spring before its completion callback fires, so the
+                // letter never reports safeToUnmount and old layers pile up while
+                // cycling. Timing makes opacity and translateY finish together.
+                exitTransition={{
+                  type: 'timing',
+                  duration: CASCADE_EXIT_DURATION,
+                  easing: EASE_OUT,
+                  delay: i * CASCADE_STAGGER * 0.5,
+                }}
               >
                 {/* biome-ignore lint/suspicious/noLeakedRender: char is always a string character — safe alternate branch */}
                 {char === ' ' ? ' ' : char}
@@ -210,10 +227,12 @@ export function ActionSwapText({
 }
 export function ActionSwapIcon({ value, children, animation = 'blur', size = 16, style, testID }: ActionSwapIconProps) {
   const reduce = useReducedMotion();
+  const pageVisible = usePageVisible();
   // Icons are single elements — cascade maps to its closest motion, roll.
   const core: CoreAnimation = animation === 'cascade' ? 'roll' : animation;
 
-  if (reduce)
+  // Same hidden-page fallback as ActionSwapText — see the comment there.
+  if (reduce || !pageVisible)
     return (
       <View testID={testID} style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
         {children}

@@ -34,7 +34,7 @@ export function animationConfig<Animate>(styleProp: string, transition: MotiTran
   else if (transition?.type) animationType = transition.type;
 
   const loop = styleSpecificTransition?.loop ?? transition?.loop;
-  if (loop !== null) repeatCount = loop ? -1 : 0;
+  if (loop !== null && loop !== undefined) repeatCount = loop ? -1 : 0;
 
   if (styleSpecificTransition?.repeat !== undefined && styleSpecificTransition.repeat !== null)
     repeatCount = styleSpecificTransition.repeat;
@@ -55,7 +55,7 @@ export function animationConfig<Animate>(styleProp: string, transition: MotiTran
     const timingReduceMotion = styleSpecificTransition?.reduceMotion ?? transitionAny?.reduceMotion;
 
     if (easing) config.easing = easing;
-    if (duration !== null) config.duration = duration;
+    if (duration !== null && duration !== undefined) config.duration = duration;
     if (timingReduceMotion) {
       reduceMotion = timingReduceMotion;
       config.reduceMotion = reduceMotion;
@@ -69,8 +69,9 @@ export function animationConfig<Animate>(styleProp: string, transition: MotiTran
       const transitionConfigForKey = transitionAny?.[configKey];
       if (configKey === 'reduceMotion' && (transitionConfigForKey || styleSpecificConfig))
         reduceMotion = transitionConfigForKey ?? styleSpecificConfig;
-      if (styleSpecificConfig !== null) config[configKey] = styleSpecificConfig;
-      else if (transitionConfigForKey !== null) config[configKey] = transitionConfigForKey;
+      if (styleSpecificConfig !== null && styleSpecificConfig !== undefined) config[configKey] = styleSpecificConfig;
+      else if (transitionConfigForKey !== null && transitionConfigForKey !== undefined)
+        config[configKey] = transitionConfigForKey;
     }
   } else if (animationType === 'decay') {
     animation = withDecay;
@@ -81,8 +82,9 @@ export function animationConfig<Animate>(styleProp: string, transition: MotiTran
       const transitionConfigForKey = transitionAny?.[configKey];
       if (configKey === 'reduceMotion' && (transitionConfigForKey || styleSpecificConfig))
         reduceMotion = transitionConfigForKey ?? styleSpecificConfig;
-      if (styleSpecificConfig !== null) config[configKey] = styleSpecificConfig;
-      else if (transitionConfigForKey !== null) config[configKey] = transitionConfigForKey;
+      if (styleSpecificConfig !== null && styleSpecificConfig !== undefined) config[configKey] = styleSpecificConfig;
+      else if (transitionConfigForKey !== null && transitionConfigForKey !== undefined)
+        config[configKey] = transitionConfigForKey;
     }
   } else if (animationType === 'no-animation') {
     animation = (value: unknown) => value;

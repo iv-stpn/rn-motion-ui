@@ -1,14 +1,24 @@
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
 import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
-import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import {
+  type LayoutChangeEvent,
+  type LayoutRectangle,
+  Pressable,
+  type StyleProp,
+  Text,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 
 type RadioCtx = {
   value: string;
   setValue: (value: string) => void;
+  reduce: boolean;
+  layouts: Record<string, LayoutRectangle>;
+  register: (value: string, layout: LayoutRectangle) => void;
 };
 
 const RadioContext = createContext<RadioCtx | null>(null);
@@ -41,6 +51,11 @@ const group = cva('gap-3', {
   defaultVariants: { orientation: 'vertical' },
 });
 
+// Ring outer size (h-5 = 20 px) and dot size (h-2.5 = 10 px). Used to centre
+// the overlay dot inside the ring measured via the Pressable's onLayout.
+const RING_SIZE = 20;
+const DOT_SIZE = 10;
+
 export function RadioGroup({
   value,
   defaultValue = '',
@@ -50,17 +65,51 @@ export function RadioGroup({
   style,
   testID,
 }: RadioGroupProps) {
+  const reduce = useReducedMotion();
   const [internal, setInternal] = useState(defaultValue);
+  const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
   const controlled = value !== undefined;
   const current = controlled ? value : internal;
+
   const setValue = (next: string) => {
     if (!controlled) setInternal(next);
     onValueChange?.(next);
   };
 
+  const register = useCallback((v: string, layout: LayoutRectangle) => {
+    setLayouts((prev) => {
+      const existing = prev[v];
+      if (existing && existing.x === layout.x && existing.y === layout.y && existing.height === layout.height) return prev;
+      return { ...prev, [v]: layout };
+    });
+  }, []);
+
+  const activeLayout = layouts[current];
+
   return (
-    <RadioContext.Provider value={{ value: current, setValue }}>
-      <View accessibilityRole="radiogroup" testID={testID} className={group({ orientation })} style={style}>
+    <RadioContext.Provider value={{ value: current, setValue, reduce, layouts, register }}>
+      <View
+        accessibilityRole="radiogroup"
+        testID={testID}
+        className={group({ orientation })}
+        style={[{ position: 'relative' }, style]}
+      >
+        {/* Single shared dot that glides to the active item — mirrors the web
+            layoutId pattern. Each Pressable reports its frame via onLayout; the
+            dot is centred inside the ring (RING_SIZE × RING_SIZE) that sits at
+            x=0 of the Pressable and is vertically centred by items-center. */}
+        {activeLayout ? (
+          <MotiView
+            animate={{
+              translateX: activeLayout.x + (RING_SIZE - DOT_SIZE) / 2,
+              translateY: activeLayout.y + (activeLayout.height - DOT_SIZE) / 2,
+            }}
+            transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
+            pointerEvents="none"
+            className="h-2.5 w-2.5 rounded-full bg-primary"
+            style={{ position: 'absolute', left: 0, top: 0 }}
+          />
+        ) : null}
         {children}
       </View>
     </RadioContext.Provider>
@@ -76,8 +125,8 @@ export type RadioGroupItemProps = {
   testID?: string;
 };
 
-// Border swaps to primary when selected; the inner dot animates in via moti.
-const control = cva('h-5 w-5 shrink-0 items-center justify-center rounded-full border-2', {
+// Border swaps to primary when selected; the shared dot in RadioGroup glides to it.
+const control = cva('h-5 w-5 shrink-0 rounded-full border-2', {
   variants: {
     selected: {
       true: 'border-primary',
@@ -87,12 +136,8 @@ const control = cva('h-5 w-5 shrink-0 items-center justify-center rounded-full b
   defaultVariants: { selected: false },
 });
 
-// RN fallback: the web uses a shared-layout `layoutId` dot that glides between
-// items. RN has no shared-element layout, so each item owns its own dot that
-// springs in/out via AnimatePresence — same feel, no cross-item morph.
 export function RadioGroupItem({ value, label, disabled, style, accessibilityLabel, testID }: RadioGroupItemProps) {
-  const { value: groupValue, setValue } = useRadioGroup();
-  const reduce = useReducedMotion();
+  const { value: groupValue, setValue, reduce, register } = useRadioGroup();
   const [pressed, setPressed] = useState(false);
   const selected = groupValue === value;
 
@@ -101,6 +146,8 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
   const handlePress = useCallback(() => {
     if (!disabled) setValue(value);
   }, [disabled, setValue, value]);
+
+  const onLayout = useCallback((e: LayoutChangeEvent) => register(value, e.nativeEvent.layout), [register, value]);
 
   return (
     <Pressable
@@ -113,6 +160,7 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
+      onLayout={onLayout}
       className="flex-row items-center"
       style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}
     >
@@ -125,25 +173,7 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
           mass: SPRING_PRESS.mass,
         }}
         className={control({ selected })}
-      >
-        <AnimatePresence>
-          {selected ? (
-            <MotiView
-              key="dot"
-              from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.4 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.4 }}
-              transition={{
-                type: 'spring',
-                stiffness: SPRING_LAYOUT.stiffness,
-                damping: SPRING_LAYOUT.damping,
-                mass: SPRING_LAYOUT.mass,
-              }}
-              className="h-2.5 w-2.5 rounded-full bg-primary"
-            />
-          ) : null}
-        </AnimatePresence>
-      </MotiView>
+      />
       {label ? <Text className="select-none text-foreground text-sm">{label}</Text> : null}
     </Pressable>
   );

@@ -1,4 +1,3 @@
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   type AccessibilityActionEvent,
@@ -9,12 +8,13 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import Animated, { useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // Smooth glide for thumb/fill — critically damped, no overshoot (web SPRING_GLIDE).
-const SPRING_GLIDE = { type: 'spring' as const, stiffness: 700, damping: 50, mass: 0.5 };
+const SPRING_GLIDE = { stiffness: 700, damping: 50, mass: 0.5 };
 // Bouncy grab feedback for the thumb scale only (web SPRING_BOUNCY).
-const SPRING_BOUNCY = { type: 'spring' as const, stiffness: 500, damping: 14, mass: 0.7 };
+const SPRING_BOUNCY = { stiffness: 500, damping: 14, mass: 0.7 };
 
 const THUMB_W = 6;
 
@@ -52,7 +52,7 @@ export function RangeSlider({
   const reduce = useReducedMotion();
   const [internal, setInternal] = useState(defaultValue);
   const [active, setActive] = useState(false);
-  const [trackW, setTrackW] = useState(0);
+  const trackW = useSharedValue(0);
   const trackWRef = useRef(0);
 
   const controlled = value !== undefined;
@@ -83,11 +83,14 @@ export function RangeSlider({
     [current, min, max],
   );
 
-  const onLayout = useCallback((e: LayoutChangeEvent) => {
-    const w = e.nativeEvent.layout.width;
-    trackWRef.current = w;
-    setTrackW(w);
-  }, []);
+  const onLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const w = e.nativeEvent.layout.width;
+      trackWRef.current = w;
+      trackW.value = w;
+    },
+    [trackW],
+  );
 
   const responder = useMemo(
     () =>
@@ -118,11 +121,20 @@ export function RangeSlider({
     [disabled, current, step, commit],
   );
 
+  // One spring-smoothed ratio drives both fill and thumb (the web `smooth` motion
+  // value) so they move frame-locked as a single unit — two independent springs
+  // over different distances would stagger.
+  const smooth = useDerivedValue(() => (reduce ? ratio : withSpring(ratio, SPRING_GLIDE)));
+
+  const fillStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: smooth.value }] }));
   // Contain the thumb fully inside the track at both ends by mapping the ratio
   // across [0, trackW - THUMB_W] rather than the raw width — no clip, no gap.
-  const glide = reduce ? { type: 'timing' as const, duration: 0 } : SPRING_GLIDE;
-  const fillW = ratio * trackW;
-  const thumbX = ratio * Math.max(trackW - THUMB_W, 0);
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: smooth.value * Math.max(trackW.value - THUMB_W, 0) },
+      { scaleY: withSpring(active && !reduce ? 1.35 : 1, SPRING_BOUNCY) },
+    ],
+  }));
 
   return (
     <View
@@ -138,12 +150,12 @@ export function RangeSlider({
       className="relative h-10 w-full flex-row items-center overflow-hidden rounded-lg bg-muted"
       style={[{ opacity: disabled ? 0.5 : 1 }, style]}
     >
-      {/* fill — from the left edge to the thumb */}
-      <MotiView
+      {/* fill — from the left edge to the thumb, scaled from the left so it shares
+          the transform pipeline (and the exact same smoothed value) as the thumb */}
+      <Animated.View
         pointerEvents="none"
-        className="absolute top-0 bottom-0 left-0 bg-foreground/15"
-        animate={{ width: fillW }}
-        transition={glide}
+        className="absolute top-0 bottom-0 left-0 w-full bg-foreground/15"
+        style={[{ transformOrigin: 'left' }, fillStyle]}
       />
 
       {/* ticks — slight inset so the end dots don't clip */}
@@ -160,13 +172,11 @@ export function RangeSlider({
         })}
       </View>
 
-      {/* vertical bar thumb — contained at both ends via thumbX */}
-      <MotiView
+      {/* vertical bar thumb — contained at both ends via the [0, trackW - THUMB_W] mapping */}
+      <Animated.View
         pointerEvents="none"
         className="absolute h-5 rounded-sm bg-foreground"
-        animate={{ translateX: thumbX, scaleY: active && !reduce ? 1.35 : 1 }}
-        transition={{ translateX: glide, scaleY: SPRING_BOUNCY }}
-        style={{ left: 0, width: THUMB_W, top: 10 }}
+        style={[{ left: 0, width: THUMB_W, top: 10 }, thumbStyle]}
       />
     </View>
   );

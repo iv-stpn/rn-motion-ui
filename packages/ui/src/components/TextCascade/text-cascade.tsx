@@ -20,7 +20,7 @@ export type TextCascadeProps = {
  * in lockstep with the action-swap button. The wrapper only adds the
  * `text`/`className` API and an accessible label; see action-swap for the
  * per-letter motion and its RN fallbacks (no glyph blur, width snaps per
- * label, leaving layer exits as a whole while entering letters cascade).
+ * label — but both layers roll per letter, entering and leaving).
  */
 export function TextCascade({ text, className, style, accessibilityLabel, testID }: TextCascadeProps) {
   return (

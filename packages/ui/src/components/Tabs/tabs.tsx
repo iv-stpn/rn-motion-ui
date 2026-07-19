@@ -90,7 +90,9 @@ export function TabsList({ children }: TabsListProps) {
   return (
     <View className={list({ variant })} style={{ position: 'relative', alignSelf: 'flex-start' }}>
       {/* Shared-layout indicator: a single MotiView that glides to the active
-          trigger's measured rect. Mirrors the web layoutId pill. */}
+          trigger's measured rect. Mirrors the web layoutId pill. White for
+          pill/segment so trigger text keeps its dark color while the pill is
+          still gliding over. */}
       {active ? (
         <MotiView
           animate={{
@@ -101,7 +103,7 @@ export function TabsList({ children }: TabsListProps) {
           }}
           transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 170, damping: 24, mass: 1.2 }}
           pointerEvents="none"
-          className="bg-primary"
+          className={variant === 'underline' ? 'bg-primary' : 'bg-white'}
           style={{
             position: 'absolute',
             left: 0,
@@ -120,12 +122,23 @@ type TabsTriggerProps = { value: string; children: ReactNode };
 export function TabsTrigger({ value, children }: TabsTriggerProps) {
   const { value: current, setValue, variant, register } = useTabs();
   const active = current === value;
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [pressed, setPressed] = useState(false);
 
   const onLayout = useCallback(
     (e: NativeSyntheticEvent<{ layout: Layout }>) => register(value, e.nativeEvent.layout),
     [register, value],
   );
   const onPress = useCallback(() => setValue(value), [setValue, value]);
+  const onHoverIn = useCallback(() => setHovered(true), []);
+  const onHoverOut = useCallback(() => setHovered(false), []);
+  const onFocus = useCallback(() => setFocused(true), []);
+  const onBlur = useCallback(() => setFocused(false), []);
+  const onPressIn = useCallback(() => setPressed(true), []);
+  const onPressOut = useCallback(() => setPressed(false), []);
+
+  const highlighted = active || hovered || focused || pressed;
 
   return (
     <Pressable
@@ -133,13 +146,15 @@ export function TabsTrigger({ value, children }: TabsTriggerProps) {
       aria-selected={active}
       onPress={onPress}
       onLayout={onLayout}
+      onHoverIn={onHoverIn}
+      onHoverOut={onHoverOut}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       className={variant === 'underline' ? 'px-3 pt-1 pb-2.5' : 'px-3.5 py-1.5'}
     >
-      <Text
-        className={active ? 'font-medium text-primary-foreground text-sm' : 'font-medium text-muted-foreground text-sm'}
-        // Underline variant keeps dark text (indicator is a thin line, not a fill).
-        style={variant === 'underline' && active ? { color: '#111111' } : undefined}
-      >
+      <Text className={highlighted ? 'font-medium text-foreground text-sm' : 'font-medium text-muted-foreground text-sm'}>
         {children}
       </Text>
     </Pressable>

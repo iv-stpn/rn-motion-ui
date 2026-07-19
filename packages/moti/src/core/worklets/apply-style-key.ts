@@ -116,7 +116,10 @@ export function applyStyleKey({ final, key, value, transition, defaultDelay, cal
 
     // biome-ignore lint/plugin: dynamic per-key delay lookup on the transition union — the runtime style key isn't in MotiTransition's static shape
     const keyTransitionDelay = (transition as Record<string, Record<string, number> | undefined> | undefined)?.[key]?.delay;
-    if (keyTransitionDelay !== null) delayMs = keyTransitionDelay;
+    // Only a per-key delay that is actually set may override the resolved
+    // delayMs — an absent (undefined) per-key delay must not erase the
+    // top-level transition delay (per-letter staggers depend on it).
+    if (keyTransitionDelay !== null && keyTransitionDelay !== undefined) delayMs = keyTransitionDelay;
 
     const transform: Record<string, unknown> = {};
     // biome-ignore lint/plugin: applyAnimation returns unknown; transform needs the concrete animation-node type

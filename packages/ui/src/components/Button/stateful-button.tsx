@@ -5,9 +5,8 @@
 
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { EASE_OUT, SPRING_SWAP } from '../../lib/ease';
+import { EASE_IN_OUT, EASE_OUT, SPRING_SWAP } from '../../lib/ease';
 import { Check, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -205,6 +204,43 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce }:
 }
 
 // ---------------------------------------------------------------------------
+// DotsLoader — three staggered bouncing dots for the loading state
+// ---------------------------------------------------------------------------
+
+const DOT_SIZE = 4;
+const DOT_GAP = 3;
+
+type DotsLoaderProps = { color: string; reduce: boolean };
+
+function DotsLoader({ color, reduce }: DotsLoaderProps) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: DOT_GAP }}>
+      {([0, 1, 2] as const).map((i) => (
+        <MotiView
+          key={i}
+          from={{ opacity: 0.5, translateY: 0 }}
+          animate={reduce ? { opacity: 1, translateY: 0 } : { opacity: 1, translateY: -4 }}
+          transition={{
+            type: 'timing',
+            duration: 400,
+            loop: true,
+            repeatReverse: true,
+            easing: EASE_IN_OUT,
+            delay: i * 120,
+          }}
+          style={{
+            width: DOT_SIZE,
+            height: DOT_SIZE,
+            borderRadius: DOT_SIZE / 2,
+            backgroundColor: color,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // StatefulButton
 // ---------------------------------------------------------------------------
 
@@ -240,45 +276,21 @@ export function StatefulButton({
   const v = variant ?? 'primary';
   const iconColor = ICON_COLOR[v];
 
-  const stateText = resolveStateText({ state, loadingText, successText, errorText, children });
+  const stateText =
+    state === 'loading'
+      ? children // use idle text as sizer so button width stays constant
+      : resolveStateText({ state, loadingText, successText, errorText, children });
 
-  // Key used to distinguish text transitions; falls back to state name for nodes.
-  const textKey = typeof stateText === 'string' ? `${state}-${stateText}` : state;
+  // In loading state keep the same key as idle so no cascade triggers on the hidden text.
+  let textKey: string;
+  if (state === 'loading') textKey = typeof children === 'string' ? `idle-${children}` : 'idle';
+  else textKey = typeof stateText === 'string' ? `${state}-${stateText}` : state;
 
   return (
     <Button variant={variant} size={size} disabled={disabled || isBusy} loading={false} {...rest}>
       {/* accessibilityLiveRegion mirrors the web's aria-live="polite" */}
       <View accessible={false} accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center' }}>
         <AnimatePresence>
-          {state === 'loading' ? (
-            <IconSlot keyId="loading-icon" reduce={reduce}>
-              <MotiView
-                from={{ rotate: '0deg' }}
-                animate={reduce ? { opacity: 0.6 } : { rotate: '360deg' }}
-                transition={
-                  reduce
-                    ? { type: 'timing', duration: 700, loop: true, repeatReverse: true }
-                    : { type: 'timing', duration: 800, loop: true, repeatReverse: false }
-                }
-                style={{ width: 16, height: 16 }}
-              >
-                <Svg width={16} height={16} viewBox="0 0 16 16">
-                  <Circle cx={8} cy={8} r={6} stroke={iconColor} strokeOpacity={0.25} strokeWidth={2} fill="none" />
-                  <Circle
-                    cx={8}
-                    cy={8}
-                    r={6}
-                    stroke={iconColor}
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    fill="none"
-                    strokeDasharray={`${Math.PI * 6} ${Math.PI * 12}`}
-                  />
-                </Svg>
-              </MotiView>
-            </IconSlot>
-          ) : null}
-
           {state === 'success' ? (
             <IconSlot keyId="success-icon" reduce={reduce}>
               <Check size={16} color={iconColor} />
@@ -292,9 +304,40 @@ export function StatefulButton({
           ) : null}
         </AnimatePresence>
 
-        <TextSlot value={textKey} variant={v} size={size} reduce={reduce}>
-          {stateText}
-        </TextSlot>
+        {/* Wrapper holds the text sizer open (preserving button width) and
+            hosts the absolutely-centred dot overlay in loading state.
+            No overflow:hidden here — dots bounce freely above the baseline. */}
+        <View style={{ position: 'relative' }}>
+          <MotiView animate={{ opacity: state === 'loading' ? 0 : 1 }} transition={{ type: 'timing', duration: 150 }}>
+            <TextSlot value={textKey} variant={v} size={size} reduce={reduce}>
+              {stateText}
+            </TextSlot>
+          </MotiView>
+
+          <AnimatePresence>
+            {state === 'loading' ? (
+              <MotiView
+                key="dots-overlay"
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'timing', duration: 150 }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
+                }}
+              >
+                <DotsLoader color={iconColor} reduce={reduce} />
+              </MotiView>
+            ) : null}
+          </AnimatePresence>
+        </View>
 
         <AnimatePresence>
           {state === 'idle' && icon ? (

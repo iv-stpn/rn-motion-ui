@@ -1,6 +1,6 @@
 {
   "name": "@rn-motion-ui/hooks",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Reusable React hooks for rn-motion-ui",
   "license": "MIT",
   "author": "Ivan Stepanian <ivanivan1233@gmail.com>",

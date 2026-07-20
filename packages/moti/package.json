@@ -1,6 +1,6 @@
 {
   "name": "@rn-motion-ui/moti",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Moti reimplementation for react-native-reanimated 4 and react-native 0.86+",
   "keywords": [
     "react-native",
@@ -177,7 +177,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@rn-motion-ui/utils": "workspace:*"
+    "@rn-motion-ui/utils": "~0.2.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

@@ -1,6 +1,6 @@
 {
   "name": "@rn-motion-ui/rn",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Animated React Native + React Native Web UI components, styled with Tailwind via uniwind and powered by Moti/Reanimated.",
   "keywords": [
     "react-native",
@@ -320,8 +320,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@rn-motion-ui/hooks": "workspace:*",
-    "@rn-motion-ui/moti": "workspace:*",
+    "@rn-motion-ui/hooks": "~0.2.0",
+    "@rn-motion-ui/moti": "~0.2.0",
     "class-variance-authority": "^0.7.1",
     "react-native-svg": "^15.15.5"
   },

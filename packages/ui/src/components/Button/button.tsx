@@ -174,6 +174,7 @@ export function Button({
         className={container({ variant, size })}
         style={{ opacity: isDisabled ? 0.5 : 1, overflow: 'hidden' }}
       >
+        {buttonContent}
         {ripple && !reduce
           ? ripples.map((rp) => (
               <MotiView
@@ -181,6 +182,7 @@ export function Button({
                 from={{ scale: 0, opacity: 0.3 }}
                 animate={{ scale: 1, opacity: 0 }}
                 transition={{ type: 'timing', duration: 600 }}
+                pointerEvents="none"
                 style={{
                   position: 'absolute',
                   left: rp.x - rp.size / 2,
@@ -189,12 +191,10 @@ export function Button({
                   height: rp.size,
                   borderRadius: rp.size / 2,
                   backgroundColor: v === 'primary' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.12)',
-                  pointerEvents: 'none',
                 }}
               />
             ))
           : null}
-        {buttonContent}
       </Pressable>
     </MotiView>
   );

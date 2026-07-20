@@ -1,10 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ArrowRight, Download, Trash2 } from '../../lib/icons';
 import { Button } from './button';
-import { type ButtonState, StatefulButton } from './stateful-button';
 
 const meta = {
   title: 'Components/Button',
@@ -19,16 +17,9 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-// ─── StatefulButton ──────────────────────────────────────────────────────────
-// StatefulButton wraps Button with idle → loading → success/error transitions.
-type StatefulStory = StoryObj<typeof StatefulButton>;
-
-const statefulArgs = { children: 'Submit', state: 'idle', onPress: fn() } as const;
-
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' };
 const CONTINUE_LABEL = 'Continue';
 const DOWNLOAD_LABEL = 'Download';
-const SUBMIT_LABEL = 'Submit';
 
 export default meta;
 
@@ -80,112 +71,4 @@ export const WithIcons: Story = {
       </Button>
     </View>
   ),
-};
-
-export const StatefulIdle: StatefulStory = {
-  args: statefulArgs,
-  render: (args) => <StatefulButton {...args} />,
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
-    await userEvent.click(button);
-    await expect(args.onPress).toHaveBeenCalled();
-  },
-};
-
-export const StatefulLoading: StatefulStory = {
-  args: { ...statefulArgs, state: 'loading' },
-  render: (args) => <StatefulButton {...args} />,
-};
-
-export const StatefulSuccess: StatefulStory = {
-  args: { ...statefulArgs, state: 'success' },
-  render: (args) => <StatefulButton {...args} />,
-};
-
-export const StatefulFailed: StatefulStory = {
-  args: { ...statefulArgs, state: 'error' },
-  render: (args) => <StatefulButton {...args} />,
-};
-
-/** Custom labels for each state transition. */
-export const StatefulCustomLabels: StatefulStory = {
-  args: {
-    ...statefulArgs,
-    state: 'loading',
-    loadingText: 'Uploading…',
-    successText: 'Uploaded!',
-    errorText: 'Upload failed',
-    children: 'Upload',
-  },
-  render: (args) => <StatefulButton {...args} />,
-};
-
-/** Icon shown on the right in the idle state via the `icon` prop. */
-export const StatefulWithIcon: StatefulStory = {
-  args: {
-    ...statefulArgs,
-    icon: <ArrowRight size={16} color="#fafafa" />,
-    children: 'Continue',
-  },
-  render: (args) => <StatefulButton {...args} />,
-};
-
-/** All four states displayed side-by-side for visual comparison. */
-export const StatefulAllStates: StatefulStory = {
-  args: statefulArgs,
-  render: (args) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-      <StatefulButton {...args} state="idle">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-      <StatefulButton {...args} state="loading">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-      <StatefulButton {...args} state="success">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-      <StatefulButton {...args} state="error">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-    </View>
-  ),
-};
-
-/** Click to watch idle → loading → success → idle. */
-export const StatefulInteractiveSuccess: StatefulStory = {
-  args: statefulArgs,
-  render: (args) => {
-    const [state, setState] = useState<ButtonState>('idle');
-
-    const handlePress = () => {
-      if (state !== 'idle') return;
-      setState('loading');
-      setTimeout(() => {
-        setState('success');
-        setTimeout(() => setState('idle'), 1500);
-      }, 1500);
-    };
-
-    return <StatefulButton {...args} state={state} onPress={handlePress} />;
-  },
-};
-
-/** Click to watch idle → loading → error → idle. */
-export const StatefulInteractiveError: StatefulStory = {
-  args: statefulArgs,
-  render: (args) => {
-    const [state, setState] = useState<ButtonState>('idle');
-
-    const handlePress = () => {
-      if (state !== 'idle') return;
-      setState('loading');
-      setTimeout(() => {
-        setState('error');
-        setTimeout(() => setState('idle'), 1500);
-      }, 1500);
-    };
-
-    return <StatefulButton {...args} state={state} onPress={handlePress} />;
-  },
 };

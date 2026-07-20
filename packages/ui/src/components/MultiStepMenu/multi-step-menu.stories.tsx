@@ -1,10 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Text, useWindowDimensions, View } from 'react-native';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, screen, userEvent, within } from 'storybook/test';
 import { Bell, Moon, ShieldCheck, User } from '../../lib/icons';
 import { Button } from '../Button/button';
-import { MenuRow, type MultiStepHelpers, MultiStepMenu, type MultiStepSection } from './multi-step-menu';
+import {
+  MenuRow,
+  type MultiStepHelpers,
+  MultiStepMenu,
+  type MultiStepMenuHandle,
+  type MultiStepSection,
+} from './multi-step-menu';
 
 const EMPTY_SECTIONS: MultiStepSection[] = [];
 
@@ -15,6 +21,7 @@ const meta = {
   // All required props are managed by each story's render fn; stubs satisfy the type checker
   args: {
     isWideScreen: false,
+    visible: false,
     onClose: () => undefined,
     sections: EMPTY_SECTIONS,
     sidebar: () => null,
@@ -170,101 +177,72 @@ function SmallScreenMenuItems({ helpers }: SmallScreenMenuItemsProps) {
 
 const renderSidebar = (h: MultiStepHelpers) => <Sidebar helpers={h} />;
 const renderSmallScreenMenu = (h: MultiStepHelpers) => <SmallScreenMenuItems helpers={h} />;
-const renderNull = () => null;
+
+type MultiStepSheetStoryProps = { isWideScreen: boolean; defaultPath?: string[] };
+
+/**
+ * Self-contained `MultiStepMenu` owns its `AdaptiveModal` shell: a full sheet on
+ * small screens (slide up/down) and a centered panel on wide screens.
+ * `onAfterClose` resets the menu's navigation state so the next open starts at
+ * the root. The inner panes keep their own slide enter/exit between steps.
+ */
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function MultiStepSheetStory({ isWideScreen, defaultPath }: MultiStepSheetStoryProps) {
+  const [visible, setVisible] = useState(false);
+  const menuRef = useRef<MultiStepMenuHandle | null>(null);
+  const handleOpen = useCallback(() => setVisible(true), []);
+  const handleClose = useCallback(() => setVisible(false), []);
+  const handleAfterClose = useCallback(() => menuRef.current?.reset(), []);
+
+  return (
+    <View>
+      <Button onPress={handleOpen}>{OPEN_SETTINGS_LABEL}</Button>
+      <MultiStepMenu
+        ref={menuRef}
+        visible={visible}
+        isWideScreen={isWideScreen}
+        sections={sections}
+        sidebar={renderSidebar}
+        smallScreenMenu={renderSmallScreenMenu}
+        rootTitle={SETTINGS_ROOT_TITLE}
+        defaultPath={defaultPath}
+        onClose={handleClose}
+        onAfterClose={handleAfterClose}
+        widePanelSize={isWideScreen ? { width: 700, height: 480 } : undefined}
+      />
+    </View>
+  );
+}
 
 export default meta;
 
 // ── Stories ────────────────────────────────────────────────────────────────
 
-/** Wide-screen layout (sidebar + content pane). */
+/** Wide-screen layout (sidebar + content pane) in a sliding sheet. */
 export const WideScreen: Story = {
-  render: () => {
-    const [open, setOpen] = useState(true);
-    const handleOpen = useCallback(() => setOpen(true), []);
-    const handleClose = useCallback(() => setOpen(false), []);
-    if (!open) return <Button onPress={handleOpen}>{OPEN_SETTINGS_LABEL}</Button>;
-    return (
-      <View style={{ width: 700, height: 480, padding: 24 }}>
-        <MultiStepMenu
-          isWideScreen={true}
-          sections={sections}
-          sidebar={renderSidebar}
-          smallScreenMenu={renderNull}
-          rootTitle={SETTINGS_ROOT_TITLE}
-          defaultPath={['account']}
-          onClose={handleClose}
-        />
-      </View>
-    );
-  },
+  render: () => <MultiStepSheetStory isWideScreen={true} defaultPath={['account']} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // Menu renders immediately — close button confirms the panel is open.
-    await expect(await canvas.findByLabelText('Close')).toBeTruthy();
+    await userEvent.click(await canvas.findByRole('button', { name: OPEN_SETTINGS_LABEL }));
+    // FullSheet renders into a Modal portal — query the document, not the canvas.
+    await expect(await screen.findByLabelText('Close')).toBeTruthy();
     // Click the Notifications sidebar item by its visible text.
-    await userEvent.click(await canvas.findByText('Notifications'));
+    await userEvent.click(await screen.findByText('Notifications'));
     // Verify the Notifications section body (unique text) is now shown.
-    await expect(await canvas.findByText(NOTIFICATIONS_BODY)).toBeTruthy();
+    await expect(await screen.findByText(NOTIFICATIONS_BODY)).toBeTruthy();
   },
 };
 
-/** Small-screen layout (stacked navigation, full-height panes). */
+/** Small-screen layout (stacked navigation, full-height panes) in a sliding sheet. */
 export const SmallScreen: Story = {
-  render: () => {
-    const [open, setOpen] = useState(false);
-    const handleOpen = useCallback(() => setOpen(true), []);
-    const handleClose = useCallback(() => setOpen(false), []);
-    return (
-      <View style={{ padding: 24 }}>
-        <Button onPress={handleOpen}>{OPEN_SETTINGS_LABEL}</Button>
-        {open ? (
-          <View style={{ position: 'absolute', inset: 0, backgroundColor: '#fff' }}>
-            <MultiStepMenu
-              isWideScreen={false}
-              sections={sections}
-              sidebar={renderNull}
-              smallScreenMenu={renderSmallScreenMenu}
-              rootTitle={SETTINGS_ROOT_TITLE}
-              onClose={handleClose}
-            />
-          </View>
-        ) : null}
-      </View>
-    );
-  },
+  render: () => <MultiStepSheetStory isWideScreen={false} />,
 };
 
-/** Responsive — switches layout based on window width. */
+/** Responsive — switches layout based on window width, in a sliding sheet. */
 export const Responsive: Story = {
   render: () => {
     const { width } = useWindowDimensions();
     const isWideScreen = width >= 640;
-    const [open, setOpen] = useState(false);
-    const handleOpen = useCallback(() => setOpen(true), []);
-    const handleClose = useCallback(() => setOpen(false), []);
-    return (
-      <View style={{ flex: 1, padding: 24 }}>
-        <Button onPress={handleOpen}>{OPEN_SETTINGS_LABEL}</Button>
-        {open ? (
-          <View
-            style={
-              isWideScreen
-                ? { width: 700, height: 480, marginTop: 16 }
-                : { position: 'absolute', inset: 0, backgroundColor: '#fff' }
-            }
-          >
-            <MultiStepMenu
-              isWideScreen={isWideScreen}
-              sections={sections}
-              sidebar={renderSidebar}
-              smallScreenMenu={renderSmallScreenMenu}
-              rootTitle={SETTINGS_ROOT_TITLE}
-              defaultPath={['account']}
-              onClose={handleClose}
-            />
-          </View>
-        ) : null}
-      </View>
-    );
+    return <MultiStepSheetStory isWideScreen={isWideScreen} defaultPath={isWideScreen ? ['account'] : undefined} />;
   },
 };

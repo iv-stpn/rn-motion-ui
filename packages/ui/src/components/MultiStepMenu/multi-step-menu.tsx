@@ -15,7 +15,7 @@ import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, Tex
 import { ChevronRight, type IconProps, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
-import { TextCascade } from '../TextCascade/text-cascade';
+import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
 import { TextRolling } from '../TextRolling/text-rolling';
 
 const SLIDE_TRANSITION = { type: 'spring', damping: 28, stiffness: 260, mass: 0.9 } as const;
@@ -112,6 +112,7 @@ export function useMultiStepMenu(): MultiStepHelpers {
 
 export type MultiStepMenuProps = {
   isWideScreen: boolean;
+  visible: boolean;
   onClose: () => void;
   sections: MultiStepSection[];
   /** Wide-screen left column. */
@@ -127,12 +128,17 @@ export type MultiStepMenuProps = {
   sidebarFooter?: ReactNode;
   /** Called whenever the active path changes. */
   onPathChange?: (path: string[]) => void;
+  /** Called after the close animation fully completes (e.g. to reset navigation). */
+  onAfterClose?: () => void;
+  /** Static size for the wide-screen centered panel (largeScreenMode="modal"). */
+  widePanelSize?: WidePanelSize;
   ref?: RefObject<MultiStepMenuHandle | null>;
 };
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small layouts are tightly coupled to shared state
 export const MultiStepMenu = function MultiStepMenu({
   isWideScreen,
+  visible,
   onClose,
   sections,
   sidebar,
@@ -142,6 +148,8 @@ export const MultiStepMenu = function MultiStepMenu({
   widePlaceholder,
   sidebarFooter,
   onPathChange,
+  onAfterClose,
+  widePanelSize,
   ref,
 }: MultiStepMenuProps) {
   const [path, setPath] = useState<string[]>(isWideScreen ? (defaultPath ?? []) : []);
@@ -226,14 +234,15 @@ export const MultiStepMenu = function MultiStepMenu({
     },
   }));
 
+  let content: ReactNode;
   if (isWideScreen) {
     const effectivePath = path.length > 0 ? path : (defaultPath ?? []);
     const activeNode = effectivePath.length > 0 ? resolveSection(sections, effectivePath) : null;
     const showBack = path.length > 1;
     const title = activeNode?.title ?? rootTitle;
 
-    return wrap(
-      <View className="flex-1 flex-row overflow-hidden rounded-2xl border-2 border-border">
+    content = (
+      <View className="flex-1 flex-row overflow-hidden rounded-2xl">
         <View className="w-56 justify-between border-border border-r-2 px-4 py-4 lg:w-64">
           <View className="min-h-0 flex-1">{sidebar(helpers)}</View>
           {sidebarFooter}
@@ -274,71 +283,90 @@ export const MultiStepMenu = function MultiStepMenu({
             <View className="flex-1">{widePlaceholder}</View>
           )}
         </View>
-      </View>,
+      </View>
+    );
+  } else {
+    // ── Small screen ──
+    const isRoot = path.length === 0;
+    const activeNode = isRoot ? null : resolveSection(sections, path);
+    const title = isRoot ? rootTitle : (activeNode?.title ?? rootTitle);
+    const paneKey = isRoot ? '__root__' : path.join('/');
+
+    const enterFrom = (() => {
+      if (isRoot) return direction === 'backward' ? { translateX: -paneWidth } : false;
+      return direction === 'backward' ? { translateX: -paneWidth } : { translateX: paneWidth };
+    })();
+    const exitTo = (() => {
+      if (isRoot) return { translateX: -paneWidth };
+      return direction === 'forward' ? { translateX: -paneWidth } : { translateX: paneWidth };
+    })();
+
+    content = (
+      <View className="flex-1" onLayout={handlePaneLayout}>
+        <View className="px-5 pt-6 pb-5">
+          <View className="mb-2 flex-row items-center justify-between">
+            <View className="w-9 items-start justify-center">
+              <AnimatePresence>
+                {!isRoot && (
+                  <MotiView
+                    key="mobile-back"
+                    from={{ opacity: 0, translateX: -8 }}
+                    animate={{ opacity: 1, translateX: 0 }}
+                    exit={{ opacity: 0, translateX: -8 }}
+                    transition={ARROW_TRANSITION}
+                    exitTransition={ARROW_EXIT_TRANSITION}
+                  >
+                    <Pressable onPress={goBack} accessibilityLabel="Back">
+                      <View style={{ transform: [{ rotate: '180deg' }] }}>
+                        <ChevronRight />
+                      </View>
+                    </Pressable>
+                  </MotiView>
+                )}
+              </AnimatePresence>
+            </View>
+            <Pressable onPress={handleClose} accessibilityLabel="Close" hitSlop={8}>
+              <X />
+            </Pressable>
+          </View>
+          <TextRolling text={title} className="font-bold text-2xl text-foreground" />
+        </View>
+        <View className="flex-1 overflow-hidden">
+          <AnimatePresence>
+            <MotiView
+              key={paneKey}
+              from={enterFrom}
+              animate={{ translateX: 0 }}
+              exit={exitTo}
+              transition={SLIDE_TRANSITION}
+              className="absolute inset-0 px-5"
+            >
+              <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="pb-6">
+                {isRoot ? smallScreenMenu(helpers) : activeNode?.render(helpers)}
+              </ScrollView>
+            </MotiView>
+          </AnimatePresence>
+        </View>
+      </View>
     );
   }
 
-  // ── Small screen ──
-  const isRoot = path.length === 0;
-  const activeNode = isRoot ? null : resolveSection(sections, path);
-  const title = isRoot ? rootTitle : (activeNode?.title ?? rootTitle);
-  const paneKey = isRoot ? '__root__' : path.join('/');
-
-  const enterFrom = (() => {
-    if (isRoot) return direction === 'backward' ? { translateX: -paneWidth } : false;
-    return direction === 'backward' ? { translateX: -paneWidth } : { translateX: paneWidth };
-  })();
-  const exitTo = (() => {
-    if (isRoot) return { translateX: -paneWidth };
-    return direction === 'forward' ? { translateX: -paneWidth } : { translateX: paneWidth };
-  })();
-
+  // AdaptiveModal owns the surface: a full sheet on small screens, a centered
+  // panel on wide screens. `customLayout` + `scrollable={false}` hand all chrome
+  // and scrolling to MultiStepMenu; the modal only provides the shell + transitions.
   return wrap(
-    <View className="flex-1" onLayout={handlePaneLayout}>
-      <View className="px-5 pt-6 pb-5">
-        <View className="mb-2 flex-row items-center justify-between">
-          <View className="w-9 items-start justify-center">
-            <AnimatePresence>
-              {!isRoot && (
-                <MotiView
-                  key="mobile-back"
-                  from={{ opacity: 0, translateX: -8 }}
-                  animate={{ opacity: 1, translateX: 0 }}
-                  exit={{ opacity: 0, translateX: -8 }}
-                  transition={ARROW_TRANSITION}
-                  exitTransition={ARROW_EXIT_TRANSITION}
-                >
-                  <Pressable onPress={goBack} accessibilityLabel="Back">
-                    <View style={{ transform: [{ rotate: '180deg' }] }}>
-                      <ChevronRight />
-                    </View>
-                  </Pressable>
-                </MotiView>
-              )}
-            </AnimatePresence>
-          </View>
-          <Pressable onPress={handleClose} accessibilityLabel="Close" hitSlop={8}>
-            <X />
-          </Pressable>
-        </View>
-        <TextCascade text={title} className="font-bold text-2xl text-foreground" />
-      </View>
-      <View className="flex-1 overflow-hidden">
-        <AnimatePresence>
-          <MotiView
-            key={paneKey}
-            from={enterFrom}
-            animate={{ translateX: 0 }}
-            exit={exitTo}
-            transition={SLIDE_TRANSITION}
-            className="absolute inset-0 px-5"
-          >
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="pb-6">
-              {isRoot ? smallScreenMenu(helpers) : activeNode?.render(helpers)}
-            </ScrollView>
-          </MotiView>
-        </AnimatePresence>
-      </View>
-    </View>,
+    <AdaptiveModal
+      visible={visible}
+      onClose={handleClose}
+      isWideScreen={isWideScreen}
+      smallScreenMode="fullSheet"
+      largeScreenMode="modal"
+      customLayout={true}
+      scrollable={false}
+      widePanelSize={widePanelSize}
+      onAfterClose={onAfterClose}
+    >
+      {content}
+    </AdaptiveModal>,
   );
 };

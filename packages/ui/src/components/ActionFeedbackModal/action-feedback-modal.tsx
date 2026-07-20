@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { Modal, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useModalRender } from '../../hooks/use-modal-render';
+import { EASE_OUT } from '../../lib/ease';
 import { Check, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -11,73 +12,95 @@ import { Loader } from '../Loader/loader';
 // modal looks correct on any host app without requiring a theme context.
 const COLORS = {
   success: '#16a34a',
-  successTint: 'rgba(34, 197, 94, 0.15)',
   destructive: '#dc2626',
-  destructiveTint: 'rgba(239, 68, 68, 0.15)',
   muted: '#6b7280',
+  white: '#ffffff',
 } as const;
 
-type LoadingContentProps = { loadingMessage?: string; tagline?: string };
+// --- Morph icon --------------------------------------------------------------
+// A single circular vessel that morphs its size + fill colour as `state`
+// changes, while the glyph inside cross-fades (spinner ↔ check ↔ close). The
+// icon persists across state transitions so the morph reads as one continuous
+// shape-change rather than three static icons swapping in/out. Ported from
+// offkeep's web ActionFeedbackModal MorphIcon (framer-motion → moti).
 
-function LoadingContent({ loadingMessage, tagline }: LoadingContentProps) {
-  return (
-    <View className="items-center gap-4 py-2">
-      <Loader size={32} />
-      <View className="items-center gap-1.5">
-        {loadingMessage ? <Text className="text-center text-muted-foreground text-sm">{loadingMessage}</Text> : null}
-        {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
-      </View>
-    </View>
-  );
-}
-
-type SuccessContentProps = { successLabel?: string; successMessage?: string; tagline?: string };
-function SuccessContent({ successLabel, successMessage, tagline }: SuccessContentProps) {
-  return (
-    <View className="items-center gap-4 py-2">
-      <View className="h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: COLORS.successTint }}>
-        <Check size={28} color={COLORS.success} />
-      </View>
-      <View className="items-center gap-1.5">
-        {successLabel ? <Text className="text-center font-semibold text-base text-foreground">{successLabel}</Text> : null}
-        {successMessage ? <Text className="text-center text-muted-foreground text-sm">{successMessage}</Text> : null}
-        {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
-      </View>
-    </View>
-  );
-}
-
-type ErrorContentProps = {
-  errorTitle: string;
-  errorMessage?: string;
-  dismissLabel: string;
-  tagline?: string;
-  onClose: () => void;
+const MORPH_SIZE: Record<ActionFeedbackState, number> = { loading: 40, success: 44, error: 38 };
+const MORPH_BG: Record<ActionFeedbackState, string> = {
+  loading: 'transparent',
+  success: COLORS.success,
+  error: COLORS.destructive,
 };
 
-function ErrorContent({ errorTitle, errorMessage, dismissLabel, tagline, onClose }: ErrorContentProps) {
+const MORPH_CONTAINER_TRANSITION = { type: 'timing', duration: 300, easing: EASE_OUT } as const;
+const MORPH_GLYPH_TRANSITION = { type: 'timing', duration: 240, easing: EASE_OUT } as const;
+const MORPH_SPINNER_TRANSITION = { type: 'timing', duration: 180, easing: EASE_OUT } as const;
+const MORPH_CONTENT_TRANSITION = { type: 'timing', duration: 180, easing: EASE_OUT } as const;
+
+const morphGlyphStyle: ViewStyle = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+type MorphIconProps = { state: ActionFeedbackState };
+
+function MorphIcon({ state }: MorphIconProps) {
+  const size = MORPH_SIZE[state];
+  const backgroundColor = MORPH_BG[state];
+
   return (
-    <View className="gap-4">
-      <View className="flex-row items-start justify-between gap-3">
-        <View
-          className="h-10 w-10 shrink-0 items-center justify-center rounded-full"
-          style={{ backgroundColor: COLORS.destructiveTint }}
-        >
-          <X size={20} color={COLORS.destructive} />
-        </View>
-        <TouchableOpacity onPress={onClose} hitSlop={8}>
-          <X size={20} color={COLORS.muted} />
-        </TouchableOpacity>
-      </View>
-      <View className="gap-1.5">
-        <Text className="font-semibold text-base text-foreground">{errorTitle}</Text>
-        {errorMessage ? <Text className="text-muted-foreground text-sm leading-relaxed">{errorMessage}</Text> : null}
-        {tagline ? <Text className="text-muted-foreground text-xs">{tagline}</Text> : null}
-      </View>
-      <Button variant="secondary" size="sm" onPress={onClose}>
-        {dismissLabel}
-      </Button>
-    </View>
+    <MotiView
+      animate={{ width: size, height: size, backgroundColor }}
+      transition={MORPH_CONTAINER_TRANSITION}
+      // Static size mirrors the animate target so the vessel paints at the
+      // correct dimensions on the first frame; the animated style still wins
+      // every subsequent frame (motify merges as [static, animated]).
+      style={{ width: size, height: size }}
+      className="items-center justify-center rounded-full"
+    >
+      <AnimatePresence initial={false}>
+        {state === 'loading' && (
+          <MotiView
+            key="spinner"
+            from={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={MORPH_SPINNER_TRANSITION}
+            style={morphGlyphStyle}
+          >
+            <Loader size={28} color={COLORS.muted} />
+          </MotiView>
+        )}
+        {state === 'success' && (
+          <MotiView
+            key="check"
+            from={{ opacity: 0, scale: 0.3, rotate: '-25deg' }}
+            animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
+            exit={{ opacity: 0, scale: 0.3, rotate: '25deg' }}
+            transition={MORPH_GLYPH_TRANSITION}
+            style={morphGlyphStyle}
+          >
+            <Check size={26} color={COLORS.white} />
+          </MotiView>
+        )}
+        {state === 'error' && (
+          <MotiView
+            key="close"
+            from={{ opacity: 0, scale: 0.3, rotate: '25deg' }}
+            animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
+            exit={{ opacity: 0, scale: 0.3, rotate: '-25deg' }}
+            transition={MORPH_GLYPH_TRANSITION}
+            style={morphGlyphStyle}
+          >
+            <X size={20} color={COLORS.white} />
+          </MotiView>
+        )}
+      </AnimatePresence>
+    </MotiView>
   );
 }
 
@@ -157,19 +180,63 @@ export function ActionFeedbackModal({
               exitTransition={{ type: 'timing', duration: 150 }}
               className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-modal"
             >
-              {state === 'loading' && <LoadingContent loadingMessage={loadingMessage} tagline={tagline} />}
-              {state === 'success' && (
-                <SuccessContent successLabel={successLabel} successMessage={successMessage} tagline={tagline} />
-              )}
-              {state === 'error' && (
-                <ErrorContent
-                  errorTitle={errorTitle}
-                  errorMessage={errorMessage}
-                  dismissLabel={dismissLabel}
-                  tagline={tagline}
-                  onClose={onClose}
-                />
-              )}
+              <View className="w-full items-center gap-4 py-2">
+                <MorphIcon state={state} />
+                <AnimatePresence exitBeforeEnter={true} initial={false}>
+                  {state === 'loading' && (
+                    <MotiView
+                      key="loading-content"
+                      from={{ opacity: 0, translateY: 4 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      exit={{ opacity: 0, translateY: -4 }}
+                      transition={MORPH_CONTENT_TRANSITION}
+                      className="w-full items-center gap-1.5"
+                    >
+                      {loadingMessage ? (
+                        <Text className="text-center text-muted-foreground text-sm">{loadingMessage}</Text>
+                      ) : null}
+                      {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
+                    </MotiView>
+                  )}
+                  {state === 'success' && (
+                    <MotiView
+                      key="success-content"
+                      from={{ opacity: 0, translateY: 4 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      exit={{ opacity: 0, translateY: -4 }}
+                      transition={MORPH_CONTENT_TRANSITION}
+                      className="w-full items-center gap-1.5"
+                    >
+                      {successLabel ? (
+                        <Text className="text-center font-semibold text-base text-foreground">{successLabel}</Text>
+                      ) : null}
+                      {successMessage ? (
+                        <Text className="text-center text-muted-foreground text-sm">{successMessage}</Text>
+                      ) : null}
+                      {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
+                    </MotiView>
+                  )}
+                  {state === 'error' && (
+                    <MotiView
+                      key="error-content"
+                      from={{ opacity: 0, translateY: 4 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      exit={{ opacity: 0, translateY: -4 }}
+                      transition={MORPH_CONTENT_TRANSITION}
+                      className="w-full items-center gap-1.5"
+                    >
+                      <Text className="text-center font-semibold text-base text-foreground">{errorTitle}</Text>
+                      {errorMessage ? (
+                        <Text className="text-center text-muted-foreground text-sm leading-relaxed">{errorMessage}</Text>
+                      ) : null}
+                      {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
+                      <Button variant="secondary" size="sm" onPress={onClose} style={{ marginTop: 8 }}>
+                        {dismissLabel}
+                      </Button>
+                    </MotiView>
+                  )}
+                </AnimatePresence>
+              </View>
             </MotiView>
           </MotiView>
         ) : null}

@@ -41,10 +41,20 @@
       "types": "./src/components/AdaptiveDropdown/adaptive-dropdown.tsx",
       "default": "./src/components/AdaptiveDropdown/adaptive-dropdown.tsx"
     },
+    "./adaptive-modal": {
+      "source": "./src/components/AdaptiveModal/adaptive-modal.tsx",
+      "types": "./src/components/AdaptiveModal/adaptive-modal.tsx",
+      "default": "./src/components/AdaptiveModal/adaptive-modal.tsx"
+    },
     "./animated-badge": {
       "source": "./src/components/AnimatedBadge/animated-badge.tsx",
       "types": "./src/components/AnimatedBadge/animated-badge.tsx",
       "default": "./src/components/AnimatedBadge/animated-badge.tsx"
+    },
+    "./animated-list": {
+      "source": "./src/components/AnimatedList/animated-list.tsx",
+      "types": "./src/components/AnimatedList/animated-list.tsx",
+      "default": "./src/components/AnimatedList/animated-list.tsx"
     },
     "./animated-number": {
       "source": "./src/components/AnimatedNumber/animated-number.tsx",
@@ -75,6 +85,16 @@
       "source": "./src/components/Button/button.tsx",
       "types": "./src/components/Button/button.tsx",
       "default": "./src/components/Button/button.tsx"
+    },
+    "./card": {
+      "source": "./src/components/Card/card.tsx",
+      "types": "./src/components/Card/card.tsx",
+      "default": "./src/components/Card/card.tsx"
+    },
+    "./card-choice": {
+      "source": "./src/components/CardChoice/card-choice.tsx",
+      "types": "./src/components/CardChoice/card-choice.tsx",
+      "default": "./src/components/CardChoice/card-choice.tsx"
     },
     "./checkbox": {
       "source": "./src/components/Checkbox/checkbox.tsx",
@@ -215,6 +235,11 @@
       "source": "./src/components/ScrollTo/scroll-to.tsx",
       "types": "./src/components/ScrollTo/scroll-to.tsx",
       "default": "./src/components/ScrollTo/scroll-to.tsx"
+    },
+    "./skeleton": {
+      "source": "./src/components/Skeleton/skeleton.tsx",
+      "types": "./src/components/Skeleton/skeleton.tsx",
+      "default": "./src/components/Skeleton/skeleton.tsx"
     },
     "./smooth-scroll": {
       "source": "./src/components/SmoothScroll/smooth-scroll.tsx",

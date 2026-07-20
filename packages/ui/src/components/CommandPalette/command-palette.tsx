@@ -1,43 +1,19 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  type StyleProp,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
-  type ViewStyle,
-} from 'react-native';
-import { useModalRender } from '../../hooks/use-modal-render';
+import { Pressable, ScrollView, type StyleProp, Text, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { SPRING_LAYOUT, SPRING_PANEL } from '../../lib/ease';
+import { SPRING_LAYOUT } from '../../lib/ease';
 import { Search } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
-import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
 
-// RN FALLBACK vs web: the web palette is a `createPortal` overlay with a
-// `backdrop-filter` blur, a global Cmd/Ctrl+K listener, body-scroll lock and
-// arrow-key/Enter list navigation. RN uses a transparent `Modal` (no window
-// keydown, so the `shortcut` prop is kept for API parity but is a no-op) and a
-// `TextInput` + scrollable rows. Rows are tapped rather than arrow-navigated;
-// the active row highlight tracks the tapped/last-focused item and fades in via
+// Renders inside AdaptiveModal with `customLayout` + `scrollable={false}`: the
+// palette owns its layout (a fixed search bar over a scrollable list) while
+// AdaptiveModal supplies the adaptive surface (narrow → fullSheet, wide →
+// centered modal), backdrop, exit animation and mount-gating. The web
+// Cmd/Ctrl+K shortcut has no RN equivalent, so `shortcut` is kept for API
+// parity but is a no-op. Rows are tapped rather than arrow-navigated; the
+// active row highlight tracks the tapped/last-focused item and fades in via
 // moti. The `ESC` kbd chip is a real close button here (no hardware ESC key).
-// The backdrop blur is dropped (no RN filter) for a dimmed scrim, and the web
-// `shadow-2xl` is mirrored with an inline shadow/elevation so the panel floats.
-// The panel sits ~18% down the viewport and the list caps at ~60% of height,
-// matching the web `pt-[18vh]` / `max-h-[60vh]`.
-
-// Mirrors the web `shadow-2xl` so the panel reads as floating above the scrim.
-const PANEL_SHADOW = {
-  ...Platform.select({
-    default: { shadowColor: '#000', shadowOffset: { width: 0, height: 24 }, shadowOpacity: 0.25, shadowRadius: 40 },
-    web: { boxShadow: '0px 24px 40px rgba(0, 0, 0, 0.25)' },
-  }),
-  elevation: 24,
-};
 
 const ESC_LABEL = 'ESC';
 
@@ -143,7 +119,6 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: search + keyboard + item selection state handled in one render pass
 export function CommandPalette({
   items,
   placeholder = 'Type a command or search…',
@@ -159,7 +134,6 @@ export function CommandPalette({
   const [internalOpen, setInternalOpen] = useState(false);
   const controlled = controlledOpen !== undefined;
   const open = controlled ? controlledOpen : internalOpen;
-  const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
 
@@ -214,97 +188,70 @@ export function CommandPalette({
     [setOpen],
   );
 
-  if (!rendered) return null;
-
   let cursor = 0;
 
   return (
-    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose}>
-      <AnimatePresence onExitComplete={handleExitComplete}>
-        {open ? (
-          <View key="command-overlay" style={{ flex: 1 }} testID={testID}>
-            <MotiView
-              from={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ type: 'timing', duration: reduce ? 100 : 160 }}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            >
-              <Pressable accessibilityLabel="Close" onPress={handleClose} className="bg-surface/60" style={{ flex: 1 }} />
-            </MotiView>
-            <View
-              className="flex-1 items-center px-4"
-              style={{ paddingTop: Math.round(windowHeight * 0.18), pointerEvents: 'box-none' }}
-            >
-              <MotiView
-                accessibilityLabel={accessibilityLabel}
-                from={{ opacity: 0, scale: reduce ? 1 : 0.97, translateY: reduce ? 0 : -8 }}
-                animate={{ opacity: 1, scale: 1, translateY: 0 }}
-                exit={{ opacity: 0, scale: reduce ? 1 : 0.97, translateY: reduce ? 0 : -8 }}
-                transition={reduce ? { type: 'timing', duration: 100 } : SPRING_PANEL}
-                className="w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card"
-                style={[PANEL_SHADOW, style]}
-              >
-                <View className="flex-row items-center gap-3 border-border border-b px-4">
-                  <Search size={16} color="#71717a" />
-                  <TextInput
-                    autoFocus={true}
-                    value={query}
-                    onChangeText={updateQuery}
-                    placeholder={placeholder}
-                    placeholderTextColor="#71717a"
-                    accessibilityLabel={placeholder}
-                    className="h-12 flex-1 text-foreground text-sm"
-                  />
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Close"
-                    onPress={handleClose}
-                    className="rounded border border-border bg-surface px-1.5 py-0.5"
-                  >
-                    <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
-                  </Pressable>
-                </View>
-                <ScrollView
-                  className="p-2"
-                  style={{ maxHeight: Math.round(windowHeight * 0.6) }}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  {filtered.length === 0 ? (
-                    <View className="p-8">
-                      <Text className="text-center text-muted-foreground text-sm">{emptyMessage}</Text>
-                    </View>
-                  ) : (
-                    grouped.map(([group, list]) => (
-                      <View key={group} className="mb-1">
-                        <Text className="px-2 py-1.5 font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
-                          {group}
-                        </Text>
-                        {list.map((it) => {
-                          const idx = cursor;
-                          cursor += 1;
-                          return (
-                            <CommandRow
-                              key={it.id}
-                              item={it}
-                              index={idx}
-                              isActive={idx === active}
-                              hasIcons={hasIcons}
-                              reduce={reduce}
-                              onActivate={setActive}
-                              onSelect={handleSelect}
-                            />
-                          );
-                        })}
-                      </View>
-                    ))
-                  )}
-                </ScrollView>
-              </MotiView>
+    <AdaptiveModal
+      visible={open}
+      onClose={handleClose}
+      customLayout={true}
+      scrollable={false}
+      smallScreenMode="fullSheet"
+      largeScreenMode="modal"
+    >
+      <View testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
+        <View className="flex-row items-center gap-3 border-border border-b px-4">
+          <Search size={16} color="#71717a" />
+          <TextInput
+            autoFocus={true}
+            value={query}
+            onChangeText={updateQuery}
+            placeholder={placeholder}
+            placeholderTextColor="#71717a"
+            accessibilityLabel={placeholder}
+            className="h-12 flex-1 text-foreground text-sm"
+          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            onPress={handleClose}
+            className="rounded border border-border bg-surface px-1.5 py-0.5"
+          >
+            <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
+          </Pressable>
+        </View>
+        <ScrollView className="p-2" style={{ maxHeight: Math.round(windowHeight * 0.6) }} keyboardShouldPersistTaps="handled">
+          {filtered.length === 0 ? (
+            <View className="p-8">
+              <Text className="text-center text-muted-foreground text-sm">{emptyMessage}</Text>
             </View>
-          </View>
-        ) : null}
-      </AnimatePresence>
-    </Modal>
+          ) : (
+            grouped.map(([group, list]) => (
+              <View key={group} className="mb-1">
+                <Text className="px-2 py-1.5 font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
+                  {group}
+                </Text>
+                {list.map((it) => {
+                  const idx = cursor;
+                  cursor += 1;
+                  return (
+                    <CommandRow
+                      key={it.id}
+                      item={it}
+                      index={idx}
+                      isActive={idx === active}
+                      hasIcons={hasIcons}
+                      reduce={reduce}
+                      onActivate={setActive}
+                      onSelect={handleSelect}
+                    />
+                  );
+                })}
+              </View>
+            ))
+          )}
+        </ScrollView>
+      </View>
+    </AdaptiveModal>
   );
 }

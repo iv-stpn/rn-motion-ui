@@ -86,11 +86,13 @@ export function AnimatedListItem({ children }: AnimatedListItemProps) {
         const done = safeToUnmountRef.current;
         if (done) runOnJS(done)();
       });
-      // Visual exit — no translateY: downward translation pushes content outside
-      // the outer container's layout bounds, escaping overflow:hidden in RN's
-      // native compositor and leaving a brief ghost of the expanded content.
-      opacity.value = withTiming(0, { duration: 230, easing: EASE_IN });
-      scale.value = withTiming(0.97, { duration: 230 });
+      // Visual exit: fade + drop (inspired by framer-motion recipe's y:8 on exit).
+      // Positive translateY (downward) is safe under overflow:hidden — content
+      // sinks into the shrinking container and is clipped from below. Only a
+      // negative (upward) translation would escape above the container's top edge.
+      opacity.value = withTiming(0, { duration: 220, easing: EASE_IN });
+      scale.value = withTiming(0.97, { duration: 220 });
+      translateY.value = withTiming(8, { duration: 220, easing: EASE_IN });
     }
   }, [isPresent]);
 

@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: row gesture, wheel fallback, and list orchestration are tightly coupled
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: row gesture, wheel fallback, and list orchestration are tightly coupled
 
 import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';

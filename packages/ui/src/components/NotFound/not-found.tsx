@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: terminal-stage sub-components and animation variants collocated by design
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: terminal-stage sub-components and animation variants collocated by design
 
 import { useCallback, useState } from 'react';
 import { Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';

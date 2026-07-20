@@ -22,7 +22,9 @@ import { PresenceContext, type PresenceContextValue } from '../presence/animate-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Collects the PresenceContext value(s) seen by children during a render. */
-function PresenceSpy({ id, onContext }: { id: string; onContext: (id: string, ctx: PresenceContextValue | null) => void }) {
+type PresenceSpyProps = { id: string; onContext: (id: string, ctx: PresenceContextValue | null) => void };
+// biome-ignore lint/style/useComponentExportOnlyModules: testing utility
+function PresenceSpy({ id, onContext }: PresenceSpyProps) {
   const ctx = React.useContext(PresenceContext);
   // Use a layout effect so the callback fires synchronously during act().
   React.useLayoutEffect(() => {
@@ -101,7 +103,8 @@ describe('AnimatePresence', () => {
   it('prunes an exited child after safeToUnmount is called', () => {
     const rendered: string[] = [];
 
-    function Child({ id }: { id: string }) {
+    type ChildProps = { id: string };
+    function Child({ id }: ChildProps) {
       const ctx = React.useContext(PresenceContext);
       React.useLayoutEffect(() => {
         rendered.push(id);
@@ -141,7 +144,8 @@ describe('AnimatePresence', () => {
   it('fires onExitComplete after all exiting children call safeToUnmount', () => {
     const onExitComplete = vi.fn();
 
-    function Child({ id }: { id: string }) {
+    type ChildProps = { id: string };
+    function Child({ id }: ChildProps) {
       const ctx = React.useContext(PresenceContext);
       React.useLayoutEffect(() => {
         if (!ctx?.isPresent && ctx?.safeToUnmount) ctx.safeToUnmount(id);
@@ -176,7 +180,7 @@ describe('AnimatePresence', () => {
     React.act(() => {
       root.render(
         <AnimatePresence onExitComplete={onExitComplete}>
-          <PresenceSpy key="a" id="a" onContext={() => {}} />
+          <PresenceSpy key="a" id="a" onContext={() => console.log('context')} />
         </AnimatePresence>,
       );
     });
@@ -190,7 +194,7 @@ describe('AnimatePresence', () => {
     React.act(() => {
       root.render(
         <AnimatePresence onExitComplete={onExitComplete}>
-          <PresenceSpy key="a" id="a" onContext={() => {}} />
+          <PresenceSpy key="a" id="a" onContext={() => console.log('context')} />
         </AnimatePresence>,
       );
     });
@@ -232,7 +236,8 @@ describe('AnimatePresence', () => {
     const seen: ContextMap = new Map();
     const onContext = (id: string, ctx: PresenceContextValue | null) => seen.set(id, ctx);
 
-    function Child({ id }: { id: string }) {
+    type ChildProps = { id: string };
+    function Child({ id }: ChildProps) {
       const ctx = React.useContext(PresenceContext);
       React.useLayoutEffect(() => {
         onContext(id, ctx);

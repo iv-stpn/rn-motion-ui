@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: file item, icon resolution, upload zone, and progress collocated by design
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: file item, icon resolution, upload zone, and progress collocated by design
 
 import { type ReactElement, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';

@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: stories + interaction tests for a complex data-grid kept together for easy editing
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: stories + interaction tests for a complex data-grid kept together for easy editing
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useRef, useState } from 'react';

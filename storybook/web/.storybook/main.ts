@@ -73,7 +73,10 @@ const config: StorybookConfig = {
       name: 'debug-alias',
       enforce: 'post',
       config(resolved) {
-        console.error('DEBUG_RESOLVED_ALIAS=' + JSON.stringify(resolved.resolve?.alias, (_k, v) => (typeof v === 'function' ? '[Function]' : v)));
+        console.error(
+          'DEBUG_RESOLVED_ALIAS=' +
+            JSON.stringify(resolved.resolve?.alias, (_k, v) => (typeof v === 'function' ? '[Function]' : v)),
+        );
       },
     });
     return viteConfig;

@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: all loader variants (spinner, dots, helix, …) collocated for consistent import
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: all loader variants (spinner, dots, helix, …) collocated for consistent import
 
 import { useEffect, useState } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';

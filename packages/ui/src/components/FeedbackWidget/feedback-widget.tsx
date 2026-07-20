@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: feedback flow, sent view, and star-rating sub-components collocated by design
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: feedback flow, sent view, and star-rating sub-components collocated by design
 
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';

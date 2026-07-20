@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: scroll physics, item layout, and accessibility all share animation values
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: scroll physics, item layout, and accessibility all share animation values
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {

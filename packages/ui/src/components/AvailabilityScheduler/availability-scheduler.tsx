@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: all-in-one scheduler — state, helpers, and rendering are tightly coupled
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: all-in-one scheduler — state, helpers, and rendering are tightly coupled
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {

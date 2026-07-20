@@ -42,6 +42,8 @@ export const Default: Story = {
       setItems((prev) => prev.filter((item) => item.id !== id));
     }, []);
 
+    const onPressRemoveHandler = useCallback((id: number) => () => remove(id), [remove]);
+
     return (
       <View className="w-80 gap-3">
         <Button onPress={add}>{ADD_LABEL}</Button>
@@ -50,7 +52,7 @@ export const Default: Story = {
             <AnimatedListItem key={item.id}>
               <View className="flex-row items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 shadow-modal">
                 <Text className="text-base text-foreground">{item.label}</Text>
-                <Pressable onPress={() => remove(item.id)} hitSlop={8} accessibilityLabel={`Remove ${item.label}`}>
+                <Pressable onPress={onPressRemoveHandler(item.id)} hitSlop={8} accessibilityLabel={`Remove ${item.label}`}>
                   <X size={16} />
                 </Pressable>
               </View>
@@ -73,12 +75,17 @@ export const GrowCollapse: Story = {
       setExpanded((cur) => (cur === index ? null : index));
     }, []);
 
+    const onPressIndexHandler = useCallback((index: number) => () => toggle(index), [toggle]);
+
     return (
       <View className="w-80">
         <AnimatedList>
           {SECTIONS.map((title, i) => (
             <AnimatedListItem key={title}>
-              <Pressable onPress={() => toggle(i)} className="rounded-xl border border-border bg-surface px-4 py-3 shadow-modal">
+              <Pressable
+                onPress={onPressIndexHandler(i)}
+                className="rounded-xl border border-border bg-surface px-4 py-3 shadow-modal"
+              >
                 <Text className="font-medium text-base text-foreground">{title}</Text>
                 {expanded === i ? (
                   <Text className="mt-2 text-muted-foreground text-sm leading-relaxed">{EXPAND_BODY}</Text>

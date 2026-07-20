@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: carousel geometry, item render, and auto-rotate logic are tightly coupled
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: carousel geometry, item render, and auto-rotate logic are tightly coupled
 
 import { Children, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {

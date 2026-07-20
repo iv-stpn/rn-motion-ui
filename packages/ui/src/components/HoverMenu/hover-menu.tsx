@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: cross-platform hover menu — web DOM helpers, positioning math, and dual-platform render collocated in one module
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: cross-platform hover menu — web DOM helpers, positioning math, and dual-platform render collocated in one module
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Modal, Platform, Pressable, useWindowDimensions, type View, type ViewStyle } from 'react-native';

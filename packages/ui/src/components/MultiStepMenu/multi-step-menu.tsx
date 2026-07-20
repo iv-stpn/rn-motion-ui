@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: complex component
 import {
   createContext,
   type ReactNode,

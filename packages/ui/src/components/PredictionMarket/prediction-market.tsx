@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: outcome editing, probability bar, and input handling collocated for state sharing
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: outcome editing, probability bar, and input handling collocated for state sharing
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';

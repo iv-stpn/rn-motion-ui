@@ -1,6 +1,6 @@
 {
   "name": "rn-motion-ui",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Animated React Native + React Native Web UI components, styled with Tailwind via uniwind and powered by Moti/Reanimated.",
   "keywords": [
     "react-native",

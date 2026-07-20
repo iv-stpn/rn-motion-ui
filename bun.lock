@@ -15,57 +15,20 @@
         "typescript": "^7",
       },
     },
-    "packages/hooks": {
-      "name": "@rn-motion-ui/hooks",
-      "version": "0.1.0",
-      "devDependencies": {
-        "@types/react": "19.2.17",
-        "react": "19.2.7",
-        "react-native": "0.86.0",
-        "typescript": "^7",
-      },
-      "peerDependencies": {
-        "react": ">=18.0.0",
-        "react-native": ">=0.76.0",
-      },
-    },
-    "packages/moti": {
-      "name": "@rn-motion-ui/moti",
-      "version": "0.1.0",
-      "dependencies": {
-        "@rn-motion-ui/utils": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/react": "19.2.17",
-        "@types/react-dom": "19.1.6",
-        "jsdom": "26",
-        "react": "19.2.7",
-        "react-dom": "19.2.7",
-        "react-native": "0.86.0",
-        "react-native-reanimated": "4.5.2",
-        "react-native-worklets": "0.11.1",
-        "typescript": "^7",
-        "vitest": "4.1.10",
-      },
-      "peerDependencies": {
-        "react": ">=18.0.0",
-        "react-native": ">=0.76.0",
-        "react-native-reanimated": ">=4.0.0",
-      },
-    },
     "packages/ui": {
-      "name": "@rn-motion-ui/rn",
-      "version": "0.2.0",
+      "name": "rn-motion-ui",
+      "version": "0.1.0",
       "dependencies": {
-        "@rn-motion-ui/hooks": "workspace:*",
-        "@rn-motion-ui/moti": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "react-native-svg": "^15.15.5",
       },
       "devDependencies": {
         "@storybook/react": "10.5.0",
         "@types/react": "19.2.17",
+        "@types/react-dom": "19.1.6",
+        "jsdom": "26",
         "react": "19.2.7",
+        "react-dom": "19.2.7",
         "react-native": "0.86.0",
         "react-native-gesture-handler": "2.32.0",
         "react-native-reanimated": "4.5.2",
@@ -75,6 +38,7 @@
         "tailwindcss": "^4",
         "typescript": "^7",
         "uniwind": "1.10.0",
+        "vitest": "4.1.10",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -83,20 +47,11 @@
         "react-native-reanimated": ">=4.0.0",
       },
     },
-    "packages/utils": {
-      "name": "@rn-motion-ui/utils",
-      "version": "0.1.0",
-      "devDependencies": {
-        "typescript": "^7",
-      },
-    },
     "storybook/native": {
       "name": "@rn-motion-ui/example",
       "version": "0.0.0",
       "dependencies": {
         "@react-native-async-storage/async-storage": "2.2.0",
-        "@rn-motion-ui/moti": "workspace:*",
-        "@rn-motion-ui/rn": "workspace:*",
         "@storybook/addon-ondevice-actions": "10.5.0",
         "@storybook/addon-ondevice-backgrounds": "10.5.0",
         "@storybook/addon-ondevice-controls": "10.5.0",
@@ -110,6 +65,7 @@
         "react-native-reanimated": "4.5.2",
         "react-native-safe-area-context": "5.8.0",
         "react-native-worklets": "0.11.1",
+        "rn-motion-ui": "workspace:*",
         "storybook": "10.5.0",
         "tailwindcss": "^4",
         "uniwind": "1.10.0",
@@ -124,8 +80,6 @@
       "name": "@rn-motion-ui/storybook-web",
       "version": "0.0.0",
       "dependencies": {
-        "@rn-motion-ui/moti": "workspace:*",
-        "@rn-motion-ui/rn": "workspace:*",
         "react": "19.2.7",
         "react-dom": "19.2.7",
         "react-native": "0.86.0",
@@ -133,6 +87,7 @@
         "react-native-reanimated": "4.5.2",
         "react-native-web": "0.21.2",
         "react-native-worklets": "0.11.1",
+        "rn-motion-ui": "workspace:*",
       },
       "devDependencies": {
         "@storybook/addon-docs": "10.5.0",
@@ -650,15 +605,7 @@
 
     "@rn-motion-ui/example": ["@rn-motion-ui/example@workspace:storybook/native"],
 
-    "@rn-motion-ui/hooks": ["@rn-motion-ui/hooks@workspace:packages/hooks"],
-
-    "@rn-motion-ui/moti": ["@rn-motion-ui/moti@workspace:packages/moti"],
-
-    "@rn-motion-ui/rn": ["@rn-motion-ui/rn@workspace:packages/ui"],
-
     "@rn-motion-ui/storybook-web": ["@rn-motion-ui/storybook-web@workspace:storybook/web"],
-
-    "@rn-motion-ui/utils": ["@rn-motion-ui/utils@workspace:packages/utils"],
 
     "@rolldown/binding-android-arm64": ["@rolldown/binding-android-arm64@1.1.5", "", { "os": "android", "cpu": "arm64" }, "sha512-lZg8fqIv2v7FF237bwMgzGZEJvGL79/s5knJ/i6FmsGF4XXlzccZ4jb+TrFIxtSSxFtIpdsgrPZeMk1I9AFcyQ=="],
 
@@ -1631,6 +1578,8 @@
     "restore-cursor": ["restore-cursor@2.0.0", "", { "dependencies": { "onetime": "^2.0.0", "signal-exit": "^3.0.2" } }, "sha512-6IzJLuGi4+R14vwagDHX+JrXmPVtPpn4mffDJ1UdR7/Edm87fl6yi8mMBIVvFtJaNTUvjughmW4hwLhRG7gC1Q=="],
 
     "reusify": ["reusify@1.1.0", "", {}, "sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw=="],
+
+    "rn-motion-ui": ["rn-motion-ui@workspace:packages/ui"],
 
     "rolldown": ["rolldown@1.1.5", "", { "dependencies": { "@oxc-project/types": "=0.139.0", "@rolldown/pluginutils": "^1.0.0" }, "optionalDependencies": { "@rolldown/binding-android-arm64": "1.1.5", "@rolldown/binding-darwin-arm64": "1.1.5", "@rolldown/binding-darwin-x64": "1.1.5", "@rolldown/binding-freebsd-x64": "1.1.5", "@rolldown/binding-linux-arm-gnueabihf": "1.1.5", "@rolldown/binding-linux-arm64-gnu": "1.1.5", "@rolldown/binding-linux-arm64-musl": "1.1.5", "@rolldown/binding-linux-ppc64-gnu": "1.1.5", "@rolldown/binding-linux-s390x-gnu": "1.1.5", "@rolldown/binding-linux-x64-gnu": "1.1.5", "@rolldown/binding-linux-x64-musl": "1.1.5", "@rolldown/binding-openharmony-arm64": "1.1.5", "@rolldown/binding-wasm32-wasi": "1.1.5", "@rolldown/binding-win32-arm64-msvc": "1.1.5", "@rolldown/binding-win32-x64-msvc": "1.1.5" }, "bin": { "rolldown": "./bin/cli.mjs" } }, "sha512-t9z29cJjXf/vxQ8dyhCSpt6H6aSwHTk8cT5I3iy6SMXuFpk5mB6PL6XfC8PCwrPTx93udwKUm9HRteAlTGBLiA=="],
 

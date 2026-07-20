@@ -1,10 +1,10 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { useShakeAnimation } from '@rn-motion-ui/hooks/use-shake-animation';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { useCallback, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { THUMB_SPRING } from '../../lib/ease';
+import { MotiView } from '../../moti/components/view';
 
 // Track colour swaps on checked; the thumb translate/squish stay inline (animated).
 const track = cva('h-7 w-12 flex-row items-center rounded-full px-1', {

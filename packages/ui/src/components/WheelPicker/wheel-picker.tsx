@@ -1,5 +1,5 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: scroll physics, item layout, and accessibility all share animation values
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type AccessibilityActionEvent,
@@ -25,6 +25,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // RN vs web: the reference wheel is a CSS 3D drum — rows seated on a cylinder via
 // `translateZ`, the whole list spun with `rotateX` — driven by a hand-rolled

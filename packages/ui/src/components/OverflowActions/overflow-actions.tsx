@@ -1,11 +1,11 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_PRESS } from '../../lib/ease';
 import { MoreHorizontal, X } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 
 // RN FALLBACK vs web: the web rail uses framer `layout` on every node so the
 // track smoothly resizes as the overflow group mounts/unmounts, plus a blur

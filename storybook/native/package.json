@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@rn-motion-ui/rn": "workspace:*",
+    "rn-motion-ui": "workspace:*",
     "@storybook/addon-ondevice-actions": "10.5.0",
     "@storybook/addon-ondevice-backgrounds": "10.5.0",
     "@storybook/addon-ondevice-controls": "10.5.0",
@@ -22,7 +22,6 @@
     "@storybook/react-native": "10.5.0",
     "expo": "^57",
     "expo-status-bar": "^57",
-    "@rn-motion-ui/moti": "workspace:*",
     "react": "19.2.7",
     "react-native": "0.86.0",
     "react-native-gesture-handler": "2.32.0",

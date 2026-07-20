@@ -1,10 +1,10 @@
-import { useModalRender } from '@rn-motion-ui/hooks/use-modal-render';
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
+import { useModalRender } from '../../hooks/use-modal-render';
 import { ChevronRight, X } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 
 const BACK_BUTTON_HEADER_HEIGHT = 56;
 const SMALL_SCREEN_BREAKPOINT = 640;

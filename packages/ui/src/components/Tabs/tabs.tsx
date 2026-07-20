@@ -1,8 +1,8 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, Text, View } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { MotiView } from '../../moti/components/view';
 
 type Variant = 'pill' | 'underline' | 'segment';
 

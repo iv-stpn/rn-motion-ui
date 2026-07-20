@@ -1,5 +1,5 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: carousel geometry, item render, and auto-rotate logic are tightly coupled
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
+
 import { Children, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type GestureResponderEvent,
@@ -18,6 +18,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // Soft settle spring for the snap/glide (mirrors the web GLIDE feel).
 const GLIDE_SPRING = { stiffness: 90, damping: 18, mass: 1 };

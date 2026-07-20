@@ -1,8 +1,8 @@
-import { MotiView } from '@rn-motion-ui/moti/view';
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Plus, Trash2 } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
 import { Checkbox } from '../Checkbox/checkbox';
 import { styles } from './table-styles';
 import type { TableColumn } from './table-types';

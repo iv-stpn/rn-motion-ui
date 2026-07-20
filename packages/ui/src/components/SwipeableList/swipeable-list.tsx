@@ -1,8 +1,9 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: row gesture, wheel fallback, and list orchestration are tightly coupled
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
+
 import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // -- Types -------------------------------------------------------------------
 

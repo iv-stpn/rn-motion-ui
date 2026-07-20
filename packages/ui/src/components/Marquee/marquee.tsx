@@ -1,4 +1,3 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { Children, type ReactNode, useCallback, useEffect, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import Animated, {
@@ -9,6 +8,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 export type MarqueeDirection = 'left' | 'right' | 'up' | 'down';
 

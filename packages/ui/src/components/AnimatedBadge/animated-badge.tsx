@@ -1,10 +1,10 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { AlertTriangle, Check, Circle, Info, LoaderCircle, X } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 
 export type AnimatedBadgeStatus = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'loading';
 // biome-ignore lint/style/useExportsLast: these type aliases are used directly by the cva constants below; moving them after inverts the natural dependency order

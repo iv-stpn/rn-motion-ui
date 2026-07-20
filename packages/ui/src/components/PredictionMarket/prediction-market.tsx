@@ -1,11 +1,12 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: outcome editing, probability bar, and input handling collocated for state sharing
-import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { MotiView } from '@rn-motion-ui/moti/view';
+
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { useMountEffect } from '../../hooks/use-mount-effect';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { Banknote } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
 import { Button } from '../Button/button';
 import { NumberTicker } from '../NumberTicker/number-ticker';
 import { Tabs, TabsList, TabsTrigger } from '../Tabs/tabs';

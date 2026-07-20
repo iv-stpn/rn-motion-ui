@@ -1,7 +1,7 @@
-import { useInView } from '@rn-motion-ui/hooks/use-in-view';
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { useEffect, useRef, useState } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useInView } from '../../hooks/use-in-view';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT_FN } from '../../lib/ease';
 
 export type AnimatedNumberProps = {

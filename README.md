@@ -6,14 +6,11 @@ Components are written as React Native primitives — they run on native (iOS/An
 
 ---
 
-## Packages
+## Package
 
 | Package | Description |
 | --- | --- |
-| [`@rn-motion-ui/rn`](./packages/ui/) | 40+ animated UI components (Button, Tabs, BottomSheet, ScrollReveal, …) |
-| [`@rn-motion-ui/moti`](./packages/moti/) | Moti reimplementation for Reanimated 4 (`MotiView`, `AnimatePresence`, `MotiPressable`, …) |
-| [`@rn-motion-ui/hooks`](./packages/hooks/) | Shared React hooks (`useMountEffect`) |
-| [`@rn-motion-ui/utils`](./packages/utils/) | Shared TypeScript utilities (type guards) |
+| [`rn-motion-ui`](./packages/ui/) | Animated RN + RNW UI components, Moti/Reanimated 4 primitives, hooks, and utils — published as one package with subpath exports (no barrels) |
 
 ---
 
@@ -49,7 +46,7 @@ bun run storybook:native
 ### Lint & typecheck
 
 ```sh
-bun run lint         # Biome — all 6 workspaces
+bun run lint         # Biome — whole workspace
 bun run lint:fix     # auto-fix
 bun run typecheck    # tsc --noEmit across all packages
 ```
@@ -113,7 +110,7 @@ CI (`.github/workflows/release.yml`) runs the changesets action on every push to
 - **No barrels** — every component has its own subpath export. Consumers only bundle what they import.
 - **`sideEffects: false`** on all packages — tree-shaking friendly.
 - **`useReducedMotion`** consumed by every animated component; 43 component files carry accessibility props.
-- **Strict TypeScript** across all 6 workspaces (`noUncheckedIndexedAccess`, `verbatimModuleSyntax`).
+- **Strict TypeScript** across the workspace (`noUncheckedIndexedAccess`, `verbatimModuleSyntax`).
 - **Biome** for linting and formatting (184 files, lint-clean baseline).
 - **Husky** pre-commit (lint + typecheck) and pre-push (test) hooks.
 

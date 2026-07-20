@@ -1,7 +1,7 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, type RefObject, useCallback, useState } from 'react';
 import { Pressable, type ScrollView, type StyleProp, Text, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { MotiView } from '../../moti/components/view';
 
 export type ScrollToProps = {
   /** The ScrollView to drive. Pass the same ref given to your <ScrollView>. */

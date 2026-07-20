@@ -3,14 +3,14 @@
 // may briefly snap vs. the web's synchronous useLayoutEffect measure.
 // aria-busy is approximated via accessibilityLiveRegion="polite" on the content row.
 
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_SWAP } from '../../lib/ease';
 import { Check, X } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';

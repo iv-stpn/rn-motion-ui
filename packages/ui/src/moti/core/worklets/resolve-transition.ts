@@ -1,4 +1,4 @@
-import { hasKey } from '@rn-motion-ui/utils/typeguards';
+import { hasKey } from '../../../utils/typeguards';
 import type { MotiTransition } from '../types';
 
 type ResolveTransitionParams<Animate> = {

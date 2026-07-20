@@ -1,8 +1,8 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { ChevronDown } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
 
 export type BouncyAccordionItem = {
   id: string;

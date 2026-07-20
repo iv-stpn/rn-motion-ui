@@ -1,7 +1,7 @@
-import { hasKey } from '@rn-motion-ui/utils/typeguards';
 import { useEffect, useMemo } from 'react';
 import type { TransformsStyle } from 'react-native';
 import { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { hasKey } from '../../utils/typeguards';
 import type { PresenceContextValue, usePresenceContext } from '../presence/animate-presence-context';
 import type { InlineOnDidAnimate, MotiProps, WithTransition } from './types';
 import { applyStyleKey } from './worklets/apply-style-key';

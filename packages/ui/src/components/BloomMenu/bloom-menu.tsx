@@ -1,8 +1,8 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { Plus, X } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
 
 // RN FALLBACK vs web: the web menu morphs a single `layoutId` box from the
 // trigger into the panel and reveals the grid with an animated `clip-path`

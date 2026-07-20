@@ -1,6 +1,6 @@
 {
-  "name": "@rn-motion-ui/rn",
-  "version": "0.3.0",
+  "name": "rn-motion-ui",
+  "version": "0.1.0",
   "description": "Animated React Native + React Native Web UI components, styled with Tailwind via uniwind and powered by Moti/Reanimated.",
   "keywords": [
     "react-native",
@@ -305,11 +305,199 @@
       "source": "./src/components/WheelPicker/wheel-picker.tsx",
       "types": "./src/components/WheelPicker/wheel-picker.tsx",
       "default": "./src/components/WheelPicker/wheel-picker.tsx"
+    },
+    "./hooks/use-arm-on-view": {
+      "source": "./src/hooks/use-arm-on-view.ts",
+      "types": "./src/hooks/use-arm-on-view.ts",
+      "default": "./src/hooks/use-arm-on-view.ts"
+    },
+    "./hooks/use-hover-capable": {
+      "source": "./src/hooks/use-hover-capable.ts",
+      "types": "./src/hooks/use-hover-capable.ts",
+      "default": "./src/hooks/use-hover-capable.ts"
+    },
+    "./hooks/use-in-view": {
+      "source": "./src/hooks/use-in-view.ts",
+      "types": "./src/hooks/use-in-view.ts",
+      "default": "./src/hooks/use-in-view.ts"
+    },
+    "./hooks/use-interval": {
+      "source": "./src/hooks/use-interval.ts",
+      "types": "./src/hooks/use-interval.ts",
+      "default": "./src/hooks/use-interval.ts"
+    },
+    "./hooks/use-modal-render": {
+      "source": "./src/hooks/use-modal-render.ts",
+      "types": "./src/hooks/use-modal-render.ts",
+      "default": "./src/hooks/use-modal-render.ts"
+    },
+    "./hooks/use-mount-effect": {
+      "source": "./src/hooks/use-mount-effect.ts",
+      "types": "./src/hooks/use-mount-effect.ts",
+      "default": "./src/hooks/use-mount-effect.ts"
+    },
+    "./hooks/use-page-visible": {
+      "source": "./src/hooks/use-page-visible.ts",
+      "types": "./src/hooks/use-page-visible.ts",
+      "default": "./src/hooks/use-page-visible.ts"
+    },
+    "./hooks/use-reduced-motion": {
+      "source": "./src/hooks/use-reduced-motion.ts",
+      "types": "./src/hooks/use-reduced-motion.ts",
+      "default": "./src/hooks/use-reduced-motion.ts"
+    },
+    "./hooks/use-scramble": {
+      "source": "./src/hooks/use-scramble.ts",
+      "types": "./src/hooks/use-scramble.ts",
+      "default": "./src/hooks/use-scramble.ts"
+    },
+    "./hooks/use-shake-animation": {
+      "source": "./src/hooks/use-shake-animation.ts",
+      "types": "./src/hooks/use-shake-animation.ts",
+      "default": "./src/hooks/use-shake-animation.ts"
+    },
+    "./moti/view": {
+      "source": "./src/moti/components/view.tsx",
+      "types": "./src/moti/components/view.tsx",
+      "default": "./src/moti/components/view.tsx"
+    },
+    "./moti/text": {
+      "source": "./src/moti/components/text.tsx",
+      "types": "./src/moti/components/text.tsx",
+      "default": "./src/moti/components/text.tsx"
+    },
+    "./moti/image": {
+      "source": "./src/moti/components/image.tsx",
+      "types": "./src/moti/components/image.tsx",
+      "default": "./src/moti/components/image.tsx"
+    },
+    "./moti/scroll-view": {
+      "source": "./src/moti/components/scroll-view.tsx",
+      "types": "./src/moti/components/scroll-view.tsx",
+      "default": "./src/moti/components/scroll-view.tsx"
+    },
+    "./moti/safe-area-view": {
+      "source": "./src/moti/components/safe-area-view.tsx",
+      "types": "./src/moti/components/safe-area-view.tsx",
+      "default": "./src/moti/components/safe-area-view.tsx"
+    },
+    "./moti/progress": {
+      "source": "./src/moti/components/progress.tsx",
+      "types": "./src/moti/components/progress.tsx",
+      "default": "./src/moti/components/progress.tsx"
+    },
+    "./moti/motify": {
+      "source": "./src/moti/core/motify.tsx",
+      "types": "./src/moti/core/motify.tsx",
+      "default": "./src/moti/core/motify.tsx"
+    },
+    "./moti/motify-svg": {
+      "source": "./src/moti/svg/motify-svg.tsx",
+      "types": "./src/moti/svg/motify-svg.tsx",
+      "default": "./src/moti/svg/motify-svg.tsx"
+    },
+    "./moti/use-motify": {
+      "source": "./src/moti/core/use-motify.ts",
+      "types": "./src/moti/core/use-motify.ts",
+      "default": "./src/moti/core/use-motify.ts"
+    },
+    "./moti/use-animation-state": {
+      "source": "./src/moti/core/use-animator.ts",
+      "types": "./src/moti/core/use-animator.ts",
+      "default": "./src/moti/core/use-animator.ts"
+    },
+    "./moti/use-dynamic-animation": {
+      "source": "./src/moti/core/use-dynamic-animation.ts",
+      "types": "./src/moti/core/use-dynamic-animation.ts",
+      "default": "./src/moti/core/use-dynamic-animation.ts"
+    },
+    "./moti/types": {
+      "source": "./src/moti/core/types.ts",
+      "types": "./src/moti/core/types.ts",
+      "default": "./src/moti/core/types.ts"
+    },
+    "./moti/color-keys": {
+      "source": "./src/moti/core/constants/color-keys.ts",
+      "types": "./src/moti/core/constants/color-keys.ts",
+      "default": "./src/moti/core/constants/color-keys.ts"
+    },
+    "./moti/presence": {
+      "source": "./src/moti/presence/animate-presence.tsx",
+      "types": "./src/moti/presence/animate-presence.tsx",
+      "default": "./src/moti/presence/animate-presence.tsx"
+    },
+    "./moti/presence-context": {
+      "source": "./src/moti/presence/animate-presence-context.tsx",
+      "types": "./src/moti/presence/animate-presence-context.tsx",
+      "default": "./src/moti/presence/animate-presence-context.tsx"
+    },
+    "./moti/pressable": {
+      "source": "./src/moti/interactions/pressable/pressable.tsx",
+      "types": "./src/moti/interactions/pressable/pressable.tsx",
+      "default": "./src/moti/interactions/pressable/pressable.tsx"
+    },
+    "./moti/pressable-context": {
+      "source": "./src/moti/interactions/pressable/context.tsx",
+      "types": "./src/moti/interactions/pressable/context.tsx",
+      "default": "./src/moti/interactions/pressable/context.tsx"
+    },
+    "./moti/pressable-types": {
+      "source": "./src/moti/interactions/pressable/types.ts",
+      "types": "./src/moti/interactions/pressable/types.ts",
+      "default": "./src/moti/interactions/pressable/types.ts"
+    },
+    "./moti/merge": {
+      "source": "./src/moti/interactions/pressable/merge.ts",
+      "types": "./src/moti/interactions/pressable/merge.ts",
+      "default": "./src/moti/interactions/pressable/merge.ts"
+    },
+    "./moti/hover": {
+      "react-native": "./src/moti/interactions/pressable/hoverable.native.tsx",
+      "source": "./src/moti/interactions/pressable/hoverable.tsx",
+      "types": "./src/moti/interactions/pressable/hoverable.tsx",
+      "default": "./src/moti/interactions/pressable/hoverable.tsx"
+    },
+    "./moti/hover-context": {
+      "source": "./src/moti/interactions/pressable/hoverable-context.tsx",
+      "types": "./src/moti/interactions/pressable/hoverable-context.tsx",
+      "default": "./src/moti/interactions/pressable/hoverable-context.tsx"
+    },
+    "./moti/use-moti-pressable": {
+      "source": "./src/moti/interactions/pressable/use-pressable.ts",
+      "types": "./src/moti/interactions/pressable/use-pressable.ts",
+      "default": "./src/moti/interactions/pressable/use-pressable.ts"
+    },
+    "./moti/use-moti-pressables": {
+      "source": "./src/moti/interactions/pressable/use-pressables.ts",
+      "types": "./src/moti/interactions/pressable/use-pressables.ts",
+      "default": "./src/moti/interactions/pressable/use-pressables.ts"
+    },
+    "./moti/use-moti-pressable-animated-props": {
+      "source": "./src/moti/interactions/pressable/use-moti-pressable-animated-props.ts",
+      "types": "./src/moti/interactions/pressable/use-moti-pressable-animated-props.ts",
+      "default": "./src/moti/interactions/pressable/use-moti-pressable-animated-props.ts"
+    },
+    "./moti/use-moti-pressable-interpolate": {
+      "source": "./src/moti/interactions/pressable/use-moti-pressable-interpolate.ts",
+      "types": "./src/moti/interactions/pressable/use-moti-pressable-interpolate.ts",
+      "default": "./src/moti/interactions/pressable/use-moti-pressable-interpolate.ts"
+    },
+    "./moti/use-moti-pressable-transition": {
+      "source": "./src/moti/interactions/pressable/use-moti-pressable-transition.ts",
+      "types": "./src/moti/interactions/pressable/use-moti-pressable-transition.ts",
+      "default": "./src/moti/interactions/pressable/use-moti-pressable-transition.ts"
+    },
+    "./utils/typeguards": {
+      "source": "./src/utils/typeguards.ts",
+      "types": "./src/utils/typeguards.ts",
+      "default": "./src/utils/typeguards.ts"
     }
   },
   "files": [
     "src",
     "!src/**/*.stories.tsx",
+    "!src/**/__tests__/**",
+    "!src/**/*.test.*",
     "README.md",
     "LICENSE"
   ],
@@ -317,11 +505,10 @@
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@rn-motion-ui/hooks": "~0.2.0",
-    "@rn-motion-ui/moti": "~0.2.0",
     "class-variance-authority": "^0.7.1",
     "react-native-svg": "^15.15.5"
   },
@@ -332,17 +519,21 @@
     "react-native-reanimated": ">=4.0.0"
   },
   "devDependencies": {
-    "@storybook/react": "10.5.0",
+    "typescript": "^7",
     "@types/react": "19.2.17",
     "react": "19.2.7",
     "react-native": "0.86.0",
-    "react-native-gesture-handler": "2.32.0",
+    "@types/react-dom": "19.1.6",
+    "jsdom": "26",
+    "react-dom": "19.2.7",
     "react-native-reanimated": "4.5.2",
-    "react-native-web": "0.21.2",
     "react-native-worklets": "0.11.1",
+    "vitest": "4.1.10",
+    "@storybook/react": "10.5.0",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-web": "0.21.2",
     "storybook": "10.5.0",
     "tailwindcss": "^4",
-    "typescript": "^7",
     "uniwind": "1.10.0"
   }
 }

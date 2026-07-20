@@ -1,11 +1,12 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: terminal-stage sub-components and animation variants collocated by design
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { useScramble } from '@rn-motion-ui/hooks/use-scramble';
-import { MotiText } from '@rn-motion-ui/moti/text';
-import { MotiView } from '@rn-motion-ui/moti/view';
+
 import { useCallback, useState } from 'react';
 import { Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useScramble } from '../../hooks/use-scramble';
 import { SPRING_PANEL, SPRING_PRESS } from '../../lib/ease';
+import { MotiText } from '../../moti/components/text';
+import { MotiView } from '../../moti/components/view';
 import { TextReveal } from '../TextReveal/text-reveal';
 
 // ─── Shared types ──────────────────────────────────────────────────────────

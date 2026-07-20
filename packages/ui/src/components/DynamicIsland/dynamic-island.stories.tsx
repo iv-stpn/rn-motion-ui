@@ -1,11 +1,11 @@
-import { useInterval } from '@rn-motion-ui/hooks/use-interval';
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
+import { useInterval } from '../../hooks/use-interval';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { Music, Phone, PhoneOff, Timer } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
 import { Button } from '../Button/button';
 import { DynamicIsland, DynamicIslandView } from './dynamic-island';
 

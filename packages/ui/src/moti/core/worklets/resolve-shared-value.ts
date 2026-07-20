@@ -1,4 +1,4 @@
-import { hasKey } from '@rn-motion-ui/utils/typeguards';
+import { hasKey } from '../../../utils/typeguards';
 
 /**
  * Unwraps a Reanimated SharedValue/DerivedValue wrapper ({ value }) to its inner value,

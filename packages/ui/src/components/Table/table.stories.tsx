@@ -1,9 +1,10 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: stories + interaction tests for a complex data-grid kept together for easy editing
-import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
+
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { useMountEffect } from '../../hooks/use-mount-effect';
 import { Switch } from '../Switch/switch';
 import { Table, type TableColumn, type TableProps } from './table';
 

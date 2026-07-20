@@ -10,8 +10,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@rn-motion-ui/rn": "workspace:*",
-    "@rn-motion-ui/moti": "workspace:*",
+    "rn-motion-ui": "workspace:*",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-native": "0.86.0",

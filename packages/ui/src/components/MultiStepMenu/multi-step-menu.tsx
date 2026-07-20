@@ -1,5 +1,3 @@
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import {
   createContext,
   type ReactNode,
@@ -15,6 +13,8 @@ import {
 } from 'react';
 import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, Text, View } from 'react-native';
 import { ChevronRight, type IconProps, X } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { TextCascade } from '../TextCascade/text-cascade';
 import { TextRolling } from '../TextRolling/text-rolling';
 

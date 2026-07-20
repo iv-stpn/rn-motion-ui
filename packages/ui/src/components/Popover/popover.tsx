@@ -1,9 +1,9 @@
-import { useModalRender } from '@rn-motion-ui/hooks/use-modal-render';
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Dimensions, type LayoutChangeEvent, Modal, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useModalRender } from '../../hooks/use-modal-render';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 
 export type PopoverSide = 'top' | 'bottom';
 export type PopoverAlign = 'start' | 'center' | 'end';

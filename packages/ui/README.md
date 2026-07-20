@@ -1,14 +1,14 @@
-# @rn-motion-ui/rn
+# rn-motion-ui
 
-Animated React Native + React Native Web UI components, styled with [Tailwind](https://tailwindcss.com/) via [uniwind](https://github.com/nativewind/uniwind) and powered by the internal [@rn-motion-ui/moti](../moti/) / [Reanimated](https://docs.swmansion.com/react-native-reanimated/).
+Animated React Native + React Native Web UI components, styled with [Tailwind](https://tailwindcss.com/) via [uniwind](https://github.com/nativewind/uniwind) and powered by an in-package Moti / [Reanimated](https://docs.swmansion.com/react-native-reanimated/) 4 layer.
 
 The components are written as React Native primitives, so they run on native (iOS/Android via Expo or bare RN) and on the web through `react-native-web`.
 
 ## Install
 
 ```sh
-npm install @rn-motion-ui/rn
-# or: bun add @rn-motion-ui/rn
+npm install rn-motion-ui
+# or: bun add rn-motion-ui
 ```
 
 ### Peer dependencies
@@ -52,25 +52,28 @@ Alias `react-native` → `react-native-web`, run the Reanimated Babel plugin thr
 
 ## Usage
 
-Each component is a **subpath export** — import directly from the component's path:
+Every module is a **subpath export** — import directly from its path. There is no barrel `index` export by design, so bundlers only pull in what you import.
 
 ```tsx
-import { Button } from '@rn-motion-ui/rn/button';
-import { Switch } from '@rn-motion-ui/rn/switch';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@rn-motion-ui/rn/tabs';
-
-export function Example() {
-  return (
-    <Button variant="primary" size="md" onPress={() => {}}>
-      Press me
-    </Button>
-  );
-}
+import { Button } from 'rn-motion-ui/button';
+import { Switch } from 'rn-motion-ui/switch';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from 'rn-motion-ui/tabs';
+import { useReducedMotion } from 'rn-motion-ui/hooks/use-reduced-motion';
+import { MotiView } from 'rn-motion-ui/moti/view';
+import { AnimatePresence } from 'rn-motion-ui/moti/presence';
+import { hasKey } from 'rn-motion-ui/utils/typeguards';
 ```
 
-There is no barrel `index` export by design — this keeps bundlers from pulling in components you don't use.
-
 ## Available exports
+
+Subpaths are namespaced by category:
+
+- **UI components** — flat, e.g. `rn-motion-ui/button`, `rn-motion-ui/tabs`, `rn-motion-ui/bottom-sheet`, …
+- **Hooks** — `rn-motion-ui/hooks/<name>` (`use-reduced-motion`, `use-mount-effect`, `use-in-view`, …)
+- **Moti primitives** — `rn-motion-ui/moti/<name>` (`view`, `text`, `motify`, `presence`, `pressable`, …)
+- **Utils** — `rn-motion-ui/utils/typeguards`
+
+### UI components
 
 | Subpath | Component / hook |
 | --- | --- |
@@ -104,6 +107,7 @@ There is no barrel `index` export by design — this keeps bundlers from pulling
 | `/adaptive-dropdown` | `AdaptiveDropdown` |
 | `/multi-step-menu` | `MultiStepMenu` |
 | `/bloom-menu` | `BloomMenu` |
+| `/hover-menu` | `HoverMenu` |
 | `/overflow-actions` | `OverflowActions` |
 | `/bouncy-accordion` | `BouncyAccordion` |
 | `/dynamic-island` | `DynamicIsland` |
@@ -122,15 +126,6 @@ There is no barrel `index` export by design — this keeps bundlers from pulling
 | `/not-found` | `NotFound` |
 | `/icons` | icon components |
 | `/ease` | easing constants |
-| `/use-in-view` | `useInView` |
-| `/use-arm-on-view` | `useArmOnView` |
-| `/use-page-visible` | `usePageVisible` |
-| `/use-reduced-motion` | `useReducedMotion` |
-| `/use-hover-capable` | `useHoverCapable` |
-| `/use-interval` | `useInterval` |
-| `/use-modal-render` | `useModalRender` |
-| `/use-scramble` | `useScramble` |
-| `/use-shake-animation` | `useShakeAnimation` |
 
 ## License
 

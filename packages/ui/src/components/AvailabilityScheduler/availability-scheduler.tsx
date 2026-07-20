@@ -1,7 +1,5 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: all-in-one scheduler — state, helpers, and rendering are tightly coupled
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type GestureResponderEvent,
@@ -14,8 +12,11 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { CONTENT_TRANSITION, SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 import { Check, Copy, Plus, X } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { Checkbox } from '../Checkbox/checkbox';
 import { Switch } from '../Switch/switch';
 import { WheelPicker } from '../WheelPicker/wheel-picker';

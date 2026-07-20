@@ -1,4 +1,3 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   type AccessibilityActionEvent,
@@ -10,6 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Animated, { useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // Smooth glide for thumb/fill — critically damped, no overshoot (web SPRING_GLIDE).
 const SPRING_GLIDE = { stiffness: 700, damping: 50, mass: 0.5 };

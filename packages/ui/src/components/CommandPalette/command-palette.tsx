@@ -1,7 +1,3 @@
-import { useModalRender } from '@rn-motion-ui/hooks/use-modal-render';
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Modal,
@@ -15,8 +11,12 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { useModalRender } from '../../hooks/use-modal-render';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_LAYOUT, SPRING_PANEL } from '../../lib/ease';
 import { Search } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 
 // RN FALLBACK vs web: the web palette is a `createPortal` overlay with a
 // `backdrop-filter` blur, a global Cmd/Ctrl+K listener, body-scroll lock and

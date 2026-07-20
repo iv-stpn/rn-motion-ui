@@ -1,6 +1,6 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent, View } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import type { RowEntry, SortState, TableProps } from './table-types';
 import { computeColumnWidths, nextSort, sortRows } from './table-utils';
 import { useColumnReorder } from './use-column-reorder';

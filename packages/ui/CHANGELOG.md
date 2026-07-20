@@ -1,14 +1,7 @@
-# @rn-motion-ui/rn
+# rn-motion-ui
 
-## 0.3.0
+## 0.1.0
 
 ### Minor Changes
 
-- fe52ee5: First public release. Publishes the full `@rn-motion-ui` library: 40+ animated React Native / React Native Web components (`Button`, `Tabs`, `BottomSheet`, `ScrollReveal`, `HoverMenu`, …), the shared hooks package, and the shared TypeScript utilities.
-
-### Patch Changes
-
-- Updated dependencies [fe52ee5]
-- Updated dependencies [defbc62]
-  - @rn-motion-ui/hooks@0.2.0
-  - @rn-motion-ui/moti@0.2.0
+- First public release of `rn-motion-ui` as a single package. Consolidates the former `@rn-motion-ui/{rn,moti,hooks,utils}` packages into one unscoped package with subpath exports (no barrel files): 40+ animated React Native / React Native Web UI components, the Moti/Reanimated 4 primitives, shared React hooks, and shared TypeScript utilities.

@@ -1,7 +1,3 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { useShakeAnimation } from '@rn-motion-ui/hooks/use-shake-animation';
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useRef, useState } from 'react';
 import {
@@ -14,7 +10,11 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { Check } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 
 // Success green mirrors the --color-success token (oklch(70% 0.18 155)); the
 // icon takes a raw colour prop, so we can't drive it through a className.

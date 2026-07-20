@@ -1,13 +1,14 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: cross-platform hover menu — web DOM helpers, positioning math, and dual-platform render collocated in one module
-import { useHoverCapable } from '@rn-motion-ui/hooks/use-hover-capable';
-import { useModalRender } from '@rn-motion-ui/hooks/use-modal-render';
-import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
+
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Modal, Platform, Pressable, useWindowDimensions, type View, type ViewStyle } from 'react-native';
+import { useHoverCapable } from '../../hooks/use-hover-capable';
+import { useModalRender } from '../../hooks/use-modal-render';
+import { useMountEffect } from '../../hooks/use-mount-effect';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_IN_OUT, SPRING_PANEL } from '../../lib/ease';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 
 const DEFAULT_WIDTH = 200;
 const DEFAULT_OFFSET = 4;

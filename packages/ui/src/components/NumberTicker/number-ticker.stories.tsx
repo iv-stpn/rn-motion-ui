@@ -1,8 +1,8 @@
-import { useMountEffect } from '@rn-motion-ui/hooks/use-mount-effect';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { expect, within } from 'storybook/test';
+import { useMountEffect } from '../../hooks/use-mount-effect';
 import { NumberTicker } from './number-ticker';
 
 const meta = {

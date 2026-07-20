@@ -1,8 +1,8 @@
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { useCallback } from 'react';
 import type { GestureResponderHandlers } from 'react-native';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { ChevronUp, GripVertical, Plus, Trash2 } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
 import { styles } from './table-styles';
 import type { SortDirection, TableColumn } from './table-types';
 import { alignStyle, alignToJustify } from './table-utils';

@@ -1,5 +1,3 @@
-import { useReducedMotion } from '@rn-motion-ui/hooks/use-reduced-motion';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Children, isValidElement, type ReactNode, useCallback, useRef, useState } from 'react';
 import {
@@ -12,6 +10,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { MotiView } from '../../moti/components/view';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
 // biome-ignore lint/style/useExportsLast: type collocated with sibling ButtonVariant export for readability

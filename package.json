@@ -8,10 +8,10 @@
   ],
   "scripts": {
     "build:storybook": "bun run --cwd storybook/web build-storybook",
-    "typecheck": "bun run --cwd packages/hooks typecheck && bun run --cwd packages/moti typecheck && bun run --cwd packages/utils typecheck && bun run --cwd packages/ui typecheck && bun run --cwd storybook/web typecheck && bun run --cwd storybook/native typecheck",
+    "typecheck": "bun run --cwd packages/ui typecheck && bun run --cwd storybook/web typecheck && bun run --cwd storybook/native typecheck",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "test": "bun run --cwd packages/moti test && bun run test:storybook",
+    "test": "bun run --cwd packages/ui test && bun run test:storybook",
     "test:storybook": "bun run --cwd storybook/web test",
     "storybook": "bun run --cwd storybook/web storybook",
     "storybook:native": "bun run --cwd storybook/native start",

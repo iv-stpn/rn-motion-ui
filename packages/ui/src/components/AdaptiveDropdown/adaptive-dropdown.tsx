@@ -1,9 +1,9 @@
-import { AnimatePresence } from '@rn-motion-ui/moti/presence';
-import { MotiView } from '@rn-motion-ui/moti/view';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { X } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
 
 const MD_BREAKPOINT = 768;

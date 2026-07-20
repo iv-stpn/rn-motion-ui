@@ -1,8 +1,8 @@
-import { hasKey } from '@rn-motion-ui/utils/typeguards';
 import { type ReactNode, useMemo } from 'react';
 import { Pressable } from 'react-native';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { hasKey } from '../../../utils/typeguards';
 import { View as MotiView } from '../../components/view';
 import { INTERACTION_CONTAINER_ID, MotiPressableContext, useMotiPressableContext } from './context';
 import { Hoverable } from './hoverable';

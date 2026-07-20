@@ -52,6 +52,18 @@ export type TableProps<T> = {
   loading?: boolean;
   skeletonRows?: number;
   emptyState?: ReactNode;
+  /**
+   * Small screen card view. When provided, enables rendering each row as a card instead of table columns.
+   * Useful for responsive layouts on mobile or narrow viewports.
+   */
+  renderSmallScreen?: (row: T, selected: boolean) => ReactNode;
+  /**
+   * When true, uses the card view (renderSmallScreen) instead of the table layout.
+   * Requires `renderSmallScreen` to be provided.
+   */
+  useSmallScreen?: boolean;
+  /** Style applied to each card container in small screen mode. */
+  cardStyle?: StyleProp<ViewStyle>;
   // misc
   className?: string;
   style?: StyleProp<ViewStyle>;

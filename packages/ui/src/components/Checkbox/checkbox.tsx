@@ -1,4 +1,3 @@
-import { cva } from 'class-variance-authority';
 import { useCallback, useState } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -9,17 +8,6 @@ import { AnimatePresence } from '../../moti/presence/animate-presence';
 
 const CHECK_PATH = 'M5 13l4 4L19 7';
 const INDETERMINATE_PATH = 'M6 12h12';
-
-// The box swaps border/fill colour by state; the mark animates in via moti.
-const box = cva('h-5 w-5 shrink-0 items-center justify-center rounded-md border-2', {
-  variants: {
-    marked: {
-      true: 'border-primary bg-primary',
-      false: 'border-muted-foreground/50 bg-surface',
-    },
-  },
-  defaultVariants: { marked: false },
-});
 
 export type CheckboxProps = {
   checked: boolean;
@@ -69,7 +57,14 @@ export function Checkbox({
     >
       {/* Tap feedback: the box springs down while pressed (Button's idiom). */}
       <MotiView animate={{ scale: pressed && !reduce && !disabled ? 0.92 : 1 }} transition={SPRING_PRESS}>
-        <View className={box({ marked: showMark })}>
+        {/* Base box is always in the unchecked state; the primary fill animates in/out. */}
+        <View className="h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 border-muted-foreground/50 bg-surface">
+          {/* Fill fades in on check and out on uncheck, same 160 ms timing as the mark. */}
+          <MotiView
+            animate={{ opacity: showMark ? 1 : 0 }}
+            transition={{ type: 'timing', duration: reduce ? 0 : 160 }}
+            className="absolute inset-0 bg-primary"
+          />
           <AnimatePresence>
             {showMark ? (
               <MotiView

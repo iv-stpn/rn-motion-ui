@@ -427,6 +427,64 @@ export const Async: Story = {
   },
 };
 
+// ─── Small screen (card view) ─────────────────────────────────────────────────
+// Toggle between the normal table layout and the card view with renderSmallScreen.
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function SmallScreenTableStory() {
+  const [useSmallScreen, setUseSmallScreen] = useState(false);
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
+
+  const rows = useMemo(() => buildPeople(12), []);
+  const getRowId = useCallback((row: Person) => row.id, []);
+
+  const renderSmallScreen = useCallback(
+    (row: Person) => (
+      <View style={{ gap: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#111827', flex: 1 }} numberOfLines={1}>
+            {row.name}
+          </Text>
+          <StatusBadge status={row.status} />
+        </View>
+        <Text style={{ fontSize: 12, color: '#6b7280' }} numberOfLines={1}>
+          {row.email}
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={{ fontSize: 12, color: '#374151' }}>{row.role}</Text>
+          <Text style={{ fontSize: 12, color: '#d1d5db' }}>{'·'}</Text>
+          <Text style={{ fontSize: 12, color: '#374151', fontWeight: '500' }}>{`$${row.mrr.toLocaleString()} MRR`}</Text>
+        </View>
+      </View>
+    ),
+    [],
+  );
+
+  return (
+    <View style={{ flex: 1, padding: 16 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <Text style={{ fontSize: 12, color: '#6b7280' }}>
+          {useSmallScreen ? 'Card view — each row rendered by renderSmallScreen.' : 'Table view — toggle to switch.'}
+        </Text>
+        <Switch checked={useSmallScreen} onCheckedChange={setUseSmallScreen} label="Card view" />
+      </View>
+      <Table
+        data={rows}
+        columns={DEFAULT_COLUMNS}
+        getRowId={getRowId}
+        height={440}
+        rowHeight={52}
+        selectable={true}
+        selectedRowIds={selectedRowIds}
+        onSelectionChange={setSelectedRowIds}
+        useSmallScreen={useSmallScreen}
+        renderSmallScreen={renderSmallScreen}
+        testID="table-small-screen"
+      />
+    </View>
+  );
+}
+
 export const Editable: Story = {
   render: () => <EditableTableStory />,
   args: {
@@ -445,5 +503,28 @@ export const Editable: Story = {
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, 'Test Name');
     expect(await canvas.findByDisplayValue('Test Name')).toBeTruthy();
+  },
+};
+
+export const SmallScreen: Story = {
+  render: () => <SmallScreenTableStory />,
+  args: {
+    data: [],
+    columns: [],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // In the default (table) state, the column headers are visible
+    await canvas.findByText('Name');
+    await canvas.findByText('Email');
+
+    // Switch to card view
+    const toggle = await canvas.findByRole('switch', { name: 'Card view' });
+    await userEvent.click(toggle);
+
+    // Headers are gone; card content from renderSmallScreen is visible
+    expect(canvas.queryByText('Email')).toBeNull();
+    await canvas.findByText('Ava Cole');
   },
 };

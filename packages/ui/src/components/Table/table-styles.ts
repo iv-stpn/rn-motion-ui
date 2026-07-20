@@ -130,4 +130,22 @@ export const styles = StyleSheet.create({
   actionBtnDestructive: {
     backgroundColor: '#ef4444',
   },
+  card: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.07)',
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  cardCheckbox: {
+    paddingTop: 2,
+  },
+  cardContent: {
+    flex: 1,
+    minWidth: 0,
+  },
 });

@@ -7,6 +7,13 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+# changesets/action needs to push the version branch + tags and open the
+# "Version Packages" PR. New repos default to a read-only GITHUB_TOKEN,
+# so grant these explicitly.
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release:
     name: Release

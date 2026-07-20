@@ -88,11 +88,6 @@
       "types": "./src/core/constants/color-keys.ts",
       "default": "./src/core/constants/color-keys.ts"
     },
-    "./package-name": {
-      "source": "./src/core/constants/package-name.ts",
-      "types": "./src/core/constants/package-name.ts",
-      "default": "./src/core/constants/package-name.ts"
-    },
     "./presence": {
       "source": "./src/presence/animate-presence.tsx",
       "types": "./src/presence/animate-presence.tsx",

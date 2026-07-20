@@ -97,7 +97,6 @@ function fileKind(item: FileUploadItem) {
 type IconComponentProps = { size: number; color: string };
 type IconComponent = (props: IconComponentProps) => ReactElement | null;
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: MIME type + extension lookup — each branch is a distinct file category
 function getFileIcon(item: FileUploadItem): IconComponent {
   const ext = item.name.includes('.') ? item.name.split('.').pop()?.toLowerCase() : undefined;
   const type = item.type ?? '';
@@ -117,15 +116,13 @@ function getFileIcon(item: FileUploadItem): IconComponent {
 
 // -- Controllable state hook -------------------------------------------------
 
-function useControllableUpload({
-  value,
-  defaultValue,
-  onValueChange,
-}: {
+type useControllableUploadParams = {
   value?: FileUploadItem[];
   defaultValue?: FileUploadItem[];
   onValueChange?: (items: FileUploadItem[]) => void;
-}) {
+};
+
+function useControllableUpload({ value, defaultValue, onValueChange }: useControllableUploadParams) {
   const [internal, setInternal] = useState(defaultValue ?? []);
   const isControlled = value !== undefined;
   const items = value ?? internal;
@@ -225,15 +222,13 @@ function ProgressBar({ progress, status, reduce }: ProgressBarProps) {
 
 // -- FileUploadRow -----------------------------------------------------------
 
-function FileUploadRow({
-  item,
-  onRemove,
-  onRetry,
-}: {
+export type FileUploadRowProps = {
   item: FileUploadItem;
   onRemove: (item: FileUploadItem) => void;
   onRetry: (item: FileUploadItem) => void;
-}) {
+};
+
+function FileUploadRow({ item, onRemove, onRetry }: FileUploadRowProps) {
   const reduce = useReducedMotion();
   const status = item.status ?? 'queued';
   const progress = clampProgress(item.progress, status);
@@ -312,7 +307,6 @@ function FileUploadRow({
 
 // -- FileUpload --------------------------------------------------------------
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: controlled + uncontrolled mode, drag-over, and error state handled together
 export function FileUpload({
   value,
   defaultValue,

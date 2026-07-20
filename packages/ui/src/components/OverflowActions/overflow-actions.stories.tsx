@@ -35,8 +35,10 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
+type DemoProps = { size?: 'sm' | 'md' };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Demo({ size }: { size?: 'sm' | 'md' }) {
+function Demo({ size }: DemoProps) {
   const [expanded, setExpanded] = useState(false);
   return (
     <OverflowActions

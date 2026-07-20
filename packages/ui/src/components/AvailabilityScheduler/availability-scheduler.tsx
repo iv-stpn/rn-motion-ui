@@ -118,19 +118,15 @@ const stopPropagation = (e: GestureResponderEvent) => e.stopPropagation();
 
 // ─── TimePickerModal ───────────────────────────────────────────────────────
 
-function TimePickerModal({
-  visible,
-  value,
-  options,
-  onSelect,
-  onClose,
-}: {
+export type TimePickerModalProps = {
   visible: boolean;
   value: string;
   options: TimeOption[];
   onSelect: (v: string) => void;
   onClose: () => void;
-}) {
+};
+
+function TimePickerModal({ visible, value, options, onSelect, onClose }: TimePickerModalProps) {
   const [pending, setPending] = useState(value);
 
   // Reset pending selection when modal opens with a new value
@@ -190,17 +186,9 @@ function TimePickerModal({
 
 // ─── TimeButton ────────────────────────────────────────────────────────────
 
-function TimeButton({
-  value,
-  options,
-  onChange,
-  testID,
-}: {
-  value: string;
-  options: TimeOption[];
-  onChange: (v: string) => void;
-  testID?: string;
-}) {
+export type TimeButtonProps = { value: string; options: TimeOption[]; onChange: (v: string) => void; testID?: string };
+
+function TimeButton({ value, options, onChange, testID }: TimeButtonProps) {
   const [open, setOpen] = useState(false);
   const openModal = useCallback(() => setOpen(true), []);
   const closeModal = useCallback(() => setOpen(false), []);
@@ -224,32 +212,16 @@ function TimeButton({
 
 // ─── CopyModal ─────────────────────────────────────────────────────────────
 
-function CopyDayCheckbox({
-  day,
-  label,
-  checked,
-  onToggle,
-}: {
-  day: DayKey;
-  label: string;
-  checked: boolean;
-  onToggle: (day: DayKey) => void;
-}) {
+export type CopyDayCheckboxProps = { day: DayKey; label: string; checked: boolean; onToggle: (day: DayKey) => void };
+
+function CopyDayCheckbox({ day, label, checked, onToggle }: CopyDayCheckboxProps) {
   const handleToggle = useCallback(() => onToggle(day), [onToggle, day]);
   return <Checkbox checked={checked} onCheckedChange={handleToggle} label={label} />;
 }
 
-function CopyModal({
-  visible,
-  fromLabel,
-  onApply,
-  onClose,
-}: {
-  visible: boolean;
-  fromLabel: string;
-  onApply: (targets: DayKey[]) => void;
-  onClose: () => void;
-}) {
+export type CopyModalProps = { visible: boolean; fromLabel: string; onApply: (targets: DayKey[]) => void; onClose: () => void };
+
+function CopyModal({ visible, fromLabel, onApply, onClose }: CopyModalProps) {
   const [picked, setPicked] = useState<Set<DayKey>>(new Set());
   const others = useMemo(() => WEEKDAYS.filter((d) => d.label !== fromLabel), [fromLabel]);
 
@@ -320,19 +292,15 @@ function CopyModal({
 
 // ─── RangeRow ──────────────────────────────────────────────────────────────
 
-function RangeRow({
-  range,
-  options,
-  reduce,
-  onUpdate,
-  onRemove,
-}: {
+export type RangeRowProps = {
   range: TimeRange;
   options: TimeOption[];
   reduce: boolean;
   onUpdate: (id: string, patch: Partial<TimeRange>) => void;
   onRemove: (id: string) => void;
-}) {
+};
+
+function RangeRow({ range, options, reduce, onUpdate, onRemove }: RangeRowProps) {
   const handleStartChange = useCallback((v: string) => onUpdate(range.id, { start: v }), [onUpdate, range.id]);
   const handleEndChange = useCallback((v: string) => onUpdate(range.id, { end: v }), [onUpdate, range.id]);
   const handleRemove = useCallback(() => onRemove(range.id), [onRemove, range.id]);
@@ -362,17 +330,7 @@ function RangeRow({
 
 // ─── DayRow ────────────────────────────────────────────────────────────────
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: time-range drag logic requires branching across all edge cases
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: time-range drag logic — each branch handles a distinct interaction state
-function DayRow({
-  day,
-  label,
-  state,
-  options,
-  reduce,
-  onChange,
-  onCopy,
-}: {
+export type DayRowProps = {
   day: DayKey;
   label: string;
   state: DayAvailability;
@@ -380,7 +338,10 @@ function DayRow({
   reduce: boolean;
   onChange: (day: DayKey, next: DayAvailability) => void;
   onCopy: (day: DayKey, targets: DayKey[]) => void;
-}) {
+};
+
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: time-range drag logic — each branch handles a distinct interaction state
+function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRowProps) {
   const idRef = useRef(0);
   const nextId = useCallback(() => {
     const n = idRef.current;

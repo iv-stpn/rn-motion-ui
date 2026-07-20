@@ -41,8 +41,10 @@ type Story = StoryObj<typeof meta>;
 
 const DRAG_HINT = 'Drag to roll';
 
+type BallProps = { label: string; color: string };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Ball({ label, color }: { label: string; color: string }) {
+function Ball({ label, color }: BallProps) {
   return (
     <View
       style={{

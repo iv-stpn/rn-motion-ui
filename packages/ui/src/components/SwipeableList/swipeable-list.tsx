@@ -10,13 +10,7 @@ export type SwipeSide = 'left' | 'right';
 
 export type SwipeActionTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
 
-export type SwipeAction = {
-  id: string;
-  label: string;
-  icon?: ReactNode;
-  tone?: SwipeActionTone;
-  disabled?: boolean;
-};
+export type SwipeAction = { id: string; label: string; icon?: ReactNode; tone?: SwipeActionTone; disabled?: boolean };
 
 export type SwipeableListItem = {
   id: string;
@@ -122,17 +116,14 @@ const ICON_COLOR: Record<SwipeActionTone, string> = {
 
 // -- SwipeActionButton -------------------------------------------------------
 
-function SwipeActionButton({
-  action,
-  actionWidth,
-  side,
-  onAction,
-}: {
+type SwipeActionButtonProps = {
   action: SwipeAction;
   actionWidth: number;
   side: SwipeSide;
   onAction: (action: SwipeAction, side: SwipeSide) => void;
-}) {
+};
+
+function SwipeActionButton({ action, actionWidth, side, onAction }: SwipeActionButtonProps) {
   const tone = action.tone ?? 'neutral';
   const handlePress = useCallback(() => onAction(action, side), [onAction, action, side]);
 
@@ -162,6 +153,16 @@ function SwipeActionButton({
 
 // -- SwipeableListRow --------------------------------------------------------
 
+export type SwipeableListRowProps = {
+  item: SwipeableListItem;
+  actionWidth: number;
+  revealThreshold: number;
+  openId: string | null;
+  setOpenId: (id: string | null) => void;
+  closeOnAction: boolean;
+  onAction?: SwipeableListProps['onAction'];
+};
+
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: gesture, wheel, and rendering are unified to share PanResponder and animation values
 function SwipeableListRow({
   item,
@@ -171,15 +172,7 @@ function SwipeableListRow({
   setOpenId,
   closeOnAction,
   onAction,
-}: {
-  item: SwipeableListItem;
-  actionWidth: number;
-  revealThreshold: number;
-  openId: string | null;
-  setOpenId: (id: string | null) => void;
-  closeOnAction: boolean;
-  onAction?: SwipeableListProps['onAction'];
-}) {
+}: SwipeableListRowProps) {
   const reduce = useReducedMotion();
   const translateX = useRef(new Animated.Value(0)).current;
   // Track translateX in JS for use inside PanResponder release handler.
@@ -242,7 +235,6 @@ function SwipeableListRow({
   // Shared by drag release (PanResponder) and web wheel settle so both gestures
   // open/close by the exact same rules.
   const resolveSwipe = useCallback(
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: swipe velocity + threshold + left/right width produce inherently complex branching
     (x: number, vx: number) => {
       const lw = leftWidthRef.current;
       const rw = rightWidthRef.current;
@@ -381,7 +373,6 @@ function SwipeableListRow({
     const node = rowRef.current;
     if (!isWheelTarget(node)) return;
 
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: trackpad scroll direction, delta accumulation, and open/close state all branch together
     const onWheel = (e: WebWheelEvent) => {
       if (handlersRef.current.itemDisabled) return;
       // Reveal is horizontal. Only claim horizontal-dominant scroll (trackpad

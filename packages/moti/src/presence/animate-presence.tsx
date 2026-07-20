@@ -19,10 +19,7 @@ function setsEqual<T>(a: ReadonlySet<T>, b: ReadonlySet<T>): boolean {
   return true;
 }
 
-type KeyCallbacks = {
-  register: (childId: string) => () => void;
-  safeToUnmount: (childId: string) => void;
-};
+type KeyCallbacks = { register: (childId: string) => () => void; safeToUnmount: (childId: string) => void };
 
 export type AnimatePresenceProps = {
   children?: ReactNode;

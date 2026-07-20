@@ -11,7 +11,10 @@ import { alignStyle, alignToJustify, readCellValue } from './table-utils';
 
 // ─── Editable cell input ──────────────────────────────────────────────────────
 
-function EditableCellInput({ value, onCommit, testID }: { value: string; onCommit: (next: string) => void; testID?: string }) {
+// biome-ignore lint/style/useExportsLast: props type before EditableCellInput — collocated for readability
+export type EditableCellInputProps = { value: string; onCommit: (next: string) => void; testID?: string };
+
+function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) {
   const [draft, setDraft] = useState(value);
   const commit = useCallback(() => onCommit(draft), [onCommit, draft]);
 

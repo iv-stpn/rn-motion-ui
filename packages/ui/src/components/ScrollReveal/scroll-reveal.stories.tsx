@@ -25,8 +25,10 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
+type DemoProps = { once: boolean };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Demo({ once }: { once: boolean }) {
+function Demo({ once }: DemoProps) {
   const scrollY = useSharedValue(0);
   // Writing a shared value from the JS thread is valid on web (no worklet plugin
   // needed); ScrollReveal reads it via useDerivedValue/useAnimatedStyle.

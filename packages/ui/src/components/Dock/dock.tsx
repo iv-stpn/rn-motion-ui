@@ -166,9 +166,7 @@ export function DockItem({ children, onPress, active, accessibilityLabel, style,
   );
 }
 
-export type DockSeparatorProps = {
-  style?: StyleProp<ViewStyle>;
-};
+export type DockSeparatorProps = { style?: StyleProp<ViewStyle> };
 
 export function DockSeparator({ style }: DockSeparatorProps) {
   return (

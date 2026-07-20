@@ -50,6 +50,8 @@ export type DynamicIslandProps = {
   testID?: string;
 };
 
+type SlotProps = { keyId: string; children: ReactNode; className?: string; style?: StyleProp<ViewStyle> };
+
 /**
  * Content slot for one island view. Reads the presence context to pop itself
  * out of flow while exiting — faking motion's `popLayout` (Moti's
@@ -59,17 +61,7 @@ export type DynamicIslandProps = {
  * presence child that would never report completion and strand the key in its
  * exiting set, and MotiView already registers one internally.
  */
-function Slot({
-  keyId,
-  children,
-  className,
-  style,
-}: {
-  keyId: string;
-  children: ReactNode;
-  className?: string;
-  style?: StyleProp<ViewStyle>;
-}) {
+function Slot({ keyId, children, className, style }: SlotProps) {
   const reduce = useReducedMotion();
   const presence = useContext(PresenceContext);
   const exiting = presence ? !presence.isPresent : false;

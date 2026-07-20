@@ -79,15 +79,9 @@ function NotFoundActions({
 
 // ─── NotFoundStage ─────────────────────────────────────────────────────────
 
-function NotFoundStage({
-  children,
-  style,
-  testID,
-}: {
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-  testID?: string;
-}) {
+export type NotFoundStageProps = { children: React.ReactNode; style?: StyleProp<ViewStyle>; testID?: string };
+
+function NotFoundStage({ children, style, testID }: NotFoundStageProps) {
   return (
     <View
       testID={testID}

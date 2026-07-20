@@ -32,7 +32,6 @@ export type CheckboxProps = {
   testID?: string;
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: animated checked/indeterminate/disabled states share interleaved conditions
 export function Checkbox({
   checked,
   onCheckedChange,

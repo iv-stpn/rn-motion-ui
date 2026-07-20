@@ -69,7 +69,6 @@ const toggle = cva('shrink-0 items-center justify-center rounded-full bg-primary
   defaultVariants: { size: 'md' },
 });
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: primary + overflow tray + outside-press all share a single open/close guard
 export function OverflowActions({
   primaryActions,
   overflowActions,
@@ -192,17 +191,14 @@ export function OverflowActions({
   );
 }
 
-function ActionButton({
-  item,
-  size,
-  reduce,
-  onAction,
-}: {
+export type ActionButtonProps = {
   item: OverflowActionItem;
   size: OverflowActionsSize;
   reduce: boolean;
   onAction: (item: OverflowActionItem) => void;
-}) {
+};
+
+function ActionButton({ item, size, reduce, onAction }: ActionButtonProps) {
   const [pressed, setPressed] = useState(false);
   const handlePressIn = useCallback(() => setPressed(true), []);
   const handlePressOut = useCallback(() => setPressed(false), []);

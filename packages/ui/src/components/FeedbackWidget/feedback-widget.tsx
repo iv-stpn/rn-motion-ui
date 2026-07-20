@@ -46,9 +46,7 @@ const SPRINKLES = Array.from({ length: 8 }, (_, i) => {
   };
 });
 
-export type FeedbackData = {
-  message: string;
-};
+export type FeedbackData = { message: string };
 
 // biome-ignore lint/style/useExportsLast: props type before internal SentViewProps — collocated for readability
 export type FeedbackWidgetProps = {
@@ -109,7 +107,6 @@ function renderFeedbackContent({
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-step submit flow with async state, error, and reduced-motion branches
 export function FeedbackWidget({
   onSubmit,
   position = 'bottom-right',
@@ -235,17 +232,7 @@ export function FeedbackWidget({
   );
 }
 
-function FormView({
-  inputRef,
-  reduce,
-  title,
-  placeholder,
-  message,
-  busy,
-  onChangeMessage,
-  onClose,
-  onSubmit,
-}: {
+export type FormViewProps = {
   inputRef: RefObject<TextInput | null>;
   reduce: boolean;
   title: string;
@@ -255,7 +242,9 @@ function FormView({
   onChangeMessage: (v: string) => void;
   onClose: () => void;
   onSubmit: () => void;
-}) {
+};
+
+function FormView({ inputRef, reduce, title, placeholder, message, busy, onChangeMessage, onClose, onSubmit }: FormViewProps) {
   return (
     <MotiView
       from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}

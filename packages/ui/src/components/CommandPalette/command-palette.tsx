@@ -143,7 +143,6 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: search + keyboard + item selection state handled in one render pass
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: search + keyboard + item selection state handled in one render pass
 export function CommandPalette({
   items,

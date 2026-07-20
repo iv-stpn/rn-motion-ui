@@ -53,7 +53,6 @@ export function useMotify<Animate>({
 
   // RNR4: useAnimatedStyle no longer accepts a dependency array —
   // dependencies are tracked automatically by the Babel/Metro plugin.
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: useAnimatedStyle orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining complexity is setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
   const style = useAnimatedStyle(() => {
     const final: Record<string, unknown> & { transform: TransformsStyle['transform'] } = { transform: [] };
 

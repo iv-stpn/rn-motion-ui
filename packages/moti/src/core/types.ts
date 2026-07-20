@@ -62,10 +62,7 @@ export type TransitionConfig = TransitionConfigWithoutRepeats & {
   repeatReverse?: boolean;
 };
 
-export type SequenceItemAnimateInfo<Value> = {
-  attemptedSequenceArray: Value;
-  attemptedSequenceItemValue: Value;
-};
+export type SequenceItemAnimateInfo<Value> = { attemptedSequenceArray: Value; attemptedSequenceItemValue: Value };
 
 export type SequenceItemObject<Value> = {
   value: Value;
@@ -80,9 +77,7 @@ export type StyleValueWithSequenceArraysWithoutTransform<T> = {
   [key in Extract<keyof T, keyof Transforms>]?: T[key] | (string & {}) | SequenceItem<T[key] | (string & {})>[];
 };
 
-export type StyleValueWithSequenceArraysWithTransform = {
-  transform: StyleValueWithSequenceArrays<Transforms>[];
-};
+export type StyleValueWithSequenceArraysWithTransform = { transform: StyleValueWithSequenceArrays<Transforms>[] };
 
 export type StyleValueWithSequenceArrays<T> = Partial<
   StyleValueWithSequenceArraysWithoutTransform<T> & StyleValueWithSequenceArraysWithTransform
@@ -115,9 +110,7 @@ export type MotiTransition<Animate = FallbackAnimateProp> = TransitionConfig & P
 
 export type MotiTransitionProp<Animate = FallbackAnimateProp> = OrDerivedValue<MotiTransition<Animate>>;
 
-export type InlineOnDidAnimateEvent<Value> = {
-  attemptedValue: Value;
-};
+export type InlineOnDidAnimateEvent<Value> = { attemptedValue: Value };
 
 export type InlineOnDidAnimate<Value> = (
   finished: boolean,
@@ -183,9 +176,7 @@ export type UseAnimationStateConfig<V, FromKey extends keyof V = keyof V, ToKey 
   to?: ToKey;
 };
 
-export type WithTransition = {
-  transition?: MotiTransition;
-};
+export type WithTransition = { transition?: MotiTransition };
 
 export type DynamicStyleProp<
   AnimateType = ImageStyle & ViewStyle & TextStyle,

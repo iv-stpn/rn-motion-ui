@@ -48,7 +48,6 @@ export function useInView(options: UseInViewOptions = {}): [React.RefObject<View
     // Use IntersectionObserver so scroll-triggered animations only fire after
     // the element actually enters the viewport.
     if (typeof IntersectionObserver !== 'undefined' && isDomNode(el)) {
-      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: IO callback is a single responsibility — three branches for isIntersecting/once/!once; splitting further would require passing shared state across function boundaries
       const onIntersect = (entries: ReadonlyArray<{ readonly isIntersecting: boolean }>) => {
         const entry = entries[0];
         if (!entry) return;

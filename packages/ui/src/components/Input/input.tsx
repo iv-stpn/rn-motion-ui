@@ -72,7 +72,6 @@ export type InputProps = {
   testID?: string;
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: label float, focus, error, password-reveal, and prefix/suffix all interleave
 export function Input({
   label,
   value: valueProp,

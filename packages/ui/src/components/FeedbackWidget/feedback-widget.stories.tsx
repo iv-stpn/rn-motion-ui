@@ -34,9 +34,11 @@ function useFailThenRecoverSubmit() {
   };
 }
 
+type AppSurfaceProps = { children: ReactNode; hint: string };
+
 /** Faux app surface so the floating triggers have context. */
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function AppSurface({ children, hint }: { children: ReactNode; hint: string }) {
+function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
     <View className="flex-1 bg-surface" style={{ minHeight: 380 }}>
       <View className="border-border border-b px-5 py-3">

@@ -8,12 +8,7 @@ import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '../../lib/ease';
 
-export type ActionSwapItem = {
-  id: string;
-  label: ReactNode;
-  icon?: ReactNode;
-  ariaLabel?: string;
-};
+export type ActionSwapItem = { id: string; label: ReactNode; icon?: ReactNode; ariaLabel?: string };
 
 export type ActionSwapButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 export type ActionSwapButtonSize = 'sm' | 'md' | 'lg' | 'icon';
@@ -113,7 +108,6 @@ export interface ActionSwapButtonProps extends VariantProps<typeof container> {
   testID?: string;
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ActionSwapText handles cascade/blur/roll animation variants with reduce-motion and string/node content branches — each path is a distinct rendering mode
 export function ActionSwapText({
   value,
   children,
@@ -261,7 +255,6 @@ export function ActionSwapIcon({ value, children, animation = 'blur', size = 16,
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ActionSwapButton computes the active item, handles controlled/uncontrolled state, disabled state, and icon/label rendering — each branch is essential
 export function ActionSwapButton({
   items,
   value,

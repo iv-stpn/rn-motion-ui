@@ -97,7 +97,6 @@ export interface AnimatedBadgeProps extends VariantProps<typeof container> {
   testID?: string;
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: AnimatedBadge renders pulse, icon swap, and label swap with reduce-motion and loading-spin variants — each branch is a distinct visual mode
 export function AnimatedBadge({
   status = 'neutral',
   size = 'md',

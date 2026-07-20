@@ -11,7 +11,9 @@
  * We render AnimatePresence into a real jsdom document via react-dom/client
  * and drive state changes with React.act().
  */
-import React, { act } from 'react';
+/** biome-ignore-all lint/performance/noJsxPropsBind: used for testing purposes */
+/** biome-ignore-all lint/correctness/useUniqueElementIds: used for testing purposes */
+import React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnimatePresence } from '../presence/animate-presence';
@@ -20,13 +22,7 @@ import { PresenceContext, type PresenceContextValue } from '../presence/animate-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Collects the PresenceContext value(s) seen by children during a render. */
-function PresenceSpy({
-  id,
-  onContext,
-}: {
-  id: string;
-  onContext: (id: string, ctx: PresenceContextValue | null) => void;
-}) {
+function PresenceSpy({ id, onContext }: { id: string; onContext: (id: string, ctx: PresenceContextValue | null) => void }) {
   const ctx = React.useContext(PresenceContext);
   // Use a layout effect so the callback fires synchronously during act().
   React.useLayoutEffect(() => {
@@ -38,7 +34,8 @@ function PresenceSpy({
 type ContextMap = Map<string, PresenceContextValue | null>;
 
 /** Renders AnimatePresence with an initial set of children and returns helpers. */
-function setup(initialChildren: React.ReactElement[]) {
+// biome-ignore lint/correctness/noUnusedVariables: jest setup
+function setup() {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const root = createRoot(container);
@@ -58,7 +55,7 @@ describe('AnimatePresence', () => {
   });
 
   afterEach(() => {
-    act(() => {
+    React.act(() => {
       root.unmount();
     });
     container.remove();
@@ -69,7 +66,7 @@ describe('AnimatePresence', () => {
   it('provides isPresent=true to a child when it is in the tree', () => {
     const seen: ContextMap = new Map();
 
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence>
           <PresenceSpy key="a" id="a" onContext={(id, ctx) => seen.set(id, ctx)} />
@@ -83,7 +80,7 @@ describe('AnimatePresence', () => {
   it('provides isPresent=false once a child is removed from the tree', () => {
     const seen: ContextMap = new Map();
 
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence>
           <PresenceSpy key="a" id="a" onContext={(id, ctx) => seen.set(id, ctx)} />
@@ -94,7 +91,7 @@ describe('AnimatePresence', () => {
     expect(seen.get('a')?.isPresent).toBe(true);
 
     // Remove child — AnimatePresence keeps it in the tree with isPresent=false.
-    act(() => {
+    React.act(() => {
       root.render(<AnimatePresence>{null}</AnimatePresence>);
     });
 
@@ -117,7 +114,7 @@ describe('AnimatePresence', () => {
       return null;
     }
 
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence>
           <Child key="a" id="a" />
@@ -128,7 +125,7 @@ describe('AnimatePresence', () => {
     const countBeforeRemove = rendered.filter((x) => x === 'a').length;
 
     // Remove the child — it should be kept until safeToUnmount fires, then pruned.
-    act(() => {
+    React.act(() => {
       root.render(<AnimatePresence>{null}</AnimatePresence>);
     });
 
@@ -147,14 +144,12 @@ describe('AnimatePresence', () => {
     function Child({ id }: { id: string }) {
       const ctx = React.useContext(PresenceContext);
       React.useLayoutEffect(() => {
-        if (!ctx?.isPresent && ctx?.safeToUnmount) {
-          ctx.safeToUnmount(id);
-        }
+        if (!ctx?.isPresent && ctx?.safeToUnmount) ctx.safeToUnmount(id);
       });
       return null;
     }
 
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence onExitComplete={onExitComplete}>
           <Child key="a" id="a" />
@@ -164,7 +159,7 @@ describe('AnimatePresence', () => {
 
     expect(onExitComplete).not.toHaveBeenCalled();
 
-    act(() => {
+    React.act(() => {
       root.render(<AnimatePresence onExitComplete={onExitComplete}>{null}</AnimatePresence>);
     });
 
@@ -178,7 +173,7 @@ describe('AnimatePresence', () => {
     // does NOT accumulate a call per cycle, and the re-entered child is present again.
     const onExitComplete = vi.fn();
 
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence onExitComplete={onExitComplete}>
           <PresenceSpy key="a" id="a" onContext={() => {}} />
@@ -187,12 +182,12 @@ describe('AnimatePresence', () => {
     });
 
     // Remove the child to start an exit...
-    act(() => {
+    React.act(() => {
       root.render(<AnimatePresence onExitComplete={onExitComplete}>{null}</AnimatePresence>);
     });
 
     // ...then immediately re-add it before safeToUnmount fires.
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence onExitComplete={onExitComplete}>
           <PresenceSpy key="a" id="a" onContext={() => {}} />
@@ -210,7 +205,7 @@ describe('AnimatePresence', () => {
     const seen: ContextMap = new Map();
     const onContext = (id: string, ctx: PresenceContextValue | null) => seen.set(id, ctx);
 
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence exitBeforeEnter={true}>
           <PresenceSpy key="a" id="a" onContext={onContext} />
@@ -219,7 +214,7 @@ describe('AnimatePresence', () => {
     });
 
     // Swap child a → b. Child b is held while a exits.
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence exitBeforeEnter={true}>
           <PresenceSpy key="b" id="b" onContext={onContext} />
@@ -241,14 +236,12 @@ describe('AnimatePresence', () => {
       const ctx = React.useContext(PresenceContext);
       React.useLayoutEffect(() => {
         onContext(id, ctx);
-        if (!ctx?.isPresent && ctx?.safeToUnmount) {
-          ctx.safeToUnmount(id);
-        }
+        if (!ctx?.isPresent && ctx?.safeToUnmount) ctx.safeToUnmount(id);
       });
       return null;
     }
 
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence exitBeforeEnter={true}>
           <Child key="a" id="a" />
@@ -257,7 +250,7 @@ describe('AnimatePresence', () => {
     });
 
     // Swap a → b; safeToUnmount fires synchronously so b should enter by end of act.
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence exitBeforeEnter={true}>
           <Child key="b" id="b" />
@@ -280,7 +273,7 @@ describe('AnimatePresence', () => {
   it('does NOT pass initial=false context when initial prop is true (default)', () => {
     const seen: ContextMap = new Map();
 
-    act(() => {
+    React.act(() => {
       root.render(
         <AnimatePresence initial={true}>
           <PresenceSpy key="a" id="a" onContext={(id, ctx) => seen.set(id, ctx)} />

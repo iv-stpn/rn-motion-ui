@@ -6,10 +6,7 @@ import type { MotiView } from '../../components/view';
 import type { MotiAnimationProp, MotiTransition } from '../../core/types';
 
 // biome-ignore lint/style/useExportsLast: MotiPressableInteractionState is a public type that the private Interactable<T> helper depends on — reversing the order would harm readability
-export type MotiPressableInteractionState = {
-  hovered: boolean;
-  pressed: boolean;
-};
+export type MotiPressableInteractionState = { hovered: boolean; pressed: boolean };
 
 type Interactable<T> = (interaction: MotiPressableInteractionState) => NonNullable<T>;
 type InteractableProp<T> = Interactable<T> | T;

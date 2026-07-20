@@ -46,7 +46,6 @@ export type AdaptiveDropdownProps = {
   /** When true, the bottom sheet on small screens stretches to full height. @default false */
   fullSheet?: boolean;
 };
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: two layout branches (wide/small screen) with shared positioning state — splitting would scatter interdependent calculations
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small screen paths are tightly coupled to shared anchor/dimension state
 export function AdaptiveDropdown({
   trigger,

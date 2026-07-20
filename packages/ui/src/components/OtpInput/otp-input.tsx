@@ -72,19 +72,15 @@ function sanitize(raw: string, length: number) {
   return raw.replace(/\D/g, '').slice(0, length);
 }
 
-function resolveHintText({
-  showSuccess,
-  successMessage,
-  status,
-  errorMessage,
-  hint,
-}: {
+type resolveHintTextParams = {
   showSuccess: boolean;
   successMessage: string | undefined;
   status: OTPStatus;
   errorMessage: string | undefined;
   hint: string | undefined;
-}): string | undefined {
+};
+
+function resolveHintText({ showSuccess, successMessage, status, errorMessage, hint }: resolveHintTextParams): string | undefined {
   if (showSuccess) return successMessage;
   if (status === 'error') return errorMessage;
   return hint;
@@ -185,53 +181,50 @@ export function OTPInput({
         />
 
         <Animated.View className="flex-row items-center gap-2" style={{ transform: [{ translateX: shakeX }] }}>
-          {chars.map(
-            // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: each slot resolves 4 independent visual states (active, filled, error, success)
-            (char, i) => {
-              const isActive = i === activeIndex;
-              const state = resolveSlotState(showSuccess, status, isActive, char);
-              return (
-                // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length slot grid, never reordered.
-                <View key={i} className={slot({ state })}>
-                  {isActive && !showSuccess && !reduce ? (
-                    // Blinking caret — vertically centred (slot 56, caret 24 → top 16),
-                    // trailing the digit when filled, centred in an empty slot.
-                    <MotiView
-                      from={{ opacity: 1 }}
-                      animate={{ opacity: 0 }}
-                      transition={{ type: 'timing', duration: 500, loop: true, repeatReverse: true }}
-                      className="absolute h-6 w-px bg-foreground"
-                      style={[{ pointerEvents: 'none' }, char ? { top: 16, right: 10 } : { top: 16, left: 23 }]}
-                    />
-                  ) : null}
+          {chars.map((char, i) => {
+            const isActive = i === activeIndex;
+            const state = resolveSlotState(showSuccess, status, isActive, char);
+            return (
+              // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length slot grid, never reordered.
+              <View key={i} className={slot({ state })}>
+                {isActive && !showSuccess && !reduce ? (
+                  // Blinking caret — vertically centred (slot 56, caret 24 → top 16),
+                  // trailing the digit when filled, centred in an empty slot.
+                  <MotiView
+                    from={{ opacity: 1 }}
+                    animate={{ opacity: 0 }}
+                    transition={{ type: 'timing', duration: 500, loop: true, repeatReverse: true }}
+                    className="absolute h-6 w-px bg-foreground"
+                    style={[{ pointerEvents: 'none' }, char ? { top: 16, right: 10 } : { top: 16, left: 23 }]}
+                  />
+                ) : null}
 
-                  <AnimatePresence>
-                    {char ? (
-                      // Absolutely centred so enter/exit overlap in place — no reflow.
-                      <MotiText
-                        key={char}
-                        from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 14 }}
-                        animate={{ opacity: 1, translateY: 0 }}
-                        exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -14 }}
-                        transition={{ type: 'timing', duration: reduce ? 0 : 220 }}
-                        className="font-semibold text-foreground text-xl"
-                        style={{
-                          position: 'absolute',
-                          width: '100%',
-                          height: '100%',
-                          textAlign: 'center',
-                          lineHeight: 56,
-                        }}
-                      >
-                        {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
-                        {mask ? '•' : char}
-                      </MotiText>
-                    ) : null}
-                  </AnimatePresence>
-                </View>
-              );
-            },
-          )}
+                <AnimatePresence>
+                  {char ? (
+                    // Absolutely centred so enter/exit overlap in place — no reflow.
+                    <MotiText
+                      key={char}
+                      from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 14 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -14 }}
+                      transition={{ type: 'timing', duration: reduce ? 0 : 220 }}
+                      className="font-semibold text-foreground text-xl"
+                      style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        textAlign: 'center',
+                        lineHeight: 56,
+                      }}
+                    >
+                      {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
+                      {mask ? '•' : char}
+                    </MotiText>
+                  ) : null}
+                </AnimatePresence>
+              </View>
+            );
+          })}
         </Animated.View>
 
         <AnimatePresence>

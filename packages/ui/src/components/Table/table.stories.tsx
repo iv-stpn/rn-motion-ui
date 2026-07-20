@@ -9,14 +9,7 @@ import { Table, type TableColumn, type TableProps } from './table';
 
 // ─── Shared data builders ─────────────────────────────────────────────────────
 
-type Person = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: 'active' | 'invited' | 'suspended';
-  mrr: number;
-};
+type Person = { id: string; name: string; email: string; role: string; status: 'active' | 'invited' | 'suspended'; mrr: number };
 
 const FIRST = ['Ava', 'Leo', 'Mia', 'Kai', 'Zoe', 'Eli', 'Noa', 'Ren', 'Ivy', 'Jude'];
 const LAST = ['Cole', 'Frost', 'Vale', 'Reyes', 'Okafor', 'Sato', 'Lund', 'Marsh', 'Bose', 'Quinn'];
@@ -42,11 +35,7 @@ function buildPeople(count: number): Person[] {
   return out;
 }
 
-const STATUS_COLORS: Record<Person['status'], string> = {
-  active: '#059669',
-  invited: '#d97706',
-  suspended: '#dc2626',
-};
+const STATUS_COLORS: Record<Person['status'], string> = { active: '#059669', invited: '#d97706', suspended: '#dc2626' };
 
 function statusBgColor(status: string): 'rgba(5,150,105,0.1)' | 'rgba(217,119,6,0.1)' | 'rgba(220,38,38,0.1)' {
   if (status === 'active') return 'rgba(5,150,105,0.1)';
@@ -54,8 +43,10 @@ function statusBgColor(status: string): 'rgba(5,150,105,0.1)' | 'rgba(217,119,6,
   return 'rgba(220,38,38,0.1)';
 }
 
+type StatusBadgeProps = { status: Person['status'] };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function StatusBadge({ status }: { status: Person['status'] }) {
+function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <View
       style={{

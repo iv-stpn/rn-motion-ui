@@ -76,19 +76,15 @@ function IconSlot({ keyId, children, reduce }: IconSlotProps) {
 // TextSlot — animated width + per-character cascade (string) or simple swap (node)
 // ---------------------------------------------------------------------------
 
-function TextSlot({
-  value,
-  children,
-  variant = 'primary',
-  size = 'md',
-  reduce,
-}: {
+type TextSlotProps = {
   value: string;
   children: ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize | null;
   reduce: boolean;
-}) {
+};
+
+function TextSlot({ value, children, variant = 'primary', size = 'md', reduce }: TextSlotProps) {
   // Roll distance = one line-box height, so glyphs travel exactly one line as
   // they roll in/out. Width is left to the in-flow sizer (no tween — see below).
   const [roll, setRoll] = useState(ROLL_FALLBACK);

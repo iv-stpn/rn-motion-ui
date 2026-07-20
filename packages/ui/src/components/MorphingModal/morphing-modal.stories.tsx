@@ -50,8 +50,10 @@ const RECOVERY_WORDS = [
   'crystal',
 ];
 
+type CloseButtonProps = { label: string; onPress: () => void };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function CloseButton({ label, onPress }: { label: string; onPress: () => void }) {
+function CloseButton({ label, onPress }: CloseButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -64,18 +66,10 @@ function CloseButton({ label, onPress }: { label: string; onPress: () => void })
   );
 }
 
+type RowProps = { icon: ReactNode; label: string; destructive?: boolean; onPress: () => void };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Row({
-  icon,
-  label,
-  destructive,
-  onPress,
-}: {
-  icon: ReactNode;
-  label: string;
-  destructive?: boolean;
-  onPress: () => void;
-}) {
+function Row({ icon, label, destructive, onPress }: RowProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -94,8 +88,10 @@ function Row({
   );
 }
 
+type ChecklistItemProps = { icon: ReactNode; text: string };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function ChecklistItem({ icon, text }: { icon: ReactNode; text: string }) {
+function ChecklistItem({ icon, text }: ChecklistItemProps) {
   return (
     <View className="flex-row items-center" style={{ gap: 10 }}>
       {icon}
@@ -104,16 +100,10 @@ function ChecklistItem({ icon, text }: { icon: ReactNode; text: string }) {
   );
 }
 
+type OptionsViewProps = { onPrivateKey: () => void; onRecovery: () => void; onClose: () => void };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function OptionsView({
-  onPrivateKey,
-  onRecovery,
-  onClose,
-}: {
-  onPrivateKey: () => void;
-  onRecovery: () => void;
-  onClose: () => void;
-}) {
+function OptionsView({ onPrivateKey, onRecovery, onClose }: OptionsViewProps) {
   return (
     <View>
       <View className="mb-4 flex-row items-center justify-between">
@@ -129,8 +119,10 @@ function OptionsView({
   );
 }
 
+type PrivateKeyViewProps = { onBack: () => void };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function PrivateKeyView({ onBack }: { onBack: () => void }) {
+function PrivateKeyView({ onBack }: PrivateKeyViewProps) {
   return (
     <View>
       <View className="mb-3 flex-row items-start justify-between">
@@ -158,8 +150,10 @@ function PrivateKeyView({ onBack }: { onBack: () => void }) {
   );
 }
 
+type RecoveryViewProps = { onBack: () => void };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function RecoveryView({ onBack }: { onBack: () => void }) {
+function RecoveryView({ onBack }: RecoveryViewProps) {
   return (
     <View>
       <View className="mb-3 flex-row items-start justify-between">
@@ -187,12 +181,7 @@ function RecoveryView({ onBack }: { onBack: () => void }) {
   );
 }
 
-type ModalViewCallbacks = {
-  close: () => void;
-  showOptions: () => void;
-  showPrivateKey: () => void;
-  showRecovery: () => void;
-};
+type ModalViewCallbacks = { close: () => void; showOptions: () => void; showPrivateKey: () => void; showRecovery: () => void };
 
 function renderModalView(view: WalletView, callbacks: ModalViewCallbacks): ReactNode {
   const { close, showOptions, showPrivateKey, showRecovery } = callbacks;
@@ -202,8 +191,10 @@ function renderModalView(view: WalletView, callbacks: ModalViewCallbacks): React
   return null;
 }
 
+type MorphingModalDemoProps = { placement: 'bottom' | 'center' };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function MorphingModalDemo({ placement }: { placement: 'bottom' | 'center' }) {
+function MorphingModalDemo({ placement }: MorphingModalDemoProps) {
   const [view, setView] = useState<WalletView>(null);
   const showOptions = useCallback(() => setView('options'), []);
   const close = useCallback(() => setView(null), []);

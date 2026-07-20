@@ -31,8 +31,10 @@ const CLOSE_LABEL = 'Close';
 const ALIGN_END_LABEL = 'Align end';
 const SELECT_ITEM_TITLE = 'Select item';
 
+type MenuItemProps = { label: string; icon: typeof User };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function MenuItem({ label, icon: Icon }: { label: string; icon: typeof User }) {
+function MenuItem({ label, icon: Icon }: MenuItemProps) {
   return (
     <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
       <Icon size={18} />
@@ -41,8 +43,10 @@ function MenuItem({ label, icon: Icon }: { label: string; icon: typeof User }) {
   );
 }
 
+type DefaultTriggerProps = { open: boolean };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function DefaultTrigger({ open }: { open: boolean }) {
+function DefaultTrigger({ open }: DefaultTriggerProps) {
   return (
     <View
       style={{

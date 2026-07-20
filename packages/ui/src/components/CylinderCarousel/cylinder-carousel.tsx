@@ -56,6 +56,94 @@ function isWheelTarget(node: unknown): node is WebWheelTarget {
 type WebViewStyle = ViewStyle & { userSelect?: string; touchAction?: string };
 const WEB_STAGE_STYLE: WebViewStyle = { userSelect: 'none', touchAction: 'pan-y' };
 
+type CylinderItemProps = {
+  scroll: SharedValue<number>;
+  index: number;
+  count: number;
+  alpha: number;
+  k: number;
+  projection: number;
+  gap: number;
+  edgeOffset: number;
+  minScale: number;
+  convex: boolean;
+  arc: number;
+  halfWidth: number;
+  itemSize: number;
+  children: ReactNode;
+};
+
+function CylinderItem({
+  scroll,
+  index,
+  count,
+  alpha,
+  k,
+  projection,
+  gap,
+  edgeOffset,
+  minScale,
+  convex,
+  arc,
+  halfWidth,
+  itemSize,
+  children,
+}: CylinderItemProps) {
+  // Signed offset from the front slot, wrapped into [-count/2, count/2] so items
+  // loop continuously around the cylinder.
+  const offset = useSharedValue(index);
+  useAnimatedReaction(
+    () => scroll.value,
+    (v: number) => {
+      let o = index - v;
+      o -= Math.round(o / count) * count;
+      offset.value = o;
+    },
+  );
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const o = offset.value;
+
+    // Horizontal position.
+    // Concave: perspective projection through the inside of the cylinder wall.
+    // Convex: linear spacing (outside of the cylinder).
+    let x: number;
+    if (convex) x = o * gap;
+    else {
+      const th = Math.max(-THETA_CLAMP, Math.min(THETA_CLAMP, o * alpha));
+      x = (projection * Math.sin(th)) / (Math.cos(th) + k);
+    }
+
+    // Scale: convex shrinks toward the edges, concave grows toward the edges.
+    const t = Math.min(Math.abs(o) / edgeOffset, THETA_CLAMP / THETA_EDGE);
+    const scale = convex ? 1 - (1 - minScale) * t : minScale + (1 - minScale) * t;
+
+    // Vertical parabola: arc*0.5 at the extremes, 0 at center. Concave dips down,
+    // convex arches up.
+    const tNorm = x / halfWidth;
+    const valley = arc * (0.5 - tNorm * tNorm);
+    const y = convex ? -valley : valley;
+
+    // Fully off-stage items stop painting.
+    const display = Math.abs(x) > halfWidth + itemSize ? ('none' as const) : ('flex' as const);
+
+    return {
+      position: 'absolute' as const,
+      top: '50%',
+      left: '50%',
+      width: itemSize,
+      height: itemSize,
+      marginLeft: -itemSize / 2,
+      marginTop: -itemSize / 2,
+      zIndex: Math.round(scale * 100),
+      transform: [{ translateX: x }, { translateY: y }, { scale }],
+      display,
+    };
+  });
+
+  return <Animated.View style={animatedStyle}>{children}</Animated.View>;
+}
+
 export type CylinderCarouselVariant = 'concave' | 'convex';
 
 export type CylinderCarouselProps = {
@@ -104,7 +192,6 @@ export type CylinderCarouselProps = {
  * `autoRotate`, `variant`, `minScale`, `arc` and `onIndexChange` are preserved.
  */
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: 3-D geometry, gesture, and layout logic integrated in one component
-// biome-ignore lint/style/useExportsLast: component exported before internal CylinderItem helper — collocated for readability
 export function CylinderCarousel({
   children,
   itemSize = 200,
@@ -308,90 +395,4 @@ export function CylinderCarousel({
       ))}
     </View>
   );
-}
-
-function CylinderItem({
-  scroll,
-  index,
-  count,
-  alpha,
-  k,
-  projection,
-  gap,
-  edgeOffset,
-  minScale,
-  convex,
-  arc,
-  halfWidth,
-  itemSize,
-  children,
-}: {
-  scroll: SharedValue<number>;
-  index: number;
-  count: number;
-  alpha: number;
-  k: number;
-  projection: number;
-  gap: number;
-  edgeOffset: number;
-  minScale: number;
-  convex: boolean;
-  arc: number;
-  halfWidth: number;
-  itemSize: number;
-  children: ReactNode;
-}) {
-  // Signed offset from the front slot, wrapped into [-count/2, count/2] so items
-  // loop continuously around the cylinder.
-  const offset = useSharedValue(index);
-  useAnimatedReaction(
-    () => scroll.value,
-    (v: number) => {
-      let o = index - v;
-      o -= Math.round(o / count) * count;
-      offset.value = o;
-    },
-  );
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const o = offset.value;
-
-    // Horizontal position.
-    // Concave: perspective projection through the inside of the cylinder wall.
-    // Convex: linear spacing (outside of the cylinder).
-    let x: number;
-    if (convex) x = o * gap;
-    else {
-      const th = Math.max(-THETA_CLAMP, Math.min(THETA_CLAMP, o * alpha));
-      x = (projection * Math.sin(th)) / (Math.cos(th) + k);
-    }
-
-    // Scale: convex shrinks toward the edges, concave grows toward the edges.
-    const t = Math.min(Math.abs(o) / edgeOffset, THETA_CLAMP / THETA_EDGE);
-    const scale = convex ? 1 - (1 - minScale) * t : minScale + (1 - minScale) * t;
-
-    // Vertical parabola: arc*0.5 at the extremes, 0 at center. Concave dips down,
-    // convex arches up.
-    const tNorm = x / halfWidth;
-    const valley = arc * (0.5 - tNorm * tNorm);
-    const y = convex ? -valley : valley;
-
-    // Fully off-stage items stop painting.
-    const display = Math.abs(x) > halfWidth + itemSize ? ('none' as const) : ('flex' as const);
-
-    return {
-      position: 'absolute' as const,
-      top: '50%',
-      left: '50%',
-      width: itemSize,
-      height: itemSize,
-      marginLeft: -itemSize / 2,
-      marginTop: -itemSize / 2,
-      zIndex: Math.round(scale * 100),
-      transform: [{ translateX: x }, { translateY: y }, { scale }],
-      display,
-    };
-  });
-
-  return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 }

@@ -20,8 +20,10 @@ type Story = StoryObj<typeof meta>;
 const OPEN_LABEL = 'Open drawer';
 const DRAWER_TITLE = 'Drawer';
 
+type DrawerDemoProps = { side: 'left' | 'right' };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function DrawerDemo({ side }: { side: 'left' | 'right' }) {
+function DrawerDemo({ side }: DrawerDemoProps) {
   const [open, setOpen] = useState(false);
   const openDrawer = useCallback(() => setOpen(true), []);
   return (

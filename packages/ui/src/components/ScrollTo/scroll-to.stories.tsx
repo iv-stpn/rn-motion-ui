@@ -21,8 +21,10 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
+type DemoProps = { onPress: () => void };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Demo({ onPress }: { onPress: () => void }) {
+function Demo({ onPress }: DemoProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [tops, setTops] = useState<Record<string, number>>({});
 

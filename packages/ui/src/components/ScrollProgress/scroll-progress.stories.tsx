@@ -20,8 +20,10 @@ type Story = StoryObj<typeof meta>;
 
 // A self-contained demo: an internal ScrollView drives the shared progress value
 // that both the bar and circle read.
+type DemoProps = { variant: 'bar' | 'circle' };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Demo({ variant }: { variant: 'bar' | 'circle' }) {
+function Demo({ variant }: DemoProps) {
   const progress = useSharedValue(0);
   const onScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {

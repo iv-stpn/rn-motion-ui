@@ -4,12 +4,7 @@
  * which animation and config were requested without running the Reanimated runtime.
  */
 
-type AnimationDescriptor = {
-  __type: string;
-  value: unknown;
-  config: Record<string, unknown>;
-  callback?: unknown;
-};
+type AnimationDescriptor = { __type: string; value: unknown; config: Record<string, unknown>; callback?: unknown };
 
 export const ReduceMotion = {
   System: 'system',

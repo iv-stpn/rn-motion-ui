@@ -130,7 +130,6 @@ export type MultiStepMenuProps = {
   ref?: RefObject<MultiStepMenuHandle | null>;
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: two layout branches (wide/small) with shared navigation state — splitting would scatter the commit/direction logic
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small layouts are tightly coupled to shared state
 export const MultiStepMenu = function MultiStepMenu({
   isWideScreen,

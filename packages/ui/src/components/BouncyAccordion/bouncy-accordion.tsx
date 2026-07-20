@@ -51,6 +51,16 @@ function useControllableValue(
   return [current, setValue] as const;
 }
 
+export type BouncyAccordionRowProps = {
+  item: BouncyAccordionItem;
+  open: boolean;
+  startsGroup: boolean;
+  endsGroup: boolean;
+  separatedFromPrevious: boolean;
+  reduce: boolean;
+  onToggle: (id: string) => void;
+};
+
 function BouncyAccordionRow({
   item,
   open,
@@ -59,15 +69,7 @@ function BouncyAccordionRow({
   separatedFromPrevious,
   reduce,
   onToggle,
-}: {
-  item: BouncyAccordionItem;
-  open: boolean;
-  startsGroup: boolean;
-  endsGroup: boolean;
-  separatedFromPrevious: boolean;
-  reduce: boolean;
-  onToggle: (id: string) => void;
-}) {
+}: BouncyAccordionRowProps) {
   const [contentHeight, setContentHeight] = useState(0);
   const onContentLayout = useCallback((e: LayoutChangeEvent) => {
     setContentHeight(e.nativeEvent.layout.height);

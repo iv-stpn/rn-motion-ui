@@ -24,8 +24,10 @@ const ITEMS = [
   { id: 'discover', icon: Sparkles, label: 'Discover' },
 ] as const;
 
+type DockDemoProps = { onSelect?: (id: string) => void };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function DockDemo({ onSelect }: { onSelect?: (id: string) => void }) {
+function DockDemo({ onSelect }: DockDemoProps) {
   const [active, setActive] = useState('home');
   const selectSettings = useCallback(() => {
     setActive('settings');

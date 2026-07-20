@@ -24,8 +24,10 @@ type Story = StoryObj<typeof meta>;
 const onScrollTop = fn();
 
 // Uses the useSmoothScroll() hook to glide the container back to the top.
+type ScrollTopButtonProps = { onPress?: () => void };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function ScrollTopButton({ onPress }: { onPress?: () => void }) {
+function ScrollTopButton({ onPress }: ScrollTopButtonProps) {
   const { scrollTo } = useSmoothScroll();
   const handlePress = useCallback(() => {
     scrollTo(0);

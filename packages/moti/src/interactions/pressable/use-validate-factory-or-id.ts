@@ -2,16 +2,11 @@ import { INTERACTION_CONTAINER_ID, type MotiPressableInteractionIds, useMotiPres
 
 type Id = MotiPressableInteractionIds['id'];
 type Deps = unknown[] | null | undefined;
-type Returns<Factory> = {
-  id: Id;
-  factory: Factory;
-  deps?: Deps;
-};
+type Returns<Factory> = { id: Id; factory: Factory; deps?: Deps };
 
 type HookName = 'useMotiPressableAnimatedProps' | 'useMotiPressable' | 'useMotiPressableTransition';
 
 // biome-ignore lint/suspicious/noExplicitAny: Factory must use any[] — unknown[] breaks the constraint due to parameter contravariance
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: factory-or-id overload dispatch — each branch handles a distinct call signature; reducing branches would require a different API
 export function useFactory<Factory extends (...args: any[]) => any>(
   hookName: HookName,
   factoryOrId: Factory | MotiPressableInteractionIds['id'],

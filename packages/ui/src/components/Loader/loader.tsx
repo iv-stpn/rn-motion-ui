@@ -83,12 +83,7 @@ export function Loader({
   );
 }
 
-type PartProps = {
-  size: number;
-  speed: number;
-  color: string;
-  reduce: boolean;
-};
+type PartProps = { size: number; speed: number; color: string; reduce: boolean };
 
 function Spinner({ size, speed, color, reduce }: PartProps) {
   const stroke = Math.max(2, size * 0.09);
@@ -343,10 +338,7 @@ function Newton({ size, speed, color, reduce }: PartProps) {
   const balls = [0, 1, 2, 3, 4];
   // Only the end balls move: left slides out and back, then right — the impact
   // appears to jump the three still middle balls.
-  const moves: Record<number, number[]> = {
-    0: [0, -out, 0, 0],
-    4: [0, 0, out, 0],
-  };
+  const moves: Record<number, number[]> = { 0: [0, -out, 0, 0], 4: [0, 0, out, 0] };
   return (
     <View className="flex-row items-center justify-center" style={{ height: d }}>
       {balls.map((i) => {

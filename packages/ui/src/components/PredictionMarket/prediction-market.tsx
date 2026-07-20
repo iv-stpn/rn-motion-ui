@@ -14,17 +14,9 @@ import { Tabs, TabsList, TabsTrigger } from '../Tabs/tabs';
 
 export type PredictionMarketMode = 'buy' | 'sell';
 
-export type PredictionMarketOutcome = {
-  id: string;
-  label: string;
-  price: number;
-};
+export type PredictionMarketOutcome = { id: string; label: string; price: number };
 
-export type PredictionMarketOrderValue = {
-  mode: PredictionMarketMode;
-  outcomeId: string;
-  amount: string;
-};
+export type PredictionMarketOrderValue = { mode: PredictionMarketMode; outcomeId: string; amount: string };
 
 export type PredictionMarketQuote = {
   valid: boolean;
@@ -106,19 +98,15 @@ function formatCents(value: number) {
 }
 
 /** Copied exactly from the web source. */
-function buildQuote({
-  order,
-  outcome,
-  balance,
-  position,
-  minTrade,
-}: {
+type BuildQuoteParams = {
   order: PredictionMarketOrderValue;
   outcome: PredictionMarketOutcome;
   balance: number;
   position: number;
   minTrade: number;
-}): PredictionMarketQuote {
+};
+
+function buildQuote({ order, outcome, balance, position, minTrade }: BuildQuoteParams): PredictionMarketQuote {
   const amount = parseAmount(order.amount);
   const price = Math.max(0.01, Math.min(0.99, outcome.price));
   const shares = order.mode === 'buy' ? amount / price : amount;
@@ -144,17 +132,13 @@ function amountFontSize(value: string) {
 
 // ─── Controllable order hook ──────────────────────────────────────────────────
 
-function useControllableOrder({
-  value,
-  defaultValue,
-  outcomes,
-  onValueChange,
-}: {
+type UseControllableOrderParams = {
   value?: PredictionMarketOrderValue;
   defaultValue?: Partial<PredictionMarketOrderValue>;
   outcomes: PredictionMarketOutcome[];
   onValueChange?: (value: PredictionMarketOrderValue) => void;
-}) {
+};
+function useControllableOrder({ value, defaultValue, outcomes, onValueChange }: UseControllableOrderParams) {
   const initialValue: PredictionMarketOrderValue = {
     mode: defaultValue?.mode ?? 'buy',
     outcomeId: defaultValue?.outcomeId ?? outcomes[0]?.id ?? '',
@@ -209,17 +193,9 @@ function AmountChip({ label, onPress, disabled }: AmountChipProps) {
 
 // Binds its own amount to the stable onSelect so the list never creates a
 // per-chip arrow in the parent's render.
-function QuickAmountChip({
-  amount,
-  label,
-  disabled,
-  onSelect,
-}: {
-  amount: number;
-  label: string;
-  disabled: boolean;
-  onSelect: (amount: number) => void;
-}) {
+type QuickAmountChipProps = { amount: number; label: string; disabled: boolean; onSelect: (amount: number) => void };
+
+function QuickAmountChip({ amount, label, disabled, onSelect }: QuickAmountChipProps) {
   const handlePress = useCallback(() => onSelect(amount), [onSelect, amount]);
   return <AmountChip label={label} onPress={handlePress} disabled={disabled} />;
 }

@@ -25,7 +25,6 @@ export type DrawerProps = {
   testID?: string;
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: gesture + spring + backdrop + keyboard interactions interleave unavoidably
 export function Drawer({
   open,
   onOpenChange,

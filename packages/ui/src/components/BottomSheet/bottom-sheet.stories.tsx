@@ -32,8 +32,10 @@ const SWIPE_SUFFIX = ' — swipe to dismiss';
 const FULL_SHEET_BODY = 'No handle, no 90% cap — takes the full screen.';
 const LOCKED_BODY = 'Tapping outside does nothing. Use the button.';
 
+type OpenButtonProps = { label?: string };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function OpenButton({ label = OPEN_SHEET_LABEL }: { label?: string }) {
+function OpenButton({ label = OPEN_SHEET_LABEL }: OpenButtonProps) {
   const [visible, setVisible] = useState(false);
   const handleOpen = useCallback(() => setVisible(true), []);
   const handleClose = useCallback(() => setVisible(false), []);

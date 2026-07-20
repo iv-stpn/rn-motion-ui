@@ -17,7 +17,9 @@ const COLORS = {
   muted: '#6b7280',
 } as const;
 
-function LoadingContent({ loadingMessage, tagline }: { loadingMessage?: string; tagline?: string }) {
+type LoadingContentProps = { loadingMessage?: string; tagline?: string };
+
+function LoadingContent({ loadingMessage, tagline }: LoadingContentProps) {
   return (
     <View className="items-center gap-4 py-2">
       <Loader size={32} />
@@ -29,15 +31,8 @@ function LoadingContent({ loadingMessage, tagline }: { loadingMessage?: string; 
   );
 }
 
-function SuccessContent({
-  successLabel,
-  successMessage,
-  tagline,
-}: {
-  successLabel?: string;
-  successMessage?: string;
-  tagline?: string;
-}) {
+type SuccessContentProps = { successLabel?: string; successMessage?: string; tagline?: string };
+function SuccessContent({ successLabel, successMessage, tagline }: SuccessContentProps) {
   return (
     <View className="items-center gap-4 py-2">
       <View className="h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: COLORS.successTint }}>
@@ -52,19 +47,15 @@ function SuccessContent({
   );
 }
 
-function ErrorContent({
-  errorTitle,
-  errorMessage,
-  dismissLabel,
-  tagline,
-  onClose,
-}: {
+type ErrorContentProps = {
   errorTitle: string;
   errorMessage?: string;
   dismissLabel: string;
   tagline?: string;
   onClose: () => void;
-}) {
+};
+
+function ErrorContent({ errorTitle, errorMessage, dismissLabel, tagline, onClose }: ErrorContentProps) {
   return (
     <View className="gap-4">
       <View className="flex-row items-start justify-between gap-3">

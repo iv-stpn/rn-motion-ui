@@ -42,8 +42,10 @@ const ADVANCED_BODY = 'Font size, contrast, motion settings.';
 const PRIVACY_TITLE = 'Privacy & Security';
 const PRIVACY_BODY = 'Two-factor auth, connected apps, and data.';
 
+type AppearanceSectionProps = { helpers: MultiStepHelpers };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function AppearanceSection({ helpers }: { helpers: MultiStepHelpers }) {
+function AppearanceSection({ helpers }: AppearanceSectionProps) {
   const navigateAdvanced = useCallback(() => helpers.navigate('appearance/advanced'), [helpers]);
   return (
     <View style={{ gap: 12 }}>
@@ -106,8 +108,10 @@ const sections: MultiStepSection[] = [
   },
 ];
 
+type SidebarProps = { helpers: MultiStepHelpers };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function Sidebar({ helpers }: { helpers: MultiStepHelpers }) {
+function Sidebar({ helpers }: SidebarProps) {
   const navAccount = useCallback(() => helpers.navigate(['account']), [helpers]);
   const navNotifications = useCallback(() => helpers.navigate(['notifications']), [helpers]);
   const navAppearance = useCallback(() => helpers.navigate(['appearance']), [helpers]);
@@ -146,8 +150,10 @@ function Sidebar({ helpers }: { helpers: MultiStepHelpers }) {
   );
 }
 
+type SmallScreenMenuItemsProps = { helpers: MultiStepHelpers };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function SmallScreenMenuItems({ helpers }: { helpers: MultiStepHelpers }) {
+function SmallScreenMenuItems({ helpers }: SmallScreenMenuItemsProps) {
   const navAccount = useCallback(() => helpers.navigate('account'), [helpers]);
   const navNotifications = useCallback(() => helpers.navigate('notifications'), [helpers]);
   const navAppearance = useCallback(() => helpers.navigate('appearance'), [helpers]);

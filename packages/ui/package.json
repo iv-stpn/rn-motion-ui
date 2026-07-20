@@ -206,11 +206,6 @@
       "types": "./src/components/Popover/popover.tsx",
       "default": "./src/components/Popover/popover.tsx"
     },
-    "./prediction-market": {
-      "source": "./src/components/PredictionMarket/prediction-market.tsx",
-      "types": "./src/components/PredictionMarket/prediction-market.tsx",
-      "default": "./src/components/PredictionMarket/prediction-market.tsx"
-    },
     "./radio": {
       "source": "./src/components/Radio/radio.tsx",
       "types": "./src/components/Radio/radio.tsx",

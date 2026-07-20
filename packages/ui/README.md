@@ -120,7 +120,6 @@ Subpaths are namespaced by category:
 | `/otp-input` | `OtpInput` |
 | `/file-upload` | `FileUpload` |
 | `/feedback-widget` | `FeedbackWidget` |
-| `/prediction-market` | `PredictionMarket` |
 | `/availability-scheduler` | `AvailabilityScheduler` |
 | `/table` | `Table` |
 | `/not-found` | `NotFound` |

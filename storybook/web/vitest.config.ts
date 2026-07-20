@@ -26,6 +26,13 @@ export default defineConfig({
     // the dep-optimizer and first-time transforms contend. Sequential runs
     // trade some speed for reliability.
     fileParallelism: false,
+    // Reuse a single browser page across files instead of recreating the
+    // context per file. On WSL2 the per-file context teardown/recreate races
+    // the orchestrator's iframe reconnect, dropping ~1 random file's dynamic
+    // import per run ("Cannot connect to the iframe … CORS"). Sharing the
+    // page removes that churn; stories still isolate in Storybook's own
+    // canvas iframe, so cross-file bleed isn't a concern.
+    isolate: false,
     setupFiles: ['./.storybook/vitest.setup.ts'],
   },
 });

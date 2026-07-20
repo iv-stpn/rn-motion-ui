@@ -42,7 +42,7 @@ export const Success: Story = {
     visible: true,
     state: 'success',
     successLabel: 'Changes saved!',
-    successMessage: 'Your profile a été mis à jour.',
+    successMessage: 'Your profile was updated.',
     tagline: 'Closing automatically…',
   },
 };

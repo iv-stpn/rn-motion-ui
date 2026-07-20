@@ -72,7 +72,7 @@ function MorphIcon({ state }: MorphIconProps) {
             transition={MORPH_SPINNER_TRANSITION}
             style={morphGlyphStyle}
           >
-            <Loader size={28} color={COLORS.muted} />
+            <Loader variant="dots" size={28} color={COLORS.muted} />
           </MotiView>
         )}
         {state === 'success' && (

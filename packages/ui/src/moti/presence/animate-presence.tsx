@@ -88,6 +88,10 @@ export function AnimatePresence({
   // the transient deregister could complete an in-flight exit prematurely.
   const keyCallbacksRef = useRef(new Map<string, KeyCallbacks>());
 
+  // Tracks insertion order of all keys (current + exiting) so exiting items
+  // stay at their original list position instead of being appended at the end.
+  const keyOrderRef = useRef<string[]>([]);
+
   // Removes `key` from the exiting set once every registered child has reported
   // completion (or none are registered). Never called during render.
   const finishExitIfDone = useCallback((key: string) => {
@@ -203,17 +207,36 @@ export function AnimatePresence({
 
   const hasActiveExits = exitingKeys.size > 0;
 
-  // Exclude held keys from the render set so new children wait their turn.
-  const keysToRender: string[] = [];
-  const seen = new Set<string>();
-  for (const key of currentKeySet) {
-    if (!(exitBeforeEnter && hasActiveExits && heldKeys.has(key))) {
-      keysToRender.push(key);
-      seen.add(key);
+  // Maintain a stable insertion-order for all active keys so exiting items
+  // remain at their original position in the list rather than being appended
+  // at the end. Ref mutation during render: idempotent under StrictMode.
+  // newExits are detected this render but not yet in exitingKeys state (which
+  // updates on the next pass). Include them so keyOrderRef doesn't prune a key
+  // before it's been added to exitingKeys, which would prevent its exit render.
+  const allActive = new Set([...currentKeySet, ...exitingKeys, ...newExits]);
+  // Prune keys that have fully unmounted from the order record.
+  keyOrderRef.current = keyOrderRef.current.filter((k) => allActive.has(k));
+  // Insert new current keys at the position their sibling order implies.
+  const inOrder = new Set(keyOrderRef.current);
+  const currentKeysInOrder = validChildren.map(getChildKey).filter((k): k is string => k !== undefined);
+  for (const [i, key] of currentKeysInOrder.entries()) {
+    if (!inOrder.has(key)) {
+      if (i === 0) keyOrderRef.current.unshift(key);
+      else {
+        // i > 0 is guaranteed by the else branch above; fall back to append if somehow undefined
+        const prevKey = currentKeysInOrder[i - 1];
+        const prevIdx = prevKey === undefined ? -1 : keyOrderRef.current.indexOf(prevKey);
+        keyOrderRef.current.splice(prevIdx >= 0 ? prevIdx + 1 : keyOrderRef.current.length, 0, key);
+      }
+      inOrder.add(key);
     }
   }
-  for (const key of exitingKeys) {
-    if (!seen.has(key)) keysToRender.push(key);
+
+  // Build the render list from the stable order, respecting exitBeforeEnter.
+  const keysToRender: string[] = [];
+  for (const key of keyOrderRef.current) {
+    if ((currentKeySet.has(key) || exitingKeys.has(key)) && !(exitBeforeEnter && hasActiveExits && heldKeys.has(key)))
+      keysToRender.push(key);
   }
 
   const firstRender = isFirstRender.current;

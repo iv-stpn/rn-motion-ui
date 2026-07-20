@@ -1,0 +1,10 @@
+name: Diag
+on:
+  push:
+    paths:
+      - .github/workflows/diag.yml
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "diag ok"

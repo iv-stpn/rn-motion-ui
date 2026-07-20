@@ -8,6 +8,11 @@ jobs:
   check:
     name: Lint, typecheck & test
     runs-on: ubuntu-latest
+    # Skip Husky hook installation in CI. `bun install` runs the `prepare`
+    # script (`bunx husky`), which would otherwise install the pre-push hook
+    # and make `changesets/action`'s git push run the whole test suite.
+    env:
+      HUSKY: '0'
     steps:
       - uses: actions/checkout@v4
 
@@ -24,8 +29,15 @@ jobs:
       - name: Clear Storybook cache
         run: rm -rf node_modules/.cache/storybook
 
+      # `playwright` is a devDependency of the storybook/web workspace only,
+      # so there is no top-level node_modules/.bin/playwright. Running
+      # `bunx playwright` from the repo root therefore fetches the *latest*
+      # playwright from npm and installs that version's browser build, which
+      # doesn't match the playwright@1.61.1 the tests launch with (they then
+      # fail with "Executable doesn't exist at …/chromium_headless_shell-1228").
+      # Invoke the workspace's own pinned playwright instead.
       - name: Install Playwright browser
-        run: bunx playwright install chromium --with-deps
+        run: bun run --cwd storybook/web playwright install --with-deps chromium
 
       - name: Lint
         run: bun run lint

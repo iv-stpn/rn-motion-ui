@@ -13,11 +13,21 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write
   pull-requests: write
+  # Lets GitHub mint the OIDC token that npm exchanges for a provenance
+  # attestation. Does not replace NPM_TOKEN — npm still authenticates with it.
+  id-token: write
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    # Skip Husky hook installation in CI. `bun install` runs the `prepare`
+    # script (`bunx husky`), which would otherwise install the pre-push hook;
+    # when changesets/action pushes the Version Packages PR, that hook fires
+    # `bun run test` (browser tests) in a job with no Playwright browser,
+    # failing the push. Tests already run in the Check workflow.
+    env:
+      HUSKY: '0'
     steps:
       - uses: actions/checkout@v4
 
@@ -38,3 +48,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # changesets publishes via `npm publish`, which reads this as the
+          # --provenance flag. Pairs with id-token: write above.
+          NPM_CONFIG_PROVENANCE: "true"

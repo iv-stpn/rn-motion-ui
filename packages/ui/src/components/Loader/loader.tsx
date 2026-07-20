@@ -5,6 +5,7 @@ import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useInterval } from '../../hooks/use-interval';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { EASE_IN_OUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 
 // biome-ignore lint/style/useExportsLast: variant union before frame constants — collocated for readability
@@ -129,6 +130,7 @@ function Dots({ size, speed, color, reduce }: PartProps) {
             duration: speed * 500,
             loop: true,
             repeatReverse: true,
+            easing: EASE_IN_OUT,
             delay: i * speed * 160,
           }}
           style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: color }}

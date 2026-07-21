@@ -1,5 +1,63 @@
 # rn-motion-ui
 
+## 2.0.0
+
+### Major Changes
+
+- ecaccd5: feat(stateful-button)!: built-in async state machine driven by `onPress`
+
+  **StatefulButton** (breaking)
+
+  - `onPress` is now `() => Promise<void>` and drives a built-in machine: pressing runs idle → loading → success (or error, if the promise rejects) without the consumer managing `state`.
+  - New timing props: `minLoadingMs` (default 300) keeps the loader visible long enough to not flash; `successDurationMs` (default 850) and `errorDurationMs` (default 600) set how long the terminal state is shown.
+  - New callbacks: `afterSuccess()` and `afterError(error)` fire once the respective display window ends — use them for navigation, closing a sheet, toasts, etc.
+  - New `autoReset` prop (default `false`): by default the button holds its terminal state **disabled** after the window ends (safe for page transitions that unmount it — no double-fires); set `autoReset` to return to idle and re-enable instead.
+  - Controlled mode is unchanged: passing an explicit `state` bypasses the machine entirely (timings, `afterSuccess`/`afterError` and `autoReset` are ignored), and `onPress` fires as a plain handler.
+  - Migration: consumers that previously drove `state` with their own timers can delete that plumbing and return a promise from `onPress`; consumers that keep `state` only need to make `onPress` async.
+
+### Minor Changes
+
+- ab36acd: feat(button): add `shape`, `noDisabledOpacity`, `backdropColor`, and `contentStyle` props
+
+  - `shape` controls the border radius: `'rounded'` (default, `rounded-xl`) or `'pill'` (`rounded-full`). Previously all sizes hard-coded `rounded-full`.
+  - `noDisabledOpacity` skips the 0.5 opacity when `disabled`, for cases where a button is disabled for interaction reasons but should remain visually prominent (e.g. success/error hold in StatefulButton).
+  - `backdropColor` animates an absolutely-positioned colour overlay in/out by opacity without touching the variant background — used by StatefulButton for its success/error state fill.
+  - `contentStyle` applies extra inline style to the Pressable container for layout overrides that cva class strings control.
+
+- b57ff3c: fix(checkbox): animate fill with MotiView; remove(file-upload): delete FileUpload component
+
+  **Checkbox**
+
+  - Checkbox fill is now animated via `MotiView`, replacing the previous static fill implementation.
+
+  **FileUpload** (removed)
+
+  - `FileUpload` component and its Storybook story have been deleted.
+  - Removed from the component list in `README.md` and `packages/ui/README.md`.
+
+- df6ce72: **WheelPicker**: add `variant` prop (`'border' | 'filled'`, default `'filled'`) — the outer container is now a `Card`, so the picker inherits all card variants. Also fixes cylinder rendering: radius now uses the `tan` formula (rows tangent to the drum circle) instead of `sin`, and row transforms switch from `rotateX + perspective + scale` to `translateY + scaleY` — uniform perspective per element was wrong, `scaleY` alone converges all rows to the correct horizon line. Selection pill hairline borders removed; decorative centre drum marked `aria-hidden`.
+
+  **Card**: `ref` is now part of `CardProps` (`ref?: Ref<View>`). React 19 passes `ref` as a plain prop through `...props`, so forwarding works without `forwardRef`.
+
+- c966432: feat(wheel-picker): add `sound` prop; steepen row opacity falloff
+
+  - New `sound` prop (default `false`): plays a short sine-wave tick on web (Web Audio API, lazily created to satisfy browser autoplay policy) or a brief `Vibration` pulse on Android on each row crossing while dragging.
+  - Opacity curve changed from `cos θ` to `cos² θ` for a steeper falloff — edge rows now read more clearly as sitting behind the drum wall.
+
+### Patch Changes
+
+- 0a456d5: fix: update Card, NotFound, OtpInput, and WheelPicker selection pill to rounded-2xl
+
+  Aligns rounding with the Button default `rounded` shape (`rounded-xl`) across the component suite. Affected: `Card`, `NotFoundTerminal` container, `OtpInput` slot, `WheelPicker` selection pill.
+
+- c6b4e91: fix(table): use `alignItems` for SkeletonCellPulse cell alignment
+
+  `justifyContent` acts on the main axis — in the column-direction cell `View`, that's vertical. `alignItems` is the correct prop for horizontal (cross-axis) alignment of the skeleton pulse within its column slot.
+
+- 2374962: fix(tabs): skip indicator mount animation when starting on a non-first tab
+
+  The sliding indicator previously always animated from its MotiView initial position on first render, producing a slide-in flash when `defaultValue` or a controlled `value` pointed to a tab that wasn't the first. A `hasPositioned` ref now lets the indicator jump directly to its initial slot and only enables the spring after the first layout commit.
+
 ## 1.1.0
 
 ### Minor Changes

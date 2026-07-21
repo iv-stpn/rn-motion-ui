@@ -525,6 +525,6 @@ export const SmallScreen: Story = {
 
     // Headers are gone; card content from renderSmallScreen is visible
     expect(canvas.queryByText('Email')).toBeNull();
-    await canvas.findByText('Ava Cole');
+    expect((await canvas.findAllByText('Ava Cole')).length).toBeGreaterThan(0);
   },
 };

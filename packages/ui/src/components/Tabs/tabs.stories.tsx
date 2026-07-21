@@ -87,6 +87,33 @@ export const Underline: Story = {
   ),
 };
 
+export const PreSelectedTab: Story = {
+  name: 'Pre-selected (non-first tab)',
+  render: () => (
+    <Tabs defaultValue="settings" variant="pill" testID="tabs">
+      <TabsList>
+        <TabsTrigger value="overview">{TAB_OVERVIEW}</TabsTrigger>
+        <TabsTrigger value="activity">{TAB_ACTIVITY}</TabsTrigger>
+        <TabsTrigger value="settings">{TAB_SETTINGS}</TabsTrigger>
+      </TabsList>
+      <TabsContent value="overview">
+        <Text className="text-muted-foreground text-sm">{OVERVIEW_SUMMARY}</Text>
+      </TabsContent>
+      <TabsContent value="activity">
+        <Text className="text-muted-foreground text-sm">{ACTIVITY_EVENTS}</Text>
+      </TabsContent>
+      <TabsContent value="settings">
+        <Text className="text-muted-foreground text-sm">{SETTINGS_PREFS}</Text>
+      </TabsContent>
+    </Tabs>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Indicator should appear directly on the third tab — no slide-in from tab 1.
+    await expect(canvas.getByText(SETTINGS_PREFS)).toBeInTheDocument();
+  },
+};
+
 export const Controlled: Story = {
   render: () => {
     const [tab, setTab] = useState('one');

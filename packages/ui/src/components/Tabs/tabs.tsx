@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, Text, View } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { MotiView } from '../../moti/components/view';
@@ -81,6 +81,14 @@ export type TabsListProps = { children: ReactNode };
 export function TabsList({ children }: TabsListProps) {
   const { variant, value, layouts, reduce } = useTabs();
   const active = layouts[value];
+  // Track whether the indicator has been placed once so the first render jumps
+  // directly to the selected tab instead of animating from wherever MotiView
+  // initialises (avoids the "slide from tab-1" flash on mount).
+  const hasPositioned = useRef(false);
+  // biome-ignore lint/plugin: tracking first-commit of `active` requires a post-render hook; no derived-state equivalent is Strict-Mode-safe
+  useEffect(() => {
+    if (active) hasPositioned.current = true;
+  }, [active]);
 
   let indicatorBorderRadius: number;
   if (variant === 'pill') indicatorBorderRadius = 9999;
@@ -101,7 +109,11 @@ export function TabsList({ children }: TabsListProps) {
             translateY: variant === 'underline' ? active.y + active.height - 2 : active.y,
             height: variant === 'underline' ? 2 : active.height,
           }}
-          transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 170, damping: 24, mass: 1.2 }}
+          transition={
+            !hasPositioned.current || reduce
+              ? { type: 'timing', duration: 0 }
+              : { type: 'spring', stiffness: 170, damping: 24, mass: 1.2 }
+          }
           className={variant === 'underline' ? 'bg-primary' : 'bg-white'}
           style={{
             pointerEvents: 'none',

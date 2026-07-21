@@ -1,13 +1,15 @@
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: press machine, text cascade, and loader are tightly coupled around one render tree
 // RN FALLBACK vs web: CSS blur filter dropped (no RN equivalent) — opacity +
 // translateY preserved. Width animation uses onLayout measurement; initial render
 // may briefly snap vs. the web's synchronous useLayoutEffect measure.
 // aria-busy is approximated via accessibilityLiveRegion="polite" on the content row.
 
-import { type ReactNode, useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { useMountEffect } from '../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_IN_OUT, EASE_OUT, SPRING_SWAP } from '../../lib/ease';
-import { Check, X } from '../../lib/icons';
+import { AlertCircle, Check } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
@@ -15,7 +17,28 @@ import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
 
 // biome-ignore lint/style/useExportsLast: props interface before CASCADE_STAGGER constant — collocated for readability
-export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loading'> {
+export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loading' | 'onPress'> {
+  /** Async action driven by the button. Pressing runs the built-in machine
+   *  idle → loading → success (or error) around the returned promise. */
+  onPress?: () => Promise<void>;
+  /** Minimum ms the loading state stays visible even if the action resolves
+   *  faster, so the loader never flashes. Default: 300. */
+  minLoadingMs?: number;
+  /** Ms the success state is shown before `afterSuccess` runs. Default: 850. */
+  successDurationMs?: number;
+  /** Ms the error state is shown before `afterError` runs. Default: 600. */
+  errorDurationMs?: number;
+  /** Called once the success display window ends. Use for navigation, closing a sheet, etc. */
+  afterSuccess?: () => void;
+  /** Called once the error display window ends. Receives the rejection value from `onPress`. */
+  afterError?: (error: unknown) => void;
+  /** Return to idle (and re-enable) once the success/error window ends. Off by
+   *  default: the button holds its terminal state, disabled, so it can't be
+   *  pressed again while e.g. a page transition unmounts it. */
+  autoReset?: boolean;
+  /** Explicit state — takes full control of the button. When set, the machine
+   *  is bypassed: timings, `afterSuccess`/`afterError` and `autoReset` are
+   *  ignored (`onPress` still fires on press). */
   state?: ButtonState;
   children: ReactNode;
   loadingText?: ReactNode;
@@ -23,6 +46,10 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
   errorText?: ReactNode;
   /** Optional icon rendered on the right in the idle state. */
   icon?: ReactNode;
+  /** Size (px) of the success / error state icons. Default: 20. */
+  stateIconSize?: number;
+  /** Stroke width of the success / error state icons. Default: 2.5. */
+  stateIconStrokeWidth?: number;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -51,17 +78,26 @@ const ICON_COLOR: Record<ButtonVariant, string> = {
   outline: '#111111',
 };
 
+// Backdrop fill and label colour for terminal states. White text over a
+// saturated background keeps all four button variants legible without needing
+// per-variant mappings.
+const STATE_BACKDROP: Partial<Record<ButtonState, string>> = {
+  success: '#22c55e', // green-500
+  error: '#ef4444', // red-500
+};
+const STATE_TEXT_COLOR: Partial<Record<ButtonState, string>> = { success: '#ffffff', error: '#ffffff' };
+
 // ---------------------------------------------------------------------------
 // IconSlot — animated width collapse / expand for state icons
 // ---------------------------------------------------------------------------
 
-type IconSlotProps = { keyId: string; children: ReactNode; reduce: boolean };
-function IconSlot({ keyId, children, reduce }: IconSlotProps) {
+type IconSlotProps = { keyId: string; children: ReactNode; reduce: boolean; slotWidth?: number };
+function IconSlot({ keyId, children, reduce, slotWidth = ICON_SLOT_WIDTH }: IconSlotProps) {
   return (
     <MotiView
       key={keyId}
       from={reduce ? { opacity: 0 } : { opacity: 0, width: 0, scale: 0.7 }}
-      animate={reduce ? { opacity: 1 } : { opacity: 1, width: ICON_SLOT_WIDTH, scale: 1 }}
+      animate={reduce ? { opacity: 1 } : { opacity: 1, width: slotWidth, scale: 1 }}
       exit={reduce ? { opacity: 0 } : { opacity: 0, width: 0, scale: 0.7 }}
       transition={reduce ? { type: 'timing', duration: 150 } : { ...SPRING_SWAP }}
       style={{ overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
@@ -81,9 +117,11 @@ type TextSlotProps = {
   variant?: ButtonVariant;
   size?: ButtonSize | null;
   reduce: boolean;
+  /** Overrides the Tailwind label colour — used when a state backdrop changes the bg. */
+  textColor?: string;
 };
 
-function TextSlot({ value, children, variant = 'primary', size = 'md', reduce }: TextSlotProps) {
+function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, textColor }: TextSlotProps) {
   // Roll distance = one line-box height, so glyphs travel exactly one line as
   // they roll in/out. Width is left to the in-flow sizer (no tween — see below).
   const [roll, setRoll] = useState(ROLL_FALLBACK);
@@ -96,6 +134,7 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce }:
   }, []);
 
   const textClass = labelStyle({ variant, size });
+  const colorStyle = textColor ? { color: textColor } : undefined;
 
   return (
     // The in-flow sizer drives the slot width directly (no width tween): an
@@ -120,10 +159,11 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce }:
           {textLabel.split('').map((char, index) => (
             <Text
               className={textClass}
+              style={colorStyle}
               // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity
               key={index}
             >
-              {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
+              {/* biome-ignore lint/suspicious/noLeakedRender: char is always a string — both ternary branches are string literals, no numeric leak possible */}
               {char === ' ' ? ' ' : char}
             </Text>
           ))}
@@ -136,7 +176,13 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce }:
         // and the button's overflow:hidden shaves the trailing glyph of the visible
         // (plain-Text) label. Keep them structurally identical so they can't diverge.
         <View onLayout={onSizerLayout} style={{ opacity: 0, paddingRight: TEXT_BUFFER }}>
-          {textLabel === null ? children : <Text className={textClass}>{textLabel}</Text>}
+          {textLabel === null ? (
+            children
+          ) : (
+            <Text className={textClass} style={colorStyle}>
+              {textLabel}
+            </Text>
+          )}
         </View>
       )}
 
@@ -176,8 +222,10 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce }:
                   animate={{ opacity: 1, translateY: 0 }}
                   transition={{ ...SPRING_SWAP, delay: index * CASCADE_STAGGER }}
                 >
-                  {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
-                  <Text className={textClass}>{char === ' ' ? ' ' : char}</Text>
+                  <Text className={textClass} style={colorStyle}>
+                    {/* biome-ignore lint/suspicious/noLeakedRender: char is always a string — both ternary branches are string literals, no numeric leak possible */}
+                    {char === ' ' ? ' ' : char}
+                  </Text>
                 </MotiView>
               ))}
             </MotiView>
@@ -193,8 +241,13 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce }:
               style={{ position: 'absolute', left: 0, top: 0 }}
               importantForAccessibility="no-hide-descendants"
             >
-              {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
-              {typeof children === 'string' ? <Text className={textClass}>{children}</Text> : children}
+              {typeof children === 'string' ? (
+                <Text className={textClass} style={colorStyle}>
+                  {children}
+                </Text>
+              ) : (
+                children
+              )}
             </MotiView>
           </AnimatePresence>
         )}
@@ -259,22 +312,122 @@ function resolveStateText({ state, loadingText, successText, errorText, children
   return children;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: press machine + render tree are one cohesive unit
 export function StatefulButton({
-  state = 'idle',
+  state: controlledState,
+  onPress,
+  minLoadingMs = 300,
+  successDurationMs = 850,
+  errorDurationMs = 600,
+  afterSuccess,
+  afterError,
+  autoReset = false,
   children,
   loadingText = 'Loading',
   successText = 'Done',
   errorText = 'Try again',
   icon,
+  stateIconSize = 20,
+  stateIconStrokeWidth = 2.5,
   disabled,
   variant = 'primary',
   size = 'md',
   ...rest
 }: StatefulButtonProps) {
   const reduce = useReducedMotion();
+  const [machineState, setMachineState] = useState<ButtonState>('idle');
+  const controlled = controlledState !== undefined;
+  const state = controlledState ?? machineState;
+
+  // The after-window callbacks fire seconds after the press; read them through
+  // refs so the machine calls the latest bound props, not press-time closures.
+  const afterSuccessRef = useRef(afterSuccess);
+  afterSuccessRef.current = afterSuccess;
+  const afterErrorRef = useRef(afterError);
+  afterErrorRef.current = afterError;
+
+  // runningRef guards the async run against re-entry (Pressable's `disabled`
+  // only updates on re-render); mountedRef guards setState after unmount.
+  const runningRef = useRef(false);
+  const mountedRef = useRef(true);
+  const windowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useMountEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (windowTimer.current !== null) clearTimeout(windowTimer.current);
+    };
+  });
+
+  const handlePress = useCallback(() => {
+    if (!onPress) return;
+    if (controlled) {
+      // Controlled: the consumer owns the machine — just start the action.
+      onPress();
+      return;
+    }
+    if (runningRef.current) return;
+    runningRef.current = true;
+
+    const runMachine = async () => {
+      const startedAt = Date.now();
+      setMachineState('loading');
+
+      let outcome: 'success' | 'error' = 'success';
+      let rejection: unknown;
+      try {
+        await onPress();
+      } catch (error) {
+        outcome = 'error';
+        rejection = error;
+      }
+
+      // Hold the loader for the remainder of minLoadingMs so fast actions don't flash it.
+      const remaining = minLoadingMs - (Date.now() - startedAt);
+      if (remaining > 0) await sleep(remaining);
+      if (!mountedRef.current) return;
+      setMachineState(outcome);
+
+      windowTimer.current = setTimeout(
+        () => {
+          if (outcome === 'success') afterSuccessRef.current?.();
+          else afterErrorRef.current?.(rejection);
+          // The callback may have unmounted the button (navigation, closed sheet).
+          if (autoReset && mountedRef.current) {
+            runningRef.current = false;
+            setMachineState('idle');
+          }
+        },
+        outcome === 'success' ? successDurationMs : errorDurationMs,
+      );
+    };
+    runMachine();
+  }, [onPress, controlled, minLoadingMs, successDurationMs, errorDurationMs, autoReset]);
+
   const isBusy = state === 'loading';
+  // Uncontrolled runs stay non-interactive through the whole machine — loading,
+  // the success/error window, and the terminal hold — so the action can't be
+  // double-fired; autoReset re-enables the button when it returns to idle.
+  const machineActive = !controlled && state !== 'idle';
   const v = variant ?? 'primary';
-  const iconColor = ICON_COLOR[v];
+  // In success/error states, white text over the coloured backdrop keeps every
+  // variant legible; fall back to the per-variant idle colour otherwise.
+  const iconColor = STATE_TEXT_COLOR[state] ?? ICON_COLOR[v];
+  const backdropColor = STATE_BACKDROP[state];
+  // Slot wide enough to contain the icon with 6 px margin on each side, which
+  // also acts as the gap between icon and label without needing an explicit gap
+  // on the outer row (an explicit gap would show during the slot's width spring).
+  const stateIconSlotWidth = stateIconSize + 12;
+  // In success/error the button shrinks its horizontal padding slightly to
+  // compensate for the extra width the icon slot adds.
+  const contentStyle =
+    state === 'success' || state === 'error'
+      ? { paddingHorizontal: ({ sm: 8, md: 14, lg: 16, icon: 0 } as const)[size ?? 'md'] }
+      : undefined;
 
   const stateText =
     state === 'loading'
@@ -287,19 +440,29 @@ export function StatefulButton({
   else textKey = typeof stateText === 'string' ? `${state}-${stateText}` : state;
 
   return (
-    <Button variant={variant} size={size} disabled={disabled || isBusy} loading={false} {...rest}>
+    <Button
+      variant={variant}
+      size={size}
+      disabled={disabled || isBusy || machineActive}
+      loading={false}
+      noDisabledOpacity={state === 'success' || state === 'error'}
+      backdropColor={backdropColor}
+      contentStyle={contentStyle}
+      onPress={handlePress}
+      {...rest}
+    >
       {/* accessibilityLiveRegion mirrors the web's aria-live="polite" */}
       <View accessible={false} accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center' }}>
         <AnimatePresence>
           {state === 'success' ? (
-            <IconSlot keyId="success-icon" reduce={reduce}>
-              <Check size={16} color={iconColor} />
+            <IconSlot keyId="success-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
+              <Check size={stateIconSize} strokeWidth={stateIconStrokeWidth} color={iconColor} />
             </IconSlot>
           ) : null}
 
           {state === 'error' ? (
-            <IconSlot keyId="error-icon" reduce={reduce}>
-              <X size={16} color={iconColor} />
+            <IconSlot keyId="error-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
+              <AlertCircle size={stateIconSize} strokeWidth={stateIconStrokeWidth} color={iconColor} />
             </IconSlot>
           ) : null}
         </AnimatePresence>
@@ -309,7 +472,7 @@ export function StatefulButton({
             No overflow:hidden here — dots bounce freely above the baseline. */}
         <View style={{ position: 'relative' }}>
           <MotiView animate={{ opacity: state === 'loading' ? 0 : 1 }} transition={{ type: 'timing', duration: 150 }}>
-            <TextSlot value={textKey} variant={v} size={size} reduce={reduce}>
+            <TextSlot value={textKey} variant={v} size={size} reduce={reduce} textColor={STATE_TEXT_COLOR[state]}>
               {stateText}
             </TextSlot>
           </MotiView>

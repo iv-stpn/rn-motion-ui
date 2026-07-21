@@ -62,7 +62,7 @@ const inputBox = cva('h-full flex-1 bg-transparent text-base text-foreground', {
 });
 
 /** Semantic input type — drives keyboard, autoComplete, and textContentType automatically. */
-export type InputType = 'text' | 'name' | 'email' | 'number' | 'otp' | 'password' | 'new-password' | 'phone';
+type InputType = 'text' | 'name' | 'email' | 'number' | 'otp' | 'password' | 'new-password' | 'phone';
 
 const autocompleteMap: Partial<Record<InputType, TextInputProps['autoComplete']>> = {
   name: 'name',
@@ -87,47 +87,6 @@ const textContentTypeMap: Partial<Record<InputType, TextInputProps['textContentT
   'new-password': 'newPassword',
   password: 'password',
   phone: 'telephoneNumber',
-};
-
-export type InputProps = {
-  label?: string;
-  value?: string;
-  defaultValue?: string;
-  onChange?: (value: string) => void;
-  placeholder?: string;
-  /** Truthy error triggers a shake, red border and (if a string) a message. */
-  error?: string | boolean;
-  /** Show the error border without a message. Useful when validation is shown elsewhere. */
-  invalid?: boolean;
-  /** Helper text shown below the field (hidden when an error is present). */
-  hint?: string;
-  success?: boolean;
-  leftIcon?: ReactNode;
-  rightIcon?: ReactNode;
-  /** Semantic type — automatically wires keyboard, autoComplete, and textContentType. */
-  inputType?: InputType;
-  /** Field height variant. Default: `md`. */
-  size?: 'sm' | 'md' | 'lg';
-  /** Border-radius variant. `rounded` (default) for a standard input, `pill` for a full-circle shape. */
-  shape?: 'rounded' | 'pill';
-  disabled?: boolean;
-  secureTextEntry?: boolean;
-  keyboardType?: KeyboardTypeOptions;
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-  multiline?: boolean;
-  autoFocus?: boolean;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  /** NativeWind class names merged onto the outer wrapper. */
-  className?: string;
-  style?: StyleProp<ViewStyle>;
-  /** NativeWind class names applied to the TextInput element. */
-  inputClassName?: string;
-  inputStyle?: StyleProp<TextStyle>;
-  accessibilityLabel?: string;
-  testID?: string;
-  /** Ref forwarded to the underlying TextInput (React 19 direct-prop style). */
-  ref?: React.Ref<TextInput>;
 };
 
 type RightElementProps = { success: boolean | undefined; rightSlot: ReactNode; reduce: boolean };
@@ -178,6 +137,47 @@ function renderSubtext({ errorMessage, hint, reduce }: SubtextProps): ReactNode 
     );
   return null;
 }
+
+export type InputProps = {
+  label?: string;
+  value?: string;
+  defaultValue?: string;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  /** Truthy error triggers a shake, red border and (if a string) a message. */
+  error?: string | boolean;
+  /** Show the error border without a message. Useful when validation is shown elsewhere. */
+  invalid?: boolean;
+  /** Helper text shown below the field (hidden when an error is present). */
+  hint?: string;
+  success?: boolean;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
+  /** Semantic type — automatically wires keyboard, autoComplete, and textContentType. */
+  inputType?: InputType;
+  /** Field height variant. Default: `md`. */
+  size?: 'sm' | 'md' | 'lg';
+  /** Border-radius variant. `rounded` (default) for a standard input, `pill` for a full-circle shape. */
+  shape?: 'rounded' | 'pill';
+  disabled?: boolean;
+  secureTextEntry?: boolean;
+  keyboardType?: KeyboardTypeOptions;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  multiline?: boolean;
+  autoFocus?: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  /** NativeWind class names merged onto the outer wrapper. */
+  className?: string;
+  style?: StyleProp<ViewStyle>;
+  /** NativeWind class names applied to the TextInput element. */
+  inputClassName?: string;
+  inputStyle?: StyleProp<TextStyle>;
+  accessibilityLabel?: string;
+  testID?: string;
+  /** Ref forwarded to the underlying TextInput (React 19 direct-prop style). */
+  ref?: React.Ref<TextInput>;
+};
 
 export function Input({
   label,

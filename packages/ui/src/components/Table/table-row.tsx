@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
+import type { DimensionValue, StyleProp, ViewStyle } from 'react-native';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Plus, Trash2 } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -36,16 +37,23 @@ function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) 
 
 // ─── Skeleton cell pulse ──────────────────────────────────────────────────────
 
-export type SkeletonCellPulseProps = { width: number; align: TableColumn<unknown>['align']; reduce: boolean };
+export type SkeletonCellPulseProps = {
+  width: number;
+  align: TableColumn<unknown>['align'];
+  /** Override skeleton bar width. Defaults to `'60%'` (or `40` for right-aligned). */
+  skeletonWidth?: DimensionValue;
+  reduce: boolean;
+};
 
-export function SkeletonCellPulse({ width, align, reduce }: SkeletonCellPulseProps) {
+export function SkeletonCellPulse({ width, align, skeletonWidth, reduce }: SkeletonCellPulseProps) {
+  const barWidth: DimensionValue = skeletonWidth ?? (align === 'right' ? 40 : '60%');
   return (
     <View style={[styles.cell, { width, alignItems: alignToJustify(align) }]}>
       <MotiView
         from={{ opacity: 0.5 }}
         animate={{ opacity: reduce ? 0.5 : 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 800, loop: !reduce, repeatReverse: true }}
-        style={{ height: 12, borderRadius: 6, backgroundColor: '#e5e7eb', width: align === 'right' ? 40 : '60%' }}
+        style={{ height: 12, borderRadius: 6, backgroundColor: '#e5e7eb', width: barWidth }}
       />
     </View>
   );
@@ -111,6 +119,10 @@ export type TableRowProps<T> = {
   rowHeight: number;
   reduce: boolean;
   hasRowMenu: boolean;
+  /** When true this row gets the `stripedStyle` background tint. */
+  isStriped?: boolean;
+  /** Style applied when `isStriped` is true. Falls back to a subtle grey tint. */
+  stripedStyle?: StyleProp<ViewStyle>;
   setPressedRowId: (id: string | null) => void;
   toggleRow: (id: string) => void;
   onCellEdit?: (rowId: string, key: string, value: string) => void;
@@ -132,6 +144,8 @@ export function TableRow<T>({
   rowHeight,
   reduce,
   hasRowMenu,
+  isStriped = false,
+  stripedStyle,
   setPressedRowId,
   toggleRow,
   onCellEdit,
@@ -157,7 +171,7 @@ export function TableRow<T>({
 
   return (
     <Pressable
-      style={[styles.row, { height: rowHeight }]}
+      style={[styles.row, { height: rowHeight }, isStriped && (stripedStyle ?? styles.stripedRow)]}
       onLongPress={handleLongPress}
       onPress={handlePress}
       testID={`${testID ?? 'table'}-row-${id}`}

@@ -17,6 +17,7 @@ export function useTable<T>(props: TableProps<T>) {
     selectedRowIds,
     defaultSelectedRowIds,
     onSelectionChange,
+    sortable = true,
     sort: sortProp,
     defaultSort = null,
     onSortChange,
@@ -28,11 +29,26 @@ export function useTable<T>(props: TableProps<T>) {
     onDeleteColumn,
     rowHeight = 48,
     height = 440,
+    loading = false,
+    loadingMore = false,
+    skeletonRows = 3,
+    mode,
+    hasMore = false,
     onEndReached,
     onEndReachedThreshold = 0.2,
-    loading = false,
-    skeletonRows = 3,
-    emptyState = 'No data',
+    onLoadMore,
+    loadMoreLabel = 'Load more',
+    page = 1,
+    pageSize = 10,
+    total = 0,
+    onPageChange,
+    paginationLabel,
+    emptyState,
+    emptyIcon,
+    emptyTitle,
+    emptyDescription,
+    striped = false,
+    stripedStyle,
     testID,
   } = props;
 
@@ -84,7 +100,8 @@ export function useTable<T>(props: TableProps<T>) {
     [activeSort, isControlledSort, onSortChange],
   );
 
-  const sortedRows = useMemo(() => sortRows(rows, activeSort), [rows, activeSort]);
+  // Pass columns so sortRows can use getSortValue when present.
+  const sortedRows = useMemo(() => sortRows(rows, activeSort, columns), [rows, activeSort, columns]);
 
   // ── Selection state (controllable) ────────────────────────────────────────
   const isControlledSelection = selectedRowIds !== undefined;
@@ -123,6 +140,11 @@ export function useTable<T>(props: TableProps<T>) {
     [rowHeight],
   );
 
+  // ── Pagination ─────────────────────────────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const goToPreviousPage = useCallback(() => onPageChange?.(page - 1), [onPageChange, page]);
+  const goToNextPage = useCallback(() => onPageChange?.(page + 1), [onPageChange, page]);
+
   return {
     // layout
     containerRef,
@@ -136,6 +158,7 @@ export function useTable<T>(props: TableProps<T>) {
     dropIndex,
     gripHandlers,
     // sort
+    sortable,
     activeSort,
     toggleSort,
     sortedRows,
@@ -156,19 +179,40 @@ export function useTable<T>(props: TableProps<T>) {
     reduce,
     keyExtractor,
     getItemLayout,
-    // loading state (needed by render callbacks in Table)
+    // loading state
     loading,
+    loadingMore,
     skeletonRows,
-    emptyState,
-    testID,
-    // pass-through convenience
+    mode,
+    hasMore,
     onEndReached,
     onEndReachedThreshold,
+    onLoadMore,
+    loadMoreLabel,
+    // pagination
+    page,
+    pageSize,
+    total,
+    totalPages,
+    onPageChange,
+    paginationLabel,
+    goToPreviousPage,
+    goToNextPage,
+    // empty state
+    emptyState,
+    emptyIcon,
+    emptyTitle,
+    emptyDescription,
+    // striped
+    striped,
+    stripedStyle,
+    // pass-through convenience
     flatListHeight: height - rowHeight,
     rowHeight,
     selectable,
     onCellEdit,
     onInsertRow,
     onDeleteRow,
+    testID,
   };
 }

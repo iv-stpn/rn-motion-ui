@@ -19,6 +19,11 @@ export type HeaderCellProps<T> = {
   reorderable: boolean;
   hasColMenu: boolean;
   reduce: boolean;
+  /**
+   * Effective sortability for this column — `table-level sortable && column.sortable`.
+   * When false the header renders as non-interactive even if `column.sortable` is true.
+   */
+  sortEnabled: boolean;
   gripHandlers: (key: string) => GestureResponderHandlers;
   toggleSort: (key: string) => void;
   setPressedColKey: (key: string | null) => void;
@@ -43,6 +48,7 @@ export function HeaderCell<T>({
   reorderable,
   hasColMenu,
   reduce,
+  sortEnabled,
   gripHandlers,
   toggleSort,
   setPressedColKey,
@@ -72,9 +78,9 @@ export function HeaderCell<T>({
       key={column.key}
       style={[styles.headerCell, { width: containerWidth > 0 ? colWidth : undefined, flex: containerWidth > 0 ? undefined : 1 }]}
       onLongPress={handleLongPress}
-      onPress={column.sortable ? handleSort : undefined}
-      accessibilityRole={column.sortable ? 'button' : undefined}
-      accessibilityLabel={column.sortable ? `Sort by ${column.header}` : undefined}
+      onPress={sortEnabled ? handleSort : undefined}
+      accessibilityRole={sortEnabled ? 'button' : undefined}
+      accessibilityLabel={sortEnabled ? `Sort by ${column.header}` : undefined}
       testID={`${testID ?? 'table'}-header-${column.key}`}
     >
       {/* Header content lifts (scale + fade) while its column is being dragged. */}
@@ -96,7 +102,7 @@ export function HeaderCell<T>({
           </View>
         ) : null}
 
-        {onColumnRename && !column.sortable ? (
+        {onColumnRename && !sortEnabled ? (
           <TextInput
             value={column.header}
             onChangeText={handleRename}
@@ -112,7 +118,7 @@ export function HeaderCell<T>({
             >
               {column.header}
             </Text>
-            {column.sortable ? (
+            {sortEnabled ? (
               <MotiView
                 animate={{ rotate: isActive && activeDirection === 'desc' ? '180deg' : '0deg', opacity: isActive ? 1 : 0.35 }}
                 transition={{ type: 'timing', duration: reduce ? 0 : 180 }}

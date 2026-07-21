@@ -52,8 +52,16 @@ export function readCellValue<T>(row: T, column: TableColumn<T>): unknown {
   return fieldValue(row, column.key);
 }
 
-export function sortRows<T>(rows: RowEntry<T>[], sort: SortState | null): RowEntry<T>[] {
+export function sortRows<T>(rows: RowEntry<T>[], sort: SortState | null, columns?: TableColumn<T>[]): RowEntry<T>[] {
   if (!sort) return rows;
+
+  // Use getSortValue from the column definition when available; otherwise fall back to
+  // reading `row[key]` directly so columns without a custom renderer still sort.
+  const column = columns?.find((c) => c.key === sort.key);
+  const getSortValue = column?.getSortValue;
+  const getVal = getSortValue
+    ? (entry: RowEntry<T>) => getSortValue(entry.row)
+    : (entry: RowEntry<T>) => fieldValue(entry.row, sort.key);
 
   // Return the same reference if data is already in sorted order — avoids a new
   // array allocation and a FlatList reconciliation pass on every render.
@@ -61,12 +69,12 @@ export function sortRows<T>(rows: RowEntry<T>[], sort: SortState | null): RowEnt
     if (i === 0) return true;
     const prev = rows[i - 1];
     if (prev === undefined) return true;
-    return compareValues(fieldValue(prev.row, sort.key), fieldValue(row.row, sort.key), sort.direction) <= 0;
+    return compareValues(getVal(prev), getVal(row), sort.direction) <= 0;
   });
 
   if (alreadySorted) return rows;
 
-  return [...rows].sort((a, b) => compareValues(fieldValue(a.row, sort.key), fieldValue(b.row, sort.key), sort.direction));
+  return [...rows].sort((a, b) => compareValues(getVal(a), getVal(b), sort.direction));
 }
 
 export function alignStyle(align: TableColumn<unknown>['align']) {

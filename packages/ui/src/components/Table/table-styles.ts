@@ -148,4 +148,73 @@ export const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  // ── Striped rows ─────────────────────────────────────────────────────────
+  stripedRow: {
+    backgroundColor: 'rgba(0,0,0,0.02)',
+  },
+  // ── Footer ───────────────────────────────────────────────────────────────
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  footerLoadMore: {
+    alignItems: 'stretch',
+  },
+  loadMoreBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.15)',
+    alignItems: 'center',
+  },
+  footerPagination: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  paginationText: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  paginationBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  paginationBtnDisabled: {
+    opacity: 0.35,
+  },
+  // ── loadingMore spinner ───────────────────────────────────────────────────
+  loadingMoreContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.07)',
+  },
+  // ── Rich empty state ──────────────────────────────────────────────────────
+  emptyIcon: {
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  emptyDescription: {
+    fontSize: 13,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
 });

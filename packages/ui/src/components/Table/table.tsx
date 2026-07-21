@@ -1,65 +1,17 @@
-import type { ReactElement, ReactNode } from 'react';
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: complex component */
 import { useCallback, useMemo } from 'react';
-import type { ListRenderItemInfo, StyleProp, ViewStyle } from 'react-native';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import type { ListRenderItemInfo } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { Checkbox } from '../Checkbox/checkbox';
 import { HeaderCell } from './table-header';
+import { LoadMoreFooter, PaginationFooter, SkeletonFooter, TableCard } from './table-parts';
 import { SkeletonCellPulse, TableRow } from './table-row';
 import { styles } from './table-styles';
 import type { RowEntry, TableProps } from './table-types';
 import { CHECKBOX_COL_WIDTH } from './table-types';
 import { useTable } from './use-table';
 
-// ── Card row (small-screen mode) ──────────────────────────────────────────────
-
-type TableCardProps<T> = {
-  row: T;
-  id: string;
-  isSelected: boolean;
-  selectable: boolean;
-  cardStyle?: StyleProp<ViewStyle>;
-  toggleRow: (id: string) => void;
-  renderSmallScreen: (row: T, selected: boolean) => ReactNode;
-  testID?: string;
-};
-
-function TableCard<T>({ row, id, isSelected, selectable, cardStyle, toggleRow, renderSmallScreen, testID }: TableCardProps<T>) {
-  const handlePress = useCallback(() => toggleRow(id), [toggleRow, id]);
-  const handleCheckedChange = useCallback(() => toggleRow(id), [toggleRow, id]);
-  return (
-    <Pressable
-      onPress={selectable ? handlePress : undefined}
-      style={[styles.card, isSelected && styles.selectedBg, cardStyle]}
-      testID={testID ? `${testID}-card-${id}` : undefined}
-    >
-      <View style={styles.cardRow}>
-        {selectable ? (
-          <View style={styles.cardCheckbox}>
-            <Checkbox checked={isSelected} onCheckedChange={handleCheckedChange} />
-          </View>
-        ) : null}
-        <View style={styles.cardContent}>{renderSmallScreen(row, isSelected)}</View>
-      </View>
-    </Pressable>
-  );
-}
-
-type FooterSkeletonOptions = {
-  loading: boolean;
-  hasRows: boolean;
-  isCardMode: boolean;
-  renderSkeletonCards: (rows: number) => ReactElement;
-  renderSkeletonRows: (rows: number) => ReactElement;
-  skeletonRows: number;
-};
-
-function resolveFooterSkeleton(opts: FooterSkeletonOptions): ReactElement | null {
-  const { loading, hasRows, isCardMode, renderSkeletonCards, renderSkeletonRows, skeletonRows } = opts;
-  if (loading && hasRows) return isCardMode ? renderSkeletonCards(skeletonRows) : renderSkeletonRows(skeletonRows);
-  return null;
-}
-
-export type { SortDirection, SortState, TableColumn, TableProps } from './table-types';
+const PAGINATION_FOOTER_HEIGHT = 52; // footer paddingVertical (10×2) + button height (32)
 
 /** biome-ignore lint/complexity/noExcessiveLinesPerFunction: the table has too many props and features to be simplified more */
 export function Table<T>(props: TableProps<T>) {
@@ -73,6 +25,7 @@ export function Table<T>(props: TableProps<T>) {
     dragKey,
     dropIndex,
     gripHandlers,
+    sortable,
     activeSort,
     toggleSort,
     sortedRows,
@@ -91,23 +44,40 @@ export function Table<T>(props: TableProps<T>) {
     keyExtractor,
     getItemLayout,
     loading,
+    loadingMore,
     skeletonRows,
-    emptyState,
+    mode,
+    hasMore,
     onEndReached,
     onEndReachedThreshold,
+    onLoadMore,
+    loadMoreLabel,
+    page,
+    totalPages,
+    paginationLabel,
+    goToPreviousPage,
+    goToNextPage,
+    emptyState,
+    emptyIcon,
+    emptyTitle,
+    emptyDescription,
+    striped,
+    stripedStyle,
     flatListHeight,
     rowHeight,
     selectable,
     onCellEdit,
     onInsertRow,
     onDeleteRow,
+    testID,
   } = useTable(props);
 
-  const { reorderable = false, height = 440, onColumnRename, onInsertColumn, onDeleteColumn, style, testID } = props;
+  const { reorderable = false, height = 440, onColumnRename, onInsertColumn, onDeleteColumn, style } = props;
   const { renderSmallScreen, useSmallScreen = false, cardStyle } = props;
-
   // Card mode: hide the table header and render each row as a card via renderSmallScreen.
   const isCardMode = useSmallScreen && Boolean(renderSmallScreen);
+  // Reduce FlatList height when pagination footer is pinned below it.
+  const effectiveFlatListHeight = mode === 'pagination' ? flatListHeight - PAGINATION_FOOTER_HEIGHT : flatListHeight;
 
   // ── Render callbacks ───────────────────────────────────────────────────────
 
@@ -140,6 +110,8 @@ export function Table<T>(props: TableProps<T>) {
           rowHeight={rowHeight}
           reduce={reduce}
           hasRowMenu={hasRowMenu}
+          isStriped={striped && index % 2 === 1}
+          stripedStyle={stripedStyle}
           setPressedRowId={setPressedRowId}
           toggleRow={toggleRow}
           onCellEdit={onCellEdit}
@@ -165,6 +137,8 @@ export function Table<T>(props: TableProps<T>) {
       onDeleteRow,
       onCellEdit,
       rowHeight,
+      striped,
+      stripedStyle,
       reduce,
       setPressedRowId,
       testID,
@@ -183,6 +157,7 @@ export function Table<T>(props: TableProps<T>) {
                 key={col.key}
                 width={containerWidth > 0 ? (colWidths[col.key] ?? 0) : 80}
                 align={col.align}
+                skeletonWidth={col.skeletonWidth}
                 reduce={reduce}
               />
             ))}
@@ -220,25 +195,92 @@ export function Table<T>(props: TableProps<T>) {
 
   const ListEmptyComponent = useMemo(() => {
     if (loading) return isCardMode ? renderSkeletonCards(skeletonRows) : renderSkeletonRows(skeletonRows);
+    // Rich empty state: render icon + title + description when text props are provided.
+    if (!emptyState && (emptyTitle || emptyIcon || emptyDescription))
+      return (
+        <View style={styles.emptyContainer}>
+          {emptyIcon ? <View style={styles.emptyIcon}>{emptyIcon}</View> : null}
+          {emptyTitle ? <Text style={styles.emptyTitle}>{emptyTitle}</Text> : null}
+          {emptyDescription ? <Text style={styles.emptyDescription}>{emptyDescription}</Text> : null}
+        </View>
+      );
     return (
       <View style={styles.emptyContainer}>
         {typeof emptyState === 'string' ? <Text style={styles.emptyText}>{emptyState}</Text> : (emptyState ?? null)}
       </View>
     );
-  }, [loading, isCardMode, skeletonRows, emptyState, renderSkeletonRows, renderSkeletonCards]);
+  }, [
+    loading,
+    isCardMode,
+    skeletonRows,
+    emptyState,
+    emptyIcon,
+    emptyTitle,
+    emptyDescription,
+    renderSkeletonRows,
+    renderSkeletonCards,
+  ]);
 
-  const ListFooterComponent = useMemo(
-    () =>
-      resolveFooterSkeleton({
-        loading,
-        hasRows: sortedRows.length > 0,
-        isCardMode,
-        renderSkeletonCards,
-        renderSkeletonRows,
-        skeletonRows,
-      }),
-    [loading, isCardMode, sortedRows.length, skeletonRows, renderSkeletonRows, renderSkeletonCards],
-  );
+  // loadingMore spinner + loadMore button — rendered inside FlatList footer so they scroll with content.
+  const ListFooterComponent = useMemo(() => {
+    const skeletonProps = {
+      loading,
+      hasRows: sortedRows.length > 0,
+      isCardMode,
+      renderSkeletonCards,
+      renderSkeletonRows,
+      skeletonRows,
+    };
+    if (loadingMore)
+      return (
+        <>
+          <SkeletonFooter {...skeletonProps} />
+          <View style={styles.loadingMoreContainer}>
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                borderWidth: 2,
+                borderColor: '#d1d5db',
+                borderTopColor: '#6b7280',
+              }}
+            />
+          </View>
+        </>
+      );
+    if (mode === 'loadMore' && hasMore)
+      return (
+        <>
+          <SkeletonFooter {...skeletonProps} />
+          <LoadMoreFooter onLoadMore={onLoadMore} loadMoreLabel={loadMoreLabel} />
+        </>
+      );
+    return <SkeletonFooter {...skeletonProps} />;
+  }, [
+    loading,
+    loadingMore,
+    mode,
+    hasMore,
+    onLoadMore,
+    loadMoreLabel,
+    isCardMode,
+    sortedRows.length,
+    skeletonRows,
+    renderSkeletonRows,
+    renderSkeletonCards,
+  ]);
+
+  const paginationFooter =
+    mode === 'pagination' ? (
+      <PaginationFooter
+        page={page}
+        totalPages={totalPages}
+        paginationLabel={paginationLabel}
+        goToPreviousPage={goToPreviousPage}
+        goToNextPage={goToNextPage}
+      />
+    ) : null;
 
   return (
     <View ref={containerRef} style={[styles.container, { height }, style]} onLayout={onContainerLayout} testID={testID}>
@@ -270,6 +312,7 @@ export function Table<T>(props: TableProps<T>) {
               reorderable={reorderable}
               hasColMenu={hasColMenu}
               reduce={reduce}
+              sortEnabled={sortable && (col.sortable ?? false)}
               gripHandlers={gripHandlers}
               toggleSort={toggleSort}
               setPressedColKey={setPressedColKey}
@@ -299,15 +342,20 @@ export function Table<T>(props: TableProps<T>) {
         // Card heights are set by renderSmallScreen content — skip getItemLayout to avoid
         // incorrect scroll offsets. Table rows are fixed-height so the optimisation holds.
         getItemLayout={isCardMode ? undefined : getItemLayout}
-        style={{ height: isCardMode ? height : flatListHeight }}
+        style={{ height: isCardMode ? height : effectiveFlatListHeight }}
         showsVerticalScrollIndicator={false}
-        onEndReached={onEndReached}
+        onEndReached={mode === 'infiniteScroll' ? onEndReached : undefined}
         onEndReachedThreshold={onEndReachedThreshold}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         removeClippedSubviews={true}
         testID={`${testID ?? 'table'}-list`}
       />
+
+      {/* ── Pagination footer (fixed, outside FlatList) ── */}
+      {paginationFooter}
     </View>
   );
 }
+
+export type { SortDirection, SortState, TableColumn, TableMode, TableProps } from './table-types';

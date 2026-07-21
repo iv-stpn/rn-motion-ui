@@ -28,7 +28,7 @@ function buildPeople(count: number): Person[] {
     out.push({
       id: String(i),
       name: `${first} ${last}`,
-      email: `${first.toLowerCase()}.${last.toLowerCase()}${i}@beui.dev`,
+      email: `${first.toLowerCase()}.${last.toLowerCase()}${i}@rnmotionui.dev`,
       role: ROLES[(i * 3) % ROLES.length] ?? 'Member',
       status,
       mrr: 12 + ((i * 37) % 488),
@@ -146,7 +146,7 @@ function buildPage(page: number): Person[] {
     out.push({
       id: String(n),
       name: `${first} ${last}`,
-      email: `${first.toLowerCase()}.${last.toLowerCase()}${n}@beui.dev`,
+      email: `${first.toLowerCase()}.${last.toLowerCase()}${n}@rnmotionui.dev`,
       role: ROLES[(n * 3) % ROLES.length] ?? 'Member',
       status,
       mrr: 12 + ((n * 37) % 488),

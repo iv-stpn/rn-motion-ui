@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type AccessibilityActionEvent,
   type GestureResponderEvent,
@@ -8,7 +8,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 
 // Smooth glide for thumb/fill — critically damped, no overshoot (web SPRING_GLIDE).
@@ -54,6 +54,7 @@ export function RangeSlider({
   const [active, setActive] = useState(false);
   const trackW = useSharedValue(0);
   const trackWRef = useRef(0);
+  const isLayoutDone = useSharedValue(false);
 
   const controlled = value !== undefined;
   const current = clamp(controlled ? value : internal, min, max);
@@ -88,8 +89,9 @@ export function RangeSlider({
       const w = e.nativeEvent.layout.width;
       trackWRef.current = w;
       trackW.value = w;
+      isLayoutDone.value = true;
     },
-    [trackW],
+    [trackW, isLayoutDone],
   );
 
   const responder = useMemo(
@@ -124,12 +126,19 @@ export function RangeSlider({
   // One spring-smoothed ratio drives both fill and thumb (the web `smooth` motion
   // value) so they move frame-locked as a single unit — two independent springs
   // over different distances would stagger.
-  const smooth = useDerivedValue(() => (reduce ? ratio : withSpring(ratio, SPRING_GLIDE)));
+  // Initialized to the correct ratio so there's no spring animation on mount.
+  const smooth = useSharedValue(ratio);
+  // biome-ignore lint/plugin: syncing an externally-controlled ratio to an Animated shared value requires a side effect
+  useEffect(() => {
+    smooth.value = reduce ? ratio : withSpring(ratio, SPRING_GLIDE);
+  }, [ratio, reduce, smooth]);
 
   const fillStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: smooth.value }] }));
   // Contain the thumb fully inside the track at both ends by mapping the ratio
   // across [0, trackW - THUMB_W] rather than the raw width — no clip, no gap.
+  // Thumb is invisible until onLayout provides trackW, preventing a flash at x=0.
   const thumbStyle = useAnimatedStyle(() => ({
+    opacity: isLayoutDone.value ? 1 : 0,
     transform: [
       { translateX: smooth.value * Math.max(trackW.value - THUMB_W, 0) },
       { scaleY: withSpring(active && !reduce ? 1.35 : 1, SPRING_BOUNCY) },

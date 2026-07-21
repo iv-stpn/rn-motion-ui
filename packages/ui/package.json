@@ -241,6 +241,11 @@
       "types": "./src/components/SmoothScroll/smooth-scroll.tsx",
       "default": "./src/components/SmoothScroll/smooth-scroll.tsx"
     },
+    "./star-rating": {
+      "source": "./src/components/StarRating/star-rating.tsx",
+      "types": "./src/components/StarRating/star-rating.tsx",
+      "default": "./src/components/StarRating/star-rating.tsx"
+    },
     "./stateful-button": {
       "source": "./src/components/Button/stateful-button.tsx",
       "types": "./src/components/Button/stateful-button.tsx",

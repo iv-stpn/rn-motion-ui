@@ -1,6 +1,16 @@
 import type { ParsedWidth, RowEntry, SortState, TableColumn } from './table-types';
 import { CHECKBOX_COL_WIDTH } from './table-types';
 
+function compareValues(av: unknown, bv: unknown, direction: SortState['direction']): number {
+  let cmp: number;
+  if (av === null && bv === null) cmp = 0;
+  else if (av === null) cmp = 1;
+  else if (bv === null) cmp = -1;
+  else if (typeof av === 'number' && typeof bv === 'number') cmp = av - bv;
+  else cmp = String(av).localeCompare(String(bv));
+  return direction === 'asc' ? cmp : -cmp;
+}
+
 export function parseColumnWidth(w: number | string | undefined): ParsedWidth {
   if (w === undefined || w === null) return { type: 'fr', value: 1 };
   if (typeof w === 'number') return { type: 'px', value: w };
@@ -44,17 +54,19 @@ export function readCellValue<T>(row: T, column: TableColumn<T>): unknown {
 
 export function sortRows<T>(rows: RowEntry<T>[], sort: SortState | null): RowEntry<T>[] {
   if (!sort) return rows;
-  return [...rows].sort((a, b) => {
-    const av = fieldValue(a.row, sort.key);
-    const bv = fieldValue(b.row, sort.key);
-    if (av === null && bv === null) return 0;
-    if (av === null) return 1;
-    if (bv === null) return -1;
-    let cmp: number;
-    if (typeof av === 'number' && typeof bv === 'number') cmp = av - bv;
-    else cmp = String(av).localeCompare(String(bv));
-    return sort.direction === 'asc' ? cmp : -cmp;
+
+  // Return the same reference if data is already in sorted order — avoids a new
+  // array allocation and a FlatList reconciliation pass on every render.
+  const alreadySorted = rows.every((row, i) => {
+    if (i === 0) return true;
+    const prev = rows[i - 1];
+    if (prev === undefined) return true;
+    return compareValues(fieldValue(prev.row, sort.key), fieldValue(row.row, sort.key), sort.direction) <= 0;
   });
+
+  if (alreadySorted) return rows;
+
+  return [...rows].sort((a, b) => compareValues(fieldValue(a.row, sort.key), fieldValue(b.row, sort.key), sort.direction));
 }
 
 export function alignStyle(align: TableColumn<unknown>['align']) {

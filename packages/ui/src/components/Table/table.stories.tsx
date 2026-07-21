@@ -1,4 +1,5 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: stories + interaction tests for a complex data-grid kept together for easy editing
+/** biome-ignore-all lint/style/useExportsLast: this a stories file */
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -236,6 +237,8 @@ function AsyncTableStory() {
 
 type EditRow = { id: string; [key: string]: string };
 
+const ITEM_SEPARATOR = ' · ';
+
 const INITIAL_ROWS: EditRow[] = [
   { id: 'r1', name: 'Ava Cole', role: 'Owner', team: 'Design' },
   { id: 'r2', name: 'Leo Frost', role: 'Admin', team: 'Growth' },
@@ -452,7 +455,7 @@ function SmallScreenTableStory() {
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text style={{ fontSize: 12, color: '#374151' }}>{row.role}</Text>
-          <Text style={{ fontSize: 12, color: '#d1d5db' }}>{'·'}</Text>
+          <Text style={{ fontSize: 12, color: '#d1d5db' }}>{ITEM_SEPARATOR}</Text>
           <Text style={{ fontSize: 12, color: '#374151', fontWeight: '500' }}>{`$${row.mrr.toLocaleString()} MRR`}</Text>
         </View>
       </View>

@@ -10,6 +10,7 @@
  *
  * Dependencies: react-native-reanimated, react-native-svg
  */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: complex logic */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type AccessibilityActionEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';

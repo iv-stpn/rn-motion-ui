@@ -11,7 +11,6 @@ import {
   Platform,
   ScrollView,
   type StyleProp,
-  StyleSheet,
   Text,
   Vibration,
   View,
@@ -28,6 +27,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { Card, type CardVariant } from '../Card/card';
 
 // RN vs web: the reference wheel is a CSS 3D drum — rows seated on a cylinder via
 // `translateZ`, the whole list spun with `rotateX` — driven by a hand-rolled
@@ -148,10 +148,17 @@ type WheelPickerRowProps = {
 };
 
 // One row on the drum wall. Its angular offset from the front is `θ = (index −
-// scroll)·itemAngle`; from that: translateY = R·sinθ bunches it toward the
-// horizon, rotateX(−θ) tilts it onto the wall, scale/opacity ≈ cosθ foreshortens
-// and fades it. Past the horizon (|offset| > hideBeyond, θ ≥ 90°) it stops
-// painting so the back of the drum never bleeds through the front.
+// scroll)·itemAngle`; from that:
+//   translateY = R·sinθ  — places the row's centre on the cylinder surface
+//   scaleY     = cosθ    — compresses height, rows thin to a sliver at the horizon
+//   opacity    = cos²θ   — fades toward the edge so the drum reads as curved
+//
+// Crucially, only Y is scaled (not X): the cylinder axis is horizontal, so width
+// never foreshortens. Uniform `scale` was the prior bug — it made items shrink in
+// both axes and look like they were zooming out rather than wrapping around a drum.
+// rotateX+perspective is dropped: per-element perspective creates a different
+// vanishing point for every row (wrong), whereas translateY+scaleY naturally
+// converges all rows to the same horizon line (correct).
 function WheelPickerRow({
   label,
   index,
@@ -174,12 +181,7 @@ function WheelPickerRow({
       // opaque rows (bright centre drum) always render at full opacity; the outer
       // drum uses cos² for a steeper falloff so edge rows read as "behind the wall".
       opacity: opaque ? 1 : Math.max(0, cos * cos),
-      transform: [
-        { perspective: 600 },
-        { translateY: radius * Math.sin(theta) },
-        { rotateX: `${-offset * itemAngle}deg` },
-        { scale: Math.max(MIN_SCALE, cos) },
-      ],
+      transform: [{ translateY: radius * Math.sin(theta) }, { scaleY: Math.max(MIN_SCALE, cos) }],
     };
   });
 
@@ -233,6 +235,8 @@ export type WheelPickerProps = {
   disabled?: boolean;
   /** Play a short tick sound on each row crossing while dragging. Default false. */
   sound?: boolean;
+  /** Visual container style — 'border' renders an outlined card, 'filled' a muted-background card. Default 'filled'. */
+  variant?: CardVariant;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -248,6 +252,7 @@ export function WheelPicker({
   itemHeight = 36,
   disabled = false,
   sound = false,
+  variant = 'filled',
   style,
   accessibilityLabel,
   testID,
@@ -277,7 +282,12 @@ export function WheelPicker({
     const rowsEachSide = Math.max(1, Math.floor(visibleCount / 2));
     const cutoff = rowsEachSide + 1;
     const angle = 90 / cutoff;
-    const r = itemHeight / Math.sin(angle * DEG);
+    // tan formula (mirrors the CSS-3D reference): each row face is tangent to the
+    // drum circle, so consecutive rows' screen-Y positions differ by
+    // radius·sin(angle) = itemHeight·cos(angle) < itemHeight — the foreshortening
+    // that makes it look like a real cylinder.  sin formula gave equal spacing at
+    // every angle, which reads as a flat infinite list.
+    const r = itemHeight / Math.tan(angle * DEG);
     return {
       itemAngle: angle,
       radius: r,
@@ -521,16 +531,17 @@ export function WheelPicker({
   // settles on a row.
   if (reduce)
     return (
-      <View
+      <Card
+        variant={variant}
         accessibilityRole="adjustable"
         accessibilityLabel={accessibilityLabel}
         accessibilityValue={{ text: currentValue }}
         testID={testID ?? 'wheel-picker'}
-        className="relative overflow-hidden rounded-3xl bg-muted"
+        className="relative overflow-hidden p-0"
         style={[{ height, opacity: disabled ? 0.5 : 1 }, style]}
       >
         <View
-          className="absolute inset-x-2 z-10 rounded-2xl bg-foreground/[0.06]"
+          className="absolute inset-x-2 z-10 rounded-xl bg-foreground/[0.06]"
           style={{ pointerEvents: 'none', top: pad, height: itemHeight }}
         />
         <ScrollView
@@ -559,19 +570,20 @@ export function WheelPicker({
             );
           })}
         </ScrollView>
-      </View>
+      </Card>
     );
 
   return (
-    <View
+    <Card
       ref={containerRef}
+      variant={variant}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ text: currentValue }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={handleAccessibilityAction}
       testID={testID ?? 'wheel-picker'}
-      className="relative overflow-hidden rounded-3xl bg-muted"
+      className="relative overflow-hidden p-0"
       style={[
         { height, opacity: disabled ? 0.5 : 1 },
         // Web: block page scroll / text selection so the drag drives the drum.
@@ -580,19 +592,10 @@ export function WheelPicker({
       ]}
       {...pan.panHandlers}
     >
-      {/* Centre band: selection pill with hairline top/bottom separators. */}
+      {/* Centre band: borderless selection pill. */}
       <View
-        className="absolute inset-x-2 rounded-2xl border-border bg-foreground/[0.06]"
-        style={{
-          pointerEvents: 'none',
-          top: pad,
-          height: itemHeight,
-          zIndex: 10,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderBottomWidth: StyleSheet.hairlineWidth,
-          borderLeftWidth: 0,
-          borderRightWidth: 0,
-        }}
+        className="absolute inset-x-2 rounded-xl bg-foreground/[0.06]"
+        style={{ pointerEvents: 'none', top: pad, height: itemHeight, zIndex: 10 }}
       />
       {options.map((option, i) => (
         <WheelPickerRow
@@ -611,8 +614,11 @@ export function WheelPicker({
       {/* Bright centre drum — same rows, clipped to one row height and drawn at
           full opacity so the selected label stands out against the dimmed drum.
           `center={0}` seats row 0 at the top of this clip view, which itself
-          sits at `top: pad` — identical to the outer drum's centre. */}
+          sits at `top: pad` — identical to the outer drum's centre.
+          aria-hidden: purely decorative duplicate; outer drum rows are the
+          interactive/accessible ones. */}
       <View
+        aria-hidden={true}
         style={{
           pointerEvents: 'none',
           position: 'absolute',
@@ -639,6 +645,6 @@ export function WheelPicker({
           />
         ))}
       </View>
-    </View>
+    </Card>
   );
 }

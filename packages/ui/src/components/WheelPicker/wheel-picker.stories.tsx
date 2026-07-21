@@ -58,7 +58,7 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     // Tapping a row snaps to it and emits the new value (drag-scroll isn't
     // reproducible in jsdom/Chromium, so the row press stands in for a flick).
-    await userEvent.click(await canvas.findByText('X-Large'));
+    await userEvent.click(await canvas.findByRole('button', { name: 'X-Large' }));
     await expect(args.onValueChange).toHaveBeenCalledWith('X-Large');
   },
 };
@@ -84,7 +84,7 @@ export const DateOfBirth: Story = {
         <Text className="text-muted-foreground text-sm">
           {BORN_LABEL} <Text className="font-medium text-foreground">{`${month} ${day}, ${year}`}</Text>
         </Text>
-        <View className="flex-row items-stretch gap-1 rounded-3xl border border-border bg-surface p-2">
+        <View className="flex-row items-stretch rounded-3xl border border-border p-2">
           <WheelPicker
             options={MONTHS}
             value={month}

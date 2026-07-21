@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { useCallback, useMemo } from 'react';
 import type { ListRenderItemInfo, StyleProp, ViewStyle } from 'react-native';
 import { FlatList, Pressable, Text, View } from 'react-native';
@@ -44,7 +44,23 @@ function TableCard<T>({ row, id, isSelected, selectable, cardStyle, toggleRow, r
   );
 }
 
+type FooterSkeletonOptions = {
+  loading: boolean;
+  hasRows: boolean;
+  isCardMode: boolean;
+  renderSkeletonCards: (rows: number) => ReactElement;
+  renderSkeletonRows: (rows: number) => ReactElement;
+  skeletonRows: number;
+};
+
+function resolveFooterSkeleton(opts: FooterSkeletonOptions): ReactElement | null {
+  const { loading, hasRows, isCardMode, renderSkeletonCards, renderSkeletonRows, skeletonRows } = opts;
+  if (loading && hasRows) return isCardMode ? renderSkeletonCards(skeletonRows) : renderSkeletonRows(skeletonRows);
+  return null;
+}
+
 export type { SortDirection, SortState, TableColumn, TableProps } from './table-types';
+
 /** biome-ignore lint/complexity/noExcessiveLinesPerFunction: the table has too many props and features to be simplified more */
 export function Table<T>(props: TableProps<T>) {
   const {
@@ -213,11 +229,14 @@ export function Table<T>(props: TableProps<T>) {
 
   const ListFooterComponent = useMemo(
     () =>
-      loading && sortedRows.length > 0
-        ? isCardMode
-          ? renderSkeletonCards(skeletonRows)
-          : renderSkeletonRows(skeletonRows)
-        : null,
+      resolveFooterSkeleton({
+        loading,
+        hasRows: sortedRows.length > 0,
+        isCardMode,
+        renderSkeletonCards,
+        renderSkeletonRows,
+        skeletonRows,
+      }),
     [loading, isCardMode, sortedRows.length, skeletonRows, renderSkeletonRows, renderSkeletonCards],
   );
 

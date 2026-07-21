@@ -40,7 +40,7 @@ export type SkeletonCellPulseProps = { width: number; align: TableColumn<unknown
 
 export function SkeletonCellPulse({ width, align, reduce }: SkeletonCellPulseProps) {
   return (
-    <View style={[styles.cell, { width, justifyContent: alignToJustify(align) }]}>
+    <View style={[styles.cell, { width, alignItems: alignToJustify(align) }]}>
       <MotiView
         from={{ opacity: 0.5 }}
         animate={{ opacity: reduce ? 0.5 : 1 }}

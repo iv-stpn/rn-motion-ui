@@ -5,7 +5,8 @@ const { withStorybook } = require('@storybook/react-native/metro/withStorybook')
 const { getDefaultConfig } = require('expo/metro-config');
 const { withUniwindConfig } = require('uniwind/metro');
 
-const projectRoot = import.meta.dirname;
+// biome-ignore lint/correctness/noGlobalDirnameFilename: necessary for metro config
+const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);

@@ -4,7 +4,7 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --dev-client --tunnel",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:android": "export NODE_ENV=development && expo prebuild -p android --no-install --no-clean && cd android && ./gradlew :app:assembleDebug -x lint -x test",
@@ -21,6 +21,7 @@
     "@storybook/react": "10.5.0",
     "@storybook/react-native": "10.5.0",
     "expo": "^57",
+    "expo-dev-client": "^57",
     "expo-status-bar": "^57",
     "react": "19.2.7",
     "react-native": "0.86.0",

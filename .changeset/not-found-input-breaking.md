@@ -1,5 +1,5 @@
 ---
-"rn-motion-ui": major
+"rn-motion-ui": minor
 ---
 
 **Breaking**: remove `NotFoundStacked` and `NotFoundTerminal`; unexport `InputType`.

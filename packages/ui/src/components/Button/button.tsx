@@ -14,8 +14,9 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { MotiView } from '../../moti/components/view';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
-// biome-ignore lint/style/useExportsLast: type collocated with sibling ButtonVariant export for readability
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
+// biome-ignore lint/style/useExportsLast: types collocated with sibling ButtonVariant / ButtonSize exports for readability
+export type ButtonShape = 'rounded' | 'pill';
 
 // cva drives the STATIC styling layer (per the conversion spec). Animated/tap
 // scale stays inline on the MotiView. Class strings are static literals so the
@@ -29,13 +30,17 @@ const container = cva('flex-row items-center justify-center', {
       outline: 'border border-border bg-transparent',
     },
     size: {
-      sm: 'h-8 px-3 gap-1.5 rounded-full',
-      md: 'h-10 px-5 gap-2 rounded-full',
-      lg: 'h-12 px-6 gap-2 rounded-full',
-      icon: 'h-8 w-8 rounded-lg',
+      sm: 'h-8 px-3 gap-1.5',
+      md: 'h-10 px-5 gap-2',
+      lg: 'h-12 px-6 gap-2',
+      icon: 'h-8 w-8',
+    },
+    shape: {
+      rounded: 'rounded-xl',
+      pill: 'rounded-full',
     },
   },
-  defaultVariants: { variant: 'primary', size: 'md' },
+  defaultVariants: { variant: 'primary', size: 'md', shape: 'rounded' },
 });
 
 // biome-ignore lint/style/useComponentExportOnlyModules: label cva is a styling utility consumed by StatefulButton in the same component family; splitting to a separate file would fragment tightly-coupled button styles
@@ -69,6 +74,17 @@ export interface ButtonProps extends VariantProps<typeof container> {
   ripple?: boolean;
   /** Scale the button settles to while pressed. */
   pressScale?: number;
+  /** When true, skip the 0.5 opacity applied to disabled buttons. Useful when
+   *  the button is disabled for interaction reasons (e.g. success/error hold)
+   *  but should remain visually prominent. */
+  noDisabledOpacity?: boolean;
+  /** Colour shown as an absolutely-positioned overlay behind the button content.
+   *  Animates in/out by opacity so it never interferes with the variant background.
+   *  Used by StatefulButton to reflect success / error state. */
+  backdropColor?: string;
+  /** Extra inline style applied directly to the Pressable container. Useful for
+   *  overriding padding or other layout properties that the cva class controls. */
+  contentStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -85,12 +101,16 @@ function renderChild(child: ReactNode, className: string): ReactNode {
 export function Button({
   variant = 'primary',
   size = 'md',
+  shape = 'rounded',
   children,
   onPress,
   disabled,
   loading,
   ripple = false,
   pressScale = 0.93,
+  noDisabledOpacity = false,
+  backdropColor,
+  contentStyle,
   style,
   accessibilityLabel,
   testID,
@@ -171,9 +191,24 @@ export function Button({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={onPress}
-        className={container({ variant, size })}
-        style={{ opacity: isDisabled ? 0.5 : 1, overflow: 'hidden' }}
+        className={container({ variant, size, shape })}
+        style={[{ opacity: isDisabled && !noDisabledOpacity ? 0.5 : 1, overflow: 'hidden' }, contentStyle]}
       >
+        {/* State backdrop — animates in/out by opacity so the variant background
+            shows through when idle and the state colour fills it on success/error. */}
+        <MotiView
+          animate={{ opacity: backdropColor === undefined ? 0 : 1 }}
+          transition={{ type: 'timing', duration: 200 }}
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: backdropColor ?? 'transparent',
+          }}
+        />
         {buttonContent}
         {ripple && !reduce
           ? ripples.map((rp) => (

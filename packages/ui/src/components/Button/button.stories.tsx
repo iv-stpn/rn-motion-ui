@@ -12,6 +12,7 @@ const meta = {
   argTypes: {
     variant: { control: 'select', options: ['primary', 'secondary', 'ghost', 'outline'] },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
+    shape: { control: 'select', options: ['rounded', 'pill'] },
   },
 } satisfies Meta<typeof Button>;
 
@@ -38,6 +39,7 @@ export const Outline: Story = { args: { variant: 'outline', children: 'Outline' 
 export const Loading: Story = { args: { loading: true } };
 export const Disabled: Story = { args: { disabled: true } };
 export const Ripple: Story = { args: { ripple: true, children: 'Tap me' } };
+export const Pill: Story = { args: { shape: 'pill', children: 'Pill shape' } };
 
 export const Sizes: Story = {
   render: (args) => (

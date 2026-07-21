@@ -25,6 +25,8 @@ export type ScrollRevealProps = {
   amount?: number;
   /** Reveal only once (default) or every time it re-enters view. */
   once?: boolean;
+  /** Additional NativeWind class names forwarded to the outer animated wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -47,6 +49,7 @@ export function ScrollReveal({
   y = 16,
   amount = 0.3,
   once = true,
+  className,
   style,
   testID,
 }: ScrollRevealProps) {
@@ -87,7 +90,7 @@ export function ScrollReveal({
   );
 
   return (
-    <Animated.View testID={testID} onLayout={onLayout} style={[style, animatedStyle]}>
+    <Animated.View testID={testID} className={className} onLayout={onLayout} style={[style, animatedStyle]}>
       {children}
     </Animated.View>
   );

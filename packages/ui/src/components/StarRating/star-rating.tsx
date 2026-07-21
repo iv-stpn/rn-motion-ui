@@ -17,6 +17,7 @@ import { type AccessibilityActionEvent, Pressable, type StyleProp, Text, View, t
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -43,6 +44,8 @@ export type StarRatingProps = {
   showValue?: boolean;
   /** Accessible name of the rating group. Default "Rating" */
   label?: string;
+  /** Additional NativeWind class names merged onto the outer row. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -237,6 +240,7 @@ export function StarRating({
   readOnly = false,
   showValue = false,
   label = 'Rating',
+  className,
   style,
   testID,
 }: StarRatingProps) {
@@ -322,7 +326,7 @@ export function StarRating({
       onAccessibilityAction={handleAccessibilityAction}
       style={style}
       testID={testID}
-      className="flex-row items-center"
+      className={cn('flex-row items-center', className)}
     >
       <View className="flex-row items-center">
         {starValues.map((starValue) => (

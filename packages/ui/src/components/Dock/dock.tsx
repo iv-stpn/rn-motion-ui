@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useState } from 'react';
 import { type LayoutRectangle, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 
@@ -31,12 +32,14 @@ export type DockProps = {
   children: ReactNode;
   /** Size of each item in px. */
   size?: number;
+  /** Additional NativeWind class names merged onto the dock bar. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
 
 // biome-ignore lint/style/useExportsLast: type LayoutEvent (private) must stay adjacent to DockItem below; hoisting all private types above would scatter the context-private/component-public grouping
-export function Dock({ children, size = 44, style, testID }: DockProps) {
+export function Dock({ children, size = 44, className, style, testID }: DockProps) {
   const reduce = useReducedMotion();
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -68,7 +71,7 @@ export function Dock({ children, size = 44, style, testID }: DockProps) {
     <DockContext.Provider value={ctx}>
       <View
         testID={testID}
-        className="flex-row items-end gap-1.5 self-start rounded-2xl border border-border bg-card px-2 py-1"
+        className={cn('flex-row items-end gap-1.5 self-start rounded-2xl border border-border bg-card px-2 py-1', className)}
         style={[{ position: 'relative' }, style]}
       >
         {/* Shared-layout pill glides to the active item's measured rect. Item

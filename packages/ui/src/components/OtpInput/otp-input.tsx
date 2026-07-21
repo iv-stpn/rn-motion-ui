@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Animated, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../hooks/use-shake-animation';
+import { cn } from '../../lib/cn';
 import { Check } from '../../lib/icons';
 import { MotiText } from '../../moti/components/text';
 import { MotiView } from '../../moti/components/view';
@@ -34,6 +35,8 @@ export type OTPInputProps = {
   disabled?: boolean;
   autoFocus?: boolean;
   accessibilityLabel?: string;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -110,6 +113,7 @@ export function OTPInput({
   disabled = false,
   autoFocus = false,
   accessibilityLabel = 'One-time passcode',
+  className,
   style,
   testID,
 }: OTPInputProps) {
@@ -157,7 +161,7 @@ export function OTPInput({
   const text = resolveHintText({ showSuccess, successMessage, status, errorMessage, hint });
 
   return (
-    <View className="gap-2" style={style}>
+    <View className={cn('gap-2', className)} style={style}>
       {label ? <Text className="font-medium text-foreground text-sm">{label}</Text> : null}
 
       <View className="flex-row items-center self-start" style={{ opacity: disabled ? 0.5 : 1 }}>

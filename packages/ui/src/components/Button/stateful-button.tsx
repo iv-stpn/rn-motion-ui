@@ -76,6 +76,10 @@ const ICON_COLOR: Record<ButtonVariant, string> = {
   secondary: '#111111',
   ghost: '#111111',
   outline: '#111111',
+  destructive: '#ffffff',
+  outlineDanger: '#ef4444',
+  ghostDanger: '#ef4444',
+  ghostPrimary: '#6366f1',
 };
 
 // Backdrop fill and label colour for terminal states. White text over a

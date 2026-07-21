@@ -1,7 +1,16 @@
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, Text, View } from 'react-native';
+import {
+  type LayoutRectangle,
+  type NativeSyntheticEvent,
+  Pressable,
+  type StyleProp,
+  Text,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
 
 type Variant = 'pill' | 'underline' | 'segment';
@@ -42,10 +51,13 @@ export type TabsProps = {
   onValueChange?: (v: string) => void;
   variant?: Variant;
   children: ReactNode;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
+  style?: StyleProp<ViewStyle>;
   testID?: string;
 };
 
-export function Tabs({ defaultValue, value, onValueChange, variant = 'pill', children, testID }: TabsProps) {
+export function Tabs({ defaultValue, value, onValueChange, variant = 'pill', children, className, style, testID }: TabsProps) {
   const reduce = useReducedMotion();
   const [internal, setInternal] = useState(defaultValue ?? '');
   const [layouts, setLayouts] = useState<Record<string, Layout>>({});
@@ -70,7 +82,9 @@ export function Tabs({ defaultValue, value, onValueChange, variant = 'pill', chi
 
   return (
     <TabsCtx.Provider value={{ value: current, setValue, variant, layouts, register, reduce }}>
-      <View testID={testID}>{children}</View>
+      <View testID={testID} className={cn(className)} style={style}>
+        {children}
+      </View>
     </TabsCtx.Provider>
   );
 }

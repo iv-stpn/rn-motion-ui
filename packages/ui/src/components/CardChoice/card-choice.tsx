@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 
 /** Join truthy class strings. (Local helper — this package ships no shared `cn`.) */
 function cn(...parts: Array<string | false | null | undefined>): string {
@@ -16,6 +16,7 @@ export type CardChoiceProps = {
   /** Custom content rendered below the title/subtitle. */
   children?: ReactNode;
   className?: string;
+  style?: StyleProp<ViewStyle>;
   /**
    * Applies tabular figures to the subtitle (useful when it's a money amount or
    * other number that should align). Matches the repo's `fontVariant` convention.
@@ -27,12 +28,23 @@ export type CardChoiceProps = {
  * A selectable card with a radio indicator, title/subtitle and an optional badge.
  * Use inside a row/grid for single-select choices (e.g. billing periods, plans).
  */
-export function CardChoice({ selected, onPress, title, subtitle, badge, children, className, numeric = false }: CardChoiceProps) {
+export function CardChoice({
+  selected,
+  onPress,
+  title,
+  subtitle,
+  badge,
+  children,
+  className,
+  style,
+  numeric = false,
+}: CardChoiceProps) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
+      style={style}
       className={cn(
         'flex-1 gap-3 rounded-2xl border p-4',
         selected ? 'border-primary bg-primary/5' : 'border-border bg-transparent',

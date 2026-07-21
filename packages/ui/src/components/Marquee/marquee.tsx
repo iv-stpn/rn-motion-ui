@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 
 export type MarqueeDirection = 'left' | 'right' | 'up' | 'down';
 
@@ -20,6 +21,8 @@ export type MarqueeProps = {
   speed?: number;
   /** Gap between repeated items, in px. */
   gap?: number;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -32,7 +35,7 @@ export type MarqueeProps = {
  * RN fallback note: the web original used a CSS `mask-image` edge fade, which
  * has no RN equivalent — the effect is dropped here (content simply scrolls).
  */
-export function Marquee({ children, direction = 'left', speed = 20, gap = 16, style, testID }: MarqueeProps) {
+export function Marquee({ children, direction = 'left', speed = 20, gap = 16, className, style, testID }: MarqueeProps) {
   const reduce = useReducedMotion();
   const vertical = direction === 'up' || direction === 'down';
   const reverse = direction === 'right' || direction === 'down';
@@ -67,7 +70,7 @@ export function Marquee({ children, direction = 'left', speed = 20, gap = 16, st
   );
 
   return (
-    <View testID={testID} style={[{ overflow: 'hidden' }, style]} className="relative">
+    <View testID={testID} style={[{ overflow: 'hidden' }, style]} className={cn('relative', className)}>
       <Animated.View style={[{ flexDirection: vertical ? 'column' : 'row', gap }, animatedStyle]}>
         <View onLayout={onLayout} style={{ flexDirection: vertical ? 'column' : 'row', gap }}>
           {items.map((child, i) => (

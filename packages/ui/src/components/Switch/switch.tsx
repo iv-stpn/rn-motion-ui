@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../hooks/use-shake-animation';
+import { cn } from '../../lib/cn';
 import { THUMB_SPRING } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 
@@ -14,12 +15,13 @@ const track = cva('h-7 w-12 flex-row items-center rounded-full px-1', {
   defaultVariants: { checked: false },
 });
 
-// biome-ignore lint/style/useExportsLast: props type before thumb animation constants — collocated for readability
 export type SwitchProps = {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
   label?: string;
+  /** Additional NativeWind class names merged onto the outer row. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -31,7 +33,7 @@ const TRAVEL = 20;
 // Shorter 4-step shake for the toggle: constrained travel (2px) for a subtle signal.
 const SWITCH_SHAKE_STEPS = [-2, 2, -1, 0] as const;
 
-export function Switch({ checked, onCheckedChange, disabled, label, style, accessibilityLabel, testID }: SwitchProps) {
+export function Switch({ checked, onCheckedChange, disabled, label, className, style, accessibilityLabel, testID }: SwitchProps) {
   const reduce = useReducedMotion();
   const [pressed, setPressed] = useState(false);
   const shakeX = useRef(new Animated.Value(0)).current;
@@ -47,7 +49,7 @@ export function Switch({ checked, onCheckedChange, disabled, label, style, acces
   }, [disabled, onCheckedChange, checked]);
 
   return (
-    <View className="flex-row items-center" style={[{ gap: 12 }, style]}>
+    <View className={cn('flex-row items-center', className)} style={[{ gap: 12 }, style]}>
       <Pressable
         accessibilityRole="switch"
         aria-checked={checked}

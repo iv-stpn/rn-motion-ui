@@ -2,6 +2,7 @@ import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { SPRING_PRESS } from '../../lib/ease';
 import { MoreHorizontal, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -41,6 +42,8 @@ export type OverflowActionsProps = {
   openLabel?: string;
   /** Toggle a11y label when expanded. */
   closeLabel?: string;
+  /** Additional NativeWind class names merged onto the outer row. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -80,6 +83,7 @@ export function OverflowActions({
   size = 'md',
   openLabel = 'Show extra actions',
   closeLabel = 'Hide extra actions',
+  className,
   style,
   testID,
 }: OverflowActionsProps) {
@@ -118,7 +122,7 @@ export function OverflowActions({
   const spring = reduce ? { type: 'timing' as const, duration: 0 } : SHELL_SPRING;
 
   return (
-    <View testID={testID} className="flex-row self-start" style={style}>
+    <View testID={testID} className={cn('flex-row self-start', className)} style={style}>
       <View className={track({ size })}>
         <View className={group({ size })}>
           {primaryActions.map((item) => (

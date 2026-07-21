@@ -10,6 +10,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 
@@ -36,6 +37,8 @@ export type RadioGroupProps = {
   onValueChange?: (value: string) => void;
   children: ReactNode;
   orientation?: 'vertical' | 'horizontal';
+  /** Additional NativeWind class names merged onto the group container. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -62,6 +65,7 @@ export function RadioGroup({
   onValueChange,
   children,
   orientation = 'vertical',
+  className,
   style,
   testID,
 }: RadioGroupProps) {
@@ -91,7 +95,7 @@ export function RadioGroup({
       <View
         accessibilityRole="radiogroup"
         testID={testID}
-        className={group({ orientation })}
+        className={cn(group({ orientation }), className)}
         style={[{ position: 'relative' }, style]}
       >
         {/* Single shared dot that glides to the active item — mirrors the web

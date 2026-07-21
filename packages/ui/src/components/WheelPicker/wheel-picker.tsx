@@ -27,6 +27,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { Card, type CardVariant } from '../Card/card';
 
 // RN vs web: the reference wheel is a CSS 3D drum — rows seated on a cylinder via
@@ -237,6 +238,8 @@ export type WheelPickerProps = {
   sound?: boolean;
   /** Visual container style — 'border' renders an outlined card, 'filled' a muted-background card. Default 'filled'. */
   variant?: CardVariant;
+  /** Additional NativeWind class names forwarded to the outer Card. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -253,6 +256,7 @@ export function WheelPicker({
   disabled = false,
   sound = false,
   variant = 'filled',
+  className,
   style,
   accessibilityLabel,
   testID,
@@ -583,7 +587,7 @@ export function WheelPicker({
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={handleAccessibilityAction}
       testID={testID ?? 'wheel-picker'}
-      className="relative overflow-hidden p-0"
+      className={cn('relative overflow-hidden p-0', className)}
       style={[
         { height, opacity: disabled ? 0.5 : 1 },
         // Web: block page scroll / text selection so the drag drives the drum.

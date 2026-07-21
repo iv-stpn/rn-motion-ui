@@ -11,9 +11,18 @@ import {
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'ghost'
+  | 'outline'
+  | 'destructive'
+  | 'outlineDanger'
+  | 'ghostDanger'
+  | 'ghostPrimary';
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 // biome-ignore lint/style/useExportsLast: types collocated with sibling ButtonVariant / ButtonSize exports for readability
 export type ButtonShape = 'rounded' | 'pill';
@@ -28,6 +37,10 @@ const container = cva('flex-row items-center justify-center', {
       secondary: 'border border-border bg-card',
       ghost: 'bg-transparent',
       outline: 'border border-border bg-transparent',
+      destructive: 'bg-destructive',
+      outlineDanger: 'border border-destructive bg-transparent',
+      ghostDanger: 'bg-transparent',
+      ghostPrimary: 'bg-transparent',
     },
     size: {
       sm: 'h-8 px-3 gap-1.5',
@@ -51,6 +64,10 @@ export const label = cva('font-medium', {
       secondary: 'text-foreground',
       ghost: 'text-muted-foreground',
       outline: 'text-foreground',
+      destructive: 'text-white',
+      outlineDanger: 'text-destructive',
+      ghostDanger: 'text-destructive',
+      ghostPrimary: 'text-primary',
     },
     size: { sm: 'text-xs', md: 'text-sm', lg: 'text-base', icon: 'text-sm' },
   },
@@ -63,10 +80,18 @@ const SPINNER_COLOR: Record<ButtonVariant, string> = {
   secondary: '#111111',
   ghost: '#111111',
   outline: '#111111',
+  destructive: '#ffffff',
+  outlineDanger: '#ef4444',
+  ghostDanger: '#ef4444',
+  ghostPrimary: '#6366f1',
 };
 
 export interface ButtonProps extends VariantProps<typeof container> {
   children?: ReactNode;
+  /** Node rendered to the left of the button label. */
+  leftAdornment?: ReactNode;
+  /** Node rendered to the right of the button label. */
+  rightAdornment?: ReactNode;
   onPress?: () => void;
   disabled?: boolean;
   loading?: boolean;
@@ -74,16 +99,15 @@ export interface ButtonProps extends VariantProps<typeof container> {
   ripple?: boolean;
   /** Scale the button settles to while pressed. */
   pressScale?: number;
-  /** When true, skip the 0.5 opacity applied to disabled buttons. Useful when
-   *  the button is disabled for interaction reasons (e.g. success/error hold)
-   *  but should remain visually prominent. */
+  /** When true, skip the 0.5 opacity applied to disabled buttons. */
   noDisabledOpacity?: boolean;
-  /** Colour shown as an absolutely-positioned overlay behind the button content.
-   *  Animates in/out by opacity so it never interferes with the variant background.
-   *  Used by StatefulButton to reflect success / error state. */
+  /** Colour shown as an absolutely-positioned overlay behind the button content. */
   backdropColor?: string;
-  /** Extra inline style applied directly to the Pressable container. Useful for
-   *  overriding padding or other layout properties that the cva class controls. */
+  /** Stretch the button to fill its container width. */
+  fitWidth?: boolean;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
+  /** Extra inline style applied directly to the Pressable container. */
   contentStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
@@ -98,11 +122,74 @@ function renderChild(child: ReactNode, className: string): ReactNode {
   return null;
 }
 
+type BuildContentArgs = {
+  loading: boolean | undefined;
+  reduce: boolean;
+  variant: ButtonVariant;
+  size: ButtonSize | null | undefined;
+  children: ReactNode;
+  leftAdornment: ReactNode;
+  rightAdornment: ReactNode;
+};
+
+function buildButtonContent({
+  loading,
+  reduce,
+  variant,
+  size,
+  children,
+  leftAdornment,
+  rightAdornment,
+}: BuildContentArgs): ReactNode {
+  if (loading)
+    return (
+      <MotiView
+        from={{ rotate: '0deg' }}
+        animate={{ rotate: reduce ? '0deg' : '360deg' }}
+        transition={{ type: 'timing', duration: 800, loop: !reduce, repeatReverse: false }}
+      >
+        <Svg width={16} height={16} viewBox="0 0 16 16">
+          <Circle cx={8} cy={8} r={6} stroke={SPINNER_COLOR[variant]} strokeOpacity={0.25} strokeWidth={2} fill="none" />
+          <Circle
+            cx={8}
+            cy={8}
+            r={6}
+            stroke={SPINNER_COLOR[variant]}
+            strokeWidth={2}
+            strokeLinecap="round"
+            fill="none"
+            strokeDasharray={`${Math.PI * 6} ${Math.PI * 12}`}
+          />
+        </Svg>
+      </MotiView>
+    );
+
+  const labelClass = label({ variant, size });
+  const hasAdornments = leftAdornment !== undefined || rightAdornment !== undefined;
+  const isLeaf = typeof children === 'string' || typeof children === 'number';
+
+  if (isLeaf && !hasAdornments) return <Text className={labelClass}>{children}</Text>;
+
+  return (
+    <View className="flex-row items-center justify-center" style={{ gap: 8 }}>
+      {leftAdornment}
+      {isLeaf ? (
+        <Text className={labelClass}>{children}</Text>
+      ) : (
+        Children.map(children, (child) => renderChild(child, labelClass))
+      )}
+      {rightAdornment}
+    </View>
+  );
+}
+
 export function Button({
   variant = 'primary',
   size = 'md',
   shape = 'rounded',
   children,
+  leftAdornment,
+  rightAdornment,
   onPress,
   disabled,
   loading,
@@ -110,6 +197,8 @@ export function Button({
   pressScale = 0.93,
   noDisabledOpacity = false,
   backdropColor,
+  fitWidth,
+  className,
   contentStyle,
   style,
   accessibilityLabel,
@@ -142,42 +231,13 @@ export function Button({
   );
   const handlePressOut = useCallback(() => setPressed(false), []);
 
-  let buttonContent: ReactNode;
-  if (loading)
-    buttonContent = (
-      <MotiView
-        from={{ rotate: '0deg' }}
-        animate={{ rotate: reduce ? '0deg' : '360deg' }}
-        transition={{ type: 'timing', duration: 800, loop: !reduce, repeatReverse: false }}
-      >
-        <Svg width={16} height={16} viewBox="0 0 16 16">
-          <Circle cx={8} cy={8} r={6} stroke={SPINNER_COLOR[v]} strokeOpacity={0.25} strokeWidth={2} fill="none" />
-          <Circle
-            cx={8}
-            cy={8}
-            r={6}
-            stroke={SPINNER_COLOR[v]}
-            strokeWidth={2}
-            strokeLinecap="round"
-            fill="none"
-            strokeDasharray={`${Math.PI * 6} ${Math.PI * 12}`}
-          />
-        </Svg>
-      </MotiView>
-    );
-  else if (typeof children === 'string' || typeof children === 'number')
-    buttonContent = <Text className={label({ variant, size })}>{children}</Text>;
-  else
-    buttonContent = (
-      <View className="flex-row items-center justify-center" style={{ gap: 8 }}>
-        {Children.map(children, (child) => renderChild(child, label({ variant, size })))}
-      </View>
-    );
+  const buttonContent = buildButtonContent({ loading, reduce, variant: v, size, children, leftAdornment, rightAdornment });
 
   return (
     <MotiView
       animate={{ scale: pressed && !reduce && !isDisabled ? pressScale : 1 }}
       transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 0.6 }}
+      className={cn(fitWidth && 'w-full', className)}
       style={style}
     >
       <Pressable

@@ -5,6 +5,7 @@ import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useInterval } from '../../hooks/use-interval';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { EASE_IN_OUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 
@@ -46,6 +47,8 @@ export type LoaderProps = {
   color?: string;
   /** Accessible label announced to screen readers. */
   label?: string;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -56,6 +59,7 @@ export function Loader({
   speed = 1,
   color = '#111111',
   label = 'Loading',
+  className,
   style,
   testID,
 }: LoaderProps) {
@@ -67,7 +71,7 @@ export function Loader({
       accessibilityRole="progressbar"
       accessibilityLabel={label}
       testID={testID}
-      className="items-center justify-center"
+      className={cn('items-center justify-center', className)}
       style={[{ minWidth: size, minHeight: size }, style]}
     >
       {variant === 'spinner' && <Spinner {...shared} />}

@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { ChevronDown } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 
@@ -20,6 +21,8 @@ export type BouncyAccordionProps = {
   defaultValue?: string | null;
   onValueChange?: (value: string | null) => void;
   collapsible?: boolean;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -148,6 +151,7 @@ export function BouncyAccordion({
   defaultValue = null,
   onValueChange,
   collapsible = true,
+  className,
   style,
   testID,
 }: BouncyAccordionProps) {
@@ -167,7 +171,7 @@ export function BouncyAccordion({
   );
 
   return (
-    <View testID={testID} className="w-full" style={style}>
+    <View testID={testID} className={cn('w-full', className)} style={style}>
       {items.map((item, index) => {
         const open = activeValue === item.id;
         const previousIsOpen = activeIndex === index - 1;

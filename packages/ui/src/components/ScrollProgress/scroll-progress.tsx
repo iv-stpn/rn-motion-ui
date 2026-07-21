@@ -19,6 +19,8 @@ type CommonProps = {
   progress: SharedValue<number>;
   /** Spring-smooth the value. Disabled automatically under reduced motion. */
   spring?: boolean;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   color?: string;
   testID?: string;
@@ -51,11 +53,19 @@ function useSmoothed(progress: SharedValue<number>, spring: boolean) {
   return useDerivedValue(() => (spring && !reduce ? withSpring(progress.value, PROGRESS_SPRING) : progress.value));
 }
 
-function ScrollProgressBar({ progress, spring = true, height = 3, color = '#111111', style, testID }: ScrollProgressBarProps) {
+function ScrollProgressBar({
+  progress,
+  spring = true,
+  height = 3,
+  color = '#111111',
+  className,
+  style,
+  testID,
+}: ScrollProgressBarProps) {
   const value = useSmoothed(progress, spring);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: Math.max(0, Math.min(1, value.value)) }] }));
   return (
-    <View testID={testID} style={[{ height, width: '100%', overflow: 'hidden' }, style]}>
+    <View testID={testID} className={className} style={[{ height, width: '100%', overflow: 'hidden' }, style]}>
       <Animated.View style={[{ height, width: '100%', backgroundColor: color, transformOrigin: 'left' }, animatedStyle]} />
     </View>
   );
@@ -67,6 +77,7 @@ function ScrollProgressCircle({
   size = 40,
   thickness = 3,
   color = '#111111',
+  className,
   style,
   testID,
 }: ScrollProgressCircleProps) {
@@ -77,7 +88,7 @@ function ScrollProgressCircle({
     strokeDashoffset: circumference * (1 - Math.max(0, Math.min(1, value.value))),
   }));
   return (
-    <View testID={testID} style={style}>
+    <View testID={testID} className={className} style={style}>
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <Circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeOpacity={0.15} strokeWidth={thickness} />
         <AnimatedCircle

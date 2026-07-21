@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { Plus, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 
@@ -41,6 +42,8 @@ export type BloomMenuProps = {
   title?: string;
   /** Trigger label. Default "Create". */
   triggerLabel?: string;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -96,7 +99,15 @@ function BloomCell({ item, className, reduce, open, dist, onSelect }: BloomCellP
   );
 }
 
-export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'Create', style, testID }: BloomMenuProps) {
+export function BloomMenu({
+  items,
+  onSelect,
+  title = 'Create',
+  triggerLabel = 'Create',
+  className,
+  style,
+  testID,
+}: BloomMenuProps) {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   // Measured natural height of the panel content — the card's open-state frame.
@@ -123,7 +134,7 @@ export function BloomMenu({ items, onSelect, title = 'Create', triggerLabel = 'C
   }, []);
 
   return (
-    <View testID={testID} className="self-start" style={[{ position: 'relative' }, style]}>
+    <View testID={testID} className={cn('self-start', className)} style={[{ position: 'relative' }, style]}>
       {/* Spacer reserves the trigger footprint in normal flow. */}
       <View style={{ width: TRIGGER_W, height: TRIGGER_H }} />
 

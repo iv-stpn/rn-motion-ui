@@ -35,6 +35,8 @@ export type SwipeableListProps = {
   revealThreshold?: number;
   closeOnAction?: boolean;
   testID?: string;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -502,13 +504,14 @@ export function SwipeableList({
   revealThreshold = 34,
   closeOnAction = true,
   testID,
+  className,
   style,
 }: SwipeableListProps) {
   // Track which row is currently open (by item id).
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <View testID={testID ?? 'swipeable-list'} style={[{ width: '100%', gap: 8 }, style]}>
+    <View testID={testID ?? 'swipeable-list'} className={className} style={[{ width: '100%', gap: 8 }, style]}>
       {items.map((item) => (
         <SwipeableListRow
           key={item.id}

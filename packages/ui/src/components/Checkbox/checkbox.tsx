@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -15,6 +16,8 @@ export type CheckboxProps = {
   disabled?: boolean;
   indeterminate?: boolean;
   label?: string;
+  /** Additional NativeWind class names merged onto the outer row. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -26,6 +29,7 @@ export function Checkbox({
   disabled,
   indeterminate,
   label,
+  className,
   style,
   accessibilityLabel,
   testID,
@@ -52,7 +56,7 @@ export function Checkbox({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
-      className="flex-row items-center"
+      className={cn('flex-row items-center', className)}
       style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}
     >
       {/* Tap feedback: the box springs down while pressed (Button's idiom). */}

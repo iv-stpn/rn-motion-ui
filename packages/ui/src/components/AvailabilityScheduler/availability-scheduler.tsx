@@ -44,6 +44,8 @@ export type AvailabilitySchedulerProps = {
   onChange?: (value: WeekAvailability) => void;
   /** Minutes between selectable times. Default 30. */
   step?: number;
+  /** Additional NativeWind class names merged onto the outer ScrollView. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -529,7 +531,15 @@ function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRow
 
 // ─── AvailabilityScheduler ─────────────────────────────────────────────────
 
-export function AvailabilityScheduler({ value, defaultValue, onChange, step = 30, style, testID }: AvailabilitySchedulerProps) {
+export function AvailabilityScheduler({
+  value,
+  defaultValue,
+  onChange,
+  step = 30,
+  className,
+  style,
+  testID,
+}: AvailabilitySchedulerProps) {
   const reduce = useReducedMotion();
   const options = useMemo(() => buildOptions(step), [step]);
   const idRef = useRef(0);
@@ -574,6 +584,7 @@ export function AvailabilityScheduler({ value, defaultValue, onChange, step = 30
   return (
     <ScrollView
       testID={testID ?? 'availability-scheduler'}
+      className={className}
       style={style}
       contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8 }}
       showsVerticalScrollIndicator={false}

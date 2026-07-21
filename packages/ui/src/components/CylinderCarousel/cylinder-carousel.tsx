@@ -19,6 +19,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 
 // Soft settle spring for the snap/glide (mirrors the web GLIDE feel).
 const GLIDE_SPRING = { stiffness: 90, damping: 18, mass: 1 };
@@ -175,6 +176,8 @@ export type CylinderCarouselProps = {
   onIndexChange?: (index: number) => void;
   /** Stage height in px. Defaults to `itemSize`. */
   height?: number;
+  /** Additional NativeWind class names merged onto the outer wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -208,6 +211,7 @@ export function CylinderCarousel({
   onIndexChange,
   height,
   style,
+  className,
   testID,
 }: CylinderCarouselProps) {
   const reduce = useReducedMotion();
@@ -363,7 +367,7 @@ export function CylinderCarousel({
       ref={viewRef}
       testID={testID}
       onLayout={onLayout}
-      className="relative w-full overflow-hidden"
+      className={cn('relative w-full overflow-hidden', className)}
       style={[
         { height: stageHeight },
         style,

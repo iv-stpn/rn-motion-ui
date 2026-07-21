@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { AlertTriangle, Check, Circle, Info, LoaderCircle, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -92,6 +93,8 @@ export interface AnimatedBadgeProps extends VariantProps<typeof container> {
   showIcon?: boolean;
   /** Soft pulse behind the badge (defaults on for `loading`). */
   pulse?: boolean;
+  /** Additional NativeWind class names merged onto the outer badge. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -104,6 +107,7 @@ export function AnimatedBadge({
   icon,
   showIcon = true,
   pulse,
+  className,
   style,
   accessibilityLabel,
   testID,
@@ -120,7 +124,7 @@ export function AnimatedBadge({
       testID={testID}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="text"
-      className={container({ size })}
+      className={cn(container({ size }), className)}
       style={style}
       animate={{ backgroundColor: BADGE_BG[s], borderColor: BADGE_BORDER[s] }}
       transition={{

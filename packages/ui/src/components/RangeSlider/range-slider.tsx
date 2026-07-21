@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 
 // Smooth glide for thumb/fill — critically damped, no overshoot (web SPRING_GLIDE).
 const SPRING_GLIDE = { stiffness: 700, damping: 50, mass: 0.5 };
@@ -30,6 +31,8 @@ export type RangeSliderProps = {
   /** Render a tick dot at each step. */
   showTicks?: boolean;
   disabled?: boolean;
+  /** Additional NativeWind class names merged onto the track. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -45,6 +48,7 @@ export function RangeSlider({
   step = 1,
   showTicks = true,
   disabled = false,
+  className,
   style,
   accessibilityLabel,
   testID,
@@ -156,7 +160,7 @@ export function RangeSlider({
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={onAccessibilityAction}
       testID={testID ?? 'range-slider'}
-      className="relative h-10 w-full flex-row items-center overflow-hidden rounded-lg bg-muted"
+      className={cn('relative h-10 w-full flex-row items-center overflow-hidden rounded-lg bg-muted', className)}
       style={[{ opacity: disabled ? 0.5 : 1 }, style]}
     >
       {/* fill — from the left edge to the thumb, scaled from the left so it shares

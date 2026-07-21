@@ -17,6 +17,8 @@ export type ScrollToProps = {
   disabled?: boolean;
   /** Scale the control settles to while pressed. */
   pressScale?: number;
+  /** Additional NativeWind class names forwarded to the outer wrapper. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -40,6 +42,7 @@ export function ScrollTo({
   onPress,
   disabled,
   pressScale = 0.96,
+  className,
   style,
   accessibilityLabel,
   testID,
@@ -61,6 +64,7 @@ export function ScrollTo({
     <MotiView
       animate={{ scale: pressed && !reduce && !disabled ? pressScale : 1 }}
       transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 0.6 }}
+      className={className}
       style={style}
     >
       <Pressable

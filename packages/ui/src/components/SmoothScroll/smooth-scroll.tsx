@@ -27,6 +27,8 @@ const SmoothScrollContext = createContext<SmoothScrollApi | null>(null);
 export type SmoothScrollProps = {
   children: ReactNode;
   orientation?: 'vertical' | 'horizontal';
+  /** Additional NativeWind class names forwarded to the ScrollView. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   testID?: string;
@@ -44,7 +46,14 @@ export type SmoothScrollProps = {
  * preserved so scroll-driven children (ScrollReveal, ScrollProgress)
  * keep working.
  */
-export function SmoothScroll({ children, orientation = 'vertical', style, contentContainerStyle, testID }: SmoothScrollProps) {
+export function SmoothScroll({
+  children,
+  orientation = 'vertical',
+  className,
+  style,
+  contentContainerStyle,
+  testID,
+}: SmoothScrollProps) {
   const reduce = useReducedMotion();
   const scrollRef = useRef<ScrollView>(null);
   const scrollY = useSharedValue(0);
@@ -83,6 +92,7 @@ export function SmoothScroll({ children, orientation = 'vertical', style, conten
         horizontal={horizontal}
         onScroll={onScroll}
         scrollEventThrottle={16}
+        className={className}
         style={style}
         contentContainerStyle={contentContainerStyle}
       >

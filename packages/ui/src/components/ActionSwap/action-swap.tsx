@@ -3,7 +3,6 @@ import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { usePageVisible } from '../../hooks/use-page-visible';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { cn } from '../../lib/cn';
 import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '../../lib/ease';
 import { MotiText } from '../../moti/components/text';
 import { MotiView } from '../../moti/components/view';

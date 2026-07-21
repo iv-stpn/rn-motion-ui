@@ -15,6 +15,12 @@ const track = cva('h-7 w-12 flex-row items-center rounded-full px-1', {
   defaultVariants: { checked: false },
 });
 
+// Thumb travels 20px (track 48 − padding 8 − thumb 20). Kept as an Animated.Value
+// so the disabled-shake sequence can drive x directly.
+const TRAVEL = 20;
+// Shorter 4-step shake for the toggle: constrained travel (2px) for a subtle signal.
+const SWITCH_SHAKE_STEPS = [-2, 2, -1, 0] as const;
+
 export type SwitchProps = {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
@@ -26,12 +32,6 @@ export type SwitchProps = {
   accessibilityLabel?: string;
   testID?: string;
 };
-
-// Thumb travels 20px (track 48 − padding 8 − thumb 20). Kept as an Animated.Value
-// so the disabled-shake sequence can drive x directly.
-const TRAVEL = 20;
-// Shorter 4-step shake for the toggle: constrained travel (2px) for a subtle signal.
-const SWITCH_SHAKE_STEPS = [-2, 2, -1, 0] as const;
 
 export function Switch({ checked, onCheckedChange, disabled, label, className, style, accessibilityLabel, testID }: SwitchProps) {
   const reduce = useReducedMotion();

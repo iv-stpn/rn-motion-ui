@@ -186,11 +186,7 @@ export function StarButton({
   useEffect(() => {
     if (isBursting && !reduce && burstKey !== prevBurstKeyRef.current) {
       prevBurstKeyRef.current = burstKey;
-      popScale.value = withSequence(
-        withTiming(0.7, { duration: 110 }),
-        withSpring(1.3, { stiffness: 500, damping: 18 }),
-        withSpring(1.0, { stiffness: 500, damping: 30 }),
-      );
+      popScale.value = withSequence(withTiming(0.7, { duration: 110 }), withSpring(1.0, { stiffness: 500, damping: 14 }));
     }
   }, [isBursting, burstKey, reduce, popScale]);
 

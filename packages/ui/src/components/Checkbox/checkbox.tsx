@@ -58,7 +58,9 @@ export function Checkbox({
       {/* Tap feedback: the box springs down while pressed (Button's idiom). */}
       <MotiView animate={{ scale: pressed && !reduce && !disabled ? 0.92 : 1 }} transition={SPRING_PRESS}>
         {/* Base box is always in the unchecked state; the primary fill animates in/out. */}
-        <View className="h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 border-muted-foreground/50 bg-surface">
+        <View
+          className={`h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-surface ${showMark ? 'border-primary' : 'border-muted-foreground/50'}`}
+        >
           {/* Fill fades in on check and out on uncheck, same 160 ms timing as the mark. */}
           <MotiView
             animate={{ opacity: showMark ? 1 : 0 }}

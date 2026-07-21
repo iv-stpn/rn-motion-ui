@@ -118,7 +118,6 @@ Subpaths are namespaced by category:
 | `/wheel-picker` | `WheelPicker` |
 | `/command-palette` | `CommandPalette` |
 | `/otp-input` | `OtpInput` |
-| `/file-upload` | `FileUpload` |
 | `/feedback-widget` | `FeedbackWidget` |
 | `/availability-scheduler` | `AvailabilityScheduler` |
 | `/table` | `Table` |

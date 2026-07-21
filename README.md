@@ -27,7 +27,7 @@ Every export lives at its own subpath — no barrel, no dead weight. Four namesp
 
 ### Components
 
-`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `animated-number` · `availability-scheduler` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `button` · `card` · `card-choice` · `checkbox` · `command-palette` · `cylinder-carousel` · `dock` · `drawer` · `dynamic-island` · `feedback-widget` · `file-upload` · `full-sheet` · `hover-menu` · `input` · `loader` · `marquee` · `morphing-modal` · `multi-step-menu` · `not-found` · `number-ticker` · `otp-input` · `overflow-actions` · `popover` · `radio` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text-cascade` · `text-reveal` · `text-rolling` · `text-shimmer` · `wheel-picker`
+`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `animated-number` · `availability-scheduler` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `button` · `card` · `card-choice` · `checkbox` · `command-palette` · `cylinder-carousel` · `dock` · `drawer` · `dynamic-island` · `feedback-widget` · `full-sheet` · `hover-menu` · `input` · `loader` · `marquee` · `morphing-modal` · `multi-step-menu` · `not-found` · `number-ticker` · `otp-input` · `overflow-actions` · `popover` · `radio` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text-cascade` · `text-reveal` · `text-rolling` · `text-shimmer` · `wheel-picker`
 
 ### Hooks
 

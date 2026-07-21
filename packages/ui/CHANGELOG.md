@@ -1,5 +1,48 @@
 # rn-motion-ui
 
+## 1.1.0
+
+### Minor Changes
+
+- 83b611b: feat(star-rating): new animated StarRating component; fix(range-slider): no spring on mount, hide thumb until layout; perf(table): skip sort allocation when already sorted
+
+  **StarRating** (new component — `@rn-motion-ui/ui/star-rating`)
+
+  - Animated star-rating input: tapping a star commits the rating with a squash-and-stretch pop and an amber sparkle burst; tapping the committed star clears it (`allowClear`, default `true`).
+  - Works controlled (`value` prop) or uncontrolled (`defaultValue`).
+  - Supports fractional read-only display (e.g. 4.3 stars) via `readOnly`.
+  - Optional rolling value label (`showValue`) animates up/down as the value changes.
+  - Three sizes: `sm`, `md` (default), `lg`.
+  - Full accessibility: `radiogroup` / `radio` ARIA roles, `increment` / `decrement` actions.
+  - Honours `prefers-reduced-motion` — all animations collapse to instant.
+  - Storybook story included.
+
+  **RangeSlider**
+
+  - `smooth` shared value is now initialised to the current ratio so there is no spring animation on first render.
+  - Thumb is hidden (`opacity: 0`) until `onLayout` fires, preventing a flash at `x=0` on mount.
+  - Replaced `useDerivedValue` with `useSharedValue` + `useEffect` to keep the smooth value in sync with externally-controlled `ratio` changes.
+
+  **Table utilities**
+
+  - `sortRows` checks whether `rows` is already in sorted order before allocating a new array; returns the same reference when no sort is needed, avoiding a `FlatList` reconciliation pass on every render.
+  - Extracted `compareValues` helper to eliminate duplicated null / number / string comparison logic.
+
+- a41c556: Table: add small-screen card view; Checkbox: animate fill with MotiView
+
+  **Table**
+
+  - New `renderSmallScreen` prop: a render function `(row, selected) => ReactNode` that replaces the column layout with a custom card per row.
+  - New `useSmallScreen` boolean prop: when `true` (and `renderSmallScreen` is provided), switches the table into card mode — the sticky header is hidden and each row is rendered via `renderSmallScreen` inside a `Pressable` card.
+  - New `cardStyle` prop: optional style applied to each card container in card mode.
+  - Card mode provides its own skeleton loading state (three placeholder lines per card) and skips `getItemLayout` so variable-height cards scroll correctly.
+  - New `SmallScreen` story with a toggle to switch between table and card views.
+
+  **Checkbox**
+
+  - Replaced the `cva`-based box colour swap with a `MotiView` animated fill overlay. The primary fill now fades in and out at 160 ms (or instantly when `reduce` is on) instead of switching via class variants, matching the mark animation timing.
+  - Removed the unused `cva` import.
+
 ## 1.0.0
 
 ### Major Changes

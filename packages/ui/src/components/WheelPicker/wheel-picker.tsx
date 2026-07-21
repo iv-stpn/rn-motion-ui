@@ -11,7 +11,9 @@ import {
   Platform,
   ScrollView,
   type StyleProp,
+  StyleSheet,
   Text,
+  Vibration,
   View,
   type ViewStyle,
 } from 'react-native';
@@ -76,6 +78,55 @@ function isWebNode(node: unknown): node is WebNode {
   );
 }
 
+// Web Audio: a short oscillator burst on each row crossing. The DOM lib is not
+// included in the RN tsconfig, so the AudioContext API is narrowed by hand.
+type AudioOscLike = {
+  connect: (d: unknown) => void;
+  frequency: { value: number };
+  start: (t: number) => void;
+  stop: (t: number) => void;
+};
+type AudioGainLike = {
+  connect: (d: unknown) => void;
+  gain: {
+    setValueAtTime: (v: number, t: number) => void;
+    exponentialRampToValueAtTime: (v: number, t: number) => void;
+  };
+};
+type AudioCtxLike = {
+  createOscillator: () => AudioOscLike;
+  createGain: () => AudioGainLike;
+  destination: unknown;
+  currentTime: number;
+  close: () => Promise<void>;
+};
+
+function tryMakeAudioCtx(): AudioCtxLike | null {
+  if (Platform.OS !== 'web') return null;
+  const Ctor: unknown = Reflect.get(globalThis, 'AudioContext');
+  if (typeof Ctor !== 'function') return null;
+  try {
+    // biome-ignore lint/plugin: AudioContext is absent from the RN tsconfig DOM lib; narrowed by typeof check above
+    return new (Ctor as new () => AudioCtxLike)();
+  } catch {
+    return null;
+  }
+}
+
+// Plays a short sine burst — frequency and gain tuned to read as a soft tick
+// rather than a harsh click.
+function webTick(ctx: AudioCtxLike) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.frequency.value = 1100;
+  gain.gain.setValueAtTime(0.08, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.03);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.035);
+}
+
 // Web-only style props (userSelect/touchAction and a `grab` cursor) aren't in RN's
 // ViewStyle. Typed as `object` so it stays assignable to the ViewStyle style array
 // (ViewStyle's props are all optional) without an `as` assertion at the call site.
@@ -91,6 +142,8 @@ type WheelPickerRowProps = {
   hideBeyond: number;
   /** Top of the centre window (px) — where a row with offset 0 seats. */
   center: number;
+  /** Render at full opacity regardless of angle (used for the clipped bright centre drum). */
+  opaque?: boolean;
   onPress?: () => void;
 };
 
@@ -109,6 +162,7 @@ function WheelPickerRow({
   hideBeyond,
   center,
   onPress,
+  opaque = false,
 }: WheelPickerRowProps) {
   const animatedStyle = useAnimatedStyle(() => {
     const offset = index - scroll.value;
@@ -117,7 +171,9 @@ function WheelPickerRow({
     const cos = Math.cos(theta);
     return {
       display: 'flex' as const,
-      opacity: Math.max(0, cos),
+      // opaque rows (bright centre drum) always render at full opacity; the outer
+      // drum uses cos² for a steeper falloff so edge rows read as "behind the wall".
+      opacity: opaque ? 1 : Math.max(0, cos * cos),
       transform: [
         { perspective: 600 },
         { translateY: radius * Math.sin(theta) },
@@ -175,6 +231,8 @@ export type WheelPickerProps = {
   /** Row height in px. Default 36. */
   itemHeight?: number;
   disabled?: boolean;
+  /** Play a short tick sound on each row crossing while dragging. Default false. */
+  sound?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -189,6 +247,7 @@ export function WheelPicker({
   visibleCount = 5,
   itemHeight = 36,
   disabled = false,
+  sound = false,
   style,
   accessibilityLabel,
   testID,
@@ -249,6 +308,14 @@ export function WheelPicker({
   disabledRef.current = disabled;
   const reduceRef = useRef(reduce);
   reduceRef.current = reduce;
+  // Sound: mirror prop to a ref so the worklet-scheduled tick can read it
+  // without a stale capture, and lazily create the AudioContext on first use
+  // (browsers require a user gesture before audio can play).
+  const soundRef = useRef(sound);
+  soundRef.current = sound;
+  const audioCtxRef = useRef<AudioCtxLike | null>(null);
+  // UI-thread dedup: only fire one tick per row crossed (mirrors `lastEmitted`).
+  const lastTicked = useSharedValue(currentIndex);
 
   const emit = useCallback(
     (i: number) => {
@@ -263,9 +330,25 @@ export function WheelPicker({
     [options, last, controlled, onValueChange],
   );
 
+  // Fires on the RN JS thread each time a new row crosses the centre while the
+  // user is actively dragging. Web uses a short Web Audio sine burst; native
+  // falls back to a brief Vibration pulse (audible on Android, silent on iOS
+  // without expo-haptics).
+  const playTickOnRN = useCallback(() => {
+    if (!soundRef.current) return;
+    if (Platform.OS === 'web') {
+      if (!audioCtxRef.current) audioCtxRef.current = tryMakeAudioCtx();
+      const ctx = audioCtxRef.current;
+      if (ctx) webTick(ctx);
+      return;
+    }
+    Vibration.vibrate(10);
+  }, []);
+
   // Emit the centre row as it crosses, on the UI thread, but only while a
   // gesture is live — the settle spring below runs with `live` off and commits
   // its own final value, so a coast never machine-guns intermediate rows.
+  // The tick also fires per row crossed, independent of the emit dedup.
   useAnimatedReaction(
     () => scroll.value,
     (s) => {
@@ -274,6 +357,11 @@ export function WheelPicker({
       if (idx !== lastEmitted.value) {
         lastEmitted.value = idx;
         scheduleOnRN(emit, idx);
+      }
+      // Tick every row crossing (independent of emit dedup) if sound is enabled.
+      if (idx !== lastTicked.value) {
+        lastTicked.value = idx;
+        scheduleOnRN(playTickOnRN);
       }
     },
   );
@@ -421,6 +509,8 @@ export function WheelPicker({
     () => () => {
       cancelAnimation(scroll);
       if (wheelSettle.current) clearTimeout(wheelSettle.current);
+      // biome-ignore lint/suspicious/noEmptyBlockStatements: AudioContext.close() may reject on immediate close; swallow errors on unmount
+      audioCtxRef.current?.close().catch(() => {});
     },
     [scroll],
   );
@@ -440,7 +530,7 @@ export function WheelPicker({
         style={[{ height, opacity: disabled ? 0.5 : 1 }, style]}
       >
         <View
-          className="absolute inset-x-2 z-10 rounded-xl bg-foreground/[0.06]"
+          className="absolute inset-x-2 z-10 rounded-2xl bg-foreground/[0.06]"
           style={{ pointerEvents: 'none', top: pad, height: itemHeight }}
         />
         <ScrollView
@@ -490,10 +580,19 @@ export function WheelPicker({
       ]}
       {...pan.panHandlers}
     >
-      {/* Centre band: a rounded, inset selection pill seating the front row. */}
+      {/* Centre band: selection pill with hairline top/bottom separators. */}
       <View
-        className="absolute inset-x-2 z-10 rounded-xl bg-foreground/[0.06]"
-        style={{ pointerEvents: 'none', top: pad, height: itemHeight }}
+        className="absolute inset-x-2 rounded-2xl border-border bg-foreground/[0.06]"
+        style={{
+          pointerEvents: 'none',
+          top: pad,
+          height: itemHeight,
+          zIndex: 10,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+        }}
       />
       {options.map((option, i) => (
         <WheelPickerRow
@@ -509,6 +608,37 @@ export function WheelPicker({
           onPress={disabled ? undefined : () => glideTo(i)}
         />
       ))}
+      {/* Bright centre drum — same rows, clipped to one row height and drawn at
+          full opacity so the selected label stands out against the dimmed drum.
+          `center={0}` seats row 0 at the top of this clip view, which itself
+          sits at `top: pad` — identical to the outer drum's centre. */}
+      <View
+        style={{
+          pointerEvents: 'none',
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: pad,
+          height: itemHeight,
+          overflow: 'hidden',
+          zIndex: 8,
+        }}
+      >
+        {options.map((option, i) => (
+          <WheelPickerRow
+            key={`b${optionValue(option)}`}
+            label={optionLabel(option)}
+            index={i}
+            scroll={scroll}
+            itemHeight={itemHeight}
+            itemAngle={itemAngle}
+            radius={radius}
+            hideBeyond={hideBeyond}
+            center={0}
+            opaque={true}
+          />
+        ))}
+      </View>
     </View>
   );
 }

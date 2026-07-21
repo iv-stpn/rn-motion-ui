@@ -24,6 +24,7 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const BORN_LABEL = 'Born';
+const TICK_HINT = 'Drag to hear the tick';
 
 const MONTHS = [
   'January',
@@ -121,6 +122,17 @@ export const Disabled: Story = {
   render: (args) => (
     <View style={{ width: 200 }}>
       <WheelPicker {...args} defaultValue="Medium" disabled={true} accessibilityLabel="Size" />
+    </View>
+  ),
+};
+
+export const WithSound: Story = {
+  render: (args) => (
+    <View style={{ alignItems: 'center', gap: 12 }}>
+      <Text className="text-muted-foreground text-sm">{TICK_HINT}</Text>
+      <View style={{ width: 200 }}>
+        <WheelPicker {...args} defaultValue="Medium" sound={true} accessibilityLabel="Size with tick" />
+      </View>
     </View>
   ),
 };

@@ -50,7 +50,7 @@ export const Default: Story = {
         <AnimatedList>
           {items.map((item) => (
             <AnimatedListItem key={item.id}>
-              <View className="flex-row items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 shadow-modal">
+              <View className="flex-row items-center justify-between rounded-2xl border border-border bg-surface px-4 py-3 shadow-modal">
                 <Text className="text-base text-foreground">{item.label}</Text>
                 <Pressable onPress={onPressRemoveHandler(item.id)} hitSlop={8} accessibilityLabel={`Remove ${item.label}`}>
                   <X size={16} />
@@ -84,7 +84,7 @@ export const GrowCollapse: Story = {
             <AnimatedListItem key={title}>
               <Pressable
                 onPress={onPressIndexHandler(i)}
-                className="rounded-xl border border-border bg-surface px-4 py-3 shadow-modal"
+                className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-modal"
               >
                 <Text className="font-medium text-base text-foreground">{title}</Text>
                 {expanded === i ? (

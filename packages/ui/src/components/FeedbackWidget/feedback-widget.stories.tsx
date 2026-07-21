@@ -47,7 +47,7 @@ function AppSurface({ children, hint }: AppSurfaceProps) {
       <View style={{ gap: 12, padding: 20 }}>
         <View className="h-2.5 w-3/4 rounded-full bg-muted-foreground/15" />
         <View className="h-2.5 w-1/2 rounded-full bg-muted-foreground/15" />
-        <View className="h-20 w-full rounded-xl bg-muted-foreground/[0.06]" />
+        <View className="h-20 w-full rounded-2xl bg-muted-foreground/[0.06]" />
         <Text className="text-muted-foreground text-sm">{hint}</Text>
       </View>
       {children}

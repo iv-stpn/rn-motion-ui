@@ -305,7 +305,7 @@ export function NotFoundTerminal({
   return (
     <NotFoundStage style={style} testID={testID ?? 'not-found-terminal'}>
       <View
-        className="overflow-hidden rounded-xl border border-border"
+        className="overflow-hidden rounded-2xl border border-border"
         style={{
           width: '100%',
           maxWidth: 448,

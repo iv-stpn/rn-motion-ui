@@ -3,7 +3,7 @@ import { View, type ViewProps } from 'react-native';
 
 // cva drives the static styling layer — class strings are static literals so
 // the Tailwind/uniwind scanner picks them up. Mirrors the Button pattern.
-const card = cva('rounded-xl', {
+const card = cva('rounded-2xl', {
   variants: {
     size: {
       compact: 'gap-2 p-3',

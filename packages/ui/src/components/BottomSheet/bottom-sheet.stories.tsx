@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Button } from '../Button/button';
+import { Text } from '../Text/text';
 import { BottomSheet } from './bottom-sheet';
 
 const meta = {

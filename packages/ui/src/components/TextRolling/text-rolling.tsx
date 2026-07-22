@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { usePageVisible } from '../../hooks/use-page-visible';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_IN_OUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { Text } from '../Text/text';
 
 // Spring enter mirrors the reference (soft, slightly heavy feel).
 const ENTER_TRANSITION = { type: 'spring', damping: 32, stiffness: 160, mass: 0.75 } as const;

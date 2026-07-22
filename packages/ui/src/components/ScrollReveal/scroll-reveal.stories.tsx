@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback } from 'react';
-import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, Text, View } from 'react-native';
+import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, View } from 'react-native';
 import { makeMutable, useSharedValue } from 'react-native-reanimated';
 import { expect, within } from 'storybook/test';
+import { Text } from '../Text/text';
 import { ScrollReveal } from './scroll-reveal';
 
 const CARDS = ['Spring slide', 'Fade in', 'Staggered reveal', 'Reveal once'];

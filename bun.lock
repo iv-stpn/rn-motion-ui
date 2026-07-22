@@ -17,10 +17,9 @@
     },
     "packages/ui": {
       "name": "rn-motion-ui",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "dependencies": {
         "class-variance-authority": "^0.7.1",
-        "react-native-svg": "^15.15.5",
       },
       "devDependencies": {
         "@storybook/react": "10.5.0",
@@ -45,6 +44,7 @@
         "react-native": ">=0.76.0",
         "react-native-gesture-handler": ">=2.0.0",
         "react-native-reanimated": ">=4.0.0",
+        "react-native-svg": ">=15.0.0",
       },
     },
     "storybook/native": {
@@ -92,6 +92,7 @@
       },
       "devDependencies": {
         "@storybook/addon-docs": "10.5.0",
+        "@storybook/addon-themes": "10.5.0",
         "@storybook/addon-vitest": "10.5.0",
         "@storybook/react": "10.5.0",
         "@storybook/react-native-web-vite": "10.5.0",
@@ -653,6 +654,8 @@
     "@storybook/addon-ondevice-backgrounds": ["@storybook/addon-ondevice-backgrounds@10.5.0", "", { "dependencies": { "@storybook/react-native-theming": "^10.5.0" }, "peerDependencies": { "react": "*", "react-native": "*", "storybook": ">=10 || ^10" } }, "sha512-GSeAyzT8eVzU5hkLAVl+MsKe5vt6DbBIfdLx7fQI10B58ydfLJXKh8DD5mEX8dp3NqmIhS2mC6/RoRw7ZyH8Tw=="],
 
     "@storybook/addon-ondevice-controls": ["@storybook/addon-ondevice-controls@10.5.0", "", { "dependencies": { "@gorhom/portal": "^1.0.14", "@storybook/react-native-theming": "^10.5.0", "@storybook/react-native-ui-common": "^10.5.0", "polished": "^4.3.1", "react-native-modal-datetime-picker": "^18.0.0", "tinycolor2": "^1.6.0" }, "peerDependencies": { "@gorhom/bottom-sheet": ">=4", "@react-native-community/datetimepicker": "*", "@react-native-community/slider": "*", "react": "*", "react-native": "*", "storybook": ">=10 || ^10" }, "optionalPeers": ["@gorhom/bottom-sheet"] }, "sha512-oHTjFQWOPRPy1FGHtSXlyHxFFAqSiYEepqb5q11waIdZo/4dJOqBvhtDjIO8NuoM0IiW51jjnNq/QNDaobzzNQ=="],
+
+    "@storybook/addon-themes": ["@storybook/addon-themes@10.5.0", "", { "dependencies": { "ts-dedent": "^2.0.0" }, "peerDependencies": { "storybook": "^10.5.0" } }, "sha512-9dvrN1JcpWt+f+RueMGvdeGTNQJ5y4w931X2HHzE+ItrN2Ogp0vSppb/baUNezeBLqhuUJjPbvyAeAb9v4rong=="],
 
     "@storybook/addon-vitest": ["@storybook/addon-vitest@10.5.0", "", { "dependencies": { "@storybook/global": "^5.0.0", "@storybook/icons": "^2.0.2" }, "peerDependencies": { "@vitest/browser": "^3.0.0 || ^4.0.0", "@vitest/browser-playwright": "^4.0.0", "@vitest/runner": "^3.0.0 || ^4.0.0", "storybook": "^10.5.0", "vitest": "^3.0.0 || ^4.0.0" }, "optionalPeers": ["@vitest/browser", "@vitest/browser-playwright", "@vitest/runner", "vitest"] }, "sha512-o/H+ii8o7bu4r1M4pgyFt+DjVaIIccSeaAikpspNHKkKdiJ2GXfkgNwtib8Jru28HaBRfcP5u+m0QE3KBYIQkw=="],
 

@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { createRef, useRef, useState } from 'react';
-import { type LayoutChangeEvent, ScrollView, Text, View } from 'react-native';
+import { type LayoutChangeEvent, ScrollView, View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { Text } from '../Text/text';
 import { ScrollTo } from './scroll-to';
 
 const SECTIONS = [

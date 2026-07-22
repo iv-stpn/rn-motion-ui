@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { useCallback } from 'react';
 import type { GestureResponderHandlers } from 'react-native';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import { ChevronUp, GripVertical, Plus, Trash2 } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { useThemeColor } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 import { styles } from './table-styles';
 import { useTableColors } from './table-theme';
 import type { SortDirection, TableColumn } from './table-types';

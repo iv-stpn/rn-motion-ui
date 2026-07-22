@@ -1,8 +1,9 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: complex component */
 import { useCallback, useMemo } from 'react';
 import type { ListRenderItemInfo } from 'react-native';
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { Checkbox } from '../Checkbox/checkbox';
+import { Text } from '../Text/text';
 import { HeaderCell } from './table-header';
 import { LoadingMoreFooter, LoadMoreFooter, PaginationFooter, SkeletonFooter, TableCard } from './table-parts';
 import { SkeletonCellPulse, TableRow } from './table-row';

@@ -1,7 +1,7 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: feedback flow, sent view, and star-rating sub-components collocated by design
 
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_PANEL } from '../../lib/ease';
@@ -11,6 +11,7 @@ import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
+import { Text } from '../Text/text';
 
 // RN FALLBACK vs web: the web widget shares a framer `layout` on one shell that
 // morphs its width/height between the 48px corner trigger and the full panel,

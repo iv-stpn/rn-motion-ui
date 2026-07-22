@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
+import { Text } from '../Text/text';
 import { Marquee } from './marquee';
 
 const LOGOS = ['Vercel', 'Linear', 'Stripe', 'Figma', 'GitHub', 'Notion', 'Loom', 'Raycast'];

@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useRef, useState } from 'react';
-import { Text, useWindowDimensions, View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Bell, Moon, ShieldCheck, User } from '../../lib/icons';
 import { Button } from '../Button/button';
+import { Text } from '../Text/text';
 import {
   MenuRow,
   type MultiStepHelpers,

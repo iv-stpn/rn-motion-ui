@@ -1,13 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
+import { Text } from '../Text/text';
 import { Loader, type LoaderVariant } from './loader';
 
 const meta = {
   title: 'Components/Loader',
   component: Loader,
   parameters: { layout: 'centered' },
-  args: { variant: 'spinner', size: 36, speed: 1, color: '#111111', label: 'Loading' },
+  // No `color` arg: leave it unset so each variant resolves its colour from
+  // `useThemeColor('foreground')` and adapts to the active theme toolbar. A
+  // hardcoded `color` here would pin every loader to that swatch in both light
+  // and dark mode, hiding the dark-mode adaptivity the default is meant to give.
+  args: { variant: 'spinner', size: 36, speed: 1, label: 'Loading' },
   argTypes: {
     variant: {
       control: 'select',

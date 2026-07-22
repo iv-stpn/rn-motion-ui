@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, userEvent, within } from 'storybook/test';
+import { Text } from '../Text/text';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 
 const meta = {

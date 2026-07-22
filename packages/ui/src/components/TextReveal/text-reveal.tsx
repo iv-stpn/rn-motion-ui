@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { useInView } from '../../hooks/use-in-view';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { MotiView } from '../../moti/components/view';
+import { Text } from '../Text/text';
 
 const HEADER_REGEX = /^h[1-6]$/;
 

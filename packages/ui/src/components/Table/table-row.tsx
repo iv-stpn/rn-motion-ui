@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import type { DimensionValue, StyleProp, ViewStyle } from 'react-native';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Plus, Trash2 } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Checkbox } from '../Checkbox/checkbox';
+import { Text } from '../Text/text';
 import { styles } from './table-styles';
 import { useTableColors } from './table-theme';
 import type { TableColumn } from './table-types';

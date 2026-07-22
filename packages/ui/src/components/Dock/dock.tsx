@@ -1,9 +1,10 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useState } from 'react';
-import { type LayoutRectangle, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type LayoutRectangle, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
+import { Text } from '../Text/text';
 
 // RN FALLBACK vs web: the web dock scales items on cursor proximity (magnify on
 // hover) — there is no touch equivalent, so magnify is dropped. Items instead

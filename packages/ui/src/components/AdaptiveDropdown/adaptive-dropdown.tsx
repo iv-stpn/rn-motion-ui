@@ -1,11 +1,12 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { type LayoutChangeEvent, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { type LayoutChangeEvent, Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
+import { Text } from '../Text/text';
 
 const MD_BREAKPOINT = 768;
 const DEFAULT_WIDTH = 360;

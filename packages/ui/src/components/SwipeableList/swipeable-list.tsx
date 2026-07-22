@@ -2,9 +2,10 @@
 
 import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, PanResponder, Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { Animated, PanResponder, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { useThemeColors } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 
 // -- Types -------------------------------------------------------------------
 

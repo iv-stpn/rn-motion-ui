@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { Ban, Lock, ScanFace, ScrollText, ShieldCheck, Trash2, X } from '../../lib/icons';
 import { Button } from '../Button/button';
+import { Text } from '../Text/text';
 import { MorphingModal } from './morphing-modal';
 
 const meta = {

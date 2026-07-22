@@ -8,7 +8,6 @@ import {
   Pressable,
   ScrollView,
   type StyleProp,
-  Text,
   View,
   type ViewStyle,
 } from 'react-native';
@@ -20,6 +19,7 @@ import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Checkbox } from '../Checkbox/checkbox';
 import { Switch } from '../Switch/switch';
+import { Text } from '../Text/text';
 import { WheelPicker } from '../WheelPicker/wheel-picker';
 
 // ─── types (re-exported) ───────────────────────────────────────────────────

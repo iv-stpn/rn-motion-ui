@@ -5,7 +5,7 @@ import type { PluginOption } from 'vite';
 
 const config: StorybookConfig = {
   stories: ['../../../packages/ui/src/**/*.stories.@(ts|tsx)'],
-  addons: ['@storybook/addon-docs', '@storybook/addon-vitest'],
+  addons: ['@storybook/addon-docs', '@storybook/addon-vitest', '@storybook/addon-themes'],
   framework: {
     name: '@storybook/react-native-web-vite',
     // The framework runs `rnw` (vite-plugin-rnw) with `babelrc:false, configFile:false`,

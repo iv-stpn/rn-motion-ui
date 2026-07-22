@@ -1,10 +1,11 @@
 import { type ReactNode, useCallback, useState } from 'react';
-import { type LayoutChangeEvent, Modal, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, Modal, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_PANEL } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { Text } from '../Text/text';
 
 export type DrawerSide = 'left' | 'right';
 

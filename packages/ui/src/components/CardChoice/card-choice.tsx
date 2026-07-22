@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { Text } from '../Text/text';
 
 /** Join truthy class strings. (Local helper — this package ships no shared `cn`.) */
 function cn(...parts: Array<string | false | null | undefined>): string {

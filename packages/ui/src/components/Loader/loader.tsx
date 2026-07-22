@@ -1,7 +1,8 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: all loader variants (spinner, dots, helix, …) collocated for consistent import
 
 import { useEffect, useState } from 'react';
-import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type StyleProp, View, type ViewStyle } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useInterval } from '../../hooks/use-interval';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
@@ -9,6 +10,7 @@ import { cn } from '../../lib/cn';
 import { EASE_IN_OUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { useThemeColor } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 
 // biome-ignore lint/style/useExportsLast: variant union before frame constants — collocated for readability
 export type LoaderVariant =
@@ -123,25 +125,49 @@ function Spinner({ size, speed, color, reduce }: PartProps) {
   );
 }
 
+function Dot({ size, speed, color, reduce, index }: PartProps & { index: number }) {
+  const dim = size * 0.24;
+  const top = -size * 0.3;
+  const half = speed * 500;
+  // Drive the bounce with a raw Reanimated shared value whose `withRepeat` is
+  // created ONCE (in this effect) — not via moti's declarative `loop`. moti
+  // rebuilds its `withRepeat(withTiming(target))` on every worklet re-run, and
+  // the Dot re-renders whenever an ancestor `<AnimatePresence>` churns its
+  // presence context (theme toggle, parent state) — which bypasses React.memo,
+  // since `useContext` always re-renders consumers. A rebuild that lands while
+  // the dot sits at its translateY target leaves the repeat with zero forward
+  // distance, freezing the dot at the top of the bounce ("one cycle then
+  // stops"). Storing the animation in a shared value created once means
+  // re-renders never cancel or rebuild it; the bounce runs indefinitely.
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(0.5);
+  // biome-ignore lint/plugin: the loop animation is an imperative side-effect assigned to a shared value — not expressible as derived state, and must run once per [reduce,size,speed,index] rather than every render
+  useEffect(() => {
+    if (reduce) {
+      translateY.value = 0;
+      opacity.value = withRepeat(withTiming(1, { duration: half, easing: EASE_IN_OUT }), -1, true);
+      return;
+    }
+    opacity.value = withTiming(1, { duration: 240 });
+    translateY.value = withDelay(
+      index * speed * 160,
+      withRepeat(withTiming(top, { duration: half, easing: EASE_IN_OUT }), -1, true),
+    );
+  }, [reduce, top, half, index, speed, translateY, opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
+  return <Animated.View style={[animatedStyle, { width: dim, height: dim, borderRadius: dim / 2, backgroundColor: color }]} />;
+}
+
 function Dots({ size, speed, color, reduce }: PartProps) {
-  const dot = size * 0.24;
   return (
     <View className="flex-row items-center" style={{ gap: size * 0.14 }}>
       {[0, 1, 2].map((i) => (
-        <MotiView
-          key={i}
-          from={{ opacity: 0.5, translateY: 0 }}
-          animate={reduce ? { opacity: 1, translateY: 0 } : { opacity: 1, translateY: -size * 0.3 }}
-          transition={{
-            type: 'timing',
-            duration: speed * 500,
-            loop: true,
-            repeatReverse: true,
-            easing: EASE_IN_OUT,
-            delay: i * speed * 160,
-          }}
-          style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: color }}
-        />
+        <Dot key={i} size={size} speed={speed} color={color} reduce={reduce} index={i} />
       ))}
     </View>
   );
@@ -236,10 +262,12 @@ function Percent({ size, speed, color, reduce }: PartProps) {
   return (
     <View className="items-center" style={{ gap: size * 0.14, width: size * 1.4 }}>
       <Text style={{ fontSize: size * 0.42, color, fontWeight: '500', fontVariant: ['tabular-nums'] }}>{`${p}%`}</Text>
-      <View
-        className="w-full overflow-hidden"
-        style={{ height: Math.max(3, size * 0.1), borderRadius: 999, backgroundColor: `${color}26` }}
-      >
+      <View className="w-full overflow-hidden" style={{ height: Math.max(3, size * 0.1), borderRadius: 999 }}>
+        {/* Faint tint of the fill colour for the track. Used to be `${color}26`
+            (hex alpha), but `color` now resolves to `rgb(...)` on web (oklch is
+            rasterised to sRGB in useThemeColor), and `rgb(…)26` isn't a valid
+            colour — so the tint is a sibling layer at 15% opacity instead. */}
+        <View style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: color, opacity: 0.15 }} />
         <View style={{ height: '100%', borderRadius: 999, backgroundColor: color, width: `${p}%` }} />
       </View>
     </View>

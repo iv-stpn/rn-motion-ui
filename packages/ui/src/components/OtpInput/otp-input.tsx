@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { useCallback, useRef, useState } from 'react';
-import { Animated, type StyleProp, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { Animated, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { cn } from '../../lib/cn';
@@ -9,6 +9,7 @@ import { MotiText } from '../../moti/components/text';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { useThemeColor } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 
 export type OTPStatus = 'idle' | 'error' | 'success';
 

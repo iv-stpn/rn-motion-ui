@@ -3,10 +3,11 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { useMountEffect } from '../../hooks/use-mount-effect';
 import { Switch } from '../Switch/switch';
+import { Text } from '../Text/text';
 import { Table, type TableColumn, type TableProps } from './table';
 
 // ─── Shared data builders ─────────────────────────────────────────────────────
@@ -81,7 +82,7 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
     header: 'Name',
     sortable: true,
     width: '1.4fr',
-    cell: (row) => <Text style={{ fontSize: 13, fontWeight: '500', color: '#111' }}>{row.name}</Text>,
+    cell: (row) => <Text style={{ fontSize: 13, fontWeight: '500' }}>{row.name}</Text>,
   },
   { key: 'email', header: 'Email', width: '1.8fr' },
   { key: 'role', header: 'Role', sortable: true, width: '120px' },
@@ -97,7 +98,7 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
     sortable: true,
     align: 'right',
     width: '100px',
-    cell: (row) => <Text style={{ fontSize: 13, textAlign: 'right', color: '#111' }}>{`$${row.mrr.toLocaleString()}`}</Text>,
+    cell: (row) => <Text style={{ fontSize: 13, textAlign: 'right' }}>{`$${row.mrr.toLocaleString()}`}</Text>,
   },
 ];
 
@@ -183,7 +184,7 @@ function AsyncTableStory() {
       {
         key: 'name',
         header: 'Name',
-        cell: (r) => <Text style={{ fontSize: 13, fontWeight: '500', color: '#111' }}>{r.name}</Text>,
+        cell: (r) => <Text style={{ fontSize: 13, fontWeight: '500' }}>{r.name}</Text>,
       },
       { key: 'email', header: 'Email', width: '180px' },
       { key: 'role', header: 'Role', width: '110px' },
@@ -198,7 +199,7 @@ function AsyncTableStory() {
         header: 'MRR',
         align: 'right',
         width: '90px',
-        cell: (r) => <Text style={{ fontSize: 13, textAlign: 'right', color: '#111' }}>{`$${r.mrr.toLocaleString()}`}</Text>,
+        cell: (r) => <Text style={{ fontSize: 13, textAlign: 'right' }}>{`$${r.mrr.toLocaleString()}`}</Text>,
       },
     ],
     [],

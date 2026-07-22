@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useState } from 'react';
-import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
@@ -8,6 +8,7 @@ import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../theme/motion';
 import { useThemeColor } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 
 const CHECK_PATH = 'M5 13l4 4L19 7';
 const INDETERMINATE_PATH = 'M6 12h12';

@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import { TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../lib/ease';
 import { Check, X } from '../../lib/icons';
@@ -10,6 +10,7 @@ import { useThemeColors } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
 import { Loader } from '../Loader/loader';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
+import { Text } from '../Text/text';
 
 // --- Morph icon --------------------------------------------------------------
 // A single circular vessel that morphs its size + fill colour as `state`
@@ -81,7 +82,7 @@ function MorphIcon({ state, reduced }: MorphIconProps) {
             transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
             style={morphGlyphStyle}
           >
-            <Check size={26} color={colors.surface} />
+            <Check size={26} color="#ffffff" /* theme-exempt */ />
           </MotiView>
         )}
         {state === 'error' && (
@@ -93,7 +94,7 @@ function MorphIcon({ state, reduced }: MorphIconProps) {
             transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
             style={morphGlyphStyle}
           >
-            <X size={20} color={colors.surface} />
+            <X size={20} color="#ffffff" /* theme-exempt */ />
           </MotiView>
         )}
       </AnimatePresence>

@@ -5,7 +5,6 @@ import {
   type KeyboardTypeOptions,
   Platform,
   type StyleProp,
-  Text,
   TextInput,
   type TextInputProps,
   type TextStyle,
@@ -21,6 +20,7 @@ import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../theme/motion';
 import { useThemeColor } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 
 // Success green and placeholder colour are resolved from the theme at runtime.
 

@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import { useCallback } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { ChevronRight } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
 import { Checkbox } from '../Checkbox/checkbox';
 import { Loader } from '../Loader/loader';
+import { Text } from '../Text/text';
 import { styles } from './table-styles';
 import { useTableColors } from './table-theme';
 

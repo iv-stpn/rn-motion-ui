@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useArmOnView } from '../../hooks/use-arm-on-view';
 import { useInView } from '../../hooks/use-in-view';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
+import { Text } from '../Text/text';
 
 const DIGITS = Array.from({ length: 10 }, (_, n) => n);
 const MEASURE_GLYPH = '0';

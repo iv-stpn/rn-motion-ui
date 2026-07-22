@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { Text } from '../Text/text';
 import { WheelPicker } from './wheel-picker';
 
 const meta = {

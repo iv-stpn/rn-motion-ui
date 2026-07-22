@@ -1,11 +1,12 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, type StyleProp, Text, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, type StyleProp, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_LAYOUT } from '../../lib/ease';
 import { Search } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
+import { Text } from '../Text/text';
 
 // Renders inside AdaptiveModal with `customLayout` + `scrollable={false}`: the
 // palette owns its layout (a fixed search bar over a scrollable list) while

@@ -12,6 +12,8 @@
  * <html>), also add:
  *   @variant dark (&:is(.dark *));
  * and the :root[dark-mode] overrides will respect that selector too.
+ * A `.light` class opts out of the automatic @media dark values (see below),
+ * so a manual toggle can force light even when the OS prefers dark.
  */
 
 /* ── Light mode (default) ──────────────────────────────────────────────── */
@@ -20,7 +22,7 @@
   --color-surface: oklch(99% 0 0);
   --color-foreground: oklch(15% 0 0);
   --color-card: oklch(97% 0 0);
-  --color-muted: oklch(97% 0 0);
+  --color-muted: oklch(95% 0 0);
   --color-muted-foreground: oklch(50% 0 0);
   --color-border: oklch(15% 0 0 / 0.06);
   --color-primary: oklch(15% 0 0);
@@ -39,15 +41,23 @@
  * override the same properties under a @media or a .dark selector in
  * @layer base. Tailwind's utility classes (bg-surface, text-foreground, …)
  * then pick up the overridden values automatically.
+ *
+ * The @media block is gated on `:root:not(.light)` so a `.light` class is an
+ * ABSOLUTE override: it opts out of the automatic OS-preference dark values and
+ * falls back to the @theme light defaults, even when the OS reports
+ * prefers-color-scheme: dark. `.dark` likewise forces dark over an OS-light
+ * preference. Without `:not(.light)`, selecting light while the OS is dark
+ * would still resolve to the dark tokens.
  */
 
 @layer base {
   @media (prefers-color-scheme: dark) {
-    :root {
+    /* biome-ignore lint/nursery/noUnusedClasses: consumer-facing selector — .light is applied by the app/Storybook to force light mode over an OS-dark preference */
+    :root:not(.light) {
       --color-surface: oklch(9% 0 0);
       --color-foreground: oklch(96% 0 0);
       --color-card: oklch(13% 0 0);
-      --color-muted: oklch(16% 0 0);
+      --color-muted: oklch(27.7% 0 0);
       --color-muted-foreground: oklch(60% 0 0);
       --color-border: oklch(99% 0 0 / 0.08);
       --color-primary: oklch(96% 0 0);

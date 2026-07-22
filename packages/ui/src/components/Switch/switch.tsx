@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { useCallback, useRef, useState } from 'react';
-import { Animated, Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { Animated, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { cn } from '../../lib/cn';
@@ -8,6 +8,7 @@ import { THUMB_SPRING } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { type MotiTransitionProp, mergeTransition } from '../../theme/motion';
 import { useThemeColor } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 
 // Track colour swaps on checked; the thumb translate/squish stay inline (animated).
 const track = cva('h-7 w-12 flex-row items-center rounded-full px-1', {

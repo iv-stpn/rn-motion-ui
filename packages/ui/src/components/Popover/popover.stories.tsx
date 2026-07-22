@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
+import { Text } from '../Text/text';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 const meta = {

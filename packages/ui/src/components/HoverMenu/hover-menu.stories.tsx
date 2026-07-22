@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Bell, Copy, Pencil, Share, Trash2 } from '../../lib/icons';
+import { Text } from '../Text/text';
 import { HoverMenu } from './hover-menu';
 
 const meta = {

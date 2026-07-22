@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Bell, ChevronDown, Moon, Settings, User } from '../../lib/icons';
+import { Text } from '../Text/text';
 import { AdaptiveDropdown } from './adaptive-dropdown';
 
 const meta = {

@@ -317,6 +317,11 @@
       "types": "./src/components/Tabs/tabs.tsx",
       "default": "./src/components/Tabs/tabs.tsx"
     },
+    "./text": {
+      "source": "./src/components/Text/text.tsx",
+      "types": "./src/components/Text/text.tsx",
+      "default": "./src/components/Text/text.tsx"
+    },
     "./text-cascade": {
       "source": "./src/components/TextCascade/text-cascade.tsx",
       "types": "./src/components/TextCascade/text-cascade.tsx",

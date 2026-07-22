@@ -1,11 +1,12 @@
 import { type ReactNode, useCallback } from 'react';
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { ChevronRight, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { OverlayShell } from '../Overlay/overlay-shell';
+import { Text } from '../Text/text';
 
 const BACK_BUTTON_HEADER_HEIGHT = 56;
 const SMALL_SCREEN_BREAKPOINT = 640;

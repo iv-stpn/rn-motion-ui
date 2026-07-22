@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '../Text/text';
 import { Card } from './card';
 
 const meta = {

@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { X } from '../../lib/icons';
 import { Button } from '../Button/button';
+import { Text } from '../Text/text';
 import { AnimatedList, AnimatedListItem } from './animated-list';
 
 const meta = {

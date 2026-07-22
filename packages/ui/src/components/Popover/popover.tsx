@@ -1,9 +1,10 @@
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Dimensions, type LayoutChangeEvent, Modal, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { Dimensions, type LayoutChangeEvent, Modal, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { Text } from '../Text/text';
 
 export type PopoverSide = 'top' | 'bottom';
 export type PopoverAlign = 'start' | 'center' | 'end';

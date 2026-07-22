@@ -13,7 +13,7 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: complex logic */
 
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type AccessibilityActionEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type AccessibilityActionEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
@@ -22,6 +22,7 @@ import { SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { useThemeColor } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

@@ -4,3 +4,13 @@
 
 /* Stories live in the library workspace, so point Tailwind's class scanner there. */
 @source "../../packages/ui/src";
+
+@layer base {
+  /* Set the default text colour on the document root so that SVG `currentColor`
+     references (e.g. icon strokes) inherit the active foreground token instead
+     of the browser default black. This keeps un-coloured icons correct in both
+     light and dark mode without requiring an explicit color prop on every icon. */
+  :root {
+    color: var(--color-foreground);
+  }
+}

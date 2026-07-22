@@ -5,7 +5,7 @@
 // aria-busy is approximated via accessibilityLiveRegion="polite" on the content row.
 
 import { type ReactNode, useCallback, useRef, useState } from 'react';
-import { type LayoutChangeEvent, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useMountEffect } from '../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_IN_OUT, EASE_OUT, SPRING_SWAP } from '../../lib/ease';
@@ -13,6 +13,7 @@ import { AlertCircle, Check } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { useThemeColors } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
@@ -415,15 +416,16 @@ export function StatefulButton({
   // Idle icon colour: matches the label on each variant.
   const idleIconColor = variantIconColor(v, colors);
 
-  // Terminal-state backdrop + text. surface token gives legible text on the
-  // saturated success/error fill on both light and dark.
+  // Terminal-state backdrop + text. White text on the saturated success/error
+  // fill reads on both light and dark — surface is near-black in dark mode, so
+  // it would vanish against the green/red backdrop there.
   let stateBackdropColor: string | undefined;
   if (state === 'success') stateBackdropColor = colors.success;
   else if (state === 'error') stateBackdropColor = colors.destructive;
 
-  const stateTextColor = state === 'success' || state === 'error' ? colors.surface : undefined;
+  const stateTextColor = state === 'success' || state === 'error' ? '#ffffff' /* theme-exempt */ : undefined;
 
-  // In success/error states, surface text over the coloured backdrop keeps
+  // In success/error states, white text over the coloured backdrop keeps
   // every variant legible; fall back to the per-variant idle colour otherwise.
   const iconColor = stateTextColor ?? idleIconColor;
   const backdropColor = stateBackdropColor;

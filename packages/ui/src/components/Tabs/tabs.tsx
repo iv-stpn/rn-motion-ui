@@ -41,9 +41,9 @@ function useTabs() {
 const list = cva('flex-row items-center', {
   variants: {
     variant: {
-      pill: 'gap-1 rounded-full bg-card p-1',
+      pill: 'gap-1 rounded-full bg-muted p-1',
       underline: 'gap-1 border-b border-border',
-      segment: 'gap-0 rounded-lg bg-card p-0.5',
+      segment: 'gap-0 rounded-lg bg-muted p-0.5',
     },
   },
   defaultVariants: { variant: 'pill' },

@@ -1,10 +1,11 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { type LayoutChangeEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_PANEL } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
+import { Text } from '../Text/text';
 
 // biome-ignore lint/style/useExportsLast: placement type before INSTANT constant — collocated for readability
 export type MorphingModalPlacement = 'bottom' | 'center';

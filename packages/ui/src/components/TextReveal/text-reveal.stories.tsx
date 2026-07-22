@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { expect, within } from 'storybook/test';
+import { Text } from '../Text/text';
 import { TextReveal, type TextRevealSplit } from './text-reveal';
 
 const meta = {

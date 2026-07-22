@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ArrowUp } from '../../lib/icons';
+import { Text } from '../Text/text';
 import { SmoothScroll, useSmoothScroll } from './smooth-scroll';
 
 const SECTIONS = Array.from({ length: 16 }, (_, i) => i + 1);

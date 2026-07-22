@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Button } from '../Button/button';
+import { Text } from '../Text/text';
 import { FeedbackWidget } from './feedback-widget';
 
 const meta = {

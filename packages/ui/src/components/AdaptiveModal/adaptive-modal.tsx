@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Modal, Pressable, ScrollView, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
@@ -8,6 +8,7 @@ import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
 import { FullSheet } from '../FullSheet/full-sheet';
+import { Text } from '../Text/text';
 
 // Narrow vs. wide layout cutoff — matches FullSheet's SMALL_SCREEN_BREAKPOINT.
 const WIDE_BREAKPOINT = 640;

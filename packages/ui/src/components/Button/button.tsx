@@ -1,20 +1,15 @@
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: complex component */
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Children, isValidElement, type ReactNode, useCallback, useRef, useState } from 'react';
-import {
-  type GestureResponderEvent,
-  type LayoutChangeEvent,
-  Pressable,
-  type StyleProp,
-  Text,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import type { GestureResponderEvent, LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
 import { MOTION_SNAPPY, type MotiTransitionProp, mergeTransition, TIMING_BASE } from '../../theme/motion';
 import { useThemeColors } from '../../theme/use-theme-color';
+import { Text } from '../Text/text';
 
 export type ButtonVariant =
   | 'primary'

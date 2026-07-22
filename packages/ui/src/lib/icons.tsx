@@ -11,11 +11,12 @@ import {
   Polyline as SvgPolyline,
   Rect as SvgRect,
 } from 'react-native-svg';
+import { useThemeColor } from '../theme/use-theme-color';
 
 export type IconProps = {
   /** Square edge length in px. */
   size?: number;
-  /** Stroke colour. Passed as react-native-svg `color` (acts as currentColor). */
+  /** Stroke colour. Defaults to the `foreground` theme token when omitted. */
   color?: string;
   /** Stroke width in user units (default 2, matching lucide). */
   strokeWidth?: number;
@@ -24,7 +25,9 @@ export type IconProps = {
   accessibilityLabel?: string;
 };
 
-export function AlertCircle({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function AlertCircle({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -47,7 +50,9 @@ export function AlertCircle({ size = 24, color = 'currentColor', strokeWidth = 2
   );
 }
 
-export function AlertTriangle({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function AlertTriangle({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -70,7 +75,9 @@ export function AlertTriangle({ size = 24, color = 'currentColor', strokeWidth =
   );
 }
 
-export function Archive({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Archive({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -93,7 +100,9 @@ export function Archive({ size = 24, color = 'currentColor', strokeWidth = 2, st
   );
 }
 
-export function ArrowDownToLine({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ArrowDownToLine({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -116,7 +125,9 @@ export function ArrowDownToLine({ size = 24, color = 'currentColor', strokeWidth
   );
 }
 
-export function ArrowDownUp({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ArrowDownUp({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -140,7 +151,9 @@ export function ArrowDownUp({ size = 24, color = 'currentColor', strokeWidth = 2
   );
 }
 
-export function ArrowLeftRight({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ArrowLeftRight({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -164,7 +177,9 @@ export function ArrowLeftRight({ size = 24, color = 'currentColor', strokeWidth 
   );
 }
 
-export function ArrowLeftToLine({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ArrowLeftToLine({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -187,7 +202,9 @@ export function ArrowLeftToLine({ size = 24, color = 'currentColor', strokeWidth
   );
 }
 
-export function ArrowRight({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ArrowRight({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -209,7 +226,9 @@ export function ArrowRight({ size = 24, color = 'currentColor', strokeWidth = 2,
   );
 }
 
-export function ArrowRightToLine({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ArrowRightToLine({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -232,7 +251,9 @@ export function ArrowRightToLine({ size = 24, color = 'currentColor', strokeWidt
   );
 }
 
-export function ArrowUp({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ArrowUp({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -254,7 +275,9 @@ export function ArrowUp({ size = 24, color = 'currentColor', strokeWidth = 2, st
   );
 }
 
-export function ArrowUpRight({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ArrowUpRight({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -276,7 +299,9 @@ export function ArrowUpRight({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function ArrowUpToLine({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ArrowUpToLine({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -299,7 +324,9 @@ export function ArrowUpToLine({ size = 24, color = 'currentColor', strokeWidth =
   );
 }
 
-export function BadgeCheck({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function BadgeCheck({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -321,7 +348,9 @@ export function BadgeCheck({ size = 24, color = 'currentColor', strokeWidth = 2,
   );
 }
 
-export function Ban({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Ban({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -343,7 +372,9 @@ export function Ban({ size = 24, color = 'currentColor', strokeWidth = 2, style,
   );
 }
 
-export function Banknote({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Banknote({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -366,7 +397,9 @@ export function Banknote({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function Bell({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Bell({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -388,7 +421,9 @@ export function Bell({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function Brush({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Brush({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -411,7 +446,9 @@ export function Brush({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function Calendar({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Calendar({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -435,7 +472,9 @@ export function Calendar({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function CalendarClock({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function CalendarClock({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -461,7 +500,9 @@ export function CalendarClock({ size = 24, color = 'currentColor', strokeWidth =
   );
 }
 
-export function ChartSpline({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ChartSpline({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -483,7 +524,9 @@ export function ChartSpline({ size = 24, color = 'currentColor', strokeWidth = 2
   );
 }
 
-export function Check({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Check({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -504,7 +547,9 @@ export function Check({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function CheckCircle2({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function CheckCircle2({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -526,7 +571,9 @@ export function CheckCircle2({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function ChevronDown({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ChevronDown({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -547,7 +594,9 @@ export function ChevronDown({ size = 24, color = 'currentColor', strokeWidth = 2
   );
 }
 
-export function ChevronRight({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ChevronRight({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -568,7 +617,9 @@ export function ChevronRight({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function ChevronUp({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ChevronUp({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -589,7 +640,9 @@ export function ChevronUp({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function Circle({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Circle({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -610,7 +663,9 @@ export function Circle({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function ClipboardCheck({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ClipboardCheck({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -633,7 +688,9 @@ export function ClipboardCheck({ size = 24, color = 'currentColor', strokeWidth 
   );
 }
 
-export function Clock3({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Clock3({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -655,7 +712,9 @@ export function Clock3({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function CloudUpload({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function CloudUpload({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -678,7 +737,9 @@ export function CloudUpload({ size = 24, color = 'currentColor', strokeWidth = 2
   );
 }
 
-export function Copy({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Copy({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -700,7 +761,9 @@ export function Copy({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function CreditCard({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function CreditCard({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -722,7 +785,9 @@ export function CreditCard({ size = 24, color = 'currentColor', strokeWidth = 2,
   );
 }
 
-export function Download({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Download({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -745,7 +810,9 @@ export function Download({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function Eye({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Eye({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -767,7 +834,9 @@ export function Eye({ size = 24, color = 'currentColor', strokeWidth = 2, style,
   );
 }
 
-export function EyeOff({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function EyeOff({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -791,7 +860,9 @@ export function EyeOff({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function FileArchive({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FileArchive({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -817,7 +888,9 @@ export function FileArchive({ size = 24, color = 'currentColor', strokeWidth = 2
   );
 }
 
-export function FileAudio({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FileAudio({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -840,7 +913,9 @@ export function FileAudio({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function FileCode2({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FileCode2({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -864,7 +939,9 @@ export function FileCode2({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function FileIcon({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FileIcon({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -886,7 +963,9 @@ export function FileIcon({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function FileImage({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FileImage({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -910,7 +989,9 @@ export function FileImage({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function FileSpreadsheet({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FileSpreadsheet({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -936,7 +1017,9 @@ export function FileSpreadsheet({ size = 24, color = 'currentColor', strokeWidth
   );
 }
 
-export function FileText({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FileText({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -961,7 +1044,9 @@ export function FileText({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function FileVideo({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FileVideo({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -984,7 +1069,9 @@ export function FileVideo({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function Flag({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Flag({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1005,7 +1092,9 @@ export function Flag({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function FolderClosed({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FolderClosed({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1027,7 +1116,9 @@ export function FolderClosed({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function FolderKanban({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function FolderKanban({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1051,7 +1142,9 @@ export function FolderKanban({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function Gauge({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Gauge({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1073,7 +1166,9 @@ export function Gauge({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function GitBranch({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function GitBranch({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1096,7 +1191,9 @@ export function GitBranch({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function GripVertical({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function GripVertical({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1122,7 +1219,9 @@ export function GripVertical({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function Heart({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Heart({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1143,7 +1242,9 @@ export function Heart({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function History({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function History({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1166,7 +1267,9 @@ export function History({ size = 24, color = 'currentColor', strokeWidth = 2, st
   );
 }
 
-export function Home({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Home({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1188,7 +1291,9 @@ export function Home({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function Images({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Images({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1212,7 +1317,9 @@ export function Images({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function Inbox({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Inbox({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1234,7 +1341,9 @@ export function Inbox({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function Info({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Info({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1257,7 +1366,9 @@ export function Info({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function LayoutGrid({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function LayoutGrid({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1281,7 +1392,9 @@ export function LayoutGrid({ size = 24, color = 'currentColor', strokeWidth = 2,
   );
 }
 
-export function Link({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Link({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1303,7 +1416,9 @@ export function Link({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function Loader2({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Loader2({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1324,7 +1439,9 @@ export function Loader2({ size = 24, color = 'currentColor', strokeWidth = 2, st
   );
 }
 
-export function LoaderCircle({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function LoaderCircle({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1345,7 +1462,9 @@ export function LoaderCircle({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function Lock({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Lock({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1367,7 +1486,9 @@ export function Lock({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function Mail({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Mail({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1389,7 +1510,9 @@ export function Mail({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function Megaphone({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Megaphone({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1412,7 +1535,9 @@ export function Megaphone({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function MessageCircle({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function MessageCircle({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1433,7 +1558,9 @@ export function MessageCircle({ size = 24, color = 'currentColor', strokeWidth =
   );
 }
 
-export function MessageSquare({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function MessageSquare({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1454,7 +1581,9 @@ export function MessageSquare({ size = 24, color = 'currentColor', strokeWidth =
   );
 }
 
-export function Moon({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Moon({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1475,7 +1604,9 @@ export function Moon({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function MoreHorizontal({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function MoreHorizontal({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1498,7 +1629,9 @@ export function MoreHorizontal({ size = 24, color = 'currentColor', strokeWidth 
   );
 }
 
-export function MoreVertical({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function MoreVertical({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1521,7 +1654,9 @@ export function MoreVertical({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function Music({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Music({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1544,7 +1679,9 @@ export function Music({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function PackageCheck({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function PackageCheck({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1569,7 +1706,9 @@ export function PackageCheck({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function PackageOpen({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function PackageOpen({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1593,7 +1732,9 @@ export function PackageOpen({ size = 24, color = 'currentColor', strokeWidth = 2
   );
 }
 
-export function Pencil({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Pencil({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1615,7 +1756,9 @@ export function Pencil({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function Phone({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Phone({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1636,7 +1779,9 @@ export function Phone({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function PhoneOff({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function PhoneOff({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1659,7 +1804,9 @@ export function PhoneOff({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function Pin({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Pin({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1681,7 +1828,9 @@ export function Pin({ size = 24, color = 'currentColor', strokeWidth = 2, style,
   );
 }
 
-export function Plus({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Plus({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1703,7 +1852,9 @@ export function Plus({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function RadioTower({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function RadioTower({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1730,7 +1881,9 @@ export function RadioTower({ size = 24, color = 'currentColor', strokeWidth = 2,
   );
 }
 
-export function RefreshCw({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function RefreshCw({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1754,7 +1907,9 @@ export function RefreshCw({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function Repeat({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Repeat({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1778,7 +1933,9 @@ export function Repeat({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function Rocket({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Rocket({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1802,7 +1959,9 @@ export function Rocket({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function RotateCcw({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function RotateCcw({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1824,7 +1983,9 @@ export function RotateCcw({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function ScanFace({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ScanFace({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1851,7 +2012,9 @@ export function ScanFace({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function ScrollText({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ScrollText({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1875,7 +2038,9 @@ export function ScrollText({ size = 24, color = 'currentColor', strokeWidth = 2,
   );
 }
 
-export function Search({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Search({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1897,7 +2062,9 @@ export function Search({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function Send({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Send({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1919,7 +2086,9 @@ export function Send({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function Settings({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Settings({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1941,7 +2110,9 @@ export function Settings({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function Share({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Share({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1964,7 +2135,9 @@ export function Share({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function Share2({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Share2({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -1989,7 +2162,9 @@ export function Share2({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function ShieldCheck({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ShieldCheck({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2011,7 +2186,9 @@ export function ShieldCheck({ size = 24, color = 'currentColor', strokeWidth = 2
   );
 }
 
-export function ShoppingCart({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function ShoppingCart({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2034,7 +2211,9 @@ export function ShoppingCart({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function Siren({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Siren({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2062,7 +2241,9 @@ export function Siren({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function Sparkles({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Sparkles({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2086,7 +2267,9 @@ export function Sparkles({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function Sun({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Sun({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2115,7 +2298,9 @@ export function Sun({ size = 24, color = 'currentColor', strokeWidth = 2, style,
   );
 }
 
-export function SwatchBook({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function SwatchBook({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2139,7 +2324,9 @@ export function SwatchBook({ size = 24, color = 'currentColor', strokeWidth = 2,
   );
 }
 
-export function Table({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Table({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2163,7 +2350,9 @@ export function Table({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function Timer({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Timer({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2186,7 +2375,9 @@ export function Timer({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function Trash2({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Trash2({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2211,7 +2402,9 @@ export function Trash2({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function TrendingDown({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function TrendingDown({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2233,7 +2426,9 @@ export function TrendingDown({ size = 24, color = 'currentColor', strokeWidth = 
   );
 }
 
-export function TrendingUp({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function TrendingUp({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2255,7 +2450,9 @@ export function TrendingUp({ size = 24, color = 'currentColor', strokeWidth = 2,
   );
 }
 
-export function UploadCloud({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function UploadCloud({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2278,7 +2475,9 @@ export function UploadCloud({ size = 24, color = 'currentColor', strokeWidth = 2
   );
 }
 
-export function User({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function User({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2300,7 +2499,9 @@ export function User({ size = 24, color = 'currentColor', strokeWidth = 2, style
   );
 }
 
-export function UserRound({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function UserRound({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2322,7 +2523,9 @@ export function UserRound({ size = 24, color = 'currentColor', strokeWidth = 2, 
   );
 }
 
-export function Users({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Users({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2346,7 +2549,9 @@ export function Users({ size = 24, color = 'currentColor', strokeWidth = 2, styl
   );
 }
 
-export function Wallet({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Wallet({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2368,7 +2573,9 @@ export function Wallet({ size = 24, color = 'currentColor', strokeWidth = 2, sty
   );
 }
 
-export function Webhook({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Webhook({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2391,7 +2598,9 @@ export function Webhook({ size = 24, color = 'currentColor', strokeWidth = 2, st
   );
 }
 
-export function Workflow({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function Workflow({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}
@@ -2414,7 +2623,9 @@ export function Workflow({ size = 24, color = 'currentColor', strokeWidth = 2, s
   );
 }
 
-export function X({ size = 24, color = 'currentColor', strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+export function X({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   return (
     <Svg
       width={size}

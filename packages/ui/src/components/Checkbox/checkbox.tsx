@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
@@ -6,6 +6,8 @@ import { cn } from '../../lib/cn';
 import { SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../theme/motion';
+import { useThemeColor } from '../../theme/use-theme-color';
 
 const CHECK_PATH = 'M5 13l4 4L19 7';
 const INDETERMINATE_PATH = 'M6 12h12';
@@ -21,6 +23,13 @@ export type CheckboxProps = {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
+  /**
+   * Override the check-mark animation. Partial — only the fields you pass are changed.
+   * Default: `TIMING_FAST` (150 ms timing).
+   */
+  checkTransition?: Partial<MotiTransitionProp>;
+  /** Replace the check-mark icon. Default: `<Svg width={12} height={12}><Path d={checkPath} .../></Svg>`. */
+  checkIcon?: ReactNode;
 };
 
 export function Checkbox({
@@ -33,11 +42,17 @@ export function Checkbox({
   style,
   accessibilityLabel,
   testID,
+  checkTransition,
+  checkIcon,
 }: CheckboxProps) {
   const reduce = useReducedMotion();
   const [pressed, setPressed] = useState(false);
+  // Resolve the check/indeterminate mark colour through the token bridge so it
+  // adapts to consumer @theme overrides (e.g. a non-black primary).
+  const checkColor = useThemeColor('primary-foreground');
   const showMark = checked || Boolean(indeterminate);
   const path = indeterminate ? INDETERMINATE_PATH : CHECK_PATH;
+  const ct = mergeTransition(TIMING_FAST, checkTransition);
 
   const handlePressIn = useCallback(() => setPressed(true), []);
   const handlePressOut = useCallback(() => setPressed(false), []);
@@ -65,10 +80,10 @@ export function Checkbox({
         <View
           className={`h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-surface ${showMark ? 'border-primary' : 'border-muted-foreground/50'}`}
         >
-          {/* Fill fades in on check and out on uncheck, same 160 ms timing as the mark. */}
+          {/* Fill fades in on check and out on uncheck, same timing as the mark. */}
           <MotiView
             animate={{ opacity: showMark ? 1 : 0 }}
-            transition={{ type: 'timing', duration: reduce ? 0 : 160 }}
+            transition={reduce ? TIMING_INSTANT : ct}
             className="absolute inset-0 bg-primary"
           />
           <AnimatePresence>
@@ -78,11 +93,13 @@ export function Checkbox({
                 from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
-                transition={{ type: 'timing', duration: reduce ? 0 : 160 }}
+                transition={reduce ? TIMING_INSTANT : ct}
               >
-                <Svg width={12} height={12} viewBox="0 0 24 24">
-                  <Path d={path} fill="none" stroke="#fafafa" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-                </Svg>
+                {checkIcon ?? (
+                  <Svg width={12} height={12} viewBox="0 0 24 24">
+                    <Path d={path} fill="none" stroke={checkColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
+                )}
               </MotiView>
             ) : null}
           </AnimatePresence>

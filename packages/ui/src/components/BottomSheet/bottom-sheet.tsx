@@ -1,8 +1,10 @@
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { cn } from '../../lib/cn';
+import { useSheetPresence } from '../Overlay/use-sheet-presence';
 
 const HANDLE_HEIGHT = 28;
 const IS_ANDROID = Platform.OS === 'android';
@@ -14,45 +16,25 @@ const styles = StyleSheet.create({
   },
 });
 
-function SheetHandle() {
+type SheetHandleProps = { className?: string };
+
+function SheetHandle({ className }: SheetHandleProps) {
   return (
-    <View className="items-center justify-center" style={{ height: HANDLE_HEIGHT }}>
+    <View className={cn('items-center justify-center', className)} style={{ height: HANDLE_HEIGHT }}>
       <View className="h-1 w-12 rounded-full bg-border/80" />
     </View>
   );
 }
 
-/** Manages mount state + translateY for a slide-from-bottom sheet. */
-function useSlideSheetPresence(visible: boolean, screenHeight: number, onAfterClose?: () => void) {
-  const [isMounted, setIsMounted] = useState(visible);
-  const translateY = useSharedValue(visible ? 0 : screenHeight);
-
-  // biome-ignore lint/plugin: slide animation tied to `visible` — effect intentionally omits stable refs
-  // biome-ignore lint/correctness/useExhaustiveDependencies: screenHeight and onAfterClose are stable refs — only `visible` drives the effect
-  useEffect(() => {
-    if (visible) {
-      setIsMounted(true);
-      translateY.value = withSpring(0, { damping: 32, stiffness: 300, mass: 0.75 });
-    } else if (isMounted)
-      translateY.value = withSpring(
-        screenHeight,
-        { damping: 40, stiffness: 300, mass: 0.75, overshootClamping: true },
-        (finished) => {
-          if (finished) {
-            scheduleOnRN(setIsMounted, false);
-            if (onAfterClose) scheduleOnRN(onAfterClose);
-          }
-        },
-      );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
-
-  return { isMounted, translateY };
-}
-
 export type BottomSheetProps = {
-  visible: boolean;
-  onClose: () => void;
+  // New preferred API
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  // Deprecated aliases (kept for one minor release)
+  /** @deprecated Use `open` instead. */
+  visible?: boolean;
+  /** @deprecated Use `onOpenChange` instead. */
+  onClose?: () => void;
   children: ReactNode;
   containerClassName?: string;
   onAfterClose?: () => void;
@@ -60,9 +42,16 @@ export type BottomSheetProps = {
   fullSheet?: boolean;
   /** When false, clicking the overlay will not close the sheet. Defaults to true. */
   closeOnOverlayClick?: boolean;
+  // Phase 5.4 — slot classNames
+  /** Additional class names merged onto the drag handle bar. */
+  handleClassName?: string;
+  /** Additional class names merged onto the backdrop overlay. */
+  backdropClassName?: string;
 };
 
 export function BottomSheet({
+  open,
+  onOpenChange,
   visible,
   onClose,
   children,
@@ -70,10 +59,18 @@ export function BottomSheet({
   onAfterClose,
   fullSheet,
   closeOnOverlayClick = true,
+  handleClassName,
+  backdropClassName,
 }: BottomSheetProps) {
+  const isOpen = open ?? visible ?? false;
   const { height } = useWindowDimensions();
-  const { isMounted, translateY } = useSlideSheetPresence(visible, height, onAfterClose);
+  const { isMounted, translateY } = useSheetPresence({ open: isOpen, screenExtent: height, onAfterClose });
   const dragStartY = useSharedValue(0);
+
+  const handleClose = useCallback(() => {
+    onClose?.();
+    onOpenChange?.(false);
+  }, [onClose, onOpenChange]);
 
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -94,15 +91,15 @@ export function BottomSheet({
     .onEnd((event) => {
       const shouldDismiss = translateY.value > height * 0.18 || event.velocityY > 1200;
       if (shouldDismiss) {
-        scheduleOnRN(onClose);
+        scheduleOnRN(handleClose);
         return;
       }
       translateY.value = withSpring(0, { damping: 40, stiffness: 300, overshootClamping: true });
     });
 
   const handleOverlayPress = useCallback(() => {
-    if (closeOnOverlayClick) onClose();
-  }, [closeOnOverlayClick, onClose]);
+    if (closeOnOverlayClick) handleClose();
+  }, [closeOnOverlayClick, handleClose]);
 
   if (!isMounted) return null;
 
@@ -113,14 +110,19 @@ export function BottomSheet({
       animationType="none"
       statusBarTranslucent={true}
       hardwareAccelerated={IS_ANDROID}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
       accessibilityViewIsModal={true}
       aria-modal={true}
     >
       <View className="flex-1" style={{ pointerEvents: 'box-none' }}>
         <Animated.View
           renderToHardwareTextureAndroid={IS_ANDROID}
-          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.45)', pointerEvents: 'none' }, backdropStyle]}
+          className={backdropClassName}
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: 'rgba(0, 0, 0, 0.45)' /* scrim — theme-independent */, pointerEvents: 'none' },
+            backdropStyle,
+          ]}
         />
         <View className="flex-1 justify-end">
           {fullSheet ? null : <Pressable onPress={handleOverlayPress} className="flex-1" />}
@@ -134,7 +136,7 @@ export function BottomSheet({
                   height: fullSheet ? height : undefined,
                 }}
               >
-                {fullSheet ? null : <SheetHandle />}
+                {fullSheet ? null : <SheetHandle className={handleClassName} />}
                 <View className={`min-h-0 flex-1${containerClassName ? ` ${containerClassName}` : ''}`}>{children}</View>
               </View>
             </Animated.View>

@@ -91,8 +91,8 @@ export function MenuRow({ icon: RowIcon, label, active = false, iconBackgroundCo
       {...props}
     >
       <View
-        // biome-ignore lint/nursery/useSortedClasses: same reason
-        className={`h-6.5 w-6.5 items-center justify-center rounded-md${active ? ' shadow-[0_0_2px_0.5px_rgb(0_0_0_/_0.20)]' : ''}`}
+        // biome-ignore lint/nursery/useSortedClasses: arbitrary shadow with conditional concat can't be split
+        className={`h-6.5 w-6.5 items-center justify-center rounded-md${active ? ' shadow-[0_0_2px_0.5px_rgb(0_0_0_/_0.20)]' : ''}`} // theme-exempt: pure-black drop shadow
         style={bgStyle}
       >
         <RowIcon size={18} color="white" />

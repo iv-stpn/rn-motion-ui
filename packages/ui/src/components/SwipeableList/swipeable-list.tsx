@@ -4,6 +4,7 @@ import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useThemeColors } from '../../theme/use-theme-color';
 
 // -- Types -------------------------------------------------------------------
 
@@ -109,12 +110,14 @@ const BADGE_BG = cva('items-center justify-center rounded-full', {
 });
 
 // Icon stroke colours that match each tone background (used for SVG icons).
+// theme-exempt: exported as SWIPE_TONE_ICON_COLOR for consumers; render path
+// uses the reactive useThemeColors() version inside SwipeActionButton instead.
 const ICON_COLOR: Record<SwipeActionTone, string> = {
-  neutral: '#71717a',
-  primary: '#fafafa',
-  success: '#ffffff',
-  warning: '#ffffff',
-  danger: '#ffffff',
+  neutral: '#71717a' /* theme-exempt */,
+  primary: '#fafafa' /* theme-exempt */,
+  success: '#ffffff' /* theme-exempt */,
+  warning: '#ffffff' /* theme-exempt */,
+  danger: '#ffffff' /* theme-exempt */,
 };
 
 // -- SwipeActionButton -------------------------------------------------------
@@ -128,6 +131,15 @@ type SwipeActionButtonProps = {
 
 function SwipeActionButton({ action, actionWidth, side, onAction }: SwipeActionButtonProps) {
   const tone = action.tone ?? 'neutral';
+  const colors = useThemeColors();
+  // biome-ignore lint/correctness/noUnusedVariables: reactive per-tone icon colour map — callers currently pre-colour icons via SWIPE_TONE_ICON_COLOR; use iconColor[tone] when rendering icons directly inside this component
+  const iconColor: Record<SwipeActionTone, string> = {
+    neutral: colors['muted-foreground'],
+    primary: colors['primary-foreground'],
+    success: colors.surface,
+    warning: colors.surface,
+    danger: colors.surface,
+  };
   const handlePress = useCallback(() => onAction(action, side), [onAction, action, side]);
 
   return (

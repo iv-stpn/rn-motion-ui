@@ -13,6 +13,8 @@ import Svg, { Circle } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
+import { MOTION_SNAPPY, type MotiTransitionProp, mergeTransition, TIMING_BASE } from '../../theme/motion';
+import { useThemeColors } from '../../theme/use-theme-color';
 
 export type ButtonVariant =
   | 'primary'
@@ -74,17 +76,19 @@ export const label = cva('font-medium', {
   defaultVariants: { variant: 'primary', size: 'md' },
 });
 
-// Spinner stroke inherits the label colour so it reads on every variant.
-const SPINNER_COLOR: Record<ButtonVariant, string> = {
-  primary: '#fafafa',
-  secondary: '#111111',
-  ghost: '#111111',
-  outline: '#111111',
-  destructive: '#ffffff',
-  outlineDanger: '#ef4444',
-  ghostDanger: '#ef4444',
-  ghostPrimary: '#6366f1',
-};
+// Spinner stroke matches the label colour so it reads on every variant.
+function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
+  switch (variant) {
+    case 'primary':
+    case 'destructive':
+      return colors['primary-foreground'];
+    case 'outlineDanger':
+    case 'ghostDanger':
+      return colors.destructive;
+    default:
+      return colors.foreground;
+  }
+}
 
 export interface ButtonProps extends VariantProps<typeof container> {
   children?: ReactNode;
@@ -103,10 +107,17 @@ export interface ButtonProps extends VariantProps<typeof container> {
   noDisabledOpacity?: boolean;
   /** Colour shown as an absolutely-positioned overlay behind the button content. */
   backdropColor?: string;
+  /**
+   * Override the press-scale spring. Partial — only the fields you pass are changed.
+   * Default: `MOTION_SNAPPY` (stiffness 500, damping 30, mass 0.6).
+   */
+  pressTransition?: Partial<MotiTransitionProp>;
   /** Stretch the button to fill its container width. */
   fitWidth?: boolean;
   /** Additional NativeWind class names merged onto the outer wrapper. */
   className?: string;
+  /** Additional class names merged onto the label Text. */
+  labelClassName?: string;
   /** Extra inline style applied directly to the Pressable container. */
   contentStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
@@ -116,10 +127,10 @@ export interface ButtonProps extends VariantProps<typeof container> {
 
 type Ripple = { id: number; x: number; y: number; size: number };
 
-function renderChild(child: ReactNode, className: string): ReactNode {
-  if (typeof child === 'string' || typeof child === 'number') return <Text className={className}>{child}</Text>;
-  if (isValidElement(child)) return child;
-  return null;
+function renderChild(child: ReactNode, className: string, labelClassName?: string): ReactNode {
+  if (typeof child === 'string' || typeof child === 'number')
+    return <Text className={cn(className, labelClassName)}>{child}</Text>;
+  return isValidElement(child) ? child : null;
 }
 
 type BuildContentArgs = {
@@ -130,6 +141,8 @@ type BuildContentArgs = {
   children: ReactNode;
   leftAdornment: ReactNode;
   rightAdornment: ReactNode;
+  spinnerColor: string;
+  labelClassName: string | undefined;
 };
 
 function buildButtonContent({
@@ -140,6 +153,8 @@ function buildButtonContent({
   children,
   leftAdornment,
   rightAdornment,
+  spinnerColor,
+  labelClassName,
 }: BuildContentArgs): ReactNode {
   if (loading)
     return (
@@ -149,12 +164,12 @@ function buildButtonContent({
         transition={{ type: 'timing', duration: 800, loop: !reduce, repeatReverse: false }}
       >
         <Svg width={16} height={16} viewBox="0 0 16 16">
-          <Circle cx={8} cy={8} r={6} stroke={SPINNER_COLOR[variant]} strokeOpacity={0.25} strokeWidth={2} fill="none" />
+          <Circle cx={8} cy={8} r={6} stroke={spinnerColor} strokeOpacity={0.25} strokeWidth={2} fill="none" />
           <Circle
             cx={8}
             cy={8}
             r={6}
-            stroke={SPINNER_COLOR[variant]}
+            stroke={spinnerColor}
             strokeWidth={2}
             strokeLinecap="round"
             fill="none"
@@ -167,16 +182,17 @@ function buildButtonContent({
   const labelClass = label({ variant, size });
   const hasAdornments = leftAdornment !== undefined || rightAdornment !== undefined;
   const isLeaf = typeof children === 'string' || typeof children === 'number';
+  const mergedLabelClass = cn(labelClass, labelClassName);
 
-  if (isLeaf && !hasAdornments) return <Text className={labelClass}>{children}</Text>;
+  if (isLeaf && !hasAdornments) return <Text className={mergedLabelClass}>{children}</Text>;
 
   return (
     <View className="flex-row items-center justify-center" style={{ gap: 8 }}>
       {leftAdornment}
       {isLeaf ? (
-        <Text className={labelClass}>{children}</Text>
+        <Text className={mergedLabelClass}>{children}</Text>
       ) : (
-        Children.map(children, (child) => renderChild(child, labelClass))
+        Children.map(children, (child) => renderChild(child, labelClass, labelClassName))
       )}
       {rightAdornment}
     </View>
@@ -197,14 +213,18 @@ export function Button({
   pressScale = 0.93,
   noDisabledOpacity = false,
   backdropColor,
+  pressTransition,
   fitWidth,
   className,
+  labelClassName,
   contentStyle,
   style,
   accessibilityLabel,
   testID,
 }: ButtonProps) {
   const reduce = useReducedMotion();
+  const colors = useThemeColors();
+  const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const [pressed, setPressed] = useState(false);
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const nextId = useRef(0);
@@ -231,12 +251,22 @@ export function Button({
   );
   const handlePressOut = useCallback(() => setPressed(false), []);
 
-  const buttonContent = buildButtonContent({ loading, reduce, variant: v, size, children, leftAdornment, rightAdornment });
+  const buttonContent = buildButtonContent({
+    loading,
+    reduce,
+    variant: v,
+    size,
+    children,
+    leftAdornment,
+    rightAdornment,
+    spinnerColor: buildSpinnerColor(v, colors),
+    labelClassName,
+  });
 
   return (
     <MotiView
       animate={{ scale: pressed && !reduce && !isDisabled ? pressScale : 1 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 0.6 }}
+      transition={pressSpring}
       className={cn(fitWidth && 'w-full', className)}
       style={style}
     >
@@ -258,7 +288,7 @@ export function Button({
             shows through when idle and the state colour fills it on success/error. */}
         <MotiView
           animate={{ opacity: backdropColor === undefined ? 0 : 1 }}
-          transition={{ type: 'timing', duration: 200 }}
+          transition={TIMING_BASE}
           pointerEvents="none"
           style={{
             position: 'absolute',
@@ -285,7 +315,10 @@ export function Button({
                   width: rp.size,
                   height: rp.size,
                   borderRadius: rp.size / 2,
-                  backgroundColor: v === 'primary' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.12)',
+                  backgroundColor:
+                    v === 'primary'
+                      ? 'rgba(255,255,255,0.35)' /* theme-exempt: white shimmer on filled bg */
+                      : 'rgba(0,0,0,0.12)' /* theme-exempt: dark shimmer on light bg */,
                 }}
               />
             ))

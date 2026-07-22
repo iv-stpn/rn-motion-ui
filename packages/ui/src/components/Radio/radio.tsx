@@ -11,8 +11,9 @@ import {
 } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
-import { SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
+import { SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
+import { MOTION_SNAPPY, type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../theme/motion';
 
 type RadioCtx = {
   value: string;
@@ -41,6 +42,11 @@ export type RadioGroupProps = {
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /**
+   * Override the indicator animation. Partial — only the fields you pass are changed.
+   * Default: `MOTION_SNAPPY` (stiffness 500, damping 30, mass 0.6).
+   */
+  transition?: Partial<MotiTransitionProp>;
 };
 
 // Layout swaps the flex direction; horizontal wraps like the web original.
@@ -68,12 +74,14 @@ export function RadioGroup({
   className,
   style,
   testID,
+  transition,
 }: RadioGroupProps) {
   const reduce = useReducedMotion();
   const [internal, setInternal] = useState(defaultValue);
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
   const controlled = value !== undefined;
   const current = controlled ? value : internal;
+  const indicatorSpring = mergeTransition(MOTION_SNAPPY, transition);
 
   const setValue = (next: string) => {
     if (!controlled) setInternal(next);
@@ -108,7 +116,7 @@ export function RadioGroup({
               translateX: activeLayout.x + (RING_SIZE - DOT_SIZE) / 2,
               translateY: activeLayout.y + (activeLayout.height - DOT_SIZE) / 2,
             }}
-            transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
+            transition={reduce ? TIMING_INSTANT : indicatorSpring}
             className="h-2.5 w-2.5 rounded-full bg-primary"
             style={{ pointerEvents: 'none', position: 'absolute', left: 0, top: 0 }}
           />

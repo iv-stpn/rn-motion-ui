@@ -31,8 +31,12 @@ function useLatchedValue<T>(value: T, active: boolean): T {
 }
 
 type AdaptiveModalProps = {
-  visible: boolean;
-  onClose: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** @deprecated Use `open` instead. */
+  visible?: boolean;
+  /** @deprecated Use `onOpenChange` instead. */
+  onClose?: () => void;
   children: ReactNode;
   title?: string;
   subtitle?: string;
@@ -85,6 +89,8 @@ export type WidePanelSize = { width?: Dimension; height?: Dimension; maxWidth?: 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: three surfaces (bottomSheet / fullSheet / wide modal+drawer) share one render path — splitting scatters tightly-coupled layout state
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — the three branches share header/content/padding helpers
 export function AdaptiveModal({
+  open: openProp,
+  onOpenChange,
   visible,
   onClose,
   children,
@@ -104,6 +110,12 @@ export function AdaptiveModal({
   const reduce = useReducedMotion();
   const { height, width } = useWindowDimensions();
   const isWideScreen = isWideScreenOverride ?? width >= WIDE_BREAKPOINT;
+
+  const open = openProp ?? visible ?? false;
+  const handleClose = useCallback(() => {
+    onClose?.();
+    onOpenChange?.(false);
+  }, [onClose, onOpenChange]);
 
   const isBottomSheet = smallScreenMode === 'bottomSheet';
   const isRightDrawer = largeScreenMode === 'rightDrawer';
@@ -126,20 +138,20 @@ export function AdaptiveModal({
     ? { type: 'timing' as const, duration: 90, easing: Easing.linear }
     : { type: 'timing' as const, duration: 180, easing: Easing.in(Easing.cubic) };
 
-  const renderedChildren = useLatchedValue(children, visible);
-  const renderedTitle = useLatchedValue(title, visible);
-  const renderedSubtitle = useLatchedValue(subtitle, visible);
+  const renderedChildren = useLatchedValue(children, open);
+  const renderedTitle = useLatchedValue(title, open);
+  const renderedSubtitle = useLatchedValue(subtitle, open);
 
   // The wide surface owns its own Modal + AnimatePresence. useModalRender keeps
   // it mounted until the exit animation finishes (mirrors FullSheet/MorphingModal).
   // When the screen narrows mid-open, `isWideOpen` flips false and the wide branch
   // stops rendering entirely (React unmounts the Modal), so no exit anim plays —
   // the narrow surface takes over immediately.
-  const isWideOpen = visible && isWideScreen;
+  const isWideOpen = open && isWideScreen;
   const { rendered: isWideMounted, onExitComplete } = useModalRender(isWideOpen);
 
   const closeButton = showClose ? (
-    <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close">
+    <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Close">
       <X size={20} />
     </Pressable>
   ) : null;
@@ -231,7 +243,7 @@ export function AdaptiveModal({
         animationType="none"
         statusBarTranslucent={true}
         accessibilityViewIsModal={true}
-        onRequestClose={onClose}
+        onRequestClose={handleClose}
       >
         <AnimatePresence onExitComplete={handleExitComplete}>
           {isWideOpen ? (
@@ -244,7 +256,7 @@ export function AdaptiveModal({
               transition={overlayTransition}
             >
               {isRightDrawer ? (
-                <TouchableOpacity className="flex-1" activeOpacity={1} onPress={closeOnOverlayClick ? onClose : undefined}>
+                <TouchableOpacity className="flex-1" activeOpacity={1} onPress={closeOnOverlayClick ? handleClose : undefined}>
                   <View className="flex-1 items-end">
                     <MotiView
                       className="h-full"
@@ -273,7 +285,7 @@ export function AdaptiveModal({
                 <TouchableOpacity
                   className="flex-1 items-center justify-center px-8"
                   activeOpacity={1}
-                  onPress={closeOnOverlayClick ? onClose : undefined}
+                  onPress={closeOnOverlayClick ? handleClose : undefined}
                 >
                   <MotiView
                     from={{ opacity: 0, scale: 0.965, translateY: desktopEnterOffset }}
@@ -320,8 +332,8 @@ export function AdaptiveModal({
 
   return isBottomSheet ? (
     <BottomSheet
-      visible={visible}
-      onClose={onClose}
+      open={open}
+      onClose={handleClose}
       containerClassName={containerPaddingClass}
       onAfterClose={onAfterClose}
       closeOnOverlayClick={closeOnOverlayClick}
@@ -330,7 +342,7 @@ export function AdaptiveModal({
       {renderBottomSheetContent()}
     </BottomSheet>
   ) : (
-    <FullSheet visible={visible} onClose={onClose} customLayout={true} onAfterClose={onAfterClose}>
+    <FullSheet open={open} onClose={handleClose} customLayout={true} onAfterClose={onAfterClose}>
       <View className={cn('flex-1', containerPaddingClass)}>
         {header}
         {renderContent()}

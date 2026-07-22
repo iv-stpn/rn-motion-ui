@@ -11,6 +11,12 @@
           }
         }
       }
+    },
+    {
+      "includes": ["**/scripts/**"],
+      "linter": { "enabled": false },
+      "formatter": { "enabled": false },
+      "assist": { "enabled": false }
     }
   ]
 }

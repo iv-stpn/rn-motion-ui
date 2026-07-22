@@ -4,8 +4,10 @@ import type { DimensionValue, StyleProp, ViewStyle } from 'react-native';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Plus, Trash2 } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
+import { useThemeColor } from '../../theme/use-theme-color';
 import { Checkbox } from '../Checkbox/checkbox';
 import { styles } from './table-styles';
+import { useTableColors } from './table-theme';
 import type { TableColumn } from './table-types';
 import { CHECKBOX_COL_WIDTH } from './table-types';
 import { alignStyle, alignToJustify, readCellValue } from './table-utils';
@@ -18,6 +20,8 @@ export type EditableCellInputProps = { value: string; onCommit: (next: string) =
 function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) {
   const [draft, setDraft] = useState(value);
   const commit = useCallback(() => onCommit(draft), [onCommit, draft]);
+  const tc = useTableColors();
+  const mutedFg = useThemeColor('muted-foreground');
 
   return (
     <TextInput
@@ -26,9 +30,9 @@ function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) 
       onBlur={commit}
       onSubmitEditing={commit}
       placeholder="Empty"
-      placeholderTextColor="rgba(0,0,0,0.25)"
+      placeholderTextColor={mutedFg}
       testID={testID}
-      style={styles.editableInput}
+      style={[styles.editableInput, tc.editableInput]}
       autoCapitalize="none"
       blurOnSubmit={true}
     />
@@ -47,13 +51,14 @@ export type SkeletonCellPulseProps = {
 
 export function SkeletonCellPulse({ width, align, skeletonWidth, reduce }: SkeletonCellPulseProps) {
   const barWidth: DimensionValue = skeletonWidth ?? (align === 'right' ? 40 : '60%');
+  const borderColor = useThemeColor('border');
   return (
     <View style={[styles.cell, { width, alignItems: alignToJustify(align) }]}>
       <MotiView
         from={{ opacity: 0.5 }}
         animate={{ opacity: reduce ? 0.5 : 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 800, loop: !reduce, repeatReverse: true }}
-        style={{ height: 12, borderRadius: 6, backgroundColor: '#e5e7eb', width: barWidth }}
+        style={{ height: 12, borderRadius: 6, backgroundColor: borderColor, width: barWidth }}
       />
     </View>
   );
@@ -77,6 +82,7 @@ export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEd
   const { textAlign } = alignStyle(column.align);
   const rawValue = readCellValue(row, column);
   const handleCommit = useCallback((v: string) => onCellEdit?.(id, column.key, v), [onCellEdit, id, column.key]);
+  const tc = useTableColors();
 
   let cellContent: ReactNode;
   if (column.cell) cellContent = column.cell(row);
@@ -90,7 +96,7 @@ export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEd
     );
   else
     cellContent = (
-      <Text style={[styles.cellText, { textAlign }]} numberOfLines={1}>
+      <Text style={[styles.cellText, tc.cellText, { textAlign }]} numberOfLines={1}>
         {rawValue === null ? '' : String(rawValue)}
       </Text>
     );
@@ -168,10 +174,12 @@ export function TableRow<T>({
     onDeleteRow?.(id);
     setPressedRowId(null);
   }, [onDeleteRow, id, setPressedRowId]);
+  const tc = useTableColors();
+  const primaryFg = useThemeColor('primary-foreground');
 
   return (
     <Pressable
-      style={[styles.row, { height: rowHeight }, isStriped && (stripedStyle ?? styles.stripedRow)]}
+      style={[styles.row, tc.row, { height: rowHeight }, isStriped && (stripedStyle ?? styles.stripedRow)]}
       onLongPress={handleLongPress}
       onPress={handlePress}
       testID={`${testID ?? 'table'}-row-${id}`}
@@ -180,7 +188,7 @@ export function TableRow<T>({
       <MotiView
         animate={{ opacity: isSelected ? 1 : 0 }}
         transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
-        style={[StyleSheet.absoluteFill, styles.selectedBg, { pointerEvents: 'none' }]}
+        style={[StyleSheet.absoluteFill, styles.selectedBg, tc.selectedBg, { pointerEvents: 'none' }]}
       />
 
       {selectable ? (
@@ -207,22 +215,22 @@ export function TableRow<T>({
         <View style={styles.rowActionBar}>
           {onInsertRow ? (
             <Pressable
-              style={styles.actionBtn}
+              style={[styles.actionBtn, tc.actionBtn]}
               onPress={handleInsertRow}
               hitSlop={8}
               accessibilityLabel={`Insert row before row ${index + 1}`}
             >
-              <Plus size={10} color="#fff" />
+              <Plus size={10} color={primaryFg} />
             </Pressable>
           ) : null}
           {onDeleteRow ? (
             <Pressable
-              style={[styles.actionBtn, styles.actionBtnDestructive]}
+              style={[styles.actionBtn, tc.actionBtn, styles.actionBtnDestructive, tc.actionBtnDestructive]}
               onPress={handleDeleteRow}
               hitSlop={8}
               accessibilityLabel={`Delete row ${index + 1}`}
             >
-              <Trash2 size={10} color="#fff" />
+              <Trash2 size={10} color={primaryFg} />
             </Pressable>
           ) : null}
         </View>

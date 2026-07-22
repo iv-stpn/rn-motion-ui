@@ -24,8 +24,33 @@
   "bugs": {
     "url": "https://github.com/iv-stpn/rn-motion-ui/issues"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "exports": {
+    "./tokens.css": {
+      "default": "./src/theme/tokens.css"
+    },
+    "./overlay/use-sheet-presence": {
+      "source": "./src/components/Overlay/use-sheet-presence.ts",
+      "types": "./src/components/Overlay/use-sheet-presence.ts",
+      "default": "./src/components/Overlay/use-sheet-presence.ts"
+    },
+    "./overlay/overlay-shell": {
+      "source": "./src/components/Overlay/overlay-shell.tsx",
+      "types": "./src/components/Overlay/overlay-shell.tsx",
+      "default": "./src/components/Overlay/overlay-shell.tsx"
+    },
+    "./theme/use-theme-color": {
+      "source": "./src/theme/use-theme-color.ts",
+      "types": "./src/theme/use-theme-color.ts",
+      "default": "./src/theme/use-theme-color.ts"
+    },
+    "./theme/motion": {
+      "source": "./src/theme/motion.ts",
+      "types": "./src/theme/motion.ts",
+      "default": "./src/theme/motion.ts"
+    },
     "./action-feedback-modal": {
       "source": "./src/components/ActionFeedbackModal/action-feedback-modal.tsx",
       "types": "./src/components/ActionFeedbackModal/action-feedback-modal.tsx",
@@ -140,11 +165,6 @@
       "source": "./src/components/FullSheet/full-sheet.tsx",
       "types": "./src/components/FullSheet/full-sheet.tsx",
       "default": "./src/components/FullSheet/full-sheet.tsx"
-    },
-    "./file-upload": {
-      "source": "./src/components/FileUpload/file-upload.tsx",
-      "types": "./src/components/FileUpload/file-upload.tsx",
-      "default": "./src/components/FileUpload/file-upload.tsx"
     },
     "./hover-menu": {
       "source": "./src/components/HoverMenu/hover-menu.tsx",

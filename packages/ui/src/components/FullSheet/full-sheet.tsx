@@ -1,19 +1,153 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { AccessibilityInfo, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { AccessibilityInfo, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
-import { useModalRender } from '../../hooks/use-modal-render';
 import { ChevronRight, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { OverlayShell } from '../Overlay/overlay-shell';
 
 const BACK_BUTTON_HEADER_HEIGHT = 56;
 const SMALL_SCREEN_BREAKPOINT = 640;
 
+type BuildBodyArgs = {
+  mode: FullSheetMode;
+  isSmallScreen: boolean;
+  title: string | undefined;
+  subtitle: string | undefined;
+  showClose: boolean | undefined;
+  dismissable: boolean;
+  handleClose: () => void;
+  customLayout: boolean;
+  children: ReactNode;
+  headerSlot: FullSheetProps['header'];
+  compact: boolean;
+  scrollable: boolean;
+  px: string;
+  pt: string;
+  pb: string;
+  closeIcon: ReactNode | undefined;
+  backIcon: ReactNode | undefined;
+};
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: two layout modes (back-button/default) plus header-slot branching share one body builder — splitting would scatter tightly-coupled layout state
+function buildBody({
+  mode,
+  isSmallScreen,
+  title,
+  subtitle,
+  showClose,
+  dismissable,
+  handleClose,
+  customLayout,
+  children,
+  headerSlot,
+  compact,
+  scrollable,
+  px,
+  pt,
+  pb,
+  closeIcon,
+  backIcon,
+}: BuildBodyArgs): ReactNode {
+  if (mode === 'back-button') {
+    const headerH = isSmallScreen && title ? BACK_BUTTON_HEADER_HEIGHT : 0;
+    let backOverlay: ReactNode = null;
+    if (isSmallScreen && title)
+      backOverlay = (
+        <View
+          className="absolute top-0 right-0 left-0 z-10 flex-row items-center bg-surface"
+          style={{ height: BACK_BUTTON_HEADER_HEIGHT }}
+        >
+          {dismissable ? (
+            <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="ml-2 p-2">
+              <View style={{ transform: [{ rotate: '180deg' }] }}>{backIcon ?? <ChevronRight size={20} />}</View>
+            </Pressable>
+          ) : (
+            <View className="ml-2 h-10 w-10" />
+          )}
+          <Text className="flex-1 pr-4 pl-2 font-semibold text-foreground text-xl" numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
+      );
+    else if (dismissable)
+      backOverlay = (
+        <View className="absolute top-3 left-4">
+          <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="p-2">
+            <View style={{ transform: [{ rotate: '180deg' }] }}>{backIcon ?? <ChevronRight size={20} />}</View>
+          </Pressable>
+        </View>
+      );
+    return (
+      <>
+        <View className="flex-1" style={{ paddingTop: headerH }}>
+          {children}
+        </View>
+        {backOverlay}
+      </>
+    );
+  }
+
+  if (customLayout) return children;
+
+  let resolvedHeader: ReactNode;
+  if (headerSlot === undefined) {
+    const hasHeader = Boolean(title || subtitle || showClose);
+    resolvedHeader = hasHeader ? (
+      <View className={compact ? 'mb-3' : 'mb-4'}>
+        <View className="flex-row items-start justify-between gap-4">
+          {title || subtitle ? (
+            <View className="min-w-0 flex-1 gap-2">
+              {title ? <Text className="mr-4 pt-1 font-semibold text-foreground text-xl">{title}</Text> : null}
+              {subtitle ? <Text className="text-base text-muted-foreground leading-relaxed">{subtitle}</Text> : null}
+            </View>
+          ) : (
+            <View className="flex-1" />
+          )}
+          {showClose && dismissable ? (
+            <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Close">
+              {closeIcon ?? <X size={20} />}
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+    ) : null;
+  } else resolvedHeader = typeof headerSlot === 'function' ? headerSlot({ close: handleClose }) : headerSlot;
+
+  return (
+    <View className={`flex-1 ${px} ${pt}`}>
+      {resolvedHeader}
+      {scrollable ? (
+        <ScrollView
+          className="min-h-0 flex-1"
+          contentContainerClassName="grow"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className={pb}>{children}</View>
+        </ScrollView>
+      ) : (
+        <View className={`w-full flex-1 ${pb}`}>{children}</View>
+      )}
+    </View>
+  );
+}
+
 export type FullSheetMode = 'default' | 'back-button';
 
+/** Context passed to the `header` render-prop. */
+export type FullSheetHeaderCtx = { close: () => void };
+
 export type FullSheetProps = {
-  visible: boolean;
-  onClose: () => void;
+  // New preferred API
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  // Deprecated aliases
+  /** @deprecated Use `open` instead. */
+  visible?: boolean;
+  /** @deprecated Use `onOpenChange` instead. */
+  onClose?: () => void;
   children: ReactNode;
   title?: string;
   subtitle?: string;
@@ -34,11 +168,21 @@ export type FullSheetProps = {
   dismissable?: boolean;
   /** Called after the close animation fully completes. */
   onAfterClose?: () => void;
+  /**
+   * Replaces the built-in title/subtitle/X header.
+   * Pass a ReactNode or a function `(ctx: FullSheetHeaderCtx) => ReactNode`.
+   * When omitted, the existing title/subtitle/showClose props build the header.
+   */
+  header?: ReactNode | ((ctx: FullSheetHeaderCtx) => ReactNode);
+  /** Replace the close (×) button icon. Default: `<X size={20} />`. */
+  closeIcon?: ReactNode;
+  /** Replace the back-button chevron icon. Default: rotated `<ChevronRight size={20} />`. */
+  backIcon?: ReactNode;
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: two layout modes (default/back-button) plus accessibility query — splitting would scatter tightly-coupled state
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — back-button and default branches share transition/reduced-motion state
 export function FullSheet({
+  open,
+  onOpenChange,
   visible,
   onClose,
   children,
@@ -51,11 +195,19 @@ export function FullSheet({
   mode = 'default',
   dismissable = true,
   onAfterClose,
+  header: headerSlot,
+  closeIcon,
+  backIcon,
 }: FullSheetProps) {
+  const isOpen = open ?? visible ?? false;
   const { height, width } = useWindowDimensions();
   const isSmallScreen = width < SMALL_SCREEN_BREAKPOINT;
-  const { rendered, onExitComplete } = useModalRender(visible);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  const handleClose = useCallback(() => {
+    onClose?.();
+    onOpenChange?.(false);
+  }, [onClose, onOpenChange]);
 
   // biome-ignore lint/plugin: one-time reduced-motion query + subscription — cannot be derived from render state
   useEffect(() => {
@@ -72,11 +224,6 @@ export function FullSheet({
     };
   }, []);
 
-  const handleExitComplete = useCallback(() => {
-    onExitComplete();
-    onAfterClose?.();
-  }, [onExitComplete, onAfterClose]);
-
   const enterTransition = {
     type: 'timing' as const,
     duration: prefersReducedMotion ? 160 : 340,
@@ -92,122 +239,46 @@ export function FullSheet({
   const pt = compact ? 'pt-6' : 'pt-8';
   const pb = compact ? 'pb-5' : 'pb-6';
 
-  if (!rendered) return null;
-
-  // ── Body layout selection ──────────────────────────────────────────────────
-  let body: ReactNode;
-
-  if (mode === 'back-button') {
-    const headerH = isSmallScreen && title ? BACK_BUTTON_HEADER_HEIGHT : 0;
-
-    let backOverlay: ReactNode = null;
-    if (isSmallScreen && title)
-      backOverlay = (
-        <View
-          className="absolute top-0 right-0 left-0 z-10 flex-row items-center bg-surface"
-          style={{ height: BACK_BUTTON_HEADER_HEIGHT }}
-        >
-          {dismissable ? (
-            <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Back" className="ml-2 p-2">
-              <View style={{ transform: [{ rotate: '180deg' }] }}>
-                <ChevronRight size={20} />
-              </View>
-            </Pressable>
-          ) : (
-            <View className="ml-2 h-10 w-10" />
-          )}
-          <Text className="flex-1 pr-4 pl-2 font-semibold text-foreground text-xl" numberOfLines={1}>
-            {title}
-          </Text>
-        </View>
-      );
-    else if (dismissable)
-      backOverlay = (
-        <View className="absolute top-3 left-4">
-          <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Back" className="p-2">
-            <View style={{ transform: [{ rotate: '180deg' }] }}>
-              <ChevronRight size={20} />
-            </View>
-          </Pressable>
-        </View>
-      );
-
-    body = (
-      <>
-        <View className="flex-1" style={{ paddingTop: headerH }}>
-          {children}
-        </View>
-        {backOverlay}
-      </>
-    );
-  } else if (customLayout) body = children;
-  else {
-    const hasHeader = Boolean(title || subtitle || showClose);
-    const header = hasHeader ? (
-      <View className={compact ? 'mb-3' : 'mb-4'}>
-        <View className="flex-row items-start justify-between gap-4">
-          {title || subtitle ? (
-            <View className="min-w-0 flex-1 gap-2">
-              {title ? <Text className="mr-4 pt-1 font-semibold text-foreground text-xl">{title}</Text> : null}
-              {subtitle ? <Text className="text-base text-muted-foreground leading-relaxed">{subtitle}</Text> : null}
-            </View>
-          ) : (
-            <View className="flex-1" />
-          )}
-          {showClose && dismissable ? (
-            <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close">
-              <X size={20} />
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
-    ) : null;
-
-    body = (
-      <View className={`flex-1 ${px} ${pt}`}>
-        {header}
-        {scrollable ? (
-          <ScrollView
-            className="min-h-0 flex-1"
-            contentContainerClassName="grow"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View className={pb}>{children}</View>
-          </ScrollView>
-        ) : (
-          <View className={`w-full flex-1 ${pb}`}>{children}</View>
-        )}
-      </View>
-    );
-  }
-
   return (
-    <Modal
-      visible={rendered}
-      transparent={true}
-      animationType="none"
-      statusBarTranslucent={true}
-      onRequestClose={dismissable ? onClose : undefined}
-      accessibilityViewIsModal={true}
-      aria-modal={true}
-    >
-      <AnimatePresence onExitComplete={handleExitComplete}>
-        {visible ? (
-          <MotiView
-            key="fullsheet"
-            className="flex-1 bg-surface"
-            from={{ translateY: height }}
-            animate={{ translateY: 0 }}
-            exit={{ translateY: height }}
-            transition={enterTransition}
-            exitTransition={exitTransition}
-          >
-            {body}
-          </MotiView>
-        ) : null}
-      </AnimatePresence>
-    </Modal>
+    <OverlayShell open={isOpen} onClose={handleClose} onAfterClose={onAfterClose} dismissable={dismissable}>
+      {({ open: isAnimOpen, onExitComplete }) => {
+        const body = buildBody({
+          mode,
+          isSmallScreen,
+          title,
+          subtitle,
+          showClose,
+          dismissable,
+          handleClose,
+          customLayout,
+          children,
+          headerSlot,
+          compact,
+          scrollable,
+          px,
+          pt,
+          pb,
+          closeIcon,
+          backIcon,
+        });
+        return (
+          <AnimatePresence onExitComplete={onExitComplete}>
+            {isAnimOpen ? (
+              <MotiView
+                key="fullsheet"
+                className="flex-1 bg-surface"
+                from={{ translateY: height }}
+                animate={{ translateY: 0 }}
+                exit={{ translateY: height }}
+                transition={enterTransition}
+                exitTransition={exitTransition}
+              >
+                {body}
+              </MotiView>
+            ) : null}
+          </AnimatePresence>
+        );
+      }}
+    </OverlayShell>
   );
 }

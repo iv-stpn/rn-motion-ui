@@ -1,23 +1,6 @@
 @import "tailwindcss";
 @import "uniwind";
+@import "rn-motion-ui/tokens.css";
 
 /* Stories live in the library workspace, so point Tailwind's class scanner there. */
 @source "../../packages/ui/src";
-
-/* Design tokens — mirrored from the web library's theme (oklch), exposed as
-   Tailwind color utilities (bg-primary, text-muted-foreground, border-border, …). */
-@theme {
-  --color-surface: oklch(99% 0 0);
-  --color-foreground: oklch(15% 0 0);
-  --color-card: oklch(97% 0 0);
-  --color-muted: oklch(97% 0 0);
-  --color-muted-foreground: oklch(50% 0 0);
-  --color-border: oklch(15% 0 0 / 0.06);
-  --color-primary: oklch(15% 0 0);
-  --color-primary-foreground: oklch(99% 0 0);
-  --color-secondary: oklch(97% 0 0);
-  --color-secondary-foreground: oklch(15% 0 0);
-  --color-destructive: oklch(62% 0.22 25);
-  --color-success: oklch(70% 0.18 155);
-  --color-warning: oklch(78% 0.18 75);
-}

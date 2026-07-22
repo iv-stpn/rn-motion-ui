@@ -42,6 +42,12 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Validate exports map
+        run: node packages/ui/scripts/check-exports.mjs
+
+      - name: Check no hardcoded colors
+        run: node packages/ui/scripts/check-no-hardcoded-colors.mjs
+
       - name: Typecheck
         run: bun run typecheck
 

@@ -9,6 +9,7 @@ import { AlertCircle, MessageSquare, X } from '../../lib/icons';
 import { MotiText } from '../../moti/components/text';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { useThemeColors } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
 
 // RN FALLBACK vs web: the web widget shares a framer `layout` on one shell that
@@ -23,7 +24,6 @@ import { Button } from '../Button/button';
 type Status = 'idle' | 'open' | 'sending' | 'sent' | 'error';
 
 const SUCCESS_DURATION_MS = 1600;
-const SUCCESS_COLOR = '#22c55e';
 // Open-morph duration; the field focus waits this long so the caret never
 // appears inside a still-expanding panel (mirrors the web widget's staged focus).
 const MORPH_OPEN_MS = 320;
@@ -43,7 +43,6 @@ const SPRINKLES = Array.from({ length: 8 }, (_, i) => {
   return {
     x: Math.cos(angle) * 26,
     y: Math.sin(angle) * 26,
-    color: i % 2 === 0 ? SUCCESS_COLOR : '#6366f1',
   };
 });
 
@@ -60,10 +59,14 @@ export type FeedbackWidgetProps = {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
+  /** Replace the close (×) icon in the panel header. Default: `<X size={12} color={mutedFg} />`. */
+  closeIcon?: ReactNode;
+  /** Replace the error-state alert icon. Default: `<AlertCircle size={20} color={destructiveColor} />`. */
+  errorIcon?: ReactNode;
 };
 
 type SentViewProps = { reduce: boolean };
-type ErrorViewProps = { reduce: boolean; onRetry: () => void };
+type ErrorViewProps = { reduce: boolean; onRetry: () => void; errorIcon?: ReactNode };
 
 type RenderFeedbackContentArgs = {
   status: Status;
@@ -76,6 +79,8 @@ type RenderFeedbackContentArgs = {
   setMessage: (v: string) => void;
   close: () => void;
   submit: () => void;
+  closeIcon?: ReactNode;
+  errorIcon?: ReactNode;
 };
 
 function renderFeedbackContent({
@@ -89,9 +94,11 @@ function renderFeedbackContent({
   setMessage,
   close,
   submit,
+  closeIcon,
+  errorIcon,
 }: RenderFeedbackContentArgs): ReactNode {
   if (status === 'sent') return <SentView key="sent" reduce={reduce} />;
-  if (status === 'error') return <ErrorView key="error" reduce={reduce} onRetry={submit} />;
+  if (status === 'error') return <ErrorView key="error" reduce={reduce} onRetry={submit} errorIcon={errorIcon} />;
   return (
     <FormView
       key="form"
@@ -104,6 +111,7 @@ function renderFeedbackContent({
       onChangeMessage={setMessage}
       onClose={close}
       onSubmit={submit}
+      closeIcon={closeIcon}
     />
   );
 }
@@ -117,8 +125,11 @@ export function FeedbackWidget({
   style,
   accessibilityLabel,
   testID,
+  closeIcon,
+  errorIcon,
 }: FeedbackWidgetProps) {
   const reduce = useReducedMotion();
+  const colors = useThemeColors();
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
   const [status, setStatus] = useState<Status>('idle');
@@ -205,6 +216,8 @@ export function FeedbackWidget({
                   setMessage,
                   close,
                   submit,
+                  closeIcon,
+                  errorIcon,
                 })}
               </AnimatePresence>
             </MotiView>
@@ -223,7 +236,7 @@ export function FeedbackWidget({
                 onPress={handleOpen}
                 className="h-12 w-12 items-center justify-center"
               >
-                {icon ?? <MessageSquare size={20} color="#111111" />}
+                {icon ?? <MessageSquare size={20} color={colors.foreground} />}
               </Pressable>
             </MotiView>
           )}
@@ -243,9 +256,22 @@ export type FormViewProps = {
   onChangeMessage: (v: string) => void;
   onClose: () => void;
   onSubmit: () => void;
+  closeIcon?: ReactNode;
 };
 
-function FormView({ inputRef, reduce, title, placeholder, message, busy, onChangeMessage, onClose, onSubmit }: FormViewProps) {
+function FormView({
+  inputRef,
+  reduce,
+  title,
+  placeholder,
+  message,
+  busy,
+  onChangeMessage,
+  onClose,
+  onSubmit,
+  closeIcon,
+}: FormViewProps) {
+  const colors = useThemeColors();
   return (
     <MotiView
       from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
@@ -262,7 +288,7 @@ function FormView({ inputRef, reduce, title, placeholder, message, busy, onChang
             onPress={onClose}
             className="h-5 w-5 items-center justify-center rounded-full bg-foreground/[0.07]"
           >
-            <X size={12} color="#71717a" />
+            {closeIcon ?? <X size={12} color={colors['muted-foreground']} />}
           </Pressable>
         </View>
         <TextInput
@@ -271,7 +297,7 @@ function FormView({ inputRef, reduce, title, placeholder, message, busy, onChang
           editable={!busy}
           onChangeText={onChangeMessage}
           placeholder={placeholder}
-          placeholderTextColor="rgba(128,128,128,0.6)"
+          placeholderTextColor={colors['muted-foreground']}
           multiline={true}
           numberOfLines={3}
           accessibilityLabel={title}
@@ -305,6 +331,7 @@ function FormView({ inputRef, reduce, title, placeholder, message, busy, onChang
 }
 
 function SentView({ reduce }: SentViewProps) {
+  const colors = useThemeColors();
   return (
     <MotiView
       from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
@@ -327,7 +354,7 @@ function SentView({ reduce }: SentViewProps) {
                     height: 6,
                     width: 6,
                     borderRadius: 3,
-                    backgroundColor: s.color,
+                    backgroundColor: i % 2 === 0 ? colors.success : '#6366f1',
                   }}
                 />
               ))}
@@ -336,7 +363,7 @@ function SentView({ reduce }: SentViewProps) {
             animate={{ scale: 1 }}
             transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 500, damping: 22, delay: 40 }}
             className="h-12 w-12 items-center justify-center rounded-full"
-            style={{ backgroundColor: SUCCESS_COLOR }}
+            style={{ backgroundColor: colors.success }}
           >
             <MotiView
               from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.4 }}
@@ -347,7 +374,7 @@ function SentView({ reduce }: SentViewProps) {
                 <Path
                   d="M5 12.5l4.5 4.5L19 7.5"
                   fill="none"
-                  stroke="#ffffff"
+                  stroke={colors.surface}
                   strokeWidth={2.5}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -363,7 +390,8 @@ function SentView({ reduce }: SentViewProps) {
   );
 }
 
-function ErrorView({ reduce, onRetry }: ErrorViewProps) {
+function ErrorView({ reduce, onRetry, errorIcon }: ErrorViewProps) {
+  const colors = useThemeColors();
   return (
     <MotiView
       from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
@@ -373,7 +401,7 @@ function ErrorView({ reduce, onRetry }: ErrorViewProps) {
     >
       <View accessibilityRole="alert" className="items-center rounded-[16px] bg-muted px-4 py-5">
         <View className="h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-          <AlertCircle size={20} color="#e5484d" />
+          {errorIcon ?? <AlertCircle size={20} color={colors.destructive} />}
         </View>
         <Text className="mt-3 font-semibold text-foreground text-sm">{ERROR_TITLE}</Text>
         <Text className="mt-1 text-center text-muted-foreground text-xs leading-relaxed">{ERROR_BODY}</Text>

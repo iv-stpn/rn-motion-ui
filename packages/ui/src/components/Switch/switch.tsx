@@ -6,6 +6,8 @@ import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { cn } from '../../lib/cn';
 import { THUMB_SPRING } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
+import { type MotiTransitionProp, mergeTransition } from '../../theme/motion';
+import { useThemeColor } from '../../theme/use-theme-color';
 
 // Track colour swaps on checked; the thumb translate/squish stay inline (animated).
 const track = cva('h-7 w-12 flex-row items-center rounded-full px-1', {
@@ -31,13 +33,33 @@ export type SwitchProps = {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
+  /**
+   * Override the thumb slide spring. Partial — only the fields you pass are changed.
+   * Default: `THUMB_SPRING` (stiffness 800, damping 80, mass 4).
+   */
+  thumbTransition?: Partial<MotiTransitionProp>;
 };
 
-export function Switch({ checked, onCheckedChange, disabled, label, className, style, accessibilityLabel, testID }: SwitchProps) {
+export function Switch({
+  checked,
+  onCheckedChange,
+  disabled,
+  label,
+  className,
+  style,
+  accessibilityLabel,
+  testID,
+  thumbTransition,
+}: SwitchProps) {
   const reduce = useReducedMotion();
   const [pressed, setPressed] = useState(false);
   const shakeX = useRef(new Animated.Value(0)).current;
   const squish = pressed && !disabled && !reduce;
+  const thumbBg = useThemeColor('surface');
+  const thumbSpring = mergeTransition(
+    { type: 'spring' as const, stiffness: THUMB_SPRING.stiffness, damping: THUMB_SPRING.damping, mass: THUMB_SPRING.mass },
+    thumbTransition,
+  );
 
   // Disabled + pressed → a short horizontal shake to signal "can't toggle".
   useShakeAnimation({ trigger: Boolean(disabled && pressed), reduce, shakeX, steps: SWITCH_SHAKE_STEPS, duration: 60 });
@@ -71,17 +93,12 @@ export function Switch({ checked, onCheckedChange, disabled, label, className, s
               scaleX: squish ? 1.15 : 1,
               scale: squish ? 0.92 : 1,
             }}
-            transition={{
-              type: 'spring',
-              stiffness: THUMB_SPRING.stiffness,
-              damping: THUMB_SPRING.damping,
-              mass: THUMB_SPRING.mass,
-            }}
+            transition={thumbSpring}
             style={{
               width: 20,
               height: 20,
               borderRadius: 10,
-              backgroundColor: '#ffffff',
+              backgroundColor: thumbBg,
               ...Platform.select({
                 default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3 },
                 web: { boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.2)' },

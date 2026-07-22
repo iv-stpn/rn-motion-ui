@@ -162,7 +162,7 @@ export function NotFoundGlitch({
           style={{
             fontSize: 100,
             fontWeight: 'bold',
-            color: '#111111',
+            color: '#111111' /* theme-exempt: glitch aesthetic, intentionally near-black on both modes */,
             fontVariant: ['tabular-nums'],
             letterSpacing: -2,
           }}

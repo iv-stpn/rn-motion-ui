@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useThemeColor } from '../../theme/use-theme-color';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -57,11 +58,13 @@ function ScrollProgressBar({
   progress,
   spring = true,
   height = 3,
-  color = '#111111',
+  color: colorProp,
   className,
   style,
   testID,
 }: ScrollProgressBarProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   const value = useSmoothed(progress, spring);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: Math.max(0, Math.min(1, value.value)) }] }));
   return (
@@ -76,11 +79,13 @@ function ScrollProgressCircle({
   spring = true,
   size = 40,
   thickness = 3,
-  color = '#111111',
+  color: colorProp,
   className,
   style,
   testID,
 }: ScrollProgressCircleProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   const value = useSmoothed(progress, spring);
   const radius = (size - thickness) / 2;
   const circumference = 2 * Math.PI * radius;

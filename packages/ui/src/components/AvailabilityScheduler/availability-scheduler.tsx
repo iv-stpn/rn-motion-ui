@@ -17,6 +17,7 @@ import { CONTENT_TRANSITION, SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease'
 import { Check, Copy, Plus, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { useThemeColor } from '../../theme/use-theme-color';
 import { Checkbox } from '../Checkbox/checkbox';
 import { Switch } from '../Switch/switch';
 import { WheelPicker } from '../WheelPicker/wheel-picker';
@@ -144,7 +145,10 @@ function TimePickerModal({ visible, value, options, onSelect, onClose }: TimePic
 
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onShow={onShow} onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} onPress={onClose}>
+      <Pressable
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' /* scrim — theme-independent */, justifyContent: 'flex-end' }}
+        onPress={onClose}
+      >
         <View>
           <Pressable onPress={stopPropagation}>
             <View className="rounded-t-3xl bg-card" style={{ paddingBottom: 16 }}>
@@ -252,7 +256,10 @@ function CopyModal({ visible, fromLabel, onApply, onClose }: CopyModalProps) {
 
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }} onPress={onClose}>
+      <Pressable
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' /* scrim — theme-independent */, justifyContent: 'flex-end' }}
+        onPress={onClose}
+      >
         <View>
           <Pressable onPress={stopPropagation}>
             <View className="rounded-t-3xl bg-card" style={{ paddingBottom: 20, paddingHorizontal: 20 }}>
@@ -304,6 +311,7 @@ export type RangeRowProps = {
 };
 
 function RangeRow({ range, options, reduce, onUpdate, onRemove }: RangeRowProps) {
+  const mutedFg = useThemeColor('muted-foreground');
   const handleStartChange = useCallback((v: string) => onUpdate(range.id, { start: v }), [onUpdate, range.id]);
   const handleEndChange = useCallback((v: string) => onUpdate(range.id, { end: v }), [onUpdate, range.id]);
   const handleRemove = useCallback(() => onRemove(range.id), [onRemove, range.id]);
@@ -325,7 +333,7 @@ function RangeRow({ range, options, reduce, onUpdate, onRemove }: RangeRowProps)
         onPress={handleRemove}
         className="h-8 w-8 items-center justify-center rounded-lg"
       >
-        <X size={16} color="#6b7280" />
+        <X size={16} color={mutedFg} />
       </Pressable>
     </MotiView>
   );
@@ -345,6 +353,7 @@ export type DayRowProps = {
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: time-range drag logic — each branch handles a distinct interaction state
 function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRowProps) {
+  const mutedFg = useThemeColor('muted-foreground');
   const idRef = useRef(0);
   const nextId = useCallback(() => {
     const n = idRef.current;
@@ -456,7 +465,7 @@ function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRow
                 onPress={addRange}
                 className="h-8 w-8 items-center justify-center rounded-lg"
               >
-                <Plus size={16} color="#6b7280" />
+                <Plus size={16} color={mutedFg} />
               </Pressable>
             </MotiView>
           ) : null}
@@ -477,7 +486,7 @@ function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRow
                   exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
                   transition={SPRING_PRESS}
                 >
-                  <Check size={16} color="#6b7280" />
+                  <Check size={16} color={mutedFg} />
                 </MotiView>
               ) : (
                 <MotiView
@@ -487,7 +496,7 @@ function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRow
                   exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
                   transition={SPRING_PRESS}
                 >
-                  <Copy size={16} color="#6b7280" />
+                  <Copy size={16} color={mutedFg} />
                 </MotiView>
               )}
             </AnimatePresence>

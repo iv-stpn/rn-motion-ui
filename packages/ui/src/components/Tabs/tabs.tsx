@@ -12,6 +12,9 @@ import {
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
+import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../theme/motion';
+
+const TAB_INDICATOR_SPRING = { type: 'spring' as const, stiffness: 170, damping: 24, mass: 1.2 };
 
 type Variant = 'pill' | 'underline' | 'segment';
 
@@ -24,6 +27,7 @@ type Ctx = {
   layouts: Record<string, Layout>;
   register: (value: string, layout: Layout) => void;
   reduce: boolean;
+  indicatorTransition?: Partial<MotiTransitionProp>;
 };
 
 const TabsCtx = createContext<Ctx | null>(null);
@@ -55,9 +59,24 @@ export type TabsProps = {
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /**
+   * Override the active-indicator slide spring. Partial — only changed fields needed.
+   * Default: `MOTION_STANDARD` tuned for tab indicators (stiffness 170, damping 24, mass 1.2).
+   */
+  indicatorTransition?: Partial<MotiTransitionProp>;
 };
 
-export function Tabs({ defaultValue, value, onValueChange, variant = 'pill', children, className, style, testID }: TabsProps) {
+export function Tabs({
+  defaultValue,
+  value,
+  onValueChange,
+  variant = 'pill',
+  children,
+  className,
+  style,
+  testID,
+  indicatorTransition,
+}: TabsProps) {
   const reduce = useReducedMotion();
   const [internal, setInternal] = useState(defaultValue ?? '');
   const [layouts, setLayouts] = useState<Record<string, Layout>>({});
@@ -81,7 +100,7 @@ export function Tabs({ defaultValue, value, onValueChange, variant = 'pill', chi
   }, []);
 
   return (
-    <TabsCtx.Provider value={{ value: current, setValue, variant, layouts, register, reduce }}>
+    <TabsCtx.Provider value={{ value: current, setValue, variant, layouts, register, reduce, indicatorTransition }}>
       <View testID={testID} className={cn(className)} style={style}>
         {children}
       </View>
@@ -93,8 +112,9 @@ export type TabsListProps = { children: ReactNode };
 
 // biome-ignore lint/style/useExportsLast: component exported before TabsTrigger helper — collocated for readability
 export function TabsList({ children }: TabsListProps) {
-  const { variant, value, layouts, reduce } = useTabs();
+  const { variant, value, layouts, reduce, indicatorTransition } = useTabs();
   const active = layouts[value];
+  const indicatorSpring = mergeTransition(TAB_INDICATOR_SPRING, indicatorTransition);
   // Track whether the indicator has been placed once so the first render jumps
   // directly to the selected tab instead of animating from wherever MotiView
   // initialises (avoids the "slide from tab-1" flash on mount).
@@ -123,12 +143,8 @@ export function TabsList({ children }: TabsListProps) {
             translateY: variant === 'underline' ? active.y + active.height - 2 : active.y,
             height: variant === 'underline' ? 2 : active.height,
           }}
-          transition={
-            !hasPositioned.current || reduce
-              ? { type: 'timing', duration: 0 }
-              : { type: 'spring', stiffness: 170, damping: 24, mass: 1.2 }
-          }
-          className={variant === 'underline' ? 'bg-primary' : 'bg-white'}
+          transition={!hasPositioned.current || reduce ? TIMING_INSTANT : indicatorSpring}
+          className={variant === 'underline' ? 'bg-primary' : 'bg-surface'}
           style={{
             pointerEvents: 'none',
             position: 'absolute',

@@ -1,9 +1,12 @@
+import type { ReactNode } from 'react';
 import { useCallback } from 'react';
 import type { GestureResponderHandlers } from 'react-native';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { ChevronUp, GripVertical, Plus, Trash2 } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
+import { useThemeColor } from '../../theme/use-theme-color';
 import { styles } from './table-styles';
+import { useTableColors } from './table-theme';
 import type { SortDirection, TableColumn } from './table-types';
 import { alignStyle, alignToJustify } from './table-utils';
 
@@ -31,6 +34,8 @@ export type HeaderCellProps<T> = {
   onInsertColumn?: (index: number, position: 'before' | 'after') => void;
   onDeleteColumn?: (key: string) => void;
   testID?: string;
+  /** Replace the sort-direction chevron. Default: `<ChevronUp size={12} color={...} />`. */
+  sortIcon?: ReactNode;
 };
 
 // One column header. Sort/menu/rename callbacks are stable useCallbacks bound to
@@ -56,8 +61,11 @@ export function HeaderCell<T>({
   onInsertColumn,
   onDeleteColumn,
   testID,
+  sortIcon,
 }: HeaderCellProps<T>) {
   const { textAlign } = alignStyle(column.align);
+  const tc = useTableColors();
+  const primaryFg = useThemeColor('primary-foreground');
 
   const handleLongPress = useCallback(() => {
     if (hasColMenu) setPressedColKey(isColPressed ? null : column.key);
@@ -98,7 +106,7 @@ export function HeaderCell<T>({
             accessibilityLabel={`Reorder ${column.key} column`}
             testID={`${testID ?? 'table'}-grip-${column.key}`}
           >
-            <GripVertical size={14} color="#9ca3af" />
+            <GripVertical size={14} color={tc.headerText.color} />
           </View>
         ) : null}
 
@@ -106,14 +114,14 @@ export function HeaderCell<T>({
           <TextInput
             value={column.header}
             onChangeText={handleRename}
-            style={[styles.headerRenameInput, { textAlign }]}
+            style={[styles.headerRenameInput, tc.headerRenameInput, { textAlign }]}
             accessibilityLabel={`Rename ${column.key} column`}
           />
         ) : (
           <View style={[styles.headerLabelRow, { justifyContent: alignToJustify(column.align) }]}>
             <Text
               selectable={false}
-              style={[styles.headerText, isActive && styles.headerTextActive, { textAlign }]}
+              style={[styles.headerText, tc.headerText, isActive && tc.headerTextActive, { textAlign }]}
               numberOfLines={1}
             >
               {column.header}
@@ -123,7 +131,7 @@ export function HeaderCell<T>({
                 animate={{ rotate: isActive && activeDirection === 'desc' ? '180deg' : '0deg', opacity: isActive ? 1 : 0.35 }}
                 transition={{ type: 'timing', duration: reduce ? 0 : 180 }}
               >
-                <ChevronUp size={12} color={isActive ? '#111' : '#888'} />
+                {sortIcon ?? <ChevronUp size={12} color={isActive ? tc.headerTextActive.color : tc.headerText.color} />}
               </MotiView>
             ) : null}
           </View>
@@ -134,13 +142,17 @@ export function HeaderCell<T>({
       {isColPressed && hasColMenu ? (
         <View style={styles.colActionBar}>
           {onInsertColumn ? (
-            <Pressable style={styles.actionBtn} onPress={handleInsertColumn} hitSlop={8}>
-              <Plus size={10} color="#fff" />
+            <Pressable style={[styles.actionBtn, tc.actionBtn]} onPress={handleInsertColumn} hitSlop={8}>
+              <Plus size={10} color={primaryFg} />
             </Pressable>
           ) : null}
           {onDeleteColumn ? (
-            <Pressable style={[styles.actionBtn, styles.actionBtnDestructive]} onPress={handleDeleteColumn} hitSlop={8}>
-              <Trash2 size={10} color="#fff" />
+            <Pressable
+              style={[styles.actionBtn, tc.actionBtn, styles.actionBtnDestructive, tc.actionBtnDestructive]}
+              onPress={handleDeleteColumn}
+              hitSlop={8}
+            >
+              <Trash2 size={10} color={primaryFg} />
             </Pressable>
           ) : null}
         </View>

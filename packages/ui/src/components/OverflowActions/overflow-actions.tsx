@@ -7,6 +7,7 @@ import { SPRING_PRESS } from '../../lib/ease';
 import { MoreHorizontal, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { useThemeColor } from '../../theme/use-theme-color';
 
 // RN FALLBACK vs web: the web rail uses framer `layout` on every node so the
 // track smoothly resizes as the overflow group mounts/unmounts, plus a blur
@@ -46,6 +47,10 @@ export type OverflowActionsProps = {
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /** Replace the open-state close icon. Default: `<X size={14|16} color={iconOnPrimary} />`. */
+  closeIcon?: ReactNode;
+  /** Replace the closed-state overflow trigger icon. Default: `<MoreHorizontal size={14|16} color={iconOnPrimary} />`. */
+  triggerIcon?: ReactNode;
 };
 
 // Softer than the app defaults so the group stays attached to the toggle.
@@ -86,8 +91,11 @@ export function OverflowActions({
   className,
   style,
   testID,
+  closeIcon,
+  triggerIcon,
 }: OverflowActionsProps) {
   const reduce = useReducedMotion();
+  const iconOnPrimary = useThemeColor('primary-foreground');
   const [internal, setInternal] = useState(defaultExpanded);
   const [togglePressed, setTogglePressed] = useState(false);
   // Natural width of the overflow group, measured offscreen so the clip has an
@@ -181,11 +189,9 @@ export function OverflowActions({
                 exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
                 transition={{ type: 'timing', duration: reduce ? 100 : 180 }}
               >
-                {isExpanded ? (
-                  <X size={size === 'sm' ? 14 : 16} color="#fafafa" />
-                ) : (
-                  <MoreHorizontal size={size === 'sm' ? 14 : 16} color="#fafafa" />
-                )}
+                {isExpanded
+                  ? (closeIcon ?? <X size={size === 'sm' ? 14 : 16} color={iconOnPrimary} />)
+                  : (triggerIcon ?? <MoreHorizontal size={size === 'sm' ? 14 : 16} color={iconOnPrimary} />)}
               </MotiView>
             </AnimatePresence>
           </Pressable>

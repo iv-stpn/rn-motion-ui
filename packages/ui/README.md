@@ -124,6 +124,91 @@ Subpaths are namespaced by category:
 | `/not-found` | `NotFound` |
 | `/icons` | icon components |
 | `/ease` | easing constants |
+| `/tokens.css` | design token stylesheet |
+| `/theme/use-theme-color` | `useThemeColor`, `useThemeColors` |
+
+## Theming
+
+### Design tokens
+
+The library ships a canonical Tailwind token sheet that you import once in your app's global CSS:
+
+```css
+@import "tailwindcss";
+@import "rn-motion-ui/tokens.css";
+```
+
+This registers 13 semantic color tokens as Tailwind CSS utilities (`bg-primary`, `text-foreground`, `border-border`, …) and applies automatic dark-mode overrides via `@media (prefers-color-scheme: dark)`.
+
+#### Token reference
+
+| Token | Light | Dark | Usage |
+| --- | --- | --- | --- |
+| `surface` | `oklch(99% 0 0)` | `oklch(9% 0 0)` | Page / screen background |
+| `foreground` | `oklch(15% 0 0)` | `oklch(96% 0 0)` | Default text |
+| `card` | `oklch(97% 0 0)` | `oklch(13% 0 0)` | Card / panel surfaces |
+| `muted` | `oklch(97% 0 0)` | `oklch(16% 0 0)` | Subtle backgrounds |
+| `muted-foreground` | `oklch(50% 0 0)` | `oklch(60% 0 0)` | Secondary / placeholder text |
+| `border` | `oklch(15% 0 0 / 0.06)` | `oklch(99% 0 0 / 0.08)` | Dividers and outlines |
+| `primary` | `oklch(15% 0 0)` | `oklch(96% 0 0)` | Primary actions / fills |
+| `primary-foreground` | `oklch(99% 0 0)` | `oklch(15% 0 0)` | Text on primary |
+| `secondary` | `oklch(97% 0 0)` | `oklch(18% 0 0)` | Secondary fills |
+| `secondary-foreground` | `oklch(15% 0 0)` | `oklch(96% 0 0)` | Text on secondary |
+| `destructive` | `oklch(62% 0.22 25)` | `oklch(66% 0.22 25)` | Error / danger states |
+| `success` | `oklch(70% 0.18 155)` | `oklch(72% 0.18 155)` | Success states |
+| `warning` | `oklch(78% 0.18 75)` | `oklch(80% 0.18 75)` | Warning states |
+
+#### Overriding tokens
+
+Add a `@theme` block after the import to override any token for your brand:
+
+```css
+@import "rn-motion-ui/tokens.css";
+
+@theme {
+  /* Brand blue as primary */
+  --color-primary:            oklch(52% 0.22 250);
+  --color-primary-foreground: oklch(99% 0 0);
+}
+```
+
+For manual dark mode (`.dark` class on `<html>` instead of `prefers-color-scheme`):
+
+```css
+@import "rn-motion-ui/tokens.css";
+
+/* tokens.css already handles system dark-mode; add .dark support too: */
+@layer base {
+  .dark {
+    --color-primary: oklch(70% 0.22 250);
+  }
+}
+```
+
+### Animated and SVG colors — `useThemeColor`
+
+Reanimated worklets and `react-native-svg` props require resolved color strings, not CSS utility classes. Use `useThemeColor` to read the current token value at runtime:
+
+```tsx
+import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
+import { useAnimatedStyle } from 'react-native-reanimated';
+
+function Spinner() {
+  const color = useThemeColor('primary');
+  const style = useAnimatedStyle(() => ({ borderColor: color }));
+  return <Animated.View style={[styles.ring, style]} />;
+}
+```
+
+On **web** it reads the live CSS custom property (`--color-primary`) so consumer `@theme` overrides are automatically respected. On **native** it uses `useColorScheme()` to select from the static light/dark maps, matching the values in `tokens.css` with no provider required.
+
+Use `useThemeColors()` when you need several tokens at once:
+
+```tsx
+import { useThemeColors } from 'rn-motion-ui/theme/use-theme-color';
+
+const { primary, destructive, success } = useThemeColors();
+```
 
 ## License
 

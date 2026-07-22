@@ -1,17 +1,16 @@
+// Color properties have been moved to useTableColors() in table-theme.ts — see each component for the merge pattern.
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-    backgroundColor: '#fff',
+    // color: tc.container (borderColor, backgroundColor)
   },
   headerRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-    backgroundColor: '#f9fafb',
+    // color: tc.headerRow (borderBottomColor, backgroundColor)
     // Reorder drags start on the header grip; without this, a mouse drag selects
     // the header text and the native selection hijacks the pointer, so the
     // PanResponder never tracks the move. Suppress selection across the header.
@@ -33,16 +32,16 @@ export const styles = StyleSheet.create({
   headerText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#6b7280',
+    // color: tc.headerText (color)
     flex: 1,
   },
   headerTextActive: {
-    color: '#111827',
+    // color: tc.headerTextActive (color)
   },
   headerRenameInput: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#6b7280',
+    // color: tc.headerRenameInput (color)
     padding: 0,
     flex: 1,
   },
@@ -63,18 +62,18 @@ export const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 2,
-    backgroundColor: '#3b82f6',
+    // color: tc.dropIndicator (backgroundColor)
     zIndex: 20,
   },
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.07)',
+    // color: tc.row (borderBottomColor)
     overflow: 'hidden',
     position: 'relative',
   },
   selectedBg: {
-    backgroundColor: 'rgba(59,130,246,0.05)',
+    // color: tc.selectedBg (backgroundColor)
   },
   cell: {
     justifyContent: 'center',
@@ -83,11 +82,11 @@ export const styles = StyleSheet.create({
   },
   cellText: {
     fontSize: 13,
-    color: '#111827',
+    // color: tc.cellText (color)
   },
   editableInput: {
     fontSize: 13,
-    color: '#111827',
+    // color: tc.editableInput (color)
     padding: 4,
     borderRadius: 4,
     flex: 1,
@@ -99,7 +98,7 @@ export const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: '#6b7280',
+    // color: tc.emptyText (color)
     textAlign: 'center',
   },
   rowActionBar: {
@@ -123,18 +122,18 @@ export const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#3b82f6',
+    // color: tc.actionBtn (backgroundColor)
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionBtnDestructive: {
-    backgroundColor: '#ef4444',
+    // color: tc.actionBtnDestructive (backgroundColor)
   },
   card: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.07)',
+    // color: tc.card (borderBottomColor)
   },
   cardRow: {
     flexDirection: 'row',
@@ -150,25 +149,17 @@ export const styles = StyleSheet.create({
   },
   // ── Striped rows ─────────────────────────────────────────────────────────
   stripedRow: {
-    backgroundColor: 'rgba(0,0,0,0.02)',
+    backgroundColor: 'rgba(0,0,0,0.02)', // exempt — too subtle to need theming
   },
   // ── Footer ───────────────────────────────────────────────────────────────
   footer: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    // color: tc.footer (borderTopColor)
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
   footerLoadMore: {
     alignItems: 'stretch',
-  },
-  loadMoreBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.15)',
-    alignItems: 'center',
   },
   footerPagination: {
     flexDirection: 'row',
@@ -178,14 +169,14 @@ export const styles = StyleSheet.create({
   },
   paginationText: {
     fontSize: 13,
-    color: '#6b7280',
+    // color: tc.paginationText (color)
   },
   paginationBtn: {
     width: 32,
     height: 32,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.12)',
+    // color: tc.paginationBtn (borderColor)
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -198,7 +189,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.07)',
+    // color: tc.loadingMoreContainer (borderTopColor)
   },
   // ── Rich empty state ──────────────────────────────────────────────────────
   emptyIcon: {
@@ -208,13 +199,13 @@ export const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    // color: tc.emptyTitle (color)
     textAlign: 'center',
     marginBottom: 4,
   },
   emptyDescription: {
     fontSize: 13,
-    color: '#6b7280',
+    // color: tc.emptyDescription (color)
     textAlign: 'center',
   },
 });

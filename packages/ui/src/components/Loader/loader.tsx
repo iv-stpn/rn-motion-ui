@@ -8,6 +8,7 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { EASE_IN_OUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
+import { useThemeColor } from '../../theme/use-theme-color';
 
 // biome-ignore lint/style/useExportsLast: variant union before frame constants — collocated for readability
 export type LoaderVariant =
@@ -57,13 +58,15 @@ export function Loader({
   variant = 'spinner',
   size = 32,
   speed = 1,
-  color = '#111111',
+  color: colorProp,
   label = 'Loading',
   className,
   style,
   testID,
 }: LoaderProps) {
   const reduce = useReducedMotion();
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
   const shared = { size, speed, color, reduce };
   const asciiFrames = ASCII_SETS[variant];
   return (

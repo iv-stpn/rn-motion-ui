@@ -4,6 +4,7 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { Plus, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
+import { useThemeColor } from '../../theme/use-theme-color';
 
 // RN FALLBACK vs web: the web menu morphs a single `layoutId` box from the
 // trigger into the panel and reveals the grid with an animated `clip-path`
@@ -77,6 +78,7 @@ function cellTransition(reduce: boolean, open: boolean, dist: number) {
 }
 
 function BloomCell({ item, className, reduce, open, dist, onSelect }: BloomCellProps) {
+  const iconColor = useThemeColor('foreground');
   const handlePress = useCallback(() => onSelect(item.label), [onSelect, item.label]);
   const Icon = item.icon;
   return (
@@ -92,7 +94,7 @@ function BloomCell({ item, className, reduce, open, dist, onSelect }: BloomCellP
         transition={cellTransition(reduce, open, dist)}
         style={{ alignItems: 'center', gap: 8 }}
       >
-        <Icon size={20} color="#111111" />
+        <Icon size={20} color={iconColor} />
         <Text className="font-medium text-foreground text-sm">{item.label}</Text>
       </MotiView>
     </Pressable>
@@ -109,6 +111,8 @@ export function BloomMenu({
   testID,
 }: BloomMenuProps) {
   const reduce = useReducedMotion();
+  const mutedColor = useThemeColor('muted-foreground');
+  const primaryColor = useThemeColor('foreground');
   const [open, setOpen] = useState(false);
   // Measured natural height of the panel content — the card's open-state frame.
   // Content is always mounted, so this lands on first layout, before any tap.
@@ -185,7 +189,7 @@ export function BloomMenu({
             >
               <Text className="font-medium text-muted-foreground text-sm">{title}</Text>
               <Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={handleClose}>
-                <X size={16} color="#71717a" />
+                <X size={16} color={mutedColor} />
               </Pressable>
             </MotiView>
 
@@ -235,7 +239,7 @@ export function BloomMenu({
               style={{ flex: 1 }}
             >
               <Text className="font-medium text-foreground text-sm">{triggerLabel}</Text>
-              <Plus size={16} color="#111111" />
+              <Plus size={16} color={primaryColor} />
             </Pressable>
           </MotiView>
         </MotiView>

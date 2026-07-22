@@ -19,11 +19,10 @@ import { cn } from '../../lib/cn';
 import { Check } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { TIMING_BASE } from '../../theme/motion';
+import { useThemeColor } from '../../theme/use-theme-color';
 
-// Success green mirrors the --color-success token (oklch(70% 0.18 155)); the
-// icon takes a raw colour prop, so we can't drive it through a className.
-const SUCCESS_COLOR = '#22c55e';
-const PLACEHOLDER_COLOR = 'rgba(128,128,128,0.6)';
+// Success green and placeholder colour are resolved from the theme at runtime.
 
 function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focused' | 'idle' {
   if (hasError) return 'error';
@@ -89,8 +88,14 @@ const textContentTypeMap: Partial<Record<InputType, TextInputProps['textContentT
   phone: 'telephoneNumber',
 };
 
-type RightElementProps = { success: boolean | undefined; rightSlot: ReactNode; reduce: boolean };
-function renderRightElement({ success, rightSlot, reduce }: RightElementProps): ReactNode {
+type RightElementProps = {
+  success: boolean | undefined;
+  rightSlot: ReactNode;
+  reduce: boolean;
+  successColor: string;
+  successIcon?: ReactNode;
+};
+function renderRightElement({ success, rightSlot, reduce, successColor, successIcon }: RightElementProps): ReactNode {
   if (success)
     return (
       <MotiView
@@ -100,7 +105,7 @@ function renderRightElement({ success, rightSlot, reduce }: RightElementProps): 
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 250 }}
       >
-        <Check size={20} color={SUCCESS_COLOR} strokeWidth={2.5} />
+        {successIcon ?? <Check size={20} color={successColor} strokeWidth={2.5} />}
       </MotiView>
     );
   if (rightSlot) return <View className="absolute top-0 right-3 bottom-0 z-10 items-center justify-center">{rightSlot}</View>;
@@ -116,7 +121,7 @@ function renderSubtext({ errorMessage, hint, reduce }: SubtextProps): ReactNode 
         from={reduce ? { opacity: 0 } : { opacity: 0, translateY: -4 }}
         animate={{ opacity: 1, translateY: 0 }}
         exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -4 }}
-        transition={{ type: 'timing', duration: 200 }}
+        transition={TIMING_BASE}
       >
         <Text accessibilityRole="alert" className="px-1 text-destructive text-xs">
           {errorMessage}
@@ -125,13 +130,7 @@ function renderSubtext({ errorMessage, hint, reduce }: SubtextProps): ReactNode 
     );
   if (hint)
     return (
-      <MotiView
-        key="hint"
-        from={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ type: 'timing', duration: 200 }}
-      >
+      <MotiView key="hint" from={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={TIMING_BASE}>
         <Text className="px-1 text-muted-foreground text-xs">{hint}</Text>
       </MotiView>
     );
@@ -153,6 +152,8 @@ export type InputProps = {
   success?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  /** Replace the success checkmark icon. Default: `<Check size={20} color={successColor} strokeWidth={2.5} />`. */
+  successIcon?: ReactNode;
   /** Semantic type — automatically wires keyboard, autoComplete, and textContentType. */
   inputType?: InputType;
   /** Field height variant. Default: `md`. */
@@ -169,6 +170,8 @@ export type InputProps = {
   onBlur?: () => void;
   /** NativeWind class names merged onto the outer wrapper. */
   className?: string;
+  /** NativeWind class names merged onto the label Text. */
+  labelClassName?: string;
   style?: StyleProp<ViewStyle>;
   /** NativeWind class names applied to the TextInput element. */
   inputClassName?: string;
@@ -191,6 +194,7 @@ export function Input({
   success,
   leftIcon,
   rightIcon,
+  successIcon,
   inputType = 'text',
   size = 'md',
   shape = 'rounded',
@@ -203,6 +207,7 @@ export function Input({
   onFocus,
   onBlur,
   className,
+  labelClassName,
   style,
   inputClassName,
   inputStyle,
@@ -211,6 +216,8 @@ export function Input({
   ref,
 }: InputProps) {
   const reduce = useReducedMotion();
+  const successColor = useThemeColor('success');
+  const placeholderColor = useThemeColor('muted-foreground');
   const controlled = valueProp !== undefined;
   const [internal, setInternal] = useState(defaultValue ?? '');
   const value = controlled ? (valueProp ?? '') : internal;
@@ -265,11 +272,11 @@ export function Input({
   const resolvedAutoCapitalize = autoCapitalize ?? (inputType === 'name' || inputType === 'text' ? 'sentences' : 'none');
   const resolvedSecureTextEntry = secureTextEntry ?? (inputType === 'password' || inputType === 'new-password');
 
-  const rightElement = renderRightElement({ success, rightSlot, reduce });
+  const rightElement = renderRightElement({ success, rightSlot, reduce, successColor, successIcon });
 
   return (
     <View className={cn('gap-1.5', className)} style={style}>
-      {label ? <Text className="px-1 font-medium text-foreground text-sm">{label}</Text> : null}
+      {label ? <Text className={cn('px-1 font-medium text-foreground text-sm', labelClassName)}>{label}</Text> : null}
 
       <Animated.View
         className={field({ state, size, shape })}
@@ -286,7 +293,7 @@ export function Input({
           value={value}
           editable={!disabled}
           placeholder={placeholder}
-          placeholderTextColor={PLACEHOLDER_COLOR}
+          placeholderTextColor={placeholderColor}
           secureTextEntry={resolvedSecureTextEntry}
           keyboardType={resolvedKeyboardType}
           autoCapitalize={resolvedAutoCapitalize}

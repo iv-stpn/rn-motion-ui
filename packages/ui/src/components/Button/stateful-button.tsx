@@ -12,6 +12,7 @@ import { EASE_IN_OUT, EASE_OUT, SPRING_SWAP } from '../../lib/ease';
 import { AlertCircle, Check } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { useThemeColors } from '../../theme/use-theme-color';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
@@ -70,26 +71,13 @@ const TEXT_BUFFER = 2;
 // (it spills harmlessly into the button's own padding) while the roll stays masked.
 const CLIP_SLACK = 64;
 
-// Matches the Button's SPINNER_COLOR map so icons stay legible on every variant.
-const ICON_COLOR: Record<ButtonVariant, string> = {
-  primary: '#fafafa',
-  secondary: '#111111',
-  ghost: '#111111',
-  outline: '#111111',
-  destructive: '#ffffff',
-  outlineDanger: '#ef4444',
-  ghostDanger: '#ef4444',
-  ghostPrimary: '#6366f1',
-};
-
-// Backdrop fill and label colour for terminal states. White text over a
-// saturated background keeps all four button variants legible without needing
-// per-variant mappings.
-const STATE_BACKDROP: Partial<Record<ButtonState, string>> = {
-  success: '#22c55e', // green-500
-  error: '#ef4444', // red-500
-};
-const STATE_TEXT_COLOR: Partial<Record<ButtonState, string>> = { success: '#ffffff', error: '#ffffff' };
+// Matches Button's buildSpinnerColor: returns the icon stroke colour for each
+// variant so the icon reads correctly against every button background.
+function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>): string {
+  if (v === 'primary' || v === 'destructive') return c['primary-foreground'];
+  if (v === 'outlineDanger' || v === 'ghostDanger') return c.destructive;
+  return c.foreground;
+}
 
 // ---------------------------------------------------------------------------
 // IconSlot — animated width collapse / expand for state icons
@@ -123,14 +111,17 @@ type TextSlotProps = {
   reduce: boolean;
   /** Overrides the Tailwind label colour — used when a state backdrop changes the bg. */
   textColor?: string;
+  /** Current button state — cascade only triggers for success/error transitions. */
+  state: ButtonState;
 };
 
-function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, textColor }: TextSlotProps) {
+function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, textColor, state }: TextSlotProps) {
   // Roll distance = one line-box height, so glyphs travel exactly one line as
   // they roll in/out. Width is left to the in-flow sizer (no tween — see below).
   const [roll, setRoll] = useState(ROLL_FALLBACK);
   const textLabel = typeof children === 'string' ? children : null;
-  const cascade = textLabel !== null && !reduce;
+  // Cascade only on success/error transitions, not on initial idle render
+  const cascade = textLabel !== null && !reduce && (state === 'success' || state === 'error');
 
   const onSizerLayout = useCallback((e: LayoutChangeEvent) => {
     const { height } = e.nativeEvent.layout;
@@ -321,6 +312,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: press machine + render tree are one cohesive unit
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: same — state machine branching is necessary complexity
 export function StatefulButton({
   state: controlledState,
   onPress,
@@ -418,10 +410,23 @@ export function StatefulButton({
   // double-fired; autoReset re-enables the button when it returns to idle.
   const machineActive = !controlled && state !== 'idle';
   const v = variant ?? 'primary';
-  // In success/error states, white text over the coloured backdrop keeps every
-  // variant legible; fall back to the per-variant idle colour otherwise.
-  const iconColor = STATE_TEXT_COLOR[state] ?? ICON_COLOR[v];
-  const backdropColor = STATE_BACKDROP[state];
+  const colors = useThemeColors();
+
+  // Idle icon colour: matches the label on each variant.
+  const idleIconColor = variantIconColor(v, colors);
+
+  // Terminal-state backdrop + text. surface token gives legible text on the
+  // saturated success/error fill on both light and dark.
+  let stateBackdropColor: string | undefined;
+  if (state === 'success') stateBackdropColor = colors.success;
+  else if (state === 'error') stateBackdropColor = colors.destructive;
+
+  const stateTextColor = state === 'success' || state === 'error' ? colors.surface : undefined;
+
+  // In success/error states, surface text over the coloured backdrop keeps
+  // every variant legible; fall back to the per-variant idle colour otherwise.
+  const iconColor = stateTextColor ?? idleIconColor;
+  const backdropColor = stateBackdropColor;
   // Slot wide enough to contain the icon with 6 px margin on each side, which
   // also acts as the gap between icon and label without needing an explicit gap
   // on the outer row (an explicit gap would show during the slot's width spring).
@@ -476,7 +481,7 @@ export function StatefulButton({
             No overflow:hidden here — dots bounce freely above the baseline. */}
         <View style={{ position: 'relative' }}>
           <MotiView animate={{ opacity: state === 'loading' ? 0 : 1 }} transition={{ type: 'timing', duration: 150 }}>
-            <TextSlot value={textKey} variant={v} size={size} reduce={reduce} textColor={STATE_TEXT_COLOR[state]}>
+            <TextSlot value={textKey} variant={v} size={size} reduce={reduce} textColor={stateTextColor} state={state}>
               {stateText}
             </TextSlot>
           </MotiView>

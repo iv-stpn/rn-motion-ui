@@ -1,13 +1,14 @@
-/**
- * Internal sub-components used by <Table>. Not exported from the package.
- */
 import type { ReactNode } from 'react';
 import { useCallback } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Pressable, Text, View } from 'react-native';
 import { ChevronRight } from '../../lib/icons';
+import { useThemeColor } from '../../theme/use-theme-color';
+import { Button } from '../Button/button';
 import { Checkbox } from '../Checkbox/checkbox';
+import { Loader } from '../Loader/loader';
 import { styles } from './table-styles';
+import { useTableColors } from './table-theme';
 
 // ── Card row (small-screen mode) ──────────────────────────────────────────────
 
@@ -34,10 +35,11 @@ export function TableCard<T>({
 }: TableCardProps<T>) {
   const handlePress = useCallback(() => toggleRow(id), [toggleRow, id]);
   const handleCheckedChange = useCallback(() => toggleRow(id), [toggleRow, id]);
+  const tc = useTableColors();
   return (
     <Pressable
       onPress={selectable ? handlePress : undefined}
-      style={[styles.card, isSelected && styles.selectedBg, cardStyle]}
+      style={[styles.card, tc.card, isSelected && tc.selectedBg, cardStyle]}
       testID={testID ? `${testID}-card-${id}` : undefined}
     >
       <View style={styles.cardRow}>
@@ -84,35 +86,47 @@ export type PaginationFooterProps = {
   paginationLabel?: (page: number, totalPages: number) => string;
   goToPreviousPage: () => void;
   goToNextPage: () => void;
+  /** Replace the previous-page icon. Default: rotated `<ChevronRight size={16} />`. */
+  prevIcon?: ReactNode;
+  /** Replace the next-page icon. Default: `<ChevronRight size={16} />`. */
+  nextIcon?: ReactNode;
 };
 
-export function PaginationFooter({ page, totalPages, paginationLabel, goToPreviousPage, goToNextPage }: PaginationFooterProps) {
+export function PaginationFooter({
+  page,
+  totalPages,
+  paginationLabel,
+  goToPreviousPage,
+  goToNextPage,
+  prevIcon,
+  nextIcon,
+}: PaginationFooterProps) {
   const label = paginationLabel?.(page, totalPages) ?? `${page} / ${totalPages}`;
   const prevDisabled = page <= 1;
   const nextDisabled = page >= totalPages;
+  const tc = useTableColors();
+  const fgColor = useThemeColor('foreground');
   return (
-    <View style={[styles.footer, styles.footerPagination]}>
+    <View style={[styles.footer, tc.footer, styles.footerPagination]}>
       <Pressable
         onPress={prevDisabled ? undefined : goToPreviousPage}
-        style={[styles.paginationBtn, prevDisabled && styles.paginationBtnDisabled]}
+        style={[styles.paginationBtn, tc.paginationBtn, prevDisabled && styles.paginationBtnDisabled]}
         accessibilityLabel="Previous page"
         accessibilityRole="button"
         disabled={prevDisabled}
       >
         {/* Rotated ChevronRight stands in for missing ChevronLeft */}
-        <View style={{ transform: [{ rotate: '180deg' }] }}>
-          <ChevronRight size={16} color="#374151" />
-        </View>
+        <View style={{ transform: [{ rotate: '180deg' }] }}>{prevIcon ?? <ChevronRight size={16} color={fgColor} />}</View>
       </Pressable>
-      <Text style={styles.paginationText}>{label}</Text>
+      <Text style={[styles.paginationText, tc.paginationText]}>{label}</Text>
       <Pressable
         onPress={nextDisabled ? undefined : goToNextPage}
-        style={[styles.paginationBtn, nextDisabled && styles.paginationBtnDisabled]}
+        style={[styles.paginationBtn, tc.paginationBtn, nextDisabled && styles.paginationBtnDisabled]}
         accessibilityLabel="Next page"
         accessibilityRole="button"
         disabled={nextDisabled}
       >
-        <ChevronRight size={16} color="#374151" />
+        {nextIcon ?? <ChevronRight size={16} color={fgColor} />}
       </Pressable>
     </View>
   );
@@ -125,9 +139,22 @@ export type LoadMoreFooterProps = { onLoadMore?: () => void; loadMoreLabel: stri
 export function LoadMoreFooter({ onLoadMore, loadMoreLabel }: LoadMoreFooterProps) {
   return (
     <View style={[styles.footer, styles.footerLoadMore]}>
-      <Pressable onPress={onLoadMore} style={styles.loadMoreBtn} accessibilityRole="button">
-        <Text style={{ fontSize: 13, color: '#374151', fontWeight: '500' }}>{loadMoreLabel}</Text>
-      </Pressable>
+      <Button variant="outline" size="sm" onPress={onLoadMore} fitWidth={true} accessibilityLabel={loadMoreLabel}>
+        {loadMoreLabel}
+      </Button>
+    </View>
+  );
+}
+
+// ── Loading-more spinner footer ───────────────────────────────────────────────
+
+/** Renders a centered Loader row while a follow-up page/batch is fetching. */
+export function LoadingMoreFooter() {
+  const tc = useTableColors();
+  const mutedFg = useThemeColor('muted-foreground');
+  return (
+    <View style={[styles.loadingMoreContainer, tc.loadingMoreContainer]}>
+      <Loader variant="spinner" size={20} color={mutedFg} label="Loading more" />
     </View>
   );
 }

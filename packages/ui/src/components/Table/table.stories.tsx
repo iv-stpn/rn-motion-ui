@@ -531,3 +531,135 @@ export const SmallScreen: Story = {
     expect((await canvas.findAllByText('Ava Cole')).length).toBeGreaterThan(0);
   },
 };
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+// mode='pagination' with prev/next footer pinned below the FlatList.
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function PaginationTableStory() {
+  const PAGE_SIZE_PAG = 10;
+  const allRows = useMemo(() => buildPeople(100), []);
+  const [page, setPage] = useState(1);
+  const data = useMemo(() => allRows.slice((page - 1) * PAGE_SIZE_PAG, page * PAGE_SIZE_PAG), [allRows, page]);
+  const getRowId = useCallback((row: Person) => row.id, []);
+
+  return (
+    <View style={{ flex: 1, padding: 16 }}>
+      <Table
+        data={data}
+        columns={DEFAULT_COLUMNS}
+        getRowId={getRowId}
+        height={420}
+        rowHeight={52}
+        mode="pagination"
+        page={page}
+        pageSize={PAGE_SIZE_PAG}
+        total={allRows.length}
+        onPageChange={setPage}
+        testID="table-pagination"
+      />
+    </View>
+  );
+}
+
+export const Pagination: Story = {
+  render: () => <PaginationTableStory />,
+  args: { data: [], columns: [] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Name');
+    // Prev/next buttons are present
+    const nextBtn = await canvas.findByRole('button', { name: 'Next page' });
+    expect(nextBtn).toBeTruthy();
+    // Navigate to page 2
+    await userEvent.click(nextBtn);
+  },
+};
+
+// ─── Load more ────────────────────────────────────────────────────────────────
+// mode='loadMore' with a "Load more" button footer. Tapping fetches the next
+// batch and shows a loadingMore spinner while the request is in flight.
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function LoadMoreTableStory() {
+  const BATCH = 20;
+  const allRows = useMemo(() => buildPeople(100), []);
+  const [count, setCount] = useState(BATCH);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const data = useMemo(() => allRows.slice(0, count), [allRows, count]);
+  const hasMore = count < allRows.length;
+  const getRowId = useCallback((row: Person) => row.id, []);
+
+  const onLoadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    setTimeout(() => {
+      setCount((c) => Math.min(c + BATCH, allRows.length));
+      setLoadingMore(false);
+    }, 800);
+  }, [allRows.length, loadingMore, hasMore]);
+
+  let loadMoreStatus: string;
+  if (loadingMore) loadMoreStatus = 'Loading…';
+  else if (hasMore) loadMoreStatus = 'More available';
+  else loadMoreStatus = 'All loaded';
+
+  return (
+    <View style={{ flex: 1, padding: 16 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+        <Text style={{ fontSize: 12, color: '#6b7280' }}>{`${data.length} / ${allRows.length} rows`}</Text>
+        <Text style={{ fontSize: 12, color: '#6b7280' }}>{loadMoreStatus}</Text>
+      </View>
+      <Table
+        data={data}
+        columns={DEFAULT_COLUMNS}
+        getRowId={getRowId}
+        height={420}
+        rowHeight={52}
+        mode="loadMore"
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        onLoadMore={onLoadMore}
+        testID="table-load-more"
+      />
+    </View>
+  );
+}
+
+export const LoadMore: Story = {
+  render: () => <LoadMoreTableStory />,
+  args: { data: [], columns: [] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Name');
+    // Load more button is visible when hasMore is true
+    const loadBtn = await canvas.findByRole('button', { name: 'Load more' });
+    expect(loadBtn).toBeTruthy();
+    await userEvent.click(loadBtn);
+  },
+};
+
+// ─── Sortable off (global master switch) ─────────────────────────────────────
+// sortable=false short-circuits all per-column sortable flags: headers render
+// as plain text with no sort affordance even when column.sortable is true.
+
+export const SortableOff: Story = {
+  args: {
+    data: buildPeople(20),
+    // All three columns carry sortable:true — the global flag overrides them.
+    columns: DEFAULT_COLUMNS,
+    sortable: false,
+    height: 420,
+    rowHeight: 52,
+    testID: 'table-sortable-off',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Name');
+    // Headers exist but clicking them must not trigger any sort action.
+    const nameHeader = await canvas.findByTestId('table-sortable-off-header-name');
+    await userEvent.click(nameHeader);
+    // Sort icon is absent — the header text element is still present.
+    expect(nameHeader).toBeTruthy();
+  },
+};

@@ -4,9 +4,10 @@ import type { ListRenderItemInfo } from 'react-native';
 import { FlatList, Text, View } from 'react-native';
 import { Checkbox } from '../Checkbox/checkbox';
 import { HeaderCell } from './table-header';
-import { LoadMoreFooter, PaginationFooter, SkeletonFooter, TableCard } from './table-parts';
+import { LoadingMoreFooter, LoadMoreFooter, PaginationFooter, SkeletonFooter, TableCard } from './table-parts';
 import { SkeletonCellPulse, TableRow } from './table-row';
 import { styles } from './table-styles';
+import { useTableColors } from './table-theme';
 import type { RowEntry, TableProps } from './table-types';
 import { CHECKBOX_COL_WIDTH } from './table-types';
 import { useTable } from './use-table';
@@ -74,6 +75,7 @@ export function Table<T>(props: TableProps<T>) {
 
   const { reorderable = false, height = 440, onColumnRename, onInsertColumn, onDeleteColumn, style } = props;
   const { renderSmallScreen, useSmallScreen = false, cardStyle } = props;
+  const tc = useTableColors();
   // Card mode: hide the table header and render each row as a card via renderSmallScreen.
   const isCardMode = useSmallScreen && Boolean(renderSmallScreen);
   // Reduce FlatList height when pagination footer is pinned below it.
@@ -150,7 +152,7 @@ export function Table<T>(props: TableProps<T>) {
       <View>
         {Array.from({ length: count }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows, fixed length, never reordered
-          <View key={i} style={[styles.row, { height: rowHeight }]}>
+          <View key={i} style={[styles.row, tc.row, { height: rowHeight }]}>
             {selectable ? <View style={[styles.cell, { width: CHECKBOX_COL_WIDTH }]} /> : null}
             {orderedColumns.map((col) => (
               <SkeletonCellPulse
@@ -165,7 +167,7 @@ export function Table<T>(props: TableProps<T>) {
         ))}
       </View>
     ),
-    [orderedColumns, colWidths, containerWidth, selectable, rowHeight, reduce],
+    [orderedColumns, colWidths, containerWidth, selectable, rowHeight, reduce, tc],
   );
 
   const renderSkeletonCards = useCallback(
@@ -173,24 +175,27 @@ export function Table<T>(props: TableProps<T>) {
       <View>
         {Array.from({ length: count }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder cards, fixed length, never reordered
-          <View key={i} style={[styles.card, cardStyle]}>
+          <View key={i} style={[styles.card, tc.card, cardStyle]}>
             <View style={styles.cardRow}>
               {selectable ? (
                 <View
-                  style={[styles.cardCheckbox, { width: 20, height: 20, borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.08)' }]}
+                  style={[
+                    styles.cardCheckbox,
+                    { width: 20, height: 20, borderRadius: 4, backgroundColor: tc.container.borderColor },
+                  ]}
                 />
               ) : null}
               <View style={[styles.cardContent, { gap: 8 }]}>
-                <View style={{ height: 14, width: '80%', borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.08)' }} />
-                <View style={{ height: 12, width: '60%', borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.06)' }} />
-                <View style={{ height: 12, width: '40%', borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.06)' }} />
+                <View style={{ height: 14, width: '80%', borderRadius: 6, backgroundColor: tc.container.borderColor }} />
+                <View style={{ height: 12, width: '60%', borderRadius: 6, backgroundColor: tc.container.borderColor }} />
+                <View style={{ height: 12, width: '40%', borderRadius: 6, backgroundColor: tc.container.borderColor }} />
               </View>
             </View>
           </View>
         ))}
       </View>
     ),
-    [selectable, cardStyle],
+    [selectable, cardStyle, tc],
   );
 
   const ListEmptyComponent = useMemo(() => {
@@ -200,13 +205,17 @@ export function Table<T>(props: TableProps<T>) {
       return (
         <View style={styles.emptyContainer}>
           {emptyIcon ? <View style={styles.emptyIcon}>{emptyIcon}</View> : null}
-          {emptyTitle ? <Text style={styles.emptyTitle}>{emptyTitle}</Text> : null}
-          {emptyDescription ? <Text style={styles.emptyDescription}>{emptyDescription}</Text> : null}
+          {emptyTitle ? <Text style={[styles.emptyTitle, tc.emptyTitle]}>{emptyTitle}</Text> : null}
+          {emptyDescription ? <Text style={[styles.emptyDescription, tc.emptyDescription]}>{emptyDescription}</Text> : null}
         </View>
       );
     return (
       <View style={styles.emptyContainer}>
-        {typeof emptyState === 'string' ? <Text style={styles.emptyText}>{emptyState}</Text> : (emptyState ?? null)}
+        {typeof emptyState === 'string' ? (
+          <Text style={[styles.emptyText, tc.emptyText]}>{emptyState}</Text>
+        ) : (
+          (emptyState ?? null)
+        )}
       </View>
     );
   }, [
@@ -219,6 +228,7 @@ export function Table<T>(props: TableProps<T>) {
     emptyDescription,
     renderSkeletonRows,
     renderSkeletonCards,
+    tc,
   ]);
 
   // loadingMore spinner + loadMore button — rendered inside FlatList footer so they scroll with content.
@@ -235,18 +245,7 @@ export function Table<T>(props: TableProps<T>) {
       return (
         <>
           <SkeletonFooter {...skeletonProps} />
-          <View style={styles.loadingMoreContainer}>
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 10,
-                borderWidth: 2,
-                borderColor: '#d1d5db',
-                borderTopColor: '#6b7280',
-              }}
-            />
-          </View>
+          <LoadingMoreFooter />
         </>
       );
     if (mode === 'loadMore' && hasMore)
@@ -283,10 +282,15 @@ export function Table<T>(props: TableProps<T>) {
     ) : null;
 
   return (
-    <View ref={containerRef} style={[styles.container, { height }, style]} onLayout={onContainerLayout} testID={testID}>
+    <View
+      ref={containerRef}
+      style={[styles.container, tc.container, { height }, style]}
+      onLayout={onContainerLayout}
+      testID={testID}
+    >
       {/* ── Sticky header — hidden in card mode ── */}
       {isCardMode ? null : (
-        <View style={[styles.headerRow, { height: rowHeight }]}>
+        <View style={[styles.headerRow, tc.headerRow, { height: rowHeight }]}>
           {selectable ? (
             <View style={[styles.headerCell, { width: CHECKBOX_COL_WIDTH, justifyContent: 'center', alignItems: 'center' }]}>
               <Checkbox
@@ -327,6 +331,7 @@ export function Table<T>(props: TableProps<T>) {
             <View
               style={[
                 styles.dropIndicator,
+                tc.dropIndicator,
                 { pointerEvents: 'none', left: Math.min(boundaries[dropIndex] ?? 0, containerWidth - 2) },
               ]}
             />

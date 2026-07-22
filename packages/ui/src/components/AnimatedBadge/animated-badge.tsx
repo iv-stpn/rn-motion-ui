@@ -6,6 +6,7 @@ import { cn } from '../../lib/cn';
 import { AlertTriangle, Check, Circle, Info, LoaderCircle, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { useThemeColors } from '../../theme/use-theme-color';
 
 export type AnimatedBadgeStatus = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'loading';
 // biome-ignore lint/style/useExportsLast: these type aliases are used directly by the cva constants below; moving them after inverts the natural dependency order
@@ -40,39 +41,50 @@ const labelClass = cva('font-medium', {
   defaultVariants: { status: 'neutral', size: 'md' },
 });
 
-// Stroke colours resolve the semantic token to a concrete hex for react-native-svg
-// (SVG stroke can't read a Tailwind class).
-const ICON_COLOR: Record<AnimatedBadgeStatus, string> = {
-  neutral: '#71717a',
-  info: '#111111',
-  success: '#3fa653',
-  warning: '#d99a00',
-  danger: '#e5484d',
-  loading: '#111111',
-};
+// Stroke colours resolve the semantic token to a concrete value for
+// react-native-svg (SVG stroke can't read a Tailwind class). Chromatic
+// variants (success/warning/danger) use their token directly; neutral/info/
+// loading use the foreground/muted-foreground tokens so they invert in dark mode.
+function useIconColor(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
+  return {
+    neutral: colors['muted-foreground'],
+    info: colors.foreground,
+    success: colors.success,
+    warning: colors.warning,
+    danger: colors.destructive,
+    loading: colors.foreground,
+  };
+}
 
-// Animated container fill + border colours. The original cva classes used
-// Tailwind tokens (bg-primary/10, border-success/30, …); moti can't interpolate
-// a className swap, so we mirror those tokens as rgba values (hues match
-// ICON_COLOR and the oklch theme) and let the root MotiView cross-fade them
-// when `status` changes.
-const BADGE_BG: Record<AnimatedBadgeStatus, string> = {
-  neutral: '#f4f4f5',
-  info: 'rgba(17,17,17,0.10)',
-  success: 'rgba(63,166,83,0.10)',
-  warning: 'rgba(217,154,0,0.10)',
-  danger: 'rgba(229,72,77,0.10)',
-  loading: 'rgba(17,17,17,0.10)',
-};
+// Animated container fill colours. Chromatic bg values are fixed-hue rgba
+// tints that look correct on both light and dark surfaces; neutral uses the
+// `muted` token so it inverts properly.
+// theme-exempt: chromatic tints are hue-locked to their semantic colour (success
+// green, warning yellow, etc.) and work on any background without inversion.
+function useBadgeBg(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
+  return {
+    neutral: colors.muted,
+    info: 'rgba(17,17,17,0.10)' /* theme-exempt */,
+    success: 'rgba(34,197,94,0.10)' /* theme-exempt */,
+    warning: 'rgba(234,179,8,0.10)' /* theme-exempt */,
+    danger: 'rgba(229,72,77,0.10)' /* theme-exempt */,
+    loading: 'rgba(17,17,17,0.10)' /* theme-exempt */,
+  };
+}
 
-const BADGE_BORDER: Record<AnimatedBadgeStatus, string> = {
-  neutral: 'rgba(17,17,17,0.06)',
-  info: 'rgba(17,17,17,0.30)',
-  success: 'rgba(63,166,83,0.30)',
-  warning: 'rgba(217,154,0,0.30)',
-  danger: 'rgba(229,72,77,0.30)',
-  loading: 'rgba(17,17,17,0.30)',
-};
+// Animated border colours. Neutral uses the `border` token; chromatic variants
+// keep fixed-hue rgba so they read on any surface.
+// theme-exempt: same rationale as useBadgeBg — chromatic border tints are hue-locked.
+function useBadgeBorder(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
+  return {
+    neutral: colors.border,
+    info: 'rgba(17,17,17,0.30)' /* theme-exempt */,
+    success: 'rgba(34,197,94,0.30)' /* theme-exempt */,
+    warning: 'rgba(234,179,8,0.30)' /* theme-exempt */,
+    danger: 'rgba(229,72,77,0.30)' /* theme-exempt */,
+    loading: 'rgba(17,17,17,0.30)' /* theme-exempt */,
+  };
+}
 
 type BadgeIconProps = { size: number; color: string };
 
@@ -113,6 +125,10 @@ export function AnimatedBadge({
   testID,
 }: AnimatedBadgeProps) {
   const reduce = useReducedMotion();
+  const colors = useThemeColors();
+  const ICON_COLOR = useIconColor(colors);
+  const BADGE_BG = useBadgeBg(colors);
+  const BADGE_BORDER = useBadgeBorder(colors);
   const s = status ?? 'neutral';
   const doPulse = (pulse ?? s === 'loading') && !reduce;
   const iconSize = size === 'sm' ? 12 : 14;

@@ -4,6 +4,7 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { SPRING_LAYOUT } from '../../lib/ease';
 import { Search } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
+import { useThemeColor } from '../../theme/use-theme-color';
 import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
 
 // Renders inside AdaptiveModal with `customLayout` + `scrollable={false}`: the
@@ -46,6 +47,8 @@ export type CommandPaletteProps = {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
+  /** Replace the search input icon. Default: `<Search size={16} color={mutedFg} />`. */
+  searchIcon?: ReactNode;
 };
 
 function fuzzyMatch(needle: string, hay: string) {
@@ -71,12 +74,14 @@ type CommandRowProps = {
 };
 
 function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSelect }: CommandRowProps) {
+  const fg = useThemeColor('foreground');
+  const mutedFg = useThemeColor('muted-foreground');
   const Icon = item.icon;
   const handlePressIn = useCallback(() => onActivate(index), [onActivate, index]);
   const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
 
   let iconSlot: ReactNode = null;
-  if (Icon) iconSlot = <Icon size={16} color={isActive ? '#111111' : '#71717a'} />;
+  if (Icon) iconSlot = <Icon size={16} color={isActive ? fg : mutedFg} />;
   else if (hasIcons) iconSlot = <View style={{ width: 16, height: 16 }} />;
 
   return (
@@ -128,8 +133,10 @@ export function CommandPalette({
   style,
   accessibilityLabel = 'Command palette',
   testID,
+  searchIcon,
 }: CommandPaletteProps) {
   const reduce = useReducedMotion();
+  const mutedFg = useThemeColor('muted-foreground');
   const { height: windowHeight } = useWindowDimensions();
   const [internalOpen, setInternalOpen] = useState(false);
   const controlled = controlledOpen !== undefined;
@@ -201,13 +208,13 @@ export function CommandPalette({
     >
       <View testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
         <View className="flex-row items-center gap-3 border-border border-b px-4">
-          <Search size={16} color="#71717a" />
+          {searchIcon ?? <Search size={16} color={mutedFg} />}
           <TextInput
             autoFocus={true}
             value={query}
             onChangeText={updateQuery}
             placeholder={placeholder}
-            placeholderTextColor="#71717a"
+            placeholderTextColor={mutedFg}
             accessibilityLabel={placeholder}
             className="h-12 flex-1 text-foreground text-sm"
           />

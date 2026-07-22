@@ -4,6 +4,7 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { ChevronDown } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
+import { useThemeColor } from '../../theme/use-theme-color';
 
 export type BouncyAccordionItem = {
   id: string;
@@ -25,6 +26,8 @@ export type BouncyAccordionProps = {
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /** Replace the expand/collapse chevron. Default: `<ChevronDown size={16} color={chevronColor} />`. */
+  chevronIcon?: ReactNode;
 };
 
 // Bouncy springs mirror the web bounce values (dampingRatio ≈ 1 − bounce).
@@ -62,6 +65,8 @@ export type BouncyAccordionRowProps = {
   separatedFromPrevious: boolean;
   reduce: boolean;
   onToggle: (id: string) => void;
+  /** Replace the expand/collapse chevron. Default: `<ChevronDown size={16} color={chevronColor} />`. */
+  chevronIcon?: ReactNode;
 };
 
 function BouncyAccordionRow({
@@ -72,7 +77,9 @@ function BouncyAccordionRow({
   separatedFromPrevious,
   reduce,
   onToggle,
+  chevronIcon,
 }: BouncyAccordionRowProps) {
+  const chevronColor = useThemeColor('muted-foreground');
   const [contentHeight, setContentHeight] = useState(0);
   const onContentLayout = useCallback((e: LayoutChangeEvent) => {
     setContentHeight(e.nativeEvent.layout.height);
@@ -119,7 +126,7 @@ function BouncyAccordionRow({
             transition={reduce ? { type: 'timing', duration: 0 } : CHEVRON_TRANSITION}
             className="h-6 w-6 shrink-0 items-center justify-center"
           >
-            <ChevronDown size={16} color="#71717a" />
+            {chevronIcon ?? <ChevronDown size={16} color={chevronColor} />}
           </MotiView>
         </Pressable>
 
@@ -154,6 +161,7 @@ export function BouncyAccordion({
   className,
   style,
   testID,
+  chevronIcon,
 }: BouncyAccordionProps) {
   const reduce = useReducedMotion();
   const [activeValue, setActiveValue] = useControllableValue(value, defaultValue, onValueChange);
@@ -190,6 +198,7 @@ export function BouncyAccordion({
             separatedFromPrevious={separatedFromPrevious}
             reduce={reduce}
             onToggle={toggleItem}
+            chevronIcon={chevronIcon}
           />
         );
       })}

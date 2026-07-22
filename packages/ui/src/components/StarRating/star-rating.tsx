@@ -12,7 +12,7 @@
  */
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: complex logic */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type AccessibilityActionEvent, Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
@@ -21,8 +21,11 @@ import { cn } from '../../lib/cn';
 import { SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { useThemeColor } from '../../theme/use-theme-color';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+
+export type StarRenderProps = { size: number; color: string; filled: boolean };
 
 // biome-ignore lint/style/useExportsLast: props type before internal constants — collocated for readability
 export type StarRatingProps = {
@@ -48,6 +51,11 @@ export type StarRatingProps = {
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /**
+   * Custom star shape. Receives `{ size, color, filled }` and should return a
+   * ReactNode sized to `size × size`. Default: the built-in `<StarSvg>`.
+   */
+  renderStar?: (props: StarRenderProps) => ReactNode;
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -88,9 +96,6 @@ const SIZES = {
 
 const STAR_PATH = 'M12 2L14.65 8.36L21.51 8.91L16.28 13.39L17.88 20.09L12 16.5L6.12 20.09L7.72 13.39L2.49 8.91L9.35 8.36Z';
 
-const AMBER = '#fbbf24';
-const MUTED_STAR = '#d1d5db';
-
 // Pre-computed per-sparkle configs — angles are stable identifiers so the map
 // never needs to touch the array index, keeping the key free of index values.
 const SPARKLES = Array.from({ length: SPARKLE_COUNT }, (_, i) => {
@@ -123,9 +128,9 @@ export function StarSvg({ size, color, filled }: StarSvgProps) {
 
 // ─── SparklesBurst ───────────────────────────────────────────────────────────
 
-type SparklesBurstProps = { icon: number; burstKey: number };
+type SparklesBurstProps = { icon: number; burstKey: number; color: string };
 
-export function SparklesBurst({ icon, burstKey }: SparklesBurstProps) {
+export function SparklesBurst({ icon, burstKey, color }: SparklesBurstProps) {
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
       {SPARKLES.map(({ angle, key }) => {
@@ -146,7 +151,7 @@ export function SparklesBurst({ icon, burstKey }: SparklesBurstProps) {
               marginTop: -dotSize / 2,
               marginLeft: -dotSize / 2,
               borderRadius: dotSize / 2,
-              backgroundColor: AMBER,
+              backgroundColor: color,
             }}
           />
         );
@@ -166,7 +171,10 @@ type StarButtonProps = {
   icon: number;
   padClass: string;
   reduce: boolean;
+  amber: string;
+  mutedStar: string;
   onSelect: (starValue: number) => void;
+  renderStar?: (props: StarRenderProps) => ReactNode;
 };
 
 export function StarButton({
@@ -178,7 +186,10 @@ export function StarButton({
   icon,
   padClass,
   reduce,
+  amber,
+  mutedStar,
   onSelect,
+  renderStar,
 }: StarButtonProps) {
   const [pressed, setPressed] = useState(false);
   const popScale = useSharedValue(1);
@@ -211,17 +222,21 @@ export function StarButton({
       <MotiView animate={{ scale: pressed && !reduce ? 0.9 : 1 }} transition={SPRING_PRESS}>
         <Animated.View style={[{ width: icon, height: icon, position: 'relative' }, popStyle]}>
           {/* Unfilled base star */}
-          <StarSvg size={icon} color={MUTED_STAR} />
+          {renderStar ? renderStar({ size: icon, color: mutedStar, filled: false }) : <StarSvg size={icon} color={mutedStar} />}
           {/* Filled amber overlay */}
           <MotiView
             animate={{ scale: filled ? 1 : 0, opacity: filled ? 1 : 0 }}
             transition={filled ? FILL_SPRING : UNFILL_TIMING}
             style={{ position: 'absolute', top: 0, left: 0 }}
           >
-            <StarSvg size={icon} color={AMBER} filled={true} />
+            {renderStar ? (
+              renderStar({ size: icon, color: amber, filled: true })
+            ) : (
+              <StarSvg size={icon} color={amber} filled={true} />
+            )}
           </MotiView>
           {/* Sparkle burst */}
-          {isBursting && !reduce ? <SparklesBurst icon={icon} burstKey={burstKey} /> : null}
+          {isBursting && !reduce ? <SparklesBurst icon={icon} burstKey={burstKey} color={amber} /> : null}
         </Animated.View>
       </MotiView>
     </Pressable>
@@ -230,6 +245,7 @@ export function StarButton({
 
 // ─── StarRating ───────────────────────────────────────────────────────────────
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: amber/muted color resolution + controlled/uncontrolled state + sparkle machine are tightly coupled
 export function StarRating({
   value: valueProp,
   defaultValue = 0,
@@ -243,8 +259,11 @@ export function StarRating({
   className,
   style,
   testID,
+  renderStar,
 }: StarRatingProps) {
   const reduce = useReducedMotion();
+  const amber = useThemeColor('warning');
+  const mutedStar = useThemeColor('border');
   const [internal, setInternal] = useState(defaultValue);
   const [burst, setBurst] = useState<{ key: number; index: number } | null>(null);
 
@@ -303,12 +322,12 @@ export function StarRating({
           return (
             <View key={starValue} className={pad}>
               <View style={{ width: icon, height: icon, position: 'relative' }}>
-                <StarSvg size={icon} color={MUTED_STAR} />
+                <StarSvg size={icon} color={mutedStar} />
                 {fillPercent > 0 ? (
                   <View
                     style={{ position: 'absolute', top: 0, left: 0, width: `${fillPercent}%`, height: icon, overflow: 'hidden' }}
                   >
-                    <StarSvg size={icon} color={AMBER} filled={true} />
+                    <StarSvg size={icon} color={amber} filled={true} />
                   </View>
                 ) : null}
               </View>
@@ -340,7 +359,10 @@ export function StarRating({
             icon={icon}
             padClass={pad}
             reduce={reduce}
+            amber={amber}
+            mutedStar={mutedStar}
             onSelect={handleSelect}
+            renderStar={renderStar}
           />
         ))}
       </View>

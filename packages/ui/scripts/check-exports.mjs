@@ -157,6 +157,7 @@ const errors = [];
 // 4a. Dangling: declared in package.json but file doesn't exist
 for (const [key, entry] of Object.entries(existingExports)) {
   if (key === './tokens.css') continue; // CSS export checked separately
+  if (key === './package.json') continue; // bare self-reference, not a TS source file
   for (const field of ['source', 'types', 'default', 'react-native']) {
     const val = entry[field];
     if (!val) continue;
@@ -195,6 +196,7 @@ if (WRITE) {
   const postErrors = [];
   for (const [key, entry] of Object.entries(newExports)) {
     if (key === './tokens.css') continue;
+    if (key === './package.json') continue;
     for (const field of ['source', 'types', 'default', 'react-native']) {
       const val = entry[field];
       if (!val) continue;

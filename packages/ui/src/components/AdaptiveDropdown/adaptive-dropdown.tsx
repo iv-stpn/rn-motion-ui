@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -47,6 +48,7 @@ export type AdaptiveDropdownProps = {
   fullSheet?: boolean;
 };
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small screen paths are tightly coupled to shared anchor/dimension state
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: same reason
 export function AdaptiveDropdown({
   trigger,
   children,
@@ -67,6 +69,7 @@ export function AdaptiveDropdown({
 }: AdaptiveDropdownProps) {
   const { width: vpWidth, height: vpHeight } = useWindowDimensions();
   const isWideScreen = vpWidth >= MD_BREAKPOINT;
+  const reduced = useReducedMotion();
 
   const triggerRef = useRef<View>(null);
   const [anchor, setAnchor] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -171,7 +174,14 @@ export function AdaptiveDropdown({
     <View className={`overflow-hidden${contentClassName ? ` ${contentClassName}` : ''}`}>{resolvedContent}</View>
   );
 
-  const exitTransition = { type: 'timing' as const, duration: 230, easing: Easing.in(Easing.cubic) };
+  const exitTransition = {
+    type: 'timing' as const,
+    duration: reduced ? 160 : 230,
+    easing: reduced ? Easing.linear : Easing.in(Easing.cubic),
+  };
+  const enterTransition = reduced
+    ? { type: 'timing' as const, duration: 160 }
+    : { type: 'spring' as const, damping: 26, stiffness: 280, mass: 0.9 };
 
   return (
     <>
@@ -192,7 +202,7 @@ export function AdaptiveDropdown({
                   from={{ opacity: 0, translateY: -12 }}
                   animate={{ opacity: 1, translateY: 0 }}
                   exit={{ opacity: 0, translateY: -12 }}
-                  transition={{ type: 'spring', damping: 26, stiffness: 280, mass: 0.9 }}
+                  transition={enterTransition}
                   exitTransition={exitTransition}
                   style={{ position: 'absolute', top: panelTop, left: panelLeft, width: panelWidth, maxHeight }}
                 >

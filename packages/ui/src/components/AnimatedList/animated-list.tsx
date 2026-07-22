@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { LayoutChangeEvent, ViewProps } from 'react-native';
 import { View } from 'react-native';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { usePresenceContext } from '../../moti/presence/animate-presence-context';
 
@@ -45,6 +46,7 @@ export type AnimatedListItemProps = PropsWithChildren;
  */
 export function AnimatedListItem({ children }: AnimatedListItemProps) {
   const [isPresent, safeToUnmount] = usePresenceContext();
+  const reduced = useReducedMotion();
 
   // Keep latest safeToUnmount in a ref — it changes identity each render
   const safeToUnmountRef = useRef(safeToUnmount);
@@ -77,9 +79,11 @@ export function AnimatedListItem({ children }: AnimatedListItemProps) {
   // biome-ignore lint/plugin: exit animation must fire the moment isPresent flips false — not derivable from render state, not mount-only (useMountEffect doesn't apply)
   useEffect(() => {
     if (!isPresent) {
+      const dur = (full: number) => (reduced ? 80 : full);
+      const easeIn = reduced ? Easing.linear : EASE_IN;
       // Height collapse drives the sibling reflow — runs slightly longer so
       // the space is fully gone before unmount.
-      containerHeight.value = withTiming(0, { duration: 240, easing: EASE_IN }, (finished) => {
+      containerHeight.value = withTiming(0, { duration: dur(240), easing: easeIn }, (finished) => {
         // safeToUnmount is null while the item is still present; read via ref
         // so the latest bound callback fires once the collapse completes.
         if (!finished) return;
@@ -90,30 +94,33 @@ export function AnimatedListItem({ children }: AnimatedListItemProps) {
       // Positive translateY (downward) is safe under overflow:hidden — content
       // sinks into the shrinking container and is clipped from below. Only a
       // negative (upward) translation would escape above the container's top edge.
-      opacity.value = withTiming(0, { duration: 220, easing: EASE_IN });
-      scale.value = withTiming(0.97, { duration: 220 });
-      translateY.value = withTiming(8, { duration: 220, easing: EASE_IN });
+      opacity.value = withTiming(0, { duration: dur(220), easing: easeIn });
+      scale.value = withTiming(0.97, { duration: dur(220) });
+      translateY.value = withTiming(8, { duration: dur(220), easing: easeIn });
     }
-  }, [isPresent]);
+  }, [isPresent, reduced]);
 
   const onContentLayout = useCallback(
     (event: LayoutChangeEvent) => {
       const height = event.nativeEvent.layout.height;
       if (height <= 0 || !isPresentRef.current) return;
 
+      const dur = (full: number) => (reduced ? 80 : full);
+      const easeOut = reduced ? Easing.linear : EASE_OUT;
+
       if (isMeasured.current) {
         // Content changed height (expand / collapse)
-        containerHeight.value = withTiming(height, { duration: 260, easing: EASE_OUT });
+        containerHeight.value = withTiming(height, { duration: dur(260), easing: easeOut });
       } else {
         // First measurement — animate the item into view
         isMeasured.current = true;
-        containerHeight.value = withTiming(height, { duration: 280, easing: EASE_OUT });
-        opacity.value = withTiming(1, { duration: 240, easing: EASE_OUT });
-        translateY.value = withTiming(0, { duration: 280, easing: EASE_OUT });
-        scale.value = withTiming(1, { duration: 280, easing: EASE_OUT });
+        containerHeight.value = withTiming(height, { duration: dur(280), easing: easeOut });
+        opacity.value = withTiming(1, { duration: dur(240), easing: easeOut });
+        translateY.value = withTiming(0, { duration: dur(280), easing: easeOut });
+        scale.value = withTiming(1, { duration: dur(280), easing: easeOut });
       }
     },
-    [containerHeight, opacity, translateY, scale],
+    [containerHeight, opacity, translateY, scale, reduced],
   );
 
   return (

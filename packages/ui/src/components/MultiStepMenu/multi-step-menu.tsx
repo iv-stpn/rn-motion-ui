@@ -13,6 +13,7 @@ import {
   useState,
 } from 'react';
 import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, Text, View } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { ChevronRight, type IconProps, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -137,6 +138,7 @@ export type MultiStepMenuProps = {
 };
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small layouts are tightly coupled to shared state
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: same reason
 export const MultiStepMenu = function MultiStepMenu({
   isWideScreen,
   visible,
@@ -156,6 +158,15 @@ export const MultiStepMenu = function MultiStepMenu({
   const [path, setPath] = useState<string[]>(isWideScreen ? (defaultPath ?? []) : []);
   const [direction, setDirection] = useState<MultiStepDirection>(null);
   const [paneWidth, setPaneWidth] = useState(0);
+  const reduced = useReducedMotion();
+
+  const slideTransition = reduced ? { type: 'timing' as const, duration: 160 } : SLIDE_TRANSITION;
+  const arrowTransition = reduced
+    ? { type: 'timing' as const, duration: 160, opacity: { type: 'timing' as const, duration: 100 } }
+    : ARROW_TRANSITION;
+  const arrowExitTransition = reduced
+    ? { type: 'timing' as const, duration: 160, opacity: { type: 'timing' as const, duration: 100 } }
+    : ARROW_EXIT_TRANSITION;
 
   // Set-direction-then-commit: update direction first so the exiting pane re-renders with
   // the correct `exit` value before AnimatePresence removes it; commit the path in the
@@ -259,8 +270,8 @@ export const MultiStepMenu = function MultiStepMenu({
                     from={{ opacity: 0, width: 0, paddingRight: 0 }}
                     animate={{ opacity: 1, width: 32, paddingRight: 8 }}
                     exit={{ opacity: 0, width: 0, paddingRight: 0 }}
-                    transition={ARROW_TRANSITION}
-                    exitTransition={ARROW_EXIT_TRANSITION}
+                    transition={arrowTransition}
+                    exitTransition={arrowExitTransition}
                   >
                     <Pressable onPress={goBack} accessibilityLabel="Back">
                       <View style={{ transform: [{ rotate: '180deg' }] }}>
@@ -314,8 +325,8 @@ export const MultiStepMenu = function MultiStepMenu({
                     from={{ opacity: 0, translateX: -8 }}
                     animate={{ opacity: 1, translateX: 0 }}
                     exit={{ opacity: 0, translateX: -8 }}
-                    transition={ARROW_TRANSITION}
-                    exitTransition={ARROW_EXIT_TRANSITION}
+                    transition={arrowTransition}
+                    exitTransition={arrowExitTransition}
                   >
                     <Pressable onPress={goBack} accessibilityLabel="Back">
                       <View style={{ transform: [{ rotate: '180deg' }] }}>
@@ -339,7 +350,7 @@ export const MultiStepMenu = function MultiStepMenu({
               from={enterFrom}
               animate={{ translateX: 0 }}
               exit={exitTo}
-              transition={SLIDE_TRANSITION}
+              transition={slideTransition}
               className="absolute inset-0 px-5"
             >
               <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="pb-6">

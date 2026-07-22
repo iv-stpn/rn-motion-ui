@@ -94,7 +94,7 @@ bun run typecheck    # tsc --noEmit across all packages
 bun run test         # Storybook/Vitest interaction tests (real Chromium via Playwright)
 ```
 
-45 story files, 159 tests. Stories with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`.
+51 story files, 159 tests. Stories with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`.
 
 ---
 
@@ -145,8 +145,8 @@ CI (`.github/workflows/release.yml`) runs the changesets action on every push to
 ## Architecture notes
 
 - **No barrels** — every component has its own subpath export. Consumers only bundle what they import.
-- **`sideEffects: false`** on all packages — tree-shaking friendly.
-- **`useReducedMotion`** consumed by every animated component; 43 component files carry accessibility props.
+- **`sideEffects: ["**/*.css"]`** — CSS token file is side-effectful; all TS source is tree-shakeable.
+- **`useReducedMotion`** consumed by every animated component; all animated component files respect the OS reduced-motion preference.
 - **Strict TypeScript** across the workspace (`noUncheckedIndexedAccess`, `verbatimModuleSyntax`).
 - **Biome** for linting and formatting (184 files, lint-clean baseline).
 - **Husky** pre-commit (lint + typecheck) and pre-push (test) hooks.

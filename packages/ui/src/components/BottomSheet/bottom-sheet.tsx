@@ -3,6 +3,7 @@ import { Modal, Platform, Pressable, StyleSheet, useWindowDimensions, View } fro
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { useSheetPresence } from '../Overlay/use-sheet-presence';
 
@@ -64,7 +65,13 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const isOpen = open ?? visible ?? false;
   const { height } = useWindowDimensions();
-  const { isMounted, translateY } = useSheetPresence({ open: isOpen, screenExtent: height, onAfterClose });
+  const reduced = useReducedMotion();
+  const { isMounted, translateY } = useSheetPresence({
+    open: isOpen,
+    screenExtent: height,
+    onAfterClose,
+    reducedMotion: reduced,
+  });
   const dragStartY = useSharedValue(0);
 
   const handleClose = useCallback(() => {

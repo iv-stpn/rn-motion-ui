@@ -1,6 +1,7 @@
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { AccessibilityInfo, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { type ReactNode, useCallback } from 'react';
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { ChevronRight, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -202,37 +203,22 @@ export function FullSheet({
   const isOpen = open ?? visible ?? false;
   const { height, width } = useWindowDimensions();
   const isSmallScreen = width < SMALL_SCREEN_BREAKPOINT;
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const reduced = useReducedMotion();
 
   const handleClose = useCallback(() => {
     onClose?.();
     onOpenChange?.(false);
   }, [onClose, onOpenChange]);
 
-  // biome-ignore lint/plugin: one-time reduced-motion query + subscription — cannot be derived from render state
-  useEffect(() => {
-    let active = true;
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then((v) => {
-        if (active) setPrefersReducedMotion(v);
-      })
-      .catch(() => undefined);
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setPrefersReducedMotion);
-    return () => {
-      active = false;
-      sub.remove();
-    };
-  }, []);
-
   const enterTransition = {
     type: 'timing' as const,
-    duration: prefersReducedMotion ? 160 : 340,
-    easing: prefersReducedMotion ? Easing.linear : Easing.out(Easing.cubic),
+    duration: reduced ? 160 : 340,
+    easing: reduced ? Easing.linear : Easing.out(Easing.cubic),
   };
   const exitTransition = {
     type: 'timing' as const,
-    duration: prefersReducedMotion ? 160 : 300,
-    easing: prefersReducedMotion ? Easing.linear : Easing.in(Easing.cubic),
+    duration: reduced ? 160 : 300,
+    easing: reduced ? Easing.linear : Easing.in(Easing.cubic),
   };
 
   const px = compact ? 'px-5' : 'px-6';

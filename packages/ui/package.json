@@ -28,6 +28,7 @@
     "**/*.css"
   ],
   "exports": {
+    "./package.json": "./package.json",
     "./tokens.css": {
       "default": "./src/theme/tokens.css"
     },
@@ -554,14 +555,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "class-variance-authority": "^0.7.1",
-    "react-native-svg": "^15.15.5"
+    "class-variance-authority": "^0.7.1"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
     "react-native-gesture-handler": ">=2.0.0",
-    "react-native-reanimated": ">=4.0.0"
+    "react-native-reanimated": ">=4.0.0",
+    "react-native-svg": ">=15.0.0"
   },
   "devDependencies": {
     "typescript": "^7",

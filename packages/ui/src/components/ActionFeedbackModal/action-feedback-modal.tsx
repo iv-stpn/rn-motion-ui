@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../lib/ease';
 import { Check, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -23,6 +24,8 @@ const MORPH_CONTAINER_TRANSITION = { type: 'timing', duration: 300, easing: EASE
 const MORPH_GLYPH_TRANSITION = { type: 'timing', duration: 240, easing: EASE_OUT } as const;
 const MORPH_SPINNER_TRANSITION = { type: 'timing', duration: 180, easing: EASE_OUT } as const;
 const MORPH_CONTENT_TRANSITION = { type: 'timing', duration: 180, easing: EASE_OUT } as const;
+/** Fallback for every morph transition under reduced-motion — short and linear. */
+const RM_TRANSITION = { type: 'timing', duration: 160 } as const;
 
 const morphGlyphStyle: ViewStyle = {
   position: 'absolute',
@@ -34,9 +37,9 @@ const morphGlyphStyle: ViewStyle = {
   justifyContent: 'center',
 };
 
-type MorphIconProps = { state: ActionFeedbackState };
+type MorphIconProps = { state: ActionFeedbackState; reduced: boolean };
 
-function MorphIcon({ state }: MorphIconProps) {
+function MorphIcon({ state, reduced }: MorphIconProps) {
   const colors = useThemeColors();
   const morphBg: Record<ActionFeedbackState, string> = {
     loading: 'transparent',
@@ -49,7 +52,7 @@ function MorphIcon({ state }: MorphIconProps) {
   return (
     <MotiView
       animate={{ width: size, height: size, backgroundColor }}
-      transition={MORPH_CONTAINER_TRANSITION}
+      transition={reduced ? RM_TRANSITION : MORPH_CONTAINER_TRANSITION}
       // Static size mirrors the animate target so the vessel paints at the
       // correct dimensions on the first frame; the animated style still wins
       // every subsequent frame (motify merges as [static, animated]).
@@ -63,7 +66,7 @@ function MorphIcon({ state }: MorphIconProps) {
             from={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
-            transition={MORPH_SPINNER_TRANSITION}
+            transition={reduced ? RM_TRANSITION : MORPH_SPINNER_TRANSITION}
             style={morphGlyphStyle}
           >
             <Loader variant="dots" size={28} color={colors['muted-foreground']} />
@@ -75,7 +78,7 @@ function MorphIcon({ state }: MorphIconProps) {
             from={{ opacity: 0, scale: 0.3, rotate: '-25deg' }}
             animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
             exit={{ opacity: 0, scale: 0.3, rotate: '25deg' }}
-            transition={MORPH_GLYPH_TRANSITION}
+            transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
             style={morphGlyphStyle}
           >
             <Check size={26} color={colors.surface} />
@@ -87,7 +90,7 @@ function MorphIcon({ state }: MorphIconProps) {
             from={{ opacity: 0, scale: 0.3, rotate: '25deg' }}
             animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
             exit={{ opacity: 0, scale: 0.3, rotate: '-25deg' }}
-            transition={MORPH_GLYPH_TRANSITION}
+            transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
             style={morphGlyphStyle}
           >
             <X size={20} color={colors.surface} />
@@ -136,6 +139,7 @@ export function ActionFeedbackModal({
 }: ActionFeedbackModalProps) {
   const isOpen = openProp ?? visible ?? false;
   const isDismissible = state === 'error';
+  const reduced = useReducedMotion();
 
   const handleClose = useCallback(() => {
     onClose?.();
@@ -166,8 +170,8 @@ export function ActionFeedbackModal({
           from={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={TIMING_BASE}
-          exitTransition={{ type: 'timing', duration: 180 }}
+          transition={reduced ? RM_TRANSITION : TIMING_BASE}
+          exitTransition={{ type: 'timing', duration: reduced ? 100 : 180 }}
         >
           <TouchableOpacity
             className="absolute inset-0"
@@ -179,12 +183,12 @@ export function ActionFeedbackModal({
             from={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ type: 'spring', damping: 24, stiffness: 280, mass: 0.9 }}
-            exitTransition={{ type: 'timing', duration: 150 }}
+            transition={reduced ? RM_TRANSITION : { type: 'spring', damping: 24, stiffness: 280, mass: 0.9 }}
+            exitTransition={{ type: 'timing', duration: reduced ? 100 : 150 }}
             className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-modal"
           >
             <View className="w-full items-center gap-4 py-2">
-              <MorphIcon state={state} />
+              <MorphIcon state={state} reduced={reduced} />
               <AnimatePresence exitBeforeEnter={true} initial={false}>
                 {state === 'loading' && (
                   <MotiView
@@ -192,7 +196,7 @@ export function ActionFeedbackModal({
                     from={{ opacity: 0, translateY: 4 }}
                     animate={{ opacity: 1, translateY: 0 }}
                     exit={{ opacity: 0, translateY: -4 }}
-                    transition={MORPH_CONTENT_TRANSITION}
+                    transition={reduced ? RM_TRANSITION : MORPH_CONTENT_TRANSITION}
                     className="w-full items-center gap-1.5"
                   >
                     {loadingMessage ? <Text className="text-center text-muted-foreground text-sm">{loadingMessage}</Text> : null}
@@ -205,7 +209,7 @@ export function ActionFeedbackModal({
                     from={{ opacity: 0, translateY: 4 }}
                     animate={{ opacity: 1, translateY: 0 }}
                     exit={{ opacity: 0, translateY: -4 }}
-                    transition={MORPH_CONTENT_TRANSITION}
+                    transition={reduced ? RM_TRANSITION : MORPH_CONTENT_TRANSITION}
                     className="w-full items-center gap-1.5"
                   >
                     {successLabel ? (
@@ -221,7 +225,7 @@ export function ActionFeedbackModal({
                     from={{ opacity: 0, translateY: 4 }}
                     animate={{ opacity: 1, translateY: 0 }}
                     exit={{ opacity: 0, translateY: -4 }}
-                    transition={MORPH_CONTENT_TRANSITION}
+                    transition={reduced ? RM_TRANSITION : MORPH_CONTENT_TRANSITION}
                     className="w-full items-center gap-1.5"
                   >
                     <Text className="text-center font-semibold text-base text-foreground">{errorTitle}</Text>

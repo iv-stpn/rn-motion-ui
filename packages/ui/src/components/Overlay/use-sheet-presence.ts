@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useSharedValue, withSpring } from 'react-native-reanimated';
+import { useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 const OPEN_SPRING = { damping: 32, stiffness: 300, mass: 0.75 };
 const CLOSE_SPRING = { damping: 40, stiffness: 300, mass: 0.75, overshootClamping: true };
+/** Reduced-motion slide duration (ms) — short enough to be imperceptible as motion. */
+const REDUCED_DURATION = 160;
 
 export type SheetSpringConfig = { damping: number; stiffness: number; mass: number; overshootClamping?: boolean };
 
@@ -18,6 +20,11 @@ export type UseSheetPresenceOptions = {
   openSpring?: Partial<SheetSpringConfig>;
   /** Spring config overrides for the close (exit) transition. */
   closeSpring?: Partial<SheetSpringConfig>;
+  /**
+   * When true, replaces spring animations with short linear timing so the sheet
+   * appears/disappears without noticeable movement (reduced-motion a11y).
+   */
+  reducedMotion?: boolean;
 };
 
 /**
@@ -31,7 +38,14 @@ export type UseSheetPresenceOptions = {
  * const { isMounted, translateY } = useSheetPresence({ open, screenExtent: height });
  * const style = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
  */
-export function useSheetPresence({ open, screenExtent, onAfterClose, openSpring, closeSpring }: UseSheetPresenceOptions) {
+export function useSheetPresence({
+  open,
+  screenExtent,
+  onAfterClose,
+  openSpring,
+  closeSpring,
+  reducedMotion,
+}: UseSheetPresenceOptions) {
   const [isMounted, setIsMounted] = useState(open);
   const translateY = useSharedValue(open ? 0 : screenExtent);
 
@@ -43,14 +57,21 @@ export function useSheetPresence({ open, screenExtent, onAfterClose, openSpring,
   useEffect(() => {
     if (open) {
       setIsMounted(true);
-      translateY.value = withSpring(0, resolvedOpen);
+      translateY.value = reducedMotion ? withTiming(0, { duration: REDUCED_DURATION }) : withSpring(0, resolvedOpen);
     } else if (isMounted)
-      translateY.value = withSpring(screenExtent, { ...resolvedClose }, (finished) => {
-        if (finished) {
-          scheduleOnRN(setIsMounted, false);
-          if (onAfterClose) scheduleOnRN(onAfterClose);
-        }
-      });
+      translateY.value = reducedMotion
+        ? withTiming(screenExtent, { duration: REDUCED_DURATION }, (finished) => {
+            if (finished) {
+              scheduleOnRN(setIsMounted, false);
+              if (onAfterClose) scheduleOnRN(onAfterClose);
+            }
+          })
+        : withSpring(screenExtent, { ...resolvedClose }, (finished) => {
+            if (finished) {
+              scheduleOnRN(setIsMounted, false);
+              if (onAfterClose) scheduleOnRN(onAfterClose);
+            }
+          });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 

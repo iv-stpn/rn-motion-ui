@@ -119,8 +119,8 @@ const BADGE_BACKGROUND = cva('items-center justify-center rounded-full', {
 // is exported as SWIPE_TONE_ICON_COLOR for consumers rendering swipe icons
 // *outside* the component; its neutral/primary entries are light-mode fallbacks.
 const ICON_COLOR: Record<SwipeActionTone, string> = {
-  neutral: '#737373', // mirrors light `muted-foreground` — resolved reactively in-component
-  primary: '#fafafa', // mirrors light `primary-foreground` — resolved reactively in-component
+  neutral: '#737373' /* theme-exempt */, // mirrors light `muted-foreground` — resolved reactively in-component
+  primary: '#fafafa' /* theme-exempt */, // mirrors light `primary-foreground` — resolved reactively in-component
   success: '#ffffff' /* theme-exempt */,
   warning: '#ffffff' /* theme-exempt */,
   danger: '#ffffff' /* theme-exempt */,

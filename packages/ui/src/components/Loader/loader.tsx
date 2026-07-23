@@ -264,9 +264,10 @@ function Percent({ size, speed, color, reduce }: PartProps) {
       <Text style={{ fontSize: size * 0.42, color, fontWeight: '500', fontVariant: ['tabular-nums'] }}>{`${p}%`}</Text>
       <View className="w-full overflow-hidden" style={{ height: Math.max(3, size * 0.1), borderRadius: 999 }}>
         {/* Faint tint of the fill colour for the track. Used to be `${color}26`
-            (hex alpha), but `color` now resolves to `rgb(...)` on web (oklch is
-            rasterised to sRGB in useThemeColor), and `rgb(…)26` isn't a valid
-            colour — so the tint is a sibling layer at 15% opacity instead. */}
+            (hex alpha), but `color` now resolves to an rgb string on web (oklch
+            is rasterised to sRGB in useThemeColor), and appending a hex-alpha
+            suffix isn't valid — so the tint is a sibling layer at 15% opacity
+            instead. */}
         <View style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: color, opacity: 0.15 }} />
         <View style={{ height: '100%', borderRadius: 999, backgroundColor: color, width: `${p}%` }} />
       </View>

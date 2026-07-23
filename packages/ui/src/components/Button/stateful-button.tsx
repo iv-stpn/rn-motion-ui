@@ -75,8 +75,8 @@ const CLIP_SLACK = 64;
 // Matches Button's buildSpinnerColor: returns the icon stroke colour for each
 // variant so the icon reads correctly against every button background.
 function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>): string {
-  if (v === 'primary' || v === 'destructive') return c['primary-foreground'];
-  if (v === 'outlineDanger' || v === 'ghostDanger') return c.destructive;
+  if (v === 'primary' || v === 'danger') return c['primary-foreground'];
+  if (v === 'outlineDanger' || v === 'ghostDanger') return c.danger;
   return c.foreground;
 }
 

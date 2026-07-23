@@ -51,8 +51,8 @@ type SlotState = 'success' | 'error' | 'active' | 'filled' | 'idle';
 const slot = cva('relative h-14 w-12 items-center justify-center overflow-hidden rounded-2xl border', {
   variants: {
     state: {
-      success: 'border-success-border',
-      error: 'border-destructive/60',
+      success: 'border-success',
+      error: 'border-danger/60',
       active: 'border-foreground',
       filled: 'border-foreground/40',
       idle: 'border-border',
@@ -65,7 +65,7 @@ const message = cva('text-sm', {
   variants: {
     status: {
       success: 'text-success-foreground',
-      error: 'text-destructive',
+      error: 'text-danger',
       idle: 'text-muted-foreground',
     },
   },

@@ -65,7 +65,7 @@ export type FeedbackWidgetProps = {
   testID?: string;
   /** Replace the close (×) icon in the panel header. Default: `<X size={12} color={mutedForeground} />`. */
   closeIcon?: ReactNode;
-  /** Replace the error-state alert icon. Default: `<AlertCircle size={20} color={destructiveColor} />`. */
+  /** Replace the error-state alert icon. Default: `<AlertCircle size={20} color={dangerColor} />`. */
   errorIcon?: ReactNode;
 };
 
@@ -368,7 +368,7 @@ function SentView({ reduce }: SentViewProps) {
             animate={{ scale: 1 }}
             transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 500, damping: 22, delay: 40 }}
             className="h-12 w-12 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.success, borderWidth: 1, borderColor: colors['success-border'] }}
+            style={{ backgroundColor: colors.success, borderWidth: 1, borderColor: colors.success }}
           >
             <MotiView
               from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.4 }}
@@ -405,7 +405,7 @@ function ErrorView({ reduce, onRetry, errorIcon }: ErrorViewProps) {
       transition={{ type: 'timing', duration: reduce ? 0 : 220, easing: EASE_OUT }}
     >
       <View accessibilityRole="alert" className="items-center rounded-[16px] bg-muted px-4 py-5">
-        <View className="h-12 w-12 items-center justify-center rounded-full border border-danger-border bg-danger">
+        <View className="h-12 w-12 items-center justify-center rounded-full border border-danger bg-danger">
           {errorIcon ?? <AlertCircle size={20} color={colors['danger-foreground']} />}
         </View>
         <Text className="mt-3 font-semibold text-foreground text-sm">{ERROR_TITLE}</Text>

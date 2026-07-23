@@ -1,27 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { CalendarClock, Eye, GitBranch, Pin } from '../../lib/icons';
+import { useThemeColor } from '../../theme/use-theme-color';
 import { type OverflowActionItem, OverflowActions } from './overflow-actions';
-
-const primaryActions: OverflowActionItem[] = [
-  { id: 'preview', label: 'Preview', icon: <Eye size={16} color="#111111" /> },
-  { id: 'pin', label: 'Pin', icon: <Pin size={16} color="#111111" /> },
-];
-
-const overflowActions: OverflowActionItem[] = [
-  { id: 'branch', label: 'Branch', icon: <GitBranch size={16} color="#111111" /> },
-  { id: 'schedule', label: 'Schedule', icon: <CalendarClock size={16} color="#111111" /> },
-];
 
 const meta = {
   title: 'Components/OverflowActions',
   component: OverflowActions,
   parameters: { layout: 'centered' },
   args: {
-    primaryActions,
-    overflowActions,
+    primaryActions: [],
+    overflowActions: [],
     size: 'md',
     onExpandedChange: fn(),
     onAction: fn(),
@@ -40,6 +31,24 @@ type DemoProps = { size?: 'sm' | 'md' };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Demo({ size }: DemoProps) {
   const [expanded, setExpanded] = useState(false);
+  const iconColor = useThemeColor('foreground');
+
+  const primaryActions = useMemo<OverflowActionItem[]>(
+    () => [
+      { id: 'preview', label: 'Preview', icon: <Eye size={16} color={iconColor} /> },
+      { id: 'pin', label: 'Pin', icon: <Pin size={16} color={iconColor} /> },
+    ],
+    [iconColor],
+  );
+
+  const overflowActions = useMemo<OverflowActionItem[]>(
+    () => [
+      { id: 'branch', label: 'Branch', icon: <GitBranch size={16} color={iconColor} /> },
+      { id: 'schedule', label: 'Schedule', icon: <CalendarClock size={16} color={iconColor} /> },
+    ],
+    [iconColor],
+  );
+
   return (
     <OverflowActions
       primaryActions={primaryActions}

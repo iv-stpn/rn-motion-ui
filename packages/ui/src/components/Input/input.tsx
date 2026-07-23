@@ -36,7 +36,7 @@ const field = cva('relative flex-row items-center overflow-hidden border', {
     state: {
       idle: 'border-border',
       focused: 'border-foreground/40',
-      error: 'border-destructive',
+      error: 'border-danger',
     },
     size: {
       sm: 'h-9',
@@ -123,7 +123,7 @@ function renderSubtext({ errorMessage, hint, reduce }: SubtextProps): ReactNode 
         exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -4 }}
         transition={TIMING_BASE}
       >
-        <Text accessibilityRole="alert" className="px-1 text-destructive text-xs">
+        <Text accessibilityRole="alert" className="px-1 text-danger text-xs">
           {errorMessage}
         </Text>
       </MotiView>

@@ -43,25 +43,23 @@ function Demo({ once }: DemoProps) {
   return (
     <View
       testID="scroll-reveal-demo"
-      style={{
-        width: 360,
-        height: VIEWPORT,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#e5e5e5',
-        overflow: 'hidden',
-      }}
+      className="overflow-hidden rounded-2xl border border-border"
+      style={{ width: 360, height: VIEWPORT }}
     >
       <ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ padding: 24, gap: 48 }}>
-        <Text style={{ textAlign: 'center', color: '#71717a', fontSize: 14 }}>{SCROLL_HINT}</Text>
+        <Text className="text-muted-foreground" style={{ textAlign: 'center', fontSize: 14 }}>
+          {SCROLL_HINT}
+        </Text>
         {CARDS.map((label) => (
           <ScrollReveal key={label} scrollY={scrollY} viewportHeight={VIEWPORT} once={once} testID={`reveal-${label}`}>
-            <View style={{ borderRadius: 12, backgroundColor: '#f4f4f5', paddingHorizontal: 16, paddingVertical: 48 }}>
+            <View className="rounded-xl border border-border bg-surface-3 px-4 py-12">
               <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '500' }}>{label}</Text>
             </View>
           </ScrollReveal>
         ))}
-        <Text style={{ textAlign: 'center', color: '#71717a', fontSize: 14 }}>{END_HINT}</Text>
+        <Text className="text-muted-foreground" style={{ textAlign: 'center', fontSize: 14 }}>
+          {END_HINT}
+        </Text>
       </ScrollView>
     </View>
   );

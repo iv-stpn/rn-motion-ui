@@ -15,11 +15,17 @@ const VIEWPORT_PADDING = 8;
 const DEFAULT_MAX_HEIGHT = 520;
 const noop = () => undefined;
 
-type TriggerRenderProps = { open: boolean };
+type TriggerRenderProps = { open: boolean; toggle: () => void };
 type ContentRenderProps = { close: () => void };
 
 export type AdaptiveDropdownProps = {
-  /** The element that opens the dropdown. Wrapped in a Pressable that toggles it. */
+  /**
+   * The element that opens the dropdown. A plain node is wrapped in a Pressable
+   * that toggles it. Pass a function to receive `{ open, toggle }` — use this
+   * when the trigger is itself pressable (e.g. a `Button`): wire its `onPress`
+   * to `toggle`, since the inner pressable claims the press and the wrapper's
+   * own toggle never fires.
+   */
   trigger: ReactNode | ((props: TriggerRenderProps) => ReactNode);
   /** Content inside the floating panel / bottom sheet. */
   children: ReactNode | ((props: ContentRenderProps) => ReactNode);
@@ -144,7 +150,7 @@ export function AdaptiveDropdown({
   }
 
   // ── Content resolution ─────────────────────────────────────────────────────
-  const resolvedTrigger = typeof trigger === 'function' ? trigger({ open }) : trigger;
+  const resolvedTrigger = typeof trigger === 'function' ? trigger({ open, toggle }) : trigger;
   const resolvedContent = typeof children === 'function' ? children({ close }) : children;
 
   const hasHeader = Boolean(title || showClose || headerRight);

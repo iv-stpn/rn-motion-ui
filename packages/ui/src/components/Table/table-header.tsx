@@ -156,7 +156,7 @@ export function HeaderCell<T>({
           ) : null}
           {onDeleteColumn ? (
             <Pressable
-              className="h-5 w-5 items-center justify-center rounded-full bg-destructive"
+              className="h-5 w-5 items-center justify-center rounded-full bg-danger"
               onPress={handleDeleteColumn}
               hitSlop={8}
             >

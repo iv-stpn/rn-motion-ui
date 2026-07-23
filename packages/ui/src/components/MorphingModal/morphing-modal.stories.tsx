@@ -67,24 +67,22 @@ function CloseButton({ label, onPress }: CloseButtonProps) {
   );
 }
 
-type RowProps = { icon: ReactNode; label: string; destructive?: boolean; onPress: () => void };
+type RowProps = { icon: ReactNode; label: string; danger?: boolean; onPress: () => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Row({ icon, label, destructive, onPress }: RowProps) {
+function Row({ icon, label, danger, onPress }: RowProps) {
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
       className={
-        destructive
-          ? 'flex-row items-center gap-3 rounded-2xl bg-destructive/10 px-4 py-3'
+        danger
+          ? 'flex-row items-center gap-3 rounded-2xl bg-danger/10 px-4 py-3'
           : 'flex-row items-center gap-3 rounded-2xl bg-muted px-4 py-3'
       }
     >
       {icon}
-      <Text className={destructive ? 'font-medium text-destructive text-sm' : 'font-medium text-foreground text-sm'}>
-        {label}
-      </Text>
+      <Text className={danger ? 'font-medium text-danger text-sm' : 'font-medium text-foreground text-sm'}>{label}</Text>
     </Pressable>
   );
 }
@@ -114,7 +112,7 @@ function OptionsView({ onPrivateKey, onRecovery, onClose }: OptionsViewProps) {
       <View style={{ gap: 8 }}>
         <Row icon={<Lock size={16} color="#111111" />} label={PRIVATE_KEY_LABEL} onPress={onPrivateKey} />
         <Row icon={<ScrollText size={16} color="#111111" />} label={RECOVERY_LABEL} onPress={onRecovery} />
-        <Row icon={<Trash2 size={16} color="#e5484d" />} label="Remove Wallet" destructive={true} onPress={onClose} />
+        <Row icon={<Trash2 size={16} color="#e5484d" />} label="Remove Wallet" danger={true} onPress={onClose} />
       </View>
     </View>
   );

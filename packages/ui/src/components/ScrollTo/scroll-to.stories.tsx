@@ -35,8 +35,8 @@ function Demo({ onPress }: DemoProps) {
   };
 
   return (
-    <View style={{ width: 360, height: 320, borderRadius: 16, borderWidth: 1, borderColor: '#e5e5e5', overflow: 'hidden' }}>
-      <View style={{ flexDirection: 'row', gap: 6, padding: 8, borderBottomWidth: 1, borderColor: '#e5e5e5' }}>
+    <View className="overflow-hidden rounded-2xl border border-border" style={{ width: 360, height: 320 }}>
+      <View className="flex-row border-border border-b" style={{ gap: 6, padding: 8 }}>
         {SECTIONS.map((s) => (
           <ScrollTo
             key={s.id}
@@ -45,7 +45,8 @@ function Demo({ onPress }: DemoProps) {
             offset={-8}
             onPress={onPress}
             testID={`nav-${s.id}`}
-            style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#f4f4f5' }}
+            className="rounded-full border border-border bg-surface-3"
+            style={{ paddingHorizontal: 12, paddingVertical: 4 }}
           >
             {s.label}
           </ScrollTo>

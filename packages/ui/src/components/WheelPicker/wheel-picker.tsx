@@ -28,7 +28,8 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
-import { Card, type CardVariant } from '../Card/card';
+import type { SurfaceLevel } from '../../lib/elevated';
+import { Card } from '../Card/card';
 
 // RN vs web: the reference wheel is a CSS 3D drum — rows seated on a cylinder via
 // `translateZ`, the whole list spun with `rotateX` — driven by a hand-rolled
@@ -236,8 +237,8 @@ export type WheelPickerProps = {
   disabled?: boolean;
   /** Play a short tick sound on each row crossing while dragging. Default false. */
   sound?: boolean;
-  /** Visual container style — 'border' renders an outlined card, 'filled' a muted-background card. Default 'filled'. */
-  variant?: CardVariant;
+  /** Surface elevation of the outer Card container (1–8). Default 3. */
+  elevation?: SurfaceLevel;
   /** Additional NativeWind class names forwarded to the outer Card. */
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -255,7 +256,7 @@ export function WheelPicker({
   itemHeight = 36,
   disabled = false,
   sound = false,
-  variant = 'filled',
+  elevation = 3,
   className,
   style,
   accessibilityLabel,
@@ -536,7 +537,7 @@ export function WheelPicker({
   if (reduce)
     return (
       <Card
-        variant={variant}
+        elevation={elevation}
         accessibilityRole="adjustable"
         accessibilityLabel={accessibilityLabel}
         accessibilityValue={{ text: currentValue }}
@@ -580,7 +581,7 @@ export function WheelPicker({
   return (
     <Card
       ref={containerRef}
-      variant={variant}
+      elevation={elevation}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ text: currentValue }}

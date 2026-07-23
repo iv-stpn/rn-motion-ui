@@ -3,7 +3,7 @@ import { TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../lib/ease';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
-import { Check, X } from '../../lib/icons';
+import { AlertCircle, Check } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../theme/motion';
@@ -20,7 +20,7 @@ import { Text } from '../Text/text';
 // shape-change rather than three static icons swapping in/out. Ported from
 // offkeep's web ActionFeedbackModal MorphIcon (framer-motion → moti).
 
-const MORPH_SIZE: Record<ActionFeedbackState, number> = { loading: 40, success: 44, error: 38 };
+const MORPH_SIZE: Record<ActionFeedbackState, number> = { loading: 40, success: 44, error: 44 };
 
 const MORPH_CONTAINER_TRANSITION = { type: 'timing', duration: 300, easing: EASE_OUT } as const;
 const MORPH_GLYPH_TRANSITION = { type: 'timing', duration: 240, easing: EASE_OUT } as const;
@@ -95,7 +95,7 @@ function MorphIcon({ state, reduced }: MorphIconProps) {
             transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
             style={morphGlyphStyle}
           >
-            <X size={20} color={colors['danger-foreground']} />
+            <AlertCircle size={26} color={colors['danger-foreground']} />
           </MotiView>
         )}
       </AnimatePresence>

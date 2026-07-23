@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { View } from 'react-native';
+import { SURFACE_LEVELS } from '../../lib/elevated';
 import { Text } from '../Text/text';
 import { Card } from './card';
 
@@ -7,10 +8,10 @@ const meta = {
   title: 'Components/Card',
   component: Card,
   parameters: { layout: 'centered' },
-  args: { size: 'md', variant: 'border' },
+  args: { size: 'md', elevation: 3 },
   argTypes: {
     size: { control: 'select', options: ['compact', 'md', 'lg'] },
-    variant: { control: 'select', options: ['border', 'filled'] },
+    elevation: { control: { type: 'range', min: 1, max: 8, step: 1 } },
   },
 } satisfies Meta<typeof Card>;
 
@@ -22,8 +23,6 @@ const DEFAULT_BODY = 'A container for grouping related content.';
 const COMPACT_LABEL = 'Compact';
 const MEDIUM_LABEL = 'Medium';
 const LARGE_LABEL = 'Large';
-const BORDER_LABEL = 'Border';
-const FILLED_LABEL = 'Filled';
 
 export default meta;
 
@@ -52,15 +51,14 @@ export const Sizes: Story = {
   ),
 };
 
-export const Variants: Story = {
+export const Elevations: Story = {
   render: (args) => (
-    <View style={{ alignItems: 'stretch', flexDirection: 'column', gap: 12 }}>
-      <Card {...args} variant="border" style={{ width: CARD_WIDTH }}>
-        <Text className="font-semibold text-foreground text-sm">{BORDER_LABEL}</Text>
-      </Card>
-      <Card {...args} variant="filled" style={{ width: CARD_WIDTH }}>
-        <Text className="font-semibold text-foreground text-sm">{FILLED_LABEL}</Text>
-      </Card>
+    <View style={{ alignItems: 'stretch', flexDirection: 'column', gap: 16 }}>
+      {SURFACE_LEVELS.map((level) => (
+        <Card {...args} key={level} elevation={level} style={{ width: CARD_WIDTH }}>
+          <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>
+        </Card>
+      ))}
     </View>
   ),
 };

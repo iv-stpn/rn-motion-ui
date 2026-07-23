@@ -16,7 +16,7 @@ export type ButtonVariant =
   | 'secondary'
   | 'ghost'
   | 'outline'
-  | 'destructive'
+  | 'danger'
   | 'outlineDanger'
   | 'ghostDanger'
   | 'ghostPrimary';
@@ -34,8 +34,8 @@ const container = cva('flex-row items-center justify-center', {
       secondary: 'border border-border bg-surface-3',
       ghost: 'bg-transparent',
       outline: 'border border-border bg-transparent',
-      destructive: 'bg-destructive',
-      outlineDanger: 'border border-destructive bg-transparent',
+      danger: 'bg-danger',
+      outlineDanger: 'border border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
       ghostPrimary: 'bg-transparent',
     },
@@ -61,9 +61,9 @@ export const label = cva('font-medium', {
       secondary: 'text-foreground',
       ghost: 'text-muted-foreground',
       outline: 'text-foreground',
-      destructive: 'text-white',
-      outlineDanger: 'text-destructive',
-      ghostDanger: 'text-destructive',
+      danger: 'text-white',
+      outlineDanger: 'text-danger',
+      ghostDanger: 'text-danger',
       ghostPrimary: 'text-primary',
     },
     size: { sm: 'text-xs', md: 'text-sm', lg: 'text-base', icon: 'text-sm' },
@@ -75,11 +75,11 @@ export const label = cva('font-medium', {
 function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   switch (variant) {
     case 'primary':
-    case 'destructive':
+    case 'danger':
       return colors['primary-foreground'];
     case 'outlineDanger':
     case 'ghostDanger':
-      return colors.destructive;
+      return colors.danger;
     default:
       return colors.foreground;
   }

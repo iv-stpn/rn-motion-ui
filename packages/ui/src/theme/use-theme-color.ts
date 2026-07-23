@@ -12,10 +12,9 @@ import { cssColorToSrgb, oklchToSrgb } from '../lib/color';
  * translucent state overlays. `surface-3` is the resting level for contained
  * content (cards, popovers, dialogs, inputs).
  *
- * Status tokens come in triads: the bare name (`success`, `warning`, `info`,
- * `danger`) is a soft plate background; `*-foreground` is legible text/icon
- * color on that plate or on any neutral surface; `*-border` is a matching
- * edge. `destructive` stays the vivid action color for destructive buttons.
+ * Status tokens come in pairs: `danger`, `success`, `warning`, `info` are
+ * vivid filled backgrounds; `*-foreground` is white for legible text/icons on
+ * that fill.
  */
 type ThemeToken =
   | 'surface-1'
@@ -38,20 +37,14 @@ type ThemeToken =
   | 'secondary-foreground'
   | 'accent'
   | 'accent-foreground'
-  | 'destructive'
-  | 'destructive-foreground'
   | 'success'
   | 'success-foreground'
-  | 'success-border'
   | 'warning'
   | 'warning-foreground'
-  | 'warning-border'
   | 'info'
   | 'info-foreground'
-  | 'info-border'
   | 'danger'
-  | 'danger-foreground'
-  | 'danger-border';
+  | 'danger-foreground';
 
 /**
  * OKLCH definitions mirroring the tokens.css @theme block — [L, C, H, alpha?].
@@ -85,20 +78,14 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   'secondary-foreground': [0.32, 0.004, 270],
   accent: [0.91, 0, 0],
   'accent-foreground': [0.22, 0.004, 270],
-  destructive: [0.53, 0.19, 25],
-  'destructive-foreground': [0.98, 0.002, 270],
-  success: [0.97, 0.04, 145],
-  'success-foreground': [0.48, 0.18, 145],
-  'success-border': [0.9, 0.1, 145],
-  warning: [0.98, 0.06, 85],
-  'warning-foreground': [0.58, 0.14, 85],
-  'warning-border': [0.92, 0.1, 85],
-  info: [0.97, 0.04, 250],
-  'info-foreground': [0.45, 0.2, 250],
-  'info-border': [0.9, 0.1, 250],
+  success: [0.7, 0.18, 155],
+  'success-foreground': [1, 0, 0],
+  warning: [0.78, 0.18, 75],
+  'warning-foreground': [1, 0, 0],
+  info: [0.62, 0.18, 250],
+  'info-foreground': [1, 0, 0],
   danger: [0.97, 0.04, 25],
   'danger-foreground': [0.55, 0.18, 25],
-  'danger-border': [0.9, 0.1, 25],
 };
 
 const DARK_OKLCH: Record<ThemeToken, Oklch> = {
@@ -122,20 +109,14 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   'secondary-foreground': [0.94, 0.004, 270],
   accent: [0.31, 0.004, 270],
   'accent-foreground': [0.95, 0.004, 270],
-  destructive: [0.5, 0.22, 25],
-  'destructive-foreground': [1, 0, 0],
-  success: [0.26, 0.07, 145],
-  'success-foreground': [0.72, 0.15, 145],
-  'success-border': [0.36, 0.11, 145],
-  warning: [0.28, 0.06, 85],
-  'warning-foreground': [0.78, 0.12, 85],
-  'warning-border': [0.38, 0.09, 85],
-  info: [0.26, 0.07, 250],
-  'info-foreground': [0.72, 0.16, 250],
-  'info-border': [0.36, 0.11, 250],
+  success: [0.72, 0.18, 155],
+  'success-foreground': [1, 0, 0],
+  warning: [0.8, 0.18, 75],
+  'warning-foreground': [1, 0, 0],
+  info: [0.65, 0.18, 250],
+  'info-foreground': [1, 0, 0],
   danger: [0.26, 0.07, 25],
   'danger-foreground': [0.75, 0.15, 25],
-  'danger-border': [0.36, 0.11, 25],
 };
 
 /** Resolve an OKLCH definition table to concrete sRGB strings. */

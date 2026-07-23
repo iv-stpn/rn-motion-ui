@@ -244,7 +244,7 @@ export function TableRow<T>({
           ) : null}
           {onDeleteRow ? (
             <Pressable
-              className="h-5 w-5 items-center justify-center rounded-full bg-destructive"
+              className="h-5 w-5 items-center justify-center rounded-full bg-danger"
               onPress={handleDeleteRow}
               hitSlop={8}
               accessibilityLabel={`Delete row ${index + 1}`}

@@ -32,10 +32,9 @@
  *
  * ## Status colors
  *
- * `success` / `warning` / `info` / `danger` are soft *plate* colors (badge and
- * banner backgrounds); pair them with `*-foreground` for legible text/icons on
- * that plate (or on any neutral surface) and `*-border` for a matching edge.
- * `destructive` stays a vivid action color for destructive buttons.
+ * `danger` / `success` / `warning` / `info` are vivid filled colors (action
+ * indicators, modals, toasts); pair them with `*-foreground` (white) for
+ * legible text/icons on that fill.
  *
  * Dark-mode overrides are applied automatically via
  * @media (prefers-color-scheme: dark). For manual dark-mode (a .dark class on
@@ -82,24 +81,16 @@
   --color-accent: oklch(91% 0 0);
   --color-accent-foreground: oklch(22% 0.004 270);
 
-  /* Vivid destructive action color (buttons), distinct from the soft
-     `danger` status plate below. */
-  --color-destructive: oklch(53% 0.19 25);
-  --color-destructive-foreground: oklch(98% 0.002 270);
-
-  /* Status triads — soft plate / legible foreground / matching border. */
-  --color-success: oklch(97% 0.04 145);
-  --color-success-foreground: oklch(48% 0.18 145);
-  --color-success-border: oklch(90% 0.1 145);
-  --color-warning: oklch(98% 0.06 85);
-  --color-warning-foreground: oklch(58% 0.14 85);
-  --color-warning-border: oklch(92% 0.1 85);
-  --color-info: oklch(97% 0.04 250);
-  --color-info-foreground: oklch(45% 0.2 250);
-  --color-info-border: oklch(90% 0.1 250);
-  --color-danger: oklch(97% 0.04 25);
-  --color-danger-foreground: oklch(55% 0.18 25);
-  --color-danger-border: oklch(90% 0.1 25);
+  /* Status pairs — vivid filled background / white foreground. All
+     foregrounds are white for consistent legibility on the saturated fill. */
+  --color-success: oklch(70% 0.18 155);
+  --color-success-foreground: oklch(100% 0 0);
+  --color-warning: oklch(78% 0.18 75);
+  --color-warning-foreground: oklch(100% 0 0);
+  --color-info: oklch(62% 0.18 250);
+  --color-info-foreground: oklch(100% 0 0);
+  --color-danger: oklch(62% 0.22 25);
+  --color-danger-foreground: oklch(100% 0 0);
 
   /* Surface elevation shadows — a crisp 1px ring at full strength plus drop
      layers whose opacity decays as blur grows (natural light fall-off).
@@ -221,20 +212,14 @@
       --color-secondary-foreground: oklch(94% 0.004 270);
       --color-accent: oklch(31% 0.004 270);
       --color-accent-foreground: oklch(95% 0.004 270);
-      --color-destructive: oklch(50% 0.22 25);
-      --color-destructive-foreground: oklch(100% 0 0);
-      --color-success: oklch(26% 0.07 145);
-      --color-success-foreground: oklch(72% 0.15 145);
-      --color-success-border: oklch(36% 0.11 145);
-      --color-warning: oklch(28% 0.06 85);
-      --color-warning-foreground: oklch(78% 0.12 85);
-      --color-warning-border: oklch(38% 0.09 85);
-      --color-info: oklch(26% 0.07 250);
-      --color-info-foreground: oklch(72% 0.16 250);
-      --color-info-border: oklch(36% 0.11 250);
-      --color-danger: oklch(26% 0.07 25);
-      --color-danger-foreground: oklch(75% 0.15 25);
-      --color-danger-border: oklch(36% 0.11 25);
+      --color-success: oklch(72% 0.18 155);
+      --color-success-foreground: oklch(100% 0 0);
+      --color-warning: oklch(80% 0.18 75);
+      --color-warning-foreground: oklch(100% 0 0);
+      --color-info: oklch(65% 0.18 250);
+      --color-info-foreground: oklch(100% 0 0);
+      --color-danger: oklch(66% 0.22 25);
+      --color-danger-foreground: oklch(100% 0 0);
       --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
       --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
       --shadow-surface-3:
@@ -308,20 +293,14 @@
     --color-secondary-foreground: oklch(94% 0.004 270);
     --color-accent: oklch(31% 0.004 270);
     --color-accent-foreground: oklch(95% 0.004 270);
-    --color-destructive: oklch(50% 0.22 25);
-    --color-destructive-foreground: oklch(100% 0 0);
-    --color-success: oklch(26% 0.07 145);
-    --color-success-foreground: oklch(72% 0.15 145);
-    --color-success-border: oklch(36% 0.11 145);
-    --color-warning: oklch(28% 0.06 85);
-    --color-warning-foreground: oklch(78% 0.12 85);
-    --color-warning-border: oklch(38% 0.09 85);
-    --color-info: oklch(26% 0.07 250);
-    --color-info-foreground: oklch(72% 0.16 250);
-    --color-info-border: oklch(36% 0.11 250);
+    --color-success: oklch(72% 0.18 155);
+    --color-success-foreground: oklch(100% 0 0);
+    --color-warning: oklch(80% 0.18 75);
+    --color-warning-foreground: oklch(100% 0 0);
+    --color-info: oklch(65% 0.18 250);
+    --color-info-foreground: oklch(100% 0 0);
     --color-danger: oklch(26% 0.07 25);
     --color-danger-foreground: oklch(75% 0.15 25);
-    --color-danger-border: oklch(36% 0.11 25);
     --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
     --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
     --shadow-surface-3:

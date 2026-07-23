@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
-import { AlertTriangle, Check, Circle, Info, LoaderCircle, X } from '../../lib/icons';
+import { AlertCircle, AlertTriangle, Check, Circle, Info, LoaderCircle } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { useThemeColors } from '../../theme/use-theme-color';
@@ -14,14 +14,14 @@ export type AnimatedBadgeStatus = 'neutral' | 'info' | 'success' | 'warning' | '
 export type AnimatedBadgeSize = 'sm' | 'md';
 
 // cva drives only the static container/label layout (height, padding, gap,
-// radius, border width). Background + border *colour* now animate on the root
-// MotiView (see BADGE_BACKGROUND / BADGE_BORDER) — moti interpolates concrete colour
-// values, not a className swap, so the colours live there rather than here.
-const container = cva('flex-row shrink-0 items-center overflow-hidden rounded-full border', {
+// radius). The badge is a solid filled plate — background *colour* animates on
+// the root MotiView (see BADGE_BACKGROUND) — moti interpolates concrete colour
+// values, not a className swap, so the colour lives there rather than here.
+const container = cva('flex-row shrink-0 items-center overflow-hidden rounded-full', {
   variants: {
     size: {
-      sm: 'h-6 gap-1.5 px-2',
-      md: 'h-8 gap-2 px-3',
+      sm: 'h-6 gap-1 px-2',
+      md: 'h-8 gap-1.5 px-3',
     },
   },
   defaultVariants: { size: 'md' },
@@ -44,8 +44,8 @@ const labelClass = cva('font-medium', {
 
 // Stroke colours resolve the semantic token to a concrete value for
 // react-native-svg (SVG stroke can't read a Tailwind class). Status variants
-// use their `*-foreground` triad partner — tuned for legibility on the soft
-// status plate in both themes; neutral/loading use the muted-foreground/
+// use their `*-foreground` pair partner — white, for legibility on the vivid
+// filled status plate in both themes; neutral/loading use the muted-foreground/
 // foreground tokens so they invert in dark mode.
 function useIconColor(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
   return {
@@ -58,10 +58,10 @@ function useIconColor(colors: ReturnType<typeof useThemeColors>): Record<Animate
   };
 }
 
-// Animated container fill colours — the soft status plates from the token
-// triads. moti interpolates concrete colour values (not className swaps), so
-// the resolved token strings feed the animation directly and still track
-// light/dark because useThemeColors() re-resolves on theme change.
+// Animated container fill colours — the vivid filled status plates. moti
+// interpolates concrete colour values (not className swaps), so the resolved
+// token strings feed the animation directly and still track light/dark because
+// useThemeColors() re-resolves on theme change.
 function useBadgeBackground(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
   return {
     neutral: colors.muted,
@@ -73,27 +73,14 @@ function useBadgeBackground(colors: ReturnType<typeof useThemeColors>): Record<A
   };
 }
 
-// Animated border colours — the `*-border` member of each status triad;
-// neutral/loading use the shared hairline `border` token.
-function useBadgeBorder(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
-  return {
-    neutral: colors.border,
-    info: colors['info-border'],
-    success: colors['success-border'],
-    warning: colors['warning-border'],
-    danger: colors['danger-border'],
-    loading: colors.border,
-  };
-}
-
-type BadgeIconProps = { size: number; color: string };
+type BadgeIconProps = { size: number; color: string; strokeWidth?: number };
 
 const ICONS: Record<AnimatedBadgeStatus, (p: BadgeIconProps) => ReactNode> = {
   neutral: Circle,
   info: Info,
   success: Check,
   warning: AlertTriangle,
-  danger: X,
+  danger: AlertCircle,
   loading: LoaderCircle,
 };
 
@@ -129,10 +116,9 @@ export function AnimatedBadge({
 
   const ICON_COLOR = useIconColor(colors);
   const BADGE_BACKGROUND = useBadgeBackground(colors);
-  const BADGE_BORDER = useBadgeBorder(colors);
 
   const doPulse = (pulse ?? status === 'loading') && !reduce;
-  const iconSize = size === 'sm' ? 12 : 14;
+  const iconSize = size === 'sm' ? 14 : 16;
 
   const Icon = ICONS[status];
   const contentKey = typeof children === 'string' || typeof children === 'number' ? String(children) : status;
@@ -144,10 +130,9 @@ export function AnimatedBadge({
       accessibilityRole="text"
       className={cn(container({ size }), className)}
       style={style}
-      animate={{ backgroundColor: BADGE_BACKGROUND[status], borderColor: BADGE_BORDER[status] }}
+      animate={{ backgroundColor: BADGE_BACKGROUND[status] }}
       transition={{
         backgroundColor: { type: 'timing', duration: 300 },
-        borderColor: { type: 'timing', duration: 300 },
       }}
     >
       {doPulse ? (
@@ -178,10 +163,10 @@ export function AnimatedBadge({
                   animate={{ rotate: '360deg' }}
                   transition={{ type: 'timing', duration: 1000, loop: true, repeatReverse: false }}
                 >
-                  <Icon size={iconSize} color={ICON_COLOR[status]} />
+                  <Icon size={iconSize} color={ICON_COLOR[status]} strokeWidth={2.5} />
                 </MotiView>
               ) : (
-                (icon ?? <Icon size={iconSize} color={ICON_COLOR[status]} />)
+                (icon ?? <Icon size={iconSize} color={ICON_COLOR[status]} strokeWidth={2.5} />)
               )}
             </MotiView>
           </AnimatePresence>

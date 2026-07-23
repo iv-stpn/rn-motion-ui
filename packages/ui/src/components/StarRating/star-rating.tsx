@@ -2,7 +2,7 @@
  * StarRating
  *
  * An animated star-rating input. Tapping commits a rating with a squash-and-
- * stretch pop and an amber sparkle burst; tapping the committed star clears it
+ * stretch pop and a sparkle burst; tapping the committed star clears it
  * (allowClear). An optional rolling value label tracks the current rating.
  * Works controlled or uncontrolled, supports fractional read-only display, and
  * honours prefers-reduced-motion. Exposes radiogroup / radio semantics with
@@ -53,6 +53,15 @@ export type StarRatingProps = {
   style?: StyleProp<ViewStyle>;
   testID?: string;
   /**
+   * Color of the filled/active stars and the sparkle burst. Defaults to a
+   * theme-independent gold so stars always read as stars.
+   */
+  activeStarColor?: string;
+  /** Color of the empty/inactive stars. Defaults to the theme `border` color. */
+  inactiveStarColor?: string;
+  /** Round the star's stroke caps and joins. Set false for sharp points. Default true */
+  round?: boolean;
+  /**
    * Custom star shape. Receives `{ size, color, filled }` and should return a
    * ReactNode sized to `size × size`. Default: the built-in `<StarSvg>`.
    */
@@ -64,9 +73,12 @@ export type StarRatingProps = {
 const SPARKLE_COUNT = 5;
 const BURST_DURATION_MS = 500;
 
+/** Theme-independent gold used for filled stars unless overridden via props. */
+const DEFAULT_ACTIVE_STAR_COLOR = '#edde51'; /* theme-exempt: fixed gold, reads as a star across every theme */
+
 /** Snappy spring for star fills and press feedback. */
 const FILL_SPRING = { type: 'spring' as const, stiffness: 500, damping: 30 };
-/** Quick tween for un-fills so the amber overlay never overshoots back. */
+/** Quick tween for un-fills so the active overlay never overshoots back. */
 const UNFILL_TIMING = { type: 'timing' as const, duration: 150 };
 /** Spring for the rolling value-label digits. */
 const VALUE_SPRING = { type: 'spring' as const, stiffness: 400, damping: 30 };
@@ -110,9 +122,9 @@ function formatValue(v: number) {
 
 // ─── StarSvg ─────────────────────────────────────────────────────────────────
 
-type StarSvgProps = { size: number; color: string; filled?: boolean };
+type StarSvgProps = { size: number; color: string; filled?: boolean; round?: boolean };
 
-export function StarSvg({ size, color, filled }: StarSvgProps) {
+export function StarSvg({ size, color, filled, round = true }: StarSvgProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       <Path
@@ -120,8 +132,8 @@ export function StarSvg({ size, color, filled }: StarSvgProps) {
         fill={filled ? color : 'none'}
         stroke={color}
         strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        strokeLinecap={round ? 'round' : undefined}
+        strokeLinejoin={round ? 'round' : undefined}
       />
     </Svg>
   );
@@ -172,8 +184,9 @@ type StarButtonProps = {
   icon: number;
   padClass: string;
   reduce: boolean;
-  amber: string;
-  mutedStar: string;
+  activeStarColor: string;
+  inactiveStarColor: string;
+  round: boolean;
   onSelect: (starValue: number) => void;
   renderStar?: (props: StarRenderProps) => ReactNode;
 };
@@ -187,8 +200,9 @@ export function StarButton({
   icon,
   padClass,
   reduce,
-  amber,
-  mutedStar,
+  activeStarColor,
+  inactiveStarColor,
+  round,
   onSelect,
   renderStar,
 }: StarButtonProps) {
@@ -223,21 +237,25 @@ export function StarButton({
       <MotiView animate={{ scale: pressed && !reduce ? 0.9 : 1 }} transition={SPRING_PRESS}>
         <Animated.View style={[{ width: icon, height: icon, position: 'relative' }, popStyle]}>
           {/* Unfilled base star */}
-          {renderStar ? renderStar({ size: icon, color: mutedStar, filled: false }) : <StarSvg size={icon} color={mutedStar} />}
-          {/* Filled amber overlay */}
+          {renderStar ? (
+            renderStar({ size: icon, color: inactiveStarColor, filled: false })
+          ) : (
+            <StarSvg size={icon} color={inactiveStarColor} round={round} />
+          )}
+          {/* Filled active overlay */}
           <MotiView
             animate={{ scale: filled ? 1 : 0, opacity: filled ? 1 : 0 }}
             transition={filled ? FILL_SPRING : UNFILL_TIMING}
             style={{ position: 'absolute', top: 0, left: 0 }}
           >
             {renderStar ? (
-              renderStar({ size: icon, color: amber, filled: true })
+              renderStar({ size: icon, color: activeStarColor, filled: true })
             ) : (
-              <StarSvg size={icon} color={amber} filled={true} />
+              <StarSvg size={icon} color={activeStarColor} filled={true} round={round} />
             )}
           </MotiView>
           {/* Sparkle burst */}
-          {isBursting && !reduce ? <SparklesBurst icon={icon} burstKey={burstKey} color={amber} /> : null}
+          {isBursting && !reduce ? <SparklesBurst icon={icon} burstKey={burstKey} color={activeStarColor} /> : null}
         </Animated.View>
       </MotiView>
     </Pressable>
@@ -259,11 +277,15 @@ export function StarRating({
   className,
   style,
   testID,
+  activeStarColor = DEFAULT_ACTIVE_STAR_COLOR,
+  inactiveStarColor,
+  round = true,
   renderStar,
 }: StarRatingProps) {
   const reduce = useReducedMotion();
-  const amber = useThemeColor('warning-foreground');
-  const mutedStar = useThemeColor('border');
+  const themeBorder = useThemeColor('border');
+  // Inactive stars fall back to the theme `border` color when no prop is given.
+  const inactiveColor = inactiveStarColor ?? themeBorder;
   const [internal, setInternal] = useState(defaultValue);
   const [burst, setBurst] = useState<{ key: number; index: number } | null>(null);
 
@@ -322,12 +344,12 @@ export function StarRating({
           return (
             <View key={starValue} className={pad}>
               <View style={{ width: icon, height: icon, position: 'relative' }}>
-                <StarSvg size={icon} color={mutedStar} />
+                <StarSvg size={icon} color={inactiveColor} round={round} />
                 {fillPercent > 0 ? (
                   <View
                     style={{ position: 'absolute', top: 0, left: 0, width: `${fillPercent}%`, height: icon, overflow: 'hidden' }}
                   >
-                    <StarSvg size={icon} color={amber} filled={true} />
+                    <StarSvg size={icon} color={activeStarColor} filled={true} round={round} />
                   </View>
                 ) : null}
               </View>
@@ -359,8 +381,9 @@ export function StarRating({
             icon={icon}
             padClass={pad}
             reduce={reduce}
-            amber={amber}
-            mutedStar={mutedStar}
+            activeStarColor={activeStarColor}
+            inactiveStarColor={inactiveColor}
+            round={round}
             onSelect={handleSelect}
             renderStar={renderStar}
           />

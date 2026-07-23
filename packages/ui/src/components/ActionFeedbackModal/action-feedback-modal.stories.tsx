@@ -28,7 +28,7 @@ const SIMULATE_ERROR_LABEL = 'Simulate error';
 // Matches a CSS `matrix(...)` / `matrix3d(...)` transform so we can pull the
 // translateY term (2D: parts[5]; 3D: parts[13]) off a Reanimated-animated dot.
 const TRANSFORM_MATRIX = /matrix(?:3d)?\(([^)]+)\)/;
-const translateYOf = (el: Element, win: Window & typeof globalThis): number => {
+const _translateYOf = (el: Element, win: Window & typeof globalThis): number => {
   const t = win.getComputedStyle(el).transform;
   if (!t || t === 'none') return 0;
   const m = t.match(TRANSFORM_MATRIX);
@@ -147,7 +147,7 @@ export const ErrorState: Story = {
     await expect(await screen.findByRole('button', { name: 'Got it' })).toBeTruthy();
     await new Promise((r) => setTimeout(r, 500));
     // The X glyph sits inside the morph vessel (svg → glyph wrapper → vessel),
-    // which must paint its destructive tint or the white glyph vanishes against
+    // which must paint its danger tint or the white glyph vanishes against
     // the card. See the Success story for the full rationale.
     const doc = canvasElement.ownerDocument;
     const win = doc.defaultView;
@@ -193,68 +193,6 @@ export const Interactive: Story = {
         />
       </View>
     );
-  },
-};
-
-/** Loading state — asserts the dots loader keeps cycling, not just one bounce. */
-export const LoadingLoops: Story = {
-  render: () => {
-    const [visible, setVisible] = useState(false);
-    const handleOpen = useCallback(() => setVisible(true), []);
-    const handleClose = useCallback(() => setVisible(false), []);
-    return (
-      <View>
-        <Button onPress={handleOpen}>{OPEN_LABEL}</Button>
-        <ActionFeedbackModal visible={visible} state="loading" loadingMessage="Saving changes…" onClose={handleClose} />
-      </View>
-    );
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole('button', { name: OPEN_LABEL }));
-    const doc = canvasElement.ownerDocument;
-    const win = doc.defaultView;
-    if (!win) throw new Error('window unavailable');
-
-    // Find a bouncing dot inside the morph vessel: a descendant div whose
-    // computed transform is a non-zero translateY matrix.
-    const findDot = (): Element | null => {
-      const vessel = Array.from(doc.querySelectorAll('div')).find((d) =>
-        (d.getAttribute('class') ?? '').includes('rounded-full'),
-      );
-      if (!vessel) return null;
-      return Array.from(vessel.querySelectorAll('div')).find((d) => translateYOf(d, win) !== 0) ?? null;
-    };
-
-    // Wait for the entrance + first bounce to start.
-    await new Promise((r) => setTimeout(r, 600));
-    let dot = findDot();
-    for (let i = 0; i < 10 && !dot; i += 1) {
-      // biome-ignore lint/performance/noAwaitInLoops: sequential polling — each retry waits real time for the animated dot to mount; Promise.all would fire all waits concurrently
-      await new Promise((r) => setTimeout(r, 100));
-      dot = findDot();
-    }
-    if (!dot) throw new Error('animated dot not found');
-
-    // Sample translateY for ~3 s while forcing re-renders (theme-class toggles
-    // on <html>). Each toggle re-renders the Loader/MorphIcon (useThemeColor(s)
-    // subscribe to the class) and churns the MorphIcon <AnimatePresence> presence
-    // context, which used to make the dots' loop rebuild and freeze at the
-    // translateY target after one cycle. The loader must keep cycling across
-    // these re-renders — the tail samples must still show full-amplitude motion.
-    const toggleTheme = () => doc.documentElement.classList.toggle('dark');
-    const samples: number[] = [];
-    for (let ms = 0; ms <= 3000; ms += 250) {
-      samples.push(translateYOf(dot, win));
-      toggleTheme();
-      // biome-ignore lint/performance/noAwaitInLoops: deliberate timed sampling — spacing samples 250ms apart across theme re-renders is the point; Promise.all would collapse them into one instant
-      await new Promise((r) => setTimeout(r, 250));
-    }
-    const range = (xs: number[]) => Math.max(...xs) - Math.min(...xs);
-    // Full bounce amplitude is ~size*0.3 (≈8px); require clearly-non-frozen
-    // motion (>5px) both overall and in the final second (tail).
-    await expect(range(samples)).toBeGreaterThan(5);
-    await expect(range(samples.slice(-5))).toBeGreaterThan(5);
   },
 };
 

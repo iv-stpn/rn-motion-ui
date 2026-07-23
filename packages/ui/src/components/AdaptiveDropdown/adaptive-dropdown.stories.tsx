@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Bell, ChevronDown, Moon, Settings, User } from '../../lib/icons';
+import { useThemeColor } from '../../theme/use-theme-color';
+import { Button } from '../Button/button';
 import { Text } from '../Text/text';
 import { AdaptiveDropdown } from './adaptive-dropdown';
 
@@ -44,36 +46,61 @@ function MenuItem({ label, icon: Icon }: MenuItemProps) {
   );
 }
 
-type DefaultTriggerProps = { open: boolean };
+type DefaultTriggerProps = { open: boolean; toggle: () => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function DefaultTrigger({ open }: DefaultTriggerProps) {
+function DefaultTrigger({ open, toggle }: DefaultTriggerProps) {
+  // Emphasized foreground when open, muted when closed — both track the theme so
+  // the open-state chevron stays legible on dark surfaces (a fixed dark hex vanished).
+  const openColor = useThemeColor('foreground');
+  const closedColor = useThemeColor('muted-foreground');
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-        borderRadius: 8,
-      }}
-    >
-      <Text style={{ fontWeight: '500' }}>{MENU_LABEL}</Text>
-      <ChevronDown size={16} color={open ? '#111' : '#6b7280'} />
-    </View>
+    <Button variant="outline" onPress={toggle} rightAdornment={<ChevronDown size={16} color={open ? openColor : closedColor} />}>
+      {MENU_LABEL}
+    </Button>
   );
 }
 
-const TRIGGER_STYLE = {
-  paddingVertical: 8,
-  paddingHorizontal: 14,
-  borderWidth: 1,
-  borderColor: '#e5e7eb',
-  borderRadius: 8,
-} as const;
+// The render-prop `trigger` receives `{ open, toggle }`; these variants only need
+// `toggle`. Defined at module scope (rather than inline arrows) so each story passes
+// a stable function reference, matching DefaultTrigger.
+type TriggerProps = { toggle: () => void };
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function OpenTrigger({ toggle }: TriggerProps) {
+  return (
+    <Button variant="outline" onPress={toggle}>
+      {OPEN_LABEL}
+    </Button>
+  );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function LongListTrigger({ toggle }: TriggerProps) {
+  return (
+    <Button variant="outline" onPress={toggle}>
+      {LONG_LIST_LABEL}
+    </Button>
+  );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function ControlledTrigger({ toggle }: TriggerProps) {
+  return (
+    <Button variant="outline" onPress={toggle}>
+      {CONTROLLED_LABEL}
+    </Button>
+  );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function EndAlignedTrigger({ toggle }: TriggerProps) {
+  return (
+    <Button variant="outline" onPress={toggle}>
+      {ALIGN_END_LABEL}
+    </Button>
+  );
+}
 
 export default meta;
 
@@ -99,15 +126,7 @@ export const Default: Story = {
 /** Header with title and close button. */
 export const WithHeader: Story = {
   render: () => (
-    <AdaptiveDropdown
-      trigger={
-        <View style={TRIGGER_STYLE}>
-          <Text style={{ fontWeight: '500' }}>{OPEN_LABEL}</Text>
-        </View>
-      }
-      title="Options"
-      showClose={true}
-    >
+    <AdaptiveDropdown trigger={OpenTrigger} title="Options" showClose={true}>
       {ITEMS.map((item) => (
         <MenuItem key={item.label} {...item} />
       ))}
@@ -118,17 +137,7 @@ export const WithHeader: Story = {
 /** `scrollable` wraps content in a ScrollView (useful for long lists). */
 export const Scrollable: Story = {
   render: () => (
-    <AdaptiveDropdown
-      trigger={
-        <View style={TRIGGER_STYLE}>
-          <Text style={{ fontWeight: '500' }}>{LONG_LIST_LABEL}</Text>
-        </View>
-      }
-      title={SELECT_ITEM_TITLE}
-      showClose={true}
-      scrollable={true}
-      maxHeight={320}
-    >
+    <AdaptiveDropdown trigger={LongListTrigger} title={SELECT_ITEM_TITLE} showClose={true} scrollable={true} maxHeight={320}>
       {Array.from({ length: 20 }, (_, i) => {
         const label = `Item ${i + 1}`;
         return (
@@ -147,32 +156,14 @@ export const Controlled: Story = {
     const [open, setOpen] = useState(false);
     return (
       <View style={{ gap: 12, alignItems: 'center' }}>
-        <Text style={{ color: '#6b7280', fontSize: 13 }}>{`open: ${String(open)}`}</Text>
-        <AdaptiveDropdown
-          open={open}
-          onOpenChange={setOpen}
-          trigger={
-            <View style={TRIGGER_STYLE}>
-              <Text style={{ fontWeight: '500' }}>{CONTROLLED_LABEL}</Text>
-            </View>
-          }
-        >
+        <Text className="text-muted-foreground" style={{ fontSize: 13 }}>{`open: ${String(open)}`}</Text>
+        <AdaptiveDropdown open={open} onOpenChange={setOpen} trigger={ControlledTrigger}>
           {({ close }) => (
             <View style={{ padding: 16, gap: 8 }}>
-              <Text style={{ color: '#6b7280' }}>{CLOSE_CALLBACK_TEXT}</Text>
-              <Pressable
-                onPress={close}
-                style={{
-                  paddingVertical: 8,
-                  paddingHorizontal: 14,
-                  borderWidth: 1,
-                  borderColor: '#e5e7eb',
-                  borderRadius: 8,
-                  alignSelf: 'flex-start',
-                }}
-              >
-                <Text>{CLOSE_LABEL}</Text>
-              </Pressable>
+              <Text className="text-muted-foreground">{CLOSE_CALLBACK_TEXT}</Text>
+              <Button variant="outline" size="sm" onPress={close} style={{ alignSelf: 'flex-start' }}>
+                {CLOSE_LABEL}
+              </Button>
             </View>
           )}
         </AdaptiveDropdown>
@@ -184,14 +175,7 @@ export const Controlled: Story = {
 /** `align="end"` anchors the panel to the right edge of the trigger. */
 export const EndAligned: Story = {
   render: () => (
-    <AdaptiveDropdown
-      align="end"
-      trigger={
-        <View style={TRIGGER_STYLE}>
-          <Text style={{ fontWeight: '500' }}>{ALIGN_END_LABEL}</Text>
-        </View>
-      }
-    >
+    <AdaptiveDropdown align="end" trigger={EndAlignedTrigger}>
       {ITEMS.map((item) => (
         <MenuItem key={item.label} {...item} />
       ))}

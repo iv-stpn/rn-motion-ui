@@ -311,7 +311,7 @@ export type RangeRowProps = {
 };
 
 function RangeRow({ range, options, reduce, onUpdate, onRemove }: RangeRowProps) {
-  const mutedFg = useThemeColor('muted-foreground');
+  const mutedForeground = useThemeColor('muted-foreground');
   const handleStartChange = useCallback((v: string) => onUpdate(range.id, { start: v }), [onUpdate, range.id]);
   const handleEndChange = useCallback((v: string) => onUpdate(range.id, { end: v }), [onUpdate, range.id]);
   const handleRemove = useCallback(() => onRemove(range.id), [onRemove, range.id]);
@@ -333,7 +333,7 @@ function RangeRow({ range, options, reduce, onUpdate, onRemove }: RangeRowProps)
         onPress={handleRemove}
         className="h-8 w-8 items-center justify-center rounded-lg"
       >
-        <X size={16} color={mutedFg} />
+        <X size={16} color={mutedForeground} />
       </Pressable>
     </MotiView>
   );
@@ -353,7 +353,7 @@ export type DayRowProps = {
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: time-range drag logic — each branch handles a distinct interaction state
 function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRowProps) {
-  const mutedFg = useThemeColor('muted-foreground');
+  const mutedForeground = useThemeColor('muted-foreground');
   const idRef = useRef(0);
   const nextId = useCallback(() => {
     const n = idRef.current;
@@ -465,7 +465,7 @@ function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRow
                 onPress={addRange}
                 className="h-8 w-8 items-center justify-center rounded-lg"
               >
-                <Plus size={16} color={mutedFg} />
+                <Plus size={16} color={mutedForeground} />
               </Pressable>
             </MotiView>
           ) : null}
@@ -486,7 +486,7 @@ function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRow
                   exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
                   transition={SPRING_PRESS}
                 >
-                  <Check size={16} color={mutedFg} />
+                  <Check size={16} color={mutedForeground} />
                 </MotiView>
               ) : (
                 <MotiView
@@ -496,7 +496,7 @@ function DayRow({ day, label, state, options, reduce, onChange, onCopy }: DayRow
                   exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
                   transition={SPRING_PRESS}
                 >
-                  <Copy size={16} color={mutedFg} />
+                  <Copy size={16} color={mutedForeground} />
                 </MotiView>
               )}
             </AnimatePresence>

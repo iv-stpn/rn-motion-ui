@@ -15,7 +15,7 @@ export type AnimatedBadgeSize = 'sm' | 'md';
 
 // cva drives only the static container/label layout (height, padding, gap,
 // radius, border width). Background + border *colour* now animate on the root
-// MotiView (see BADGE_BG / BADGE_BORDER) — moti interpolates concrete colour
+// MotiView (see BADGE_BACKGROUND / BADGE_BORDER) — moti interpolates concrete colour
 // values, not a className swap, so the colours live there rather than here.
 const container = cva('flex-row shrink-0 items-center overflow-hidden rounded-full border', {
   variants: {
@@ -62,7 +62,7 @@ function useIconColor(colors: ReturnType<typeof useThemeColors>): Record<Animate
 // `muted` token so it inverts properly.
 // theme-exempt: chromatic tints are hue-locked to their semantic colour (success
 // green, warning yellow, etc.) and work on any background without inversion.
-function useBadgeBg(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
+function useBadgeBackground(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
   return {
     neutral: colors.muted,
     info: 'rgba(17,17,17,0.10)' /* theme-exempt */,
@@ -75,7 +75,7 @@ function useBadgeBg(colors: ReturnType<typeof useThemeColors>): Record<AnimatedB
 
 // Animated border colours. Neutral uses the `border` token; chromatic variants
 // keep fixed-hue rgba so they read on any surface.
-// theme-exempt: same rationale as useBadgeBg — chromatic border tints are hue-locked.
+// theme-exempt: same rationale as useBadgeBackground — chromatic border tints are hue-locked.
 function useBadgeBorder(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
   return {
     neutral: colors.border,
@@ -127,14 +127,16 @@ export function AnimatedBadge({
 }: AnimatedBadgeProps) {
   const reduce = useReducedMotion();
   const colors = useThemeColors();
+
   const ICON_COLOR = useIconColor(colors);
-  const BADGE_BG = useBadgeBg(colors);
+  const BADGE_BACKGROUND = useBadgeBackground(colors);
   const BADGE_BORDER = useBadgeBorder(colors);
-  const s = status ?? 'neutral';
-  const doPulse = (pulse ?? s === 'loading') && !reduce;
+
+  const doPulse = (pulse ?? status === 'loading') && !reduce;
   const iconSize = size === 'sm' ? 12 : 14;
-  const Icon = ICONS[s];
-  const contentKey = typeof children === 'string' || typeof children === 'number' ? String(children) : s;
+
+  const Icon = ICONS[status];
+  const contentKey = typeof children === 'string' || typeof children === 'number' ? String(children) : status;
 
   return (
     <MotiView
@@ -143,7 +145,7 @@ export function AnimatedBadge({
       accessibilityRole="text"
       className={cn(container({ size }), className)}
       style={style}
-      animate={{ backgroundColor: BADGE_BG[s], borderColor: BADGE_BORDER[s] }}
+      animate={{ backgroundColor: BADGE_BACKGROUND[status], borderColor: BADGE_BORDER[status] }}
       transition={{
         backgroundColor: { type: 'timing', duration: 300 },
         borderColor: { type: 'timing', duration: 300 },
@@ -155,7 +157,7 @@ export function AnimatedBadge({
           animate={{ opacity: 0.16, scale: 1.08 }}
           transition={{ type: 'timing', duration: 800, loop: true, repeatReverse: true }}
           style={[
-            { position: 'absolute', inset: 0, borderRadius: 999, backgroundColor: ICON_COLOR[s] },
+            { position: 'absolute', inset: 0, borderRadius: 999, backgroundColor: ICON_COLOR[status] },
             { pointerEvents: 'none' },
           ]}
         />
@@ -164,23 +166,23 @@ export function AnimatedBadge({
         <View style={{ width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
           <AnimatePresence exitBeforeEnter={true}>
             <MotiView
-              key={s}
+              key={status}
               from={reduce ? { opacity: 0 } : { opacity: 0.7, translateY: 8, scale: 0.9 }}
               animate={{ opacity: 1, translateY: 0, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 210, damping: 24, mass: 0.85 }}
               exitTransition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 160 }}
             >
-              {s === 'loading' && !reduce && !icon ? (
+              {status === 'loading' && !reduce && !icon ? (
                 <MotiView
                   from={{ rotate: '0deg' }}
                   animate={{ rotate: '360deg' }}
                   transition={{ type: 'timing', duration: 1000, loop: true, repeatReverse: false }}
                 >
-                  <Icon size={iconSize} color={ICON_COLOR[s]} />
+                  <Icon size={iconSize} color={ICON_COLOR[status]} />
                 </MotiView>
               ) : (
-                (icon ?? <Icon size={iconSize} color={ICON_COLOR[s]} />)
+                (icon ?? <Icon size={iconSize} color={ICON_COLOR[status]} />)
               )}
             </MotiView>
           </AnimatePresence>

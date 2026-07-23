@@ -48,7 +48,7 @@ export type CommandPaletteProps = {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-  /** Replace the search input icon. Default: `<Search size={16} color={mutedFg} />`. */
+  /** Replace the search input icon. Default: `<Search size={16} color={mutedForeground} />`. */
   searchIcon?: ReactNode;
 };
 
@@ -75,14 +75,14 @@ type CommandRowProps = {
 };
 
 function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSelect }: CommandRowProps) {
-  const fg = useThemeColor('foreground');
-  const mutedFg = useThemeColor('muted-foreground');
+  const foreground = useThemeColor('foreground');
+  const mutedForeground = useThemeColor('muted-foreground');
   const Icon = item.icon;
   const handlePressIn = useCallback(() => onActivate(index), [onActivate, index]);
   const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
 
   let iconSlot: ReactNode = null;
-  if (Icon) iconSlot = <Icon size={16} color={isActive ? fg : mutedFg} />;
+  if (Icon) iconSlot = <Icon size={16} color={isActive ? foreground : mutedForeground} />;
   else if (hasIcons) iconSlot = <View style={{ width: 16, height: 16 }} />;
 
   return (
@@ -137,11 +137,15 @@ export function CommandPalette({
   searchIcon,
 }: CommandPaletteProps) {
   const reduce = useReducedMotion();
-  const mutedFg = useThemeColor('muted-foreground');
+  const mutedForeground = useThemeColor('muted-foreground');
+
   const { height: windowHeight } = useWindowDimensions();
+
   const [internalOpen, setInternalOpen] = useState(false);
+
   const controlled = controlledOpen !== undefined;
   const open = controlled ? controlledOpen : internalOpen;
+
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
 
@@ -209,13 +213,13 @@ export function CommandPalette({
     >
       <View testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
         <View className="flex-row items-center gap-3 border-border border-b px-4">
-          {searchIcon ?? <Search size={16} color={mutedFg} />}
+          {searchIcon ?? <Search size={16} color={mutedForeground} />}
           <TextInput
             autoFocus={true}
             value={query}
             onChangeText={updateQuery}
             placeholder={placeholder}
-            placeholderTextColor={mutedFg}
+            placeholderTextColor={mutedForeground}
             accessibilityLabel={placeholder}
             className="h-12 flex-1 text-foreground text-sm"
           />

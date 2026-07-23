@@ -297,11 +297,6 @@
       "types": "./src/components/Table/table-row.tsx",
       "default": "./src/components/Table/table-row.tsx"
     },
-    "./table-styles": {
-      "source": "./src/components/Table/table-styles.ts",
-      "types": "./src/components/Table/table-styles.ts",
-      "default": "./src/components/Table/table-styles.ts"
-    },
     "./table-types": {
       "source": "./src/components/Table/table-types.ts",
       "types": "./src/components/Table/table-types.ts",

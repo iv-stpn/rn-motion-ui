@@ -60,7 +60,7 @@ export type FeedbackWidgetProps = {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
-  /** Replace the close (×) icon in the panel header. Default: `<X size={12} color={mutedFg} />`. */
+  /** Replace the close (×) icon in the panel header. Default: `<X size={12} color={mutedForeground} />`. */
   closeIcon?: ReactNode;
   /** Replace the error-state alert icon. Default: `<AlertCircle size={20} color={destructiveColor} />`. */
   errorIcon?: ReactNode;

@@ -40,7 +40,7 @@ function buildPeople(count: number): Person[] {
 
 const STATUS_COLORS: Record<Person['status'], string> = { active: '#059669', invited: '#d97706', suspended: '#dc2626' };
 
-function statusBgColor(status: string): 'rgba(5,150,105,0.1)' | 'rgba(217,119,6,0.1)' | 'rgba(220,38,38,0.1)' {
+function statusBackgroundColor(status: string): 'rgba(5,150,105,0.1)' | 'rgba(217,119,6,0.1)' | 'rgba(220,38,38,0.1)' {
   if (status === 'active') return 'rgba(5,150,105,0.1)';
   if (status === 'invited') return 'rgba(217,119,6,0.1)';
   return 'rgba(220,38,38,0.1)';
@@ -57,7 +57,7 @@ function StatusBadge({ status }: StatusBadgeProps) {
         paddingHorizontal: 8,
         paddingVertical: 2,
         alignSelf: 'flex-start',
-        backgroundColor: statusBgColor(status),
+        backgroundColor: statusBackgroundColor(status),
       }}
     >
       <Text
@@ -570,10 +570,10 @@ export const Pagination: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('Name');
     // Prev/next buttons are present
-    const nextBtn = await canvas.findByRole('button', { name: 'Next page' });
-    expect(nextBtn).toBeTruthy();
+    const nextButton = await canvas.findByRole('button', { name: 'Next page' });
+    expect(nextButton).toBeTruthy();
     // Navigate to page 2
-    await userEvent.click(nextBtn);
+    await userEvent.click(nextButton);
   },
 };
 
@@ -634,9 +634,9 @@ export const LoadMore: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('Name');
     // Load more button is visible when hasMore is true
-    const loadBtn = await canvas.findByRole('button', { name: 'Load more' });
-    expect(loadBtn).toBeTruthy();
-    await userEvent.click(loadBtn);
+    const loadButton = await canvas.findByRole('button', { name: 'Load more' });
+    expect(loadButton).toBeTruthy();
+    await userEvent.click(loadButton);
   },
 };
 

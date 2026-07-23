@@ -38,17 +38,23 @@ function Demo({ onPress }: DemoProps) {
     <View style={{ width: 360, height: 320, borderRadius: 16, borderWidth: 1, borderColor: '#e5e5e5', overflow: 'hidden' }}>
       <View style={{ flexDirection: 'row', gap: 6, padding: 8, borderBottomWidth: 1, borderColor: '#e5e5e5' }}>
         {SECTIONS.map((s) => (
-          <ScrollTo key={s.id} scrollRef={scrollRef} to={tops[s.id] ?? 0} offset={-8} onPress={onPress} testID={`nav-${s.id}`}>
-            <View style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#f4f4f5' }}>
-              <Text style={{ fontSize: 13, color: '#111111' }}>{s.label}</Text>
-            </View>
+          <ScrollTo
+            key={s.id}
+            scrollRef={scrollRef}
+            to={tops[s.id] ?? 0}
+            offset={-8}
+            onPress={onPress}
+            testID={`nav-${s.id}`}
+            style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#f4f4f5' }}
+          >
+            {s.label}
           </ScrollTo>
         ))}
       </View>
       <ScrollView ref={scrollRef} scrollEventThrottle={16}>
         {SECTIONS.map((s) => (
           <View key={s.id} onLayout={measure(s.id)} style={{ height: 240, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 18, fontWeight: '500', color: '#111111' }}>{s.label}</Text>
+            <Text style={{ fontSize: 18, fontWeight: '500' }}>{s.label}</Text>
           </View>
         ))}
       </ScrollView>

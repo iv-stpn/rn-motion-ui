@@ -42,13 +42,13 @@ type MorphIconProps = { state: ActionFeedbackState; reduced: boolean };
 
 function MorphIcon({ state, reduced }: MorphIconProps) {
   const colors = useThemeColors();
-  const morphBg: Record<ActionFeedbackState, string> = {
+  const morphBackground: Record<ActionFeedbackState, string> = {
     loading: 'transparent',
     success: colors.success,
     error: colors.destructive,
   };
   const size = MORPH_SIZE[state];
-  const backgroundColor = morphBg[state];
+  const backgroundColor = morphBackground[state];
 
   return (
     <MotiView

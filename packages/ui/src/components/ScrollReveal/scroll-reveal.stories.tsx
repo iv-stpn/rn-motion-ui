@@ -57,7 +57,7 @@ function Demo({ once }: DemoProps) {
         {CARDS.map((label) => (
           <ScrollReveal key={label} scrollY={scrollY} viewportHeight={VIEWPORT} once={once} testID={`reveal-${label}`}>
             <View style={{ borderRadius: 12, backgroundColor: '#f4f4f5', paddingHorizontal: 16, paddingVertical: 48 }}>
-              <Text style={{ textAlign: 'center', color: '#111111', fontSize: 16, fontWeight: '500' }}>{label}</Text>
+              <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '500' }}>{label}</Text>
             </View>
           </ScrollReveal>
         ))}

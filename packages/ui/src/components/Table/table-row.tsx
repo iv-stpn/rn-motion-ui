@@ -1,14 +1,13 @@
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import type { DimensionValue, StyleProp, ViewStyle } from 'react-native';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
+import { cn } from '../../lib/cn';
 import { Plus, Trash2 } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Checkbox } from '../Checkbox/checkbox';
 import { Text } from '../Text/text';
-import { styles } from './table-styles';
-import { useTableColors } from './table-theme';
 import type { TableColumn } from './table-types';
 import { CHECKBOX_COL_WIDTH } from './table-types';
 import { alignStyle, alignToJustify, readCellValue } from './table-utils';
@@ -21,8 +20,7 @@ export type EditableCellInputProps = { value: string; onCommit: (next: string) =
 function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) {
   const [draft, setDraft] = useState(value);
   const commit = useCallback(() => onCommit(draft), [onCommit, draft]);
-  const tc = useTableColors();
-  const mutedFg = useThemeColor('muted-foreground');
+  const mutedForeground = useThemeColor('muted-foreground');
 
   return (
     <TextInput
@@ -31,9 +29,10 @@ function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) 
       onBlur={commit}
       onSubmitEditing={commit}
       placeholder="Empty"
-      placeholderTextColor={mutedFg}
+      placeholderTextColor={mutedForeground}
       testID={testID}
-      style={[styles.editableInput, tc.editableInput]}
+      className="p-1 rounded flex-1 text-foreground"
+      style={{ fontSize: 13 }}
       autoCapitalize="none"
       blurOnSubmit={true}
     />
@@ -52,14 +51,14 @@ export type SkeletonCellPulseProps = {
 
 export function SkeletonCellPulse({ width, align, skeletonWidth, reduce }: SkeletonCellPulseProps) {
   const barWidth: DimensionValue = skeletonWidth ?? (align === 'right' ? 40 : '60%');
-  const borderColor = useThemeColor('border');
   return (
-    <View style={[styles.cell, { width, alignItems: alignToJustify(align) }]}>
+    <View className="justify-center px-4 overflow-hidden" style={{ width, alignItems: alignToJustify(align) }}>
       <MotiView
         from={{ opacity: 0.5 }}
         animate={{ opacity: reduce ? 0.5 : 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 800, loop: !reduce, repeatReverse: true }}
-        style={{ height: 12, borderRadius: 6, backgroundColor: borderColor, width: barWidth }}
+        className="h-3 rounded-md bg-border"
+        style={{ width: barWidth }}
       />
     </View>
   );
@@ -76,14 +75,15 @@ export type RowCellProps<T> = {
   colWidth: number;
   containerWidth: number;
   onCellEdit?: (rowId: string, key: string, value: string) => void;
+  /** NativeWind classes merged onto this cell. */
+  cellClassName?: string;
   testID?: string;
 };
 
-export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEdit, testID }: RowCellProps<T>) {
+export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEdit, cellClassName, testID }: RowCellProps<T>) {
   const { textAlign } = alignStyle(column.align);
   const rawValue = readCellValue(row, column);
   const handleCommit = useCallback((v: string) => onCellEdit?.(id, column.key, v), [onCellEdit, id, column.key]);
-  const tc = useTableColors();
 
   let cellContent: ReactNode;
   if (column.cell) cellContent = column.cell(row);
@@ -97,13 +97,16 @@ export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEd
     );
   else
     cellContent = (
-      <Text style={[styles.cellText, tc.cellText, { textAlign }]} numberOfLines={1}>
+      <Text className="text-foreground" style={{ fontSize: 13, textAlign }} numberOfLines={1}>
         {rawValue === null ? '' : String(rawValue)}
       </Text>
     );
 
   return (
-    <View style={[styles.cell, { width: containerWidth > 0 ? colWidth : undefined, flex: containerWidth > 0 ? undefined : 1 }]}>
+    <View
+      className={cn('justify-center px-4 overflow-hidden', cellClassName)}
+      style={{ width: containerWidth > 0 ? colWidth : undefined, flex: containerWidth > 0 ? undefined : 1 }}
+    >
       {cellContent}
     </View>
   );
@@ -130,6 +133,10 @@ export type TableRowProps<T> = {
   isStriped?: boolean;
   /** Style applied when `isStriped` is true. Falls back to a subtle grey tint. */
   stripedStyle?: StyleProp<ViewStyle>;
+  /** NativeWind classes merged onto the row. */
+  rowClassName?: string;
+  /** NativeWind classes merged onto each cell in this row. */
+  cellClassName?: string;
   setPressedRowId: (id: string | null) => void;
   toggleRow: (id: string) => void;
   onCellEdit?: (rowId: string, key: string, value: string) => void;
@@ -137,6 +144,9 @@ export type TableRowProps<T> = {
   onDeleteRow?: (rowId: string) => void;
   testID?: string;
 };
+
+// Subtle alternating-row tint — exempt from theming (too faint to need a token).
+const STRIPED_FALLBACK: ViewStyle = { backgroundColor: 'rgba(0,0,0,0.02)' };
 
 export function TableRow<T>({
   row,
@@ -153,6 +163,8 @@ export function TableRow<T>({
   hasRowMenu,
   isStriped = false,
   stripedStyle,
+  rowClassName,
+  cellClassName,
   setPressedRowId,
   toggleRow,
   onCellEdit,
@@ -163,24 +175,28 @@ export function TableRow<T>({
   const handleLongPress = useCallback(() => {
     if (hasRowMenu) setPressedRowId(isRowPressed ? null : id);
   }, [hasRowMenu, isRowPressed, id, setPressedRowId]);
+
   const handlePress = useCallback(() => {
     if (isRowPressed) setPressedRowId(null);
   }, [isRowPressed, setPressedRowId]);
+
   const handleToggleRow = useCallback(() => toggleRow(id), [toggleRow, id]);
   const handleInsertRow = useCallback(() => {
     onInsertRow?.(index, 'before');
     setPressedRowId(null);
   }, [onInsertRow, index, setPressedRowId]);
+
   const handleDeleteRow = useCallback(() => {
     onDeleteRow?.(id);
     setPressedRowId(null);
   }, [onDeleteRow, id, setPressedRowId]);
-  const tc = useTableColors();
-  const primaryFg = useThemeColor('primary-foreground');
+
+  const primaryForeground = useThemeColor('primary-foreground');
 
   return (
     <Pressable
-      style={[styles.row, tc.row, { height: rowHeight }, isStriped && (stripedStyle ?? styles.stripedRow)]}
+      className={cn('flex-row border-b border-border overflow-hidden relative', rowClassName)}
+      style={[{ height: rowHeight }, isStriped && (stripedStyle ?? STRIPED_FALLBACK)]}
       onLongPress={handleLongPress}
       onPress={handlePress}
       testID={`${testID ?? 'table'}-row-${id}`}
@@ -189,11 +205,12 @@ export function TableRow<T>({
       <MotiView
         animate={{ opacity: isSelected ? 1 : 0 }}
         transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
-        style={[StyleSheet.absoluteFill, styles.selectedBg, tc.selectedBg, { pointerEvents: 'none' }]}
+        className="absolute inset-0 bg-border"
+        style={{ pointerEvents: 'none' }}
       />
 
       {selectable ? (
-        <View style={[styles.cell, { width: CHECKBOX_COL_WIDTH, justifyContent: 'center', alignItems: 'center' }]}>
+        <View className="justify-center px-4 overflow-hidden items-center" style={{ width: CHECKBOX_COL_WIDTH }}>
           <Checkbox checked={isSelected} onCheckedChange={handleToggleRow} accessibilityLabel={`Select row ${index + 1}`} />
         </View>
       ) : null}
@@ -207,31 +224,32 @@ export function TableRow<T>({
           colWidth={colWidths[column.key] ?? 0}
           containerWidth={containerWidth}
           onCellEdit={onCellEdit}
+          cellClassName={cellClassName}
           testID={testID}
         />
       ))}
 
       {/* Row action buttons shown on long-press at right edge */}
       {isRowPressed && hasRowMenu ? (
-        <View style={styles.rowActionBar}>
+        <View className="absolute right-2 top-0 bottom-0 flex-row items-center gap-1">
           {onInsertRow ? (
             <Pressable
-              style={[styles.actionBtn, tc.actionBtn]}
+              className="w-5 h-5 rounded-full items-center justify-center bg-primary"
               onPress={handleInsertRow}
               hitSlop={8}
               accessibilityLabel={`Insert row before row ${index + 1}`}
             >
-              <Plus size={10} color={primaryFg} />
+              <Plus size={10} color={primaryForeground} />
             </Pressable>
           ) : null}
           {onDeleteRow ? (
             <Pressable
-              style={[styles.actionBtn, tc.actionBtn, styles.actionBtnDestructive, tc.actionBtnDestructive]}
+              className="w-5 h-5 rounded-full items-center justify-center bg-destructive"
               onPress={handleDeleteRow}
               hitSlop={8}
               accessibilityLabel={`Delete row ${index + 1}`}
             >
-              <Trash2 size={10} color={primaryFg} />
+              <Trash2 size={10} color={primaryForeground} />
             </Pressable>
           ) : null}
         </View>

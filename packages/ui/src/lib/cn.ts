@@ -17,7 +17,11 @@
 // Groups are matched against the class with responsive/state prefixes stripped.
 const GROUP_PATTERNS: [RegExp, string][] = [
   // Layout
-  [/^flex-(?:row|col|wrap|nowrap|1|auto|initial|none)$/, 'flex-direction'],
+  // `flex-row/col/…` (flex-direction) is a different property from `flex-1/auto/…`
+  // (the flex shorthand), so they get separate groups — otherwise `flex-row flex-1`
+  // collapse into one group and the direction utility is dropped.
+  [/^flex-(?:row|col|wrap|nowrap)$/, 'flex-direction'],
+  [/^flex-(?:1|auto|initial|none)$/, 'flex'],
   [/^items-/, 'items'],
   [/^justify-/, 'justify'],
   [/^self-/, 'self'],
@@ -65,14 +69,17 @@ const GROUP_PATTERNS: [RegExp, string][] = [
   // Color
   [/^text-/, 'text-color'],
   [/^bg-/, 'bg'],
-  [/^border-(?!\d)[a-z]/, 'border-color'],
   [/^ring-/, 'ring'],
   [/^shadow-/, 'shadow'],
   [/^opacity-/, 'opacity'],
-  // Border
+  // Border — width patterns MUST precede the color catch-all. The color regex
+  // `/^border-(?!\d)[a-z]/` matches the side letter in `border-b`/`border-t`/…,
+  // so without this ordering `border-b border-border` collapses both into the
+  // color group and the one-sided border WIDTH is silently dropped.
   [/^rounded/, 'rounded'],
   [/^border(?:-[trbl])?-\d/, 'border-width'],
   [/^border(?:$|-[trblxy]$)/, 'border-width'],
+  [/^border-(?!\d)[a-z]/, 'border-color'],
   // Transforms
   [/^scale-/, 'scale'],
   [/^translate-x-/, 'translate-x'],

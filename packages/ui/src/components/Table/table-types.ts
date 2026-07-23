@@ -118,7 +118,18 @@ export type TableProps<T> = {
   /** Style applied to each card container in small screen mode. */
   cardStyle?: StyleProp<ViewStyle>;
   // misc
+  /** NativeWind classes merged onto the outer container (last-wins over defaults). */
   className?: string;
+  /** NativeWind classes merged onto the sticky header row. */
+  headerClassName?: string;
+  /** NativeWind classes merged onto every data row. */
+  rowClassName?: string;
+  /** NativeWind classes merged onto every body cell. */
+  cellClassName?: string;
+  /** NativeWind classes merged onto each small-screen card (alongside `cardStyle`). */
+  cardClassName?: string;
+  /** NativeWind classes merged onto the footer (pagination / load-more / loading-more). */
+  footerClassName?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };

@@ -2,12 +2,11 @@ import type { ReactNode } from 'react';
 import { useCallback } from 'react';
 import type { GestureResponderHandlers } from 'react-native';
 import { Pressable, TextInput, View } from 'react-native';
+import { cn } from '../../lib/cn';
 import { ChevronUp, GripVertical, Plus, Trash2 } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
-import { styles } from './table-styles';
-import { useTableColors } from './table-theme';
 import type { SortDirection, TableColumn } from './table-types';
 import { alignStyle, alignToJustify } from './table-utils';
 
@@ -65,8 +64,9 @@ export function HeaderCell<T>({
   sortIcon,
 }: HeaderCellProps<T>) {
   const { textAlign } = alignStyle(column.align);
-  const tc = useTableColors();
-  const primaryFg = useThemeColor('primary-foreground');
+  const mutedForeground = useThemeColor('muted-foreground');
+  const foregroundForeground = useThemeColor('foreground');
+  const primaryForeground = useThemeColor('primary-foreground');
 
   const handleLongPress = useCallback(() => {
     if (hasColMenu) setPressedColKey(isColPressed ? null : column.key);
@@ -85,7 +85,8 @@ export function HeaderCell<T>({
   return (
     <Pressable
       key={column.key}
-      style={[styles.headerCell, { width: containerWidth > 0 ? colWidth : undefined, flex: containerWidth > 0 ? undefined : 1 }]}
+      className="flex-col justify-center px-4 overflow-hidden relative"
+      style={{ width: containerWidth > 0 ? colWidth : undefined, flex: containerWidth > 0 ? undefined : 1 }}
       onLongPress={handleLongPress}
       onPress={sortEnabled ? handleSort : undefined}
       accessibilityRole={sortEnabled ? 'button' : undefined}
@@ -94,7 +95,7 @@ export function HeaderCell<T>({
     >
       {/* Header content lifts (scale + fade) while its column is being dragged. */}
       <MotiView
-        style={styles.headerInner}
+        className="flex-row items-center flex-1 gap-1"
         animate={reduce ? { opacity: isDragging ? 0.5 : 1 } : { scale: isDragging ? 1.04 : 1, opacity: isDragging ? 0.5 : 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 180 }}
       >
@@ -102,12 +103,12 @@ export function HeaderCell<T>({
         {reorderable ? (
           <View
             {...gripHandlers(column.key)}
-            style={styles.grip}
+            className="justify-center items-center -ml-1 select-none"
             hitSlop={8}
             accessibilityLabel={`Reorder ${column.key} column`}
             testID={`${testID ?? 'table'}-grip-${column.key}`}
           >
-            <GripVertical size={14} color={tc.headerText.color} />
+            <GripVertical size={14} color={mutedForeground} />
           </View>
         ) : null}
 
@@ -115,14 +116,16 @@ export function HeaderCell<T>({
           <TextInput
             value={column.header}
             onChangeText={handleRename}
-            style={[styles.headerRenameInput, tc.headerRenameInput, { textAlign }]}
+            className="text-xs font-medium p-0 flex-1 text-muted-foreground"
+            style={{ textAlign }}
             accessibilityLabel={`Rename ${column.key} column`}
           />
         ) : (
-          <View style={[styles.headerLabelRow, { justifyContent: alignToJustify(column.align) }]}>
+          <View className="flex-row items-center flex-1 gap-1" style={{ justifyContent: alignToJustify(column.align) }}>
             <Text
               selectable={false}
-              style={[styles.headerText, tc.headerText, isActive && tc.headerTextActive, { textAlign }]}
+              className={cn('text-xs font-medium flex-1 text-muted-foreground', isActive && 'text-foreground')}
+              style={{ textAlign }}
               numberOfLines={1}
             >
               {column.header}
@@ -132,7 +135,7 @@ export function HeaderCell<T>({
                 animate={{ rotate: isActive && activeDirection === 'desc' ? '180deg' : '0deg', opacity: isActive ? 1 : 0.35 }}
                 transition={{ type: 'timing', duration: reduce ? 0 : 180 }}
               >
-                {sortIcon ?? <ChevronUp size={12} color={isActive ? tc.headerTextActive.color : tc.headerText.color} />}
+                {sortIcon ?? <ChevronUp size={12} color={isActive ? foregroundForeground : mutedForeground} />}
               </MotiView>
             ) : null}
           </View>
@@ -141,19 +144,23 @@ export function HeaderCell<T>({
 
       {/* Column action overlay on long-press */}
       {isColPressed && hasColMenu ? (
-        <View style={styles.colActionBar}>
+        <View className="absolute top-0.5 right-0.5 flex-row gap-0.5 z-10">
           {onInsertColumn ? (
-            <Pressable style={[styles.actionBtn, tc.actionBtn]} onPress={handleInsertColumn} hitSlop={8}>
-              <Plus size={10} color={primaryFg} />
+            <Pressable
+              className="w-5 h-5 rounded-full items-center justify-center bg-primary"
+              onPress={handleInsertColumn}
+              hitSlop={8}
+            >
+              <Plus size={10} color={primaryForeground} />
             </Pressable>
           ) : null}
           {onDeleteColumn ? (
             <Pressable
-              style={[styles.actionBtn, tc.actionBtn, styles.actionBtnDestructive, tc.actionBtnDestructive]}
+              className="w-5 h-5 rounded-full items-center justify-center bg-destructive"
               onPress={handleDeleteColumn}
               hitSlop={8}
             >
-              <Trash2 size={10} color={primaryFg} />
+              <Trash2 size={10} color={primaryForeground} />
             </Pressable>
           ) : null}
         </View>

@@ -2,14 +2,13 @@ import type { ReactNode } from 'react';
 import { useCallback } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Pressable, View } from 'react-native';
+import { cn } from '../../lib/cn';
 import { ChevronRight } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
 import { Checkbox } from '../Checkbox/checkbox';
 import { Loader } from '../Loader/loader';
 import { Text } from '../Text/text';
-import { styles } from './table-styles';
-import { useTableColors } from './table-theme';
 
 // ── Card row (small-screen mode) ──────────────────────────────────────────────
 
@@ -19,6 +18,8 @@ export type TableCardProps<T> = {
   isSelected: boolean;
   selectable: boolean;
   cardStyle?: StyleProp<ViewStyle>;
+  /** NativeWind classes merged onto the card (alongside `cardStyle`). */
+  cardClassName?: string;
   toggleRow: (id: string) => void;
   renderSmallScreen: (row: T, selected: boolean) => ReactNode;
   testID?: string;
@@ -30,26 +31,27 @@ export function TableCard<T>({
   isSelected,
   selectable,
   cardStyle,
+  cardClassName,
   toggleRow,
   renderSmallScreen,
   testID,
 }: TableCardProps<T>) {
   const handlePress = useCallback(() => toggleRow(id), [toggleRow, id]);
   const handleCheckedChange = useCallback(() => toggleRow(id), [toggleRow, id]);
-  const tc = useTableColors();
   return (
     <Pressable
       onPress={selectable ? handlePress : undefined}
-      style={[styles.card, tc.card, isSelected && tc.selectedBg, cardStyle]}
+      className={cn('px-4 py-3 border-b border-border', isSelected && 'bg-border', cardClassName)}
+      style={cardStyle}
       testID={testID ? `${testID}-card-${id}` : undefined}
     >
-      <View style={styles.cardRow}>
+      <View className="flex-row items-start gap-3">
         {selectable ? (
-          <View style={styles.cardCheckbox}>
+          <View className="pt-0.5">
             <Checkbox checked={isSelected} onCheckedChange={handleCheckedChange} />
           </View>
         ) : null}
-        <View style={styles.cardContent}>{renderSmallScreen(row, isSelected)}</View>
+        <View className="flex-1 min-w-0">{renderSmallScreen(row, isSelected)}</View>
       </View>
     </Pressable>
   );
@@ -87,6 +89,8 @@ export type PaginationFooterProps = {
   paginationLabel?: (page: number, totalPages: number) => string;
   goToPreviousPage: () => void;
   goToNextPage: () => void;
+  /** NativeWind classes merged onto the footer container. */
+  footerClassName?: string;
   /** Replace the previous-page icon. Default: rotated `<ChevronRight size={16} />`. */
   prevIcon?: ReactNode;
   /** Replace the next-page icon. Default: `<ChevronRight size={16} />`. */
@@ -99,35 +103,37 @@ export function PaginationFooter({
   paginationLabel,
   goToPreviousPage,
   goToNextPage,
+  footerClassName,
   prevIcon,
   nextIcon,
 }: PaginationFooterProps) {
   const label = paginationLabel?.(page, totalPages) ?? `${page} / ${totalPages}`;
   const prevDisabled = page <= 1;
   const nextDisabled = page >= totalPages;
-  const tc = useTableColors();
-  const fgColor = useThemeColor('foreground');
+  const foreground = useThemeColor('foreground');
   return (
-    <View style={[styles.footer, tc.footer, styles.footerPagination]}>
+    <View className={cn('border-t border-border px-4 py-2.5 flex-row items-center justify-center gap-3', footerClassName)}>
       <Pressable
         onPress={prevDisabled ? undefined : goToPreviousPage}
-        style={[styles.paginationBtn, tc.paginationBtn, prevDisabled && styles.paginationBtnDisabled]}
+        className={cn('w-8 h-8 rounded-md border border-border items-center justify-center', prevDisabled && 'opacity-35')}
         accessibilityLabel="Previous page"
         accessibilityRole="button"
         disabled={prevDisabled}
       >
         {/* Rotated ChevronRight stands in for missing ChevronLeft */}
-        <View style={{ transform: [{ rotate: '180deg' }] }}>{prevIcon ?? <ChevronRight size={16} color={fgColor} />}</View>
+        <View style={{ transform: [{ rotate: '180deg' }] }}>{prevIcon ?? <ChevronRight size={16} color={foreground} />}</View>
       </Pressable>
-      <Text style={[styles.paginationText, tc.paginationText]}>{label}</Text>
+      <Text className="text-muted-foreground" style={{ fontSize: 13 }}>
+        {label}
+      </Text>
       <Pressable
         onPress={nextDisabled ? undefined : goToNextPage}
-        style={[styles.paginationBtn, tc.paginationBtn, nextDisabled && styles.paginationBtnDisabled]}
+        className={cn('w-8 h-8 rounded-md border border-border items-center justify-center', nextDisabled && 'opacity-35')}
         accessibilityLabel="Next page"
         accessibilityRole="button"
         disabled={nextDisabled}
       >
-        {nextIcon ?? <ChevronRight size={16} color={fgColor} />}
+        {nextIcon ?? <ChevronRight size={16} color={foreground} />}
       </Pressable>
     </View>
   );
@@ -135,11 +141,16 @@ export function PaginationFooter({
 
 // ── Load-more button footer ───────────────────────────────────────────────────
 
-export type LoadMoreFooterProps = { onLoadMore?: () => void; loadMoreLabel: string };
+export type LoadMoreFooterProps = {
+  onLoadMore?: () => void;
+  loadMoreLabel: string;
+  /** NativeWind classes merged onto the footer container. */
+  footerClassName?: string;
+};
 
-export function LoadMoreFooter({ onLoadMore, loadMoreLabel }: LoadMoreFooterProps) {
+export function LoadMoreFooter({ onLoadMore, loadMoreLabel, footerClassName }: LoadMoreFooterProps) {
   return (
-    <View style={[styles.footer, styles.footerLoadMore]}>
+    <View className={cn('border-t border-border px-4 py-2.5 items-stretch', footerClassName)}>
       <Button variant="outline" size="sm" onPress={onLoadMore} fitWidth={true} accessibilityLabel={loadMoreLabel}>
         {loadMoreLabel}
       </Button>
@@ -149,13 +160,14 @@ export function LoadMoreFooter({ onLoadMore, loadMoreLabel }: LoadMoreFooterProp
 
 // ── Loading-more spinner footer ───────────────────────────────────────────────
 
+export type LoadingMoreFooterProps = { footerClassName?: string };
+
 /** Renders a centered Loader row while a follow-up page/batch is fetching. */
-export function LoadingMoreFooter() {
-  const tc = useTableColors();
-  const mutedFg = useThemeColor('muted-foreground');
+export function LoadingMoreFooter({ footerClassName }: LoadingMoreFooterProps) {
+  const mutedForeground = useThemeColor('muted-foreground');
   return (
-    <View style={[styles.loadingMoreContainer, tc.loadingMoreContainer]}>
-      <Loader variant="spinner" size={20} color={mutedFg} label="Loading more" />
+    <View className={cn('py-4 items-center justify-center border-t border-border', footerClassName)}>
+      <Loader variant="spinner" size={20} color={mutedForeground} label="Loading more" />
     </View>
   );
 }

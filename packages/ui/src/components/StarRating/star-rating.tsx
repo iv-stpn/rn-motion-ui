@@ -246,7 +246,6 @@ export function StarButton({
 
 // ─── StarRating ───────────────────────────────────────────────────────────────
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: amber/muted color resolution + controlled/uncontrolled state + sparkle machine are tightly coupled
 export function StarRating({
   value: valueProp,
   defaultValue = 0,
@@ -369,23 +368,28 @@ export function StarRating({
       </View>
 
       {showValue ? (
-        <View
-          accessible={false}
-          importantForAccessibility="no"
-          style={{ height: lineH, overflow: 'hidden' }}
-          className={`flex-row items-center ${valueGap}`}
-        >
-          <AnimatePresence>
-            <MotiView
-              key={formatValue(value)}
-              from={{ translateY: direction * 12, opacity: 0 }}
-              animate={{ translateY: 0, opacity: 1 }}
-              exit={{ translateY: direction * -12, opacity: 0 }}
-              transition={reduce ? { type: 'timing', duration: 0 } : VALUE_SPRING}
-            >
-              <Text className={valueLabel}>{formatValue(value)}</Text>
-            </MotiView>
-          </AnimatePresence>
+        <View accessible={false} importantForAccessibility="no" className={`flex-row items-center ${valueGap}`}>
+          {/* Rolling value digit. A hidden sizer reserves the digit's width so the
+            slot stays stable; the animated label is absolutely positioned so the
+            entering and exiting digits overlap instead of sitting side-by-side
+            and shoving the /max label sideways on every change. Mirrors TextRolling. */}
+          <View style={{ height: lineH, overflow: 'hidden' }}>
+            <Text className={valueLabel} style={{ opacity: 0 }} importantForAccessibility="no">
+              {formatValue(value)}
+            </Text>
+            <AnimatePresence initial={false}>
+              <MotiView
+                key={formatValue(value)}
+                from={{ translateY: direction * 12, opacity: 0 }}
+                animate={{ translateY: 0, opacity: 1 }}
+                exit={{ translateY: direction * -12, opacity: 0 }}
+                transition={reduce ? { type: 'timing', duration: 0 } : VALUE_SPRING}
+                style={{ position: 'absolute', left: 0, top: 0 }}
+              >
+                <Text className={valueLabel}>{formatValue(value)}</Text>
+              </MotiView>
+            </AnimatePresence>
+          </View>
           <Text className={valueLabel}>{`/${max}`}</Text>
         </View>
       ) : null}

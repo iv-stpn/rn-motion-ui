@@ -26,7 +26,7 @@ export const Glitch: Story = {
     const canvas = within(canvasElement);
     const code = await canvas.findByTestId('not-found-code');
     await expect(code).toBeTruthy();
-    const homeBtn = await canvas.findByText('Back home');
-    await expect(homeBtn).toBeTruthy();
+    const homeButton = await canvas.findByText('Back home');
+    await expect(homeButton).toBeTruthy();
   },
 };

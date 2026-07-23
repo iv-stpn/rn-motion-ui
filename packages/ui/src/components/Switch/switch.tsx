@@ -56,7 +56,7 @@ export function Switch({
   const [pressed, setPressed] = useState(false);
   const shakeX = useRef(new Animated.Value(0)).current;
   const squish = pressed && !disabled && !reduce;
-  const thumbBg = useThemeColor('surface');
+  const thumbBackground = useThemeColor('surface');
   const thumbSpring = mergeTransition(
     { type: 'spring' as const, stiffness: THUMB_SPRING.stiffness, damping: THUMB_SPRING.damping, mass: THUMB_SPRING.mass },
     thumbTransition,
@@ -99,7 +99,7 @@ export function Switch({
               width: 20,
               height: 20,
               borderRadius: 10,
-              backgroundColor: thumbBg,
+              backgroundColor: thumbBackground,
               ...Platform.select({
                 default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3 },
                 web: { boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.2)' },

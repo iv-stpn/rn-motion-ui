@@ -1,7 +1,7 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: row gesture, wheel fallback, and list orchestration are tightly coupled
 
 import { cva } from 'class-variance-authority';
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { cloneElement, isValidElement, type ReactElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { useThemeColors } from '../../theme/use-theme-color';
@@ -97,7 +97,7 @@ const OVERSCROLL_DAMPING = 0.04;
 
 // Static class map (Tailwind scanner picks these up as literal strings in the
 // cva-style object rather than dynamic concatenation).
-const BADGE_BG = cva('items-center justify-center rounded-full', {
+const BADGE_BACKGROUND = cva('items-center justify-center rounded-full', {
   variants: {
     tone: {
       neutral: 'bg-muted',
@@ -111,11 +111,16 @@ const BADGE_BG = cva('items-center justify-center rounded-full', {
 });
 
 // Icon stroke colours that match each tone background (used for SVG icons).
-// theme-exempt: exported as SWIPE_TONE_ICON_COLOR for consumers; render path
-// uses the reactive useThemeColors() version inside SwipeActionButton instead.
+// Chromatic tones (success/warning/danger) are theme-exempt: their vivid badge
+// backgrounds are stable across themes, so white always reads. neutral/primary
+// badge backgrounds invert with the theme (`bg-muted`/`bg-primary`), so their
+// icon colour must invert too — the render path resolves these reactively via
+// useThemeColors() inside SwipeActionButton (see `iconColor`). This static map
+// is exported as SWIPE_TONE_ICON_COLOR for consumers rendering swipe icons
+// *outside* the component; its neutral/primary entries are light-mode fallbacks.
 const ICON_COLOR: Record<SwipeActionTone, string> = {
-  neutral: '#71717a' /* theme-exempt */,
-  primary: '#fafafa' /* theme-exempt */,
+  neutral: '#737373', // mirrors light `muted-foreground` — resolved reactively in-component
+  primary: '#fafafa', // mirrors light `primary-foreground` — resolved reactively in-component
   success: '#ffffff' /* theme-exempt */,
   warning: '#ffffff' /* theme-exempt */,
   danger: '#ffffff' /* theme-exempt */,
@@ -133,13 +138,17 @@ type SwipeActionButtonProps = {
 function SwipeActionButton({ action, actionWidth, side, onAction }: SwipeActionButtonProps) {
   const tone = action.tone ?? 'neutral';
   const colors = useThemeColors();
-  // biome-ignore lint/correctness/noUnusedVariables: reactive per-tone icon colour map — callers currently pre-colour icons via SWIPE_TONE_ICON_COLOR; use iconColor[tone] when rendering icons directly inside this component
+  // Reactive per-tone icon colour. neutral/primary track the theme — their badge
+  // backgrounds (`bg-muted`/`bg-primary`) invert, so the icon must invert too.
+  // Chromatic tones stay white: their vivid backgrounds are stable across themes,
+  // so white reads in both (using `colors.surface` here would darken the icon in
+  // dark mode and drop contrast against the saturated badge).
   const iconColor: Record<SwipeActionTone, string> = {
     neutral: colors['muted-foreground'],
     primary: colors['primary-foreground'],
-    success: colors.surface,
-    warning: colors.surface,
-    danger: colors.surface,
+    success: '#ffffff' /* theme-exempt */,
+    warning: '#ffffff' /* theme-exempt */,
+    danger: '#ffffff' /* theme-exempt */,
   };
   const handlePress = useCallback(() => onAction(action, side), [onAction, action, side]);
 
@@ -152,12 +161,15 @@ function SwipeActionButton({ action, actionWidth, side, onAction }: SwipeActionB
       onPress={handlePress}
       style={{ width: actionWidth, alignItems: 'center', justifyContent: 'center', height: '100%' }}
     >
-      <View className={BADGE_BG({ tone })} style={{ width: 36, height: 36 }}>
-        {action.icon
-          ? // Clone icon with colour override via wrapping — caller's icon node
-            // already has colour baked in from stories, so this is a passthrough.
-            action.icon
-          : null}
+      <View className={BADGE_BACKGROUND({ tone })} style={{ width: 36, height: 36 }}>
+        {isValidElement(action.icon)
+          ? // Override the icon's colour with the tone-matched, theme-reactive
+            // value so neutral/primary invert correctly in dark mode. Callers may
+            // bake a colour into the icon node, but the tone owns the final stroke
+            // here to stay legible against the badge background.
+            // biome-ignore lint/plugin: action.icon is a consumer ReactNode; casting to ReactElement<{color?}> lets us inject the tone stroke without narrowing away other valid node shapes
+            cloneElement(action.icon as ReactElement<{ color?: string }>, { color: iconColor[tone] })
+          : (action.icon ?? null)}
         {/* sr-only equivalent: label is set on the Pressable above */}
       </View>
       <Text className="sr-only" style={{ position: 'absolute', opacity: 0 }} accessibilityElementsHidden={true}>

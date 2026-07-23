@@ -2,13 +2,12 @@
 import { useCallback, useMemo } from 'react';
 import type { ListRenderItemInfo } from 'react-native';
 import { FlatList, View } from 'react-native';
+import { cn } from '../../lib/cn';
 import { Checkbox } from '../Checkbox/checkbox';
 import { Text } from '../Text/text';
 import { HeaderCell } from './table-header';
 import { LoadingMoreFooter, LoadMoreFooter, PaginationFooter, SkeletonFooter, TableCard } from './table-parts';
 import { SkeletonCellPulse, TableRow } from './table-row';
-import { styles } from './table-styles';
-import { useTableColors } from './table-theme';
 import type { RowEntry, TableProps } from './table-types';
 import { CHECKBOX_COL_WIDTH } from './table-types';
 import { useTable } from './use-table';
@@ -74,9 +73,21 @@ export function Table<T>(props: TableProps<T>) {
     testID,
   } = useTable(props);
 
-  const { reorderable = false, height = 440, onColumnRename, onInsertColumn, onDeleteColumn, style } = props;
+  const {
+    reorderable = false,
+    height = 440,
+    onColumnRename,
+    onInsertColumn,
+    onDeleteColumn,
+    style,
+    className,
+    headerClassName,
+    rowClassName,
+    cellClassName,
+    cardClassName,
+    footerClassName,
+  } = props;
   const { renderSmallScreen, useSmallScreen = false, cardStyle } = props;
-  const tc = useTableColors();
   // Card mode: hide the table header and render each row as a card via renderSmallScreen.
   const isCardMode = useSmallScreen && Boolean(renderSmallScreen);
   // Reduce FlatList height when pagination footer is pinned below it.
@@ -94,6 +105,7 @@ export function Table<T>(props: TableProps<T>) {
             isSelected={selected.has(item.id)}
             selectable={selectable}
             cardStyle={cardStyle}
+            cardClassName={cardClassName}
             toggleRow={toggleRow}
             renderSmallScreen={renderSmallScreen}
             testID={testID}
@@ -115,6 +127,8 @@ export function Table<T>(props: TableProps<T>) {
           hasRowMenu={hasRowMenu}
           isStriped={striped && index % 2 === 1}
           stripedStyle={stripedStyle}
+          rowClassName={rowClassName}
+          cellClassName={cellClassName}
           setPressedRowId={setPressedRowId}
           toggleRow={toggleRow}
           onCellEdit={onCellEdit}
@@ -128,6 +142,7 @@ export function Table<T>(props: TableProps<T>) {
       isCardMode,
       renderSmallScreen,
       cardStyle,
+      cardClassName,
       orderedColumns,
       colWidths,
       containerWidth,
@@ -142,6 +157,8 @@ export function Table<T>(props: TableProps<T>) {
       rowHeight,
       striped,
       stripedStyle,
+      rowClassName,
+      cellClassName,
       reduce,
       setPressedRowId,
       testID,
@@ -153,8 +170,8 @@ export function Table<T>(props: TableProps<T>) {
       <View>
         {Array.from({ length: count }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows, fixed length, never reordered
-          <View key={i} style={[styles.row, tc.row, { height: rowHeight }]}>
-            {selectable ? <View style={[styles.cell, { width: CHECKBOX_COL_WIDTH }]} /> : null}
+          <View key={i} className="flex-row border-b border-border overflow-hidden relative" style={{ height: rowHeight }}>
+            {selectable ? <View className="justify-center px-4 overflow-hidden" style={{ width: CHECKBOX_COL_WIDTH }} /> : null}
             {orderedColumns.map((col) => (
               <SkeletonCellPulse
                 key={col.key}
@@ -168,7 +185,7 @@ export function Table<T>(props: TableProps<T>) {
         ))}
       </View>
     ),
-    [orderedColumns, colWidths, containerWidth, selectable, rowHeight, reduce, tc],
+    [orderedColumns, colWidths, containerWidth, selectable, rowHeight, reduce],
   );
 
   const renderSkeletonCards = useCallback(
@@ -176,27 +193,20 @@ export function Table<T>(props: TableProps<T>) {
       <View>
         {Array.from({ length: count }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder cards, fixed length, never reordered
-          <View key={i} style={[styles.card, tc.card, cardStyle]}>
-            <View style={styles.cardRow}>
-              {selectable ? (
-                <View
-                  style={[
-                    styles.cardCheckbox,
-                    { width: 20, height: 20, borderRadius: 4, backgroundColor: tc.container.borderColor },
-                  ]}
-                />
-              ) : null}
-              <View style={[styles.cardContent, { gap: 8 }]}>
-                <View style={{ height: 14, width: '80%', borderRadius: 6, backgroundColor: tc.container.borderColor }} />
-                <View style={{ height: 12, width: '60%', borderRadius: 6, backgroundColor: tc.container.borderColor }} />
-                <View style={{ height: 12, width: '40%', borderRadius: 6, backgroundColor: tc.container.borderColor }} />
+          <View key={i} className={cn('px-4 py-3 border-b border-border', cardClassName)} style={cardStyle}>
+            <View className="flex-row items-start gap-3">
+              {selectable ? <View className="pt-0.5 w-5 h-5 rounded bg-border" /> : null}
+              <View className="flex-1 min-w-0 gap-2">
+                <View className="h-3.5 w-4/5 rounded-md bg-border" />
+                <View className="h-3 w-3/5 rounded-md bg-border" />
+                <View className="h-3 w-2/5 rounded-md bg-border" />
               </View>
             </View>
           </View>
         ))}
       </View>
     ),
-    [selectable, cardStyle, tc],
+    [selectable, cardStyle, cardClassName],
   );
 
   const ListEmptyComponent = useMemo(() => {
@@ -204,16 +214,20 @@ export function Table<T>(props: TableProps<T>) {
     // Rich empty state: render icon + title + description when text props are provided.
     if (!emptyState && (emptyTitle || emptyIcon || emptyDescription))
       return (
-        <View style={styles.emptyContainer}>
-          {emptyIcon ? <View style={styles.emptyIcon}>{emptyIcon}</View> : null}
-          {emptyTitle ? <Text style={[styles.emptyTitle, tc.emptyTitle]}>{emptyTitle}</Text> : null}
-          {emptyDescription ? <Text style={[styles.emptyDescription, tc.emptyDescription]}>{emptyDescription}</Text> : null}
+        <View className="p-10 items-center justify-center">
+          {emptyIcon ? <View className="mb-2.5 items-center">{emptyIcon}</View> : null}
+          {emptyTitle ? <Text className="text-sm font-semibold text-center text-foreground mb-1">{emptyTitle}</Text> : null}
+          {emptyDescription ? (
+            <Text className="text-center text-muted-foreground" style={{ fontSize: 13 }}>
+              {emptyDescription}
+            </Text>
+          ) : null}
         </View>
       );
     return (
-      <View style={styles.emptyContainer}>
+      <View className="p-10 items-center justify-center">
         {typeof emptyState === 'string' ? (
-          <Text style={[styles.emptyText, tc.emptyText]}>{emptyState}</Text>
+          <Text className="text-sm text-center text-muted-foreground">{emptyState}</Text>
         ) : (
           (emptyState ?? null)
         )}
@@ -229,7 +243,6 @@ export function Table<T>(props: TableProps<T>) {
     emptyDescription,
     renderSkeletonRows,
     renderSkeletonCards,
-    tc,
   ]);
 
   // loadingMore spinner + loadMore button — rendered inside FlatList footer so they scroll with content.
@@ -246,14 +259,14 @@ export function Table<T>(props: TableProps<T>) {
       return (
         <>
           <SkeletonFooter {...skeletonProps} />
-          <LoadingMoreFooter />
+          <LoadingMoreFooter footerClassName={footerClassName} />
         </>
       );
     if (mode === 'loadMore' && hasMore)
       return (
         <>
           <SkeletonFooter {...skeletonProps} />
-          <LoadMoreFooter onLoadMore={onLoadMore} loadMoreLabel={loadMoreLabel} />
+          <LoadMoreFooter onLoadMore={onLoadMore} loadMoreLabel={loadMoreLabel} footerClassName={footerClassName} />
         </>
       );
     return <SkeletonFooter {...skeletonProps} />;
@@ -269,6 +282,7 @@ export function Table<T>(props: TableProps<T>) {
     skeletonRows,
     renderSkeletonRows,
     renderSkeletonCards,
+    footerClassName,
   ]);
 
   const paginationFooter =
@@ -279,21 +293,29 @@ export function Table<T>(props: TableProps<T>) {
         paginationLabel={paginationLabel}
         goToPreviousPage={goToPreviousPage}
         goToNextPage={goToNextPage}
+        footerClassName={footerClassName}
       />
     ) : null;
 
   return (
     <View
       ref={containerRef}
-      style={[styles.container, tc.container, { height }, style]}
+      className={cn('overflow-hidden border border-border bg-surface', className)}
+      style={[{ height }, style]}
       onLayout={onContainerLayout}
       testID={testID}
     >
       {/* ── Sticky header — hidden in card mode ── */}
       {isCardMode ? null : (
-        <View style={[styles.headerRow, tc.headerRow, { height: rowHeight }]}>
+        <View
+          className={cn('flex-row border-b border-border bg-muted select-none', headerClassName)}
+          style={{ height: rowHeight }}
+        >
           {selectable ? (
-            <View style={[styles.headerCell, { width: CHECKBOX_COL_WIDTH, justifyContent: 'center', alignItems: 'center' }]}>
+            <View
+              className="flex-col justify-center px-4 overflow-hidden relative items-center"
+              style={{ width: CHECKBOX_COL_WIDTH }}
+            >
               <Checkbox
                 checked={allSelected}
                 indeterminate={someSelected}
@@ -330,11 +352,8 @@ export function Table<T>(props: TableProps<T>) {
           {/* Drop indicator: a line at the insertion boundary while dragging */}
           {dragKey && dropIndex !== null && containerWidth > 0 ? (
             <View
-              style={[
-                styles.dropIndicator,
-                tc.dropIndicator,
-                { pointerEvents: 'none', left: Math.min(boundaries[dropIndex] ?? 0, containerWidth - 2) },
-              ]}
+              className="absolute top-0 bottom-0 w-0.5 z-20 bg-primary"
+              style={{ pointerEvents: 'none', left: Math.min(boundaries[dropIndex] ?? 0, containerWidth - 2) }}
             />
           ) : null}
         </View>

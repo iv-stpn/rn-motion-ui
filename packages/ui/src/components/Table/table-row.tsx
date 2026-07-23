@@ -31,7 +31,7 @@ function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) 
       placeholder="Empty"
       placeholderTextColor={mutedForeground}
       testID={testID}
-      className="p-1 rounded flex-1 text-foreground"
+      className="flex-1 rounded p-1 text-foreground"
       style={{ fontSize: 13 }}
       autoCapitalize="none"
       blurOnSubmit={true}
@@ -52,7 +52,7 @@ export type SkeletonCellPulseProps = {
 export function SkeletonCellPulse({ width, align, skeletonWidth, reduce }: SkeletonCellPulseProps) {
   const barWidth: DimensionValue = skeletonWidth ?? (align === 'right' ? 40 : '60%');
   return (
-    <View className="justify-center px-4 overflow-hidden" style={{ width, alignItems: alignToJustify(align) }}>
+    <View className="justify-center overflow-hidden px-4" style={{ width, alignItems: alignToJustify(align) }}>
       <MotiView
         from={{ opacity: 0.5 }}
         animate={{ opacity: reduce ? 0.5 : 1 }}
@@ -104,7 +104,7 @@ export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEd
 
   return (
     <View
-      className={cn('justify-center px-4 overflow-hidden', cellClassName)}
+      className={cn('justify-center overflow-hidden px-4', cellClassName)}
       style={{ width: containerWidth > 0 ? colWidth : undefined, flex: containerWidth > 0 ? undefined : 1 }}
     >
       {cellContent}
@@ -195,7 +195,7 @@ export function TableRow<T>({
 
   return (
     <Pressable
-      className={cn('flex-row border-b border-border overflow-hidden relative', rowClassName)}
+      className={cn('relative flex-row overflow-hidden border-border border-b', rowClassName)}
       style={[{ height: rowHeight }, isStriped && (stripedStyle ?? STRIPED_FALLBACK)]}
       onLongPress={handleLongPress}
       onPress={handlePress}
@@ -210,7 +210,7 @@ export function TableRow<T>({
       />
 
       {selectable ? (
-        <View className="justify-center px-4 overflow-hidden items-center" style={{ width: CHECKBOX_COL_WIDTH }}>
+        <View className="items-center justify-center overflow-hidden px-4" style={{ width: CHECKBOX_COL_WIDTH }}>
           <Checkbox checked={isSelected} onCheckedChange={handleToggleRow} accessibilityLabel={`Select row ${index + 1}`} />
         </View>
       ) : null}
@@ -231,10 +231,10 @@ export function TableRow<T>({
 
       {/* Row action buttons shown on long-press at right edge */}
       {isRowPressed && hasRowMenu ? (
-        <View className="absolute right-2 top-0 bottom-0 flex-row items-center gap-1">
+        <View className="absolute top-0 right-2 bottom-0 flex-row items-center gap-1">
           {onInsertRow ? (
             <Pressable
-              className="w-5 h-5 rounded-full items-center justify-center bg-primary"
+              className="h-5 w-5 items-center justify-center rounded-full bg-primary"
               onPress={handleInsertRow}
               hitSlop={8}
               accessibilityLabel={`Insert row before row ${index + 1}`}
@@ -244,7 +244,7 @@ export function TableRow<T>({
           ) : null}
           {onDeleteRow ? (
             <Pressable
-              className="w-5 h-5 rounded-full items-center justify-center bg-destructive"
+              className="h-5 w-5 items-center justify-center rounded-full bg-destructive"
               onPress={handleDeleteRow}
               hitSlop={8}
               accessibilityLabel={`Delete row ${index + 1}`}

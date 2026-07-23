@@ -170,8 +170,8 @@ export function Table<T>(props: TableProps<T>) {
       <View>
         {Array.from({ length: count }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows, fixed length, never reordered
-          <View key={i} className="flex-row border-b border-border overflow-hidden relative" style={{ height: rowHeight }}>
-            {selectable ? <View className="justify-center px-4 overflow-hidden" style={{ width: CHECKBOX_COL_WIDTH }} /> : null}
+          <View key={i} className="relative flex-row overflow-hidden border-border border-b" style={{ height: rowHeight }}>
+            {selectable ? <View className="justify-center overflow-hidden px-4" style={{ width: CHECKBOX_COL_WIDTH }} /> : null}
             {orderedColumns.map((col) => (
               <SkeletonCellPulse
                 key={col.key}
@@ -193,10 +193,10 @@ export function Table<T>(props: TableProps<T>) {
       <View>
         {Array.from({ length: count }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder cards, fixed length, never reordered
-          <View key={i} className={cn('px-4 py-3 border-b border-border', cardClassName)} style={cardStyle}>
+          <View key={i} className={cn('border-border border-b px-4 py-3', cardClassName)} style={cardStyle}>
             <View className="flex-row items-start gap-3">
-              {selectable ? <View className="pt-0.5 w-5 h-5 rounded bg-border" /> : null}
-              <View className="flex-1 min-w-0 gap-2">
+              {selectable ? <View className="h-5 w-5 rounded bg-border pt-0.5" /> : null}
+              <View className="min-w-0 flex-1 gap-2">
                 <View className="h-3.5 w-4/5 rounded-md bg-border" />
                 <View className="h-3 w-3/5 rounded-md bg-border" />
                 <View className="h-3 w-2/5 rounded-md bg-border" />
@@ -214,9 +214,9 @@ export function Table<T>(props: TableProps<T>) {
     // Rich empty state: render icon + title + description when text props are provided.
     if (!emptyState && (emptyTitle || emptyIcon || emptyDescription))
       return (
-        <View className="p-10 items-center justify-center">
+        <View className="items-center justify-center p-10">
           {emptyIcon ? <View className="mb-2.5 items-center">{emptyIcon}</View> : null}
-          {emptyTitle ? <Text className="text-sm font-semibold text-center text-foreground mb-1">{emptyTitle}</Text> : null}
+          {emptyTitle ? <Text className="mb-1 text-center font-semibold text-foreground text-sm">{emptyTitle}</Text> : null}
           {emptyDescription ? (
             <Text className="text-center text-muted-foreground" style={{ fontSize: 13 }}>
               {emptyDescription}
@@ -225,9 +225,9 @@ export function Table<T>(props: TableProps<T>) {
         </View>
       );
     return (
-      <View className="p-10 items-center justify-center">
+      <View className="items-center justify-center p-10">
         {typeof emptyState === 'string' ? (
-          <Text className="text-sm text-center text-muted-foreground">{emptyState}</Text>
+          <Text className="text-center text-muted-foreground text-sm">{emptyState}</Text>
         ) : (
           (emptyState ?? null)
         )}
@@ -308,12 +308,12 @@ export function Table<T>(props: TableProps<T>) {
       {/* ── Sticky header — hidden in card mode ── */}
       {isCardMode ? null : (
         <View
-          className={cn('flex-row border-b border-border bg-muted select-none', headerClassName)}
+          className={cn('select-none flex-row border-border border-b bg-muted', headerClassName)}
           style={{ height: rowHeight }}
         >
           {selectable ? (
             <View
-              className="flex-col justify-center px-4 overflow-hidden relative items-center"
+              className="relative flex-col items-center justify-center overflow-hidden px-4"
               style={{ width: CHECKBOX_COL_WIDTH }}
             >
               <Checkbox
@@ -352,7 +352,7 @@ export function Table<T>(props: TableProps<T>) {
           {/* Drop indicator: a line at the insertion boundary while dragging */}
           {dragKey && dropIndex !== null && containerWidth > 0 ? (
             <View
-              className="absolute top-0 bottom-0 w-0.5 z-20 bg-primary"
+              className="absolute top-0 bottom-0 z-20 w-0.5 bg-primary"
               style={{ pointerEvents: 'none', left: Math.min(boundaries[dropIndex] ?? 0, containerWidth - 2) }}
             />
           ) : null}

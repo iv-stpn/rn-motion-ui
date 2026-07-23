@@ -230,6 +230,7 @@ export const LoadingLoops: Story = {
     await new Promise((r) => setTimeout(r, 600));
     let dot = findDot();
     for (let i = 0; i < 10 && !dot; i += 1) {
+      // biome-ignore lint/performance/noAwaitInLoops: sequential polling — each retry waits real time for the animated dot to mount; Promise.all would fire all waits concurrently
       await new Promise((r) => setTimeout(r, 100));
       dot = findDot();
     }
@@ -246,6 +247,7 @@ export const LoadingLoops: Story = {
     for (let ms = 0; ms <= 3000; ms += 250) {
       samples.push(translateYOf(dot, win));
       toggleTheme();
+      // biome-ignore lint/performance/noAwaitInLoops: deliberate timed sampling — spacing samples 250ms apart across theme re-renders is the point; Promise.all would collapse them into one instant
       await new Promise((r) => setTimeout(r, 250));
     }
     const range = (xs: number[]) => Math.max(...xs) - Math.min(...xs);

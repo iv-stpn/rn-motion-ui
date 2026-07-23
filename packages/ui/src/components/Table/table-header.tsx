@@ -85,7 +85,7 @@ export function HeaderCell<T>({
   return (
     <Pressable
       key={column.key}
-      className="flex-col justify-center px-4 overflow-hidden relative"
+      className="relative flex-col justify-center overflow-hidden px-4"
       style={{ width: containerWidth > 0 ? colWidth : undefined, flex: containerWidth > 0 ? undefined : 1 }}
       onLongPress={handleLongPress}
       onPress={sortEnabled ? handleSort : undefined}
@@ -95,7 +95,7 @@ export function HeaderCell<T>({
     >
       {/* Header content lifts (scale + fade) while its column is being dragged. */}
       <MotiView
-        className="flex-row items-center flex-1 gap-1"
+        className="flex-1 flex-row items-center gap-1"
         animate={reduce ? { opacity: isDragging ? 0.5 : 1 } : { scale: isDragging ? 1.04 : 1, opacity: isDragging ? 0.5 : 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 180 }}
       >
@@ -103,7 +103,7 @@ export function HeaderCell<T>({
         {reorderable ? (
           <View
             {...gripHandlers(column.key)}
-            className="justify-center items-center -ml-1 select-none"
+            className="-ml-1 select-none items-center justify-center"
             hitSlop={8}
             accessibilityLabel={`Reorder ${column.key} column`}
             testID={`${testID ?? 'table'}-grip-${column.key}`}
@@ -116,15 +116,15 @@ export function HeaderCell<T>({
           <TextInput
             value={column.header}
             onChangeText={handleRename}
-            className="text-xs font-medium p-0 flex-1 text-muted-foreground"
+            className="flex-1 p-0 font-medium text-muted-foreground text-xs"
             style={{ textAlign }}
             accessibilityLabel={`Rename ${column.key} column`}
           />
         ) : (
-          <View className="flex-row items-center flex-1 gap-1" style={{ justifyContent: alignToJustify(column.align) }}>
+          <View className="flex-1 flex-row items-center gap-1" style={{ justifyContent: alignToJustify(column.align) }}>
             <Text
               selectable={false}
-              className={cn('text-xs font-medium flex-1 text-muted-foreground', isActive && 'text-foreground')}
+              className={cn('flex-1 font-medium text-muted-foreground text-xs', isActive && 'text-foreground')}
               style={{ textAlign }}
               numberOfLines={1}
             >
@@ -144,10 +144,10 @@ export function HeaderCell<T>({
 
       {/* Column action overlay on long-press */}
       {isColPressed && hasColMenu ? (
-        <View className="absolute top-0.5 right-0.5 flex-row gap-0.5 z-10">
+        <View className="absolute top-0.5 right-0.5 z-10 flex-row gap-0.5">
           {onInsertColumn ? (
             <Pressable
-              className="w-5 h-5 rounded-full items-center justify-center bg-primary"
+              className="h-5 w-5 items-center justify-center rounded-full bg-primary"
               onPress={handleInsertColumn}
               hitSlop={8}
             >
@@ -156,7 +156,7 @@ export function HeaderCell<T>({
           ) : null}
           {onDeleteColumn ? (
             <Pressable
-              className="w-5 h-5 rounded-full items-center justify-center bg-destructive"
+              className="h-5 w-5 items-center justify-center rounded-full bg-destructive"
               onPress={handleDeleteColumn}
               hitSlop={8}
             >

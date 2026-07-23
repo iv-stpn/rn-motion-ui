@@ -41,7 +41,7 @@ export function TableCard<T>({
   return (
     <Pressable
       onPress={selectable ? handlePress : undefined}
-      className={cn('px-4 py-3 border-b border-border', isSelected && 'bg-border', cardClassName)}
+      className={cn('border-border border-b px-4 py-3', isSelected && 'bg-border', cardClassName)}
       style={cardStyle}
       testID={testID ? `${testID}-card-${id}` : undefined}
     >
@@ -51,7 +51,7 @@ export function TableCard<T>({
             <Checkbox checked={isSelected} onCheckedChange={handleCheckedChange} />
           </View>
         ) : null}
-        <View className="flex-1 min-w-0">{renderSmallScreen(row, isSelected)}</View>
+        <View className="min-w-0 flex-1">{renderSmallScreen(row, isSelected)}</View>
       </View>
     </Pressable>
   );
@@ -112,10 +112,10 @@ export function PaginationFooter({
   const nextDisabled = page >= totalPages;
   const foreground = useThemeColor('foreground');
   return (
-    <View className={cn('border-t border-border px-4 py-2.5 flex-row items-center justify-center gap-3', footerClassName)}>
+    <View className={cn('flex-row items-center justify-center gap-3 border-border border-t px-4 py-2.5', footerClassName)}>
       <Pressable
         onPress={prevDisabled ? undefined : goToPreviousPage}
-        className={cn('w-8 h-8 rounded-md border border-border items-center justify-center', prevDisabled && 'opacity-35')}
+        className={cn('h-8 w-8 items-center justify-center rounded-md border border-border', prevDisabled && 'opacity-35')}
         accessibilityLabel="Previous page"
         accessibilityRole="button"
         disabled={prevDisabled}
@@ -128,7 +128,7 @@ export function PaginationFooter({
       </Text>
       <Pressable
         onPress={nextDisabled ? undefined : goToNextPage}
-        className={cn('w-8 h-8 rounded-md border border-border items-center justify-center', nextDisabled && 'opacity-35')}
+        className={cn('h-8 w-8 items-center justify-center rounded-md border border-border', nextDisabled && 'opacity-35')}
         accessibilityLabel="Next page"
         accessibilityRole="button"
         disabled={nextDisabled}
@@ -150,7 +150,7 @@ export type LoadMoreFooterProps = {
 
 export function LoadMoreFooter({ onLoadMore, loadMoreLabel, footerClassName }: LoadMoreFooterProps) {
   return (
-    <View className={cn('border-t border-border px-4 py-2.5 items-stretch', footerClassName)}>
+    <View className={cn('items-stretch border-border border-t px-4 py-2.5', footerClassName)}>
       <Button variant="outline" size="sm" onPress={onLoadMore} fitWidth={true} accessibilityLabel={loadMoreLabel}>
         {loadMoreLabel}
       </Button>
@@ -166,7 +166,7 @@ export type LoadingMoreFooterProps = { footerClassName?: string };
 export function LoadingMoreFooter({ footerClassName }: LoadingMoreFooterProps) {
   const mutedForeground = useThemeColor('muted-foreground');
   return (
-    <View className={cn('py-4 items-center justify-center border-t border-border', footerClassName)}>
+    <View className={cn('items-center justify-center border-border border-t py-4', footerClassName)}>
       <Loader variant="spinner" size={20} color={mutedForeground} label="Loading more" />
     </View>
   );

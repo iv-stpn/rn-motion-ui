@@ -1,5 +1,24 @@
 # rn-motion-ui
 
+## 3.0.0
+
+### Major Changes
+
+- c2fd8d1: Adopt the cubby-ui surfaces system as the token foundation.
+
+  **Breaking — token model reworked** (`rn-motion-ui/tokens.css`):
+
+  - **Surface elevation ladder**: `--color-surface-1` … `--color-surface-8` with paired `--shadow-surface-1` … `--shadow-surface-8` recipes (crisp 1px ring + progressive drop layers). Surfaces address the ladder directly — `surface-1` is the page, `surface-3` the resting level for contained content (cards, popovers, dialogs, inputs). The shadcn-style container/page aliases (`--color-surface`, `--color-card`, `--color-popover`, `--color-input`) are gone; use `bg-surface-1` / `bg-surface-3` instead. Light mode keeps surfaces neutral and lets shadows carry elevation; dark mode steps lightness per level with a subtle neutral tint (hue 270, chroma 0.004) across the whole neutral stack.
+  - **State overlays**: new translucent `--color-surface-hover` / `--color-surface-selected` utilities that composite on any surface level.
+  - **Status triads**: `success` / `warning` / `info` / `danger` are now soft plate backgrounds with `*-foreground` (legible text/icon on the plate) and `*-border` partners. The previous vivid `--color-success` / `--color-warning` values are gone — text/icons that used them should use `*-foreground`. `--color-destructive` stays the vivid action color and gains `--color-destructive-foreground`; new `--color-accent` / `--color-accent-foreground`.
+  - The undefined `shadow-modal` class (silently no-op) is replaced with real `shadow-surface-N` recipes across overlays; `ThemeToken` (use-theme-color) covers the full new token set.
+
+  **New — `rn-motion-ui/color`**: pure-formula OKLCH → sRGB conversion (`oklchToSrgb`, `cssColorToSrgb`) using the reference OKLab matrices with CSS Color 4 chroma-reduction gamut mapping. `useThemeColor()` now resolves web CSS variables through this deterministic formula instead of rasterising a 1×1 canvas pixel, and the native static maps are derived from the same oklch definitions at module load (no more hand-maintained hex duplicates).
+
+  **New — `elevation` prop + `rn-motion-ui/elevated`**: surface components (`Card`, `Popover`, `AdaptiveDropdown`, `HoverMenu`, `MorphingModal`, `ActionFeedbackModal`, `AdaptiveModal`, `FeedbackWidget`) accept an `elevation` prop (`SurfaceLevel`, `1`–`8`) that drives where the surface sits on the ladder: its background (`bg-surface-N`), its drop shadow, and — in dark mode — its inset rim (top highlight + full-perimeter ring) all track the same level, so the fill and the rim highlight stay calibrated together. Because light-mode surfaces `3`–`8` are all white, coupling the background to elevation is a no-op in light mode; in dark mode a higher `elevation` reads as a lighter, more-floated surface. Backing this is a new `--shadow-elevated-1` … `--shadow-elevated-8` token pair (rim + drop folded into one box-shadow, since React Native has no `::after` to paint cubby's pseudo-element rim) and the `rn-motion-ui/elevated` helper (`elevated`, `elevatedShadow`, `surfaceBackground`, `clampSurfaceLevel`, `SURFACE_LEVELS`, `SurfaceLevel`) mirroring cubby's `surfaceClasses` two-arg (background level / float level) split. The dark stack also gains `--surface-hi-*` highlight and `--surface-ring-*` ring tokens driving the rim recipe.
+
+  Components migrated throughout: modals/sheets/popovers sit at `bg-surface-3` with ladder shadows, tables/lists use `bg-surface-selected` for selected rows, badges/stateful buttons/swipe actions use the status triads, and StarRating's `text-neutral-*` Tailwind-palette stragglers now use `text-muted-foreground`.
+
 ## 2.3.0
 
 ### Minor Changes

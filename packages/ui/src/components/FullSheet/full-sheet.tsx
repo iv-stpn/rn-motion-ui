@@ -57,7 +57,7 @@ function buildBody({
     if (isSmallScreen && title)
       backOverlay = (
         <View
-          className="absolute top-0 right-0 left-0 z-10 flex-row items-center bg-surface"
+          className="absolute top-0 right-0 left-0 z-10 flex-row items-center bg-surface-3"
           style={{ height: BACK_BUTTON_HEADER_HEIGHT }}
         >
           {dismissable ? (
@@ -253,7 +253,7 @@ export function FullSheet({
             {isAnimOpen ? (
               <MotiView
                 key="fullsheet"
-                className="flex-1 bg-surface"
+                className="flex-1 bg-surface-3"
                 from={{ translateY: height }}
                 animate={{ translateY: 0 }}
                 exit={{ translateY: height }}

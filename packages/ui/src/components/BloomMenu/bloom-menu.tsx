@@ -169,7 +169,7 @@ export function BloomMenu({
         <MotiView
           animate={{ width: open ? PANEL_W : TRIGGER_W, height: open ? (panelH ?? BOX_H) : TRIGGER_H }}
           transition={morph}
-          className="overflow-hidden border border-border bg-card"
+          className="overflow-hidden border border-border bg-surface-3"
           style={{ borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
         >
           {/* Panel content, fixed at its open-state size and centred in the
@@ -225,7 +225,7 @@ export function BloomMenu({
             aria-hidden={open}
             animate={{ opacity: open ? 0 : 1 }}
             transition={open ? { type: 'timing', duration: 120 } : { type: 'timing', duration: 150, delay: reduce ? 0 : 80 }}
-            className="bg-card"
+            className="bg-surface-3"
             style={[
               { position: 'absolute', top: 1, left: 1, right: 1, bottom: 1, borderRadius: 15 },
               { pointerEvents: open ? 'none' : 'auto' },

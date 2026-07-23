@@ -41,7 +41,7 @@ type AppSurfaceProps = { children: ReactNode; hint: string };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
-    <View className="flex-1 bg-surface" style={{ minHeight: 380 }}>
+    <View className="flex-1 bg-surface-1" style={{ minHeight: 380 }}>
       <View className="border-border border-b px-5 py-3">
         <View className="h-2.5 w-24 rounded-full bg-muted-foreground/20" />
       </View>

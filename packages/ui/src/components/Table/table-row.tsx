@@ -205,7 +205,7 @@ export function TableRow<T>({
       <MotiView
         animate={{ opacity: isSelected ? 1 : 0 }}
         transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
-        className="absolute inset-0 bg-border"
+        className="absolute inset-0 bg-surface-selected"
         style={{ pointerEvents: 'none' }}
       />
 

@@ -104,26 +104,25 @@ const BADGE_BACKGROUND = cva('items-center justify-center rounded-full', {
       primary: 'bg-primary',
       success: 'bg-success',
       warning: 'bg-warning',
-      danger: 'bg-destructive',
+      danger: 'bg-danger',
     },
   },
   defaultVariants: { tone: 'neutral' },
 });
 
 // Icon stroke colours that match each tone background (used for SVG icons).
-// Chromatic tones (success/warning/danger) are theme-exempt: their vivid badge
-// backgrounds are stable across themes, so white always reads. neutral/primary
-// badge backgrounds invert with the theme (`bg-muted`/`bg-primary`), so their
-// icon colour must invert too — the render path resolves these reactively via
-// useThemeColors() inside SwipeActionButton (see `iconColor`). This static map
-// is exported as SWIPE_TONE_ICON_COLOR for consumers rendering swipe icons
-// *outside* the component; its neutral/primary entries are light-mode fallbacks.
+// Every badge background is a theme token now — neutral/primary invert with
+// the theme and the status tones are soft plates paired with their
+// `*-foreground` partner — so the render path resolves all of them reactively
+// via useThemeColors() inside SwipeActionButton (see `iconColor`). This static
+// map is exported as SWIPE_TONE_ICON_COLOR for consumers rendering swipe icons
+// *outside* the component; its entries are light-mode fallbacks.
 const ICON_COLOR: Record<SwipeActionTone, string> = {
-  neutral: '#737373' /* theme-exempt */, // mirrors light `muted-foreground` — resolved reactively in-component
-  primary: '#fafafa' /* theme-exempt */, // mirrors light `primary-foreground` — resolved reactively in-component
-  success: '#ffffff' /* theme-exempt */,
-  warning: '#ffffff' /* theme-exempt */,
-  danger: '#ffffff' /* theme-exempt */,
+  neutral: '#626366' /* theme-exempt */, // mirrors light `muted-foreground` — resolved reactively in-component
+  primary: '#f8f8fa' /* theme-exempt */, // mirrors light `primary-foreground` — resolved reactively in-component
+  success: '#007500' /* theme-exempt */, // mirrors light `success-foreground` — resolved reactively in-component
+  warning: '#a07100' /* theme-exempt */, // mirrors light `warning-foreground` — resolved reactively in-component
+  danger: '#c53637' /* theme-exempt */, // mirrors light `danger-foreground` — resolved reactively in-component
 };
 
 // -- SwipeActionButton -------------------------------------------------------
@@ -140,15 +139,15 @@ function SwipeActionButton({ action, actionWidth, side, onAction }: SwipeActionB
   const colors = useThemeColors();
   // Reactive per-tone icon colour. neutral/primary track the theme — their badge
   // backgrounds (`bg-muted`/`bg-primary`) invert, so the icon must invert too.
-  // Chromatic tones stay white: their vivid backgrounds are stable across themes,
-  // so white reads in both (using `colors.surface` here would darken the icon in
-  // dark mode and drop contrast against the saturated badge).
+  // Status tones pair their soft plate background with the matching
+  // `*-foreground` token, which is tuned for legibility on the plate in both
+  // light and dark mode.
   const iconColor: Record<SwipeActionTone, string> = {
     neutral: colors['muted-foreground'],
     primary: colors['primary-foreground'],
-    success: '#ffffff' /* theme-exempt */,
-    warning: '#ffffff' /* theme-exempt */,
-    danger: '#ffffff' /* theme-exempt */,
+    success: colors['success-foreground'],
+    warning: colors['warning-foreground'],
+    danger: colors['danger-foreground'],
   };
   const handlePress = useCallback(() => onAction(action, side), [onAction, action, side]);
 
@@ -501,7 +500,7 @@ function SwipeableListRow({
 
       {/* Draggable surface */}
       <Animated.View
-        className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm"
+        className="rounded-2xl border border-border bg-surface-3 px-4 py-3 shadow-sm"
         style={[
           {
             minHeight: 72,

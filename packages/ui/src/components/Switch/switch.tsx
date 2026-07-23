@@ -56,7 +56,9 @@ export function Switch({
   const [pressed, setPressed] = useState(false);
   const shakeX = useRef(new Animated.Value(0)).current;
   const squish = pressed && !disabled && !reduce;
-  const thumbBackground = useThemeColor('surface');
+  // The thumb is a lifted control — surface-3 (white in light, a raised tinted
+  // step in dark) keeps it distinct from both track states.
+  const thumbBackground = useThemeColor('surface-3');
   const thumbSpring = mergeTransition(
     { type: 'spring' as const, stiffness: THUMB_SPRING.stiffness, damping: THUMB_SPRING.damping, mass: THUMB_SPRING.mass },
     thumbTransition,

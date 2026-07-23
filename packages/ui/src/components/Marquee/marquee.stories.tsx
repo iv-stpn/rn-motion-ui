@@ -11,7 +11,7 @@ type ChipProps = { label: string };
 // biome-ignore lint/style/useComponentExportOnlyModules: Chip is a local story helper, intentionally unexported
 function Chip({ label }: ChipProps) {
   return (
-    <View className="h-12 items-center justify-center rounded-lg border border-border bg-card px-6">
+    <View className="h-12 items-center justify-center rounded-lg border border-border bg-surface-3 px-6">
       <Text className="font-medium text-foreground text-sm">{label}</Text>
     </View>
   );

@@ -48,7 +48,7 @@ export const Currency: Story = {
     <View style={{ alignItems: 'center', gap: 8 }}>
       <Text className="text-muted-foreground text-xs">{MRR_LABEL}</Text>
       <AnimatedNumber {...args} />
-      <Text className="text-success text-xs">{MRR_DELTA}</Text>
+      <Text className="text-success-foreground text-xs">{MRR_DELTA}</Text>
     </View>
   ),
 };

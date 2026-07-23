@@ -137,7 +137,7 @@ export function BottomSheet({
             <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>
               <View
                 // biome-ignore lint/nursery/useSortedClasses: dynamic class — cannot sort across template-literal segments
-                className={`w-full overflow-hidden bg-surface${fullSheet ? '' : ' rounded-t-2xl'}`}
+                className={`w-full overflow-hidden bg-surface-3${fullSheet ? '' : ' rounded-t-2xl'}`}
                 style={{
                   maxHeight: fullSheet ? height : Math.round(height * 0.9),
                   height: fullSheet ? height : undefined,

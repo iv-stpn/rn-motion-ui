@@ -1,8 +1,11 @@
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: three surfaces (bottomSheet / fullSheet / wide modal+drawer) share one render path — splitting scatters tightly-coupled layout state
+
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -61,6 +64,8 @@ type AdaptiveModalProps = {
   onAfterClose?: () => void;
   /** When false, clicking the overlay will not close the modal. Defaults to true. */
   closeOnOverlayClick?: boolean;
+  /** Surface elevation (1–8) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. Defaults to 6. */
+  elevation?: SurfaceLevel;
 };
 
 function resolvePanelDimension(value: Dimension | undefined, viewportSize: number): number | undefined {
@@ -107,6 +112,7 @@ export function AdaptiveModal({
   customLayout = false,
   onAfterClose,
   closeOnOverlayClick = true,
+  elevation = 6,
 }: AdaptiveModalProps) {
   const reduce = useReducedMotion();
   const { height, width } = useWindowDimensions();
@@ -269,7 +275,7 @@ export function AdaptiveModal({
                     >
                       <TouchableOpacity activeOpacity={1} className="h-full" style={{ width: drawerWidth }}>
                         <View
-                          className="h-full bg-surface px-8 pt-8 pb-8"
+                          className={`h-full px-8 pt-8 pb-8 ${surfaceBackground(elevation)}`}
                           accessibilityViewIsModal={true}
                           aria-modal={true}
                           role="dialog"
@@ -307,7 +313,9 @@ export function AdaptiveModal({
                     >
                       <View
                         className={cn(
-                          'rounded-2xl border border-border bg-surface shadow-modal',
+                          'rounded-2xl border border-border',
+                          surfaceBackground(elevation),
+                          elevatedShadow(elevation),
                           widePanelHeight !== undefined && 'flex-1',
                           containerPaddingClass,
                         )}

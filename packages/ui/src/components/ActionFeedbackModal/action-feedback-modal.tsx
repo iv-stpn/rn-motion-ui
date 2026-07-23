@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../lib/ease';
+import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { Check, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -45,7 +46,7 @@ function MorphIcon({ state, reduced }: MorphIconProps) {
   const morphBackground: Record<ActionFeedbackState, string> = {
     loading: 'transparent',
     success: colors.success,
-    error: colors.destructive,
+    error: colors.danger,
   };
   const size = MORPH_SIZE[state];
   const backgroundColor = morphBackground[state];
@@ -82,7 +83,7 @@ function MorphIcon({ state, reduced }: MorphIconProps) {
             transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
             style={morphGlyphStyle}
           >
-            <Check size={26} color="#ffffff" /* theme-exempt */ />
+            <Check size={26} color={colors['success-foreground']} />
           </MotiView>
         )}
         {state === 'error' && (
@@ -94,7 +95,7 @@ function MorphIcon({ state, reduced }: MorphIconProps) {
             transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
             style={morphGlyphStyle}
           >
-            <X size={20} color="#ffffff" /* theme-exempt */ />
+            <X size={20} color={colors['danger-foreground']} />
           </MotiView>
         )}
       </AnimatePresence>
@@ -122,6 +123,8 @@ export type ActionFeedbackModalProps = {
   errorTitle?: string;
   dismissLabel?: string;
   tagline?: string;
+  /** Surface elevation (1–8) — drives the drop shadow + dark-mode rim. Defaults to 6. */
+  elevation?: SurfaceLevel;
 };
 
 export function ActionFeedbackModal({
@@ -137,6 +140,7 @@ export function ActionFeedbackModal({
   errorTitle = 'Error',
   dismissLabel = 'Dismiss',
   tagline,
+  elevation = 6,
 }: ActionFeedbackModalProps) {
   const isOpen = openProp ?? visible ?? false;
   const isDismissible = state === 'error';
@@ -186,7 +190,7 @@ export function ActionFeedbackModal({
             exit={{ opacity: 0, scale: 0.96 }}
             transition={reduced ? RM_TRANSITION : { type: 'spring', damping: 24, stiffness: 280, mass: 0.9 }}
             exitTransition={{ type: 'timing', duration: reduced ? 100 : 150 }}
-            className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-modal"
+            className={`w-full max-w-sm rounded-2xl border border-border ${surfaceBackground(elevation)} p-6 ${elevatedShadow(elevation)}`}
           >
             <View className="w-full items-center gap-4 py-2">
               <MorphIcon state={state} reduced={reduced} />

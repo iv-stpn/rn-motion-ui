@@ -151,7 +151,7 @@ function TimePickerModal({ visible, value, options, onSelect, onClose }: TimePic
       >
         <View>
           <Pressable onPress={stopPropagation}>
-            <View className="rounded-t-3xl bg-card" style={{ paddingBottom: 16 }}>
+            <View className="rounded-t-3xl bg-surface-3" style={{ paddingBottom: 16 }}>
               {/* Handle bar */}
               <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
                 <View className="bg-border" style={{ width: 36, height: 4, borderRadius: 2 }} />
@@ -169,7 +169,7 @@ function TimePickerModal({ visible, value, options, onSelect, onClose }: TimePic
                 <Pressable
                   accessibilityRole="button"
                   onPress={onClose}
-                  className="flex-1 items-center justify-center rounded-full border border-border bg-card"
+                  className="flex-1 items-center justify-center rounded-full border border-border bg-surface-3"
                   style={{ height: 44 }}
                 >
                   <Text className="font-medium text-foreground text-sm">{LABEL_CANCEL}</Text>
@@ -205,7 +205,7 @@ function TimeButton({ value, options, onChange, testID }: TimeButtonProps) {
         accessibilityRole="button"
         testID={testID}
         onPress={openModal}
-        className="items-center justify-center rounded-lg border border-border bg-card"
+        className="items-center justify-center rounded-lg border border-border bg-surface-3"
         style={{ height: 36, paddingHorizontal: 10, minWidth: 96 }}
       >
         <Text className="text-foreground text-sm" style={{ fontVariant: ['tabular-nums'] }}>
@@ -262,7 +262,7 @@ function CopyModal({ visible, fromLabel, onApply, onClose }: CopyModalProps) {
       >
         <View>
           <Pressable onPress={stopPropagation}>
-            <View className="rounded-t-3xl bg-card" style={{ paddingBottom: 20, paddingHorizontal: 20 }}>
+            <View className="rounded-t-3xl bg-surface-3" style={{ paddingBottom: 20, paddingHorizontal: 20 }}>
               <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
                 <View className="bg-border" style={{ width: 36, height: 4, borderRadius: 2 }} />
               </View>
@@ -277,7 +277,7 @@ function CopyModal({ visible, fromLabel, onApply, onClose }: CopyModalProps) {
                 <Pressable
                   accessibilityRole="button"
                   onPress={applyEveryDay}
-                  className="flex-1 items-center justify-center rounded-full border border-border bg-card"
+                  className="flex-1 items-center justify-center rounded-full border border-border bg-surface-3"
                   style={{ height: 44 }}
                 >
                   <Text className="font-medium text-muted-foreground text-xs">{LABEL_EVERY_DAY}</Text>

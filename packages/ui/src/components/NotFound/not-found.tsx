@@ -66,7 +66,7 @@ function NotFoundActions({
           onPressIn={handleBrowsePressIn}
           onPressOut={handleBrowsePressOut}
           onPress={onBrowse}
-          className="h-11 items-center justify-center rounded-full border border-border bg-card px-6"
+          className="h-11 items-center justify-center rounded-full border border-border bg-surface-3 px-6"
         >
           <Text className="font-medium text-foreground text-sm">{browseLabel}</Text>
         </Pressable>

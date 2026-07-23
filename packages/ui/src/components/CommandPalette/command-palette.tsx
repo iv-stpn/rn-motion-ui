@@ -96,7 +96,7 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
       {isActive ? (
         <MotiView
           key={`hl-${item.id}`}
-          className="bg-primary/5"
+          className="bg-surface-selected"
           from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
@@ -117,7 +117,7 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
       </Text>
       {item.badge ? <View className="shrink-0">{item.badge}</View> : null}
       {item.hint ? (
-        <Text className="rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        <Text className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
           {item.hint}
         </Text>
       ) : null}
@@ -227,7 +227,7 @@ export function CommandPalette({
             accessibilityRole="button"
             accessibilityLabel="Close"
             onPress={handleClose}
-            className="rounded border border-border bg-surface px-1.5 py-0.5"
+            className="rounded border border-border bg-surface-2 px-1.5 py-0.5"
           >
             <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
           </Pressable>

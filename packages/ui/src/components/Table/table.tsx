@@ -300,7 +300,7 @@ export function Table<T>(props: TableProps<T>) {
   return (
     <View
       ref={containerRef}
-      className={cn('overflow-hidden border border-border bg-surface', className)}
+      className={cn('overflow-hidden border border-border bg-surface-2', className)}
       style={[{ height }, style]}
       onLayout={onContainerLayout}
       testID={testID}

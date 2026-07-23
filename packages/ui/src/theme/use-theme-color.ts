@@ -1,15 +1,34 @@
 import { useEffect, useState } from 'react';
 import { Platform, useColorScheme } from 'react-native';
+import { cssColorToSrgb, oklchToSrgb } from '../lib/color';
 
 /**
  * The semantic color tokens exported by rn-motion-ui/tokens.css.
  *
  * Each key corresponds to a `--color-<token>` CSS custom property.
+ *
+ * Surfaces follow the cubby-ui elevation ladder: `surface-1` (the page)
+ * through `surface-8`, plus the `surface-hover` / `surface-selected`
+ * translucent state overlays. `surface-3` is the resting level for contained
+ * content (cards, popovers, dialogs, inputs).
+ *
+ * Status tokens come in triads: the bare name (`success`, `warning`, `info`,
+ * `danger`) is a soft plate background; `*-foreground` is legible text/icon
+ * color on that plate or on any neutral surface; `*-border` is a matching
+ * edge. `destructive` stays the vivid action color for destructive buttons.
  */
 type ThemeToken =
-  | 'surface'
+  | 'surface-1'
+  | 'surface-2'
+  | 'surface-3'
+  | 'surface-4'
+  | 'surface-5'
+  | 'surface-6'
+  | 'surface-7'
+  | 'surface-8'
+  | 'surface-hover'
+  | 'surface-selected'
   | 'foreground'
-  | 'card'
   | 'muted'
   | 'muted-foreground'
   | 'border'
@@ -17,51 +36,124 @@ type ThemeToken =
   | 'primary-foreground'
   | 'secondary'
   | 'secondary-foreground'
+  | 'accent'
+  | 'accent-foreground'
   | 'destructive'
+  | 'destructive-foreground'
   | 'success'
-  | 'warning';
+  | 'success-foreground'
+  | 'success-border'
+  | 'warning'
+  | 'warning-foreground'
+  | 'warning-border'
+  | 'info'
+  | 'info-foreground'
+  | 'info-border'
+  | 'danger'
+  | 'danger-foreground'
+  | 'danger-border';
 
 /**
- * Static color maps — hex/rgba approximations of the tokens.css @theme values.
+ * OKLCH definitions mirroring the tokens.css @theme block — [L, C, H, alpha?].
  *
- * Used on native (where CSS vars are unavailable) and as the web SSR fallback.
- * React Native only accepts sRGB color formats (hex, rgb, rgba, hsl, hsla),
- * so we store pre-converted values here rather than the raw oklch strings from
- * tokens.css (which work in browsers but not in RN StyleSheet / SVG props).
- *
- * Keep these in sync with tokens.css whenever the @theme block changes.
+ * These are the single native source of truth: the sRGB maps used on native
+ * (and as the web SSR fallback) are derived from them at module load via
+ * lib/color.ts, so there are no hand-converted hex values to drift out of
+ * sync. Keep these tuples identical to the values in tokens.css whenever the
+ * @theme block changes.
  */
-const LIGHT: Record<ThemeToken, string> = {
-  surface: '#fafafa', // oklch(99% 0 0)
-  foreground: '#111111', // oklch(15% 0 0)
-  card: '#f4f4f5', // oklch(97% 0 0)
-  muted: '#f4f4f5', // oklch(97% 0 0)
-  'muted-foreground': '#737373', // oklch(50% 0 0)
-  border: 'rgba(17,17,17,0.06)', // oklch(15% 0 0 / 0.06)
-  primary: '#111111', // oklch(15% 0 0)
-  'primary-foreground': '#fafafa', // oklch(99% 0 0)
-  secondary: '#f4f4f5', // oklch(97% 0 0)
-  'secondary-foreground': '#111111', // oklch(15% 0 0)
-  destructive: '#e5484d', // oklch(62% 0.22 25)
-  success: '#22c55e', // oklch(70% 0.18 155)
-  warning: '#eab308', // oklch(78% 0.18 75)
+type Oklch = readonly [number, number, number, number?];
+
+const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
+  'surface-1': [0.97, 0, 0],
+  'surface-2': [0.985, 0, 0],
+  'surface-3': [1, 0, 0],
+  'surface-4': [1, 0, 0],
+  'surface-5': [1, 0, 0],
+  'surface-6': [1, 0, 0],
+  'surface-7': [1, 0, 0],
+  'surface-8': [1, 0, 0],
+  'surface-hover': [0, 0, 0, 0.04],
+  'surface-selected': [0, 0, 0, 0.08],
+  foreground: [0.18, 0.004, 270],
+  muted: [0.94, 0, 0],
+  'muted-foreground': [0.5, 0.004, 270],
+  border: [0, 0, 0, 0.1],
+  primary: [0.22, 0, 0],
+  'primary-foreground': [0.98, 0.002, 270],
+  secondary: [0.92, 0, 0],
+  'secondary-foreground': [0.32, 0.004, 270],
+  accent: [0.91, 0, 0],
+  'accent-foreground': [0.22, 0.004, 270],
+  destructive: [0.53, 0.19, 25],
+  'destructive-foreground': [0.98, 0.002, 270],
+  success: [0.97, 0.04, 145],
+  'success-foreground': [0.48, 0.18, 145],
+  'success-border': [0.9, 0.1, 145],
+  warning: [0.98, 0.06, 85],
+  'warning-foreground': [0.58, 0.14, 85],
+  'warning-border': [0.92, 0.1, 85],
+  info: [0.97, 0.04, 250],
+  'info-foreground': [0.45, 0.2, 250],
+  'info-border': [0.9, 0.1, 250],
+  danger: [0.97, 0.04, 25],
+  'danger-foreground': [0.55, 0.18, 25],
+  'danger-border': [0.9, 0.1, 25],
 };
 
-const DARK: Record<ThemeToken, string> = {
-  surface: '#111111', // oklch(9% 0 0)
-  foreground: '#f4f4f5', // oklch(96% 0 0)
-  card: '#1c1c1c', // oklch(13% 0 0)
-  muted: '#222222', // oklch(16% 0 0)
-  'muted-foreground': '#8f8f8f', // oklch(60% 0 0)
-  border: 'rgba(250,250,250,0.08)', // oklch(99% 0 0 / 0.08)
-  primary: '#f4f4f5', // oklch(96% 0 0)
-  'primary-foreground': '#111111', // oklch(15% 0 0)
-  secondary: '#252525', // oklch(18% 0 0)
-  'secondary-foreground': '#f4f4f5', // oklch(96% 0 0)
-  destructive: '#ef4444', // oklch(66% 0.22 25)
-  success: '#4ade80', // oklch(72% 0.18 155)
-  warning: '#facc15', // oklch(80% 0.18 75)
+const DARK_OKLCH: Record<ThemeToken, Oklch> = {
+  'surface-1': [0.205, 0.004, 270],
+  'surface-2': [0.235, 0.004, 270],
+  'surface-3': [0.264, 0.004, 270],
+  'surface-4': [0.293, 0.004, 270],
+  'surface-5': [0.321, 0.004, 270],
+  'surface-6': [0.348, 0.004, 270],
+  'surface-7': [0.375, 0.004, 270],
+  'surface-8': [0.402, 0.004, 270],
+  'surface-hover': [1, 0, 0, 0.04],
+  'surface-selected': [1, 0, 0, 0.08],
+  foreground: [0.94, 0.004, 270],
+  muted: [0.24, 0.004, 270],
+  'muted-foreground': [0.73, 0.004, 270],
+  border: [1, 0, 0, 0.1],
+  primary: [0.95, 0.004, 270],
+  'primary-foreground': [0.13, 0.004, 270],
+  secondary: [0.35, 0.004, 270],
+  'secondary-foreground': [0.94, 0.004, 270],
+  accent: [0.31, 0.004, 270],
+  'accent-foreground': [0.95, 0.004, 270],
+  destructive: [0.5, 0.22, 25],
+  'destructive-foreground': [1, 0, 0],
+  success: [0.26, 0.07, 145],
+  'success-foreground': [0.72, 0.15, 145],
+  'success-border': [0.36, 0.11, 145],
+  warning: [0.28, 0.06, 85],
+  'warning-foreground': [0.78, 0.12, 85],
+  'warning-border': [0.38, 0.09, 85],
+  info: [0.26, 0.07, 250],
+  'info-foreground': [0.72, 0.16, 250],
+  'info-border': [0.36, 0.11, 250],
+  danger: [0.26, 0.07, 25],
+  'danger-foreground': [0.75, 0.15, 25],
+  'danger-border': [0.36, 0.11, 25],
 };
+
+/** Resolve an OKLCH definition table to concrete sRGB strings. */
+function buildSrgbMap(source: Record<ThemeToken, Oklch>): Record<ThemeToken, string> {
+  // biome-ignore lint/plugin: {} as Record<ThemeToken,string> is safe — the loop below populates every key of the fully-typed source table
+  const map = {} as Record<ThemeToken, string>;
+  // biome-ignore lint/plugin: Object.entries over a Record<ThemeToken, Oklch> yields exactly the ThemeToken keys
+  for (const [token, [lightness, chroma, hue, alpha]] of Object.entries(source) as [ThemeToken, Oklch][]) {
+    map[token] = oklchToSrgb(lightness, chroma, hue, alpha);
+  }
+  return map;
+}
+
+// Static maps — used on native (where CSS vars are unavailable) and as the web
+// SSR fallback. React Native only accepts sRGB color formats, so the oklch
+// definitions are converted once at module load.
+const LIGHT: Record<ThemeToken, string> = buildSrgbMap(LIGHT_OKLCH);
+const DARK: Record<ThemeToken, string> = buildSrgbMap(DARK_OKLCH);
 
 /**
  * Force a re-render whenever the active theme changes on web.
@@ -100,65 +192,20 @@ function useWebThemeChange(): void {
   }, []);
 }
 
-// --- Web sRGB resolution ----------------------------------------------------
-// tokens.css defines colours as oklch, which browsers render fine for static
-// CSS / SVG props BUT Reanimated's colour parser cannot interpolate (it only
-// understands sRGB hex/rgb/rgba/hsl — see react-native-reanimated/Colors). An
-// animated `backgroundColor`/`color` set to an oklch value is silently dropped,
-// so e.g. ActionFeedbackModal's morph vessel stays transparent and its glyph
-// vanishes against the card. Resolve oklch (and any other non-sRGB CSS colour)
-// to an sRGB string by rasterising it to a 1×1 <canvas> pixel and reading the
-// pixel back via getImageData — the rasterised pixel is always sRGB, so the
-// browser does the conversion regardless of how it serialises the colour. The
-// same value then works for StyleSheet/SVG props AND Reanimated colour
-// animations. Native already uses the sRGB LIGHT/DARK maps below, so this keeps
-// web parity with native.
-let pixelCtx: CanvasRenderingContext2D | null | undefined;
-const srgbCache = new Map<string, string>();
-// A colour no token uses, so we can tell whether the canvas accepted `color`
-// (fillStyle moves off the sentinel) or rejected it (stays on the sentinel).
-const SENTINEL = '#010203';
-const NON_SRGB = /oklch|oklab|color\(/i;
-
-function toSrgb(color: string): string {
-  // Only non-sRGB notations need converting; pass hex/rgb/rgba/hsl/named through.
-  if (!NON_SRGB.test(color)) return color;
-  const cached = srgbCache.get(color);
-  if (cached) return cached;
-  if (pixelCtx === undefined)
-    pixelCtx =
-      typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-  let resolved = color;
-  if (pixelCtx) {
-    // fillStyle stays on SENTINEL if the browser rejects `color`; otherwise it
-    // moves to the (normalised) accepted value — the signal that rasterising
-    // will produce a meaningful pixel.
-    pixelCtx.fillStyle = SENTINEL;
-    pixelCtx.fillStyle = color;
-    if (pixelCtx.fillStyle !== SENTINEL) {
-      pixelCtx.clearRect(0, 0, 1, 1);
-      pixelCtx.fillRect(0, 0, 1, 1);
-      const [r = 0, g = 0, b = 0, a = 0] = pixelCtx.getImageData(0, 0, 1, 1).data;
-      resolved = a >= 255 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${Number((a / 255).toFixed(4))})`;
-    }
-  }
-  srgbCache.set(color, resolved);
-  return resolved;
-}
-
 /**
  * Resolve a semantic token to a concrete color string at runtime.
  *
  * - **Web**: reads the CSS custom property (`--color-<token>`) from the document
  *   root via `getComputedStyle`, so it always reflects the active Tailwind theme
  *   (including any consumer `@theme` overrides). oklch values are resolved to
- *   sRGB (see `toSrgb`) so they're usable by Reanimated colour animations, which
- *   can't parse oklch. Re-renders when the theme changes — via the OS
- *   `prefers-color-scheme` media query or a manual `.dark`/`.light` class on
- *   `<html>` — so the value never goes stale on a theme toggle. Falls back to
- *   the static map during SSR when the DOM is unavailable.
+ *   sRGB via the pure formula in lib/color.ts so they're usable by Reanimated
+ *   colour animations, which can't parse oklch. Re-renders when the theme
+ *   changes — via the OS `prefers-color-scheme` media query or a manual
+ *   `.dark`/`.light` class on `<html>` — so the value never goes stale on a
+ *   theme toggle. Falls back to the static map during SSR when the DOM is
+ *   unavailable.
  * - **Native**: uses `useColorScheme()` to pick between the light/dark static
- *   maps derived from `tokens.css`. No provider or setup required.
+ *   maps derived from the same oklch definitions. No provider or setup required.
  *
  * @example
  * // Pass resolved color to a Reanimated worklet:
@@ -167,7 +214,7 @@ function toSrgb(color: string): string {
  *
  * @example
  * // Pass resolved color to a react-native-svg prop:
- * const fill = useThemeColor('success');
+ * const fill = useThemeColor('success-foreground');
  * return <Path fill={fill} d="..." />;
  */
 export function useThemeColor(token: ThemeToken): string {
@@ -184,7 +231,7 @@ export function useThemeColor(token: ThemeToken): string {
   if (typeof document === 'undefined') return LIGHT[token];
 
   const raw = getComputedStyle(document.documentElement).getPropertyValue(`--color-${token}`).trim();
-  return raw ? toSrgb(raw) : LIGHT[token];
+  return raw ? cssColorToSrgb(raw) : LIGHT[token];
 }
 
 /**
@@ -207,7 +254,7 @@ export function useThemeColors(): Record<ThemeToken, string> {
   // biome-ignore lint/plugin: Object.keys(LIGHT) is exactly ThemeToken[] — LIGHT is typed Record<ThemeToken,string>
   for (const token of Object.keys(LIGHT) as ThemeToken[]) {
     const raw = style.getPropertyValue(`--color-${token}`).trim();
-    result[token] = raw ? toSrgb(raw) : LIGHT[token];
+    result[token] = raw ? cssColorToSrgb(raw) : LIGHT[token];
   }
   return result;
 }

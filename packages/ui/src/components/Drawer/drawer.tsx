@@ -81,8 +81,8 @@ export function Drawer({
               transition={reduce ? { type: 'timing', duration: 200 } : SPRING_PANEL}
               className={
                 side === 'right'
-                  ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l bg-surface'
-                  : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r bg-surface'
+                  ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l bg-surface-3'
+                  : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r bg-surface-3'
               }
               style={style}
             >

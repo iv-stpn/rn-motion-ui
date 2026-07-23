@@ -72,7 +72,7 @@ export function Dock({ children, size = 44, className, style, testID }: DockProp
     <DockContext.Provider value={ctx}>
       <View
         testID={testID}
-        className={cn('flex-row items-end gap-1.5 self-start rounded-2xl border border-border bg-card px-2 py-1', className)}
+        className={cn('flex-row items-end gap-1.5 self-start rounded-2xl border border-border bg-surface-3 px-2 py-1', className)}
         style={[{ position: 'relative' }, style]}
       >
         {/* Shared-layout pill glides to the active item's measured rect. Item
@@ -88,7 +88,7 @@ export function Dock({ children, size = 44, className, style, testID }: DockProp
               height: active.height - PILL_INSET * 2,
             }}
             transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
-            className="bg-primary/5"
+            className="bg-surface-selected"
             style={{ position: 'absolute', left: 0, top: 0, borderRadius: 12, pointerEvents: 'none' }}
           />
         ) : null}

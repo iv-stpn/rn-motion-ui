@@ -36,7 +36,7 @@ type MenuContentProps = { close: () => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function Trigger({ open }: TriggerProps) {
-  const containerClass = `flex-row items-center gap-2 rounded-full border px-4 py-2 ${open ? 'border-primary bg-primary' : 'border-border bg-card'}`;
+  const containerClass = `flex-row items-center gap-2 rounded-full border px-4 py-2 ${open ? 'border-primary bg-primary' : 'border-border bg-surface-3'}`;
   const textClass = open ? 'font-medium text-primary-foreground text-sm' : 'font-medium text-foreground text-sm';
   const label = open ? TRIGGER_OPEN : TRIGGER_CLOSED;
   return (

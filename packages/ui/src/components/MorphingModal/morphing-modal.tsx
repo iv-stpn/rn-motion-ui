@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_PANEL } from '../../lib/ease';
+import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
@@ -38,6 +39,8 @@ export type MorphingModalProps = {
   children: ReactNode;
   /** "bottom" anchors near the bottom (mobile-like). "center" centers vertically. */
   placement?: MorphingModalPlacement;
+  /** Surface elevation (1–8) — drives the drop shadow + dark-mode rim. Defaults to 6. */
+  elevation?: SurfaceLevel;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -49,6 +52,7 @@ export function MorphingModal({
   onOpenChange,
   children,
   placement = 'bottom',
+  elevation = 6,
   accessibilityLabel,
   style,
   testID,
@@ -118,7 +122,7 @@ export function MorphingModal({
               animate={{ opacity: 1, translateY: 0, scale: 1 }}
               exit={{ opacity: 0, translateY: enterY, scale: reduce ? 1 : 0.98 }}
               transition={reduce ? { type: 'timing', duration: 180, easing: EASE_OUT } : SPRING_PANEL}
-              className="w-full max-w-sm overflow-hidden rounded-3xl border border-border bg-surface"
+              className={`w-full max-w-sm overflow-hidden rounded-3xl border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
               style={style}
             >
               {/*

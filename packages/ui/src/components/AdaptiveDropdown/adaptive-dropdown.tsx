@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { type LayoutChangeEvent, Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -47,6 +48,8 @@ export type AdaptiveDropdownProps = {
   triggerClassName?: string;
   /** When true, the bottom sheet on small screens stretches to full height. @default false */
   fullSheet?: boolean;
+  /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 5 */
+  elevation?: SurfaceLevel;
 };
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small screen paths are tightly coupled to shared anchor/dimension state
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: same reason
@@ -67,6 +70,7 @@ export function AdaptiveDropdown({
   contentClassName,
   triggerClassName,
   fullSheet = false,
+  elevation = 5,
 }: AdaptiveDropdownProps) {
   const { width: vpWidth, height: vpHeight } = useWindowDimensions();
   const isWideScreen = vpWidth >= MD_BREAKPOINT;
@@ -210,7 +214,7 @@ export function AdaptiveDropdown({
                   <Pressable
                     onPress={noop}
                     style={{ maxHeight }}
-                    className="flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-modal"
+                    className={`flex-col overflow-hidden rounded-2xl border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
                   >
                     {header}
                     {body}

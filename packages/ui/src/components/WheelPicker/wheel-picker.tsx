@@ -545,7 +545,7 @@ export function WheelPicker({
         style={[{ height, opacity: disabled ? 0.5 : 1 }, style]}
       >
         <View
-          className="absolute inset-x-2 z-10 rounded-xl bg-foreground/[0.06]"
+          className="absolute inset-x-2 z-10 rounded-xl bg-surface-selected"
           style={{ pointerEvents: 'none', top: pad, height: itemHeight }}
         />
         <ScrollView

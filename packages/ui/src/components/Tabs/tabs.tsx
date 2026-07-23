@@ -144,7 +144,7 @@ export function TabsList({ children }: TabsListProps) {
             height: variant === 'underline' ? 2 : active.height,
           }}
           transition={!hasPositioned.current || reduce ? TIMING_INSTANT : indicatorSpring}
-          className={variant === 'underline' ? 'bg-primary' : 'bg-surface'}
+          className={variant === 'underline' ? 'bg-primary' : 'bg-surface-3'}
           style={{
             pointerEvents: 'none',
             position: 'absolute',

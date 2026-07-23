@@ -41,7 +41,7 @@ export function TableCard<T>({
   return (
     <Pressable
       onPress={selectable ? handlePress : undefined}
-      className={cn('border-border border-b px-4 py-3', isSelected && 'bg-border', cardClassName)}
+      className={cn('border-border border-b px-4 py-3', isSelected && 'bg-surface-selected', cardClassName)}
       style={cardStyle}
       testID={testID ? `${testID}-card-${id}` : undefined}
     >

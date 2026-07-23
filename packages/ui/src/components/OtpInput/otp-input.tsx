@@ -51,7 +51,7 @@ type SlotState = 'success' | 'error' | 'active' | 'filled' | 'idle';
 const slot = cva('relative h-14 w-12 items-center justify-center overflow-hidden rounded-2xl border', {
   variants: {
     state: {
-      success: 'border-success/60',
+      success: 'border-success-border',
       error: 'border-destructive/60',
       active: 'border-foreground',
       filled: 'border-foreground/40',
@@ -64,7 +64,7 @@ const slot = cva('relative h-14 w-12 items-center justify-center overflow-hidden
 const message = cva('text-sm', {
   variants: {
     status: {
-      success: 'text-success',
+      success: 'text-success-foreground',
       error: 'text-destructive',
       idle: 'text-muted-foreground',
     },
@@ -119,7 +119,7 @@ export function OTPInput({
   testID,
 }: OTPInputProps) {
   const reduce = useReducedMotion();
-  const successColor = useThemeColor('success');
+  const successColor = useThemeColor('success-foreground');
   const inputRef = useRef<TextInput>(null);
   const shakeX = useRef(new Animated.Value(0)).current;
 

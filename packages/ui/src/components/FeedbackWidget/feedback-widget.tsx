@@ -5,6 +5,7 @@ import { Pressable, type StyleProp, TextInput, View, type ViewStyle } from 'reac
 import Svg, { Path } from 'react-native-svg';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_PANEL } from '../../lib/ease';
+import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { AlertCircle, MessageSquare, X } from '../../lib/icons';
 import { MotiText } from '../../moti/components/text';
 import { MotiView } from '../../moti/components/view';
@@ -54,6 +55,8 @@ export type FeedbackWidgetProps = {
   /** Called on submit. May be async; the button shows a sending state until it resolves. */
   onSubmit?: (data: FeedbackData) => void | Promise<void>;
   position?: 'bottom-right' | 'bottom-left';
+  /** Surface elevation (1–8) for the widget shell — drives the drop shadow + dark-mode rim. Defaults to 5. */
+  elevation?: SurfaceLevel;
   title?: string;
   placeholder?: string;
   icon?: ReactNode;
@@ -120,6 +123,7 @@ function renderFeedbackContent({
 export function FeedbackWidget({
   onSubmit,
   position = 'bottom-right',
+  elevation = 5,
   title = 'Help us improve',
   placeholder = 'Share an idea or report a bug',
   icon,
@@ -192,7 +196,7 @@ export function FeedbackWidget({
       <MotiView
         animate={{ borderRadius: open ? 20 : 40 }}
         transition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 320, easing: EASE_OUT }}
-        className="overflow-hidden border border-border bg-surface shadow-lg"
+        className={`overflow-hidden border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
         style={{ position: 'absolute', bottom: 0, ...(left ? { left: 0 } : { right: 0 }) }}
       >
         <AnimatePresence exitBeforeEnter={true}>
@@ -287,7 +291,7 @@ function FormView({
             accessibilityRole="button"
             accessibilityLabel="Close"
             onPress={onClose}
-            className="h-5 w-5 items-center justify-center rounded-full bg-foreground/[0.07]"
+            className="h-5 w-5 items-center justify-center rounded-full bg-surface-selected"
           >
             {closeIcon ?? <X size={12} color={colors['muted-foreground']} />}
           </Pressable>
@@ -355,7 +359,7 @@ function SentView({ reduce }: SentViewProps) {
                     height: 6,
                     width: 6,
                     borderRadius: 3,
-                    backgroundColor: i % 2 === 0 ? colors.success : '#6366f1',
+                    backgroundColor: i % 2 === 0 ? colors['success-foreground'] : '#6366f1',
                   }}
                 />
               ))}
@@ -364,7 +368,7 @@ function SentView({ reduce }: SentViewProps) {
             animate={{ scale: 1 }}
             transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 500, damping: 22, delay: 40 }}
             className="h-12 w-12 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.success }}
+            style={{ backgroundColor: colors.success, borderWidth: 1, borderColor: colors['success-border'] }}
           >
             <MotiView
               from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.4 }}
@@ -375,7 +379,7 @@ function SentView({ reduce }: SentViewProps) {
                 <Path
                   d="M5 12.5l4.5 4.5L19 7.5"
                   fill="none"
-                  stroke={colors.surface}
+                  stroke={colors['success-foreground']}
                   strokeWidth={2.5}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -401,8 +405,8 @@ function ErrorView({ reduce, onRetry, errorIcon }: ErrorViewProps) {
       transition={{ type: 'timing', duration: reduce ? 0 : 220, easing: EASE_OUT }}
     >
       <View accessibilityRole="alert" className="items-center rounded-[16px] bg-muted px-4 py-5">
-        <View className="h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-          {errorIcon ?? <AlertCircle size={20} color={colors.destructive} />}
+        <View className="h-12 w-12 items-center justify-center rounded-full border border-danger-border bg-danger">
+          {errorIcon ?? <AlertCircle size={20} color={colors['danger-foreground']} />}
         </View>
         <Text className="mt-3 font-semibold text-foreground text-sm">{ERROR_TITLE}</Text>
         <Text className="mt-1 text-center text-muted-foreground text-xs leading-relaxed">{ERROR_BODY}</Text>

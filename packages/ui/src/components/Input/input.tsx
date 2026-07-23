@@ -216,7 +216,7 @@ export function Input({
   ref,
 }: InputProps) {
   const reduce = useReducedMotion();
-  const successColor = useThemeColor('success');
+  const successColor = useThemeColor('success-foreground');
   const placeholderColor = useThemeColor('muted-foreground');
   const controlled = valueProp !== undefined;
   const [internal, setInternal] = useState(defaultValue ?? '');

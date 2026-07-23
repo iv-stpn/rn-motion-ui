@@ -2,6 +2,7 @@ import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef
 import { Dimensions, type LayoutChangeEvent, Modal, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { Text } from '../Text/text';
@@ -130,7 +131,7 @@ export function PopoverTrigger({ children, accessibilityLabel, style, testID }: 
       accessibilityLabel={accessibilityLabel}
       testID={testID}
       onPress={onPress}
-      className="h-10 flex-row items-center justify-center gap-2 self-start rounded-full border border-border bg-card px-5"
+      className="h-10 flex-row items-center justify-center gap-2 self-start rounded-full border border-border bg-surface-3 px-5"
       style={style}
     >
       {typeof children === 'string' || typeof children === 'number' ? (
@@ -156,11 +157,13 @@ function resolveEnterY(reduce: boolean, side: PopoverSide): number {
 export type PopoverContentProps = {
   children: ReactNode;
   accessibilityLabel?: string;
+  /** Float level — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 4 */
+  elevation?: SurfaceLevel;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
 
-export function PopoverContent({ children, accessibilityLabel, style, testID }: PopoverContentProps) {
+export function PopoverContent({ children, accessibilityLabel, elevation = 4, style, testID }: PopoverContentProps) {
   const { open, setOpen, rect, side, align, gap, panelRadius, reduce } = usePopover('PopoverContent');
   const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
   const [panel, setPanel] = useState({ w: 0, h: 0 });
@@ -207,7 +210,7 @@ export function PopoverContent({ children, accessibilityLabel, style, testID }: 
               animate={{ opacity: measured ? 1 : 0, scale: 1, translateY: 0 }}
               exit={{ opacity: 0, scale: reduce ? 1 : 0.96, translateY: enterY }}
               transition={reduce ? { type: 'timing', duration: 120 } : { type: 'spring', stiffness: 300, damping: 26, mass: 0.8 }}
-              className="max-w-xs border border-border bg-card p-4"
+              className={`max-w-xs border border-border p-4 ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
               style={[{ position: 'absolute', left, top, borderRadius: panelRadius }, style]}
             >
               {children}

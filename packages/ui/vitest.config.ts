@@ -9,7 +9,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/moti/__tests__/setup.ts'],
-    include: ['src/moti/__tests__/**/*.test.ts', 'src/moti/__tests__/**/*.test.tsx'],
+    include: ['src/moti/__tests__/**/*.test.ts', 'src/moti/__tests__/**/*.test.tsx', 'src/lib/__tests__/**/*.test.ts'],
   },
   resolve: {
     alias: {

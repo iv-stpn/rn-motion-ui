@@ -127,6 +127,11 @@
       "types": "./src/components/Checkbox/checkbox.tsx",
       "default": "./src/components/Checkbox/checkbox.tsx"
     },
+    "./color": {
+      "source": "./src/lib/color.ts",
+      "types": "./src/lib/color.ts",
+      "default": "./src/lib/color.ts"
+    },
     "./command-palette": {
       "source": "./src/components/CommandPalette/command-palette.tsx",
       "types": "./src/components/CommandPalette/command-palette.tsx",
@@ -156,6 +161,11 @@
       "source": "./src/lib/ease.ts",
       "types": "./src/lib/ease.ts",
       "default": "./src/lib/ease.ts"
+    },
+    "./elevated": {
+      "source": "./src/lib/elevated.ts",
+      "types": "./src/lib/elevated.ts",
+      "default": "./src/lib/elevated.ts"
     },
     "./feedback-widget": {
       "source": "./src/components/FeedbackWidget/feedback-widget.tsx",

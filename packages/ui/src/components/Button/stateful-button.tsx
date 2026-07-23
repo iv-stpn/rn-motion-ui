@@ -313,7 +313,6 @@ function sleep(ms: number): Promise<void> {
 }
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: press machine + render tree are one cohesive unit
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: same — state machine branching is necessary complexity
 export function StatefulButton({
   state: controlledState,
   onPress,
@@ -416,14 +415,18 @@ export function StatefulButton({
   // Idle icon colour: matches the label on each variant.
   const idleIconColor = variantIconColor(v, colors);
 
-  // Terminal-state backdrop + text. White text on the saturated success/error
-  // fill reads on both light and dark — surface is near-black in dark mode, so
-  // it would vanish against the green/red backdrop there.
+  // Terminal-state backdrop + text: the soft status plate with its `*-foreground`
+  // triad partner as text/icon colour. The pair is tuned for legibility on the
+  // plate in both light and dark mode, so no hardcoded white is needed.
   let stateBackdropColor: string | undefined;
-  if (state === 'success') stateBackdropColor = colors.success;
-  else if (state === 'error') stateBackdropColor = colors.destructive;
-
-  const stateTextColor = state === 'success' || state === 'error' ? '#ffffff' /* theme-exempt */ : undefined;
+  let stateTextColor: string | undefined;
+  if (state === 'success') {
+    stateBackdropColor = colors.success;
+    stateTextColor = colors['success-foreground'];
+  } else if (state === 'error') {
+    stateBackdropColor = colors.danger;
+    stateTextColor = colors['danger-foreground'];
+  }
 
   // In success/error states, white text over the coloured backdrop keeps
   // every variant legible; fall back to the per-variant idle colour otherwise.

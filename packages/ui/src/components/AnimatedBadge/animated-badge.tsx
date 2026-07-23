@@ -31,10 +31,10 @@ const labelClass = cva('font-medium', {
   variants: {
     status: {
       neutral: 'text-muted-foreground',
-      info: 'text-primary',
-      success: 'text-success',
-      warning: 'text-warning',
-      danger: 'text-destructive',
+      info: 'text-info-foreground',
+      success: 'text-success-foreground',
+      warning: 'text-warning-foreground',
+      danger: 'text-danger-foreground',
       loading: 'text-primary',
     },
     size: { sm: 'text-xs', md: 'text-xs' },
@@ -43,47 +43,46 @@ const labelClass = cva('font-medium', {
 });
 
 // Stroke colours resolve the semantic token to a concrete value for
-// react-native-svg (SVG stroke can't read a Tailwind class). Chromatic
-// variants (success/warning/danger) use their token directly; neutral/info/
-// loading use the foreground/muted-foreground tokens so they invert in dark mode.
+// react-native-svg (SVG stroke can't read a Tailwind class). Status variants
+// use their `*-foreground` triad partner — tuned for legibility on the soft
+// status plate in both themes; neutral/loading use the muted-foreground/
+// foreground tokens so they invert in dark mode.
 function useIconColor(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
   return {
     neutral: colors['muted-foreground'],
-    info: colors.foreground,
-    success: colors.success,
-    warning: colors.warning,
-    danger: colors.destructive,
+    info: colors['info-foreground'],
+    success: colors['success-foreground'],
+    warning: colors['warning-foreground'],
+    danger: colors['danger-foreground'],
     loading: colors.foreground,
   };
 }
 
-// Animated container fill colours. Chromatic bg values are fixed-hue rgba
-// tints that look correct on both light and dark surfaces; neutral uses the
-// `muted` token so it inverts properly.
-// theme-exempt: chromatic tints are hue-locked to their semantic colour (success
-// green, warning yellow, etc.) and work on any background without inversion.
+// Animated container fill colours — the soft status plates from the token
+// triads. moti interpolates concrete colour values (not className swaps), so
+// the resolved token strings feed the animation directly and still track
+// light/dark because useThemeColors() re-resolves on theme change.
 function useBadgeBackground(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
   return {
     neutral: colors.muted,
-    info: 'rgba(17,17,17,0.10)' /* theme-exempt */,
-    success: 'rgba(34,197,94,0.10)' /* theme-exempt */,
-    warning: 'rgba(234,179,8,0.10)' /* theme-exempt */,
-    danger: 'rgba(229,72,77,0.10)' /* theme-exempt */,
-    loading: 'rgba(17,17,17,0.10)' /* theme-exempt */,
+    info: colors.info,
+    success: colors.success,
+    warning: colors.warning,
+    danger: colors.danger,
+    loading: colors.muted,
   };
 }
 
-// Animated border colours. Neutral uses the `border` token; chromatic variants
-// keep fixed-hue rgba so they read on any surface.
-// theme-exempt: same rationale as useBadgeBackground — chromatic border tints are hue-locked.
+// Animated border colours — the `*-border` member of each status triad;
+// neutral/loading use the shared hairline `border` token.
 function useBadgeBorder(colors: ReturnType<typeof useThemeColors>): Record<AnimatedBadgeStatus, string> {
   return {
     neutral: colors.border,
-    info: 'rgba(17,17,17,0.30)' /* theme-exempt */,
-    success: 'rgba(34,197,94,0.30)' /* theme-exempt */,
-    warning: 'rgba(234,179,8,0.30)' /* theme-exempt */,
-    danger: 'rgba(229,72,77,0.30)' /* theme-exempt */,
-    loading: 'rgba(17,17,17,0.30)' /* theme-exempt */,
+    info: colors['info-border'],
+    success: colors['success-border'],
+    warning: colors['warning-border'],
+    danger: colors['danger-border'],
+    loading: colors.border,
   };
 }
 

@@ -106,7 +106,7 @@ function BouncyAccordionRow({
           borderBottomRightRadius: bottomRadius,
         }}
         transition={reduce ? { type: 'timing', duration: 0 } : ROW_TRANSITION}
-        className="overflow-hidden bg-card"
+        className="overflow-hidden bg-surface-3"
         style={{ opacity: item.disabled ? 0.5 : 1 }}
       >
         <Pressable

@@ -7,6 +7,7 @@ import { useModalRender } from '../../hooks/use-modal-render';
 import { useMountEffect } from '../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_IN_OUT, SPRING_PANEL } from '../../lib/ease';
+import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 
@@ -43,6 +44,8 @@ export type HoverMenuProps = {
   /** Hover-close delay in ms (web only). @default 150 */
   closeDelay?: number;
   contentClassName?: string;
+  /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 5 */
+  elevation?: SurfaceLevel;
 };
 
 // Minimal web-only DOM types — the RN package tsconfig omits the DOM lib, so the
@@ -154,6 +157,7 @@ export function HoverMenu({
   openDelay = DEFAULT_OPEN_DELAY,
   closeDelay = DEFAULT_CLOSE_DELAY,
   contentClassName,
+  elevation = 5,
 }: HoverMenuProps) {
   const canHover = useHoverCapable();
   const reduce = useReducedMotion();
@@ -365,7 +369,7 @@ export function HoverMenu({
           transition={reduce ? REDUCED_TRANSITION : SPRING_PANEL}
           exitTransition={reduce ? REDUCED_TRANSITION : EXIT_TRANSITION}
           onDidAnimate={handleDidAnimate}
-          className={`z-50 overflow-hidden rounded-2xl border border-border bg-card shadow-modal ${contentClassName ?? ''}`}
+          className={`z-50 overflow-hidden rounded-2xl border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)} ${contentClassName ?? ''}`}
         >
           {resolvedContent}
         </MotiView>

@@ -61,7 +61,7 @@ const SHELL_SPRING = { type: 'spring', stiffness: 220, damping: 17, mass: 0.85 }
 // No flex `gap` here: the overflow clip is an always-mounted flex child, so a
 // track gap would render on both sides of it even at width 0 (phantom spacing
 // when collapsed). Inter-segment spacing is driven by explicit margins instead.
-const track = cva('relative flex-row items-center overflow-hidden rounded-full border border-border bg-card', {
+const track = cva('relative flex-row items-center overflow-hidden rounded-full border border-border bg-surface-2', {
   variants: { size: { sm: 'p-1', md: 'p-1.5' } },
   defaultVariants: { size: 'md' },
 });
@@ -69,7 +69,7 @@ const group = cva('flex-row items-center', {
   variants: { size: { sm: 'gap-1', md: 'gap-1.5' } },
   defaultVariants: { size: 'md' },
 });
-const action = cva('flex-row shrink-0 items-center justify-center rounded-full bg-surface', {
+const action = cva('flex-row shrink-0 items-center justify-center rounded-full bg-surface-3', {
   variants: { size: { sm: 'h-8 gap-1.5 px-3', md: 'h-9 gap-2 px-3.5' } },
   defaultVariants: { size: 'md' },
 });

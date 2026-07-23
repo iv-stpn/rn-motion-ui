@@ -77,21 +77,21 @@ const SIZES = {
     pad: 'p-1',
     valueGap: 'ml-1.5',
     lineH: 16,
-    valueLabel: 'text-xs font-medium tabular-nums text-neutral-500 dark:text-neutral-400',
+    valueLabel: 'text-xs font-medium tabular-nums text-muted-foreground',
   },
   md: {
     icon: 22,
     pad: 'p-0.5',
     valueGap: 'ml-2',
     lineH: 20,
-    valueLabel: 'text-sm font-medium tabular-nums text-neutral-500 dark:text-neutral-400',
+    valueLabel: 'text-sm font-medium tabular-nums text-muted-foreground',
   },
   lg: {
     icon: 28,
     pad: 'p-0.5',
     valueGap: 'ml-2.5',
     lineH: 20,
-    valueLabel: 'text-sm font-medium tabular-nums text-neutral-500 dark:text-neutral-400',
+    valueLabel: 'text-sm font-medium tabular-nums text-muted-foreground',
   },
 } as const;
 
@@ -262,7 +262,7 @@ export function StarRating({
   renderStar,
 }: StarRatingProps) {
   const reduce = useReducedMotion();
-  const amber = useThemeColor('warning');
+  const amber = useThemeColor('warning-foreground');
   const mutedStar = useThemeColor('border');
   const [internal, setInternal] = useState(defaultValue);
   const [burst, setBurst] = useState<{ key: number; index: number } | null>(null);

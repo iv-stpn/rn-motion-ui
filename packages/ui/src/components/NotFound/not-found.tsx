@@ -56,7 +56,7 @@ function NotFoundActions({
           onPress={onHome}
           className="h-11 items-center justify-center rounded-full bg-primary px-6"
         >
-          <Text className="font-medium text-primary-foreground text-sm">{homeLabel}</Text>
+          <Text className="font-medium text-foreground text-sm">{homeLabel}</Text>
         </Pressable>
       </MotiView>
 

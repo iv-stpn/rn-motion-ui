@@ -15,6 +15,7 @@ import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
+import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './elevated-button';
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -52,6 +53,14 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
   stateIconSize?: number;
   /** Stroke width of the success / error state icons. Default: 2.5. */
   stateIconStrokeWidth?: number;
+  /** Render the glossy elevated chip (top-down sheen + 1px rim + coloured drop
+   *  shadow) instead of the flat button. The chip keeps its gloss/shadow through the
+   *  whole machine rather than greying out, and each machine state adopts the
+   *  matching elevated variant: idle/loading use `variant`'s palette (the danger
+   *  family → `danger`, everything else → the monochrome `neutral` fill), success
+   *  switches to the glossy `success` chip and error to the glossy `danger` chip —
+   *  full fill, gloss, rim and coloured drop-shadow, not a flat overlay. Default: false. */
+  elevated?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -73,6 +82,93 @@ function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>
   if (v === 'primary' || v === 'danger') return c['primary-foreground'];
   if (v === 'outlineDanger' || v === 'ghostDanger') return c.danger;
   return c.foreground;
+}
+
+type WrapperResolved = {
+  /** Elevated palette to render, or null to render the flat Button. */
+  elevatedVariant: ElevatedVariant | null;
+  /** Idle icon/label colour — elevated fills follow their foreground (grey once
+   *  flattened); the flat Button follows its per-variant label colour. */
+  idleIconColor: string;
+  /** Keep the chip's full appearance while the machine holds it disabled
+   *  (loading/success/error) instead of dimming/flattening. */
+  keepAppearance: boolean;
+};
+
+type WrapperArgs = {
+  elevated: boolean;
+  v: ButtonVariant;
+  state: ButtonState;
+  disabled: boolean | undefined;
+  colors: ReturnType<typeof useThemeColors>;
+};
+
+// Folds the `elevated` flag + flat variant + machine state into what the wrapper
+// needs. Extracted so the component body stays under the complexity budget.
+function resolveWrapper({ elevated, v, state, disabled, colors }: WrapperArgs): WrapperResolved {
+  if (!elevated)
+    return {
+      elevatedVariant: null,
+      idleIconColor: variantIconColor(v, colors),
+      keepAppearance: state === 'success' || state === 'error',
+    };
+
+  // Each machine state adopts its own elevated variant so success/error get the
+  // real glossy chip (green/red fill, gloss, 1px rim and coloured drop-shadow
+  // ring) rather than a flat overlay on the neutral chip. idle/loading map the
+  // flat variant onto the palette: the danger family → the danger fill,
+  // everything else → the monochrome neutral fill.
+  const isDanger = v === 'danger' || v === 'outlineDanger' || v === 'ghostDanger';
+  const baseVariant: ElevatedVariant = isDanger ? 'danger' : 'neutral';
+  let elevatedVariant: ElevatedVariant = baseVariant;
+  if (state === 'success') elevatedVariant = 'success';
+  else if (state === 'error') elevatedVariant = 'danger';
+  // Only a genuinely disabled idle chip flattens to the muted plate (label greys
+  // out too); the machine states keep the chip's full appearance.
+  const genuinelyDisabled = Boolean(disabled) && state === 'idle';
+  return {
+    elevatedVariant,
+    idleIconColor: elevatedContentColor(elevatedVariant, genuinelyDisabled, colors),
+    keepAppearance: state !== 'idle',
+  };
+}
+
+type StateColors = {
+  /** Coloured plate behind the content on success/error, else undefined. */
+  backdropColor: string | undefined;
+  /** State-icon + dots-loader colour. */
+  iconColor: string;
+  /** Label colour handed to TextSlot, or undefined to keep the Tailwind class. */
+  textColor: string | undefined;
+};
+
+// Folds the machine state into the backdrop / icon / label colours. success and
+// error use their `*-foreground` partner as text/icon colour; idle/loading carry
+// no backdrop and follow the idle colour (elevated only — the flat Button leaves
+// the label undefined so `labelStyle` applies). Elevated mode paints no backdrop:
+// the chip switches to its `success`/`danger` variant, whose fill (and matching
+// gloss/rim/shadow ring) supplies the colour. The flat Button keeps the overlay,
+// since it has no variant to switch and crossfades the plate instead.
+function resolveStateColors(
+  state: ButtonState,
+  idleIconColor: string,
+  elevatedVariant: ElevatedVariant | null,
+  colors: ReturnType<typeof useThemeColors>,
+): StateColors {
+  const elevated = elevatedVariant !== null;
+  if (state === 'success')
+    return {
+      backdropColor: elevated ? undefined : colors.success,
+      iconColor: colors['success-foreground'],
+      textColor: colors['success-foreground'],
+    };
+  if (state === 'error')
+    return {
+      backdropColor: elevated ? undefined : colors.danger,
+      iconColor: colors['danger-foreground'],
+      textColor: colors['danger-foreground'],
+    };
+  return { backdropColor: undefined, iconColor: idleIconColor, textColor: elevated ? idleIconColor : undefined };
 }
 
 // ---------------------------------------------------------------------------
@@ -270,9 +366,11 @@ export function StatefulButton({
   icon,
   stateIconSize = 20,
   stateIconStrokeWidth = 2.5,
+  elevated = false,
   disabled,
   variant = 'primary',
   size = 'md',
+  shape,
   ...rest
 }: StatefulButtonProps) {
   const reduce = useReducedMotion();
@@ -353,26 +451,18 @@ export function StatefulButton({
   const v = variant ?? 'primary';
   const colors = useThemeColors();
 
-  // Idle icon colour: matches the label on each variant.
-  const idleIconColor = variantIconColor(v, colors);
+  // Elevated mode swaps the flat Button for the glossy ElevatedButton chip. The
+  // machine disables the button during loading/success/error, so the chip is told
+  // (via keepAppearance → noDisabledOpacity) to keep its gloss/fill instead of
+  // greying out — only a genuinely disabled idle button flattens to the muted plate.
+  const { elevatedVariant, idleIconColor, keepAppearance } = resolveWrapper({ elevated, v, state, disabled, colors });
 
-  // Terminal-state backdrop + text: the soft status plate with its `*-foreground`
-  // triad partner as text/icon colour. The pair is tuned for legibility on the
-  // plate in both light and dark mode, so no hardcoded white is needed.
-  let stateBackdropColor: string | undefined;
-  let stateTextColor: string | undefined;
-  if (state === 'success') {
-    stateBackdropColor = colors.success;
-    stateTextColor = colors['success-foreground'];
-  } else if (state === 'error') {
-    stateBackdropColor = colors.danger;
-    stateTextColor = colors['danger-foreground'];
-  }
-
-  // In success/error states, white text over the coloured backdrop keeps
-  // every variant legible; fall back to the per-variant idle colour otherwise.
-  const iconColor = stateTextColor ?? idleIconColor;
-  const backdropColor = stateBackdropColor;
+  // Backdrop / icon / label colours for the current state (see resolveStateColors).
+  const {
+    backdropColor,
+    iconColor,
+    textColor: resolvedTextColor,
+  } = resolveStateColors(state, idleIconColor, elevatedVariant, colors);
   // Slot wide enough to contain the icon with 6 px margin on each side, which
   // also acts as the gap between icon and label without needing an explicit gap
   // on the outer row (an explicit gap would show during the slot's width spring).
@@ -394,77 +484,93 @@ export function StatefulButton({
   if (state === 'loading') textKey = typeof children === 'string' ? `idle-${children}` : 'idle';
   else textKey = typeof stateText === 'string' ? `${state}-${stateText}` : state;
 
-  return (
-    <Button
-      variant={variant}
-      size={size}
-      disabled={disabled || isBusy || machineActive}
-      loading={false}
-      noDisabledOpacity={state === 'success' || state === 'error'}
-      backdropColor={backdropColor}
-      contentStyle={contentStyle}
-      onPress={handlePress}
-      {...rest}
-    >
-      {/* accessibilityLiveRegion mirrors the web's aria-live="polite" */}
-      <View accessible={false} accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <AnimatePresence>
-          {state === 'success' ? (
-            <IconSlot keyId="success-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
-              <Check size={stateIconSize} strokeWidth={stateIconStrokeWidth} color={iconColor} />
-            </IconSlot>
-          ) : null}
+  // Shared across both wrapper branches. `keepAppearance` maps onto the wrapper's
+  // skip-the-dim `noDisabledOpacity`: the flat Button keeps full opacity, the
+  // elevated chip keeps its gloss/fill while the machine holds it disabled.
+  const sharedProps = {
+    size: size ?? 'md',
+    shape: shape ?? 'rounded',
+    disabled: disabled || isBusy || machineActive,
+    loading: false as const,
+    noDisabledOpacity: keepAppearance,
+    backdropColor,
+    contentStyle,
+    onPress: handlePress,
+    ...rest,
+  };
 
-          {state === 'error' ? (
-            <IconSlot keyId="error-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
-              <AlertCircle size={stateIconSize} strokeWidth={stateIconStrokeWidth} color={iconColor} />
-            </IconSlot>
-          ) : null}
-        </AnimatePresence>
+  const content = (
+    // accessibilityLiveRegion mirrors the web's aria-live="polite"
+    <View accessible={false} accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <AnimatePresence>
+        {state === 'success' ? (
+          <IconSlot keyId="success-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
+            <Check size={stateIconSize} strokeWidth={stateIconStrokeWidth} color={iconColor} />
+          </IconSlot>
+        ) : null}
 
-        {/* Wrapper holds the text sizer open (preserving button width) and
+        {state === 'error' ? (
+          <IconSlot keyId="error-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
+            <AlertCircle size={stateIconSize} strokeWidth={stateIconStrokeWidth} color={iconColor} />
+          </IconSlot>
+        ) : null}
+      </AnimatePresence>
+
+      {/* Wrapper holds the text sizer open (preserving button width) and
             hosts the absolutely-centred dot overlay in loading state.
             No overflow:hidden here — dots bounce freely above the baseline. */}
-        <View style={{ position: 'relative' }}>
-          <MotiView animate={{ opacity: state === 'loading' ? 0 : 1 }} transition={{ type: 'timing', duration: 150 }}>
-            <TextSlot value={textKey} variant={v} size={size} reduce={reduce} textColor={stateTextColor}>
-              {stateText}
-            </TextSlot>
-          </MotiView>
-
-          <AnimatePresence>
-            {state === 'loading' ? (
-              <MotiView
-                key="dots-overlay"
-                from={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ type: 'timing', duration: 150 }}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  pointerEvents: 'none',
-                }}
-              >
-                <DotsLoader color={iconColor} reduce={reduce} />
-              </MotiView>
-            ) : null}
-          </AnimatePresence>
-        </View>
+      <View style={{ position: 'relative' }}>
+        <MotiView animate={{ opacity: state === 'loading' ? 0 : 1 }} transition={{ type: 'timing', duration: 150 }}>
+          <TextSlot value={textKey} variant={v} size={size} reduce={reduce} textColor={resolvedTextColor}>
+            {stateText}
+          </TextSlot>
+        </MotiView>
 
         <AnimatePresence>
-          {state === 'idle' && icon ? (
-            <IconSlot keyId="idle-icon" reduce={reduce}>
-              {icon}
-            </IconSlot>
+          {state === 'loading' ? (
+            <MotiView
+              key="dots-overlay"
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ type: 'timing', duration: 150 }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+              }}
+            >
+              <DotsLoader color={iconColor} reduce={reduce} />
+            </MotiView>
           ) : null}
         </AnimatePresence>
       </View>
+
+      <AnimatePresence>
+        {state === 'idle' && icon ? (
+          <IconSlot keyId="idle-icon" reduce={reduce}>
+            {icon}
+          </IconSlot>
+        ) : null}
+      </AnimatePresence>
+    </View>
+  );
+
+  if (elevatedVariant)
+    return (
+      <ElevatedButton variant={elevatedVariant} {...sharedProps}>
+        {content}
+      </ElevatedButton>
+    );
+
+  return (
+    <Button variant={variant} {...sharedProps}>
+      {content}
     </Button>
   );
 }

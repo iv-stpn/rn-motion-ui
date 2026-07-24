@@ -314,6 +314,7 @@ export function ElevatedButton({
   onPress,
   disabled,
   loading,
+  noDisabledOpacity = false,
   ripple = false,
   pressScale = 0.93,
   backdropColor,
@@ -331,12 +332,17 @@ export function ElevatedButton({
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const [hovered, setHovered] = useState(false);
   const isDisabled = Boolean(disabled || loading);
+  // Two axes: `isDisabled` blocks interaction (Pressable + press-scale), while
+  // `flatten` collapses the chip to the muted plate. `noDisabledOpacity` splits
+  // them so a non-interactive chip (e.g. StatefulButton mid-machine) keeps its
+  // gloss/fill/shadow instead of greying out.
+  const flatten = isDisabled && !noDisabledOpacity;
 
   // SVG gradient ids must be unique per instance (they land in one shared
   // document on web). useId can emit ':' which is illegal in url(#…), so strip it.
   const gradientId = useId().replace(/:/g, '');
 
-  const appearance = resolveAppearance({ variant, size, shape, hovered, isDisabled, colors });
+  const appearance = resolveAppearance({ variant, size, shape, hovered, isDisabled: flatten, colors });
   const { containerClass, spinnerColor, showHighlights, radius, boxShadow, wrapperBackground } = appearance;
 
   const { pressed, ripples, dims, onLayout, handlePressIn, handlePressOut } = usePressRipples({
@@ -413,4 +419,19 @@ export function ElevatedButton({
       </Pressable>
     </MotiView>
   );
+}
+
+/**
+ * Rest-state label/icon colour for an elevated variant, resolved from the same
+ * table the loading spinner uses so a consumer that renders its own content
+ * (e.g. StatefulButton's animated label + icons) matches the chip exactly. Pass
+ * `disabled` to get the muted-plate colour a flattened chip would show.
+ */
+// biome-ignore lint/style/useComponentExportOnlyModules: colour helper shares the elevated variant tables with the component; splitting it out would fragment tightly-coupled styling
+export function elevatedContentColor(
+  variant: ElevatedVariant,
+  disabled: boolean,
+  colors: ReturnType<typeof useThemeColors>,
+): string {
+  return spinnerColorFor(variant, disabled, colors);
 }

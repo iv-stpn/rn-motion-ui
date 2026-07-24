@@ -167,6 +167,11 @@
       "types": "./src/lib/elevated.ts",
       "default": "./src/lib/elevated.ts"
     },
+    "./elevated-button": {
+      "source": "./src/components/Button/elevated-button.tsx",
+      "types": "./src/components/Button/elevated-button.tsx",
+      "default": "./src/components/Button/elevated-button.tsx"
+    },
     "./feedback-widget": {
       "source": "./src/components/FeedbackWidget/feedback-widget.tsx",
       "types": "./src/components/FeedbackWidget/feedback-widget.tsx",

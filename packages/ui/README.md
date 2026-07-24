@@ -78,6 +78,7 @@ Subpaths are namespaced by category:
 | Subpath | Component / hook |
 | --- | --- |
 | `/button` | `Button` |
+| `/elevated-button` | `ElevatedButton` |
 | `/stateful-button` | `StatefulButton` |
 | `/switch` | `Switch` |
 | `/checkbox` | `Checkbox` |

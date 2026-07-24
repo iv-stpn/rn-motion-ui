@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Text } from '../Text/text';
-import { CardChoice } from './card-choice';
+import { CardChoice, CardChoiceGroup } from './card-choice';
 
 const meta = {
   title: 'Components/CardChoice',
@@ -50,28 +50,21 @@ export const Default: Story = {
 
 export const SingleSelect: Story = {
   render: () => {
-    const [selected, setSelected] = useState<'monthly' | 'yearly'>('monthly');
-    const chooseMonthly = useCallback(() => setSelected('monthly'), []);
-    const chooseYearly = useCallback(() => setSelected('yearly'), []);
+    const [plan, setPlan] = useState('monthly');
     return (
-      <View style={{ flexDirection: 'row', gap: 12, width: ROW_WIDTH }}>
-        <CardChoice
-          selected={selected === 'monthly'}
-          onPress={chooseMonthly}
-          subtitle={MONTHLY_SUB}
-          title={MONTHLY_TITLE}
-          numeric={true}
-        />
-        <CardChoice
-          selected={selected === 'yearly'}
-          onPress={chooseYearly}
-          subtitle={YEARLY_SUB}
-          title={YEARLY_TITLE}
-          badge={YEARLY_BADGE}
-          numeric={true}
-        />
-      </View>
+      <CardChoiceGroup value={plan} onValueChange={setPlan} style={{ width: ROW_WIDTH }}>
+        <CardChoice value="monthly" subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} numeric={true} />
+        <CardChoice value="yearly" subtitle={YEARLY_SUB} title={YEARLY_TITLE} badge={YEARLY_BADGE} numeric={true} />
+      </CardChoiceGroup>
     );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The shared indicator glides to whichever card matches the group value.
+    await userEvent.click(await canvas.findByText(YEARLY_TITLE));
+    await expect(await canvas.findByText(YEARLY_TITLE)).toBeVisible();
+    await userEvent.click(await canvas.findByText(MONTHLY_TITLE));
+    await expect(await canvas.findByText(MONTHLY_TITLE)).toBeVisible();
   },
 };
 

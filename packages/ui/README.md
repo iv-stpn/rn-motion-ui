@@ -155,7 +155,7 @@ This registers 13 semantic color tokens as Tailwind CSS utilities (`bg-primary`,
 | `primary-foreground` | `oklch(99% 0 0)` | `oklch(15% 0 0)` | Text on primary |
 | `secondary` | `oklch(97% 0 0)` | `oklch(18% 0 0)` | Secondary fills |
 | `secondary-foreground` | `oklch(15% 0 0)` | `oklch(96% 0 0)` | Text on secondary |
-| `destructive` | `oklch(62% 0.22 25)` | `oklch(66% 0.22 25)` | Error / danger states |
+| `danger` | `oklch(62% 0.22 25)` | `oklch(66% 0.22 25)` | Error / danger states |
 | `success` | `oklch(70% 0.18 155)` | `oklch(72% 0.18 155)` | Success states |
 | `warning` | `oklch(78% 0.18 75)` | `oklch(80% 0.18 75)` | Warning states |
 
@@ -208,7 +208,7 @@ Use `useThemeColors()` when you need several tokens at once:
 ```tsx
 import { useThemeColors } from 'rn-motion-ui/theme/use-theme-color';
 
-const { primary, destructive, success } = useThemeColors();
+const { primary, danger, success } = useThemeColors();
 ```
 
 ## License

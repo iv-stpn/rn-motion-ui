@@ -136,12 +136,13 @@ export function useMotify<Animate>({
   });
 
   // biome-ignore lint/plugin: presence unmount gate — must set isMounted.value and call safeToUnmount() as a side effect after the animated style is committed
+  // biome-ignore lint/correctness/useExhaustiveDependencies: isMounted.value, isPresent, hasExitStyle, reanimatedSafeToUnmount, and fromProp are all stable references that don't change across renders; the effect is only triggered by changes to the presence state
   useEffect(
     function allowUnMountIfMissingExit() {
       if (fromProp && isMounted.value === false) isMounted.value = true;
       if (!(isPresent || hasExitStyle)) reanimatedSafeToUnmount();
     },
-    [hasExitStyle, isPresent, reanimatedSafeToUnmount, isMounted.value, isMounted, fromProp],
+    [hasExitStyle, isPresent, reanimatedSafeToUnmount, fromProp],
   );
 
   return { style };

@@ -120,7 +120,7 @@ export function DynamicIsland({ view, compact, children, className, style, acces
         // expansion reads as unfurling downward out of the pill; justify-center
         // keeps it centered as the shell blooms symmetrically. position:relative
         // anchors the absolute exiting slots.
-        className={['bg-foreground', className].filter(Boolean).join(' ')}
+        className={['bg-black', className].filter(Boolean).join(' ')}
         style={[
           {
             borderRadius: RADIUS,

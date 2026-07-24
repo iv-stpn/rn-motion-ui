@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { useMountEffect } from '../../hooks/use-mount-effect';
+import { Text } from '../Text/text';
 import { TextShimmer } from './text-shimmer';
 
 const meta = {
@@ -23,8 +24,29 @@ type Story = StoryObj<typeof meta>;
 
 // Mirrors text-animation.preview.tsx: swap between two shimmer strings on a timer.
 const PHRASES = ['Loading with shimmer', 'Almost there…'];
+const DEFAULT_LABEL = 'default';
+const FASTER_LABEL = 'faster';
+const FASTER_TEXT = 'Faster shimmer';
 
 export default meta;
+
+export const AllVariants: Story = {
+  name: 'All variants',
+  render: (args) => (
+    <View style={{ gap: 24, alignItems: 'flex-start' }}>
+      <View style={{ gap: 8, alignItems: 'flex-start' }}>
+        <Text className="text-muted-foreground text-xs">{DEFAULT_LABEL}</Text>
+        <TextShimmer {...args} />
+      </View>
+      <View style={{ gap: 8, alignItems: 'flex-start' }}>
+        <Text className="text-muted-foreground text-xs">{FASTER_LABEL}</Text>
+        <TextShimmer {...args} duration={1.5}>
+          {FASTER_TEXT}
+        </TextShimmer>
+      </View>
+    </View>
+  ),
+};
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {

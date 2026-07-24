@@ -40,8 +40,47 @@ const _translateYOf = (el: Element, win: Window & typeof globalThis): number => 
 
 export default meta;
 
+/** Interactive demo: trigger loading → success / error transitions. */
+export const Interactive: Story = {
+  render: () => {
+    const [visible, setVisible] = useState(false);
+    const [state, setState] = useState<ActionFeedbackState>('loading');
+
+    const trigger = useCallback((outcome: 'success' | 'error') => {
+      setState('loading');
+      setVisible(true);
+      setTimeout(() => setState(outcome), 1800);
+    }, []);
+
+    const handleSuccess = useCallback(() => trigger('success'), [trigger]);
+    const handleError = useCallback(() => trigger('error'), [trigger]);
+    const handleClose = useCallback(() => setVisible(false), []);
+
+    return (
+      <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
+        <Button onPress={handleSuccess}>{SIMULATE_SUCCESS_LABEL}</Button>
+        <Button variant="secondary" onPress={handleError}>
+          {SIMULATE_ERROR_LABEL}
+        </Button>
+        <ActionFeedbackModal
+          visible={visible}
+          state={state}
+          loadingMessage="Processing…"
+          successLabel="Done!"
+          successMessage="The operation completed successfully."
+          errorTitle="Operation failed"
+          errorMessage="Something went wrong. Please try again."
+          dismissLabel="Dismiss"
+          onClose={handleClose}
+        />
+      </View>
+    );
+  },
+};
+
 /** Spinner with an optional loading message. */
 export const Loading: Story = {
+  name: 'Demo: Loading state',
   render: () => {
     const [visible, setVisible] = useState(false);
     const handleOpen = useCallback(() => setVisible(true), []);
@@ -83,6 +122,7 @@ export const Loading: Story = {
 
 /** Success state — auto-closes after 2.5 s in the real component. */
 export const Success: Story = {
+  name: 'Demo: Success state',
   render: () => {
     const [visible, setVisible] = useState(false);
     const handleOpen = useCallback(() => setVisible(true), []);
@@ -122,6 +162,7 @@ export const Success: Story = {
 
 /** Error state — dismissable via button or backdrop tap. */
 export const ErrorState: Story = {
+  name: 'Demo: Error state',
   render: () => {
     const [visible, setVisible] = useState(false);
     const handleOpen = useCallback(() => setVisible(true), []);
@@ -155,44 +196,6 @@ export const ErrorState: Story = {
     const vessel = svg?.parentElement?.parentElement;
     if (!(win && vessel)) throw new Error('morph vessel not found');
     await expect(win.getComputedStyle(vessel).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
-  },
-};
-
-/** Interactive demo: trigger loading → success / error transitions. */
-export const Interactive: Story = {
-  render: () => {
-    const [visible, setVisible] = useState(false);
-    const [state, setState] = useState<ActionFeedbackState>('loading');
-
-    const trigger = useCallback((outcome: 'success' | 'error') => {
-      setState('loading');
-      setVisible(true);
-      setTimeout(() => setState(outcome), 1800);
-    }, []);
-
-    const handleSuccess = useCallback(() => trigger('success'), [trigger]);
-    const handleError = useCallback(() => trigger('error'), [trigger]);
-    const handleClose = useCallback(() => setVisible(false), []);
-
-    return (
-      <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
-        <Button onPress={handleSuccess}>{SIMULATE_SUCCESS_LABEL}</Button>
-        <Button variant="secondary" onPress={handleError}>
-          {SIMULATE_ERROR_LABEL}
-        </Button>
-        <ActionFeedbackModal
-          visible={visible}
-          state={state}
-          loadingMessage="Processing…"
-          successLabel="Done!"
-          successMessage="The operation completed successfully."
-          errorTitle="Operation failed"
-          errorMessage="Something went wrong. Please try again."
-          dismissLabel="Dismiss"
-          onClose={handleClose}
-        />
-      </View>
-    );
   },
 };
 

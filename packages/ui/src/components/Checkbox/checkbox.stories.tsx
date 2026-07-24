@@ -14,19 +14,6 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 export default meta;
 
-export const Default: Story = {
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const box = await canvas.findByRole('checkbox');
-    await userEvent.click(box);
-    await expect(args.onCheckedChange).toHaveBeenCalledWith(true);
-  },
-};
-
-export const Checked: Story = { args: { checked: true } };
-export const Indeterminate: Story = { args: { checked: true, indeterminate: true, label: 'Select all (partial)' } };
-export const Disabled: Story = { args: { checked: true, disabled: true, label: 'Disabled' } };
-
 export const Interactive: Story = {
   render: (args) => {
     const [terms, setTerms] = useState(true);
@@ -39,3 +26,17 @@ export const Interactive: Story = {
     );
   },
 };
+
+export const Default: Story = {
+  name: 'Demo: Toggle on',
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const box = await canvas.findByRole('checkbox');
+    await userEvent.click(box);
+    await expect(args.onCheckedChange).toHaveBeenCalledWith(true);
+  },
+};
+
+export const Checked: Story = { args: { checked: true } };
+export const Indeterminate: Story = { args: { checked: true, indeterminate: true, label: 'Select all (partial)' } };
+export const Disabled: Story = { args: { checked: true, disabled: true, label: 'Disabled' } };

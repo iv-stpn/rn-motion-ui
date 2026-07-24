@@ -58,8 +58,14 @@ function OpenButton({ label = OPEN_SHEET_LABEL }: OpenButtonProps) {
 
 export default meta;
 
+/** User-openable sheet — open it and dismiss it yourself. */
+export const Interactive: Story = {
+  render: () => <OpenButton />,
+};
+
 /** Drag the handle or tap the overlay to dismiss. */
 export const Default: Story = {
+  name: 'Demo: Open the sheet',
   render: () => <OpenButton />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

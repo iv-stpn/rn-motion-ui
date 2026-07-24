@@ -62,7 +62,7 @@ function Demo({ variant }: DemoProps) {
 
 export default meta;
 
-export const Bar: Story = {
+export const Interactive: Story = {
   render: () => <Demo variant="bar" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

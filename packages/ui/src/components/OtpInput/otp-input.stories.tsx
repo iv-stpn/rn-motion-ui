@@ -27,7 +27,38 @@ type Story = StoryObj<typeof meta>;
 
 export default meta;
 
+export const Interactive: Story = {
+  render: (args) => {
+    const [value, setValue] = useState('');
+    const [status, setStatus] = useState<OTPStatus>('idle');
+    const handleChange = useCallback(
+      (v: string) => {
+        setValue(v);
+        if (status !== 'idle') setStatus('idle');
+      },
+      [status],
+    );
+    const handleComplete = useCallback((v: string) => setStatus(v === CODE ? 'success' : 'error'), []);
+    return (
+      <View style={{ alignItems: 'center' }}>
+        <OTPInput
+          {...args}
+          label="Verification code"
+          hint={`Enter ${CODE} to verify.`}
+          successMessage="Verified."
+          errorMessage="Wrong code, try again."
+          value={value}
+          status={status}
+          onChange={handleChange}
+          onComplete={handleComplete}
+        />
+      </View>
+    );
+  },
+};
+
 export const Default: Story = {
+  name: 'Demo: Type a code',
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const input = await canvas.findByRole('textbox');
@@ -40,6 +71,7 @@ export const Default: Story = {
 // Retyping a slot of an already-complete code keeps the value full-length while
 // its content changes, so onComplete must re-fire to let the parent re-validate.
 export const Retype: Story = {
+  name: 'Demo: Overwrite a digit',
   args: { defaultValue: '' },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
@@ -63,6 +95,7 @@ export const Retype: Story = {
 // Tapping any slot (not just the first empty one) moves the edit caret there, so
 // a previous digit can be re-selected and overwritten in place.
 export const ReselectCell: Story = {
+  name: 'Demo: Tap to reselect',
   args: { defaultValue: CODE },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
@@ -97,33 +130,3 @@ export const ErrorState: Story = {
   args: { defaultValue: '000000', status: 'error', errorMessage: 'Wrong code, try again.' },
 };
 export const Disabled: Story = { args: { defaultValue: '12', disabled: true } };
-
-export const Interactive: Story = {
-  render: (args) => {
-    const [value, setValue] = useState('');
-    const [status, setStatus] = useState<OTPStatus>('idle');
-    const handleChange = useCallback(
-      (v: string) => {
-        setValue(v);
-        if (status !== 'idle') setStatus('idle');
-      },
-      [status],
-    );
-    const handleComplete = useCallback((v: string) => setStatus(v === CODE ? 'success' : 'error'), []);
-    return (
-      <View style={{ alignItems: 'center' }}>
-        <OTPInput
-          {...args}
-          label="Verification code"
-          hint={`Enter ${CODE} to verify.`}
-          successMessage="Verified."
-          errorMessage="Wrong code, try again."
-          value={value}
-          status={status}
-          onChange={handleChange}
-          onComplete={handleComplete}
-        />
-      </View>
-    );
-  },
-};

@@ -64,7 +64,12 @@ function Demo({ size }: DemoProps) {
 
 export default meta;
 
+export const Interactive: Story = {
+  render: () => <Demo />,
+};
+
 export const Default: Story = {
+  name: 'Demo: Expand actions',
   render: () => <Demo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

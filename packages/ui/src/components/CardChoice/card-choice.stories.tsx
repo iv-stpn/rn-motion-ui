@@ -24,9 +24,26 @@ const YEARLY_BADGE = 'Save 20%';
 const SEAT_TEXT = 'Includes 1 seat';
 const handlePress = fn();
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the Interactive + SingleSelect stories
+function CardChoiceGroupDemo() {
+  const [plan, setPlan] = useState('monthly');
+  return (
+    <CardChoiceGroup value={plan} onValueChange={setPlan} style={{ width: ROW_WIDTH }}>
+      <CardChoice value="monthly" subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} numeric={true} />
+      <CardChoice value="yearly" subtitle={YEARLY_SUB} title={YEARLY_TITLE} badge={YEARLY_BADGE} numeric={true} />
+    </CardChoiceGroup>
+  );
+}
+
 export default meta;
 
+/** Controlled group playground — tap cards to move the shared indicator. */
+export const Interactive: Story = {
+  render: () => <CardChoiceGroupDemo />,
+};
+
 export const Default: Story = {
+  name: 'Demo: Select a card',
   render: () => (
     <View style={{ flexDirection: 'row', gap: 12, width: ROW_WIDTH }}>
       <CardChoice selected={true} onPress={handlePress} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} numeric={true} />
@@ -49,15 +66,8 @@ export const Default: Story = {
 };
 
 export const SingleSelect: Story = {
-  render: () => {
-    const [plan, setPlan] = useState('monthly');
-    return (
-      <CardChoiceGroup value={plan} onValueChange={setPlan} style={{ width: ROW_WIDTH }}>
-        <CardChoice value="monthly" subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} numeric={true} />
-        <CardChoice value="yearly" subtitle={YEARLY_SUB} title={YEARLY_TITLE} badge={YEARLY_BADGE} numeric={true} />
-      </CardChoiceGroup>
-    );
-  },
+  name: 'Demo: Switch selection',
+  render: () => <CardChoiceGroupDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // The shared indicator glides to whichever card matches the group value.

@@ -61,20 +61,8 @@ const GALLERY: LoaderVariant[] = [
 
 export default meta;
 
-export const Spinner: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    // The accessible progressbar role is always present regardless of variant.
-    await expect(await canvas.findByLabelText('Loading')).toBeInTheDocument();
-  },
-};
-
-export const Dots: Story = { args: { variant: 'dots' } };
-export const Bars: Story = { args: { variant: 'bars' } };
-export const Percent: Story = { args: { variant: 'percent' } };
-export const Scramble: Story = { args: { variant: 'scramble' } };
-
-export const Gallery: Story = {
+export const AllVariants: Story = {
+  name: 'All variants',
   render: (args) => (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 32, maxWidth: 520, justifyContent: 'center' }}>
       {GALLERY.map((variant) => (
@@ -88,3 +76,16 @@ export const Gallery: Story = {
     </View>
   ),
 };
+
+export const Spinner: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The accessible progressbar role is always present regardless of variant.
+    await expect(await canvas.findByLabelText('Loading')).toBeInTheDocument();
+  },
+};
+
+export const Dots: Story = { args: { variant: 'dots' } };
+export const Bars: Story = { args: { variant: 'bars' } };
+export const Percent: Story = { args: { variant: 'percent' } };
+export const Scramble: Story = { args: { variant: 'scramble' } };

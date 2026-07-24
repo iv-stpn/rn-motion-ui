@@ -62,7 +62,12 @@ function DockDemo({ onSelect }: DockDemoProps) {
 
 export default meta;
 
+export const Interactive: Story = {
+  render: () => <DockDemo />,
+};
+
 export const Default: Story = {
+  name: 'Demo: Select an item',
   render: () => <DockDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

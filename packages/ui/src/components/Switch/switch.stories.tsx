@@ -19,18 +19,6 @@ const noop = () => {
 
 export default meta;
 
-export const Default: Story = {
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const toggle = await canvas.findByRole('switch');
-    await userEvent.click(toggle);
-    await expect(args.onCheckedChange).toHaveBeenCalledWith(true);
-  },
-};
-
-export const On: Story = { args: { checked: true, label: 'On' } };
-export const Disabled: Story = { args: { checked: true, disabled: true, label: 'Disabled' } };
-
 export const Interactive: Story = {
   render: (args) => {
     const [on, setOn] = useState(true);
@@ -43,3 +31,16 @@ export const Interactive: Story = {
     );
   },
 };
+
+export const Default: Story = {
+  name: 'Demo: Toggle on',
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const toggle = await canvas.findByRole('switch');
+    await userEvent.click(toggle);
+    await expect(args.onCheckedChange).toHaveBeenCalledWith(true);
+  },
+};
+
+export const On: Story = { args: { checked: true, label: 'On' } };
+export const Disabled: Story = { args: { checked: true, disabled: true, label: 'Disabled' } };

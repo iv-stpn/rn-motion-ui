@@ -95,7 +95,7 @@ export default meta;
  * Default story: 4 items with left (Done/Pin) and right (Later/Trash) actions.
  * Swipe gesture is hard to simulate in play, so we verify items render correctly.
  */
-export const Default: Story = {
+export const Interactive: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -113,6 +113,7 @@ export const Default: Story = {
  * so they can be triggered by aria-label in storybook tests).
  */
 export const WithAction: Story = {
+  name: 'Demo: Trigger an action',
   render: (args) => (
     <View style={{ width: '100%' }}>
       <SwipeableList {...args} />

@@ -26,6 +26,19 @@ const LARGE_LABEL = 'Large';
 
 export default meta;
 
+export const AllElevations: Story = {
+  name: 'All elevations',
+  render: (args) => (
+    <View style={{ alignItems: 'stretch', flexDirection: 'column', gap: 16 }}>
+      {SURFACE_LEVELS.map((level) => (
+        <Card {...args} key={level} elevation={level} style={{ width: CARD_WIDTH }}>
+          <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>
+        </Card>
+      ))}
+    </View>
+  ),
+};
+
 export const Default: Story = {
   render: (args) => (
     <Card {...args} style={{ width: CARD_WIDTH }}>
@@ -47,18 +60,6 @@ export const Sizes: Story = {
       <Card {...args} size="lg" style={{ width: CARD_WIDTH }}>
         <Text className="font-semibold text-foreground text-sm">{LARGE_LABEL}</Text>
       </Card>
-    </View>
-  ),
-};
-
-export const Elevations: Story = {
-  render: (args) => (
-    <View style={{ alignItems: 'stretch', flexDirection: 'column', gap: 16 }}>
-      {SURFACE_LEVELS.map((level) => (
-        <Card {...args} key={level} elevation={level} style={{ width: CARD_WIDTH }}>
-          <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>
-        </Card>
-      ))}
     </View>
   ),
 };

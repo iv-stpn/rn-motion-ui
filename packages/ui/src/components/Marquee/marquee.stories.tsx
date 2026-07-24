@@ -36,7 +36,55 @@ const meta = {
 } satisfies Meta<typeof Marquee>;
 
 type Story = StoryObj<typeof meta>;
+
+const LEFT_LABEL = 'left';
+const RIGHT_LABEL = 'right';
+const UP_LABEL = 'up';
+const DOWN_LABEL = 'down';
+
 export default meta;
+
+export const AllVariants: Story = {
+  name: 'All variants',
+  render: (args) => (
+    <View style={{ gap: 20 }}>
+      <View style={{ gap: 8 }}>
+        <Text className="text-muted-foreground text-xs">{LEFT_LABEL}</Text>
+        <Marquee {...args} direction="left">
+          {LOGOS.map((l) => (
+            <Chip key={l} label={l} />
+          ))}
+        </Marquee>
+      </View>
+      <View style={{ gap: 8 }}>
+        <Text className="text-muted-foreground text-xs">{RIGHT_LABEL}</Text>
+        <Marquee {...args} direction="right">
+          {LOGOS.map((l) => (
+            <Chip key={l} label={l} />
+          ))}
+        </Marquee>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 20 }}>
+        <View style={{ gap: 8 }}>
+          <Text className="text-muted-foreground text-xs">{UP_LABEL}</Text>
+          <Marquee {...args} direction="up" style={{ height: 180 }}>
+            {LOGOS.map((l) => (
+              <Chip key={l} label={l} />
+            ))}
+          </Marquee>
+        </View>
+        <View style={{ gap: 8 }}>
+          <Text className="text-muted-foreground text-xs">{DOWN_LABEL}</Text>
+          <Marquee {...args} direction="down" style={{ height: 180 }}>
+            {LOGOS.map((l) => (
+              <Chip key={l} label={l} />
+            ))}
+          </Marquee>
+        </View>
+      </View>
+    </View>
+  ),
+};
 
 export const Horizontal: Story = {
   render: (args) => (

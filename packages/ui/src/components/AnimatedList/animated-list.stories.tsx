@@ -26,7 +26,7 @@ export default meta;
  * Adding and removing items animates each item in (height + opacity + rise)
  * and out (height collapse drives sibling reflow).
  */
-export const Default: Story = {
+export const Interactive: Story = {
   render: () => {
     const idRef = useRef(0);
     const make = useCallback((label: string): Item => {

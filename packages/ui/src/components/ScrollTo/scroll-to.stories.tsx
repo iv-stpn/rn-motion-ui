@@ -65,7 +65,21 @@ function Demo({ onPress }: DemoProps) {
 
 export default meta;
 
+export const Interactive: Story = {
+  render: (args) => (
+    <Demo
+      onPress={
+        args.onPress ??
+        (() => {
+          /* noop */
+        })
+      }
+    />
+  ),
+};
+
 export const Nav: Story = {
+  name: 'Demo: Scroll to a section',
   render: (args) => (
     <Demo
       onPress={

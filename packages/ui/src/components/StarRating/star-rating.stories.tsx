@@ -13,6 +13,13 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 export default meta;
 
+export const Interactive: Story = {
+  render: () => {
+    const [rating, setRating] = useState(0);
+    return <StarRating value={rating} onValueChange={setRating} showValue={true} />;
+  },
+};
+
 export const Default: Story = {};
 
 export const WithValue: Story = { args: { showValue: true } };
@@ -35,13 +42,6 @@ export const ReadOnly: Story = {
       <StarRating readOnly={true} value={4.3} showValue={true} max={10} />
     </View>
   ),
-};
-
-export const Controlled: Story = {
-  render: () => {
-    const [rating, setRating] = useState(0);
-    return <StarRating value={rating} onValueChange={setRating} showValue={true} />;
-  },
 };
 
 export const NoClear: Story = { args: { allowClear: false, defaultValue: 3 } };

@@ -77,7 +77,12 @@ function Demo() {
 
 export default meta;
 
+export const Interactive: Story = {
+  render: () => <Demo />,
+};
+
 export const Contained: Story = {
+  name: 'Demo: Scroll to top',
   render: () => <Demo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

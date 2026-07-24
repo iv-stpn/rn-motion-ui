@@ -49,22 +49,7 @@ function daysIn(month: number, year: number) {
 
 export default meta;
 
-export const Default: Story = {
-  render: (args) => (
-    <View style={{ width: 200 }}>
-      <WheelPicker {...args} defaultValue="Medium" accessibilityLabel="Size" />
-    </View>
-  ),
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    // Tapping a row snaps to it and emits the new value (drag-scroll isn't
-    // reproducible in jsdom/Chromium, so the row press stands in for a flick).
-    await userEvent.click(await canvas.findByRole('button', { name: 'X-Large' }));
-    await expect(args.onValueChange).toHaveBeenCalledWith('X-Large');
-  },
-};
-
-export const DateOfBirth: Story = {
+export const Interactive: Story = {
   render: () => {
     const [month, setMonth] = useState('June');
     const [year, setYear] = useState('2004');
@@ -116,6 +101,22 @@ export const DateOfBirth: Story = {
         </View>
       </View>
     );
+  },
+};
+
+export const Default: Story = {
+  name: 'Demo: Pick a size',
+  render: (args) => (
+    <View style={{ width: 200 }}>
+      <WheelPicker {...args} defaultValue="Medium" accessibilityLabel="Size" />
+    </View>
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    // Tapping a row snaps to it and emits the new value (drag-scroll isn't
+    // reproducible in jsdom/Chromium, so the row press stands in for a flick).
+    await userEvent.click(await canvas.findByRole('button', { name: 'X-Large' }));
+    await expect(args.onValueChange).toHaveBeenCalledWith('X-Large');
   },
 };
 

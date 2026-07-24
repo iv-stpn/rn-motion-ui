@@ -40,7 +40,12 @@ function PaletteDemo() {
 
 export default meta;
 
+export const Interactive: Story = {
+  render: () => <PaletteDemo />,
+};
+
 export const Default: Story = {
+  name: 'Demo: Type to filter',
   render: () => <PaletteDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -55,6 +60,7 @@ export const Default: Story = {
 };
 
 export const Filtered: Story = {
+  name: 'Demo: Select a command',
   render: () => <PaletteDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

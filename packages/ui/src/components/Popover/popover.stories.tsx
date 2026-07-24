@@ -26,10 +26,9 @@ const TOP_CENTER_DESC = 'Opens above the trigger, centered.';
 const MORE_OPTIONS = 'More options';
 const ALIGN_END_DESC = "Aligned to the trigger's end edge.";
 
-export default meta;
-
-export const Default: Story = {
-  render: () => (
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the Interactive + Default stories
+function PopoverDemo() {
+  return (
     <Popover side="bottom" align="start">
       <PopoverTrigger>{EDIT_PROFILE}</PopoverTrigger>
       <PopoverContent>
@@ -39,7 +38,19 @@ export const Default: Story = {
         </View>
       </PopoverContent>
     </Popover>
-  ),
+  );
+}
+
+export default meta;
+
+/** User-openable popover — tap the trigger to open it yourself. */
+export const Interactive: Story = {
+  render: () => <PopoverDemo />,
+};
+
+export const Default: Story = {
+  name: 'Demo: Open the popover',
+  render: () => <PopoverDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Tapping the trigger opens the popover; its content mounts in the RN Modal.

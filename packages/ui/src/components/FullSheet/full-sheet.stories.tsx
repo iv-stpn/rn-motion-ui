@@ -32,23 +32,32 @@ const CUSTOM_LAYOUT_BODY = 'No header, no padding — caller owns every pixel.';
 const LOCKED_BODY = 'Close button and back gesture are disabled. Programmatically close when done.';
 const COMPACT_BODY = 'Compact padding variant.';
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the Interactive + WithHeader stories
+function SheetDemo() {
+  const [visible, setVisible] = useState(false);
+  const handleOpen = useCallback(() => setVisible(true), []);
+  const handleClose = useCallback(() => setVisible(false), []);
+  return (
+    <View>
+      <Button onPress={handleOpen}>{OPEN_SHEET_LABEL}</Button>
+      <FullSheet visible={visible} onClose={handleClose} title="Settings" subtitle="Manage your preferences" showClose={true}>
+        <Text style={{ color: '#6b7280', lineHeight: 22 }}>{BODY_TEXT}</Text>
+      </FullSheet>
+    </View>
+  );
+}
+
 export default meta;
+
+/** User-openable standard sheet — open it and close it yourself. */
+export const Interactive: Story = {
+  render: () => <SheetDemo />,
+};
 
 /** Standard sheet with title and close button. */
 export const WithHeader: Story = {
-  render: () => {
-    const [visible, setVisible] = useState(false);
-    const handleOpen = useCallback(() => setVisible(true), []);
-    const handleClose = useCallback(() => setVisible(false), []);
-    return (
-      <View>
-        <Button onPress={handleOpen}>{OPEN_SHEET_LABEL}</Button>
-        <FullSheet visible={visible} onClose={handleClose} title="Settings" subtitle="Manage your preferences" showClose={true}>
-          <Text style={{ color: '#6b7280', lineHeight: 22 }}>{BODY_TEXT}</Text>
-        </FullSheet>
-      </View>
-    );
-  },
+  name: 'Demo: Open and close',
+  render: () => <SheetDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Open the sheet.

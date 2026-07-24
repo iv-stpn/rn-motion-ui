@@ -67,7 +67,7 @@ function Demo({ once }: DemoProps) {
 
 export default meta;
 
-export const RevealOnce: Story = {
+export const Interactive: Story = {
   render: () => <Demo once={true} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

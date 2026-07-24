@@ -72,7 +72,13 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 export default meta;
 
+export const Interactive: Story = {
+  name: 'Interactive',
+  render: (args) => <AnimationsGallery {...args} />,
+};
+
 export const Blur: Story = {
+  name: 'Demo: Copy to clipboard',
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('button');
@@ -91,6 +97,7 @@ export const Cascade: Story = {
 };
 
 export const IconOnly: Story = {
+  name: 'Demo: Toggle theme',
   args: { items: THEME_ITEMS, variant: 'outline', size: 'icon', iconOnly: true },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
@@ -98,8 +105,4 @@ export const IconOnly: Story = {
     await userEvent.click(button);
     await expect(args.onValueChange).toHaveBeenCalledWith('dark', expect.objectContaining({ id: 'dark' }));
   },
-};
-
-export const Animations: Story = {
-  render: (args) => <AnimationsGallery {...args} />,
 };

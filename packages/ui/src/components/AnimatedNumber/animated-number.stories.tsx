@@ -27,9 +27,33 @@ type Story = StoryObj<typeof meta>;
 const MRR_LABEL = 'Monthly recurring revenue';
 const MRR_DELTA = '+12.4% vs last month';
 const ACTIVE_USERS_LABEL = 'Active users';
+const PLAIN_LABEL = 'plain';
+const CURRENCY_LABEL = 'currency';
+const STATIC_LABEL = 'static (no roll)';
 const formatCount = (n: number) => Math.round(n).toLocaleString();
+const formatCurrency = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
 export default meta;
+
+export const AllVariants: Story = {
+  name: 'All variants',
+  render: (args) => (
+    <View style={{ alignItems: 'center', gap: 24 }}>
+      <View style={{ alignItems: 'center', gap: 4 }}>
+        <Text className="text-muted-foreground text-xs">{PLAIN_LABEL}</Text>
+        <AnimatedNumber {...args} />
+      </View>
+      <View style={{ alignItems: 'center', gap: 4 }}>
+        <Text className="text-muted-foreground text-xs">{CURRENCY_LABEL}</Text>
+        <AnimatedNumber {...args} format={formatCurrency} />
+      </View>
+      <View style={{ alignItems: 'center', gap: 4 }}>
+        <Text className="text-muted-foreground text-xs">{STATIC_LABEL}</Text>
+        <AnimatedNumber {...args} value={42} startOnView={false} />
+      </View>
+    </View>
+  ),
+};
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {

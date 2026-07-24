@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ArrowRight, Download } from '../../lib/icons';
+import { Text } from '../Text/text';
 import { ElevatedButton } from './elevated-button';
 
 const meta = {
@@ -35,12 +37,33 @@ const VARIANT_LABELS: Record<(typeof VARIANTS)[number], string> = {
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' };
 const CONTINUE_LABEL = 'Continue';
 const DOWNLOAD_LABEL = 'Download';
+const pressedLabel = (n: number) => `Pressed ${n} times`;
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function ElevatedButtonPlayground(args: ComponentProps<typeof ElevatedButton>) {
+  const [count, setCount] = useState(0);
+  const handlePress = useCallback(() => {
+    setCount((n) => n + 1);
+    args.onPress?.();
+  }, [args.onPress]);
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+      <ElevatedButton {...args} onPress={handlePress} />
+      <Text className="text-muted-foreground text-sm">{pressedLabel(count)}</Text>
+    </View>
+  );
+}
 
 export default meta;
+
+export const Interactive: Story = {
+  render: (args) => <ElevatedButtonPlayground {...args} />,
+};
 
 // The glossy filled chip: white sheen + 1px rim highlight + a drop shadow whose
 // ring is the fill darkened toward black. Hover lifts the gloss (.16 → .24).
 export const Neutral: Story = {
+  name: 'Demo: Press to confirm',
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('button');

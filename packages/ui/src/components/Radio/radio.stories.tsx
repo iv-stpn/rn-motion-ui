@@ -26,18 +26,6 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 export default meta;
 
-export const Default: Story = {
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    // Select Starter by its accessible name; the change fires with its value.
-    const starter = await canvas.findByRole('radio', { name: 'Starter — free' });
-    await userEvent.click(starter);
-    await expect(args.onValueChange).toHaveBeenCalledWith('starter');
-  },
-};
-
-export const Horizontal: Story = { args: { orientation: 'horizontal' } };
-
 export const Interactive: Story = {
   render: (args) => {
     const [plan, setPlan] = useState('pro');
@@ -51,3 +39,16 @@ export const Interactive: Story = {
     );
   },
 };
+
+export const Default: Story = {
+  name: 'Demo: Select an option',
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    // Select Starter by its accessible name; the change fires with its value.
+    const starter = await canvas.findByRole('radio', { name: 'Starter — free' });
+    await userEvent.click(starter);
+    await expect(args.onValueChange).toHaveBeenCalledWith('starter');
+  },
+};
+
+export const Horizontal: Story = { args: { orientation: 'horizontal' } };

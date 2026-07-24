@@ -212,7 +212,12 @@ function MorphingModalDemo({ placement }: MorphingModalDemoProps) {
 
 export default meta;
 
+export const Interactive: Story = {
+  render: () => <MorphingModalDemo placement="center" />,
+};
+
 export const Default: Story = {
+  name: 'Demo: Open and morph',
   render: () => <MorphingModalDemo placement="bottom" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -220,8 +225,4 @@ export const Default: Story = {
     await userEvent.click(await canvas.findByText(OPEN_LABEL));
     await expect(await screen.findByText(OPTIONS_TITLE)).toBeTruthy();
   },
-};
-
-export const Centered: Story = {
-  render: () => <MorphingModalDemo placement="center" />,
 };

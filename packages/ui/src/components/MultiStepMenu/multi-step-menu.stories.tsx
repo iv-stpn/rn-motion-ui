@@ -219,8 +219,18 @@ export default meta;
 
 // ── Stories ────────────────────────────────────────────────────────────────
 
+/** Interactive — responsive layout that switches on window width, in a sliding sheet. */
+export const Interactive: Story = {
+  render: () => {
+    const { width } = useWindowDimensions();
+    const isWideScreen = width >= 640;
+    return <MultiStepSheetStory isWideScreen={isWideScreen} defaultPath={isWideScreen ? ['account'] : undefined} />;
+  },
+};
+
 /** Wide-screen layout (sidebar + content pane) in a sliding sheet. */
 export const WideScreen: Story = {
+  name: 'Demo: Navigate sections',
   render: () => <MultiStepSheetStory isWideScreen={true} defaultPath={['account']} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -237,13 +247,4 @@ export const WideScreen: Story = {
 /** Small-screen layout (stacked navigation, full-height panes) in a sliding sheet. */
 export const SmallScreen: Story = {
   render: () => <MultiStepSheetStory isWideScreen={false} />,
-};
-
-/** Responsive — switches layout based on window width, in a sliding sheet. */
-export const Responsive: Story = {
-  render: () => {
-    const { width } = useWindowDimensions();
-    const isWideScreen = width >= 640;
-    return <MultiStepSheetStory isWideScreen={isWideScreen} defaultPath={isWideScreen ? ['account'] : undefined} />;
-  },
 };

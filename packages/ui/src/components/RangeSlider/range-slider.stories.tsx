@@ -31,18 +31,6 @@ const DRAG_HINT = 'Drag the handle';
 
 export default meta;
 
-export const Default: Story = {
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const slider = await canvas.findByRole('slider');
-    await userEvent.click(slider);
-    await expect(args.onValueChange).toHaveBeenCalled();
-  },
-};
-
-export const NoTicks: Story = { args: { showTicks: false, step: 1 } };
-export const Disabled: Story = { args: { disabled: true, defaultValue: 60 } };
-
 export const Interactive: Story = {
   render: (args) => {
     const [value, setValue] = useState(40);
@@ -59,3 +47,16 @@ export const Interactive: Story = {
     );
   },
 };
+
+export const Default: Story = {
+  name: 'Demo: Adjust the value',
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const slider = await canvas.findByRole('slider');
+    await userEvent.click(slider);
+    await expect(args.onValueChange).toHaveBeenCalled();
+  },
+};
+
+export const NoTicks: Story = { args: { showTicks: false, step: 1 } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: 60 } };

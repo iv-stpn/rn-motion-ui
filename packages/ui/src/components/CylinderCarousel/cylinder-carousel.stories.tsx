@@ -101,7 +101,7 @@ function VariantDemo() {
 
 export default meta;
 
-export const Default: Story = {
+export const Interactive: Story = {
   render: (args) => (
     <View style={{ width: 480, paddingVertical: 24 }}>
       <CylinderCarousel {...args} testID="cylinder" height={200}>

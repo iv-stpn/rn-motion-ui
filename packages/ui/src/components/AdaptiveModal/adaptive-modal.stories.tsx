@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
-import { AdaptiveModal } from './adaptive-modal';
+import { AdaptiveModal, type LargeScreenMode, type SmallScreenMode } from './adaptive-modal';
 
 const meta = {
   title: 'Components/AdaptiveModal',
@@ -24,31 +24,69 @@ const OPEN_SHEET_LABEL = 'Open bottom sheet';
 const OPEN_COMPACT_LABEL = 'Open compact modal';
 const CLOSE_LABEL = 'Close';
 
+type ModalDemoProps = {
+  triggerLabel: string;
+  title: string;
+  subtitle?: string;
+  mode: LargeScreenMode | SmallScreenMode;
+  isWideScreen: boolean;
+  compact?: boolean;
+};
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the Interactive + variant stories
+function ModalDemo({ triggerLabel, title, subtitle, mode, isWideScreen, compact = false }: ModalDemoProps) {
+  const [visible, setVisible] = useState(false);
+  const handleOpen = useCallback(() => setVisible(true), []);
+  const handleClose = useCallback(() => setVisible(false), []);
+  const largeScreenMode: LargeScreenMode = mode === 'rightDrawer' ? 'rightDrawer' : 'modal';
+  const smallScreenMode: SmallScreenMode = mode === 'bottomSheet' ? 'bottomSheet' : 'fullSheet';
+  return (
+    <View>
+      <Button onPress={handleOpen}>{triggerLabel}</Button>
+      <AdaptiveModal
+        visible={visible}
+        onClose={handleClose}
+        title={title}
+        subtitle={subtitle}
+        showClose={true}
+        isWideScreen={isWideScreen}
+        largeScreenMode={largeScreenMode}
+        smallScreenMode={smallScreenMode}
+        compact={compact}
+      >
+        <Text style={{ color: '#6b7280', lineHeight: 22 }}>{BODY}</Text>
+      </AdaptiveModal>
+    </View>
+  );
+}
+
 export default meta;
+
+/** User-navigable centered desktop panel — open and close it yourself. */
+export const Interactive: Story = {
+  render: () => (
+    <ModalDemo
+      triggerLabel={OPEN_MODAL_LABEL}
+      title="Settings"
+      subtitle="Manage your preferences"
+      mode="modal"
+      isWideScreen={true}
+    />
+  ),
+};
 
 /** Centered desktop panel (largeScreenMode="modal"), forced wide. */
 export const WideModal: Story = {
-  render: () => {
-    const [visible, setVisible] = useState(false);
-    const handleOpen = useCallback(() => setVisible(true), []);
-    const handleClose = useCallback(() => setVisible(false), []);
-    return (
-      <View>
-        <Button onPress={handleOpen}>{OPEN_MODAL_LABEL}</Button>
-        <AdaptiveModal
-          visible={visible}
-          onClose={handleClose}
-          title="Settings"
-          subtitle="Manage your preferences"
-          showClose={true}
-          isWideScreen={true}
-          largeScreenMode="modal"
-        >
-          <Text style={{ color: '#6b7280', lineHeight: 22 }}>{BODY}</Text>
-        </AdaptiveModal>
-      </View>
-    );
-  },
+  name: 'Demo: Open and close',
+  render: () => (
+    <ModalDemo
+      triggerLabel={OPEN_MODAL_LABEL}
+      title="Settings"
+      subtitle="Manage your preferences"
+      mode="modal"
+      isWideScreen={true}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Open the modal.
@@ -62,74 +100,23 @@ export const WideModal: Story = {
 
 /** Right-edge drawer (largeScreenMode="rightDrawer"), forced wide. */
 export const RightDrawer: Story = {
-  render: () => {
-    const [visible, setVisible] = useState(false);
-    const handleOpen = useCallback(() => setVisible(true), []);
-    const handleClose = useCallback(() => setVisible(false), []);
-    return (
-      <View>
-        <Button onPress={handleOpen}>{OPEN_DRAWER_LABEL}</Button>
-        <AdaptiveModal
-          visible={visible}
-          onClose={handleClose}
-          title="Filters"
-          subtitle="Refine the results"
-          showClose={true}
-          isWideScreen={true}
-          largeScreenMode="rightDrawer"
-        >
-          <Text style={{ color: '#6b7280', lineHeight: 22 }}>{BODY}</Text>
-        </AdaptiveModal>
-      </View>
-    );
-  },
+  render: () => (
+    <ModalDemo
+      triggerLabel={OPEN_DRAWER_LABEL}
+      title="Filters"
+      subtitle="Refine the results"
+      mode="rightDrawer"
+      isWideScreen={true}
+    />
+  ),
 };
 
 /** Partial bottom sheet (smallScreenMode="bottomSheet"), forced narrow. */
 export const BottomSheet: Story = {
-  render: () => {
-    const [visible, setVisible] = useState(false);
-    const handleOpen = useCallback(() => setVisible(true), []);
-    const handleClose = useCallback(() => setVisible(false), []);
-    return (
-      <View>
-        <Button onPress={handleOpen}>{OPEN_SHEET_LABEL}</Button>
-        <AdaptiveModal
-          visible={visible}
-          onClose={handleClose}
-          title="Quick actions"
-          showClose={true}
-          isWideScreen={false}
-          smallScreenMode="bottomSheet"
-        >
-          <Text style={{ color: '#6b7280', lineHeight: 22 }}>{BODY}</Text>
-        </AdaptiveModal>
-      </View>
-    );
-  },
+  render: () => <ModalDemo triggerLabel={OPEN_SHEET_LABEL} title="Quick actions" mode="bottomSheet" isWideScreen={false} />,
 };
 
 /** Compact centered panel — tighter padding. */
 export const Compact: Story = {
-  render: () => {
-    const [visible, setVisible] = useState(false);
-    const handleOpen = useCallback(() => setVisible(true), []);
-    const handleClose = useCallback(() => setVisible(false), []);
-    return (
-      <View>
-        <Button onPress={handleOpen}>{OPEN_COMPACT_LABEL}</Button>
-        <AdaptiveModal
-          visible={visible}
-          onClose={handleClose}
-          title="Confirm"
-          showClose={true}
-          isWideScreen={true}
-          largeScreenMode="modal"
-          compact={true}
-        >
-          <Text style={{ color: '#6b7280', lineHeight: 22 }}>{BODY}</Text>
-        </AdaptiveModal>
-      </View>
-    );
-  },
+  render: () => <ModalDemo triggerLabel={OPEN_COMPACT_LABEL} title="Confirm" mode="modal" isWideScreen={true} compact={true} />,
 };

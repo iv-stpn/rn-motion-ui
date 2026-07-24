@@ -62,7 +62,12 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 export default meta;
 
+export const Interactive: Story = {
+  args: { defaultValue: null },
+};
+
 export const Default: Story = {
+  name: 'Demo: Expand a row',
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     // A closed row toggles open on press (aria-expanded flips true).
@@ -72,10 +77,6 @@ export const Default: Story = {
     await expect(args.onValueChange).toHaveBeenCalledWith('brief');
     await expect(brief).toHaveAttribute('aria-expanded', 'true');
   },
-};
-
-export const AllClosed: Story = {
-  args: { defaultValue: null },
 };
 
 export const NotCollapsible: Story = {

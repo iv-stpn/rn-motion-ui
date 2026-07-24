@@ -22,8 +22,38 @@ const PANGRAM = 'The quick brown fox jumps over the lazy dog';
 const AMOUNTS = ['$1,234.50', '$42.00', '$999.99', '$12,345.67'];
 const PROPORTIONAL_LABEL = 'proportional';
 const NUMERIC_LABEL = 'numeric';
+const SIZES_LABEL = 'sizes';
+const WEIGHTS_LABEL = 'weights';
 
 export default meta;
+
+export const AllVariants: Story = {
+  name: 'All variants',
+  render: (args) => (
+    <View style={{ gap: 24, alignItems: 'flex-start' }}>
+      <View style={{ gap: 8, alignItems: 'flex-start' }}>
+        <Text size="xs" className="text-muted-foreground">
+          {SIZES_LABEL}
+        </Text>
+        {SIZES.map((size) => (
+          <Text {...args} key={size} size={size}>
+            {PANGRAM}
+          </Text>
+        ))}
+      </View>
+      <View style={{ gap: 8, alignItems: 'flex-start' }}>
+        <Text size="xs" className="text-muted-foreground">
+          {WEIGHTS_LABEL}
+        </Text>
+        {WEIGHTS.map((weight) => (
+          <Text {...args} key={weight} weight={weight} size="lg">
+            {weight}
+          </Text>
+        ))}
+      </View>
+    </View>
+  ),
+};
 
 export const Default: Story = {};
 

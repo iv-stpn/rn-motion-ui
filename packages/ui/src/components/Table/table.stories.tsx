@@ -365,16 +365,23 @@ export default meta;
 // ─── Default ─────────────────────────────────────────────────────────────────
 // 1000 rows, sort by mrr desc initially, selectable
 
+const DEFAULT_STORY_ARGS = {
+  data: buildPeople(1000),
+  columns: DEFAULT_COLUMNS,
+  selectable: true,
+  defaultSort: { key: 'mrr', direction: 'desc' },
+  height: 420,
+  rowHeight: 52,
+} satisfies Partial<TableProps<Person>>;
+
+/** User-driven sortable, selectable grid — sort columns and select rows yourself. */
+export const Interactive: Story = {
+  args: { ...DEFAULT_STORY_ARGS, testID: 'table-interactive' },
+};
+
 export const Default: Story = {
-  args: {
-    data: buildPeople(1000),
-    columns: DEFAULT_COLUMNS,
-    selectable: true,
-    defaultSort: { key: 'mrr', direction: 'desc' },
-    height: 420,
-    rowHeight: 52,
-    testID: 'table-default',
-  },
+  name: 'Demo: Sort a column',
+  args: { ...DEFAULT_STORY_ARGS, testID: 'table-default' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -490,6 +497,7 @@ function SmallScreenTableStory() {
 }
 
 export const Editable: Story = {
+  name: 'Demo: Edit a cell',
   render: () => <EditableTableStory />,
   args: {
     // render override supplies its own data; placeholders satisfy Story typing
@@ -511,6 +519,7 @@ export const Editable: Story = {
 };
 
 export const SmallScreen: Story = {
+  name: 'Demo: Toggle card view',
   render: () => <SmallScreenTableStory />,
   args: {
     data: [],
@@ -564,6 +573,7 @@ function PaginationTableStory() {
 }
 
 export const Pagination: Story = {
+  name: 'Demo: Next page',
   render: () => <PaginationTableStory />,
   args: { data: [], columns: [] },
   play: async ({ canvasElement }) => {
@@ -628,6 +638,7 @@ function LoadMoreTableStory() {
 }
 
 export const LoadMore: Story = {
+  name: 'Demo: Load more',
   render: () => <LoadMoreTableStory />,
   args: { data: [], columns: [] },
   play: async ({ canvasElement }) => {
@@ -645,6 +656,7 @@ export const LoadMore: Story = {
 // as plain text with no sort affordance even when column.sortable is true.
 
 export const SortableOff: Story = {
+  name: 'Demo: Sorting disabled',
   args: {
     data: buildPeople(20),
     // All three columns carry sortable:true — the global flag overrides them.

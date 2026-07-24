@@ -16,40 +16,6 @@ type Story = StoryObj<typeof meta>;
 
 export default meta;
 
-export const Default: Story = {
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const input = await canvas.findByRole('textbox');
-    await userEvent.type(input, 'ada');
-    await expect(args.onChange).toHaveBeenCalled();
-  },
-};
-
-export const WithLeftIcon: Story = {
-  args: { label: 'Email', leftIcon: <Mail size={16} color="#737373" /> },
-};
-
-export const ErrorState: Story = {
-  name: 'Error',
-  args: {
-    label: 'Email',
-    value: 'not-an-email',
-    error: 'Enter a valid email address.',
-    leftIcon: <Mail size={16} color="#737373" />,
-  },
-};
-
-export const Success: Story = {
-  args: {
-    label: 'Search',
-    value: 'Ada',
-    success: true,
-    leftIcon: <Search size={16} color="#737373" />,
-  },
-};
-
-export const Disabled: Story = { args: { label: 'Email', value: 'you@example.com', disabled: true } };
-
 export const Interactive: Story = {
   render: (args) => {
     const [email, setEmail] = useState('');
@@ -100,3 +66,38 @@ export const Interactive: Story = {
     );
   },
 };
+
+export const Default: Story = {
+  name: 'Demo: Type an email',
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const input = await canvas.findByRole('textbox');
+    await userEvent.type(input, 'ada');
+    await expect(args.onChange).toHaveBeenCalled();
+  },
+};
+
+export const WithLeftIcon: Story = {
+  args: { label: 'Email', leftIcon: <Mail size={16} color="#737373" /> },
+};
+
+export const ErrorState: Story = {
+  name: 'Error',
+  args: {
+    label: 'Email',
+    value: 'not-an-email',
+    error: 'Enter a valid email address.',
+    leftIcon: <Mail size={16} color="#737373" />,
+  },
+};
+
+export const Success: Story = {
+  args: {
+    label: 'Search',
+    value: 'Ada',
+    success: true,
+    leftIcon: <Search size={16} color="#737373" />,
+  },
+};
+
+export const Disabled: Story = { args: { label: 'Email', value: 'you@example.com', disabled: true } };

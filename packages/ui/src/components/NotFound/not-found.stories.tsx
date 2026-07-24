@@ -20,7 +20,7 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 export default meta;
 
-export const Glitch: Story = {
+export const Interactive: Story = {
   render: (args) => <NotFoundGlitch {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

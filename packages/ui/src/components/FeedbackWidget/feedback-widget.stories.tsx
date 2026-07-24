@@ -89,12 +89,17 @@ function InteractiveDemo() {
 
 export default meta;
 
+export const Interactive: Story = {
+  render: () => <InteractiveDemo />,
+};
+
 /**
  * Two live widgets: the bottom-right one submits successfully, the bottom-left
  * one fails the first attempt then recovers on retry. Open either, type a
  * message and submit to watch the real success / error / recovery flow.
  */
 export const Default: Story = {
+  name: 'Demo: Submit feedback',
   render: () => {
     const success = useSuccessSubmit();
     const failThenRecover = useFailThenRecoverSubmit();
@@ -126,6 +131,7 @@ export const Default: Story = {
  * error view; tapping "Try again" retries and succeeds.
  */
 export const ErrorRecovery: Story = {
+  name: 'Demo: Error then recover',
   render: () => {
     const failThenRecover = useFailThenRecoverSubmit();
     return (
@@ -158,8 +164,4 @@ export const BottomLeft: Story = {
       </AppSurface>
     );
   },
-};
-
-export const Interactive: Story = {
-  render: () => <InteractiveDemo />,
 };

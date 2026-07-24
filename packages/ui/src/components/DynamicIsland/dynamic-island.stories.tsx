@@ -146,7 +146,13 @@ function IslandDemo() {
 
 export default meta;
 
+/** User-driven island — tap the buttons to switch between call, timer and music views. */
+export const Interactive: Story = {
+  render: () => <IslandDemo />,
+};
+
 export const Default: Story = {
+  name: 'Demo: Switch between views',
   render: () => <IslandDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

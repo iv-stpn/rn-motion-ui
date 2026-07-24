@@ -30,8 +30,31 @@ type Story = StoryObj<typeof meta>;
 
 const ACTIVE_USERS_LABEL = 'Active users';
 const LIVE_HINT = 'live · updates every 2.5s';
+const PLAIN_LABEL = 'plain';
+const PADDED_LABEL = 'padded';
+const AFFIXED_LABEL = 'affixed';
 
 export default meta;
+
+export const AllVariants: Story = {
+  name: 'All variants',
+  render: (args) => (
+    <View style={{ alignItems: 'center', gap: 24 }}>
+      <View style={{ alignItems: 'center', gap: 4 }}>
+        <Text style={{ fontSize: 12, color: '#71717a' }}>{PLAIN_LABEL}</Text>
+        <NumberTicker {...args} />
+      </View>
+      <View style={{ alignItems: 'center', gap: 4 }}>
+        <Text style={{ fontSize: 12, color: '#71717a' }}>{PADDED_LABEL}</Text>
+        <NumberTicker {...args} value={42} pad={6} locale={false} />
+      </View>
+      <View style={{ alignItems: 'center', gap: 4 }}>
+        <Text style={{ fontSize: 12, color: '#71717a' }}>{AFFIXED_LABEL}</Text>
+        <NumberTicker {...args} value={1280} prefix="$" suffix=" MRR" locale={true} />
+      </View>
+    </View>
+  ),
+};
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {

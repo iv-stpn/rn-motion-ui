@@ -29,8 +29,31 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const REPLAY_LABEL = 'Replay';
+const WORDS_LABEL = 'word split';
+const CHARS_LABEL = 'char split';
+const MULTILINE_LABEL = 'multi-line';
 
 export default meta;
+
+export const AllVariants: Story = {
+  name: 'All variants',
+  render: (args) => (
+    <View style={{ gap: 32, alignItems: 'flex-start' }}>
+      <View style={{ gap: 8, alignItems: 'flex-start' }}>
+        <Text className="text-muted-foreground text-xs">{WORDS_LABEL}</Text>
+        <TextReveal {...args} />
+      </View>
+      <View style={{ gap: 8, alignItems: 'flex-start' }}>
+        <Text className="text-muted-foreground text-xs">{CHARS_LABEL}</Text>
+        <TextReveal {...args} text="considered." split="char" stagger={0.04} />
+      </View>
+      <View style={{ gap: 8, alignItems: 'flex-start' }}>
+        <Text className="text-muted-foreground text-xs">{MULTILINE_LABEL}</Text>
+        <TextReveal {...args} text={['Motion that feels', 'considered.']} />
+      </View>
+    </View>
+  ),
+};
 
 export const Words: Story = {
   play: async ({ canvasElement }) => {

@@ -104,8 +104,31 @@ function EndAlignedTrigger({ toggle }: TriggerProps) {
 
 export default meta;
 
+/** Controlled open state — drive it yourself with the trigger. */
+export const Interactive: Story = {
+  render: () => {
+    const [open, setOpen] = useState(false);
+    return (
+      <View style={{ gap: 12, alignItems: 'center' }}>
+        <Text className="text-muted-foreground" style={{ fontSize: 13 }}>{`open: ${String(open)}`}</Text>
+        <AdaptiveDropdown open={open} onOpenChange={setOpen} trigger={ControlledTrigger}>
+          {({ close }) => (
+            <View style={{ padding: 16, gap: 8 }}>
+              <Text className="text-muted-foreground">{CLOSE_CALLBACK_TEXT}</Text>
+              <Button variant="outline" size="sm" onPress={close} style={{ alignSelf: 'flex-start' }}>
+                {CLOSE_LABEL}
+              </Button>
+            </View>
+          )}
+        </AdaptiveDropdown>
+      </View>
+    );
+  },
+};
+
 /** Uncontrolled dropdown — manages its own open state. */
 export const Default: Story = {
+  name: 'Demo: Open the menu',
   render: () => (
     <AdaptiveDropdown trigger={DefaultTrigger}>
       {ITEMS.map((item) => (
@@ -148,28 +171,6 @@ export const Scrollable: Story = {
       })}
     </AdaptiveDropdown>
   ),
-};
-
-/** Controlled open state. */
-export const Controlled: Story = {
-  render: () => {
-    const [open, setOpen] = useState(false);
-    return (
-      <View style={{ gap: 12, alignItems: 'center' }}>
-        <Text className="text-muted-foreground" style={{ fontSize: 13 }}>{`open: ${String(open)}`}</Text>
-        <AdaptiveDropdown open={open} onOpenChange={setOpen} trigger={ControlledTrigger}>
-          {({ close }) => (
-            <View style={{ padding: 16, gap: 8 }}>
-              <Text className="text-muted-foreground">{CLOSE_CALLBACK_TEXT}</Text>
-              <Button variant="outline" size="sm" onPress={close} style={{ alignSelf: 'flex-start' }}>
-                {CLOSE_LABEL}
-              </Button>
-            </View>
-          )}
-        </AdaptiveDropdown>
-      </View>
-    );
-  },
 };
 
 /** `align="end"` anchors the panel to the right edge of the trigger. */

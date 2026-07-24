@@ -77,7 +77,7 @@ function ControlledHoverMenu() {
 
 export default meta;
 
-export const Default: Story = {
+export const Interactive: Story = {
   render: () => (
     <View className="p-8">
       <HoverMenu trigger={renderTrigger}>{renderContent}</HoverMenu>

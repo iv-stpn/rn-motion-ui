@@ -36,17 +36,8 @@ const CYCLE: Array<{ status: AnimatedBadgeStatus; label: string }> = [
 
 export default meta;
 
-export const Success: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(await canvas.findByText('Synced')).toBeInTheDocument();
-  },
-};
-
-export const Loading: Story = { args: { status: 'loading', children: 'Syncing' } };
-export const Danger: Story = { args: { status: 'danger', children: 'Failed' } };
-
-export const AllStatuses: Story = {
+export const AllVariants: Story = {
+  name: 'All variants',
   render: (args) => (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, maxWidth: 320, justifyContent: 'center' }}>
       <AnimatedBadge {...args} status="neutral" size="sm">
@@ -70,6 +61,16 @@ export const AllStatuses: Story = {
     </View>
   ),
 };
+
+export const Success: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Synced')).toBeInTheDocument();
+  },
+};
+
+export const Loading: Story = { args: { status: 'loading', children: 'Syncing' } };
+export const Danger: Story = { args: { status: 'danger', children: 'Failed' } };
 
 export const Cycling: Story = {
   render: () => {

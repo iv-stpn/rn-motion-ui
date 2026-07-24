@@ -14,7 +14,7 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 export default meta;
 
-export const Default: Story = {
+export const Interactive: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Monday switch should be present and checked (Mon is enabled by default)

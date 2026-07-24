@@ -22,19 +22,27 @@ const SUBMIT_LABEL = 'Submit';
 
 export default meta;
 
+/** Press to run a 1.2 s action that resolves — loading dots, then “Done”,
+ *  held disabled (the default, so a navigation callback can't be double-fired). */
+export const Interactive: Story = {
+  args: { onPress: fn(() => sleep(1200)) },
+};
+
+/** Same 1.2 s run, rendered as a glossy elevated chip. The chip keeps its gloss
+ *  and fill through loading/success/error instead of flattening to grey. */
+export const InteractiveElevated: Story = {
+  name: 'Interactive - Elevated',
+  args: { elevated: true, onPress: fn(() => sleep(1200)) },
+};
+
 export const Idle: Story = {
+  name: 'Demo: Run to success',
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('button');
     await userEvent.click(button);
     await expect(args.onPress).toHaveBeenCalled();
   },
-};
-
-/** Press to run a 1.2 s action that resolves — loading dots, then “Done”,
- *  held disabled (the default, so a navigation callback can't be double-fired). */
-export const AsyncSuccess: Story = {
-  args: { onPress: fn(() => sleep(1200)) },
 };
 
 /** Press to run a 1.2 s action that rejects — loading dots, then “Try again”.
@@ -57,6 +65,7 @@ export const AsyncAutoReset: Story = {
 /** Full machine run: press → action → success window → afterSuccess, with the
  *  button held disabled the whole way so the action can't be double-fired. */
 export const MachineSuccess: Story = {
+  name: 'Demo: Success machine',
   args: {
     onPress: fn(() => Promise.resolve()),
     afterSuccess: fn(),
@@ -79,6 +88,7 @@ export const MachineSuccess: Story = {
 /** Rejection path: afterError receives the rejection, then autoReset re-arms
  *  the button so a second press runs the action again. */
 export const MachineError: Story = {
+  name: 'Demo: Error then retry',
   args: {
     onPress: fn(() => Promise.reject(new Error('nope'))),
     afterError: fn(),
@@ -138,6 +148,28 @@ export const AllStates: Story = {
         {SUBMIT_LABEL}
       </StatefulButton>
       <StatefulButton {...args} state="error">
+        {SUBMIT_LABEL}
+      </StatefulButton>
+    </View>
+  ),
+};
+
+/** All four states as glossy elevated chips. Idle keeps its gloss/fill; success
+ *  and error swap to their status backdrops while staying raised. */
+export const AllStatesElevated: Story = {
+  name: 'All States - Elevated',
+  render: (args) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <StatefulButton {...args} elevated={true} state="idle">
+        {SUBMIT_LABEL}
+      </StatefulButton>
+      <StatefulButton {...args} elevated={true} state="loading">
+        {SUBMIT_LABEL}
+      </StatefulButton>
+      <StatefulButton {...args} elevated={true} state="success">
+        {SUBMIT_LABEL}
+      </StatefulButton>
+      <StatefulButton {...args} elevated={true} state="error">
         {SUBMIT_LABEL}
       </StatefulButton>
     </View>

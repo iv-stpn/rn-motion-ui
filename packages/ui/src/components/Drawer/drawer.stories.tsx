@@ -42,7 +42,12 @@ function DrawerDemo({ side }: DrawerDemoProps) {
 
 export default meta;
 
+export const Interactive: Story = {
+  render: () => <DrawerDemo side="left" />,
+};
+
 export const Right: Story = {
+  name: 'Demo: Open the drawer',
   render: () => <DrawerDemo side="right" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -50,8 +55,4 @@ export const Right: Story = {
     await userEvent.click(await canvas.findByText(OPEN_LABEL));
     await expect(await screen.findByText(DRAWER_TITLE)).toBeTruthy();
   },
-};
-
-export const Left: Story = {
-  render: () => <DrawerDemo side="left" />,
 };

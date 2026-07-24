@@ -36,7 +36,28 @@ const SELECTED_PREFIX = 'Selected: ';
 
 export default meta;
 
+export const Interactive: Story = {
+  render: () => {
+    const [tab, setTab] = useState('one');
+    return (
+      <View style={{ gap: 12 }}>
+        <Tabs value={tab} onValueChange={setTab} variant="pill">
+          <TabsList>
+            <TabsTrigger value="one">{CONTROLLED_ONE}</TabsTrigger>
+            <TabsTrigger value="two">{CONTROLLED_TWO}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Text className="text-muted-foreground text-xs">
+          {SELECTED_PREFIX}
+          {tab}
+        </Text>
+      </View>
+    );
+  },
+};
+
 export const Pill: Story = {
+  name: 'Demo: Switch tabs',
   render: () => (
     <Tabs defaultValue="overview" variant="pill" testID="tabs">
       <TabsList>
@@ -112,25 +133,5 @@ export const PreSelectedTab: Story = {
     const canvas = within(canvasElement);
     // Indicator should appear directly on the third tab — no slide-in from tab 1.
     await expect(canvas.getByText(SETTINGS_PREFS)).toBeInTheDocument();
-  },
-};
-
-export const Controlled: Story = {
-  render: () => {
-    const [tab, setTab] = useState('one');
-    return (
-      <View style={{ gap: 12 }}>
-        <Tabs value={tab} onValueChange={setTab} variant="pill">
-          <TabsList>
-            <TabsTrigger value="one">{CONTROLLED_ONE}</TabsTrigger>
-            <TabsTrigger value="two">{CONTROLLED_TWO}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Text className="text-muted-foreground text-xs">
-          {SELECTED_PREFIX}
-          {tab}
-        </Text>
-      </View>
-    );
   },
 };

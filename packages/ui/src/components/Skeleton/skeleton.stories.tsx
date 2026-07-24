@@ -19,15 +19,8 @@ const LINE_WIDTH = 240;
 
 export default meta;
 
-export const Default: Story = {
-  render: (args) => (
-    <View style={{ width: LINE_WIDTH }}>
-      <Skeleton {...args} className="h-4 w-full" />
-    </View>
-  ),
-};
-
-export const Shapes: Story = {
+export const AllVariants: Story = {
+  name: 'All variants',
   render: (args) => (
     <View style={{ flexDirection: 'column', gap: 12, width: LINE_WIDTH }}>
       <Skeleton {...args} shape="rounded" className="h-4 w-full" />
@@ -36,6 +29,14 @@ export const Shapes: Story = {
         <Skeleton {...args} shape="circle" className="h-10 w-10" />
         <Skeleton {...args} shape="circle" className="h-10 w-10" />
       </View>
+    </View>
+  ),
+};
+
+export const Default: Story = {
+  render: (args) => (
+    <View style={{ width: LINE_WIDTH }}>
+      <Skeleton {...args} className="h-4 w-full" />
     </View>
   ),
 };

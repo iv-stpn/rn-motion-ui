@@ -10,7 +10,10 @@ const meta = {
   parameters: { layout: 'centered' },
   args: { children: 'Continue', variant: 'primary', size: 'md', onPress: fn() },
   argTypes: {
-    variant: { control: 'select', options: ['primary', 'secondary', 'ghost', 'outline'] },
+    variant: {
+      control: 'select',
+      options: ['primary', 'secondary', 'ghost', 'outline', 'danger', 'outlineDanger', 'ghostDanger', 'ghostPrimary'],
+    },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
   },

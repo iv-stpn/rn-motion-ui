@@ -1,4 +1,4 @@
-// biome-ignore-all lint/style/noExcessiveLinesPerFile: press machine, text cascade, and loader are tightly coupled around one render tree
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: press machine, text roll, and loader are tightly coupled around one render tree
 // RN FALLBACK vs web: CSS blur filter dropped (no RN equivalent) — opacity +
 // translateY preserved. Width animation uses onLayout measurement; initial render
 // may briefly snap vs. the web's synchronous useLayoutEffect measure.
@@ -8,7 +8,7 @@ import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useMountEffect } from '../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { EASE_IN_OUT, EASE_OUT, SPRING_SWAP } from '../../lib/ease';
+import { EASE_IN_OUT, SPRING_SWAP } from '../../lib/ease';
 import { AlertCircle, Check } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -18,7 +18,7 @@ import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
 
-// biome-ignore lint/style/useExportsLast: props interface before CASCADE_STAGGER constant — collocated for readability
+// biome-ignore lint/style/useExportsLast: props interface before layout constants — collocated for readability
 export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loading' | 'onPress'> {
   /** Async action driven by the button. Pressing runs the built-in machine
    *  idle → loading → success (or error) around the returned promise. */
@@ -55,21 +55,16 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
   style?: StyleProp<ViewStyle>;
 }
 
-const CASCADE_STAGGER = 25; // ms per character (web original: 0.025 s)
 const ICON_SLOT_WIDTH = 24; // px — icon (16 px) + surrounding whitespace
-// Block exit for the outgoing label: the whole word rolls up + fades as one,
-// while the incoming word's letters roll in staggered on top of it.
-const CASCADE_EXIT = { type: 'timing', duration: 160, easing: EASE_OUT } as const;
 // Roll distance before the slot height has been measured (px).
 const ROLL_FALLBACK = 18;
 // Trailing slack past the last glyph's advance box so its ink (and sub-pixel
 // rounding) never touches the slot's clip edge.
 const TEXT_BUFFER = 2;
-// The roll mask must clip the vertical letter travel WITHOUT clipping horizontally:
-// each cascade glyph rides its own transformed box that rounds outward ~1 px, so the
-// summed overlay runs wider than the flat sizer and the trailing glyph loses its edge.
-// The mask extends this far past the right edge so horizontal overflow is never cut
-// (it spills harmlessly into the button's own padding) while the roll stays masked.
+// The roll mask clips the vertical label travel WITHOUT clipping horizontally:
+// the overlay label rounds outward ~1 px vs. the flat sizer, so the mask extends
+// this far past the right edge so the trailing glyph is never shaved (it spills
+// harmlessly into the button's own padding) while the vertical roll stays masked.
 const CLIP_SLACK = 64;
 
 // Matches Button's buildSpinnerColor: returns the icon stroke colour for each
@@ -101,7 +96,7 @@ function IconSlot({ keyId, children, reduce, slotWidth = ICON_SLOT_WIDTH }: Icon
 }
 
 // ---------------------------------------------------------------------------
-// TextSlot — animated width + per-character cascade (string) or simple swap (node)
+// TextSlot — animated width + whole-label roll (string) or simple swap (node)
 // ---------------------------------------------------------------------------
 
 type TextSlotProps = {
@@ -112,17 +107,13 @@ type TextSlotProps = {
   reduce: boolean;
   /** Overrides the Tailwind label colour — used when a state backdrop changes the bg. */
   textColor?: string;
-  /** Current button state — cascade only triggers for success/error transitions. */
-  state: ButtonState;
 };
 
-function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, textColor, state }: TextSlotProps) {
-  // Roll distance = one line-box height, so glyphs travel exactly one line as
-  // they roll in/out. Width is left to the in-flow sizer (no tween — see below).
+function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, textColor }: TextSlotProps) {
+  // Roll distance = one line-box height, so the label travels exactly one line
+  // as it rolls in/out. Width is left to the in-flow sizer (no tween — see below).
   const [roll, setRoll] = useState(ROLL_FALLBACK);
   const textLabel = typeof children === 'string' ? children : null;
-  // Cascade only on success/error transitions, not on initial idle render
-  const cascade = textLabel !== null && !reduce && (state === 'success' || state === 'error');
 
   const onSizerLayout = useCallback((e: LayoutChangeEvent) => {
     const { height } = e.nativeEvent.layout;
@@ -144,50 +135,29 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, t
     <View>
       {/* In-flow sizer: holds the slot open at the current label's natural
           width/height and is the single copy assistive tech reads (opacity 0
-          keeps it in the a11y tree). The animated copies float on top.
-          In cascade mode it mirrors the per-letter row layout so the measured
-          width matches the split glyphs (split Text loses inter-letter kerning
-          and rounds each advance up, so a single Text under-measures and the
-          slot clips the right edge). The trailing padding keeps the last glyph's
-          ink clear of the clip edge. */}
-      {cascade ? (
-        <View onLayout={onSizerLayout} style={{ flexDirection: 'row', opacity: 0, paddingRight: TEXT_BUFFER }}>
-          {textLabel.split('').map((char, index) => (
-            <Text
-              className={textClass}
-              style={colorStyle}
-              // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity
-              key={index}
-            >
-              {/* biome-ignore lint/suspicious/noLeakedRender: char is always a string — both ternary branches are string literals, no numeric leak possible */}
-              {char === ' ' ? ' ' : char}
-            </Text>
-          ))}
-        </View>
-      ) : (
-        // MUST render identically to the visible overlay below (same <Text>, no
-        // numberOfLines): the sizer drives the box/button width, and RNW renders
-        // `numberOfLines={1}` as display:-webkit-box + line-clamp, whose intrinsic
-        // width measures ~5px NARROWER than a plain <Text>. That undersizes the box
-        // and the button's overflow:hidden shaves the trailing glyph of the visible
-        // (plain-Text) label. Keep them structurally identical so they can't diverge.
-        <View onLayout={onSizerLayout} style={{ opacity: 0, paddingRight: TEXT_BUFFER }}>
-          {textLabel === null ? (
-            children
-          ) : (
-            <Text className={textClass} style={colorStyle}>
-              {textLabel}
-            </Text>
-          )}
-        </View>
-      )}
+          keeps it in the a11y tree). The animated copy floats on top.
+          MUST render identically to the visible overlay below (same <Text>, no
+          numberOfLines): the sizer drives the box/button width, and RNW renders
+          `numberOfLines={1}` as display:-webkit-box + line-clamp, whose intrinsic
+          width measures ~5px NARROWER than a plain <Text>. That undersizes the box
+          and the button's overflow:hidden shaves the trailing glyph of the visible
+          (plain-Text) label. Keep them structurally identical so they can't diverge.
+          The trailing padding keeps the last glyph's ink clear of the clip edge. */}
+      <View onLayout={onSizerLayout} style={{ opacity: 0, paddingRight: TEXT_BUFFER }}>
+        {textLabel === null ? (
+          children
+        ) : (
+          <Text className={textClass} style={colorStyle}>
+            {textLabel}
+          </Text>
+        )}
+      </View>
 
-      {/* Clip layer: masks ONLY the vertical letter roll. It is pinned tight to
-          the line box (top/bottom: 0) but runs open-ended to the right
-          (right: -CLIP_SLACK) so the trailing glyph — whose per-letter transform
-          boxes each round outward and sum wider than the flat sizer — is never
-          shaved horizontally. pointerEvents:'none' lets taps fall through to the
-          button. */}
+      {/* Clip layer: masks the vertical label roll. It is pinned tight to the
+          line box (top/bottom: 0) but runs open-ended to the right
+          (right: -CLIP_SLACK) so the trailing glyph is never shaved horizontally
+          (transformed text boxes round outward and can sum wider than the flat
+          sizer). pointerEvents:'none' lets taps fall through to the button. */}
       <View
         style={{
           position: 'absolute',
@@ -199,54 +169,25 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, t
           pointerEvents: 'none',
         }}
       >
-        {cascade ? (
-          <AnimatePresence initial={false}>
-            <MotiView
-              key={`cascade-${value}`}
-              from={{ opacity: 1, translateY: 0 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              exit={{ opacity: 0, translateY: -roll }}
-              transition={CASCADE_EXIT}
-              importantForAccessibility="no-hide-descendants"
-              style={{ position: 'absolute', left: 0, top: 0, flexDirection: 'row' }}
-            >
-              {textLabel.split('').map((char, index) => (
-                <MotiView
-                  // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity
-                  key={index}
-                  from={{ opacity: 0, translateY: roll }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  transition={{ ...SPRING_SWAP, delay: index * CASCADE_STAGGER }}
-                >
-                  <Text className={textClass} style={colorStyle}>
-                    {/* biome-ignore lint/suspicious/noLeakedRender: char is always a string — both ternary branches are string literals, no numeric leak possible */}
-                    {char === ' ' ? ' ' : char}
-                  </Text>
-                </MotiView>
-              ))}
-            </MotiView>
-          </AnimatePresence>
-        ) : (
-          <AnimatePresence initial={false}>
-            <MotiView
-              key={`text-${value}`}
-              from={reduce ? { opacity: 0 } : { opacity: 0, translateY: roll }}
-              animate={{ opacity: 1, translateY: 0 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -roll }}
-              transition={reduce ? { type: 'timing', duration: 150 } : { ...SPRING_SWAP }}
-              style={{ position: 'absolute', left: 0, top: 0 }}
-              importantForAccessibility="no-hide-descendants"
-            >
-              {typeof children === 'string' ? (
-                <Text className={textClass} style={colorStyle}>
-                  {children}
-                </Text>
-              ) : (
-                children
-              )}
-            </MotiView>
-          </AnimatePresence>
-        )}
+        <AnimatePresence initial={false}>
+          <MotiView
+            key={`text-${value}`}
+            from={reduce ? { opacity: 0 } : { opacity: 0, translateY: roll }}
+            animate={{ opacity: 1, translateY: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -roll }}
+            transition={reduce ? { type: 'timing', duration: 150 } : { ...SPRING_SWAP }}
+            style={{ position: 'absolute', left: 0, top: 0 }}
+            importantForAccessibility="no-hide-descendants"
+          >
+            {typeof children === 'string' ? (
+              <Text className={textClass} style={colorStyle}>
+                {children}
+              </Text>
+            ) : (
+              children
+            )}
+          </MotiView>
+        </AnimatePresence>
       </View>
     </View>
   );
@@ -448,7 +389,7 @@ export function StatefulButton({
       ? children // use idle text as sizer so button width stays constant
       : resolveStateText({ state, loadingText, successText, errorText, children });
 
-  // In loading state keep the same key as idle so no cascade triggers on the hidden text.
+  // In loading state keep the same key as idle so no roll triggers on the hidden text.
   let textKey: string;
   if (state === 'loading') textKey = typeof children === 'string' ? `idle-${children}` : 'idle';
   else textKey = typeof stateText === 'string' ? `${state}-${stateText}` : state;
@@ -486,7 +427,7 @@ export function StatefulButton({
             No overflow:hidden here — dots bounce freely above the baseline. */}
         <View style={{ position: 'relative' }}>
           <MotiView animate={{ opacity: state === 'loading' ? 0 : 1 }} transition={{ type: 'timing', duration: 150 }}>
-            <TextSlot value={textKey} variant={v} size={size} reduce={reduce} textColor={stateTextColor} state={state}>
+            <TextSlot value={textKey} variant={v} size={size} reduce={reduce} textColor={stateTextColor}>
               {stateText}
             </TextSlot>
           </MotiView>

@@ -59,8 +59,13 @@ type FileTreeRowHandlers = {
  * single inline-rename target. A tap activates (selection/expansion/open); a
  * long-press maps to a secondary activation (select + open context actions,
  * mirroring web right-click); rename commit/cancel clears the target.
+ *
+ * When `draggable`, long-press belongs to the drag instead — the two cannot share
+ * one hold, and drag is the stronger affordance. Secondary activation is then
+ * reachable by right-click on web (and, on native, by whatever affordance the
+ * host provides), which keeps a press from both moving a file and opening a menu.
  */
-function useFileTreeRowHandlers(synced: SyncedFileTree): FileTreeRowHandlers {
+function useFileTreeRowHandlers(synced: SyncedFileTree, draggable: boolean): FileTreeRowHandlers {
   const { activate, toggleExpand, commitRename } = synced;
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
 
@@ -69,8 +74,11 @@ function useFileTreeRowHandlers(synced: SyncedFileTree): FileTreeRowHandlers {
     [activate],
   );
   const onLongPress = useCallback(
-    (row: FileTreeVisibleRow, x?: number, y?: number) => activate(row, { modifiers: { secondary: true }, x, y }),
-    [activate],
+    (row: FileTreeVisibleRow, x?: number, y?: number) => {
+      if (draggable) return;
+      activate(row, { modifiers: { secondary: true }, x, y });
+    },
+    [activate, draggable],
   );
   const onRenameSubmit = useCallback(
     (path: string, nextName: string) => {
@@ -180,7 +188,8 @@ export function FileTree(props: FileTreeProps) {
   const metrics = useMemo(() => resolveDensityMetrics(density), [density]);
   const colors = useRowColors();
   const reduce = useReducedMotion();
-  const handlers = useFileTreeRowHandlers(synced);
+  const draggable = Boolean(props.draggable);
+  const handlers = useFileTreeRowHandlers(synced, draggable);
 
   const {
     showIcons = true,
@@ -243,7 +252,7 @@ export function FileTree(props: FileTreeProps) {
         keyExtractor={keyExtractor}
         getItemLayout={getItemLayout}
         stickyEnabled={props.stickyHeaders ?? true}
-        draggable={Boolean(props.draggable)}
+        draggable={draggable}
         getSelected={getSelected}
         commitMove={synced.commitMove}
         emptyState={<FileTreeEmpty emptyState={emptyState} />}

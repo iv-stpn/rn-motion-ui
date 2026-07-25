@@ -12,14 +12,15 @@
 // scrolled row are pixel-identical and share one set of handlers.
 
 import { type ReactElement, type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
-import type { ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import { Animated, FlatList, View } from 'react-native';
+import type { ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent, ViewStyle } from 'react-native';
+import { Animated, FlatList, Platform, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { Text } from '../Text/text';
 import type { FileTreeVisibleRow } from './file-tree.types';
 import { computeStickyHeaders } from './file-tree-layout';
 import { FileTreeStickyHeaders } from './file-tree-sticky-headers';
 import { useFileTreeDrag } from './use-file-tree-drag';
+import { useFileTreeDragWeb } from './use-file-tree-drag-web';
 
 export type FileTreeScrollBodyProps = {
   rows: FileTreeVisibleRow[];
@@ -47,6 +48,12 @@ export type FileTreeScrollBodyProps = {
 
 /** Offset (px) of the drag preview chip from the finger so it isn't occluded. */
 const PREVIEW_MARGIN = { marginLeft: 14, marginTop: -10 };
+
+// Web-only style prop (`userSelect` isn't in RN's ViewStyle). Applied while a drag
+// is live so the pointer doesn't paint a text selection across the rows it
+// crosses; inert on native.
+type WebViewStyle = ViewStyle & { userSelect?: string };
+const WEB_DRAGGING_STYLE: WebViewStyle = { userSelect: 'none' };
 
 type DropHighlightProps = { rows: FileTreeVisibleRow[]; dropTargetPath: string | null; itemHeight: number; scrollOffset: number };
 
@@ -95,6 +102,7 @@ export function FileTreeScrollBody(props: FileTreeScrollBodyProps) {
   const { stickyEnabled, draggable, getSelected, commitMove, emptyState, testID } = props;
 
   const listRef = useRef<FlatList<FileTreeVisibleRow> | null>(null);
+  const containerRef = useRef<View | null>(null);
   const scrollOffsetRef = useRef(0);
   const [scrollOffset, setScrollOffset] = useState(0);
   const tracksOffset = stickyEnabled || draggable;
@@ -109,6 +117,7 @@ export function FileTreeScrollBody(props: FileTreeScrollBodyProps) {
     getSelected,
     commitMove,
   });
+  useFileTreeDragWeb({ enabled: draggable, containerRef, session: drag.session });
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -145,11 +154,18 @@ export function FileTreeScrollBody(props: FileTreeScrollBodyProps) {
     />
   );
   // A long-press pan can only fire when the detector wraps the list, so only pay
-  // for it when dragging is on; otherwise the bare FlatList scrolls unimpeded.
-  const body = draggable ? <GestureDetector gesture={drag.gesture}>{list}</GestureDetector> : list;
+  // for it when dragging is on; otherwise the bare FlatList scrolls unimpeded. On
+  // web the detector is skipped entirely — `useFileTreeDragWeb` drives the same
+  // session from pointer events on the container instead (see that file for why).
+  const useNativePan = draggable && Platform.OS !== 'web';
+  const body = useNativePan ? <GestureDetector gesture={drag.gesture}>{list}</GestureDetector> : list;
 
   return (
-    <View className="relative" style={{ height: bodyHeight }}>
+    <View
+      ref={containerRef}
+      className="relative"
+      style={[{ height: bodyHeight }, drag.render.active ? WEB_DRAGGING_STYLE : null]}
+    >
       {body}
       {sticky ? (
         <FileTreeStickyHeaders

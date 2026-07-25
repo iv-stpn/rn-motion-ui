@@ -73,8 +73,9 @@ type Story = StoryObj<typeof meta>;
 
 // ─── Interactive ───────────────────────────────────────────────────────────────
 // The full playground: multi-select, built-in search, drag-to-move, inline
-// rename and git lanes all on. Drive it yourself — tap to select/open, long-press
-// (or right-click on web) for multi-select, drag a row onto a folder to move it.
+// rename and git lanes all on. Drive it yourself — tap to select/open, right-click
+// (web) for secondary activation, and hold a row then drag it onto a folder to
+// move it. With `draggable` on, the hold belongs to the drag, not to multi-select.
 
 /** Every feature on — the hands-on playground. */
 export const Interactive: Story = {
@@ -183,17 +184,103 @@ export const MultiSelect: Story = {
 
 // ─── Draggable ─────────────────────────────────────────────────────────────────
 // Long-press a row and drag it onto a folder to move it (with all descendants).
-// The move is committed to the model and echoed through `onMove`. Gesture
-// mechanics are demonstrated visually — no scripted drag in the play test.
+// The move is committed to the model and echoed through `onMove`.
+//
+// The play test drives the drag with real PointerEvents rather than `userEvent`:
+// the web transport takes pointer capture, and capture only works for a pointer
+// the browser considers active, so the ids and coordinates have to line up. Each
+// step below is one event the browser itself would send.
+
+type ClientPoint = { x: number; y: number };
+
+/** The rendered row carrying `path`. */
+function rowFor(canvasElement: HTMLElement, path: string): Element {
+  const row = canvasElement.querySelector(`[data-fttree-path="${path}"]`);
+  if (!row) throw new Error(`no row rendered for ${path}`);
+  return row;
+}
+
+/** Centre point of the row carrying `path`, in client coordinates. */
+function rowCentre(canvasElement: HTMLElement, path: string): ClientPoint {
+  const rect = rowFor(canvasElement, path).getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+const DRAG_POINTER_ID = 7;
+/** Long-press threshold plus a margin, so the drag is armed before the first move. */
+const DRAG_ARMED_MS = 450;
+
+/** Dispatch one pointer event of `type` at a client point, as the browser would. */
+function pointer(node: Element, type: string, point: ClientPoint) {
+  node.dispatchEvent(
+    new PointerEvent(type, {
+      pointerId: DRAG_POINTER_ID,
+      pointerType: 'mouse',
+      isPrimary: true,
+      button: 0,
+      buttons: type === 'pointerup' ? 0 : 1,
+      clientX: point.x,
+      clientY: point.y,
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+}
 
 /** Long-press drag-to-move + inline rename enabled. */
 export const Draggable: Story = {
+  name: 'Demo: Drag a folder onto another',
   args: {
     draggable: true,
     renamable: true,
     initialExpansion: 'open',
     gitStatus: SAMPLE_GIT_STATUS,
     testID: 'file-tree-drag',
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('hooks');
+
+    // The transport listens on the scroll container, which is also the frame the
+    // drop highlight is positioned in — the same node a real press bubbles to.
+    const list = await canvas.findByTestId('file-tree-drag-list');
+    const container = list.parentElement;
+    if (!container) throw new Error('scroll container not found');
+
+    const source = rowCentre(canvasElement, 'src/app/screens/');
+    const target = rowCentre(canvasElement, 'src/components/');
+
+    // Press on the row, then hold past the long-press threshold to arm the drag.
+    pointer(rowFor(canvasElement, 'src/app/screens/'), 'pointerdown', source);
+    await new Promise((resolve) => setTimeout(resolve, DRAG_ARMED_MS));
+
+    // Drag down onto `src/components/`, in steps, as a pointer stream would arrive.
+    // The old RNGH transport died on the first of these moves, when the row that
+    // owned the gesture re-rendered under it.
+    const steps = 6;
+    for (let step = 1; step <= steps; step += 1) {
+      const ratio = step / steps;
+      pointer(container, 'pointermove', {
+        x: source.x + (target.x - source.x) * ratio,
+        y: source.y + (target.y - source.y) * ratio,
+      });
+    }
+    pointer(container, 'pointerup', target);
+
+    // `screens/` and both its files land under `components/`.
+    await waitFor(() =>
+      expect(args.onMove).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sources: ['src/app/screens/'],
+          destination: 'src/components/',
+          remap: expect.objectContaining({
+            'src/app/screens/': 'src/components/screens/',
+            'src/app/screens/home.tsx': 'src/components/screens/home.tsx',
+            'src/app/screens/profile.tsx': 'src/components/screens/profile.tsx',
+          }),
+        }),
+      ),
+    );
   },
 };
 

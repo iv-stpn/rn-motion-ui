@@ -131,7 +131,7 @@ Subpaths are namespaced by category:
 
 ## FileTree
 
-A path-first file tree — the path *is* the identity, there are no numeric IDs. Feed it a flat list of paths; missing ancestor directories are inferred, single-child folder chains are flattened, and rows sort dirs-before-files in natural order. Works on native and web (react-native-web): tap to select/expand, long-press to multi-select or open context actions (or, when `draggable`, to pick a row up and drag it), and on web the usual Ctrl/Shift-click, right-click, double-click, and keyboard navigation all work.
+A path-first file tree — the path *is* the identity, there are no numeric IDs. Feed it a flat list of paths; missing ancestor directories are inferred, single-child folder chains are flattened, and rows sort dirs-before-files in natural order. Works on native and web (react-native-web): tap to select/expand, long-press to multi-select or open context actions (or, when `draggable`, to pick a row up and drag it — on web a mouse just click-drags, no hold), and on web the usual Ctrl/Shift-click, right-click, double-click, and keyboard navigation all work.
 
 ```tsx
 import { FileTree } from 'rn-motion-ui/file-tree';

@@ -49,11 +49,15 @@ export type FileTreeScrollBodyProps = {
 /** Offset (px) of the drag preview chip from the finger so it isn't occluded. */
 const PREVIEW_MARGIN = { marginLeft: 14, marginTop: -10 };
 
-// Web-only style prop (`userSelect` isn't in RN's ViewStyle). Applied while a drag
-// is live so the pointer doesn't paint a text selection across the rows it
-// crosses; inert on native.
-type WebViewStyle = ViewStyle & { userSelect?: string };
-const WEB_DRAGGING_STYLE: WebViewStyle = { userSelect: 'none' };
+// Web-only style props (`userSelect` / `touchAction` aren't in RN's ViewStyle, and
+// mean nothing on native — hence the Platform gate rather than a cast at the use
+// site). Rows are controls, not prose: dragging one, or shift-clicking a range,
+// should never paint a text selection across the tree, so selection is off for the
+// whole body. `touchAction` is only clamped while a drag is live, so ordinary
+// touch scrolling keeps working the rest of the time.
+type WebViewStyle = ViewStyle & { userSelect?: string; touchAction?: string };
+const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none' } : null;
+const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none', touchAction: 'none' } : null;
 
 type DropHighlightProps = { rows: FileTreeVisibleRow[]; dropTargetPath: string | null; itemHeight: number; scrollOffset: number };
 
@@ -164,7 +168,7 @@ export function FileTreeScrollBody(props: FileTreeScrollBodyProps) {
     <View
       ref={containerRef}
       className="relative"
-      style={[{ height: bodyHeight }, drag.render.active ? WEB_DRAGGING_STYLE : null]}
+      style={[{ height: bodyHeight }, drag.render.active ? WEB_DRAGGING_STYLE : WEB_BODY_STYLE]}
     >
       {body}
       {sticky ? (

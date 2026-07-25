@@ -5,7 +5,7 @@
 // forwarded to the handlers from useSyncedFileTree via the callback props.
 
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
-import { type GestureResponderEvent, Pressable, TextInput, View } from 'react-native';
+import { type GestureResponderEvent, Platform, Pressable, TextInput, type TextStyle, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import { ChevronRight } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -185,6 +185,12 @@ type RowRenameInputProps = {
 /** Minimal shape of the key-press event we read (RN + RNW both provide `key`). */
 type KeyPressEvent = { nativeEvent: { key: string } };
 
+// The tree body turns selection off on web (rows are controls, not prose), and that
+// inherits into this input — where a caret and drag-select are the whole point. Opt
+// it back in. `userSelect` isn't in RN's TextStyle and means nothing on native.
+type WebTextStyle = TextStyle & { userSelect?: string };
+const RENAME_STYLE: WebTextStyle = Platform.OS === 'web' ? { userSelect: 'text' } : {};
+
 function RowRenameInput({ initialName, fontSize, placeholderColor, onSubmit, onCancel }: RowRenameInputProps) {
   const [draft, setDraft] = useState(initialName);
   const done = useRef(false);
@@ -216,21 +222,25 @@ function RowRenameInput({ initialName, fontSize, placeholderColor, onSubmit, onC
       placeholder={initialName}
       placeholderTextColor={placeholderColor}
       className="min-w-0 flex-1 rounded-sm bg-surface-3 px-1 py-0 text-foreground"
-      style={{ fontSize }}
+      style={[RENAME_STYLE, { fontSize }]}
       accessibilityLabel={`Rename ${initialName}`}
     />
   );
 }
 
-// ─── Selection / focus / drop overlays ────────────────────────────────────────
+// ─── Hover / selection / focus / drop overlays ─────────────────────────────────
 // Absolute layers that fill the row. Selection fades via Moti; the focus ring and
 // drop-target border sit on top, non-interactive, so they never block presses.
 
-type RowOverlaysProps = { selected: boolean; focused: boolean; dropTarget: boolean; reduce: boolean };
+type RowOverlaysProps = { selected: boolean; hovered: boolean; focused: boolean; dropTarget: boolean; reduce: boolean };
 
-function RowOverlays({ selected, focused, dropTarget, reduce }: RowOverlaysProps) {
+function RowOverlays({ selected, hovered, focused, dropTarget, reduce }: RowOverlaysProps) {
   return (
     <>
+      {/* Hover sits under selection and yields to it: a selected row already reads
+          as the active one, and stacking both translucent tints just muddies it.
+          Unanimated on purpose — pointer feedback that lags feels broken. */}
+      {hovered && !selected ? <View className="absolute inset-0 bg-surface-hover" pointerEvents="none" /> : null}
       <MotiView
         animate={{ opacity: selected ? 1 : 0 }}
         transition={reduce ? NO_MOTION : SELECT_TRANSITION}
@@ -269,6 +279,14 @@ function FileTreeRowImpl(props: FileTreeRowProps) {
   );
   const handleRenameSubmit = useCallback((next: string) => onRenameSubmit(row.path, next), [onRenameSubmit, row.path]);
 
+  // Hover is web-only: RNW drives these from pointerenter/leave and native never
+  // fires them. Both handlers are stable and close over nothing — RNW binds
+  // `pointerleave` once, inside the enter handler, so a changing closure would go
+  // stale and leave the row stuck highlighted.
+  const [hovered, setHovered] = useState(false);
+  const onHoverIn = useCallback(() => setHovered(true), []);
+  const onHoverOut = useCallback(() => setHovered(false), []);
+
   const iconColor = row.kind === 'directory' ? colors.folder : colors.icon;
   const contentOpacity = dimmed || dragging ? 0.45 : 1;
 
@@ -282,11 +300,13 @@ function FileTreeRowImpl(props: FileTreeRowProps) {
       style={{ height: metrics.itemHeight }}
       {...webRowIdentity(row.path)}
     >
-      <RowOverlays selected={row.isSelected} focused={row.isFocused} dropTarget={dropTarget} reduce={reduce} />
+      <RowOverlays selected={row.isSelected} hovered={hovered} focused={row.isFocused} dropTarget={dropTarget} reduce={reduce} />
       {showIndentGuides ? <IndentGuides level={row.level} metrics={metrics} /> : null}
       <Pressable
         onPress={renaming ? undefined : handlePress}
         onLongPress={renaming ? undefined : handleLongPress}
+        onHoverIn={onHoverIn}
+        onHoverOut={onHoverOut}
         delayLongPress={LONG_PRESS_DELAY}
         className="min-w-0 flex-1 flex-row items-center pr-2"
         style={{ paddingLeft: indentForLevel(row.level, metrics), columnGap: metrics.gap, opacity: contentOpacity }}

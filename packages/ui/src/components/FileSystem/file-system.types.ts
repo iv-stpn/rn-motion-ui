@@ -167,6 +167,29 @@ export type FileSystemProps = {
    * promise; the menu closes immediately regardless of the promise outcome.
    */
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  /**
+   * Enable drag-and-drop in the list and grid views. When `true`, entries can be
+   * dragged onto folders to move them, and `onMove` fires on drop. A folder
+   * cannot be dropped into itself or its own subtree. The columns and gallery
+   * views accept the prop and ignore it.
+   */
+  draggable?: boolean;
+  /**
+   * Called after the user drops one or more entries onto a destination folder.
+   * The component itself does not mutate `items` — update the prop in response.
+   */
+  onMove?: (event: FileSystemMoveEvent) => void;
   /** Fixed viewport height. Defaults to 480. */
   height?: number;
+};
+
+/** Emitted by `onMove` when the user drops entries onto a destination folder. */
+export type FileSystemMoveEvent = {
+  /** Paths of the dragged entries. */
+  sources: string[];
+  /**
+   * Destination folder path (trailing slash). Empty string `''` means the
+   * implicit root — entries are moved to the top level.
+   */
+  destination: string;
 };

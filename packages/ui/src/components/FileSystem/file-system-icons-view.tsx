@@ -4,8 +4,20 @@
 // width picks a column count and the entries are pre-chunked into rows so a
 // FlatList can window them.
 
-import { useCallback, useMemo, useState } from 'react';
-import { FlatList, type LayoutChangeEvent, type ListRenderItemInfo, Pressable, View } from 'react-native';
+import { type RefObject, useCallback, useMemo, useRef, useState } from 'react';
+import {
+  Animated,
+  FlatList,
+  type LayoutChangeEvent,
+  type ListRenderItemInfo,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Platform,
+  Pressable,
+  View,
+  type ViewStyle,
+} from 'react-native';
+import { GestureDetector } from 'react-native-gesture-handler';
 import { cn } from '../../lib/cn';
 import { Text } from '../Text/text';
 import type { FileSystemEntry } from './file-system.types';
@@ -14,6 +26,8 @@ import { FileSystemFolderGlyph } from './file-system-icons';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
 import { useEntryActivation } from './use-entry-activation';
+import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
+import { type UseIconsDragReturn, useIconsViewDrag } from './use-file-system-icons-drag';
 
 // Tile geometry (px). Tiles have a fixed height — a glyph box plus a reserved
 // two-line label — so every row shares one stride and windowing stays exact.
@@ -33,13 +47,14 @@ const TILE_PREVIEW_RATIO = 0.78;
 
 type GridMetrics = { columns: number; tileWidth: number };
 
+// Web-only style props (userSelect / touchAction are absent from RN's ViewStyle).
+type WebViewStyle = ViewStyle & { userSelect?: string; touchAction?: string };
+const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none' } : null;
+const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none', touchAction: 'none' } : null;
+
 /** Stable empty data for the frame before the width is known — see below. */
 const NO_ROWS: FileSystemEntry[][] = [];
 
-/**
- * How many `MIN_TILE_WIDTH` tiles fit the measured content box, and the width
- * they share once the gaps are taken out — the RN stand-in for CSS `auto-fill`.
- */
 function gridMetrics(width: number): GridMetrics {
   const available = Math.max(0, width - GRID_PADDING * 2);
   const columns = Math.max(1, Math.floor((available + TILE_GAP) / (MIN_TILE_WIDTH + TILE_GAP)));
@@ -48,24 +63,44 @@ function gridMetrics(width: number): GridMetrics {
 
 function chunkEntries(entries: FileSystemEntry[], columns: number): FileSystemEntry[][] {
   const rows: FileSystemEntry[][] = [];
-  for (let index = 0; index < entries.length; index += columns) rows.push(entries.slice(index, index + columns));
+  for (let i = 0; i < entries.length; i += columns) rows.push(entries.slice(i, i + columns));
   return rows;
 }
+
+type DragPreviewProps = { label: string; pos: Animated.ValueXY };
+
+function DragPreview({ label, pos }: DragPreviewProps) {
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{ left: 0, position: 'absolute', top: 0, transform: pos.getTranslateTransform(), zIndex: 4 }}
+    >
+      <View className="rounded-md border border-border bg-surface-4 px-2 py-1">
+        <Text className="text-foreground" numberOfLines={1} size="xs">
+          {label}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+// ── Tile + row ─────────────────────────────────────────────────────────────────
 
 type IconTileProps = Pick<
   FileSystemViewProps,
   'getContextMenuActions' | 'loadPreviewImageUrl' | 'onContextMenuAction' | 'pageUrlCache' | 'renderFilePreview'
 > & {
   entry: FileSystemEntry;
+  isDropTarget: boolean;
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry) => void;
   width: number;
 };
 
-/** One grid tile: folder glyph or file thumbnail over a two-line name. */
 function IconTile({
   entry,
   getContextMenuActions,
+  isDropTarget,
   isSelected,
   onActivate,
   onContextMenuAction,
@@ -88,7 +123,11 @@ function IconTile({
         style={{ height: TILE_HEIGHT, width }}
       >
         <View
-          className={cn('w-20 shrink-0 items-center justify-center rounded-lg p-1', isSelected && 'bg-surface-selected')}
+          className={cn(
+            'w-20 shrink-0 items-center justify-center rounded-lg p-1',
+            isSelected && 'bg-surface-selected',
+            isDropTarget && 'border-2 border-primary',
+          )}
           style={{ height: GLYPH_BOX_HEIGHT }}
         >
           {entry.kind === 'folder' ? (
@@ -117,42 +156,76 @@ function IconTile({
   );
 }
 
-type IconRowProps = Omit<IconTileProps, 'entry' | 'isSelected' | 'width'> & {
+type IconRowProps = Omit<IconTileProps, 'entry' | 'isDropTarget' | 'isSelected' | 'width'> & {
+  dragTargetPath: string | null;
   row: FileSystemEntry[];
   selectedPath: string | null;
   tileWidth: number;
 };
 
-/**
- * One grid row. Tiles take the measured width rather than `flex-1` so a short
- * trailing row keeps the same column stride as a full one.
- */
-function IconRow({ row, selectedPath, tileWidth, ...tileProps }: IconRowProps) {
+function IconRow({ dragTargetPath, row, selectedPath, tileWidth, ...tileProps }: IconRowProps) {
   return (
     <View className="flex-row gap-1" style={{ marginBottom: ROW_GAP }}>
       {row.map((entry) => (
-        <IconTile entry={entry} isSelected={entry.path === selectedPath} key={entry.path} width={tileWidth} {...tileProps} />
+        <IconTile
+          entry={entry}
+          isDropTarget={entry.path === dragTargetPath}
+          isSelected={entry.path === selectedPath}
+          key={entry.path}
+          width={tileWidth}
+          {...tileProps}
+        />
       ))}
     </View>
   );
 }
 
-export function FileSystemIconsView({
-  entries,
-  getContextMenuActions,
-  loadPreviewImageUrl,
-  onContextMenuAction,
-  onOpen,
-  onSelect,
-  pageUrlCache,
-  renderFilePreview,
-  selectedPath,
-}: FileSystemViewProps) {
+// ── Grid + drag session ────────────────────────────────────────────────────────
+
+const keyExtractor = (row: FileSystemEntry[]) => row[0]?.path ?? '';
+const getItemLayout = (_: ArrayLike<FileSystemEntry[]> | null | undefined, index: number) => ({
+  index,
+  length: ROW_STRIDE,
+  offset: ROW_STRIDE * index,
+});
+
+type IconsGrid = UseIconsDragReturn & {
+  containerRef: RefObject<View | null>;
+  flatListRef: RefObject<FlatList | null>;
+  onLayout: (event: LayoutChangeEvent) => void;
+  onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  rows: FileSystemEntry[][];
+  tileWidth: number;
+};
+
+/**
+ * Measures the grid, chunks the entries into rows, and opens the drag session.
+ * The column count and tile width live in refs as well as in the render output:
+ * the session's index resolver reads them on every pointer move, and refs keep
+ * a resize from tearing down the session mid-drag.
+ */
+function useIconsGrid(entries: FileSystemEntry[], draggable: boolean, onMove: FileSystemViewProps['onMove']): IconsGrid {
   const [width, setWidth] = useState(0);
-  const activate = useEntryActivation(onOpen, onSelect);
-  const handleLayout = useCallback((event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width), []);
+  const flatListRef = useRef<FlatList | null>(null);
+  const containerRef = useRef<View | null>(null);
+  const scrollOffsetRef = useRef(0);
+  const containerHeightRef = useRef(0);
+  const columnsRef = useRef(1);
+  const tileWidthRef = useRef(0);
+
+  const onLayout = useCallback((event: LayoutChangeEvent) => {
+    setWidth(event.nativeEvent.layout.width);
+    containerHeightRef.current = event.nativeEvent.layout.height;
+  }, []);
+
+  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+  }, []);
 
   const { columns, tileWidth } = gridMetrics(width);
+  columnsRef.current = columns;
+  tileWidthRef.current = tileWidth;
+
   // Nothing is chunked until a width lands. Guessing a column count first would
   // mean re-chunking on the very next frame, and since a row is keyed by its
   // first entry every key would change — remounting all but one tile. A press
@@ -160,9 +233,44 @@ export function FileSystemIconsView({
   // its `click` reaches React, which ignores events on unmounted fibers.
   const rows = useMemo(() => (width > 0 ? chunkEntries(entries, columns) : NO_ROWS), [columns, entries, width]);
 
+  const dragSession = useIconsViewDrag({
+    columnsRef,
+    containerHeightRef,
+    containerRef,
+    enabled: draggable,
+    entries,
+    flatListRef,
+    onMove,
+    scrollOffsetRef,
+    tileWidthRef,
+  });
+
+  return { ...dragSession, containerRef, flatListRef, onLayout, onScroll, rows, tileWidth };
+}
+
+// ── View ───────────────────────────────────────────────────────────────────────
+
+export function FileSystemIconsView({
+  draggable = false,
+  entries,
+  getContextMenuActions,
+  loadPreviewImageUrl,
+  onContextMenuAction,
+  onMove,
+  onOpen,
+  onSelect,
+  pageUrlCache,
+  renderFilePreview,
+  selectedPath,
+}: FileSystemViewProps) {
+  const activate = useEntryActivation(onOpen, onSelect);
+  const { containerRef, drag, dragTargetPath, flatListRef, nativeGesture, onLayout, onScroll, previewPos, rows, tileWidth } =
+    useIconsGrid(entries, draggable, onMove);
+
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry[]>) => (
       <IconRow
+        dragTargetPath={dragTargetPath}
         getContextMenuActions={getContextMenuActions}
         loadPreviewImageUrl={loadPreviewImageUrl}
         onActivate={activate}
@@ -176,6 +284,7 @@ export function FileSystemIconsView({
     ),
     [
       activate,
+      dragTargetPath,
       getContextMenuActions,
       loadPreviewImageUrl,
       onContextMenuAction,
@@ -186,26 +295,34 @@ export function FileSystemIconsView({
     ],
   );
 
-  const keyExtractor = useCallback((row: FileSystemEntry[]) => row[0]?.path ?? '', []);
-  const getItemLayout = useCallback(
-    (_data: ArrayLike<FileSystemEntry[]> | null | undefined, index: number) => ({
-      index,
-      length: ROW_STRIDE,
-      offset: ROW_STRIDE * index,
-    }),
-    [],
-  );
-
-  return (
+  const list = (
     <FlatList
+      ref={flatListRef}
       className="flex-1"
       contentContainerClassName="p-3"
       data={rows}
       getItemLayout={getItemLayout}
       keyExtractor={keyExtractor}
-      onLayout={handleLayout}
+      onScroll={onScroll}
       renderItem={renderRow}
+      scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
     />
+  );
+  const isNativeDrag = draggable && Platform.OS !== 'web' && nativeGesture !== null;
+  const body = isNativeDrag ? <GestureDetector gesture={nativeGesture}>{list}</GestureDetector> : list;
+
+  return (
+    <View className="min-h-0 flex-1" onLayout={onLayout}>
+      <View
+        ref={containerRef}
+        className="relative min-h-0 flex-1"
+        style={drag.active ? WEB_DRAGGING_STYLE : WEB_BODY_STYLE}
+        testID={FS_DRAG_CONTAINER_TEST_ID.icons}
+      >
+        {body}
+        {drag.active ? <DragPreview label={drag.previewLabel} pos={previewPos} /> : null}
+      </View>
+    </View>
   );
 }

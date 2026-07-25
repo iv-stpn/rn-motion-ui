@@ -40,6 +40,7 @@ export function FileSystem({
   className,
   defaultPath = '',
   defaultView = 'icons',
+  draggable,
   getContextMenuActions,
   getFileUrl,
   height = DEFAULT_HEIGHT,
@@ -48,6 +49,7 @@ export function FileSystem({
   loadPreviewImageUrl,
   onContextMenuAction,
   onFileOpen,
+  onMove,
   onSelectionChange,
   onViewChange,
   renderFilePreview,
@@ -152,6 +154,7 @@ export function FileSystem({
       <FileSystemContextMenuProvider>
         <FileSystemBody
           currentPath={state.currentPath}
+          draggable={draggable}
           entries={state.entries}
           fileFilter={state.fileFilter}
           getContextMenuActions={getContextMenuActions}
@@ -163,6 +166,7 @@ export function FileSystem({
           loadPreviewImageUrl={loadPreviewImageUrl}
           loadingFolders={state.loadingFolders}
           onContextMenuAction={onContextMenuAction}
+          onMove={onMove}
           onOpen={openEntry}
           onSelect={selectAndPrefetch}
           onSortColumnClick={state.toggleSortColumn}

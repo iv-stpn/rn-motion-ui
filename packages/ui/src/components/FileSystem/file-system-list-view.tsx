@@ -4,8 +4,20 @@
 // index (see file-system-rows) and render through a FlatList, so the same
 // folder-first ordering and per-folder disclosure survive without the DOM.
 
-import { useCallback, useMemo, useState } from 'react';
-import { FlatList, type LayoutChangeEvent, type ListRenderItemInfo, Pressable, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  Animated,
+  FlatList,
+  type LayoutChangeEvent,
+  type ListRenderItemInfo,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Platform,
+  Pressable,
+  View,
+  type ViewStyle,
+} from 'react-native';
+import { GestureDetector } from 'react-native-gesture-handler';
 import { cn } from '../../lib/cn';
 import { ChevronDown, ChevronRight, ChevronUp } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
@@ -24,13 +36,14 @@ import type { FileSystemRow } from './file-system-rows';
 import { flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
+import { FS_DRAG_CONTAINER_TEST_ID, FS_ROW_HEIGHT, useFileSystemDrag } from './use-file-system-drag';
+import { useFileSystemDragWeb } from './use-file-system-drag-web';
 
 const NAME_LABEL = 'Name';
 const DATE_LABEL = 'Date Modified';
 const SIZE_LABEL = 'Size';
 const MISSING_VALUE = '—';
 
-const ROW_HEIGHT = 30;
 const INDENT_PER_LEVEL = 14;
 /** The chevron lane, reserved on file rows too so names stay aligned. */
 const CHEVRON_SIZE = 18;
@@ -39,9 +52,51 @@ const FOLDER_GLYPH_SIZE = 18;
 /** Below this the date column drops out, leaving name + size. */
 const DATE_COLUMN_MIN_WIDTH = 420;
 
+// Web-only style props (userSelect / touchAction are absent from RN's ViewStyle).
+// Selection is off for the whole body; touchAction is clamped only during a drag
+// so ordinary touch scrolling is unaffected the rest of the time.
+type WebViewStyle = ViewStyle & { userSelect?: string; touchAction?: string };
+const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none' } : null;
+const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none', touchAction: 'none' } : null;
+
+/** Content-container top padding (py-1 = 4 px) so the drop highlight lines up. */
+const LIST_PADDING_TOP = 4;
+
 function itemCountLabel(count: number | undefined): string {
   if (count === undefined) return MISSING_VALUE;
   return `${count} ${count === 1 ? 'item' : 'items'}`;
+}
+
+type DropHighlightProps = { targetIndex: number | null; scrollOffset: number };
+
+/** Border outline over the row currently under the pointer (drop feedback). */
+function DropHighlight({ targetIndex, scrollOffset }: DropHighlightProps) {
+  if (targetIndex === null) return null;
+  return (
+    <View
+      pointerEvents="none"
+      className="absolute right-0 left-0 rounded-md border-2 border-primary"
+      style={{ height: FS_ROW_HEIGHT, top: targetIndex * FS_ROW_HEIGHT + LIST_PADDING_TOP - scrollOffset, zIndex: 3 }}
+    />
+  );
+}
+
+type DragPreviewProps = { label: string; pos: Animated.ValueXY };
+
+/** Floating label chip that tracks the pointer during a drag (no re-renders). */
+function DragPreview({ label, pos }: DragPreviewProps) {
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{ left: 0, position: 'absolute', top: 0, transform: pos.getTranslateTransform(), zIndex: 4 }}
+    >
+      <View className="rounded-md border border-border bg-surface-4 px-2 py-1">
+        <Text className="text-foreground" numberOfLines={1} size="xs">
+          {label}
+        </Text>
+      </View>
+    </Animated.View>
+  );
 }
 
 type ColumnHeaderProps = {
@@ -109,7 +164,7 @@ function ListRow({
         className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected ? 'bg-primary' : 'hover:bg-surface-hover')}
         onLongPress={onLongPress}
         onPress={handlePress}
-        style={{ height: ROW_HEIGHT, paddingLeft: 8 + level * INDENT_PER_LEVEL }}
+        style={{ height: FS_ROW_HEIGHT, paddingLeft: 8 + level * INDENT_PER_LEVEL }}
       >
         {isExpandable ? (
           <Pressable
@@ -148,9 +203,11 @@ function ListRow({
 
 export function FileSystemListView({
   currentPath,
+  draggable = false,
   getContextMenuActions,
   index,
   onContextMenuAction,
+  onMove,
   onOpen,
   onSelect,
   onSortColumnClick,
@@ -159,13 +216,43 @@ export function FileSystemListView({
 }: FileSystemViewProps) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set<string>());
   const [width, setWidth] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(0);
   const activate = useEntryActivation(onOpen, onSelect);
+
+  const flatListRef = useRef<FlatList<FileSystemRow> | null>(null);
+  const containerRef = useRef<View | null>(null);
+  const scrollOffsetRef = useRef(0);
+  const containerHeightRef = useRef(0);
 
   const rows = useMemo(() => flattenFileSystemRows({ currentPath, expanded, index }), [currentPath, expanded, index]);
   const showDate = width === 0 || width >= DATE_COLUMN_MIN_WIDTH;
 
-  const handleLayout = useCallback((event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width), []);
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    setWidth(event.nativeEvent.layout.width);
+    containerHeightRef.current = event.nativeEvent.layout.height;
+  }, []);
   const toggleExpanded = useCallback((path: string) => setExpanded((previous) => toggleExpandedPath(previous, path)), []);
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offset = event.nativeEvent.contentOffset.y;
+      scrollOffsetRef.current = offset;
+      if (draggable) setScrollOffset(offset);
+    },
+    [draggable],
+  );
+
+  const { session, previewPos, drag, nativeGesture } = useFileSystemDrag({
+    containerHeightRef,
+    // The rows start below the content container's top padding — without this the
+    // resolved row is one boundary off from the one under the pointer.
+    contentOffsetTop: LIST_PADDING_TOP,
+    enabled: draggable,
+    flatListRef,
+    onMove,
+    rows,
+    scrollOffsetRef,
+  });
+  useFileSystemDragWeb({ containerRef, enabled: draggable, session });
 
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemRow>) => (
@@ -187,11 +274,28 @@ export function FileSystemListView({
   const getItemLayout = useCallback(
     (_data: ArrayLike<FileSystemRow> | null | undefined, itemIndex: number) => ({
       index: itemIndex,
-      length: ROW_HEIGHT,
-      offset: ROW_HEIGHT * itemIndex,
+      length: FS_ROW_HEIGHT,
+      offset: FS_ROW_HEIGHT * itemIndex,
     }),
     [],
   );
+
+  const list = (
+    <FlatList
+      ref={flatListRef}
+      className="flex-1"
+      contentContainerClassName="py-1"
+      data={rows}
+      getItemLayout={getItemLayout}
+      keyExtractor={keyExtractor}
+      onScroll={draggable ? onScroll : undefined}
+      renderItem={renderRow}
+      scrollEventThrottle={16}
+      showsVerticalScrollIndicator={false}
+    />
+  );
+  const useNativePan = draggable && Platform.OS !== 'web' && nativeGesture !== null;
+  const body = useNativePan ? <GestureDetector gesture={nativeGesture}>{list}</GestureDetector> : list;
 
   return (
     <View className="min-h-0 flex-1" onLayout={handleLayout}>
@@ -204,15 +308,20 @@ export function FileSystemListView({
         ) : null}
         <ColumnHeader className="w-20 justify-end" label={SIZE_LABEL} onPress={onSortColumnClick} sort={sort} sortKey="size" />
       </View>
-      <FlatList
-        className="flex-1"
-        contentContainerClassName="py-1"
-        data={rows}
-        getItemLayout={getItemLayout}
-        keyExtractor={keyExtractor}
-        renderItem={renderRow}
-        showsVerticalScrollIndicator={false}
-      />
+      <View
+        ref={containerRef}
+        className="relative min-h-0 flex-1"
+        style={drag.active ? WEB_DRAGGING_STYLE : WEB_BODY_STYLE}
+        testID={FS_DRAG_CONTAINER_TEST_ID.list}
+      >
+        {body}
+        {drag.active ? (
+          <>
+            <DropHighlight scrollOffset={scrollOffset} targetIndex={drag.targetIndex} />
+            <DragPreview label={drag.previewLabel} pos={previewPos} />
+          </>
+        ) : null}
+      </View>
     </View>
   );
 }

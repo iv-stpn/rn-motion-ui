@@ -12,6 +12,7 @@ import type {
   FileSystemFileItem,
   FileSystemIndex,
   FileSystemItem,
+  FileSystemMoveEvent,
   FileSystemSortKey,
   FileSystemSortState,
   FileSystemViewerArgs,
@@ -42,6 +43,10 @@ export type FileSystemViewProps = {
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   /** See `FileSystemProps.onContextMenuAction`. */
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  /** See `FileSystemProps.draggable`. */
+  draggable?: boolean;
+  /** See `FileSystemProps.onMove`. */
+  onMove?: (event: FileSystemMoveEvent) => void;
 };
 
 export type FileSystemEmptyStateProps = { isLoading?: boolean; label: string };

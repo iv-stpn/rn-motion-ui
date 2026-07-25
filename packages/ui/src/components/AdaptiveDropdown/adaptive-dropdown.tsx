@@ -15,8 +15,8 @@ const VIEWPORT_PADDING = 8;
 const DEFAULT_MAX_HEIGHT = 520;
 const noop = () => undefined;
 
-type TriggerRenderProps = { open: boolean; toggle: () => void };
-type ContentRenderProps = { close: () => void };
+export type TriggerRenderProps = { open: boolean; toggle: () => void };
+export type ContentRenderProps = { close: () => void };
 
 export type AdaptiveDropdownProps = {
   /**

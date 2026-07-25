@@ -177,6 +177,11 @@
       "types": "./src/components/FeedbackWidget/feedback-widget.tsx",
       "default": "./src/components/FeedbackWidget/feedback-widget.tsx"
     },
+    "./file-system": {
+      "source": "./src/components/FileSystem/file-system.tsx",
+      "types": "./src/components/FileSystem/file-system.tsx",
+      "default": "./src/components/FileSystem/file-system.tsx"
+    },
     "./file-tree": {
       "source": "./src/components/FileTree/file-tree.tsx",
       "types": "./src/components/FileTree/file-tree.tsx",

@@ -151,6 +151,30 @@ export function ArrowDownUp({ size = 24, color: colorProp, strokeWidth = 2, styl
   );
 }
 
+export function ArrowLeft({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      color={color}
+      style={style}
+      accessibilityRole={accessibilityLabel ? 'image' : undefined}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <SvgPath d="m12 19-7-7 7-7" />
+      <SvgPath d="M19 12H5" />
+    </Svg>
+  );
+}
+
 export function ArrowLeftRight({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
@@ -594,6 +618,29 @@ export function ChevronDown({ size = 24, color: colorProp, strokeWidth = 2, styl
   );
 }
 
+export function ChevronLeft({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      color={color}
+      style={style}
+      accessibilityRole={accessibilityLabel ? 'image' : undefined}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <SvgPath d="m15 18-6-6 6-6" />
+    </Svg>
+  );
+}
+
 export function ChevronRight({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
@@ -733,6 +780,31 @@ export function CloudUpload({ size = 24, color: colorProp, strokeWidth = 2, styl
       <SvgPath d="M12 13v8" />
       <SvgPath d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
       <SvgPath d="m8 17 4-4 4 4" />
+    </Svg>
+  );
+}
+
+export function Columns3({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      color={color}
+      style={style}
+      accessibilityRole={accessibilityLabel ? 'image' : undefined}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <SvgRect width="18" height="18" x="3" y="3" rx="2" />
+      <SvgPath d="M9 3v18" />
+      <SvgPath d="M15 3v18" />
     </Svg>
   );
 }
@@ -1138,6 +1210,29 @@ export function FolderKanban({ size = 24, color: colorProp, strokeWidth = 2, sty
       <SvgPath d="M8 10v4" />
       <SvgPath d="M12 10v2" />
       <SvgPath d="M16 10v6" />
+    </Svg>
+  );
+}
+
+export function Funnel({ size = 24, color: colorProp, strokeWidth = 2, style, accessibilityLabel }: IconProps) {
+  const defaultColor = useThemeColor('foreground');
+  const color = colorProp ?? defaultColor;
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      color={color}
+      style={style}
+      accessibilityRole={accessibilityLabel ? 'image' : undefined}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <SvgPath d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z" />
     </Svg>
   );
 }

@@ -199,17 +199,42 @@ export const ErrorState: Story = {
   },
 };
 
-/** Minimal variant — no optional text, just the icon + default labels. */
+/**
+ * Minimal variant — no optional text at all, so the morph icon is the only
+ * content: the vessel resolves loading → success, then auto-closes.
+ */
 export const Minimal: Story = {
   render: () => {
     const [visible, setVisible] = useState(false);
-    const handleOpen = useCallback(() => setVisible(true), []);
+    const [state, setState] = useState<ActionFeedbackState>('loading');
+
+    const handleOpen = useCallback(() => {
+      setState('loading');
+      setVisible(true);
+      setTimeout(() => setState('success'), 1800);
+    }, []);
     const handleClose = useCallback(() => setVisible(false), []);
+
     return (
       <View>
         <Button onPress={handleOpen}>{OPEN_LABEL}</Button>
-        <ActionFeedbackModal visible={visible} state="loading" onClose={handleClose} />
+        <ActionFeedbackModal visible={visible} state={state} onClose={handleClose} />
       </View>
     );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole('button', { name: OPEN_LABEL }));
+    const doc = canvasElement.ownerDocument;
+    // With no text props the state block would render as an empty flex child of
+    // the `gap-4` column, adding a stray 16px gap under the icon. Assert no
+    // childless content wrapper exists — in loading, and again after success.
+    const strayGapWrapper = () =>
+      Array.from(doc.querySelectorAll('div')).find(
+        (d) => (d.getAttribute('class') ?? '').includes('gap-1.5') && d.childElementCount === 0,
+      );
+    await expect(strayGapWrapper()).toBeUndefined();
+    await new Promise((r) => setTimeout(r, 2200));
+    await expect(strayGapWrapper()).toBeUndefined();
   },
 };

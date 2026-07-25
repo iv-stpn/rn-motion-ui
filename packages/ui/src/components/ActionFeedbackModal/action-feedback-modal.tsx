@@ -164,6 +164,12 @@ export function ActionFeedbackModal({
     if (isDismissible) handleClose();
   }, [isDismissible, handleClose]);
 
+  // Each state block is a flex child of a `gap-4` column, so rendering one with
+  // no text inside still costs a 16px gap under the morph icon. Skip the block
+  // entirely when there is nothing to show. `error` always has a title + button.
+  const hasLoadingContent = Boolean(loadingMessage || tagline);
+  const hasSuccessContent = Boolean(successLabel || successMessage || tagline);
+
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: three state branches (loading/success/error) share one backdrop + morph vessel — splitting would scatter tightly-coupled animation state
   const renderContent = ({ open: isAnimOpen, onExitComplete }: OverlayShellContext) => (
     <AnimatePresence onExitComplete={onExitComplete}>
@@ -195,7 +201,7 @@ export function ActionFeedbackModal({
             <View className="w-full items-center gap-4 py-2">
               <MorphIcon state={state} reduced={reduced} />
               <AnimatePresence exitBeforeEnter={true} initial={false}>
-                {state === 'loading' && (
+                {state === 'loading' && hasLoadingContent && (
                   <MotiView
                     key="loading-content"
                     from={{ opacity: 0, translateY: 4 }}
@@ -208,7 +214,7 @@ export function ActionFeedbackModal({
                     {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
                   </MotiView>
                 )}
-                {state === 'success' && (
+                {state === 'success' && hasSuccessContent && (
                   <MotiView
                     key="success-content"
                     from={{ opacity: 0, translateY: 4 }}

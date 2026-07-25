@@ -177,6 +177,11 @@
       "types": "./src/components/FeedbackWidget/feedback-widget.tsx",
       "default": "./src/components/FeedbackWidget/feedback-widget.tsx"
     },
+    "./file-tree": {
+      "source": "./src/components/FileTree/file-tree.tsx",
+      "types": "./src/components/FileTree/file-tree.tsx",
+      "default": "./src/components/FileTree/file-tree.tsx"
+    },
     "./full-sheet": {
       "source": "./src/components/FullSheet/full-sheet.tsx",
       "types": "./src/components/FullSheet/full-sheet.tsx",

@@ -43,6 +43,10 @@ export type FileSystemViewProps = {
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   /** See `FileSystemProps.onContextMenuAction`. */
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  /** See `FileSystemProps.getBackgroundContextMenuActions`. */
+  getBackgroundContextMenuActions?: () => FileSystemContextMenuAction[];
+  /** See `FileSystemProps.onBackgroundContextMenuAction`. */
+  onBackgroundContextMenuAction?: (action: FileSystemContextMenuAction) => void | Promise<void>;
   /** See `FileSystemProps.draggable`. */
   draggable?: boolean;
   /** See `FileSystemProps.onMove`. */

@@ -29,7 +29,7 @@ import {
   type PanGestureHandlerEventPayload,
 } from 'react-native-gesture-handler';
 import type { FileTreeVisibleRow } from './file-tree.types';
-import { resolveDraggedPathsForStart } from './file-tree-dnd';
+import { resolveDraggedPathsForStart, resolveDropHighlightPath } from './file-tree-dnd';
 import { rowIndexAtOffset } from './file-tree-layout';
 import { leafName } from './file-tree-paths';
 
@@ -71,7 +71,21 @@ export type UseFileTreeDragParams = {
 };
 
 /** What the overlays need in order to draw. */
-export type FileTreeDragRender = { active: boolean; label: string; dropTargetPath: string | null; previewPos: Animated.ValueXY };
+export type FileTreeDragRender = {
+  active: boolean;
+  label: string;
+  dropTargetPath: string | null;
+  /**
+   * The paths this drag lifted. Rows read it to hold the hover tint on the source
+   * for the length of the drag: a captured pointer sends them no boundary events,
+   * so their own hover state cannot say it. Empty when no drag is in flight.
+   */
+  draggedPaths: readonly string[];
+  previewPos: Animated.ValueXY;
+};
+
+/** Stable empty set so an idle tree never re-renders its rows over identity alone. */
+const NO_DRAGGED_PATHS: readonly string[] = [];
 
 /**
  * The imperative drag session a platform transport drives. Coordinates are local
@@ -179,6 +193,9 @@ export function useFileTreeDrag(params: UseFileTreeDragParams): UseFileTreeDrag 
   const [active, setActive] = useState(false);
   const [label, setLabel] = useState('');
   const [dropTargetPath, setDropTargetPath] = useState<string | null>(null);
+  // Mirrors draggedRef into render state. Only the rows need it, and it changes
+  // exactly twice per drag, so it is nowhere near the pointer path.
+  const [draggedPaths, setDraggedPaths] = useState<readonly string[]>(NO_DRAGGED_PATHS);
   const previewPos = useRef(new Animated.ValueXY()).current;
 
   // Drag state lives in refs: the pointer stream reads it synchronously, and a
@@ -206,7 +223,8 @@ export function useFileTreeDrag(params: UseFileTreeDragParams): UseFileTreeDrag 
       targetRef.current = path;
       previewPos.setValue({ x: localX, y: localY });
       setLabel(dragLabel(dragged));
-      setDropTargetPath(path);
+      setDropTargetPath(resolveDropHighlightPath(dragged, path));
+      setDraggedPaths(dragged);
       setActive(true);
       return true;
     },
@@ -225,7 +243,7 @@ export function useFileTreeDrag(params: UseFileTreeDragParams): UseFileTreeDrag 
       const path = hoveredPathAt(localY);
       if (path !== targetRef.current) {
         targetRef.current = path;
-        setDropTargetPath(path);
+        setDropTargetPath(resolveDropHighlightPath(draggedRef.current, path));
       }
     },
     [previewPos, viewportHeight, hoveredPathAt, setAutoScrollDir],
@@ -241,6 +259,7 @@ export function useFileTreeDrag(params: UseFileTreeDragParams): UseFileTreeDrag 
       if (dragged.length === 0) return;
       setActive(false);
       setDropTargetPath(null);
+      setDraggedPaths(NO_DRAGGED_PATHS);
       setLabel('');
       if (commit) commitMove(dragged, target);
     },
@@ -255,8 +274,8 @@ export function useFileTreeDrag(params: UseFileTreeDragParams): UseFileTreeDrag 
   const gesture = useNativeDragPan(enabled, session);
 
   const render = useMemo<FileTreeDragRender>(
-    () => ({ active, label, dropTargetPath, previewPos }),
-    [active, label, dropTargetPath, previewPos],
+    () => ({ active, draggedPaths, label, dropTargetPath, previewPos }),
+    [active, draggedPaths, label, dropTargetPath, previewPos],
   );
 
   return { gesture, session, render };

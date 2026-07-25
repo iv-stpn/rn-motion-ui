@@ -168,6 +168,14 @@ export type FileSystemProps = {
    */
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   /**
+   * Resolve context-menu actions for a right-click (web) or long-press (native)
+   * on an empty area of the file browser — i.e. not on any entry. Omit to
+   * disable the background context menu.
+   */
+  getBackgroundContextMenuActions?: () => FileSystemContextMenuAction[];
+  /** Called when the user picks an action from the background context menu. */
+  onBackgroundContextMenuAction?: (action: FileSystemContextMenuAction) => void | Promise<void>;
+  /**
    * Enable drag-and-drop in the list and grid views. When `true`, entries can be
    * dragged onto folders to move them, and `onMove` fires on drop. A folder
    * cannot be dropped into itself or its own subtree. The columns and gallery

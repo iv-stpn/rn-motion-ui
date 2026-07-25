@@ -4,9 +4,8 @@
 // width picks a column count and the entries are pre-chunked into rows so a
 // FlatList can window them.
 
-import { type RefObject, useCallback, useMemo, useRef, useState } from 'react';
+import { type MutableRefObject, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated,
   FlatList,
   type LayoutChangeEvent,
   type ListRenderItemInfo,
@@ -18,34 +17,20 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import { cn } from '../../lib/cn';
-import { Text } from '../Text/text';
 import type { FileSystemEntry } from './file-system.types';
-import { useContextMenu } from './file-system-context-menu';
-import { FileSystemFolderGlyph } from './file-system-icons';
+import { useBackgroundContextMenu } from './file-system-context-menu';
+import {
+  type FileSystemHoverController,
+  FileSystemHoverHighlight,
+  FS_HOVER_TEST_ID,
+  useFileSystemHover,
+} from './file-system-hover';
+import { chunkEntries, gridMetrics, ROW_STRIDE, TILE_HEIGHT, tileAt, tileCorner } from './file-system-icons-grid';
+import { DragGhost, IconRow } from './file-system-icons-tile';
 import type { FileSystemViewProps } from './file-system-view';
-import { FileVisual } from './file-system-visual';
 import { useEntryActivation } from './use-entry-activation';
 import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
 import { type UseIconsDragReturn, useIconsViewDrag } from './use-file-system-icons-drag';
-
-// Tile geometry (px). Tiles have a fixed height — a glyph box plus a reserved
-// two-line label — so every row shares one stride and windowing stays exact.
-const GRID_PADDING = 12;
-const MIN_TILE_WIDTH = 104;
-const TILE_GAP = 4;
-const ROW_GAP = 12;
-const GLYPH_BOX_HEIGHT = 64;
-const TILE_HEIGHT = 102;
-const ROW_STRIDE = TILE_HEIGHT + ROW_GAP;
-const FOLDER_GLYPH_SIZE = 52;
-/** Landscape thumbnails get the wider face so they fill the tile. */
-const LANDSCAPE_RATIO = 1.2;
-const PORTRAIT_TILE_WIDTH = 48;
-const LANDSCAPE_TILE_WIDTH = 76;
-const TILE_PREVIEW_RATIO = 0.78;
-
-type GridMetrics = { columns: number; tileWidth: number };
 
 // Web-only style props (userSelect / touchAction are absent from RN's ViewStyle).
 type WebViewStyle = ViewStyle & { userSelect?: string; touchAction?: string };
@@ -54,131 +39,6 @@ const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSe
 
 /** Stable empty data for the frame before the width is known — see below. */
 const NO_ROWS: FileSystemEntry[][] = [];
-
-function gridMetrics(width: number): GridMetrics {
-  const available = Math.max(0, width - GRID_PADDING * 2);
-  const columns = Math.max(1, Math.floor((available + TILE_GAP) / (MIN_TILE_WIDTH + TILE_GAP)));
-  return { columns, tileWidth: Math.floor((available - TILE_GAP * (columns - 1)) / columns) };
-}
-
-function chunkEntries(entries: FileSystemEntry[], columns: number): FileSystemEntry[][] {
-  const rows: FileSystemEntry[][] = [];
-  for (let i = 0; i < entries.length; i += columns) rows.push(entries.slice(i, i + columns));
-  return rows;
-}
-
-type DragPreviewProps = { label: string; pos: Animated.ValueXY };
-
-function DragPreview({ label, pos }: DragPreviewProps) {
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={{ left: 0, position: 'absolute', top: 0, transform: pos.getTranslateTransform(), zIndex: 4 }}
-    >
-      <View className="rounded-md border border-border bg-surface-4 px-2 py-1">
-        <Text className="text-foreground" numberOfLines={1} size="xs">
-          {label}
-        </Text>
-      </View>
-    </Animated.View>
-  );
-}
-
-// ── Tile + row ─────────────────────────────────────────────────────────────────
-
-type IconTileProps = Pick<
-  FileSystemViewProps,
-  'getContextMenuActions' | 'loadPreviewImageUrl' | 'onContextMenuAction' | 'pageUrlCache' | 'renderFilePreview'
-> & {
-  entry: FileSystemEntry;
-  isDropTarget: boolean;
-  isSelected: boolean;
-  onActivate: (entry: FileSystemEntry) => void;
-  width: number;
-};
-
-function IconTile({
-  entry,
-  getContextMenuActions,
-  isDropTarget,
-  isSelected,
-  onActivate,
-  onContextMenuAction,
-  width,
-  ...visualProps
-}: IconTileProps) {
-  const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
-  const isLandscape = entry.kind === 'file' && (entry.previewAspectRatio ?? 0) > LANDSCAPE_RATIO;
-  const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
-
-  return (
-    <View ref={wrapperRef} style={{ width }}>
-      <Pressable
-        accessibilityLabel={entry.name}
-        accessibilityRole="button"
-        accessibilityState={{ selected: isSelected }}
-        className="items-center gap-1.5"
-        onLongPress={onLongPress}
-        onPress={handlePress}
-        style={{ height: TILE_HEIGHT, width }}
-      >
-        <View
-          className={cn(
-            'w-20 shrink-0 items-center justify-center rounded-lg p-1',
-            isSelected && 'bg-surface-selected',
-            isDropTarget && 'border-2 border-primary',
-          )}
-          style={{ height: GLYPH_BOX_HEIGHT }}
-        >
-          {entry.kind === 'folder' ? (
-            <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />
-          ) : (
-            <FileVisual
-              file={entry}
-              previewAspectRatio={TILE_PREVIEW_RATIO}
-              width={isLandscape ? LANDSCAPE_TILE_WIDTH : PORTRAIT_TILE_WIDTH}
-              {...visualProps}
-            />
-          )}
-        </View>
-        <View className={cn('max-w-full rounded-sm px-1.5 py-px', isSelected && 'bg-primary')}>
-          <Text
-            className={cn('text-center leading-tight', isSelected ? 'text-primary-foreground' : 'text-foreground')}
-            numberOfLines={2}
-            size="xs"
-          >
-            {entry.name}
-          </Text>
-        </View>
-        {contextMenuNode}
-      </Pressable>
-    </View>
-  );
-}
-
-type IconRowProps = Omit<IconTileProps, 'entry' | 'isDropTarget' | 'isSelected' | 'width'> & {
-  dragTargetPath: string | null;
-  row: FileSystemEntry[];
-  selectedPath: string | null;
-  tileWidth: number;
-};
-
-function IconRow({ dragTargetPath, row, selectedPath, tileWidth, ...tileProps }: IconRowProps) {
-  return (
-    <View className="flex-row gap-1" style={{ marginBottom: ROW_GAP }}>
-      {row.map((entry) => (
-        <IconTile
-          entry={entry}
-          isDropTarget={entry.path === dragTargetPath}
-          isSelected={entry.path === selectedPath}
-          key={entry.path}
-          width={tileWidth}
-          {...tileProps}
-        />
-      ))}
-    </View>
-  );
-}
 
 // ── Grid + drag session ────────────────────────────────────────────────────────
 
@@ -192,11 +52,59 @@ const getItemLayout = (_: ArrayLike<FileSystemEntry[]> | null | undefined, index
 type IconsGrid = UseIconsDragReturn & {
   containerRef: RefObject<View | null>;
   flatListRef: RefObject<FlatList | null>;
+  hover: FileSystemHoverController;
   onLayout: (event: LayoutChangeEvent) => void;
   onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   rows: FileSystemEntry[][];
   tileWidth: number;
 };
+
+type UseIconsHoverParams = {
+  columnsRef: MutableRefObject<number>;
+  containerRef: RefObject<View | null>;
+  /** Past the last entry the grid has slots but no tiles — nothing to highlight. */
+  entryCount: number;
+  isDragging: () => boolean;
+  scrollOffsetRef: MutableRefObject<number>;
+  /** Flat index of the selected entry, or null. Selected tiles suppress normal hover. */
+  selectedIndexRef: MutableRefObject<number | null>;
+  tileWidthRef: MutableRefObject<number>;
+};
+
+/**
+ * Hover controller for the tile grid. `tileAt` clamps to the nearest tile, which
+ * is what a drag wants — a drop should commit somewhere. Hover is the stricter
+ * question, so the hit is rejected unless the pointer is inside the tile's own
+ * box: no highlight in the grid padding or the gaps between tiles.
+ *
+ * Hover is suppressed entirely during a drag — the label chip fill on `isDropTarget`
+ * already marks the folder a drop would land in, so a second highlight is redundant.
+ * It is also suppressed on the selected tile — its `bg-surface-selected` glyph box
+ * already marks it, and a hover on top reads as a confusing flicker on click.
+ */
+function useIconsHover({
+  columnsRef,
+  containerRef,
+  entryCount,
+  isDragging,
+  scrollOffsetRef,
+  selectedIndexRef,
+  tileWidthRef,
+}: UseIconsHoverParams): FileSystemHoverController {
+  const resolve = useCallback(
+    (localX: number, localY: number) => {
+      if (isDragging()) return null;
+      const lookup = { columns: columnsRef.current, scrollOffset: scrollOffsetRef.current, tileWidth: tileWidthRef.current };
+      const hit = tileAt(localX, localY, lookup);
+      if (hit.index >= entryCount) return null;
+      if (hit.index === selectedIndexRef.current) return null;
+      const inside = localX >= hit.x && localX < hit.x + lookup.tileWidth && localY >= hit.y && localY < hit.y + TILE_HEIGHT;
+      return inside ? tileCorner(hit.index, lookup) : null;
+    },
+    [columnsRef, entryCount, isDragging, scrollOffsetRef, selectedIndexRef, tileWidthRef],
+  );
+  return useFileSystemHover({ containerRef, isDragging, resolve });
+}
 
 /**
  * Measures the grid, chunks the entries into rows, and opens the drag session.
@@ -204,7 +112,12 @@ type IconsGrid = UseIconsDragReturn & {
  * the session's index resolver reads them on every pointer move, and refs keep
  * a resize from tearing down the session mid-drag.
  */
-function useIconsGrid(entries: FileSystemEntry[], draggable: boolean, onMove: FileSystemViewProps['onMove']): IconsGrid {
+function useIconsGrid(
+  entries: FileSystemEntry[],
+  draggable: boolean,
+  onMove: FileSystemViewProps['onMove'],
+  selectedPath: string | null,
+): IconsGrid {
   const [width, setWidth] = useState(0);
   const flatListRef = useRef<FlatList | null>(null);
   const containerRef = useRef<View | null>(null);
@@ -212,14 +125,12 @@ function useIconsGrid(entries: FileSystemEntry[], draggable: boolean, onMove: Fi
   const containerHeightRef = useRef(0);
   const columnsRef = useRef(1);
   const tileWidthRef = useRef(0);
+  const selectedIndexRef = useRef<number | null>(null);
+  selectedIndexRef.current = selectedPath === null ? null : entries.findIndex((e) => e.path === selectedPath);
 
   const onLayout = useCallback((event: LayoutChangeEvent) => {
     setWidth(event.nativeEvent.layout.width);
     containerHeightRef.current = event.nativeEvent.layout.height;
-  }, []);
-
-  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
   }, []);
 
   const { columns, tileWidth } = gridMetrics(width);
@@ -245,16 +156,39 @@ function useIconsGrid(entries: FileSystemEntry[], draggable: boolean, onMove: Fi
     tileWidthRef,
   });
 
-  return { ...dragSession, containerRef, flatListRef, onLayout, onScroll, rows, tileWidth };
+  const hover = useIconsHover({
+    columnsRef,
+    containerRef,
+    entryCount: entries.length,
+    isDragging: dragSession.isDragging,
+    scrollOffsetRef,
+    selectedIndexRef,
+    tileWidthRef,
+  });
+
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+      // The pointer sits still while the tiles move under it, so the highlight has
+      // to re-resolve — including while a drag auto-scrolls the grid.
+      hover.refresh();
+    },
+    [hover],
+  );
+
+  return { ...dragSession, containerRef, flatListRef, hover, onLayout, onScroll, rows, tileWidth };
 }
 
 // ── View ───────────────────────────────────────────────────────────────────────
 
 export function FileSystemIconsView({
+  currentPath,
   draggable = false,
   entries,
+  getBackgroundContextMenuActions,
   getContextMenuActions,
   loadPreviewImageUrl,
+  onBackgroundContextMenuAction,
   onContextMenuAction,
   onMove,
   onOpen,
@@ -264,12 +198,43 @@ export function FileSystemIconsView({
   selectedPath,
 }: FileSystemViewProps) {
   const activate = useEntryActivation(onOpen, onSelect);
-  const { containerRef, drag, dragTargetPath, flatListRef, nativeGesture, onLayout, onScroll, previewPos, rows, tileWidth } =
-    useIconsGrid(entries, draggable, onMove);
+  const {
+    containerRef,
+    drag,
+    draggedEntry,
+    dragTargetPath,
+    flatListRef,
+    hover,
+    nativeGesture,
+    onLayout,
+    onScroll,
+    previewPos,
+    rows,
+    tileWidth,
+  } = useIconsGrid(entries, draggable, onMove, selectedPath);
+  const draggedPath = draggedEntry?.path ?? null;
+
+  // When selection changes the pointer hasn't moved, so the highlight won't
+  // self-dismiss — re-resolve explicitly so a just-selected tile hides it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPath is the trigger; it is not read in the body but must be in the deps to re-fire on selection change
+  // biome-ignore lint/plugin: re-resolve is a side-effect on an Animated value, not render state
+  useEffect(() => {
+    hover.refresh();
+  }, [hover, selectedPath]);
+
+  const folderTitle = currentPath.split('/').filter(Boolean).at(-1) ?? 'Files';
+  const backgroundMenu = useBackgroundContextMenu(
+    containerRef,
+    getBackgroundContextMenuActions,
+    onBackgroundContextMenuAction,
+    folderTitle,
+  );
+  const handleBackgroundPress = useCallback(() => onSelect(null), [onSelect]);
 
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry[]>) => (
       <IconRow
+        draggedPath={draggedPath}
         dragTargetPath={dragTargetPath}
         getContextMenuActions={getContextMenuActions}
         loadPreviewImageUrl={loadPreviewImageUrl}
@@ -284,6 +249,7 @@ export function FileSystemIconsView({
     ),
     [
       activate,
+      draggedPath,
       dragTargetPath,
       getContextMenuActions,
       loadPreviewImageUrl,
@@ -314,15 +280,37 @@ export function FileSystemIconsView({
 
   return (
     <View className="min-h-0 flex-1" onLayout={onLayout}>
-      <View
+      <Pressable
         ref={containerRef}
         className="relative min-h-0 flex-1"
         style={drag.active ? WEB_DRAGGING_STYLE : WEB_BODY_STYLE}
         testID={FS_DRAG_CONTAINER_TEST_ID.icons}
+        onPress={handleBackgroundPress}
+        onLongPress={backgroundMenu.onLongPress}
       >
+        {/* Before the grid, so it paints behind the tiles — see FileSystemHoverHighlight.
+            Sized to the glyph box, not the tile: that box is what selection fills
+            and a drop outlines, so all three states mark one rect. */}
+        <FileSystemHoverHighlight
+          className="rounded-lg"
+          controller={hover}
+          height={TILE_HEIGHT}
+          testID={FS_HOVER_TEST_ID.icons}
+          width={tileWidth}
+        />
         {body}
-        {drag.active ? <DragPreview label={drag.previewLabel} pos={previewPos} /> : null}
-      </View>
+        {draggedEntry ? (
+          <DragGhost
+            entry={draggedEntry}
+            loadPreviewImageUrl={loadPreviewImageUrl}
+            pageUrlCache={pageUrlCache}
+            pos={previewPos}
+            renderFilePreview={renderFilePreview}
+            width={tileWidth}
+          />
+        ) : null}
+        {backgroundMenu.contextMenuNode}
+      </Pressable>
     </View>
   );
 }

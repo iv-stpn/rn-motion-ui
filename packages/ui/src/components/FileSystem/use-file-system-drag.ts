@@ -42,9 +42,27 @@ export type FileSystemDragSession = {
   move: (localX: number, localY: number) => void;
   finish: (commit: boolean) => void;
   isActive: () => boolean;
+  /**
+   * The flat index a drop would commit to, live off the ref rather than render
+   * state. The hover highlight reads it on the pointer path — one pointermove
+   * updates the target and re-resolves the highlight in the same tick, so the
+   * two can never disagree by a frame.
+   */
+  getTargetIndex: () => number | null;
 };
 
-export type FileSystemDragRender = { active: boolean; previewLabel: string; targetIndex: number | null };
+/** A point in the container-local frame — the grabbed element's top-left corner. */
+export type FileSystemGrabAnchor = { x: number; y: number };
+
+export type FileSystemDragRender = {
+  active: boolean;
+  previewLabel: string;
+  targetIndex: number | null;
+  /** Flat index of the entry being dragged, so a view can render it as a ghost. */
+  draggedIndex: number | null;
+};
+
+const IDLE_DRAG: FileSystemDragRender = { active: false, draggedIndex: null, previewLabel: '', targetIndex: null };
 
 export type UseFileSystemDragParams = {
   enabled: boolean;
@@ -65,6 +83,13 @@ export type UseFileSystemDragParams = {
    * where the pointer actually resolves it.
    */
   contentOffsetTop?: number;
+  /**
+   * Top-left corner of the element under `(localX, localY)`, container-local.
+   * Given one, the ghost is offset by where inside the element the grab landed,
+   * so it stays pinned under the pointer the way an OS drag image does. Without
+   * one the ghost trails the pointer by a fixed offset (the list-view chip).
+   */
+  getGrabAnchor?: (localX: number, localY: number) => FileSystemGrabAnchor | null;
 };
 
 export type UseFileSystemDragReturn = {
@@ -90,12 +115,15 @@ type SessionRefs = {
   draggedIndexRef: MutableRefObject<number | null>;
   targetIndexRef: MutableRefObject<number | null>;
   isDraggingRef: MutableRefObject<boolean>;
+  /** Where inside the grabbed element the press landed — see moveGhost. */
+  grabOffsetRef: MutableRefObject<FileSystemGrabAnchor | null>;
   scrollTimerRef: MutableRefObject<ReturnType<typeof setInterval> | null>;
   scrollOffsetRef: MutableRefObject<number>;
   containerHeightRef: MutableRefObject<number>;
   flatListRef: RefObject<FlatList | null>;
   previewPos: Animated.ValueXY;
   toEntryIndex: (localX: number, localY: number) => number;
+  getGrabAnchor: (localX: number, localY: number) => FileSystemGrabAnchor | null;
   setDrag: (updater: (prev: FileSystemDragRender) => FileSystemDragRender) => void;
   setDragDirect: (next: FileSystemDragRender) => void;
 };
@@ -122,12 +150,14 @@ function buildDragSession(refs: SessionRefs): FileSystemDragSession {
     draggedIndexRef,
     targetIndexRef,
     isDraggingRef,
+    grabOffsetRef,
     scrollTimerRef,
     scrollOffsetRef,
     containerHeightRef,
     flatListRef,
     previewPos,
     toEntryIndex,
+    getGrabAnchor,
     setDrag,
     setDragDirect,
   } = refs;
@@ -138,21 +168,35 @@ function buildDragSession(refs: SessionRefs): FileSystemDragSession {
     scrollTimerRef.current = null;
   }
 
+  /**
+   * Place the ghost for a pointer at `(localX, localY)`. With a grab offset the
+   * ghost's top-left keeps the same position under the pointer it had at press
+   * time, so the tile appears lifted from where it sat rather than snapping its
+   * corner to the cursor. Without one it trails by a fixed offset.
+   */
+  function moveGhost(localX: number, localY: number) {
+    const grab = grabOffsetRef.current;
+    if (grab) previewPos.setValue({ x: localX - grab.x, y: localY - grab.y });
+    else previewPos.setValue({ x: localX + GHOST_OFFSET_X, y: localY + GHOST_OFFSET_Y });
+  }
+
   return {
     begin(localX, localY) {
       const entryIndex = toEntryIndex(localX, localY);
       const row = rowsRef.current?.[entryIndex];
       if (!row) return false;
+      const anchor = getGrabAnchor(localX, localY);
       draggedIndexRef.current = entryIndex;
       targetIndexRef.current = null;
       isDraggingRef.current = true;
-      previewPos.setValue({ x: localX + GHOST_OFFSET_X, y: localY + GHOST_OFFSET_Y });
-      setDragDirect({ active: true, previewLabel: row.entry.name, targetIndex: null });
+      grabOffsetRef.current = anchor === null ? null : { x: localX - anchor.x, y: localY - anchor.y };
+      moveGhost(localX, localY);
+      setDragDirect({ active: true, draggedIndex: entryIndex, previewLabel: row.entry.name, targetIndex: null });
       return true;
     },
     move(localX, localY) {
       if (!isDraggingRef.current) return;
-      previewPos.setValue({ x: localX + GHOST_OFFSET_X, y: localY + GHOST_OFFSET_Y });
+      moveGhost(localX, localY);
       const entryIndex = toEntryIndex(localX, localY);
       const clamped = Math.max(0, Math.min(entryIndex, (rowsRef.current?.length ?? 1) - 1));
       const draggedIndex = draggedIndexRef.current;
@@ -186,9 +230,11 @@ function buildDragSession(refs: SessionRefs): FileSystemDragSession {
         onMoveRef.current?.({ destination: dst.entry.path, sources: [src.entry.path] });
       draggedIndexRef.current = null;
       targetIndexRef.current = null;
-      setDragDirect({ active: false, previewLabel: '', targetIndex: null });
+      grabOffsetRef.current = null;
+      setDragDirect(IDLE_DRAG);
     },
     isActive: () => isDraggingRef.current,
+    getTargetIndex: () => targetIndexRef.current,
   };
 }
 
@@ -203,6 +249,7 @@ export function useFileSystemDrag({
   onMove,
   toEntryIndex,
   contentOffsetTop = 0,
+  getGrabAnchor,
 }: UseFileSystemDragParams): UseFileSystemDragReturn {
   // biome-ignore lint/plugin: useRef<T>(val) returns MutableRefObject; we need RefObject for the session param type
   const rowsRef = useRef(rows) as RefObject<FileSystemRow[]>;
@@ -214,15 +261,12 @@ export function useFileSystemDrag({
   const draggedIndexRef = useRef<number | null>(null);
   const targetIndexRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
+  const grabOffsetRef = useRef<FileSystemGrabAnchor | null>(null);
   const scrollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const previewPos = useRef(new Animated.ValueXY()).current;
 
-  const [drag, setDrag] = useState<FileSystemDragRender>({
-    active: false,
-    previewLabel: '',
-    targetIndex: null,
-  });
+  const [drag, setDrag] = useState<FileSystemDragRender>(IDLE_DRAG);
   const setDragDirect = useCallback((next: FileSystemDragRender) => setDrag(() => next), []);
 
   // Default index resolver: list-view row formula. `contentOffsetTop` is the
@@ -239,6 +283,12 @@ export function useFileSystemDrag({
   toEntryIndexRef.current = resolvedToEntryIndex;
   const stableToEntryIndex = useCallback((x: number, y: number) => toEntryIndexRef.current(x, y), []);
 
+  // Same treatment for the anchor resolver: the icons view rebuilds it whenever
+  // the grid metrics change, and a session rebuilt mid-drag loses the gesture.
+  const grabAnchorRef = useRef(getGrabAnchor);
+  grabAnchorRef.current = getGrabAnchor;
+  const stableGetGrabAnchor = useCallback((x: number, y: number) => grabAnchorRef.current?.(x, y) ?? null, []);
+
   const session = useMemo(
     () =>
       buildDragSession({
@@ -247,17 +297,19 @@ export function useFileSystemDrag({
         draggedIndexRef,
         targetIndexRef,
         isDraggingRef,
+        grabOffsetRef,
         scrollTimerRef,
         scrollOffsetRef,
         containerHeightRef,
         flatListRef,
         previewPos,
         toEntryIndex: stableToEntryIndex,
+        getGrabAnchor: stableGetGrabAnchor,
         setDrag,
         setDragDirect,
       }),
     // All deps are stable refs or stable callbacks — this memo fires exactly once.
-    [containerHeightRef, flatListRef, previewPos, scrollOffsetRef, setDragDirect, stableToEntryIndex],
+    [containerHeightRef, flatListRef, previewPos, scrollOffsetRef, setDragDirect, stableGetGrabAnchor, stableToEntryIndex],
   );
 
   const nativeGesture = useMemo(() => {

@@ -5,6 +5,7 @@ import {
   isSelfOrDescendantDrop,
   normalizeDraggedPaths,
   resolveDraggedPathsForStart,
+  resolveDropHighlightPath,
   resolveMoveDestinationPath,
 } from '../file-tree-dnd';
 
@@ -54,6 +55,40 @@ describe('isSelfOrDescendantDrop', () => {
 
   it('is false for an unrelated destination', () => {
     expect(isSelfOrDescendantDrop(['src/'], 'dest/')).toBe(false);
+  });
+});
+
+describe('resolveDropHighlightPath', () => {
+  it('marks the hovered directory', () => {
+    expect(resolveDropHighlightPath(['src/a.ts'], 'dest/')).toBe('dest/');
+  });
+
+  it("marks a hovered file's parent, not the file", () => {
+    expect(resolveDropHighlightPath(['src/a.ts'], 'dest/keep.ts')).toBe('dest/');
+  });
+
+  it('marks nothing for the drag source itself', () => {
+    expect(resolveDropHighlightPath(['src/nested/'], 'src/nested/')).toBeNull();
+    expect(resolveDropHighlightPath(['src/a.ts'], 'src/a.ts')).toBeNull();
+  });
+
+  it('marks nothing for a no-op drop into the directory the source already sits in', () => {
+    expect(resolveDropHighlightPath(['src/a.ts'], 'src/')).toBeNull();
+    expect(resolveDropHighlightPath(['src/a.ts'], 'src/b.ts')).toBeNull();
+  });
+
+  it("marks nothing inside the dragged directory's own subtree", () => {
+    expect(resolveDropHighlightPath(['src/'], 'src/nested/')).toBeNull();
+    expect(resolveDropHighlightPath(['src/'], 'src/nested/deep.ts')).toBeNull();
+  });
+
+  it('marks nothing at the top level, which has no row of its own', () => {
+    expect(resolveDropHighlightPath(['src/a.ts'], null)).toBeNull();
+    expect(resolveDropHighlightPath(['src/a.ts'], 'root.ts')).toBeNull();
+  });
+
+  it('marks a destination that is legal for only part of a multi-drag', () => {
+    expect(resolveDropHighlightPath(['dest/keep.ts', 'src/a.ts'], 'dest/')).toBe('dest/');
   });
 });
 

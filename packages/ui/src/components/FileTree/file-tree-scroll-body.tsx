@@ -17,6 +17,7 @@ import { Animated, FlatList, Platform, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { Text } from '../Text/text';
 import type { FileTreeVisibleRow } from './file-tree.types';
+import { FileTreeDragActiveProvider } from './file-tree-drag-context';
 import { computeStickyHeaders } from './file-tree-layout';
 import { FileTreeStickyHeaders } from './file-tree-sticky-headers';
 import { useFileTreeDrag } from './use-file-tree-drag';
@@ -61,7 +62,13 @@ const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSe
 
 type DropHighlightProps = { rows: FileTreeVisibleRow[]; dropTargetPath: string | null; itemHeight: number; scrollOffset: number };
 
-/** A border box over the row currently under the finger (drop feedback). */
+// A thin outline plus the hover tint over the directory row the drop would land
+// in — the one mark the tree shows while a drag is live (row hover is suppressed
+// for the duration, see file-tree-drag-context). `dropTargetPath` is already
+// resolved to that directory by the session, so an illegal or no-op drop simply
+// has no row to outline. The tint is the same 4% overlay a hovered row paints;
+// carrying it here rather than leaving it to the row keeps the highlight and the
+// outline on one node, which is the only way they cannot drift apart.
 function DropHighlight({ rows, dropTargetPath, itemHeight, scrollOffset }: DropHighlightProps) {
   if (!dropTargetPath) return null;
   const index = rows.findIndex((row) => row.path === dropTargetPath);
@@ -69,7 +76,7 @@ function DropHighlight({ rows, dropTargetPath, itemHeight, scrollOffset }: DropH
   return (
     <View
       pointerEvents="none"
-      className="absolute right-0 left-0 rounded-sm border-2 border-primary"
+      className="absolute right-0 left-0 rounded-sm border border-primary bg-surface-hover"
       style={{ top: index * itemHeight - scrollOffset, height: itemHeight, zIndex: 3 }}
     />
   );
@@ -165,31 +172,36 @@ export function FileTreeScrollBody(props: FileTreeScrollBodyProps) {
   const body = useNativePan ? <GestureDetector gesture={drag.gesture}>{list}</GestureDetector> : list;
 
   return (
-    <View
-      ref={containerRef}
-      className="relative"
-      style={[{ height: bodyHeight }, drag.render.active ? WEB_DRAGGING_STYLE : WEB_BODY_STYLE]}
-    >
-      {body}
-      {sticky ? (
-        <FileTreeStickyHeaders
-          headers={sticky.headers}
-          transition={sticky.transition}
-          itemHeight={itemHeight}
-          renderRow={renderRow}
-        />
-      ) : null}
-      {drag.render.active ? (
-        <>
-          <DropHighlight
-            rows={rows}
-            dropTargetPath={drag.render.dropTargetPath}
+    // The provider, not a prop on the rows: `renderRow` is built by the parent and
+    // shared with the sticky stack, so the flag has to reach the rows past it. It
+    // flips twice per drag, so the re-render it costs every row is bounded.
+    <FileTreeDragActiveProvider active={drag.render.active} draggedPaths={drag.render.draggedPaths}>
+      <View
+        ref={containerRef}
+        className="relative"
+        style={[{ height: bodyHeight }, drag.render.active ? WEB_DRAGGING_STYLE : WEB_BODY_STYLE]}
+      >
+        {body}
+        {sticky ? (
+          <FileTreeStickyHeaders
+            headers={sticky.headers}
+            transition={sticky.transition}
             itemHeight={itemHeight}
-            scrollOffset={scrollOffset}
+            renderRow={renderRow}
           />
-          <DragPreview label={drag.render.label} pos={drag.render.previewPos} />
-        </>
-      ) : null}
-    </View>
+        ) : null}
+        {drag.render.active ? (
+          <>
+            <DropHighlight
+              rows={rows}
+              dropTargetPath={drag.render.dropTargetPath}
+              itemHeight={itemHeight}
+              scrollOffset={scrollOffset}
+            />
+            <DragPreview label={drag.render.label} pos={drag.render.previewPos} />
+          </>
+        ) : null}
+      </View>
+    </FileTreeDragActiveProvider>
   );
 }

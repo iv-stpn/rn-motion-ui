@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
 /** biome-ignore-all lint/style/useComponentExportOnlyModules: hook and helper components kept together — all are internal to this module */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: entry and background context-menu hooks share the same panel/action components — splitting would add indirection with no benefit */
 // Context-menu support for file entries: right-click on web, long-press on
 // native. Implemented as a hook so each row or tile can wire it without an
 // extra wrapper component changing the layout tree.
@@ -264,6 +265,9 @@ export function useContextMenu(
     if (!node?.addEventListener) return;
     const handler = (e: Event) => {
       e.preventDefault();
+      // Stop bubbling so a background contextmenu listener on the container
+      // does not also fire when right-clicking directly on an entry.
+      e.stopPropagation();
       // biome-ignore lint/plugin: MouseEvent is the concrete type at runtime; Event is the generic DOM listener signature
       const me = e as MouseEvent;
       openMenu({ x: me.clientX, y: me.clientY });
@@ -279,4 +283,98 @@ export function useContextMenu(
   ) : null;
 
   return { wrapperRef, onLongPress: openFromLongPress, contextMenuNode };
+}
+
+// ── Background context menu ────────────────────────────────────────────────────
+
+export type BackgroundContextMenuHookReturn = {
+  /**
+   * Pass to the background Pressable's `onLongPress`. `undefined` when
+   * `getActions` was not provided so the prop is truly absent.
+   */
+  onLongPress: (() => void) | undefined;
+  /**
+   * Render this node alongside the view body. Same Modal-backed panel as the
+   * entry context menu. `null` when disabled.
+   */
+  contextMenuNode: ReactNode;
+};
+
+/**
+ * Wires up a right-click / long-press context menu for the empty background
+ * of a file-system view — i.e. not on any specific entry.
+ *
+ * @param containerRef  The scroll/drag container that receives the `contextmenu`
+ *                      DOM event on web (entry context menus call `stopPropagation`,
+ *                      so only genuine background clicks reach this listener).
+ * @param getActions    Synchronous resolver for menu actions — omit to disable.
+ * @param onAction      Called with the chosen action (may be async).
+ * @param title         Label shown in the bottom-sheet header on narrow/native screens.
+ */
+export function useBackgroundContextMenu(
+  containerRef: RefObject<View | null>,
+  getActions: (() => FileSystemContextMenuAction[]) | undefined,
+  onAction: ((action: FileSystemContextMenuAction) => void | Promise<void>) | undefined,
+  title: string,
+): BackgroundContextMenuHookReturn {
+  const registryRef = useContext(FileSystemContextMenuContext);
+  const [open, setOpen] = useState(false);
+  const [actions, setActions] = useState<FileSystemContextMenuAction[]>([]);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+
+  const getActionsRef = useRef(getActions);
+  getActionsRef.current = getActions;
+
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+    setPos(null);
+  }, []);
+
+  const openMenu = useCallback(
+    (cursorPos: { x: number; y: number } | null) => {
+      if (!getActionsRef.current) return;
+      registryRef.current?.close();
+      const result = getActionsRef.current();
+      setActions(result);
+      setPos(cursorPos);
+      setOpen(true);
+      registryRef.current = { close: closeMenu };
+    },
+    [closeMenu, registryRef],
+  );
+
+  const handleAction = useCallback(
+    (action: FileSystemContextMenuAction) => {
+      setOpen(false);
+      onAction?.(action);
+    },
+    [onAction],
+  );
+
+  const openFromLongPress = useCallback(() => openMenu(null), [openMenu]);
+
+  // biome-ignore lint/plugin: attaching a web-only DOM event; Platform guard makes this branch unreachable on native
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (!getActions) return;
+    // biome-ignore lint/plugin: RN View refs resolve to HTMLElement in react-native-web; no type-safe alternative
+    const node = containerRef.current as unknown as HTMLElement | null;
+    if (!node?.addEventListener) return;
+    const handler = (e: Event) => {
+      e.preventDefault();
+      // biome-ignore lint/plugin: MouseEvent is the concrete type at runtime
+      const me = e as MouseEvent;
+      openMenu({ x: me.clientX, y: me.clientY });
+    };
+    node.addEventListener('contextmenu', handler);
+    return () => node.removeEventListener('contextmenu', handler);
+  }, [containerRef, getActions, openMenu]);
+
+  if (!getActions) return { onLongPress: undefined, contextMenuNode: null };
+
+  const contextMenuNode = open ? (
+    <ContextMenuPanel actions={actions} onAction={handleAction} onClose={closeMenu} pos={pos} title={title} />
+  ) : null;
+
+  return { onLongPress: openFromLongPress, contextMenuNode };
 }

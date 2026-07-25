@@ -41,12 +41,14 @@ export function FileSystem({
   defaultPath = '',
   defaultView = 'icons',
   draggable,
+  getBackgroundContextMenuActions,
   getContextMenuActions,
   getFileUrl,
   height = DEFAULT_HEIGHT,
   items,
   loadChildren,
   loadPreviewImageUrl,
+  onBackgroundContextMenuAction,
   onContextMenuAction,
   onFileOpen,
   onMove,
@@ -157,6 +159,7 @@ export function FileSystem({
           draggable={draggable}
           entries={state.entries}
           fileFilter={state.fileFilter}
+          getBackgroundContextMenuActions={getBackgroundContextMenuActions}
           getContextMenuActions={getContextMenuActions}
           getFileUrl={getFileUrl}
           hasActiveFilters={state.hasActiveFilters}
@@ -165,6 +168,7 @@ export function FileSystem({
           isSearching={state.isSearching}
           loadPreviewImageUrl={loadPreviewImageUrl}
           loadingFolders={state.loadingFolders}
+          onBackgroundContextMenuAction={onBackgroundContextMenuAction}
           onContextMenuAction={onContextMenuAction}
           onMove={onMove}
           onOpen={openEntry}

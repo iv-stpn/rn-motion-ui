@@ -1,4 +1,5 @@
-/** biome-ignore-all lint/style/useExportsLast: exports and defines multiple utils */
+// biome-ignore-all lint/style/useExportsLast: exports and defines multiple utils
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: component is long but each piece is small and self-contained, so it's easier to read in one file than split across many.
 // One rendered tree row: indent guides, disclosure chevron, file/folder icon,
 // a middle-truncated label (or inline rename input), and an optional git-status
 // letter. Presentational — all state lives in the controller; interactions are
@@ -13,6 +14,7 @@ import { Text } from '../Text/text';
 import type { FileTreeGitStatusCode, FileTreeVisibleRow } from './file-tree.types';
 import type { ClickModifiers } from './file-tree-click-plan';
 import { type FileTreeDensityMetrics, indentForLevel } from './file-tree-density';
+import { useFileTreeDragActive, useFileTreeIsDragSource } from './file-tree-drag-context';
 import { gitStatusPresentation } from './file-tree-git';
 import { resolveFileTreeIcon } from './file-tree-icon';
 import { FileTreeIcon } from './file-tree-icons';
@@ -248,7 +250,7 @@ function RowOverlays({ selected, hovered, focused, dropTarget, reduce }: RowOver
         style={{ pointerEvents: 'none' }}
       />
       {focused ? <View className="absolute inset-0 rounded-sm border border-primary" pointerEvents="none" /> : null}
-      {dropTarget ? <View className="absolute inset-0 rounded-sm border-2 border-primary" pointerEvents="none" /> : null}
+      {dropTarget ? <View className="absolute inset-0 rounded-sm border border-primary" pointerEvents="none" /> : null}
     </>
   );
 }
@@ -286,6 +288,14 @@ function FileTreeRowImpl(props: FileTreeRowProps) {
   const [hovered, setHovered] = useState(false);
   const onHoverIn = useCallback(() => setHovered(true), []);
   const onHoverOut = useCallback(() => setHovered(false), []);
+  // A drag captures the pointer on the container, which stops the boundary events
+  // these handlers ride on — so `hovered` freezes wherever it was when the drag
+  // armed. For the length of the drag the answer comes from the session instead:
+  // the rows it lifted stay lit, everything else goes dark. Own state is left
+  // untouched rather than cleared — it is stale, not wrong, and it is correct
+  // again the moment the pointer moves after the release.
+  const dragActive = useFileTreeDragActive();
+  const isDragSource = useFileTreeIsDragSource(row.path);
 
   const iconColor = row.kind === 'directory' ? colors.folder : colors.icon;
   const contentOpacity = dimmed || dragging ? 0.45 : 1;
@@ -300,7 +310,13 @@ function FileTreeRowImpl(props: FileTreeRowProps) {
       style={{ height: metrics.itemHeight }}
       {...webRowIdentity(row.path)}
     >
-      <RowOverlays selected={row.isSelected} hovered={hovered} focused={row.isFocused} dropTarget={dropTarget} reduce={reduce} />
+      <RowOverlays
+        selected={row.isSelected}
+        hovered={dragActive ? isDragSource : hovered}
+        focused={row.isFocused}
+        dropTarget={dropTarget}
+        reduce={reduce}
+      />
       {showIndentGuides ? <IndentGuides level={row.level} metrics={metrics} /> : null}
       <Pressable
         onPress={renaming ? undefined : handlePress}

@@ -1,0 +1,9 @@
+---
+"rn-motion-ui": minor
+---
+
+Fix hover highlights and drag-source tinting in `FileSystem` and `FileTree` under pointer capture.
+
+**FileSystem.** The web drag transport takes `setPointerCapture` on the scroll container, which stops the browser updating `:hover` and stops RNW firing `onHoverIn`/`onHoverOut`. The hover highlight was therefore freezing on the drag's origin cell for the duration of the drag. The highlight is now driven by the container's own `pointermove` stream — which continues firing under capture — through a `FileSystemHoverController`; position and opacity live in `Animated` values written directly from the DOM listener, so tracking the pointer costs zero React re-renders. Grid geometry for the icons view is extracted into a pure-math module (`file-system-icons-grid.ts`) that both the tile layout and the hover/drag resolvers share, so the cell the highlight marks and the cell a drop commits to are always the same cell. `FileSystemIconsTile` is extracted as a standalone component whose face is reused by the drag ghost, keeping the lifted copy pixel-identical to the tile it came from.
+
+**FileTree.** Rows own their hover state through RNW's `onHoverIn`/`onHoverOut`, but those are `pointerenter`/`pointerleave` underneath — they stop arriving once pointer capture is active. The row a drag starts from kept its hover tint for the length of the drag; every row the pointer passed over got none. A new `FileTreeDragContext` broadcasts the live dragged-path set to all rows: while a drag is in flight each row reads this context instead of its own hover, holding the tint on the source rows and clearing it everywhere else. The drop-highlight resolver (`resolveDropHighlightPath`) no longer marks a row when the drop would be a no-op (every dragged item already lives in the target directory, which covers hovering the drag source itself) or when the target is the root (which has no row to outline).

@@ -54,6 +54,22 @@ export function isSelfOrDescendantDrop(dragged: string[], destination: string): 
 }
 
 /**
+ * The row a drag should visibly point at while it is in flight: the directory the
+ * drop would actually land in, which for a hovered file is its parent — not the
+ * file itself. `null` when there is nothing to mark, i.e. the drop would be
+ * illegal (into the dragged directory or below it), a no-op (everything already
+ * lives there, which covers hovering the drag source), or lands at the top level,
+ * which has no row of its own to outline.
+ */
+export function resolveDropHighlightPath(dragged: string[], targetPath: string | null): string | null {
+  const destination = resolveMoveDestinationPath(targetPath);
+  if (!destination) return null;
+  if (isSelfOrDescendantDrop(dragged, destination)) return null;
+  if (dragged.every((path) => parentPath(path) === destination)) return null;
+  return destination;
+}
+
+/**
  * Build the full set of move operations for dropping `draggedInput` into the
  * directory resolved from `targetPath`. Returns `null` when the drop is illegal
  * (into itself/descendant) or a pure no-op (everything already lives there).

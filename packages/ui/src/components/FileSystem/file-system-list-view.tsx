@@ -1,10 +1,11 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: the view and its row/header/overlay parts are one render layer */
 // The list view: a disclosure tree with Name / Date Modified / Size columns.
 // The web version drives @pierre/trees; here the rows come from the sorted
 // index (see file-system-rows) and render through a FlatList, so the same
 // folder-first ordering and per-folder disclosure survive without the DOM.
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   FlatList,
@@ -29,8 +30,14 @@ import type {
   FileSystemSortKey,
   FileSystemSortState,
 } from './file-system.types';
-import { useContextMenu } from './file-system-context-menu';
+import { useBackgroundContextMenu, useContextMenu } from './file-system-context-menu';
 import { formatByteSize, formatTimestamp } from './file-system-format';
+import {
+  FileSystemHoverHighlight,
+  FileSystemSourceHighlight,
+  FS_HOVER_TEST_ID,
+  useFileSystemRowHover,
+} from './file-system-hover';
 import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import type { FileSystemRow } from './file-system-rows';
 import { flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';
@@ -59,12 +66,28 @@ type WebViewStyle = ViewStyle & { userSelect?: string; touchAction?: string };
 const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none' } : null;
 const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none', touchAction: 'none' } : null;
 
-/** Content-container top padding (py-1 = 4 px) so the drop highlight lines up. */
+/** Content-container top padding (py-1 = 4 px): where row 0 starts. */
 const LIST_PADDING_TOP = 4;
+const keyExtractor = (row: FileSystemRow) => row.entry.path;
+const getItemLayout = (_data: ArrayLike<FileSystemRow> | null | undefined, index: number) => ({
+  index,
+  length: FS_ROW_HEIGHT,
+  offset: FS_ROW_HEIGHT * index,
+});
 
 function itemCountLabel(count: number | undefined): string {
   if (count === undefined) return MISSING_VALUE;
   return `${count} ${count === 1 ? 'item' : 'items'}`;
+}
+
+/**
+ * Container-local top-left of a row, or `null` for no row. Takes the live scroll
+ * offset because a drag can scroll the list out from under the row it lifted, so
+ * the source position is not fixed for the length of the drag.
+ */
+function rowOrigin(index: number | null, scrollOffset: number) {
+  if (index === null) return null;
+  return { x: 0, y: index * FS_ROW_HEIGHT + LIST_PADDING_TOP - scrollOffset };
 }
 
 type DropHighlightProps = { targetIndex: number | null; scrollOffset: number };
@@ -75,7 +98,7 @@ function DropHighlight({ targetIndex, scrollOffset }: DropHighlightProps) {
   return (
     <View
       pointerEvents="none"
-      className="absolute right-0 left-0 rounded-md border-2 border-primary"
+      className="absolute right-0 left-0 rounded-md border border-primary"
       style={{ height: FS_ROW_HEIGHT, top: targetIndex * FS_ROW_HEIGHT + LIST_PADDING_TOP - scrollOffset, zIndex: 3 }}
     />
   );
@@ -161,7 +184,9 @@ function ListRow({
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: isExpandable ? isExpanded : undefined, selected: isSelected }}
-        className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected ? 'bg-primary' : 'hover:bg-surface-hover')}
+        // Hover is not a class here: it is one sliding node behind the rows, so it
+        // can keep tracking under the drag's pointer capture. See file-system-hover.
+        className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected && 'bg-primary')}
         onLongPress={onLongPress}
         onPress={handlePress}
         style={{ height: FS_ROW_HEIGHT, paddingLeft: 8 + level * INDENT_PER_LEVEL }}
@@ -204,8 +229,10 @@ function ListRow({
 export function FileSystemListView({
   currentPath,
   draggable = false,
+  getBackgroundContextMenuActions,
   getContextMenuActions,
   index,
+  onBackgroundContextMenuAction,
   onContextMenuAction,
   onMove,
   onOpen,
@@ -232,14 +259,6 @@ export function FileSystemListView({
     containerHeightRef.current = event.nativeEvent.layout.height;
   }, []);
   const toggleExpanded = useCallback((path: string) => setExpanded((previous) => toggleExpandedPath(previous, path)), []);
-  const onScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offset = event.nativeEvent.contentOffset.y;
-      scrollOffsetRef.current = offset;
-      if (draggable) setScrollOffset(offset);
-    },
-    [draggable],
-  );
 
   const { session, previewPos, drag, nativeGesture } = useFileSystemDrag({
     containerHeightRef,
@@ -253,6 +272,48 @@ export function FileSystemListView({
     scrollOffsetRef,
   });
   useFileSystemDragWeb({ containerRef, enabled: draggable, session });
+
+  const selectedIndexRef = useRef<number | null>(null);
+  const selIdx = selectedPath === null ? -1 : rows.findIndex((r) => r.entry.path === selectedPath);
+  selectedIndexRef.current = selIdx === -1 ? null : selIdx;
+
+  const hover = useFileSystemRowHover({
+    containerRef,
+    count: rows.length,
+    // getTargetIndex omitted: DropHighlight handles drag indication; hover is suppressed during drag
+    isDragging: session.isActive,
+    offsetTop: LIST_PADDING_TOP,
+    scrollOffsetRef,
+    selectedIndexRef,
+    stride: FS_ROW_HEIGHT,
+  });
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPath is the trigger; not read in the body but must be in the deps to re-fire on selection change
+  // biome-ignore lint/plugin: re-resolve is a side-effect on an Animated value, not render state
+  useEffect(() => {
+    hover.refresh();
+  }, [hover, selectedPath]);
+
+  const folderTitle = currentPath.split('/').filter(Boolean).at(-1) ?? 'Files';
+  const backgroundMenu = useBackgroundContextMenu(
+    containerRef,
+    getBackgroundContextMenuActions,
+    onBackgroundContextMenuAction,
+    folderTitle,
+  );
+  const handleBackgroundPress = useCallback(() => onSelect(null), [onSelect]);
+
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offset = event.nativeEvent.contentOffset.y;
+      scrollOffsetRef.current = offset;
+      // The pointer has not moved but the rows under it have, so the highlight has
+      // to re-resolve — including while a drag auto-scrolls the list.
+      hover.refresh();
+      if (draggable) setScrollOffset(offset);
+    },
+    [draggable, hover],
+  );
 
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemRow>) => (
@@ -270,16 +331,6 @@ export function FileSystemListView({
     [activate, getContextMenuActions, index, onContextMenuAction, selectedPath, showDate, toggleExpanded],
   );
 
-  const keyExtractor = useCallback((row: FileSystemRow) => row.entry.path, []);
-  const getItemLayout = useCallback(
-    (_data: ArrayLike<FileSystemRow> | null | undefined, itemIndex: number) => ({
-      index: itemIndex,
-      length: FS_ROW_HEIGHT,
-      offset: FS_ROW_HEIGHT * itemIndex,
-    }),
-    [],
-  );
-
   const list = (
     <FlatList
       ref={flatListRef}
@@ -288,7 +339,7 @@ export function FileSystemListView({
       data={rows}
       getItemLayout={getItemLayout}
       keyExtractor={keyExtractor}
-      onScroll={draggable ? onScroll : undefined}
+      onScroll={onScroll}
       renderItem={renderRow}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
@@ -308,12 +359,17 @@ export function FileSystemListView({
         ) : null}
         <ColumnHeader className="w-20 justify-end" label={SIZE_LABEL} onPress={onSortColumnClick} sort={sort} sortKey="size" />
       </View>
-      <View
+      <Pressable
         ref={containerRef}
         className="relative min-h-0 flex-1"
         style={drag.active ? WEB_DRAGGING_STYLE : WEB_BODY_STYLE}
         testID={FS_DRAG_CONTAINER_TEST_ID.list}
+        onPress={handleBackgroundPress}
+        onLongPress={backgroundMenu.onLongPress}
       >
+        {/* Both before the list, so they paint behind the rows — see FileSystemHoverHighlight. */}
+        <FileSystemHoverHighlight controller={hover} height={FS_ROW_HEIGHT} testID={FS_HOVER_TEST_ID.list} />
+        <FileSystemSourceHighlight height={FS_ROW_HEIGHT} origin={rowOrigin(drag.draggedIndex, scrollOffset)} />
         {body}
         {drag.active ? (
           <>
@@ -321,7 +377,8 @@ export function FileSystemListView({
             <DragPreview label={drag.previewLabel} pos={previewPos} />
           </>
         ) : null}
-      </View>
+        {backgroundMenu.contextMenuNode}
+      </Pressable>
     </View>
   );
 }

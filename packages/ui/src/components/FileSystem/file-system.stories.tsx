@@ -19,6 +19,8 @@ import type {
   FileSystemProps,
   FileSystemViewerArgs,
 } from './file-system.types';
+import { FS_HOVER_TEST_ID } from './file-system-hover';
+import { FS_TILE_DROP_TARGET_TEST_ID } from './file-system-icons-tile';
 import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
 
 // ─── Shared data ───────────────────────────────────────────────────────────────
@@ -246,7 +248,14 @@ function applyNewFolder(items: FileSystemItem[], parent: string): NewFolderResul
   return { items: [...items, { kind: 'folder', path, updatedAt: DATES.june }], path };
 }
 
-const ACTION = { copyPath: 'copy-path', delete: 'delete', duplicate: 'duplicate', newFolder: 'new-folder', share: 'share' };
+const ACTION = {
+  copyPath: 'copy-path',
+  delete: 'delete',
+  duplicate: 'duplicate',
+  newFolder: 'new-folder',
+  paste: 'paste',
+  share: 'share',
+};
 
 /** The root is the empty path; name it after the title the header shows. */
 function folderLabel(path: string): string {
@@ -282,7 +291,8 @@ function applyAction(state: PlaygroundState, actionId: string, path: string): Pl
   }
 }
 
-const PLAYGROUND_HINT = 'Drag an entry onto a folder to move it. Right-click (long-press on touch) any entry for its menu.';
+const PLAYGROUND_HINT =
+  'Drag an entry onto a folder to move it. Right-click (or long-press) any entry for its menu, or right-click empty space for folder actions.';
 const RESET_LABEL = 'Reset';
 
 type PlaygroundStatusProps = { message: string | null; onReset: () => void };
@@ -338,6 +348,20 @@ function FileSystemPlayground(args: FileSystemProps) {
     setState((previous) => applyAction(previous, action.id, item.path));
   }, []);
 
+  const getBackgroundContextMenuActions = useCallback((): FileSystemContextMenuAction[] => {
+    const tint = colors.foreground;
+    return [
+      { icon: <FolderClosed color={tint} size={16} />, id: ACTION.newFolder, label: 'New folder' },
+      { disabled: true, icon: <Copy color={tint} size={16} />, id: ACTION.paste, label: 'Paste' },
+    ];
+  }, [colors]);
+
+  // Background actions don't carry a path — `newFolder` creates in the root here
+  // because the playground has no navigation hook to track the current folder.
+  const handleBackgroundAction = useCallback((action: FileSystemContextMenuAction) => {
+    setState((previous) => applyAction(previous, action.id, ''));
+  }, []);
+
   // Menus differ by kind, and `Share…` is disabled to show that state. The new
   // folder lands beside the entry you clicked rather than inside it, so the row
   // appears where you are instead of behind a navigation.
@@ -366,9 +390,11 @@ function FileSystemPlayground(args: FileSystemProps) {
       <FileSystem
         {...args}
         draggable={true}
+        getBackgroundContextMenuActions={getBackgroundContextMenuActions}
         getContextMenuActions={getContextMenuActions}
         items={state.items}
         loadChildren={loadChildren}
+        onBackgroundContextMenuAction={handleBackgroundAction}
         onContextMenuAction={handleAction}
         onMove={handleMove}
       />
@@ -720,6 +746,43 @@ export const WithContextMenu: Story = {
   },
 };
 
+/**
+ * Right-click (or long-press) an empty area of the file browser — not on any
+ * entry — to open the background context menu. It carries folder-level actions
+ * that make sense without a target: new folder, paste, and so on. Entry-level
+ * right-clicks still open the per-entry menu; they stop propagation so the
+ * background listener never fires.
+ */
+export const WithBackgroundContextMenu: Story = {
+  name: 'Demo: Background context menu',
+  args: {
+    getBackgroundContextMenuActions: (): FileSystemContextMenuAction[] => [
+      { id: 'new-folder', label: 'New folder' },
+      { disabled: true, id: 'paste', label: 'Paste' },
+    ],
+    onBackgroundContextMenuAction: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    // Right-click an empty tile area — any part of the container that is not a
+    // button. The drag container is the registered listener target.
+    const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.icons);
+    await userEvent.pointer({ target: container, keys: '[MouseRight]' });
+
+    // Both actions appear; Paste is disabled.
+    await screen.findByText('New folder');
+    await expect(await screen.findByRole('menuitem', { name: 'Paste' })).toHaveAttribute('aria-disabled', 'true');
+
+    // Picking an enabled action fires the callback and closes the menu.
+    await userEvent.click(await screen.findByText('New folder'));
+    await waitFor(() =>
+      expect(args.onBackgroundContextMenuAction).toHaveBeenCalledWith(expect.objectContaining({ id: 'new-folder' })),
+    );
+  },
+};
+
 // ─── Drag and drop ─────────────────────────────────────────────────────────────
 // The play tests drive the drag with real PointerEvents rather than `userEvent`:
 // the web transport takes pointer capture, and capture only works for a pointer
@@ -765,8 +828,12 @@ function pointer(node: Element, type: string, point: ClientPoint) {
   );
 }
 
-/** Walk the pointer from `source` to `target` in steps, as a real stream would arrive. */
-function dragTo(container: Element, source: ClientPoint, target: ClientPoint) {
+/**
+ * Walk the pointer from `source` to `target` in steps, as a real stream would
+ * arrive, and stop there — still pressed. Split from the release below so a test
+ * can inspect the live drop feedback before the drag commits and it disappears.
+ */
+function dragOver(container: Element, source: ClientPoint, target: ClientPoint) {
   const steps = 6;
   for (let step = 1; step <= steps; step += 1) {
     const ratio = step / steps;
@@ -775,6 +842,11 @@ function dragTo(container: Element, source: ClientPoint, target: ClientPoint) {
       y: source.y + (target.y - source.y) * ratio,
     });
   }
+}
+
+/** Walk the pointer to `target` and release it there, committing the drop. */
+function dragTo(container: Element, source: ClientPoint, target: ClientPoint) {
+  dragOver(container, source, target);
   pointer(container, 'pointerup', target);
 }
 
@@ -830,8 +902,9 @@ export const WithDragAndDrop: Story = {
 };
 
 /**
- * The same gesture in the grid, where the drop target is the tile's own outline
- * rather than a row highlight. This is the view Interactive opens in.
+ * The same gesture in the grid, where the drop target is marked by the folder's
+ * own name filling in under a hover-tinted glyph rather than a row highlight.
+ * This is the view Interactive opens in.
  */
 export const GridDragAndDrop: Story = {
   name: 'Demo: Drag a tile onto a folder',
@@ -843,11 +916,37 @@ export const GridDragAndDrop: Story = {
     // A tile's accessible name is just the entry name, so the button role is the
     // whole query — the tile box is what the 2-D resolver maps a point back to.
     const tile = await canvas.findByRole('button', { name: 'Roadmap.pptx' });
+    const folderTile = await canvas.findByRole('button', { name: 'Documents' });
     const source = centreOf(tile);
-    const target = centreOf(await canvas.findByRole('button', { name: 'Documents' }));
+    const target = centreOf(folderTile);
 
     pointer(tile, 'pointerdown', source);
-    dragTo(container, source, target);
+    dragOver(container, source, target);
+
+    // Hold the drag over the folder and read its two marks. The pending drop is
+    // the folder's *name* lighting up, with the hover tint on the glyph above it
+    // — so the drop mark sits below the highlight, not around it.
+    const dropTarget = await canvas.findByTestId(FS_TILE_DROP_TARGET_TEST_ID);
+    const highlight = await canvas.findByTestId(FS_HOVER_TEST_ID.icons);
+    // The highlight glides between cells (MOVE_MS), so wait for it to land on
+    // the folder's glyph box: narrower than the tile, centred, pinned to its top.
+    const tileBox = folderTile.getBoundingClientRect();
+    await waitFor(async () => {
+      const highlightBox = highlight.getBoundingClientRect();
+      await expect(highlightBox.width).toBeLessThan(tileBox.width);
+      await expect(highlightBox.height).toBeLessThan(tileBox.height);
+      await expect(highlightBox.left + highlightBox.width / 2).toBeCloseTo(tileBox.left + tileBox.width / 2, 0);
+      await expect(highlightBox.top).toBeCloseTo(tileBox.top, 0);
+    });
+
+    // And the drop mark is the label chip under that glyph, inside the same tile.
+    const targetBox = dropTarget.getBoundingClientRect();
+    const highlightBox = highlight.getBoundingClientRect();
+    await expect(targetBox.top).toBeGreaterThanOrEqual(highlightBox.bottom - 1);
+    await expect(targetBox.bottom).toBeLessThanOrEqual(tileBox.bottom + 1);
+    await expect(dropTarget).toHaveTextContent('Documents');
+
+    pointer(container, 'pointerup', target);
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
   },
 };

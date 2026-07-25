@@ -4,9 +4,10 @@
 // including when it arrives from another view.
 
 import { type ReactNode, useCallback, useEffect, useRef } from 'react';
-import { FlatList, type ListRenderItemInfo, Pressable } from 'react-native';
+import { FlatList, type ListRenderItemInfo, Pressable, View } from 'react-native';
 import { cn } from '../../lib/cn';
-import type { FileSystemEntry, FileSystemFileItem } from './file-system.types';
+import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemFileItem, FileSystemItem } from './file-system.types';
+import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph } from './file-system-icons';
 import { FileVisual } from './file-system-visual';
 
@@ -20,48 +21,71 @@ const STRIP_ASPECT_RATIO = 0.78;
 
 type StripTileProps = {
   entry: FileSystemEntry;
+  getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   isActive: boolean;
   onActivate: (entry: FileSystemEntry) => void;
+  onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
 };
 
-function StripTile({ entry, isActive, onActivate, renderFilePreview }: StripTileProps) {
+function StripTile({
+  entry,
+  getContextMenuActions,
+  isActive,
+  onActivate,
+  onContextMenuAction,
+  renderFilePreview,
+}: StripTileProps) {
   const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
+  const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
 
   return (
-    <Pressable
-      accessibilityLabel={entry.name}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isActive }}
-      className={cn(
-        'items-center justify-center rounded-md border border-transparent p-1',
-        isActive && 'border-border bg-surface-selected',
-      )}
-      onPress={handlePress}
-      style={{ height: STRIP_TILE_SIZE, marginRight: STRIP_TILE_GAP, width: STRIP_TILE_SIZE }}
-    >
-      {entry.kind === 'folder' ? (
-        <FileSystemFolderGlyph size={STRIP_FOLDER_GLYPH_SIZE} />
-      ) : (
-        <FileVisual
-          file={entry}
-          previewAspectRatio={STRIP_ASPECT_RATIO}
-          renderFilePreview={renderFilePreview}
-          width={STRIP_THUMBNAIL_WIDTH}
-        />
-      )}
-    </Pressable>
+    <View ref={wrapperRef} style={{ marginRight: STRIP_TILE_GAP }}>
+      <Pressable
+        accessibilityLabel={entry.name}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isActive }}
+        className={cn(
+          'items-center justify-center rounded-md border border-transparent p-1',
+          isActive && 'border-border bg-surface-selected',
+        )}
+        onLongPress={onLongPress}
+        onPress={handlePress}
+        style={{ height: STRIP_TILE_SIZE, width: STRIP_TILE_SIZE }}
+      >
+        {entry.kind === 'folder' ? (
+          <FileSystemFolderGlyph size={STRIP_FOLDER_GLYPH_SIZE} />
+        ) : (
+          <FileVisual
+            file={entry}
+            previewAspectRatio={STRIP_ASPECT_RATIO}
+            renderFilePreview={renderFilePreview}
+            width={STRIP_THUMBNAIL_WIDTH}
+          />
+        )}
+        {contextMenuNode}
+      </Pressable>
+    </View>
   );
 }
 
 export type FileSystemGalleryStripProps = {
   activePath: string | null;
   entries: FileSystemEntry[];
+  getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   onActivate: (entry: FileSystemEntry) => void;
+  onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
 };
 
-export function FileSystemGalleryStrip({ activePath, entries, onActivate, renderFilePreview }: FileSystemGalleryStripProps) {
+export function FileSystemGalleryStrip({
+  activePath,
+  entries,
+  getContextMenuActions,
+  onActivate,
+  onContextMenuAction,
+  renderFilePreview,
+}: FileSystemGalleryStripProps) {
   const listRef = useRef<FlatList<FileSystemEntry>>(null);
 
   // The strip follows the selection rather than driving it, so a file picked in
@@ -75,9 +99,16 @@ export function FileSystemGalleryStrip({ activePath, entries, onActivate, render
 
   const renderTile = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
-      <StripTile entry={item} isActive={item.path === activePath} onActivate={onActivate} renderFilePreview={renderFilePreview} />
+      <StripTile
+        entry={item}
+        getContextMenuActions={getContextMenuActions}
+        isActive={item.path === activePath}
+        onActivate={onActivate}
+        onContextMenuAction={onContextMenuAction}
+        renderFilePreview={renderFilePreview}
+      />
     ),
-    [activePath, onActivate, renderFilePreview],
+    [activePath, getContextMenuActions, onActivate, onContextMenuAction, renderFilePreview],
   );
 
   const keyExtractor = useCallback((entry: FileSystemEntry) => entry.path, []);

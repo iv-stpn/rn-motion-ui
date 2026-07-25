@@ -82,9 +82,11 @@ function PreviewPane({ file, index, viewportWidth, ...visualProps }: PreviewPane
 
 export function FileSystemColumnsView({
   currentPath,
+  getContextMenuActions,
   index,
   loadPreviewImageUrl,
   loadingFolders,
+  onContextMenuAction,
   onOpen,
   onSelect,
   pageUrlCache,
@@ -117,10 +119,12 @@ export function FileSystemColumnsView({
       {columnPaths.map((columnPath, columnIndex) => (
         <FileSystemColumn
           entries={index.children.get(columnPath) ?? []}
+          getContextMenuActions={getContextMenuActions}
           index={index}
           isLoading={loadingFolders.has(columnPath)}
           key={columnPath || '(root)'}
           onActivate={activate}
+          onContextMenuAction={onContextMenuAction}
           // Scalar per-column props: a selection deeper in the trail leaves
           // ancestor columns' memoized renders untouched.
           selectedChildPath={selectedPath && pathParent(selectedPath) === columnPath ? selectedPath : null}

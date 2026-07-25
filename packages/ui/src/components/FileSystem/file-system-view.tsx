@@ -7,9 +7,11 @@ import { Loader } from '../Loader/loader';
 import { Text } from '../Text/text';
 import type {
   FileEntry,
+  FileSystemContextMenuAction,
   FileSystemEntry,
   FileSystemFileItem,
   FileSystemIndex,
+  FileSystemItem,
   FileSystemSortKey,
   FileSystemSortState,
   FileSystemViewerArgs,
@@ -36,6 +38,10 @@ export type FileSystemViewProps = {
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
   getFileUrl?: (file: FileSystemFileItem) => string | Promise<string>;
   renderFileViewer?: (args: FileSystemViewerArgs) => ReactNode;
+  /** See `FileSystemProps.getContextMenuActions`. */
+  getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
+  /** See `FileSystemProps.onContextMenuAction`. */
+  onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
 };
 
 export type FileSystemEmptyStateProps = { isLoading?: boolean; label: string };

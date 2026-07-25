@@ -10,7 +10,14 @@ import { cn } from '../../lib/cn';
 import { ChevronDown, ChevronRight, ChevronUp } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
-import type { FileSystemEntry, FileSystemSortKey, FileSystemSortState } from './file-system.types';
+import type {
+  FileSystemContextMenuAction,
+  FileSystemEntry,
+  FileSystemItem,
+  FileSystemSortKey,
+  FileSystemSortState,
+} from './file-system.types';
+import { useContextMenu } from './file-system-context-menu';
 import { formatByteSize, formatTimestamp } from './file-system-format';
 import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import type { FileSystemRow } from './file-system-rows';
@@ -64,15 +71,26 @@ function ColumnHeader({ className, label, onPress, sort, sortKey }: ColumnHeader
 
 type ListRowProps = {
   childCount: number | undefined;
+  getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry) => void;
+  onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   onToggleExpanded: (path: string) => void;
   row: FileSystemRow;
   showDate: boolean;
 };
 
 /** Disclosure chevron, icon, name, then the metadata columns. */
-function ListRow({ childCount, isSelected, onActivate, onToggleExpanded, row, showDate }: ListRowProps) {
+function ListRow({
+  childCount,
+  getContextMenuActions,
+  isSelected,
+  onActivate,
+  onContextMenuAction,
+  onToggleExpanded,
+  row,
+  showDate,
+}: ListRowProps) {
   const colors = useThemeColors();
   const { entry, isExpandable, isExpanded, level } = row;
   const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
@@ -81,50 +99,58 @@ function ListRow({ childCount, isSelected, onActivate, onToggleExpanded, row, sh
   const textClassName = isSelected ? 'text-primary-foreground' : 'text-foreground';
   const metaClassName = isSelected ? 'text-primary-foreground' : 'text-muted-foreground';
 
+  const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ expanded: isExpandable ? isExpanded : undefined, selected: isSelected }}
-      className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected ? 'bg-primary' : 'hover:bg-surface-hover')}
-      onPress={handlePress}
-      style={{ height: ROW_HEIGHT, paddingLeft: 8 + level * INDENT_PER_LEVEL }}
-    >
-      {isExpandable ? (
-        <Pressable
-          accessibilityLabel={isExpanded ? `Collapse ${entry.name}` : `Expand ${entry.name}`}
-          accessibilityRole="button"
-          className="items-center justify-center"
-          onPress={handleToggle}
-          style={{ width: CHEVRON_SIZE }}
-        >
-          <ChevronIcon color={isSelected ? colors['primary-foreground'] : colors['muted-foreground']} size={14} />
-        </Pressable>
-      ) : (
-        <View style={{ width: CHEVRON_SIZE }} />
-      )}
-      {entry.kind === 'folder' ? (
-        <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />
-      ) : (
-        <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />
-      )}
-      <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
-        {entry.name}
-      </Text>
-      {showDate ? (
-        <Text className={cn('w-44', metaClassName)} numberOfLines={1} size="xs">
-          {formatTimestamp(entry.updatedAt ?? entry.createdAt) ?? MISSING_VALUE}
+    <View ref={wrapperRef}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: isExpandable ? isExpanded : undefined, selected: isSelected }}
+        className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected ? 'bg-primary' : 'hover:bg-surface-hover')}
+        onLongPress={onLongPress}
+        onPress={handlePress}
+        style={{ height: ROW_HEIGHT, paddingLeft: 8 + level * INDENT_PER_LEVEL }}
+      >
+        {isExpandable ? (
+          <Pressable
+            accessibilityLabel={isExpanded ? `Collapse ${entry.name}` : `Expand ${entry.name}`}
+            accessibilityRole="button"
+            className="items-center justify-center"
+            onPress={handleToggle}
+            style={{ width: CHEVRON_SIZE }}
+          >
+            <ChevronIcon color={isSelected ? colors['primary-foreground'] : colors['muted-foreground']} size={14} />
+          </Pressable>
+        ) : (
+          <View style={{ width: CHEVRON_SIZE }} />
+        )}
+        {entry.kind === 'folder' ? (
+          <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />
+        ) : (
+          <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />
+        )}
+        <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
+          {entry.name}
         </Text>
-      ) : null}
-      <Text className={cn('w-20 text-right', metaClassName)} numberOfLines={1} numeric={true} size="xs">
-        {entry.kind === 'folder' ? itemCountLabel(childCount) : (formatByteSize(entry.size) ?? MISSING_VALUE)}
-      </Text>
-    </Pressable>
+        {showDate ? (
+          <Text className={cn('w-44', metaClassName)} numberOfLines={1} size="xs">
+            {formatTimestamp(entry.updatedAt ?? entry.createdAt) ?? MISSING_VALUE}
+          </Text>
+        ) : null}
+        <Text className={cn('w-20 text-right', metaClassName)} numberOfLines={1} numeric={true} size="xs">
+          {entry.kind === 'folder' ? itemCountLabel(childCount) : (formatByteSize(entry.size) ?? MISSING_VALUE)}
+        </Text>
+        {contextMenuNode}
+      </Pressable>
+    </View>
   );
 }
 
 export function FileSystemListView({
   currentPath,
+  getContextMenuActions,
   index,
+  onContextMenuAction,
   onOpen,
   onSelect,
   onSortColumnClick,
@@ -145,14 +171,16 @@ export function FileSystemListView({
     ({ item }: ListRenderItemInfo<FileSystemRow>) => (
       <ListRow
         childCount={index.children.get(item.entry.path)?.length}
+        getContextMenuActions={getContextMenuActions}
         isSelected={item.entry.path === selectedPath}
         onActivate={activate}
+        onContextMenuAction={onContextMenuAction}
         onToggleExpanded={toggleExpanded}
         row={item}
         showDate={showDate}
       />
     ),
-    [activate, index, selectedPath, showDate, toggleExpanded],
+    [activate, getContextMenuActions, index, onContextMenuAction, selectedPath, showDate, toggleExpanded],
   );
 
   const keyExtractor = useCallback((row: FileSystemRow) => row.entry.path, []);

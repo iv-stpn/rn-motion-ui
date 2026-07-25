@@ -8,6 +8,17 @@
 
 import type { ReactNode } from 'react';
 
+/** One entry in the list returned by `getContextMenuActions`. */
+export type FileSystemContextMenuAction = {
+  id: string;
+  label: string;
+  /** Optional leading icon — pass a `<IconName size={16} color={...} />` node. */
+  icon?: ReactNode;
+  /** Renders the label in the destructive color. */
+  destructive?: boolean;
+  disabled?: boolean;
+};
+
 /** The four Finder-style presentations. */
 export type FileSystemView = 'icons' | 'list' | 'columns' | 'gallery';
 
@@ -144,6 +155,18 @@ export type FileSystemProps = {
    * `previewImageUrls` (the pager calls this as pages come into view).
    */
   loadPreviewImageUrl?: (file: FileSystemFileItem, pageIndex: number) => Promise<string | null>;
+  /**
+   * Resolve the context-menu actions for an entry on right-click (web) or
+   * long-press (native). Must return synchronously — the menu opens instantly
+   * with no loading state. Return an empty array to show "No actions" copy.
+   * Omit to disable context menus entirely.
+   */
+  getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
+  /**
+   * Called when the user picks an action from the context menu. May return a
+   * promise; the menu closes immediately regardless of the promise outcome.
+   */
+  onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   /** Fixed viewport height. Defaults to 480. */
   height?: number;
 };

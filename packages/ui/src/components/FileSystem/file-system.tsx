@@ -10,6 +10,7 @@ import { useWindowDimensions, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import type { FileSystemEntry, FileSystemProps } from './file-system.types';
 import { FileSystemBody } from './file-system-body';
+import { FileSystemContextMenuProvider } from './file-system-context-menu';
 import { FileSystemDateRangeModal } from './file-system-date-range-modal';
 import { FILTER_TYPE_LABELS } from './file-system-filter';
 import { FileSystemFilterPills } from './file-system-filter-pills';
@@ -39,11 +40,13 @@ export function FileSystem({
   className,
   defaultPath = '',
   defaultView = 'icons',
+  getContextMenuActions,
   getFileUrl,
   height = DEFAULT_HEIGHT,
   items,
   loadChildren,
   loadPreviewImageUrl,
+  onContextMenuAction,
   onFileOpen,
   onSelectionChange,
   onViewChange,
@@ -146,31 +149,35 @@ export function FileSystem({
         onSelectDatePreset={state.setFilterDatePreset}
         onToggleFileType={state.toggleFileTypeFilterValue}
       />
-      <FileSystemBody
-        currentPath={state.currentPath}
-        entries={state.entries}
-        fileFilter={state.fileFilter}
-        getFileUrl={getFileUrl}
-        hasActiveFilters={state.hasActiveFilters}
-        index={state.sortedIndex}
-        isLoadingCurrentFolder={state.isLoadingCurrentFolder}
-        isSearching={state.isSearching}
-        loadPreviewImageUrl={loadPreviewImageUrl}
-        loadingFolders={state.loadingFolders}
-        onOpen={openEntry}
-        onSelect={selectAndPrefetch}
-        onSortColumnClick={state.toggleSortColumn}
-        pageUrlCache={state.pageUrlCache}
-        renderFilePreview={renderFilePreview}
-        renderFileViewer={renderFileViewer}
-        searchInput={state.searchInput}
-        searchQuery={state.searchQuery}
-        selectedEntry={state.selectedEntry}
-        selectedPath={state.selectedPath}
-        sort={state.sort}
-        urlCache={state.resolvedUrlCache}
-        view={state.view}
-      />
+      <FileSystemContextMenuProvider>
+        <FileSystemBody
+          currentPath={state.currentPath}
+          entries={state.entries}
+          fileFilter={state.fileFilter}
+          getContextMenuActions={getContextMenuActions}
+          getFileUrl={getFileUrl}
+          hasActiveFilters={state.hasActiveFilters}
+          index={state.sortedIndex}
+          isLoadingCurrentFolder={state.isLoadingCurrentFolder}
+          isSearching={state.isSearching}
+          loadPreviewImageUrl={loadPreviewImageUrl}
+          loadingFolders={state.loadingFolders}
+          onContextMenuAction={onContextMenuAction}
+          onOpen={openEntry}
+          onSelect={selectAndPrefetch}
+          onSortColumnClick={state.toggleSortColumn}
+          pageUrlCache={state.pageUrlCache}
+          renderFilePreview={renderFilePreview}
+          renderFileViewer={renderFileViewer}
+          searchInput={state.searchInput}
+          searchQuery={state.searchQuery}
+          selectedEntry={state.selectedEntry}
+          selectedPath={state.selectedPath}
+          sort={state.sort}
+          urlCache={state.resolvedUrlCache}
+          view={state.view}
+        />
+      </FileSystemContextMenuProvider>
       <FileSystemStatusBar count={state.entries.length} isSearching={state.isSearching} selectedName={selectedName} />
       <FileSystemDateRangeModal
         initialRange={dateRangeRequest?.initialRange}
@@ -201,6 +208,7 @@ export function FileSystem({
 // stay internal.
 export type {
   FileEntry,
+  FileSystemContextMenuAction,
   FileSystemEntry,
   FileSystemFileItem,
   FileSystemFilter,

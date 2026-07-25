@@ -9,6 +9,7 @@ import { FlatList, type LayoutChangeEvent, type ListRenderItemInfo, Pressable, V
 import { cn } from '../../lib/cn';
 import { Text } from '../Text/text';
 import type { FileSystemEntry } from './file-system.types';
+import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph } from './file-system-icons';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
@@ -51,7 +52,10 @@ function chunkEntries(entries: FileSystemEntry[], columns: number): FileSystemEn
   return rows;
 }
 
-type IconTileProps = Pick<FileSystemViewProps, 'loadPreviewImageUrl' | 'pageUrlCache' | 'renderFilePreview'> & {
+type IconTileProps = Pick<
+  FileSystemViewProps,
+  'getContextMenuActions' | 'loadPreviewImageUrl' | 'onContextMenuAction' | 'pageUrlCache' | 'renderFilePreview'
+> & {
   entry: FileSystemEntry;
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry) => void;
@@ -59,44 +63,57 @@ type IconTileProps = Pick<FileSystemViewProps, 'loadPreviewImageUrl' | 'pageUrlC
 };
 
 /** One grid tile: folder glyph or file thumbnail over a two-line name. */
-function IconTile({ entry, isSelected, onActivate, width, ...visualProps }: IconTileProps) {
+function IconTile({
+  entry,
+  getContextMenuActions,
+  isSelected,
+  onActivate,
+  onContextMenuAction,
+  width,
+  ...visualProps
+}: IconTileProps) {
   const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
   const isLandscape = entry.kind === 'file' && (entry.previewAspectRatio ?? 0) > LANDSCAPE_RATIO;
+  const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
 
   return (
-    <Pressable
-      accessibilityLabel={entry.name}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
-      className="items-center gap-1.5"
-      onPress={handlePress}
-      style={{ height: TILE_HEIGHT, width }}
-    >
-      <View
-        className={cn('w-20 shrink-0 items-center justify-center rounded-lg p-1', isSelected && 'bg-surface-selected')}
-        style={{ height: GLYPH_BOX_HEIGHT }}
+    <View ref={wrapperRef} style={{ width }}>
+      <Pressable
+        accessibilityLabel={entry.name}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isSelected }}
+        className="items-center gap-1.5"
+        onLongPress={onLongPress}
+        onPress={handlePress}
+        style={{ height: TILE_HEIGHT, width }}
       >
-        {entry.kind === 'folder' ? (
-          <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />
-        ) : (
-          <FileVisual
-            file={entry}
-            previewAspectRatio={TILE_PREVIEW_RATIO}
-            width={isLandscape ? LANDSCAPE_TILE_WIDTH : PORTRAIT_TILE_WIDTH}
-            {...visualProps}
-          />
-        )}
-      </View>
-      <View className={cn('max-w-full rounded-sm px-1.5 py-px', isSelected && 'bg-primary')}>
-        <Text
-          className={cn('text-center leading-tight', isSelected ? 'text-primary-foreground' : 'text-foreground')}
-          numberOfLines={2}
-          size="xs"
+        <View
+          className={cn('w-20 shrink-0 items-center justify-center rounded-lg p-1', isSelected && 'bg-surface-selected')}
+          style={{ height: GLYPH_BOX_HEIGHT }}
         >
-          {entry.name}
-        </Text>
-      </View>
-    </Pressable>
+          {entry.kind === 'folder' ? (
+            <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />
+          ) : (
+            <FileVisual
+              file={entry}
+              previewAspectRatio={TILE_PREVIEW_RATIO}
+              width={isLandscape ? LANDSCAPE_TILE_WIDTH : PORTRAIT_TILE_WIDTH}
+              {...visualProps}
+            />
+          )}
+        </View>
+        <View className={cn('max-w-full rounded-sm px-1.5 py-px', isSelected && 'bg-primary')}>
+          <Text
+            className={cn('text-center leading-tight', isSelected ? 'text-primary-foreground' : 'text-foreground')}
+            numberOfLines={2}
+            size="xs"
+          >
+            {entry.name}
+          </Text>
+        </View>
+        {contextMenuNode}
+      </Pressable>
+    </View>
   );
 }
 
@@ -122,7 +139,9 @@ function IconRow({ row, selectedPath, tileWidth, ...tileProps }: IconRowProps) {
 
 export function FileSystemIconsView({
   entries,
+  getContextMenuActions,
   loadPreviewImageUrl,
+  onContextMenuAction,
   onOpen,
   onSelect,
   pageUrlCache,
@@ -144,8 +163,10 @@ export function FileSystemIconsView({
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry[]>) => (
       <IconRow
+        getContextMenuActions={getContextMenuActions}
         loadPreviewImageUrl={loadPreviewImageUrl}
         onActivate={activate}
+        onContextMenuAction={onContextMenuAction}
         pageUrlCache={pageUrlCache}
         renderFilePreview={renderFilePreview}
         row={item}
@@ -153,7 +174,16 @@ export function FileSystemIconsView({
         tileWidth={tileWidth}
       />
     ),
-    [activate, loadPreviewImageUrl, pageUrlCache, renderFilePreview, selectedPath, tileWidth],
+    [
+      activate,
+      getContextMenuActions,
+      loadPreviewImageUrl,
+      onContextMenuAction,
+      pageUrlCache,
+      renderFilePreview,
+      selectedPath,
+      tileWidth,
+    ],
   );
 
   const keyExtractor = useCallback((row: FileSystemEntry[]) => row[0]?.path ?? '', []);

@@ -9,7 +9,8 @@ import { cn } from '../../lib/cn';
 import { ChevronRight } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
-import type { FileSystemEntry, FileSystemIndex } from './file-system.types';
+import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemIndex, FileSystemItem } from './file-system.types';
+import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import { filePreviewUrls, folderHasChildren } from './file-system-index';
 import { FileSystemEmptyState } from './file-system-view';
@@ -28,10 +29,12 @@ const COLUMN_CHEVRON_SIZE = 14;
 
 type ColumnRowProps = {
   entry: FileSystemEntry;
+  getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   index: FileSystemIndex;
   isOnTrail: boolean;
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry) => void;
+  onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
 };
 
 /** The row's leading glyph: folder, cover thumbnail, or file-type icon. */
@@ -54,41 +57,60 @@ function ColumnRowGlyph({ entry, isSelected }: Pick<ColumnRowProps, 'entry' | 'i
   return <FileTypeIcon fileName={entry.name} size={COLUMN_ICON_SIZE} surface={isSelected ? 'inverted' : 'theme'} />;
 }
 
-function ColumnRow({ entry, index, isOnTrail, isSelected, onActivate }: ColumnRowProps) {
+function ColumnRow({
+  entry,
+  getContextMenuActions,
+  index,
+  isOnTrail,
+  isSelected,
+  onActivate,
+  onContextMenuAction,
+}: ColumnRowProps) {
   const colors = useThemeColors();
   const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
   const hasChildren = entry.kind === 'folder' && folderHasChildren(index, entry);
 
+  const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+
   return (
-    <Pressable
-      accessibilityLabel={entry.name}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
-      className={cn(
-        'flex-row items-center gap-2 rounded-md px-2',
-        isSelected && 'bg-primary',
-        !isSelected && isOnTrail && 'bg-surface-selected',
-        !(isSelected || isOnTrail) && 'hover:bg-surface-hover',
-      )}
-      onPress={handlePress}
-      style={{ height: COLUMN_ROW_HEIGHT, marginBottom: COLUMN_ROW_GAP }}
-    >
-      <ColumnRowGlyph entry={entry} isSelected={isSelected} />
-      <Text className={cn('flex-1', isSelected && 'text-primary-foreground')} numberOfLines={1} size="sm">
-        {entry.name}
-      </Text>
-      {hasChildren ? (
-        <ChevronRight color={isSelected ? colors['primary-foreground'] : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
-      ) : null}
-    </Pressable>
+    <View ref={wrapperRef} style={{ marginBottom: COLUMN_ROW_GAP }}>
+      <Pressable
+        accessibilityLabel={entry.name}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isSelected }}
+        className={cn(
+          'flex-row items-center gap-2 rounded-md px-2',
+          isSelected && 'bg-primary',
+          !isSelected && isOnTrail && 'bg-surface-selected',
+          !(isSelected || isOnTrail) && 'hover:bg-surface-hover',
+        )}
+        onLongPress={onLongPress}
+        onPress={handlePress}
+        style={{ height: COLUMN_ROW_HEIGHT }}
+      >
+        <ColumnRowGlyph entry={entry} isSelected={isSelected} />
+        <Text className={cn('flex-1', isSelected && 'text-primary-foreground')} numberOfLines={1} size="sm">
+          {entry.name}
+        </Text>
+        {hasChildren ? (
+          <ChevronRight
+            color={isSelected ? colors['primary-foreground'] : colors['muted-foreground']}
+            size={COLUMN_CHEVRON_SIZE}
+          />
+        ) : null}
+        {contextMenuNode}
+      </Pressable>
+    </View>
   );
 }
 
 export type FileSystemColumnProps = {
   entries: FileSystemEntry[];
+  getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   index: FileSystemIndex;
   isLoading: boolean;
   onActivate: (entry: FileSystemEntry) => void;
+  onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   /** The selected row when it belongs to this column, else `null`. */
   selectedChildPath: string | null;
   /** The child folder the trail continues through, highlighted as the path. */
@@ -97,9 +119,11 @@ export type FileSystemColumnProps = {
 
 function FileSystemColumnImpl({
   entries,
+  getContextMenuActions,
   index,
   isLoading,
   onActivate,
+  onContextMenuAction,
   selectedChildPath,
   trailChildPath,
 }: FileSystemColumnProps) {
@@ -107,13 +131,15 @@ function FileSystemColumnImpl({
     ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
       <ColumnRow
         entry={item}
+        getContextMenuActions={getContextMenuActions}
         index={index}
         isOnTrail={item.kind === 'folder' && item.path === trailChildPath}
         isSelected={item.path === selectedChildPath}
         onActivate={onActivate}
+        onContextMenuAction={onContextMenuAction}
       />
     ),
-    [index, onActivate, selectedChildPath, trailChildPath],
+    [getContextMenuActions, index, onActivate, onContextMenuAction, selectedChildPath, trailChildPath],
   );
 
   const keyExtractor = useCallback((entry: FileSystemEntry) => entry.path, []);

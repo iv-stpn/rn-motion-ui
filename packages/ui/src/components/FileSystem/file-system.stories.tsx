@@ -6,7 +6,7 @@ import { View } from 'react-native';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Text } from '../Text/text';
 import { FileSystem } from './file-system';
-import type { FileSystemItem, FileSystemViewerArgs } from './file-system.types';
+import type { FileSystemContextMenuAction, FileSystemItem, FileSystemViewerArgs } from './file-system.types';
 
 // ─── Shared data ───────────────────────────────────────────────────────────────
 // A small, deterministic manifest. Only files are listed at the top level —
@@ -432,6 +432,59 @@ export const Compact: Story = {
     await userEvent.click(await canvas.findByLabelText('View'));
     await userEvent.click(await screen.findByText('List'));
     await canvas.findByText('Name');
+  },
+};
+
+// ─── Context menu ──────────────────────────────────────────────────────────────
+
+/** Actions vary by entry kind; folders expose fewer operations than files. */
+function resolveContextMenuActions(item: FileSystemItem): FileSystemContextMenuAction[] {
+  const common: FileSystemContextMenuAction[] = [
+    { id: 'rename', label: 'Rename…' },
+    { id: 'move', label: 'Move to…' },
+    { id: 'delete', label: 'Delete', destructive: true },
+  ];
+  if (item.kind === 'file')
+    return [
+      { id: 'open', label: 'Open' },
+      { id: 'download', label: 'Download' },
+      { id: 'copy-link', label: 'Copy link' },
+      ...common,
+    ];
+  return [{ id: 'open', label: 'Open' }, ...common];
+}
+
+/**
+ * Right-click any entry (web) or long-press it (native) to see the context
+ * menu. The chosen action is reported to `onContextMenuAction`.
+ */
+export const WithContextMenu: Story = {
+  name: 'Demo: Context menu',
+  args: {
+    getContextMenuActions: resolveContextMenuActions,
+    onContextMenuAction: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    // Right-click a file to open its context menu.
+    const readmeTile = await canvas.findByRole('button', { name: 'README.md' });
+    await userEvent.pointer({ target: readmeTile, keys: '[MouseRight]' });
+
+    // The menu resolves async — wait for at least one action to appear.
+    const openAction = await screen.findByText('Open');
+    expect(screen.getByText('Download')).toBeTruthy();
+    expect(screen.getByText('Delete')).toBeTruthy();
+
+    // Selecting an action fires the callback and closes the menu.
+    await userEvent.click(openAction);
+    await waitFor(() =>
+      expect(args.onContextMenuAction).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'open' }),
+        expect.objectContaining({ path: 'README.md' }),
+      ),
+    );
   },
 };
 

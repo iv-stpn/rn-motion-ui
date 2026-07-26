@@ -226,6 +226,7 @@ function ListRow({
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: drag, hover, context-menu, and row layout are tightly coupled around shared state — splitting would scatter interdependent logic
 export function FileSystemListView({
   currentPath,
   draggable = false,

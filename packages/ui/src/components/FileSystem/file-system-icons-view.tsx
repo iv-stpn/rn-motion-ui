@@ -181,6 +181,7 @@ function useIconsGrid(
 
 // ── View ───────────────────────────────────────────────────────────────────────
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: drag, hover, context-menu, and tile layout are tightly coupled around shared state — splitting would scatter interdependent logic
 export function FileSystemIconsView({
   currentPath,
   draggable = false,

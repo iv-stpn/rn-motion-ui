@@ -136,6 +136,7 @@ export type MultiStepMenuProps = {
   /** Static size for the wide-screen centered panel (largeScreenMode="modal"). */
   widePanelSize?: WidePanelSize;
   ref?: RefObject<MultiStepMenuHandle | null>;
+  testID?: string;
 };
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small layouts are tightly coupled to shared state
@@ -155,6 +156,7 @@ export const MultiStepMenu = function MultiStepMenu({
   onAfterClose,
   widePanelSize,
   ref,
+  testID,
 }: MultiStepMenuProps) {
   const [path, setPath] = useState<string[]>(isWideScreen ? (defaultPath ?? []) : []);
   const [direction, setDirection] = useState<MultiStepDirection>(null);
@@ -378,6 +380,7 @@ export const MultiStepMenu = function MultiStepMenu({
       scrollable={false}
       widePanelSize={widePanelSize}
       onAfterClose={onAfterClose}
+      testID={testID}
     >
       {content}
     </AdaptiveModal>,

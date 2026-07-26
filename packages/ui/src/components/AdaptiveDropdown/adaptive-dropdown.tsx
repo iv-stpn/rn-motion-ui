@@ -56,6 +56,7 @@ export type AdaptiveDropdownProps = {
   fullSheet?: boolean;
   /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 5 */
   elevation?: SurfaceLevel;
+  testID?: string;
 };
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small screen paths are tightly coupled to shared anchor/dimension state
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: same reason
@@ -77,6 +78,7 @@ export function AdaptiveDropdown({
   triggerClassName,
   fullSheet = false,
   elevation = 5,
+  testID,
 }: AdaptiveDropdownProps) {
   const { width: vpWidth, height: vpHeight } = useWindowDimensions();
   const isWideScreen = vpWidth >= MD_BREAKPOINT;
@@ -196,7 +198,7 @@ export function AdaptiveDropdown({
 
   return (
     <>
-      <View ref={triggerRef} collapsable={false} className={triggerClassName}>
+      <View ref={triggerRef} collapsable={false} className={triggerClassName} testID={testID}>
         <Pressable onPress={toggle} accessibilityLabel={triggerAccessibilityLabel}>
           {resolvedTrigger}
         </Pressable>
@@ -221,6 +223,7 @@ export function AdaptiveDropdown({
                     onPress={noop}
                     style={{ maxHeight }}
                     className={`flex-col overflow-hidden rounded-2xl border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
+                    testID={testID ? `${testID}-panel` : undefined}
                   >
                     {header}
                     {body}

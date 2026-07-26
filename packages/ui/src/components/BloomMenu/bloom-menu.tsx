@@ -26,7 +26,7 @@ export type BloomIconProps = { size?: number; color?: string };
 export type BloomIcon = (props: BloomIconProps) => ReactNode;
 
 // biome-ignore lint/style/useExportsLast: type collocated with sibling BloomIcon export for readability
-export type BloomMenuItem = { label: string; icon: BloomIcon };
+export type BloomMenuItem = { label: string; icon: BloomIcon; testID?: string };
 
 const TRIGGER_W = 144;
 const TRIGGER_H = 44;
@@ -68,6 +68,7 @@ type BloomCellProps = {
   open: boolean;
   dist: number;
   onSelect: (label: string) => void;
+  testID?: string;
 };
 
 function cellTransition(reduce: boolean, open: boolean, dist: number) {
@@ -78,7 +79,7 @@ function cellTransition(reduce: boolean, open: boolean, dist: number) {
   return { type: 'timing' as const, duration: 120 };
 }
 
-function BloomCell({ item, className, reduce, open, dist, onSelect }: BloomCellProps) {
+function BloomCell({ item, className, reduce, open, dist, onSelect, testID }: BloomCellProps) {
   const iconColor = useThemeColor('foreground');
   const handlePress = useCallback(() => onSelect(item.label), [onSelect, item.label]);
   const Icon = item.icon;
@@ -89,6 +90,7 @@ function BloomCell({ item, className, reduce, open, dist, onSelect }: BloomCellP
       onPress={handlePress}
       className={className}
       style={{ width: PANEL_W / COLS }}
+      testID={testID}
     >
       <MotiView
         animate={reduce ? { opacity: open ? 1 : 0 } : { opacity: open ? 1 : 0, scale: open ? 1 : 0.85 }}
@@ -211,6 +213,7 @@ export function BloomMenu({
                     open={open}
                     dist={dist}
                     onSelect={select}
+                    testID={item.testID}
                   />
                 );
               })}

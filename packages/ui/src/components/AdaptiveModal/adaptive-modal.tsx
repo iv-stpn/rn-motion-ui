@@ -66,6 +66,7 @@ type AdaptiveModalProps = {
   closeOnOverlayClick?: boolean;
   /** Surface elevation (1–8) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. Defaults to 6. */
   elevation?: SurfaceLevel;
+  testID?: string;
 };
 
 function resolvePanelDimension(value: Dimension | undefined, viewportSize: number): number | undefined {
@@ -113,6 +114,7 @@ export function AdaptiveModal({
   onAfterClose,
   closeOnOverlayClick = true,
   elevation = 6,
+  testID,
 }: AdaptiveModalProps) {
   const reduce = useReducedMotion();
   const { height, width } = useWindowDimensions();
@@ -280,6 +282,7 @@ export function AdaptiveModal({
                           aria-modal={true}
                           role="dialog"
                           aria-label={renderedTitle}
+                          testID={testID}
                         >
                           {header}
                           {renderContent()}
@@ -323,6 +326,7 @@ export function AdaptiveModal({
                         accessibilityViewIsModal={true}
                         aria-modal={true}
                         role="dialog"
+                        testID={testID}
                         aria-label={renderedTitle}
                       >
                         {header}
@@ -346,12 +350,13 @@ export function AdaptiveModal({
       containerClassName={containerPaddingClass}
       onAfterClose={onAfterClose}
       closeOnOverlayClick={closeOnOverlayClick}
+      testID={testID}
     >
       {header}
       {renderBottomSheetContent()}
     </BottomSheet>
   ) : (
-    <FullSheet open={open} onClose={handleClose} customLayout={true} onAfterClose={onAfterClose}>
+    <FullSheet open={open} onClose={handleClose} customLayout={true} onAfterClose={onAfterClose} testID={testID}>
       <View className={cn('flex-1', containerPaddingClass)}>
         {header}
         {renderContent()}

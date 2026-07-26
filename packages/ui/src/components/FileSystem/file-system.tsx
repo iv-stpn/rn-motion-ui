@@ -58,6 +58,7 @@ export function FileSystem({
   renderFileViewer,
   title = 'Files',
   view: viewProp,
+  testID,
 }: FileSystemProps) {
   const state = useFileSystem({
     defaultPath,
@@ -115,6 +116,7 @@ export function FileSystem({
     <View
       className={cn('overflow-hidden rounded-xl border border-border bg-background', className)}
       onLayout={handleLayout}
+      testID={testID}
       style={{ height }}
     >
       <FileSystemHeader
@@ -139,6 +141,7 @@ export function FileSystem({
         searchValue={state.searchInput}
         sort={state.sort}
         view={state.view}
+        testID={testID ? `${testID}-header` : undefined}
       />
       {isSearchRowVisible ? (
         <FileSystemCollapsedSearchRow inputRef={searchInputRef} onValueChange={state.setSearchInput} value={state.searchInput} />
@@ -184,9 +187,15 @@ export function FileSystem({
           sort={state.sort}
           urlCache={state.resolvedUrlCache}
           view={state.view}
+          testID={testID ? `${testID}-body` : undefined}
         />
       </FileSystemContextMenuProvider>
-      <FileSystemStatusBar count={state.entries.length} isSearching={state.isSearching} selectedName={selectedName} />
+      <FileSystemStatusBar
+        count={state.entries.length}
+        isSearching={state.isSearching}
+        selectedName={selectedName}
+        testID={testID ? `${testID}-status` : undefined}
+      />
       <FileSystemDateRangeModal
         initialRange={dateRangeRequest?.initialRange}
         onApply={handleApplyDateRange}

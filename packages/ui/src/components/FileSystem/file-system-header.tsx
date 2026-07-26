@@ -51,6 +51,7 @@ export type FileSystemHeaderProps = {
   searchValue: string;
   sort: FileSystemSortState;
   view: FileSystemView;
+  testID?: string;
 };
 
 type NavProps = Pick<FileSystemHeaderProps, 'canGoBack' | 'canGoForward' | 'folderName' | 'layout' | 'onGoBack' | 'onGoForward'>;
@@ -117,10 +118,10 @@ function HeaderTools({
   );
 }
 
-export function FileSystemHeader({ isCompact, onViewChange, view, ...props }: FileSystemHeaderProps) {
+export function FileSystemHeader({ isCompact, onViewChange, view, testID, ...props }: FileSystemHeaderProps) {
   const { canGoBack, canGoForward, folderName, layout, onGoBack, onGoForward, ...toolProps } = props;
   return (
-    <View className="h-12 shrink-0 flex-row items-center gap-2 border-border border-b bg-surface-2 px-2">
+    <View className="h-12 shrink-0 flex-row items-center gap-2 border-border border-b bg-surface-2 px-2" testID={testID}>
       <HeaderNav
         canGoBack={canGoBack}
         canGoForward={canGoForward}

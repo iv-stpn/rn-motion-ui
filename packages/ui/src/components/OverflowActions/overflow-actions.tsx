@@ -28,6 +28,7 @@ export type OverflowActionItem = {
   onPress?: () => void;
   disabled?: boolean;
   accessibilityLabel?: string;
+  testID?: string;
 };
 
 // biome-ignore lint/style/useExportsLast: props type before spring constants — collocated for readability
@@ -181,6 +182,7 @@ export function OverflowActions({
             onPressOut={handleTogglePressOut}
             onPress={handleTogglePress}
             className={toggle({ size })}
+            testID={testID ? `${testID}-toggle` : undefined}
           >
             <AnimatePresence exitBeforeEnter={true}>
               <MotiView
@@ -227,6 +229,7 @@ function ActionButton({ item, size, reduce, onAction }: ActionButtonProps) {
         onPress={handlePress}
         className={action({ size })}
         style={{ opacity: item.disabled ? 0.45 : 1 }}
+        testID={item.testID}
       >
         {item.icon === null ? null : item.icon}
         {typeof item.label === 'string' || typeof item.label === 'number' ? (

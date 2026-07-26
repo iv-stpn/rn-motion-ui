@@ -180,6 +180,7 @@ export type FullSheetProps = {
   closeIcon?: ReactNode;
   /** Replace the back-button chevron icon. Default: rotated `<ChevronRight size={20} />`. */
   backIcon?: ReactNode;
+  testID?: string;
 };
 
 export function FullSheet({
@@ -200,6 +201,7 @@ export function FullSheet({
   header: headerSlot,
   closeIcon,
   backIcon,
+  testID,
 }: FullSheetProps) {
   const isOpen = open ?? visible ?? false;
   const { height, width } = useWindowDimensions();
@@ -259,6 +261,7 @@ export function FullSheet({
                 exit={{ translateY: height }}
                 transition={enterTransition}
                 exitTransition={exitTransition}
+                testID={testID}
               >
                 {body}
               </MotiView>

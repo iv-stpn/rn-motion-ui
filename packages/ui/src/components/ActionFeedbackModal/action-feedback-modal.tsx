@@ -125,6 +125,7 @@ export type ActionFeedbackModalProps = {
   tagline?: string;
   /** Surface elevation (1–8) — drives the drop shadow + dark-mode rim. Defaults to 6. */
   elevation?: SurfaceLevel;
+  testID?: string;
 };
 
 export function ActionFeedbackModal({
@@ -141,6 +142,7 @@ export function ActionFeedbackModal({
   dismissLabel = 'Dismiss',
   tagline,
   elevation = 6,
+  testID,
 }: ActionFeedbackModalProps) {
   const isOpen = openProp ?? visible ?? false;
   const isDismissible = state === 'error';
@@ -197,6 +199,7 @@ export function ActionFeedbackModal({
             transition={reduced ? RM_TRANSITION : { type: 'spring', damping: 24, stiffness: 280, mass: 0.9 }}
             exitTransition={{ type: 'timing', duration: reduced ? 100 : 150 }}
             className={`w-full max-w-sm rounded-2xl border border-border ${surfaceBackground(elevation)} p-6 ${elevatedShadow(elevation)}`}
+            testID={testID}
           >
             <View className="w-full items-center gap-4 py-2">
               <MorphIcon state={state} reduced={reduced} />
@@ -244,7 +247,13 @@ export function ActionFeedbackModal({
                       <Text className="text-center text-muted-foreground text-sm leading-relaxed">{errorMessage}</Text>
                     ) : null}
                     {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
-                    <Button variant="secondary" size="sm" onPress={handleClose} style={{ marginTop: 8 }}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={handleClose}
+                      style={{ marginTop: 8 }}
+                      testID={testID ? `${testID}-dismiss` : undefined}
+                    >
                       {dismissLabel}
                     </Button>
                   </MotiView>

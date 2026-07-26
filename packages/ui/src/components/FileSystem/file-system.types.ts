@@ -189,6 +189,7 @@ export type FileSystemProps = {
   onMove?: (event: FileSystemMoveEvent) => void;
   /** Fixed viewport height. Defaults to 480. */
   height?: number;
+  testID?: string;
 };
 
 /** Emitted by `onMove` when the user drops entries onto a destination folder. */

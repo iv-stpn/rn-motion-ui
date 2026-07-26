@@ -32,6 +32,7 @@ export type FileSystemBodyProps = FileSystemViewProps & {
   /** Raw input rather than the normalized query, so the message quotes what was typed. */
   searchInput: string;
   view: FileSystemView;
+  testID?: string;
 };
 
 type EmptyLabelArgs = Pick<FileSystemBodyProps, 'hasActiveFilters' | 'isSearching' | 'searchInput'>;
@@ -68,9 +69,9 @@ function FileSystemBodyContent({
 type WebViewStyle = ViewStyle & { userSelect?: string };
 const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none' } : null;
 
-export function FileSystemBody(props: FileSystemBodyProps) {
+export function FileSystemBody({ testID, ...props }: FileSystemBodyProps) {
   return (
-    <View className="min-h-0 flex-1" style={WEB_BODY_STYLE}>
+    <View className="min-h-0 flex-1" style={WEB_BODY_STYLE} testID={testID}>
       <FileSystemBodyContent {...props} />
     </View>
   );

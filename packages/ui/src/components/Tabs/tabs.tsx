@@ -159,9 +159,9 @@ export function TabsList({ children }: TabsListProps) {
   );
 }
 
-type TabsTriggerProps = { value: string; children: ReactNode };
+type TabsTriggerProps = { value: string; children: ReactNode; testID?: string };
 
-export function TabsTrigger({ value, children }: TabsTriggerProps) {
+export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
   const { value: current, setValue, variant, register } = useTabs();
   const active = current === value;
   const [hovered, setHovered] = useState(false);
@@ -195,6 +195,7 @@ export function TabsTrigger({ value, children }: TabsTriggerProps) {
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       className={variant === 'underline' ? 'px-3 pt-1 pb-2.5' : 'px-3.5 py-1.5'}
+      testID={testID}
     >
       <Text className={highlighted ? 'font-medium text-foreground text-sm' : 'font-medium text-muted-foreground text-sm'}>
         {children}

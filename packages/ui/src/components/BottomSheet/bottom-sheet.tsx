@@ -48,6 +48,7 @@ export type BottomSheetProps = {
   handleClassName?: string;
   /** Additional class names merged onto the backdrop overlay. */
   backdropClassName?: string;
+  testID?: string;
 };
 
 export function BottomSheet({
@@ -62,6 +63,7 @@ export function BottomSheet({
   closeOnOverlayClick = true,
   handleClassName,
   backdropClassName,
+  testID,
 }: BottomSheetProps) {
   const isOpen = open ?? visible ?? false;
   const { height } = useWindowDimensions();
@@ -132,12 +134,15 @@ export function BottomSheet({
           ]}
         />
         <View className="flex-1 justify-end">
-          {fullSheet ? null : <Pressable onPress={handleOverlayPress} className="flex-1" />}
+          {fullSheet ? null : (
+            <Pressable onPress={handleOverlayPress} className="flex-1" testID={testID ? `${testID}-backdrop` : undefined} />
+          )}
           <GestureDetector gesture={handleGesture}>
             <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>
               <View
                 // biome-ignore lint/nursery/useSortedClasses: dynamic class — cannot sort across template-literal segments
                 className={`w-full overflow-hidden bg-surface-3${fullSheet ? '' : ' rounded-t-2xl'}`}
+                testID={testID}
                 style={{
                   maxHeight: fullSheet ? height : Math.round(height * 0.9),
                   height: fullSheet ? height : undefined,

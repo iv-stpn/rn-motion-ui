@@ -46,6 +46,7 @@ export type HoverMenuProps = {
   contentClassName?: string;
   /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 5 */
   elevation?: SurfaceLevel;
+  testID?: string;
 };
 
 // Minimal web-only DOM types — the RN package tsconfig omits the DOM lib, so the
@@ -158,6 +159,7 @@ export function HoverMenu({
   closeDelay = DEFAULT_CLOSE_DELAY,
   contentClassName,
   elevation = 5,
+  testID,
 }: HoverMenuProps) {
   const canHover = useHoverCapable();
   const reduce = useReducedMotion();
@@ -361,6 +363,7 @@ export function HoverMenu({
         onHoverIn={canHover ? handleHoverIn : undefined}
         onHoverOut={canHover ? handleHoverOut : undefined}
         style={[canHover ? WEB_PANEL_POSITION : POSITION_ABSOLUTE, { left, top, width: panelWidth, zIndex: 50 }]}
+        testID={testID ? `${testID}-panel` : undefined}
       >
         <MotiView
           from={{ opacity: 0, translateY: enterY }}
@@ -387,6 +390,7 @@ export function HoverMenu({
         onPress={toggle}
         onHoverIn={canHover ? handleHoverIn : undefined}
         onHoverOut={canHover ? handleHoverOut : undefined}
+        testID={testID}
       >
         {resolvedTrigger}
       </Pressable>

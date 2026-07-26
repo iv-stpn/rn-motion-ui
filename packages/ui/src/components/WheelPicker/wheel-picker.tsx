@@ -1,6 +1,6 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: scroll physics, item layout, and accessibility all share animation values
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type AccessibilityActionEvent,
   type GestureResponderEvent,
@@ -14,6 +14,7 @@ import {
   Text,
   Vibration,
   View,
+  type ViewProps,
   type ViewStyle,
 } from 'react-native';
 import Animated, {
@@ -223,7 +224,44 @@ function optionLabel(option: WheelPickerOption) {
   return typeof option === 'string' ? option : option.label;
 }
 
+// Centre selection band. Rounded in both variants — the pill is what marks the
+// selected row, so it survives dropping the container. Only the inset differs:
+// `card` pulls in from the surface edge (inset-x-2), `plain` uses a tighter
+// inset-x-1 so a narrow wheel (a 56px day column) still gets a band wide enough
+// to read, and two wheels butted together leave a small gutter between pills
+// instead of fusing into one bar. Static literals (never composed at runtime) so
+// the Tailwind/uniwind scanner sees every class.
+const BAND_CLASS: Record<WheelPickerVariant, string> = {
+  card: 'absolute inset-x-2 rounded-xl bg-foreground/[0.06]',
+  plain: 'absolute inset-x-1 rounded-xl bg-foreground/[0.06]',
+};
+const REDUCED_BAND_CLASS: Record<WheelPickerVariant, string> = {
+  card: 'absolute inset-x-2 z-10 rounded-xl bg-surface-selected',
+  plain: 'absolute inset-x-1 z-10 rounded-xl bg-surface-selected',
+};
+
+type WheelPickerFrameProps = ViewProps & { variant: WheelPickerVariant; elevation: SurfaceLevel; ref?: Ref<View> };
+
+// The outer shell. `card` is an elevated Card surface; `plain` is a bare
+// transparent View — no fill, no shadow, no radius — so a parent can frame
+// several wheels as one control. Both keep `overflow-hidden` (rows near the
+// horizon would otherwise paint past the window) and no padding (rows are
+// absolutely positioned against the container box, so padding offsets the drum).
+function WheelPickerFrame({ variant, elevation, className, ...props }: WheelPickerFrameProps) {
+  if (variant === 'plain') return <View className={cn('relative overflow-hidden bg-transparent', className)} {...props} />;
+  return <Card className={cn('relative overflow-hidden p-0', className)} elevation={elevation} {...props} />;
+}
+
 export type WheelPickerOption = string | { label: string; value: string };
+
+/**
+ * `card` — self-contained control: elevated Card surface, inset rounded centre pill.
+ * `plain` — no container: transparent, no surface, no shadow, no radius of its own.
+ * The rounded centre pill stays (it's what marks the selection), just on a tighter
+ * inset. Use this for each wheel when composing several into one control — a date
+ * picker, say — and let the parent supply the single frame.
+ */
+export type WheelPickerVariant = 'card' | 'plain';
 
 export type WheelPickerProps = {
   options: WheelPickerOption[];
@@ -237,9 +275,11 @@ export type WheelPickerProps = {
   disabled?: boolean;
   /** Play a short tick sound on each row crossing while dragging. Default false. */
   sound?: boolean;
-  /** Surface elevation of the outer Card container (1–8). Default 3. */
+  /** Container treatment. Default `card`. See {@link WheelPickerVariant}. */
+  variant?: WheelPickerVariant;
+  /** Surface elevation of the outer Card container (1–8). Default 3. Ignored when `variant="plain"`. */
   elevation?: SurfaceLevel;
-  /** Additional NativeWind class names forwarded to the outer Card. */
+  /** Additional NativeWind class names forwarded to the container. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
@@ -256,6 +296,7 @@ export function WheelPicker({
   itemHeight = 36,
   disabled = false,
   sound = false,
+  variant = 'card',
   elevation = 3,
   className,
   style,
@@ -536,18 +577,19 @@ export function WheelPicker({
   // settles on a row.
   if (reduce)
     return (
-      <Card
+      <WheelPickerFrame
+        variant={variant}
         elevation={elevation}
         accessibilityRole="adjustable"
         accessibilityLabel={accessibilityLabel}
         accessibilityValue={{ text: currentValue }}
         testID={testID ?? 'wheel-picker'}
-        className="relative overflow-hidden p-0"
+        className={className}
         style={[{ height, opacity: disabled ? 0.5 : 1 }, style]}
       >
         <View
-          className="absolute inset-x-2 z-10 rounded-xl bg-surface-selected"
-          style={{ pointerEvents: 'none', top: pad, height: itemHeight }}
+          className={REDUCED_BAND_CLASS[variant]}
+          style={{ pointerEvents: 'none', top: pad, height: itemHeight, zIndex: 10 }}
         />
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -575,12 +617,13 @@ export function WheelPicker({
             );
           })}
         </ScrollView>
-      </Card>
+      </WheelPickerFrame>
     );
 
   return (
-    <Card
+    <WheelPickerFrame
       ref={containerRef}
+      variant={variant}
       elevation={elevation}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
@@ -588,7 +631,7 @@ export function WheelPicker({
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={handleAccessibilityAction}
       testID={testID ?? 'wheel-picker'}
-      className={cn('relative overflow-hidden p-0', className)}
+      className={className}
       style={[
         { height, opacity: disabled ? 0.5 : 1 },
         // Web: block page scroll / text selection so the drag drives the drum.
@@ -597,11 +640,9 @@ export function WheelPicker({
       ]}
       {...pan.panHandlers}
     >
-      {/* Centre band: borderless selection pill. */}
-      <View
-        className="absolute inset-x-2 rounded-xl bg-foreground/[0.06]"
-        style={{ pointerEvents: 'none', top: pad, height: itemHeight, zIndex: 10 }}
-      />
+      {/* Centre band: borderless rounded selection pill, tighter inset under
+          `plain` so butted-together wheels each keep a distinct pill. */}
+      <View className={BAND_CLASS[variant]} style={{ pointerEvents: 'none', top: pad, height: itemHeight, zIndex: 10 }} />
       {options.map((option, i) => (
         <WheelPickerRow
           key={optionValue(option)}
@@ -650,6 +691,6 @@ export function WheelPicker({
           />
         ))}
       </View>
-    </Card>
+    </WheelPickerFrame>
   );
 }

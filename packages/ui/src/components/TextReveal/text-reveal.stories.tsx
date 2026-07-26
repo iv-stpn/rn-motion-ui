@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { expect, within } from 'storybook/test';
-import { Text } from '../Text/text';
+import { Action, Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { TextReveal, type TextRevealSplit } from './text-reveal';
 
 const meta = {
@@ -28,66 +27,91 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const REPLAY_LABEL = 'Replay';
-const WORDS_LABEL = 'word split';
-const CHARS_LABEL = 'char split';
-const MULTILINE_LABEL = 'multi-line';
+const SPLITS = ['word', 'char'] as const satisfies readonly TextRevealSplit[];
+const PACES = [
+  { value: '0.03', label: 'quick' },
+  { value: '0.09', label: 'default' },
+  { value: '0.18', label: 'slow' },
+] as const;
+const OFFSETS = ['0', '24', '60'] as const;
+const ONE_LINE = 'Motion that feels considered.';
+const TWO_LINES = ['Motion that feels', 'considered.'];
+const HEADING = 'text-2xl font-semibold text-foreground';
+
+type PaceKey = (typeof PACES)[number]['value'];
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function TextRevealPlayground(args: ComponentProps<typeof TextReveal>) {
+  const [split, setSplit] = useState<TextRevealSplit>('word');
+  const [paceKey, setPaceKey] = useState<PaceKey>('0.09');
+  const [offsetKey, setOffsetKey] = useState<(typeof OFFSETS)[number]>('24');
+  const [multiline, setMultiline] = useState(false);
+  // Remounting is the only way to replay a reveal — the animation runs once on mount.
+  const [runKey, setRunKey] = useState(0);
+  const replay = useCallback(() => setRunKey((k) => k + 1), []);
+
+  const stagger = Number(paceKey);
+  const yOffset = Number(offsetKey);
+
+  return (
+    <Playground style={{ maxWidth: 460 }}>
+      <Controls>
+        <Choice label="Split" onChange={setSplit} options={SPLITS} value={split} />
+        <Choice label="Stagger" onChange={setPaceKey} options={PACES} value={paceKey} />
+        <Choice label="Y offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
+        <Toggle label="Multi-line" onChange={setMultiline} value={multiline} />
+        <Action label="Replay" onPress={replay} />
+      </Controls>
+
+      <TextReveal
+        {...args}
+        className={HEADING}
+        key={runKey}
+        split={split}
+        stagger={stagger}
+        text={multiline ? TWO_LINES : ONE_LINE}
+        yOffset={yOffset}
+      />
+
+      <Section title="Split">
+        <Variants direction="column" gap={16}>
+          {SPLITS.map((name) => (
+            <Sample key={name} label={`${name} split`}>
+              <TextReveal {...args} className={HEADING} split={name} stagger={name === 'char' ? 0.04 : 0.09} text={ONE_LINE} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      <Section title="Stacked lines">
+        <TextReveal {...args} className={HEADING} text={TWO_LINES} />
+      </Section>
+
+      {/* `whileInView` defers the reveal until the text scrolls into view; inside a
+          story canvas it is already visible, so the two read the same here. */}
+      <Section title="Y offset">
+        <Variants direction="column" gap={16}>
+          {OFFSETS.map((key) => (
+            <Sample key={key} label={`${key}px travel`}>
+              <TextReveal {...args} className="font-medium text-base text-foreground" text={ONE_LINE} yOffset={Number(key)} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+    </Playground>
+  );
+}
 
 export default meta;
 
-export const AllVariants: Story = {
-  name: 'All variants',
-  render: (args) => (
-    <View style={{ gap: 32, alignItems: 'flex-start' }}>
-      <View style={{ gap: 8, alignItems: 'flex-start' }}>
-        <Text className="text-muted-foreground text-xs">{WORDS_LABEL}</Text>
-        <TextReveal {...args} />
-      </View>
-      <View style={{ gap: 8, alignItems: 'flex-start' }}>
-        <Text className="text-muted-foreground text-xs">{CHARS_LABEL}</Text>
-        <TextReveal {...args} text="considered." split="char" stagger={0.04} />
-      </View>
-      <View style={{ gap: 8, alignItems: 'flex-start' }}>
-        <Text className="text-muted-foreground text-xs">{MULTILINE_LABEL}</Text>
-        <TextReveal {...args} text={['Motion that feels', 'considered.']} />
-      </View>
-    </View>
-  ),
-};
+/** Reveal per word or per character, at three paces and three travel distances.
+ *  Press "Replay" to remount and watch the stagger again. */
+export const Interactive: Story = { render: (args) => <TextRevealPlayground {...args} /> };
 
 export const Words: Story = {
+  name: 'Demo: Announces the whole line',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByLabelText('Motion that feels considered.')).toBeInTheDocument();
-  },
-};
-
-export const Characters: Story = {
-  args: { text: 'considered.', split: 'char', stagger: 0.04 },
-};
-
-export const MultiLine: Story = {
-  args: {
-    text: ['Motion that feels', 'considered.'],
-    className: 'text-3xl font-semibold text-foreground',
-  },
-};
-
-export const Replay: Story = {
-  render: (args) => {
-    const [key, setKey] = useState(0);
-    const replay = useCallback(() => setKey((k) => k + 1), []);
-    return (
-      <View style={{ alignItems: 'center', gap: 24 }}>
-        <TextReveal {...args} key={key} />
-        <Pressable
-          onPress={replay}
-          accessibilityRole="button"
-          className="h-9 items-center justify-center rounded-full border border-border bg-surface-3 px-4"
-        >
-          <Text className="font-medium text-foreground text-xs">{REPLAY_LABEL}</Text>
-        </Pressable>
-      </View>
-    );
+    await expect(await canvas.findByLabelText(ONE_LINE)).toBeInTheDocument();
   },
 };

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { OTPInput, type OTPStatus } from './otp-input';
 
 const CODE = '123456';
@@ -25,37 +25,101 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
+const LENGTHS = ['4', '6'] as const;
+const SUCCESS_MESSAGE = 'Verified.';
+const ERROR_MESSAGE = 'Wrong code, try again.';
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
+  const [lengthKey, setLengthKey] = useState<(typeof LENGTHS)[number]>('6');
+  const [mask, setMask] = useState(false);
+  const [disabled, setDisabled] = useState(false);
+  const [value, setValue] = useState('');
+  const [status, setStatus] = useState<OTPStatus>('idle');
+
+  const length = Number(lengthKey);
+  const expected = CODE.slice(0, length);
+
+  // Editing after a verdict clears it, so the shake/check can be re-triggered
+  // without reloading the story.
+  const handleChange = useCallback(
+    (next: string) => {
+      setValue(next);
+      setStatus('idle');
+      args.onChange?.(next);
+    },
+    [args.onChange],
+  );
+
+  const handleComplete = useCallback(
+    (next: string) => {
+      setStatus(next === expected ? 'success' : 'error');
+      args.onComplete?.(next);
+    },
+    [expected, args.onComplete],
+  );
+
+  const handleLength = useCallback((next: (typeof LENGTHS)[number]) => {
+    setLengthKey(next);
+    setValue('');
+    setStatus('idle');
+  }, []);
+
+  return (
+    <Playground style={{ alignItems: 'center' }}>
+      <Controls>
+        <Choice label="Length" onChange={handleLength} options={LENGTHS} value={lengthKey} />
+        <Toggle label="Mask" onChange={setMask} value={mask} />
+        <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
+      </Controls>
+
+      <OTPInput
+        {...args}
+        disabled={disabled}
+        errorMessage={ERROR_MESSAGE}
+        hint={`Enter ${expected} to verify.`}
+        length={length}
+        mask={mask}
+        onChange={handleChange}
+        onComplete={handleComplete}
+        status={status}
+        successMessage={SUCCESS_MESSAGE}
+        value={value}
+      />
+
+      {/* The states below are `status`-driven and read-only — a real form would set
+          `status` from its own validation, which is what the live field above does. */}
+      <Section title="States">
+        <Variants direction="column" gap={20}>
+          <Sample label="partially filled">
+            <OTPInput {...args} defaultValue="123" hint="Keep going." />
+          </Sample>
+          <Sample label="masked">
+            <OTPInput {...args} defaultValue="1234" hint="Digits are hidden." mask={true} />
+          </Sample>
+          <Sample label="success">
+            <OTPInput {...args} defaultValue={CODE} status="success" successMessage={SUCCESS_MESSAGE} />
+          </Sample>
+          <Sample label="error">
+            <OTPInput {...args} defaultValue="000000" errorMessage={ERROR_MESSAGE} status="error" />
+          </Sample>
+          <Sample label="disabled">
+            <OTPInput {...args} defaultValue="12" disabled={true} hint="Locked while we re-send." />
+          </Sample>
+          <Sample label="four slots">
+            <OTPInput {...args} hint="Shorter codes just take a lower `length`." length={4} />
+          </Sample>
+        </Variants>
+      </Section>
+    </Playground>
+  );
+}
+
 export default meta;
 
-export const Interactive: Story = {
-  render: (args) => {
-    const [value, setValue] = useState('');
-    const [status, setStatus] = useState<OTPStatus>('idle');
-    const handleChange = useCallback(
-      (v: string) => {
-        setValue(v);
-        if (status !== 'idle') setStatus('idle');
-      },
-      [status],
-    );
-    const handleComplete = useCallback((v: string) => setStatus(v === CODE ? 'success' : 'error'), []);
-    return (
-      <View style={{ alignItems: 'center' }}>
-        <OTPInput
-          {...args}
-          label="Verification code"
-          hint={`Enter ${CODE} to verify.`}
-          successMessage="Verified."
-          errorMessage="Wrong code, try again."
-          value={value}
-          status={status}
-          onChange={handleChange}
-          onComplete={handleComplete}
-        />
-      </View>
-    );
-  },
-};
+/** Type into the live field — matching the hint verifies (check draw), anything
+ *  else shakes. The rows below hold the states a parent sets via `status`. */
+export const Interactive: Story = { render: (args) => <OtpPlayground {...args} /> };
 
 export const Default: Story = {
   name: 'Demo: Type a code',
@@ -119,14 +183,3 @@ export const ReselectCell: Story = {
     await expect(args.onComplete).toHaveBeenLastCalledWith('129456');
   },
 };
-
-export const Filled: Story = { args: { defaultValue: '1234', hint: 'Keep going.' } };
-export const Masked: Story = { args: { defaultValue: '1234', mask: true } };
-export const Success: Story = {
-  args: { defaultValue: CODE, status: 'success', successMessage: 'Verified.' },
-};
-export const ErrorState: Story = {
-  name: 'Error',
-  args: { defaultValue: '000000', status: 'error', errorMessage: 'Wrong code, try again.' },
-};
-export const Disabled: Story = { args: { defaultValue: '12', disabled: true } };

@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
-import { CylinderCarousel } from './cylinder-carousel';
+import { CylinderCarousel, type CylinderCarouselVariant } from './cylinder-carousel';
 
 const SLIDES = [
   { label: 'Aurora', color: '#6a7bff' },
@@ -40,7 +41,14 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const DRAG_HINT = 'Drag to roll';
+const DRAG_HINT = 'Drag the ring — or flick it and let the momentum settle.';
+const STAGE_WIDTH = 480;
+const STAGE_HEIGHT = 200;
+
+const VARIANTS = ['concave', 'convex'] as const satisfies readonly CylinderCarouselVariant[];
+const ITEM_SIZES = ['90', '120', '160'] as const;
+const SLOTS = ['3', '5', '7'] as const;
+const MIN_SCALES = ['0.3', '0.55', '0.8'] as const;
 
 type BallProps = { label: string; color: string };
 
@@ -63,67 +71,76 @@ function Ball({ label, color }: BallProps) {
   );
 }
 
-// Mirrors the web preview's concave/convex toggle.
+/** The eight balls, rebuilt per carousel instance (children can't be shared). */
+function balls() {
+  return SLIDES.map((slide) => <Ball color={slide.color} key={slide.label} label={slide.label} />);
+}
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function VariantDemo() {
-  const [variant, setVariant] = useState<'concave' | 'convex'>('concave');
+function CarouselPlayground() {
+  const [variant, setVariant] = useState<CylinderCarouselVariant>('convex');
+  const [itemSizeKey, setItemSizeKey] = useState<(typeof ITEM_SIZES)[number]>('120');
+  const [slotsKey, setSlotsKey] = useState<(typeof SLOTS)[number]>('5');
+  const [minScaleKey, setMinScaleKey] = useState<(typeof MIN_SCALES)[number]>('0.55');
+  const [snap, setSnap] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [index, setIndex] = useState(0);
+
+  const handleIndexChange = useCallback((next: number) => setIndex(next), []);
+  const front = SLIDES[index % SLIDES.length]?.label ?? '';
+
   return (
-    <View style={{ width: 480, paddingVertical: 24, gap: 12, alignItems: 'center' }}>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {(['concave', 'convex'] as const).map((v) => (
-          <Text
-            key={v}
-            // biome-ignore lint/performance/noJsxPropsBind: story demo handler
-            onPress={() => setVariant(v)}
-            testID={`variant-${v}`}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 6,
-              borderRadius: 999,
-              overflow: 'hidden',
-              fontSize: 13,
-              color: variant === v ? '#ffffff' : '#111111',
-              backgroundColor: variant === v ? '#111111' : '#f4f4f5',
-            }}
-          >
-            {v}
-          </Text>
-        ))}
-      </View>
-      <CylinderCarousel variant={variant} itemSize={120} height={200} minScale={0.5}>
-        {SLIDES.map((s) => (
-          <Ball key={s.label} label={s.label} color={s.color} />
-        ))}
+    <Playground style={{ width: STAGE_WIDTH }}>
+      <Controls>
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Choice label="Item size" onChange={setItemSizeKey} options={ITEM_SIZES} value={itemSizeKey} />
+        <Choice label="Visible slots" onChange={setSlotsKey} options={SLOTS} value={slotsKey} />
+        <Choice label="Min scale" onChange={setMinScaleKey} options={MIN_SCALES} value={minScaleKey} />
+        <Toggle label="Snap" onChange={setSnap} value={snap} />
+        <Toggle label="Auto-rotate" onChange={setAutoRotate} value={autoRotate} />
+      </Controls>
+
+      <CylinderCarousel
+        autoRotate={autoRotate}
+        height={STAGE_HEIGHT}
+        itemSize={Number(itemSizeKey)}
+        minScale={Number(minScaleKey)}
+        onIndexChange={handleIndexChange}
+        snap={snap}
+        testID="cylinder"
+        variant={variant}
+        visibleItems={Number(slotsKey)}
+      >
+        {balls()}
       </CylinderCarousel>
-    </View>
+      <Note testID="story-front">{`Front: ${front} · ${DRAG_HINT}`}</Note>
+
+      <View style={{ height: 12 }} />
+      <Section title="Convex rolls on the outside, concave on the inside">
+        <Variants align="stretch" direction="column" gap={12}>
+          {VARIANTS.map((option) => (
+            <Sample key={option} label={option}>
+              <CylinderCarousel height={160} itemSize={90} minScale={0.5} style={{ width: STAGE_WIDTH }} variant={option}>
+                {balls()}
+              </CylinderCarousel>
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+    </Playground>
   );
 }
 
 export default meta;
 
+/** Roll the ring by dragging (or wheel on web); every knob that shapes the cylinder is live. */
 export const Interactive: Story = {
-  render: (args) => (
-    <View style={{ width: 480, paddingVertical: 24 }}>
-      <CylinderCarousel {...args} testID="cylinder" height={200}>
-        {SLIDES.map((s) => (
-          <Ball key={s.label} label={s.label} color={s.color} />
-        ))}
-      </CylinderCarousel>
-      <Text style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: '#71717a' }}>{DRAG_HINT}</Text>
-    </View>
-  ),
+  render: () => <CarouselPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByTestId('cylinder')).toBeInTheDocument();
-    // All items are mounted (positioned around the ring).
-    await expect(await canvas.findByText('Aurora')).toBeInTheDocument();
-  },
-};
-
-export const ConcaveConvex: Story = {
-  render: () => <VariantDemo />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(await canvas.findByTestId('variant-convex')).toBeInTheDocument();
+    // Every item is mounted at once, positioned around the ring — one per carousel on screen.
+    const auroras = await canvas.findAllByText('Aurora');
+    await expect(auroras.length).toBeGreaterThan(0);
   },
 };

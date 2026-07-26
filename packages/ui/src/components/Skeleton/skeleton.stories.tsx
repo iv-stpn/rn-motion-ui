@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
-import { Skeleton } from './skeleton';
+import { Choice, Controls, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
+import { Skeleton, type SkeletonShape } from './skeleton';
 
 const meta = {
   title: 'Components/Skeleton',
@@ -16,49 +18,65 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const LINE_WIDTH = 240;
+const SHAPES = ['rounded', 'circle', 'square'] as const satisfies readonly SkeletonShape[];
+const SPEEDS = [
+  { value: '1', label: '1s' },
+  { value: '2', label: '2s (default)' },
+  { value: '4', label: '4s' },
+] as const;
+
+type SpeedKey = (typeof SPEEDS)[number]['value'];
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function SkeletonPlayground(args: ComponentProps<typeof Skeleton>) {
+  const [shape, setShape] = useState<SkeletonShape>('rounded');
+  const [speedKey, setSpeedKey] = useState<SpeedKey>('2');
+  const speed = Number(speedKey);
+
+  return (
+    <Playground style={{ width: LINE_WIDTH }}>
+      <Controls>
+        <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
+        <Choice label="Pulse" onChange={setSpeedKey} options={SPEEDS} value={speedKey} />
+      </Controls>
+
+      <Skeleton {...args} className="h-10 w-full" shape={shape} speed={speed} />
+
+      <Section title="Shapes">
+        <Variants align="center" gap={16}>
+          {SHAPES.map((name) => (
+            <Sample align="center" key={name} label={name}>
+              <Skeleton {...args} className="h-10 w-10" shape={name} speed={speed} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      {/* Sizing is a `className` concern — the component only owns the pulse and
+          the corner preset, so real placeholders are composed, not configured. */}
+      <Section title="Text block">
+        <View style={{ gap: 8 }}>
+          <Skeleton {...args} className="h-4 w-full" speed={speed} />
+          <Skeleton {...args} className="h-4 w-full" speed={speed} />
+          <Skeleton {...args} className="h-4 w-3/4" speed={speed} />
+        </View>
+      </Section>
+
+      <Section title="Profile card">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Skeleton {...args} className="h-12 w-12" shape="circle" speed={speed} />
+          <View style={{ flex: 1, gap: 8 }}>
+            <Skeleton {...args} className="h-4 w-1/2" speed={speed} />
+            <Skeleton {...args} className="h-3 w-3/4" speed={speed} />
+          </View>
+        </View>
+      </Section>
+    </Playground>
+  );
+}
 
 export default meta;
 
-export const AllVariants: Story = {
-  name: 'All variants',
-  render: (args) => (
-    <View style={{ flexDirection: 'column', gap: 12, width: LINE_WIDTH }}>
-      <Skeleton {...args} shape="rounded" className="h-4 w-full" />
-      <Skeleton {...args} shape="square" className="h-4 w-full" />
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <Skeleton {...args} shape="circle" className="h-10 w-10" />
-        <Skeleton {...args} shape="circle" className="h-10 w-10" />
-      </View>
-    </View>
-  ),
-};
-
-export const Default: Story = {
-  render: (args) => (
-    <View style={{ width: LINE_WIDTH }}>
-      <Skeleton {...args} className="h-4 w-full" />
-    </View>
-  ),
-};
-
-export const TextBlock: Story = {
-  render: (args) => (
-    <View style={{ flexDirection: 'column', gap: 8, width: LINE_WIDTH }}>
-      <Skeleton {...args} className="h-4 w-full" />
-      <Skeleton {...args} className="h-4 w-full" />
-      <Skeleton {...args} className="h-4 w-3/4" />
-    </View>
-  ),
-};
-
-export const ProfileCard: Story = {
-  render: (args) => (
-    <View style={{ alignItems: 'center', flexDirection: 'row', gap: 12, width: LINE_WIDTH }}>
-      <Skeleton {...args} shape="circle" className="h-12 w-12" />
-      <View style={{ flex: 1, flexDirection: 'column', gap: 8 }}>
-        <Skeleton {...args} className="h-4 w-1/2" />
-        <Skeleton {...args} className="h-3 w-3/4" />
-      </View>
-    </View>
-  ),
-};
+/** Every shape and pulse speed, plus the two placeholder layouts they compose
+ *  into (text block, profile card). Sizing stays a `className` concern. */
+export const Interactive: Story = { render: (args) => <SkeletonPlayground {...args} /> };

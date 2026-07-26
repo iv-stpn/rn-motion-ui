@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import type { ComponentProps } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
+import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Text } from './text';
 
 const meta = {
@@ -18,97 +21,104 @@ type Story = StoryObj<typeof meta>;
 
 const WEIGHTS = ['normal', 'medium', 'semibold', 'bold'] as const;
 const SIZES = ['xs', 'sm', 'base', 'lg', 'xl', '2xl'] as const;
+const COLORS = [
+  { value: 'text-foreground', label: 'foreground' },
+  { value: 'text-muted-foreground', label: 'muted' },
+  { value: 'text-primary', label: 'primary' },
+  { value: 'text-danger', label: 'danger' },
+] as const;
 const PANGRAM = 'The quick brown fox jumps over the lazy dog';
 const AMOUNTS = ['$1,234.50', '$42.00', '$999.99', '$12,345.67'];
-const PROPORTIONAL_LABEL = 'proportional';
-const NUMERIC_LABEL = 'numeric';
-const SIZES_LABEL = 'sizes';
-const WEIGHTS_LABEL = 'weights';
+
+type ColorClass = (typeof COLORS)[number]['value'];
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function TextPlayground(args: ComponentProps<typeof Text>) {
+  const [weight, setWeight] = useState<(typeof WEIGHTS)[number]>('normal');
+  const [size, setSize] = useState<(typeof SIZES)[number]>('base');
+  const [color, setColor] = useState<ColorClass>('text-foreground');
+  const [numeric, setNumeric] = useState(false);
+
+  // Digits make the `numeric` cut legible; prose makes the weights legible.
+  const sample = numeric ? AMOUNTS.join('  ') : PANGRAM;
+
+  return (
+    <Playground style={{ maxWidth: 420 }}>
+      <Controls>
+        <Choice label="Weight" onChange={setWeight} options={WEIGHTS} value={weight} />
+        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+        <Choice label="Colour" onChange={setColor} options={COLORS} value={color} />
+        <Toggle label="Numeric" onChange={setNumeric} value={numeric} />
+      </Controls>
+
+      <Text {...args} className={color} numeric={numeric} size={size} weight={weight}>
+        {sample}
+      </Text>
+
+      <Section title="Sizes">
+        <Variants direction="column" gap={10}>
+          {SIZES.map((name) => (
+            <Sample key={name} label={name}>
+              <Text {...args} size={name} weight={weight}>
+                {PANGRAM}
+              </Text>
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      <Section title="Weights">
+        <Variants direction="column" gap={10}>
+          {WEIGHTS.map((name) => (
+            <Sample key={name} label={name}>
+              <Text {...args} size="lg" weight={name}>
+                {PANGRAM}
+              </Text>
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      <Section title="Colours">
+        <Variants>
+          {COLORS.map((token) => (
+            <Text {...args} className={token.value} key={token.value} size="base" weight="medium">
+              {token.label}
+            </Text>
+          ))}
+        </Variants>
+      </Section>
+
+      {/* Tabular figures only pay off in a column: the `numeric` digits line up
+          across rows while the proportional ones drift. */}
+      <Section title="Numeric (tabular figures)">
+        <View style={{ flexDirection: 'row', gap: 32 }}>
+          <Sample label="proportional">
+            <View style={{ gap: 4 }}>
+              {AMOUNTS.map((amount) => (
+                <Text {...args} key={amount} numeric={false} size="xl">
+                  {amount}
+                </Text>
+              ))}
+            </View>
+          </Sample>
+          <Sample label="numeric">
+            <View style={{ gap: 4 }}>
+              {AMOUNTS.map((amount) => (
+                <Text {...args} key={amount} numeric={true} size="xl">
+                  {amount}
+                </Text>
+              ))}
+            </View>
+          </Sample>
+        </View>
+      </Section>
+    </Playground>
+  );
+}
 
 export default meta;
 
-export const AllVariants: Story = {
-  name: 'All variants',
-  render: (args) => (
-    <View style={{ gap: 24, alignItems: 'flex-start' }}>
-      <View style={{ gap: 8, alignItems: 'flex-start' }}>
-        <Text size="xs" className="text-muted-foreground">
-          {SIZES_LABEL}
-        </Text>
-        {SIZES.map((size) => (
-          <Text {...args} key={size} size={size}>
-            {PANGRAM}
-          </Text>
-        ))}
-      </View>
-      <View style={{ gap: 8, alignItems: 'flex-start' }}>
-        <Text size="xs" className="text-muted-foreground">
-          {WEIGHTS_LABEL}
-        </Text>
-        {WEIGHTS.map((weight) => (
-          <Text {...args} key={weight} weight={weight} size="lg">
-            {weight}
-          </Text>
-        ))}
-      </View>
-    </View>
-  ),
-};
-
-export const Default: Story = {};
-
-export const Weights: Story = {
-  render: (args) => (
-    <View style={{ gap: 16, alignItems: 'flex-start' }}>
-      {WEIGHTS.map((weight) => (
-        <View key={weight} style={{ gap: 4 }}>
-          <Text {...args} weight={weight} size="2xl">
-            {PANGRAM}
-          </Text>
-          <Text size="xs" className="text-muted-foreground">
-            {weight}
-          </Text>
-        </View>
-      ))}
-    </View>
-  ),
-};
-
-export const Sizes: Story = {
-  render: (args) => (
-    <View style={{ gap: 12, alignItems: 'flex-start' }}>
-      {SIZES.map((size) => (
-        <Text {...args} key={size} size={size}>
-          {PANGRAM}
-        </Text>
-      ))}
-    </View>
-  ),
-};
-
-export const Numeric: Story = {
-  render: (args) => (
-    <View style={{ gap: 24, flexDirection: 'row' }}>
-      <View style={{ gap: 6, alignItems: 'flex-start' }}>
-        <Text {...args} size="xs" className="text-muted-foreground" numeric={false}>
-          {PROPORTIONAL_LABEL}
-        </Text>
-        {AMOUNTS.map((amount) => (
-          <Text {...args} key={amount} size="2xl" numeric={false}>
-            {amount}
-          </Text>
-        ))}
-      </View>
-      <View style={{ gap: 6, alignItems: 'flex-start' }}>
-        <Text {...args} size="xs" className="text-muted-foreground" numeric={true}>
-          {NUMERIC_LABEL}
-        </Text>
-        {AMOUNTS.map((amount) => (
-          <Text {...args} key={amount} size="2xl" numeric={true}>
-            {amount}
-          </Text>
-        ))}
-      </View>
-    </View>
-  ),
-};
+/** Every weight, size, colour token and the tabular-figure mode in one story:
+ *  drive the top line with the controls, or read the rows below. */
+export const Interactive: Story = { render: (args) => <TextPlayground {...args} /> };

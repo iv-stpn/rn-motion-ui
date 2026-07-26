@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { useMountEffect } from '../../hooks/use-mount-effect';
-import { Text } from '../Text/text';
+import { Action, Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { useInterval } from '../../hooks/use-interval';
 import { TextRolling, type TextRollingDirection } from './text-rolling';
 
 const meta = {
@@ -16,62 +16,80 @@ const meta = {
     className: 'text-lg font-medium text-foreground',
   },
   argTypes: {
-    direction: { control: 'radio', options: ['up', 'down'] },
+    direction: { control: 'radio', options: ['forward', 'backward'] satisfies TextRollingDirection[] },
   },
 } satisfies Meta<typeof TextRolling>;
 
 type Story = StoryObj<typeof meta>;
 
 const STATUSES = ['Uploading', 'Processing', 'Almost done', 'Complete'];
-const FORWARD_LABEL = 'forward';
-const BACKWARD_LABEL = 'backward';
+const DIRECTIONS = [
+  { value: 'forward', label: 'forward (up)' },
+  { value: 'backward', label: 'backward (down)' },
+] as const satisfies readonly { value: TextRollingDirection; label: string }[];
+const CYCLE_MS = 2000;
+const FIRST_STATUS = 'Uploading';
 
-type RollingDemoProps = { direction?: TextRollingDirection; className?: string };
+type RollingDemoProps = { direction: TextRollingDirection; className?: string; index: number };
 
-// Cycles the label every couple of seconds so the whole-text roll is visible.
+// The roll only fires when `text` changes, so every sample reads the same shared
+// index — one timer drives them all and the directions stay in step.
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function RollingDemo({ direction = 'forward', className }: RollingDemoProps) {
-  const [index, setIndex] = useState(0);
-  useMountEffect(() => {
-    const id = setInterval(() => setIndex((i) => (i + 1) % STATUSES.length), 2000);
-    return () => clearInterval(id);
-  });
-  const current = STATUSES[index % STATUSES.length] ?? 'Uploading';
+function RollingSample({ direction, className, index }: RollingDemoProps) {
+  const current = STATUSES[index % STATUSES.length] ?? FIRST_STATUS;
   return (
     <View style={{ minWidth: 160, alignItems: 'center' }}>
-      <TextRolling text={current} direction={direction} className={className} />
+      <TextRolling className={className} direction={direction} text={current} />
     </View>
+  );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function TextRollingPlayground(args: ComponentProps<typeof TextRolling>) {
+  const [direction, setDirection] = useState<TextRollingDirection>('forward');
+  const [auto, setAuto] = useState(true);
+  const [index, setIndex] = useState(0);
+
+  const advance = useCallback(() => setIndex((i) => (i + 1) % STATUSES.length), []);
+  useInterval(advance, auto ? CYCLE_MS : null);
+
+  return (
+    <Playground style={{ maxWidth: 380 }}>
+      <Controls>
+        <Choice label="Direction" onChange={setDirection} options={DIRECTIONS} value={direction} />
+        <Toggle label="Auto-cycle" onChange={setAuto} value={auto} />
+        <Action label="Next label" onPress={advance} />
+      </Controls>
+
+      <View style={{ alignItems: 'center', gap: 6 }}>
+        <RollingSample className={args.className} direction={direction} index={index} />
+        <Note>{`${index + 1} / ${STATUSES.length}`}</Note>
+      </View>
+
+      {/* Both directions share the index, so one press rolls them opposite ways. */}
+      <Section title="Directions">
+        <Variants align="center" gap={24}>
+          {DIRECTIONS.map((option) => (
+            <Sample align="center" key={option.value} label={option.label}>
+              <RollingSample className={args.className} direction={option.value} index={index} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+    </Playground>
   );
 }
 
 export default meta;
 
-export const AllVariants: Story = {
-  name: 'All variants',
-  render: (args) => (
-    <View style={{ gap: 24, alignItems: 'center' }}>
-      <View style={{ gap: 8, alignItems: 'center' }}>
-        <Text className="text-muted-foreground text-xs">{FORWARD_LABEL}</Text>
-        <RollingDemo direction="forward" className={args.className} />
-      </View>
-      <View style={{ gap: 8, alignItems: 'center' }}>
-        <Text className="text-muted-foreground text-xs">{BACKWARD_LABEL}</Text>
-        <RollingDemo direction="backward" className={args.className} />
-      </View>
-    </View>
-  ),
-};
+/** One label rolling through four statuses. Flip the direction to swap which way
+ *  the old text leaves, or step it manually with "Next label". */
+export const Interactive: Story = { render: (args) => <TextRollingPlayground {...args} /> };
 
-/** Cycles the label every couple of seconds so the whole-text roll is visible. */
 export const Cycling: Story = {
-  render: (args) => <RollingDemo direction="forward" className={args.className} />,
+  name: 'Demo: Announces the current label',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByLabelText('Uploading')).toBeInTheDocument();
+    await expect(await canvas.findByLabelText(FIRST_STATUS)).toBeInTheDocument();
   },
-};
-
-/** Rolls downward — new label enters from above, old exits to the bottom. */
-export const RollDown: Story = {
-  render: (args) => <RollingDemo direction="backward" className={args.className} />,
 };

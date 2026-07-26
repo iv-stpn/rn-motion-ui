@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { Choice, Controls, Playground, Section } from '../../__stories__/story-harness';
+import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
 import { Ban, Lock, ScanFace, ScrollText, ShieldCheck, Trash2, X } from '../../lib/icons';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
@@ -190,10 +192,15 @@ function renderModalView(view: WalletView, callbacks: ModalViewCallbacks): React
   return null;
 }
 
-type MorphingModalDemoProps = { placement: 'bottom' | 'center' };
+const PLACEMENTS = [
+  { value: 'bottom', label: 'Bottom' },
+  { value: 'center', label: 'Center' },
+] as const satisfies readonly { value: 'bottom' | 'center'; label: string }[];
+
+type MorphingModalDemoProps = { placement: 'bottom' | 'center'; triggerKind?: TriggerKind };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function MorphingModalDemo({ placement }: MorphingModalDemoProps) {
+function MorphingModalDemo({ placement, triggerKind }: MorphingModalDemoProps) {
   const [view, setView] = useState<WalletView>(null);
   const showOptions = useCallback(() => setView('options'), []);
   const close = useCallback(() => setView(null), []);
@@ -201,7 +208,7 @@ function MorphingModalDemo({ placement }: MorphingModalDemoProps) {
   const showRecovery = useCallback(() => setView('recovery'), []);
   return (
     <View className="items-center" style={{ gap: 12 }}>
-      <Button onPress={showOptions}>{OPEN_LABEL}</Button>
+      <TriggerButton kind={triggerKind} label={OPEN_LABEL} onPress={showOptions} />
       <Text className="text-muted-foreground text-xs">{HINT}</Text>
       <MorphingModal viewId={view} onClose={close} placement={placement}>
         {renderModalView(view, { close, showOptions, showPrivateKey, showRecovery })}
@@ -210,10 +217,27 @@ function MorphingModalDemo({ placement }: MorphingModalDemoProps) {
   );
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function MorphingModalPlayground() {
+  const [placement, setPlacement] = useState<'bottom' | 'center'>('bottom');
+  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+  return (
+    <Playground style={{ minWidth: 340 }}>
+      <Controls>
+        <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
+        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
+      </Controls>
+      <Section>
+        <MorphingModalDemo placement={placement} triggerKind={triggerKind} />
+      </Section>
+    </Playground>
+  );
+}
+
 export default meta;
 
 export const Interactive: Story = {
-  render: () => <MorphingModalDemo placement="center" />,
+  render: () => <MorphingModalPlayground />,
 };
 
 export const Default: Story = {
@@ -222,7 +246,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Open the modal; it lands on the options list, not a detail view.
-    await userEvent.click(await canvas.findByText(OPEN_LABEL));
+    await userEvent.click(await canvas.findByRole('button', { name: OPEN_LABEL }));
     await expect(await screen.findByText(OPTIONS_TITLE)).toBeTruthy();
   },
 };

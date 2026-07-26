@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { RadioGroup, RadioGroupItem } from './radio';
 
 const meta = {
@@ -24,20 +25,47 @@ const meta = {
 } satisfies Meta<typeof RadioGroup>;
 
 type Story = StoryObj<typeof meta>;
+
+const ORIENTATIONS = ['vertical', 'horizontal'] as const;
+const PLANS = [
+  { value: 'starter', label: 'Starter — free' },
+  { value: 'pro', label: 'Pro — $12/mo' },
+  { value: 'team', label: 'Team — $29/mo' },
+] as const;
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function RadioPlayground() {
+  const [orientation, setOrientation] = useState<(typeof ORIENTATIONS)[number]>('vertical');
+  const [showDisabled, setShowDisabled] = useState(true);
+  const [plan, setPlan] = useState('pro');
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        <Toggle label="Disabled item" onChange={setShowDisabled} value={showDisabled} />
+      </Controls>
+
+      <Section>
+        <RadioGroup onValueChange={setPlan} orientation={orientation} value={plan}>
+          {PLANS.map((item) => (
+            <RadioGroupItem key={item.value} label={item.label} value={item.value} />
+          ))}
+          {showDisabled ? <RadioGroupItem disabled={true} label="Legacy plan" value="legacy" /> : null}
+        </RadioGroup>
+      </Section>
+
+      <Note testID="story-selected-plan">{`Selected: ${plan}`}</Note>
+    </Playground>
+  );
+}
+
 export default meta;
 
+/** Both orientations plus the disabled item, driven live. A disabled item stays
+ *  in the tab order but never commits a selection. */
 export const Interactive: Story = {
-  render: (args) => {
-    const [plan, setPlan] = useState('pro');
-    return (
-      <RadioGroup {...args} value={plan} onValueChange={setPlan}>
-        <RadioGroupItem value="starter" label="Starter — free" />
-        <RadioGroupItem value="pro" label="Pro — $12/mo" />
-        <RadioGroupItem value="team" label="Team — $29/mo" />
-        <RadioGroupItem value="legacy" label="Legacy plan" disabled={true} />
-      </RadioGroup>
-    );
-  },
+  render: () => <RadioPlayground />,
 };
 
 export const Default: Story = {
@@ -50,5 +78,3 @@ export const Default: Story = {
     await expect(args.onValueChange).toHaveBeenCalledWith('starter');
   },
 };
-
-export const Horizontal: Story = { args: { orientation: 'horizontal' } };

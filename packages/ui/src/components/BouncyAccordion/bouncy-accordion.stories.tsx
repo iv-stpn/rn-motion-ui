@@ -1,49 +1,62 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { CalendarClock, FileText, FolderKanban, PackageCheck, RadioTower, ShieldCheck } from '../../lib/icons';
-import { BouncyAccordion } from './bouncy-accordion';
+import { useThemeColor } from '../../theme/use-theme-color';
+import { BouncyAccordion, type BouncyAccordionItem } from './bouncy-accordion';
 
-const ICON = '#71717a';
+// Icons need an explicit colour (RN icons don't inherit currentColor). The meta
+// args are static, so they use a fixed grey; the playground re-tints the same set
+// from the theme so it tracks light/dark.
+const STATIC_ICON = '#71717a';
 
-const ITEMS = [
+const SOURCE = [
   {
     id: 'brief',
     title: 'Release Brief',
     description: 'Collect launch notes, owners, and risks in one compact handoff before the release window opens.',
-    icon: <FileText size={16} color={ICON} />,
+    Icon: FileText,
   },
   {
     id: 'launch',
     title: 'Launch Checklist',
     description: 'Verify copy, links, analytics, rollback steps, and final approvals without leaving the queue.',
-    icon: <ShieldCheck size={16} color={ICON} />,
+    Icon: ShieldCheck,
   },
   {
     id: 'campaign',
     title: 'Campaign Notes',
     description: 'Keep channel-specific notes close to the task while preserving a calm collapsed list.',
-    icon: <RadioTower size={16} color={ICON} />,
+    Icon: RadioTower,
   },
   {
     id: 'calendar',
     title: 'Rollout Calendar',
     description: 'Plan announcements, staging checks, reminders, and quiet periods around the same timeline.',
-    icon: <CalendarClock size={16} color={ICON} />,
+    Icon: CalendarClock,
   },
   {
     id: 'ship',
     title: 'Ship Build',
     description: 'Track the current artifact, deploy status, and final sign-off before marking the release complete.',
-    icon: <PackageCheck size={16} color={ICON} />,
+    Icon: PackageCheck,
   },
   {
     id: 'archive',
     title: 'Archive Assets',
     description: 'Move final copy, images, and source files into the campaign folder once the rollout is done.',
-    icon: <FolderKanban size={16} color={ICON} />,
+    Icon: FolderKanban,
   },
-];
+] as const;
+
+const ITEMS: BouncyAccordionItem[] = SOURCE.map(({ id, title, description, Icon }) => ({
+  id,
+  title,
+  description,
+  icon: <Icon color={STATIC_ICON} size={16} />,
+}));
 
 const meta = {
   title: 'Components/BouncyAccordion',
@@ -60,11 +73,66 @@ const meta = {
 } satisfies Meta<typeof BouncyAccordion>;
 
 type Story = StoryObj<typeof meta>;
+
+const NOTHING_OPEN = 'nothing open';
+const COUNTS = [
+  { value: '3', label: '3 rows' },
+  { value: '6', label: '6 rows' },
+] as const;
+
+type CountKey = (typeof COUNTS)[number]['value'];
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function BouncyAccordionPlayground() {
+  const [collapsible, setCollapsible] = useState(true);
+  const [icons, setIcons] = useState(true);
+  const [countKey, setCountKey] = useState<CountKey>('6');
+  const [lockLast, setLockLast] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
+  const iconColor = useThemeColor('muted-foreground');
+
+  const items = useMemo<BouncyAccordionItem[]>(() => {
+    const count = Number(countKey);
+    return SOURCE.slice(0, count).map(({ id, title, description, Icon }, index) => ({
+      id,
+      title,
+      description,
+      icon: icons ? <Icon color={iconColor} size={16} /> : undefined,
+      disabled: lockLast && index === count - 1,
+    }));
+  }, [countKey, icons, iconColor, lockLast]);
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="Rows" onChange={setCountKey} options={COUNTS} value={countKey} />
+        <Toggle label="Collapsible" onChange={setCollapsible} value={collapsible} />
+        <Toggle label="Icons" onChange={setIcons} value={icons} />
+        <Toggle label="Lock last row" onChange={setLockLast} value={lockLast} />
+      </Controls>
+
+      {/* With `collapsible` off, pressing the open row keeps it open — one row is
+          always expanded. With it on, the same press closes it and `value` is null. */}
+      <View style={{ gap: 8 }}>
+        <BouncyAccordion collapsible={collapsible} items={items} onValueChange={setOpen} value={open} />
+        <Note testID="story-open">{open ?? NOTHING_OPEN}</Note>
+      </View>
+
+      <View style={{ height: 12 }} />
+      {/* Rows adjacent to the open one detach: the group's corner radii and the gap
+          between rows spring apart, which is the whole point of the bounce. */}
+      <Section title="Pre-opened, not collapsible">
+        <BouncyAccordion collapsible={false} defaultValue="brief" items={items} />
+      </Section>
+    </Playground>
+  );
+}
+
 export default meta;
 
-export const Interactive: Story = {
-  args: { defaultValue: null },
-};
+/** One controlled accordion with a live value readout, plus the non-collapsible
+ *  variant that always keeps a row open. "Lock last row" disables a row. */
+export const Interactive: Story = { render: () => <BouncyAccordionPlayground /> };
 
 export const Default: Story = {
   name: 'Demo: Expand a row',
@@ -77,8 +145,4 @@ export const Default: Story = {
     await expect(args.onValueChange).toHaveBeenCalledWith('brief');
     await expect(brief).toHaveAttribute('aria-expanded', 'true');
   },
-};
-
-export const NotCollapsible: Story = {
-  args: { defaultValue: 'brief', collapsible: false },
 };

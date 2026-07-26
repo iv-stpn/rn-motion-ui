@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
-import { View } from 'react-native';
-import { expect, screen, userEvent, within } from 'storybook/test';
-import { Button } from '../Button/button';
+import { useCallback, useEffect, useState } from 'react';
+import { Modal, View } from 'react-native';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
+import { Action, Choice, Controls, Note, Playground, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
 import { ActionFeedbackModal, type ActionFeedbackState } from './action-feedback-modal';
 
 const meta = {
@@ -22,8 +24,6 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const OPEN_LABEL = 'Show modal';
-const SIMULATE_SUCCESS_LABEL = 'Simulate success';
-const SIMULATE_ERROR_LABEL = 'Simulate error';
 
 // Matches a CSS `matrix(...)` / `matrix3d(...)` transform so we can pull the
 // translateY term (2D: parts[5]; 3D: parts[13]) off a Reanimated-animated dot.
@@ -38,47 +38,158 @@ const _translateYOf = (el: Element, win: Window & typeof globalThis): number => 
   return ty ?? 0;
 };
 
+const OUTCOMES = ['success', 'error'] as const;
+const RESOLVE_MS = 1800;
+
+const COPY = {
+  loadingMessage: 'Processing…',
+  successLabel: 'Done!',
+  successMessage: 'The operation completed successfully.',
+  errorTitle: 'Operation failed',
+  errorMessage: 'Something went wrong. Please try again.',
+  dismissLabel: 'Dismiss',
+} as const;
+
+const TAGLINE = 'This may take a moment';
+const RUN_LABEL = 'Run the action';
+const IDLE_NOTE = 'Closed — run the action, or jump straight to a state.';
+// `loading` blocks dismissal on purpose; `success` closes itself after 2.5s.
+const DISMISS_HINT =
+  'Only the error state can be dismissed by the component — by its button or the backdrop. The Close button the loading state shows here is story-only chrome so the demo cannot trap you.';
+
+const ESCAPE_LABEL = 'Close';
+
+type LoadingEscapeHatchProps = { onClose: () => void };
+
+/**
+ * Story-only escape hatch for a `loading` modal.
+ *
+ * `loading` is non-dismissible by design: the backdrop is disabled and
+ * `OverlayShell` ignores request-close. In a story that resolves nothing, that
+ * leaves the modal on screen forever — its full-screen backdrop covers the
+ * canvas, so a button rendered next to the trigger would be painted under it
+ * and unclickable. So the escape button gets its own `Modal`, stacked on top.
+ *
+ * Layering is DOM order: react-native-web portals each `Modal` into a fresh
+ * `div` on `document.body`, and both roots are `position: fixed` siblings in
+ * the root stacking context, so the one appended last paints on top. Mounting
+ * is therefore deferred one frame — `ActionFeedbackModal`'s own portal is
+ * created in `OverlayShell`'s post-effect render pass, and this one has to land
+ * after it.
+ *
+ * Mount it only while loading (`visible && state === 'loading'`): its layer
+ * swallows pointer events across the viewport, which is harmless while nothing
+ * underneath is interactive but would eat the error state's backdrop tap.
+ *
+ * Story chrome, not a pattern to copy: a real caller resolves `loading` from
+ * its own async work instead of stacking modals. Two simultaneous `Modal`s are
+ * well-behaved on web and Android but can race iOS's presentation queue.
+ */
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function LoadingEscapeHatch({ onClose }: LoadingEscapeHatchProps) {
+  const [mounted, setMounted] = useState(false);
+
+  // biome-ignore lint/plugin: portal-ordering gate — this Modal's body div must be appended after the feedback Modal's to paint above it, which cannot be expressed as derived state
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  if (!mounted) return null;
+
+  return (
+    <Modal visible={true} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={onClose}>
+      <View style={{ flex: 1, alignItems: 'flex-end', padding: 16 }}>
+        <Action label={ESCAPE_LABEL} onPress={onClose} />
+      </View>
+    </Modal>
+  );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function FeedbackPlayground() {
+  const [visible, setVisible] = useState(false);
+  const [state, setState] = useState<ActionFeedbackState>('loading');
+  const [outcome, setOutcome] = useState<'success' | 'error'>('success');
+  const [withText, setWithText] = useState(true);
+  const [withTagline, setWithTagline] = useState(false);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
+  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+
+  // The real flow: open on `loading`, then resolve to the chosen outcome.
+  const run = useCallback(() => {
+    setState('loading');
+    setVisible(true);
+    setTimeout(() => setState(outcome), RESOLVE_MS);
+  }, [outcome]);
+
+  const jumpTo = useCallback((next: ActionFeedbackState) => {
+    setState(next);
+    setVisible(true);
+  }, []);
+  const showLoading = useCallback(() => jumpTo('loading'), [jumpTo]);
+  const showSuccess = useCallback(() => jumpTo('success'), [jumpTo]);
+  const showError = useCallback(() => jumpTo('error'), [jumpTo]);
+  const handleClose = useCallback(() => setVisible(false), []);
+
+  const text = withText ? COPY : {};
+  const stateNote = visible ? `Open — ${state}` : IDLE_NOTE;
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="Resolves to" onChange={setOutcome} options={OUTCOMES} value={outcome} />
+        <Toggle label="Message text" onChange={setWithText} value={withText} />
+        <Toggle label="Tagline" onChange={setWithTagline} value={withTagline} />
+        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
+      </Controls>
+
+      <Section title="Elevation">
+        <View style={{ alignItems: 'flex-start' }}>
+          <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+        </View>
+      </Section>
+
+      <Section title="Open it">
+        <TriggerButton kind={triggerKind} label={RUN_LABEL} onPress={run} />
+        <Variants>
+          <Action label="Loading" onPress={showLoading} />
+          <Action label="Success" onPress={showSuccess} />
+          <Action label="Error" onPress={showError} />
+        </Variants>
+        <Note testID="story-state">{stateNote}</Note>
+      </Section>
+
+      <Note>{DISMISS_HINT}</Note>
+
+      <ActionFeedbackModal
+        elevation={ELEVATIONS[elevationKey]}
+        onClose={handleClose}
+        state={state}
+        tagline={withTagline ? TAGLINE : undefined}
+        visible={visible}
+        {...text}
+      />
+      {visible && state === 'loading' ? <LoadingEscapeHatch onClose={handleClose} /> : null}
+    </Playground>
+  );
+}
+
 export default meta;
 
-/** Interactive demo: trigger loading → success / error transitions. */
+/**
+ * Run the action to watch the vessel morph loading → success / error, or jump
+ * straight to a state. Only the error state is dismissable; the loading state
+ * gets a story-only Close button so jumping to it is not a dead end.
+ */
 export const Interactive: Story = {
-  render: () => {
-    const [visible, setVisible] = useState(false);
-    const [state, setState] = useState<ActionFeedbackState>('loading');
-
-    const trigger = useCallback((outcome: 'success' | 'error') => {
-      setState('loading');
-      setVisible(true);
-      setTimeout(() => setState(outcome), 1800);
-    }, []);
-
-    const handleSuccess = useCallback(() => trigger('success'), [trigger]);
-    const handleError = useCallback(() => trigger('error'), [trigger]);
-    const handleClose = useCallback(() => setVisible(false), []);
-
-    return (
-      <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
-        <Button onPress={handleSuccess}>{SIMULATE_SUCCESS_LABEL}</Button>
-        <Button variant="secondary" onPress={handleError}>
-          {SIMULATE_ERROR_LABEL}
-        </Button>
-        <ActionFeedbackModal
-          visible={visible}
-          state={state}
-          loadingMessage="Processing…"
-          successLabel="Done!"
-          successMessage="The operation completed successfully."
-          errorTitle="Operation failed"
-          errorMessage="Something went wrong. Please try again."
-          dismissLabel="Dismiss"
-          onClose={handleClose}
-        />
-      </View>
-    );
-  },
+  render: () => <FeedbackPlayground />,
 };
 
-/** Spinner with an optional loading message. */
+/**
+ * Spinner with an optional loading message. Nothing resolves this one, so it
+ * carries the story-only Close button — see `LoadingEscapeHatch`.
+ */
 export const Loading: Story = {
   name: 'Demo: Loading state',
   render: () => {
@@ -87,7 +198,7 @@ export const Loading: Story = {
     const handleClose = useCallback(() => setVisible(false), []);
     return (
       <View>
-        <Button onPress={handleOpen}>{OPEN_LABEL}</Button>
+        <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
         <ActionFeedbackModal
           visible={visible}
           state="loading"
@@ -95,6 +206,7 @@ export const Loading: Story = {
           tagline="This may take a moment"
           onClose={handleClose}
         />
+        {visible ? <LoadingEscapeHatch onClose={handleClose} /> : null}
       </View>
     );
   },
@@ -117,6 +229,20 @@ export const Loading: Story = {
       (d) => win.getComputedStyle(d).backgroundColor !== 'rgba(0, 0, 0, 0)',
     );
     await expect(dotIsColoured).toBe(true);
+    // The escape hatch must actually reach the user. Its layering is DOM order,
+    // not z-index — both Modal roots are `position: fixed` siblings on
+    // document.body — and `userEvent` dispatches straight at the node without
+    // hit-testing, so a click alone would pass even with the button buried
+    // under the loading backdrop. Assert the real paint order first.
+    const closeButton = await screen.findByTestId('story-action-close');
+    const box = closeButton.getBoundingClientRect();
+    const topmost = doc.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    // Name what actually paints there, so a regression reports the offending
+    // layer instead of a bare `false`.
+    const topmostLabel = topmost?.closest('[data-testid]')?.getAttribute('data-testid') ?? topmost?.className ?? 'nothing';
+    await expect(topmostLabel).toBe('story-action-close');
+    await userEvent.click(closeButton);
+    await waitFor(() => expect(screen.queryByText('Saving changes…')).toBeNull());
   },
 };
 
@@ -129,7 +255,7 @@ export const Success: Story = {
     const handleClose = useCallback(() => setVisible(false), []);
     return (
       <View>
-        <Button onPress={handleOpen}>{OPEN_LABEL}</Button>
+        <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
         <ActionFeedbackModal
           visible={visible}
           state="success"
@@ -169,7 +295,7 @@ export const ErrorState: Story = {
     const handleClose = useCallback(() => setVisible(false), []);
     return (
       <View>
-        <Button onPress={handleOpen}>{OPEN_LABEL}</Button>
+        <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
         <ActionFeedbackModal
           visible={visible}
           state="error"
@@ -204,6 +330,7 @@ export const ErrorState: Story = {
  * content: the vessel resolves loading → success, then auto-closes.
  */
 export const Minimal: Story = {
+  name: 'Demo: No optional text',
   render: () => {
     const [visible, setVisible] = useState(false);
     const [state, setState] = useState<ActionFeedbackState>('loading');
@@ -217,7 +344,7 @@ export const Minimal: Story = {
 
     return (
       <View>
-        <Button onPress={handleOpen}>{OPEN_LABEL}</Button>
+        <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
         <ActionFeedbackModal visible={visible} state={state} onClose={handleClose} />
       </View>
     );

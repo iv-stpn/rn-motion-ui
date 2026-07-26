@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { type ComponentType, useCallback, useState } from 'react';
+import { View } from 'react-native';
+import { expect, userEvent, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { Calendar, GitBranch, Home, Mail, Music, Settings, Sparkles } from '../../lib/icons';
+import { useThemeColor } from '../../theme/use-theme-color';
 import { Dock, DockItem, DockSeparator } from './dock';
 
 const meta = {
@@ -24,47 +27,114 @@ const ITEMS = [
   { id: 'discover', icon: Sparkles, label: 'Discover' },
 ] as const;
 
-type DockDemoProps = { onSelect?: (id: string) => void };
+const SIZES = [
+  { value: '36', label: '36px' },
+  { value: '44', label: '44px' },
+  { value: '56', label: '56px' },
+] as const;
+
+type SizeKey = (typeof SIZES)[number]['value'];
+type IconType = ComponentType<{ size?: number; color?: string }>;
+type DockButtonProps = {
+  id: string;
+  label: string;
+  icon: IconType;
+  active: boolean;
+  iconSize: number;
+  onSelect: (id: string) => void;
+};
+
+// Its own component so each item's `onPress` is a stable per-id callback.
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function DockButton({ id, label, icon: Icon, active, iconSize, onSelect }: DockButtonProps) {
+  const color = useThemeColor('foreground');
+  const handlePress = useCallback(() => onSelect(id), [onSelect, id]);
+  return (
+    <DockItem accessibilityLabel={label} active={active} onPress={handlePress}>
+      <Icon color={color} size={iconSize} />
+    </DockItem>
+  );
+}
+
+type DockDemoProps = { size?: number; separator?: boolean; onSelect?: (id: string) => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function DockDemo({ onSelect }: DockDemoProps) {
+function DockDemo({ size = 44, separator = true, onSelect }: DockDemoProps) {
   const [active, setActive] = useState('home');
-  const selectSettings = useCallback(() => {
-    setActive('settings');
-    onSelect?.('settings');
-  }, [onSelect]);
+  const color = useThemeColor('foreground');
+  const iconSize = Math.round(size * 0.45);
+
+  const select = useCallback(
+    (id: string) => {
+      setActive(id);
+      onSelect?.(id);
+    },
+    [onSelect],
+  );
+  const selectSettings = useCallback(() => select('settings'), [select]);
+
   return (
-    <Dock>
-      {ITEMS.map(({ id, icon: Icon, label }) => (
-        <DockItem
-          key={id}
-          accessibilityLabel={label}
-          active={active === id}
-          // biome-ignore lint/performance/noJsxPropsBind: story demo handler
-          onPress={() => {
-            setActive(id);
-            onSelect?.(id);
-          }}
-        >
-          <Icon size={20} color="#111111" />
-        </DockItem>
+    <Dock size={size}>
+      {ITEMS.map((item) => (
+        <DockButton
+          active={active === item.id}
+          icon={item.icon}
+          iconSize={iconSize}
+          id={item.id}
+          key={item.id}
+          label={item.label}
+          onSelect={select}
+        />
       ))}
-      <DockSeparator />
+      {separator ? <DockSeparator /> : null}
       <DockItem accessibilityLabel="Settings" active={active === 'settings'} onPress={selectSettings}>
-        <Settings size={20} color="#111111" />
+        <Settings color={color} size={iconSize} />
       </DockItem>
+      {/* No `onPress`: the item renders as a plain View, so it never highlights. */}
       <DockItem accessibilityLabel="Repository">
-        <GitBranch size={20} color="#111111" />
+        <GitBranch color={color} size={iconSize} />
       </DockItem>
     </Dock>
   );
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function DockPlayground() {
+  const [sizeKey, setSizeKey] = useState<SizeKey>('44');
+  const [separator, setSeparator] = useState(true);
+  const [selected, setSelected] = useState('home');
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="Item size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
+        <Toggle label="Separator" onChange={setSeparator} value={separator} />
+      </Controls>
+
+      {/* The highlight is a single pill that measures each item's box and glides
+          between them, so a size change moves both the pill and its travel. */}
+      <View style={{ alignItems: 'center', gap: 8 }}>
+        <DockDemo onSelect={setSelected} separator={separator} size={Number(sizeKey)} />
+        <Note testID="story-selected">{selected}</Note>
+      </View>
+
+      <View style={{ height: 12 }} />
+      <Section title="Item sizes">
+        <View style={{ gap: 16, alignItems: 'center' }}>
+          {SIZES.map((option) => (
+            <DockDemo key={option.value} size={Number(option.value)} />
+          ))}
+        </View>
+      </Section>
+    </Playground>
+  );
+}
+
 export default meta;
 
-export const Interactive: Story = {
-  render: () => <DockDemo />,
-};
+/** One dock with a live selection readout, plus the size ladder. The last item has
+ *  no `onPress`, so it stays a plain View and never takes the highlight. */
+export const Interactive: Story = { render: () => <DockPlayground /> };
 
 export const Default: Story = {
   name: 'Demo: Select an item',
@@ -75,9 +145,4 @@ export const Default: Story = {
     await userEvent.click(mail);
     await expect(mail).toHaveAttribute('aria-selected', 'true');
   },
-};
-
-export const WithCallback: Story = {
-  args: { children: null },
-  render: () => <DockDemo onSelect={fn()} />,
 };

@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { ArrowRight } from '../../lib/icons';
+import { useThemeColors } from '../../theme/use-theme-color';
 import { StatefulButton } from './stateful-button';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -18,24 +21,89 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const SUBMIT_LABEL = 'Submit';
+const STATES = ['idle', 'loading', 'success', 'error'] as const;
+const OUTCOMES = ['success', 'error'] as const;
+const CUSTOM_LABELS = {
+  children: 'Upload',
+  loadingText: 'Uploading…',
+  successText: 'Uploaded!',
+  errorText: 'Upload failed',
+} as const;
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
+  const colors = useThemeColors();
+  const [elevated, setElevated] = useState(false);
+  const [withIcon, setWithIcon] = useState(false);
+  const [autoReset, setAutoReset] = useState(true);
+  const [customLabels, setCustomLabels] = useState(false);
+  const [outcome, setOutcome] = useState<(typeof OUTCOMES)[number]>('success');
+  const [lastRun, setLastRun] = useState('Idle — press to run.');
+
+  // Rejecting drives the machine down its error path; resolving drives success.
+  const handlePress = useCallback(async () => {
+    setLastRun('Running…');
+    await sleep(1200);
+    if (outcome === 'error') throw new Error('Upload failed');
+  }, [outcome]);
+  const handleAfterSuccess = useCallback(() => setLastRun('Resolved → success window ended.'), []);
+  const handleAfterError = useCallback((error: unknown) => setLastRun(`Rejected → ${String(error)}`), []);
+
+  const shared = {
+    ...args,
+    ...(customLabels ? CUSTOM_LABELS : {}),
+    elevated,
+    icon: withIcon ? <ArrowRight size={16} color={colors['primary-foreground']} /> : undefined,
+  };
+
+  return (
+    <Playground>
+      <Controls>
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="With icon" onChange={setWithIcon} value={withIcon} />
+        <Toggle label="Auto reset" onChange={setAutoReset} value={autoReset} />
+        <Toggle label="Custom labels" onChange={setCustomLabels} value={customLabels} />
+        <Choice label="Outcome" onChange={setOutcome} options={OUTCOMES} value={outcome} />
+      </Controls>
+
+      <Section title="Live — runs a 1.2 s action through the machine">
+        <Variants align="center">
+          <StatefulButton
+            {...shared}
+            afterError={handleAfterError}
+            afterSuccess={handleAfterSuccess}
+            autoReset={autoReset}
+            onPress={handlePress}
+          />
+          <Note testID="story-last-run">{lastRun}</Note>
+        </Variants>
+      </Section>
+
+      <View style={{ height: 12 }} />
+      <Section title="Controlled — an explicit `state` bypasses the machine">
+        <Variants align="center">
+          {STATES.map((state) => (
+            <Sample key={state} label={state}>
+              <StatefulButton {...shared} state={state} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+    </Playground>
+  );
+}
 
 export default meta;
 
-/** Press to run a 1.2 s action that resolves — loading dots, then “Done”,
- *  held disabled (the default, so a navigation callback can't be double-fired). */
+/** Live machine on top (press it), every controlled state below. The toggles
+ *  swap the glossy elevated chip in, add the trailing idle icon, re-arm the
+ *  button after its terminal window, and rename each state's label; `Outcome`
+ *  picks whether the run resolves or rejects. */
 export const Interactive: Story = {
-  args: { onPress: fn(() => sleep(1200)) },
+  render: (args) => <StatefulButtonPlayground {...args} />,
 };
 
-/** Same 1.2 s run, rendered as a glossy elevated chip. The chip keeps its gloss
- *  and fill through loading/success/error instead of flattening to grey. */
-export const InteractiveElevated: Story = {
-  name: 'Interactive - Elevated',
-  args: { elevated: true, onPress: fn(() => sleep(1200)) },
-};
-
-export const Idle: Story = {
+export const RunToSuccess: Story = {
   name: 'Demo: Run to success',
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
@@ -43,23 +111,6 @@ export const Idle: Story = {
     await userEvent.click(button);
     await expect(args.onPress).toHaveBeenCalled();
   },
-};
-
-/** Press to run a 1.2 s action that rejects — loading dots, then “Try again”.
- *  `autoReset` re-arms the button after the error window so it can be retried. */
-export const AsyncError: Story = {
-  args: {
-    onPress: fn(async () => {
-      await sleep(1200);
-      throw new Error('Upload failed');
-    }),
-    autoReset: true,
-  },
-};
-
-/** `autoReset` returns the button to idle once the success window ends. */
-export const AsyncAutoReset: Story = {
-  args: { onPress: fn(() => sleep(1200)), autoReset: true },
 };
 
 /** Full machine run: press → action → success window → afterSuccess, with the
@@ -107,71 +158,4 @@ export const MachineError: Story = {
     await userEvent.click(button);
     await expect(args.onPress).toHaveBeenCalledTimes(2);
   },
-};
-
-// --- controlled mode: an explicit `state` bypasses the machine ---
-
-export const Loading: Story = { args: { state: 'loading' } };
-export const Success: Story = { args: { state: 'success' } };
-export const Failed: Story = { args: { state: 'error' } };
-
-/** Custom labels for each state transition. */
-export const CustomLabels: Story = {
-  args: {
-    state: 'loading',
-    loadingText: 'Uploading…',
-    successText: 'Uploaded!',
-    errorText: 'Upload failed',
-    children: 'Upload',
-  },
-};
-
-/** Icon shown on the right in the idle state via the `icon` prop. */
-export const WithIcon: Story = {
-  args: {
-    icon: <ArrowRight size={16} color="#fafafa" />,
-    children: 'Continue',
-  },
-};
-
-/** All four states displayed side-by-side for visual comparison. */
-export const AllStates: Story = {
-  render: (args) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-      <StatefulButton {...args} state="idle">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-      <StatefulButton {...args} state="loading">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-      <StatefulButton {...args} state="success">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-      <StatefulButton {...args} state="error">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-    </View>
-  ),
-};
-
-/** All four states as glossy elevated chips. Idle keeps its gloss/fill; success
- *  and error swap to their status backdrops while staying raised. */
-export const AllStatesElevated: Story = {
-  name: 'All States - Elevated',
-  render: (args) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-      <StatefulButton {...args} elevated={true} state="idle">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-      <StatefulButton {...args} elevated={true} state="loading">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-      <StatefulButton {...args} elevated={true} state="success">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-      <StatefulButton {...args} elevated={true} state="error">
-        {SUBMIT_LABEL}
-      </StatefulButton>
-    </View>
-  ),
 };

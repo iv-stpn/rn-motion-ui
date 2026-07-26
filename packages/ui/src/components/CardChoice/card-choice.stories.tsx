@@ -2,8 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
-import { CardChoice, CardChoiceGroup } from './card-choice';
+import { CardChoice, CardChoiceGroup, type CardChoiceGroupProps } from './card-choice';
 
 const meta = {
   title: 'Components/CardChoice',
@@ -21,39 +22,110 @@ const MONTHLY_SUB = '$12/mo';
 const YEARLY_TITLE = 'Yearly';
 const YEARLY_SUB = '$120/yr';
 const YEARLY_BADGE = 'Save 20%';
+const LIFETIME_TITLE = 'Lifetime';
+const LIFETIME_SUB = '$480 once';
 const SEAT_TEXT = 'Includes 1 seat';
+const TEAM_TEXT = 'Unlimited seats, priority support';
 const handlePress = fn();
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the Interactive + SingleSelect stories
+type Orientation = NonNullable<CardChoiceGroupProps['orientation']>;
+
+const ORIENTATIONS = ['horizontal', 'vertical'] as const satisfies readonly Orientation[];
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the playground and the Demo stories
 function CardChoiceGroupDemo() {
   const [plan, setPlan] = useState('monthly');
   return (
-    <CardChoiceGroup value={plan} onValueChange={setPlan} style={{ width: ROW_WIDTH }}>
-      <CardChoice value="monthly" subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} numeric={true} />
-      <CardChoice value="yearly" subtitle={YEARLY_SUB} title={YEARLY_TITLE} badge={YEARLY_BADGE} numeric={true} />
+    <CardChoiceGroup onValueChange={setPlan} style={{ width: ROW_WIDTH }} value={plan}>
+      <CardChoice numeric={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} value="monthly" />
+      <CardChoice badge={YEARLY_BADGE} numeric={true} subtitle={YEARLY_SUB} title={YEARLY_TITLE} value="yearly" />
     </CardChoiceGroup>
+  );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function CardChoicePlayground() {
+  const [plan, setPlan] = useState('yearly');
+  const [orientation, setOrientation] = useState<Orientation>('horizontal');
+  const [badges, setBadges] = useState(true);
+  const [details, setDetails] = useState(false);
+  const [numeric, setNumeric] = useState(true);
+
+  return (
+    <Playground style={{ width: ROW_WIDTH }}>
+      <Controls>
+        <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        <Toggle label="Badges" onChange={setBadges} value={badges} />
+        <Toggle label="Extra content" onChange={setDetails} value={details} />
+        <Toggle label="Tabular figures" onChange={setNumeric} value={numeric} />
+      </Controls>
+
+      {/* Inside a group there is exactly one dot: it measures each card's radio
+          ring and glides between them, so the ring's own border/padding never
+          has to be guessed at. */}
+      <CardChoiceGroup onValueChange={setPlan} orientation={orientation} value={plan}>
+        <CardChoice numeric={numeric} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} value="monthly">
+          {details ? <Text className="text-muted-foreground text-xs">{SEAT_TEXT}</Text> : null}
+        </CardChoice>
+        <CardChoice
+          badge={badges ? YEARLY_BADGE : undefined}
+          numeric={numeric}
+          subtitle={YEARLY_SUB}
+          title={YEARLY_TITLE}
+          value="yearly"
+        >
+          {details ? <Text className="text-muted-foreground text-xs">{TEAM_TEXT}</Text> : null}
+        </CardChoice>
+        <CardChoice numeric={numeric} subtitle={LIFETIME_SUB} title={LIFETIME_TITLE} value="lifetime" />
+      </CardChoiceGroup>
+      <Note testID="story-plan">{plan}</Note>
+
+      <View style={{ height: 12 }} />
+      {/* Standalone, each card owns its own dot — no shared indicator, so the
+          selection is whatever `selected` says. */}
+      <Section title="Standalone (selected / unselected)">
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <CardChoice numeric={true} onPress={handlePress} selected={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} />
+          <CardChoice
+            badge={YEARLY_BADGE}
+            numeric={true}
+            onPress={handlePress}
+            selected={false}
+            subtitle={YEARLY_SUB}
+            title={YEARLY_TITLE}
+          />
+        </View>
+      </Section>
+
+      <Section title="With custom content">
+        <View style={{ width: NARROW_WIDTH }}>
+          <CardChoice onPress={handlePress} selected={false} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE}>
+            <Text className="text-muted-foreground text-xs">{SEAT_TEXT}</Text>
+          </CardChoice>
+        </View>
+      </Section>
+    </Playground>
   );
 }
 
 export default meta;
 
-/** Controlled group playground — tap cards to move the shared indicator. */
-export const Interactive: Story = {
-  render: () => <CardChoiceGroupDemo />,
-};
+/** A controlled group of three plans plus the standalone form. Flip the
+ *  orientation to see the shared dot re-measure and glide along the other axis. */
+export const Interactive: Story = { render: () => <CardChoicePlayground /> };
 
 export const Default: Story = {
   name: 'Demo: Select a card',
   render: () => (
     <View style={{ flexDirection: 'row', gap: 12, width: ROW_WIDTH }}>
-      <CardChoice selected={true} onPress={handlePress} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} numeric={true} />
+      <CardChoice numeric={true} onPress={handlePress} selected={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} />
       <CardChoice
-        selected={false}
-        onPress={handlePress}
-        subtitle={YEARLY_SUB}
-        title={YEARLY_TITLE}
         badge={YEARLY_BADGE}
         numeric={true}
+        onPress={handlePress}
+        selected={false}
+        subtitle={YEARLY_SUB}
+        title={YEARLY_TITLE}
       />
     </View>
   ),
@@ -76,14 +148,4 @@ export const SingleSelect: Story = {
     await userEvent.click(await canvas.findByText(MONTHLY_TITLE));
     await expect(await canvas.findByText(MONTHLY_TITLE)).toBeVisible();
   },
-};
-
-export const WithChildren: Story = {
-  render: () => (
-    <View style={{ width: NARROW_WIDTH }}>
-      <CardChoice selected={false} onPress={handlePress} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE}>
-        <Text className="text-muted-foreground text-xs">{SEAT_TEXT}</Text>
-      </CardChoice>
-    </View>
-  ),
 };

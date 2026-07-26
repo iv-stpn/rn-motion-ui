@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { CalendarClock, Eye, GitBranch, Pin } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
-import { type OverflowActionItem, OverflowActions } from './overflow-actions';
+import { type OverflowActionItem, OverflowActions, type OverflowActionsSize } from './overflow-actions';
 
 const meta = {
   title: 'Components/OverflowActions',
@@ -26,47 +27,129 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-type DemoProps = { size?: 'sm' | 'md' };
+const SIZES = ['sm', 'md'] as const satisfies readonly OverflowActionsSize[];
+const NO_ACTION = 'no action yet';
 
+type DemoProps = { size?: OverflowActionsSize; label?: string };
+
+// The uncontrolled variant used by the size rows — each rail owns its own state.
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Demo({ size }: DemoProps) {
-  const [expanded, setExpanded] = useState(false);
+function Demo({ size, label = 'action rail' }: DemoProps) {
   const iconColor = useThemeColor('foreground');
+  const iconSize = size === 'sm' ? 14 : 16;
 
   const primaryActions = useMemo<OverflowActionItem[]>(
     () => [
-      { id: 'preview', label: 'Preview', icon: <Eye size={16} color={iconColor} /> },
-      { id: 'pin', label: 'Pin', icon: <Pin size={16} color={iconColor} /> },
+      { id: 'preview', label: 'Preview', icon: <Eye color={iconColor} size={iconSize} /> },
+      { id: 'pin', label: 'Pin', icon: <Pin color={iconColor} size={iconSize} /> },
     ],
-    [iconColor],
+    [iconColor, iconSize],
   );
 
   const overflowActions = useMemo<OverflowActionItem[]>(
     () => [
-      { id: 'branch', label: 'Branch', icon: <GitBranch size={16} color={iconColor} /> },
-      { id: 'schedule', label: 'Schedule', icon: <CalendarClock size={16} color={iconColor} /> },
+      { id: 'branch', label: 'Branch', icon: <GitBranch color={iconColor} size={iconSize} /> },
+      { id: 'schedule', label: 'Schedule', icon: <CalendarClock color={iconColor} size={iconSize} /> },
     ],
-    [iconColor],
+    [iconColor, iconSize],
   );
 
   return (
     <OverflowActions
-      primaryActions={primaryActions}
+      closeLabel={`Collapse ${label}`}
+      openLabel={`Open ${label}`}
       overflowActions={overflowActions}
+      primaryActions={primaryActions}
       size={size}
-      expanded={expanded}
-      onExpandedChange={setExpanded}
-      openLabel="Open action rail"
-      closeLabel="Collapse action rail"
     />
+  );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function OverflowActionsPlayground() {
+  const [size, setSize] = useState<OverflowActionsSize>('md');
+  const [expanded, setExpanded] = useState(false);
+  const [collapseOnAction, setCollapseOnAction] = useState(false);
+  const [icons, setIcons] = useState(true);
+  const [last, setLast] = useState(NO_ACTION);
+  const iconColor = useThemeColor('foreground');
+  const iconSize = size === 'sm' ? 14 : 16;
+
+  const primaryActions = useMemo<OverflowActionItem[]>(
+    () => [
+      { id: 'preview', label: 'Preview', icon: icons ? <Eye color={iconColor} size={iconSize} /> : undefined },
+      { id: 'pin', label: 'Pin', icon: icons ? <Pin color={iconColor} size={iconSize} /> : undefined },
+    ],
+    [icons, iconColor, iconSize],
+  );
+
+  const overflowActions = useMemo<OverflowActionItem[]>(
+    () => [
+      { id: 'branch', label: 'Branch', icon: icons ? <GitBranch color={iconColor} size={iconSize} /> : undefined },
+      { id: 'schedule', label: 'Schedule', icon: icons ? <CalendarClock color={iconColor} size={iconSize} /> : undefined },
+      { id: 'archive', label: 'Archive', disabled: true },
+    ],
+    [icons, iconColor, iconSize],
+  );
+
+  const handleAction = useCallback((item: OverflowActionItem) => setLast(item.id), []);
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+        <Toggle label="Expanded" onChange={setExpanded} value={expanded} />
+        <Toggle label="Collapse on action" onChange={setCollapseOnAction} value={collapseOnAction} />
+        <Toggle label="Icons" onChange={setIcons} value={icons} />
+      </Controls>
+
+      {/* Driving `expanded` from the harness toggle shows the rail is fully
+          controllable — the built-in trigger just calls the same setter. */}
+      <View style={{ alignItems: 'center', gap: 8 }}>
+        <OverflowActions
+          closeLabel="Collapse action rail"
+          collapseOnAction={collapseOnAction}
+          expanded={expanded}
+          onAction={handleAction}
+          onExpandedChange={setExpanded}
+          openLabel="Open action rail"
+          overflowActions={overflowActions}
+          primaryActions={primaryActions}
+          size={size}
+        />
+        <Note testID="story-last-action">{last}</Note>
+      </View>
+
+      {/* The overflow group's width is measured, so a smaller size shrinks both
+          the buttons and the distance the toggle travels when it opens. */}
+      <Section title="Sizes">
+        <Variants direction="column" gap={16}>
+          {SIZES.map((option) => (
+            <Sample key={option} label={option}>
+              <Demo label={`${option} rail`} size={option} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      <Section title="Primary actions only (no overflow trigger)">
+        <OverflowActions
+          onAction={handleAction}
+          overflowActions={[]}
+          primaryActions={primaryActions}
+          openLabel="Open empty rail"
+          size={size}
+        />
+      </Section>
+    </Playground>
   );
 }
 
 export default meta;
 
-export const Interactive: Story = {
-  render: () => <Demo />,
-};
+/** One controlled rail with a live action readout, plus the size ladder and the
+ *  degenerate case where there is nothing to overflow. */
+export const Interactive: Story = { render: () => <OverflowActionsPlayground /> };
 
 export const Default: Story = {
   name: 'Demo: Expand actions',
@@ -77,17 +160,4 @@ export const Default: Story = {
     await userEvent.click(await canvas.findByRole('button', { name: 'Open action rail' }));
     await expect(await canvas.findByRole('button', { name: 'Branch' })).toBeTruthy();
   },
-};
-
-export const Small: Story = {
-  render: () => <Demo size="sm" />,
-};
-
-export const Sizes: Story = {
-  render: () => (
-    <View style={{ gap: 16, alignItems: 'center' }}>
-      <Demo size="sm" />
-      <Demo size="md" />
-    </View>
-  ),
 };

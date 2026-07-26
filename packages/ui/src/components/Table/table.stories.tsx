@@ -5,10 +5,11 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { useMountEffect } from '../../hooks/use-mount-effect';
 import { Switch } from '../Switch/switch';
 import { Text } from '../Text/text';
-import { Table, type TableColumn, type TableProps } from './table';
+import { type SortState, Table, type TableColumn, type TableProps } from './table';
 
 // ─── Shared data builders ─────────────────────────────────────────────────────
 
@@ -70,6 +71,32 @@ function StatusBadge({ status }: StatusBadgeProps) {
       >
         {status}
       </Text>
+    </View>
+  );
+}
+
+const ITEM_SEPARATOR = ' · ';
+
+/** The card body `renderSmallScreen` asks for: the same five fields, stacked instead of columned. */
+function renderPersonCard(row: Person) {
+  return (
+    <View style={{ gap: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <Text numberOfLines={1} size="sm" style={{ flex: 1 }} weight="semibold">
+          {row.name}
+        </Text>
+        <StatusBadge status={row.status} />
+      </View>
+      <Text className="text-muted-foreground" numberOfLines={1} size="xs">
+        {row.email}
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Text size="xs">{row.role}</Text>
+        <Text className="text-muted-foreground" size="xs">
+          {ITEM_SEPARATOR}
+        </Text>
+        <Text size="xs" weight="medium">{`$${row.mrr.toLocaleString()} MRR`}</Text>
+      </View>
     </View>
   );
 }
@@ -238,8 +265,6 @@ function AsyncTableStory() {
 
 type EditRow = { id: string; [key: string]: string };
 
-const ITEM_SEPARATOR = ' · ';
-
 const INITIAL_ROWS: EditRow[] = [
   { id: 'r1', name: 'Ava Cole', role: 'Owner', team: 'Design' },
   { id: 'r2', name: 'Leo Frost', role: 'Admin', team: 'Growth' },
@@ -362,6 +387,151 @@ function EditableTableStory() {
 
 export default meta;
 
+// ─── Interactive ──────────────────────────────────────────────────────────────
+
+const ROW_COUNTS = { '0': 0, '8': 8, '50': 50, '1000': 1000 } as const;
+type RowCountKey = keyof typeof ROW_COUNTS;
+
+const ROW_COUNT_OPTIONS = [
+  { value: '0', label: 'Empty' },
+  { value: '8', label: '8 rows' },
+  { value: '50', label: '50 rows' },
+  { value: '1000', label: '1000 rows' },
+] as const satisfies readonly { value: RowCountKey; label: string }[];
+
+const ROW_HEIGHTS = { compact: 40, default: 52, relaxed: 68 } as const;
+type RowHeightKey = keyof typeof ROW_HEIGHTS;
+const ROW_HEIGHT_KEYS = ['compact', 'default', 'relaxed'] as const satisfies readonly RowHeightKey[];
+
+const FOOTERS = [
+  { value: 'none', label: 'None' },
+  { value: 'pagination', label: 'Pagination' },
+  { value: 'loadMore', label: 'Load more' },
+  { value: 'infiniteScroll', label: 'Infinite scroll' },
+] as const;
+type FooterKey = (typeof FOOTERS)[number]['value'];
+
+const PLAYGROUND_PAGE_SIZE = 10;
+const PLAYGROUND_BATCH = 20;
+const FETCH_DELAY_MS = 500;
+const IDLE_NOTE = 'Tap a header to sort, tick a row to select.';
+const FOOTER_NOTE = 'Every footer mode reports intent and waits for the story to hand back the next slice.';
+
+function getPersonId(row: Person) {
+  return row.id;
+}
+
+/** All of it on one canvas: the four footer modes, three densities, and every affordance the grid can carry. */
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function TablePlayground() {
+  const [rowCountKey, setRowCountKey] = useState<RowCountKey>('1000');
+  const [rowHeightKey, setRowHeightKey] = useState<RowHeightKey>('default');
+  const [footer, setFooter] = useState<FooterKey>('none');
+  const [selectable, setSelectable] = useState(true);
+  const [sortable, setSortable] = useState(true);
+  const [reorderable, setReorderable] = useState(false);
+  const [striped, setStriped] = useState(false);
+  const [cardView, setCardView] = useState(false);
+  const [note, setNote] = useState(IDLE_NOTE);
+
+  const [page, setPage] = useState(1);
+  const [loaded, setLoaded] = useState(PLAYGROUND_BATCH);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const fetchingRef = useRef(false);
+
+  const rows = useMemo(() => buildPeople(ROW_COUNTS[rowCountKey]), [rowCountKey]);
+
+  // Paging stays the story's business: the table renders the footer and reports
+  // the intent, the consumer hands back the slice that answers it.
+  const visible = useMemo(() => {
+    if (footer === 'none') return rows;
+    if (footer === 'pagination') return rows.slice((page - 1) * PLAYGROUND_PAGE_SIZE, page * PLAYGROUND_PAGE_SIZE);
+    return rows.slice(0, loaded);
+  }, [footer, loaded, page, rows]);
+
+  // `onEndReached` can fire several times per scroll, so the in-flight guard is a
+  // ref: state would not have committed yet by the second call.
+  const fetchMore = useCallback(() => {
+    if (fetchingRef.current || loaded >= rows.length) return;
+    fetchingRef.current = true;
+    setLoadingMore(true);
+    setTimeout(() => {
+      setLoaded((current) => Math.min(current + PLAYGROUND_BATCH, rows.length));
+      setLoadingMore(false);
+      fetchingRef.current = false;
+    }, FETCH_DELAY_MS);
+  }, [loaded, rows.length]);
+
+  // Both choices invalidate whatever page the footer was on.
+  const handleRowCount = useCallback((value: RowCountKey) => {
+    setRowCountKey(value);
+    setPage(1);
+    setLoaded(PLAYGROUND_BATCH);
+  }, []);
+
+  const handleFooter = useCallback((value: FooterKey) => {
+    setFooter(value);
+    setPage(1);
+    setLoaded(PLAYGROUND_BATCH);
+  }, []);
+
+  const handleSelection = useCallback((ids: string[]) => setNote(ids.length > 0 ? `${ids.length} selected` : IDLE_NOTE), []);
+
+  const handleSort = useCallback(
+    (sort: SortState | null) => setNote(sort ? `Sorted by ${sort.key}, ${sort.direction}` : 'Sort cleared'),
+    [],
+  );
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="Rows" onChange={handleRowCount} options={ROW_COUNT_OPTIONS} value={rowCountKey} />
+        <Choice label="Row height" onChange={setRowHeightKey} options={ROW_HEIGHT_KEYS} value={rowHeightKey} />
+        <Choice label="Footer" onChange={handleFooter} options={FOOTERS} value={footer} />
+        <Toggle label="Selectable" onChange={setSelectable} value={selectable} />
+        <Toggle label="Sortable" onChange={setSortable} value={sortable} />
+        <Toggle label="Reorderable" onChange={setReorderable} value={reorderable} />
+        <Toggle label="Striped" onChange={setStriped} value={striped} />
+        <Toggle label="Card view" onChange={setCardView} value={cardView} />
+      </Controls>
+
+      <Note testID="story-note">{note}</Note>
+      <Note>{FOOTER_NOTE}</Note>
+
+      <Table
+        columns={DEFAULT_COLUMNS}
+        data={visible}
+        getRowId={getPersonId}
+        hasMore={loaded < rows.length}
+        height={420}
+        loadingMore={loadingMore}
+        mode={footer === 'none' ? undefined : footer}
+        onEndReached={fetchMore}
+        onLoadMore={fetchMore}
+        onPageChange={setPage}
+        onSelectionChange={handleSelection}
+        onSortChange={handleSort}
+        page={page}
+        pageSize={PLAYGROUND_PAGE_SIZE}
+        renderSmallScreen={renderPersonCard}
+        reorderable={reorderable}
+        rowHeight={ROW_HEIGHTS[rowHeightKey]}
+        selectable={selectable}
+        sortable={sortable}
+        striped={striped}
+        testID="table-interactive"
+        total={rows.length}
+        useSmallScreen={cardView}
+      />
+    </Playground>
+  );
+}
+
+export const Interactive: Story = {
+  args: { columns: [], data: [] },
+  render: () => <TablePlayground />,
+};
+
 // ─── Default ─────────────────────────────────────────────────────────────────
 // 1000 rows, sort by mrr desc initially, selectable
 
@@ -373,11 +543,6 @@ const DEFAULT_STORY_ARGS = {
   height: 420,
   rowHeight: 52,
 } satisfies Partial<TableProps<Person>>;
-
-/** User-driven sortable, selectable grid — sort columns and select rows yourself. */
-export const Interactive: Story = {
-  args: { ...DEFAULT_STORY_ARGS, testID: 'table-interactive' },
-};
 
 export const Default: Story = {
   name: 'Demo: Sort a column',
@@ -400,6 +565,7 @@ export const Default: Story = {
 // Drag a header grip left/right to reorder columns; a line marks the drop spot.
 
 export const Reorderable: Story = {
+  name: 'Demo: Reorder grips',
   args: {
     data: buildPeople(50),
     columns: DEFAULT_COLUMNS,
@@ -424,6 +590,7 @@ export const Reorderable: Story = {
 };
 
 export const Async: Story = {
+  name: 'Demo: Infinite scroll pages',
   render: () => <AsyncTableStory />,
   args: {
     // render override supplies its own data; placeholders satisfy Story typing
@@ -449,28 +616,6 @@ function SmallScreenTableStory() {
   const rows = useMemo(() => buildPeople(12), []);
   const getRowId = useCallback((row: Person) => row.id, []);
 
-  const renderSmallScreen = useCallback(
-    (row: Person) => (
-      <View style={{ gap: 4 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#111827', flex: 1 }} numberOfLines={1}>
-            {row.name}
-          </Text>
-          <StatusBadge status={row.status} />
-        </View>
-        <Text style={{ fontSize: 12, color: '#6b7280' }} numberOfLines={1}>
-          {row.email}
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={{ fontSize: 12, color: '#374151' }}>{row.role}</Text>
-          <Text style={{ fontSize: 12, color: '#d1d5db' }}>{ITEM_SEPARATOR}</Text>
-          <Text style={{ fontSize: 12, color: '#374151', fontWeight: '500' }}>{`$${row.mrr.toLocaleString()} MRR`}</Text>
-        </View>
-      </View>
-    ),
-    [],
-  );
-
   return (
     <View style={{ flex: 1, padding: 16 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -489,7 +634,7 @@ function SmallScreenTableStory() {
         selectedRowIds={selectedRowIds}
         onSelectionChange={setSelectedRowIds}
         useSmallScreen={useSmallScreen}
-        renderSmallScreen={renderSmallScreen}
+        renderSmallScreen={renderPersonCard}
         testID="table-small-screen"
       />
     </View>

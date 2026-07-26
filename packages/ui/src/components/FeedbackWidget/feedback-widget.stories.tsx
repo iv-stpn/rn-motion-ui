@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import { Button } from '../Button/button';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
+import { Choice, Controls, Section, Toggle } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
 import { FeedbackWidget } from './feedback-widget';
 
@@ -56,42 +57,65 @@ function AppSurface({ children, hint }: AppSurfaceProps) {
   );
 }
 
-type InteractiveOutcome = 'success' | 'fail';
-const SUCCEEDS_LABEL = 'Succeeds';
-const FAILS_LABEL = 'Fails then recovers';
+const POSITIONS = [
+  { value: 'bottom-right', label: 'Bottom right' },
+  { value: 'bottom-left', label: 'Bottom left' },
+] as const;
+type Position = (typeof POSITIONS)[number]['value'];
+
+const OUTCOMES = [
+  { value: 'success', label: 'Succeeds' },
+  { value: 'fail', label: 'Fails then recovers' },
+] as const;
+type Outcome = (typeof OUTCOMES)[number]['value'];
+
+const CUSTOM_COPY = { placeholder: 'What could work better?', title: 'Report a bug' } as const;
+const PLAYGROUND_HINT =
+  'Set the corner, the submit outcome and the panel copy, then tap the message icon to open the panel and send feedback.';
 
 /** Manual playground: pick the submit outcome, then drive the widget yourself.
  *  No `play` function, so nothing auto-clicks — open the trigger, type, submit,
  *  and (on failure) tap Try again to see the recovery. */
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function InteractiveDemo() {
-  const [outcome, setOutcome] = useState<InteractiveOutcome>('success');
-  const selectSuccess = useCallback(() => setOutcome('success'), []);
-  const selectFail = useCallback(() => setOutcome('fail'), []);
+function FeedbackPlayground() {
+  const [position, setPosition] = useState<Position>('bottom-right');
+  const [outcome, setOutcome] = useState<Outcome>('success');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
+  const [customCopy, setCustomCopy] = useState(false);
   const success = useSuccessSubmit();
   const failThenRecover = useFailThenRecoverSubmit();
   const onSubmit = outcome === 'fail' ? failThenRecover : success;
+  const copy = customCopy ? CUSTOM_COPY : {};
 
   return (
-    <AppSurface hint="Pick a submit outcome, then tap the message icon in the corner to open the panel and send feedback.">
-      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingTop: 8 }}>
-        <Button size="sm" variant={outcome === 'success' ? 'primary' : 'secondary'} onPress={selectSuccess}>
-          {SUCCEEDS_LABEL}
-        </Button>
-        <Button size="sm" variant={outcome === 'fail' ? 'primary' : 'secondary'} onPress={selectFail}>
-          {FAILS_LABEL}
-        </Button>
+    <AppSurface hint={PLAYGROUND_HINT}>
+      <View style={{ paddingHorizontal: 20, gap: 12 }}>
+        <Controls>
+          <Choice label="Corner" onChange={setPosition} options={POSITIONS} value={position} />
+          <Choice label="Submit" onChange={setOutcome} options={OUTCOMES} value={outcome} />
+          <Toggle label="Custom copy" onChange={setCustomCopy} value={customCopy} />
+        </Controls>
+        <Section title="Elevation">
+          <View style={{ alignItems: 'flex-start' }}>
+            <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+          </View>
+        </Section>
       </View>
-      <FeedbackWidget position="bottom-right" onSubmit={onSubmit} testID="feedback-widget" />
+      <FeedbackWidget
+        elevation={ELEVATIONS[elevationKey]}
+        onSubmit={onSubmit}
+        position={position}
+        testID="feedback-widget"
+        {...copy}
+      />
     </AppSurface>
   );
 }
 
 export default meta;
 
-export const Interactive: Story = {
-  render: () => <InteractiveDemo />,
-};
+/** Both corners, both submit outcomes, every elevation and the copy overrides in one canvas. */
+export const Interactive: Story = { render: () => <FeedbackPlayground /> };
 
 /**
  * Two live widgets: the bottom-right one submits successfully, the bottom-left
@@ -152,16 +176,5 @@ export const ErrorRecovery: Story = {
     await userEvent.click(await screen.findByText('Try again'));
     // Retry succeeds → success view
     await expect(await screen.findByText('Thanks!')).toBeTruthy();
-  },
-};
-
-export const BottomLeft: Story = {
-  render: () => {
-    const success = useSuccessSubmit();
-    return (
-      <AppSurface hint="Press the message icon in the corner to open the feedback panel.">
-        <FeedbackWidget position="bottom-left" onSubmit={success} testID="feedback-widget" />
-      </AppSurface>
-    );
   },
 };

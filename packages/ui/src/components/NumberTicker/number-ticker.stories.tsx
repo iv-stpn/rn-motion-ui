@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { useMountEffect } from '../../hooks/use-mount-effect';
-import { Text } from '../Text/text';
+import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { useInterval } from '../../hooks/use-interval';
 import { NumberTicker } from './number-ticker';
 
 const meta = {
@@ -28,63 +28,103 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const ACTIVE_USERS_LABEL = 'Active users';
-const LIVE_HINT = 'live · updates every 2.5s';
-const PLAIN_LABEL = 'plain';
-const PADDED_LABEL = 'padded';
-const AFFIXED_LABEL = 'affixed';
+const NUMERAL = 'font-semibold text-3xl text-foreground';
+const LIVE_MS = 2500;
+
+const TARGETS = [
+  { value: '42', label: '42' },
+  { value: '1280', label: '1,280' },
+  { value: '48273', label: '48,273' },
+] as const;
+
+const STAGGERS = [
+  { value: '0', label: 'none' },
+  { value: '0.04', label: '0.04s' },
+  { value: '0.12', label: '0.12s' },
+] as const;
+
+type TargetKey = (typeof TARGETS)[number]['value'];
+type StaggerKey = (typeof STAGGERS)[number]['value'];
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function NumberTickerPlayground(args: ComponentProps<typeof NumberTicker>) {
+  const [targetKey, setTargetKey] = useState<TargetKey>('48273');
+  const [staggerKey, setStaggerKey] = useState<StaggerKey>('0.04');
+  const [locale, setLocale] = useState(true);
+  const [padded, setPadded] = useState(false);
+  const [affixed, setAffixed] = useState(false);
+  const [live, setLive] = useState(false);
+  const [drift, setDrift] = useState(0);
+
+  const stagger = Number(staggerKey);
+  // The live feed only nudges the last digits, which is what the per-digit
+  // stagger is for: unchanged columns hold still while the tail rolls.
+  const bump = useCallback(() => setDrift((d) => d + Math.floor(Math.random() * 50) + 1), []);
+  useInterval(bump, live ? LIVE_MS : null);
+  const value = Number(targetKey) + drift;
+
+  return (
+    <Playground style={{ maxWidth: 420 }}>
+      <Controls>
+        <Choice label="Target" onChange={setTargetKey} options={TARGETS} value={targetKey} />
+        <Choice label="Stagger" onChange={setStaggerKey} options={STAGGERS} value={staggerKey} />
+        <Toggle label="Locale separators" onChange={setLocale} value={locale} />
+        <Toggle label="Pad to 6" onChange={setPadded} value={padded} />
+        <Toggle label="Affixes" onChange={setAffixed} value={affixed} />
+        <Toggle label="Live feed" onChange={setLive} value={live} />
+      </Controls>
+
+      <View style={{ alignItems: 'center', gap: 6 }}>
+        <NumberTicker
+          {...args}
+          locale={locale}
+          pad={padded ? 6 : undefined}
+          prefix={affixed ? '$' : undefined}
+          stagger={stagger}
+          suffix={affixed ? ' MRR' : undefined}
+          value={value}
+        />
+        <Note testID="story-ticker-value">{live ? `live · every ${LIVE_MS / 1000}s` : `value ${value}`}</Note>
+      </View>
+
+      <Section title="Formatting">
+        <Variants direction="column" gap={14}>
+          <Sample label="locale separators">
+            <NumberTicker {...args} className={NUMERAL} locale={true} stagger={stagger} value={48_273} />
+          </Sample>
+          <Sample label="pad={6} (leading zeros hold their columns)">
+            <NumberTicker {...args} className={NUMERAL} locale={false} pad={6} stagger={stagger} value={42} />
+          </Sample>
+          <Sample label="prefix / suffix">
+            <NumberTicker {...args} className={NUMERAL} prefix="$" stagger={stagger} suffix=" MRR" value={1280} />
+          </Sample>
+        </Variants>
+      </Section>
+
+      <Section title="Stagger">
+        <Variants direction="column" gap={14}>
+          {STAGGERS.map((option) => (
+            <Sample key={option.value} label={`stagger ${option.label}`}>
+              <NumberTicker {...args} className={NUMERAL} stagger={Number(option.value)} value={value} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+    </Playground>
+  );
+}
 
 export default meta;
 
-export const AllVariants: Story = {
-  name: 'All variants',
-  render: (args) => (
-    <View style={{ alignItems: 'center', gap: 24 }}>
-      <View style={{ alignItems: 'center', gap: 4 }}>
-        <Text style={{ fontSize: 12, color: '#71717a' }}>{PLAIN_LABEL}</Text>
-        <NumberTicker {...args} />
-      </View>
-      <View style={{ alignItems: 'center', gap: 4 }}>
-        <Text style={{ fontSize: 12, color: '#71717a' }}>{PADDED_LABEL}</Text>
-        <NumberTicker {...args} value={42} pad={6} locale={false} />
-      </View>
-      <View style={{ alignItems: 'center', gap: 4 }}>
-        <Text style={{ fontSize: 12, color: '#71717a' }}>{AFFIXED_LABEL}</Text>
-        <NumberTicker {...args} value={1280} prefix="$" suffix=" MRR" locale={true} />
-      </View>
-    </View>
-  ),
-};
+/** Every formatting mode (locale separators, padding, affixes) plus the per-digit
+ *  stagger. Flip "Live feed" to watch only the changed columns roll. */
+export const Interactive: Story = { render: (args) => <NumberTickerPlayground {...args} /> };
 
 export const Default: Story = {
+  name: 'Demo: Exposes a readable value',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Digits render as scrolling columns, so assert the accessible readable value.
     await expect(await canvas.findByLabelText('48,273')).toBeInTheDocument();
-  },
-};
-
-export const Padded: Story = {
-  args: { value: 42, pad: 6, locale: false },
-};
-
-export const WithAffixes: Story = {
-  args: { value: 1280, prefix: '$', suffix: ' MRR', locale: true },
-};
-
-export const Live: Story = {
-  render: (args) => {
-    const [value, setValue] = useState(48_273);
-    useMountEffect(() => {
-      const id = setInterval(() => setValue((v) => v + Math.floor(Math.random() * 50)), 2500);
-      return () => clearInterval(id);
-    });
-    return (
-      <View style={{ alignItems: 'center', gap: 12 }}>
-        <Text style={{ fontSize: 12, color: '#71717a' }}>{ACTIVE_USERS_LABEL}</Text>
-        <NumberTicker {...args} value={value} />
-        <Text style={{ fontSize: 12, color: '#71717a' }}>{LIVE_HINT}</Text>
-      </View>
-    );
   },
 };

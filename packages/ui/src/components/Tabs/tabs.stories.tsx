@@ -2,8 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, userEvent, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
+import { Tabs, TabsContent, TabsList, type TabsProps, TabsTrigger } from './tabs';
 
 const meta = {
   title: 'Components/Tabs',
@@ -18,62 +19,100 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
+type Variant = NonNullable<TabsProps['variant']>;
+
+const VARIANTS = ['pill', 'underline', 'segment'] as const satisfies readonly Variant[];
+
 const TAB_OVERVIEW = 'Overview';
 const TAB_ACTIVITY = 'Activity';
 const TAB_SETTINGS = 'Settings';
 const OVERVIEW_SUMMARY = 'High-level summary.';
 const ACTIVITY_EVENTS = 'Recent events.';
 const SETTINGS_PREFS = 'Preferences.';
-const SEGMENT_DAY = 'Day';
-const SEGMENT_WEEK = 'Week';
-const SEGMENT_MONTH = 'Month';
-const FILTER_ALL = 'All';
-const FILTER_OPEN = 'Open';
-const FILTER_CLOSED = 'Closed';
-const CONTROLLED_ONE = 'One';
-const CONTROLLED_TWO = 'Two';
-const SELECTED_PREFIX = 'Selected: ';
+const PANELS = [
+  { value: 'overview', label: TAB_OVERVIEW, body: OVERVIEW_SUMMARY },
+  { value: 'activity', label: TAB_ACTIVITY, body: ACTIVITY_EVENTS },
+  { value: 'settings', label: TAB_SETTINGS, body: SETTINGS_PREFS },
+] as const;
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function TabsPlayground() {
+  const [variant, setVariant] = useState<Variant>('pill');
+  const [withPanels, setWithPanels] = useState(true);
+  const [tab, setTab] = useState('overview');
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Toggle label="Content panels" onChange={setWithPanels} value={withPanels} />
+      </Controls>
+
+      <View style={{ gap: 8 }}>
+        <Tabs onValueChange={setTab} value={tab} variant={variant}>
+          <TabsList>
+            {PANELS.map((panel) => (
+              <TabsTrigger key={panel.value} value={panel.value}>
+                {panel.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {withPanels
+            ? PANELS.map((panel) => (
+                <TabsContent key={panel.value} value={panel.value}>
+                  <Text className="text-muted-foreground text-sm">{panel.body}</Text>
+                </TabsContent>
+              ))
+            : null}
+        </Tabs>
+        <Note testID="story-selected-tab">{`Selected: ${tab}`}</Note>
+      </View>
+
+      {/* The indicator is the whole point of the variants: a sliding pill, a
+          sliding underline, or a segmented plate. Same tree, three treatments. */}
+      <Section title="Variants">
+        <Variants direction="column" gap={16}>
+          {VARIANTS.map((name) => (
+            <Sample key={name} label={name}>
+              <Tabs defaultValue="overview" variant={name}>
+                <TabsList>
+                  {PANELS.map((panel) => (
+                    <TabsTrigger key={panel.value} value={panel.value}>
+                      {panel.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+    </Playground>
+  );
+}
 
 export default meta;
 
-export const Interactive: Story = {
-  render: () => {
-    const [tab, setTab] = useState('one');
-    return (
-      <View style={{ gap: 12 }}>
-        <Tabs value={tab} onValueChange={setTab} variant="pill">
-          <TabsList>
-            <TabsTrigger value="one">{CONTROLLED_ONE}</TabsTrigger>
-            <TabsTrigger value="two">{CONTROLLED_TWO}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Text className="text-muted-foreground text-xs">
-          {SELECTED_PREFIX}
-          {tab}
-        </Text>
-      </View>
-    );
-  },
-};
+/** All three indicator treatments, with or without content panels. The live set
+ *  at the top is controlled, so the readout tracks whatever you select. */
+export const Interactive: Story = { render: () => <TabsPlayground /> };
 
 export const Pill: Story = {
   name: 'Demo: Switch tabs',
   render: () => (
-    <Tabs defaultValue="overview" variant="pill" testID="tabs">
+    <Tabs defaultValue="overview" testID="tabs" variant="pill">
       <TabsList>
-        <TabsTrigger value="overview">{TAB_OVERVIEW}</TabsTrigger>
-        <TabsTrigger value="activity">{TAB_ACTIVITY}</TabsTrigger>
-        <TabsTrigger value="settings">{TAB_SETTINGS}</TabsTrigger>
+        {PANELS.map((panel) => (
+          <TabsTrigger key={panel.value} value={panel.value}>
+            {panel.label}
+          </TabsTrigger>
+        ))}
       </TabsList>
-      <TabsContent value="overview">
-        <Text className="text-muted-foreground text-sm">{OVERVIEW_SUMMARY}</Text>
-      </TabsContent>
-      <TabsContent value="activity">
-        <Text className="text-muted-foreground text-sm">{ACTIVITY_EVENTS}</Text>
-      </TabsContent>
-      <TabsContent value="settings">
-        <Text className="text-muted-foreground text-sm">{SETTINGS_PREFS}</Text>
-      </TabsContent>
+      {PANELS.map((panel) => (
+        <TabsContent key={panel.value} value={panel.value}>
+          <Text className="text-muted-foreground text-sm">{panel.body}</Text>
+        </TabsContent>
+      ))}
     </Tabs>
   ),
   play: async ({ canvasElement }) => {
@@ -85,48 +124,22 @@ export const Pill: Story = {
   },
 };
 
-export const Segment: Story = {
-  render: () => (
-    <Tabs defaultValue="day" variant="segment">
-      <TabsList>
-        <TabsTrigger value="day">{SEGMENT_DAY}</TabsTrigger>
-        <TabsTrigger value="week">{SEGMENT_WEEK}</TabsTrigger>
-        <TabsTrigger value="month">{SEGMENT_MONTH}</TabsTrigger>
-      </TabsList>
-    </Tabs>
-  ),
-};
-
-export const Underline: Story = {
-  render: () => (
-    <Tabs defaultValue="all" variant="underline">
-      <TabsList>
-        <TabsTrigger value="all">{FILTER_ALL}</TabsTrigger>
-        <TabsTrigger value="open">{FILTER_OPEN}</TabsTrigger>
-        <TabsTrigger value="closed">{FILTER_CLOSED}</TabsTrigger>
-      </TabsList>
-    </Tabs>
-  ),
-};
-
 export const PreSelectedTab: Story = {
-  name: 'Pre-selected (non-first tab)',
+  name: 'Demo: Pre-selected (non-first tab)',
   render: () => (
-    <Tabs defaultValue="settings" variant="pill" testID="tabs">
+    <Tabs defaultValue="settings" testID="tabs" variant="pill">
       <TabsList>
-        <TabsTrigger value="overview">{TAB_OVERVIEW}</TabsTrigger>
-        <TabsTrigger value="activity">{TAB_ACTIVITY}</TabsTrigger>
-        <TabsTrigger value="settings">{TAB_SETTINGS}</TabsTrigger>
+        {PANELS.map((panel) => (
+          <TabsTrigger key={panel.value} value={panel.value}>
+            {panel.label}
+          </TabsTrigger>
+        ))}
       </TabsList>
-      <TabsContent value="overview">
-        <Text className="text-muted-foreground text-sm">{OVERVIEW_SUMMARY}</Text>
-      </TabsContent>
-      <TabsContent value="activity">
-        <Text className="text-muted-foreground text-sm">{ACTIVITY_EVENTS}</Text>
-      </TabsContent>
-      <TabsContent value="settings">
-        <Text className="text-muted-foreground text-sm">{SETTINGS_PREFS}</Text>
-      </TabsContent>
+      {PANELS.map((panel) => (
+        <TabsContent key={panel.value} value={panel.value}>
+          <Text className="text-muted-foreground text-sm">{panel.body}</Text>
+        </TabsContent>
+      ))}
     </Tabs>
   ),
   play: async ({ canvasElement }) => {

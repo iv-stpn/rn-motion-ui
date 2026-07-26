@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useRef, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
+import { Action, Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Bell, Moon, ShieldCheck, User } from '../../lib/icons';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
@@ -35,6 +36,7 @@ type Story = StoryObj<typeof meta>;
 
 const SETTINGS_ROOT_TITLE = 'Settings';
 const OPEN_SETTINGS_LABEL = 'Open settings';
+const WIDE_BREAKPOINT = 640;
 
 // ── Shared fixture data ────────────────────────────────────────────────────
 
@@ -57,8 +59,10 @@ function AppearanceSection({ helpers }: AppearanceSectionProps) {
   const navigateAdvanced = useCallback(() => helpers.navigate('appearance/advanced'), [helpers]);
   return (
     <View style={{ gap: 12 }}>
-      <Text style={{ fontWeight: '600', fontSize: 16 }}>{APPEARANCE_TITLE}</Text>
-      <Text style={{ color: '#6b7280', lineHeight: 22 }}>{APPEARANCE_BODY}</Text>
+      <Text size="lg" weight="semibold">
+        {APPEARANCE_TITLE}
+      </Text>
+      <Text className="text-muted-foreground">{APPEARANCE_BODY}</Text>
       <Button variant="secondary" size="sm" onPress={navigateAdvanced}>
         {ADVANCED_APPEARANCE_LABEL}
       </Button>
@@ -72,8 +76,10 @@ const sections: MultiStepSection[] = [
     title: 'Account',
     render: () => (
       <View style={{ gap: 12 }}>
-        <Text style={{ fontWeight: '600', fontSize: 16 }}>{ACCOUNT_TITLE}</Text>
-        <Text style={{ color: '#6b7280', lineHeight: 22 }}>{ACCOUNT_BODY}</Text>
+        <Text size="lg" weight="semibold">
+          {ACCOUNT_TITLE}
+        </Text>
+        <Text className="text-muted-foreground">{ACCOUNT_BODY}</Text>
       </View>
     ),
   },
@@ -82,8 +88,10 @@ const sections: MultiStepSection[] = [
     title: 'Notifications',
     render: () => (
       <View style={{ gap: 12 }}>
-        <Text style={{ fontWeight: '600', fontSize: 16 }}>{NOTIFICATIONS_TITLE}</Text>
-        <Text style={{ color: '#6b7280', lineHeight: 22 }}>{NOTIFICATIONS_BODY}</Text>
+        <Text size="lg" weight="semibold">
+          {NOTIFICATIONS_TITLE}
+        </Text>
+        <Text className="text-muted-foreground">{NOTIFICATIONS_BODY}</Text>
       </View>
     ),
   },
@@ -97,8 +105,10 @@ const sections: MultiStepSection[] = [
         title: 'Advanced Appearance',
         render: () => (
           <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600', fontSize: 16 }}>{ADVANCED_TITLE}</Text>
-            <Text style={{ color: '#6b7280' }}>{ADVANCED_BODY}</Text>
+            <Text size="lg" weight="semibold">
+              {ADVANCED_TITLE}
+            </Text>
+            <Text className="text-muted-foreground">{ADVANCED_BODY}</Text>
           </View>
         ),
       },
@@ -109,77 +119,106 @@ const sections: MultiStepSection[] = [
     title: 'Privacy & Security',
     render: () => (
       <View style={{ gap: 8 }}>
-        <Text style={{ fontWeight: '600', fontSize: 16 }}>{PRIVACY_TITLE}</Text>
-        <Text style={{ color: '#6b7280' }}>{PRIVACY_BODY}</Text>
+        <Text size="lg" weight="semibold">
+          {PRIVACY_TITLE}
+        </Text>
+        <Text className="text-muted-foreground">{PRIVACY_BODY}</Text>
       </View>
     ),
   },
 ];
 
-type SidebarProps = { helpers: MultiStepHelpers };
+// `iconBackgroundColor` is a decorative per-row accent, not a themed surface. theme-exempt.
+type MenuEntry = { path: string; label: string; icon: typeof User; color: string };
+
+const MENU_ENTRIES = [
+  { path: 'account', label: 'Account', icon: User, color: '#3b82f6' },
+  { path: 'notifications', label: 'Notifications', icon: Bell, color: '#f59e0b' },
+  { path: 'appearance', label: 'Appearance', icon: Moon, color: '#8b5cf6' },
+  { path: 'privacy', label: 'Privacy & Security', icon: ShieldCheck, color: '#10b981' },
+] as const satisfies readonly MenuEntry[];
+
+type MenuEntryRowProps = { entry: MenuEntry; active?: boolean; onNavigate: (path: string) => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function Sidebar({ helpers }: SidebarProps) {
-  const navAccount = useCallback(() => helpers.navigate(['account']), [helpers]);
-  const navNotifications = useCallback(() => helpers.navigate(['notifications']), [helpers]);
-  const navAppearance = useCallback(() => helpers.navigate(['appearance']), [helpers]);
-  const navPrivacy = useCallback(() => helpers.navigate(['privacy']), [helpers]);
+function MenuEntryRow({ entry, active = false, onNavigate }: MenuEntryRowProps) {
+  const handlePress = useCallback(() => onNavigate(entry.path), [entry.path, onNavigate]);
   return (
-    <View style={{ gap: 4, paddingTop: 8 }}>
-      <MenuRow
-        icon={User}
-        label="Account"
-        iconBackgroundColor="#3b82f6"
-        active={helpers.path[0] === 'account'}
-        onPress={navAccount}
-      />
-      <MenuRow
-        icon={Bell}
-        label="Notifications"
-        iconBackgroundColor="#f59e0b"
-        active={helpers.path[0] === 'notifications'}
-        onPress={navNotifications}
-      />
-      <MenuRow
-        icon={Moon}
-        label="Appearance"
-        iconBackgroundColor="#8b5cf6"
-        active={helpers.path[0] === 'appearance'}
-        onPress={navAppearance}
-      />
-      <MenuRow
-        icon={ShieldCheck}
-        label="Privacy & Security"
-        iconBackgroundColor="#10b981"
-        active={helpers.path[0] === 'privacy'}
-        onPress={navPrivacy}
-      />
-    </View>
+    <MenuRow icon={entry.icon} label={entry.label} iconBackgroundColor={entry.color} active={active} onPress={handlePress} />
   );
 }
 
-type SmallScreenMenuItemsProps = { helpers: MultiStepHelpers };
+type MenuListProps = { helpers: MultiStepHelpers; showActive: boolean };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function SmallScreenMenuItems({ helpers }: SmallScreenMenuItemsProps) {
-  const navAccount = useCallback(() => helpers.navigate('account'), [helpers]);
-  const navNotifications = useCallback(() => helpers.navigate('notifications'), [helpers]);
-  const navAppearance = useCallback(() => helpers.navigate('appearance'), [helpers]);
-  const navPrivacy = useCallback(() => helpers.navigate('privacy'), [helpers]);
+function MenuList({ helpers, showActive }: MenuListProps) {
+  const navigate = useCallback((path: string) => helpers.navigate([path]), [helpers]);
   return (
     <View style={{ gap: 4 }}>
-      <MenuRow icon={User} label="Account" iconBackgroundColor="#3b82f6" onPress={navAccount} />
-      <MenuRow icon={Bell} label="Notifications" iconBackgroundColor="#f59e0b" onPress={navNotifications} />
-      <MenuRow icon={Moon} label="Appearance" iconBackgroundColor="#8b5cf6" onPress={navAppearance} />
-      <MenuRow icon={ShieldCheck} label="Privacy & Security" iconBackgroundColor="#10b981" onPress={navPrivacy} />
+      {MENU_ENTRIES.map((entry) => (
+        <MenuEntryRow
+          key={entry.path}
+          entry={entry}
+          active={showActive && helpers.path[0] === entry.path}
+          onNavigate={navigate}
+        />
+      ))}
     </View>
   );
 }
 
-const renderSidebar = (h: MultiStepHelpers) => <Sidebar helpers={h} />;
-const renderSmallScreenMenu = (h: MultiStepHelpers) => <SmallScreenMenuItems helpers={h} />;
+const renderSidebar = (h: MultiStepHelpers) => <MenuList helpers={h} showActive={true} />;
+const renderSmallScreenMenu = (h: MultiStepHelpers) => <MenuList helpers={h} showActive={false} />;
 
-type MultiStepSheetStoryProps = { isWideScreen: boolean; defaultPath?: string[] };
+// ── Playground ─────────────────────────────────────────────────────────────
+
+const LAYOUTS = [
+  { value: 'auto', label: 'Auto (window)' },
+  { value: 'wide', label: 'Wide' },
+  { value: 'small', label: 'Small' },
+] as const;
+type LayoutKey = (typeof LAYOUTS)[number]['value'];
+
+const START_OPTIONS = [
+  { value: 'none', label: 'Placeholder' },
+  { value: 'account', label: 'Account' },
+  { value: 'advanced', label: 'Appearance → Advanced' },
+] as const;
+type StartKey = (typeof START_OPTIONS)[number]['value'];
+
+// Wide screens adopt `defaultPath` as the initial sidebar selection; small screens always start at the root.
+// `defaultPath` is a mutable `string[]`, so these can't be `as const`.
+const START_PATHS: Record<StartKey, string[] | undefined> = {
+  account: ['account'],
+  advanced: ['appearance', 'advanced'],
+  none: undefined,
+};
+
+const WIDE_PANEL_SIZE = { width: 700, height: 480 } as const;
+const RESET_LABEL = 'Reset to root';
+const JUMP_LABEL = 'Jump to Advanced';
+const SIDEBAR_FOOTER_LABEL = 'v2.4.0';
+const PLACEHOLDER_TITLE = 'Pick a section';
+const PLACEHOLDER_BODY = 'Nothing is selected yet.';
+const CLOSED_NOTE = 'Closed';
+const START_NOTE = 'Initial selection and the panel size only apply to the wide layout.';
+
+const SIDEBAR_FOOTER = (
+  <Text className="text-muted-foreground" size="sm">
+    {SIDEBAR_FOOTER_LABEL}
+  </Text>
+);
+
+const WIDE_PLACEHOLDER = (
+  <View style={{ alignItems: 'center', flex: 1, gap: 6, justifyContent: 'center' }}>
+    <Text size="lg" weight="semibold">
+      {PLACEHOLDER_TITLE}
+    </Text>
+    <Text className="text-muted-foreground" size="sm">
+      {PLACEHOLDER_BODY}
+    </Text>
+  </View>
+);
 
 /**
  * Self-contained `MultiStepMenu` owns its `AdaptiveModal` shell: a full sheet on
@@ -187,6 +226,81 @@ type MultiStepSheetStoryProps = { isWideScreen: boolean; defaultPath?: string[] 
  * `onAfterClose` resets the menu's navigation state so the next open starts at
  * the root. The inner panes keep their own slide enter/exit between steps.
  */
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function MenuPlayground() {
+  const { width } = useWindowDimensions();
+  const [layout, setLayout] = useState<LayoutKey>('auto');
+  const [startKey, setStartKey] = useState<StartKey>('account');
+  const [withFooter, setWithFooter] = useState(true);
+  const [withPlaceholder, setWithPlaceholder] = useState(true);
+  const [visible, setVisible] = useState(false);
+  const [path, setPath] = useState<string[]>([]);
+  const menuRef = useRef<MultiStepMenuHandle | null>(null);
+
+  const isWideScreen = layout === 'auto' ? width >= WIDE_BREAKPOINT : layout === 'wide';
+  const handleOpen = useCallback(() => setVisible(true), []);
+  const handleClose = useCallback(() => setVisible(false), []);
+  const handleAfterClose = useCallback(() => menuRef.current?.reset(), []);
+  const handleReset = useCallback(() => menuRef.current?.reset(), []);
+  const handleJump = useCallback(() => menuRef.current?.navigate(['appearance', 'advanced']), []);
+
+  const pathNote = path.length > 0 ? path.join(' → ') : SETTINGS_ROOT_TITLE;
+  const stateNote = visible ? `Open — ${pathNote}` : CLOSED_NOTE;
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="Layout" onChange={setLayout} options={LAYOUTS} value={layout} />
+        <Choice label="Initial selection" onChange={setStartKey} options={START_OPTIONS} value={startKey} />
+        <Toggle label="Sidebar footer" onChange={setWithFooter} value={withFooter} />
+        <Toggle label="Wide placeholder" onChange={setWithPlaceholder} value={withPlaceholder} />
+        <Action label={OPEN_SETTINGS_LABEL} onPress={handleOpen} />
+        <Action label={JUMP_LABEL} onPress={handleJump} />
+        <Action label={RESET_LABEL} onPress={handleReset} />
+      </Controls>
+
+      <Note testID="story-state">{stateNote}</Note>
+      <Note>{START_NOTE}</Note>
+
+      <MultiStepMenu
+        defaultPath={START_PATHS[startKey]}
+        isWideScreen={isWideScreen}
+        onAfterClose={handleAfterClose}
+        onClose={handleClose}
+        onPathChange={setPath}
+        ref={menuRef}
+        rootTitle={SETTINGS_ROOT_TITLE}
+        sections={sections}
+        sidebar={renderSidebar}
+        sidebarFooter={withFooter ? SIDEBAR_FOOTER : undefined}
+        smallScreenMenu={renderSmallScreenMenu}
+        widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
+        widePlaceholder={withPlaceholder ? WIDE_PLACEHOLDER : undefined}
+        visible={visible}
+      />
+
+      <View style={{ height: 12 }} />
+      <Section title="Sidebar row states">
+        <Variants align="stretch" direction="column" gap={6}>
+          <Sample label="Default">
+            <MenuRow icon={MENU_ENTRIES[0].icon} iconBackgroundColor={MENU_ENTRIES[0].color} label={MENU_ENTRIES[0].label} />
+          </Sample>
+          <Sample label="Active">
+            <MenuRow
+              active={true}
+              icon={MENU_ENTRIES[3].icon}
+              iconBackgroundColor={MENU_ENTRIES[3].color}
+              label={MENU_ENTRIES[3].label}
+            />
+          </Sample>
+        </Variants>
+      </Section>
+    </Playground>
+  );
+}
+
+type MultiStepSheetStoryProps = { isWideScreen: boolean; defaultPath?: string[] };
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function MultiStepSheetStory({ isWideScreen, defaultPath }: MultiStepSheetStoryProps) {
   const [visible, setVisible] = useState(false);
@@ -199,17 +313,17 @@ function MultiStepSheetStory({ isWideScreen, defaultPath }: MultiStepSheetStoryP
     <View>
       <Button onPress={handleOpen}>{OPEN_SETTINGS_LABEL}</Button>
       <MultiStepMenu
-        ref={menuRef}
-        visible={visible}
+        defaultPath={defaultPath}
         isWideScreen={isWideScreen}
+        onAfterClose={handleAfterClose}
+        onClose={handleClose}
+        ref={menuRef}
+        rootTitle={SETTINGS_ROOT_TITLE}
         sections={sections}
         sidebar={renderSidebar}
         smallScreenMenu={renderSmallScreenMenu}
-        rootTitle={SETTINGS_ROOT_TITLE}
-        defaultPath={defaultPath}
-        onClose={handleClose}
-        onAfterClose={handleAfterClose}
-        widePanelSize={isWideScreen ? { width: 700, height: 480 } : undefined}
+        visible={visible}
+        widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
       />
     </View>
   );
@@ -219,19 +333,13 @@ export default meta;
 
 // ── Stories ────────────────────────────────────────────────────────────────
 
-/** Interactive — responsive layout that switches on window width, in a sliding sheet. */
-export const Interactive: Story = {
-  render: () => {
-    const { width } = useWindowDimensions();
-    const isWideScreen = width >= 640;
-    return <MultiStepSheetStory isWideScreen={isWideScreen} defaultPath={isWideScreen ? ['account'] : undefined} />;
-  },
-};
+/** Every layout, initial selection and imperative navigation in one sheet. */
+export const Interactive: Story = { render: () => <MenuPlayground /> };
 
 /** Wide-screen layout (sidebar + content pane) in a sliding sheet. */
 export const WideScreen: Story = {
   name: 'Demo: Navigate sections',
-  render: () => <MultiStepSheetStory isWideScreen={true} defaultPath={['account']} />,
+  render: () => <MultiStepSheetStory defaultPath={START_PATHS.account} isWideScreen={true} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole('button', { name: OPEN_SETTINGS_LABEL }));
@@ -242,9 +350,4 @@ export const WideScreen: Story = {
     // Verify the Notifications section body (unique text) is now shown.
     await expect(await screen.findByText(NOTIFICATIONS_BODY)).toBeTruthy();
   },
-};
-
-/** Small-screen layout (stacked navigation, full-height panes) in a sliding sheet. */
-export const SmallScreen: Story = {
-  render: () => <MultiStepSheetStory isWideScreen={false} />,
 };

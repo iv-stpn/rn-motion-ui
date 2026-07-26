@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { useMountEffect } from '../../hooks/use-mount-effect';
-import { Text } from '../Text/text';
+import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { useInterval } from '../../hooks/use-interval';
 import { AnimatedNumber } from './animated-number';
 
 const meta = {
@@ -24,71 +24,97 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const MRR_LABEL = 'Monthly recurring revenue';
-const MRR_DELTA = '+12.4% vs last month';
-const ACTIVE_USERS_LABEL = 'Active users';
-const PLAIN_LABEL = 'plain';
-const CURRENCY_LABEL = 'currency';
-const STATIC_LABEL = 'static (no roll)';
-const formatCount = (n: number) => Math.round(n).toLocaleString();
-const formatCurrency = (n: number) => `$${Math.round(n).toLocaleString()}`;
+const FORMATS = ['plain', 'currency', 'compact'] as const;
+const DURATIONS = [
+  { value: '0.4', label: '0.4s' },
+  { value: '1.2', label: '1.2s' },
+  { value: '3', label: '3s' },
+] as const;
+const TARGETS = [
+  { value: '42', label: '42' },
+  { value: '1280', label: '1,280' },
+  { value: '129480', label: '129,480' },
+] as const;
+const LIVE_STEP_MS = 1800;
+
+type FormatKey = (typeof FORMATS)[number];
+
+const FORMATTERS: Record<FormatKey, (n: number) => string> = {
+  plain: (n) => Math.round(n).toLocaleString(),
+  currency: (n) => `$${Math.round(n).toLocaleString()}`,
+  compact: (n) => `${(Math.round(n) / 1000).toFixed(1)}k`,
+};
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function AnimatedNumberPlayground(args: ComponentProps<typeof AnimatedNumber>) {
+  const [format, setFormat] = useState<FormatKey>('plain');
+  const [durationKey, setDurationKey] = useState<(typeof DURATIONS)[number]['value']>('1.2');
+  const [targetKey, setTargetKey] = useState<(typeof TARGETS)[number]['value']>('129480');
+  const [live, setLive] = useState(false);
+  const [bump, setBump] = useState(0);
+
+  const duration = Number(durationKey);
+  // The counter rolls from wherever it is to the new target, so a "live" tick is
+  // just a bumped target — same code path the chips take.
+  const value = Number(targetKey) + bump;
+  const tick = useCallback(() => setBump((b) => b + Math.floor(Math.random() * 500)), []);
+  useInterval(tick, live ? LIVE_STEP_MS : null);
+
+  return (
+    <Playground style={{ maxWidth: 420 }}>
+      <Controls>
+        <Choice label="Target" onChange={setTargetKey} options={TARGETS} value={targetKey} />
+        <Choice label="Format" onChange={setFormat} options={FORMATS} value={format} />
+        <Choice label="Duration" onChange={setDurationKey} options={DURATIONS} value={durationKey} />
+        <Toggle label="Live updates" onChange={setLive} value={live} />
+      </Controls>
+
+      <AnimatedNumber {...args} duration={duration} format={FORMATTERS[format]} value={value} />
+
+      <View style={{ height: 12 }} />
+      <Section title="Formats (same value, different formatter)">
+        <Variants gap={28}>
+          {FORMATS.map((name) => (
+            <Sample align="center" key={name} label={name}>
+              <AnimatedNumber
+                {...args}
+                className="font-semibold text-2xl text-foreground"
+                duration={duration}
+                format={FORMATTERS[name]}
+                value={value}
+              />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      {/* `startOnView` gates the roll on the viewport; with it off the number
+          counts up the moment it mounts, which is what a dashboard tile wants. */}
+      <Section title="startOnView">
+        <View style={{ flexDirection: 'row', gap: 28 }}>
+          <Sample align="center" label="true (rolls when scrolled in)">
+            <AnimatedNumber {...args} className="font-semibold text-2xl text-foreground" startOnView={true} value={9480} />
+          </Sample>
+          <Sample align="center" label="false (rolls on mount)">
+            <AnimatedNumber {...args} className="font-semibold text-2xl text-foreground" startOnView={false} value={9480} />
+          </Sample>
+        </View>
+      </Section>
+    </Playground>
+  );
+}
 
 export default meta;
 
-export const AllVariants: Story = {
-  name: 'All variants',
-  render: (args) => (
-    <View style={{ alignItems: 'center', gap: 24 }}>
-      <View style={{ alignItems: 'center', gap: 4 }}>
-        <Text className="text-muted-foreground text-xs">{PLAIN_LABEL}</Text>
-        <AnimatedNumber {...args} />
-      </View>
-      <View style={{ alignItems: 'center', gap: 4 }}>
-        <Text className="text-muted-foreground text-xs">{CURRENCY_LABEL}</Text>
-        <AnimatedNumber {...args} format={formatCurrency} />
-      </View>
-      <View style={{ alignItems: 'center', gap: 4 }}>
-        <Text className="text-muted-foreground text-xs">{STATIC_LABEL}</Text>
-        <AnimatedNumber {...args} value={42} startOnView={false} />
-      </View>
-    </View>
-  ),
-};
+/** Pick a target to watch it roll there, switch formatter, or flip "Live updates"
+ *  to feed it a new value every 1.8s the way a metrics tile would. */
+export const Interactive: Story = { render: (args) => <AnimatedNumberPlayground {...args} /> };
 
 export const Default: Story = {
+  name: 'Demo: Exposes the final value',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // The final value is exposed as the accessible label regardless of the roll.
     await expect(await canvas.findByLabelText('129,480')).toBeInTheDocument();
-  },
-};
-
-export const Currency: Story = {
-  args: {
-    value: 129_480,
-    format: (n: number) => `$${Math.round(n).toLocaleString()}`,
-  },
-  render: (args) => (
-    <View style={{ alignItems: 'center', gap: 8 }}>
-      <Text className="text-muted-foreground text-xs">{MRR_LABEL}</Text>
-      <AnimatedNumber {...args} />
-      <Text className="text-success-foreground text-xs">{MRR_DELTA}</Text>
-    </View>
-  ),
-};
-
-export const Live: Story = {
-  render: (args) => {
-    const [value, setValue] = useState(48_273);
-    useMountEffect(() => {
-      const id = setInterval(() => setValue((v) => v + Math.floor(Math.random() * 500)), 2000);
-      return () => clearInterval(id);
-    });
-    return (
-      <View style={{ alignItems: 'center', gap: 8 }}>
-        <Text className="text-muted-foreground text-xs">{ACTIVE_USERS_LABEL}</Text>
-        <AnimatedNumber {...args} value={value} duration={0.8} format={formatCount} />
-      </View>
-    );
   },
 };

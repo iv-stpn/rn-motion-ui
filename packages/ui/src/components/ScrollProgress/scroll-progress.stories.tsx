@@ -1,12 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, View } from 'react-native';
-import { makeMutable, useSharedValue } from 'react-native-reanimated';
+import { makeMutable, type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { expect, within } from 'storybook/test';
+import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { useThemeColors } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
 import { ScrollProgress } from './scroll-progress';
 
 const ROWS = Array.from({ length: 18 }, (_, i) => i + 1);
+const BOX_W = 340;
+const BOX_H = 260;
+const SMALL_BOX_W = 200;
 
 const meta = {
   title: 'Components/ScrollProgress',
@@ -19,12 +24,29 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-// A self-contained demo: an internal ScrollView drives the shared progress value
-// that both the bar and circle read.
-type DemoProps = { variant: 'bar' | 'circle' };
+const THICKNESSES = [
+  { value: '2', label: 'hairline' },
+  { value: '3', label: '3px' },
+  { value: '8', label: 'chunky' },
+] as const;
+const DIAMETERS = [
+  { value: '28', label: '28px' },
+  { value: '36', label: '36px' },
+  { value: '52', label: '52px' },
+] as const;
 
+type ThicknessKey = (typeof THICKNESSES)[number]['value'];
+type DiameterKey = (typeof DIAMETERS)[number]['value'];
+
+type ScrollBoxProps = { children: (progress: SharedValue<number>) => ReactNode; width?: number; height?: number };
+
+/**
+ * Scrollable frame that owns the shared progress value and hands it to its
+ * children — the indicator has no scroll awareness of its own, it only reads a
+ * 0→1 value someone else drives.
+ */
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Demo({ variant }: DemoProps) {
+function ScrollBox({ children, width = BOX_W, height = BOX_H }: ScrollBoxProps) {
   const progress = useSharedValue(0);
   const onScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -38,21 +60,12 @@ function Demo({ variant }: DemoProps) {
   );
 
   return (
-    <View
-      testID="scroll-progress-demo"
-      style={{ width: 340, height: 260, borderRadius: 16, borderWidth: 1, borderColor: '#e5e5e5', overflow: 'hidden' }}
-    >
-      {variant === 'bar' ? (
-        <ScrollProgress progress={progress} height={3} testID="bar" />
-      ) : (
-        <View style={{ position: 'absolute', right: 12, top: 12, zIndex: 10 }}>
-          <ScrollProgress variant="circle" progress={progress} size={36} testID="circle" />
-        </View>
-      )}
-      <ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ padding: 12, gap: 10 }}>
+    <View className="overflow-hidden rounded-2xl border border-border" style={{ width, height }}>
+      {children(progress)}
+      <ScrollView contentContainerStyle={{ padding: 12, gap: 10 }} onScroll={onScroll} scrollEventThrottle={16}>
         {ROWS.map((n) => (
-          <View key={n} style={{ borderRadius: 10, backgroundColor: '#f4f4f5', paddingHorizontal: 12, paddingVertical: 16 }}>
-            <Text style={{ color: '#71717a', fontSize: 14 }}>{`Section ${n}`}</Text>
+          <View className="rounded-lg bg-surface-3 px-3 py-4" key={n}>
+            <Text className="text-muted-foreground" size="sm">{`Section ${n}`}</Text>
           </View>
         ))}
       </ScrollView>
@@ -60,20 +73,100 @@ function Demo({ variant }: DemoProps) {
   );
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function ScrollProgressPlayground() {
+  const [circle, setCircle] = useState(false);
+  const [spring, setSpring] = useState(true);
+  const [tinted, setTinted] = useState(false);
+  const [thicknessKey, setThicknessKey] = useState<ThicknessKey>('3');
+  const [diameterKey, setDiameterKey] = useState<DiameterKey>('36');
+  const colors = useThemeColors();
+  const color = tinted ? colors.primary : undefined;
+
+  return (
+    <Playground>
+      <Controls>
+        <Toggle label="Circle" onChange={setCircle} value={circle} />
+        <Toggle label="Spring" onChange={setSpring} value={spring} />
+        <Toggle label="Tinted" onChange={setTinted} value={tinted} />
+        <Choice label="Bar height" onChange={setThicknessKey} options={THICKNESSES} value={thicknessKey} />
+        <Choice label="Circle size" onChange={setDiameterKey} options={DIAMETERS} value={diameterKey} />
+      </Controls>
+
+      {/* With spring off the indicator tracks the offset exactly; with it on the
+          value chases the scroll and settles a beat behind. */}
+      <ScrollBox>
+        {(progress) =>
+          circle ? (
+            <View style={{ position: 'absolute', right: 12, top: 12, zIndex: 10 }}>
+              <ScrollProgress
+                color={color}
+                progress={progress}
+                size={Number(diameterKey)}
+                spring={spring}
+                testID="playground-circle"
+                variant="circle"
+              />
+            </View>
+          ) : (
+            <ScrollProgress
+              color={color}
+              height={Number(thicknessKey)}
+              progress={progress}
+              spring={spring}
+              testID="playground-bar"
+            />
+          )
+        }
+      </ScrollBox>
+
+      {/* Both variants read the same kind of value — only the painting differs. */}
+      <Section title="Variants">
+        <Variants gap={16}>
+          <Sample label="bar (pinned to the top edge)">
+            <ScrollBox height={180} width={SMALL_BOX_W}>
+              {(progress) => <ScrollProgress height={3} progress={progress} />}
+            </ScrollBox>
+          </Sample>
+          <Sample label="circle (free-floating)">
+            <ScrollBox height={180} width={SMALL_BOX_W}>
+              {(progress) => (
+                <View style={{ position: 'absolute', right: 10, top: 10, zIndex: 10 }}>
+                  <ScrollProgress progress={progress} size={36} variant="circle" />
+                </View>
+              )}
+            </ScrollBox>
+          </Sample>
+        </Variants>
+      </Section>
+    </Playground>
+  );
+}
+
 export default meta;
 
-export const Interactive: Story = {
-  render: () => <Demo variant="bar" />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(await canvas.findByTestId('bar')).toBeInTheDocument();
-  },
-};
+/** One indicator over a live scroll area, switchable between the bar and circle
+ *  variants, plus both side by side. Scroll a box to drive its value. */
+export const Interactive: Story = { render: () => <ScrollProgressPlayground /> };
 
-export const CircleVariant: Story = {
-  render: () => <Demo variant="circle" />,
+export const Bar: Story = {
+  name: 'Demo: Tracks the scroll offset',
+  render: () => (
+    <ScrollBox>
+      {(progress) => (
+        <>
+          <ScrollProgress height={3} progress={progress} testID="bar" />
+          <View style={{ position: 'absolute', right: 12, top: 12, zIndex: 10 }}>
+            <ScrollProgress progress={progress} size={36} testID="circle" variant="circle" />
+          </View>
+        </>
+      )}
+    </ScrollBox>
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    // Both variants mount against the same shared value.
+    await expect(await canvas.findByTestId('bar')).toBeInTheDocument();
     await expect(await canvas.findByTestId('circle')).toBeInTheDocument();
   },
 };

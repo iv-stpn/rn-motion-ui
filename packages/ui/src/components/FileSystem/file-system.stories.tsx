@@ -2,9 +2,10 @@
 /** biome-ignore-all lint/style/useExportsLast: this a stories file */
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { cn } from '../../lib/cn';
 import { Copy, FolderClosed, Link, Share2, Trash2 } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
@@ -17,6 +18,7 @@ import type {
   FileSystemLoadChildrenArgs,
   FileSystemMoveEvent,
   FileSystemProps,
+  FileSystemView,
   FileSystemViewerArgs,
 } from './file-system.types';
 import { FS_HOVER_TEST_ID } from './file-system-hover';
@@ -312,13 +314,20 @@ function PlaygroundStatus({ message, onReset }: PlaygroundStatusProps) {
   );
 }
 
+/** Which consumer-side features the playground wires up. Defaults to all of them. */
+type PlaygroundOptions = { backgroundMenu: boolean; contextMenus: boolean; draggable: boolean; lazyChildren: boolean };
+
+const ALL_FEATURES: PlaygroundOptions = { backgroundMenu: true, contextMenus: true, draggable: true, lazyChildren: true };
+
+type FileSystemPlaygroundProps = FileSystemProps & { options?: PlaygroundOptions };
+
 /**
  * Holds the manifest and applies both feature's events to it. Drag-and-drop and
  * the context menu are the two places where <FileSystem> asks the consumer to
  * change the data, so a playground for them has to own it.
  */
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function FileSystemPlayground(args: FileSystemProps) {
+function FileSystemPlayground({ options = ALL_FEATURES, ...args }: FileSystemPlaygroundProps) {
   // One state, so each handler is a single pure rewrite: the status line always
   // describes the list rendered beside it, and nothing needs a second setState.
   const [state, setState] = useState<PlaygroundState>(INITIAL_STATE);
@@ -389,11 +398,11 @@ function FileSystemPlayground(args: FileSystemProps) {
     <View>
       <FileSystem
         {...args}
-        draggable={true}
-        getBackgroundContextMenuActions={getBackgroundContextMenuActions}
-        getContextMenuActions={getContextMenuActions}
+        draggable={options.draggable}
+        getBackgroundContextMenuActions={options.backgroundMenu ? getBackgroundContextMenuActions : undefined}
+        getContextMenuActions={options.contextMenus ? getContextMenuActions : undefined}
         items={state.items}
-        loadChildren={loadChildren}
+        loadChildren={options.lazyChildren ? loadChildren : undefined}
         onBackgroundContextMenuAction={handleBackgroundAction}
         onContextMenuAction={handleAction}
         onMove={handleMove}
@@ -403,21 +412,112 @@ function FileSystemPlayground(args: FileSystemProps) {
   );
 }
 
+const VIEWS = [
+  { value: 'icons', label: 'Grid' },
+  { value: 'list', label: 'List' },
+  { value: 'columns', label: 'Columns' },
+  { value: 'gallery', label: 'Gallery' },
+] as const satisfies readonly { value: FileSystemView; label: string }[];
+
+// `defaultPath` seeds the history on mount, so switching the start folder remounts
+// the browser rather than navigating it.
+const START_PATHS = { root: '', documents: 'Documents/', photos: 'Photos/' } as const;
+type StartKey = keyof typeof START_PATHS;
+
+const START_OPTIONS = [
+  { value: 'root', label: 'Root' },
+  { value: 'documents', label: 'Documents/' },
+  { value: 'photos', label: 'Photos/' },
+] as const satisfies readonly { value: StartKey; label: string }[];
+
+const HEIGHTS = { '380': 380, '460': 460, '560': 560 } as const;
+type HeightKey = keyof typeof HEIGHTS;
+const HEIGHT_KEYS = ['380', '460', '560'] as const satisfies readonly HeightKey[];
+
+/** Narrow enough to fold the view tabs into a dropdown and collapse the search field. */
+const COMPACT_WIDTH = 420;
+const VIEWER_NOTE = 'Only images open in place without a viewer — everything else needs `renderFileViewer`.';
+
+const VIEWER_PLACEHOLDER = 'Your PDF renderer goes here';
+
+/** Stand-in for the document renderer the package leaves to the consumer. */
+function renderPlaceholderViewer({ file }: FileSystemViewerArgs) {
+  return (
+    <View className="flex-1 items-center justify-center gap-1 rounded-lg bg-surface-2 p-6">
+      <Text size="sm" weight="semibold">
+        {file.name}
+      </Text>
+      <Text className="text-muted-foreground" size="xs">
+        {VIEWER_PLACEHOLDER}
+      </Text>
+    </View>
+  );
+}
+
 /**
- * The full playground, with both consumer-driven features live.
- *
- * Drag an entry onto a folder — the outline marks the live target — and it moves,
- * subtree included; a folder cannot be dropped into itself or its own descendant,
- * so those drags simply find no target. Right-click (long-press on touch) any
- * entry for a menu that duplicates, deletes or adds a folder beside it. Both
- * report to the story, which rewrites the manifest and names what it did below.
+ * The full playground. Drag an entry onto a folder — the outline marks the live
+ * target — and it moves, subtree included; a folder cannot be dropped into itself
+ * or its own descendant, so those drags simply find no target. Right-click
+ * (long-press on touch) any entry for a menu that duplicates, deletes or adds a
+ * folder beside it. Both report to the story, which rewrites the manifest and
+ * names what it did below.
  *
  * Everything else is live too: tap to select, tap again to open, `Archive/` loads
  * its children on first visit, and the quarterly report's third page loads when
  * the tile pager reaches it.
  */
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function FileSystemControls(args: FileSystemProps) {
+  const [view, setView] = useState<FileSystemView>('icons');
+  const [startKey, setStartKey] = useState<StartKey>('root');
+  const [heightKey, setHeightKey] = useState<HeightKey>('460');
+  const [compact, setCompact] = useState(false);
+  const [draggable, setDraggable] = useState(true);
+  const [contextMenus, setContextMenus] = useState(true);
+  const [backgroundMenu, setBackgroundMenu] = useState(true);
+  const [lazyChildren, setLazyChildren] = useState(true);
+  const [withViewer, setWithViewer] = useState(true);
+
+  const options = useMemo(
+    () => ({ backgroundMenu, contextMenus, draggable, lazyChildren }),
+    [backgroundMenu, contextMenus, draggable, lazyChildren],
+  );
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="View" onChange={setView} options={VIEWS} value={view} />
+        <Choice label="Start folder" onChange={setStartKey} options={START_OPTIONS} value={startKey} />
+        <Choice label="Height" onChange={setHeightKey} options={HEIGHT_KEYS} value={heightKey} />
+        <Toggle label="Compact width" onChange={setCompact} value={compact} />
+        <Toggle label="Draggable" onChange={setDraggable} value={draggable} />
+        <Toggle label="Entry menus" onChange={setContextMenus} value={contextMenus} />
+        <Toggle label="Background menu" onChange={setBackgroundMenu} value={backgroundMenu} />
+        <Toggle label="Lazy children" onChange={setLazyChildren} value={lazyChildren} />
+        <Toggle label="Document viewer" onChange={setWithViewer} value={withViewer} />
+      </Controls>
+
+      <Note>{VIEWER_NOTE}</Note>
+
+      <View style={compact ? { width: COMPACT_WIDTH } : undefined}>
+        <FileSystemPlayground
+          {...args}
+          defaultPath={START_PATHS[startKey]}
+          height={HEIGHTS[heightKey]}
+          key={startKey}
+          onViewChange={setView}
+          options={options}
+          renderFileViewer={withViewer ? renderPlaceholderViewer : undefined}
+          view={view}
+        />
+      </View>
+    </Playground>
+  );
+}
+
+/** Every view, layout width and consumer-driven feature on one canvas. */
 export const Interactive: Story = {
-  render: (args) => <FileSystemPlayground {...args} />,
+  render: (args) => <FileSystemControls {...args} />,
 };
 
 // ─── Views ─────────────────────────────────────────────────────────────────────
@@ -445,15 +545,6 @@ export const SwitchViews: Story = {
     await waitFor(() => expect(args.onViewChange).toHaveBeenLastCalledWith('gallery'));
   },
 };
-
-/** Column panes, Finder-style: each selection opens the next pane to its right. */
-export const Columns: Story = { args: { defaultView: 'columns' } };
-
-/** One large preview over a filmstrip of the folder's entries. */
-export const Gallery: Story = { args: { defaultView: 'gallery' } };
-
-/** The disclosure list, with sortable Name / Date Modified / Size columns. */
-export const List: Story = { args: { defaultView: 'list' } };
 
 // ─── Navigation ────────────────────────────────────────────────────────────────
 // Activation is tap-to-select / tap-again-to-open, so a mouse double-click and a
@@ -622,8 +713,6 @@ export const ImageViewer: Story = {
   },
 };
 
-const VIEWER_PLACEHOLDER = 'Your PDF renderer goes here';
-
 /**
  * `renderFileViewer` supplies the document body the package deliberately ships
  * without: hand back a PDF/DOCX/XLSX renderer and those kinds become openable in
@@ -631,18 +720,7 @@ const VIEWER_PLACEHOLDER = 'Your PDF renderer goes here';
  */
 export const WithFileViewer: Story = {
   name: 'Demo: Bring your own document viewer',
-  args: {
-    renderFileViewer: ({ file }: FileSystemViewerArgs) => (
-      <View className="flex-1 items-center justify-center gap-1 rounded-lg bg-surface-2 p-6">
-        <Text size="sm" weight="semibold">
-          {file.name}
-        </Text>
-        <Text className="text-muted-foreground" size="xs">
-          {VIEWER_PLACEHOLDER}
-        </Text>
-      </View>
-    ),
-  },
+  args: { renderFileViewer: renderPlaceholderViewer },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 

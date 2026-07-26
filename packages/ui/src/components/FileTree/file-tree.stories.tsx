@@ -2,10 +2,19 @@
 /** biome-ignore-all lint/style/useExportsLast: this a stories file */
 
 import type { Meta, StoryObj } from '@storybook/react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { Choice, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { FileTree } from './file-tree';
-import type { FileTreeGitStatusMap } from './file-tree.types';
+import type {
+  FileTreeDensity,
+  FileTreeGitStatusMap,
+  FileTreeInitialExpansion,
+  FileTreeSearchMode,
+  FileTreeSelectionMode,
+} from './file-tree.types';
+import type { FileTreeMoveEvent, FileTreeRenameEvent } from './file-tree-props';
 
 // ─── Shared data ───────────────────────────────────────────────────────────────
 // A small, deterministic tree. Top-level directories (`docs/`, `src/`) sort
@@ -46,12 +55,21 @@ const SAMPLE_GIT_STATUS: FileTreeGitStatusMap = {
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
+/** Demos render in a narrow panel; the playground needs room for its controls. */
+const DEFAULT_FRAME_WIDTH = 400;
+const PLAYGROUND_FRAME_WIDTH = 760;
+
+function frameWidthOf(parameters: Record<string, unknown>): number {
+  const width = parameters.frameWidth;
+  return typeof width === 'number' ? width : DEFAULT_FRAME_WIDTH;
+}
+
 const meta = {
   title: 'Components/FileTree',
   component: FileTree,
   decorators: [
-    (Story) => (
-      <View style={{ width: 400 }}>
+    (Story, ctx) => (
+      <View style={{ width: frameWidthOf(ctx.parameters) }}>
         <Story />
       </View>
     ),
@@ -72,24 +90,127 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // ─── Interactive ───────────────────────────────────────────────────────────────
-// The full playground: multi-select, built-in search, drag-to-move, inline
-// rename and git lanes all on. Drive it yourself — tap to select/open, right-click
-// (web) for secondary activation, and drag a row onto a folder to move it (with a
-// mouse, just press and drag; with a finger, hold first so the same downstroke can
-// still scroll). With `draggable` on, the hold belongs to the drag, not to
-// multi-select.
+// One playground for every prop. Drive it yourself — tap to select/open,
+// right-click (web) for secondary activation, and drag a row onto a folder to
+// move it (with a mouse, just press and drag; with a finger, hold first so the
+// same downstroke can still scroll). With `draggable` on, the hold belongs to the
+// drag, not to multi-select.
 
-/** Every feature on — the hands-on playground. */
+const DENSITIES = ['compact', 'default', 'relaxed'] as const satisfies readonly FileTreeDensity[];
+
+const SELECTION_MODES = ['none', 'single', 'multiple'] as const satisfies readonly FileTreeSelectionMode[];
+
+const SEARCH_MODES = [
+  { value: 'expand-matches', label: 'Expand matches' },
+  { value: 'collapse-non-matches', label: 'Collapse others' },
+  { value: 'hide-non-matches', label: 'Hide others' },
+] as const satisfies readonly { value: FileTreeSearchMode; label: string }[];
+
+// `initialExpansion` is read once per mount (and per `paths` swap), so the
+// playground remounts the tree when it changes rather than trying to push it in.
+const EXPANSIONS = {
+  closed: 'closed',
+  '1': 1,
+  '2': 2,
+  open: 'open',
+} as const satisfies Record<string, FileTreeInitialExpansion>;
+type ExpansionKey = keyof typeof EXPANSIONS;
+
+const EXPANSION_OPTIONS = [
+  { value: 'closed', label: 'Closed' },
+  { value: '1', label: 'Depth 1' },
+  { value: '2', label: 'Depth 2' },
+  { value: 'open', label: 'All open' },
+] as const satisfies readonly { value: ExpansionKey; label: string }[];
+
+const PRESELECTED_PATHS = ['package.json', 'README.md'];
+const NO_PATHS: string[] = [];
+const EMPTY_STATE_LABEL = 'No files yet';
+const PLAYGROUND_HEIGHT = 320;
+const IDLE_NOTE = 'No selection yet.';
+const REMOUNT_NOTE = 'Expansion and pre-selection seed the tree on mount, so changing them remounts it.';
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function FileTreePlayground() {
+  const [density, setDensity] = useState<FileTreeDensity>('default');
+  const [selectionMode, setSelectionMode] = useState<FileTreeSelectionMode>('multiple');
+  const [searchMode, setSearchMode] = useState<FileTreeSearchMode>('expand-matches');
+  const [expansionKey, setExpansionKey] = useState<ExpansionKey>('1');
+  const [showSearch, setShowSearch] = useState(true);
+  const [draggable, setDraggable] = useState(true);
+  const [renamable, setRenamable] = useState(true);
+  const [withGitStatus, setWithGitStatus] = useState(true);
+  const [showIcons, setShowIcons] = useState(true);
+  const [showIndentGuides, setShowIndentGuides] = useState(true);
+  const [stickyHeaders, setStickyHeaders] = useState(true);
+  const [flatten, setFlatten] = useState(true);
+  const [preselected, setPreselected] = useState(false);
+  const [empty, setEmpty] = useState(false);
+  const [note, setNote] = useState(IDLE_NOTE);
+
+  const handleSelection = useCallback((paths: string[]) => {
+    setNote(paths.length > 0 ? `Selected: ${paths.join(', ')}` : IDLE_NOTE);
+  }, []);
+  const handleMove = useCallback((event: FileTreeMoveEvent) => {
+    setNote(`Moved ${event.sources.join(', ')} → ${event.destination || '(root)'}`);
+  }, []);
+  const handleRename = useCallback((event: FileTreeRenameEvent) => {
+    setNote(`Renamed ${event.path} → ${event.newPath}`);
+  }, []);
+
+  return (
+    <Playground>
+      <Controls>
+        <Choice label="Density" onChange={setDensity} options={DENSITIES} value={density} />
+        <Choice label="Selection" onChange={setSelectionMode} options={SELECTION_MODES} value={selectionMode} />
+        <Choice label="Expansion" onChange={setExpansionKey} options={EXPANSION_OPTIONS} value={expansionKey} />
+        <Choice label="Search mode" onChange={setSearchMode} options={SEARCH_MODES} value={searchMode} />
+        <Toggle label="Search input" onChange={setShowSearch} value={showSearch} />
+        <Toggle label="Draggable" onChange={setDraggable} value={draggable} />
+        <Toggle label="Renamable" onChange={setRenamable} value={renamable} />
+        <Toggle label="Git lanes" onChange={setWithGitStatus} value={withGitStatus} />
+        <Toggle label="Icons" onChange={setShowIcons} value={showIcons} />
+        <Toggle label="Indent guides" onChange={setShowIndentGuides} value={showIndentGuides} />
+        <Toggle label="Sticky headers" onChange={setStickyHeaders} value={stickyHeaders} />
+        <Toggle label="Flatten chains" onChange={setFlatten} value={flatten} />
+        <Toggle label="Pre-selected" onChange={setPreselected} value={preselected} />
+        <Toggle label="Empty" onChange={setEmpty} value={empty} />
+      </Controls>
+
+      <Note testID="story-note">{note}</Note>
+      <Note>{REMOUNT_NOTE}</Note>
+
+      <FileTree
+        defaultSelectedPaths={preselected ? PRESELECTED_PATHS : undefined}
+        density={density}
+        draggable={draggable}
+        emptyState={EMPTY_STATE_LABEL}
+        flattenEmptyDirectories={flatten}
+        gitStatus={withGitStatus ? SAMPLE_GIT_STATUS : undefined}
+        height={PLAYGROUND_HEIGHT}
+        initialExpansion={EXPANSIONS[expansionKey]}
+        key={`${expansionKey}-${String(preselected)}`}
+        onMove={handleMove}
+        onRename={handleRename}
+        onSelectionChange={handleSelection}
+        paths={empty ? NO_PATHS : SAMPLE_PATHS}
+        renamable={renamable}
+        searchMode={searchMode}
+        selectionMode={selectionMode}
+        showIcons={showIcons}
+        showIndentGuides={showIndentGuides}
+        showSearch={showSearch}
+        stickyHeaders={stickyHeaders}
+        testID="file-tree-interactive"
+      />
+    </Playground>
+  );
+}
+
+/** Every prop on one canvas — density, selection, search, drag, rename and git lanes. */
 export const Interactive: Story = {
-  args: {
-    selectionMode: 'multiple',
-    showSearch: true,
-    draggable: true,
-    renamable: true,
-    gitStatus: SAMPLE_GIT_STATUS,
-    initialExpansion: 1,
-    testID: 'file-tree-interactive',
-  },
+  parameters: { frameWidth: PLAYGROUND_FRAME_WIDTH },
+  render: () => <FileTreePlayground />,
 };
 
 // ─── Expand / collapse ───────────────────────────────────────────────────────
@@ -179,17 +300,6 @@ export const GitStatus: Story = {
     // The lane letter is exposed to a11y by its status name.
     const modified = await canvas.findAllByLabelText('Modified');
     expect(modified.length).toBeGreaterThan(0);
-  },
-};
-
-// ─── Multi-select ────────────────────────────────────────────────────────────
-
-/** Multiple selection with two rows pre-selected via `defaultSelectedPaths`. */
-export const MultiSelect: Story = {
-  args: {
-    selectionMode: 'multiple',
-    defaultSelectedPaths: ['package.json', 'README.md'],
-    testID: 'file-tree-multi',
   },
 };
 
@@ -351,18 +461,6 @@ export const TouchDrag: Story = {
     dragTo(container, source, target, 'touch');
     await waitFor(() => expectScreensMoved(args.onMove));
   },
-};
-
-// ─── Density ─────────────────────────────────────────────────────────────────
-
-/** Compact rows for dense file panels. */
-export const Compact: Story = {
-  args: { density: 'compact', initialExpansion: 'open', testID: 'file-tree-compact' },
-};
-
-/** Relaxed rows for touch-first layouts. */
-export const Relaxed: Story = {
-  args: { density: 'relaxed', testID: 'file-tree-relaxed' },
 };
 
 // ─── Empty ─────────────────────────────────────────────────────────────────────

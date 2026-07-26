@@ -217,6 +217,33 @@ For manual dark mode (`.dark` class on `<html>` instead of `prefers-color-scheme
 }
 ```
 
+#### Retinting the neutral palette
+
+The neutral ramp (surfaces, foregrounds, borders, muted) is not pure grey — every step carries a faint shared tint, declared in the sheet as `--neutral-hue` / `--neutral-chroma`. Those two are documentation, not inputs: uniwind folds every color to a hex at bundle time, and a `var()` inside `oklch()` never folds on native, so the tint has to be baked into the literals. To change it, generate your own sheet:
+
+```bash
+npx rn-motion-ui-tokens --hue 250 --chroma 0.006
+```
+
+That writes a `tokens.css` into the current directory. Import it **instead of** `rn-motion-ui/tokens.css` — it's a full replacement, not an overlay:
+
+```css
+@import "tailwindcss";
+@import "./tokens.css";
+```
+
+Every neutral-tinted literal is rewritten to the new hue, with each token's chroma scaled proportionally so partial tints stay partial. Status colors (`danger`, `success`, `warning`, `info`) and true achromatic values are left alone, as are the shadow recipes, all three theme blocks, and anything you'd added upstream. `--chroma 0` drops the tint for a strictly neutral grey ramp. Run it with no arguments and you get the shipped sheet back verbatim.
+
+| Flag | Default |
+| --- | --- |
+| `--hue <deg>` | shipped `--neutral-hue`; cyclic, so `-20` and `400` both work |
+| `--chroma <c>` | shipped `--neutral-chroma`; `0`–`0.4` |
+| `--out <path>` | `./tokens.css` |
+| `--force`, `-f` | refuse to overwrite unless passed |
+| `--stdout` | write to stdout instead of a file |
+
+Regenerate after upgrading `rn-motion-ui` so new tokens land in your copy.
+
 ### Animated and SVG colors — `useThemeColor`
 
 Reanimated worklets and `react-native-svg` props require resolved color strings, not CSS utility classes. Use `useThemeColor` to read the current token value at runtime:

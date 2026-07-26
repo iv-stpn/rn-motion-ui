@@ -569,12 +569,16 @@
       "default": "./src/utils/typeguards.ts"
     }
   },
+  "bin": {
+    "rn-motion-ui-tokens": "./scripts/gen-tokens.mjs"
+  },
   "files": [
     "src",
     "!src/**/*.stories.tsx",
     "!src/**/__stories__/**",
     "!src/**/__tests__/**",
     "!src/**/*.test.*",
+    "scripts/gen-tokens.mjs",
     "README.md",
     "LICENSE"
   ],

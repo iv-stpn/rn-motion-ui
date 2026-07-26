@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "uniwind";
-@import "rn-motion-ui/tokens.css";
+/* Retinted token sheet (hue 106.5 / chroma 0.002), generated with
+   `npx rn-motion-ui-tokens`. Full replacement for "rn-motion-ui/tokens.css". */
+@import "./tokens.css";
 
 /* GlossyButton ships its own literal classes, so scan the library source too. */
 @source "../../packages/ui/src";

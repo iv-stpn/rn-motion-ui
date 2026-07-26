@@ -18,23 +18,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: [
-        'spinner',
-        'dots',
-        'bars',
-        'dot-matrix',
-        'dither',
-        'comet',
-        'scramble',
-        'newton',
-        'helix',
-        'percent',
-        'ascii',
-        'ascii-line',
-        'ascii-braille',
-        'ascii-blocks',
-        'ascii-bounce',
-      ] satisfies LoaderVariant[],
+      options: ['spinner', 'dots', 'bars', 'dot-matrix', 'dither'] satisfies LoaderVariant[],
     },
     size: { control: { type: 'range', min: 16, max: 96, step: 4 } },
     speed: { control: { type: 'range', min: 0.25, max: 3, step: 0.25 } },
@@ -43,23 +27,7 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const GALLERY = [
-  'spinner',
-  'dots',
-  'bars',
-  'dot-matrix',
-  'dither',
-  'comet',
-  'scramble',
-  'newton',
-  'helix',
-  'percent',
-  'ascii',
-  'ascii-line',
-  'ascii-braille',
-  'ascii-blocks',
-  'ascii-bounce',
-] as const satisfies readonly LoaderVariant[];
+const GALLERY = ['spinner', 'dots', 'bars', 'dot-matrix', 'dither'] as const satisfies readonly LoaderVariant[];
 
 const SIZES = ['24', '36', '56'] as const;
 const SPEEDS = [
@@ -125,7 +93,7 @@ function LoaderPlayground(args: ComponentProps<typeof Loader>) {
 export default meta;
 
 /** Pick a variant, size and speed with the controls, or scan the gallery below
- *  for all fifteen animations side-by-side. */
+ *  for all five animations side-by-side. */
 export const Interactive: Story = { render: (args) => <LoaderPlayground {...args} /> };
 
 export const Spinner: Story = {

@@ -59,8 +59,12 @@ const GROUP_PATTERNS: [RegExp, string][] = [
   [/^gap-x-/, 'gap-x'],
   [/^gap-y-/, 'gap-y'],
   [/^gap-/, 'gap'],
-  // Typography — size before color so text-sm doesn't collide with text-foreground
+  // Typography — size before color so text-sm doesn't collide with text-foreground.
+  // Arbitrary sizes start with a digit (`text-[17px]`, `text-[1.5rem]`), which no
+  // color notation does (`text-[#fff]`, `text-[rgb(…)]`), so the leading digit is
+  // enough to route them to the size group instead of the color catch-all.
   [/^text-(?:xs|sm|base|lg|xl|\dxl)$/, 'text-size'],
+  [/^text-\[\d/, 'text-size'],
   [/^text-(?:left|center|right|justify)$/, 'text-align'],
   [/^font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\d+)$/, 'font-weight'],
   [/^font-(?:sans|serif|mono)$/, 'font-family'],

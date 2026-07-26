@@ -29,6 +29,11 @@ type BuildContentArgs = {
   /** Resolved label class (colour + size), computed by the caller so each button
    *  can fold its own variant/colour/hover override in before it reaches here. */
   labelClass: string;
+  /** Resolved label colour, applied inline. For callers whose colour isn't a
+   *  static class — GlossyButton derives its label from the face colour, so
+   *  there is no `text-*` utility for the scanner to find. Wins over any colour
+   *  in `labelClass`/`labelClassName`, since inline style beats className. */
+  labelColor?: string;
   /** Space content at 12px (`gap-3`) with adornments pulled back in 4px (AlignUI's
    *  icon `-mx-1`) — used by ElevatedButton; every other button uses a flat 8px gap. */
   spacious: boolean;
@@ -39,9 +44,13 @@ type BuildContentArgs = {
   labelClassName: string | undefined;
 };
 
-function renderChild(child: ReactNode, className: string, labelClassName?: string): ReactNode {
+function renderChild(child: ReactNode, className: string, labelClassName?: string, color?: string): ReactNode {
   if (typeof child === 'string' || typeof child === 'number')
-    return <Text className={cn(className, labelClassName)}>{child}</Text>;
+    return (
+      <Text className={cn(className, labelClassName)} style={color === undefined ? undefined : { color }}>
+        {child}
+      </Text>
+    );
   return isValidElement(child) ? child : null;
 }
 
@@ -161,6 +170,7 @@ export function buildButtonContent({
   loading,
   reduce,
   labelClass,
+  labelColor,
   spacious,
   children,
   leftAdornment,
@@ -194,8 +204,14 @@ export function buildButtonContent({
   const hasAdornments = leftAdornment !== undefined || rightAdornment !== undefined;
   const isLeaf = typeof children === 'string' || typeof children === 'number';
   const mergedLabelClass = cn(labelClass, labelClassName);
+  const labelStyle = labelColor === undefined ? undefined : { color: labelColor };
 
-  if (isLeaf && !hasAdornments) return <Text className={mergedLabelClass}>{children}</Text>;
+  if (isLeaf && !hasAdornments)
+    return (
+      <Text className={mergedLabelClass} style={labelStyle}>
+        {children}
+      </Text>
+    );
 
   // Mirrors AlignUI's icon slot: `gap-3` between pieces with `-mx-1` on icons,
   // netting 8px beside the label while text-only siblings keep the full 12px.
@@ -206,9 +222,11 @@ export function buildButtonContent({
     <View className="flex-row items-center justify-center" style={{ gap: spacious ? 12 : 8 }}>
       {wrapAdornment(leftAdornment)}
       {isLeaf ? (
-        <Text className={mergedLabelClass}>{children}</Text>
+        <Text className={mergedLabelClass} style={labelStyle}>
+          {children}
+        </Text>
       ) : (
-        Children.map(children, (child) => renderChild(child, labelClass, labelClassName))
+        Children.map(children, (child) => renderChild(child, labelClass, labelClassName, labelColor))
       )}
       {wrapAdornment(rightAdornment)}
     </View>

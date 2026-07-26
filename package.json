@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "build:storybook": "bun run --cwd storybook/web build-storybook",
-    "typecheck": "bun run --cwd packages/ui typecheck && bun run --cwd storybook/web typecheck && bun run --cwd storybook/native typecheck",
+    "typecheck": "bun run --cwd packages/ui typecheck && bun run --cwd storybook/web typecheck && bun run --cwd storybook/native typecheck && bun run --cwd storybook/demo typecheck",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "test": "bun run --cwd packages/ui test && bun run test:storybook",
@@ -17,6 +17,7 @@
     "storybook:native": "bun run --cwd storybook/native start",
     "storybook:native:build:android": "bun run --cwd storybook/native build:android",
     "storybook:native:build:ios": "bun run --cwd storybook/native build:ios",
+    "demo": "bun run --cwd storybook/demo start",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish",

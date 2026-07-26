@@ -1,0 +1,36 @@
+{
+  "name": "@rn-motion-ui/demo",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --web",
+    "web": "expo start --web",
+    "native": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "expo": "^57",
+    "expo-dev-client": "^57",
+    "expo-status-bar": "^57",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-native": "0.86.0",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.2",
+    "react-native-svg": "15.15.5",
+    "react-native-web": "0.21.2",
+    "react-native-worklets": "0.11.1",
+    "rn-motion-ui": "workspace:*",
+    "tailwindcss": "^4",
+    "uniwind": "1.10.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.1.6",
+    "babel-preset-expo": "^57",
+    "typescript": "^7"
+  }
+}

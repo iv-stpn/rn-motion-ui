@@ -192,6 +192,11 @@
       "types": "./src/components/FullSheet/full-sheet.tsx",
       "default": "./src/components/FullSheet/full-sheet.tsx"
     },
+    "./glossy-button": {
+      "source": "./src/components/Button/glossy-button.tsx",
+      "types": "./src/components/Button/glossy-button.tsx",
+      "default": "./src/components/Button/glossy-button.tsx"
+    },
     "./hover-menu": {
       "source": "./src/components/HoverMenu/hover-menu.tsx",
       "types": "./src/components/HoverMenu/hover-menu.tsx",

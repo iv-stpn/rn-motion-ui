@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: the grid, its drag session and its hover controller are one render layer */
 // The icons view: a Finder-style tile grid. The web original leans on CSS
 // `auto-fill` plus a hand-rolled virtual window; here the measured viewport
 // width picks a column count and the entries are pre-chunked into rows so a
@@ -25,7 +26,16 @@ import {
   FS_HOVER_TEST_ID,
   useFileSystemHover,
 } from './file-system-hover';
-import { chunkEntries, gridMetrics, ROW_STRIDE, TILE_HEIGHT, tileAt, tileCorner } from './file-system-icons-grid';
+import {
+  chunkEntries,
+  GLYPH_BOX_HEIGHT,
+  GLYPH_BOX_WIDTH,
+  glyphBoxCorner,
+  gridMetrics,
+  ROW_STRIDE,
+  TILE_HEIGHT,
+  tileAt,
+} from './file-system-icons-grid';
 import { DragGhost, IconRow } from './file-system-icons-tile';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
@@ -64,6 +74,8 @@ type UseIconsHoverParams = {
   containerRef: RefObject<View | null>;
   /** Past the last entry the grid has slots but no tiles — nothing to highlight. */
   entryCount: number;
+  /** The entry index a drop would commit to, read live — see the resolver below. */
+  getTargetIndex: () => number | null;
   isDragging: () => boolean;
   scrollOffsetRef: MutableRefObject<number>;
   /** Flat index of the selected entry, or null. Selected tiles suppress normal hover. */
@@ -72,20 +84,21 @@ type UseIconsHoverParams = {
 };
 
 /**
- * Hover controller for the tile grid. `tileAt` clamps to the nearest tile, which
- * is what a drag wants — a drop should commit somewhere. Hover is the stricter
- * question, so the hit is rejected unless the pointer is inside the tile's own
- * box: no highlight in the grid padding or the gaps between tiles.
+ * Hover controller for the tile grid, marking glyph boxes rather than whole tiles:
+ * that box is the tile's state surface, so hover, selection and a pending drop all
+ * describe the same rect.
  *
- * Hover is suppressed entirely during a drag — the label chip fill on `isDropTarget`
- * already marks the folder a drop would land in, so a second highlight is redundant.
- * It is also suppressed on the selected tile — its `bg-surface-selected` glyph box
- * already marks it, and a hover on top reads as a confusing flicker on click.
+ * `tileAt` clamps to the nearest tile, which is what a drag wants — a drop should
+ * commit somewhere. Hover is the stricter question, so the hit is rejected unless
+ * the pointer is inside the tile's own box: no highlight in the grid padding or
+ * the gaps between tiles. It is also suppressed on the selected tile, whose
+ * `bg-surface-selected` box already marks it and reads as a flicker under a hover.
  */
 function useIconsHover({
   columnsRef,
   containerRef,
   entryCount,
+  getTargetIndex,
   isDragging,
   scrollOffsetRef,
   selectedIndexRef,
@@ -93,15 +106,22 @@ function useIconsHover({
 }: UseIconsHoverParams): FileSystemHoverController {
   const resolve = useCallback(
     (localX: number, localY: number) => {
-      if (isDragging()) return null;
       const lookup = { columns: columnsRef.current, scrollOffset: scrollOffsetRef.current, tileWidth: tileWidthRef.current };
+      // Under a drag the highlight is placed from the drop target instead of the
+      // pointer, so it cannot disagree with the label chip that names the same
+      // index: the source tile does not stay lit, a file passed over never lights
+      // up, and the pointer may sit in a gap while the target is a real folder.
+      if (isDragging()) {
+        const target = getTargetIndex();
+        return target === null ? null : glyphBoxCorner(target, lookup);
+      }
       const hit = tileAt(localX, localY, lookup);
       if (hit.index >= entryCount) return null;
       if (hit.index === selectedIndexRef.current) return null;
       const inside = localX >= hit.x && localX < hit.x + lookup.tileWidth && localY >= hit.y && localY < hit.y + TILE_HEIGHT;
-      return inside ? tileCorner(hit.index, lookup) : null;
+      return inside ? glyphBoxCorner(hit.index, lookup) : null;
     },
-    [columnsRef, entryCount, isDragging, scrollOffsetRef, selectedIndexRef, tileWidthRef],
+    [columnsRef, entryCount, getTargetIndex, isDragging, scrollOffsetRef, selectedIndexRef, tileWidthRef],
   );
   return useFileSystemHover({ containerRef, isDragging, resolve });
 }
@@ -160,6 +180,7 @@ function useIconsGrid(
     columnsRef,
     containerRef,
     entryCount: entries.length,
+    getTargetIndex: dragSession.getTargetIndex,
     isDragging: dragSession.isDragging,
     scrollOffsetRef,
     selectedIndexRef,
@@ -291,13 +312,14 @@ export function FileSystemIconsView({
       >
         {/* Before the grid, so it paints behind the tiles — see FileSystemHoverHighlight.
             Sized to the glyph box, not the tile: that box is what selection fills
-            and a drop outlines, so all three states mark one rect. */}
+            and a drop marks, so all three states land on one rect. `rounded-lg`
+            and the size match IconTileFace's box exactly. */}
         <FileSystemHoverHighlight
           className="rounded-lg"
           controller={hover}
-          height={TILE_HEIGHT}
+          height={GLYPH_BOX_HEIGHT}
           testID={FS_HOVER_TEST_ID.icons}
-          width={tileWidth}
+          width={GLYPH_BOX_WIDTH}
         />
         {body}
         {draggedEntry ? (

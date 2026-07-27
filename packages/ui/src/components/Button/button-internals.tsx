@@ -12,6 +12,7 @@ import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
 import type { MotiTransitionProp } from '../../theme/motion';
 import { Text } from '../Text/text';
+import { BUTTON_GAP } from './button-scale';
 
 // ── module-local types & helpers ────────────────────────────────────────────
 // Kept ahead of the exports (useExportsLast). `Ripple` stays local: consumers
@@ -34,9 +35,6 @@ type BuildContentArgs = {
    *  there is no `text-*` utility for the scanner to find. Wins over any colour
    *  in `labelClass`/`labelClassName`, since inline style beats className. */
   labelColor?: string;
-  /** Space content at 12px (`gap-3`) with adornments pulled back in 4px (AlignUI's
-   *  icon `-mx-1`) — used by ElevatedButton; every other button uses a flat 8px gap. */
-  spacious: boolean;
   children: ReactNode;
   leftAdornment: ReactNode;
   rightAdornment: ReactNode;
@@ -56,8 +54,11 @@ function renderChild(child: ReactNode, className: string, labelClassName?: strin
 
 // ── exports ─────────────────────────────────────────────────────────────────
 
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
-export type ButtonShape = 'rounded' | 'pill';
+// The size/shape axes and the label ramp live in button-scale.ts, next to the
+// box geometry they belong to (and reachable from ActionSwap without pulling in
+// this file's SVG/Moti dependencies). Re-exported here so every sibling keeps
+// importing its types from one place.
+export type { ButtonShape, ButtonSize } from './button-scale';
 
 /**
  * Props shared by every button in the family (Button, ElevatedButton). Each
@@ -171,7 +172,6 @@ export function buildButtonContent({
   reduce,
   labelClass,
   labelColor,
-  spacious,
   children,
   leftAdornment,
   rightAdornment,
@@ -213,14 +213,13 @@ export function buildButtonContent({
       </Text>
     );
 
-  // Mirrors AlignUI's icon slot: `gap-3` between pieces with `-mx-1` on icons,
-  // netting 8px beside the label while text-only siblings keep the full 12px.
-  const wrapAdornment = (node: ReactNode): ReactNode =>
-    spacious && node !== undefined ? <View style={{ marginHorizontal: -4 }}>{node}</View> : node;
-
+  // One gap for the whole family — {@link BUTTON_GAP}. (AlignUI spaces its chips
+  // at 12px and pulls icons back in by `-mx-1`, netting the same 8px beside the
+  // label; the pullback is dropped so an elevated chip and a flat button lay out
+  // their content identically.)
   return (
-    <View className="flex-row items-center justify-center" style={{ gap: spacious ? 12 : 8 }}>
-      {wrapAdornment(leftAdornment)}
+    <View className="flex-row items-center justify-center" style={{ gap: BUTTON_GAP }}>
+      {leftAdornment}
       {isLeaf ? (
         <Text className={mergedLabelClass} style={labelStyle}>
           {children}
@@ -228,7 +227,7 @@ export function buildButtonContent({
       ) : (
         Children.map(children, (child) => renderChild(child, labelClass, labelClassName, labelColor))
       )}
-      {wrapAdornment(rightAdornment)}
+      {rightAdornment}
     </View>
   );
 }

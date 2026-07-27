@@ -7,14 +7,8 @@ import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../theme/motion';
 import { type ThemeToken, useThemeColors } from '../../theme/use-theme-color';
-import {
-  type BaseButtonProps,
-  ButtonRipples,
-  type ButtonShape,
-  type ButtonSize,
-  buildButtonContent,
-  usePressRipples,
-} from './button-internals';
+import { type BaseButtonProps, ButtonRipples, buildButtonContent, usePressRipples } from './button-internals';
+import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadius } from './button-scale';
 
 /**
  * Fill colour + surface style for an ElevatedButton. Most values get the glossy
@@ -142,35 +136,6 @@ function spinnerColorFor(variant: ElevatedVariant, disabled: boolean, colors: Re
   return colors[ELEVATED_FOREGROUND_TOKEN[variant]];
 }
 
-// AlignUI sizing: the 40px chip rounds to 10px and pads 14px (`medium`:
-// `h-10 gap-3 rounded-10 px-3.5`), the 32px chip rounds to 8px and pads 10px
-// (`xsmall`: `h-8 gap-3 rounded-lg px-2.5`). The repo-only `lg` extrapolates
-// that scale to 12px/16px. Every size keeps AlignUI's `gap-3` (12px); icons are
-// pulled back in by `-mx-1` inside buildButtonContent. Spelled per shape so no
-// two classes ever compete for the same cn group.
-const CONTAINER: Record<ButtonShape, Record<ButtonSize, string>> = {
-  rounded: {
-    sm: 'h-8 gap-3 rounded-lg px-2.5',
-    md: 'h-10 gap-3 rounded-[10px] px-3.5',
-    lg: 'h-12 gap-3 rounded-xl px-4',
-    icon: 'h-8 w-8 rounded-lg',
-  },
-  pill: {
-    sm: 'h-8 gap-3 rounded-full px-2.5',
-    md: 'h-10 gap-3 rounded-full px-3.5',
-    lg: 'h-12 gap-3 rounded-full px-4',
-    icon: 'h-8 w-8 rounded-full',
-  },
-};
-
-// Pixel radii mirroring CONTAINER's rounded-* classes — the SVG rim and the
-// wrapper's shadow ring must follow the same curve as the Pressable.
-const SIZE_HEIGHT: Record<ButtonSize, number> = { sm: 32, md: 40, lg: 48, icon: 32 };
-const ROUNDED_RADIUS: Record<ButtonSize, number> = { sm: 8, md: 10, lg: 12, icon: 8 };
-function cornerRadius(shape: ButtonShape, size: ButtonSize): number {
-  return shape === 'pill' ? SIZE_HEIGHT[size] / 2 : ROUNDED_RADIUS[size];
-}
-
 const RGB_RE = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/;
 
 /** Parse an `rgb()`/`rgba()` string to a [r,g,b] triple (0 on failure). */
@@ -249,18 +214,20 @@ function resolveAppearance({ variant, size, shape, hovered, isDisabled, colors }
     } else boxShadow = elevatedShadow(variant, colors[ELEVATED_FILL_TOKEN[variant]], colors.border);
   }
   return {
-    // Elevated chips carry their own AlignUI paddings/gaps/radii (CONTAINER) and
-    // keep the 14px `text-label-sm` label at every size rather than stepping down.
+    // The box is the family's ({@link BUTTON_BOX}) so an elevated chip and a flat
+    // button at the same size occupy the same rectangle. The label is not: AlignUI
+    // pins its chips to the 14px `text-label-sm` at every size rather than
+    // stepping the type down with the box, so this is the family's one type opt-out.
     containerClass: cn(
       'flex-row items-center justify-center',
-      CONTAINER[shape][size],
+      BUTTON_BOX[shape][size],
       backgroundClass(variant, hovered, isDisabled),
     ),
     labelClass: cn('text-sm font-medium', labelColorClass(variant, hovered, isDisabled)),
     spinnerColor: spinnerColorFor(variant, isDisabled, colors),
     // gray and white are flat plates — neither gets the SVG gloss/rim overlays.
     showHighlights: variant !== 'white' && variant !== 'gray' && !isDisabled,
-    radius: cornerRadius(shape, size),
+    radius: buttonRadius(shape, size),
     boxShadow,
     wrapperBackground,
   };
@@ -387,7 +354,6 @@ export function ElevatedButton({
     loading,
     reduce,
     labelClass: appearance.labelClass,
-    spacious: true,
     children,
     leftAdornment,
     rightAdornment,

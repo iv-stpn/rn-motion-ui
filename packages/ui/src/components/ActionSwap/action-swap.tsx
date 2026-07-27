@@ -1,18 +1,23 @@
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: the three swap animations, the two slot primitives and the button that composes them read best in one file */
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { usePageVisible } from '../../hooks/use-page-visible';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '../../lib/ease';
 import { MotiText } from '../../moti/components/text';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { BUTTON_BOX, BUTTON_GAP, type ButtonShape, type ButtonSize, LABEL_TEXT_CLASS } from '../Button/button-scale';
 import { Text } from '../Text/text';
 
 export type ActionSwapItem = { id: string; label: ReactNode; icon?: ReactNode; ariaLabel?: string };
 
 export type ActionSwapButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
-export type ActionSwapButtonSize = 'sm' | 'md' | 'lg' | 'icon';
+/** Aliases of the button family's own axes — an ActionSwapButton is a button. */
+export type ActionSwapButtonSize = ButtonSize;
+export type ActionSwapButtonShape = ButtonShape;
 // biome-ignore lint/style/useExportsLast: CoreAnimation narrows this type and must stay immediately below it for readability
 export type ActionSwapAnimation = 'blur' | 'roll' | 'cascade';
 
@@ -40,7 +45,11 @@ const CASCADE_EXIT_DURATION = 160; // ms (web original: 0.16 s)
 // Fallback roll distance before the slot has been measured (px).
 const ROLL_FALLBACK = 18;
 
-const container = cva('flex-row items-center justify-center overflow-hidden font-medium', {
+// Colour is the only axis here: the box (height, padding, radius) is the button
+// family's, resolved through {@link BUTTON_BOX}, so an ActionSwapButton drops
+// into a row of Buttons at the same `size` without a seam. `overflow-hidden`
+// clips the swap — a letter rolling in from below must not escape the box.
+const container = cva('flex-row items-center justify-center overflow-hidden', {
   variants: {
     variant: {
       primary: 'bg-primary',
@@ -48,17 +57,13 @@ const container = cva('flex-row items-center justify-center overflow-hidden font
       outline: 'border border-border bg-transparent',
       ghost: 'bg-transparent',
     },
-    size: {
-      sm: 'h-8 gap-1.5 rounded-full px-3',
-      md: 'h-10 gap-2 rounded-full px-4',
-      lg: 'h-12 gap-2.5 rounded-full px-5',
-      icon: 'h-10 w-10 rounded-full',
-    },
   },
-  defaultVariants: { variant: 'secondary', size: 'md' },
+  defaultVariants: { variant: 'secondary' },
 });
 
-const labelClass = cva('font-medium', {
+// Label colour per variant; the weight and size come from the family's ramp so a
+// swapping label is the same text a flat Button paints at that size.
+const labelClass = cva('', {
   variants: {
     variant: {
       primary: 'text-primary-foreground',
@@ -66,7 +71,7 @@ const labelClass = cva('font-medium', {
       outline: 'text-foreground',
       ghost: 'text-muted-foreground',
     },
-    size: { sm: 'text-xs', md: 'text-sm', lg: 'text-base', icon: 'text-sm' },
+    size: LABEL_TEXT_CLASS,
   },
   defaultVariants: { variant: 'secondary', size: 'md' },
 });
@@ -97,6 +102,13 @@ export interface ActionSwapButtonProps extends VariantProps<typeof container> {
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string, item: ActionSwapItem) => void;
+  size?: ButtonSize;
+  /**
+   * Corner treatment. Defaults to `pill` — a swapping label reads as a capsule,
+   * and that's what this component has always been. Pass `rounded` to take the
+   * family's radius ramp instead and match a neighbouring Button exactly.
+   */
+  shape?: ButtonShape;
   animation?: ActionSwapAnimation;
   iconOnly?: boolean;
   /** Advance to the next item on press. Default true. */
@@ -263,6 +275,7 @@ export function ActionSwapButton({
   onValueChange,
   variant = 'secondary',
   size = 'md',
+  shape = 'pill',
   animation = 'blur',
   iconOnly = size === 'icon',
   cycle = true,
@@ -310,8 +323,11 @@ export function ActionSwapButton({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={handlePress}
-        className={container({ variant, size })}
-        style={{ opacity: disabled ? 0.5 : 1 }}
+        className={cn(container({ variant }), BUTTON_BOX[shape][size])}
+        // The gap is inline, not a class: unlike the rest of the family (whose
+        // content sits in one flex row inside the Pressable) the icon and label
+        // slots are direct children here, so this gap is the live one.
+        style={{ opacity: disabled ? 0.5 : 1, gap: BUTTON_GAP }}
       >
         {hasIcon ? (
           <ActionSwapIcon value={activeItem.id} animation={animation} size={16}>

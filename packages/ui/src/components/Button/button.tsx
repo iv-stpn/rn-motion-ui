@@ -6,8 +6,9 @@ import { MotiView } from '../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../theme/motion';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { type BaseButtonProps, ButtonRipples, buildButtonContent, usePressRipples } from './button-internals';
+import { BUTTON_BOX, type ButtonShape, type ButtonSize, LABEL_TEXT_CLASS } from './button-scale';
 
-export type { ButtonShape, ButtonSize } from './button-internals';
+export type { ButtonShape, ButtonSize } from './button-scale';
 
 // biome-ignore lint/style/useExportsLast: ButtonVariant is a public type declared beside the cva tables it enumerates; hoisting it to the file end would separate it from the container/label variants it must stay in sync with
 export type ButtonVariant =
@@ -25,6 +26,10 @@ export type ButtonVariant =
 // cva drives the STATIC styling layer (per the conversion spec). Animated/tap
 // scale stays inline on the MotiView. Class strings are static literals so the
 // Tailwind/uniwind scanner picks them up.
+//
+// Colour is the only axis here: the box (height, padding, radius) is the family's,
+// resolved through {@link BUTTON_BOX} so a flat `md` occupies exactly the same
+// rectangle as an elevated chip, a glossy key or an ActionSwap at `md`.
 const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
@@ -43,22 +48,12 @@ const container = cva('flex-row items-center justify-center', {
       ghostDanger: 'bg-transparent',
       ghostPrimary: 'bg-transparent',
     },
-    size: {
-      sm: 'h-8 px-3 gap-1.5',
-      md: 'h-10 px-5 gap-2',
-      lg: 'h-12 px-6 gap-2',
-      icon: 'h-8 w-8',
-    },
-    shape: {
-      rounded: 'rounded-xl',
-      pill: 'rounded-full',
-    },
   },
-  defaultVariants: { variant: 'primary', size: 'md', shape: 'rounded' },
+  defaultVariants: { variant: 'primary' },
 });
 
 // biome-ignore lint/style/useComponentExportOnlyModules: label cva is a styling utility consumed by StatefulButton in the same component family; splitting to a separate file would fragment tightly-coupled button styles
-export const label = cva('font-medium', {
+export const label = cva('', {
   variants: {
     variant: {
       primary: 'text-primary-foreground',
@@ -74,7 +69,9 @@ export const label = cva('font-medium', {
       ghostDanger: 'text-danger',
       ghostPrimary: 'text-primary',
     },
-    size: { sm: 'text-xs', md: 'text-sm', lg: 'text-base', icon: 'text-sm' },
+    // Weight + size come from the family ramp, shared with GlossyButton, so only
+    // the colour above is Button's own.
+    size: LABEL_TEXT_CLASS,
   },
   defaultVariants: { variant: 'primary', size: 'md' },
 });
@@ -105,7 +102,10 @@ function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof use
   }
 }
 
-export interface ButtonProps extends VariantProps<typeof container>, BaseButtonProps {}
+export interface ButtonProps extends VariantProps<typeof container>, BaseButtonProps {
+  size?: ButtonSize;
+  shape?: ButtonShape;
+}
 
 export function Button({
   variant = 'primary',
@@ -146,7 +146,6 @@ export function Button({
     loading,
     reduce,
     labelClass: label({ variant: v, size }),
-    spacious: false,
     children,
     leftAdornment,
     rightAdornment,
@@ -172,7 +171,7 @@ export function Button({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={onPress}
-        className={container({ variant, size, shape })}
+        className={cn(container({ variant }), BUTTON_BOX[shape][size])}
         style={[{ opacity: isDisabled && !noDisabledOpacity ? 0.5 : 1, overflow: 'hidden' }, contentStyle]}
       >
         {/* State backdrop — animates in/out by opacity so the variant background

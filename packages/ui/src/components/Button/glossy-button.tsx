@@ -9,14 +9,8 @@ import { compositeOver, cssColorToOklch, oklchToSrgb } from '../../lib/color';
 import { MotiView } from '../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE, TIMING_FAST, TIMING_INSTANT } from '../../theme/motion';
 import { type ThemeToken, useThemeColors } from '../../theme/use-theme-color';
-import {
-  type BaseButtonProps,
-  ButtonRipples,
-  type ButtonShape,
-  type ButtonSize,
-  buildButtonContent,
-  usePressRipples,
-} from './button-internals';
+import { type BaseButtonProps, ButtonRipples, buildButtonContent, usePressRipples } from './button-internals';
+import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadius, LABEL_TEXT_CLASS } from './button-scale';
 
 /**
  * Physically-lit key: a face stacked with absolutely-positioned effect layers
@@ -472,46 +466,6 @@ function glossyRecipe(kind: FaceKind, base: string, pageDark: boolean): GlossySl
   return derivedRecipe(base, pageDark);
 }
 
-// ── layout ──────────────────────────────────────────────────────────────────
-
-// Web sizing: `sm` is `h-8 px-2.5 text-sm`, `md` `h-9 px-5 text-[17px]`, `lg`
-// `h-11 px-6 text-[17px]`, all on a fixed `rounded-xl`. The family-only `icon`
-// squares the md height. Spelled per shape so no two classes ever compete for
-// the same cn group.
-const CONTAINER: Record<ButtonShape, Record<ButtonSize, string>> = {
-  rounded: {
-    sm: 'h-8 rounded-xl px-2.5',
-    md: 'h-9 rounded-xl px-5',
-    lg: 'h-11 rounded-xl px-6',
-    icon: 'h-9 w-9 rounded-xl',
-  },
-  pill: {
-    sm: 'h-8 rounded-full px-2.5',
-    md: 'h-9 rounded-full px-5',
-    lg: 'h-11 rounded-full px-6',
-    icon: 'h-9 w-9 rounded-full',
-  },
-};
-
-// Pixel radii mirroring CONTAINER's rounded-* classes — every effect layer has
-// to follow the same curve as the Pressable.
-const SIZE_HEIGHT: Record<ButtonSize, number> = { sm: 32, md: 36, lg: 44, icon: 36 };
-const ROUNDED_XL_RADIUS = 12;
-function cornerRadius(shape: ButtonShape, size: ButtonSize): number {
-  return shape === 'pill' ? SIZE_HEIGHT[size] / 2 : ROUNDED_XL_RADIUS;
-}
-
-// Web keeps the 17px label at md and lg; only sm steps down to text-sm. The
-// colour doesn't come from a class — it's per-face, so it arrives as an inline
-// style on the label instead.
-function labelClass(size: ButtonSize): string {
-  return cn('font-normal', size === 'sm' ? 'text-sm' : 'text-[17px]');
-}
-
-// The web wraps its label in `<span className="px-0.5">` — 2px of breathing room
-// inside the padding, so a descender or an italic never touches the rim.
-const LABEL_INSET = 2;
-
 // ── interaction ─────────────────────────────────────────────────────────────
 
 type InteractionState = { flatten: boolean; hoverCapable: boolean; pressed: boolean; hovered: boolean };
@@ -760,7 +714,7 @@ export function GlossyButton({
   // SVG gradient ids must be unique per instance (they land in one shared
   // document on web). useId can emit ':', illegal in url(#…), so strip it.
   const gradientId = useId().replace(/:/g, '');
-  const radius = cornerRadius(shape, size);
+  const radius = buttonRadius(shape, size);
 
   const { pressed, ripples, onLayout, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -779,9 +733,11 @@ export function GlossyButton({
   const buttonContent = buildButtonContent({
     loading,
     reduce,
-    labelClass: labelClass(size),
+    // Family label ramp — the same text a flat Button paints at this size. Only
+    // the colour is the key's own, and it arrives inline (below) because it's
+    // derived per-face and has no `text-*` utility to name.
+    labelClass: LABEL_TEXT_CLASS[size],
     labelColor: content,
-    spacious: false,
     children,
     leftAdornment,
     rightAdornment,
@@ -820,7 +776,7 @@ export function GlossyButton({
         onPress={onPress}
         onHoverIn={handleHoverIn}
         onHoverOut={handleHoverOut}
-        className={cn('flex-row items-center justify-center', CONTAINER[shape][size])}
+        className={cn('flex-row items-center justify-center', BUTTON_BOX[shape][size])}
         style={[{ overflow: 'hidden', backgroundColor: face.paint }, contentStyle]}
       >
         <GlossyLayers
@@ -833,8 +789,10 @@ export function GlossyButton({
           tint={tintOpacity(interaction)}
           backdropColor={backdropColor}
         />
-        {/* Label above every lit slot — the web's `z-10` span, with its px-0.5. */}
-        <View style={{ zIndex: FX_Z.label, paddingHorizontal: LABEL_INSET }}>{buttonContent}</View>
+        {/* Label above every lit slot — the web's `z-10` span. (The web adds a
+            `px-0.5` inset here; dropped so the label sits at exactly the family's
+            padding and a glossy key can be swapped for a flat Button in place.) */}
+        <View style={{ zIndex: FX_Z.label }}>{buttonContent}</View>
         {ripple && !reduce ? (
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: FX_Z.ripples }]}>
             {/* White shimmer over a dark face, dark shimmer over a light one. */}

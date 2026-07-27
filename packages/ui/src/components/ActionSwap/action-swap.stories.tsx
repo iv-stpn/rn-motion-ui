@@ -8,6 +8,7 @@ import { useThemeColor } from '../../theme/use-theme-color';
 import {
   type ActionSwapAnimation,
   ActionSwapButton,
+  type ActionSwapButtonShape,
   type ActionSwapButtonSize,
   type ActionSwapButtonVariant,
   type ActionSwapItem,
@@ -32,6 +33,7 @@ const THEME_ITEMS: ActionSwapItem[] = [
 const ANIMATIONS = ['blur', 'roll', 'cascade'] as const satisfies readonly ActionSwapAnimation[];
 const VARIANTS = ['primary', 'secondary', 'outline', 'ghost'] as const satisfies readonly ActionSwapButtonVariant[];
 const SIZES = ['sm', 'md', 'lg', 'icon'] as const satisfies readonly ActionSwapButtonSize[];
+const SHAPES = ['pill', 'rounded'] as const satisfies readonly ActionSwapButtonShape[];
 
 /** Item sets whose icons are tinted for whatever the button fills itself with. */
 function useItems(kind: 'send' | 'copy', variant: ActionSwapButtonVariant): ActionSwapItem[] {
@@ -52,15 +54,16 @@ type SwapProps = {
   animation: ActionSwapAnimation;
   variant: ActionSwapButtonVariant;
   size?: ActionSwapButtonSize;
+  shape?: ActionSwapButtonShape;
   kind?: 'send' | 'copy';
   iconOnly?: boolean;
 };
 
 // Resolves its own tinted items, so the sample rows can vary variant freely.
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Swap({ animation, variant, size = 'md', kind = 'copy', iconOnly }: SwapProps) {
+function Swap({ animation, variant, size = 'md', shape, kind = 'copy', iconOnly }: SwapProps) {
   const items = useItems(kind, variant);
-  return <ActionSwapButton animation={animation} iconOnly={iconOnly} items={items} size={size} variant={variant} />;
+  return <ActionSwapButton animation={animation} iconOnly={iconOnly} items={items} shape={shape} size={size} variant={variant} />;
 }
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
@@ -68,6 +71,7 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
   const [animation, setAnimation] = useState<ActionSwapAnimation>('blur');
   const [variant, setVariant] = useState<ActionSwapButtonVariant>('secondary');
   const [size, setSize] = useState<ActionSwapButtonSize>('md');
+  const [shape, setShape] = useState<ActionSwapButtonShape>('pill');
   const [iconOnly, setIconOnly] = useState(false);
   const [cycle, setCycle] = useState(true);
   const [disabled, setDisabled] = useState(false);
@@ -80,6 +84,7 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
         <Choice label="Animation" onChange={setAnimation} options={ANIMATIONS} value={animation} />
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+        <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
         <Toggle label="Icon only" onChange={setIconOnly} value={iconOnly} />
         <Toggle label="Cycle" onChange={setCycle} value={cycle} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
@@ -96,6 +101,7 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
           iconOnly={iconOnly}
           items={items}
           onValueChange={setValue}
+          shape={shape}
           size={size}
           value={value}
           variant={variant}
@@ -137,6 +143,19 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
           {SIZES.map((option) => (
             <Sample align="center" key={option} label={option}>
               <Swap animation={animation} iconOnly={option === 'icon'} size={option} variant="outline" />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      {/* The same shape axis the rest of the button family carries. `pill` is the
+          default here; `rounded` takes the family's radius ramp, so a swapping
+          button can sit in a row of Buttons with the same corner. */}
+      <Section title="Shapes">
+        <Variants align="center" gap={16}>
+          {SHAPES.map((option) => (
+            <Sample align="center" key={option} label={option}>
+              <Swap animation={animation} shape={option} variant="secondary" />
             </Sample>
           ))}
         </Variants>

@@ -15,7 +15,9 @@ import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
+import { BUTTON_METRICS } from './button-scale';
 import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './elevated-button';
+import { GlossyButton, type GlossyVariant, glossyContentColor } from './glossy-button';
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -53,14 +55,16 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
   stateIconSize?: number;
   /** Stroke width of the success / error state icons. Default: 2.5. */
   stateIconStrokeWidth?: number;
-  /** Render the glossy elevated chip (top-down sheen + 1px rim + coloured drop
-   *  shadow) instead of the flat button. The chip keeps its gloss/shadow through the
-   *  whole machine rather than greying out, and each machine state adopts the
-   *  matching elevated variant: idle/loading use `variant`'s palette (the danger
-   *  family → `danger`, everything else → the monochrome `neutral` fill), success
-   *  switches to the glossy `success` chip and error to the glossy `danger` chip —
-   *  full fill, gloss, rim and coloured drop-shadow, not a flat overlay. Default: false. */
-  elevated?: boolean;
+  /** Render a chip-style key instead of the flat button.
+   *
+   * - `'elevated'` — ElevatedButton: top-down sheen, 1px rim, coloured drop-shadow.
+   * - `'glossy'`   — GlossyButton: domed SVG gradient, inset bevel, derived OKLCH cast.
+   *
+   * Either chip keeps its full appearance through the machine (loading/success/error)
+   * rather than greying out, and each state adopts the matching variant — success →
+   * `success`, error → `danger` — so the fill, gloss, rim and shadow update in full
+   * rather than overlaying a flat plate. Omit (default) for the flat button. */
+  chip?: 'elevated' | 'glossy';
   style?: StyleProp<ViewStyle>;
 }
 
@@ -75,6 +79,11 @@ const TEXT_BUFFER = 2;
 // this far past the right edge so the trailing glyph is never shaved (it spills
 // harmlessly into the button's own padding) while the vertical roll stays masked.
 const CLIP_SLACK = 64;
+// success/error pull this much off the size's shared horizontal padding
+// ({@link BUTTON_METRICS}) to pay for the width the state icon slot adds. Taken
+// off the family token rather than tabulated per size, so retuning a button's
+// padding keeps the squeeze proportional; `icon` has no padding to give back.
+const STATE_PAD_SQUEEZE = 4;
 
 // Matches Button's buildSpinnerColor: returns the icon stroke colour for each
 // variant so the icon reads correctly against every button background.
@@ -96,11 +105,23 @@ function elevatedPaletteFor(v: ButtonVariant): ElevatedVariant {
   return 'neutral';
 }
 
+// Flat variant → glossy palette for the idle/loading key. Same family
+// collapse as the elevated palette: danger family → `danger`, special/inverse
+// carry over, everything else → the translucent `neutral` glass key.
+function glossyPaletteFor(v: ButtonVariant): GlossyVariant {
+  if (v === 'danger' || v === 'outlineDanger' || v === 'ghostDanger') return 'danger';
+  if (v === 'special' || v === 'inverse') return v;
+  return 'neutral';
+}
+
 type WrapperResolved = {
-  /** Elevated palette to render, or null to render the flat Button. */
+  /** Elevated palette to render, or null when not in elevated mode. */
   elevatedVariant: ElevatedVariant | null;
+  /** Glossy palette to render, or null when not in glossy mode. */
+  glossyVariant: GlossyVariant | null;
   /** Idle icon/label colour — elevated fills follow their foreground (grey once
-   *  flattened); the flat Button follows its per-variant label colour. */
+   *  flattened); glossy dims whole-key via opacity so the rest-state content
+   *  colour stays constant; the flat Button follows its per-variant label colour. */
   idleIconColor: string;
   /** Keep the chip's full appearance while the machine holds it disabled
    *  (loading/success/error) instead of dimming/flattening. */
@@ -108,38 +129,60 @@ type WrapperResolved = {
 };
 
 type WrapperArgs = {
-  elevated: boolean;
+  chip: 'elevated' | 'glossy' | undefined;
   v: ButtonVariant;
   state: ButtonState;
   disabled: boolean | undefined;
   colors: ReturnType<typeof useThemeColors>;
 };
 
-// Folds the `elevated` flag + flat variant + machine state into what the wrapper
+// Folds the `chip` mode + flat variant + machine state into what the wrapper
 // needs. Extracted so the component body stays under the complexity budget.
-function resolveWrapper({ elevated, v, state, disabled, colors }: WrapperArgs): WrapperResolved {
-  if (!elevated)
+function resolveWrapper({ chip, v, state, disabled, colors }: WrapperArgs): WrapperResolved {
+  if (chip === 'glossy') {
+    // Each machine state adopts its own glossy variant: success → `success`,
+    // error → `danger` (full fill, dome, rim and coloured cast — not a flat
+    // overlay). idle/loading map the flat variant onto the glossy palette.
+    const baseVariant: GlossyVariant = glossyPaletteFor(v);
+    let gVariant: GlossyVariant = baseVariant;
+    if (state === 'success') gVariant = 'success';
+    else if (state === 'error') gVariant = 'danger';
+    // GlossyButton dims whole-key (opacity 0.5) for a genuinely disabled idle
+    // key; it does not recolour the label. The rest-state content colour is
+    // therefore always the right choice — the dim is the key's own job.
     return {
       elevatedVariant: null,
-      idleIconColor: variantIconColor(v, colors),
-      keepAppearance: state === 'success' || state === 'error',
+      glossyVariant: gVariant,
+      idleIconColor: glossyContentColor(baseVariant, colors),
+      keepAppearance: state !== 'idle',
     };
+  }
 
-  // Each machine state adopts its own elevated variant so success/error get the
-  // real glossy chip (green/red fill, gloss, 1px rim and coloured drop-shadow
-  // ring) rather than a flat overlay on the neutral chip. idle/loading map the
-  // flat variant onto the palette (see elevatedPaletteFor).
-  const baseVariant: ElevatedVariant = elevatedPaletteFor(v);
-  let elevatedVariant: ElevatedVariant = baseVariant;
-  if (state === 'success') elevatedVariant = 'success';
-  else if (state === 'error') elevatedVariant = 'danger';
-  // Only a genuinely disabled idle chip flattens to the muted plate (label greys
-  // out too); the machine states keep the chip's full appearance.
-  const genuinelyDisabled = Boolean(disabled) && state === 'idle';
+  if (chip === 'elevated') {
+    // Each machine state adopts its own elevated variant so success/error get the
+    // real glossy chip (green/red fill, gloss, 1px rim and coloured drop-shadow
+    // ring) rather than a flat overlay on the neutral chip. idle/loading map the
+    // flat variant onto the palette (see elevatedPaletteFor).
+    const baseVariant: ElevatedVariant = elevatedPaletteFor(v);
+    let elevatedVariant: ElevatedVariant = baseVariant;
+    if (state === 'success') elevatedVariant = 'success';
+    else if (state === 'error') elevatedVariant = 'danger';
+    // Only a genuinely disabled idle chip flattens to the muted plate (label greys
+    // out too); the machine states keep the chip's full appearance.
+    const genuinelyDisabled = Boolean(disabled) && state === 'idle';
+    return {
+      elevatedVariant,
+      glossyVariant: null,
+      idleIconColor: elevatedContentColor(elevatedVariant, genuinelyDisabled, colors),
+      keepAppearance: state !== 'idle',
+    };
+  }
+
   return {
-    elevatedVariant,
-    idleIconColor: elevatedContentColor(elevatedVariant, genuinelyDisabled, colors),
-    keepAppearance: state !== 'idle',
+    elevatedVariant: null,
+    glossyVariant: null,
+    idleIconColor: variantIconColor(v, colors),
+    keepAppearance: state === 'success' || state === 'error',
   };
 }
 
@@ -152,33 +195,38 @@ type StateColors = {
   textColor: string | undefined;
 };
 
+type StateColorsArgs = {
+  state: ButtonState;
+  idleIconColor: string;
+  elevatedVariant: ElevatedVariant | null;
+  glossyVariant: GlossyVariant | null;
+  colors: ReturnType<typeof useThemeColors>;
+};
+
 // Folds the machine state into the backdrop / icon / label colours. success and
 // error use their `*-foreground` partner as text/icon colour; idle/loading carry
-// no backdrop and follow the idle colour (elevated only — the flat Button leaves
-// the label undefined so `labelStyle` applies). Elevated mode paints no backdrop:
-// the chip switches to its `success`/`danger` variant, whose fill (and matching
+// no backdrop and follow the idle colour (chip only — the flat Button leaves
+// the label undefined so `labelStyle` applies). Both chip modes paint no backdrop:
+// each switches to its `success`/`danger` variant, whose fill (and matching
 // gloss/rim/shadow ring) supplies the colour. The flat Button keeps the overlay,
 // since it has no variant to switch and crossfades the plate instead.
-function resolveStateColors(
-  state: ButtonState,
-  idleIconColor: string,
-  elevatedVariant: ElevatedVariant | null,
-  colors: ReturnType<typeof useThemeColors>,
-): StateColors {
-  const elevated = elevatedVariant !== null;
+function resolveStateColors({ state, idleIconColor, elevatedVariant, glossyVariant, colors }: StateColorsArgs): StateColors {
+  // Neither chip renders a backdrop — the chip switches variant and its fill
+  // supplies the colour. Only the flat Button crossfades a coloured plate.
+  const isChip = elevatedVariant !== null || glossyVariant !== null;
   if (state === 'success')
     return {
-      backdropColor: elevated ? undefined : colors.success,
+      backdropColor: isChip ? undefined : colors.success,
       iconColor: colors['success-foreground'],
       textColor: colors['success-foreground'],
     };
   if (state === 'error')
     return {
-      backdropColor: elevated ? undefined : colors.danger,
+      backdropColor: isChip ? undefined : colors.danger,
       iconColor: colors['danger-foreground'],
       textColor: colors['danger-foreground'],
     };
-  return { backdropColor: undefined, iconColor: idleIconColor, textColor: elevated ? idleIconColor : undefined };
+  return { backdropColor: undefined, iconColor: idleIconColor, textColor: isChip ? idleIconColor : undefined };
 }
 
 // ---------------------------------------------------------------------------
@@ -376,7 +424,7 @@ export function StatefulButton({
   icon,
   stateIconSize = 20,
   stateIconStrokeWidth = 2.5,
-  elevated = false,
+  chip,
   disabled,
   variant = 'primary',
   size = 'md',
@@ -461,27 +509,35 @@ export function StatefulButton({
   const v = variant ?? 'primary';
   const colors = useThemeColors();
 
-  // Elevated mode swaps the flat Button for the glossy ElevatedButton chip. The
-  // machine disables the button during loading/success/error, so the chip is told
-  // (via keepAppearance → noDisabledOpacity) to keep its gloss/fill instead of
-  // greying out — only a genuinely disabled idle button flattens to the muted plate.
-  const { elevatedVariant, idleIconColor, keepAppearance } = resolveWrapper({ elevated, v, state, disabled, colors });
+  // Chip mode swaps the flat Button for an elevated or glossy key. The machine
+  // disables the button during loading/success/error, so the chip is told (via
+  // keepAppearance → noDisabledOpacity) to keep its gloss/fill instead of
+  // greying out — only a genuinely disabled idle button flattens.
+  const { elevatedVariant, glossyVariant, idleIconColor, keepAppearance } = resolveWrapper({
+    chip,
+    v,
+    state,
+    disabled,
+    colors,
+  });
 
   // Backdrop / icon / label colours for the current state (see resolveStateColors).
   const {
     backdropColor,
     iconColor,
     textColor: resolvedTextColor,
-  } = resolveStateColors(state, idleIconColor, elevatedVariant, colors);
+  } = resolveStateColors({ state, idleIconColor, elevatedVariant, glossyVariant, colors });
   // Slot wide enough to contain the icon with 6 px margin on each side, which
   // also acts as the gap between icon and label without needing an explicit gap
   // on the outer row (an explicit gap would show during the slot's width spring).
   const stateIconSlotWidth = stateIconSize + 12;
   // In success/error the button shrinks its horizontal padding slightly to
-  // compensate for the extra width the icon slot adds.
+  // compensate for the extra width the icon slot adds. Derived from the family's
+  // padding rather than tabulated, so retuning a `--spacing-button-pad-*` token
+  // keeps the squeeze proportional (and `icon`, which has no padding, stays 0).
   const contentStyle =
     state === 'success' || state === 'error'
-      ? { paddingHorizontal: ({ sm: 8, md: 14, lg: 16, icon: 0 } as const)[size ?? 'md'] }
+      ? { paddingHorizontal: Math.max(0, BUTTON_METRICS[size ?? 'md'].padX - STATE_PAD_SQUEEZE) }
       : undefined;
 
   const stateText =
@@ -576,6 +632,13 @@ export function StatefulButton({
       <ElevatedButton variant={elevatedVariant} {...sharedProps}>
         {content}
       </ElevatedButton>
+    );
+
+  if (glossyVariant)
+    return (
+      <GlossyButton variant={glossyVariant} {...sharedProps}>
+        {content}
+      </GlossyButton>
     );
 
   return (

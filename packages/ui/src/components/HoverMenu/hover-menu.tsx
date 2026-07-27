@@ -20,13 +20,29 @@ const OPENING_GUARD_MS = 1000;
 
 type Rect = { x: number; y: number; w: number; h: number };
 type PanelSize = { w: number; h: number };
-type TriggerRenderProps = { open: boolean };
+type TriggerRenderProps = { open: boolean; toggle: () => void };
 type MenuContentRenderProps = { close: () => void };
 
 // biome-ignore lint/style/useExportsLast: type collocated with the render-prop types above; the component export follows at the end of the file
 export type HoverMenuProps = {
-  /** The element that opens the menu. On web it opens on hover; on every platform it toggles on press. */
+  /**
+   * The element that opens the menu. On web it opens on hover; on every platform
+   * it toggles on press. A plain node is wrapped in a Pressable that toggles it.
+   * Pass a function to receive `{ open, toggle }` — use this when the trigger is
+   * itself pressable (e.g. a `Button`): wire its `onPress` to `toggle`, since the
+   * inner pressable claims the press and the wrapper's own toggle never fires.
+   * Hover still reaches the wrapper either way, so web hover-open is unaffected.
+   */
   trigger: ReactNode | ((props: TriggerRenderProps) => ReactNode);
+  /**
+   * Set when the trigger is pressable in its own right (a `Button`, a
+   * `Pressable`). The wrapper then drops its own button semantics — role and
+   * `aria-expanded` — so the two don't nest, which is invalid DOM on web and a
+   * doubled-up accessibility node on native. Hover still lives on the wrapper,
+   * so web hover-open is unaffected; wire the trigger's `onPress` to the
+   * render prop's `toggle` to keep press working. @default false
+   */
+  triggerIsPressable?: boolean;
   /** Content rendered inside the floating panel. As a render prop receives `{ close }`. */
   children: ReactNode | ((props: MenuContentRenderProps) => ReactNode);
   /** Controls visibility from outside. If omitted, the menu manages its own open state. */
@@ -148,6 +164,7 @@ const handlePanelPress = () => undefined;
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: positioning, hover timers, and dual-platform render are collocated around shared refs/state
 export function HoverMenu({
   trigger,
+  triggerIsPressable = false,
   children,
   open: openProp,
   onOpenChange,
@@ -350,8 +367,22 @@ export function HoverMenu({
     reduce,
   });
 
-  const resolvedTrigger = typeof trigger === 'function' ? trigger({ open }) : trigger;
+  const resolvedTrigger = typeof trigger === 'function' ? trigger({ open, toggle }) : trigger;
   const resolvedContent = typeof children === 'function' ? children({ close }) : children;
+
+  // The wrapper only claims button semantics when it is the thing being pressed.
+  // A trigger that is pressable in its own right already carries the role, the
+  // label, the expanded state and the tab stop, so the wrapper steps back to a
+  // plain hover/measure box — otherwise web gets a <button> inside a <button>
+  // and keyboard users get two tab stops for one control.
+  const wrapperSemantics = triggerIsPressable
+    ? ({ tabIndex: -1 } as const)
+    : ({
+        accessibilityRole: 'button',
+        accessibilityLabel: triggerAccessibilityLabel,
+        'aria-expanded': open,
+        onPress: toggle,
+      } as const);
 
   const panel =
     open && rect ? (
@@ -381,13 +412,13 @@ export function HoverMenu({
 
   return (
     <>
+      {/* Stays a Pressable even when the trigger owns the press: hover lives here so
+          web hover-open keeps working, and this is the box we measure to position the
+          panel. What it gives up is its interactive identity — see wrapperSemantics. */}
       <Pressable
         ref={triggerRef}
         collapsable={false}
-        accessibilityRole="button"
-        accessibilityLabel={triggerAccessibilityLabel}
-        aria-expanded={open}
-        onPress={toggle}
+        {...wrapperSemantics}
         onHoverIn={canHover ? handleHoverIn : undefined}
         onHoverOut={canHover ? handleHoverOut : undefined}
         testID={testID}

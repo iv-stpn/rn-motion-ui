@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
 import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
+import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
 import { Bell, Copy, Pencil, Share, Trash2 } from '../../lib/icons';
 import { Text } from '../Text/text';
 import { HoverMenu, type HoverMenuProps } from './hover-menu';
@@ -22,7 +23,12 @@ type Story = StoryObj<typeof meta>;
 
 const TRIGGER_CLOSED = 'Open menu';
 const TRIGGER_OPEN = 'Close menu';
+const PLAIN_TRIGGER_LABEL = 'Open menu (plain node)';
 const HINT = 'Hover the trigger on web, tap it on native. The Open switch drives and mirrors the menu state.';
+// The counterpart to the plain-node section below: a trigger that is pressable in
+// its own right swallows the press, so the wrapper's toggle never runs.
+const TRIGGER_NOTE =
+  "A pressable trigger claims the press, so the wrapper's toggle never fires — take `toggle` from the render prop and wire it to onPress. Pair it with `triggerIsPressable` so the wrapper drops its own button role and tab stop instead of nesting one control inside another. Hover still reaches the wrapper either way, so web hover-open is unaffected.";
 
 type Align = NonNullable<HoverMenuProps['align']>;
 const ALIGNS = ['start', 'end'] as const satisfies readonly Align[];
@@ -53,11 +59,13 @@ const ITEMS: MenuItemDef[] = [
   { id: 'delete', label: 'Delete', icon: <Trash2 size={18} /> },
 ];
 
-type TriggerProps = { open: boolean };
+/** What HoverMenu hands a render-prop trigger. */
+type TriggerRenderProps = { open: boolean; toggle: () => void };
+type PlainTriggerProps = { open: boolean };
 type MenuContentProps = { close: () => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function Trigger({ open }: TriggerProps) {
+function PlainTrigger({ open }: PlainTriggerProps) {
   const containerClass = `flex-row items-center gap-2 rounded-full border px-4 py-2 ${open ? 'border-primary bg-primary' : 'border-border bg-surface-3'}`;
   const textClass = open ? 'font-medium text-primary-foreground text-sm' : 'font-medium text-foreground text-sm';
   const label = open ? TRIGGER_OPEN : TRIGGER_CLOSED;
@@ -84,7 +92,18 @@ function MenuContent({ close }: MenuContentProps) {
   );
 }
 
-const renderTrigger = (props: TriggerProps) => <Trigger open={props.open} />;
+type SwappableTriggerProps = TriggerRenderProps & { kind: TriggerKind };
+
+// The playground's trigger: still the `{ open, toggle }` render prop, but the body
+// is a `TriggerButton` so the Trigger chips can swap Button / ElevatedButton /
+// GlossyButton / bare Pressable under one menu. Each of those is pressable in its
+// own right, which is exactly why `onPress` has to be `toggle` — see TRIGGER_NOTE.
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function SwappableTrigger({ kind, open, toggle }: SwappableTriggerProps) {
+  return <TriggerButton buttonVariant="outline" kind={kind} label={open ? TRIGGER_OPEN : TRIGGER_CLOSED} onPress={toggle} />;
+}
+
+const renderPlainTrigger = (props: PlainTriggerProps) => <PlainTrigger open={props.open} />;
 const renderContent = (props: MenuContentProps) => <MenuContent close={props.close} />;
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
@@ -94,9 +113,14 @@ function HoverMenuPlayground() {
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('4');
   const [delayKey, setDelayKey] = useState<DelayKey>('100');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
+  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
   const [open, setOpen] = useState(false);
 
   const delay = Number(delayKey);
+  const renderTrigger = useCallback(
+    (props: TriggerRenderProps) => <SwappableTrigger kind={triggerKind} open={props.open} toggle={props.toggle} />,
+    [triggerKind],
+  );
 
   return (
     <Playground>
@@ -105,6 +129,7 @@ function HoverMenuPlayground() {
         <Choice label="Width" onChange={setWidthKey} options={WIDTH_KEYS} value={widthKey} />
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
         <Choice label="Hover delay" onChange={setDelayKey} options={DELAYS} value={delayKey} />
+        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
         <Toggle label="Open" onChange={setOpen} value={open} />
       </Controls>
 
@@ -126,16 +151,19 @@ function HoverMenuPlayground() {
           open={open}
           openDelay={delay}
           trigger={renderTrigger}
+          triggerIsPressable={true}
           width={WIDTHS[widthKey]}
         >
           {renderContent}
         </HoverMenu>
       </View>
 
+      <Note>{TRIGGER_NOTE}</Note>
+
       <View style={{ height: 12 }} />
-      <Section title="Uncontrolled — keeps its own open state">
+      <Section title="Plain node trigger — uncontrolled, and the wrapper owns the press">
         <View style={{ alignItems: 'flex-start' }}>
-          <HoverMenu trigger={renderTrigger} width="trigger">
+          <HoverMenu trigger={renderPlainTrigger} triggerAccessibilityLabel={PLAIN_TRIGGER_LABEL} width="trigger">
             {renderContent}
           </HoverMenu>
         </View>

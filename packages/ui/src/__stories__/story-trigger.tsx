@@ -4,8 +4,8 @@
  * Kept separate from story-harness.tsx because the harness is intentionally
  * built from bare `Pressable` — it must never answer a library-component query
  * so play-function selectors are unambiguous. TriggerButton uses Button /
- * ElevatedButton / Pressable on purpose: overlay stories need to showcase real
- * launch styles, not harness chrome.
+ * ElevatedButton / GlossyButton / Pressable on purpose: overlay stories need to
+ * showcase real launch styles, not harness chrome.
  *
  * Usage:
  *   import { TriggerButton, TRIGGER_KINDS, type TriggerKind } from '../../__stories__/story-trigger';
@@ -19,7 +19,7 @@
  *   <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
  *   <TriggerButton kind="elevated" label={OPEN_LABEL} onPress={handleOpen} />
  *
- * All three kinds expose `accessibilityRole="button"` under the same accessible
+ * Every kind exposes `accessibilityRole="button"` under the same accessible
  * name, so play functions need no changes:
  *   canvas.findByRole('button', { name: OPEN_LABEL })
  */
@@ -30,15 +30,17 @@ import type { ButtonVariant } from '../components/Button/button';
 import { Button } from '../components/Button/button';
 import type { ElevatedVariant } from '../components/Button/elevated-button';
 import { ElevatedButton } from '../components/Button/elevated-button';
+import type { GlossyVariant } from '../components/Button/glossy-button';
+import { GlossyButton } from '../components/Button/glossy-button';
 import { Text } from '../components/Text/text';
 import { useThemeColors } from '../theme/use-theme-color';
 
-/** The three trigger styles an overlay story can showcase. */
-export type TriggerKind = 'button' | 'elevated' | 'pressable';
+/** The trigger styles an overlay story can showcase. */
+export type TriggerKind = 'button' | 'elevated' | 'glossy' | 'pressable';
 
 /** Ordered list ready to pass directly to `<Choice options={TRIGGER_KINDS} />`. */
 // biome-ignore lint/style/useComponentExportOnlyModules: the chip list belongs with the component it drives
-export const TRIGGER_KINDS: readonly TriggerKind[] = ['button', 'elevated', 'pressable'] as const;
+export const TRIGGER_KINDS: readonly TriggerKind[] = ['button', 'elevated', 'glossy', 'pressable'] as const;
 
 export type TriggerButtonProps = {
   /** Which component to render. Defaults to `'button'`. */
@@ -56,6 +58,11 @@ export type TriggerButtonProps = {
    * Defaults to `'neutral'`.
    */
   elevatedVariant?: ElevatedVariant;
+  /**
+   * `kind === 'glossy'` only. Variant forwarded to `GlossyButton`.
+   * Defaults to `'neutral'` — the signature translucent glass key.
+   */
+  glossyVariant?: GlossyVariant;
   /**
    * `kind === 'pressable'` only. Tailwind/NativeWind classes applied to the
    * `Pressable` wrapper — useful for one-off layout or colour overrides.
@@ -75,6 +82,7 @@ export type TriggerButtonProps = {
  * |---------------|-------------------|--------------------------|
  * | `'button'`    | `Button`          | `buttonVariant`          |
  * | `'elevated'`  | `ElevatedButton`  | `elevatedVariant`        |
+ * | `'glossy'`    | `GlossyButton`    | `glossyVariant`          |
  * | `'pressable'` | bare `Pressable`  | `className`, `style`     |
  *
  * The per-kind props are all optional on one flat props type rather than a
@@ -88,6 +96,7 @@ export function TriggerButton({
   onPress,
   buttonVariant = 'primary',
   elevatedVariant = 'neutral',
+  glossyVariant = 'neutral',
   className,
   style,
 }: TriggerButtonProps) {
@@ -98,6 +107,13 @@ export function TriggerButton({
       <ElevatedButton onPress={onPress} variant={elevatedVariant} style={{ alignSelf: 'flex-start' }}>
         {label}
       </ElevatedButton>
+    );
+
+  if (kind === 'glossy')
+    return (
+      <GlossyButton onPress={onPress} variant={glossyVariant} style={{ alignSelf: 'flex-start' }}>
+        {label}
+      </GlossyButton>
     );
 
   if (kind === 'pressable')

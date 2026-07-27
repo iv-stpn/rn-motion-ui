@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
 import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
+import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
 import { Bell, ChevronDown, Moon, Settings, User } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
@@ -21,6 +22,7 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const MENU_LABEL = 'Menu';
+const CLOSE_MENU_LABEL = 'Close menu';
 const CLOSE_LABEL = 'Close';
 const CLEAR_LABEL = 'Clear';
 const PANEL_TITLE = 'Options';
@@ -30,6 +32,8 @@ const TRIGGER_SECTION = 'Plain node trigger — wrapped in a Pressable by the co
 const SMALL_SCREEN_NOTE =
   'Narrow viewports swap the floating panel for a bottom sheet, where "Full sheet" stretches it to the full height.';
 const UNCONTROLLED_NOTE = 'Uncontrolled — the dropdown owns its open state.';
+const TRIGGER_NOTE =
+  "Every kind here is pressable in its own right, so it claims the press and the component's wrapper toggle never fires — each takes `toggle` off the render prop and wires it to onPress. The label flips with `open`, the other half of what that render prop hands you.";
 
 const ALIGNS = ['start', 'end'] as const;
 type Align = (typeof ALIGNS)[number];
@@ -100,6 +104,16 @@ function PlaygroundTrigger({ open, toggle }: TriggerRenderProps) {
   );
 }
 
+type SwappableTriggerProps = TriggerRenderProps & { kind: TriggerKind };
+
+// The playground's trigger: the same `{ open, toggle }` render prop as above, but
+// the body is a `TriggerButton` so the Trigger chips can swap Button /
+// ElevatedButton / GlossyButton / bare Pressable under one dropdown.
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function SwappableTrigger({ kind, open, toggle }: SwappableTriggerProps) {
+  return <TriggerButton buttonVariant="outline" kind={kind} label={open ? CLOSE_MENU_LABEL : MENU_LABEL} onPress={toggle} />;
+}
+
 const HEADER_ACTION = (
   <Text className="text-muted-foreground" size="sm">
     {CLEAR_LABEL}
@@ -126,8 +140,13 @@ function DropdownPlayground() {
   const [fullSheet, setFullSheet] = useState(false);
   const [controlled, setControlled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
 
   const renderContent = useCallback(({ close }: ContentRenderProps) => <MenuBody long={longList} onClose={close} />, [longList]);
+  const renderTrigger = useCallback(
+    (props: TriggerRenderProps) => <SwappableTrigger kind={triggerKind} open={props.open} toggle={props.toggle} />,
+    [triggerKind],
+  );
   // Only hand `open`/`onOpenChange` over when the toggle is on — omitting them lets
   // the component own its state, which is the other half of the API to exhibit.
   const controlledProps = controlled ? { onOpenChange: setOpen, open } : {};
@@ -146,6 +165,7 @@ function DropdownPlayground() {
         <Toggle label="Scrollable" onChange={setScrollable} value={scrollable} />
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Controlled" onChange={setControlled} value={controlled} />
+        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
       </Controls>
 
       <Section title="Elevation">
@@ -165,13 +185,14 @@ function DropdownPlayground() {
           scrollable={scrollable}
           showClose={withClose}
           title={withTitle ? PANEL_TITLE : undefined}
-          trigger={PlaygroundTrigger}
+          trigger={renderTrigger}
           width={Number(widthKey)}
           {...controlledProps}
         >
           {renderContent}
         </AdaptiveDropdown>
         <Note testID="story-open">{openNote}</Note>
+        <Note>{TRIGGER_NOTE}</Note>
       </Section>
 
       <Section title={TRIGGER_SECTION}>

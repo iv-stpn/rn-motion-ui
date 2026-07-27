@@ -187,7 +187,7 @@ export function FileSystem({
           sort={state.sort}
           urlCache={state.resolvedUrlCache}
           view={state.view}
-          testID={testID ? `${testID}-body` : undefined}
+          testID={testID}
         />
       </FileSystemContextMenuProvider>
       <FileSystemStatusBar

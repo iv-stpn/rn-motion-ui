@@ -9,6 +9,7 @@ import { cn } from '../../lib/cn';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemFileItem, FileSystemItem } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph } from './file-system-icons';
+import { fileSystemEntryTestID } from './file-system-test-id';
 import { FileVisual } from './file-system-visual';
 
 /** Filmstrip geometry (px). Uniform tiles keep `getItemLayout` exact. */
@@ -26,6 +27,8 @@ type StripTileProps = {
   onActivate: (entry: FileSystemEntry) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
+  /** Already resolved for this entry by the strip — see `fileSystemEntryTestID`. */
+  testID?: string;
 };
 
 function StripTile({
@@ -35,6 +38,7 @@ function StripTile({
   onActivate,
   onContextMenuAction,
   renderFilePreview,
+  testID,
 }: StripTileProps) {
   const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
   const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
@@ -52,6 +56,7 @@ function StripTile({
         onLongPress={onLongPress}
         onPress={handlePress}
         style={{ height: STRIP_TILE_SIZE, width: STRIP_TILE_SIZE }}
+        testID={testID}
       >
         {entry.kind === 'folder' ? (
           <FileSystemFolderGlyph size={STRIP_FOLDER_GLYPH_SIZE} />
@@ -76,6 +81,8 @@ export type FileSystemGalleryStripProps = {
   onActivate: (entry: FileSystemEntry) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
+  /** The browser's root `testID`; each tile derives its own from it. */
+  testID?: string;
 };
 
 export function FileSystemGalleryStrip({
@@ -85,6 +92,7 @@ export function FileSystemGalleryStrip({
   onActivate,
   onContextMenuAction,
   renderFilePreview,
+  testID,
 }: FileSystemGalleryStripProps) {
   const listRef = useRef<FlatList<FileSystemEntry>>(null);
 
@@ -106,9 +114,10 @@ export function FileSystemGalleryStrip({
         onActivate={onActivate}
         onContextMenuAction={onContextMenuAction}
         renderFilePreview={renderFilePreview}
+        testID={fileSystemEntryTestID(testID, item.path)}
       />
     ),
-    [activePath, getContextMenuActions, onActivate, onContextMenuAction, renderFilePreview],
+    [activePath, getContextMenuActions, onActivate, onContextMenuAction, renderFilePreview, testID],
   );
 
   const keyExtractor = useCallback((entry: FileSystemEntry) => entry.path, []);

@@ -14,6 +14,7 @@ export type BouncyAccordionItem = {
   /** Leading icon element. Pass an explicit `color` — RN icons don't inherit currentColor. */
   icon?: ReactNode;
   disabled?: boolean;
+  testID?: string;
 };
 
 // biome-ignore lint/style/useExportsLast: props type before spring constants — collocated for readability
@@ -116,6 +117,7 @@ function BouncyAccordionRow({
           accessibilityLabel={item.title}
           disabled={item.disabled}
           onPress={handleToggle}
+          testID={item.testID}
           className="min-h-[54px] w-full flex-row items-center gap-4 px-5"
         >
           {item.icon ? <View className="h-7 w-7 shrink-0 items-center justify-center">{item.icon}</View> : null}

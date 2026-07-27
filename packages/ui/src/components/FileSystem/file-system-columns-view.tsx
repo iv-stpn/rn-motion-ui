@@ -93,6 +93,7 @@ export function FileSystemColumnsView({
   renderFilePreview,
   selectedEntry,
   selectedPath,
+  testID,
 }: FileSystemViewProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
@@ -128,6 +129,7 @@ export function FileSystemColumnsView({
           // Scalar per-column props: a selection deeper in the trail leaves
           // ancestor columns' memoized renders untouched.
           selectedChildPath={selectedPath && pathParent(selectedPath) === columnPath ? selectedPath : null}
+          testID={testID}
           trailChildPath={columnPaths[columnIndex + 1] ?? null}
         />
       ))}

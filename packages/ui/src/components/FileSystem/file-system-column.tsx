@@ -13,6 +13,7 @@ import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemIndex, Fil
 import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import { filePreviewUrls, folderHasChildren } from './file-system-index';
+import { fileSystemEntryTestID } from './file-system-test-id';
 import { FileSystemEmptyState } from './file-system-view';
 
 const LOADING_LABEL = 'Loading…';
@@ -35,6 +36,8 @@ type ColumnRowProps = {
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  /** Already resolved for this entry by the column — see `fileSystemEntryTestID`. */
+  testID?: string;
 };
 
 /** The row's leading glyph: folder, cover thumbnail, or file-type icon. */
@@ -65,6 +68,7 @@ function ColumnRow({
   isSelected,
   onActivate,
   onContextMenuAction,
+  testID,
 }: ColumnRowProps) {
   const colors = useThemeColors();
   const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
@@ -87,6 +91,7 @@ function ColumnRow({
         onLongPress={onLongPress}
         onPress={handlePress}
         style={{ height: COLUMN_ROW_HEIGHT }}
+        testID={testID}
       >
         <ColumnRowGlyph entry={entry} isSelected={isSelected} />
         <Text className={cn('flex-1', isSelected && 'text-primary-foreground')} numberOfLines={1} size="sm">
@@ -115,6 +120,8 @@ export type FileSystemColumnProps = {
   selectedChildPath: string | null;
   /** The child folder the trail continues through, highlighted as the path. */
   trailChildPath: string | null;
+  /** The browser's root `testID`; each row derives its own from it. */
+  testID?: string;
 };
 
 function FileSystemColumnImpl({
@@ -125,6 +132,7 @@ function FileSystemColumnImpl({
   onActivate,
   onContextMenuAction,
   selectedChildPath,
+  testID,
   trailChildPath,
 }: FileSystemColumnProps) {
   const renderRow = useCallback(
@@ -137,9 +145,10 @@ function FileSystemColumnImpl({
         isSelected={item.path === selectedChildPath}
         onActivate={onActivate}
         onContextMenuAction={onContextMenuAction}
+        testID={fileSystemEntryTestID(testID, item.path)}
       />
     ),
-    [getContextMenuActions, index, onActivate, onContextMenuAction, selectedChildPath, trailChildPath],
+    [getContextMenuActions, index, onActivate, onContextMenuAction, selectedChildPath, testID, trailChildPath],
   );
 
   const keyExtractor = useCallback((entry: FileSystemEntry) => entry.path, []);

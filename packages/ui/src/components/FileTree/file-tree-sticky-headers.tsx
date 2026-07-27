@@ -11,9 +11,12 @@
 // (higher zIndex) so the departing one slides away behind them, and the
 // container clips it. Non-interactive gaps let taps fall through to the list.
 
-import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import type { FileTreeVisibleRow } from './file-tree.types';
+import type { FileTreeRenderRow } from './file-tree-row';
+
+/** Hoisted so the pinned rows aren't handed a fresh object on every render. */
+const STICKY_VARIANT = { sticky: true } as const;
 
 export type FileTreeStickyHeadersProps = {
   /** Ancestor rows to pin, shallow→deep (from `computeStickyHeaders`). */
@@ -23,7 +26,7 @@ export type FileTreeStickyHeadersProps = {
   /** Uniform row height — each header occupies exactly one row slot. */
   itemHeight: number;
   /** The parent's row builder, so a pinned header renders like its twin. */
-  renderRow: (row: FileTreeVisibleRow) => ReactNode;
+  renderRow: FileTreeRenderRow;
 };
 
 /**
@@ -31,6 +34,9 @@ export type FileTreeStickyHeadersProps = {
  * empty. Each header sits at `slot * itemHeight`; the deepest is translated up
  * by `transition`. Shallower headers get a higher `zIndex` so the departing
  * deepest slides away behind them, and the clipped container hides the overflow.
+ *
+ * Rows are built with `sticky: true` so a pinned copy carries its own `testID`,
+ * distinct from the one its twin in the list beneath it carries.
  */
 export function FileTreeStickyHeaders({ headers, transition, itemHeight, renderRow }: FileTreeStickyHeadersProps) {
   if (headers.length === 0) return null;
@@ -52,7 +58,7 @@ export function FileTreeStickyHeaders({ headers, transition, itemHeight, renderR
             transform: slot === deepest ? [{ translateY: -transition }] : undefined,
           }}
         >
-          {renderRow(row)}
+          {renderRow(row, STICKY_VARIANT)}
         </View>
       ))}
     </View>

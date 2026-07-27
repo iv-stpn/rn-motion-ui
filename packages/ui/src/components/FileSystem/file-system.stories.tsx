@@ -524,25 +524,34 @@ export const Interactive: Story = {
 
 export const SwitchViews: Story = {
   name: 'Demo: Switch views',
+  args: { testID: 'file-system-views' },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
+    // Every entry answers to `<testID>-entry-<path>` whichever view is drawing
+    // it, so one query holds across all four frames below.
+    const readme = 'file-system-views-entry-README.md';
+
     // Grid is the default: tiles, no column headers.
     await canvas.findByText('README.md');
+    await canvas.findByTestId(readme);
     expect(canvas.queryByText('Date Modified')).toBeNull();
 
     // List brings the sortable Name / Date Modified / Size header row.
     await userEvent.click(await canvas.findByLabelText('List view'));
     await canvas.findByText('Date Modified');
+    await canvas.findByTestId(readme);
     await waitFor(() => expect(args.onViewChange).toHaveBeenCalledWith('list'));
 
     // Columns and Gallery keep the same entries, each in its own frame.
     await userEvent.click(await canvas.findByLabelText('Columns view'));
     await waitFor(() => expect(canvas.queryByText('Date Modified')).toBeNull());
     await canvas.findByText('README.md');
+    await canvas.findByTestId(readme);
 
     await userEvent.click(await canvas.findByLabelText('Gallery view'));
     await waitFor(() => expect(args.onViewChange).toHaveBeenLastCalledWith('gallery'));
+    await canvas.findByTestId(readme);
   },
 };
 

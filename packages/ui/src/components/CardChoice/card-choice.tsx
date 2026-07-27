@@ -154,6 +154,7 @@ export type CardChoiceProps = {
   selected?: boolean;
   /** Standalone press handler. Ignored inside a `<CardChoiceGroup>`. */
   onPress?: () => void;
+  testID?: string;
 };
 
 /**
@@ -175,6 +176,7 @@ export function CardChoice({
   className,
   style,
   numeric = false,
+  testID,
 }: CardChoiceProps) {
   const groupCtx = useContext(CardChoiceContext);
   const inGroup = groupCtx !== null && value !== undefined;
@@ -209,6 +211,7 @@ export function CardChoice({
       onLayout={measureRing}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
+      testID={testID}
       style={style}
       className={cn(
         'flex-1 gap-3 rounded-2xl border p-4',

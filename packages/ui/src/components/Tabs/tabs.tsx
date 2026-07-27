@@ -204,9 +204,9 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
   );
 }
 
-type TabsContentProps = { value: string; children: ReactNode };
+type TabsContentProps = { value: string; children: ReactNode; testID?: string };
 
-export function TabsContent({ value, children }: TabsContentProps) {
+export function TabsContent({ value, children, testID }: TabsContentProps) {
   const { value: current, reduce } = useTabs();
   if (current !== value) return null;
   return (
@@ -214,6 +214,7 @@ export function TabsContent({ value, children }: TabsContentProps) {
       from={{ opacity: 0, translateY: reduce ? 0 : 4 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: 'timing', duration: 180 }}
+      testID={testID}
       style={{ marginTop: 16 }}
     >
       {children}

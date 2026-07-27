@@ -122,6 +122,7 @@ function GallerySidebar({ entry, index, renderFilePreview, sizeLabel }: SidebarP
 export function FileSystemGalleryView(props: FileSystemViewProps) {
   const { entries, getContextMenuActions, index, onContextMenuAction, onOpen, onSelect, renderFilePreview, selectedEntry } =
     props;
+  const { testID } = props;
   const [viewportWidth, setViewportWidth] = useState(0);
   const activate = useEntryActivation(onOpen, onSelect);
   const handleLayout = useCallback((event: LayoutChangeEvent) => setViewportWidth(event.nativeEvent.layout.width), []);
@@ -158,6 +159,7 @@ export function FileSystemGalleryView(props: FileSystemViewProps) {
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
         renderFilePreview={renderFilePreview}
+        testID={testID}
       />
     </View>
   );

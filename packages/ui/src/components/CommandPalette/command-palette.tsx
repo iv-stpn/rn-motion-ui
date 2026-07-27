@@ -34,6 +34,7 @@ export type CommandItem = {
   icon?: CommandIcon;
   badge?: ReactNode;
   onSelect: () => void;
+  testID?: string;
 };
 
 // biome-ignore lint/style/useExportsLast: props type before fuzzyMatch helper — collocated for readability
@@ -91,6 +92,7 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
       accessibilityLabel={item.label}
       onPressIn={handlePressIn}
       onPress={handlePress}
+      testID={item.testID}
       className="relative flex-row items-center gap-3 rounded-md px-2 py-2"
     >
       {isActive ? (

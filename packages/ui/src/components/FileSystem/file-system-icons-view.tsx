@@ -218,6 +218,7 @@ export function FileSystemIconsView({
   pageUrlCache,
   renderFilePreview,
   selectedPath,
+  testID,
 }: FileSystemViewProps) {
   const activate = useEntryActivation(onOpen, onSelect);
   const {
@@ -266,6 +267,7 @@ export function FileSystemIconsView({
         renderFilePreview={renderFilePreview}
         row={item}
         selectedPath={selectedPath}
+        testID={testID}
         tileWidth={tileWidth}
       />
     ),
@@ -279,6 +281,7 @@ export function FileSystemIconsView({
       pageUrlCache,
       renderFilePreview,
       selectedPath,
+      testID,
       tileWidth,
     ],
   );

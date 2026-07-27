@@ -11,7 +11,7 @@
 // delegated back to the parent's `renderRow` builder so a sticky header and a
 // scrolled row are pixel-identical and share one set of handlers.
 
-import { type ReactElement, type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import { type ReactElement, useCallback, useMemo, useRef, useState } from 'react';
 import type { ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent, ViewStyle } from 'react-native';
 import { Animated, FlatList, Platform, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -19,6 +19,7 @@ import { Text } from '../Text/text';
 import type { FileTreeVisibleRow } from './file-tree.types';
 import { FileTreeDragActiveProvider } from './file-tree-drag-context';
 import { computeStickyHeaders } from './file-tree-layout';
+import type { FileTreeRenderRow } from './file-tree-row';
 import { FileTreeStickyHeaders } from './file-tree-sticky-headers';
 import { useFileTreeDrag } from './use-file-tree-drag';
 import { useFileTreeDragWeb } from './use-file-tree-drag-web';
@@ -28,7 +29,7 @@ export type FileTreeScrollBodyProps = {
   itemHeight: number;
   bodyHeight: number;
   /** Builds one row element from a bare row (shared by the list + sticky stack). */
-  renderRow: (row: FileTreeVisibleRow) => ReactNode;
+  renderRow: FileTreeRenderRow;
   keyExtractor: (row: FileTreeVisibleRow) => string;
   getItemLayout: (
     data: ArrayLike<FileTreeVisibleRow> | null | undefined,

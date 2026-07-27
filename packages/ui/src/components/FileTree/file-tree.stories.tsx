@@ -251,6 +251,10 @@ export const Selection: Story = {
     // Pointing at a row tints it. Web-only (RNW drives hover from pointerenter),
     // and it yields to selection, so it has to be checked before the click.
     const row = rowFor(canvasElement, 'docs/');
+
+    // Each row is addressable by its own path, so a test can reach one row
+    // without going through its label — and it resolves to that same node.
+    expect(await canvas.findByTestId('file-tree-select-row-docs/')).toBe(row);
     await userEvent.hover(label);
     await waitFor(() => expect(row.querySelector('.bg-surface-hover')).not.toBeNull());
     await userEvent.unhover(label);

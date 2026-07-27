@@ -51,6 +51,12 @@ export type FileSystemViewProps = {
   draggable?: boolean;
   /** See `FileSystemProps.onMove`. */
   onMove?: (event: FileSystemMoveEvent) => void;
+  /**
+   * The root `testID`, not the view's own: each view derives one id per entry
+   * from it through `entryTestID`, so the same entry answers to the same query
+   * in every view. Undefined falls back to the `file-system` default.
+   */
+  testID?: string;
 };
 
 export type FileSystemEmptyStateProps = { isLoading?: boolean; label: string };

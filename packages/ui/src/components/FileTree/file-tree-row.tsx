@@ -29,6 +29,16 @@ const LONG_PRESS_DELAY = 300;
 /** Theme colors resolved once by the parent and shared across every row. */
 export type FileTreeRowColors = { icon: string; folder: string; chevron: string; placeholder: string };
 
+/**
+ * Which copy of a row is being drawn. The sticky stack renders pinned copies of
+ * rows that are also in the list beneath it, so the two copies of one path have
+ * to be tellable apart — otherwise a per-row `testID` would match twice.
+ */
+export type FileTreeRowVariant = { sticky?: boolean };
+
+/** Builds one row element from a bare row — shared by the list and the sticky stack. */
+export type FileTreeRenderRow = (row: FileTreeVisibleRow, variant?: FileTreeRowVariant) => ReactNode;
+
 /** Git-status token → the static text-color class the letter renders in. */
 const GIT_TEXT_CLASS: Record<string, string> = {
   success: 'text-success',
@@ -54,6 +64,7 @@ export type FileTreeRowProps = {
   /** This row is being dragged (dimmed while it floats under the finger). */
   dragging: boolean;
   rowClassName?: string;
+  /** Already resolved for this row by the parent — see `useRenderRow`. */
   testID?: string;
   onActivate: (row: FileTreeVisibleRow, modifiers: ClickModifiers, x?: number, y?: number) => void;
   onToggleExpand: (path: string) => void;

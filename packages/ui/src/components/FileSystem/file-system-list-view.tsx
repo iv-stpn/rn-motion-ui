@@ -41,6 +41,7 @@ import {
 import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import type { FileSystemRow } from './file-system-rows';
 import { flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';
+import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
 import { FS_DRAG_CONTAINER_TEST_ID, FS_ROW_HEIGHT, useFileSystemDrag } from './use-file-system-drag';
@@ -156,6 +157,8 @@ type ListRowProps = {
   onToggleExpanded: (path: string) => void;
   row: FileSystemRow;
   showDate: boolean;
+  /** Already resolved for this entry by the view — see `fileSystemEntryTestID`. */
+  testID?: string;
 };
 
 /** Disclosure chevron, icon, name, then the metadata columns. */
@@ -168,6 +171,7 @@ function ListRow({
   onToggleExpanded,
   row,
   showDate,
+  testID,
 }: ListRowProps) {
   const colors = useThemeColors();
   const { entry, isExpandable, isExpanded, level } = row;
@@ -190,6 +194,7 @@ function ListRow({
         onLongPress={onLongPress}
         onPress={handlePress}
         style={{ height: FS_ROW_HEIGHT, paddingLeft: 8 + level * INDENT_PER_LEVEL }}
+        testID={testID}
       >
         {isExpandable ? (
           <Pressable
@@ -241,6 +246,7 @@ export function FileSystemListView({
   onSortColumnClick,
   selectedPath,
   sort,
+  testID,
 }: FileSystemViewProps) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set<string>());
   const [width, setWidth] = useState(0);
@@ -327,9 +333,10 @@ export function FileSystemListView({
         onToggleExpanded={toggleExpanded}
         row={item}
         showDate={showDate}
+        testID={fileSystemEntryTestID(testID, item.entry.path)}
       />
     ),
-    [activate, getContextMenuActions, index, onContextMenuAction, selectedPath, showDate, toggleExpanded],
+    [activate, getContextMenuActions, index, onContextMenuAction, selectedPath, showDate, testID, toggleExpanded],
   );
 
   const list = (

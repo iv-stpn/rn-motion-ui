@@ -14,6 +14,7 @@ import type { FileSystemEntry } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph } from './file-system-icons';
 import { GLYPH_BOX_HEIGHT, GLYPH_BOX_WIDTH, ROW_GAP, TILE_HEIGHT } from './file-system-icons-grid';
+import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
 
@@ -107,6 +108,8 @@ type IconTileProps = IconTileFaceProps &
     /** This tile is the one being dragged — faded, since the ghost now carries it. */
     isDragSource: boolean;
     onActivate: (entry: FileSystemEntry) => void;
+    /** Already resolved for this entry by `IconRow` — see `fileSystemEntryTestID`. */
+    testID?: string;
   };
 
 function IconTile({
@@ -117,6 +120,7 @@ function IconTile({
   isSelected,
   onActivate,
   onContextMenuAction,
+  testID,
   width,
   ...faceProps
 }: IconTileProps) {
@@ -135,6 +139,7 @@ function IconTile({
         className={cn(isDragSource && DRAG_SOURCE_CLASSNAME)}
         onLongPress={onLongPress}
         onPress={handlePress}
+        testID={testID}
       >
         {/* The source wears the selected face for the length of the drag. The
             sliding highlight has moved to the drop target by then, and a pointer
@@ -154,7 +159,7 @@ function IconTile({
   );
 }
 
-export type IconRowProps = Omit<IconTileProps, 'entry' | 'isDragSource' | 'isDropTarget' | 'isSelected' | 'width'> & {
+export type IconRowProps = Omit<IconTileProps, 'entry' | 'isDragSource' | 'isDropTarget' | 'isSelected' | 'testID' | 'width'> & {
   /** Path of the entry being dragged, so its tile can fade. */
   draggedPath: string | null;
   /** Path of the folder under the pointer, so its tile can outline. */
@@ -162,9 +167,11 @@ export type IconRowProps = Omit<IconTileProps, 'entry' | 'isDragSource' | 'isDro
   row: FileSystemEntry[];
   selectedPath: string | null;
   tileWidth: number;
+  /** The browser's root `testID`; each tile derives its own from it. */
+  testID?: string;
 };
 
-export function IconRow({ draggedPath, dragTargetPath, row, selectedPath, tileWidth, ...tileProps }: IconRowProps) {
+export function IconRow({ draggedPath, dragTargetPath, row, selectedPath, testID, tileWidth, ...tileProps }: IconRowProps) {
   return (
     <View className="flex-row gap-1" style={{ marginBottom: ROW_GAP }}>
       {row.map((entry) => (
@@ -174,6 +181,7 @@ export function IconRow({ draggedPath, dragTargetPath, row, selectedPath, tileWi
           isDropTarget={entry.path === dragTargetPath}
           isSelected={entry.path === selectedPath}
           key={entry.path}
+          testID={fileSystemEntryTestID(testID, entry.path)}
           width={tileWidth}
           {...tileProps}
         />

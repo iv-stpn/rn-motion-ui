@@ -17,7 +17,7 @@ import type { FileTreeVisibleRow } from './file-tree.types';
 import type { ClickModifiers } from './file-tree-click-plan';
 import { resolveDensityMetrics } from './file-tree-density';
 import type { FileTreeProps } from './file-tree-props';
-import { FileTreeRow, type FileTreeRowColors } from './file-tree-row';
+import { FileTreeRow, type FileTreeRowColors, type FileTreeRowVariant } from './file-tree-row';
 import { FileTreeScrollBody } from './file-tree-scroll-body';
 import { FileTreeSearchInput } from './file-tree-search-input';
 import { type SyncedFileTree, useSyncedFileTree } from './use-file-tree';
@@ -113,6 +113,11 @@ type RenderRowContext = {
  * every version bump). Memoized on the whole context so `extraData` can point at
  * this function and force the list to re-render when the context shifts. Drop /
  * drag feedback is drawn as overlays by the scroll body, so rows stay neutral.
+ *
+ * Each row is addressable by its own path (`<testID>-row-<path>`), the way
+ * `<Table>` keys its rows by id. A pinned header is a second copy of a row that
+ * may also be in the list below it, so it takes a `-sticky-row-` id instead —
+ * one query, one node, whichever of the two a test means.
  */
 function useRenderRow(ctx: RenderRowContext) {
   const { synced, metrics, colors, handlers, showIcons, showIndentGuides, reduce, rowClassName, testID } = ctx;
@@ -120,7 +125,7 @@ function useRenderRow(ctx: RenderRowContext) {
   const { renamingPath, onActivate, onToggleExpand, onLongPress, onRenameSubmit, onRenameCancel } = handlers;
 
   return useCallback(
-    (row: FileTreeVisibleRow) => (
+    (row: FileTreeVisibleRow, variant?: FileTreeRowVariant) => (
       <FileTreeRow
         row={row}
         metrics={metrics}
@@ -134,7 +139,7 @@ function useRenderRow(ctx: RenderRowContext) {
         dropTarget={false}
         dragging={false}
         rowClassName={rowClassName}
-        testID={testID ? `${testID}-row` : undefined}
+        testID={`${testID ?? 'file-tree'}-${variant?.sticky ? 'sticky-row' : 'row'}-${row.path}`}
         onActivate={onActivate}
         onToggleExpand={onToggleExpand}
         onLongPress={onLongPress}

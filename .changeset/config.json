@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@rn-motion-ui/storybook-web", "@rn-motion-ui/example"]
+  "ignore": ["@rn-motion-ui/storybook-web", "@rn-motion-ui/example", "@rn-motion-ui/demo"]
 }

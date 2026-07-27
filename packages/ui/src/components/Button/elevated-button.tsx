@@ -113,7 +113,8 @@ const DISABLED_LABEL = 'text-muted-foreground';
 // otherwise be hidden by the Pressable's own background).
 const GRAY_FILL = 'rgb(242, 242, 242)'; /* theme-exempt: fixed Geist plate */
 const GRAY_LABEL = 'text-[#707070]'; /* theme-exempt: fixed muted label */
-const GRAY_SHADOW = '0px 0px 0px 1px rgba(61,61,61,0.12), inset 0px 0.75px 0.75px 0px rgba(255,255,255,0.64)';
+const GRAY_SHADOW =
+  '0px 0px 0px 1px rgba(61,61,61,0.12), inset 0px 0.75px 0.75px 0px rgba(255,255,255,0.64)'; /* theme-exempt: fixed Geist plate — border ring + inset sheen */
 
 /** Background class for the container given its variant, hover, disabled. */
 function backgroundClass(variant: ElevatedVariant, hovered: boolean, disabled: boolean): string {
@@ -190,17 +191,18 @@ function parseRgb(color: string): [number, number, number] {
  * New Arch).
  */
 function elevatedShadow(variant: ElevatedVariant, fill: string, borderColor: string): string {
-  if (variant === 'white') return `0 1px 3px 0 rgba(14,18,27,0.12),0 0 0 1px ${borderColor}`;
+  if (variant === 'white')
+    return `0 1px 3px 0 rgba(14,18,27,0.12),0 0 0 1px ${borderColor}`; /* theme-exempt: fixed neutral drop for white plate */
 
   const [red, green, blue] = parseRgb(fill);
   // The two monochrome fills cast the fixed dark-neutral drop rather than a tint
   // of themselves: both flip with the page, and darkening their near-white dark-
   // mode fill would put a pale grey haze under the chip instead of a shadow.
   if (variant === 'neutral' || variant === 'inverse')
-    return `0px 1px 2px 0px rgba(27,28,29,0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`;
+    return `0px 1px 2px 0px rgba(27,28,29,0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`; /* theme-exempt: fixed dark-neutral shadow for monochrome fills */
 
   const darken = (c: number) => Math.round(c * 0.7);
-  return `0px 1px 2px 0px rgba(${darken(red)},${darken(green)},${darken(blue)},0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`;
+  return `0px 1px 2px 0px rgba(${darken(red)},${darken(green)},${darken(blue)},0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`; /* theme-exempt: tinted shadow derived from fill RGB */
 }
 
 type ElevatedAppearance = {
@@ -288,8 +290,8 @@ function ElevatedHighlights({ id, hovered, radius, width, height }: ElevatedHigh
         <Svg width="100%" height="100%">
           <Defs>
             <LinearGradient id={`${id}-gloss`} x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#fff" stopOpacity={1} />
-              <Stop offset="1" stopColor="#fff" stopOpacity={0} />
+              <Stop /* theme-exempt: pure-white gloss gradient top */ offset="0" stopColor="#fff" stopOpacity={1} />
+              <Stop /* theme-exempt: pure-white gloss gradient bottom */ offset="1" stopColor="#fff" stopOpacity={0} />
             </LinearGradient>
           </Defs>
           <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id}-gloss)`} />
@@ -299,8 +301,8 @@ function ElevatedHighlights({ id, hovered, radius, width, height }: ElevatedHigh
         <Svg width={width} height={height} pointerEvents="none" style={StyleSheet.absoluteFill}>
           <Defs>
             <LinearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#fff" stopOpacity={0.12} />
-              <Stop offset="1" stopColor="#fff" stopOpacity={0} />
+              <Stop /* theme-exempt: pure-white rim highlight top */ offset="0" stopColor="#fff" stopOpacity={0.12} />
+              <Stop /* theme-exempt: pure-white rim highlight bottom */ offset="1" stopColor="#fff" stopOpacity={0} />
             </LinearGradient>
           </Defs>
           <Rect

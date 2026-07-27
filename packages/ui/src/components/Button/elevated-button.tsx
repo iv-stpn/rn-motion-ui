@@ -23,9 +23,14 @@ import {
  * muted label, 1px border, darkening and dropping its shadow on hover) and
  * `gray` (a Geist-style secondary plate — a fixed #F2F2F2 fill, #707070 label, a
  * 1px neutral ring plus a hairline white top sheen, no gloss and no hover shift).
+ *
+ * `special` is the non-semantic accent — a promotion or an upgrade path, where
+ * `info`/`success`/`warning`/`danger` each carry a meaning. `inverse` is the
+ * high-contrast flip of the page, the one fill whose contrast a consumer retint
+ * can't break. Both mirror the GlossyButton variants of the same name.
  */
 // biome-ignore lint/style/useExportsLast: declared up top so the colour tables below can key off it; kept with its doc comment for readability
-export type ElevatedVariant = 'neutral' | 'danger' | 'success' | 'warning' | 'info' | 'white' | 'gray';
+export type ElevatedVariant = 'neutral' | 'inverse' | 'danger' | 'success' | 'warning' | 'info' | 'special' | 'white' | 'gray';
 
 // A glossy filled chip (or, for `white`/`gray`, a flat plate). Everything colour-
 // dependent is resolved from `variant` here so one component covers every hue
@@ -36,40 +41,55 @@ export type ElevatedVariant = 'neutral' | 'danger' | 'success' | 'warning' | 'in
 // uniwind/Tailwind scanner registers each class.
 const ELEVATED_BG: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = {
   neutral: 'bg-primary',
+  // `inverse` is deliberately not `primary`: `primary` is the consumer's brand
+  // token, designed to be overridden, so a fill built on it can't promise
+  // contrast. `foreground` over `surface-1` is the one pair a theme guarantees
+  // reads against each other, so the flip survives any retint. Untinted the two
+  // land in the same place; they diverge the moment a consumer sets a brand hue.
+  inverse: 'bg-foreground',
   danger: 'bg-danger',
   success: 'bg-success',
   warning: 'bg-warning',
   info: 'bg-info',
+  special: 'bg-special',
 };
 
 // Label colour class per variant. Coloured fills are vivid, so their
 // `*-foreground` (white) partner reads on top; neutral uses `primary-foreground`.
 const ELEVATED_LABEL: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = {
   neutral: 'text-primary-foreground',
+  // The page colour, so the label reads as a hole punched through the slab to the
+  // backdrop behind it (the pairing GlossyButton's `inverse` uses).
+  inverse: 'text-surface-1',
   danger: 'text-danger-foreground',
   success: 'text-success-foreground',
   warning: 'text-warning-foreground',
   info: 'text-info-foreground',
+  special: 'text-special-foreground',
 };
 
 // Foreground token per variant — drives the loading spinner stroke so it matches
 // the label on the filled chip.
 const ELEVATED_FOREGROUND_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, ThemeToken> = {
   neutral: 'primary-foreground',
+  inverse: 'surface-1',
   danger: 'danger-foreground',
   success: 'success-foreground',
   warning: 'warning-foreground',
   info: 'info-foreground',
+  special: 'special-foreground',
 };
 
 // Fill token per variant — resolved to sRGB for the drop shadow: the 1px ring is
 // the fill itself and the shadow tint is the fill darkened toward black.
 const ELEVATED_FILL_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, ThemeToken> = {
   neutral: 'primary',
+  inverse: 'foreground',
   danger: 'danger',
   success: 'success',
   warning: 'warning',
   info: 'info',
+  special: 'special',
 };
 
 // The white stroke plate: light surface + muted label at rest; on hover it
@@ -161,8 +181,9 @@ function parseRgb(color: string): [number, number, number] {
 
 /**
  * Drop-shadow + ring for an elevated chip. Matches `shadow-fancy-buttons-*` on
- * web: a soft 1px-blur shadow at 48% plus a crisp 1px ring. Neutral and white
- * cast a dark-neutral shadow (`rgba(27,28,29,.48)`); vivid fills tint the shadow
+ * web: a soft 1px-blur shadow at 48% plus a crisp 1px ring. The monochrome fills
+ * (`neutral`, `inverse`) and `white` cast a dark-neutral shadow
+ * (`rgba(27,28,29,.48)`); vivid fills tint the shadow
  * with the fill darkened toward black (AlignUI derives e.g. `#253ea7` from
  * primary `#375dfb`). The ring is the fill itself, or the theme border for
  * `white`. `boxShadow` composes both layers in one value (web and native ≥ 0.76
@@ -172,7 +193,11 @@ function elevatedShadow(variant: ElevatedVariant, fill: string, borderColor: str
   if (variant === 'white') return `0 1px 3px 0 rgba(14,18,27,0.12),0 0 0 1px ${borderColor}`;
 
   const [red, green, blue] = parseRgb(fill);
-  if (variant === 'neutral') return `0px 1px 2px 0px rgba(27,28,29,0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`;
+  // The two monochrome fills cast the fixed dark-neutral drop rather than a tint
+  // of themselves: both flip with the page, and darkening their near-white dark-
+  // mode fill would put a pale grey haze under the chip instead of a shadow.
+  if (variant === 'neutral' || variant === 'inverse')
+    return `0px 1px 2px 0px rgba(27,28,29,0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`;
 
   const darken = (c: number) => Math.round(c * 0.7);
   return `0px 1px 2px 0px rgba(${darken(red)},${darken(green)},${darken(blue)},0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`;
@@ -298,7 +323,8 @@ function ElevatedHighlights({ id, hovered, radius, width, height }: ElevatedHigh
 export interface ElevatedButtonProps extends BaseButtonProps {
   /** Fill colour. Most colours get the glossy treatment (top-down sheen + 1px rim
    *  highlight + coloured drop-shadow ring); `white` is a stroke plate and `gray`
-   *  a fixed Geist-style secondary plate. Defaults to `neutral`. */
+   *  a fixed Geist-style secondary plate. `special` is the non-semantic accent and
+   *  `inverse` the high-contrast flip of the page. Defaults to `neutral`. */
   variant?: ElevatedVariant;
   size?: ButtonSize;
   shape?: ButtonShape;

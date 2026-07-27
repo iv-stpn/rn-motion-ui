@@ -15,7 +15,18 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'ghost', 'outline', 'danger', 'outlineDanger', 'ghostDanger', 'ghostPrimary'],
+      options: [
+        'primary',
+        'secondary',
+        'ghost',
+        'outline',
+        'danger',
+        'special',
+        'inverse',
+        'outlineDanger',
+        'ghostDanger',
+        'ghostPrimary',
+      ],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -30,6 +41,8 @@ const VARIANTS = [
   'ghost',
   'outline',
   'danger',
+  'special',
+  'inverse',
   'outlineDanger',
   'ghostDanger',
   'ghostPrimary',
@@ -41,12 +54,22 @@ const CONTINUE_LABEL = 'Continue';
 const DOWNLOAD_LABEL = 'Download';
 const pressedLabel = (n: number) => `Pressed ${n} times`;
 
+// The two token-backed fills, probed in TokenFillsResolve.
+const SPECIAL_KEY = 'special-key';
+const INVERSE_KEY = 'inverse-key';
+// What the browser computes for both an unset custom property and an absent
+// background utility — the collision TokenFillsResolve has to rule out.
+const TRANSPARENT = 'rgba(0, 0, 0, 0)';
+
 type IconSide = (typeof ICON_SIDES)[number];
 
-// Icon colour per variant — filled variants carry white content, the danger
+// Icon colour per variant — filled variants carry their fill's foreground
+// partner (`inverse` the page, so it punches through the slab), the danger
 // outlines carry the danger hue, everything else the plain foreground.
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   if (variant === 'primary' || variant === 'danger') return colors['primary-foreground'];
+  if (variant === 'special') return colors['special-foreground'];
+  if (variant === 'inverse') return colors['surface-1'];
   if (variant === 'outlineDanger' || variant === 'ghostDanger') return colors.danger;
   if (variant === 'ghostPrimary') return colors.primary;
   return colors.foreground;
@@ -164,5 +187,53 @@ export const Primary: Story = {
     const button = await canvas.findByRole('button');
     await userEvent.click(button);
     await expect(args.onPress).toHaveBeenCalled();
+  },
+};
+
+/** `special` and `inverse` are the only variants whose fill/label utilities
+ *  (`bg-special`, `text-special-foreground`, `bg-foreground`, `text-surface-1`)
+ *  aren't used anywhere else in the library, so a scanner miss would fail open:
+ *  the class would simply not exist and the chip would render transparent with
+ *  inherited text. This pins each one to the custom property it must resolve to. */
+export const TokenFillsResolve: Story = {
+  render: () => (
+    <View style={{ flexDirection: 'row', gap: 16 }}>
+      <Button testID={SPECIAL_KEY} variant="special">
+        {CONTINUE_LABEL}
+      </Button>
+      <Button testID={INVERSE_KEY} variant="inverse">
+        {CONTINUE_LABEL}
+      </Button>
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const specialKey = await canvas.findByTestId(SPECIAL_KEY);
+    const inverseKey = await canvas.findByTestId(INVERSE_KEY);
+    const labelOf = (key: HTMLElement) => within(key).getByText(CONTINUE_LABEL);
+
+    // Resolve each token the same way the browser resolved the class, so the
+    // comparison is sRGB-vs-sRGB and survives a retint of the token itself.
+    const probe = document.createElement('div');
+    canvasElement.appendChild(probe);
+    const resolveToken = (token: string) => {
+      probe.style.backgroundColor = `var(${token})`;
+      const resolved = getComputedStyle(probe).backgroundColor;
+      // An undefined custom property leaves the declaration invalid, so the probe
+      // falls back to transparent — which is also what a missing utility class
+      // yields on the button. Asserting the token is opaque keeps the comparisons
+      // below from passing vacuously when both sides are "nothing".
+      expect(resolved).not.toBe(TRANSPARENT);
+      return resolved;
+    };
+
+    try {
+      expect(getComputedStyle(specialKey).backgroundColor).toBe(resolveToken('--color-special'));
+      expect(getComputedStyle(labelOf(specialKey)).color).toBe(resolveToken('--color-special-foreground'));
+      expect(getComputedStyle(inverseKey).backgroundColor).toBe(resolveToken('--color-foreground'));
+      expect(getComputedStyle(labelOf(inverseKey)).color).toBe(resolveToken('--color-surface-1'));
+    } finally {
+      probe.remove();
+    }
   },
 };

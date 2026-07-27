@@ -34,8 +34,8 @@
  * hue equals the source `--neutral-hue` and its chroma is above zero and no
  * greater than the source `--neutral-chroma`; chroma is then scaled
  * proportionally, so a token authored at half tint (primary-foreground) stays at
- * half tint. Status colours (danger/success/warning/info) carry their own hues
- * and much larger chromas, so they are left alone.
+ * half tint. Status colours (danger/success/warning/info/special) carry their own
+ * hues and much larger chromas, so they are left alone.
  *
  * Running with neither --hue nor --chroma reproduces the shipped sheet byte for
  * byte apart from the generated header, which makes that the cheapest self-test.

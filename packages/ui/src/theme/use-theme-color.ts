@@ -12,9 +12,10 @@ import { cssColorToSrgb, oklchToSrgb } from '../lib/color';
  * translucent state overlays. `surface-3` is the resting level for contained
  * content (cards, popovers, dialogs, inputs).
  *
- * Status tokens come in pairs: `danger`, `success`, `warning`, `info` are
- * vivid filled backgrounds; `*-foreground` is white for legible text/icons on
- * that fill.
+ * Status tokens come in pairs: `danger`, `success`, `warning`, `info` and
+ * `special` are vivid filled backgrounds; `*-foreground` is white for legible
+ * text/icons on that fill. `special` is the one non-semantic member of the row
+ * — a promotion or an upgrade path rather than a state.
  */
 type ThemeToken =
   | 'surface-1'
@@ -44,7 +45,9 @@ type ThemeToken =
   | 'info'
   | 'info-foreground'
   | 'danger'
-  | 'danger-foreground';
+  | 'danger-foreground'
+  | 'special'
+  | 'special-foreground';
 
 /**
  * OKLCH definitions mirroring the tokens.css @theme block — [L, C, H, alpha?].
@@ -80,12 +83,14 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   'accent-foreground': [0.22, 0.004, 270],
   success: [0.7, 0.18, 155],
   'success-foreground': [1, 0, 0],
-  warning: [0.78, 0.18, 75],
+  warning: [0.58, 0.18, 40],
   'warning-foreground': [1, 0, 0],
-  info: [0.62, 0.18, 250],
+  info: [0.52, 0.24, 264],
   'info-foreground': [1, 0, 0],
-  danger: [0.97, 0.04, 25],
-  'danger-foreground': [0.55, 0.18, 25],
+  danger: [0.62, 0.22, 25],
+  'danger-foreground': [1, 0, 0],
+  special: [0.59, 0.25, 295],
+  'special-foreground': [1, 0, 0],
 };
 
 const DARK_OKLCH: Record<ThemeToken, Oklch> = {
@@ -111,12 +116,14 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   'accent-foreground': [0.95, 0.004, 270],
   success: [0.72, 0.18, 155],
   'success-foreground': [1, 0, 0],
-  warning: [0.8, 0.18, 75],
+  warning: [0.58, 0.18, 40],
   'warning-foreground': [1, 0, 0],
-  info: [0.65, 0.18, 250],
+  info: [0.52, 0.24, 264],
   'info-foreground': [1, 0, 0],
-  danger: [0.26, 0.07, 25],
-  'danger-foreground': [0.75, 0.15, 25],
+  danger: [0.66, 0.22, 25],
+  'danger-foreground': [1, 0, 0],
+  special: [0.59, 0.25, 295],
+  'special-foreground': [1, 0, 0],
 };
 
 /** Resolve an OKLCH definition table to concrete sRGB strings. */

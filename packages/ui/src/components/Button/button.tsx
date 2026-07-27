@@ -16,6 +16,8 @@ export type ButtonVariant =
   | 'ghost'
   | 'outline'
   | 'danger'
+  | 'special'
+  | 'inverse'
   | 'outlineDanger'
   | 'ghostDanger'
   | 'ghostPrimary';
@@ -31,6 +33,12 @@ const container = cva('flex-row items-center justify-center', {
       ghost: 'bg-transparent',
       outline: 'border border-border bg-transparent',
       danger: 'bg-danger',
+      special: 'bg-special',
+      // `inverse` is deliberately not `primary`: `primary` is the consumer's
+      // brand token, designed to be overridden, so a fill built on it can't
+      // promise contrast. `foreground` over `surface-1` is the one pair a theme
+      // guarantees reads, so the flip stays legible through any retint.
+      inverse: 'bg-foreground',
       outlineDanger: 'border border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
       ghostPrimary: 'bg-transparent',
@@ -58,6 +66,10 @@ export const label = cva('font-medium', {
       ghost: 'text-muted-foreground',
       outline: 'text-foreground',
       danger: 'text-white',
+      special: 'text-special-foreground',
+      // The page colour, so the label reads as a hole punched through the slab
+      // to the backdrop behind it (same pairing GlossyButton's `inverse` uses).
+      inverse: 'text-surface-1',
       outlineDanger: 'text-danger',
       ghostDanger: 'text-danger',
       ghostPrimary: 'text-primary',
@@ -67,12 +79,24 @@ export const label = cva('font-medium', {
   defaultVariants: { variant: 'primary', size: 'md' },
 });
 
+// Variants whose background is an opaque, dark-or-vivid fill, so a ripple has to
+// shimmer white to be visible. Everything else is transparent or a light plate
+// and takes the dark ripple. (`inverse` follows `primary` here: both are the
+// monochrome flip of the page, so on a dark page their near-white fill swallows
+// the white shimmer — same trade-off `primary` has always made, not worth
+// resolving the page colour in a flat button for.)
+const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['primary', 'danger', 'special', 'inverse']);
+
 // Spinner stroke matches the label colour so it reads on every variant.
 function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   switch (variant) {
     case 'primary':
     case 'danger':
       return colors['primary-foreground'];
+    case 'special':
+      return colors['special-foreground'];
+    case 'inverse':
+      return colors['surface-1'];
     case 'outlineDanger':
     case 'ghostDanger':
       return colors.danger;
@@ -160,7 +184,7 @@ export function Button({
           style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent' }]}
         />
         {buttonContent}
-        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={v === 'primary'} /> : null}
+        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}
       </Pressable>
     </MotiView>
   );

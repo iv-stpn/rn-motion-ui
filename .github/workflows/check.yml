@@ -48,6 +48,12 @@ jobs:
       - name: Check no hardcoded colors
         run: node packages/ui/scripts/check-no-hardcoded-colors.mjs
 
+      # Every colour token is written down three times (tokens.css @theme, the
+      # two dark blocks, and the native OKLCH tables). Nothing reconciles them
+      # at runtime, so this fails when one of them is edited and another missed.
+      - name: Check colour token parity
+        run: node packages/ui/scripts/check-token-parity.mjs
+
       - name: Typecheck
         run: bun run typecheck
 

@@ -15,9 +15,9 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['neutral', 'danger', 'success', 'warning', 'info', 'white', 'gray', 'dark'],
+      options: ['neutral', 'inverse', 'danger', 'success', 'warning', 'info', 'special', 'gray'],
       description:
-        'Face colour from the built-in set. Every value keeps the glossy treatment; neutral is the translucent key, status values fill with theme tokens, and white/gray/dark are fixed plates pinned in both themes.',
+        'Face colour from the built-in set. Every value keeps the glossy treatment; neutral is the translucent key, inverse fills with `foreground` so it flips with the page, status values fill with theme tokens, and gray is a fixed plate pinned in both themes.',
     },
     color: {
       control: 'color',
@@ -34,13 +34,13 @@ type Story = StoryObj<typeof meta>;
 
 const VARIANTS = [
   'neutral',
+  'inverse',
   'danger',
   'success',
   'warning',
   'info',
-  'white',
+  'special',
   'gray',
-  'dark',
 ] as const satisfies readonly GlossyVariant[];
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
@@ -50,12 +50,12 @@ const DOWNLOAD_LABEL = 'Download';
 const UPGRADE_LABEL = 'Upgrade';
 const pressedLabel = (n: number) => `Pressed ${n} times`;
 
-// The pinned `white` plate and its pinned label — light-theme `muted-foreground`
-// (oklch(0.5 0.004 270)). Both must survive a theme swap; see WhiteIsAlwaysWhite.
-const WHITE_KEY = 'white-key';
+// The pinned `gray` plate and its pinned mid-grey label, both fixed Geist
+// values. Neither may move on a theme swap; see GrayIsAlwaysGray.
+const GRAY_KEY = 'gray-key';
 const NEUTRAL_KEY = 'neutral-key';
-const WHITE_FACE = 'rgb(255, 255, 255)';
-const WHITE_LABEL_COLOR = 'rgb(98, 99, 102)';
+const GRAY_FACE = 'rgb(242, 242, 242)';
+const GRAY_LABEL_COLOR = 'rgb(112, 112, 112)';
 
 // Arbitrary faces, none of which is a variant: each derives its own shadow,
 // rim, sheen and hover tint from the hex below. The last two straddle the
@@ -117,11 +117,12 @@ function GlossyButtonPlayground(args: ComponentProps<typeof GlossyButton>) {
           rim hairline, with an inset bevel and a cast shadow that snap to 0 while
           pressed so the key sinks. Hover tints the face on fine pointers; touch
           presses dim the whole key instead. The variant only picks the face the
-          treatment derives from: neutral is the translucent key, status values
-          fill with theme tokens, and white/gray/dark are fixed plates. Because
-          the lighting follows the face's own lightness rather than the page,
-          those three look identical in both themes — flip the Storybook theme
-          and the white key stays white with a dark label. */}
+          treatment derives from: neutral is the translucent key, inverse flips to
+          the foreground colour, status values fill with theme tokens, and gray is
+          a fixed plate. Because a plate that light opts out of the page's dark
+          branch, gray looks identical in both themes — flip the Storybook theme
+          and it keeps its plate and its mid-grey label, while neutral and inverse
+          swap. */}
       <Section title="Variants">
         <Variants>
           {VARIANTS.map((name) => (
@@ -204,17 +205,17 @@ export const Default: Story = {
 };
 
 /**
- * The `white` key is pinned: white plate, dark label, in both themes. It used to
- * ride `bg-surface-3` + `text-muted-foreground`, which both flip with the theme,
- * so on a dark page a "white" key rendered as a charcoal plate with a pale grey
- * label on it. The `neutral` key beside it is the control — it *should* follow
- * the page, and the play function waits on it to know the theme swap landed
- * before checking that the white key ignored it.
+ * The `gray` key is pinned: the same light plate and mid-grey label in both
+ * themes. Nothing about it may read the page — not the fill, and not the label,
+ * which is the failure mode a themed token would produce (a "gray" key turning
+ * into a charcoal plate on a dark page). The `neutral` key beside it is the
+ * control — it *should* follow the page, and the play function waits on it to
+ * know the theme swap landed before checking that the gray key ignored it.
  */
-export const WhiteIsAlwaysWhite: Story = {
+export const GrayIsAlwaysGray: Story = {
   render: () => (
     <View style={{ flexDirection: 'row', gap: 16 }}>
-      <GlossyButton testID={WHITE_KEY} variant="white">
+      <GlossyButton testID={GRAY_KEY} variant="gray">
         {CONTINUE_LABEL}
       </GlossyButton>
       <GlossyButton testID={NEUTRAL_KEY} variant="neutral">
@@ -224,7 +225,7 @@ export const WhiteIsAlwaysWhite: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const whiteKey = await canvas.findByTestId(WHITE_KEY);
+    const grayKey = await canvas.findByTestId(GRAY_KEY);
     const neutralKey = await canvas.findByTestId(NEUTRAL_KEY);
     const labelOf = (key: HTMLElement) => within(key).getByText(CONTINUE_LABEL);
     const root = document.documentElement;
@@ -233,8 +234,8 @@ export const WhiteIsAlwaysWhite: Story = {
     try {
       root.classList.add('light');
       root.classList.remove('dark');
-      await waitFor(() => expect(getComputedStyle(whiteKey).backgroundColor).toBe(WHITE_FACE));
-      expect(getComputedStyle(labelOf(whiteKey)).color).toBe(WHITE_LABEL_COLOR);
+      await waitFor(() => expect(getComputedStyle(grayKey).backgroundColor).toBe(GRAY_FACE));
+      expect(getComputedStyle(labelOf(grayKey)).color).toBe(GRAY_LABEL_COLOR);
       const neutralOnLight = getComputedStyle(neutralKey).backgroundColor;
 
       root.classList.remove('light');
@@ -243,8 +244,8 @@ export const WhiteIsAlwaysWhite: Story = {
       // the neutral key — which does track the page — to prove the swap landed.
       await waitFor(() => expect(getComputedStyle(neutralKey).backgroundColor).not.toBe(neutralOnLight));
 
-      expect(getComputedStyle(whiteKey).backgroundColor).toBe(WHITE_FACE);
-      expect(getComputedStyle(labelOf(whiteKey)).color).toBe(WHITE_LABEL_COLOR);
+      expect(getComputedStyle(grayKey).backgroundColor).toBe(GRAY_FACE);
+      expect(getComputedStyle(labelOf(grayKey)).color).toBe(GRAY_LABEL_COLOR);
     } finally {
       root.className = initialTheme;
     }

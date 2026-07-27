@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/style/noExcessiveLinesPerFile: self-contained glossy-key component — the OKLCH lighting derivation, the variant face table, the SVG dome and the component read best in one file */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: self-contained glossy-key component — the primitive table, the per-variant recipes, the SVG dome and the component read best in one file */
 import { useCallback, useId, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -22,269 +22,396 @@ import {
  * Physically-lit key: a face stacked with absolutely-positioned effect layers
  * that together read as a domed, back-lit key.
  *
- * ## One colour in, every layer out
+ * ## Seven slots
  *
- * Nothing in the stack is hand-tuned per variant. A key is defined by a single
- * opaque *base* colour, and every layer — cast shadow, hover tint, bevel
- * spotlights, dome gradient, rim — is derived from it in OKLCH by
- * {@link glossyLighting}: the shadow is the face at 20% lightness with chroma
- * pushed 20% (so a violet key casts a violet shadow), the rim is the face 0.2
- * lightness down, the hover tint 0.1 down, the spotlights a near-white at the
- * face's own hue.
+ * The web source builds the whole key from one `box-shadow` list of seven fixed
+ * slots, and swaps that list wholesale on press for a pressed variant with the
+ * same slots in the same order at the same geometry (so the swap interpolates):
  *
- * This is the React Native equivalent of the web source's relative colour
- * syntax — `oklch(from var(--bg-button) calc(l - 0.1) c h)` — which RN has no
- * parser for, so lib/color.ts does the arithmetic instead. The upshot is that
- * pointing a key at a new colour is a one-liner: `<GlossyButton color="#7c3aed">`
- * gets a violet shadow, rim, sheen and press tint in the right proportions,
- * with no table to extend and no variant to add.
+ *   [1][2] edge accents — hairline top/bottom, painted *over* the spotlights
+ *   [3]    rim          — hairline inside the radius; the only slot that
+ *                         survives the press
+ *   [4][5] spotlights   — the bright bevel, 1px top/bottom
+ *   [6][7] casts        — contact + ambient drop, outside the box
+ *
+ * plus a dome gradient over the face and an interaction tint over that. Only
+ * the *colours* of those slots vary — by theme and by variant — which is what
+ * lets one recipe serve every variant in both schemes.
+ *
+ * {@link GlossyPrimitives} is that slot table, one entry per `--btn-*` custom
+ * property in the web source. Reanimated can't interpolate `boxShadow`, so
+ * rather than swapping two lists this port splits the slots across layers and
+ * animates their *opacity* instead — same destination, different vehicle.
+ *
+ * ## Three recipe families
+ *
+ * - `neutral` and `inverse` are hand-authored light/dark pairs, transcribed
+ *   from the web source. Both faces flip with the page on their own (glass, and
+ *   `foreground`), so they branch on the page and nothing else.
+ * - every other face — the status tokens, the `gray` plate, and any `color` a
+ *   consumer passes — runs the *derived* recipe: the rim is the face taken 0.17
+ *   darker at 65% chroma, the cast the face at absolute lightness 0.25 and 40%
+ *   chroma. Those ratios are reverse-engineered from the web source's
+ *   hand-authored per-hue table (`--rim-*` / `--cast-*`), so a token retint or
+ *   an arbitrary `color` lands where a designer would have put it, with no
+ *   table to extend.
  *
  * ## The page lights the key; extreme faces opt out
  *
- * Which treatment a key takes — light (dark tint, black dome, a solid derived
- * rim) or dark (light tint, white dome, a translucent sheen rim) — follows the
- * page, the same signal the web source's `light-dark()` reads. A vivid key is
- * no exception: on a dark page `info` gets the near-white sheen rim, not a navy
- * ring around a blue fill.
+ * Which branch a face takes follows the page, the same signal the web source's
+ * `.dark` selectors read: a light page casts dark rims and drops, a dark page
+ * catches white sheens. A vivid key is no exception — on a dark page `info`
+ * takes the white sheen rim, not a navy ring around a blue fill.
  *
- * The one exception is a face pinned against its page, which the built-in
- * plates and a fixed `color` both produce. There the page's branch paints a rim
- * the face swallows: a 32%-white sheen disappears into a white plate, and
- * `calc(l - 0.2)` on a near-black face clamps to rgb(0,0,0). Faces past
- * {@link SHEEN_LOST_ABOVE} or {@link SHADE_LOST_BELOW} therefore take the other
- * branch, which is what lets `white` stay white-with-ink on a dark page and
- * `dark` stay dark-with-sheen on a light one. Everything between the cutoffs
- * simply follows the page.
+ * The exception is a face pinned *against* its page, which the `gray` plate and
+ * a fixed `color` both produce. There the page's branch paints a rim the face
+ * swallows: a 32%-white sheen vanishes into a near-white plate, and darkening a
+ * near-black face clamps to black. Faces past {@link SHEEN_LOST_ABOVE} or
+ * {@link SHADE_LOST_BELOW} therefore take the other branch, which is what keeps
+ * the `gray` plate edged on a dark page and an ink `color` sheened on a light
+ * one. Everything between the cutoffs simply follows the page.
  *
  * ## The layer stack
  *
- *   1. interaction — hover/press tint, ramps *up* on hover and press. Hover-
- *      capable pointers only; touch devices dim the whole key on press instead
- *      (the web `[@media(hover:none)]:active:opacity-80` fallback).
- *   2. lifted — cast shadow + bevel spotlights, snap to 0 while pressed (the
- *      key sinks into the page). Split across the Pressable boundary: the
- *      inset bevel paints inside it, while the outer cast shadow rides a
- *      sibling behind it so the Pressable's overflow clip (needed to round the
- *      tint/gradient/ripples) can't eat the blur. Both fade in lockstep.
- *   3. dome + rim — constant. An SVG gradient curves the face (RN has no CSS
- *      gradients) and an inset hairline shadow paints the rim over it, keeping
- *      the edge crisp. Persists while pressed and disabled.
+ * RN has no pseudo-elements and no CSS gradients, and a child paints *above* its
+ * parent's inset shadow — so the slots can't share one element the way they do
+ * on the web. They become siblings at explicit ascending zIndex, ordered to
+ * reproduce the web's painting exactly (see {@link FX_Z}):
  *
- * The layers stack at explicit ascending zIndex (FX_Z) with the label above
- * them all — the web source's DOM-order painting plus its `z-10` label.
+ *   cast (outside the Pressable) → face → spotlights → rim → edges → dome →
+ *   tint → label → ripples
+ *
+ * The cast rides a sibling *behind* the Pressable because the Pressable clips
+ * (`overflow: hidden`, needed to round the tint, dome and ripples) and an outer
+ * shadow paints outside the bounds a clip allows.
  */
 
 /**
  * Face colour for a GlossyButton. Every value keeps the full glossy treatment;
- * the variant only chooses the base colour the treatment is derived from.
+ * the variant only chooses the base colour the treatment derives from.
  *
  * `neutral` is the signature translucent face (the page, seen through glass);
- * the four status values fill with their vivid theme tokens; `white`, `gray`
- * and `dark` are fixed plates pinned in both schemes. Pass `color` instead for
- * any colour outside this set.
+ * the five status values fill with their vivid theme tokens; `inverse` is the
+ * high-contrast slab; `gray` is a fixed plate pinned in both schemes. Pass
+ * `color` instead for any colour outside this set.
  */
-// biome-ignore lint/style/useExportsLast: declared up top so the face table below can key off it; kept with its doc comment for readability
-export type GlossyVariant = 'neutral' | 'danger' | 'success' | 'warning' | 'info' | 'white' | 'gray' | 'dark';
+// biome-ignore lint/style/useExportsLast: declared up top so the recipe tables below can key off it; kept with its doc comment for readability
+export type GlossyVariant = 'neutral' | 'inverse' | 'danger' | 'success' | 'warning' | 'info' | 'special' | 'gray';
 
-type StatusVariant = Exclude<GlossyVariant, 'neutral' | 'white' | 'gray' | 'dark'>;
+/** The variants whose face is a vivid status token. */
+type StatusVariant = Extract<GlossyVariant, 'danger' | 'success' | 'warning' | 'info' | 'special'>;
 
 type ThemeColors = ReturnType<typeof useThemeColors>;
 
 // Foreground token per status variant — the designed partner for the vivid
 // fill, used for the label, adornment icons and the loading spinner. Status
 // keys keep their token pair rather than a derived contrast colour: the pairing
-// is a design decision, not a luminance calculation.
+// is a design decision, not a luminance calculation. (All five resolve to white
+// today, which is what the web source hardcodes as `--fg-on-solid`; going
+// through the tokens means a consumer retint carries the label with it.)
 const GLOSSY_FOREGROUND_TOKEN: Record<StatusVariant, ThemeToken> = {
   danger: 'danger-foreground',
   success: 'success-foreground',
   warning: 'warning-foreground',
   info: 'info-foreground',
+  special: 'special-foreground',
 };
 
-// ── fixed plates (theme-exempt: pinned colours, not tokens) ──────────────────
-
-// `white` is pinned in both schemes: a white key is white, on a light page and
-// a dark one. It used to ride `bg-surface-3` + `text-muted-foreground`, both of
-// which flip with the theme — so on a dark page the "white" key rendered as a
-// charcoal plate with a pale grey label. Pinning the plate makes it white, and
-// being past SHEEN_LOST_ABOVE it opts out of the page's dark branch, so it
-// keeps the light treatment (ink label, dark rim) on a dark page.
-const WHITE_FILL = 'rgb(255, 255, 255)'; /* theme-exempt: pinned white plate */
-// Light-theme `muted-foreground` — oklch(0.5 0.004 270), pinned like the plate.
-const WHITE_CONTENT = 'rgb(98, 99, 102)'; /* theme-exempt: pinned muted label */
+// ── pinned plate & glass ────────────────────────────────────────────────────
 
 // The gray plate mirrors ElevatedButton's Geist-style secondary: a fixed light
-// fill + mid-grey label, pinned in both schemes by design.
+// fill + mid-grey label, pinned in both schemes by design. No token says these,
+// so they're the only genuinely literal colours in the file. Being past
+// SHEEN_LOST_ABOVE the plate opts out of the page's dark branch, keeping the
+// light treatment (dark rim, bright bevel) on a dark page too.
 const GRAY_FILL = 'rgb(242, 242, 242)'; /* theme-exempt: fixed Geist plate */
 const GRAY_CONTENT = 'rgb(112, 112, 112)'; /* theme-exempt: fixed muted label */
 
-// `neutral`'s glass: a white lift over whatever the page is. The only face that
-// stays translucent, and so the only one that reads the page scheme.
-const NEUTRAL_GLASS_LIGHT = 'rgba(255, 255, 255, 0.72)'; /* theme-exempt: light glass */
-const NEUTRAL_GLASS_DARK = 'rgba(255, 255, 255, 0.06)'; /* theme-exempt: dark glass */
+// `neutral`'s glass — the only face that stays translucent, and so the only one
+// that has to read the page scheme. Both are the web source's `--bg-translucent`:
+// near-opaque white on a light page, and a *warm* gray at 16% on a dark one, so
+// the key picks up the backdrop without pulling it blue. Spelled as OKLCH
+// conversions rather than baked hex so they can't drift from the token
+// definitions they mirror — and so the colour guard has nothing to flag.
+const NEUTRAL_GLASS_LIGHT = oklchToSrgb(1, 0, 0, 0.8);
+const NEUTRAL_GLASS_DARK = oklchToSrgb(0.5674, 0.009, 106.68, 0.16);
 
-// `dark` is the dark-scheme key pinned in both themes. Its plate is literally
-// what `neutral` composites to on a dark page — the same glass over dark
-// `surface-1` — so the two are indistinguishable in the dark theme while `dark`
-// stays a dark key on a light one. Computed rather than hand-baked so it can't
-// drift from the glass above.
-const DARK_PAGE = 'rgb(22, 23, 25)'; /* theme-exempt: dark surface-1, oklch(0.205 0.004 270) */
-const DARK_FILL = compositeOver(NEUTRAL_GLASS_DARK, DARK_PAGE);
-// Dark-theme `foreground` — oklch(0.94 0.004 270), pinned like the plate.
-const DARK_CONTENT = 'rgb(234, 235, 238)'; /* theme-exempt: pinned dark label */
+// Pure black and pure white at an alpha. These are the light hitting the key
+// and the shadow it drops — physical lighting, identical in every theme, which
+// is exactly why they aren't tokens.
+const black = (alpha: number) => `rgba(0, 0, 0, ${alpha})`; /* theme-exempt: physical lighting, not a themed colour */
+const white = (alpha: number) => `rgba(255, 255, 255, ${alpha})`; /* theme-exempt: physical lighting, not a themed colour */
 
-// ── lighting derivation (theme-exempt: physical lighting, not tokens) ────────
+// ── the primitive table ─────────────────────────────────────────────────────
 
-/** Every colour the effect stack paints, all derived from one base face. */
-type GlossyLighting = {
-  /** Whether the face took the dark treatment — also picks the ripple shimmer. */
-  dark: boolean;
-  /** Interaction tint colour and its hover/press layer opacities. */
-  tint: string;
-  tintHover: number;
-  tintPress: number;
-  /** Inset bevel shadows — one list, all fading together as the key sinks. */
-  bevelShadow: string;
-  /** Outer cast shadows — the drop that vanishes while the key is pressed. */
-  castShadow: string;
-  /** Dome gradient colour and its top/bottom stop opacities. */
-  domeColor: string;
-  domeTopOpacity: number;
-  domeBottomOpacity: number;
-  /** Rim hairline drawn inside the radius on top of the dome. */
-  rimShadow: string;
+/**
+ * Every colour a key paints, one field per `--btn-*` custom property in the web
+ * source. A recipe fills this in; the component only reads it.
+ */
+type GlossyPrimitives = {
+  /** Painted on the Pressable. Translucent for `neutral`, opaque elsewhere. */
+  face: string;
+  /** `face` flattened over the page — what the derived recipe measures. */
+  base: string;
+  /** Label, adornment-icon and spinner colour (`--btn-fg`). */
+  content: string;
+  /** Hairline accents over the spotlights, top and bottom. */
+  edgeTop: string;
+  edgeBottom: string;
+  /** The hairline inside the radius — the one slot that survives the press. */
+  rim: string;
+  /** The bright bevel, 1px top and bottom. */
+  spotTop: string;
+  spotBottom: string;
+  /** Contact and ambient drop shadow. Same colour per variant, different blur. */
+  castNear: string;
+  castFar: string;
+  /** Dome gradient stops, top to bottom. */
+  domeTop: string;
+  domeBottom: string;
+  /** Interaction tint. The colour snaps hover→active; only opacity animates. */
+  tintHover: string;
+  tintActive: string;
+  /** White press shimmer rather than a dark one — set for a dark face. */
+  faceIsDark: boolean;
 };
 
-// A key is lit by its page — a light page casts dark rims and shadows, a dark
-// page catches light sheens — which is what the web source's `light-dark()`
-// selects on. A vivid key follows the page like everything else: `info` gets
-// the near-white sheen rim on a dark page, not a navy ring around a blue fill.
+/** A recipe's output: everything except the three face-derived fields. */
+type GlossySlots = Omit<GlossyPrimitives, 'face' | 'base' | 'content'>;
+
+// ── geometry (fixed; only the colours above vary) ───────────────────────────
+
+// The web spends a full `--border-default` (0.5px) on the edges and the rim.
+// A half-pixel is a crisp hairline on the retina displays these keys are
+// designed for; a full pixel reads as a drawn border rather than a lit edge.
+const HAIRLINE = 0.5;
+const SPOT_WIDTH = 1;
+
+/** The web's `--shadow-button` inset slots, minus the rim. */
+function edgeShadow({ edgeTop, edgeBottom }: GlossySlots): string {
+  return `inset 0 ${HAIRLINE}px 0 0 ${edgeTop}, inset 0 -${HAIRLINE}px 0 0 ${edgeBottom}`;
+}
+
+function spotShadow({ spotTop, spotBottom }: GlossySlots): string {
+  return `inset 0 ${SPOT_WIDTH}px 0 0 ${spotTop}, inset 0 -${SPOT_WIDTH}px 0 0 ${spotBottom}`;
+}
+
+function rimShadow({ rim }: GlossySlots): string {
+  return `inset 0 0 0 ${HAIRLINE}px ${rim}`;
+}
+
+/** The two outer drops: a tight contact shadow and a wider ambient one. */
+function castShadow({ castNear, castFar }: GlossySlots): string {
+  return `0 2px 2px -1px ${castNear}, 0 4px 4px -2px ${castFar}`;
+}
+
+// ── hand-authored recipes: neutral ──────────────────────────────────────────
 //
-// The exception is a face pinned *against* its page: a white plate on a dark
-// page, an ink one on a light page. There the page's own branch paints a rim
-// the face swallows whole — a 32%-white sheen on white, or `calc(l - 0.2)` on
-// something already near-black (which clamps to rgb(0,0,0)) — leaving the key
-// flat with no visible edge and no hover shift. Only those faces take the
-// opposite branch, and that is what lets `white` stay white in both themes.
-// Everything between the two cutoffs simply follows the page.
+// The web source's root `--btn-*` block and its `.dark` counterpart, transcribed
+// slot for slot. `neutral` is the only face that stays translucent, so it's the
+// only one whose lighting can't be derived from a colour: the key is lit by the
+// page showing *through* it, which is a fact about the theme, not about a hue.
+
+const NEUTRAL_LIGHT: GlossySlots = {
+  edgeTop: black(0.08),
+  edgeBottom: black(0.16),
+  rim: black(0.16),
+  // Opaque white, and the brightest spotlight in the set — a glass key catches
+  // the most light along its top bevel because there's no fill damping it.
+  spotTop: white(1),
+  spotBottom: white(0.8),
+  castNear: black(0.04),
+  castFar: black(0.02),
+  domeTop: 'transparent',
+  domeBottom: black(0.04),
+  tintHover: black(0.04),
+  tintActive: black(0.06),
+  faceIsDark: false,
+};
+
+const NEUTRAL_DARK: GlossySlots = {
+  // Back-lit rather than white-painted: the edges go translucent white, and the
+  // top edge is the bright one (the light is above the key, not below it).
+  edgeTop: white(0.16),
+  edgeBottom: white(0.04),
+  rim: white(0.16),
+  // Nothing for a spotlight to add over a dark face. The slots stay so the
+  // layer still exists and still fades on press — only the colour is gone.
+  spotTop: 'transparent',
+  spotBottom: 'transparent',
+  // A shadow has to work harder against a dark backdrop, so both casts take the
+  // heavier alpha and the ambient one stops being lighter than the contact one.
+  castNear: black(0.12),
+  castFar: black(0.12),
+  domeTop: white(0.04),
+  domeBottom: 'transparent',
+  tintHover: white(0.08),
+  tintActive: white(0.12),
+  faceIsDark: true,
+};
+
+// ── hand-authored recipes: inverse ──────────────────────────────────────────
+//
+// The high-contrast slab, and the one variant deliberately *not* `primary`:
+// `primary` is the consumer's brand token, designed to be overridden, so a key
+// built on it can't promise contrast. `inverse` is built on `foreground` over
+// `surface` — the two colours a theme guarantees read against each other — so it
+// stays the loudest key in the set no matter what a consumer retints.
+//
+// Both edges are inherited from the neutral root in the web source rather than
+// re-declared, so they're spread in here for the same reason.
+
+const INVERSE_LIGHT: GlossySlots = {
+  ...NEUTRAL_LIGHT,
+  // Fully opaque, top and bottom: the slab reads as a machined edge, not a lit
+  // one. This is the only rim in the set that isn't translucent.
+  rim: black(1),
+  spotTop: white(0.24),
+  spotBottom: white(0.16),
+  castNear: black(0.12),
+  castFar: black(0.12),
+  // A near-black face has room for a real gradient, and this is the steepest
+  // dome in the set — 88% black at the bottom, so the key curves hard.
+  domeTop: 'transparent',
+  domeBottom: black(0.88),
+  tintHover: white(0.12),
+  tintActive: white(0.2),
+  faceIsDark: true,
+};
+
+const INVERSE_DARK: GlossySlots = {
+  ...NEUTRAL_DARK,
+  rim: white(1),
+  // The face is near-white, so the tint has to darken rather than lighten, and
+  // the dome only needs a hint of weight instead of the light branch's 88%.
+  domeTop: 'transparent',
+  domeBottom: black(0.08),
+  tintHover: black(0.08),
+  tintActive: black(0.14),
+  faceIsDark: false,
+};
+
+// ── the derived recipe ──────────────────────────────────────────────────────
+//
+// Everything that isn't `neutral` or `inverse` is an opaque face, and every
+// opaque face is lit the same way — so the web source's six hand-authored solid
+// variants collapse into one function of the face colour.
+//
+// The two derived slots are the rim and the cast, and both ratios come from
+// measuring that hand-authored table (six hues × light/dark) rather than from
+// taste: the rim runs 0.167–0.174 lightness below its face at 53–72% of its
+// chroma, and the cast sits at an *absolute* 0.238–0.264 lightness at 37–43%
+// chroma. Taking the middle of each band reproduces all six of the designer's
+// entries within a few sRGB units, which is what makes the generalisation safe:
+// a token retint or an arbitrary `color` lands where a seventh hand-authored
+// entry would have.
+//
+// Note the cast's absolute lightness. A drop shadow is the *page* in shadow, not
+// the face darkened, so it converges toward one near-black regardless of how
+// light the face is — only the hue and a trace of chroma survive to keep a
+// violet key's shadow violet.
+const RIM_LIGHTNESS_DROP = 0.17;
+const RIM_CHROMA_SCALE = 0.65;
+const CAST_LIGHTNESS = 0.25;
+const CAST_CHROMA_SCALE = 0.4;
+// A shadow has to work harder against a dark backdrop (`--btn-cast-alpha`).
+const CAST_ALPHA_LIGHT = 0.12;
+const CAST_ALPHA_DARK = 0.24;
+
+// A key is lit by its page — a light page casts dark rims and drops, a dark page
+// catches white sheens — which is the signal the web source's `.dark` selectors
+// read.
+//
+// The exception is a face pinned *against* its page: the `gray` plate on a dark
+// page, an ink `color` on a light one. There the page's own branch paints a rim
+// the face swallows whole — a 32%-white sheen on near-white, or a 0.17 darkening
+// of something already near-black — leaving the key flat with no visible edge
+// and no hover shift. Only those faces take the opposite branch, which is what
+// keeps the gray plate edged in the dark theme. Everything between the two
+// cutoffs simply follows the page.
 const MID_LIGHTNESS = 0.5;
 const SHEEN_LOST_ABOVE = 0.85;
 const SHADE_LOST_BELOW = 0.3;
 
-/** Whether a face takes the dark (sheen) treatment rather than the light one. */
+/** Whether an opaque face takes the dark (sheen) branch rather than the light one. */
 function usesDarkLighting(faceLightness: number, pageDark: boolean): boolean {
-  if (pageDark) return faceLightness <= SHEEN_LOST_ABOVE;
-  return faceLightness < SHADE_LOST_BELOW;
+  return pageDark ? faceLightness <= SHEEN_LOST_ABOVE : faceLightness < SHADE_LOST_BELOW;
 }
 
-// Relative-colour offsets, lifted verbatim from the web source's `oklch(from …)`
-// expressions so the two implementations stay in step.
-const TINT_LIGHTNESS_DROP = 0.1; // light: calc(l - 0.1)
-const TINT_LIGHTNESS_LIFT = 0.15; // dark:  calc(l + 0.15)
-const TINT_DARK_ALPHA = 0.7;
-const RIM_LIGHTNESS_DROP = 0.2; // light: calc(l - 0.2)
-const RIM_CHROMA_SCALE = 0.75; // light: calc(c * 0.75)
-const RIM_DARK_ALPHA = 0.32;
-// The one deliberate divergence from the web source, which spends a full
-// `var(--border-default)` here. A half-pixel rim is a crisp hairline on the
-// retina displays these keys are designed for, and a full pixel reads as a
-// drawn border rather than a lit edge. Keep it at 0.5px.
-const RIM_WIDTH = '0.5px';
-const SHADOW_LIGHTNESS = 0.2;
-const SHADOW_CHROMA_BOOST = 1.2; // calc(c * 1.2) — the drop keeps the face's hue
-const SHADOW_LIGHT_ALPHA = 0.12;
-const SHADOW_DARK_ALPHA = 0.24;
-// The spotlights are a near-white carrying the face's hue, so a coloured key
-// gets a coloured sheen instead of a grey one.
-const SPOTLIGHT_LIGHTNESS = 0.98;
-const SPOTLIGHT_CHROMA = 0.01;
-
-// Pure white / black — physical lighting, unrelated to the face's hue.
-const SHEEN = '#ffffff';
-const SHADE = '#000000';
-const DOME_OPACITY = 0.08;
-const EDGE_SHEEN = 'rgba(255, 255, 255, 0.08)';
-const EDGE_SHADE = 'rgba(0, 0, 0, 0.16)';
+// Label contrast for a face with no designed foreground partner — any `color` a
+// consumer passes. OKLCH lightness tracks perceived brightness closely enough
+// that one threshold picks the legible side; 0.65 keeps white on mid-tone fills
+// and flips to ink only once the face is genuinely light. Also picks the ripple
+// shimmer, which needs the same answer.
+const CONTENT_LIGHTNESS_SWITCH = 0.65;
 
 // Stand-in for a face this library can't parse (a named CSS colour, say). White
-// is the safest guess: it yields the light treatment, which is legible over the
+// is the safest guess: it yields the light branch, which is legible over the
 // widest range of real faces.
 const FALLBACK_FACE = { lightness: 1, chroma: 0, hue: 0 };
 
-/** The light treatment: a dark tint, a solid derived rim, the dome darkening downward. */
-function lightLighting(lightness: number, chroma: number, hue: number): GlossyLighting {
-  const spotlight = (alpha: number) => oklchToSrgb(SPOTLIGHT_LIGHTNESS, SPOTLIGHT_CHROMA, hue, alpha);
-  const drop = oklchToSrgb(SHADOW_LIGHTNESS, chroma * SHADOW_CHROMA_BOOST, hue, SHADOW_LIGHT_ALPHA);
+/** Light branch for an opaque face: dark rim, dark drop, bright bevel, dark tint. */
+function derivedLight(lightness: number, chroma: number, hue: number): GlossySlots {
+  const cast = oklchToSrgb(CAST_LIGHTNESS, chroma * CAST_CHROMA_SCALE, hue, CAST_ALPHA_LIGHT);
   return {
-    dark: false,
-    tint: oklchToSrgb(lightness - TINT_LIGHTNESS_DROP, chroma, hue),
-    tintHover: 0.4,
-    tintPress: 0.64,
-    // Ordered front-to-back — the first shadow in a list paints on top — so the
-    // half-pixel edge accents sit over the 1px spotlights, mirroring the web
-    // source's secondary-spotlight layer stacking above the primary one.
-    bevelShadow: [
-      `inset 0 0.5px 0 0 ${EDGE_SHEEN}`,
-      `inset 0 -0.5px 0 0 ${EDGE_SHADE}`,
-      `inset 0 1px 0 0 ${spotlight(0.16)}`,
-      `inset 0 -1px 0 0 ${spotlight(0.08)}`,
-    ].join(', '),
-    castShadow: `0 2px 2px -1px ${drop}, 0 4px 4px -2px ${drop}`,
-    domeColor: SHADE,
-    domeTopOpacity: 0,
-    domeBottomOpacity: DOME_OPACITY,
-    rimShadow: `inset 0 0 0 ${RIM_WIDTH} ${oklchToSrgb(lightness - RIM_LIGHTNESS_DROP, chroma * RIM_CHROMA_SCALE, hue)}`,
+    ...NEUTRAL_LIGHT,
+    // The face's own colour taken very dark, so the edge reads as the face in
+    // shadow rather than as a black line drawn around it.
+    rim: oklchToSrgb(lightness - RIM_LIGHTNESS_DROP, chroma * RIM_CHROMA_SCALE, hue),
+    // Far dimmer than the glass key's opaque spotlights: a solid fill damps the
+    // bevel, so the sheen is a suggestion rather than a highlight.
+    spotTop: white(0.16),
+    spotBottom: white(0.08),
+    castNear: cast,
+    castFar: cast,
+    faceIsDark: lightness < CONTENT_LIGHTNESS_SWITCH,
   };
 }
 
-/** The dark treatment: a light tint, a translucent sheen rim, the dome lightening upward. */
-function darkLighting(lightness: number, chroma: number, hue: number): GlossyLighting {
-  const spotlight = (alpha: number) => oklchToSrgb(SPOTLIGHT_LIGHTNESS, SPOTLIGHT_CHROMA, hue, alpha);
-  const drop = oklchToSrgb(SHADOW_LIGHTNESS, chroma * SHADOW_CHROMA_BOOST, hue, SHADOW_DARK_ALPHA);
+/** Dark branch for an opaque face: one white sheen rim, heavier drop, light tint. */
+function derivedDark(lightness: number, chroma: number, hue: number): GlossySlots {
+  const cast = oklchToSrgb(CAST_LIGHTNESS, chroma * CAST_CHROMA_SCALE, hue, CAST_ALPHA_DARK);
   return {
-    dark: true,
-    tint: oklchToSrgb(lightness + TINT_LIGHTNESS_LIFT, chroma, hue, TINT_DARK_ALPHA),
-    tintHover: 0.4,
-    tintPress: 0.8,
-    // No 1px spotlights on a dark key: the dome gradient and rim carry the
-    // highlight, so only the half-pixel accents remain.
-    bevelShadow: `inset 0 0.5px 0 0 ${spotlight(0.16)}, inset 0 -0.5px 0 0 ${spotlight(0.08)}`,
-    castShadow: `0 2px 2px -1px ${drop}, 0 4px 4px -2px ${drop}`,
-    domeColor: SHEEN,
-    domeTopOpacity: DOME_OPACITY,
-    domeBottomOpacity: 0,
-    rimShadow: `inset 0 0 0 ${RIM_WIDTH} ${spotlight(RIM_DARK_ALPHA)}`,
+    ...NEUTRAL_DARK,
+    // One translucent white for every hue, replacing the six per-hue rims. A
+    // dark page lights the key from outside, and that sheen doesn't care what
+    // colour it lands on.
+    edgeBottom: white(0.08),
+    rim: white(0.32),
+    castNear: cast,
+    castFar: cast,
+    faceIsDark: lightness < CONTENT_LIGHTNESS_SWITCH,
   };
 }
 
-/** Derive the whole effect stack from one opaque face colour, lit by its page. */
-function glossyLighting(base: string, pageDark: boolean): GlossyLighting {
+/** Derive the whole slot table from one opaque face colour, lit by its page. */
+function derivedRecipe(base: string, pageDark: boolean): GlossySlots {
   const { lightness, chroma, hue } = cssColorToOklch(base) ?? FALLBACK_FACE;
-  return usesDarkLighting(lightness, pageDark) ? darkLighting(lightness, chroma, hue) : lightLighting(lightness, chroma, hue);
+  return usesDarkLighting(lightness, pageDark) ? derivedDark(lightness, chroma, hue) : derivedLight(lightness, chroma, hue);
 }
 
-// ── face resolution ─────────────────────────────────────────────────────────
+// ── face resolution ────────────────────────────────────────────────────────
 
-/** The colour a key paints, and the opaque colour its lighting derives from. */
+/** Which recipe family a face belongs to. */
+type FaceKind = 'neutral' | 'inverse' | 'derived';
+
+/** The face colours, plus the family whose recipe lights them. */
 type GlossyFace = {
   /** Painted on the Pressable — translucent for `neutral`'s glass. */
   paint: string;
-  /** What every layer derives from: `paint` flattened over the page, so a
+  /** What the derived recipe measures: `paint` flattened over the page, so a
    *  translucent face derives from the colour actually seen, not from white. */
   base: string;
   /** Label, adornment-icon and spinner colour. */
   content: string;
+  kind: FaceKind;
 };
 
-// Label contrast for a face with no designed foreground partner. OKLCH
-// lightness tracks perceived brightness closely enough that one threshold picks
-// the legible side; 0.65 keeps white on mid-tone fills and flips to ink only
-// once the face is genuinely light.
-const CONTENT_LIGHTNESS_SWITCH = 0.65;
-const CONTENT_ON_DARK: string = 'rgb(255, 255, 255)'; /* theme-exempt: contrast pick */
-const CONTENT_ON_LIGHT: string = 'rgb(23, 23, 23)'; /* theme-exempt: contrast pick */
+const CONTENT_ON_DARK = oklchToSrgb(1, 0, 0);
+// Light-theme `foreground` — oklch(14.5% 0 0), the ink a light face would use.
+const CONTENT_ON_LIGHT = oklchToSrgb(0.145, 0, 0);
 
-/** Legible label colour for a face, by its lightness. */
+/** Legible label colour for a face with no designed foreground partner. */
 function contentOn(base: string): string {
   const { lightness } = cssColorToOklch(base) ?? FALLBACK_FACE;
   return lightness < CONTENT_LIGHTNESS_SWITCH ? CONTENT_ON_DARK : CONTENT_ON_LIGHT;
@@ -292,7 +419,7 @@ function contentOn(base: string): string {
 
 /**
  * Whether the page is dark, read from the resolved `surface-1` token — the
- * colour the page actually paints, which is what the lighting is reacting to.
+ * colour the page actually paints, which is what the lighting reacts to.
  *
  * Reading a token rather than `useColorScheme()` is deliberate: the latter only
  * tracks the OS media query and would miss class-based theming on web (a manual
@@ -308,19 +435,41 @@ function isPageDark(colors: ThemeColors): boolean {
 function resolveFace(variant: GlossyVariant, color: string | undefined, colors: ThemeColors, pageDark: boolean): GlossyFace {
   const page = colors['surface-1'];
   if (color !== undefined) {
-    // A translucent custom colour is honoured as glass, exactly like `neutral`.
+    // A translucent custom colour is honoured as glass, exactly like `neutral` —
+    // but it's still lit as a solid, because its flattened colour is knowable.
     const base = compositeOver(color, page);
-    return { paint: color, base, content: contentOn(base) };
+    return { paint: color, base, content: contentOn(base), kind: 'derived' };
   }
-  if (variant === 'white') return { paint: WHITE_FILL, base: WHITE_FILL, content: WHITE_CONTENT };
-  if (variant === 'gray') return { paint: GRAY_FILL, base: GRAY_FILL, content: GRAY_CONTENT };
-  if (variant === 'dark') return { paint: DARK_FILL, base: DARK_FILL, content: DARK_CONTENT };
-  if (variant === 'neutral') {
-    const glass = pageDark ? NEUTRAL_GLASS_DARK : NEUTRAL_GLASS_LIGHT;
-    return { paint: glass, base: compositeOver(glass, page), content: colors.foreground };
+  switch (variant) {
+    case 'neutral': {
+      const glass = pageDark ? NEUTRAL_GLASS_DARK : NEUTRAL_GLASS_LIGHT;
+      return { paint: glass, base: compositeOver(glass, page), content: colors.foreground, kind: 'neutral' };
+    }
+    case 'inverse': {
+      // `foreground` over `surface-1`, both straight from the theme, which is
+      // what makes this the one key whose contrast a retint can't break. The
+      // label is the *page* rather than `surface`, so it reads as a hole punched
+      // through the slab to the backdrop behind it.
+      const paint = colors.foreground;
+      return { paint, base: paint, content: page, kind: 'inverse' };
+    }
+    case 'gray':
+      return { paint: GRAY_FILL, base: GRAY_FILL, content: GRAY_CONTENT, kind: 'derived' };
+    default: {
+      const fill = colors[variant];
+      return { paint: fill, base: fill, content: colors[GLOSSY_FOREGROUND_TOKEN[variant]], kind: 'derived' };
+    }
   }
-  const fill = colors[variant];
-  return { paint: fill, base: fill, content: colors[GLOSSY_FOREGROUND_TOKEN[variant]] };
+}
+
+/** The whole slot table for a face: hand-authored pair, or derived from the colour. */
+function glossyRecipe(kind: FaceKind, base: string, pageDark: boolean): GlossySlots {
+  if (kind === 'neutral') return pageDark ? NEUTRAL_DARK : NEUTRAL_LIGHT;
+  // `inverse` branches on the page alone — its face already flipped with it, and
+  // running it through the derived cutoffs would read a near-black light-theme
+  // face as "pinned against the page" and flip it straight back.
+  if (kind === 'inverse') return pageDark ? INVERSE_DARK : INVERSE_LIGHT;
+  return derivedRecipe(base, pageDark);
 }
 
 // ── layout ──────────────────────────────────────────────────────────────────
@@ -344,74 +493,191 @@ const CONTAINER: Record<ButtonShape, Record<ButtonSize, string>> = {
   },
 };
 
-// Pixel radii mirroring CONTAINER's rounded-* classes — every effect layer must
-// follow the same curve as the Pressable.
+// Pixel radii mirroring CONTAINER's rounded-* classes — every effect layer has
+// to follow the same curve as the Pressable.
 const SIZE_HEIGHT: Record<ButtonSize, number> = { sm: 32, md: 36, lg: 44, icon: 36 };
 const ROUNDED_XL_RADIUS = 12;
 function cornerRadius(shape: ButtonShape, size: ButtonSize): number {
   return shape === 'pill' ? SIZE_HEIGHT[size] / 2 : ROUNDED_XL_RADIUS;
 }
 
-// Web keeps the 17px label at md/lg; only sm steps down to text-sm. The colour
-// no longer comes from a class — it's derived per face, so it arrives as an
-// inline style on the label instead.
+// Web keeps the 17px label at md and lg; only sm steps down to text-sm. The
+// colour doesn't come from a class — it's per-face, so it arrives as an inline
+// style on the label instead.
 function labelClass(size: ButtonSize): string {
   return cn('font-normal', size === 'sm' ? 'text-sm' : 'text-[17px]');
 }
 
+// The web wraps its label in `<span className="px-0.5">` — 2px of breathing room
+// inside the padding, so a descender or an italic never touches the rim.
+const LABEL_INSET = 2;
+
+// ── interaction ─────────────────────────────────────────────────────────────
+
 type InteractionState = { flatten: boolean; hoverCapable: boolean; pressed: boolean; hovered: boolean };
 
-/** Interaction-tint opacity: hover-capable pointers only (touch devices get the
- *  whole-key dim instead), hidden while flattened, press beating hover. */
-function tintOpacity(lighting: GlossyLighting, { flatten, hoverCapable, pressed, hovered }: InteractionState): number {
+/**
+ * Interaction-tint opacity — 0 or 1, never in between.
+ *
+ * The web animates only the tint layer's opacity and *snaps* its colour from
+ * hover to active, since each tint value carries its own alpha (0.04 → 0.06 on
+ * a light key). Hover-capable pointers only: a touch device dims the whole key
+ * instead (`[@media(hover:none)]:after:hidden` plus `active:opacity-80`), and a
+ * disabled key shows no tint at all (`group-disabled:after:hidden`).
+ */
+function tintOpacity({ flatten, hoverCapable, pressed, hovered }: InteractionState): 0 | 1 {
   if (flatten || !hoverCapable) return 0;
-  if (pressed) return lighting.tintPress;
-  if (hovered) return lighting.tintHover;
-  return 0;
+  return pressed || hovered ? 1 : 0;
 }
 
-/** Whole-key opacity: the web disabled dim, or the touch-press dim on devices
- *  that can't hover (where the tint layer never shows). */
+/** Whole-key opacity: the web `disabled:opacity-50`, or its touch-press dim on
+ *  devices that can't hover (where the tint layer never shows). */
 function keyOpacity({ flatten, hoverCapable, pressed }: InteractionState): 0.5 | 0.8 | 1 {
   if (flatten) return 0.5;
   if (pressed && !hoverCapable) return 0.8;
   return 1;
 }
 
-// Explicit stacking ladder mirroring the web source: fx layers at ascending
-// zIndex in their DOM order (interaction < lifted < dome+rim), the label above
-// them all (the web `z-10`), family ripples topmost. Child order alone would
-// paint the same way; the explicit indices pin the stack so no layer can drift.
-const FX_Z = { interaction: 1, lifted: 2, domeRim: 3, label: 10, ripples: 20 } as const;
+// ── the layer stack ─────────────────────────────────────────────────────────
 
-type GlossyDomeRimProps = { id: string; radius: number; lighting: GlossyLighting };
+/**
+ * Explicit stacking ladder. The web paints all seven slots from one box-shadow
+ * list, where the *first*-listed shadow paints on top — edges over rim over
+ * spotlights — and then its `::before` dome and `::after` tint paint above the
+ * lot, because a child paints above its parent's own inset shadows.
+ *
+ * RN has no pseudo-elements, and a child paints above its parent's inset shadow
+ * here too, so the slots can't share one element. They become siblings at
+ * ascending zIndex in the same order the web paints them, bottom to top. Child
+ * order alone would paint the same way; the explicit indices pin the stack so no
+ * layer can drift.
+ */
+const FX_Z = { spots: 1, rim: 2, edges: 3, dome: 4, tint: 5, label: 10, ripples: 20 } as const;
 
-// The constant third layer: the dome gradient (SVG — RN has no CSS gradients)
-// clipped to the face, with the rim hairline painted over it as an inset spread
-// shadow so the edge stays crisp at any radius. The web fuses both into one
-// span (an inset shadow paints above its own background); RN children paint
-// above a parent's inset shadow, so the SVG can't live inside the shadow view —
-// two siblings at the same zIndex reproduce the compositing.
-function GlossyDomeRim({ id, radius, lighting }: GlossyDomeRimProps) {
+/** One SVG gradient stop, colour and alpha held apart. */
+type DomeStop = { color: string; opacity: number };
+
+const RGBA_CHANNELS = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/;
+// A stop with no colour of its own and no sibling to borrow one from — i.e. no
+// dome at all. Nothing in the set hits this today; it's the total fallback.
+const CLEAR_STOP: DomeStop = { color: oklchToSrgb(0, 0, 0), opacity: 0 };
+
+/** Split a slot colour into an SVG `stopColor` / `stopOpacity` pair, or null for
+ *  a value with no colour of its own (`transparent`). */
+function parseStop(value: string): DomeStop | null {
+  const channels = RGBA_CHANNELS.exec(value);
+  if (channels === null) return null;
+  const [, red, green, blue, alpha] = channels;
+  const color = `rgb(${red}, ${green}, ${blue})`; /* theme-exempt: the slot's own channels, restated without its alpha */
+  return { color, opacity: alpha === undefined ? 1 : Number(alpha) };
+}
+
+/**
+ * The dome's two stops, RN-safe.
+ *
+ * Two translations happen here. Alpha moves out of the colour and into
+ * `stopOpacity`, because react-native-svg's native backends read the attribute
+ * rather than an alpha channel baked into `stopColor`. And `transparent` borrows
+ * its sibling's colour at zero alpha, which is what a browser does when it
+ * interpolates a premultiplied gradient — leave it a literal `transparent` and
+ * the ramp slides through grey on its way to black.
+ */
+function domeStops({ domeTop, domeBottom }: GlossySlots): [DomeStop, DomeStop] {
+  const top = parseStop(domeTop);
+  const bottom = parseStop(domeBottom);
+  // Whichever end has a colour lends it to the other. Every dome in the set has
+  // exactly one transparent end, so one of the first two branches always wins.
+  if (top !== null && bottom !== null) return [top, bottom];
+  if (top !== null) return [top, { color: top.color, opacity: 0 }];
+  if (bottom !== null) return [{ color: bottom.color, opacity: 0 }, bottom];
+  return [CLEAR_STOP, CLEAR_STOP];
+}
+
+type DomeProps = { id: string; radius: number; slots: GlossySlots };
+
+/** The dome gradient — SVG, since RN has no CSS gradients. Constant: it survives
+ *  the press and the disabled state, exactly as the web's `::before` does. */
+function GlossyDome({ id, radius, slots }: DomeProps) {
+  const [top, bottom] = domeStops(slots);
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden', zIndex: FX_Z.dome }]}>
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id={`${id}-dome`} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={top.color} stopOpacity={top.opacity} />
+            <Stop offset="1" stopColor={bottom.color} stopOpacity={bottom.opacity} />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id}-dome)`} />
+      </Svg>
+    </View>
+  );
+}
+
+/** A timing transition — the clock every lit slot and the tint fade on. */
+type Fade = { type: 'timing'; duration: number };
+
+type LayersProps = {
+  id: string;
+  radius: number;
+  slots: GlossySlots;
+  /** 1 at rest, 0 while pressed or flattened — the whole lit stack but the rim. */
+  lifted: 0 | 1;
+  fade: Fade;
+  pressed: boolean;
+  tint: 0 | 1;
+  backdropColor: string | undefined;
+};
+
+/**
+ * Everything painted between the face and the label: the state backdrop, the
+ * four inset slots, the dome and the interaction tint.
+ *
+ * Split out from the component only because the stack is long — it holds no
+ * state and takes no decisions, and the zIndex ladder is what orders it, not
+ * this nesting.
+ */
+function GlossyLayers({ id, radius, slots, lifted, fade, pressed, tint, backdropColor }: LayersProps) {
+  const rounded = { borderRadius: radius };
   return (
     <>
-      <View
+      {/* State backdrop — sits directly on the face, under every lit slot, so a
+          success or error fill is still a *face* colour and stays lit. */}
+      <MotiView
+        animate={{ opacity: backdropColor === undefined ? 0 : 1 }}
+        transition={TIMING_BASE}
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden', zIndex: FX_Z.domeRim }]}
-      >
-        <Svg width="100%" height="100%">
-          <Defs>
-            <LinearGradient id={`${id}-dome`} x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={lighting.domeColor} stopOpacity={lighting.domeTopOpacity} />
-              <Stop offset="1" stopColor={lighting.domeColor} stopOpacity={lighting.domeBottomOpacity} />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id}-dome)`} />
-        </Svg>
-      </View>
-      <View
+        style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent' }]}
+      />
+      {/* Spotlights, then rim, then edges — the web's box-shadow list read back to
+          front. The rim is the one slot that survives the press, which is why it
+          can't share a layer with the two that don't. */}
+      <MotiView
+        animate={{ opacity: lifted }}
+        transition={fade}
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { borderRadius: radius, boxShadow: lighting.rimShadow, zIndex: FX_Z.domeRim }]}
+        style={[StyleSheet.absoluteFill, rounded, { boxShadow: spotShadow(slots), zIndex: FX_Z.spots }]}
+      />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, rounded, { boxShadow: rimShadow(slots), zIndex: FX_Z.rim }]} />
+      <MotiView
+        animate={{ opacity: lifted }}
+        transition={fade}
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, rounded, { boxShadow: edgeShadow(slots), zIndex: FX_Z.edges }]}
+      />
+      <GlossyDome id={id} radius={radius} slots={slots} />
+      {/* Hover/press tint. Only the opacity animates — the colour snaps from hover
+          to active in `style`, since each carries its own alpha and interpolating
+          between them would dip through the wrong value. */}
+      <MotiView
+        animate={{ opacity: tint }}
+        transition={fade}
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFill,
+          rounded,
+          { backgroundColor: pressed ? slots.tintActive : slots.tintHover, zIndex: FX_Z.tint },
+        ]}
       />
     </>
   );
@@ -419,18 +685,19 @@ function GlossyDomeRim({ id, radius, lighting }: GlossyDomeRimProps) {
 
 export interface GlossyButtonProps extends BaseButtonProps {
   /** Face colour from the built-in set: `neutral` (default) is the translucent
-   *  key, the status values fill with their theme tokens, and `white` / `gray` /
-   *  `dark` are fixed plates pinned in both schemes. Ignored when `color` is set. */
+   *  glass key, the status values fill with their vivid theme tokens, `inverse`
+   *  is the high-contrast slab, and `gray` is a fixed plate pinned in both
+   *  schemes. Ignored when `color` is set. */
   variant?: GlossyVariant;
   /**
-   * Paint the key any colour. The whole effect stack — shadow, rim, sheen,
-   * hover tint — is re-derived from it in OKLCH, and the label picks the
-   * legible side automatically, so no variant needs to exist for it.
+   * Paint the key any colour. The whole slot table — cast, rim, sheen, dome,
+   * hover tint — is re-derived from it in OKLCH, and the label picks the legible
+   * side automatically, so no variant needs to exist for it.
    *
-   * Takes hex, `rgb()`/`rgba()` and `oklch()`; a translucent value is treated
-   * as glass and derives from what it composites to over the page. Named CSS
+   * Takes hex, `rgb()`/`rgba()` and `oklch()`; a translucent value is treated as
+   * glass and derives from what it composites to over the page. Named CSS
    * colours (`'rebeccapurple'`) can't be parsed and fall back to the light
-   * treatment — pass those as hex.
+   * branch — pass those as hex.
    *
    * @example
    * <GlossyButton color="#7c3aed">Upgrade</GlossyButton>
@@ -457,8 +724,8 @@ export function GlossyButton({
   loading,
   noDisabledOpacity = false,
   ripple = false,
-  // The press feedback IS the sink (shadow drop + tint / touch dim), so the
-  // key doesn't also shrink by default — pass a pressScale to opt in.
+  // The press feedback IS the sink (the lit layers drop away, the tint deepens),
+  // so the key doesn't also shrink by default — pass a pressScale to opt in.
   pressScale = 1,
   backdropColor,
   pressTransition,
@@ -475,22 +742,23 @@ export function GlossyButton({
   const hoverCapable = useHoverCapable();
   const pageDark = isPageDark(colors);
   const face = resolveFace(variant, color, colors, pageDark);
-  // Deriving the stack runs a dozen gamut-mapped OKLCH conversions, and hover
-  // and press both re-render — so it's keyed on the inputs, not the render.
-  const lighting = useMemo(() => glossyLighting(face.base, pageDark), [face.base, pageDark]);
+  // The derived branch runs a handful of gamut-mapped OKLCH conversions, and both
+  // hover and press re-render — so it's keyed on the inputs, not on the render.
+  const slots = useMemo(() => glossyRecipe(face.kind, face.base, pageDark), [face.kind, face.base, pageDark]);
   const content = contentColor ?? face.content;
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const fade = reduce ? TIMING_INSTANT : TIMING_FAST;
   const [hovered, setHovered] = useState(false);
   const isDisabled = Boolean(disabled || loading);
   // Two axes, mirroring ElevatedButton: `isDisabled` blocks interaction, while
-  // `flatten` sinks the key (lifted layers to 0, tint hidden, whole key at half
-  // opacity — the web disabled treatment). `noDisabledOpacity` splits them so a
-  // non-interactive key (e.g. StatefulButton mid-machine) keeps its lifted look.
+  // `flatten` sinks the key (lit layers to 0, no tint, half opacity — the web
+  // `disabled:opacity-50` plus its pressed shadow list). `noDisabledOpacity`
+  // splits them so a non-interactive key (StatefulButton mid-machine, say) keeps
+  // its lifted look.
   const flatten = isDisabled && !noDisabledOpacity;
 
   // SVG gradient ids must be unique per instance (they land in one shared
-  // document on web). useId can emit ':' which is illegal in url(#…), so strip it.
+  // document on web). useId can emit ':', illegal in url(#…), so strip it.
   const gradientId = useId().replace(/:/g, '');
   const radius = cornerRadius(shape, size);
 
@@ -503,7 +771,8 @@ export function GlossyButton({
   const handleHoverIn = useCallback(() => setHovered(true), []);
   const handleHoverOut = useCallback(() => setHovered(false), []);
 
-  // The key sinks: both lifted layers snap to 0 while pressed or flattened.
+  // The key sinks into the page: every lit slot but the rim drops to 0, which is
+  // exactly the substitution the web's `--shadow-button-pressed` makes.
   const lifted = pressed || flatten ? 0 : 1;
   const interaction: InteractionState = { flatten, hoverCapable, pressed, hovered };
 
@@ -524,19 +793,19 @@ export function GlossyButton({
     <MotiView
       animate={{ scale: pressed && !reduce && !isDisabled ? pressScale : 1, opacity: keyOpacity(interaction) }}
       // Scale keeps the family press spring; opacity cross-fades on the same
-      // clock as the effect layers so the touch dim and the sink move together.
+      // clock as the lit layers so the touch dim and the sink move together.
       transition={{ ...pressSpring, opacity: fade }}
       className={cn(fitWidth && 'w-full', className)}
       style={style}
     >
-      {/* Cast shadow — behind the Pressable so its overflow clip (which rounds
-          the tint/gradient/ripples) can't eat the blur; outer shadows paint
-          outside the layer's bounds, and the unclipped wrapper lets them. */}
+      {/* Cast — behind the Pressable, because the Pressable clips (needed to
+          round the dome, tint and ripples) and an outer shadow paints outside
+          the bounds a clip allows. Fades with the rest of the lit slots. */}
       <MotiView
         animate={{ opacity: lifted }}
         transition={fade}
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { borderRadius: radius, boxShadow: lighting.castShadow }]}
+        style={[StyleSheet.absoluteFill, { borderRadius: radius, boxShadow: castShadow(slots) }]}
       />
       <Pressable
         accessibilityRole="button"
@@ -554,38 +823,22 @@ export function GlossyButton({
         className={cn('flex-row items-center justify-center', CONTAINER[shape][size])}
         style={[{ overflow: 'hidden', backgroundColor: face.paint }, contentStyle]}
       >
-        {/* State backdrop — animates in/out by opacity so the face shows through
-            when idle and the state colour fills it on success/error. */}
-        <MotiView
-          animate={{ opacity: backdropColor === undefined ? 0 : 1 }}
-          transition={TIMING_BASE}
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent' }]}
+        <GlossyLayers
+          id={gradientId}
+          radius={radius}
+          slots={slots}
+          lifted={lifted}
+          fade={fade}
+          pressed={pressed}
+          tint={tintOpacity(interaction)}
+          backdropColor={backdropColor}
         />
-        {/* Hover/press tint — the face itself, darkened on a light key and
-            lightened on a dark one, so the shift keeps the key's own hue. */}
-        <MotiView
-          animate={{ opacity: tintOpacity(lighting, interaction) }}
-          transition={fade}
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: lighting.tint, zIndex: FX_Z.interaction }]}
-        />
-        {/* Bevel — the inset half of the lifted read; inset shadows paint within
-            the layer, so the Pressable's clip never touches them. */}
-        <MotiView
-          animate={{ opacity: lifted }}
-          transition={fade}
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { borderRadius: radius, boxShadow: lighting.bevelShadow, zIndex: FX_Z.lifted }]}
-        />
-        <GlossyDomeRim id={gradientId} radius={radius} lighting={lighting} />
-        {/* Label above every fx layer (the web `z-10` span, with its px-0.5). */}
-        <View style={{ zIndex: FX_Z.label, paddingHorizontal: 2 }}>{buttonContent}</View>
+        {/* Label above every lit slot — the web's `z-10` span, with its px-0.5. */}
+        <View style={{ zIndex: FX_Z.label, paddingHorizontal: LABEL_INSET }}>{buttonContent}</View>
         {ripple && !reduce ? (
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: FX_Z.ripples }]}>
-            {/* White shimmer over a dark face, dark shimmer over a light one —
-                the same split the lighting already made. */}
-            <ButtonRipples ripples={ripples} filled={lighting.dark} />
+            {/* White shimmer over a dark face, dark shimmer over a light one. */}
+            <ButtonRipples ripples={ripples} filled={slots.faceIsDark} />
           </View>
         ) : null}
       </Pressable>

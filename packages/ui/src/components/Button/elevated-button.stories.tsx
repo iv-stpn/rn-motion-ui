@@ -15,7 +15,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['neutral', 'danger', 'success', 'warning', 'info', 'white', 'gray'],
+      options: ['neutral', 'inverse', 'danger', 'success', 'warning', 'info', 'special', 'white', 'gray'],
       description: 'Fill colour. Coloured fills get the gloss + rim + shadow; white/gray are flat plates.',
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
@@ -27,10 +27,12 @@ type Story = StoryObj<typeof meta>;
 
 const VARIANTS = [
   'neutral',
+  'inverse',
   'danger',
   'success',
   'warning',
   'info',
+  'special',
   'white',
   'gray',
 ] as const satisfies readonly ElevatedVariant[];

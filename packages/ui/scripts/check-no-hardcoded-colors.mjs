@@ -40,7 +40,16 @@ const EXEMPT_PATTERNS = [
 ];
 
 // Regex that matches a hardcoded color token.
-const COLOR_RE = /#[0-9a-fA-F]{3,8}\b|rgba?\s*\(/;
+//
+// The `rgb(`/`rgba(` half needs the negative lookbehind: without it, the "rgb("
+// inside `oklchToSrgb(...)` / `cssColorToSrgb(...)` matches, so the sanctioned
+// OKLCH → sRGB API — the thing this guard wants code to use *instead* of a
+// literal — reads as a violation.
+const COLOR_RE = /#[0-9a-fA-F]{3,8}\b|(?<![\w$])rgba?\s*\(/;
+
+// A colour named in prose paints nothing. Comment-only lines are skipped so doc
+// blocks can quote a hex or an `rgba()` signature without an exemption comment.
+const COMMENT_RE = /^\s*(?:\/\/|\/\*|\*)/;
 
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {
@@ -64,6 +73,7 @@ for (const file of files) {
   const lines = readFileSync(file, 'utf8').split('\n');
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
+    if (COMMENT_RE.test(line)) continue;
     if (!COLOR_RE.test(line)) continue;
     if (EXEMPT_PATTERNS.some((p) => p.test(line))) continue;
     const rel = relative(resolve(__dirname, '../..'), file);

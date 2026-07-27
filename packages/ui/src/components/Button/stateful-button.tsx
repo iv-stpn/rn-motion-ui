@@ -80,8 +80,20 @@ const CLIP_SLACK = 64;
 // variant so the icon reads correctly against every button background.
 function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>): string {
   if (v === 'primary' || v === 'danger') return c['primary-foreground'];
+  if (v === 'special') return c['special-foreground'];
+  if (v === 'inverse') return c['surface-1'];
   if (v === 'outlineDanger' || v === 'ghostDanger') return c.danger;
   return c.foreground;
+}
+
+// Flat variant → elevated palette for the idle/loading chip. The danger family
+// collapses onto the `danger` fill and `special`/`inverse` carry over as
+// themselves (both exist on the elevated union); every remaining variant is
+// monochrome or transparent, so it takes the `neutral` fill.
+function elevatedPaletteFor(v: ButtonVariant): ElevatedVariant {
+  if (v === 'danger' || v === 'outlineDanger' || v === 'ghostDanger') return 'danger';
+  if (v === 'special' || v === 'inverse') return v;
+  return 'neutral';
 }
 
 type WrapperResolved = {
@@ -116,10 +128,8 @@ function resolveWrapper({ elevated, v, state, disabled, colors }: WrapperArgs): 
   // Each machine state adopts its own elevated variant so success/error get the
   // real glossy chip (green/red fill, gloss, 1px rim and coloured drop-shadow
   // ring) rather than a flat overlay on the neutral chip. idle/loading map the
-  // flat variant onto the palette: the danger family → the danger fill,
-  // everything else → the monochrome neutral fill.
-  const isDanger = v === 'danger' || v === 'outlineDanger' || v === 'ghostDanger';
-  const baseVariant: ElevatedVariant = isDanger ? 'danger' : 'neutral';
+  // flat variant onto the palette (see elevatedPaletteFor).
+  const baseVariant: ElevatedVariant = elevatedPaletteFor(v);
   let elevatedVariant: ElevatedVariant = baseVariant;
   if (state === 'success') elevatedVariant = 'success';
   else if (state === 'error') elevatedVariant = 'danger';

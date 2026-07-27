@@ -118,15 +118,15 @@ In light mode, surfaces 3+ are pure white and shadows alone carry depth. In dark
 
 ### Status triads
 
-`success` / `warning` / `info` / `danger` each ship as a soft-plate triad:
+`success` / `warning` / `info` / `danger` / `special` each ship as a vivid fill plus a white foreground, so a filled status plate is two classes:
 
 ```tsx
-<View className="rounded-lg border border-success-border bg-success p-3">
+<View className="rounded-lg bg-success p-3">
   <Text className="text-success-foreground">Saved!</Text>
 </View>
 ```
 
-`destructive` remains the vivid action color for destructive buttons and stays separate.
+`danger` is the destructive fill. `special` is the one non-semantic member — a promotion or an upgrade path, where the other four each carry a meaning. `warning`, `info` and `special` hold the same value in both schemes; they already sit at mid lightness, so there is nothing a dark-mode lift fixes.
 
 ### Elevation prop
 

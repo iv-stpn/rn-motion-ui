@@ -112,15 +112,21 @@
   --color-accent-foreground: oklch(22% 0.002 106.5);
 
   /* Status pairs — vivid filled background / white foreground. All
-     foregrounds are white for consistent legibility on the saturated fill. */
+     foregrounds are white for consistent legibility on the saturated fill.
+     `warning`, `info` and `special` hold the same value in both schemes: they
+     sit at mid lightness already, so there is nothing a dark-mode lift fixes.
+     `special` is the non-semantic accent — a promotion or an upgrade path,
+     where `info`/`success`/`warning`/`danger` all carry a meaning. */
   --color-success: oklch(70% 0.18 155);
   --color-success-foreground: oklch(100% 0 0);
-  --color-warning: oklch(78% 0.18 75);
+  --color-warning: oklch(58% 0.18 40);
   --color-warning-foreground: oklch(100% 0 0);
-  --color-info: oklch(62% 0.18 250);
+  --color-info: oklch(52% 0.24 264);
   --color-info-foreground: oklch(100% 0 0);
   --color-danger: oklch(62% 0.22 25);
   --color-danger-foreground: oklch(100% 0 0);
+  --color-special: oklch(59% 0.25 295);
+  --color-special-foreground: oklch(100% 0 0);
 
   /* Surface elevation shadows — a crisp 1px ring at full strength plus drop
      layers whose opacity decays as blur grows (natural light fall-off).
@@ -244,12 +250,14 @@
       --color-accent-foreground: oklch(95% 0.002 106.5);
       --color-success: oklch(72% 0.18 155);
       --color-success-foreground: oklch(100% 0 0);
-      --color-warning: oklch(80% 0.18 75);
+      --color-warning: oklch(58% 0.18 40);
       --color-warning-foreground: oklch(100% 0 0);
-      --color-info: oklch(65% 0.18 250);
+      --color-info: oklch(52% 0.24 264);
       --color-info-foreground: oklch(100% 0 0);
       --color-danger: oklch(66% 0.22 25);
       --color-danger-foreground: oklch(100% 0 0);
+      --color-special: oklch(59% 0.25 295);
+      --color-special-foreground: oklch(100% 0 0);
       --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
       --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
       --shadow-surface-3:
@@ -325,12 +333,14 @@
     --color-accent-foreground: oklch(95% 0.002 106.5);
     --color-success: oklch(72% 0.18 155);
     --color-success-foreground: oklch(100% 0 0);
-    --color-warning: oklch(80% 0.18 75);
+    --color-warning: oklch(58% 0.18 40);
     --color-warning-foreground: oklch(100% 0 0);
-    --color-info: oklch(65% 0.18 250);
+    --color-info: oklch(52% 0.24 264);
     --color-info-foreground: oklch(100% 0 0);
-    --color-danger: oklch(26% 0.07 25);
-    --color-danger-foreground: oklch(75% 0.15 25);
+    --color-danger: oklch(66% 0.22 25);
+    --color-danger-foreground: oklch(100% 0 0);
+    --color-special: oklch(59% 0.25 295);
+    --color-special-foreground: oklch(100% 0 0);
     --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
     --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
     --shadow-surface-3:

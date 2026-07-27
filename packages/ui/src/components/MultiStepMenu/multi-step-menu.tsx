@@ -81,10 +81,25 @@ export type MenuRowProps = Omit<PressableProps, 'children'> & {
   label: ReactNode;
   active?: boolean;
   iconBackgroundColor: string;
+  /**
+   * Stroke color passed to the icon. Defaults to `'white'` — the correct
+   * foreground for the vivid/saturated fills this row is designed for (iOS-style
+   * coloured icon squares). Override when `iconBackgroundColor` is a pale or
+   * neutral fill that needs a darker icon to stay legible.
+   */
+  iconColor?: string;
 };
 
 /** iOS-style settings sidebar row with a coloured icon background and a subtle active highlight. */
-export function MenuRow({ icon: RowIcon, label, active = false, iconBackgroundColor, className, ...props }: MenuRowProps) {
+export function MenuRow({
+  icon: RowIcon,
+  label,
+  active = false,
+  iconBackgroundColor,
+  iconColor = 'white' /* theme-exempt: white on vivid icon square fill */,
+  className,
+  ...props
+}: MenuRowProps) {
   const bgStyle = useMemo(() => ({ backgroundColor: iconBackgroundColor }), [iconBackgroundColor]);
   return (
     <Pressable
@@ -97,10 +112,10 @@ export function MenuRow({ icon: RowIcon, label, active = false, iconBackgroundCo
         className={`h-6.5 w-6.5 items-center justify-center rounded-md${active ? ' shadow-[0_0_2px_0.5px_rgb(0_0_0_/_0.20)]' : ''}`} // theme-exempt: pure-black drop shadow
         style={bgStyle}
       >
-        <RowIcon size={18} color="white" />
+        <RowIcon size={18} color={iconColor} />
       </View>
       {/* biome-ignore lint/nursery/useSortedClasses: same reason */}
-      <Text className={`text-base${active ? ' font-semibold text-white' : ' text-foreground'}`}>{label}</Text>
+      <Text className={`text-base${active ? ' font-semibold text-primary-foreground' : ' text-foreground'}`}>{label}</Text>
     </Pressable>
   );
 }

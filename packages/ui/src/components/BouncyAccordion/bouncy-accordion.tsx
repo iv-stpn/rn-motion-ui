@@ -4,7 +4,7 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { ChevronDown } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
-import { useThemeColor } from '../../theme/use-theme-color';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 
 export type BouncyAccordionItem = {
@@ -81,7 +81,6 @@ function BouncyAccordionRow({
   onToggle,
   chevronIcon,
 }: BouncyAccordionRowProps) {
-  const chevronColor = useThemeColor('muted-foreground');
   const [contentHeight, setContentHeight] = useState(0);
   const onContentLayout = useCallback((e: LayoutChangeEvent) => {
     setContentHeight(e.nativeEvent.layout.height);
@@ -129,7 +128,7 @@ function BouncyAccordionRow({
             transition={reduce ? { type: 'timing', duration: 0 } : CHEVRON_TRANSITION}
             className="h-6 w-6 shrink-0 items-center justify-center"
           >
-            {chevronIcon ?? <ChevronDown size={16} color={chevronColor} />}
+            {chevronIcon ?? <ThemedIcon icon={ChevronDown} variant="ghost" size={16} />}
           </MotiView>
         </Pressable>
 

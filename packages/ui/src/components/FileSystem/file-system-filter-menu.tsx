@@ -6,9 +6,9 @@
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Calendar, ChevronLeft, ChevronRight, FileIcon, Funnel } from '../../lib/icons';
-import { useThemeColors } from '../../theme/use-theme-color';
 import type { TriggerRenderProps } from '../AdaptiveDropdown/adaptive-dropdown';
 import { AdaptiveDropdown } from '../AdaptiveDropdown/adaptive-dropdown';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 import type { FileSystemDateFilterType, FileSystemFilter, FileTypeFilterOption } from './file-system.types';
 import { FILTER_TYPE_LABELS } from './file-system-filter';
@@ -33,7 +33,6 @@ type SubmenuHeaderProps = { onBack: () => void; title: string };
 
 /** Header shown above a submenu panel, with a back affordance to the root. */
 function SubmenuHeader({ onBack, title }: SubmenuHeaderProps) {
-  const colors = useThemeColors();
   return (
     <View className="mb-1 flex-row items-center gap-1 border-border border-b pb-1">
       <Pressable
@@ -42,7 +41,7 @@ function SubmenuHeader({ onBack, title }: SubmenuHeaderProps) {
         onPress={onBack}
         className="size-7 items-center justify-center rounded-md"
       >
-        <ChevronLeft color={colors['muted-foreground']} size={16} />
+        <ThemedIcon icon={ChevronLeft} variant="ghost" size={16} />
       </Pressable>
       <Text size="sm" weight="medium">
         {title}
@@ -54,14 +53,13 @@ function SubmenuHeader({ onBack, title }: SubmenuHeaderProps) {
 type DateFacetRowProps = { onOpenPanel: (type: FileSystemDateFilterType) => void; type: FileSystemDateFilterType };
 
 function DateFacetRow({ onOpenPanel, type }: DateFacetRowProps) {
-  const colors = useThemeColors();
   const handlePress = useCallback(() => onOpenPanel(type), [onOpenPanel, type]);
   return (
     <MenuRow
       label={FILTER_TYPE_LABELS[type]}
-      leading={<Calendar color={colors['muted-foreground']} size={16} />}
+      leading={<ThemedIcon icon={Calendar} variant="ghost" size={16} />}
       onPress={handlePress}
-      trailing={<ChevronRight color={colors['muted-foreground']} size={14} />}
+      trailing={<ThemedIcon icon={ChevronRight} variant="ghost" size={14} />}
     />
   );
 }
@@ -69,7 +67,6 @@ function DateFacetRow({ onOpenPanel, type }: DateFacetRowProps) {
 type FilterTriggerProps = { isMarked: boolean; toggle: () => void };
 
 function FilterTrigger({ isMarked, toggle }: FilterTriggerProps) {
-  const colors = useThemeColors();
   return (
     <ToolbarIconButton
       accessibilityLabel="Filter"
@@ -77,7 +74,7 @@ function FilterTrigger({ isMarked, toggle }: FilterTriggerProps) {
       onPress={toggle}
       className="border border-border bg-surface-3"
     >
-      <Funnel color={colors['muted-foreground']} size={16} />
+      <ThemedIcon icon={Funnel} variant="ghost" size={16} />
     </ToolbarIconButton>
   );
 }
@@ -88,14 +85,13 @@ type FilterRootPanelProps = {
 };
 
 function FilterRootPanel({ onOpenDatePanel, onOpenFileTypePanel }: FilterRootPanelProps) {
-  const colors = useThemeColors();
   return (
     <View>
       <MenuRow
         label={FILE_TYPE_LABEL}
-        leading={<FileIcon color={colors['muted-foreground']} size={16} />}
+        leading={<ThemedIcon icon={FileIcon} variant="ghost" size={16} />}
         onPress={onOpenFileTypePanel}
-        trailing={<ChevronRight color={colors['muted-foreground']} size={14} />}
+        trailing={<ThemedIcon icon={ChevronRight} variant="ghost" size={14} />}
       />
       {DATE_PANELS.map((type) => (
         <DateFacetRow key={type} onOpenPanel={onOpenDatePanel} type={type} />

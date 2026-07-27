@@ -7,9 +7,9 @@ import { useCallback, useState } from 'react';
 import { Pressable, useWindowDimensions, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import { Calendar, ChevronLeft, ChevronRight } from '../../lib/icons';
-import { useThemeColors } from '../../theme/use-theme-color';
 import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
 import { Button } from '../Button/button';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Input } from '../Input/input';
 import { Text } from '../Text/text';
 import {
@@ -129,7 +129,6 @@ export type FileSystemRangeCalendarProps = { onSelect: (range: DateRangeDraft) =
  * the start swaps the ends, and a press once both are set restarts the range.
  */
 export function FileSystemRangeCalendar({ onSelect, range }: FileSystemRangeCalendarProps) {
-  const colors = useThemeColors();
   const { width } = useWindowDimensions();
   const [viewMonth, setViewMonth] = useState(() => startOfMonth(range.from ?? new Date()));
 
@@ -152,7 +151,7 @@ export function FileSystemRangeCalendar({ onSelect, range }: FileSystemRangeCale
           onPress={showPreviousMonth}
           className="size-6 items-center justify-center rounded-md"
         >
-          <ChevronLeft color={colors['muted-foreground']} size={16} />
+          <ThemedIcon icon={ChevronLeft} variant="ghost" size={16} />
         </Pressable>
         <Pressable
           accessibilityLabel="Next month"
@@ -160,7 +159,7 @@ export function FileSystemRangeCalendar({ onSelect, range }: FileSystemRangeCale
           onPress={showNextMonth}
           className="size-6 items-center justify-center rounded-md"
         >
-          <ChevronRight color={colors['muted-foreground']} size={16} />
+          <ThemedIcon icon={ChevronRight} variant="ghost" size={16} />
         </Pressable>
       </View>
       <View className="-mt-6 flex-row gap-4">
@@ -200,7 +199,6 @@ export type FileSystemDateRangeModalProps = {
 };
 
 export function FileSystemDateRangeModal({ initialRange, onApply, onClose, open, title }: FileSystemDateRangeModalProps) {
-  const colors = useThemeColors();
   const [range, setRange] = useState<DateRangeDraft>(() => initialRange ?? {});
   const [fromInput, setFromInput] = useState(() => formatDateInputValue(initialRange?.from));
   const [toInput, setToInput] = useState(() => formatDateInputValue(initialRange?.to));
@@ -253,7 +251,7 @@ export function FileSystemDateRangeModal({ initialRange, onApply, onClose, open,
             <Input
               accessibilityLabel="From date"
               label="From"
-              leftIcon={<Calendar color={colors['muted-foreground']} size={14} />}
+              leftIcon={<ThemedIcon icon={Calendar} variant="ghost" size={14} />}
               onChange={handleFromInput}
               placeholder={DATE_INPUT_PLACEHOLDER}
               size="sm"
@@ -264,7 +262,7 @@ export function FileSystemDateRangeModal({ initialRange, onApply, onClose, open,
             <Input
               accessibilityLabel="To date"
               label="To"
-              leftIcon={<Calendar color={colors['muted-foreground']} size={14} />}
+              leftIcon={<ThemedIcon icon={Calendar} variant="ghost" size={14} />}
               onChange={handleToInput}
               placeholder={DATE_INPUT_PLACEHOLDER}
               size="sm"

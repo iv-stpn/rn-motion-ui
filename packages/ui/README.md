@@ -125,6 +125,7 @@ Subpaths are namespaced by category:
 | `/file-tree` | `FileTree`, `useFileTree` |
 | `/not-found` | `NotFound` |
 | `/icons` | icon components |
+| `/icon` | `ThemedIcon` |
 | `/ease` | easing constants |
 | `/tokens.css` | design token stylesheet |
 | `/theme/use-theme-color` | `useThemeColor`, `useThemeColors` |

@@ -20,6 +20,7 @@ import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../theme/motion';
 import { useThemeColor } from '../../theme/use-theme-color';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 
 // Success green and placeholder colour are resolved from the theme at runtime.
@@ -88,14 +89,14 @@ const textContentTypeMap: Partial<Record<InputType, TextInputProps['textContentT
   phone: 'telephoneNumber',
 };
 
+// biome-ignore lint/plugin: 4-field props type is more readable across multiple lines
 type RightElementProps = {
   success: boolean | undefined;
   rightSlot: ReactNode;
   reduce: boolean;
-  successColor: string;
   successIcon?: ReactNode;
 };
-function renderRightElement({ success, rightSlot, reduce, successColor, successIcon }: RightElementProps): ReactNode {
+function renderRightElement({ success, rightSlot, reduce, successIcon }: RightElementProps): ReactNode {
   if (success)
     return (
       <MotiView
@@ -105,7 +106,7 @@ function renderRightElement({ success, rightSlot, reduce, successColor, successI
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 250 }}
       >
-        {successIcon ?? <Check size={20} color={successColor} strokeWidth={2.5} />}
+        {successIcon ?? <ThemedIcon icon={Check} token="success-foreground" size={20} strokeWidth={2.5} />}
       </MotiView>
     );
   if (rightSlot) return <View className="absolute top-0 right-3 bottom-0 z-10 items-center justify-center">{rightSlot}</View>;
@@ -216,7 +217,6 @@ export function Input({
   ref,
 }: InputProps) {
   const reduce = useReducedMotion();
-  const successColor = useThemeColor('success-foreground');
   const placeholderColor = useThemeColor('muted-foreground');
   const controlled = valueProp !== undefined;
   const [internal, setInternal] = useState(defaultValue ?? '');
@@ -272,7 +272,7 @@ export function Input({
   const resolvedAutoCapitalize = autoCapitalize ?? (inputType === 'name' || inputType === 'text' ? 'sentences' : 'none');
   const resolvedSecureTextEntry = secureTextEntry ?? (inputType === 'password' || inputType === 'new-password');
 
-  const rightElement = renderRightElement({ success, rightSlot, reduce, successColor, successIcon });
+  const rightElement = renderRightElement({ success, rightSlot, reduce, successIcon });
 
   return (
     <View className={cn('gap-1.5', className)} style={style}>

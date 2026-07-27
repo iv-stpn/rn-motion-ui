@@ -8,6 +8,7 @@ import React, { useCallback } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import { Search, X } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
+import { ThemedIcon } from '../Icon/themed-icon';
 
 export type FileTreeSearchInputProps = {
   query: string;
@@ -22,7 +23,7 @@ function FileTreeSearchInputImpl({ query, onChangeQuery, placeholder = 'Search f
 
   return (
     <View className="flex-row items-center gap-2 border-border border-b px-3" style={{ height: 40 }}>
-      <Search size={16} color={mutedForeground} />
+      <ThemedIcon icon={Search} variant="ghost" size={16} />
       <TextInput
         value={query}
         onChangeText={onChangeQuery}
@@ -37,7 +38,7 @@ function FileTreeSearchInputImpl({ query, onChangeQuery, placeholder = 'Search f
       />
       {query.length > 0 ? (
         <Pressable onPress={clear} hitSlop={8} accessibilityRole="button" accessibilityLabel="Clear search" className="shrink-0">
-          <X size={16} color={mutedForeground} />
+          <ThemedIcon icon={X} variant="ghost" size={16} />
         </Pressable>
       ) : null}
     </View>

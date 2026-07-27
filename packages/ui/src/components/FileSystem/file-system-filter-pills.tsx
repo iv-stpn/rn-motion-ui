@@ -7,9 +7,9 @@ import { type ReactNode, useCallback } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import { Calendar, FileIcon, X } from '../../lib/icons';
-import { useThemeColors } from '../../theme/use-theme-color';
 import type { TriggerRenderProps } from '../AdaptiveDropdown/adaptive-dropdown';
 import { AdaptiveDropdown } from '../AdaptiveDropdown/adaptive-dropdown';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 import type {
   FileSystemDateFilterType,
@@ -196,7 +196,6 @@ export function FileSystemFilterPill({
   onSelectDatePreset,
   onToggleFileType,
 }: FileSystemFilterPillProps) {
-  const colors = useThemeColors();
   const isFileType = filter.type === 'fileType';
   const TypeIcon = isFileType ? FileIcon : Calendar;
   // The date callbacks are keyed by facet, so a file-type pill never fires them.
@@ -216,7 +215,7 @@ export function FileSystemFilterPill({
   return (
     <View className="flex-row items-center">
       <PillSegment className="rounded-l-md border-l">
-        <TypeIcon color={colors.primary} size={12} />
+        <ThemedIcon icon={TypeIcon} token="primary" size={12} />
         <Text size="xs" className="text-primary">
           {FILTER_TYPE_LABELS[filter.type]}
         </Text>
@@ -234,7 +233,7 @@ export function FileSystemFilterPill({
         onPress={handleRemove}
         className="rounded-r-md px-1"
       >
-        <X color={colors['muted-foreground']} size={12} />
+        <ThemedIcon icon={X} variant="ghost" size={12} />
       </PillButton>
     </View>
   );

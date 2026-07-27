@@ -9,7 +9,7 @@ import { Check } from '../../lib/icons';
 import { MotiText } from '../../moti/components/text';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
-import { useThemeColor } from '../../theme/use-theme-color';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 import { applyEdit, sanitize } from './otp-input.logic';
 
@@ -183,7 +183,6 @@ export function OTPInput({
   testID,
 }: OTPInputProps) {
   const reduce = useReducedMotion();
-  const successColor = useThemeColor('success-foreground');
   const inputRef = useRef<TextInput>(null);
   const shakeX = useRef(new Animated.Value(0)).current;
 
@@ -310,7 +309,7 @@ export function OTPInput({
               className="absolute"
               style={{ pointerEvents: 'none', right: -28, top: 18 }}
             >
-              <Check size={20} color={successColor} strokeWidth={3} />
+              <ThemedIcon icon={Check} token="success-foreground" size={20} strokeWidth={3} />
             </MotiView>
           ) : null}
         </AnimatePresence>

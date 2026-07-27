@@ -12,6 +12,7 @@ import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 
 // RN FALLBACK vs web: the web widget shares a framer `layout` on one shell that
@@ -134,7 +135,6 @@ export function FeedbackWidget({
   errorIcon,
 }: FeedbackWidgetProps) {
   const reduce = useReducedMotion();
-  const colors = useThemeColors();
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
   const [status, setStatus] = useState<Status>('idle');
@@ -241,7 +241,7 @@ export function FeedbackWidget({
                 onPress={handleOpen}
                 className="h-12 w-12 items-center justify-center"
               >
-                {icon ?? <MessageSquare size={20} color={colors.foreground} />}
+                {icon ?? <ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
               </Pressable>
             </MotiView>
           )}
@@ -293,7 +293,7 @@ function FormView({
             onPress={onClose}
             className="h-5 w-5 items-center justify-center rounded-full bg-surface-selected"
           >
-            {closeIcon ?? <X size={12} color={colors['muted-foreground']} />}
+            {closeIcon ?? <ThemedIcon icon={X} variant="ghost" size={12} />}
           </Pressable>
         </View>
         <TextInput
@@ -396,7 +396,6 @@ function SentView({ reduce }: SentViewProps) {
 }
 
 function ErrorView({ reduce, onRetry, errorIcon }: ErrorViewProps) {
-  const colors = useThemeColors();
   return (
     <MotiView
       from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
@@ -406,7 +405,7 @@ function ErrorView({ reduce, onRetry, errorIcon }: ErrorViewProps) {
     >
       <View accessibilityRole="alert" className="items-center rounded-[16px] bg-muted px-4 py-5">
         <View className="h-12 w-12 items-center justify-center rounded-full border border-danger bg-danger">
-          {errorIcon ?? <AlertCircle size={20} color={colors['danger-foreground']} />}
+          {errorIcon ?? <ThemedIcon icon={AlertCircle} token="danger-foreground" size={20} />}
         </View>
         <Text className="mt-3 font-semibold text-foreground text-sm">{ERROR_TITLE}</Text>
         <Text className="mt-1 text-center text-muted-foreground text-xs leading-relaxed">{ERROR_BODY}</Text>

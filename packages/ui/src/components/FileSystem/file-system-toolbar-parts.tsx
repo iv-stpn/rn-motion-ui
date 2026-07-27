@@ -8,6 +8,7 @@ import { Platform, Pressable, TextInput, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import { Columns3, Images, LayoutGrid, Search, Table, X } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 import type { FileSystemView } from './file-system.types';
 
@@ -74,7 +75,6 @@ export type ViewSwitcherProps = { view: FileSystemView; onViewChange: (view: Fil
 type ViewSwitcherTabProps = { isActive: boolean; onViewChange: (view: FileSystemView) => void; option: ViewOption };
 
 function ViewSwitcherTab({ isActive, onViewChange, option }: ViewSwitcherTabProps) {
-  const colors = useThemeColors();
   const handlePress = useCallback(() => onViewChange(option.value), [onViewChange, option.value]);
   const Icon = option.icon;
   return (
@@ -85,7 +85,7 @@ function ViewSwitcherTab({ isActive, onViewChange, option }: ViewSwitcherTabProp
       onPress={handlePress}
       className={cn('h-7 items-center justify-center rounded-md px-2.5', isActive && 'bg-surface-5')}
     >
-      <Icon color={isActive ? colors.foreground : colors['muted-foreground']} size={16} />
+      <ThemedIcon icon={Icon} token={isActive ? 'foreground' : 'muted-foreground'} size={16} />
     </Pressable>
   );
 }
@@ -122,7 +122,7 @@ function SearchInput({ autoFocus, inputRef, onValueChange, value }: SearchInputP
   const handleClear = useCallback(() => onValueChange(''), [onValueChange]);
   return (
     <View className="h-7 min-w-0 flex-1 flex-row items-center rounded-lg border border-border bg-surface-3 px-2">
-      <Search color={colors['muted-foreground']} size={14} />
+      <ThemedIcon icon={Search} variant="ghost" size={14} />
       <TextInput
         accessibilityLabel="Search files"
         autoFocus={autoFocus}
@@ -141,7 +141,7 @@ function SearchInput({ autoFocus, inputRef, onValueChange, value }: SearchInputP
           onPress={handleClear}
           className="size-5 items-center justify-center rounded-sm"
         >
-          <X color={colors['muted-foreground']} size={12} />
+          <ThemedIcon icon={X} variant="ghost" size={12} />
         </Pressable>
       ) : null}
     </View>

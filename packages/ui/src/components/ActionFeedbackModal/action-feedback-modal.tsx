@@ -9,6 +9,7 @@ import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../theme/motion';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Loader } from '../Loader/loader';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 import { Text } from '../Text/text';
@@ -83,7 +84,7 @@ function MorphIcon({ state, reduced }: MorphIconProps) {
             transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
             style={morphGlyphStyle}
           >
-            <Check size={26} color={colors['success-foreground']} />
+            <ThemedIcon icon={Check} token="success-foreground" size={26} />
           </MotiView>
         )}
         {state === 'error' && (
@@ -95,7 +96,7 @@ function MorphIcon({ state, reduced }: MorphIconProps) {
             transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
             style={morphGlyphStyle}
           >
-            <AlertCircle size={26} color={colors['danger-foreground']} />
+            <ThemedIcon icon={AlertCircle} token="danger-foreground" size={26} />
           </MotiView>
         )}
       </AnimatePresence>

@@ -6,6 +6,7 @@ import { Search } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 
 // Renders inside AdaptiveModal with `customLayout` + `scrollable={false}`: the
@@ -76,14 +77,12 @@ type CommandRowProps = {
 };
 
 function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSelect }: CommandRowProps) {
-  const foreground = useThemeColor('foreground');
-  const mutedForeground = useThemeColor('muted-foreground');
   const Icon = item.icon;
   const handlePressIn = useCallback(() => onActivate(index), [onActivate, index]);
   const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
 
   let iconSlot: ReactNode = null;
-  if (Icon) iconSlot = <Icon size={16} color={isActive ? foreground : mutedForeground} />;
+  if (Icon) iconSlot = <ThemedIcon icon={Icon} token={isActive ? 'foreground' : 'muted-foreground'} size={16} />;
   else if (hasIcons) iconSlot = <View style={{ width: 16, height: 16 }} />;
 
   return (
@@ -139,7 +138,7 @@ export function CommandPalette({
   searchIcon,
 }: CommandPaletteProps) {
   const reduce = useReducedMotion();
-  const mutedForeground = useThemeColor('muted-foreground');
+  const placeholderColor = useThemeColor('muted-foreground');
 
   const { height: windowHeight } = useWindowDimensions();
 
@@ -215,13 +214,13 @@ export function CommandPalette({
     >
       <View testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
         <View className="flex-row items-center gap-3 border-border border-b px-4">
-          {searchIcon ?? <Search size={16} color={mutedForeground} />}
+          {searchIcon ?? <ThemedIcon icon={Search} variant="ghost" size={16} />}
           <TextInput
             autoFocus={true}
             value={query}
             onChangeText={updateQuery}
             placeholder={placeholder}
-            placeholderTextColor={mutedForeground}
+            placeholderTextColor={placeholderColor}
             accessibilityLabel={placeholder}
             className="h-12 flex-1 text-foreground text-sm"
           />

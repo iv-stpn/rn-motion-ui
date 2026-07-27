@@ -8,7 +8,7 @@ import type { RefObject } from 'react';
 import type { TextInput } from 'react-native';
 import { View } from 'react-native';
 import { ArrowLeft, ArrowRight } from '../../lib/icons';
-import { useThemeColors } from '../../theme/use-theme-color';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 import type {
   FileSystemDateFilterType,
@@ -58,14 +58,13 @@ type NavProps = Pick<FileSystemHeaderProps, 'canGoBack' | 'canGoForward' | 'fold
 
 /** Back/forward pair plus the current folder's name. */
 function HeaderNav({ canGoBack, canGoForward, folderName, layout, onGoBack, onGoForward }: NavProps) {
-  const colors = useThemeColors();
   return (
     <View className="min-w-0 flex-1 flex-row items-center gap-0.5">
       <ToolbarIconButton accessibilityLabel={BACK_LABEL} disabled={!canGoBack} onPress={onGoBack}>
-        <ArrowLeft color={colors['muted-foreground']} size={NAV_ICON_SIZE} />
+        <ThemedIcon icon={ArrowLeft} variant="ghost" size={NAV_ICON_SIZE} />
       </ToolbarIconButton>
       <ToolbarIconButton accessibilityLabel={FORWARD_LABEL} disabled={!canGoForward} onPress={onGoForward}>
-        <ArrowRight color={colors['muted-foreground']} size={NAV_ICON_SIZE} />
+        <ThemedIcon icon={ArrowRight} variant="ghost" size={NAV_ICON_SIZE} />
       </ToolbarIconButton>
       {layout === 'minimal' ? null : (
         <Text className="ml-1.5 shrink" numberOfLines={1} size="sm" weight="semibold">

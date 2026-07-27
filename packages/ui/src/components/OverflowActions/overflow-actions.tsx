@@ -7,7 +7,7 @@ import { SPRING_PRESS } from '../../lib/ease';
 import { MoreHorizontal, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
-import { useThemeColor } from '../../theme/use-theme-color';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 
 // RN FALLBACK vs web: the web rail uses framer `layout` on every node so the
@@ -97,7 +97,6 @@ export function OverflowActions({
   triggerIcon,
 }: OverflowActionsProps) {
   const reduce = useReducedMotion();
-  const iconOnPrimary = useThemeColor('primary-foreground');
   const [internal, setInternal] = useState(defaultExpanded);
   const [togglePressed, setTogglePressed] = useState(false);
   // Natural width of the overflow group, measured offscreen so the clip has an
@@ -193,8 +192,8 @@ export function OverflowActions({
                 transition={{ type: 'timing', duration: reduce ? 100 : 180 }}
               >
                 {isExpanded
-                  ? (closeIcon ?? <X size={size === 'sm' ? 14 : 16} color={iconOnPrimary} />)
-                  : (triggerIcon ?? <MoreHorizontal size={size === 'sm' ? 14 : 16} color={iconOnPrimary} />)}
+                  ? (closeIcon ?? <ThemedIcon icon={X} variant="primary" size={size === 'sm' ? 14 : 16} />)
+                  : (triggerIcon ?? <ThemedIcon icon={MoreHorizontal} variant="primary" size={size === 'sm' ? 14 : 16} />)}
               </MotiView>
             </AnimatePresence>
           </Pressable>

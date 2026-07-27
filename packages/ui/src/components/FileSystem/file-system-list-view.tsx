@@ -21,7 +21,7 @@ import {
 import { GestureDetector } from 'react-native-gesture-handler';
 import { cn } from '../../lib/cn';
 import { ChevronDown, ChevronRight, ChevronUp } from '../../lib/icons';
-import { useThemeColors } from '../../theme/use-theme-color';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 import type {
   FileSystemContextMenuAction,
@@ -133,7 +133,6 @@ type ColumnHeaderProps = {
 
 /** One sortable header; the active column carries the direction chevron. */
 function ColumnHeader({ className, label, onPress, sort, sortKey }: ColumnHeaderProps) {
-  const colors = useThemeColors();
   const isActive = sort.key === sortKey;
   const handlePress = useCallback(() => onPress(sortKey), [onPress, sortKey]);
   const DirectionIcon = sort.direction === 'asc' ? ChevronUp : ChevronDown;
@@ -143,7 +142,7 @@ function ColumnHeader({ className, label, onPress, sort, sortKey }: ColumnHeader
       <Text className={cn(isActive ? 'text-foreground' : 'text-muted-foreground')} numberOfLines={1} size="xs" weight="medium">
         {label}
       </Text>
-      {isActive ? <DirectionIcon color={colors.foreground} size={12} /> : null}
+      {isActive ? <ThemedIcon icon={DirectionIcon} variant="secondary" size={12} /> : null}
     </Pressable>
   );
 }
@@ -173,7 +172,6 @@ function ListRow({
   showDate,
   testID,
 }: ListRowProps) {
-  const colors = useThemeColors();
   const { entry, isExpandable, isExpanded, level } = row;
   const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
   const handleToggle = useCallback(() => onToggleExpanded(entry.path), [entry.path, onToggleExpanded]);
@@ -204,7 +202,7 @@ function ListRow({
             onPress={handleToggle}
             style={{ width: CHEVRON_SIZE }}
           >
-            <ChevronIcon color={isSelected ? colors['primary-foreground'] : colors['muted-foreground']} size={14} />
+            <ThemedIcon icon={ChevronIcon} token={isSelected ? 'primary-foreground' : 'muted-foreground'} size={14} />
           </Pressable>
         ) : (
           <View style={{ width: CHEVRON_SIZE }} />

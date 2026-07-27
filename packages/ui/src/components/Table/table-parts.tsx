@@ -7,6 +7,7 @@ import { ChevronRight } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
 import { Checkbox } from '../Checkbox/checkbox';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Loader } from '../Loader/loader';
 import { Text } from '../Text/text';
 
@@ -110,7 +111,6 @@ export function PaginationFooter({
   const label = paginationLabel?.(page, totalPages) ?? `${page} / ${totalPages}`;
   const prevDisabled = page <= 1;
   const nextDisabled = page >= totalPages;
-  const foreground = useThemeColor('foreground');
   return (
     <View className={cn('flex-row items-center justify-center gap-3 border-border border-t px-4 py-2.5', footerClassName)}>
       <Pressable
@@ -121,7 +121,9 @@ export function PaginationFooter({
         disabled={prevDisabled}
       >
         {/* Rotated ChevronRight stands in for missing ChevronLeft */}
-        <View style={{ transform: [{ rotate: '180deg' }] }}>{prevIcon ?? <ChevronRight size={16} color={foreground} />}</View>
+        <View style={{ transform: [{ rotate: '180deg' }] }}>
+          {prevIcon ?? <ThemedIcon icon={ChevronRight} variant="secondary" size={16} />}
+        </View>
       </Pressable>
       <Text className="text-muted-foreground" style={{ fontSize: 13 }}>
         {label}
@@ -133,7 +135,7 @@ export function PaginationFooter({
         accessibilityRole="button"
         disabled={nextDisabled}
       >
-        {nextIcon ?? <ChevronRight size={16} color={foreground} />}
+        {nextIcon ?? <ThemedIcon icon={ChevronRight} variant="secondary" size={16} />}
       </Pressable>
     </View>
   );

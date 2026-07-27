@@ -10,6 +10,7 @@ import { ArrowDownUp, Check } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
 import type { TriggerRenderProps } from '../AdaptiveDropdown/adaptive-dropdown';
 import { AdaptiveDropdown } from '../AdaptiveDropdown/adaptive-dropdown';
+import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 import type { FileSystemSortKey, FileSystemSortState, FileTypeFilterOption } from './file-system.types';
 import { DATE_FILTER_PRESETS, FILE_TYPE_FILTER_GROUPS } from './file-system-filter';
@@ -58,8 +59,7 @@ type CheckSlotProps = { isChecked: boolean };
 
 /** Fixed-width checkmark slot, so labels line up whether or not they're checked. */
 function CheckSlot({ isChecked }: CheckSlotProps) {
-  const colors = useThemeColors();
-  return <View className="w-4 items-center">{isChecked ? <Check color={colors.foreground} size={14} /> : null}</View>;
+  return <View className="w-4 items-center">{isChecked ? <ThemedIcon icon={Check} variant="secondary" size={14} /> : null}</View>;
 }
 
 export type FileSystemSortSelectProps = {
@@ -81,7 +81,6 @@ function SortMenuRow({ isSelected, onSelect, option }: SortMenuRowProps) {
 type SortTriggerProps = { label: string | null; toggle: () => void };
 
 function SortTrigger({ label, toggle }: SortTriggerProps) {
-  const colors = useThemeColors();
   return (
     <Pressable
       accessibilityLabel="Sort by"
@@ -89,7 +88,7 @@ function SortTrigger({ label, toggle }: SortTriggerProps) {
       onPress={toggle}
       className="h-7 shrink-0 flex-row items-center gap-1.5 rounded-md border border-border bg-surface-3 px-2"
     >
-      <ArrowDownUp color={colors['muted-foreground']} size={16} />
+      <ThemedIcon icon={ArrowDownUp} variant="ghost" size={16} />
       {label ? (
         <Text size="sm" className="text-foreground">
           {label}

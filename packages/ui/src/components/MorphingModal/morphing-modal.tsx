@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_PANEL } from '../../lib/ease';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
@@ -24,6 +24,21 @@ export type MorphingModalPlacement = 'bottom' | 'center';
 // worklets and so needs no reanimated Babel plugin, which the web/vitest build
 // target doesn't apply; a raw `useAnimatedStyle` throws there.)
 const INSTANT = { type: 'timing' as const, duration: 0 };
+
+// `pointerEvents: 'box-none'` MUST come from StyleSheet.create, not an inline
+// style object. On react-native-web, `box-none` is not real CSS — it is a
+// polyfill the StyleSheet compiler expands into two rules (`pointer-events:
+// none!important` on the node, `pointer-events: auto` on its direct children).
+// That expansion only runs in the atomic/class path; RNW's inline-style path
+// explicitly does not support `pointerEvents` and passes the value straight to
+// the DOM, where the browser drops `pointer-events: box-none` as invalid. The
+// node then keeps the default `auto`, and this full-bleed positioning layer
+// swallows every tap meant for the scrim behind it — i.e. the modal stops
+// closing on overlay tap. Native reads the same style object directly, so the
+// class path is correct on both targets.
+const styles = StyleSheet.create({
+  positioner: { pointerEvents: 'box-none' },
+});
 
 function resolveEnterY(reduce: boolean, placement: MorphingModalProps['placement']): 0 | 20 | 40 {
   if (reduce) return 0;
@@ -108,10 +123,16 @@ export function MorphingModal({
             transition={{ type: 'timing', duration: 200, easing: EASE_OUT }}
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
           >
-            <Pressable accessibilityLabel="Close" onPress={handleClose} className="bg-foreground/20" style={{ flex: 1 }} />
+            <Pressable
+              accessibilityLabel="Close"
+              onPress={handleClose}
+              className="bg-foreground/20"
+              style={{ flex: 1 }}
+              testID={testID ? `${testID}-backdrop` : undefined}
+            />
           </MotiView>
           <View
-            style={{ pointerEvents: 'box-none' }}
+            style={styles.positioner}
             className={
               placement === 'bottom' ? 'flex-1 items-center justify-end px-4 pb-8' : 'flex-1 items-center justify-center px-4'
             }

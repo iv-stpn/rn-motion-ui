@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, Controls, Playground, Section } from '../../__stories__/story-harness';
 import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
 import { Ban, Lock, ScanFace, ScrollText, ShieldCheck, Trash2, X } from '../../lib/icons';
@@ -197,10 +197,10 @@ const PLACEMENTS = [
   { value: 'center', label: 'Center' },
 ] as const satisfies readonly { value: 'bottom' | 'center'; label: string }[];
 
-type MorphingModalDemoProps = { placement: 'bottom' | 'center'; triggerKind?: TriggerKind };
+type MorphingModalDemoProps = { placement: 'bottom' | 'center'; triggerKind?: TriggerKind; testID?: string };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function MorphingModalDemo({ placement, triggerKind }: MorphingModalDemoProps) {
+function MorphingModalDemo({ placement, triggerKind, testID }: MorphingModalDemoProps) {
   const [view, setView] = useState<WalletView>(null);
   const showOptions = useCallback(() => setView('options'), []);
   const close = useCallback(() => setView(null), []);
@@ -210,7 +210,7 @@ function MorphingModalDemo({ placement, triggerKind }: MorphingModalDemoProps) {
     <View className="items-center" style={{ gap: 12 }}>
       <TriggerButton kind={triggerKind} label={OPEN_LABEL} onPress={showOptions} />
       <Text className="text-muted-foreground text-xs">{HINT}</Text>
-      <MorphingModal viewId={view} onClose={close} placement={placement}>
+      <MorphingModal viewId={view} onClose={close} placement={placement} testID={testID}>
         {renderModalView(view, { close, showOptions, showPrivateKey, showRecovery })}
       </MorphingModal>
     </View>
@@ -248,5 +248,35 @@ export const Default: Story = {
     // Open the modal; it lands on the options list, not a detail view.
     await userEvent.click(await canvas.findByRole('button', { name: OPEN_LABEL }));
     await expect(await screen.findByText(OPTIONS_TITLE)).toBeTruthy();
+  },
+};
+
+export const CloseOnOverlayTap: Story = {
+  name: 'Demo: Close on overlay tap',
+  render: () => <MorphingModalDemo placement="bottom" testID="morph" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole('button', { name: OPEN_LABEL }));
+    await expect(await screen.findByText(OPTIONS_TITLE)).toBeTruthy();
+
+    // The scrim must be what actually paints in the empty area around the
+    // panel. `userEvent` dispatches straight at the node without hit-testing,
+    // so a click alone would pass even while the panel's positioning layer sat
+    // on top and swallowed every real tap. Probe the top-left corner — far from
+    // the bottom-anchored card — and name what paints there so a regression
+    // reports the offending layer instead of a bare `false`.
+    const doc = canvasElement.ownerDocument;
+    const topmost = doc.elementFromPoint(12, 12);
+    const label = topmost?.closest('[data-testid]')?.getAttribute('data-testid') ?? topmost?.className ?? 'nothing';
+    await expect(label).toBe('morph-backdrop');
+
+    // The other half of `box-none`: the panel itself must still take taps. A
+    // positioning layer fixed with plain `pointerEvents: 'none'` would pass
+    // the corner probe above and still leave the card dead, so morph a view.
+    await userEvent.click(await screen.findByText(PRIVATE_KEY_LABEL));
+    await expect(await screen.findByText(PRIVATE_KEY_TITLE)).toBeTruthy();
+
+    await userEvent.click(await screen.findByTestId('morph-backdrop'));
+    await waitFor(() => expect(screen.queryByText(PRIVATE_KEY_TITLE)).toBeNull());
   },
 };

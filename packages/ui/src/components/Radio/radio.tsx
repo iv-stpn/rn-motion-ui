@@ -21,6 +21,8 @@ type RadioCtx = {
   reduce: boolean;
   layouts: Record<string, LayoutRectangle>;
   register: (value: string, layout: LayoutRectangle) => void;
+  /** The group's own testID, used to derive per-item ones. */
+  testID?: string;
 };
 
 const RadioContext = createContext<RadioCtx | null>(null);
@@ -99,7 +101,7 @@ export function RadioGroup({
   const activeLayout = layouts[current];
 
   return (
-    <RadioContext.Provider value={{ value: current, setValue, reduce, layouts, register }}>
+    <RadioContext.Provider value={{ value: current, setValue, reduce, layouts, register, testID }}>
       <View
         accessibilityRole="radiogroup"
         testID={testID}
@@ -117,6 +119,7 @@ export function RadioGroup({
               translateY: activeLayout.y + (activeLayout.height - DOT_SIZE) / 2,
             }}
             transition={reduce ? TIMING_INSTANT : indicatorSpring}
+            testID={`${testID ?? 'radio-group'}-indicator`}
             className="h-2.5 w-2.5 rounded-full bg-primary"
             style={{ pointerEvents: 'none', position: 'absolute', left: 0, top: 0 }}
           />
@@ -133,6 +136,11 @@ export type RadioGroupItemProps = {
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  /**
+   * Defaults to `${group testID ?? 'radio-group'}-item-<value>`, so every item is
+   * addressable without threading ids through. Pass one to override it. The ring
+   * inside gets `-control` appended to whichever id is used.
+   */
   testID?: string;
 };
 
@@ -148,9 +156,13 @@ const control = cva('h-5 w-5 shrink-0 rounded-full border-2', {
 });
 
 export function RadioGroupItem({ value, label, disabled, style, accessibilityLabel, testID }: RadioGroupItemProps) {
-  const { value: groupValue, setValue, reduce, register } = useRadioGroup();
+  const { value: groupValue, setValue, reduce, register, testID: groupTestID } = useRadioGroup();
   const [pressed, setPressed] = useState(false);
   const selected = groupValue === value;
+  // Derive from the group so items are addressable without threading a testID
+  // through every child; an explicit prop still wins. Falls back to the
+  // component name when the group has no testID, matching FileTree/FileSystem.
+  const itemTestID = testID ?? `${groupTestID ?? 'radio-group'}-item-${value}`;
 
   const handlePressIn = useCallback(() => setPressed(true), []);
   const handlePressOut = useCallback(() => setPressed(false), []);
@@ -166,7 +178,7 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
       aria-checked={selected}
       aria-disabled={Boolean(disabled)}
       accessibilityLabel={accessibilityLabel ?? label}
-      testID={testID}
+      testID={itemTestID}
       disabled={disabled}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -183,6 +195,7 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
           damping: SPRING_PRESS.damping,
           mass: SPRING_PRESS.mass,
         }}
+        testID={`${itemTestID}-control`}
         className={control({ selected })}
       />
       {label ? <Text className="select-none text-foreground text-sm">{label}</Text> : null}

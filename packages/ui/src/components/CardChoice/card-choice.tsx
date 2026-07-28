@@ -15,6 +15,8 @@ type CardChoiceCtx = {
   groupRef: RefObject<View | null>;
   /** Report a card's radio-ring box, already resolved to group-relative coords. */
   register: (value: string, ring: LayoutRectangle) => void;
+  /** The group's own testID, used to derive per-card ones. */
+  testID?: string;
 };
 
 const CardChoiceContext = createContext<CardChoiceCtx | null>(null);
@@ -99,7 +101,7 @@ export function CardChoiceGroup({
   const activeRing = rings[current];
 
   return (
-    <CardChoiceContext.Provider value={{ value: current, setValue, reduce, groupRef, register }}>
+    <CardChoiceContext.Provider value={{ value: current, setValue, reduce, groupRef, register, testID }}>
       <View
         ref={groupRef}
         accessibilityRole="radiogroup"
@@ -121,6 +123,7 @@ export function CardChoiceGroup({
               translateY: activeRing.y + (activeRing.height - DOT_SIZE) / 2,
             }}
             transition={reduce ? TIMING_INSTANT : indicatorSpring}
+            testID={`${testID ?? 'card-choice-group'}-indicator`}
             className="h-2.5 w-2.5 rounded-full bg-primary"
             style={{ pointerEvents: 'none', position: 'absolute', left: 0, top: 0 }}
           />
@@ -154,6 +157,14 @@ export type CardChoiceProps = {
   selected?: boolean;
   /** Standalone press handler. Ignored inside a `<CardChoiceGroup>`. */
   onPress?: () => void;
+  /**
+   * Inside a `<CardChoiceGroup>`, defaults to
+   * `${group testID ?? 'card-choice-group'}-card-${value}`, so every card is
+   * addressable without threading ids through the tree. Pass one to override it
+   * — required to address the card standalone, where there is no value to key on.
+   * The ring, its standalone dot and the badge derive from the resolved id
+   * (`-ring`, `-dot`, `-badge`).
+   */
   testID?: string;
 };
 
@@ -182,6 +193,11 @@ export function CardChoice({
   const inGroup = groupCtx !== null && value !== undefined;
   const selected = inGroup ? groupCtx.value === value : Boolean(selectedProp);
   const ringRef = useRef<View | null>(null);
+  // Derive from the group so cards are addressable without threading a testID
+  // through every child; an explicit prop still wins. Falls back to the
+  // component name when the group has no testID, matching FileTree/FileSystem.
+  // Standalone there is no value to key on, so only an explicit prop applies.
+  const cardTestID = testID ?? (inGroup ? `${groupCtx.testID ?? 'card-choice-group'}-card-${value}` : undefined);
 
   const handlePress = useCallback(() => {
     if (groupCtx && value !== undefined) groupCtx.setValue(value);
@@ -211,7 +227,7 @@ export function CardChoice({
       onLayout={measureRing}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
-      testID={testID}
+      testID={cardTestID}
       style={style}
       className={cn(
         'flex-1 gap-3 rounded-2xl border p-4',
@@ -227,12 +243,15 @@ export function CardChoice({
         <View
           ref={ringRef}
           onLayout={measureRing}
+          testID={cardTestID ? `${cardTestID}-ring` : undefined}
           className={cn('h-5 w-5 items-center justify-center rounded-full border', selected ? 'border-primary' : 'border-border')}
         >
-          {selected && !inGroup ? <View className="h-2.5 w-2.5 rounded-full bg-primary" /> : null}
+          {selected && !inGroup ? (
+            <View testID={cardTestID ? `${cardTestID}-dot` : undefined} className="h-2.5 w-2.5 rounded-full bg-primary" />
+          ) : null}
         </View>
         {badge ? (
-          <View className="rounded-full bg-primary/10 px-2 py-0.5">
+          <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
             <Text className="font-semibold text-primary text-xs">{badge}</Text>
           </View>
         ) : null}

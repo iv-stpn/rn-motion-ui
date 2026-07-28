@@ -17,7 +17,10 @@
     },
     "packages/ui": {
       "name": "rn-motion-ui",
-      "version": "3.1.0",
+      "version": "3.2.0",
+      "bin": {
+        "rn-motion-ui-tokens": "./scripts/gen-tokens.mjs",
+      },
       "dependencies": {
         "class-variance-authority": "^0.7.1",
       },
@@ -44,8 +47,12 @@
         "react-native": ">=0.76.0",
         "react-native-gesture-handler": ">=2.0.0",
         "react-native-reanimated": ">=4.0.0",
+        "react-native-safe-area-context": ">=4.0.0",
         "react-native-svg": ">=15.0.0",
       },
+      "optionalPeers": [
+        "react-native-safe-area-context",
+      ],
     },
     "storybook/demo": {
       "name": "@rn-motion-ui/demo",
@@ -112,6 +119,7 @@
         "react-native": "0.86.0",
         "react-native-gesture-handler": "2.32.0",
         "react-native-reanimated": "4.5.2",
+        "react-native-safe-area-context": "^5.8.0",
         "react-native-web": "0.21.2",
         "react-native-worklets": "0.11.1",
         "rn-motion-ui": "workspace:*",

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
+import { expect, within } from 'storybook/test';
 import { Choice, Controls, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
 import { SURFACE_LEVELS, type SurfaceLevel } from '../../lib/elevated';
 import { Text } from '../Text/text';
@@ -76,8 +77,79 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
   );
 }
 
+const ladderTestID = (level: SurfaceLevel) => `card-elevation-${level}`;
+const PROBED_LEVELS = [1, 3, 6] as const satisfies readonly SurfaceLevel[];
+const TRANSPARENT = 'rgba(0, 0, 0, 0)';
+
 export default meta;
 
 /** Both axes the card exposes — the 1–8 surface/shadow ladder and the three
  *  padding sizes. Drive the top card with the chips, or compare the rows below. */
 export const Interactive: Story = { render: (args) => <CardPlayground {...args} /> };
+
+/**
+ * The whole of `elevation` is that one number drives a *pair* of utilities —
+ * `bg-surface-N` and `shadow-elevated-N` — so fill and rim stay calibrated at
+ * the same rung. Nothing else in the component enforces that, and a scanner
+ * miss fails open: an unregistered class renders as no background and no
+ * shadow, which looks merely flat rather than broken.
+ *
+ * This pins both halves against the tokens they must resolve to. The shadows
+ * are additionally compared across levels, because in light mode every surface
+ * from 3 up is pure white — the shadow is the only thing that moves, so a
+ * background-only assertion would pass on a ladder that had stopped laddering.
+ */
+export const ElevationPairsSurfaceAndShadow: Story = {
+  render: () => (
+    <View style={{ gap: 12 }}>
+      {SURFACE_LEVELS.map((level) => (
+        <Card elevation={level} key={level} style={{ width: CARD_WIDTH }} testID={ladderTestID(level)}>
+          <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>
+        </Card>
+      ))}
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Probe with the utility classes themselves rather than the raw tokens:
+    // Tailwind never emits `--shadow-elevated-N` as a custom property, it
+    // inlines the value into `--tw-shadow` and composes the final box-shadow
+    // out of five layers (inset, inset-ring, ring-offset, ring, shadow). Only
+    // an element carrying the real class reproduces that composition.
+    const probe = document.createElement('div');
+    canvasElement.appendChild(probe);
+    const expectedFor = (level: SurfaceLevel) => {
+      probe.className = `bg-surface-${level} shadow-elevated-${level}`;
+      const { backgroundColor, boxShadow } = getComputedStyle(probe);
+      // A class the scanner never registered simply doesn't exist, leaving the
+      // probe transparent and shadowless — which is also what a card with no
+      // surface classes looks like. Pinning the probe to real values first
+      // keeps the comparisons below from passing vacuously.
+      expect(backgroundColor).not.toBe(TRANSPARENT);
+      expect(boxShadow).not.toBe('none');
+      return { backgroundColor, boxShadow };
+    };
+    // One await for the render; the whole ladder mounts in the same pass, so
+    // the rest of the lookups are synchronous.
+    await canvas.findByTestId(ladderTestID(1));
+    const cardStyle = (level: SurfaceLevel) => getComputedStyle(canvas.getByTestId(ladderTestID(level)));
+
+    try {
+      for (const level of PROBED_LEVELS) {
+        const expected = expectedFor(level);
+        const actual = cardStyle(level);
+        expect(actual.backgroundColor).toBe(expected.backgroundColor);
+        expect(actual.boxShadow).toBe(expected.boxShadow);
+      }
+
+      // …and the rungs are actually distinct, not eight aliases of one recipe.
+      // In light mode every surface from 3 up is pure white, so the shadow is
+      // the only thing that moves — a background-only check would pass on a
+      // ladder that had stopped laddering.
+      expect(cardStyle(3).boxShadow).not.toBe(cardStyle(6).boxShadow);
+    } finally {
+      probe.remove();
+    }
+  },
+};

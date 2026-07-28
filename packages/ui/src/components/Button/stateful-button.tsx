@@ -4,7 +4,7 @@
 // may briefly snap vs. the web's synchronous useLayoutEffect measure.
 // aria-busy is approximated via accessibilityLiveRegion="polite" on the content row.
 
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useMountEffect } from '../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
@@ -37,13 +37,30 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
   afterSuccess?: () => void;
   /** Called once the error display window ends. Receives the rejection value from `onPress`. */
   afterError?: (error: unknown) => void;
-  /** Return to idle (and re-enable) once the success/error window ends. Off by
-   *  default: the button holds its terminal state, disabled, so it can't be
-   *  pressed again while e.g. a page transition unmounts it. */
-  autoReset?: boolean;
+  /** Reset signal. Rising to `true` returns the button to idle immediately,
+   *  wherever the machine currently is — mid-action, mid-window, or holding a
+   *  terminal state — cancelling the pending window (so a not-yet-fired
+   *  `afterSuccess`/`afterError` is skipped) and re-enabling the button.
+   *
+   * Edge-triggered on false → true, so it can be held `true` without pinning the
+   * button to idle: a press after that still runs the machine normally. Lower it
+   * and raise it again to reset a second time. An in-flight `onPress` is not
+   * cancelled (a promise can't be), but its result is discarded and can no longer
+   * move the button. Resetting an already-idle button does nothing. */
+  shouldReset?: boolean;
+  /** Whether a run returns to idle (and the button re-enables) on its own once
+   *  the success/error window ends. Off by default: the button holds its
+   *  terminal state, disabled, so it can't be pressed again while e.g. a page
+   *  transition unmounts it. */
+  shouldAutoReset?: boolean;
+  /** Called after any reset returns the button to idle — whether from
+   *  `shouldReset` or `shouldAutoReset`. On the auto path it follows
+   *  `afterSuccess`/`afterError`; a `shouldReset` mid-window replaces them.
+   *  Never fires when a run holds its terminal state. */
+  afterReset?: () => void;
   /** Explicit state — takes full control of the button. When set, the machine
-   *  is bypassed: timings, `afterSuccess`/`afterError` and `autoReset` are
-   *  ignored (`onPress` still fires on press). */
+   *  is bypassed: timings, `afterSuccess`/`afterError`, `shouldReset`,
+   *  `shouldAutoReset` and `afterReset` are ignored (`onPress` still fires on press). */
   state?: ButtonState;
   children: ReactNode;
   loadingText?: ReactNode;
@@ -416,7 +433,9 @@ export function StatefulButton({
   errorDurationMs = 600,
   afterSuccess,
   afterError,
-  autoReset = false,
+  afterReset,
+  shouldReset = false,
+  shouldAutoReset = false,
   children,
   loadingText = 'Loading',
   successText = 'Done',
@@ -442,12 +461,23 @@ export function StatefulButton({
   afterSuccessRef.current = afterSuccess;
   const afterErrorRef = useRef(afterError);
   afterErrorRef.current = afterError;
+  const afterResetRef = useRef(afterReset);
+  afterResetRef.current = afterReset;
+  // Read at window end rather than press time, so toggling the prop mid-run
+  // still decides the run it lands on.
+  const shouldAutoResetRef = useRef(shouldAutoReset);
+  shouldAutoResetRef.current = shouldAutoReset;
 
   // runningRef guards the async run against re-entry (Pressable's `disabled`
   // only updates on re-render); mountedRef guards setState after unmount.
   const runningRef = useRef(false);
   const mountedRef = useRef(true);
   const windowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Bumped by every reset. The async run captures it and drops its writes if it
+  // no longer matches: an external reset can land while `onPress` is still
+  // pending, and that orphaned promise must not push the button back into
+  // success/error after it has already returned to idle.
+  const runIdRef = useRef(0);
   useMountEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -455,6 +485,37 @@ export function StatefulButton({
       if (windowTimer.current !== null) clearTimeout(windowTimer.current);
     };
   });
+
+  // Single reset path, shared by the external `shouldReset` signal and the
+  // `shouldAutoReset` window end: cancel the pending window, orphan any in-flight
+  // run, re-arm, and announce it. Returns false when there was nothing to reset.
+  const resetNow = useCallback((): boolean => {
+    if (!mountedRef.current) return false;
+    if (windowTimer.current !== null) {
+      clearTimeout(windowTimer.current);
+      windowTimer.current = null;
+    }
+    runIdRef.current += 1;
+    runningRef.current = false;
+    setMachineState('idle');
+    afterResetRef.current?.();
+    return true;
+  }, []);
+
+  // The external signal is edge-triggered on the rise: a parent that leaves
+  // `shouldReset` pinned true would otherwise re-reset the button on every press,
+  // so raising it resets once. Lower it and raise it again to reset again.
+  const prevShouldReset = useRef(shouldReset);
+  // biome-ignore lint/plugin: reacting to a prop's rising edge — the reset cancels a pending timer and orphans an in-flight promise, neither of which is derivable during render
+  useEffect(() => {
+    const rose = shouldReset && !prevShouldReset.current;
+    prevShouldReset.current = shouldReset;
+    if (!rose || controlled) return;
+    // Already idle with nothing in flight: there is no state to unwind, so
+    // `afterReset` stays silent rather than announcing a reset that didn't happen.
+    if (machineState === 'idle' && !runningRef.current) return;
+    resetNow();
+  }, [shouldReset, controlled, machineState, resetNow]);
 
   const handlePress = useCallback(() => {
     if (!onPress) return;
@@ -465,6 +526,11 @@ export function StatefulButton({
     }
     if (runningRef.current) return;
     runningRef.current = true;
+
+    // Identifies this run for the whole of its async life. A reset bumps the ref,
+    // so everything below can tell "still my run" from "reset out from under me".
+    const runId = runIdRef.current;
+    const isCurrent = () => mountedRef.current && runIdRef.current === runId;
 
     const runMachine = async () => {
       const startedAt = Date.now();
@@ -482,29 +548,30 @@ export function StatefulButton({
       // Hold the loader for the remainder of minLoadingMs so fast actions don't flash it.
       const remaining = minLoadingMs - (Date.now() - startedAt);
       if (remaining > 0) await sleep(remaining);
-      if (!mountedRef.current) return;
+      // Reset (or unmount) while the action was pending: this run is orphaned, so
+      // it neither shows its outcome nor opens a window. The button is already idle.
+      if (!isCurrent()) return;
       setMachineState(outcome);
 
       windowTimer.current = setTimeout(
         () => {
+          windowTimer.current = null;
           if (outcome === 'success') afterSuccessRef.current?.();
           else afterErrorRef.current?.(rejection);
-          // The callback may have unmounted the button (navigation, closed sheet).
-          if (autoReset && mountedRef.current) {
-            runningRef.current = false;
-            setMachineState('idle');
-          }
+          // The callback may have unmounted the button (navigation, closed sheet),
+          // or reset it — either way this run no longer owns the state.
+          if (shouldAutoResetRef.current && isCurrent()) resetNow();
         },
         outcome === 'success' ? successDurationMs : errorDurationMs,
       );
     };
     runMachine();
-  }, [onPress, controlled, minLoadingMs, successDurationMs, errorDurationMs, autoReset]);
+  }, [onPress, controlled, minLoadingMs, successDurationMs, errorDurationMs, resetNow]);
 
   const isBusy = state === 'loading';
   // Uncontrolled runs stay non-interactive through the whole machine — loading,
   // the success/error window, and the terminal hold — so the action can't be
-  // double-fired; autoReset re-enables the button when it returns to idle.
+  // double-fired; a reset re-enables the button when it returns to idle.
   const machineActive = !controlled && state !== 'idle';
   const v = variant ?? 'primary';
   const colors = useThemeColors();

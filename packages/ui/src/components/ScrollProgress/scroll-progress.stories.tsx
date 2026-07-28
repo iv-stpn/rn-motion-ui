@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, View } from 'react-native';
 import { makeMutable, type SharedValue, useSharedValue } from 'react-native-reanimated';
-import { expect, within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
@@ -40,6 +40,8 @@ type DiameterKey = (typeof DIAMETERS)[number]['value'];
 
 type ScrollBoxProps = { children: (progress: SharedValue<number>) => ReactNode; width?: number; height?: number };
 
+const SCROLL_BOX_TESTID = 'scroll-box-scroller';
+
 /**
  * Scrollable frame that owns the shared progress value and hands it to its
  * children — the indicator has no scroll awareness of its own, it only reads a
@@ -62,7 +64,12 @@ function ScrollBox({ children, width = BOX_W, height = BOX_H }: ScrollBoxProps) 
   return (
     <View className="overflow-hidden rounded-2xl border border-border" style={{ width, height }}>
       {children(progress)}
-      <ScrollView contentContainerStyle={{ padding: 12, gap: 10 }} onScroll={onScroll} scrollEventThrottle={16}>
+      <ScrollView
+        contentContainerStyle={{ padding: 12, gap: 10 }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        testID={SCROLL_BOX_TESTID}
+      >
         {ROWS.map((n) => (
           <View className="rounded-lg bg-surface-3 px-3 py-4" key={n}>
             <Text className="text-muted-foreground" size="sm">{`Section ${n}`}</Text>
@@ -168,5 +175,38 @@ export const Bar: Story = {
     // Both variants mount against the same shared value.
     await expect(await canvas.findByTestId('bar')).toBeInTheDocument();
     await expect(await canvas.findByTestId('circle')).toBeInTheDocument();
+
+    // Both are progressbars, not anonymous boxes — and the arc inside the
+    // circle stays out of the tree so it isn't announced as a second thing.
+    const bars = await canvas.findAllByRole('progressbar');
+    expect(bars.length).toBe(2);
+    for (const bar of bars) expect(bar).toHaveAttribute('aria-label', 'Scroll progress');
+  },
+};
+
+/**
+ * The indicator is driven entirely on the UI thread, but `accessibilityValue`
+ * is a render-time prop — so the percentage has to be mirrored back to JS or a
+ * screen reader is told the progress never moves. That mirror is quantised to
+ * whole 5% steps to keep it from re-rendering every frame, which makes it easy
+ * to break in the direction that fails silently: still a progressbar, still
+ * labelled, permanently reading 0%.
+ */
+export const ReportsItsValue: Story = {
+  name: 'Demo: Announces the percentage',
+  render: () => <ScrollBox>{(progress) => <ScrollProgress height={4} progress={progress} testID="reporting-bar" />}</ScrollBox>,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const bar = await canvas.findByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuemin', '0');
+    expect(bar).toHaveAttribute('aria-valuemax', '100');
+    expect(bar).toHaveAttribute('aria-valuenow', '0');
+
+    // Scroll the box and the reported value has to follow.
+    const scroller = await canvas.findByTestId(SCROLL_BOX_TESTID);
+    scroller.scrollTop = scroller.scrollHeight - scroller.clientHeight;
+    scroller.dispatchEvent(new Event('scroll', { bubbles: true }));
+
+    await waitFor(() => expect(Number(bar.getAttribute('aria-valuenow'))).toBeGreaterThan(0), { timeout: 3000 });
   },
 };

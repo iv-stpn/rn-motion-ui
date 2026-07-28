@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
 import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
@@ -172,9 +173,57 @@ function HoverMenuPlayground() {
   );
 }
 
+const DEMO_TESTID = 'hover-menu-demo';
+const DEMO_PANEL_TESTID = `${DEMO_TESTID}-panel`;
+
+// Uncontrolled, plain-node trigger — the wrapper owns both the hover and the
+// press, so the play function exercises the component's own state machine
+// rather than the playground's `open` mirror.
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function HoverMenuDemo() {
+  return (
+    <HoverMenu testID={DEMO_TESTID} trigger={renderPlainTrigger} triggerAccessibilityLabel={PLAIN_TRIGGER_LABEL} width="trigger">
+      {renderContent}
+    </HoverMenu>
+  );
+}
+
 export default meta;
 
 /** Align, width, offset, hover delay and elevation on a controlled menu, plus an uncontrolled one. */
 export const Interactive: Story = {
   render: () => <HoverMenuPlayground />,
+};
+
+/**
+ * Pins the full hover cycle: the panel opens on hover-in after `openDelay` and
+ * — the half that has broken before — closes again on the *first* hover-out.
+ *
+ * react-native-web's `useHover` binds its `pointerleave` listener from inside
+ * the `pointerenter` handler and never re-binds it when the prop identity
+ * changes, so the hover-out handler captured at enter time is the one that runs
+ * on leave. A handler closing over `open` was therefore captured while the menu
+ * was still closed (hover opens on a timer, after enter), bailed out of its
+ * `if (!open) return` guard, and left the menu stuck open until a second hover
+ * happened to enter while already open. `handleHoverOut` reads `openRef`
+ * instead; this asserts that one hover round-trip is enough.
+ */
+export const Default: Story = {
+  name: 'Demo: Hover opens and closes it',
+  render: () => <HoverMenuDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = await canvas.findByTestId(DEMO_TESTID);
+    await expect(canvas.queryByTestId(DEMO_PANEL_TESTID)).toBeNull();
+
+    // The panel is a sibling in the same tree on web (position: fixed, no
+    // portal), so it answers the canvas queries rather than needing `screen`.
+    await userEvent.hover(trigger);
+    await waitFor(() => expect(canvas.getByTestId(DEMO_PANEL_TESTID)).toBeInTheDocument());
+    await expect(await canvas.findByText('Duplicate')).toBeInTheDocument();
+
+    // closeDelay (150ms) then the 180ms exit animation before it unmounts.
+    await userEvent.unhover(trigger);
+    await waitFor(() => expect(canvas.queryByTestId(DEMO_PANEL_TESTID)).toBeNull(), { timeout: 2000 });
+  },
 };

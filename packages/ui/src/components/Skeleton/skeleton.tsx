@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import type { ViewProps } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
 
 // cubic-bezier(0.4, 0, 0.6, 1) — Tailwind's `animate-pulse` easing.
@@ -21,11 +22,6 @@ const skeleton = cva('bg-muted', {
     shape: 'rounded',
   },
 });
-
-/** Join truthy class strings. (Local helper — this package ships no shared `cn`.) */
-function cn(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter((part): part is string => typeof part === 'string').join(' ');
-}
 
 export type SkeletonShape = NonNullable<VariantProps<typeof skeleton>['shape']>;
 export type SkeletonProps = ViewProps & {

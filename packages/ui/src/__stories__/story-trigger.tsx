@@ -24,7 +24,6 @@
  *   canvas.findByRole('button', { name: OPEN_LABEL })
  */
 
-import type { StyleProp, ViewStyle } from 'react-native';
 import { Pressable } from 'react-native';
 import type { ButtonVariant } from '../components/Button/button';
 import { Button } from '../components/Button/button';
@@ -33,6 +32,7 @@ import { ElevatedButton } from '../components/Button/elevated-button';
 import type { GlossyVariant } from '../components/Button/glossy-button';
 import { GlossyButton } from '../components/Button/glossy-button';
 import { Text } from '../components/Text/text';
+import { cn } from '../lib/cn';
 import { useThemeColors } from '../theme/use-theme-color';
 
 /** The trigger styles an overlay story can showcase. */
@@ -68,11 +68,6 @@ export type TriggerButtonProps = {
    * `Pressable` wrapper — useful for one-off layout or colour overrides.
    */
   className?: string;
-  /**
-   * `kind === 'pressable'` only. Inline style merged on top of the default
-   * bordered-outline appearance. Pass `{}` to start from a blank slate.
-   */
-  style?: StyleProp<ViewStyle>;
 };
 
 /**
@@ -83,7 +78,7 @@ export type TriggerButtonProps = {
  * | `'button'`    | `Button`          | `buttonVariant`          |
  * | `'elevated'`  | `ElevatedButton`  | `elevatedVariant`        |
  * | `'glossy'`    | `GlossyButton`    | `glossyVariant`          |
- * | `'pressable'` | bare `Pressable`  | `className`, `style`     |
+ * | `'pressable'` | bare `Pressable`  | `className`              |
  *
  * The per-kind props are all optional on one flat props type rather than a
  * discriminated union: a story flipping `kind` from a `Choice` would otherwise
@@ -98,7 +93,6 @@ export function TriggerButton({
   elevatedVariant = 'neutral',
   glossyVariant = 'neutral',
   className,
-  style,
 }: TriggerButtonProps) {
   const colors = useThemeColors();
 
@@ -121,19 +115,8 @@ export function TriggerButton({
       <Pressable
         accessibilityLabel={label}
         accessibilityRole="button"
-        className={className}
+        className={cn('self-start rounded-lg px-4 py-2', className)}
         onPress={onPress}
-        style={[
-          {
-            alignSelf: 'flex-start',
-            borderRadius: 12,
-            borderWidth: 1.5,
-            borderColor: colors.primary,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-          },
-          style,
-        ]}
       >
         <Text size="sm" weight="medium" style={{ color: colors.primary }}>
           {label}

@@ -30,7 +30,6 @@ const TITLE = 'Settings';
 const SUBTITLE = 'Manage your preferences';
 const CUSTOM_LAYOUT_TITLE = 'Custom layout';
 const CLOSED_NOTE = 'Closed';
-const OVERLAY_NOTE = 'With "Close on overlay" off, only the header button (or Escape) dismisses the modal.';
 const SIZE_NOTE = 'Panel size, elevation and the wide layout only apply while "Wide screen" is on.';
 
 const SCREENS = [
@@ -151,7 +150,6 @@ function ModalPlayground() {
       </Section>
 
       <Note>{SIZE_NOTE}</Note>
-      <Note>{OVERLAY_NOTE}</Note>
 
       <AdaptiveModal
         closeOnOverlayClick={closeOnOverlay}
@@ -180,7 +178,7 @@ function ModalDemo() {
   const [open, setOpen] = useState(false);
   const handleOpen = useCallback(() => setOpen(true), []);
   return (
-    <View>
+    <View style={{ alignItems: 'center' }}>
       <TriggerButton label={OPEN_MODAL_LABEL} onPress={handleOpen} />
       <AdaptiveModal
         isWideScreen={true}

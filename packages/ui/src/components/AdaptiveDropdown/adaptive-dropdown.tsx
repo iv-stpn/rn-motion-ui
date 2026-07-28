@@ -3,7 +3,8 @@ import { type LayoutChangeEvent, Modal, Pressable, ScrollView, useWindowDimensio
 import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { type BreakpointValue, isWidthAtLeast } from '../../lib/breakpoints';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
+import { cn } from '../../lib/cn';
+import { SURFACE_CLASSNAME, type SurfaceLevel } from '../../lib/elevated';
 import { X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -15,6 +16,7 @@ const DEFAULT_WIDE_BREAKPOINT: BreakpointValue = 'md';
 const DEFAULT_WIDTH = 360;
 const VIEWPORT_PADDING = 8;
 const DEFAULT_MAX_HEIGHT = 520;
+
 const noop = () => undefined;
 
 export type TriggerRenderProps = { open: boolean; toggle: () => void };
@@ -227,13 +229,18 @@ export function AdaptiveDropdown({
                   transition={enterTransition}
                   exitTransition={exitTransition}
                   style={{ position: 'absolute', top: panelTop, left: panelLeft, width: panelWidth, maxHeight }}
+                  className={cn('flex-col overflow-hidden rounded-2xl', SURFACE_CLASSNAME[elevation])}
+                  testID={testID ? `${testID}-panel` : undefined}
                 >
-                  <Pressable
-                    onPress={noop}
-                    style={{ maxHeight }}
-                    className={`flex-col overflow-hidden rounded-2xl border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
-                    testID={testID ? `${testID}-panel` : undefined}
-                  >
+                  {/*
+                   * Swallows presses so a tap on the panel's own padding doesn't
+                   * reach the dismiss Pressable filling the modal behind it. On
+                   * react-native-web that Pressable is a DOM node with a click
+                   * handler, and clicks bubble regardless of RN's responder
+                   * negotiation — so claiming the responder on the panel view is
+                   * not enough; a Pressable that handles the press is.
+                   */}
+                  <Pressable className="min-h-0 flex-col" onPress={noop}>
                     {header}
                     {body}
                   </Pressable>

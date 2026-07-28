@@ -1156,6 +1156,95 @@ export const PlaygroundMenuActions: Story = {
   },
 };
 
+// ─── Body wrapper ──────────────────────────────────────────────────────────────
+// `renderBody` wraps the file area rather than replacing it: the active view (or
+// the placeholder standing in for it) arrives as `content` and goes back into a
+// tree of your own. The state that produced it comes along, so the wrapper reacts
+// to the same selection, view and folder the views do without recomputing any of
+// it — and because the slot is *called* rather than mounted as a component, the
+// views underneath keep their scroll offset and panes across these re-renders.
+
+const DROP_HINT = 'Drop files here to upload';
+const NO_SELECTION = 'Nothing selected';
+
+/** Sits over the file area whenever the folder has nothing in it. */
+const dropHint = (
+  <View className="absolute inset-x-0 bottom-0 items-center p-3">
+    <Text className="text-muted-foreground" size="xs">
+      {DROP_HINT}
+    </Text>
+  </View>
+);
+
+/** A details rail beside the views, driven entirely by the slot's own state. */
+const renderBodyWithRail: FileSystemProps['renderBody'] = ({ content, currentPath, entries, isEmpty, selectedEntry, view }) => (
+  <View className="flex-1 flex-row">
+    <View className="min-h-0 flex-1">
+      {content}
+      {isEmpty ? dropHint : null}
+    </View>
+    <View className="w-48 gap-1 border-border border-l p-3">
+      <Text size="xs" weight="medium">
+        {selectedEntry?.name ?? NO_SELECTION}
+      </Text>
+      <Text className="text-muted-foreground" size="xs">
+        {`${entries.length} in ${currentPath || 'Files'}`}
+      </Text>
+      <Text className="text-muted-foreground" size="xs">
+        {`${view} view`}
+      </Text>
+    </View>
+  </View>
+);
+
+export const WithBodyWrapper: Story = {
+  name: 'Demo: Wrap the file area',
+  args: { renderBody: renderBodyWithRail },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // The default content still renders, and the rail reads the state it came from:
+    // seven entries at the root — Archive/, Documents/, Photos/ and four files.
+    await canvas.findByText('README.md');
+    await canvas.findByText(NO_SELECTION);
+    await canvas.findByText('7 in Files');
+    await canvas.findByText('icons view');
+
+    // Selecting shows the name twice over: once on the tile, once in the rail.
+    await userEvent.click(await canvas.findByRole('button', { name: 'README.md' }));
+    await waitFor(async () => expect(await canvas.findAllByText('README.md')).toHaveLength(2));
+    await waitFor(() => expect(canvas.queryByText(NO_SELECTION)).toBeNull());
+
+    // Navigating rewires both halves at once.
+    await openTile(canvas, 'Documents');
+    await canvas.findByText('3 in Documents/');
+
+    // Switching views re-renders the wrapper with the view it switched to.
+    await userEvent.click(await canvas.findByLabelText('List view'));
+    await canvas.findByText('list view');
+  },
+};
+
+/** The wrapper is still what fills the area when the placeholder is the content. */
+export const BodyWrapperEmpty: Story = {
+  name: 'Demo: Wrap an empty file area',
+  args: {
+    items: [],
+    loadChildren: undefined,
+    renderBody: ({ content, isEmpty }) => (
+      <View className="flex-1">
+        {content}
+        {isEmpty ? dropHint : null}
+      </View>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('This folder is empty');
+    await canvas.findByText(DROP_HINT);
+  },
+};
+
 // ─── Empty ─────────────────────────────────────────────────────────────────────
 
 export const Empty: Story = {

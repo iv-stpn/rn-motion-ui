@@ -7,6 +7,7 @@ import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../lib/breakpoints';
+import { cn } from '../../lib/cn';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -17,11 +18,6 @@ import { Text } from '../Text/text';
 
 /** Narrow vs. wide layout cutoff — matches FullSheet's default. */
 const DEFAULT_WIDE_BREAKPOINT: BreakpointValue = 'sm';
-
-/** Join truthy class strings. (Local helper — this package ships no shared `cn`.) */
-function cn(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter((part): part is string => typeof part === 'string').join(' ');
-}
 
 /**
  * Freezes `value` while `active` is false, so exit animations keep showing the

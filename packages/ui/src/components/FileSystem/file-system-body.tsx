@@ -3,11 +3,15 @@
 // when there is nothing to show. The columns view keeps its panes even when the
 // current folder is empty — that's how Finder lets you walk back up a trail —
 // so it only yields to the placeholder while searching or filtering.
+//
+// `renderBody` wraps that default content rather than replacing it: the slot
+// receives the node and returns a tree containing it, so a consumer can add a
+// sidebar or an overlay without reimplementing the four views.
 
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { Platform, View, type ViewStyle } from 'react-native';
 import { cn } from '../../lib/cn';
-import type { FileSystemView } from './file-system.types';
+import type { FileSystemBodyState, FileSystemView } from './file-system.types';
 import { FileSystemColumnsView } from './file-system-columns-view';
 import { FileSystemGalleryView } from './file-system-gallery-view';
 import { FileSystemIconsView } from './file-system-icons-view';
@@ -35,6 +39,8 @@ export type FileSystemBodyProps = FileSystemViewProps & {
   view: FileSystemView;
   /** Extra NativeWind classes merged onto the file-area root view. */
   className?: string;
+  /** See `FileSystemProps.renderBody`. */
+  renderBody?: (state: FileSystemBodyState & { testID?: string }) => ReactNode;
 };
 
 type EmptyLabelArgs = Pick<FileSystemBodyProps, 'hasActiveFilters' | 'isSearching' | 'searchInput'>;
@@ -74,14 +80,39 @@ const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect
 // `testID` is the root's, not the body's: it stays in the props handed to the
 // active view so every entry can derive its own id from it (see
 // file-system-test-id.ts). The body's own node takes the `-body` suffix.
-export function FileSystemBody({ className, ...props }: FileSystemBodyProps) {
+//
+// The wrapper goes inside that node rather than around it, so the file area
+// keeps its flex sizing and web selection guard however the consumer nests it.
+export function FileSystemBody({ className, renderBody, ...props }: FileSystemBodyProps) {
+  const bodyTestID = props.testID ? `${props.testID}-body` : undefined;
+  const content = <FileSystemBodyContent {...props} />;
+
+  // Called as a plain function rather than rendered as a component, unlike the
+  // header and footer slots. An inline `renderBody` arrow is a new function on
+  // every render, and a component whose *type* changes remounts its whole
+  // subtree — here that subtree is the active view, so every keystroke in the
+  // search field would reset its scroll offset, panes and in-flight drag.
+  // Calling it keeps the returned elements in the parent's own tree, where
+  // reconciliation compares them by position as usual.
+  const body = renderBody
+    ? renderBody({
+        content,
+        currentPath: props.currentPath,
+        entries: props.entries,
+        hasActiveFilters: props.hasActiveFilters,
+        isEmpty: props.entries.length === 0,
+        isLoadingCurrentFolder: props.isLoadingCurrentFolder,
+        isSearching: props.isSearching,
+        searchValue: props.searchInput,
+        selectedEntry: props.selectedEntry,
+        testID: props.testID,
+        view: props.view,
+      })
+    : content;
+
   return (
-    <View
-      className={cn('min-h-0 flex-1', className)}
-      style={WEB_BODY_STYLE}
-      testID={props.testID ? `${props.testID}-body` : undefined}
-    >
-      <FileSystemBodyContent {...props} />
+    <View className={cn('min-h-0 flex-1', className)} style={WEB_BODY_STYLE} testID={bodyTestID}>
+      {body}
     </View>
   );
 }

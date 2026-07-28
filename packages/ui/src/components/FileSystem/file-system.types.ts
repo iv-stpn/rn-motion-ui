@@ -146,6 +146,34 @@ export type FileSystemHeaderState = {
 /** State snapshot passed to {@link FileSystemProps.renderFooter}. */
 export type FileSystemStatusState = { count: number; isSearching: boolean; selectedName?: string };
 
+/**
+ * State snapshot passed to {@link FileSystemProps.renderBody}. Unlike the header
+ * and footer slots this one wraps rather than replaces: `content` is the file
+ * area the component would have rendered on its own, so returning it unchanged
+ * is a no-op and returning it inside your own tree decorates it.
+ */
+export type FileSystemBodyState = {
+  /** The active view, or the empty/loading placeholder standing in for it. */
+  content: ReactNode;
+  /** Folder prefix currently open (`''` at the root). */
+  currentPath: string;
+  /** Entries of the current folder, sorted and filtered — the search hits while searching. */
+  entries: FileSystemEntry[];
+  view: FileSystemView;
+  selectedEntry: FileSystemEntry | null;
+  searchValue: string;
+  isSearching: boolean;
+  hasActiveFilters: boolean;
+  /** `true` while the current folder's children are being fetched. */
+  isLoadingCurrentFolder: boolean;
+  /**
+   * `true` when the current folder has no entries to show. The columns view
+   * still renders its panes in that case, so this does not always mean `content`
+   * is the placeholder.
+   */
+  isEmpty: boolean;
+};
+
 // ── Responsive tiers ───────────────────────────────────────────────────────
 // These are container widths, not window widths: the header adapts to the
 // component's own measured width so it collapses inside a narrow parent too.
@@ -277,6 +305,32 @@ export type FileSystemProps = {
    * When provided, `footerClassName` is ignored.
    */
   renderFooter?: (state: FileSystemStatusState & { testID?: string }) => ReactNode;
+  /**
+   * Wrap the file area instead of replacing it. Receives the default content —
+   * the active view or its empty/loading placeholder — as `state.content`, plus
+   * the state that produced it, so an overlay, a drop hint or a sidebar can sit
+   * alongside the views without reimplementing them. Return `state.content`
+   * as-is to opt out for a given state.
+   *
+   * The wrapper renders inside the file-area node, so `bodyClassName` still
+   * applies. Give the returned tree `flex-1` (or `size-full`) if it should fill
+   * the area the way the built-in views do.
+   *
+   * Called as a plain function, not rendered as a component, so that an inline
+   * arrow doesn't remount the active view on every render. Don't call hooks
+   * directly in it — put them in a component you render inside the returned
+   * tree.
+   *
+   * ```tsx
+   * renderBody={({ content, isEmpty }) => (
+   *   <View className="flex-1">
+   *     {content}
+   *     {isEmpty ? null : <UploadOverlay />}
+   *   </View>
+   * )}
+   * ```
+   */
+  renderBody?: (state: FileSystemBodyState & { testID?: string }) => ReactNode;
   /** Extra NativeWind classes merged onto the root container. */
   className?: string;
   /** Extra NativeWind classes merged onto the built-in header's root view. Ignored when `renderHeader` is provided. */

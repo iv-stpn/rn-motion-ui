@@ -96,6 +96,7 @@ export function FileSystem({
   onMove,
   onSelectionChange,
   onViewChange,
+  renderBody,
   renderFilePreview,
   renderFileViewer,
   renderFooter: CustomFooter,
@@ -150,12 +151,7 @@ export function FileSystem({
   const footerTestID = testID ? `${testID}-footer` : undefined;
 
   return (
-    <View
-      className={cn('overflow-hidden rounded-xl border border-border bg-background', className)}
-      onLayout={handleLayout}
-      testID={testID}
-      style={{ height }}
-    >
+    <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
       {renderHeader ? (
         <HeaderRenderer
           renderHeader={renderHeader}
@@ -229,6 +225,7 @@ export function FileSystem({
           onSelect={selectAndPrefetch}
           onSortColumnClick={state.toggleSortColumn}
           pageUrlCache={state.pageUrlCache}
+          renderBody={renderBody}
           renderFilePreview={renderFilePreview}
           renderFileViewer={renderFileViewer}
           searchInput={state.searchInput}
@@ -286,6 +283,7 @@ export function FileSystem({
 // stay internal.
 export type {
   FileEntry,
+  FileSystemBodyState,
   FileSystemContextMenuAction,
   FileSystemEntry,
   FileSystemFileItem,

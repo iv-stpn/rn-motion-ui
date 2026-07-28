@@ -26,14 +26,8 @@ const CLOSE_MENU_LABEL = 'Close menu';
 const CLOSE_LABEL = 'Close';
 const CLEAR_LABEL = 'Clear';
 const PANEL_TITLE = 'Options';
-const FILTERS_TITLE = 'Filters';
-const PLAIN_TRIGGER_LABEL = 'Plain node trigger';
-const TRIGGER_SECTION = 'Plain node trigger — wrapped in a Pressable by the component';
 const SMALL_SCREEN_NOTE =
   'Narrow viewports swap the floating panel for a bottom sheet, where "Full sheet" stretches it to the full height.';
-const UNCONTROLLED_NOTE = 'Uncontrolled — the dropdown owns its open state.';
-const TRIGGER_NOTE =
-  "Every kind here is pressable in its own right, so it claims the press and the component's wrapper toggle never fires — each takes `toggle` off the render prop and wires it to onPress. The label flips with `open`, the other half of what that render prop hands you.";
 
 const ALIGNS = ['start', 'end'] as const;
 type Align = (typeof ALIGNS)[number];
@@ -120,12 +114,6 @@ const HEADER_ACTION = (
   </Text>
 );
 
-const PLAIN_TRIGGER = (
-  <Text className="text-foreground" size="sm" weight="medium">
-    {PLAIN_TRIGGER_LABEL}
-  </Text>
-);
-
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function DropdownPlayground() {
   const [align, setAlign] = useState<Align>('start');
@@ -150,7 +138,7 @@ function DropdownPlayground() {
   // Only hand `open`/`onOpenChange` over when the toggle is on — omitting them lets
   // the component own its state, which is the other half of the API to exhibit.
   const controlledProps = controlled ? { onOpenChange: setOpen, open } : {};
-  const openNote = controlled ? `Controlled — open: ${String(open)}` : UNCONTROLLED_NOTE;
+  const openNote = controlled ? `Controlled — open: ${String(open)}` : 'Uncontrolled';
 
   return (
     <Playground style={{ minWidth: 340 }}>
@@ -192,20 +180,7 @@ function DropdownPlayground() {
           {renderContent}
         </AdaptiveDropdown>
         <Note testID="story-open">{openNote}</Note>
-        <Note>{TRIGGER_NOTE}</Note>
       </Section>
-
-      <Section title={TRIGGER_SECTION}>
-        <AdaptiveDropdown
-          showClose={true}
-          title={FILTERS_TITLE}
-          trigger={PLAIN_TRIGGER}
-          triggerAccessibilityLabel={PLAIN_TRIGGER_LABEL}
-        >
-          <MenuBody />
-        </AdaptiveDropdown>
-      </Section>
-
       <Note>{SMALL_SCREEN_NOTE}</Note>
     </Playground>
   );
@@ -220,9 +195,11 @@ export const Interactive: Story = { render: () => <DropdownPlayground /> };
 export const Default: Story = {
   name: 'Demo: Open the menu',
   render: () => (
-    <AdaptiveDropdown trigger={PlaygroundTrigger}>
-      <MenuBody />
-    </AdaptiveDropdown>
+    <View style={{ alignItems: 'center' }}>
+      <AdaptiveDropdown trigger={PlaygroundTrigger}>
+        <MenuBody />
+      </AdaptiveDropdown>
+    </View>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

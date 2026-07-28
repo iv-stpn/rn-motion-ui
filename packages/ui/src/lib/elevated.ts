@@ -27,7 +27,7 @@
 export type SurfaceLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 // Static literal maps — the scanner reads the class names from these keys.
-const SURFACE_BG: Record<SurfaceLevel, string> = {
+const SURFACE_BG_CLASSNAME: Record<SurfaceLevel, string> = {
   1: 'bg-surface-1',
   2: 'bg-surface-2',
   3: 'bg-surface-3',
@@ -38,7 +38,7 @@ const SURFACE_BG: Record<SurfaceLevel, string> = {
   8: 'bg-surface-8',
 };
 
-const SURFACE_ELEVATED_SHADOW: Record<SurfaceLevel, string> = {
+const SURFACE_ELEVATED_SHADOW_CLASSNAME: Record<SurfaceLevel, string> = {
   1: 'shadow-elevated-1',
   2: 'shadow-elevated-2',
   3: 'shadow-elevated-3',
@@ -49,6 +49,17 @@ const SURFACE_ELEVATED_SHADOW: Record<SurfaceLevel, string> = {
   8: 'shadow-elevated-8',
 };
 
+export const SURFACE_CLASSNAME: Record<SurfaceLevel, string> = {
+  1: 'bg-surface-1 shadow-elevated-1',
+  2: 'bg-surface-2 shadow-elevated-2',
+  3: 'bg-surface-3 shadow-elevated-3',
+  4: 'bg-surface-4 shadow-elevated-4',
+  5: 'bg-surface-5 shadow-elevated-5',
+  6: 'bg-surface-6 shadow-elevated-6',
+  7: 'bg-surface-7 shadow-elevated-7',
+  8: 'bg-surface-8 shadow-elevated-8',
+};
+
 /** Every valid level, ascending — handy for stories, tests, and iteration. */
 export const SURFACE_LEVELS: readonly SurfaceLevel[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -56,18 +67,18 @@ export const SURFACE_LEVELS: readonly SurfaceLevel[] = [1, 2, 3, 4, 5, 6, 7, 8];
 export function clampSurfaceLevel(level: number): SurfaceLevel {
   if (!(level > 1)) return 1; // also catches NaN
   if (level >= 8) return 8;
-  // biome-ignore lint/plugin: the guards above prove Math.round(level) ∈ 2..7 — a valid SurfaceLevel — so this only narrows number to the union
+  // biome-ignore lint/plugin: the guards above prove Math.round(level) ∈ 1..8 — a valid SurfaceLevel — so this only narrows number to the union
   return Math.round(level) as SurfaceLevel;
 }
 
 /** Elevation shadow class (rim + drop) for a level. */
 export function elevatedShadow(level: SurfaceLevel): string {
-  return SURFACE_ELEVATED_SHADOW[clampSurfaceLevel(level)];
+  return SURFACE_ELEVATED_SHADOW_CLASSNAME[clampSurfaceLevel(level)];
 }
 
 /** Background class for a surface level. */
 export function surfaceBackground(level: SurfaceLevel): string {
-  return SURFACE_BG[clampSurfaceLevel(level)];
+  return SURFACE_BG_CLASSNAME[clampSurfaceLevel(level)];
 }
 
 /**
@@ -77,5 +88,5 @@ export function surfaceBackground(level: SurfaceLevel): string {
  * `elevation` prop.
  */
 export function elevated(level: SurfaceLevel, shadowLevel: SurfaceLevel = level): string {
-  return `${SURFACE_BG[clampSurfaceLevel(level)]} ${SURFACE_ELEVATED_SHADOW[clampSurfaceLevel(shadowLevel)]}`;
+  return `${SURFACE_BG_CLASSNAME[clampSurfaceLevel(level)]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[clampSurfaceLevel(shadowLevel)]}`;
 }

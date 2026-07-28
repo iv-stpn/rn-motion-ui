@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
+import { expect, waitFor, within } from 'storybook/test';
 import { Choice, Controls, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
 import { Skeleton, type SkeletonShape } from './skeleton';
 
@@ -75,8 +76,49 @@ function SkeletonPlayground(args: ComponentProps<typeof Skeleton>) {
   );
 }
 
+const PULSE_TESTID = 'skeleton-pulse';
+
 export default meta;
 
 /** Every shape and pulse speed, plus the two placeholder layouts they compose
  *  into (text block, profile card). Sizing stays a `className` concern. */
 export const Interactive: Story = { render: (args) => <SkeletonPlayground {...args} /> };
+
+/**
+ * A skeleton that renders but never pulses is indistinguishable from a plain
+ * muted box — it looks like a deliberate design, not a broken animation. This
+ * samples the opacity twice across the tween and asserts it actually moved.
+ *
+ * The reduced-motion branch is the same assertion inverted, and which one runs
+ * is decided by the environment rather than by the story: `useReducedMotion`
+ * resolves through `AccessibilityInfo`, which reads a `matchMedia` list
+ * captured at module load, so a play function can't flip it after the fact.
+ * CI's headless Chromium reports no-preference and exercises the pulse; a
+ * developer running with reduce-motion on exercises the static branch and gets
+ * a real assertion rather than a false failure.
+ */
+export const Default: Story = {
+  name: 'Demo: Pulses (unless reduced motion)',
+  render: (args) => <Skeleton {...args} className="h-10 w-40" speed={1} testID={PULSE_TESTID} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pulse = await canvas.findByTestId(PULSE_TESTID);
+    await expect(pulse).toBeInTheDocument();
+
+    const prefersReduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const opacity = () => Number(getComputedStyle(pulse).opacity);
+
+    if (prefersReduced) {
+      // Static muted box: the transition is a 0ms timing to opacity 1, so the
+      // value must never leave 1 — sampling over a full nominal cycle.
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      await expect(opacity()).toBe(1);
+      return;
+    }
+
+    // speed={1} → a 500ms half-cycle ping-ponging 1 → 0.5 → 1, so any sample
+    // taken mid-flight sits strictly below 1.
+    await waitFor(() => expect(opacity()).toBeLessThan(1), { timeout: 2000 });
+    await expect(opacity()).toBeGreaterThanOrEqual(0.5);
+  },
+};

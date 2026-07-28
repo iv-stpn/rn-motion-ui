@@ -1,112 +1,127 @@
 import { useCallback, useEffect } from 'react';
-import { TouchableOpacity, View, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, Platform, TouchableOpacity, View } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { EASE_OUT } from '../../lib/ease';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
-import { AlertCircle, Check } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../theme/motion';
-import { useThemeColors } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
-import { ThemedIcon } from '../Icon/themed-icon';
-import { Loader } from '../Loader/loader';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 import { Text } from '../Text/text';
-
-// --- Morph icon --------------------------------------------------------------
-// A single circular vessel that morphs its size + fill colour as `state`
-// changes, while the glyph inside cross-fades (spinner ↔ check ↔ close). The
-// icon persists across state transitions so the morph reads as one continuous
-// shape-change rather than three static icons swapping in/out. Ported from
-// offkeep's web ActionFeedbackModal MorphIcon (framer-motion → moti).
-
-const MORPH_SIZE: Record<ActionFeedbackState, number> = { loading: 40, success: 44, error: 44 };
-
-const MORPH_CONTAINER_TRANSITION = { type: 'timing', duration: 300, easing: EASE_OUT } as const;
-const MORPH_GLYPH_TRANSITION = { type: 'timing', duration: 240, easing: EASE_OUT } as const;
-const MORPH_SPINNER_TRANSITION = { type: 'timing', duration: 180, easing: EASE_OUT } as const;
-const MORPH_CONTENT_TRANSITION = { type: 'timing', duration: 180, easing: EASE_OUT } as const;
-/** Fallback for every morph transition under reduced-motion — short and linear. */
-const RM_TRANSITION = { type: 'timing', duration: 160 } as const;
-
-const morphGlyphStyle: ViewStyle = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-type MorphIconProps = { state: ActionFeedbackState; reduced: boolean };
-
-function MorphIcon({ state, reduced }: MorphIconProps) {
-  const colors = useThemeColors();
-  const morphBackground: Record<ActionFeedbackState, string> = {
-    loading: 'transparent',
-    success: colors.success,
-    error: colors.danger,
-  };
-  const size = MORPH_SIZE[state];
-  const backgroundColor = morphBackground[state];
-
-  return (
-    <MotiView
-      animate={{ width: size, height: size, backgroundColor }}
-      transition={reduced ? RM_TRANSITION : MORPH_CONTAINER_TRANSITION}
-      // Static size mirrors the animate target so the vessel paints at the
-      // correct dimensions on the first frame; the animated style still wins
-      // every subsequent frame (motify merges as [static, animated]).
-      style={{ width: size, height: size }}
-      className="items-center justify-center rounded-full"
-    >
-      <AnimatePresence initial={false}>
-        {state === 'loading' && (
-          <MotiView
-            key="spinner"
-            from={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            transition={reduced ? RM_TRANSITION : MORPH_SPINNER_TRANSITION}
-            style={morphGlyphStyle}
-          >
-            <Loader variant="dots" size={28} color={colors['muted-foreground']} />
-          </MotiView>
-        )}
-        {state === 'success' && (
-          <MotiView
-            key="check"
-            from={{ opacity: 0, scale: 0.3, rotate: '-25deg' }}
-            animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
-            exit={{ opacity: 0, scale: 0.3, rotate: '25deg' }}
-            transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
-            style={morphGlyphStyle}
-          >
-            <ThemedIcon icon={Check} token="success-foreground" size={26} />
-          </MotiView>
-        )}
-        {state === 'error' && (
-          <MotiView
-            key="close"
-            from={{ opacity: 0, scale: 0.3, rotate: '25deg' }}
-            animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
-            exit={{ opacity: 0, scale: 0.3, rotate: '-25deg' }}
-            transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
-            style={morphGlyphStyle}
-          >
-            <ThemedIcon icon={AlertCircle} token="danger-foreground" size={26} />
-          </MotiView>
-        )}
-      </AnimatePresence>
-    </MotiView>
-  );
-}
+import { MORPH_CONTENT_TRANSITION, RM_TRANSITION } from './action-feedback-motion';
+import { MorphIcon } from './morph-icon';
 
 const SUCCESS_AUTO_CLOSE_MS = 2500;
 
+// biome-ignore lint/style/useExportsLast: the state union heads the module — MORPH_SIZE above and the announcement helper below are both keyed on it
 export type ActionFeedbackState = 'loading' | 'success' | 'error';
+
+type StateContentProps = {
+  state: ActionFeedbackState;
+  reduced: boolean;
+  loadingMessage?: string;
+  successLabel?: string;
+  successMessage?: string;
+  errorTitle: string;
+  errorMessage?: string;
+  tagline?: string;
+  dismissLabel: string;
+  onDismiss: () => void;
+  testID?: string;
+};
+
+/**
+ * The text under the morph vessel, cross-faded as the state changes.
+ *
+ * Each block is a flex child of a `gap-4` column, so rendering one with no text
+ * inside still costs a 16px gap under the icon — hence the emptiness checks.
+ * `error` always has a title and a button, so it always renders.
+ */
+function StateContent(props: StateContentProps) {
+  const { state, reduced, loadingMessage, successLabel, successMessage, errorTitle, errorMessage } = props;
+  const { tagline, dismissLabel, onDismiss, testID } = props;
+  const transition = reduced ? RM_TRANSITION : MORPH_CONTENT_TRANSITION;
+  const hasLoadingContent = Boolean(loadingMessage || tagline);
+  const hasSuccessContent = Boolean(successLabel || successMessage || tagline);
+  const taglineText = tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null;
+
+  return (
+    <AnimatePresence exitBeforeEnter={true} initial={false}>
+      {state === 'loading' && hasLoadingContent && (
+        <MotiView
+          key="loading-content"
+          from={{ opacity: 0, translateY: 4 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          exit={{ opacity: 0, translateY: -4 }}
+          transition={transition}
+          className="w-full items-center gap-1.5"
+        >
+          {loadingMessage ? <Text className="text-center text-muted-foreground text-sm">{loadingMessage}</Text> : null}
+          {taglineText}
+        </MotiView>
+      )}
+      {state === 'success' && hasSuccessContent && (
+        <MotiView
+          key="success-content"
+          from={{ opacity: 0, translateY: 4 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          exit={{ opacity: 0, translateY: -4 }}
+          transition={transition}
+          className="w-full items-center gap-1.5"
+        >
+          {successLabel ? <Text className="text-center font-semibold text-base text-foreground">{successLabel}</Text> : null}
+          {successMessage ? <Text className="text-center text-muted-foreground text-sm">{successMessage}</Text> : null}
+          {taglineText}
+        </MotiView>
+      )}
+      {state === 'error' && (
+        <MotiView
+          key="error-content"
+          from={{ opacity: 0, translateY: 4 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          exit={{ opacity: 0, translateY: -4 }}
+          transition={transition}
+          className="w-full items-center gap-1.5"
+        >
+          <Text className="text-center font-semibold text-base text-foreground">{errorTitle}</Text>
+          {errorMessage ? (
+            <Text className="text-center text-muted-foreground text-sm leading-relaxed">{errorMessage}</Text>
+          ) : null}
+          {taglineText}
+          <Button
+            variant="secondary"
+            size="sm"
+            onPress={onDismiss}
+            style={{ marginTop: 8 }}
+            testID={testID ? `${testID}-dismiss` : undefined}
+          >
+            {dismissLabel}
+          </Button>
+        </MotiView>
+      )}
+    </AnimatePresence>
+  );
+}
+
+type AnnouncementParts = {
+  state: ActionFeedbackState;
+  loadingMessage?: string;
+  successLabel?: string;
+  successMessage?: string;
+  errorTitle: string;
+  errorMessage?: string;
+};
+
+/**
+ * What the outcome sounds like: the same words that are on screen for the
+ * active state, joined so it reads as one sentence rather than fragments.
+ */
+function announcementFor(parts: AnnouncementParts): string {
+  const { state, loadingMessage, successLabel, successMessage, errorTitle, errorMessage } = parts;
+  if (state === 'loading') return loadingMessage ?? '';
+  if (state === 'success') return [successLabel, successMessage].filter(Boolean).join('. ');
+  return [errorTitle, errorMessage].filter(Boolean).join('. ');
+}
 
 export type ActionFeedbackModalProps = {
   // New preferred API
@@ -149,6 +164,19 @@ export function ActionFeedbackModal({
   const isDismissible = state === 'error';
   const reduced = useReducedMotion();
 
+  const announcement = announcementFor({ state, loadingMessage, successLabel, successMessage, errorTitle, errorMessage });
+
+  // iOS has no live-region equivalent — `accessibilityLiveRegion` is Android
+  // only, and VoiceOver does not re-read a subtree that changed under it. So the
+  // outcome is pushed explicitly there. On Android the live region below already
+  // fires, and on web `announceForAccessibility` is a no-op in react-native-web,
+  // so both would otherwise double-announce.
+  // biome-ignore lint/plugin: a screen-reader announcement is an imperative side effect keyed on the resolved state — there is nothing to derive.
+  useEffect(() => {
+    if (Platform.OS !== 'ios' || !isOpen || state === 'loading' || !announcement) return;
+    AccessibilityInfo.announceForAccessibility(announcement);
+  }, [isOpen, state, announcement]);
+
   const handleClose = useCallback(() => {
     onClose?.();
     onOpenChange?.(false);
@@ -167,13 +195,6 @@ export function ActionFeedbackModal({
     if (isDismissible) handleClose();
   }, [isDismissible, handleClose]);
 
-  // Each state block is a flex child of a `gap-4` column, so rendering one with
-  // no text inside still costs a 16px gap under the morph icon. Skip the block
-  // entirely when there is nothing to show. `error` always has a title + button.
-  const hasLoadingContent = Boolean(loadingMessage || tagline);
-  const hasSuccessContent = Boolean(successLabel || successMessage || tagline);
-
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: three state branches (loading/success/error) share one backdrop + morph vessel — splitting would scatter tightly-coupled animation state
   const renderContent = ({ open: isAnimOpen, onExitComplete }: OverlayShellContext) => (
     <AnimatePresence onExitComplete={onExitComplete}>
       {isAnimOpen ? (
@@ -202,64 +223,30 @@ export function ActionFeedbackModal({
             className={`w-full max-w-sm rounded-2xl border border-border ${surfaceBackground(elevation)} p-6 ${elevatedShadow(elevation)}`}
             testID={testID}
           >
-            <View className="w-full items-center gap-4 py-2">
+            {/* One persistent live region rather than per-state ones: aria-live
+                only announces mutations *inside* a region that already existed,
+                and each state block mounts fresh. This wrapper outlives the
+                swaps, so loading → success/error is announced. Errors interrupt
+                (`assertive`); progress and success wait their turn. */}
+            <View
+              className="w-full items-center gap-4 py-2"
+              accessibilityLiveRegion={state === 'error' ? 'assertive' : 'polite'}
+              aria-live={state === 'error' ? 'assertive' : 'polite'}
+            >
               <MorphIcon state={state} reduced={reduced} />
-              <AnimatePresence exitBeforeEnter={true} initial={false}>
-                {state === 'loading' && hasLoadingContent && (
-                  <MotiView
-                    key="loading-content"
-                    from={{ opacity: 0, translateY: 4 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    exit={{ opacity: 0, translateY: -4 }}
-                    transition={reduced ? RM_TRANSITION : MORPH_CONTENT_TRANSITION}
-                    className="w-full items-center gap-1.5"
-                  >
-                    {loadingMessage ? <Text className="text-center text-muted-foreground text-sm">{loadingMessage}</Text> : null}
-                    {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
-                  </MotiView>
-                )}
-                {state === 'success' && hasSuccessContent && (
-                  <MotiView
-                    key="success-content"
-                    from={{ opacity: 0, translateY: 4 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    exit={{ opacity: 0, translateY: -4 }}
-                    transition={reduced ? RM_TRANSITION : MORPH_CONTENT_TRANSITION}
-                    className="w-full items-center gap-1.5"
-                  >
-                    {successLabel ? (
-                      <Text className="text-center font-semibold text-base text-foreground">{successLabel}</Text>
-                    ) : null}
-                    {successMessage ? <Text className="text-center text-muted-foreground text-sm">{successMessage}</Text> : null}
-                    {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
-                  </MotiView>
-                )}
-                {state === 'error' && (
-                  <MotiView
-                    key="error-content"
-                    from={{ opacity: 0, translateY: 4 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    exit={{ opacity: 0, translateY: -4 }}
-                    transition={reduced ? RM_TRANSITION : MORPH_CONTENT_TRANSITION}
-                    className="w-full items-center gap-1.5"
-                  >
-                    <Text className="text-center font-semibold text-base text-foreground">{errorTitle}</Text>
-                    {errorMessage ? (
-                      <Text className="text-center text-muted-foreground text-sm leading-relaxed">{errorMessage}</Text>
-                    ) : null}
-                    {tagline ? <Text className="text-center text-muted-foreground text-xs">{tagline}</Text> : null}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onPress={handleClose}
-                      style={{ marginTop: 8 }}
-                      testID={testID ? `${testID}-dismiss` : undefined}
-                    >
-                      {dismissLabel}
-                    </Button>
-                  </MotiView>
-                )}
-              </AnimatePresence>
+              <StateContent
+                dismissLabel={dismissLabel}
+                errorMessage={errorMessage}
+                errorTitle={errorTitle}
+                loadingMessage={loadingMessage}
+                onDismiss={handleClose}
+                reduced={reduced}
+                state={state}
+                successLabel={successLabel}
+                successMessage={successMessage}
+                tagline={tagline}
+                testID={testID}
+              />
             </View>
           </MotiView>
         </MotiView>
@@ -268,7 +255,14 @@ export function ActionFeedbackModal({
   );
 
   return (
-    <OverlayShell open={isOpen} onClose={handleClose} dismissable={isDismissible}>
+    <OverlayShell
+      open={isOpen}
+      onClose={handleClose}
+      dismissable={isDismissible}
+      // The dialog is named by whatever it is currently reporting, so focusing
+      // it announces the outcome rather than an anonymous "dialog".
+      accessibilityLabel={announcement || undefined}
+    >
       {renderContent}
     </OverlayShell>
   );

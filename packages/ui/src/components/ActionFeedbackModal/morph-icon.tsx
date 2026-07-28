@@ -1,0 +1,103 @@
+import type { ViewStyle } from 'react-native';
+import { AlertCircle, Check } from '../../lib/icons';
+import { MotiView } from '../../moti/components/view';
+import { AnimatePresence } from '../../moti/presence/animate-presence';
+import { useThemeColors } from '../../theme/use-theme-color';
+import { ThemedIcon } from '../Icon/themed-icon';
+import { Loader } from '../Loader/loader';
+import type { ActionFeedbackState } from './action-feedback-modal';
+import {
+  MORPH_CONTAINER_TRANSITION,
+  MORPH_GLYPH_TRANSITION,
+  MORPH_SPINNER_TRANSITION,
+  RM_TRANSITION,
+} from './action-feedback-motion';
+
+// A single circular vessel that morphs its size + fill colour as `state`
+// changes, while the glyph inside cross-fades (spinner ↔ check ↔ close). The
+// icon persists across state transitions so the morph reads as one continuous
+// shape-change rather than three static icons swapping in/out. Ported from
+// offkeep's web ActionFeedbackModal MorphIcon (framer-motion → moti).
+//
+// Purely decorative: the outcome is carried by the text beside it, which sits
+// in a live region, so the vessel and its glyphs stay out of the a11y tree
+// rather than announcing "image" between the announcements that matter.
+
+const MORPH_SIZE: Record<ActionFeedbackState, number> = { loading: 40, success: 44, error: 44 };
+
+const morphGlyphStyle: ViewStyle = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+export type MorphIconProps = { state: ActionFeedbackState; reduced: boolean };
+
+export function MorphIcon({ state, reduced }: MorphIconProps) {
+  const colors = useThemeColors();
+  const morphBackground: Record<ActionFeedbackState, string> = {
+    loading: 'transparent',
+    success: colors.success,
+    error: colors.danger,
+  };
+  const size = MORPH_SIZE[state];
+  const backgroundColor = morphBackground[state];
+
+  return (
+    <MotiView
+      animate={{ width: size, height: size, backgroundColor }}
+      transition={reduced ? RM_TRANSITION : MORPH_CONTAINER_TRANSITION}
+      // Static size mirrors the animate target so the vessel paints at the
+      // correct dimensions on the first frame; the animated style still wins
+      // every subsequent frame (motify merges as [static, animated]).
+      style={{ width: size, height: size }}
+      className="items-center justify-center rounded-full"
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
+      aria-hidden={true}
+    >
+      <AnimatePresence initial={false}>
+        {state === 'loading' && (
+          <MotiView
+            key="spinner"
+            from={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={reduced ? RM_TRANSITION : MORPH_SPINNER_TRANSITION}
+            style={morphGlyphStyle}
+          >
+            <Loader variant="dots" size={28} color={colors['muted-foreground']} />
+          </MotiView>
+        )}
+        {state === 'success' && (
+          <MotiView
+            key="check"
+            from={{ opacity: 0, scale: 0.3, rotate: '-25deg' }}
+            animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
+            exit={{ opacity: 0, scale: 0.3, rotate: '25deg' }}
+            transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
+            style={morphGlyphStyle}
+          >
+            <ThemedIcon icon={Check} token="success-foreground" size={26} />
+          </MotiView>
+        )}
+        {state === 'error' && (
+          <MotiView
+            key="close"
+            from={{ opacity: 0, scale: 0.3, rotate: '25deg' }}
+            animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
+            exit={{ opacity: 0, scale: 0.3, rotate: '-25deg' }}
+            transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
+            style={morphGlyphStyle}
+          >
+            <ThemedIcon icon={AlertCircle} token="danger-foreground" size={26} />
+          </MotiView>
+        )}
+      </AnimatePresence>
+    </MotiView>
+  );
+}

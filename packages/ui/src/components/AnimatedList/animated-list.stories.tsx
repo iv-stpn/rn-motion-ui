@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Action, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { X } from '../../lib/icons';
 import { Text } from '../Text/text';
@@ -96,4 +97,58 @@ export default meta;
  */
 export const Interactive: Story = {
   render: () => <AnimatedListPlayground />,
+};
+
+/**
+ * The two halves of the item lifecycle, both of which fail silently if their
+ * wiring breaks.
+ *
+ * **In:** each item's outer view starts at `height: 0` and only grows once
+ * `onLayout` reports the content's natural height. If that measurement never
+ * lands the row still mounts, still passes a `findByText`, and is still
+ * invisible — collapsed to nothing inside `overflow-hidden`. So the assertion
+ * is on the measured box, not on the text.
+ *
+ * **Out:** removal goes through `AnimatePresence`. The item is expected to stay
+ * mounted while its height collapses and to unmount only when `safeToUnmount`
+ * fires from the timing callback. An item that disappeared the instant its key
+ * left the array would mean presence isn't wired — the list would still "work",
+ * just without an exit animation, which is the entire component.
+ */
+export const Default: Story = {
+  name: 'Demo: Items animate in and out',
+  render: () => <AnimatedListPlayground />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // The measured box is AnimatedListItem's outer view — the `overflow-hidden`
+    // wrapper whose animated height drives the sibling reflow.
+    const boxFor = (label: string) => {
+      const box = canvas.getByText(label).closest('.overflow-hidden');
+      if (!(box instanceof HTMLElement)) throw new Error(`No AnimatedListItem box around "${label}"`);
+      return box;
+    };
+
+    await Promise.all(SEED.map(async (label) => expect(await canvas.findByText(label)).toBeInTheDocument()));
+    // 280ms height tween from 0 once the first layout pass reports a height.
+    await waitFor(() => {
+      for (const label of SEED) expect(boxFor(label).getBoundingClientRect().height).toBeGreaterThan(0);
+    });
+
+    // A new item takes the same path: mounted collapsed, then measured open.
+    await userEvent.click(await canvas.findByTestId('story-action-add-item'));
+    const added = await canvas.findByText('Item 4');
+    await expect(added).toBeInTheDocument();
+    await waitFor(() => expect(boxFor('Item 4').getBoundingClientRect().height).toBeGreaterThan(0));
+
+    // Removal is deferred, not immediate: still mounted right after the press,
+    // gone once the 240ms collapse completes and releases it.
+    await userEvent.click(await canvas.findByLabelText('Remove Notes'));
+    await expect(canvas.getByText('Notes')).toBeInTheDocument();
+    await waitFor(() => expect(canvas.queryByText('Notes')).toBeNull(), { timeout: 2000 });
+
+    // The rest of the list survives the removal.
+    await expect(canvas.getByText('Overview')).toBeInTheDocument();
+    await expect(canvas.getByText('Item 4')).toBeInTheDocument();
+  },
 };

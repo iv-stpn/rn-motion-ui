@@ -20,6 +20,21 @@ export type AnimatedListProps = PropsWithChildren<ViewProps>;
  * Wraps `AnimatedListItem` children in an `AnimatePresence` context.
  * Do NOT add gap/margin here — spacing between items is handled internally
  * by each `AnimatedListItem` so it can collapse smoothly with the item.
+ *
+ * **Accessibility:** the list adds no semantics of its own — it is a layout and
+ * animation wrapper, and the roles belong on whatever you render inside each
+ * item. Two things are worth knowing when items come and go:
+ *
+ * - *Focus.* An item stays mounted through its exit animation and unmounts
+ *   afterwards. If focus was inside it — the row's own delete button is the
+ *   usual case — it is lost at unmount and returns to the document body, which
+ *   on web sends a keyboard user back to the top of the page. Move focus
+ *   somewhere deliberate (the next row, or the control that triggered the
+ *   removal) in the same handler that removes the item.
+ * - *Announcements.* Additions and removals are silent. If the change is the
+ *   result of something the user did elsewhere, mark the list region
+ *   `accessibilityLiveRegion="polite"` (or announce the outcome yourself) so it
+ *   is not a purely visual event.
  */
 export function AnimatedList({ children, ...props }: AnimatedListProps) {
   return (

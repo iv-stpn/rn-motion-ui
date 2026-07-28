@@ -1,5 +1,5 @@
 ---
-"rn-motion-ui": major
+"rn-motion-ui": minor
 ---
 
 **Breaking — `StatefulButton`'s `elevated` prop is replaced by `chip`.** `elevated` was a boolean with one alternative to the flat button; there are now two chip keys, so the flag becomes a mode:

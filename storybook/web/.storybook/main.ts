@@ -46,6 +46,12 @@ const config: StorybookConfig = {
     );
     viteConfig.resolve ??= {};
     viteConfig.resolve.tsconfigPaths = true;
+    // biome-ignore lint/plugin: ts/no-as-cast — viteConfig.resolve.alias is AliasOptions|undefined; narrowing to a plain record is the standard Vite config pattern
+    const existingAlias = (viteConfig.resolve.alias as Record<string, string> | undefined) ?? {};
+    viteConfig.resolve.alias = {
+      ...existingAlias,
+      'react-native-safe-area-context': new URL('../__mocks__/react-native-safe-area-context.ts', import.meta.url).pathname,
+    };
     viteConfig.plugins.push(tailwindcss(), uniwind({ cssEntryFile: './global.css', dtsFile: './uniwind-types.d.ts' }));
     // Uniwind excludes `react-native` from dep optimization, which otherwise stops Vite
     // from pre-bundling react-native-web as a unit — leaving its CJS transitive dep

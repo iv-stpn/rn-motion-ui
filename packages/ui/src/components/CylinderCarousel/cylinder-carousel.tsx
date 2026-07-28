@@ -2,6 +2,7 @@
 
 import { Children, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  type AccessibilityActionEvent,
   type GestureResponderEvent,
   type LayoutChangeEvent,
   PanResponder,
@@ -18,11 +19,15 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 
 // Soft settle spring for the snap/glide (mirrors the web GLIDE feel).
 const GLIDE_SPRING = { stiffness: 90, damping: 18, mass: 1 };
+
+// Stable identity — a fresh array each render would churn the native a11y node.
+const ADJUSTABLE_ACTIONS = [{ name: 'increment' }, { name: 'decrement' }] as const;
 
 // Flick / momentum constants (mirror the reference implementation).
 const FLICK_MOMENTUM = 0.45;
@@ -179,6 +184,19 @@ export type CylinderCarouselProps = {
   /** Additional NativeWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
+  /**
+   * Names the carousel for assistive technology. It is exposed as an adjustable
+   * control, so this should describe the collection ("Featured artwork") rather
+   * than the current item — the item index is reported separately.
+   * @default 'Carousel'
+   */
+  accessibilityLabel?: string;
+  /**
+   * Announced as the current value, given the 0-based index of the front item.
+   * Defaults to a 1-based "N of M". Return the item's own name when you have
+   * one — "Starry Night, 3 of 12" is far more use than "3 of 12".
+   */
+  accessibilityValueText?: (index: number, count: number) => string;
   testID?: string;
 };
 
@@ -212,6 +230,8 @@ export function CylinderCarousel({
   height,
   style,
   className,
+  accessibilityLabel = 'Carousel',
+  accessibilityValueText,
   testID,
 }: CylinderCarouselProps) {
   const reduce = useReducedMotion();
@@ -224,6 +244,10 @@ export function CylinderCarousel({
   const scroll = useSharedValue(defaultIndex);
   const draggingRef = useRef(false);
   const indexRef = useRef(defaultIndex);
+  // Mirrored to React state as well as the ref: the ref keeps the reaction
+  // cheap, but `accessibilityValue` is a render-time prop and a ref never
+  // re-renders, so a screen reader would be told the front item never changes.
+  const [index, setIndex] = useState(defaultIndex);
 
   const convex = variant === 'convex';
   const stageWidth = width || 800;
@@ -251,8 +275,22 @@ export function CylinderCarousel({
   const projection = (halfWidth * (Math.cos(THETA_EDGE) + kConst)) / Math.sin(THETA_EDGE);
 
   const stageHeight = height ?? size + arc;
+  const valueText = accessibilityValueText?.(index, count) ?? `${index + 1} of ${count}`;
 
-  // Fire onIndexChange on the UI thread via animated reaction (replaces setInterval).
+  // Publish the front item back to the JS thread: the consumer callback and the
+  // announced `accessibilityValue`. Hopping via `scheduleOnRN` rather than
+  // calling straight out of the reaction — the reaction body is workletized, so
+  // on native a direct call into a JS closure is not allowed (it only appeared
+  // to work because on web the UI thread *is* the JS thread).
+  const commitIndex = useCallback(
+    (idx: number) => {
+      setIndex(idx);
+      onIndexChange?.(idx);
+    },
+    [onIndexChange],
+  );
+
+  // Track the front item on the UI thread via animated reaction (replaces setInterval).
   useAnimatedReaction(
     () => scroll.value,
     (v: number) => {
@@ -260,9 +298,23 @@ export function CylinderCarousel({
       const idx = ((Math.round(v) % count) + count) % count;
       if (idx !== indexRef.current) {
         indexRef.current = idx;
-        onIndexChange?.(idx);
+        scheduleOnRN(commitIndex, idx);
       }
     },
+  );
+
+  // Screen-reader "increment"/"decrement" — the swipe-up/down gesture VoiceOver
+  // and TalkBack map onto an adjustable. Rolls exactly one slot, which is the
+  // only unit that makes sense without a pointer; the spring keeps it looking
+  // like the drag path rather than teleporting.
+  const handleAccessibilityAction = useCallback(
+    (event: AccessibilityActionEvent) => {
+      const name = event.nativeEvent.actionName;
+      if (name !== 'increment' && name !== 'decrement') return;
+      const target = Math.round(scroll.value) + (name === 'increment' ? 1 : -1);
+      scroll.value = reduce ? target : withSpring(target, GLIDE_SPRING);
+    },
+    [reduce, scroll],
   );
 
   // Live params ref — updated every render so PanResponder (created once) sees
@@ -367,6 +419,21 @@ export function CylinderCarousel({
       ref={viewRef}
       testID={testID}
       onLayout={onLayout}
+      // A carousel is a one-dimensional value the user moves through, which is
+      // exactly what "adjustable" describes — and unlike a role-less drag
+      // surface it gives non-pointer users the increment/decrement gesture.
+      accessibilityRole="adjustable"
+      accessibilityLabel={accessibilityLabel}
+      // Both spellings on purpose: react-native-web does not understand React
+      // Native's nested `accessibilityValue` object, only the flat `aria-value*`
+      // props, so either one alone is silent on the other platform.
+      accessibilityValue={{ min: 0, max: Math.max(count - 1, 0), now: index, text: valueText }}
+      aria-valuemin={0}
+      aria-valuemax={Math.max(count - 1, 0)}
+      aria-valuenow={index}
+      aria-valuetext={valueText}
+      accessibilityActions={ADJUSTABLE_ACTIONS}
+      onAccessibilityAction={handleAccessibilityAction}
       className={cn('relative w-full overflow-hidden', className)}
       style={[
         { height: stageHeight },

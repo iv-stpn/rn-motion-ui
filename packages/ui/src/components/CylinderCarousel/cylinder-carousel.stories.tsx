@@ -42,6 +42,8 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const DRAG_HINT = 'Drag the ring — or flick it and let the momentum settle.';
+/** The default `accessibilityValueText` shape: "3 of 12". */
+const POSITION_TEXT = /^\d+ of \d+$/;
 const STAGE_WIDTH = 480;
 const STAGE_HEIGHT = 200;
 
@@ -138,9 +140,21 @@ export const Interactive: Story = {
   render: () => <CarouselPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByTestId('cylinder')).toBeInTheDocument();
+    const cylinder = await canvas.findByTestId('cylinder');
+    await expect(cylinder).toBeInTheDocument();
     // Every item is mounted at once, positioned around the ring — one per carousel on screen.
     const auroras = await canvas.findAllByText('Aurora');
     await expect(auroras.length).toBeGreaterThan(0);
+
+    // Without a role the carousel is a drag surface with no non-pointer way in
+    // at all. "adjustable" is what gives VoiceOver/TalkBack the swipe-to-change
+    // gesture, and the value is what tells the user where they are in the ring.
+    // `adjustable` is React Native's name for it; react-native-web translates
+    // it to the ARIA role with the same meaning, which is `slider`.
+    expect(cylinder).toHaveAttribute('role', 'slider');
+    expect(cylinder).toHaveAttribute('aria-valuemin', '0');
+    expect(cylinder).toHaveAttribute('aria-valuenow');
+    // The `text` form matters more than the number here — "3" alone says nothing.
+    expect(cylinder.getAttribute('aria-valuetext')).toMatch(POSITION_TEXT);
   },
 };

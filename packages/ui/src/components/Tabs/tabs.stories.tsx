@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { DirectionProvider } from '../../hooks/direction-provider';
 import { Text } from '../Text/text';
 import { Tabs, TabsContent, TabsList, type TabsProps, TabsTrigger } from './tabs';
 
@@ -165,6 +166,35 @@ function TabsPlayground() {
   );
 }
 
+const DIRECTION_STYLES = { ltr: { direction: 'ltr' }, rtl: { direction: 'rtl' } } as const;
+
+type DirectionalTabsProps = { direction: 'ltr' | 'rtl'; animation?: ContentAnimation };
+
+/** One Tabs tree under a stated writing direction, with everything addressable. */
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function DirectionalTabs({ direction, animation }: DirectionalTabsProps) {
+  return (
+    <DirectionProvider value={direction}>
+      <View style={DIRECTION_STYLES[direction]}>
+        <Tabs contentAnimation={animation} defaultValue="overview" style={{ width: MODAL_WIDTH }} variant="segment">
+          <TabsList testID={`${direction}-list`}>
+            {PANELS.map((panel) => (
+              <TabsTrigger key={panel.value} testID={`${direction}-trigger-${panel.value}`} value={panel.value}>
+                {panel.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {PANELS.map((panel) => (
+            <TabsContent key={panel.value} value={panel.value}>
+              <Text className="text-muted-foreground text-sm">{panel.body}</Text>
+            </TabsContent>
+          ))}
+        </Tabs>
+      </View>
+    </DirectionProvider>
+  );
+}
+
 export default meta;
 
 /** All three indicator treatments and all three panel animations, with or without
@@ -213,5 +243,59 @@ export const SlideBothDirections: Story = {
     // one thing worth pinning down is that it does leave: a push-out layer that
     // never unmounts would keep a stale panel (and its effects) alive for good.
     await waitFor(() => expect(canvas.queryByText(SETTINGS_PREFS)).toBeNull());
+  },
+};
+
+/**
+ * Tabs needs no direction-aware code, and this is what says so.
+ *
+ * Both moving parts are computed from *measured* geometry rather than from
+ * declaration order: the indicator glides to the active trigger's `layout.x`,
+ * and the slide direction is `to.x < from.x`. Layout `x` and `translateX` are
+ * both physical on both platforms, so when the platform mirrors the trigger row
+ * the measurements mirror with it and the arithmetic comes out right for free.
+ *
+ * That is worth pinning rather than trusting, because the obvious "fix" breaks
+ * it: negating the indicator's `translateX` under RTL — which looks like
+ * exactly the mirroring every other direction-aware component needs — flips an
+ * offset that was already correct and lands the pill on the wrong tab. Verified
+ * by mutation: that change fails this story and leaves every other Tabs test
+ * passing, which is precisely why the RTL case needs its own.
+ */
+export const RightToLeft: Story = {
+  name: 'Demo: Indicator tracks in RTL',
+  render: () => (
+    <View style={{ gap: 24 }}>
+      <DirectionalTabs direction="ltr" />
+      <DirectionalTabs direction="rtl" />
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const box = async (testID: string) => (await canvas.findByTestId(testID)).getBoundingClientRect();
+    // Indicator and trigger are separate boxes that must coincide; a pixel of
+    // sub-pixel rounding between them is not a failure.
+    const coincide = (a: DOMRect, b: DOMRect) => Math.abs(a.left - b.left) <= 1.5 && Math.abs(a.right - b.right) <= 1.5;
+
+    // First, prove the harness actually flipped the layout — otherwise every
+    // assertion below would pass just as well against an LTR canvas.
+    const ltrList = await box('ltr-list');
+    const rtlList = await box('rtl-list');
+    const ltrFirst = await box('ltr-trigger-overview');
+    const rtlFirst = await box('rtl-trigger-overview');
+    expect(ltrFirst.left - ltrList.left).toBeLessThan(4); // LTR: first tab at the left edge
+    expect(rtlList.right - rtlFirst.right).toBeLessThan(4); // RTL: first tab at the right edge
+
+    // The indicator sits on the selected trigger in both directions.
+    await waitFor(async () => expect(coincide(await box('ltr-list-indicator'), await box('ltr-trigger-overview'))).toBe(true));
+    await waitFor(async () => expect(coincide(await box('rtl-list-indicator'), await box('rtl-trigger-overview'))).toBe(true));
+
+    // …and follows the selection. In RTL the third tab is to the *left*, so this
+    // also pins the direction of travel, not just the destination.
+    await userEvent.click(await canvas.findByTestId('rtl-trigger-settings'));
+    await waitFor(async () => expect(coincide(await box('rtl-list-indicator'), await box('rtl-trigger-settings'))).toBe(true), {
+      timeout: 2000,
+    });
+    expect((await box('rtl-list-indicator')).left).toBeLessThan(rtlFirst.left);
   },
 };

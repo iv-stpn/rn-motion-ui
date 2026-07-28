@@ -368,9 +368,13 @@ export function Tabs({
   );
 }
 
-export type TabsListProps = { children: ReactNode };
+export type TabsListProps = {
+  children: ReactNode;
+  /** Applied to the list; the sliding indicator gets `${testID}-indicator`. */
+  testID?: string;
+};
 
-export function TabsList({ children }: TabsListProps) {
+export function TabsList({ children, testID }: TabsListProps) {
   const { variant, value, layouts, reduce, indicatorTransition } = useTabs();
   const active = layouts[value];
   const indicatorSpring = mergeTransition(TAB_INDICATOR_SPRING, indicatorTransition);
@@ -389,7 +393,7 @@ export function TabsList({ children }: TabsListProps) {
   else indicatorBorderRadius = 0;
 
   return (
-    <View className={list({ variant })} style={{ position: 'relative', alignSelf: 'flex-start' }}>
+    <View className={list({ variant })} style={{ position: 'relative', alignSelf: 'flex-start' }} testID={testID}>
       {/* Shared-layout indicator: a single MotiView that glides to the active
           trigger's measured rect. Mirrors the web layoutId pill. White for
           pill/segment so trigger text keeps its dark color while the pill is
@@ -404,6 +408,7 @@ export function TabsList({ children }: TabsListProps) {
           }}
           transition={!hasPositioned.current || reduce ? TIMING_INSTANT : indicatorSpring}
           className={variant === 'underline' ? 'bg-primary' : 'bg-surface-3'}
+          testID={testID ? `${testID}-indicator` : undefined}
           style={{
             pointerEvents: 'none',
             position: 'absolute',

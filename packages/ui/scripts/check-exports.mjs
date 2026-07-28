@@ -180,17 +180,33 @@ for (const [key] of expectedEntries) {
 // ---------------------------------------------------------------------------
 
 if (WRITE) {
-  // Sort keys: tokens.css first, then alphabetically
-  const sortedEntries = [...expectedEntries.entries()].sort(([a], [b]) => {
-    if (a === './tokens.css') return -1;
-    if (b === './tokens.css') return 1;
-    return a.localeCompare(b);
-  });
+  // Merge, never replace. `expectedEntries` only holds the auto-required subset
+  // (primary component files, hooks, ease, icons) — the map also carries
+  // hand-curated keys the derivation rules deliberately skip: ./package.json,
+  // ./moti/*, ./theme/*, ./overlay/*, the non-primary ./table-* helpers and the
+  // ./lib re-exports. Regenerating from `expectedEntries` alone would silently
+  // delete every one of them (and break consumers importing them), so existing
+  // keys are kept and only missing ones are added.
+  // Existing keys keep their current position (the map is grouped by hand —
+  // overlay/theme up top, the moti layer last); only the missing ones are
+  // appended, sorted, so the diff is just the new lines.
+  //
+  // For the keys the script derives from disk, disk is the source of truth, so
+  // an existing entry is *rewritten* — that repairs a path left dangling by a
+  // renamed file (a .ts that became .tsx, say). Keys it does not derive —
+  // ./moti/*, ./theme/*, ./overlay/*, the ./table-* helpers, ./package.json —
+  // are never touched, which is what stops --write from wiping them.
+  const merged = new Map(Object.entries(existingExports));
+  const added = [...expectedEntries.keys()].filter((key) => !merged.has(key)).sort();
+  for (const [key, entry] of expectedEntries) {
+    if (merged.has(key)) merged.set(key, entry);
+  }
+  for (const key of added) merged.set(key, expectedEntries.get(key));
 
-  const newExports = Object.fromEntries(sortedEntries);
+  const newExports = Object.fromEntries(merged);
   pkg.exports = newExports;
   writeFileSync(pkgJsonPath, `${JSON.stringify(pkg, null, 2)}\n`);
-  console.log(`✔  Rewrote exports map (${sortedEntries.length} entries).`);
+  console.log(`✔  Wrote exports map (${merged.size} entries, ${added.length} added).`);
 
   // Re-validate after writing
   const postErrors = [];

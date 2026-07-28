@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Modal, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useSafeInsets } from '../../hooks/use-safe-insets';
 import { SPRING_PANEL } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -23,6 +24,12 @@ export type DrawerProps = {
   dismissable?: boolean;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
+  /**
+   * Wrap content in device safe-area insets (status bar top, home indicator
+   * bottom). Requires `react-native-safe-area-context` and `<SafeAreaProvider>`
+   * in the tree. Set to `false` to manage insets yourself. @default true
+   */
+  safeArea?: boolean;
   testID?: string;
 };
 
@@ -34,10 +41,12 @@ export function Drawer({
   dismissable = true,
   accessibilityLabel,
   style,
+  safeArea = true,
   testID,
 }: DrawerProps) {
   const reduce = useReducedMotion();
   const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
+  const insets = useSafeInsets();
   // Panel width drives the offscreen slide distance; measured on first layout,
   // falls back to a wide default so it starts fully offscreen before measure.
   const [width, setWidth] = useState(360);
@@ -84,7 +93,7 @@ export function Drawer({
                   ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l bg-surface-3'
                   : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r bg-surface-3'
               }
-              style={style}
+              style={safeArea ? [{ paddingTop: insets.top, paddingBottom: insets.bottom }, style] : style}
             >
               {typeof children === 'string' || typeof children === 'number' ? (
                 <Text className="text-foreground text-sm">{children}</Text>

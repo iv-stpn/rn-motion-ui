@@ -612,7 +612,13 @@
     "react-native": ">=0.76.0",
     "react-native-gesture-handler": ">=2.0.0",
     "react-native-reanimated": ">=4.0.0",
+    "react-native-safe-area-context": ">=4.0.0",
     "react-native-svg": ">=15.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react-native-safe-area-context": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "typescript": "^7",

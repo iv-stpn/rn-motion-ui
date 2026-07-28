@@ -5,6 +5,7 @@ import { Modal, Pressable, ScrollView, TouchableOpacity, useWindowDimensions, Vi
 import { Easing } from 'react-native-reanimated';
 import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useSafeInsets } from '../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../lib/breakpoints';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { X } from '../../lib/icons';
@@ -72,6 +73,14 @@ type AdaptiveModalProps = {
   closeOnOverlayClick?: boolean;
   /** Surface elevation (1–8) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. Defaults to 6. */
   elevation?: SurfaceLevel;
+  /**
+   * Wrap content in device safe-area insets. Passed through to BottomSheet /
+   * FullSheet on narrow screens; applied directly to the right-drawer panel on
+   * wide screens. Requires `react-native-safe-area-context` and
+   * `<SafeAreaProvider>` in the tree. Set to `false` to manage insets yourself.
+   * @default true
+   */
+  safeArea?: boolean;
   testID?: string;
 };
 
@@ -121,11 +130,13 @@ export function AdaptiveModal({
   onAfterClose,
   closeOnOverlayClick = true,
   elevation = 6,
+  safeArea = true,
   testID,
 }: AdaptiveModalProps) {
   const reduce = useReducedMotion();
   const { height, width } = useWindowDimensions();
   const isWideScreen = isWideScreenOverride ?? isWidthAtLeast(width, wideBreakpoint);
+  const insets = useSafeInsets();
 
   const open = openProp ?? visible ?? false;
   const handleClose = useCallback(() => {
@@ -290,6 +301,7 @@ export function AdaptiveModal({
                           role="dialog"
                           aria-label={renderedTitle}
                           testID={testID}
+                          style={safeArea ? { paddingTop: insets.top, paddingBottom: insets.bottom } : undefined}
                         >
                           {header}
                           {renderContent()}
@@ -357,13 +369,21 @@ export function AdaptiveModal({
       containerClassName={containerPaddingClass}
       onAfterClose={onAfterClose}
       closeOnOverlayClick={closeOnOverlayClick}
+      safeArea={safeArea}
       testID={testID}
     >
       {header}
       {renderBottomSheetContent()}
     </BottomSheet>
   ) : (
-    <FullSheet open={open} onClose={handleClose} customLayout={true} onAfterClose={onAfterClose} testID={testID}>
+    <FullSheet
+      open={open}
+      onClose={handleClose}
+      customLayout={true}
+      onAfterClose={onAfterClose}
+      safeArea={safeArea}
+      testID={testID}
+    >
       <View className={cn('flex-1', containerPaddingClass)}>
         {header}
         {renderContent()}

@@ -2,6 +2,7 @@ import { type ReactNode, useCallback } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useSafeInsets } from '../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../lib/breakpoints';
 import { ChevronRight, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -187,6 +188,12 @@ export type FullSheetProps = {
    * from the shared scale or a raw pixel number. @default 'sm' (640)
    */
   wideBreakpoint?: BreakpointValue;
+  /**
+   * Wrap content in device safe-area insets (status bar top, home indicator
+   * bottom). Requires `react-native-safe-area-context` and `<SafeAreaProvider>`
+   * in the tree. Set to `false` to manage insets yourself. @default true
+   */
+  safeArea?: boolean;
   testID?: string;
 };
 
@@ -209,12 +216,14 @@ export function FullSheet({
   closeIcon,
   backIcon,
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
+  safeArea = true,
   testID,
 }: FullSheetProps) {
   const isOpen = open ?? visible ?? false;
   const { height, width } = useWindowDimensions();
   const isSmallScreen = !isWidthAtLeast(width, wideBreakpoint);
   const reduced = useReducedMotion();
+  const insets = useSafeInsets();
 
   const handleClose = useCallback(() => {
     onClose?.();
@@ -270,6 +279,7 @@ export function FullSheet({
                 transition={enterTransition}
                 exitTransition={exitTransition}
                 testID={testID}
+                style={safeArea ? { paddingTop: insets.top, paddingBottom: insets.bottom } : undefined}
               >
                 {body}
               </MotiView>

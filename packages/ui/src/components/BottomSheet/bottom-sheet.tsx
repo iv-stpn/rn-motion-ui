@@ -4,6 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { useSafeInsets } from '../../hooks/use-safe-insets';
 import { cn } from '../../lib/cn';
 import { useSheetPresence } from '../Overlay/use-sheet-presence';
 
@@ -48,6 +49,13 @@ export type BottomSheetProps = {
   handleClassName?: string;
   /** Additional class names merged onto the backdrop overlay. */
   backdropClassName?: string;
+  /**
+   * Wrap content in device safe-area insets (home indicator bottom; also status
+   * bar top when `fullSheet` is true). Requires `react-native-safe-area-context`
+   * and `<SafeAreaProvider>` in the tree. Set to `false` to manage insets
+   * yourself. @default true
+   */
+  safeArea?: boolean;
   testID?: string;
 };
 
@@ -63,11 +71,13 @@ export function BottomSheet({
   closeOnOverlayClick = true,
   handleClassName,
   backdropClassName,
+  safeArea = true,
   testID,
 }: BottomSheetProps) {
   const isOpen = open ?? visible ?? false;
   const { height } = useWindowDimensions();
   const reduced = useReducedMotion();
+  const insets = useSafeInsets();
   const { isMounted, translateY } = useSheetPresence({
     open: isOpen,
     screenExtent: height,
@@ -149,7 +159,12 @@ export function BottomSheet({
                 }}
               >
                 {fullSheet ? null : <SheetHandle className={handleClassName} />}
-                <View className={`min-h-0 flex-1${containerClassName ? ` ${containerClassName}` : ''}`}>{children}</View>
+                <View
+                  className={`min-h-0 flex-1${containerClassName ? ` ${containerClassName}` : ''}`}
+                  style={safeArea ? { paddingTop: fullSheet ? insets.top : 0, paddingBottom: insets.bottom } : undefined}
+                >
+                  {children}
+                </View>
               </View>
             </Animated.View>
           </GestureDetector>

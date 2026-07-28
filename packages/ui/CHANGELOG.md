@@ -1,5 +1,146 @@
 # rn-motion-ui
 
+## 3.3.0
+
+### Minor Changes
+
+- 465ac98: feat: `useBreakpoint` — width breakpoints without resize re-renders
+
+  New `rn-motion-ui/hooks/use-breakpoint` exports `useBreakpoint()` and
+  `useBreakpointAtLeast(value)`. Both subscribe to `Dimensions` but store only the
+  resolved tier, so a component re-renders when the breakpoint flips rather than
+  on every resize frame the way `useWindowDimensions` does.
+
+  The scale (`base` / `sm` / `md` / `lg` / `xl` / `2xl`) mirrors Tailwind's default
+  `screens` and is the single source of truth for responsive decisions in the
+  package — the pure helpers live in `rn-motion-ui/breakpoints` for components that
+  measure their own container instead of the window.
+
+  Every component that previously hard-coded a cutoff now accepts an override:
+
+  - `AdaptiveModal`, `FullSheet` — `wideBreakpoint` (default `'sm'`, was a literal 640)
+  - `AdaptiveDropdown` — `wideBreakpoint` (default `'md'`, was a literal 768)
+  - `FileSystem` — `breakpoints={{ minimal, compact, tablet }}` for its
+    container-measured header tiers (defaults 360 / 560 / 768), plus
+    `contextMenuWideBreakpoint` (default `'md'`, was a literal 768) for the window
+    width at which entry context menus open as a cursor-anchored panel rather than
+    a bottom sheet
+
+  Each takes a breakpoint name or a raw pixel number. Defaults are unchanged, so
+  this is additive.
+
+- ab84da1: One shared box for the whole button family, driven by tokens. `Button`, `ElevatedButton`, `GlossyButton` and `ActionSwapButton` had each grown their own height/padding/radius table, so an `md` of one type didn't line up with an `md` of another. They now all read the same geometry from `tokens.css` — `--spacing-button-{sm,md,lg}` (32/40/48px), `--spacing-button-pad-{sm,md,lg}` (12/16/20px) and `--radius-button-{sm,md,lg}` (8/10/12px) — so a row of mixed button types has one baseline, and overriding a token retunes every type at once.
+
+  `ActionSwapButton` joins the family properly: it takes a `shape` prop (`'pill' | 'rounded'`, default `'pill'` so existing buttons look the same), its `size` is now the family's `ButtonSize`, and its label uses the family's type ramp instead of a duplicate of it. `ActionSwapButtonSize` is now an alias of `ButtonSize` and `ActionSwapButtonShape` of `ButtonShape` — both still exported.
+
+  Visible changes, per type:
+
+  - **`Button`** — `md` and `lg` lose 4px of horizontal padding (20→16, 24→20); the `rounded` shape moves off a flat 12px radius onto the 8/10/12 ramp; `icon` grows from 32 to 40px so it squares the `md` height.
+  - **`ElevatedButton`** — padding grows 2–4px per size (10→12, 14→16, 16→20); `icon` grows from 32 to 40px. Radii are unchanged (AlignUI's 8/10/12 is what the shared ramp was drawn from), and its 14px label is still the documented opt-out from the type ramp.
+  - **`GlossyButton`** — `md` grows 36→40px and `lg` 44→48px to join the family's height ramp; padding drops at `md`/`lg` (20→16, 24→20) and grows at `sm` (10→12); `icon` grows 36→40px; the `rounded` shape moves off a flat 12px radius onto the ramp. The 2px inset around the label is gone, so a glossy label sits at the same inset as a flat one.
+  - **`ActionSwapButton`** — same height and padding as before at every size. Its content gap is now a flat 8px (was 6 at `sm` and 10 at `lg`).
+
+  Adornment spacing is one value across the family now (8px). `ElevatedButton` previously spaced its content at 12px and pulled icons back in by 4px, which netted the same 8px beside a label — the difference only showed with two adornments.
+
+  `StatefulButton`'s success/error padding squeeze is derived from the shared padding rather than tabulated, so it stays proportional if a token is overridden.
+
+- de66bc8: feat(ui): `FileSystem` headless header/footer slots + per-region classNames
+
+  `renderHeader` and `renderFooter` replace the built-in toolbar and status bar
+  with your own UI. Each receives the same state the default region renders from,
+  so a custom header wires navigation, search, sort and filters without
+  reimplementing any of the logic:
+
+  ```tsx
+  <FileSystem
+    items={items}
+    renderHeader={({ folderName, canGoBack, goBack, searchValue, setSearchValue, layout }) => (
+      <MyToolbar … />
+    )}
+  />
+  ```
+
+  The state shapes are exported as `FileSystemHeaderState` and
+  `FileSystemStatusState`. Both include the responsive hints the built-in header
+  uses (`layout`, `isCompact`), so a custom region can collapse at the same widths.
+
+  For the common case of restyling rather than replacing, four class hooks merge
+  onto the built-in regions: `headerClassName`, `bodyClassName`, `footerClassName`
+  and the existing `className`. The two `render*` props take precedence over their
+  matching `*ClassName`.
+
+  Defaults are unchanged — omit everything and the component renders exactly as
+  before.
+
+- 19c5bbc: `HoverMenu`'s render-prop `trigger` now receives `{ open, toggle }` instead of just `{ open }`, matching `AdaptiveDropdown`. A trigger that is pressable in its own right (a `Button`, a `Pressable`) claims the press, so the wrapper's own toggle never fires — `toggle` is what lets such a trigger open the menu. Also adds `triggerIsPressable`: set it and the wrapper drops its button role, `aria-expanded`, `onPress` and tab stop, since the trigger already carries all four. Without it, web renders a `<button>` inside a `<button>` and keyboard users get two tab stops for one control. Hover stays on the wrapper either way, so web hover-open is unaffected. Both are additive — a plain node trigger keeps the wrapper-owns-the-press behaviour unchanged.
+
+  Stories: add the `glossy` trigger kind to the shared story `TriggerButton`, which gives every overlay playground that showcases trigger variants (ActionFeedbackModal, AdaptiveModal, BottomSheet, CommandPalette, FullSheet, MorphingModal) a GlossyButton chip. The `HoverMenu` and `AdaptiveDropdown` playgrounds gain that same Trigger chip row, so all four launch styles can be swapped under one live overlay; each keeps its previous plain-node trigger in a section of its own to demonstrate the wrapper-owns-the-press path.
+
+- f2d4ba4: feat(overlays): safe-area insets on by default for full-screen overlays
+
+  `FullSheet`, `BottomSheet`, `Drawer`, and `AdaptiveModal` now accept a `safeArea` prop (default `true`) that applies device safe-area insets — status-bar top and home-indicator bottom — to the overlay content.
+
+  When `react-native-safe-area-context` is installed and a `<SafeAreaProvider>` is present in the tree, real device insets are used. If the package is absent, insets fall back to zero so existing consumers without it are unaffected.
+
+  Pass `safeArea={false}` to opt out and manage insets yourself.
+
+- 8d996ce: **Breaking — `StatefulButton`'s `elevated` prop is replaced by `chip`.** `elevated` was a boolean with one alternative to the flat button; there are now two chip keys, so the flag becomes a mode:
+
+  ```diff
+  -<StatefulButton elevated onPress={submit}>Save</StatefulButton>
+  +<StatefulButton chip="elevated" onPress={submit}>Save</StatefulButton>
+  ```
+
+  Omitting `chip` renders the flat button, exactly as omitting `elevated` did. `elevated` is gone rather than deprecated — it shipped one release ago in 3.2.0, and keeping a boolean that means "one particular chip" beside the mode it is a subset of reads worse than the rename costs.
+
+  The new value is `chip="glossy"`: the `GlossyButton` key (domed SVG gradient, inset bevel, OKLCH-derived cast) driven through the same machine. Either key keeps its full appearance through loading/success/error instead of greying out, and each state adopts the matching variant — idle/loading map the flat variant onto that key's palette (danger family → `danger`, `special`/`inverse` carry over, everything else → the key's neutral fill), success switches to the `success` key, error to the `danger` key. Full fill, gloss, rim and cast, not a flat overlay: neither chip paints the flat button's crossfaded colour plate, because it has a variant to switch instead. Glossy dims whole-key via opacity rather than recolouring its label, so its idle content colour comes from `glossyContentColor` and holds constant across states.
+
+  The success/error horizontal padding squeeze is now derived from the family's shared `--spacing-button-pad-*` rather than tabulated per size, so retuning a padding token keeps the squeeze proportional.
+
+- fd1d111: `Tabs` gains a choice of content-panel animation. `contentAnimation` on `Tabs` sets it for every panel, and `animation` on a single `TabsContent` overrides it for that panel only:
+
+  - `fade` (default) — the existing cross-fade with a 4 px settle, unchanged, so nothing shifts for current consumers.
+  - `slide` — the panel you land on travels a full container width in from the side the selection moved towards, while the panel you left is pushed out the opposite way, so the pair reads as one page displacing another rather than as a nudge. Sized for mobile screens and modals. Direction is read off the triggers' measured rects rather than the order the panels were declared in, so it also holds for controlled changes: a programmatic jump to a tab slides the same way a press on that tab would. Travel distance is measured on the `Tabs` root, so the first panel — which has no previous page to push out — just fades in.
+  - `dropIn` — the panel falls from above on a springy scale-up.
+
+  `fade` and `dropIn` are enter-only: `TabsContent` renders nothing for the tab it isn't showing, so a switch is an unmount plus a fresh mount, with no exiting layer to co-ordinate. `slide` is the exception, since a page swap only reads as one if the page you left is visibly pushed aside. The outgoing panel keeps its subtree mounted for the length of the push, leaves the layout flow immediately so it can't displace the panel replacing it, and finishes the trip as an absolutely positioned layer over the spot it held — hidden from assistive tech and non-interactive while it travels, then unmounted. Under `prefers-reduced-motion` every animation collapses to the same plain opacity fade with no exit layer at all — the cross-fade is information, the transforms are decoration.
+
+  A full-width slide has to be clipped or the travelling pages paint outside the `Tabs` box, so `slide` panels mount inside an `overflow: hidden` wrapper. The clip is scoped to the motion: an arriving panel lifts it once it has landed, which keeps shadows and any overlay a panel raises inline from being cut off for the rest of the panel's life, and a departing panel simply stays clipped until it unmounts.
+
+  `contentTransition` is the matching escape hatch, partial like `indicatorTransition`: pass only the fields you want changed and the rest come from that animation's default (180 ms timing for `fade`, 280 ms linear for `slide`, a spring for `dropIn`).
+
+  Story: the playground gains a Content animation chip row wired to the live controlled set, a section with one tab set per animation for clicking through them side by side, and a modal-width sample where the full-width slide reads properly. `Demo: Slide (both directions)` tours forward and back at that width.
+
+- 0cae697: Per-entry `testID`s in the file browsers, so every row/tile is addressable on its own. The id is keyed by the path that already identifies the entry (folders keep their trailing slash), the way `Table` keys rows by id. No new props: the ids derive from the component's root `testID`, falling back to the component name when it is omitted.
+
+  - `FileTree` — each row is `${testID ?? 'file-tree'}-row-${path}`. A row pinned by the sticky headers is a second copy of a row that may also be in the list below it, so it takes `${testID ?? 'file-tree'}-sticky-row-${path}` instead — one query resolves to one node, whichever copy a test means. Previously every row shared a single `${testID}-row`.
+  - `FileSystem` — each entry is `${testID ?? 'file-system'}-entry-${path}`, the same id in all four views (list rows, icons tiles, columns rows, gallery filmstrip tiles), so a test that switches views keeps its queries.
+
+  Additional per-item `testID`s, filling the gaps left by the previous release:
+
+  - `CardChoice` — accepts `testID` and forwards it to the card `Pressable` (standalone or inside a `CardChoiceGroup`). Inside a group it now defaults to `${group testID ?? 'card-choice-group'}-card-${value}`, keyed by the `value` that already identifies the card, so cards are addressable without threading ids through each one. The radio ring is `-ring`, its standalone dot `-dot`, the badge `-badge`, and the group's gliding indicator `${testID ?? 'card-choice-group'}-indicator`. A standalone card has no group and no `value` to key on, so its inner ids only appear when you pass a `testID`.
+  - `RadioGroupItem` — each item defaults to `${group testID ?? 'radio-group'}-item-${value}`, with the ring at `-control` and the group's gliding indicator at `${testID ?? 'radio-group'}-indicator`. Previously only an explicitly passed `testID` reached the item's `Pressable`.
+  - `CommandItem` — new optional `testID` field; forwarded to each row's `Pressable` in `CommandPalette`.
+  - `BouncyAccordionItem` — new optional `testID` field; forwarded to each row's trigger `Pressable`.
+  - `TabsContent` — accepts `testID` and forwards it to the content wrapper.
+
+- a981e3b: New `ThemedIcon` at `rn-motion-ui/icon` wraps any icon from `rn-motion-ui/icons` and resolves its stroke colour from the active theme, so an icon can be placed by the name of the surface it sits on rather than by a colour threaded down from a hook call.
+
+  Two ways to name that colour, `token` winning if both are given:
+
+  - `variant` takes any `ButtonVariant` or `ElevatedVariant` name and maps it to that fill's legible partner — `variant="primary"` gives `primary-foreground`, `variant="ghost"` gives `muted-foreground`, `variant="success"` gives `success-foreground`, and the outline/ghost danger variants give the `danger` hue itself since there is no fill to sit on. The mapping is the same one `ElevatedButton`'s `elevatedContentColor` and `Button`'s label cva already use, so an icon passed as a button adornment lands on the colour that button's own label would. Defaults to `secondary`, i.e. the plain `foreground` token.
+  - `token` skips the lookup and resolves a `ThemeToken` directly, for icons whose colour isn't a button variant — a `success-foreground` check inside a green circle, or a colour that flips between two tokens on a state, `token={isActive ? 'foreground' : 'muted-foreground'}`.
+
+  Everything else in `IconProps` (`size`, `strokeWidth`, `style`, `accessibilityLabel`) is forwarded untouched.
+
+  Internally, the components that were each calling `useThemeColor`/`useThemeColors` solely to hand a colour to an icon now use it instead: `ActionFeedbackModal`, `BloomMenu`, `BouncyAccordion`, `CommandPalette`, `FeedbackWidget`, `FileTree`'s search input, `Input`, `OtpInput`, `OverflowActions`, `Table`'s pagination footer, and the `FileSystem` toolbar, header, list view, menus, filter menu, filter pills, and date-range modal. Rendered colours are unchanged. Where the icon wanted the `foreground` token anyway, the wrapper is dropped altogether — icons already fall back to `foreground` when given no `color`, as in `BloomMenu`'s cells.
+
+  `MenuRow` in `MultiStepMenu` gains `iconColor`, defaulting to the `white` it previously hard-coded. That default is right for the vivid iOS-style icon squares the row is built around, but `iconBackgroundColor` is a free-form colour, and a pale or neutral fill needs a darker icon to stay legible. Its active label also moves from a literal `text-white` to `text-primary-foreground`, which is the same colour but follows the theme.
+
+### Patch Changes
+
+- ab84da1: `GlossyButton` labels now use the Button family's type ramp instead of their own. The ramp moves to `LABEL_TEXT_CLASS` in `button-scale.ts`, and both `Button`'s `label` cva and `GlossyButton` read it, so a glossy `md` renders the same text as a flat `md` — which is what `StatefulButton`'s `chip="glossy"` was already doing for its rolling label. Visible change: glossy labels go `font-medium` on the `text-xs`/`text-sm`/`text-base` ramp rather than `font-normal` at a fixed 17px (14px at `sm`). `ElevatedButton` is unchanged — AlignUI pins its chips to 14px at every size.
+
 ## 3.2.0
 
 ### Minor Changes

@@ -2,6 +2,7 @@ import { type ReactNode, useCallback } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { type BreakpointValue, isWidthAtLeast } from '../../lib/breakpoints';
 import { ChevronRight, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -9,7 +10,8 @@ import { OverlayShell } from '../Overlay/overlay-shell';
 import { Text } from '../Text/text';
 
 const BACK_BUTTON_HEADER_HEIGHT = 56;
-const SMALL_SCREEN_BREAKPOINT = 640;
+/** Narrow vs. wide layout cutoff — matches AdaptiveModal's default. */
+const DEFAULT_WIDE_BREAKPOINT: BreakpointValue = 'sm';
 
 type BuildBodyArgs = {
   mode: FullSheetMode;
@@ -180,6 +182,11 @@ export type FullSheetProps = {
   closeIcon?: ReactNode;
   /** Replace the back-button chevron icon. Default: rotated `<ChevronRight size={20} />`. */
   backIcon?: ReactNode;
+  /**
+   * Width at or above which the sheet uses its wide layout. A breakpoint name
+   * from the shared scale or a raw pixel number. @default 'sm' (640)
+   */
+  wideBreakpoint?: BreakpointValue;
   testID?: string;
 };
 
@@ -201,11 +208,12 @@ export function FullSheet({
   header: headerSlot,
   closeIcon,
   backIcon,
+  wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   testID,
 }: FullSheetProps) {
   const isOpen = open ?? visible ?? false;
   const { height, width } = useWindowDimensions();
-  const isSmallScreen = width < SMALL_SCREEN_BREAKPOINT;
+  const isSmallScreen = !isWidthAtLeast(width, wideBreakpoint);
   const reduced = useReducedMotion();
 
   const handleClose = useCallback(() => {

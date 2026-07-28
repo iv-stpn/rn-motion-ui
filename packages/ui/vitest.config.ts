@@ -13,6 +13,8 @@ export default defineConfig({
       'src/moti/__tests__/**/*.test.ts',
       'src/moti/__tests__/**/*.test.tsx',
       'src/lib/__tests__/**/*.test.ts',
+      'src/hooks/__tests__/**/*.test.ts',
+      'src/hooks/__tests__/**/*.test.tsx',
       'src/components/**/__tests__/**/*.test.ts',
     ],
   },

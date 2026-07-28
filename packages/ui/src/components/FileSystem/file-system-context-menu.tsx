@@ -32,6 +32,7 @@ import {
   useState,
 } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { type BreakpointValue, isWidthAtLeast } from '../../lib/breakpoints';
 import { cn } from '../../lib/cn';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
@@ -40,6 +41,13 @@ import type { FileSystemContextMenuAction, FileSystemItem } from './file-system.
 const NO_ACTIONS_LABEL = 'No actions available.';
 const MENU_WIDTH = 220;
 const VIEWPORT_PADDING = 8;
+/**
+ * Window width at which the menu switches from bottom sheet to cursor-anchored
+ * panel. This one is a *window* decision, not a container one: the panel lives
+ * in a Modal and clamps against the viewport, so it reads the global scale
+ * rather than {@link FileSystemProps.breakpoints}.
+ */
+const DEFAULT_CONTEXT_MENU_WIDE_BREAKPOINT: BreakpointValue = 'md';
 /** react-native-web honours 'fixed' but the type union omits it. */
 // biome-ignore lint/plugin: 'fixed' is valid on web; not in RN's LayoutPosition union
 const WEB_FIXED = { position: 'fixed' } as unknown as object;
@@ -51,11 +59,35 @@ type ContextMenuCloser = { close: () => void } | null;
 /** Each FileSystem tree mounts one provider; useContextMenu reads the nearest one. */
 const FileSystemContextMenuContext = createContext<MutableRefObject<ContextMenuCloser>>({ current: null });
 
-export type FileSystemContextMenuProviderProps = { children: ReactNode };
+/**
+ * Kept separate from the closer registry above so that ref keeps its mutable
+ * identity — the panel is the only consumer of the breakpoint, and the two
+ * hooks only ever touch the registry.
+ */
+const ContextMenuBreakpointContext = createContext<BreakpointValue>(DEFAULT_CONTEXT_MENU_WIDE_BREAKPOINT);
 
-export function FileSystemContextMenuProvider({ children }: FileSystemContextMenuProviderProps) {
+export type FileSystemContextMenuProviderProps = {
+  children: ReactNode;
+  /**
+   * Minimum window width for the cursor-anchored panel; below it the menu
+   * opens as a bottom sheet. A breakpoint name from the default scale or a raw
+   * pixel number.
+   *
+   * @default 'md'
+   */
+  wideBreakpoint?: BreakpointValue;
+};
+
+export function FileSystemContextMenuProvider({
+  children,
+  wideBreakpoint = DEFAULT_CONTEXT_MENU_WIDE_BREAKPOINT,
+}: FileSystemContextMenuProviderProps) {
   const registryRef = useRef<ContextMenuCloser>(null);
-  return <FileSystemContextMenuContext.Provider value={registryRef}>{children}</FileSystemContextMenuContext.Provider>;
+  return (
+    <FileSystemContextMenuContext.Provider value={registryRef}>
+      <ContextMenuBreakpointContext.Provider value={wideBreakpoint}>{children}</ContextMenuBreakpointContext.Provider>
+    </FileSystemContextMenuContext.Provider>
+  );
 }
 
 // ── Action row ─────────────────────────────────────────────────────────────────
@@ -110,8 +142,12 @@ type ContextMenuPanelProps = {
 type LayoutEvent = { nativeEvent: { layout: { height: number } } };
 
 function ContextMenuPanel({ actions, onAction, onClose, pos, title }: ContextMenuPanelProps) {
+  // Raw dimensions are needed to clamp the panel inside the viewport, so this
+  // keeps useWindowDimensions and only routes the layout decision through the
+  // shared scale.
   const { width: vpWidth, height: vpHeight } = useWindowDimensions();
-  const isWide = vpWidth >= 768;
+  const wideBreakpoint = useContext(ContextMenuBreakpointContext);
+  const isWide = isWidthAtLeast(vpWidth, wideBreakpoint);
   const [panelHeight, setPanelHeight] = useState(0);
 
   const clampedX = pos ? Math.min(pos.x, vpWidth - MENU_WIDTH - VIEWPORT_PADDING) : 0;

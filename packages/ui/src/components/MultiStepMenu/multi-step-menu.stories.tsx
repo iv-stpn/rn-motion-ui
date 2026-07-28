@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useRef, useState } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Action, Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { useBreakpointAtLeast } from '../../hooks/use-breakpoint';
 import { Bell, Moon, ShieldCheck, User } from '../../lib/icons';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
@@ -36,7 +37,6 @@ type Story = StoryObj<typeof meta>;
 
 const SETTINGS_ROOT_TITLE = 'Settings';
 const OPEN_SETTINGS_LABEL = 'Open settings';
-const WIDE_BREAKPOINT = 640;
 
 // ── Shared fixture data ────────────────────────────────────────────────────
 
@@ -228,7 +228,9 @@ const WIDE_PLACEHOLDER = (
  */
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function MenuPlayground() {
-  const { width } = useWindowDimensions();
+  // Only the wide/narrow answer matters here, so this subscribes to the tier
+  // rather than the width — dragging the viewport re-renders at the edge only.
+  const isAutoWide = useBreakpointAtLeast('sm');
   const [layout, setLayout] = useState<LayoutKey>('auto');
   const [startKey, setStartKey] = useState<StartKey>('account');
   const [withFooter, setWithFooter] = useState(true);
@@ -237,7 +239,7 @@ function MenuPlayground() {
   const [path, setPath] = useState<string[]>([]);
   const menuRef = useRef<MultiStepMenuHandle | null>(null);
 
-  const isWideScreen = layout === 'auto' ? width >= WIDE_BREAKPOINT : layout === 'wide';
+  const isWideScreen = layout === 'auto' ? isAutoWide : layout === 'wide';
   const handleOpen = useCallback(() => setVisible(true), []);
   const handleClose = useCallback(() => setVisible(false), []);
   const handleAfterClose = useCallback(() => menuRef.current?.reset(), []);

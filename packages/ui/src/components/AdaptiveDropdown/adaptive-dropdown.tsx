@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { type LayoutChangeEvent, Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { type BreakpointValue, isWidthAtLeast } from '../../lib/breakpoints';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -9,7 +10,8 @@ import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
 import { Text } from '../Text/text';
 
-const MD_BREAKPOINT = 768;
+/** Floating panel vs. bottom sheet cutoff. */
+const DEFAULT_WIDE_BREAKPOINT: BreakpointValue = 'md';
 const DEFAULT_WIDTH = 360;
 const VIEWPORT_PADDING = 8;
 const DEFAULT_MAX_HEIGHT = 520;
@@ -56,6 +58,12 @@ export type AdaptiveDropdownProps = {
   fullSheet?: boolean;
   /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 5 */
   elevation?: SurfaceLevel;
+  /**
+   * Minimum window width for the floating-panel layout; below it the content
+   * opens as a bottom sheet. A breakpoint name from the default scale or a raw
+   * pixel number. @default 'md'
+   */
+  wideBreakpoint?: BreakpointValue;
   testID?: string;
 };
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small screen paths are tightly coupled to shared anchor/dimension state
@@ -78,10 +86,11 @@ export function AdaptiveDropdown({
   triggerClassName,
   fullSheet = false,
   elevation = 5,
+  wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   testID,
 }: AdaptiveDropdownProps) {
   const { width: vpWidth, height: vpHeight } = useWindowDimensions();
-  const isWideScreen = vpWidth >= MD_BREAKPOINT;
+  const isWideScreen = isWidthAtLeast(vpWidth, wideBreakpoint);
   const reduced = useReducedMotion();
 
   const triggerRef = useRef<View>(null);

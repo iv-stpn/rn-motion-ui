@@ -5,6 +5,7 @@ import { Modal, Pressable, ScrollView, TouchableOpacity, useWindowDimensions, Vi
 import { Easing } from 'react-native-reanimated';
 import { useModalRender } from '../../hooks/use-modal-render';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { type BreakpointValue, isWidthAtLeast } from '../../lib/breakpoints';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -13,8 +14,8 @@ import { BottomSheet } from '../BottomSheet/bottom-sheet';
 import { FullSheet } from '../FullSheet/full-sheet';
 import { Text } from '../Text/text';
 
-// Narrow vs. wide layout cutoff — matches FullSheet's SMALL_SCREEN_BREAKPOINT.
-const WIDE_BREAKPOINT = 640;
+/** Narrow vs. wide layout cutoff — matches FullSheet's default. */
+const DEFAULT_WIDE_BREAKPOINT: BreakpointValue = 'sm';
 
 /** Join truthy class strings. (Local helper — this package ships no shared `cn`.) */
 function cn(...parts: Array<string | false | null | undefined>): string {
@@ -58,6 +59,11 @@ type AdaptiveModalProps = {
   compact?: boolean;
   /** Overrides the breakpoint-derived wide/narrow layout decision. */
   isWideScreen?: boolean;
+  /**
+   * Width at which the wide (modal / drawer) layout takes over — a breakpoint
+   * name or a raw pixel number. @default 'sm' (640)
+   */
+  wideBreakpoint?: BreakpointValue;
   /** When true, the caller fully owns the content layout and the modal applies no container padding. */
   customLayout?: boolean;
   /** Called after the close animation has fully completed and the modal is unmounted. */
@@ -110,6 +116,7 @@ export function AdaptiveModal({
   widePanelSize,
   compact = false,
   isWideScreen: isWideScreenOverride,
+  wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   customLayout = false,
   onAfterClose,
   closeOnOverlayClick = true,
@@ -118,7 +125,7 @@ export function AdaptiveModal({
 }: AdaptiveModalProps) {
   const reduce = useReducedMotion();
   const { height, width } = useWindowDimensions();
-  const isWideScreen = isWideScreenOverride ?? width >= WIDE_BREAKPOINT;
+  const isWideScreen = isWideScreenOverride ?? isWidthAtLeast(width, wideBreakpoint);
 
   const open = openProp ?? visible ?? false;
   const handleClose = useCallback(() => {

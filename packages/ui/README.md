@@ -129,6 +129,70 @@ Subpaths are namespaced by category:
 | `/ease` | easing constants |
 | `/tokens.css` | design token stylesheet |
 | `/theme/use-theme-color` | `useThemeColor`, `useThemeColors` |
+| `/breakpoints` | breakpoint scale + pure resolvers |
+| `/hooks/use-breakpoint` | `useBreakpoint`, `useBreakpointAtLeast` |
+
+## Responsive breakpoints
+
+Every responsive decision in the library resolves against one scale, which mirrors Tailwind's default `screens` so a `md:` class and a `useBreakpoint() === 'md'` check flip at the same width:
+
+| Name | Min width |
+| --- | --- |
+| `base` | `0` |
+| `sm` | `640` |
+| `md` | `768` |
+| `lg` | `1024` |
+| `xl` | `1280` |
+| `2xl` | `1536` |
+
+### `useBreakpoint`
+
+Returns the current tier and **re-renders only when that tier changes**. `useWindowDimensions` pushes a render for every resize frame — dragging a window edge across 200 px re-renders the whole subtree ~200 times even though the layout decision never moved. This subscribes to the same `Dimensions` event but stores only the resolved breakpoint.
+
+```tsx
+import { useBreakpoint, useBreakpointAtLeast } from 'rn-motion-ui/hooks/use-breakpoint';
+
+const breakpoint = useBreakpoint();               // 'base' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+const breakpoint = useBreakpoint({ md: 720 });    // move just the md edge
+const isWide = useBreakpointAtLeast('md');        // one cutoff, boolean, flips once
+const isWide = useBreakpointAtLeast(900);         // raw pixels work too
+```
+
+Overrides are matched by value, not object identity, so an inline `{{ md: 720 }}` literal doesn't re-subscribe on every render.
+
+### Per-component overrides
+
+Components that pick a layout from the window width take a `wideBreakpoint` prop — a breakpoint name or a raw pixel number:
+
+| Component | Prop | Default |
+| --- | --- | --- |
+| `AdaptiveModal` | `wideBreakpoint` | `'sm'` (640) |
+| `FullSheet` | `wideBreakpoint` | `'sm'` (640) |
+| `AdaptiveDropdown` | `wideBreakpoint` | `'md'` (768) |
+
+```tsx
+<AdaptiveModal wideBreakpoint="md" … />   {/* stay narrow until 768 */}
+<AdaptiveDropdown wideBreakpoint={900} … />
+```
+
+`AdaptiveModal` also keeps `isWideScreen` to bypass width entirely, and `MultiStepMenu` still receives `isWideScreen` from its caller.
+
+`FileSystem` is the exception: it adapts to its **own measured width**, not the window's, so it collapses inside a narrow parent too. Its tiers are container widths and are overridden as a group:
+
+```tsx
+<FileSystem breakpoints={{ minimal: 320, compact: 520, tablet: 720 }} … />
+```
+
+### Measuring your own container
+
+The resolvers are pure and React-free, so a component that measures itself can reuse the same thresholds:
+
+```tsx
+import { breakpointForWidth, isWidthAtLeast } from 'rn-motion-ui/breakpoints';
+
+const tier = breakpointForWidth(measuredWidth);          // 'md'
+const isWide = isWidthAtLeast(measuredWidth, 'lg');      // boolean
+```
 
 ## FileTree
 

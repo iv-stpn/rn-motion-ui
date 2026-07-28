@@ -102,6 +102,11 @@
       "types": "./src/components/BottomSheet/bottom-sheet.tsx",
       "default": "./src/components/BottomSheet/bottom-sheet.tsx"
     },
+    "./breakpoints": {
+      "source": "./src/lib/breakpoints.ts",
+      "types": "./src/lib/breakpoints.ts",
+      "default": "./src/lib/breakpoints.ts"
+    },
     "./bouncy-accordion": {
       "source": "./src/components/BouncyAccordion/bouncy-accordion.tsx",
       "types": "./src/components/BouncyAccordion/bouncy-accordion.tsx",
@@ -391,6 +396,11 @@
       "source": "./src/hooks/use-arm-on-view.ts",
       "types": "./src/hooks/use-arm-on-view.ts",
       "default": "./src/hooks/use-arm-on-view.ts"
+    },
+    "./hooks/use-breakpoint": {
+      "source": "./src/hooks/use-breakpoint.ts",
+      "types": "./src/hooks/use-breakpoint.ts",
+      "default": "./src/hooks/use-breakpoint.ts"
     },
     "./hooks/use-hover-capable": {
       "source": "./src/hooks/use-hover-capable.ts",

@@ -20,7 +20,7 @@ export default defineConfig({
       provider: playwright(),
       instances: [{ browser: 'chromium' }],
     },
-    // Run story files one at a time. With 45 files fetching modules from
+    // Run story files one at a time. With every story file fetching modules from
     // Vite's on-demand transform pipeline concurrently, slower environments
     // (WSL2/CI) hit "Failed to fetch dynamically imported module" races as
     // the dep-optimizer and first-time transforms contend. Sequential runs

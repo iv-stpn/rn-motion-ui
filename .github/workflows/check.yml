@@ -45,6 +45,12 @@ jobs:
       - name: Validate exports map
         run: node packages/ui/scripts/check-exports.mjs
 
+      # The root README's component/hook lists are generated from that exports
+      # map. Without this step they drifted silently — four shipped components
+      # and two hooks went unlisted for several releases.
+      - name: Check README is in sync
+        run: node packages/ui/scripts/check-readme.mjs
+
       - name: Check no hardcoded colors
         run: node packages/ui/scripts/check-no-hardcoded-colors.mjs
 

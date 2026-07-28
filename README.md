@@ -29,12 +29,29 @@ import { Card } from 'rn-motion-ui/card'
 import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 ```
 
-`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `animated-number` · `availability-scheduler` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `button` · `card` · `card-choice` · `checkbox` · `command-palette` · `cylinder-carousel` · `dock` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-widget` · `full-sheet` · `hover-menu` · `input` · `loader` · `marquee` · `morphing-modal` · `multi-step-menu` · `not-found` · `number-ticker` · `otp-input` · `overflow-actions` · `popover` · `radio` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text-cascade` · `text-reveal` · `text-rolling` · `text-shimmer` · `wheel-picker`
+> The lists below are generated from the package's `exports` map by
+> `node packages/ui/scripts/check-readme.mjs --fix`, which CI re-runs on every push.
+
+<!-- generated:components -->
+`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `animated-number` · `availability-scheduler` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `button` · `card` · `card-choice` · `checkbox` · `command-palette` · `cylinder-carousel` · `dock` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-widget` · `file-system` · `file-tree` · `full-sheet` · `glossy-button` · `hover-menu` · `icon` · `input` · `loader` · `marquee` · `morphing-modal` · `multi-step-menu` · `not-found` · `number-ticker` · `otp-input` · `overflow-actions` · `popover` · `radio` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-reveal` · `text-rolling` · `text-shimmer` · `wheel-picker`
+<!-- /generated:components -->
 
 <details>
 <summary>Hooks</summary>
 
-`hooks/use-arm-on-view` · `hooks/use-hover-capable` · `hooks/use-in-view` · `hooks/use-interval` · `hooks/use-modal-render` · `hooks/use-mount-effect` · `hooks/use-page-visible` · `hooks/use-reduced-motion` · `hooks/use-scramble` · `hooks/use-shake-animation`
+<!-- generated:hooks -->
+`hooks/direction-provider` · `hooks/use-arm-on-view` · `hooks/use-breakpoint` · `hooks/use-direction` · `hooks/use-focus-trap` · `hooks/use-hover-capable` · `hooks/use-in-view` · `hooks/use-interval` · `hooks/use-modal-render` · `hooks/use-mount-effect` · `hooks/use-page-visible` · `hooks/use-reduced-motion` · `hooks/use-safe-insets` · `hooks/use-scramble` · `hooks/use-shake-animation`
+<!-- /generated:hooks -->
+</details>
+
+<details>
+<summary>Utilities</summary>
+
+Pure helpers and the theme layer — tokens, easings, the surface ladder, the icon set, and the runtime colour resolvers.
+
+<!-- generated:utilities -->
+`breakpoints` · `color` · `ease` · `elevated` · `icons` · `theme/motion` · `theme/use-theme-color` · `utils/typeguards`
+<!-- /generated:utilities -->
 </details>
 
 <details>
@@ -54,7 +71,19 @@ Types / constants: `moti/types` · `moti/color-keys`
 <details>
 <summary>Table helpers</summary>
 
-`table-header` · `table-row` · `table-styles` · `table-types` · `table-utils` · `use-table` · `use-column-reorder`
+<!-- generated:table -->
+`table-header` · `table-row` · `table-types` · `table-utils` · `use-column-reorder` · `use-table`
+<!-- /generated:table -->
+</details>
+
+<details>
+<summary>Advanced / internal</summary>
+
+The shell and presence hook the sheet family (`bottom-sheet`, `full-sheet`, `drawer`, `adaptive-modal`) is built on. Exported so a consumer can build a sheet of their own on the same primitives — but they are infrastructure, not a component API, and they change with the components that use them rather than on their own deprecation cycle.
+
+<!-- generated:internal -->
+`overlay/overlay-shell` · `overlay/use-sheet-presence`
+<!-- /generated:internal -->
 </details>
 
 ---
@@ -171,7 +200,10 @@ bun run typecheck     # tsc --noEmit across all packages
 bun run test          # Vitest + Playwright interaction tests (real Chromium)
 ```
 
-51 story files, 159 tests. Stories with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`.
+<!-- generated:counts -->
+56 story files, 163 stories.
+<!-- /generated:counts -->
+Every story runs as a vitest test; those with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`. `packages/ui` also carries a jsdom unit suite over the pure layers (Moti worklets, `lib/`, the FileTree controller, the OTP edit logic).
 
 ---
 

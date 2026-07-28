@@ -80,11 +80,17 @@ Subpaths are namespaced by category:
 | `/button` | `Button` |
 | `/elevated-button` | `ElevatedButton` |
 | `/stateful-button` | `StatefulButton` |
+| `/glossy-button` | `GlossyButton` |
 | `/switch` | `Switch` |
 | `/checkbox` | `Checkbox` |
 | `/radio` | `Radio` |
+| `/card-choice` | `CardChoiceGroup`, `CardChoice` |
+| `/star-rating` | `StarRating` |
 | `/input` | `Input` |
 | `/tabs` | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` |
+| `/card` | `Card` |
+| `/text` | `Text` |
+| `/skeleton` | `Skeleton` |
 | `/loader` | `Loader` |
 | `/animated-badge` | `AnimatedBadge` |
 | `/animated-number` | `AnimatedNumber` |
@@ -104,6 +110,7 @@ Subpaths are namespaced by category:
 | `/bottom-sheet` | `BottomSheet` |
 | `/full-sheet` | `FullSheet` |
 | `/morphing-modal` | `MorphingModal` |
+| `/adaptive-modal` | `AdaptiveModal` |
 | `/action-feedback-modal` | `ActionFeedbackModal` |
 | `/adaptive-dropdown` | `AdaptiveDropdown` |
 | `/multi-step-menu` | `MultiStepMenu` |
@@ -113,6 +120,7 @@ Subpaths are namespaced by category:
 | `/bouncy-accordion` | `BouncyAccordion` |
 | `/dynamic-island` | `DynamicIsland` |
 | `/action-swap` | `ActionSwap` |
+| `/animated-list` | `AnimatedList`, `AnimatedListItem` |
 | `/swipeable-list` | `SwipeableList` |
 | `/range-slider` | `RangeSlider` |
 | `/cylinder-carousel` | `CylinderCarousel` |
@@ -122,7 +130,14 @@ Subpaths are namespaced by category:
 | `/feedback-widget` | `FeedbackWidget` |
 | `/availability-scheduler` | `AvailabilityScheduler` |
 | `/table` | `Table` |
+| `/table-header` | `HeaderCell` |
+| `/table-row` | `TableRow`, `RowCell` |
+| `/table-types` | table type definitions |
+| `/table-utils` | sorting / filtering helpers |
+| `/use-table` | `useTable` |
+| `/use-column-reorder` | `useColumnReorder` |
 | `/file-tree` | `FileTree`, `useFileTree` |
+| `/file-system` | `FileSystem` |
 | `/not-found` | `NotFound` |
 | `/icons` | icon components |
 | `/icon` | `ThemedIcon` |

@@ -1,0 +1,194 @@
+#!/usr/bin/env node
+/**
+ * check-readme.mjs — keeps the root README.md in sync with what the package
+ * actually ships. Everything it checks is derived from two machine-readable
+ * sources: the `exports` map in packages/ui/package.json, and the story files
+ * on disk.
+ *
+ * It replaces the older assert-counts.mjs, which only guarded the story-file
+ * number — the component and hook lists drifted anyway (four shipped components
+ * and two hooks went unlisted) because nothing generated them.
+ *
+ * What it does:
+ *  - Generates the component / hook / table-helper / utility / internal lists
+ *    into the `<!-- generated:NAME -->` blocks in README.md.
+ *  - Generates the story-file and story counts.
+ *  - Verifies every remaining exports subpath (the hand-grouped moti layer,
+ *    tokens.css) is mentioned somewhere in the README, so a new subpath can't
+ *    ship undocumented.
+ *
+ * Usage:
+ *   node scripts/check-readme.mjs        # exits 1 if README is stale
+ *   node scripts/check-readme.mjs --fix  # rewrites the generated blocks
+ *
+ * Wired into .github/workflows/check.yml so the lists can't drift again.
+ */
+
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkgRoot = resolve(__dirname, '..');
+const repoRoot = resolve(pkgRoot, '../..');
+const readmePath = resolve(repoRoot, 'README.md');
+const pkgReadmePath = resolve(pkgRoot, 'README.md');
+const pkgJsonPath = resolve(pkgRoot, 'package.json');
+const srcDir = resolve(pkgRoot, 'src');
+
+const FIX = process.argv.includes('--fix');
+
+// ---------------------------------------------------------------------------
+// 1. Read the exports map and sort every subpath into a README section
+// ---------------------------------------------------------------------------
+
+/**
+ * Which generated block a subpath belongs in, keyed off the source file it
+ * points at. Returns null for anything the rules don't cover — that's reported
+ * rather than silently dropped, which is how the lists drifted before.
+ *
+ *   src/hooks/                       -> hooks
+ *   src/lib/, src/theme/, src/utils/ -> utilities
+ *   src/components/Overlay/          -> internal (infra behind the sheet family)
+ *   src/components/Table/ (helper)   -> table
+ *   src/components/                  -> components
+ */
+function sectionFor(key, source) {
+  if (source.startsWith('./src/hooks/')) return 'hooks';
+  if (source.startsWith('./src/lib/') || source.startsWith('./src/theme/') || source.startsWith('./src/utils/'))
+    return 'utilities';
+  if (source.startsWith('./src/components/Overlay/')) return 'internal';
+  // `./table` is the component; every other Table file is a helper around it.
+  if (source.startsWith('./src/components/Table/')) return key === './table' ? 'components' : 'table';
+  if (source.startsWith('./src/components/')) return 'components';
+  return null;
+}
+
+// Subpaths that live in hand-written prose rather than a generated list. The
+// moti layer is grouped by role (primitives / presence / pressable / core), a
+// shape no flat alphabetical list would keep, so it is checked for mention
+// instead of generated.
+const isMentionOnly = (key) => key.startsWith('./moti/') || key === './tokens.css';
+
+const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8'));
+const sections = { components: [], hooks: [], table: [], utilities: [], internal: [] };
+const mentionOnly = [];
+const unclassified = [];
+
+for (const [key, entry] of Object.entries(pkg.exports)) {
+  if (key === './package.json') continue;
+  if (isMentionOnly(key)) {
+    mentionOnly.push(key);
+    continue;
+  }
+  const source = typeof entry === 'string' ? entry : (entry.source ?? entry.default);
+  const section = sectionFor(key, source);
+  if (section === null) {
+    unclassified.push(key);
+    continue;
+  }
+  sections[section].push(key.replace(/^\.\//, ''));
+}
+
+for (const names of Object.values(sections)) names.sort();
+
+// ---------------------------------------------------------------------------
+// 2. Count story files and stories
+// ---------------------------------------------------------------------------
+
+/** Recursively list files matching `predicate`. */
+function collectFiles(dir, predicate) {
+  const results = [];
+  for (const entry of readdirSync(dir)) {
+    const full = resolve(dir, entry);
+    if (statSync(full).isDirectory()) results.push(...collectFiles(full, predicate));
+    else if (predicate(entry)) results.push(full);
+  }
+  return results;
+}
+
+const storyFiles = collectFiles(srcDir, (f) => f.endsWith('.stories.tsx'));
+// Storybook turns every named export of a story file into one story, and
+// @storybook/addon-vitest turns every story into one vitest test — so this
+// count is exactly what `bun run test:storybook` reports.
+const storyCount = storyFiles.reduce(
+  (total, file) => total + (readFileSync(file, 'utf8').match(/^export const \w+/gm)?.length ?? 0),
+  0,
+);
+
+// ---------------------------------------------------------------------------
+// 3. Build the expected content of each generated block
+// ---------------------------------------------------------------------------
+
+const list = (names) => names.map((name) => `\`${name}\``).join(' · ');
+
+const blocks = {
+  components: list(sections.components),
+  hooks: list(sections.hooks),
+  table: list(sections.table),
+  utilities: list(sections.utilities),
+  internal: list(sections.internal),
+  counts: `${storyFiles.length} story files, ${storyCount} stories.`,
+};
+
+// ---------------------------------------------------------------------------
+// 4. Compare (or rewrite)
+// ---------------------------------------------------------------------------
+
+const readme = readFileSync(readmePath, 'utf8');
+const errors = [];
+let updated = readme;
+
+for (const [name, expected] of Object.entries(blocks)) {
+  const open = `<!-- generated:${name} -->`;
+  const close = `<!-- /generated:${name} -->`;
+  // Whole block, non-greedy — matched and rebuilt as a unit rather than patched
+  // in place, so an empty block (a marker pair with nothing between it, how a
+  // new section starts life) is handled like any other.
+  const re = new RegExp(`${open}\\n?([\\s\\S]*?)\\n?${close}`);
+  const match = updated.match(re);
+  if (match === null) {
+    errors.push(`MISSING BLOCK  ${open} … ${close} not found in README.md`);
+    continue;
+  }
+  if (match[1] === expected) continue;
+  if (FIX) updated = updated.replace(re, `${open}\n${expected}\n${close}`);
+  else errors.push(`STALE BLOCK    generated:${name}\n    expected: ${expected}\n    found:    ${match[1]}`);
+}
+
+// Every subpath that isn't generated must at least be named in the prose.
+for (const key of mentionOnly) {
+  const name = key.replace(/^\.\//, '');
+  if (!updated.includes(name)) errors.push(`UNDOCUMENTED   ${key} is exported but never mentioned in README.md`);
+}
+for (const key of unclassified) {
+  errors.push(`UNCLASSIFIED   ${key} fits no README section — extend sectionFor() in this script`);
+}
+
+// The published README (packages/ui/README.md) carries its own "UI components"
+// table — subpath alongside the symbols it exports, so it can't be generated
+// from the exports map. It drifted the same way the root lists did (nine
+// components were absent), so every component row is checked for presence; the
+// symbol column stays hand-written. Scoped to components on purpose: hooks, the
+// moti layer and utils are documented there as namespaced categories rather
+// than row by row.
+const pkgReadme = readFileSync(pkgReadmePath, 'utf8');
+for (const name of [...sections.components, ...sections.table]) {
+  if (!pkgReadme.includes(`\`/${name}\``))
+    errors.push(`UNPUBLISHED    ./${name} is exported but missing from the UI components table in packages/ui/README.md`);
+}
+
+if (FIX && updated !== readme) {
+  writeFileSync(readmePath, updated);
+  console.log('✔  Updated README.md generated blocks.');
+}
+
+if (errors.length > 0) {
+  console.error(`✖  README.md is out of sync (${errors.length} problem(s)):\n`);
+  for (const e of errors) console.error(`  ${e}`);
+  console.error('\n   Run `node packages/ui/scripts/check-readme.mjs --fix` to regenerate the lists.');
+  process.exit(1);
+}
+
+const documented = Object.values(sections).reduce((sum, names) => sum + names.length, 0) + mentionOnly.length;
+console.log(`✔  README OK — ${documented} subpaths documented, ${storyFiles.length} story files, ${storyCount} stories.`);

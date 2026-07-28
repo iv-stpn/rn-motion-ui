@@ -1,6 +1,7 @@
 import { withThemeByClassName } from '@storybook/addon-themes';
 import type { Decorator, Preview } from '@storybook/react';
 import { View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useGlobals } from 'storybook/preview-api';
 import '../global.css';
 
@@ -27,9 +28,11 @@ const ThemeDecorator: Decorator = (Story) => {
   const [globals] = useGlobals();
   const isDark = globals.theme === 'dark';
   return (
-    <View style={{ flex: 1, backgroundColor: isDark ? '#111111' : '#fafafa', padding: 24 }}>
-      <Story />
-    </View>
+    <SafeAreaProvider>
+      <View style={{ flex: 1, backgroundColor: isDark ? '#111111' : '#fafafa', padding: 24 }}>
+        <Story />
+      </View>
+    </SafeAreaProvider>
   );
 };
 

@@ -29,3 +29,6 @@ coverage/
 .DS_Store
 .env*
 !.env.example
+
+# Agents
+.agent/

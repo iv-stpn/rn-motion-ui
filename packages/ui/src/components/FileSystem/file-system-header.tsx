@@ -7,6 +7,7 @@
 import type { RefObject } from 'react';
 import type { TextInput } from 'react-native';
 import { View } from 'react-native';
+import { cn } from '../../lib/cn';
 import { ArrowLeft, ArrowRight } from '../../lib/icons';
 import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
@@ -51,6 +52,8 @@ export type FileSystemHeaderProps = {
   searchValue: string;
   sort: FileSystemSortState;
   view: FileSystemView;
+  /** Extra NativeWind classes merged onto the header's root view. */
+  className?: string;
   testID?: string;
 };
 
@@ -117,10 +120,13 @@ function HeaderTools({
   );
 }
 
-export function FileSystemHeader({ isCompact, onViewChange, view, testID, ...props }: FileSystemHeaderProps) {
+export function FileSystemHeader({ className, isCompact, onViewChange, view, testID, ...props }: FileSystemHeaderProps) {
   const { canGoBack, canGoForward, folderName, layout, onGoBack, onGoForward, ...toolProps } = props;
   return (
-    <View className="h-12 shrink-0 flex-row items-center gap-2 border-border border-b bg-surface-2 px-2" testID={testID}>
+    <View
+      className={cn('h-12 shrink-0 flex-row items-center gap-2 border-border border-b bg-surface-2 px-2', className)}
+      testID={testID}
+    >
       <HeaderNav
         canGoBack={canGoBack}
         canGoForward={canGoForward}

@@ -6,6 +6,7 @@
 
 import type { ComponentType } from 'react';
 import { Platform, View, type ViewStyle } from 'react-native';
+import { cn } from '../../lib/cn';
 import type { FileSystemView } from './file-system.types';
 import { FileSystemColumnsView } from './file-system-columns-view';
 import { FileSystemGalleryView } from './file-system-gallery-view';
@@ -32,6 +33,8 @@ export type FileSystemBodyProps = FileSystemViewProps & {
   /** Raw input rather than the normalized query, so the message quotes what was typed. */
   searchInput: string;
   view: FileSystemView;
+  /** Extra NativeWind classes merged onto the file-area root view. */
+  className?: string;
 };
 
 type EmptyLabelArgs = Pick<FileSystemBodyProps, 'hasActiveFilters' | 'isSearching' | 'searchInput'>;
@@ -71,9 +74,13 @@ const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect
 // `testID` is the root's, not the body's: it stays in the props handed to the
 // active view so every entry can derive its own id from it (see
 // file-system-test-id.ts). The body's own node takes the `-body` suffix.
-export function FileSystemBody(props: FileSystemBodyProps) {
+export function FileSystemBody({ className, ...props }: FileSystemBodyProps) {
   return (
-    <View className="min-h-0 flex-1" style={WEB_BODY_STYLE} testID={props.testID ? `${props.testID}-body` : undefined}>
+    <View
+      className={cn('min-h-0 flex-1', className)}
+      style={WEB_BODY_STYLE}
+      testID={props.testID ? `${props.testID}-body` : undefined}
+    >
       <FileSystemBodyContent {...props} />
     </View>
   );

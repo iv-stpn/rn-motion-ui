@@ -201,18 +201,21 @@ export function FileSystemCollapsedSearchRow({ inputRef, onValueChange, value }:
   );
 }
 
-export type StatusBarProps = { count: number; isSearching: boolean; selectedName?: string; testID?: string };
+export type StatusBarProps = { count: number; isSearching: boolean; selectedName?: string; className?: string; testID?: string };
 
 const COUNT_NOUNS = { result: { one: 'result', other: 'results' }, row: { one: 'item', other: 'items' } };
 
 /** Status-bar text: item/result count plus the current selection. */
-export function FileSystemStatusBar({ count, isSearching, selectedName, testID }: StatusBarProps) {
+export function FileSystemStatusBar({ className, count, isSearching, selectedName, testID }: StatusBarProps) {
   const nouns = isSearching ? COUNT_NOUNS.result : COUNT_NOUNS.row;
   const noun = count === 1 ? nouns.one : nouns.other;
   return (
     <View
       accessibilityLiveRegion="polite"
-      className="h-7 shrink-0 flex-row items-center justify-center gap-1 border-border border-t bg-surface-2 px-3"
+      className={cn(
+        'h-7 shrink-0 flex-row items-center justify-center gap-1 border-border border-t bg-surface-2 px-3',
+        className,
+      )}
       testID={testID}
     >
       <Text size="xs" className="text-muted-foreground">

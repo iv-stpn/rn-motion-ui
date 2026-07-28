@@ -7,6 +7,7 @@
 // prefixes are inferred by `buildFileSystemIndex`.
 
 import type { ReactNode } from 'react';
+import type { BreakpointValue } from '../../lib/breakpoints';
 
 /** One entry in the list returned by `getContextMenuActions`. */
 export type FileSystemContextMenuAction = {
@@ -104,6 +105,66 @@ export type FileTypeFilterOption = {
   mime: string;
 };
 
+// ── Render-prop state shapes ───────────────────────────────────────────────
+// Passed to renderHeader / renderFooter so consumers drive their own UI from
+// the same state the built-in toolbar uses.
+
+/** State snapshot passed to {@link FileSystemProps.renderHeader}. */
+export type FileSystemHeaderState = {
+  // Navigation
+  canGoBack: boolean;
+  canGoForward: boolean;
+  /** Display name of the current folder (title at the root). */
+  folderName: string;
+  goBack: () => void;
+  goForward: () => void;
+  // View
+  view: FileSystemView;
+  setView: (view: FileSystemView) => void;
+  // Search
+  searchValue: string;
+  setSearchValue: (value: string) => void;
+  isSearchExpanded: boolean;
+  setSearchExpanded: (expanded: boolean) => void;
+  // Sort
+  sort: FileSystemSortState;
+  setSortKey: (key: FileSystemSortKey) => void;
+  // Filters
+  filters: FileSystemFilter[];
+  fileTypeOptions: FileTypeFilterOption[];
+  toggleFileType: (mime: string, checked: boolean) => void;
+  selectDatePreset: (type: FileSystemDateFilterType, preset: string) => void;
+  openCustomRange: (type: FileSystemDateFilterType) => void;
+  clearFilters: () => void;
+  // Responsive layout hints (derived from the measured root width)
+  /** Width band the component has measured itself at. */
+  layout: 'full' | 'compact' | 'minimal';
+  /** `true` when root width is below the tablet breakpoint (768 px by default, see {@link FileSystemProps.breakpoints}); the built-in header switches from tabs to a dropdown at this point. */
+  isCompact: boolean;
+};
+
+/** State snapshot passed to {@link FileSystemProps.renderFooter}. */
+export type FileSystemStatusState = { count: number; isSearching: boolean; selectedName?: string };
+
+// ── Responsive tiers ───────────────────────────────────────────────────────
+// These are container widths, not window widths: the header adapts to the
+// component's own measured width so it collapses inside a narrow parent too.
+// That's why they don't come from the global breakpoint scale.
+
+/** Container widths (px) at which the header sheds affordances. */
+export type FileSystemBreakpoints = {
+  /** Below this, the header drops to its sparsest layout. @default 360 */
+  minimal?: number;
+  /** Below this, the header uses the condensed layout. @default 560 */
+  compact?: number;
+  /** Below this, the four-tab view switcher collapses into a dropdown. @default 768 */
+  tablet?: number;
+};
+
+export type ResolvedFileSystemBreakpoints = Required<FileSystemBreakpoints>;
+
+export const defaultFileSystemBreakpoints: ResolvedFileSystemBreakpoints = { minimal: 360, compact: 560, tablet: 768 };
+
 // ── Internal (resolved) entries ────────────────────────────────────────────
 // The index fills in every optional identity field so the render layer never
 // has to re-derive a name or a parent path.
@@ -123,7 +184,21 @@ export type FileSystemIndex = {
 export type FileSystemProps = {
   /** Flat manifest. Folders are optional; missing prefixes are inferred from file paths. */
   items: FileSystemItem[];
-  className?: string;
+  /**
+   * Overrides the container widths at which the header collapses. Partial —
+   * `{ tablet: 700 }` moves only that edge. See {@link FileSystemBreakpoints}.
+   */
+  breakpoints?: FileSystemBreakpoints;
+  /**
+   * Minimum *window* width at which entry context menus open as a
+   * cursor-anchored panel instead of a bottom sheet. Separate from
+   * {@link FileSystemProps.breakpoints} because those tiers measure the
+   * component's own container, while the menu is a Modal clamped to the
+   * viewport. A name from the default scale or a raw pixel number.
+   *
+   * @default 'md'
+   */
+  contextMenuWideBreakpoint?: BreakpointValue;
   /** Label for the root folder. */
   title?: string;
   defaultView?: FileSystemView;
@@ -189,6 +264,27 @@ export type FileSystemProps = {
   onMove?: (event: FileSystemMoveEvent) => void;
   /** Fixed viewport height. Defaults to 480. */
   height?: number;
+  // ── Headless slots ──────────────────────────────────────────────────────
+  /**
+   * Replace the built-in header toolbar with your own. Receives all the state
+   * the default header uses so you can wire actions without duplicating logic.
+   * When provided, `headerClassName` is ignored.
+   */
+  renderHeader?: (state: FileSystemHeaderState & { testID?: string }) => ReactNode;
+  /**
+   * Replace the built-in status-bar footer with your own. Receives the count /
+   * search / selection state the default status bar displays.
+   * When provided, `footerClassName` is ignored.
+   */
+  renderFooter?: (state: FileSystemStatusState & { testID?: string }) => ReactNode;
+  /** Extra NativeWind classes merged onto the root container. */
+  className?: string;
+  /** Extra NativeWind classes merged onto the built-in header's root view. Ignored when `renderHeader` is provided. */
+  headerClassName?: string;
+  /** Extra NativeWind classes merged onto the file-area root view. */
+  bodyClassName?: string;
+  /** Extra NativeWind classes merged onto the built-in footer's root view. Ignored when `renderFooter` is provided. */
+  footerClassName?: string;
   testID?: string;
 };
 

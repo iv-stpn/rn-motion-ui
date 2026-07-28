@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
-import { expect, screen, userEvent, within } from 'storybook/test';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
 import { Button } from '../Button/button';
@@ -115,7 +115,7 @@ function SheetDemo() {
   return (
     <View style={{ gap: 12 }}>
       <TriggerButton label={OPEN_SHEET_LABEL} onPress={handleOpen} />
-      <BottomSheet onOpenChange={setOpen} open={open}>
+      <BottomSheet accessibilityLabel={BOTTOM_SHEET_TITLE} onOpenChange={setOpen} open={open}>
         <SheetBody onClose={handleClose} />
       </BottomSheet>
     </View>
@@ -139,5 +139,21 @@ export const Default: Story = {
     await expect(await screen.findByText(BOTTOM_SHEET_TITLE)).toBeTruthy();
     // Verify the dismiss button is present and interactive.
     await expect(await screen.findByRole('button', { name: DISMISS_LABEL })).toBeTruthy();
+
+    // The sheet is a *named* dialog. Queried by name on purpose: on web
+    // react-native-web's own Modal wrapper already answers `role="dialog"`, so
+    // an unqualified query matches two nodes — the anonymous wrapper and the
+    // panel. The one that matters is the one carrying the label, and on native
+    // (where Modal contributes no role) it is the only one.
+    const dialog = await screen.findByRole('dialog', { name: BOTTOM_SHEET_TITLE });
+    await expect(dialog).toHaveAttribute('aria-modal', 'true');
+
+    // The drag handle is pointer-only, so the backdrop is the dismiss control a
+    // screen-reader or keyboard user actually has. It must be a labelled
+    // button, not a bare tap target.
+    const close = await screen.findByRole('button', { name: 'Close' });
+    await expect(close).toBeInTheDocument();
+    await userEvent.click(close);
+    await waitFor(() => expect(screen.queryByText(BOTTOM_SHEET_TITLE)).toBeNull(), { timeout: 2000 });
   },
 };

@@ -14,6 +14,18 @@ import { useTable } from './use-table';
 
 const PAGINATION_FOOTER_HEIGHT = 52; // footer paddingVertical (10×2) + button height (32)
 
+/**
+ * **Right-to-left:** column *order* is deliberately left alone — the table
+ * renders the `columns` array in the order given, and whether the first column
+ * belongs on the right under RTL depends on what the data means, so reversing
+ * it here would be guessing. Reverse the array yourself if it should follow the
+ * reading direction. Cell alignment *does* follow the direction unless a column
+ * sets `align` explicitly (see `TableColumn.align`).
+ *
+ * Column drag-to-reorder follows the direction too: its drop boundaries are
+ * accumulated from column widths in column order rather than measured, so they
+ * describe the logical axis and are reconciled with the physical pointer.
+ */
 /** biome-ignore lint/complexity/noExcessiveLinesPerFunction: the table has too many props and features to be simplified more */
 export function Table<T>(props: TableProps<T>) {
   const {
@@ -22,9 +34,8 @@ export function Table<T>(props: TableProps<T>) {
     onContainerLayout,
     colWidths,
     orderedColumns,
-    boundaries,
     dragKey,
-    dropIndex,
+    indicatorX,
     gripHandlers,
     sortable,
     activeSort,
@@ -349,11 +360,14 @@ export function Table<T>(props: TableProps<T>) {
               testID={testID}
             />
           ))}
-          {/* Drop indicator: a line at the insertion boundary while dragging */}
-          {dragKey && dropIndex !== null && containerWidth > 0 ? (
+          {/* Drop indicator: a line at the insertion boundary while dragging.
+              `left` is physical, so the position is resolved for the direction
+              upstream (see `dropIndicatorX`). */}
+          {dragKey && indicatorX !== null ? (
             <View
               className="absolute top-0 bottom-0 z-20 w-0.5 bg-primary"
-              style={{ pointerEvents: 'none', left: Math.min(boundaries[dropIndex] ?? 0, containerWidth - 2) }}
+              style={{ pointerEvents: 'none', left: indicatorX }}
+              testID={`${testID ?? 'table'}-drop-indicator`}
             />
           ) : null}
         </View>

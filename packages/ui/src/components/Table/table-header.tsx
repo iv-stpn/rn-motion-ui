@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useCallback } from 'react';
 import type { GestureResponderHandlers } from 'react-native';
 import { Pressable, TextInput, View } from 'react-native';
+import { useIsRTL } from '../../hooks/use-direction';
 import { cn } from '../../lib/cn';
 import { ChevronUp, GripVertical, Plus, Trash2 } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -63,7 +64,8 @@ export function HeaderCell<T>({
   testID,
   sortIcon,
 }: HeaderCellProps<T>) {
-  const { textAlign } = alignStyle(column.align);
+  const isRTL = useIsRTL();
+  const { textAlign } = alignStyle(column.align, isRTL);
   const mutedForeground = useThemeColor('muted-foreground');
   const foregroundForeground = useThemeColor('foreground');
   const primaryForeground = useThemeColor('primary-foreground');
@@ -103,7 +105,9 @@ export function HeaderCell<T>({
         {reorderable ? (
           <View
             {...gripHandlers(column.key)}
-            className="-ml-1 select-none items-center justify-center"
+            // Negative margin pulls the grip into the cell padding on the side it
+            // sits, which the row direction decides — so it mirrors with the row.
+            className={cn('select-none items-center justify-center', isRTL ? '-mr-1' : '-ml-1')}
             hitSlop={8}
             accessibilityLabel={`Reorder ${column.key} column`}
             testID={`${testID ?? 'table'}-grip-${column.key}`}
@@ -142,14 +146,16 @@ export function HeaderCell<T>({
         )}
       </MotiView>
 
-      {/* Column action overlay on long-press */}
+      {/* Column action overlay on long-press, pinned to the trailing edge — the
+          left one under RTL, since `right` stays physical in both directions. */}
       {isColPressed && hasColMenu ? (
-        <View className="absolute top-0.5 right-0.5 z-10 flex-row gap-0.5">
+        <View className={cn('absolute top-0.5 z-10 flex-row gap-0.5', isRTL ? 'left-0.5' : 'right-0.5')}>
           {onInsertColumn ? (
             <Pressable
               className="h-5 w-5 items-center justify-center rounded-full bg-primary"
               onPress={handleInsertColumn}
               hitSlop={8}
+              accessibilityLabel={`Insert column before ${column.header}`}
             >
               <Plus size={10} color={primaryForeground} />
             </Pressable>
@@ -159,6 +165,7 @@ export function HeaderCell<T>({
               className="h-5 w-5 items-center justify-center rounded-full bg-danger"
               onPress={handleDeleteColumn}
               hitSlop={8}
+              accessibilityLabel={`Delete column ${column.header}`}
             >
               <Trash2 size={10} color={primaryForeground} />
             </Pressable>

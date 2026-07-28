@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import type { DimensionValue, StyleProp, ViewStyle } from 'react-native';
 import { Pressable, TextInput, View } from 'react-native';
+import { useIsRTL } from '../../hooks/use-direction';
 import { cn } from '../../lib/cn';
 import { Plus, Trash2 } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
@@ -81,7 +82,8 @@ export type RowCellProps<T> = {
 };
 
 export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEdit, cellClassName, testID }: RowCellProps<T>) {
-  const { textAlign } = alignStyle(column.align);
+  const isRTL = useIsRTL();
+  const { textAlign } = alignStyle(column.align, isRTL);
   const rawValue = readCellValue(row, column);
   const handleCommit = useCallback((v: string) => onCellEdit?.(id, column.key, v), [onCellEdit, id, column.key]);
 
@@ -172,6 +174,7 @@ export function TableRow<T>({
   onDeleteRow,
   testID,
 }: TableRowProps<T>) {
+  const isRTL = useIsRTL();
   const handleLongPress = useCallback(() => {
     if (hasRowMenu) setPressedRowId(isRowPressed ? null : id);
   }, [hasRowMenu, isRowPressed, id, setPressedRowId]);
@@ -229,9 +232,10 @@ export function TableRow<T>({
         />
       ))}
 
-      {/* Row action buttons shown on long-press at right edge */}
+      {/* Row action buttons shown on long-press, pinned to the trailing edge —
+          which is the left one under RTL, since `right` stays physical. */}
       {isRowPressed && hasRowMenu ? (
-        <View className="absolute top-0 right-2 bottom-0 flex-row items-center gap-1">
+        <View className={cn('absolute top-0 bottom-0 flex-row items-center gap-1', isRTL ? 'left-2' : 'right-2')}>
           {onInsertRow ? (
             <Pressable
               className="h-5 w-5 items-center justify-center rounded-full bg-primary"

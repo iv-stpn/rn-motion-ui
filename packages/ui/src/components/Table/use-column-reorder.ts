@@ -2,13 +2,15 @@ import type { RefObject } from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { View } from 'react-native';
 import { PanResponder } from 'react-native';
+import { useIsRTL } from '../../hooks/use-direction';
 import type { TableColumn } from './table-types';
-import { CHECKBOX_COL_WIDTH } from './table-types';
+import { columnBoundaries, dropIndexAt, dropIndicatorX } from './table-utils';
 
 type UseColumnReorderArgs<T> = {
   columns: TableColumn<T>[];
   colWidths: Record<string, number>;
   selectable: boolean;
+  containerWidth: number;
   containerRef: RefObject<View | null>;
   containerPageX: RefObject<number>;
   onColumnOrderChange?: (keys: string[]) => void;
@@ -16,9 +18,13 @@ type UseColumnReorderArgs<T> = {
 
 type UseColumnReorderResult<T> = {
   orderedColumns: TableColumn<T>[];
-  boundaries: number[];
+  /**
+   * Physical `left` for the drop indicator, or null when there is nothing to
+   * show. Resolved here rather than handed out as a boundary table so the
+   * direction is reconciled in one place — see `toLogicalX` in table-utils.
+   */
+  indicatorX: number | null;
   dragKey: string | null;
-  dropIndex: number | null;
   gripHandlers: (key: string) => ReturnType<typeof PanResponder.create>['panHandlers'];
 };
 
@@ -26,14 +32,20 @@ type UseColumnReorderResult<T> = {
 // getBoundingClientRect, drop boundaries are derived from the already-computed
 // column pixel widths. A PanResponder on each header grip captures the drag,
 // tracks the pointer's x within the container, and commits the new order on release.
+//
+// Those widths accumulate in column order, so the boundary table is *logical*
+// while the pointer is physical. `dropIndexAt` reconciles the two — see
+// `toLogicalX` in table-utils for why that has to happen somewhere.
 export function useColumnReorder<T>({
   columns,
   colWidths,
   selectable,
+  containerWidth,
   containerRef,
   containerPageX,
   onColumnOrderChange,
 }: UseColumnReorderArgs<T>): UseColumnReorderResult<T> {
+  const isRTL = useIsRTL();
   const [order, setOrder] = useState<string[]>(() => columns.map((c) => c.key));
   const [dragKey, setDragKey] = useState<string | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
@@ -60,34 +72,25 @@ export function useColumnReorder<T>({
     return resultKeys.map((k) => byKey.get(k)).filter((c): c is TableColumn<T> => c !== undefined);
   }, [order, columns]);
 
-  // Cumulative left edges for each ordered column (offset 0 is the checkbox col).
-  const boundaries = useMemo(() => {
-    const edges: number[] = [];
-    let x = selectable ? CHECKBOX_COL_WIDTH : 0;
-    for (const col of orderedColumns) {
-      edges.push(x);
-      x += colWidths[col.key] ?? 0;
-    }
-    edges.push(x);
-    return edges;
-  }, [orderedColumns, colWidths, selectable]);
+  const boundaries = useMemo(
+    () => columnBoundaries(orderedColumns, colWidths, selectable),
+    [orderedColumns, colWidths, selectable],
+  );
 
   // Live values read by the (cached) PanResponder callbacks — refreshed each
   // render so the stable responders never close over stale state.
-  const ctx = useRef({ boundaries, orderedColumns, dropIndex, onColumnOrderChange });
-  ctx.current = { boundaries, orderedColumns, dropIndex, onColumnOrderChange };
+  const ctx = useRef({ boundaries, dropIndex, containerWidth, isRTL, orderedColumns, onColumnOrderChange });
+  ctx.current = { boundaries, dropIndex, containerWidth, isRTL, orderedColumns, onColumnOrderChange };
 
-  // Map a container-relative x to an insertion index by comparing against each
-  // ordered column's horizontal midpoint.
   const dropIndexFor = useCallback((px: number) => {
-    const { boundaries: edges, orderedColumns: cols } = ctx.current;
-    for (let i = 0; i < cols.length; i += 1) {
-      const left = edges[i] ?? 0;
-      const right = edges[i + 1] ?? left;
-      if (px < left + (right - left) / 2) return i;
-    }
-    return cols.length;
+    const { boundaries: edges, containerWidth: width, isRTL: rtl } = ctx.current;
+    return dropIndexAt({ px, boundaries: edges, containerWidth: width, isRTL: rtl });
   }, []);
+
+  const indicatorX =
+    dragKey !== null && dropIndex !== null && containerWidth > 0
+      ? dropIndicatorX({ boundaries, dropIndex, containerWidth, isRTL })
+      : null;
 
   // Commit the reorder: move `key` to the current dropIndex. No-op if unchanged.
   const commit = useCallback((key: string, di: number | null) => {
@@ -139,5 +142,5 @@ export function useColumnReorder<T>({
     [dropIndexFor, commit, containerRef, containerPageX],
   );
 
-  return { orderedColumns, boundaries, dragKey, dropIndex, gripHandlers };
+  return { orderedColumns, dragKey, indicatorX, gripHandlers };
 }

@@ -14,6 +14,13 @@ export type TableColumn<T> = {
   editable?: boolean;
   /** pixels string like "120px" or fraction "1.4fr" */
   width?: number | string;
+  /**
+   * Cell alignment. **Physical, not direction-relative** — `right` is the right
+   * edge in an RTL table too, because the usual reason to set it is a column of
+   * numbers, and the caller is the one who knows whether that choice tracks the
+   * reading direction. Omit it to get alignment that does follow the direction
+   * (left in LTR, right in RTL).
+   */
   align?: 'left' | 'center' | 'right';
   minWidth?: number;
   /** Width of the skeleton bar shown for this cell during initial load. Defaults to `'60%'`. */

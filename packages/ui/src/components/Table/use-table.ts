@@ -71,10 +71,11 @@ export function useTable<T>(props: TableProps<T>) {
   );
 
   // ── Column reorder ─────────────────────────────────────────────────────────
-  const { orderedColumns, boundaries, dragKey, dropIndex, gripHandlers } = useColumnReorder({
+  const { orderedColumns, dragKey, indicatorX, gripHandlers } = useColumnReorder({
     columns,
     colWidths,
     selectable,
+    containerWidth,
     containerRef,
     containerPageX,
     onColumnOrderChange,
@@ -153,9 +154,8 @@ export function useTable<T>(props: TableProps<T>) {
     colWidths,
     // reorder
     orderedColumns,
-    boundaries,
     dragKey,
-    dropIndex,
+    indicatorX,
     gripHandlers,
     // sort
     sortable,

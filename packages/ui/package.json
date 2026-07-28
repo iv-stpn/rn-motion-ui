@@ -437,6 +437,11 @@
       "types": "./src/hooks/use-reduced-motion.ts",
       "default": "./src/hooks/use-reduced-motion.ts"
     },
+    "./hooks/use-safe-insets": {
+      "source": "./src/hooks/use-safe-insets.ts",
+      "types": "./src/hooks/use-safe-insets.ts",
+      "default": "./src/hooks/use-safe-insets.ts"
+    },
     "./hooks/use-scramble": {
       "source": "./src/hooks/use-scramble.ts",
       "types": "./src/hooks/use-scramble.ts",

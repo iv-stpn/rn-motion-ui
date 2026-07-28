@@ -8,15 +8,42 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { type Direction, useIsRTL } from '../../hooks/use-direction';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 
-export type MarqueeDirection = 'left' | 'right' | 'up' | 'down';
+/**
+ * Whether the content travels toward increasing X (right) or Y (down).
+ *
+ * Only the logical values consult the writing direction; `left`/`right`/`up`/
+ * `down` are physical by definition and stay put.
+ */
+function resolveReverse(direction: MarqueeDirection, isRTL: boolean): boolean {
+  if (direction === 'start') return isRTL;
+  if (direction === 'end') return !isRTL;
+  return direction === 'right' || direction === 'down';
+}
+
+/**
+ * Which way the content travels.
+ *
+ * `start` and `end` are relative to the writing direction — `start` moves
+ * content toward the leading edge (left in LTR, right in RTL), which is the way
+ * a ticker reads. `left`/`right` are physical and never flip; reach for them
+ * when the motion is tied to something on screen rather than to the text.
+ */
+export type MarqueeDirection = 'start' | 'end' | 'left' | 'right' | 'up' | 'down';
 
 export type MarqueeProps = {
   children: ReactNode;
-  /** Scroll direction. */
+  /** Scroll direction. @default 'start' */
   direction?: MarqueeDirection;
+  /**
+   * Overrides the ambient writing direction for the `start`/`end` resolution.
+   * Rarely needed — the value from `DirectionProvider` (or the platform) is
+   * normally right.
+   */
+  writingDirection?: Direction;
   /** Seconds for one full loop of the content. */
   speed?: number;
   /** Gap between repeated items, in px. */
@@ -35,10 +62,24 @@ export type MarqueeProps = {
  * RN fallback note: the web original used a CSS `mask-image` edge fade, which
  * has no RN equivalent — the effect is dropped here (content simply scrolls).
  */
-export function Marquee({ children, direction = 'left', speed = 20, gap = 16, className, style, testID }: MarqueeProps) {
+export function Marquee({
+  children,
+  direction = 'start',
+  writingDirection,
+  speed = 20,
+  gap = 16,
+  className,
+  style,
+  testID,
+}: MarqueeProps) {
   const reduce = useReducedMotion();
+  const isRTL = useIsRTL(writingDirection);
   const vertical = direction === 'up' || direction === 'down';
-  const reverse = direction === 'right' || direction === 'down';
+  // `reverse` means "travels toward increasing X/Y". Under RTL the belt's own
+  // flex row is mirrored by the platform, so the first track sits on the right
+  // and travel has to mirror with it — otherwise the loop tears open a gap
+  // instead of the duplicate track sliding in behind the first.
+  const reverse = resolveReverse(direction, isRTL);
   const [size, setSize] = useState(0);
   const offset = useSharedValue(0);
   const items = Children.toArray(children);
@@ -78,8 +119,17 @@ export function Marquee({ children, direction = 'left', speed = 20, gap = 16, cl
             <View key={i}>{child}</View>
           ))}
         </View>
-        {/* Second track fills the gap as the first scrolls away. */}
-        <View aria-hidden={true} style={{ flexDirection: vertical ? 'column' : 'row', gap }}>
+        {/* Second track fills the gap as the first scrolls away. It is the same
+            content over again, so it is hidden from assistive technology —
+            otherwise every logo, quote or headline in the marquee is announced
+            twice. `aria-hidden` covers web; the two RN props cover iOS and
+            Android, where the duplicate was previously read out in full. */}
+        <View
+          aria-hidden={true}
+          accessibilityElementsHidden={true}
+          importantForAccessibility="no-hide-descendants"
+          style={{ flexDirection: vertical ? 'column' : 'row', gap }}
+        >
           {items.map((child, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static duplicated slots, order never mutates
             <View key={i}>{child}</View>

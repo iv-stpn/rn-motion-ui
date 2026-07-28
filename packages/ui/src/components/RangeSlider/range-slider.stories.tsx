@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { DirectionProvider } from '../../hooks/direction-provider';
 import { RangeSlider } from './range-slider';
 
 const meta = {
@@ -100,6 +101,30 @@ function RangeSliderPlayground(args: ComponentProps<typeof RangeSlider>) {
   );
 }
 
+const DIRECTION_STYLES = { ltr: { direction: 'ltr' }, rtl: { direction: 'rtl' } } as const;
+const RTL_TRACK_WIDTH = 300;
+
+type DirectionalSliderProps = { direction: 'ltr' | 'rtl' };
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function DirectionalSlider({ direction }: DirectionalSliderProps) {
+  return (
+    <DirectionProvider value={direction}>
+      <View style={{ ...DIRECTION_STYLES[direction], width: RTL_TRACK_WIDTH }}>
+        <RangeSlider
+          accessibilityLabel={`Value (${direction})`}
+          defaultValue={25}
+          max={100}
+          min={0}
+          showTicks={false}
+          step={1}
+          testID={`slider-${direction}`}
+        />
+      </View>
+    </DirectionProvider>
+  );
+}
+
 export default meta;
 
 /** One live slider with a readout, plus the step/tick/range combinations. Ticks
@@ -113,5 +138,80 @@ export const Default: Story = {
     const slider = await canvas.findByRole('slider');
     await userEvent.click(slider);
     await expect(args.onValueChange).toHaveBeenCalled();
+  },
+};
+
+/**
+ * A slider has no measured geometry to inherit a mirroring from — every part of
+ * it is pinned to a physical edge, and `locationX` is the distance from the
+ * physical left of the track whichever way the page reads. So under RTL all
+ * four have to be flipped together, or they disagree with each other: the
+ * pointer mapping, the fill's growth origin, the thumb's travel, and the tick
+ * positions.
+ *
+ * Both directions render the same `value={25}`, so every assertion below is a
+ * comparison rather than a hard-coded pixel: the thumb sits a quarter of the way
+ * in *from the minimum end*, and the two ends are opposite.
+ */
+export const RightToLeft: Story = {
+  name: 'Demo: Mirrors under RTL',
+  render: () => (
+    <View style={{ gap: 24 }}>
+      <DirectionalSlider direction="ltr" />
+      <DirectionalSlider direction="rtl" />
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const ltr = await canvas.findByTestId('slider-ltr');
+    const rtl = await canvas.findByTestId('slider-rtl');
+
+    // The thumb is the only absolutely-positioned child that moves; the fill is
+    // the one that spans and scales.
+    const childBox = (track: HTMLElement, index: number) => {
+      const child = track.children[index];
+      if (!(child instanceof HTMLElement)) throw new Error(`No child ${index}`);
+      return child.getBoundingClientRect();
+    };
+    const trackBox = (track: HTMLElement) => track.getBoundingClientRect();
+
+    // The thumb's offset comes from an animated style that lands after the
+    // track's first layout pass, so nothing is measurable until it has moved.
+    await waitFor(() => expect(childBox(ltr, 2).left - trackBox(ltr).left).toBeGreaterThan(1));
+
+    // At 25%, the filled portion hugs the minimum end — left in LTR, right in RTL.
+    const ltrFill = childBox(ltr, 0);
+    const rtlFill = childBox(rtl, 0);
+    expect(ltrFill.left - trackBox(ltr).left).toBeLessThan(2);
+    expect(trackBox(rtl).right - rtlFill.right).toBeLessThan(2);
+    // …and it is a quarter of the track, not the whole thing, in both.
+    expect(ltrFill.width).toBeLessThan(trackBox(ltr).width * 0.5);
+    expect(rtlFill.width).toBeLessThan(trackBox(rtl).width * 0.5);
+
+    // The thumb sits a quarter in from opposite ends.
+    const ltrThumbOffset = childBox(ltr, 2).left - trackBox(ltr).left;
+    const rtlThumbOffset = trackBox(rtl).right - childBox(rtl, 2).right;
+    expect(Math.abs(ltrThumbOffset - rtlThumbOffset)).toBeLessThan(4);
+    // Guards against the mirroring being a no-op: at 25% the thumb is nearer one
+    // end, so the two directions must land in different halves of the track.
+    expect(ltrThumbOffset).toBeLessThan(trackBox(ltr).width * 0.4);
+
+    // The pointer mapping has to agree with the paint. Pressing the same
+    // physical spot means opposite values in the two directions.
+    const pressAt = async (track: HTMLElement, fraction: number) => {
+      const box = track.getBoundingClientRect();
+      const coords = { clientX: box.left + box.width * fraction, clientY: box.top + box.height / 2 };
+      await userEvent.pointer([
+        { keys: '[MouseLeft>]', target: track, coords },
+        { keys: '[/MouseLeft]', target: track },
+      ]);
+    };
+
+    await pressAt(ltr, 0.25);
+    await pressAt(rtl, 0.25);
+    // A quarter along physically: a low value reading left-to-right, a high one
+    // reading right-to-left.
+    expect(Number(ltr.getAttribute('aria-valuenow'))).toBeLessThan(40);
+    expect(Number(rtl.getAttribute('aria-valuenow'))).toBeGreaterThan(60);
   },
 };

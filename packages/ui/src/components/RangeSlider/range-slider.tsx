@@ -9,6 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { type Direction, useIsRTL } from '../../hooks/use-direction';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 
@@ -35,6 +36,16 @@ export type RangeSliderProps = {
   className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  /**
+   * Overrides the ambient writing direction, which decides which end of the
+   * track holds `min`. Under RTL the slider mirrors — minimum on the right,
+   * filling leftwards — the way a native slider does in an RTL locale.
+   *
+   * Set this to `'ltr'` to opt out: a track whose axis is a *thing* rather than
+   * a quantity (a timeline, a waveform, a left-to-right seek bar) should not
+   * flip just because the surrounding prose did.
+   */
+  writingDirection?: Direction;
   testID?: string;
 };
 
@@ -51,9 +62,14 @@ export function RangeSlider({
   className,
   style,
   accessibilityLabel,
+  writingDirection,
   testID,
 }: RangeSliderProps) {
   const reduce = useReducedMotion();
+  // Nothing about this component self-corrects under RTL the way a measured
+  // layout does: every anchor is a physical edge and `locationX` is always the
+  // distance from the physical left of the track, so the mirroring is explicit.
+  const isRTL = useIsRTL(writingDirection);
   const [internal, setInternal] = useState(defaultValue);
   const [active, setActive] = useState(false);
   const trackW = useSharedValue(0);
@@ -83,9 +99,13 @@ export function RangeSlider({
     (x: number) => {
       const w = trackWRef.current;
       if (!w) return current;
-      return min + clamp(x / w, 0, 1) * (max - min);
+      // `locationX` is measured from the physical left edge on both platforms,
+      // so under RTL — where the left edge is the *maximum* — the fraction is
+      // taken from the other end.
+      const fraction = clamp(x / w, 0, 1);
+      return min + (isRTL ? 1 - fraction : fraction) * (max - min);
     },
-    [current, min, max],
+    [current, min, max, isRTL],
   );
 
   const onLayout = useCallback(
@@ -141,13 +161,16 @@ export function RangeSlider({
   // Contain the thumb fully inside the track at both ends by mapping the ratio
   // across [0, trackW - THUMB_W] rather than the raw width — no clip, no gap.
   // Thumb is invisible until onLayout provides trackW, preventing a flash at x=0.
-  const thumbStyle = useAnimatedStyle(() => ({
-    opacity: isLayoutDone.value ? 1 : 0,
-    transform: [
-      { translateX: smooth.value * Math.max(trackW.value - THUMB_W, 0) },
-      { scaleY: withSpring(active && !reduce ? 1.35 : 1, SPRING_BOUNCY) },
-    ],
-  }));
+  const thumbStyle = useAnimatedStyle(() => {
+    // The thumb is anchored to the physical left in both directions and moved by
+    // a positive offset; under RTL it is the *complement* of the ratio, so the
+    // minimum parks it at the right-hand end.
+    const travel = (isRTL ? 1 - smooth.value : smooth.value) * Math.max(trackW.value - THUMB_W, 0);
+    return {
+      opacity: isLayoutDone.value ? 1 : 0,
+      transform: [{ translateX: travel }, { scaleY: withSpring(active && !reduce ? 1.35 : 1, SPRING_BOUNCY) }],
+    };
+  });
 
   return (
     <View
@@ -156,29 +179,39 @@ export function RangeSlider({
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
       aria-disabled={disabled}
+      // Both spellings on purpose: react-native-web does not understand React
+      // Native's nested `accessibilityValue` object, only the flat `aria-value*`
+      // props, so on web the slider was announced without any value at all.
       accessibilityValue={{ min, max, now: current }}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={current}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={onAccessibilityAction}
       testID={testID ?? 'range-slider'}
       className={cn('relative h-10 w-full flex-row items-center overflow-hidden rounded-lg bg-muted', className)}
       style={[{ opacity: disabled ? 0.5 : 1 }, style]}
     >
-      {/* fill — from the left edge to the thumb, scaled from the left so it shares
-          the transform pipeline (and the exact same smoothed value) as the thumb */}
+      {/* fill — from the minimum end of the track to the thumb. The box is
+          full-width either way; `transformOrigin` is what decides which end it
+          grows from, so it is the only thing direction changes here. */}
       <Animated.View
         className="absolute top-0 bottom-0 left-0 w-full bg-foreground/15"
-        style={[{ pointerEvents: 'none', transformOrigin: 'left' }, fillStyle]}
+        style={[{ pointerEvents: 'none', transformOrigin: isRTL ? 'right' : 'left' }, fillStyle]}
       />
 
       {/* ticks — slight inset so the end dots don't clip */}
       <View style={{ pointerEvents: 'none' }} className="absolute top-0 right-2 bottom-0 left-2">
         {ticks.map((t) => {
           const tp = max > min ? ((t - min) / (max - min)) * 100 : 0;
+          // Evenly spaced ticks look identical mirrored, but they are not always
+          // even: `steps` floors, so a range that does not divide by `step`
+          // leaves a gap at the top end — which belongs on the correct side.
           return (
             <View
               key={t}
               className="absolute top-1/2 h-1 w-1 rounded-full bg-foreground/25"
-              style={{ left: `${tp}%`, marginLeft: -2, marginTop: -2 }}
+              style={{ left: `${isRTL ? 100 - tp : tp}%`, marginLeft: -2, marginTop: -2 }}
             />
           );
         })}

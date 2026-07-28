@@ -587,6 +587,21 @@
       "source": "./src/utils/typeguards.ts",
       "types": "./src/utils/typeguards.ts",
       "default": "./src/utils/typeguards.ts"
+    },
+    "./hooks/use-direction": {
+      "source": "./src/hooks/use-direction.ts",
+      "types": "./src/hooks/use-direction.ts",
+      "default": "./src/hooks/use-direction.ts"
+    },
+    "./hooks/use-focus-trap": {
+      "source": "./src/hooks/use-focus-trap.ts",
+      "types": "./src/hooks/use-focus-trap.ts",
+      "default": "./src/hooks/use-focus-trap.ts"
+    },
+    "./hooks/direction-provider": {
+      "source": "./src/hooks/direction-provider.tsx",
+      "types": "./src/hooks/direction-provider.tsx",
+      "default": "./src/hooks/direction-provider.tsx"
     }
   },
   "bin": {

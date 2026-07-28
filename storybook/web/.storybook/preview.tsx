@@ -2,6 +2,7 @@ import { withThemeByClassName } from '@storybook/addon-themes';
 import type { Decorator, Preview } from '@storybook/react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { DirectionProvider } from 'rn-motion-ui/hooks/direction-provider';
 import { useGlobals } from 'storybook/preview-api';
 import '../global.css';
 
@@ -27,11 +28,20 @@ import '../global.css';
 const ThemeDecorator: Decorator = (Story) => {
   const [globals] = useGlobals();
   const isDark = globals.theme === 'dark';
+  // Both halves of the direction story, because they are separate mechanisms:
+  // `dir` on the wrapping View is what makes react-native-web actually flip the
+  // layout (it forwards to the DOM attribute and to RNW's own locale context),
+  // while DirectionProvider is what the library's own `useDirection` reads.
+  // Setting only one would give a canvas whose layout and logic disagree —
+  // exactly the bug the harness exists to catch.
+  const direction = globals.direction === 'rtl' ? 'rtl' : 'ltr';
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: isDark ? '#111111' : '#fafafa', padding: 24 }}>
-        <Story />
-      </View>
+      <DirectionProvider value={direction}>
+        <View dir={direction} style={{ flex: 1, backgroundColor: isDark ? '#111111' : '#fafafa', padding: 24 }}>
+          <Story />
+        </View>
+      </DirectionProvider>
     </SafeAreaProvider>
   );
 };
@@ -45,6 +55,21 @@ const preview: Preview = {
     }),
     ThemeDecorator,
   ],
+  globalTypes: {
+    direction: {
+      description: 'Writing direction',
+      defaultValue: 'ltr',
+      toolbar: {
+        title: 'Direction',
+        icon: 'transfer',
+        items: [
+          { value: 'ltr', title: 'LTR' },
+          { value: 'rtl', title: 'RTL' },
+        ],
+        dynamicTitle: true,
+      },
+    },
+  },
   parameters: {
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
   },

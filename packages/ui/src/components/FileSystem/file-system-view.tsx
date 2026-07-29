@@ -20,6 +20,13 @@ import type {
 
 export type FileSystemViewProps = {
   currentPath: string;
+  /**
+   * Display name of the current folder — the `title` prop at the root. Titles
+   * the background context menu's bottom sheet, and is handed to
+   * `renderEmptyState` so a custom placeholder can name the folder it stands in
+   * for.
+   */
+  folderName: string;
   entries: FileSystemEntry[];
   fileFilter: ((file: FileEntry) => boolean) | null;
   index: FileSystemIndex;

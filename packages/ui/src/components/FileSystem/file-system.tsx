@@ -209,6 +209,7 @@ export function FileSystem({
           draggable={draggable}
           entries={state.entries}
           fileFilter={state.fileFilter}
+          folderName={state.currentFolderName}
           getBackgroundContextMenuActions={getBackgroundContextMenuActions}
           getContextMenuActions={getContextMenuActions}
           getFileUrl={getFileUrl}

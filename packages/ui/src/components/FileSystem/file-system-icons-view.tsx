@@ -204,9 +204,9 @@ function useIconsGrid(
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: drag, hover, context-menu, and tile layout are tightly coupled around shared state — splitting would scatter interdependent logic
 export function FileSystemIconsView({
-  currentPath,
   draggable = false,
   entries,
+  folderName,
   getBackgroundContextMenuActions,
   getContextMenuActions,
   loadPreviewImageUrl,
@@ -245,12 +245,11 @@ export function FileSystemIconsView({
     hover.refresh();
   }, [hover, selectedPath]);
 
-  const folderTitle = currentPath.split('/').filter(Boolean).at(-1) ?? 'Files';
   const backgroundMenu = useBackgroundContextMenu(
     containerRef,
     getBackgroundContextMenuActions,
     onBackgroundContextMenuAction,
-    folderTitle,
+    folderName,
   );
   const handleBackgroundPress = useCallback(() => onSelect(null), [onSelect]);
 

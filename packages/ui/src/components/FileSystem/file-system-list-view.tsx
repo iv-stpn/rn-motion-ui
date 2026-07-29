@@ -233,6 +233,7 @@ function ListRow({
 export function FileSystemListView({
   currentPath,
   draggable = false,
+  folderName,
   getBackgroundContextMenuActions,
   getContextMenuActions,
   index,
@@ -299,12 +300,11 @@ export function FileSystemListView({
     hover.refresh();
   }, [hover, selectedPath]);
 
-  const folderTitle = currentPath.split('/').filter(Boolean).at(-1) ?? 'Files';
   const backgroundMenu = useBackgroundContextMenu(
     containerRef,
     getBackgroundContextMenuActions,
     onBackgroundContextMenuAction,
-    folderTitle,
+    folderName,
   );
   const handleBackgroundPress = useCallback(() => onSelect(null), [onSelect]);
 

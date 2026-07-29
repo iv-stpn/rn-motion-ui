@@ -9,19 +9,20 @@ import { useCallback, useRef, useState } from 'react';
 import type { LayoutChangeEvent, TextInput } from 'react-native';
 import { useWindowDimensions, View } from 'react-native';
 import { cn } from '../../lib/cn';
-import type { FileSystemEntry, FileSystemHeaderState, FileSystemProps, ResolvedFileSystemBreakpoints } from './file-system.types';
+import type { FileSystemEntry, FileSystemProps, ResolvedFileSystemBreakpoints } from './file-system.types';
 import { defaultFileSystemBreakpoints } from './file-system.types';
 import { FileSystemBody } from './file-system-body';
+import type { FileSystemContextValue } from './file-system-context';
+import { FileSystemContext, useFileSystemContext } from './file-system-context';
 import { FileSystemContextMenuProvider } from './file-system-context-menu';
 import { FileSystemDateRangeModal } from './file-system-date-range-modal';
-import { FILTER_TYPE_LABELS } from './file-system-filter';
 import { FileSystemFilterPills } from './file-system-filter-pills';
 import { FileSystemHeader } from './file-system-header';
 import type { HeaderLayout } from './file-system-toolbar-parts';
 import { FileSystemCollapsedSearchRow, FileSystemStatusBar } from './file-system-toolbar-parts';
 import { FileSystemViewerModal } from './file-system-viewer-modal';
 import { useFileOpen } from './use-file-open';
-import { type FileSystemState, useFileSystem, useSelectAndPrefetch } from './use-file-system';
+import { useFileSystem, useSelectAndPrefetch } from './use-file-system';
 
 /** Default viewport height, matching the web original's `h-[480px]`. */
 const DEFAULT_HEIGHT = 480;
@@ -31,48 +32,51 @@ function headerLayoutForWidth(width: number, breakpoints: ResolvedFileSystemBrea
   return width < breakpoints.compact ? 'compact' : 'full';
 }
 
-type HeaderRedenderProps = {
-  renderHeader: (state: FileSystemHeaderState & { testID?: string }) => React.ReactNode;
-  state: FileSystemState;
-  layout: HeaderLayout;
-  isSearchExpanded: boolean;
-  setIsSearchExpanded: (expanded: boolean) => void;
-  isCompact: boolean;
-  testID?: string;
-};
-function HeaderRenderer({ renderHeader: Header, state, layout, ...props }: HeaderRedenderProps) {
-  const {
-    currentFolderName,
-    searchInput,
-    setSearchInput,
-    applySortKey,
-    setFilterOperator,
-    setFilterDatePreset,
-    toggleFileTypeFilterValue,
-    openDateRangeRequest,
-    setDatePresetFilter,
-    ...stateProps
-  } = state;
-  return (
-    <Header
-      {...stateProps}
-      folderName={currentFolderName}
-      searchValue={searchInput}
-      setSearchValue={setSearchInput}
-      openCustomRange={openDateRangeRequest}
-      selectDatePreset={setDatePresetFilter}
-      setSortKey={applySortKey}
-      toggleFileType={toggleFileTypeFilterValue}
-      isSearchExpanded={props.isSearchExpanded}
-      setSearchExpanded={props.setIsSearchExpanded}
-      layout={layout}
-      isCompact={props.isCompact}
-      testID={props.testID}
-    />
-  );
+// Renders the consumer's renderHeader render prop, mapping internal state field
+// names to the public FileSystemHeaderState shape.
+function FileSystemCustomHeader() {
+  const ctx = useFileSystemContext();
+  if (!ctx.renderHeader) return null;
+  const headerTestID = ctx.testID ? `${ctx.testID}-header` : undefined;
+  return ctx.renderHeader({
+    canGoBack: ctx.canGoBack,
+    canGoForward: ctx.canGoForward,
+    clearFilters: ctx.clearFilters,
+    fileTypeOptions: ctx.fileTypeOptions,
+    filters: ctx.filters,
+    folderName: ctx.currentFolderName,
+    goBack: ctx.goBack,
+    goForward: ctx.goForward,
+    isCompact: ctx.isCompact,
+    isSearchExpanded: ctx.isSearchExpanded,
+    layout: ctx.layout,
+    openCustomRange: ctx.openDateRangeRequest,
+    searchValue: ctx.searchInput,
+    selectDatePreset: ctx.setDatePresetFilter,
+    setSearchExpanded: ctx.setIsSearchExpanded,
+    setSearchValue: ctx.setSearchInput,
+    setSortKey: ctx.applySortKey,
+    setView: ctx.setView,
+    sort: ctx.sort,
+    toggleFileType: ctx.toggleFileTypeFilterValue,
+    view: ctx.view,
+    testID: headerTestID,
+  });
 }
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the root is wiring — state in, four regions and two modals out; splitting it would only add indirection
+// Renders the consumer's renderFooter render prop from context.
+function FileSystemCustomFooter() {
+  const ctx = useFileSystemContext();
+  if (!ctx.renderFooter) return null;
+  const footerTestID = ctx.testID ? `${ctx.testID}-footer` : undefined;
+  return ctx.renderFooter({
+    count: ctx.entries.length,
+    isSearching: ctx.isSearching,
+    selectedName: ctx.selectedEntry?.name,
+    testID: footerTestID,
+  });
+}
+
 export function FileSystem({
   bodyClassName,
   breakpoints,
@@ -100,7 +104,7 @@ export function FileSystem({
   renderEmptyState,
   renderFilePreview,
   renderFileViewer,
-  renderFooter: CustomFooter,
+  renderFooter,
   renderHeader,
   title = 'Files',
   view,
@@ -132,149 +136,56 @@ export function FileSystem({
     [navigateTo, openFile],
   );
 
-  const { applyCustomDateRange, closeDateRangeRequest, dateRangeRequest } = state;
-  const handleApplyDateRange = useCallback(
-    (from: Date, to: Date) => {
-      if (!dateRangeRequest) return;
-      applyCustomDateRange(dateRangeRequest.type, from, to);
-      closeDateRangeRequest();
-    },
-    [applyCustomDateRange, closeDateRangeRequest, dateRangeRequest],
-  );
-
   const tiers: ResolvedFileSystemBreakpoints = { ...defaultFileSystemBreakpoints, ...breakpoints };
   const layout = headerLayoutForWidth(measuredWidth, tiers);
   const isCompact = measuredWidth < tiers.tablet;
   const isSearchRowVisible = layout !== 'full' && isSearchExpanded;
-  const selectedName = state.selectedEntry?.name;
 
-  const headerTestID = testID ? `${testID}-header` : undefined;
-  const footerTestID = testID ? `${testID}-footer` : undefined;
+  const ctxValue: FileSystemContextValue = {
+    ...state,
+    openEntry,
+    selectAndPrefetch,
+    layout,
+    isCompact,
+    isSearchExpanded,
+    setIsSearchExpanded,
+    searchInputRef,
+    closeFile,
+    opened,
+    draggable,
+    getBackgroundContextMenuActions,
+    getContextMenuActions,
+    getFileUrl,
+    loadPreviewImageUrl,
+    onBackgroundContextMenuAction,
+    onContextMenuAction,
+    onMove,
+    renderBody,
+    renderEmptyState,
+    renderFilePreview,
+    renderFileViewer,
+    renderHeader,
+    renderFooter,
+    headerClassName,
+    bodyClassName,
+    footerClassName,
+    testID,
+  };
 
   return (
-    <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
-      {renderHeader ? (
-        <HeaderRenderer
-          renderHeader={renderHeader}
-          state={state}
-          layout={layout}
-          isSearchExpanded={isSearchExpanded}
-          setIsSearchExpanded={setIsSearchExpanded}
-          isCompact={isCompact}
-          testID={headerTestID}
-        />
-      ) : (
-        <FileSystemHeader
-          canGoBack={state.canGoBack}
-          canGoForward={state.canGoForward}
-          className={headerClassName}
-          fileTypeOptions={state.fileTypeOptions}
-          filters={state.filters}
-          folderName={state.currentFolderName}
-          isCompact={isCompact}
-          isSearchExpanded={isSearchExpanded}
-          layout={layout}
-          onGoBack={state.goBack}
-          onGoForward={state.goForward}
-          onOpenCustomRange={state.openDateRangeRequest}
-          onSearchChange={state.setSearchInput}
-          onSearchExpandedChange={setIsSearchExpanded}
-          onSelectDatePreset={state.setDatePresetFilter}
-          onSortKeyChange={state.applySortKey}
-          onToggleFileType={state.toggleFileTypeFilterValue}
-          onViewChange={state.setView}
-          searchInputRef={searchInputRef}
-          searchValue={state.searchInput}
-          sort={state.sort}
-          view={state.view}
-          testID={headerTestID}
-        />
-      )}
-      {isSearchRowVisible ? (
-        <FileSystemCollapsedSearchRow inputRef={searchInputRef} onValueChange={state.setSearchInput} value={state.searchInput} />
-      ) : null}
-      <FileSystemFilterPills
-        fileTypeOptions={state.fileTypeOptions}
-        filters={state.filters}
-        onClearFilters={state.clearFilters}
-        onOpenCustomRange={state.openDateRangeRequest}
-        onOperatorChange={state.setFilterOperator}
-        onRemove={state.removeFilter}
-        onSelectDatePreset={state.setFilterDatePreset}
-        onToggleFileType={state.toggleFileTypeFilterValue}
-      />
-      <FileSystemContextMenuProvider wideBreakpoint={contextMenuWideBreakpoint}>
-        <FileSystemBody
-          className={bodyClassName}
-          currentPath={state.currentPath}
-          draggable={draggable}
-          entries={state.entries}
-          fileFilter={state.fileFilter}
-          folderName={state.currentFolderName}
-          getBackgroundContextMenuActions={getBackgroundContextMenuActions}
-          getContextMenuActions={getContextMenuActions}
-          getFileUrl={getFileUrl}
-          hasActiveFilters={state.hasActiveFilters}
-          index={state.sortedIndex}
-          isLoadingCurrentFolder={state.isLoadingCurrentFolder}
-          isSearching={state.isSearching}
-          loadPreviewImageUrl={loadPreviewImageUrl}
-          loadingFolders={state.loadingFolders}
-          onBackgroundContextMenuAction={onBackgroundContextMenuAction}
-          onContextMenuAction={onContextMenuAction}
-          onMove={onMove}
-          onOpen={openEntry}
-          onSelect={selectAndPrefetch}
-          onSortColumnClick={state.toggleSortColumn}
-          pageUrlCache={state.pageUrlCache}
-          renderBody={renderBody}
-          renderEmptyState={renderEmptyState}
-          renderFilePreview={renderFilePreview}
-          renderFileViewer={renderFileViewer}
-          searchInput={state.searchInput}
-          searchQuery={state.searchQuery}
-          selectedEntry={state.selectedEntry}
-          selectedPath={state.selectedPath}
-          sort={state.sort}
-          urlCache={state.resolvedUrlCache}
-          view={state.view}
-          testID={testID}
-        />
-      </FileSystemContextMenuProvider>
-      {CustomFooter ? (
-        <CustomFooter
-          count={state.entries.length}
-          isSearching={state.isSearching}
-          selectedName={selectedName}
-          testID={footerTestID}
-        />
-      ) : (
-        <FileSystemStatusBar
-          className={footerClassName}
-          count={state.entries.length}
-          isSearching={state.isSearching}
-          selectedName={selectedName}
-          testID={footerTestID}
-        />
-      )}
-      <FileSystemDateRangeModal
-        initialRange={dateRangeRequest?.initialRange}
-        onApply={handleApplyDateRange}
-        onClose={closeDateRangeRequest}
-        open={dateRangeRequest !== null}
-        title={dateRangeRequest ? FILTER_TYPE_LABELS[dateRangeRequest.type] : undefined}
-      />
-      <FileSystemViewerModal
-        getFileUrl={getFileUrl}
-        loadPreviewImageUrl={loadPreviewImageUrl}
-        onClose={closeFile}
-        opened={opened}
-        pageUrlCache={state.pageUrlCache}
-        renderFilePreview={renderFilePreview}
-        renderFileViewer={renderFileViewer}
-        urlCache={state.resolvedUrlCache}
-      />
-    </View>
+    <FileSystemContext.Provider value={ctxValue}>
+      <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
+        {renderHeader ? <FileSystemCustomHeader /> : <FileSystemHeader />}
+        {isSearchRowVisible ? <FileSystemCollapsedSearchRow /> : null}
+        <FileSystemFilterPills />
+        <FileSystemContextMenuProvider wideBreakpoint={contextMenuWideBreakpoint}>
+          <FileSystemBody />
+        </FileSystemContextMenuProvider>
+        {renderFooter ? <FileSystemCustomFooter /> : <FileSystemStatusBar />}
+        <FileSystemDateRangeModal />
+        <FileSystemViewerModal />
+      </View>
+    </FileSystemContext.Provider>
   );
 }
 

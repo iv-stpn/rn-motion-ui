@@ -17,13 +17,9 @@
 import { type ComponentType, type ReactNode, useRef } from 'react';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import { cn } from '../../lib/cn';
-import type {
-  FileSystemBodyState,
-  FileSystemEmptyStateArgs,
-  FileSystemEmptyStateReason,
-  FileSystemView,
-} from './file-system.types';
+import type { FileSystemEmptyStateReason, FileSystemView } from './file-system.types';
 import { FileSystemColumnsView } from './file-system-columns-view';
+import { useFileSystemContext } from './file-system-context';
 import { useBackgroundContextMenu } from './file-system-context-menu';
 import { FileSystemGalleryView } from './file-system-gallery-view';
 import { FileSystemIconsView } from './file-system-icons-view';
@@ -50,22 +46,7 @@ const VIEW_COMPONENTS: Record<FileSystemView, ComponentType<FileSystemViewProps>
   list: FileSystemListView,
 };
 
-export type FileSystemBodyProps = FileSystemViewProps & {
-  hasActiveFilters: boolean;
-  isLoadingCurrentFolder: boolean;
-  isSearching: boolean;
-  /** Raw input rather than the normalized query, so the message quotes what was typed. */
-  searchInput: string;
-  view: FileSystemView;
-  /** Extra NativeWind classes merged onto the file-area root view. */
-  className?: string;
-  /** See `FileSystemProps.renderBody`. */
-  renderBody?: (state: FileSystemBodyState & { testID?: string }) => ReactNode;
-  /** See `FileSystemProps.renderEmptyState`. */
-  renderEmptyState?: (args: FileSystemEmptyStateArgs) => ReactNode | undefined;
-};
-
-type EmptyStateArgs = Pick<FileSystemBodyProps, 'hasActiveFilters' | 'isLoadingCurrentFolder' | 'isSearching'>;
+type EmptyStateArgs = { hasActiveFilters: boolean; isLoadingCurrentFolder: boolean; isSearching: boolean };
 
 // Loading wins over the other three: a folder still fetching its children looks
 // empty, and saying so would be wrong rather than merely early.
@@ -88,10 +69,7 @@ function emptyLabel(reason: FileSystemEmptyStateReason, searchInput: string): st
   }
 }
 
-type PlaceholderProps = Pick<
-  FileSystemBodyProps,
-  'folderName' | 'getBackgroundContextMenuActions' | 'onBackgroundContextMenuAction'
-> & { children: ReactNode };
+type PlaceholderProps = { children: ReactNode };
 
 // The placeholder stands where a view would, so it has to answer a right-click
 // the same way — an empty folder is exactly when "New folder" is the action a
@@ -101,18 +79,14 @@ type PlaceholderProps = Pick<
 // `tabIndex={-1}` keeps this off the tab ring: it is a surface for a pointer
 // gesture, not a control, and anything focusable a consumer renders inside it
 // stays reachable regardless.
-function FileSystemBodyPlaceholder({
-  children,
-  folderName,
-  getBackgroundContextMenuActions,
-  onBackgroundContextMenuAction,
-}: PlaceholderProps) {
+function FileSystemBodyPlaceholder({ children }: PlaceholderProps) {
+  const { currentFolderName, getBackgroundContextMenuActions, onBackgroundContextMenuAction } = useFileSystemContext();
   const containerRef = useRef<View | null>(null);
   const backgroundMenu = useBackgroundContextMenu(
     containerRef,
     getBackgroundContextMenuActions,
     onBackgroundContextMenuAction,
-    folderName,
+    currentFolderName,
   );
 
   return (
@@ -129,17 +103,49 @@ function FileSystemBodyPlaceholder({
   );
 }
 
-/** Placeholder or view, whichever the current state calls for. */
-function FileSystemBodyContent({
-  hasActiveFilters,
-  isLoadingCurrentFolder,
-  isSearching,
-  renderEmptyState,
-  searchInput,
-  view,
-  ...viewProps
-}: FileSystemBodyProps) {
-  const isEmpty = viewProps.entries.length === 0;
+/**
+ * Placeholder or view, whichever the current state calls for.
+ *
+ * The views still take their state as props rather than reading the context
+ * themselves: `FileSystemViewProps` is one flat contract the four of them share,
+ * and the mapping from state field to view prop lives here — `sortedIndex` as
+ * `index`, `resolvedUrlCache` as `urlCache`, `toggleSortColumn` as
+ * `onSortColumnClick` — so the views stay unaware of how the state is shaped.
+ */
+function FileSystemBodyContent() {
+  const ctx = useFileSystemContext();
+  const { hasActiveFilters, isLoadingCurrentFolder, isSearching, renderEmptyState, searchInput, view } = ctx;
+
+  const viewProps: FileSystemViewProps = {
+    currentPath: ctx.currentPath,
+    draggable: ctx.draggable,
+    entries: ctx.entries,
+    fileFilter: ctx.fileFilter,
+    folderName: ctx.currentFolderName,
+    getBackgroundContextMenuActions: ctx.getBackgroundContextMenuActions,
+    getContextMenuActions: ctx.getContextMenuActions,
+    getFileUrl: ctx.getFileUrl,
+    index: ctx.sortedIndex,
+    loadingFolders: ctx.loadingFolders,
+    loadPreviewImageUrl: ctx.loadPreviewImageUrl,
+    onBackgroundContextMenuAction: ctx.onBackgroundContextMenuAction,
+    onContextMenuAction: ctx.onContextMenuAction,
+    onMove: ctx.onMove,
+    onOpen: ctx.openEntry,
+    onSelect: ctx.selectAndPrefetch,
+    onSortColumnClick: ctx.toggleSortColumn,
+    pageUrlCache: ctx.pageUrlCache,
+    renderFilePreview: ctx.renderFilePreview,
+    renderFileViewer: ctx.renderFileViewer,
+    searchQuery: ctx.searchQuery,
+    selectedEntry: ctx.selectedEntry,
+    selectedPath: ctx.selectedPath,
+    sort: ctx.sort,
+    testID: ctx.testID,
+    urlCache: ctx.resolvedUrlCache,
+  };
+
+  const isEmpty = ctx.entries.length === 0;
 
   // The columns view keeps its panes over an empty folder so the trail stays
   // walkable, and only yields to the placeholder when a query or a filter is what
@@ -151,8 +157,8 @@ function FileSystemBodyContent({
     // slot can take over the empty folder and leave the spinner alone. `null` is
     // a decision, and draws nothing.
     const custom = renderEmptyState?.({
-      currentPath: viewProps.currentPath,
-      folderName: viewProps.folderName,
+      currentPath: ctx.currentPath,
+      folderName: ctx.currentFolderName,
       hasActiveFilters,
       isSearching,
       label,
@@ -162,15 +168,7 @@ function FileSystemBodyContent({
     });
     const placeholder = custom === undefined ? <FileSystemEmptyState isLoading={reason === 'loading'} label={label} /> : custom;
 
-    return (
-      <FileSystemBodyPlaceholder
-        folderName={viewProps.folderName}
-        getBackgroundContextMenuActions={viewProps.getBackgroundContextMenuActions}
-        onBackgroundContextMenuAction={viewProps.onBackgroundContextMenuAction}
-      >
-        {placeholder}
-      </FileSystemBodyPlaceholder>
-    );
+    return <FileSystemBodyPlaceholder>{placeholder}</FileSystemBodyPlaceholder>;
   }
 
   const ActiveView = VIEW_COMPONENTS[view];
@@ -191,9 +189,23 @@ const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect
 //
 // The wrapper goes inside that node rather than around it, so the file area
 // keeps its flex sizing and web selection guard however the consumer nests it.
-export function FileSystemBody({ className, renderBody, ...props }: FileSystemBodyProps) {
-  const bodyTestID = props.testID ? `${props.testID}-body` : undefined;
-  const content = <FileSystemBodyContent {...props} />;
+export function FileSystemBody() {
+  const {
+    bodyClassName,
+    currentPath,
+    entries,
+    hasActiveFilters,
+    isLoadingCurrentFolder,
+    isSearching,
+    renderBody,
+    searchInput,
+    selectedEntry,
+    testID,
+    view,
+  } = useFileSystemContext();
+
+  const bodyTestID = testID ? `${testID}-body` : undefined;
+  const content = <FileSystemBodyContent />;
 
   // Called as a plain function rather than rendered as a component, unlike the
   // header and footer slots. An inline `renderBody` arrow is a new function on
@@ -205,21 +217,21 @@ export function FileSystemBody({ className, renderBody, ...props }: FileSystemBo
   const body = renderBody
     ? renderBody({
         content,
-        currentPath: props.currentPath,
-        entries: props.entries,
-        hasActiveFilters: props.hasActiveFilters,
-        isEmpty: props.entries.length === 0,
-        isLoadingCurrentFolder: props.isLoadingCurrentFolder,
-        isSearching: props.isSearching,
-        searchValue: props.searchInput,
-        selectedEntry: props.selectedEntry,
-        testID: props.testID,
-        view: props.view,
+        currentPath,
+        entries,
+        hasActiveFilters,
+        isEmpty: entries.length === 0,
+        isLoadingCurrentFolder,
+        isSearching,
+        searchValue: searchInput,
+        selectedEntry,
+        testID,
+        view,
       })
     : content;
 
   return (
-    <View className={cn('min-h-0 flex-1', className)} style={WEB_BODY_STYLE} testID={bodyTestID}>
+    <View className={cn('min-h-0 flex-1', bodyClassName)} style={WEB_BODY_STYLE} testID={bodyTestID}>
       {body}
     </View>
   );

@@ -15,8 +15,14 @@ import type { DateRange } from './file-system-calendar';
 import { fileMatchesFilter, isCustomDateRangeValue } from './file-system-filter';
 import { fileTypeFilterGroup, MIME_TYPE_LABELS, mimeTypeForFile } from './file-system-kinds';
 
-/** A pending "Custom date range…" request, i.e. the modal's open state. */
-export type DateRangeRequest = { initialRange?: DateRange; type: FileSystemDateFilterType };
+/**
+ * A pending "Custom date range…" request, i.e. the modal's open state.
+ *
+ * `id` counts opens rather than naming the facet: the modal seeds its draft from
+ * `initialRange` once per mount, so it needs something that changes even when the
+ * same facet is reopened, or the second visit would show the first one's draft.
+ */
+export type DateRangeRequest = { id: number; initialRange?: DateRange; type: FileSystemDateFilterType };
 
 export type FileSystemFiltersState = {
   filters: FileSystemFilter[];
@@ -89,6 +95,7 @@ function nextFileTypeFilters(previous: FileSystemFilter[], id: string, mime: str
 export function useFileSystemFilters(index: FileSystemIndex): FileSystemFiltersState {
   const [filters, setFilters] = useState<FileSystemFilter[]>([]);
   const filterIdRef = useRef(0);
+  const requestIdRef = useRef(0);
   const [dateRangeRequest, setDateRangeRequest] = useState<DateRangeRequest | null>(null);
   const fileTypeOptions = useFileTypeOptions(index);
 
@@ -123,12 +130,16 @@ export function useFileSystemFilters(index: FileSystemIndex): FileSystemFiltersS
     [nextFilterId],
   );
 
-  // Editing an existing custom range seeds the modal with its bounds.
+  // Editing an existing custom range seeds the modal with its bounds. Each
+  // request gets its own id: the modal keys its draft to it, so reopening the
+  // same facet still starts from the stored bounds rather than the last draft.
   const openDateRangeRequest = useCallback(
     (type: FileSystemDateFilterType) => {
       const existing = filters.find((filter) => filter.type === type);
       const bounds = existing && isCustomDateRangeValue(existing.value) ? existing.value : null;
+      requestIdRef.current += 1;
       setDateRangeRequest({
+        id: requestIdRef.current,
         initialRange: bounds ? { from: new Date(bounds[0]), to: new Date(bounds[1]) } : undefined,
         type,
       });

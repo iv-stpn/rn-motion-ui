@@ -28,6 +28,8 @@ import {
   WEEKDAY_LABELS,
   wholeDayRange,
 } from './file-system-calendar';
+import { useFileSystemContext } from './file-system-context';
+import { FILTER_TYPE_LABELS } from './file-system-filter';
 
 /** Below this the calendar shows a single month. */
 const TWO_MONTH_MIN_WIDTH = 640;
@@ -189,16 +191,13 @@ function PresetButton({ onSelect, preset }: PresetButtonProps) {
   );
 }
 
-export type FileSystemDateRangeModalProps = {
-  initialRange?: DateRange;
-  onApply: (from: Date, to: Date) => void;
-  onClose: () => void;
-  open: boolean;
-  /** Names the filter the range applies to, e.g. "Date modified". */
-  title?: string;
-};
+type DateRangeFormProps = { initialRange?: DateRange; onApply: (from: Date, to: Date) => void; onClose: () => void };
 
-export function FileSystemDateRangeModal({ initialRange, onApply, onClose, open, title }: FileSystemDateRangeModalProps) {
+// The draft lives inside the modal rather than in the component that owns it, so
+// it is scoped to a single visit: seeded once per mount from `initialRange`, and
+// remounted per request by the caller's `key`. Reseeding from a prop change
+// instead would fight the user's edits mid-draft.
+function DateRangeForm({ initialRange, onApply, onClose }: DateRangeFormProps) {
   const [range, setRange] = useState<DateRangeDraft>(() => initialRange ?? {});
   const [fromInput, setFromInput] = useState(() => formatDateInputValue(initialRange?.from));
   const [toInput, setToInput] = useState(() => formatDateInputValue(initialRange?.to));
@@ -230,64 +229,101 @@ export function FileSystemDateRangeModal({ initialRange, onApply, onClose, open,
     }
   }, [onApply, range.from, range.to]);
 
+  return (
+    <View className="gap-4">
+      <View className="flex-row gap-3">
+        <View className="flex-1">
+          <Input
+            accessibilityLabel="From date"
+            label="From"
+            leftIcon={<ThemedIcon icon={Calendar} variant="ghost" size={14} />}
+            onChange={handleFromInput}
+            placeholder={DATE_INPUT_PLACEHOLDER}
+            size="sm"
+            value={fromInput}
+          />
+        </View>
+        <View className="flex-1">
+          <Input
+            accessibilityLabel="To date"
+            label="To"
+            leftIcon={<ThemedIcon icon={Calendar} variant="ghost" size={14} />}
+            onChange={handleToInput}
+            placeholder={DATE_INPUT_PLACEHOLDER}
+            size="sm"
+            value={toInput}
+          />
+        </View>
+      </View>
+
+      <FileSystemRangeCalendar onSelect={selectRange} range={range} />
+
+      <View className="flex-row flex-wrap gap-2">
+        {DATE_RANGE_PRESETS.map((preset) => (
+          <PresetButton key={preset} onSelect={selectPreset} preset={preset} />
+        ))}
+      </View>
+
+      <View className="flex-row justify-end gap-2 border-border border-t pt-3">
+        <Button onPress={onClose} size="sm" variant="outline">
+          {CANCEL_LABEL}
+        </Button>
+        <Button disabled={!(range.from && range.to)} onPress={handleApply} size="sm">
+          {APPLY_LABEL}
+        </Button>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * The root's custom-range modal. Open state *is* the pending request off the
+ * context: `openDateRangeRequest(type)` names the facet the range will apply to,
+ * and applying writes the filter for that facet and clears the request.
+ *
+ * The draft lives in <DateRangeForm>, keyed by request id, so every visit starts
+ * from the filter's stored bounds instead of the last draft. It has to be *inside*
+ * AdaptiveModal for that: AdaptiveModal unmounts its children on close (wide path
+ * via AnimatePresence + useModalRender; narrow path via BottomSheet's isMounted
+ * guard), so a form inside it is naturally scoped to one visit. The `key` covers
+ * the reopening case: same facet reopened gets a new id → remount → lazy
+ * initialisers re-read the updated `initialRange` from the filter.
+ */
+export function FileSystemDateRangeModal() {
+  const { applyCustomDateRange, closeDateRangeRequest, dateRangeRequest } = useFileSystemContext();
+
+  const handleApply = useCallback(
+    (from: Date, to: Date) => {
+      if (!dateRangeRequest) return;
+      applyCustomDateRange(dateRangeRequest.type, from, to);
+      closeDateRangeRequest();
+    },
+    [applyCustomDateRange, closeDateRangeRequest, dateRangeRequest],
+  );
+
   const handleOpenChange = useCallback(
     (next: boolean) => {
-      if (!next) onClose();
+      if (!next) closeDateRangeRequest();
     },
-    [onClose],
+    [closeDateRangeRequest],
   );
+
+  const title = dateRangeRequest ? FILTER_TYPE_LABELS[dateRangeRequest.type] : undefined;
 
   return (
     <AdaptiveModal
       onOpenChange={handleOpenChange}
-      open={open}
+      open={dateRangeRequest !== null}
       showClose={true}
       title={title ? `Custom range · ${title}` : 'Custom date range'}
       widePanelSize={{ maxWidth: '100%', width: 560 }}
     >
-      <View className="gap-4">
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <Input
-              accessibilityLabel="From date"
-              label="From"
-              leftIcon={<ThemedIcon icon={Calendar} variant="ghost" size={14} />}
-              onChange={handleFromInput}
-              placeholder={DATE_INPUT_PLACEHOLDER}
-              size="sm"
-              value={fromInput}
-            />
-          </View>
-          <View className="flex-1">
-            <Input
-              accessibilityLabel="To date"
-              label="To"
-              leftIcon={<ThemedIcon icon={Calendar} variant="ghost" size={14} />}
-              onChange={handleToInput}
-              placeholder={DATE_INPUT_PLACEHOLDER}
-              size="sm"
-              value={toInput}
-            />
-          </View>
-        </View>
-
-        <FileSystemRangeCalendar onSelect={selectRange} range={range} />
-
-        <View className="flex-row flex-wrap gap-2">
-          {DATE_RANGE_PRESETS.map((preset) => (
-            <PresetButton key={preset} onSelect={selectPreset} preset={preset} />
-          ))}
-        </View>
-
-        <View className="flex-row justify-end gap-2 border-border border-t pt-3">
-          <Button onPress={onClose} size="sm" variant="outline">
-            {CANCEL_LABEL}
-          </Button>
-          <Button disabled={!(range.from && range.to)} onPress={handleApply} size="sm">
-            {APPLY_LABEL}
-          </Button>
-        </View>
-      </View>
+      <DateRangeForm
+        initialRange={dateRangeRequest?.initialRange}
+        key={dateRangeRequest?.id}
+        onApply={handleApply}
+        onClose={closeDateRangeRequest}
+      />
     </AdaptiveModal>
   );
 }

@@ -648,6 +648,66 @@ export const Filter: Story = {
   },
 };
 
+/** Opens the toolbar filter menu on a date facet's preset panel. */
+async function openDatePanel(canvas: ReturnType<typeof within>, facet: string) {
+  await userEvent.click(await canvas.findByLabelText('Filter'));
+  await userEvent.click(await screen.findByText(facet));
+}
+
+/**
+ * A pill's value segment re-values the filter it stands for, rather than adding
+ * another. Regression test: the pill's preset dropdown used to be handed the
+ * *facet* where its mutator matches on the filter's `id`, so nothing matched and
+ * picking a preset was a silent no-op.
+ */
+export const FilterPillRevalue: Story = {
+  name: 'Demo: Re-value a filter pill',
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    await openDatePanel(canvas, 'Date modified');
+    await userEvent.click(await screen.findByText('1 month ago'));
+
+    // The pill reads back as `Date modified · after · 1 month ago`.
+    await canvas.findByLabelText('Date: 1 month ago');
+
+    // Re-valuing goes through the pill's own value segment, not the menu.
+    await userEvent.click(await canvas.findByLabelText('Date: 1 month ago'));
+    await userEvent.click(await screen.findByText('3 days ago'));
+
+    await canvas.findByLabelText('Date: 3 days ago');
+    // Re-valued in place: the older value is gone rather than sitting beside it.
+    await waitFor(() => expect(canvas.queryByLabelText('Date: 1 month ago')).toBeNull());
+  },
+};
+
+/**
+ * The custom-range modal starts each visit from the filter's stored bounds.
+ * Regression test: its draft used to live in a component mounted above the modal,
+ * which outlived the request — so an abandoned draft came back on the next open.
+ */
+export const CustomRangeDraftIsPerVisit: Story = {
+  name: 'Demo: Custom range starts fresh each visit',
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    await openDatePanel(canvas, 'Date modified');
+    await userEvent.click(await screen.findByText('Custom date range…'));
+
+    // Type a draft, then abandon it.
+    await userEvent.type(await screen.findByLabelText('From date'), '2026-03-01');
+    await userEvent.click(await screen.findByText('Cancel'));
+    await waitFor(() => expect(screen.queryByLabelText('From date')).toBeNull());
+
+    // Reopening the same facet starts empty rather than resuming the draft.
+    await openDatePanel(canvas, 'Date modified');
+    await userEvent.click(await screen.findByText('Custom date range…'));
+    await waitFor(() => expect(screen.getByLabelText('From date')).toHaveValue(''));
+  },
+};
+
 // ─── Sort ──────────────────────────────────────────────────────────────────────
 
 /** Matches a file name by its extension, so folder rows drop out of the order check. */

@@ -11,6 +11,7 @@ import { useThemeColors } from '../../theme/use-theme-color';
 import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 import type { FileSystemView } from './file-system.types';
+import { useFileSystemContext } from './file-system-context';
 
 /** Width band the header lays itself out for. */
 export type HeaderLayout = 'full' | 'compact' | 'minimal';
@@ -186,27 +187,33 @@ function SearchGlyph() {
   return <Search color={colors['muted-foreground']} size={16} />;
 }
 
-export type CollapsedSearchRowProps = Pick<SearchFieldProps, 'inputRef' | 'onValueChange' | 'value'>;
-
 /**
  * The revealed search row under the header at compact widths. Rendered by the
  * component root (not the popover-less trigger) so it participates in layout
  * instead of floating — Finder's own behaviour on a narrow window.
  */
-export function FileSystemCollapsedSearchRow({ inputRef, onValueChange, value }: CollapsedSearchRowProps) {
+export function FileSystemCollapsedSearchRow() {
+  const { searchInputRef, setSearchInput, searchInput } = useFileSystemContext();
   return (
     <View className="shrink-0 flex-row items-center border-border border-b bg-surface-2 px-2 py-1.5">
-      <SearchInput autoFocus={Platform.OS === 'web'} inputRef={inputRef} onValueChange={onValueChange} value={value} />
+      <SearchInput
+        autoFocus={Platform.OS === 'web'}
+        inputRef={searchInputRef}
+        onValueChange={setSearchInput}
+        value={searchInput}
+      />
     </View>
   );
 }
 
-export type StatusBarProps = { count: number; isSearching: boolean; selectedName?: string; className?: string; testID?: string };
-
 const COUNT_NOUNS = { result: { one: 'result', other: 'results' }, row: { one: 'item', other: 'items' } };
 
 /** Status-bar text: item/result count plus the current selection. */
-export function FileSystemStatusBar({ className, count, isSearching, selectedName, testID }: StatusBarProps) {
+export function FileSystemStatusBar() {
+  const { entries, footerClassName, isSearching, selectedEntry, testID } = useFileSystemContext();
+  const count = entries.length;
+  const selectedName = selectedEntry?.name;
+  const footerTestID = testID ? `${testID}-footer` : undefined;
   const nouns = isSearching ? COUNT_NOUNS.result : COUNT_NOUNS.row;
   const noun = count === 1 ? nouns.one : nouns.other;
   return (
@@ -214,9 +221,9 @@ export function FileSystemStatusBar({ className, count, isSearching, selectedNam
       accessibilityLiveRegion="polite"
       className={cn(
         'h-7 shrink-0 flex-row items-center justify-center gap-1 border-border border-t bg-surface-2 px-3',
-        className,
+        footerClassName,
       )}
-      testID={testID}
+      testID={footerTestID}
     >
       <Text size="xs" className="text-muted-foreground">
         {`${count} ${noun}`}

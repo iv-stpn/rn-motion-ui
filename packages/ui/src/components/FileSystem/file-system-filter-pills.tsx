@@ -2,6 +2,10 @@
 // Applied filters, one segmented pill each: type · operator · value · remove.
 // Every segment but the type label opens its own dropdown, so a pill can be
 // re-operated or re-valued in place.
+//
+// The mutators come off FileSystemContext rather than down through props: a pill
+// only needs to be told *which* filter it stands for, and the row above it only
+// needs the filter list.
 
 import { type ReactNode, useCallback } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -17,6 +21,7 @@ import type {
   FileSystemFilterOperator,
   FileTypeFilterOption,
 } from './file-system.types';
+import { useFileSystemContext } from './file-system-context';
 import { FILTER_OPERATOR_LABELS, FILTER_TYPE_LABELS, filterOperatorChoices, isCustomDateRangeValue } from './file-system-filter';
 import { DatePresetPanel, FileTypeChecklist, MenuRow } from './file-system-menus';
 
@@ -152,19 +157,15 @@ function CustomRangeSegment({ onOpenCustomRange, value }: CustomRangeSegmentProp
   );
 }
 
-export type FileSystemFilterPillProps = {
+/** A pill stands for one filter; every mutator it needs comes off the context. */
+export type FileSystemFilterPillProps = { filter: FileSystemFilter };
+
+type ValueSegmentProps = {
   fileTypeOptions: FileTypeFilterOption[];
   filter: FileSystemFilter;
-  onOpenCustomRange: (type: FileSystemDateFilterType) => void;
-  onOperatorChange: (id: string, operator: FileSystemFilterOperator) => void;
-  onRemove: (id: string) => void;
-  onSelectDatePreset: (type: FileSystemDateFilterType, preset: string) => void;
-  onToggleFileType: (mime: string, checked: boolean) => void;
-};
-
-type ValueSegmentProps = Omit<FileSystemFilterPillProps, 'onOperatorChange' | 'onRemove'> & {
   onOpenCustomRange: () => void;
   onSelectDatePreset: (preset: string) => void;
+  onToggleFileType: (mime: string, checked: boolean) => void;
 };
 
 /** Picks the value editor the filter's type calls for. */
@@ -187,18 +188,19 @@ function ValueSegment({ fileTypeOptions, filter, onOpenCustomRange, onSelectDate
  * Every segment but the type label is interactive, so a filter can be
  * re-operated or re-valued without going back through the filter menu.
  */
-export function FileSystemFilterPill({
-  fileTypeOptions,
-  filter,
-  onOpenCustomRange,
-  onOperatorChange,
-  onRemove,
-  onSelectDatePreset,
-  onToggleFileType,
-}: FileSystemFilterPillProps) {
+export function FileSystemFilterPill({ filter }: FileSystemFilterPillProps) {
+  const {
+    fileTypeOptions,
+    openDateRangeRequest: onOpenCustomRange,
+    removeFilter: onRemove,
+    setFilterDatePreset: onSelectDatePreset,
+    setFilterOperator: onOperatorChange,
+    toggleFileTypeFilterValue: onToggleFileType,
+  } = useFileSystemContext();
   const isFileType = filter.type === 'fileType';
   const TypeIcon = isFileType ? FileIcon : Calendar;
-  // The date callbacks are keyed by facet, so a file-type pill never fires them.
+  // "Custom range…" is keyed by facet — it replaces whichever filter holds that
+  // facet — so a file-type pill never fires it and the fallback is unreachable.
   const dateType: FileSystemDateFilterType = filter.type === 'fileType' ? 'dateModified' : filter.type;
 
   const handleOperatorChange = useCallback(
@@ -206,9 +208,11 @@ export function FileSystemFilterPill({
     [filter.id, onOperatorChange],
   );
   const handleOpenCustomRange = useCallback(() => onOpenCustomRange(dateType), [dateType, onOpenCustomRange]);
+  // Keyed by this pill's own id, not its facet: editing a pill in place keeps the
+  // operator it already carries, which replacing the facet's filter would reset.
   const handleSelectDatePreset = useCallback(
-    (preset: string) => onSelectDatePreset(dateType, preset),
-    [dateType, onSelectDatePreset],
+    (preset: string) => onSelectDatePreset(filter.id, preset),
+    [filter.id, onSelectDatePreset],
   );
   const handleRemove = useCallback(() => onRemove(filter.id), [filter.id, onRemove]);
 
@@ -239,16 +243,12 @@ export function FileSystemFilterPill({
   );
 }
 
-export type FileSystemFilterPillsProps = Omit<FileSystemFilterPillProps, 'filter'> & {
-  filters: FileSystemFilter[];
-  onClearFilters: () => void;
-};
-
 /**
  * The applied-filter row under the toolbar. Scrolls horizontally rather than
  * wrapping, so a long filter set never pushes the file area down.
  */
-export function FileSystemFilterPills({ filters, onClearFilters, ...pillProps }: FileSystemFilterPillsProps) {
+export function FileSystemFilterPills() {
+  const { clearFilters, filters } = useFileSystemContext();
   if (filters.length === 0) return null;
 
   return (
@@ -259,9 +259,9 @@ export function FileSystemFilterPills({ filters, onClearFilters, ...pillProps }:
       showsHorizontalScrollIndicator={false}
     >
       {filters.map((filter) => (
-        <FileSystemFilterPill filter={filter} key={filter.id} {...pillProps} />
+        <FileSystemFilterPill filter={filter} key={filter.id} />
       ))}
-      <Pressable accessibilityRole="button" onPress={onClearFilters} className="rounded-md px-1.5 py-0.5">
+      <Pressable accessibilityRole="button" onPress={clearFilters} className="rounded-md px-1.5 py-0.5">
         <Text size="xs" className="text-muted-foreground">
           {CLEAR_ALL_LABEL}
         </Text>

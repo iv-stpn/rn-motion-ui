@@ -176,8 +176,8 @@ function ListRow({
   const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
   const handleToggle = useCallback(() => onToggleExpanded(entry.path), [entry.path, onToggleExpanded]);
   const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
-  const textClassName = isSelected ? 'text-primary-foreground' : 'text-foreground';
-  const metaClassName = isSelected ? 'text-primary-foreground' : 'text-muted-foreground';
+  const textClassName = isSelected ? 'text-white' : 'text-foreground';
+  const metaClassName = isSelected ? 'text-white' : 'text-muted-foreground';
 
   const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
 
@@ -188,7 +188,7 @@ function ListRow({
         accessibilityState={{ expanded: isExpandable ? isExpanded : undefined, selected: isSelected }}
         // Hover is not a class here: it is one sliding node behind the rows, so it
         // can keep tracking under the drag's pointer capture. See file-system-hover.
-        className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected && 'bg-primary')}
+        className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected && 'bg-info')}
         onLongPress={onLongPress}
         onPress={handlePress}
         style={{ height: FS_ROW_HEIGHT, paddingLeft: 8 + level * INDENT_PER_LEVEL }}
@@ -202,7 +202,7 @@ function ListRow({
             onPress={handleToggle}
             style={{ width: CHEVRON_SIZE }}
           >
-            <ThemedIcon icon={ChevronIcon} token={isSelected ? 'primary-foreground' : 'muted-foreground'} size={14} />
+            <ThemedIcon icon={ChevronIcon} token={isSelected ? 'white' : 'muted-foreground'} size={14} />
           </Pressable>
         ) : (
           <View style={{ width: CHEVRON_SIZE }} />

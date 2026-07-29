@@ -88,11 +88,11 @@ function IconTileFace({ entry, isDropTarget = false, isSelected, width, ...visua
           both: a drop lands *in* this folder, so marking it the way selection
           does says "this one" without adding a third visual language. */}
       <View
-        className={cn('max-w-full rounded-sm px-1.5 py-px', (isSelected || isDropTarget) && 'bg-primary')}
+        className={cn('max-w-full rounded-sm px-1.5 py-px', (isSelected || isDropTarget) && 'bg-info')}
         testID={isDropTarget ? FS_TILE_DROP_TARGET_TEST_ID : undefined}
       >
         <Text
-          className={cn('text-center leading-tight', isSelected || isDropTarget ? 'text-primary-foreground' : 'text-foreground')}
+          className={cn('text-center leading-tight', isSelected || isDropTarget ? 'text-white' : 'text-foreground')}
           numberOfLines={2}
           size="xs"
         >

@@ -84,7 +84,7 @@ function ColumnRow({
         accessibilityState={{ selected: isSelected }}
         className={cn(
           'flex-row items-center gap-2 rounded-md px-2',
-          isSelected && 'bg-primary',
+          isSelected && 'bg-info',
           !isSelected && isOnTrail && 'bg-surface-selected',
           !(isSelected || isOnTrail) && 'hover:bg-surface-hover',
         )}
@@ -94,14 +94,11 @@ function ColumnRow({
         testID={testID}
       >
         <ColumnRowGlyph entry={entry} isSelected={isSelected} />
-        <Text className={cn('flex-1', isSelected && 'text-primary-foreground')} numberOfLines={1} size="sm">
+        <Text className={cn('flex-1', isSelected && 'text-white')} numberOfLines={1} size="sm">
           {entry.name}
         </Text>
         {hasChildren ? (
-          <ChevronRight
-            color={isSelected ? colors['primary-foreground'] : colors['muted-foreground']}
-            size={COLUMN_CHEVRON_SIZE}
-          />
+          <ChevronRight color={isSelected ? colors.white : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
         ) : null}
         {contextMenuNode}
       </Pressable>

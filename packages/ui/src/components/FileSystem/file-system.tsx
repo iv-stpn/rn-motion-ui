@@ -97,6 +97,7 @@ export function FileSystem({
   onSelectionChange,
   onViewChange,
   renderBody,
+  renderEmptyState,
   renderFilePreview,
   renderFileViewer,
   renderFooter: CustomFooter,
@@ -227,6 +228,7 @@ export function FileSystem({
           onSortColumnClick={state.toggleSortColumn}
           pageUrlCache={state.pageUrlCache}
           renderBody={renderBody}
+          renderEmptyState={renderEmptyState}
           renderFilePreview={renderFilePreview}
           renderFileViewer={renderFileViewer}
           searchInput={state.searchInput}
@@ -286,6 +288,8 @@ export type {
   FileEntry,
   FileSystemBodyState,
   FileSystemContextMenuAction,
+  FileSystemEmptyStateArgs,
+  FileSystemEmptyStateReason,
   FileSystemEntry,
   FileSystemFileItem,
   FileSystemFilter,

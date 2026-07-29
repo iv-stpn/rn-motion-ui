@@ -9,14 +9,20 @@
 // receives the node and returns a tree containing it, so a consumer can add a
 // sidebar or an overlay without reimplementing the four views.
 //
-// The placeholder is mounted in the same background surface the list and icons
-// views use, so the background context menu opens on the empty area too — that's
-// where a "New folder" action matters most.
+// `renderEmptyState` replaces the placeholder itself. Either way the placeholder
+// is mounted in the same background surface the list and icons views use, so the
+// background context menu opens on the empty area too — that's where a "New
+// folder" action matters most.
 
 import { type ComponentType, type ReactNode, useRef } from 'react';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import { cn } from '../../lib/cn';
-import type { FileSystemBodyState, FileSystemView } from './file-system.types';
+import type {
+  FileSystemBodyState,
+  FileSystemEmptyStateArgs,
+  FileSystemEmptyStateReason,
+  FileSystemView,
+} from './file-system.types';
 import { FileSystemColumnsView } from './file-system-columns-view';
 import { useBackgroundContextMenu } from './file-system-context-menu';
 import { FileSystemGalleryView } from './file-system-gallery-view';
@@ -55,16 +61,31 @@ export type FileSystemBodyProps = FileSystemViewProps & {
   className?: string;
   /** See `FileSystemProps.renderBody`. */
   renderBody?: (state: FileSystemBodyState & { testID?: string }) => ReactNode;
+  /** See `FileSystemProps.renderEmptyState`. */
+  renderEmptyState?: (args: FileSystemEmptyStateArgs) => ReactNode | undefined;
 };
 
-type EmptyLabelArgs = Pick<FileSystemBodyProps, 'hasActiveFilters' | 'isLoadingCurrentFolder' | 'isSearching' | 'searchInput'>;
+type EmptyStateArgs = Pick<FileSystemBodyProps, 'hasActiveFilters' | 'isLoadingCurrentFolder' | 'isSearching'>;
 
-// Loading wins over the other two: a folder still fetching its children looks
+// Loading wins over the other three: a folder still fetching its children looks
 // empty, and saying so would be wrong rather than merely early.
-function emptyLabel({ hasActiveFilters, isLoadingCurrentFolder, isSearching, searchInput }: EmptyLabelArgs): string {
-  if (isLoadingCurrentFolder) return LOADING_LABEL;
-  if (isSearching) return `No results for “${searchInput.trim()}”`;
-  return hasActiveFilters ? NO_FILTER_MATCH_LABEL : EMPTY_FOLDER_LABEL;
+function emptyReason({ hasActiveFilters, isLoadingCurrentFolder, isSearching }: EmptyStateArgs): FileSystemEmptyStateReason {
+  if (isLoadingCurrentFolder) return 'loading';
+  if (isSearching) return 'no-search-results';
+  return hasActiveFilters ? 'no-filter-matches' : 'empty-folder';
+}
+
+function emptyLabel(reason: FileSystemEmptyStateReason, searchInput: string): string {
+  switch (reason) {
+    case 'loading':
+      return LOADING_LABEL;
+    case 'no-search-results':
+      return `No results for “${searchInput.trim()}”`;
+    case 'no-filter-matches':
+      return NO_FILTER_MATCH_LABEL;
+    default:
+      return EMPTY_FOLDER_LABEL;
+  }
 }
 
 type PlaceholderProps = Pick<
@@ -113,6 +134,7 @@ function FileSystemBodyContent({
   hasActiveFilters,
   isLoadingCurrentFolder,
   isSearching,
+  renderEmptyState,
   searchInput,
   view,
   ...viewProps
@@ -122,19 +144,34 @@ function FileSystemBodyContent({
   // The columns view keeps its panes over an empty folder so the trail stays
   // walkable, and only yields to the placeholder when a query or a filter is what
   // emptied it — or while the folder is still loading.
-  if (isEmpty && (isLoadingCurrentFolder || view !== 'columns' || isSearching || hasActiveFilters))
+  if (isEmpty && (isLoadingCurrentFolder || view !== 'columns' || isSearching || hasActiveFilters)) {
+    const reason = emptyReason({ hasActiveFilters, isLoadingCurrentFolder, isSearching });
+    const label = emptyLabel(reason, searchInput);
+    // `undefined` means "not mine to draw" and falls back to the default, so a
+    // slot can take over the empty folder and leave the spinner alone. `null` is
+    // a decision, and draws nothing.
+    const custom = renderEmptyState?.({
+      currentPath: viewProps.currentPath,
+      folderName: viewProps.folderName,
+      hasActiveFilters,
+      isSearching,
+      label,
+      reason,
+      searchValue: searchInput,
+      view,
+    });
+    const placeholder = custom === undefined ? <FileSystemEmptyState isLoading={reason === 'loading'} label={label} /> : custom;
+
     return (
       <FileSystemBodyPlaceholder
         folderName={viewProps.folderName}
         getBackgroundContextMenuActions={viewProps.getBackgroundContextMenuActions}
         onBackgroundContextMenuAction={viewProps.onBackgroundContextMenuAction}
       >
-        <FileSystemEmptyState
-          isLoading={isLoadingCurrentFolder}
-          label={emptyLabel({ hasActiveFilters, isLoadingCurrentFolder, isSearching, searchInput })}
-        />
+        {placeholder}
       </FileSystemBodyPlaceholder>
     );
+  }
 
   const ActiveView = VIEW_COMPONENTS[view];
   return <ActiveView {...viewProps} />;

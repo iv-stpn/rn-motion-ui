@@ -174,6 +174,33 @@ export type FileSystemBodyState = {
   isEmpty: boolean;
 };
 
+/** Why the file area has a placeholder in it instead of entries. */
+export type FileSystemEmptyStateReason =
+  /** The current folder's children are still being fetched. */
+  | 'loading'
+  /** The folder itself holds nothing. */
+  | 'empty-folder'
+  /** A search is running and nothing matched the query. */
+  | 'no-search-results'
+  /** Filters are active and nothing matched them. */
+  | 'no-filter-matches';
+
+/** Args passed to {@link FileSystemProps.renderEmptyState}. */
+export type FileSystemEmptyStateArgs = {
+  reason: FileSystemEmptyStateReason;
+  /** The copy the built-in placeholder would have shown, ready to reuse. */
+  label: string;
+  /** Folder prefix currently open (`''` at the root). */
+  currentPath: string;
+  /** Display name of the current folder (the `title` prop at the root). */
+  folderName: string;
+  view: FileSystemView;
+  /** Raw search input rather than the normalized query, so a message can quote what was typed. */
+  searchValue: string;
+  isSearching: boolean;
+  hasActiveFilters: boolean;
+};
+
 // ── Responsive tiers ───────────────────────────────────────────────────────
 // These are container widths, not window widths: the header adapts to the
 // component's own measured width so it collapses inside a narrow parent too.
@@ -331,6 +358,31 @@ export type FileSystemProps = {
    * ```
    */
   renderBody?: (state: FileSystemBodyState & { testID?: string }) => ReactNode;
+  /**
+   * Replace the placeholder that stands in for the file area when there is
+   * nothing to show — an empty folder, a search with no hits, filters that match
+   * nothing, or a folder still loading. `args.reason` says which, and
+   * `args.label` carries the copy the default would have used.
+   *
+   * Return `undefined` to keep the built-in placeholder for that state — handy
+   * for customizing the empty folder while leaving the loading spinner alone.
+   * Return `null` to render nothing at all.
+   *
+   * Whatever you return is mounted in the same background surface the views use,
+   * so {@link FileSystemProps.getBackgroundContextMenuActions} still opens on a
+   * right-click (web) or long-press (native) anywhere in the empty area.
+   *
+   * Called as a plain function, not rendered as a component, for the same reason
+   * as {@link FileSystemProps.renderBody} — don't call hooks directly in it, put
+   * them in a component you render inside the returned tree.
+   *
+   * ```tsx
+   * renderEmptyState={({ reason, label }) =>
+   *   reason === 'empty-folder' ? <DropZone onPick={upload} /> : undefined
+   * }
+   * ```
+   */
+  renderEmptyState?: (args: FileSystemEmptyStateArgs) => ReactNode;
   /** Extra NativeWind classes merged onto the root container. */
   className?: string;
   /** Extra NativeWind classes merged onto the built-in header's root view. Ignored when `renderHeader` is provided. */

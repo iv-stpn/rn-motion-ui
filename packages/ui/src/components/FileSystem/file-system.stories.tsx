@@ -1258,11 +1258,59 @@ export const Empty: Story = {
   },
 };
 
+const EMPTY_CTA = 'Add your first file';
+const onEmptyCtaPress = fn();
+
+/**
+ * `renderEmptyState` replaces the placeholder that stands in for the file area
+ * when there is nothing to show. `reason` distinguishes the four cases — an empty
+ * folder, a search with no hits, filters that match nothing, a folder still
+ * loading — and `label` carries the copy the default would have used, so a slot
+ * can restyle a message without rewriting it.
+ *
+ * Returning `undefined` keeps the built-in placeholder for that state. That's
+ * what makes this per-reason rather than all-or-nothing: this story takes over
+ * the empty folder and leaves the search and loading placeholders alone.
+ */
+export const WithCustomEmptyState: Story = {
+  name: 'Demo: Custom empty state',
+  args: {
+    items: [],
+    loadChildren: undefined,
+    renderEmptyState: ({ folderName, reason }) =>
+      reason === 'empty-folder' ? (
+        <View className="flex-1 items-center justify-center gap-2">
+          <Text size="sm" weight="semibold">
+            {`${folderName} is ready`}
+          </Text>
+          <Button onPress={onEmptyCtaPress} size="sm" variant="secondary">
+            {EMPTY_CTA}
+          </Button>
+        </View>
+      ) : undefined,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // The slot draws the empty folder — `folderName` is the `title` at the root.
+    await canvas.findByText('Files is ready');
+    await canvas.findByRole('button', { name: EMPTY_CTA });
+    expect(canvas.queryByText('This folder is empty')).toBeNull();
+
+    // A search empties the folder for a different reason, and the slot declines
+    // it by returning `undefined` — so the built-in copy is what shows.
+    await userEvent.type(await canvas.findByLabelText('Search files'), 'invoice');
+    await canvas.findByText('No results for “invoice”');
+    await waitFor(() => expect(canvas.queryByText('Files is ready')).toBeNull());
+  },
+};
+
 /**
  * The placeholder is mounted in the same background surface the list and icons
  * views use, so a right-click (or long-press) on an empty folder opens
  * `getBackgroundContextMenuActions` just as it does over a folder with entries.
- * An empty folder is where "New folder" matters most.
+ * An empty folder is where "New folder" matters most, and it holds for a custom
+ * `renderEmptyState` too — the slot's tree goes inside that surface.
  */
 export const EmptyStateBackgroundMenu: Story = {
   name: 'Demo: Background menu on an empty folder',

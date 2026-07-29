@@ -205,8 +205,8 @@ export function CommandPalette({
 
   return (
     <AdaptiveModal
-      visible={open}
-      onClose={handleClose}
+      open={open}
+      onOpenChange={handleClose}
       customLayout={true}
       scrollable={false}
       smallScreenMode="fullSheet"

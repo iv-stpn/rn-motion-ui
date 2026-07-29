@@ -58,9 +58,6 @@ export type MarqueeProps = {
  * Infinite marquee. Two identical tracks translate in lockstep; when the first
  * scrolls fully out, the animation resets seamlessly because the second has
  * taken its place. Reanimated drives the loop on the UI thread.
- *
- * RN fallback note: the web original used a CSS `mask-image` edge fade, which
- * has no RN equivalent — the effect is dropped here (content simply scrolls).
  */
 export function Marquee({
   children,

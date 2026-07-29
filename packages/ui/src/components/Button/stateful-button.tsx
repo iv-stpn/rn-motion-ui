@@ -1,7 +1,4 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: press machine, text roll, and loader are tightly coupled around one render tree
-// RN FALLBACK vs web: CSS blur filter dropped (no RN equivalent) — opacity +
-// translateY preserved. Width animation uses onLayout measurement; initial render
-// may briefly snap vs. the web's synchronous useLayoutEffect measure.
 // aria-busy is approximated via accessibilityLiveRegion="polite" on the content row.
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';

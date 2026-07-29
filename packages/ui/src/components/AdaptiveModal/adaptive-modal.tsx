@@ -35,10 +35,6 @@ function useLatchedValue<T>(value: T, active: boolean): T {
 type AdaptiveModalProps = {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** @deprecated Use `open` instead. */
-  visible?: boolean;
-  /** @deprecated Use `onOpenChange` instead. */
-  onClose?: () => void;
   children: ReactNode;
   title?: string;
   subtitle?: string;
@@ -109,8 +105,6 @@ export type WidePanelSize = { width?: Dimension; height?: Dimension; maxWidth?: 
 export function AdaptiveModal({
   open: openProp,
   onOpenChange,
-  visible,
-  onClose,
   children,
   title,
   subtitle,
@@ -134,11 +128,10 @@ export function AdaptiveModal({
   const isWideScreen = isWideScreenOverride ?? isWidthAtLeast(width, wideBreakpoint);
   const insets = useSafeInsets();
 
-  const open = openProp ?? visible ?? false;
+  const open = openProp ?? false;
   const handleClose = useCallback(() => {
-    onClose?.();
     onOpenChange?.(false);
-  }, [onClose, onOpenChange]);
+  }, [onOpenChange]);
 
   const isBottomSheet = smallScreenMode === 'bottomSheet';
   const isRightDrawer = largeScreenMode === 'rightDrawer';
@@ -361,7 +354,7 @@ export function AdaptiveModal({
   return isBottomSheet ? (
     <BottomSheet
       open={open}
-      onClose={handleClose}
+      onOpenChange={handleClose}
       containerClassName={containerPaddingClass}
       onAfterClose={onAfterClose}
       closeOnOverlayClick={closeOnOverlayClick}
@@ -374,7 +367,7 @@ export function AdaptiveModal({
   ) : (
     <FullSheet
       open={open}
-      onClose={handleClose}
+      onOpenChange={handleClose}
       customLayout={true}
       onAfterClose={onAfterClose}
       safeArea={safeArea}

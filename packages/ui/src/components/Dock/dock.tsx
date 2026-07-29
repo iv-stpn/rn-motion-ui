@@ -6,11 +6,6 @@ import { SPRING_LAYOUT, SPRING_PRESS } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { Text } from '../Text/text';
 
-// RN FALLBACK vs web: the web dock scales items on cursor proximity (magnify on
-// hover) — there is no touch equivalent, so magnify is dropped. Items instead
-// get a press-scale spring for tactile feedback. The active-item pill still
-// glides between items via a measured shared-layout indicator (like tabs.tsx),
-// standing in for the web `layoutId` pill.
 type DockContextValue = {
   size: number;
   reduce: boolean;

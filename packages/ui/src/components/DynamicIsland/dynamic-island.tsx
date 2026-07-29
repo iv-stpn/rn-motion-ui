@@ -8,11 +8,6 @@ import { PresenceContext } from '../../moti/presence/animate-presence-context';
 
 type Size = { width: number; height: number };
 
-// RN FALLBACK vs web: the web island animates real width/height to a
-// ResizeObserver-measured content size and blurs content in/out with a CSS
-// `filter`. RN has no blur filter, so the blur is dropped; the shell still
-// springs its width/height to the natural size of its content (onLayout) and
-// the active slot swaps with a scale/opacity/translate spring (AnimatePresence).
 type IslandContextValue = { view: string | null };
 const IslandContext = createContext<IslandContextValue | null>(null);
 

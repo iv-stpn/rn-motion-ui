@@ -15,15 +15,6 @@ import { Button } from '../Button/button';
 import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 
-// RN FALLBACK vs web: the web widget shares a framer `layout` on one shell that
-// morphs its width/height between the 48px corner trigger and the full panel,
-// with an SVG path-draw check and blur() transitions on the inner views. RN has
-// no auto layout morph, backdrop blur, or SVG pathLength — the shell is a
-// MotiView that springs its measured open size (width fixed, height flows from
-// content) while AnimatePresence cross-fades/translates the trigger <-> panel and
-// the form/sent/error views. The check scales+fades in (no stroke draw); blur is
-// dropped. Outside-tap/escape dismiss becomes the X + Cancel buttons.
-
 type Status = 'idle' | 'open' | 'sending' | 'sent' | 'error';
 
 const SUCCESS_DURATION_MS = 1600;

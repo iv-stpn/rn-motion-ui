@@ -39,14 +39,8 @@ function SheetHandle({ className }: SheetHandleProps) {
 }
 
 export type BottomSheetProps = {
-  // New preferred API
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  // Deprecated aliases (kept for one minor release)
-  /** @deprecated Use `open` instead. */
-  visible?: boolean;
-  /** @deprecated Use `onOpenChange` instead. */
-  onClose?: () => void;
   children: ReactNode;
   containerClassName?: string;
   onAfterClose?: () => void;
@@ -84,8 +78,6 @@ export type BottomSheetProps = {
 export function BottomSheet({
   open,
   onOpenChange,
-  visible,
-  onClose,
   children,
   containerClassName,
   onAfterClose,
@@ -98,7 +90,7 @@ export function BottomSheet({
   closeAccessibilityLabel = 'Close',
   testID,
 }: BottomSheetProps) {
-  const isOpen = open ?? visible ?? false;
+  const isOpen = open ?? false;
   const { height } = useWindowDimensions();
   const reduced = useReducedMotion();
   const insets = useSafeInsets();
@@ -115,9 +107,8 @@ export function BottomSheet({
   const dragStartY = useSharedValue(0);
 
   const handleClose = useCallback(() => {
-    onClose?.();
     onOpenChange?.(false);
-  }, [onClose, onOpenChange]);
+  }, [onOpenChange]);
 
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],

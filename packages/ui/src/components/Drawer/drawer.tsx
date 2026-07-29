@@ -10,11 +10,6 @@ import { Text } from '../Text/text';
 
 export type DrawerSide = 'left' | 'right';
 
-// RN FALLBACK vs web: the web drawer is a `position:fixed` overlay that locks
-// body scroll and closes on Escape. RN uses a full-screen `Modal` (transparent,
-// animationType="none") and animates the panel + backdrop with moti. Drag is
-// dropped — close via the backdrop tap or a close control (documented). The
-// slide uses the same SPRING_PANEL feel as the web SPRING_PANEL transition.
 export type DrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;

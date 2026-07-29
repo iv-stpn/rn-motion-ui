@@ -386,8 +386,8 @@ export const MultiStepMenu = function MultiStepMenu({
   // and scrolling to MultiStepMenu; the modal only provides the shell + transitions.
   return wrap(
     <AdaptiveModal
-      visible={visible}
-      onClose={handleClose}
+      open={visible}
+      onOpenChange={handleClose}
       isWideScreen={isWideScreen}
       smallScreenMode="fullSheet"
       largeScreenMode="modal"

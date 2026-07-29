@@ -12,9 +12,9 @@ const meta = {
   component: ActionFeedbackModal,
   parameters: { layout: 'centered' },
   args: {
-    visible: false,
+    open: false,
     state: 'loading',
-    onClose: () => undefined,
+    onOpenChange: () => undefined,
   },
   argTypes: {
     state: { control: 'select', options: ['loading', 'success', 'error'] },
@@ -164,10 +164,10 @@ function FeedbackPlayground() {
 
       <ActionFeedbackModal
         elevation={ELEVATIONS[elevationKey]}
-        onClose={handleClose}
+        onOpenChange={handleClose}
         state={state}
         tagline={withTagline ? TAGLINE : undefined}
-        visible={visible}
+        open={visible}
         {...text}
       />
       {visible && state === 'loading' ? <LoadingEscapeHatch onClose={handleClose} /> : null}
@@ -200,11 +200,11 @@ export const Loading: Story = {
       <View>
         <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
         <ActionFeedbackModal
-          visible={visible}
+          open={visible}
           state="loading"
           loadingMessage="Saving changes…"
           tagline="This may take a moment"
-          onClose={handleClose}
+          onOpenChange={handleClose}
         />
         {visible ? <LoadingEscapeHatch onClose={handleClose} /> : null}
       </View>
@@ -257,12 +257,12 @@ export const Success: Story = {
       <View>
         <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
         <ActionFeedbackModal
-          visible={visible}
+          open={visible}
           state="success"
           successLabel="Changes saved!"
           successMessage="Your profile was updated."
           tagline="Closing automatically…"
-          onClose={handleClose}
+          onOpenChange={handleClose}
         />
       </View>
     );
@@ -297,12 +297,12 @@ export const ErrorState: Story = {
       <View>
         <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
         <ActionFeedbackModal
-          visible={visible}
+          open={visible}
           state="error"
           errorTitle="Upload failed"
           errorMessage="The file could not be uploaded. Check your connection and try again."
           dismissLabel="Got it"
-          onClose={handleClose}
+          onOpenChange={handleClose}
         />
       </View>
     );
@@ -345,7 +345,7 @@ export const Minimal: Story = {
     return (
       <View>
         <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
-        <ActionFeedbackModal visible={visible} state={state} onClose={handleClose} />
+        <ActionFeedbackModal open={visible} state={state} onOpenChange={handleClose} />
       </View>
     );
   },

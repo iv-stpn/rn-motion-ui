@@ -120,7 +120,7 @@ export function NotFoundGlitch({
     <NotFoundStage style={style} testID={testID ?? 'not-found-glitch'}>
       {/* Large code with chromatic ghost layers. */}
       <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Ghost layers for chromatic aberration (RN fallback: MotiText opacity+translateX) */}
+        {/* Ghost layers for chromatic aberration (MotiText opacity+translateX) */}
         {reduce ? null : (
           <>
             <MotiText

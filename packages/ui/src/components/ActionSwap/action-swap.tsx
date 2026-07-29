@@ -24,11 +24,6 @@ export type ActionSwapAnimation = 'blur' | 'roll' | 'cascade';
 /** Animations with a single-element variant set (cascade animates per letter). */
 type CoreAnimation = 'blur' | 'roll';
 
-// RN FALLBACK vs web: the web variants animate a CSS `filter: blur()` alongside
-// opacity/transform. React Native has no animatable blur, so we drop the filter
-// and keep the opacity + scale/translate motion (the readable part of the swap).
-// The web `width` tween on the text slot is also dropped — the slot snaps to the
-// new label width (RN doesn't auto-animate layout). Timing/spring feel is kept.
 const BLUR_TRANSITION = { type: 'timing', duration: 200, easing: EASE_IN_OUT } as const;
 const BLUR_EXIT = { type: 'timing', duration: 200, easing: EASE_IN_OUT } as const;
 const ROLL_TRANSITION = { type: 'timing', duration: 240, easing: EASE_OUT } as const;

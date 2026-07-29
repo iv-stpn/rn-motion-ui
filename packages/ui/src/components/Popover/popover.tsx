@@ -14,12 +14,7 @@ export type PopoverTriggerMode = 'click' | 'hover';
 
 type Rect = { x: number; y: number; w: number; h: number };
 
-// RN FALLBACK vs web: the web popover melts out of the trigger via an SVG goo
-// filter (feGaussianBlur + feColorMatrix) morphing a clip-path. RN has no SVG
-// filters or clip-path morph, so the panel enters with a scale/opacity/translate
-// spring anchored near the trigger edge instead. `gooStrength`/`panelRadius` are
-// kept on the API for parity; `gooStrength` is a no-op here.
-type PopoverCtx = {
+type PopoverContext = {
   open: boolean;
   setOpen: (v: boolean) => void;
   toggle: () => void;
@@ -32,7 +27,7 @@ type PopoverCtx = {
   reduce: boolean;
 };
 
-const Ctx = createContext<PopoverCtx | null>(null);
+const Ctx = createContext<PopoverContext | null>(null);
 
 function usePopover(component: string) {
   const ctx = useContext(Ctx);
@@ -91,7 +86,7 @@ export function Popover({
 
   const toggle = useCallback(() => setOpen(!open), [setOpen, open]);
 
-  const ctx = useMemo<PopoverCtx>(
+  const ctx = useMemo<PopoverContext>(
     () => ({ open, setOpen, toggle, rect, setRect, side, align, gap: sideOffset, panelRadius, reduce }),
     [open, setOpen, toggle, rect, side, align, sideOffset, panelRadius, reduce],
   );

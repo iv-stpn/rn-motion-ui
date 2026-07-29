@@ -124,13 +124,8 @@ function announcementFor(parts: AnnouncementParts): string {
 }
 
 export type ActionFeedbackModalProps = {
-  // New preferred API
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** @deprecated Use `open` instead. */
-  visible?: boolean;
-  /** @deprecated Use `onOpenChange` instead. */
-  onClose?: () => void;
   state: ActionFeedbackState;
   loadingMessage?: string;
   successLabel?: string;
@@ -147,8 +142,6 @@ export type ActionFeedbackModalProps = {
 export function ActionFeedbackModal({
   open: openProp,
   onOpenChange,
-  visible,
-  onClose,
   state,
   loadingMessage,
   successLabel,
@@ -160,7 +153,7 @@ export function ActionFeedbackModal({
   elevation = 6,
   testID,
 }: ActionFeedbackModalProps) {
-  const isOpen = openProp ?? visible ?? false;
+  const isOpen = openProp ?? false;
   const isDismissible = state === 'error';
   const reduced = useReducedMotion();
 
@@ -178,9 +171,8 @@ export function ActionFeedbackModal({
   }, [isOpen, state, announcement]);
 
   const handleClose = useCallback(() => {
-    onClose?.();
     onOpenChange?.(false);
-  }, [onClose, onOpenChange]);
+  }, [onOpenChange]);
 
   // Auto-close after success — mirrors offkeep's useTimeout behaviour.
   // biome-ignore lint/plugin: timer side-effect cannot be expressed as derived state — fires once when success lands, cleans up on unmount

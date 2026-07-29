@@ -137,7 +137,7 @@ function PopoverPlayground() {
 export default meta;
 
 /** Side, alignment, offset and corner radius on one live popover, then a trigger
- *  for every side/align pair. Note the RN fallback: the web original melted the
+ *  for every side/align pair. The web original melted the
  *  panel out of the trigger with an SVG goo filter — here it springs instead. */
 export const Interactive: Story = { render: () => <PopoverPlayground /> };
 

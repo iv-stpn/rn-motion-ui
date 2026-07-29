@@ -7,18 +7,6 @@ import { MotiView } from '../../moti/components/view';
 import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 
-// RN FALLBACK vs web: the web menu morphs a single `layoutId` box from the
-// trigger into the panel and reveals the grid with an animated `clip-path`
-// iris. RN has neither, so the shared-layout movement is driven explicitly:
-// one always-mounted card springs its width/height between the trigger frame
-// and the measured panel frame (staying centred on the trigger point, like the
-// web's centred morph), and `overflow: hidden` on that card plays the role of
-// the clip-path — the centred panel content is progressively unclipped as the
-// card grows. The trigger face and panel content cross-fade inside the card,
-// and grid items bloom centre-out via a radial stagger, matching the web.
-// Escape / outside-tap close is dropped (no window listeners on RN) — close
-// via the X header button or by selecting an item (documented).
-
 /** Props passed to a bloom menu icon renderer. */
 export type BloomIconProps = { size?: number; color?: string };
 

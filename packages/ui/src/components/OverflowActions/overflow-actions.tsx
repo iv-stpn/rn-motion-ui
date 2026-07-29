@@ -10,15 +10,6 @@ import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 
-// RN FALLBACK vs web: the web rail uses framer `layout` on every node so the
-// track smoothly resizes as the overflow group mounts/unmounts, plus a blur
-// filter on the entering actions. RN has no shared-layout resize or blur filter,
-// so the overflow group lives in an overflow-hidden clip whose width + marginLeft
-// spring between 0 and the group's measured natural width (onLayout). Because the
-// clip is a flex child, the track reflows with it every frame — the toggle glides
-// right as the group grows instead of the whole width snapping open at once. The
-// toggle icon still cross-fades. Hover scale is dropped (touch); press scale kept.
-
 export type OverflowActionsSize = 'sm' | 'md';
 
 export type OverflowActionItem = {

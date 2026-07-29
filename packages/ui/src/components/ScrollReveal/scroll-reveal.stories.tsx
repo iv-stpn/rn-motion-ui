@@ -114,9 +114,8 @@ function ScrollRevealPlayground() {
 
 export default meta;
 
-/** Slide distance, reveal threshold, and the latch. RN fallback: the web original
- *  used IntersectionObserver plus a CSS `blur()` — here reveal is interpolated
- *  from the parent scroll offset and the enter-blur is dropped. */
+/** Slide distance, reveal threshold, and the latch. Reveal is interpolated
+ *  from the parent scroll offset. */
 export const Interactive: Story = { render: () => <ScrollRevealPlayground /> };
 
 export const Default: Story = {

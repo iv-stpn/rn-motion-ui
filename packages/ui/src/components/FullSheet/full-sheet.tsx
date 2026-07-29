@@ -145,14 +145,8 @@ export type FullSheetMode = 'default' | 'back-button';
 export type FullSheetHeaderCtx = { close: () => void };
 
 export type FullSheetProps = {
-  // New preferred API
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  // Deprecated aliases
-  /** @deprecated Use `open` instead. */
-  visible?: boolean;
-  /** @deprecated Use `onOpenChange` instead. */
-  onClose?: () => void;
   children: ReactNode;
   title?: string;
   subtitle?: string;
@@ -200,8 +194,6 @@ export type FullSheetProps = {
 export function FullSheet({
   open,
   onOpenChange,
-  visible,
-  onClose,
   children,
   title,
   subtitle,
@@ -219,16 +211,15 @@ export function FullSheet({
   safeArea = true,
   testID,
 }: FullSheetProps) {
-  const isOpen = open ?? visible ?? false;
+  const isOpen = open ?? false;
   const { height, width } = useWindowDimensions();
   const isSmallScreen = !isWidthAtLeast(width, wideBreakpoint);
   const reduced = useReducedMotion();
   const insets = useSafeInsets();
 
   const handleClose = useCallback(() => {
-    onClose?.();
     onOpenChange?.(false);
-  }, [onClose, onOpenChange]);
+  }, [onOpenChange]);
 
   const enterTransition = {
     type: 'timing' as const,

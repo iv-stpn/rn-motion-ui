@@ -22,8 +22,6 @@ export type MotiPressableProps = {
   onBlur?: () => void;
   transition?: MotiPressableTransitionProp;
   animate?: MotiPressableProp;
-  /** @deprecated The `state` prop is not available with this component. */
-  state?: never;
   onPress?: () => void;
   onPressIn?: () => void;
   onPressOut?: () => void;

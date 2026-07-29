@@ -11,18 +11,6 @@ import { Text } from '../Text/text';
 // biome-ignore lint/style/useExportsLast: placement type before INSTANT constant — collocated for readability
 export type MorphingModalPlacement = 'bottom' | 'center';
 
-// RN FALLBACK vs web: the web modal blurs the backdrop (`backdrop-filter`) and
-// uses framer `layout` to morph the panel's height between views. RN has no
-// backdrop blur (uses a dim scrim instead) and no automatic layout morph, so we
-// drive the morph explicitly: each view measures itself (onLayout) and the
-// panel's height animates to that measurement via moti. The two views are
-// absolutely positioned and cross-fade over each other (presenceAffectsLayout=
-// {false}), so the height glides between sizes instead of snapping. The morph
-// reuses SPRING_PANEL for the same weighty feel as the enter/exit.
-//
-// (moti — not a hand-written reanimated worklet — because moti ships compiled
-// worklets and so needs no reanimated Babel plugin, which the web/vitest build
-// target doesn't apply; a raw `useAnimatedStyle` throws there.)
 const INSTANT = { type: 'timing' as const, duration: 0 };
 
 // `pointerEvents: 'box-none'` MUST come from StyleSheet.create, not an inline

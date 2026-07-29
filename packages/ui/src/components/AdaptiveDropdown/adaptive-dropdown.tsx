@@ -250,7 +250,7 @@ export function AdaptiveDropdown({
           </Pressable>
         </Modal>
       ) : (
-        <BottomSheet visible={open} onClose={close} fullSheet={fullSheet}>
+        <BottomSheet open={open} onOpenChange={close} fullSheet={fullSheet}>
           {header}
           {body}
         </BottomSheet>

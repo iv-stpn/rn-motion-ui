@@ -21,6 +21,7 @@ import type {
   FileSystemView,
   FileSystemViewerArgs,
 } from './file-system.types';
+import { FS_EMPTY_STATE_TEST_ID } from './file-system-body';
 import { FS_HOVER_TEST_ID } from './file-system-hover';
 import { FS_TILE_DROP_TARGET_TEST_ID } from './file-system-icons-tile';
 import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
@@ -1254,5 +1255,34 @@ export const Empty: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('This folder is empty');
     await canvas.findByText('0 items');
+  },
+};
+
+/**
+ * The placeholder is mounted in the same background surface the list and icons
+ * views use, so a right-click (or long-press) on an empty folder opens
+ * `getBackgroundContextMenuActions` just as it does over a folder with entries.
+ * An empty folder is where "New folder" matters most.
+ */
+export const EmptyStateBackgroundMenu: Story = {
+  name: 'Demo: Background menu on an empty folder',
+  args: {
+    items: [],
+    loadChildren: undefined,
+    getBackgroundContextMenuActions: (): FileSystemContextMenuAction[] => [{ id: 'new-folder', label: 'New folder' }],
+    onBackgroundContextMenuAction: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('This folder is empty');
+
+    // No view to right-click, so the placeholder's own node is the listener target.
+    const placeholder = await canvas.findByTestId(FS_EMPTY_STATE_TEST_ID);
+    await userEvent.pointer({ target: placeholder, keys: '[MouseRight]' });
+
+    await userEvent.click(await screen.findByText('New folder'));
+    await waitFor(() =>
+      expect(args.onBackgroundContextMenuAction).toHaveBeenCalledWith(expect.objectContaining({ id: 'new-folder' })),
+    );
   },
 };

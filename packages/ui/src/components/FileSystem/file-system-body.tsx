@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
+/** biome-ignore-all lint/style/useComponentExportOnlyModules: the placeholder test id belongs with the node it names */
 // The file area: whichever view is active, or the placeholder that replaces it
 // when there is nothing to show. The columns view keeps its panes even when the
 // current folder is empty — that's how Finder lets you walk back up a trail —
@@ -7,12 +8,17 @@
 // `renderBody` wraps that default content rather than replacing it: the slot
 // receives the node and returns a tree containing it, so a consumer can add a
 // sidebar or an overlay without reimplementing the four views.
+//
+// The placeholder is mounted in the same background surface the list and icons
+// views use, so the background context menu opens on the empty area too — that's
+// where a "New folder" action matters most.
 
-import type { ComponentType, ReactNode } from 'react';
-import { Platform, View, type ViewStyle } from 'react-native';
+import { type ComponentType, type ReactNode, useRef } from 'react';
+import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import { cn } from '../../lib/cn';
 import type { FileSystemBodyState, FileSystemView } from './file-system.types';
 import { FileSystemColumnsView } from './file-system-columns-view';
+import { useBackgroundContextMenu } from './file-system-context-menu';
 import { FileSystemGalleryView } from './file-system-gallery-view';
 import { FileSystemIconsView } from './file-system-icons-view';
 import { FileSystemListView } from './file-system-list-view';
@@ -22,6 +28,14 @@ import { FileSystemEmptyState } from './file-system-view';
 const LOADING_LABEL = 'Loading…';
 const EMPTY_FOLDER_LABEL = 'This folder is empty';
 const NO_FILTER_MATCH_LABEL = 'No items match the active filters';
+
+/**
+ * The placeholder's own node — the surface that answers a background
+ * right-click / long-press when there is no view to answer it. Fixed rather than
+ * derived from the root `testID`, like the drag containers, so a test can reach
+ * it untagged.
+ */
+export const FS_EMPTY_STATE_TEST_ID = 'file-system-empty-state';
 
 const VIEW_COMPONENTS: Record<FileSystemView, ComponentType<FileSystemViewProps>> = {
   columns: FileSystemColumnsView,
@@ -43,11 +57,55 @@ export type FileSystemBodyProps = FileSystemViewProps & {
   renderBody?: (state: FileSystemBodyState & { testID?: string }) => ReactNode;
 };
 
-type EmptyLabelArgs = Pick<FileSystemBodyProps, 'hasActiveFilters' | 'isSearching' | 'searchInput'>;
+type EmptyLabelArgs = Pick<FileSystemBodyProps, 'hasActiveFilters' | 'isLoadingCurrentFolder' | 'isSearching' | 'searchInput'>;
 
-function emptyLabel({ hasActiveFilters, isSearching, searchInput }: EmptyLabelArgs): string {
+// Loading wins over the other two: a folder still fetching its children looks
+// empty, and saying so would be wrong rather than merely early.
+function emptyLabel({ hasActiveFilters, isLoadingCurrentFolder, isSearching, searchInput }: EmptyLabelArgs): string {
+  if (isLoadingCurrentFolder) return LOADING_LABEL;
   if (isSearching) return `No results for “${searchInput.trim()}”`;
   return hasActiveFilters ? NO_FILTER_MATCH_LABEL : EMPTY_FOLDER_LABEL;
+}
+
+type PlaceholderProps = Pick<
+  FileSystemBodyProps,
+  'folderName' | 'getBackgroundContextMenuActions' | 'onBackgroundContextMenuAction'
+> & { children: ReactNode };
+
+// The placeholder stands where a view would, so it has to answer a right-click
+// the same way — an empty folder is exactly when "New folder" is the action a
+// consumer reaches for, and having it work everywhere *except* there would be a
+// hole. Same hook the list and icons views use, so one menu closes another.
+//
+// `tabIndex={-1}` keeps this off the tab ring: it is a surface for a pointer
+// gesture, not a control, and anything focusable a consumer renders inside it
+// stays reachable regardless.
+function FileSystemBodyPlaceholder({
+  children,
+  folderName,
+  getBackgroundContextMenuActions,
+  onBackgroundContextMenuAction,
+}: PlaceholderProps) {
+  const containerRef = useRef<View | null>(null);
+  const backgroundMenu = useBackgroundContextMenu(
+    containerRef,
+    getBackgroundContextMenuActions,
+    onBackgroundContextMenuAction,
+    folderName,
+  );
+
+  return (
+    <Pressable
+      ref={containerRef}
+      className="min-h-0 flex-1"
+      onLongPress={backgroundMenu.onLongPress}
+      tabIndex={-1}
+      testID={FS_EMPTY_STATE_TEST_ID}
+    >
+      {children}
+      {backgroundMenu.contextMenuNode}
+    </Pressable>
+  );
 }
 
 /** Placeholder or view, whichever the current state calls for. */
@@ -60,10 +118,23 @@ function FileSystemBodyContent({
   ...viewProps
 }: FileSystemBodyProps) {
   const isEmpty = viewProps.entries.length === 0;
-  if (isLoadingCurrentFolder && isEmpty) return <FileSystemEmptyState isLoading={true} label={LOADING_LABEL} />;
 
-  if (isEmpty && (view !== 'columns' || isSearching || hasActiveFilters))
-    return <FileSystemEmptyState label={emptyLabel({ hasActiveFilters, isSearching, searchInput })} />;
+  // The columns view keeps its panes over an empty folder so the trail stays
+  // walkable, and only yields to the placeholder when a query or a filter is what
+  // emptied it — or while the folder is still loading.
+  if (isEmpty && (isLoadingCurrentFolder || view !== 'columns' || isSearching || hasActiveFilters))
+    return (
+      <FileSystemBodyPlaceholder
+        folderName={viewProps.folderName}
+        getBackgroundContextMenuActions={viewProps.getBackgroundContextMenuActions}
+        onBackgroundContextMenuAction={viewProps.onBackgroundContextMenuAction}
+      >
+        <FileSystemEmptyState
+          isLoading={isLoadingCurrentFolder}
+          label={emptyLabel({ hasActiveFilters, isLoadingCurrentFolder, isSearching, searchInput })}
+        />
+      </FileSystemBodyPlaceholder>
+    );
 
   const ActiveView = VIEW_COMPONENTS[view];
   return <ActiveView {...viewProps} />;

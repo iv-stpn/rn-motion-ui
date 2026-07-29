@@ -16,6 +16,11 @@ import { cssColorToSrgb, oklchToSrgb } from '../lib/color';
  * `special` are vivid filled backgrounds; `*-foreground` is white for legible
  * text/icons on that fill. `special` is the one non-semantic member of the row
  * — a promotion or an upgrade path rather than a state.
+ *
+ * `white` and `black` are the two absolute colors: identical in both schemes, so
+ * they do NOT flip with the theme. They exist for the places that legitimately
+ * need a fixed color — a glyph on a vivid status fill, a gloss highlight, a
+ * scrim — which would otherwise be a hardcoded `#fff` / `#000` literal.
  */
 type ThemeToken =
   | 'surface-1'
@@ -47,7 +52,9 @@ type ThemeToken =
   | 'danger'
   | 'danger-foreground'
   | 'special'
-  | 'special-foreground';
+  | 'special-foreground'
+  | 'white'
+  | 'black';
 
 /**
  * OKLCH definitions mirroring the tokens.css @theme block — [L, C, H, alpha?].
@@ -91,6 +98,8 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   'danger-foreground': [1, 0, 0],
   special: [0.59, 0.25, 295],
   'special-foreground': [1, 0, 0],
+  white: [1, 0, 0],
+  black: [0, 0, 0],
 };
 
 const DARK_OKLCH: Record<ThemeToken, Oklch> = {
@@ -124,6 +133,9 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   'danger-foreground': [1, 0, 0],
   special: [0.59, 0.25, 295],
   'special-foreground': [1, 0, 0],
+  // Absolute colors — same in both schemes, on purpose.
+  white: [1, 0, 0],
+  black: [0, 0, 0],
 };
 
 /** Resolve an OKLCH definition table to concrete sRGB strings. */

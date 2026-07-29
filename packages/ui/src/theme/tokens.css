@@ -36,6 +36,15 @@
  * indicators, modals, toasts); pair them with `*-foreground` (white) for
  * legible text/icons on that fill.
  *
+ * ## Absolute colors
+ *
+ * `white` and `black` are the two theme-independent tokens — the same value in
+ * light and dark, so `bg-white` / `text-black` (and `useThemeColor('white')`)
+ * never flip. They cover the cases where a fixed color is the design intent —
+ * a glyph on a vivid status fill, a gloss highlight, a scrim — instead of a
+ * hardcoded `#fff` / `#000`. Anything that should follow the theme wants
+ * `foreground` / `surface-N` / `*-foreground` instead.
+ *
  * ## Button geometry
  *
  * `--spacing-button-*`, `--spacing-button-pad-*` and `--radius-button-*` are the
@@ -110,6 +119,16 @@
   --color-danger-foreground: oklch(100% 0 0);
   --color-special: oklch(59% 0.25 295);
   --color-special-foreground: oklch(100% 0 0);
+
+  /* Absolute colors — the two values that do NOT flip with the theme. They are
+     re-declared verbatim in both dark blocks so every platform resolves them
+     the same way (and so the parity check has all three declarations to
+     compare). Reach for these where a fixed color is the design intent — a
+     glyph on a vivid status fill, a gloss highlight, a scrim — rather than
+     hardcoding `#fff` / `#000`. For anything that should track the theme, use
+     `foreground` / `surface-N` instead. */
+  --color-white: oklch(100% 0 0);
+  --color-black: oklch(0% 0 0);
 
   /* Surface elevation shadows — a crisp 1px ring at full strength plus drop
      layers whose opacity decays as blur grows (natural light fall-off).
@@ -262,6 +281,12 @@
       --color-danger-foreground: oklch(100% 0 0);
       --color-special: oklch(59% 0.25 295);
       --color-special-foreground: oklch(100% 0 0);
+
+      /* Absolute colors — same value in both schemes, restated so the two dark
+         blocks stay a complete mirror of the @theme block. */
+      --color-white: oklch(100% 0 0);
+      --color-black: oklch(0% 0 0);
+
       --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
       --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
       --shadow-surface-3:
@@ -345,6 +370,12 @@
     --color-danger-foreground: oklch(100% 0 0);
     --color-special: oklch(59% 0.25 295);
     --color-special-foreground: oklch(100% 0 0);
+
+    /* Absolute colors — same value in both schemes, restated so the two dark
+       blocks stay a complete mirror of the @theme block. */
+    --color-white: oklch(100% 0 0);
+    --color-black: oklch(0% 0 0);
+
     --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
     --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
     --shadow-surface-3:

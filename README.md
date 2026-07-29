@@ -157,6 +157,20 @@ In light mode, surfaces 3+ are pure white and shadows alone carry depth. In dark
 
 `danger` is the destructive fill. `special` is the one non-semantic member — a promotion or an upgrade path, where the other four each carry a meaning. `warning`, `info` and `special` hold the same value in both schemes; they already sit at mid lightness, so there is nothing a dark-mode lift fixes.
 
+### Absolute colors
+
+`white` and `black` are the two tokens that do **not** flip with the theme — identical in light and dark, on web and native. They cover the cases where a fixed color is the design intent rather than an oversight: a glyph on a vivid status fill, a gloss highlight, a scrim.
+
+```tsx
+<Text className="text-white">On a vivid fill in both schemes</Text>
+```
+
+```ts
+const white = useThemeColor('white'); // "rgb(255, 255, 255)"
+```
+
+Reach for them instead of a hardcoded `#fff` / `#000`. For anything that should track the theme, use `foreground` / `surface-N`.
+
 ### Elevation prop
 
 Surface components (`Card`, `Popover`, `AdaptiveDropdown`, `HoverMenu`, `MorphingModal`, `ActionFeedbackModal`, `AdaptiveModal`, `FeedbackWidget`) accept an `elevation` prop (`1`–`8`). It drives the background, drop shadow, and — in dark mode — the inset rim highlight together, keeping fill and rim calibrated at the same level.

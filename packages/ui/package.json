@@ -87,11 +87,6 @@
       "types": "./src/components/AnimatedNumber/animated-number.tsx",
       "default": "./src/components/AnimatedNumber/animated-number.tsx"
     },
-    "./availability-scheduler": {
-      "source": "./src/components/AvailabilityScheduler/availability-scheduler.tsx",
-      "types": "./src/components/AvailabilityScheduler/availability-scheduler.tsx",
-      "default": "./src/components/AvailabilityScheduler/availability-scheduler.tsx"
-    },
     "./bloom-menu": {
       "source": "./src/components/BloomMenu/bloom-menu.tsx",
       "types": "./src/components/BloomMenu/bloom-menu.tsx",

@@ -128,7 +128,6 @@ Subpaths are namespaced by category:
 | `/command-palette` | `CommandPalette` |
 | `/otp-input` | `OtpInput` |
 | `/feedback-widget` | `FeedbackWidget` |
-| `/availability-scheduler` | `AvailabilityScheduler` |
 | `/table` | `Table` |
 | `/table-header` | `HeaderCell` |
 | `/table-row` | `TableRow`, `RowCell` |

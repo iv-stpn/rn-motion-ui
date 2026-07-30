@@ -11,7 +11,7 @@ import { useCallback } from 'react';
 import { View } from 'react-native';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
 import type { FileEntry, FileSystemViewerKind } from './file-system.types';
-import { useFileSystemContext } from './file-system-context';
+import { useFileSystemConsumer, useFileSystemViewer, useFileSystemViewerActions } from './file-system-context';
 import { FileSystemGalleryStage } from './file-system-gallery-stage';
 
 /** Wide-screen panel size per viewer kind, as a share of the window. */
@@ -34,16 +34,9 @@ export type FileSystemOpenedFile = { file: FileEntry; kind: FileSystemViewerKind
  * second round-trip — the URL is already in `urlCache`.
  */
 export function FileSystemViewerModal() {
-  const {
-    closeFile,
-    getFileUrl,
-    loadPreviewImageUrl,
-    opened,
-    pageUrlCache,
-    renderFilePreview,
-    renderFileViewer,
-    resolvedUrlCache,
-  } = useFileSystemContext();
+  const { closeFile } = useFileSystemViewerActions();
+  const { opened, resolvedUrlCache, pageUrlCache } = useFileSystemViewer();
+  const { getFileUrl, loadPreviewImageUrl, renderFilePreview, renderFileViewer } = useFileSystemConsumer();
 
   const handleOpenChange = useCallback(
     (next: boolean) => {

@@ -1,19 +1,30 @@
-// biome-ignore-all lint/style/noExcessiveLinesPerFile: stories + interaction tests for the whole browser kept together for easy editing
-// <FileSystem>: a Finder-style browser over a flat manifest of files.
-//
-// The component is assembled rather than implemented here — state comes from
-// useFileSystem, the toolbar from FileSystemHeader, the file area from
-// FileSystemBody — so this module is only the wiring plus the two modals.
+// <FileSystem>: assembly point — creates the per-instance Zustand store, syncs
+// consumer props into it, and renders the context provider with all regions.
 
-import { useCallback, useRef, useState } from 'react';
-import type { LayoutChangeEvent, TextInput } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { LayoutChangeEvent } from 'react-native';
 import { useWindowDimensions, View } from 'react-native';
 import { cn } from '../../lib/cn';
-import type { FileSystemEntry, FileSystemProps, ResolvedFileSystemBreakpoints } from './file-system.types';
+import type { FileSystemProps, ResolvedFileSystemBreakpoints } from './file-system.types';
 import { defaultFileSystemBreakpoints } from './file-system.types';
 import { FileSystemBody } from './file-system-body';
-import type { FileSystemContextValue } from './file-system-context';
-import { FileSystemContext, useFileSystemContext } from './file-system-context';
+import {
+  createFileSystemStore,
+  type FileSystemStoreApi,
+  FileSystemStoreContext,
+  useFileSystemConsumer,
+  useFileSystemEntries,
+  useFileSystemEntriesActions,
+  useFileSystemFilterActions,
+  useFileSystemFilters,
+  useFileSystemLayout,
+  useFileSystemNavigation,
+  useFileSystemNavigationActions,
+  useFileSystemSearch,
+  useFileSystemSearchActions,
+  useFileSystemSelection,
+  useFileSystemStoreContext,
+} from './file-system-context';
 import { FileSystemContextMenuProvider } from './file-system-context-menu';
 import { FileSystemDateRangeModal } from './file-system-date-range-modal';
 import { FileSystemFilterPills } from './file-system-filter-pills';
@@ -21,8 +32,6 @@ import { FileSystemHeader } from './file-system-header';
 import type { HeaderLayout } from './file-system-toolbar-parts';
 import { FileSystemCollapsedSearchRow, FileSystemStatusBar } from './file-system-toolbar-parts';
 import { FileSystemViewerModal } from './file-system-viewer-modal';
-import { useFileOpen } from './use-file-open';
-import { useFileSystem, useSelectAndPrefetch } from './use-file-system';
 
 /** Default viewport height, matching the web original's `h-[480px]`. */
 const DEFAULT_HEIGHT = 480;
@@ -32,49 +41,80 @@ function headerLayoutForWidth(width: number, breakpoints: ResolvedFileSystemBrea
   return width < breakpoints.compact ? 'compact' : 'full';
 }
 
-// Renders the consumer's renderHeader render prop, mapping internal state field
-// names to the public FileSystemHeaderState shape.
-function FileSystemCustomHeader() {
-  const ctx = useFileSystemContext();
-  if (!ctx.renderHeader) return null;
-  const headerTestID = ctx.testID ? `${ctx.testID}-header` : undefined;
-  return ctx.renderHeader({
-    canGoBack: ctx.canGoBack,
-    canGoForward: ctx.canGoForward,
-    clearFilters: ctx.clearFilters,
-    fileTypeOptions: ctx.fileTypeOptions,
-    filters: ctx.filters,
-    folderName: ctx.currentFolderName,
-    goBack: ctx.goBack,
-    goForward: ctx.goForward,
-    isCompact: ctx.isCompact,
-    isSearchExpanded: ctx.isSearchExpanded,
-    layout: ctx.layout,
-    openCustomRange: ctx.openDateRangeRequest,
-    searchValue: ctx.searchInput,
-    selectDatePreset: ctx.setDatePresetFilter,
-    setSearchExpanded: ctx.setIsSearchExpanded,
-    setSearchValue: ctx.setSearchInput,
-    setSortKey: ctx.applySortKey,
-    setView: ctx.setView,
-    sort: ctx.sort,
-    toggleFileType: ctx.toggleFileTypeFilterValue,
-    view: ctx.view,
-    testID: headerTestID,
+type FileSystemCustomHeaderProps = { renderHeader: NonNullable<FileSystemProps['renderHeader']> };
+
+// Renders the consumer's renderHeader render prop, mapping slice state to the
+// public FileSystemHeaderState shape.
+function FileSystemCustomHeader({ renderHeader }: FileSystemCustomHeaderProps) {
+  const { currentFolderName, canGoBack, canGoForward } = useFileSystemNavigation();
+  const { view, sort } = useFileSystemEntries();
+  const { searchInput, isSearchExpanded } = useFileSystemSearch();
+  const { filters, fileTypeOptions } = useFileSystemFilters();
+  const { layout, isCompact } = useFileSystemLayout();
+  const { testID } = useFileSystemConsumer();
+  const { goBack, goForward } = useFileSystemNavigationActions();
+  const { setView, applySortKey } = useFileSystemEntriesActions();
+  const { setSearchInput, setIsSearchExpanded } = useFileSystemSearchActions();
+  const { clearFilters, toggleFileTypeFilterValue, openDateRangeRequest, setDatePresetFilter } = useFileSystemFilterActions();
+  return renderHeader({
+    canGoBack,
+    canGoForward,
+    clearFilters,
+    fileTypeOptions,
+    filters,
+    folderName: currentFolderName,
+    goBack,
+    goForward,
+    isCompact,
+    isSearchExpanded,
+    layout,
+    openCustomRange: openDateRangeRequest,
+    searchValue: searchInput,
+    selectDatePreset: setDatePresetFilter,
+    setSearchExpanded: setIsSearchExpanded,
+    setSearchValue: setSearchInput,
+    setSortKey: applySortKey,
+    setView,
+    sort,
+    toggleFileType: toggleFileTypeFilterValue,
+    view,
+    testID: testID ? `${testID}-header` : undefined,
   });
 }
 
-// Renders the consumer's renderFooter render prop from context.
-function FileSystemCustomFooter() {
-  const ctx = useFileSystemContext();
-  if (!ctx.renderFooter) return null;
-  const footerTestID = ctx.testID ? `${ctx.testID}-footer` : undefined;
-  return ctx.renderFooter({
-    count: ctx.entries.length,
-    isSearching: ctx.isSearching,
-    selectedName: ctx.selectedEntry?.name,
-    testID: footerTestID,
+type FileSystemCustomFooterProps = { renderFooter: NonNullable<FileSystemProps['renderFooter']> };
+
+// Renders the consumer's renderFooter render prop from slice state.
+function FileSystemCustomFooter({ renderFooter }: FileSystemCustomFooterProps) {
+  const { entries } = useFileSystemEntries();
+  const { isSearching } = useFileSystemSearch();
+  const { selectedEntry } = useFileSystemSelection();
+  const { testID } = useFileSystemConsumer();
+  return renderFooter({
+    count: entries.length,
+    isSearching,
+    selectedName: selectedEntry?.name,
+    testID: testID ? `${testID}-footer` : undefined,
   });
+}
+
+// Null-rendering component that subscribes to store path changes and triggers
+// ensureChildren — kept separate so FileSystem itself never re-renders on
+// navigation state changes.
+function FileSystemSideEffects() {
+  const store = useFileSystemStoreContext();
+  // biome-ignore lint/plugin: subscribing to store for path-driven lazy loading
+  useEffect(() => {
+    const {
+      navigation: { currentPath },
+      ensureChildren,
+    } = store.getState();
+    ensureChildren(currentPath);
+    return store.subscribe((s, prev) => {
+      if (s.navigation.currentPath !== prev.navigation.currentPath) store.getState().ensureChildren(s.navigation.currentPath);
+    });
+  }, [store]);
+  return null;
 }
 
 export function FileSystem({
@@ -110,82 +150,104 @@ export function FileSystem({
   view,
   testID,
 }: FileSystemProps) {
-  const state = useFileSystem({ defaultPath, defaultView, items, loadChildren, onSelectionChange, onViewChange, title, view });
-  const selectAndPrefetch = useSelectAndPrefetch(state);
+  // Create ONE store per mount; never recreate on re-render.
+  const storeRef = useRef<FileSystemStoreApi | null>(null);
+  if (storeRef.current === null)
+    storeRef.current = createFileSystemStore({
+      items,
+      title,
+      defaultPath,
+      defaultView,
+      draggable,
+      getBackgroundContextMenuActions,
+      getContextMenuActions,
+      getFileUrl,
+      loadChildren,
+      loadPreviewImageUrl,
+      onBackgroundContextMenuAction,
+      onContextMenuAction,
+      onFileOpen,
+      onMove,
+      onSelectionChange,
+      onViewChange,
+      renderEmptyState,
+      renderFilePreview,
+      renderFileViewer,
+      testID,
+    });
+  const store = storeRef.current;
 
-  const urlCache = state.resolvedUrlCache;
-  const { closeFile, openFile, opened } = useFileOpen({ getFileUrl, onFileOpen, renderFileViewer, urlCache });
+  // Sync items into the store when the prop changes.
+  // biome-ignore lint/plugin: syncing external items prop into Zustand store
+  useEffect(() => {
+    store.getState()._setItems(items);
+  }, [store, items]);
 
-  // The header adapts to the component's own width, not the window's, so it
-  // collapses inside a narrow container too. The window width is the first-paint
-  // guess until the root has been measured.
+  // Sync all consumer callbacks on every render — no deps array is intentional.
+  // _syncConsumer short-circuits with a shallow-equal check so it's idempotent.
+  // biome-ignore lint/plugin: intentional no-deps sync on every render
+  useEffect(() => {
+    store.getState()._syncConsumer({
+      title,
+      draggable,
+      getBackgroundContextMenuActions,
+      getContextMenuActions,
+      getFileUrl,
+      loadChildren,
+      loadPreviewImageUrl,
+      onBackgroundContextMenuAction,
+      onContextMenuAction,
+      onFileOpen,
+      onMove,
+      onSelectionChange,
+      onViewChange,
+      renderEmptyState,
+      renderFilePreview,
+      renderFileViewer,
+      testID,
+    });
+  });
+
+  // Layout: adapt the header to the component's own width, not the window's.
+  // The window width is the first-paint guess until the root has been measured.
   const { width: windowWidth } = useWindowDimensions();
   const [rootWidth, setRootWidth] = useState(0);
   const measuredWidth = rootWidth || windowWidth;
   const handleLayout = useCallback((event: LayoutChangeEvent) => setRootWidth(event.nativeEvent.layout.width), []);
-
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const searchInputRef = useRef<TextInput | null>(null);
-
-  const { navigateTo } = state;
-  const openEntry = useCallback(
-    (entry: FileSystemEntry) => {
-      if (entry.kind === 'folder') navigateTo(entry.path);
-      else openFile(entry);
-    },
-    [navigateTo, openFile],
-  );
-
   const tiers: ResolvedFileSystemBreakpoints = { ...defaultFileSystemBreakpoints, ...breakpoints };
   const layout = headerLayoutForWidth(measuredWidth, tiers);
   const isCompact = measuredWidth < tiers.tablet;
-  const isSearchRowVisible = layout !== 'full' && isSearchExpanded;
 
-  const ctxValue: FileSystemContextValue = {
-    ...state,
-    openEntry,
-    selectAndPrefetch,
-    layout,
-    isCompact,
-    isSearchExpanded,
-    setIsSearchExpanded,
-    searchInputRef,
-    closeFile,
-    opened,
-    draggable,
-    getBackgroundContextMenuActions,
-    getContextMenuActions,
-    getFileUrl,
-    loadPreviewImageUrl,
-    onBackgroundContextMenuAction,
-    onContextMenuAction,
-    onMove,
-    renderBody,
-    renderEmptyState,
-    renderFilePreview,
-    renderFileViewer,
-    renderHeader,
-    renderFooter,
-    headerClassName,
-    bodyClassName,
-    footerClassName,
-    testID,
-  };
+  // biome-ignore lint/plugin: syncing layout into store
+  useEffect(() => {
+    store.getState()._syncLayout({ layout, isCompact });
+  }, [store, layout, isCompact]);
+
+  // Sync the controlled `view` prop when provided.
+  // biome-ignore lint/plugin: syncing controlled view prop into store
+  useEffect(() => {
+    if (view !== undefined) store.getState().setView(view);
+  }, [store, view]);
 
   return (
-    <FileSystemContext.Provider value={ctxValue}>
+    <FileSystemStoreContext.Provider value={store}>
       <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
-        {renderHeader ? <FileSystemCustomHeader /> : <FileSystemHeader />}
-        {isSearchRowVisible ? <FileSystemCollapsedSearchRow /> : null}
+        {renderHeader ? <FileSystemCustomHeader renderHeader={renderHeader} /> : <FileSystemHeader className={headerClassName} />}
+        <FileSystemCollapsedSearchRow />
         <FileSystemFilterPills />
         <FileSystemContextMenuProvider wideBreakpoint={contextMenuWideBreakpoint}>
-          <FileSystemBody />
+          <FileSystemBody className={bodyClassName} renderBody={renderBody} />
         </FileSystemContextMenuProvider>
-        {renderFooter ? <FileSystemCustomFooter /> : <FileSystemStatusBar />}
+        {renderFooter ? (
+          <FileSystemCustomFooter renderFooter={renderFooter} />
+        ) : (
+          <FileSystemStatusBar className={footerClassName} />
+        )}
         <FileSystemDateRangeModal />
         <FileSystemViewerModal />
+        <FileSystemSideEffects />
       </View>
-    </FileSystemContext.Provider>
+    </FileSystemStoreContext.Provider>
   );
 }
 

@@ -657,7 +657,7 @@ async function openDatePanel(canvas: ReturnType<typeof within>, facet: string) {
 /**
  * A pill's value segment re-values the filter it stands for, rather than adding
  * another. Regression test: the pill's preset dropdown used to be handed the
- * *facet* where its mutator matches on the filter's `id`, so nothing matched and
+ *facet* where its mutator matches on the filter's `id`, so nothing matched and
  * picking a preset was a silent no-op.
  */
 export const FilterPillRevalue: Story = {

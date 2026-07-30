@@ -28,7 +28,7 @@ import {
   WEEKDAY_LABELS,
   wholeDayRange,
 } from './file-system-calendar';
-import { useFileSystemContext } from './file-system-context';
+import { useFileSystemFilterActions, useFileSystemFilters } from './file-system-context';
 import { FILTER_TYPE_LABELS } from './file-system-filter';
 
 /** Below this the calendar shows a single month. */
@@ -290,7 +290,8 @@ function DateRangeForm({ initialRange, onApply, onClose }: DateRangeFormProps) {
  * initialisers re-read the updated `initialRange` from the filter.
  */
 export function FileSystemDateRangeModal() {
-  const { applyCustomDateRange, closeDateRangeRequest, dateRangeRequest } = useFileSystemContext();
+  const { applyCustomDateRange, closeDateRangeRequest } = useFileSystemFilterActions();
+  const { dateRangeRequest } = useFileSystemFilters();
 
   const handleApply = useCallback(
     (from: Date, to: Date) => {

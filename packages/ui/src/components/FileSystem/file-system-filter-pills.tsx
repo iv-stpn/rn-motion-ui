@@ -21,7 +21,7 @@ import type {
   FileSystemFilterOperator,
   FileTypeFilterOption,
 } from './file-system.types';
-import { useFileSystemContext } from './file-system-context';
+import { useFileSystemFilterActions, useFileSystemFilters } from './file-system-context';
 import { FILTER_OPERATOR_LABELS, FILTER_TYPE_LABELS, filterOperatorChoices, isCustomDateRangeValue } from './file-system-filter';
 import { DatePresetPanel, FileTypeChecklist, MenuRow } from './file-system-menus';
 
@@ -189,14 +189,14 @@ function ValueSegment({ fileTypeOptions, filter, onOpenCustomRange, onSelectDate
  * re-operated or re-valued without going back through the filter menu.
  */
 export function FileSystemFilterPill({ filter }: FileSystemFilterPillProps) {
+  const { fileTypeOptions } = useFileSystemFilters();
   const {
-    fileTypeOptions,
     openDateRangeRequest: onOpenCustomRange,
     removeFilter: onRemove,
     setFilterDatePreset: onSelectDatePreset,
     setFilterOperator: onOperatorChange,
     toggleFileTypeFilterValue: onToggleFileType,
-  } = useFileSystemContext();
+  } = useFileSystemFilterActions();
   const isFileType = filter.type === 'fileType';
   const TypeIcon = isFileType ? FileIcon : Calendar;
   // "Custom range…" is keyed by facet — it replaces whichever filter holds that
@@ -248,7 +248,8 @@ export function FileSystemFilterPill({ filter }: FileSystemFilterPillProps) {
  * wrapping, so a long filter set never pushes the file area down.
  */
 export function FileSystemFilterPills() {
-  const { clearFilters, filters } = useFileSystemContext();
+  const { filters } = useFileSystemFilters();
+  const { clearFilters } = useFileSystemFilterActions();
   if (filters.length === 0) return null;
 
   return (

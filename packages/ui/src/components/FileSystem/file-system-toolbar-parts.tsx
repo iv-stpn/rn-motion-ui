@@ -11,7 +11,14 @@ import { useThemeColors } from '../../theme/use-theme-color';
 import { ThemedIcon } from '../Icon/themed-icon';
 import { Text } from '../Text/text';
 import type { FileSystemView } from './file-system.types';
-import { useFileSystemContext } from './file-system-context';
+import {
+  useFileSystemConsumer,
+  useFileSystemEntries,
+  useFileSystemLayout,
+  useFileSystemSearch,
+  useFileSystemSearchActions,
+  useFileSystemSelection,
+} from './file-system-context';
 
 /** Width band the header lays itself out for. */
 export type HeaderLayout = 'full' | 'compact' | 'minimal';
@@ -193,7 +200,10 @@ function SearchGlyph() {
  * instead of floating — Finder's own behaviour on a narrow window.
  */
 export function FileSystemCollapsedSearchRow() {
-  const { searchInputRef, setSearchInput, searchInput } = useFileSystemContext();
+  const { isSearchExpanded, searchInput, searchInputRef } = useFileSystemSearch();
+  const { layout } = useFileSystemLayout();
+  const { setSearchInput } = useFileSystemSearchActions();
+  if (layout === 'full' || !isSearchExpanded) return null;
   return (
     <View className="shrink-0 flex-row items-center border-border border-b bg-surface-2 px-2 py-1.5">
       <SearchInput
@@ -208,9 +218,14 @@ export function FileSystemCollapsedSearchRow() {
 
 const COUNT_NOUNS = { result: { one: 'result', other: 'results' }, row: { one: 'item', other: 'items' } };
 
+type FileSystemStatusBarProps = { className?: string };
+
 /** Status-bar text: item/result count plus the current selection. */
-export function FileSystemStatusBar() {
-  const { entries, footerClassName, isSearching, selectedEntry, testID } = useFileSystemContext();
+export function FileSystemStatusBar({ className }: FileSystemStatusBarProps) {
+  const { entries } = useFileSystemEntries();
+  const { isSearching } = useFileSystemSearch();
+  const { selectedEntry } = useFileSystemSelection();
+  const { testID } = useFileSystemConsumer();
   const count = entries.length;
   const selectedName = selectedEntry?.name;
   const footerTestID = testID ? `${testID}-footer` : undefined;
@@ -221,7 +236,7 @@ export function FileSystemStatusBar() {
       accessibilityLiveRegion="polite"
       className={cn(
         'h-7 shrink-0 flex-row items-center justify-center gap-1 border-border border-t bg-surface-2 px-3',
-        footerClassName,
+        className,
       )}
       testID={footerTestID}
     >

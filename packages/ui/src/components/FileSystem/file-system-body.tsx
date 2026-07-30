@@ -17,9 +17,19 @@
 import { type ComponentType, type ReactNode, useRef } from 'react';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import { cn } from '../../lib/cn';
-import type { FileSystemEmptyStateReason, FileSystemView } from './file-system.types';
+import type { FileSystemBodyState, FileSystemEmptyStateReason, FileSystemView } from './file-system.types';
 import { FileSystemColumnsView } from './file-system-columns-view';
-import { useFileSystemContext } from './file-system-context';
+import {
+  useFileSystemConsumer,
+  useFileSystemEntries,
+  useFileSystemEntriesActions,
+  useFileSystemFilters,
+  useFileSystemNavigation,
+  useFileSystemSearch,
+  useFileSystemSelection,
+  useFileSystemSelectionActions,
+  useFileSystemViewer,
+} from './file-system-context';
 import { useBackgroundContextMenu } from './file-system-context-menu';
 import { FileSystemGalleryView } from './file-system-gallery-view';
 import { FileSystemIconsView } from './file-system-icons-view';
@@ -80,7 +90,8 @@ type PlaceholderProps = { children: ReactNode };
 // gesture, not a control, and anything focusable a consumer renders inside it
 // stays reachable regardless.
 function FileSystemBodyPlaceholder({ children }: PlaceholderProps) {
-  const { currentFolderName, getBackgroundContextMenuActions, onBackgroundContextMenuAction } = useFileSystemContext();
+  const { currentFolderName } = useFileSystemNavigation();
+  const { getBackgroundContextMenuActions, onBackgroundContextMenuAction } = useFileSystemConsumer();
   const containerRef = useRef<View | null>(null);
   const backgroundMenu = useBackgroundContextMenu(
     containerRef,
@@ -113,39 +124,59 @@ function FileSystemBodyPlaceholder({ children }: PlaceholderProps) {
  * `onSortColumnClick` — so the views stay unaware of how the state is shaped.
  */
 function FileSystemBodyContent() {
-  const ctx = useFileSystemContext();
-  const { hasActiveFilters, isLoadingCurrentFolder, isSearching, renderEmptyState, searchInput, view } = ctx;
+  const { currentPath, currentFolderName, loadingFolders, isLoadingCurrentFolder } = useFileSystemNavigation();
+  const { entries, sortedIndex, sort, view } = useFileSystemEntries();
+  const { isSearching, searchInput, searchQuery } = useFileSystemSearch();
+  const { hasActiveFilters, fileFilter } = useFileSystemFilters();
+  const { selectedEntry, selectedPath } = useFileSystemSelection();
+  const { resolvedUrlCache, pageUrlCache } = useFileSystemViewer();
+  const {
+    draggable,
+    getBackgroundContextMenuActions,
+    getContextMenuActions,
+    getFileUrl,
+    loadPreviewImageUrl,
+    onBackgroundContextMenuAction,
+    onContextMenuAction,
+    onMove,
+    renderEmptyState,
+    renderFilePreview,
+    renderFileViewer,
+    testID,
+  } = useFileSystemConsumer();
+  const { openEntry, selectAndPrefetch } = useFileSystemSelectionActions();
+  const { toggleSortColumn } = useFileSystemEntriesActions();
 
   const viewProps: FileSystemViewProps = {
-    currentPath: ctx.currentPath,
-    draggable: ctx.draggable,
-    entries: ctx.entries,
-    fileFilter: ctx.fileFilter,
-    folderName: ctx.currentFolderName,
-    getBackgroundContextMenuActions: ctx.getBackgroundContextMenuActions,
-    getContextMenuActions: ctx.getContextMenuActions,
-    getFileUrl: ctx.getFileUrl,
-    index: ctx.sortedIndex,
-    loadingFolders: ctx.loadingFolders,
-    loadPreviewImageUrl: ctx.loadPreviewImageUrl,
-    onBackgroundContextMenuAction: ctx.onBackgroundContextMenuAction,
-    onContextMenuAction: ctx.onContextMenuAction,
-    onMove: ctx.onMove,
-    onOpen: ctx.openEntry,
-    onSelect: ctx.selectAndPrefetch,
-    onSortColumnClick: ctx.toggleSortColumn,
-    pageUrlCache: ctx.pageUrlCache,
-    renderFilePreview: ctx.renderFilePreview,
-    renderFileViewer: ctx.renderFileViewer,
-    searchQuery: ctx.searchQuery,
-    selectedEntry: ctx.selectedEntry,
-    selectedPath: ctx.selectedPath,
-    sort: ctx.sort,
-    testID: ctx.testID,
-    urlCache: ctx.resolvedUrlCache,
+    currentPath,
+    draggable,
+    entries,
+    fileFilter,
+    folderName: currentFolderName,
+    getBackgroundContextMenuActions,
+    getContextMenuActions,
+    getFileUrl,
+    index: sortedIndex,
+    loadingFolders,
+    loadPreviewImageUrl,
+    onBackgroundContextMenuAction,
+    onContextMenuAction,
+    onMove,
+    onOpen: openEntry,
+    onSelect: selectAndPrefetch,
+    onSortColumnClick: toggleSortColumn,
+    pageUrlCache,
+    renderFilePreview,
+    renderFileViewer,
+    searchQuery,
+    selectedEntry,
+    selectedPath,
+    sort,
+    testID,
+    urlCache: resolvedUrlCache,
   };
 
-  const isEmpty = ctx.entries.length === 0;
+  const isEmpty = entries.length === 0;
 
   // The columns view keeps its panes over an empty folder so the trail stays
   // walkable, and only yields to the placeholder when a query or a filter is what
@@ -157,8 +188,8 @@ function FileSystemBodyContent() {
     // slot can take over the empty folder and leave the spinner alone. `null` is
     // a decision, and draws nothing.
     const custom = renderEmptyState?.({
-      currentPath: ctx.currentPath,
-      folderName: ctx.currentFolderName,
+      currentPath,
+      folderName: currentFolderName,
       hasActiveFilters,
       isSearching,
       label,
@@ -189,20 +220,18 @@ const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect
 //
 // The wrapper goes inside that node rather than around it, so the file area
 // keeps its flex sizing and web selection guard however the consumer nests it.
-export function FileSystemBody() {
-  const {
-    bodyClassName,
-    currentPath,
-    entries,
-    hasActiveFilters,
-    isLoadingCurrentFolder,
-    isSearching,
-    renderBody,
-    searchInput,
-    selectedEntry,
-    testID,
-    view,
-  } = useFileSystemContext();
+type FileSystemBodyProps = {
+  className?: string;
+  renderBody?: (state: FileSystemBodyState & { testID?: string }) => ReactNode;
+};
+
+export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
+  const { currentPath, isLoadingCurrentFolder } = useFileSystemNavigation();
+  const { entries, view } = useFileSystemEntries();
+  const { hasActiveFilters } = useFileSystemFilters();
+  const { isSearching, searchInput } = useFileSystemSearch();
+  const { selectedEntry } = useFileSystemSelection();
+  const { testID } = useFileSystemConsumer();
 
   const bodyTestID = testID ? `${testID}-body` : undefined;
   const content = <FileSystemBodyContent />;
@@ -231,7 +260,7 @@ export function FileSystemBody() {
     : content;
 
   return (
-    <View className={cn('min-h-0 flex-1', bodyClassName)} style={WEB_BODY_STYLE} testID={bodyTestID}>
+    <View className={cn('min-h-0 flex-1', className)} style={WEB_BODY_STYLE} testID={bodyTestID}>
       {body}
     </View>
   );

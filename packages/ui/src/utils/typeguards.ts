@@ -11,3 +11,9 @@ export function hasKey<K extends PropertyKey>(key: K, obj: unknown): obj is Reco
   'worklet';
   return obj !== null && typeof obj === 'object' && Object.hasOwn(obj, key);
 }
+
+export function objectKeys<T extends object>(obj: T): Array<keyof T> {
+  'worklet';
+  // biome-ignore lint/plugin: the type system guarantees this is safe
+  return Object.keys(obj) as Array<keyof T>;
+}

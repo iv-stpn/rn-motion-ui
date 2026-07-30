@@ -9,6 +9,7 @@ import { createContext, type RefObject, useContext } from 'react';
 import type { TextInput } from 'react-native';
 import { createStore, useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
+import { objectKeys } from '../../utils/typeguards';
 import type {
   FileEntry,
   FileSystemContextMenuAction,
@@ -73,10 +74,7 @@ type EntriesSlice = {
   sort: FileSystemSortState;
 };
 
-type SelectionSlice = {
-  selectedPath: string | null;
-  selectedEntry: FileSystemEntry | null;
-};
+type SelectionSlice = { selectedPath: string | null; selectedEntry: FileSystemEntry | null };
 
 type SearchSlice = {
   searchInput: string;
@@ -100,10 +98,7 @@ type ViewerSlice = {
   pageUrlCache: Map<string, string>;
 };
 
-type LayoutSlice = {
-  layout: HeaderLayout;
-  isCompact: boolean;
-};
+type LayoutSlice = { layout: HeaderLayout; isCompact: boolean };
 
 type ConsumerSlice = {
   title: string;
@@ -217,11 +212,8 @@ function computeFileTypeOptions(index: FileSystemIndex): FileTypeFilterOption[] 
  * `searchQuery`, `sort`, or `currentPath`. Called from any mutating action.
  * Also auto-deselects when the selected path falls outside the visible set.
  */
-function _recomputeEntries(s: FileSystemStore): {
-  entries: EntriesSlice;
-  filters: FiltersSlice;
-  selection: SelectionSlice;
-} {
+type RecomputedEntries = { entries: EntriesSlice; filters: FiltersSlice; selection: SelectionSlice };
+function _recomputeEntries(s: FileSystemStore): RecomputedEntries {
   const { currentPath } = s.navigation;
   const { index, sort } = s.entries;
   const { filters } = s.filters;
@@ -680,15 +672,13 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
     // ── Sync actions (called from file-system.tsx, never by internal components)
     _syncConsumer: (patch) => {
       const s = get();
-      const changed = (Object.keys(patch) as Array<keyof ConsumerSlice>).some((k) => s.consumer[k] !== patch[k]);
+      const changed = objectKeys(patch).some((k) => s.consumer[k] !== patch[k]);
       if (changed) set({ consumer: { ...s.consumer, ...patch } });
     },
 
     _syncLayout: (patch) => {
       const s = get();
-      if (s.layout.layout !== patch.layout || s.layout.isCompact !== patch.isCompact) {
-        set({ layout: patch });
-      }
+      if (s.layout.layout !== patch.layout || s.layout.isCompact !== patch.isCompact) set({ layout: patch });
     },
   }));
 }

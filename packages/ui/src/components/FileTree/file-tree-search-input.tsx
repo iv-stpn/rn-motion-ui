@@ -22,7 +22,7 @@ function FileTreeSearchInputImpl({ query, onChangeQuery, placeholder = 'Search f
   const clear = useCallback(() => onChangeQuery(''), [onChangeQuery]);
 
   return (
-    <View className="flex-row items-center gap-2 border-border border-b px-3" style={{ height: 40 }}>
+    <View className="h-10 flex-row items-center gap-2 border-border border-b px-3">
       <ThemedIcon icon={Search} variant="ghost" size={16} />
       <TextInput
         value={query}

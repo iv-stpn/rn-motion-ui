@@ -113,14 +113,14 @@ function DockPlayground() {
 
       {/* The highlight is a single pill that measures each item's box and glides
           between them, so a size change moves both the pill and its travel. */}
-      <View style={{ alignItems: 'center', gap: 8 }}>
+      <View className="items-center gap-2">
         <DockDemo onSelect={setSelected} separator={separator} size={Number(sizeKey)} />
         <Note testID="story-selected">{selected}</Note>
       </View>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Item sizes">
-        <View style={{ gap: 16, alignItems: 'center' }}>
+        <View className="items-center gap-4">
           {SIZES.map((option) => (
             <DockDemo key={option.value} size={Number(option.value)} />
           ))}

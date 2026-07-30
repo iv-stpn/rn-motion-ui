@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { usePageVisible } from '../../hooks/use-page-visible';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { EASE_IN_OUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -84,7 +85,7 @@ export function TextRolling({ text, direction = 'forward', className, style, acc
     >
       {/* Hidden sizer keeps the slot at the correct line height. Always renders
           the current text so the clip region tracks text size changes. */}
-      <Text className={className} onLayout={onLayout} style={{ opacity: 0 }} importantForAccessibility="no">
+      <Text className={cn(className, 'opacity-0')} onLayout={onLayout} importantForAccessibility="no">
         {text}
       </Text>
       {/* initial={false}: skip enter animation on first mount — text appears
@@ -97,7 +98,7 @@ export function TextRolling({ text, direction = 'forward', className, style, acc
           exit={{ opacity: 0, translateY: exitY }}
           transition={ENTER_TRANSITION}
           exitTransition={EXIT_TRANSITION}
-          style={{ position: 'absolute', left: 0, top: 0, right: 0 }}
+          className="absolute top-0 right-0 left-0"
         >
           <Text numberOfLines={1} className={className}>
             {text}

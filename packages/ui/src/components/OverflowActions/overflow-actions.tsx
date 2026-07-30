@@ -149,14 +149,13 @@ export function OverflowActions({
           <View
             aria-hidden={true}
             onLayout={handleOverflowLayout}
-            className={group({ size })}
-            style={{ pointerEvents: 'none', position: 'absolute', left: 0, top: 0, opacity: 0 }}
+            className={cn('pointer-events-none absolute top-0 left-0 opacity-0', group({ size }))}
           >
             {overflowActions.map((item) => (
               <ActionButton key={item.id} item={item} size={size} reduce={reduce} onAction={handleAction} />
             ))}
           </View>
-          <View className={group({ size })} style={{ alignSelf: 'flex-start' }}>
+          <View className={cn(group({ size }), 'self-start')}>
             {overflowActions.map((item) => (
               <ActionButton key={item.id} item={item} size={size} reduce={reduce} onAction={handleAction} />
             ))}

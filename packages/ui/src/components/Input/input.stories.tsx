@@ -83,9 +83,9 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
         value={email}
       />
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="States">
-        <Variants direction="column" gap={20}>
+        <Variants direction="column">
           <Sample label="error">
             <Input {...args} error={EMAIL_ERROR} label="Email" style={{ width: FIELD_WIDTH }} value="not-an-email" />
           </Sample>
@@ -129,7 +129,7 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
       </Section>
 
       <Section title="Sizes">
-        <View style={{ gap: 16 }}>
+        <View className="gap-4">
           {SIZES.map((name) => (
             <Input {...args} key={name} label={name} size={name} style={{ width: FIELD_WIDTH }} />
           ))}

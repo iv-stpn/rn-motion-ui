@@ -100,8 +100,7 @@ function renderRightElement({ success, rightSlot, reduce, successIcon }: RightEl
   if (success)
     return (
       <MotiView
-        style={{ pointerEvents: 'none' }}
-        className="absolute top-0 right-3.5 bottom-0 items-center justify-center"
+        className="pointer-events-none absolute top-0 right-3.5 bottom-0 items-center justify-center"
         from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 250 }}
@@ -283,9 +282,7 @@ export function Input({
         style={{ opacity: disabled ? 0.6 : 1, transform: [{ translateX: shakeX }] }}
       >
         {leftIcon ? (
-          <View style={{ pointerEvents: 'none' }} className="absolute top-0 bottom-0 left-3 z-10 items-center justify-center">
-            {leftIcon}
-          </View>
+          <View className="pointer-events-none absolute top-0 bottom-0 left-3 z-10 items-center justify-center">{leftIcon}</View>
         ) : null}
 
         <TextInput

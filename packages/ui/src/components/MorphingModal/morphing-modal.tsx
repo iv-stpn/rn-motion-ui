@@ -103,19 +103,18 @@ export function MorphingModal({
   const renderPanel = ({ open: isAnimOpen, onExitComplete }: OverlayShellContext) => (
     <AnimatePresence onExitComplete={onExitComplete}>
       {isAnimOpen ? (
-        <View key="morphing-modal" style={{ flex: 1 }} testID={testID}>
+        <View key="morphing-modal" className="flex-1" testID={testID}>
           <MotiView
             from={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ type: 'timing', duration: 200, easing: EASE_OUT }}
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            className="absolute top-0 right-0 bottom-0 left-0"
           >
             <Pressable
               accessibilityLabel="Close"
               onPress={handleClose}
-              className="bg-foreground/20"
-              style={{ flex: 1 }}
+              className="flex-1 bg-foreground/20"
               testID={testID ? `${testID}-backdrop` : undefined}
             />
           </MotiView>
@@ -142,7 +141,7 @@ export function MorphingModal({
               <MotiView
                 animate={contentHeight === null ? {} : { height: contentHeight }}
                 transition={reduce || !morphing ? INSTANT : SPRING_PANEL}
-                style={{ overflow: 'hidden' }}
+                className="overflow-hidden"
               >
                 {/*
                  * presenceAffectsLayout={false}: the exiting view is absolutely
@@ -158,7 +157,7 @@ export function MorphingModal({
                     transition={{ type: 'timing', duration: reduce ? 160 : 240, easing: EASE_OUT }}
                     exitTransition={{ type: 'timing', duration: reduce ? 140 : 160, easing: EASE_OUT }}
                     onLayout={onContentLayout(viewId ?? '')}
-                    style={{ position: 'absolute', top: 0, left: 0, right: 0 }}
+                    className="absolute top-0 right-0 left-0"
                   >
                     <View className="p-5">
                       {typeof children === 'string' || typeof children === 'number' ? (

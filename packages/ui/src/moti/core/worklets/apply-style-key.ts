@@ -1,6 +1,6 @@
 import type { TransformsStyle } from 'react-native';
 import { withRepeat, withSequence, type withTiming } from 'react-native-reanimated';
-import { hasKey } from '../../../utils/typeguards';
+import { hasKey } from '../../../lib/typeguards';
 import type { MotiTransition } from '../types';
 import { animationConfig } from './animation-config';
 import { animationDelay } from './animation-delay';

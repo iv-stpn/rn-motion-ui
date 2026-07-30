@@ -256,7 +256,7 @@ function IconSlot({ keyId, children, reduce, slotWidth = ICON_SLOT_WIDTH }: Icon
       animate={reduce ? { opacity: 1 } : { opacity: 1, width: slotWidth, scale: 1 }}
       exit={reduce ? { opacity: 0 } : { opacity: 0, width: 0, scale: 0.7 }}
       transition={reduce ? { type: 'timing', duration: 150 } : { ...SPRING_SWAP }}
-      style={{ overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
+      className="items-center justify-center overflow-hidden"
     >
       {children}
     </MotiView>
@@ -311,7 +311,7 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, t
           and the button's overflow:hidden shaves the trailing glyph of the visible
           (plain-Text) label. Keep them structurally identical so they can't diverge.
           The trailing padding keeps the last glyph's ink clear of the clip edge. */}
-      <View onLayout={onSizerLayout} style={{ opacity: 0, paddingRight: TEXT_BUFFER }}>
+      <View onLayout={onSizerLayout} className="opacity-0" style={{ paddingRight: TEXT_BUFFER }}>
         {textLabel === null ? (
           children
         ) : (
@@ -326,17 +326,7 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, t
           (right: -CLIP_SLACK) so the trailing glyph is never shaved horizontally
           (transformed text boxes round outward and can sum wider than the flat
           sizer). pointerEvents:'none' lets taps fall through to the button. */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          right: -CLIP_SLACK,
-          overflow: 'hidden',
-          pointerEvents: 'none',
-        }}
-      >
+      <View className="pointer-events-none absolute inset-y-0 left-0 overflow-hidden" style={{ right: -CLIP_SLACK }}>
         <AnimatePresence initial={false}>
           <MotiView
             key={`text-${value}`}
@@ -344,7 +334,7 @@ function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, t
             animate={{ opacity: 1, translateY: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -roll }}
             transition={reduce ? { type: 'timing', duration: 150 } : { ...SPRING_SWAP }}
-            style={{ position: 'absolute', left: 0, top: 0 }}
+            className="absolute top-0 left-0"
             importantForAccessibility="no-hide-descendants"
           >
             {typeof children === 'string' ? (
@@ -372,7 +362,7 @@ type DotsLoaderProps = { color: string; reduce: boolean };
 
 function DotsLoader({ color, reduce }: DotsLoaderProps) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: DOT_GAP }}>
+    <View className="flex-row items-center" style={{ gap: DOT_GAP }}>
       {([0, 1, 2] as const).map((i) => (
         <MotiView
           key={i}
@@ -631,7 +621,7 @@ export function StatefulButton({
 
   const content = (
     // accessibilityLiveRegion mirrors the web's aria-live="polite"
-    <View accessible={false} accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <View accessible={false} accessibilityLiveRegion="polite" className="flex-row items-center">
       <AnimatePresence>
         {state === 'success' ? (
           <IconSlot keyId="success-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
@@ -649,7 +639,7 @@ export function StatefulButton({
       {/* Wrapper holds the text sizer open (preserving button width) and
             hosts the absolutely-centred dot overlay in loading state.
             No overflow:hidden here — dots bounce freely above the baseline. */}
-      <View style={{ position: 'relative' }}>
+      <View className="relative">
         <MotiView animate={{ opacity: state === 'loading' ? 0 : 1 }} transition={{ type: 'timing', duration: 150 }}>
           <TextSlot value={textKey} variant={v} size={size} reduce={reduce} textColor={resolvedTextColor}>
             {stateText}
@@ -664,16 +654,7 @@ export function StatefulButton({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ type: 'timing', duration: 150 }}
-              style={{
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0,
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-              }}
+              className="pointer-events-none absolute inset-0 items-center justify-center"
             >
               <DotsLoader color={iconColor} reduce={reduce} />
             </MotiView>

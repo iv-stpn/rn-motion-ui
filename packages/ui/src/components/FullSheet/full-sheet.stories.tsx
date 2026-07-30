@@ -45,7 +45,7 @@ type SheetBodyProps = { long?: boolean; padded?: boolean; centered?: boolean; on
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetBody({ long = false, padded = false, centered = false, onClose }: SheetBodyProps) {
   return (
-    <View style={{ flex: 1, gap: 12, alignItems: centered ? 'center' : 'stretch', padding: padded ? 24 : 0 }}>
+    <View className="flex-1 gap-3" style={{ alignItems: centered ? 'center' : 'stretch', padding: padded ? 24 : 0 }}>
       {centered ? (
         <Text size="2xl" weight="bold">
           {CUSTOM_LAYOUT_TITLE}
@@ -88,7 +88,7 @@ function SheetPlayground() {
   const openNote = open ? `Open — ${mode}` : CLOSED_NOTE;
 
   return (
-    <Playground style={{ minWidth: 340 }}>
+    <Playground className="min-w-[340px]">
       <Controls>
         <Choice label="Mode" onChange={setMode} options={MODES} value={mode} />
         <Toggle label="Subtitle" onChange={setWithSubtitle} value={withSubtitle} />

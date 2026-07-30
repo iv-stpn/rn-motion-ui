@@ -31,7 +31,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <View style={{ width: 360 }}>
+      <View className="w-[360px]">
         <Story />
       </View>
     ),
@@ -91,9 +91,9 @@ function MarqueePlayground(args: ComponentProps<typeof Marquee>) {
         {chips()}
       </Marquee>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Horizontal">
-        <Variants direction="column" gap={16}>
+        <Variants direction="column">
           <Sample label="left">
             <Marquee {...args} direction="left" gap={gap} speed={speed}>
               {chips()}
@@ -108,7 +108,7 @@ function MarqueePlayground(args: ComponentProps<typeof Marquee>) {
       </Section>
 
       <Section title="Vertical">
-        <Variants gap={20}>
+        <Variants>
           <Sample label="up">
             <Marquee {...args} direction="up" gap={gap} speed={speed} style={{ height: VERTICAL_HEIGHT }}>
               {chips()}
@@ -167,7 +167,7 @@ export const Horizontal: Story = {
 export const RightToLeft: Story = {
   name: 'Demo: Mirrors travel in RTL',
   render: (args) => (
-    <View style={{ gap: 16 }}>
+    <View className="gap-4">
       <DirectionProvider value="ltr">
         <View style={LTR_STYLE}>
           <Marquee {...args} direction="start" testID="marquee-ltr">

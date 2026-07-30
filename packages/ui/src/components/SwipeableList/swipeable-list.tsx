@@ -4,6 +4,7 @@ import { cva } from 'class-variance-authority';
 import { cloneElement, isValidElement, type ReactElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
 
@@ -158,9 +159,10 @@ function SwipeActionButton({ action, actionWidth, side, onAction }: SwipeActionB
       aria-disabled={Boolean(action.disabled)}
       disabled={action.disabled}
       onPress={handlePress}
-      style={{ width: actionWidth, alignItems: 'center', justifyContent: 'center', height: '100%' }}
+      className="h-full items-center justify-center"
+      style={{ width: actionWidth }}
     >
-      <View className={BADGE_BACKGROUND({ tone })} style={{ width: 36, height: 36 }}>
+      <View className={cn(BADGE_BACKGROUND({ tone }), 'h-9 w-[36px]')}>
         {isValidElement(action.icon)
           ? // Override the icon's colour with the tone-matched, theme-reactive
             // value so neutral/primary invert correctly in dark mode. Callers may
@@ -171,7 +173,7 @@ function SwipeActionButton({ action, actionWidth, side, onAction }: SwipeActionB
           : (action.icon ?? null)}
         {/* sr-only equivalent: label is set on the Pressable above */}
       </View>
-      <Text className="sr-only" style={{ position: 'absolute', opacity: 0 }} accessibilityElementsHidden={true}>
+      <Text className="sr-only absolute opacity-0" accessibilityElementsHidden={true}>
         {action.label}
       </Text>
     </Pressable>
@@ -445,25 +447,21 @@ function SwipeableListRow({
   }, [translateX]);
 
   const defaultContent = (
-    <View className="flex-row items-center" style={{ gap: 12 }}>
-      {item.leading ? <View style={{ flexShrink: 0 }}>{item.leading}</View> : null}
-      <View className="flex-1" style={{ minWidth: 0 }}>
+    <View className="flex-row items-center gap-3">
+      {item.leading ? <View className="shrink-0">{item.leading}</View> : null}
+      <View className="min-w-0 flex-1">
         {item.title ? (
           <Text className="font-medium text-foreground text-sm" numberOfLines={1}>
             {item.title}
           </Text>
         ) : null}
         {item.description ? (
-          <Text className="text-muted-foreground text-xs" style={{ marginTop: 2 }} numberOfLines={1}>
+          <Text className="mt-0.5 text-muted-foreground text-xs" numberOfLines={1}>
             {item.description}
           </Text>
         ) : null}
       </View>
-      {item.meta ? (
-        <Text className="font-medium text-muted-foreground text-xs" style={{ flexShrink: 0 }}>
-          {item.meta}
-        </Text>
-      ) : null}
+      {item.meta ? <Text className="shrink-0 font-medium text-muted-foreground text-xs">{item.meta}</Text> : null}
     </View>
   );
 
@@ -485,13 +483,13 @@ function SwipeableListRow({
         accessibilityElementsHidden={openSideRef.current === null}
       >
         {/* Left actions */}
-        <View className="flex-row overflow-hidden rounded-l-2xl" style={{ height: '100%' }}>
+        <View className="h-full flex-row overflow-hidden rounded-l-2xl">
           {leftActions.map((action) => (
             <SwipeActionButton key={action.id} action={action} actionWidth={actionWidth} side="left" onAction={handleAction} />
           ))}
         </View>
         {/* Right actions */}
-        <View className="ml-auto flex-row overflow-hidden rounded-r-2xl" style={{ height: '100%' }}>
+        <View className="ml-auto h-full flex-row overflow-hidden rounded-r-2xl">
           {rightActions.map((action) => (
             <SwipeActionButton key={action.id} action={action} actionWidth={actionWidth} side="right" onAction={handleAction} />
           ))}

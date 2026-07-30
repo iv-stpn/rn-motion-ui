@@ -58,14 +58,12 @@ function Demo({ once, y, amount }: DemoProps) {
 
   return (
     <View
-      className="overflow-hidden rounded-2xl border border-border"
-      style={{ width: 360, height: VIEWPORT }}
+      className="w-[360px] overflow-hidden rounded-2xl border border-border"
+      style={{ height: VIEWPORT }}
       testID="scroll-reveal-demo"
     >
       <ScrollView contentContainerStyle={{ padding: 24, gap: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <Text className="text-muted-foreground" style={{ textAlign: 'center', fontSize: 14 }}>
-          {SCROLL_HINT}
-        </Text>
+        <Text className="text-center text-[14px] text-muted-foreground">{SCROLL_HINT}</Text>
         {CARDS.map((label) => (
           <ScrollReveal
             amount={amount}
@@ -77,13 +75,11 @@ function Demo({ once, y, amount }: DemoProps) {
             y={y}
           >
             <View className="rounded-xl border border-border bg-surface-3 px-4 py-12">
-              <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '500' }}>{label}</Text>
+              <Text className="text-center font-medium text-[16px]">{label}</Text>
             </View>
           </ScrollReveal>
         ))}
-        <Text className="text-muted-foreground" style={{ textAlign: 'center', fontSize: 14 }}>
-          {END_HINT}
-        </Text>
+        <Text className="text-center text-[14px] text-muted-foreground">{END_HINT}</Text>
       </ScrollView>
     </View>
   );

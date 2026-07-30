@@ -1,4 +1,4 @@
-import { hasKey } from '../../../utils/typeguards';
+import { hasKey } from '../../../lib/typeguards';
 import type { MotiTransition } from '../types';
 
 type ResolveTransitionParams<Animate> = {

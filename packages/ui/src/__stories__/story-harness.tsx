@@ -19,19 +19,34 @@
  */
 
 import { type ReactNode, useCallback } from 'react';
-import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { type FlexAlignType, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { Text } from '../components/Text/text';
-import { useThemeColors } from '../theme/use-theme-color';
+import { cn } from '../lib/cn';
+import { SURFACE_CLASSNAME } from '../lib/elevated';
 
-type PlaygroundProps = { children: ReactNode; style?: StyleProp<ViewStyle> };
+const alignClassname: Record<FlexAlignType, string> = {
+  'flex-start': 'items-start',
+  center: 'items-center',
+  'flex-end': 'items-end',
+  stretch: 'items-stretch',
+  baseline: 'items-baseline',
+};
+
+type PlaygroundProps = { children: ReactNode; className?: string; style?: StyleProp<ViewStyle> };
 type ControlsProps = { children: ReactNode };
 type ToggleProps = { label: string; value: boolean; onChange: (next: boolean) => void };
 type ActionProps = { label: string; onPress: () => void };
 type ChoiceOption<T extends string> = { value: T; label: string };
 type ChipProps<T extends string> = { option: ChoiceOption<T>; selected: boolean; testID: string; onSelect: (next: T) => void };
 type SectionProps = { title?: string; children: ReactNode };
-type VariantsProps = { children: ReactNode; direction?: 'row' | 'column'; gap?: number; align?: ViewStyle['alignItems'] };
-type SampleProps = { label?: string; children: ReactNode; align?: ViewStyle['alignItems']; style?: StyleProp<ViewStyle> };
+type VariantsProps = { children: ReactNode; direction?: 'row' | 'column'; align?: ViewStyle['alignItems'] };
+type SampleProps = {
+  label?: string;
+  children: ReactNode;
+  className?: string;
+  align?: ViewStyle['alignItems'];
+  style?: StyleProp<ViewStyle>;
+};
 type NoteProps = { children: ReactNode; testID?: string };
 
 type ChoiceProps<T extends string> = {
@@ -51,7 +66,6 @@ const slug = (value: string) =>
 
 // Its own component so `onPress` can be a stable per-chip callback.
 function ChoiceChip<T extends string>({ option, selected, testID, onSelect }: ChipProps<T>) {
-  const colors = useThemeColors();
   const handlePress = useCallback(() => onSelect(option.value), [onSelect, option.value]);
   return (
     <Pressable
@@ -59,10 +73,10 @@ function ChoiceChip<T extends string>({ option, selected, testID, onSelect }: Ch
       accessibilityRole="button"
       aria-pressed={selected}
       onPress={handlePress}
-      style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: selected ? colors.primary : 'transparent' }}
+      className={cn('px-2.5 py-[5px]', selected ? 'bg-primary' : 'bg-transparent')}
       testID={testID}
     >
-      <Text size="sm" style={{ color: selected ? colors['primary-foreground'] : colors['muted-foreground'] }}>
+      <Text size="sm" className={cn('text-sm', selected ? 'text-primary-foreground' : 'text-muted-foreground')}>
         {option.label}
       </Text>
     </Pressable>
@@ -70,26 +84,19 @@ function ChoiceChip<T extends string>({ option, selected, testID, onSelect }: Ch
 }
 
 /** Vertical frame for a playground story: controls, then sample rows. */
-export function Playground({ children, style }: PlaygroundProps) {
-  return <View style={[{ gap: 20, minWidth: 280 }, style]}>{children}</View>;
+export function Playground({ children, className, style }: PlaygroundProps) {
+  return (
+    <View className={cn('min-w-[280px] gap-5', className)} style={style}>
+      {children}
+    </View>
+  );
 }
 
 /** Bordered card holding the live controls at the top of a playground. */
 export function Controls({ children }: ControlsProps) {
-  const colors = useThemeColors();
   return (
     <View
-      style={{
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        gap: 16,
-        padding: 12,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors['surface-2'],
-      }}
+      className={cn('flex flex-row flex-wrap items-center gap-4 rounded-xl p-3', SURFACE_CLASSNAME[2])}
       testID="story-controls"
     >
       {children}
@@ -99,7 +106,6 @@ export function Controls({ children }: ControlsProps) {
 
 /** Boolean control — a compact switch that never answers `role="switch"`. */
 export function Toggle({ label, value, onChange }: ToggleProps) {
-  const colors = useThemeColors();
   const handlePress = useCallback(() => onChange(!value), [onChange, value]);
   return (
     <Pressable
@@ -107,28 +113,11 @@ export function Toggle({ label, value, onChange }: ToggleProps) {
       accessibilityRole="button"
       aria-pressed={value}
       onPress={handlePress}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+      className="flex-row items-center gap-2"
       testID={`story-toggle-${slug(label)}`}
     >
-      <View
-        style={{
-          width: 34,
-          height: 20,
-          borderRadius: 10,
-          padding: 2,
-          justifyContent: 'center',
-          backgroundColor: value ? colors.primary : colors['muted-foreground'],
-        }}
-      >
-        <View
-          style={{
-            width: 16,
-            height: 16,
-            borderRadius: 8,
-            backgroundColor: colors['surface-3'],
-            transform: [{ translateX: value ? 14 : 0 }],
-          }}
-        />
+      <View className={cn('h-5 w-[34px] justify-center rounded-[10px] p-0.5', value ? 'bg-primary' : 'bg-muted-foreground')}>
+        <View className={cn('size-4 rounded-lg', SURFACE_CLASSNAME[3], value ? 'translate-x-[14px]' : 'translate-x-0')} />
       </View>
       <Text className="text-foreground" size="sm">
         {label}
@@ -139,20 +128,12 @@ export function Toggle({ label, value, onChange }: ToggleProps) {
 
 /** One-shot control — replay an animation, reset a counter, fire a callback. */
 export function Action({ label, onPress }: ActionProps) {
-  const colors = useThemeColors();
   return (
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
       onPress={onPress}
-      style={{
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors['surface-4'],
-      }}
+      className={cn('rounded-[10px] px-3 py-1.5', SURFACE_CLASSNAME[4])}
       testID={`story-action-${slug(label)}`}
     >
       <Text className="text-foreground" size="sm" weight="medium">
@@ -164,28 +145,17 @@ export function Action({ label, onPress }: ActionProps) {
 
 /** Enum control — a segmented row of chips, one selected at a time. */
 export function Choice<T extends string>({ label, value, options, onChange }: ChoiceProps<T>) {
-  const colors = useThemeColors();
   const items: ChoiceOption<T>[] = options.map((option) =>
     typeof option === 'string' ? { value: option, label: option } : option,
   );
   return (
-    <View style={{ gap: 6 }}>
+    <View className="items-start gap-1.5">
       {label ? (
         <Text className="text-muted-foreground" size="xs" weight="medium">
           {label}
         </Text>
       ) : null}
-      <View
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          borderRadius: 10,
-          borderWidth: 1,
-          borderColor: colors.border,
-          backgroundColor: colors['surface-3'],
-          overflow: 'hidden',
-        }}
-      >
+      <View className={cn('flex-row flex-wrap overflow-hidden rounded-[10px]', SURFACE_CLASSNAME[3])}>
         {items.map((item) => (
           <ChoiceChip
             key={item.value}
@@ -203,7 +173,7 @@ export function Choice<T extends string>({ label, value, options, onChange }: Ch
 /** Titled block grouping related samples under the controls. */
 export function Section({ title, children }: SectionProps) {
   return (
-    <View style={{ gap: 10 }}>
+    <View className="gap-2.5">
       {title ? (
         <Text className="text-muted-foreground" size="xs" weight="semibold">
           {title}
@@ -215,18 +185,18 @@ export function Section({ title, children }: SectionProps) {
 }
 
 /** Row (default) or column of samples, wrapping when it runs out of width. */
-export function Variants({ children, direction = 'row', gap = 12, align = 'flex-start' }: VariantsProps) {
+export function Variants({ children, direction = 'row', align = 'flex-start' }: VariantsProps) {
   return (
-    <View style={{ flexDirection: direction, flexWrap: direction === 'row' ? 'wrap' : 'nowrap', gap, alignItems: align }}>
+    <View className={cn(direction === 'row' ? 'flex-row flex-wrap' : 'flex-col', alignClassname[align], 'gap-3')}>
       {children}
     </View>
   );
 }
 
 /** One specimen with a caption underneath. */
-export function Sample({ label, children, align = 'flex-start', style }: SampleProps) {
+export function Sample({ label, children, className, align = 'flex-start', style }: SampleProps) {
   return (
-    <View style={[{ gap: 6, alignItems: align }, style]}>
+    <View className={cn('gap-1.5', className)} style={[{ alignItems: align }, style]}>
       {children}
       {label ? (
         <Text className="text-muted-foreground" size="xs">

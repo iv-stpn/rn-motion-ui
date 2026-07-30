@@ -28,10 +28,10 @@ function DrawerDemo({ side }: DrawerDemoProps) {
   const [open, setOpen] = useState(false);
   const openDrawer = useCallback(() => setOpen(true), []);
   return (
-    <View style={{ gap: 12 }}>
+    <View className="gap-3">
       <Button onPress={openDrawer}>{OPEN_LABEL}</Button>
       <Drawer open={open} onOpenChange={setOpen} side={side} accessibilityLabel="Demo drawer">
-        <View style={{ gap: 8, padding: 24 }}>
+        <View className="gap-2 p-6">
           <Text className="font-semibold text-foreground text-sm">{DRAWER_TITLE}</Text>
           <Text className="text-muted-foreground text-sm">{`Slides in from the ${side}. Tap outside to close.`}</Text>
         </View>

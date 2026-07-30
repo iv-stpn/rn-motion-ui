@@ -92,7 +92,7 @@ function StateContent(props: StateContentProps) {
             variant="secondary"
             size="sm"
             onPress={onDismiss}
-            style={{ marginTop: 8 }}
+            className="mt-2"
             testID={testID ? `${testID}-dismiss` : undefined}
           >
             {dismissLabel}
@@ -192,8 +192,7 @@ export function ActionFeedbackModal({
       {isAnimOpen ? (
         <MotiView
           key="action-feedback-backdrop"
-          className="flex-1 items-center justify-center px-6"
-          style={{ backgroundColor: 'rgba(0,0,0,0.4)' /* scrim — theme-independent */ }}
+          className="flex-1 items-center justify-center bg-black/40 px-6"
           from={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

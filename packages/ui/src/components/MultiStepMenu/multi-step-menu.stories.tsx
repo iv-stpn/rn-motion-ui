@@ -58,7 +58,7 @@ type AppearanceSectionProps = { helpers: MultiStepHelpers };
 function AppearanceSection({ helpers }: AppearanceSectionProps) {
   const navigateAdvanced = useCallback(() => helpers.navigate('appearance/advanced'), [helpers]);
   return (
-    <View style={{ gap: 12 }}>
+    <View className="gap-3">
       <Text size="lg" weight="semibold">
         {APPEARANCE_TITLE}
       </Text>
@@ -75,7 +75,7 @@ const sections: MultiStepSection[] = [
     path: 'account',
     title: 'Account',
     render: () => (
-      <View style={{ gap: 12 }}>
+      <View className="gap-3">
         <Text size="lg" weight="semibold">
           {ACCOUNT_TITLE}
         </Text>
@@ -87,7 +87,7 @@ const sections: MultiStepSection[] = [
     path: 'notifications',
     title: 'Notifications',
     render: () => (
-      <View style={{ gap: 12 }}>
+      <View className="gap-3">
         <Text size="lg" weight="semibold">
           {NOTIFICATIONS_TITLE}
         </Text>
@@ -104,7 +104,7 @@ const sections: MultiStepSection[] = [
         path: 'advanced',
         title: 'Advanced Appearance',
         render: () => (
-          <View style={{ gap: 8 }}>
+          <View className="gap-2">
             <Text size="lg" weight="semibold">
               {ADVANCED_TITLE}
             </Text>
@@ -118,7 +118,7 @@ const sections: MultiStepSection[] = [
     path: 'privacy',
     title: 'Privacy & Security',
     render: () => (
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <Text size="lg" weight="semibold">
           {PRIVACY_TITLE}
         </Text>
@@ -154,7 +154,7 @@ type MenuListProps = { helpers: MultiStepHelpers; showActive: boolean };
 function MenuList({ helpers, showActive }: MenuListProps) {
   const navigate = useCallback((path: string) => helpers.navigate([path]), [helpers]);
   return (
-    <View style={{ gap: 4 }}>
+    <View className="gap-1">
       {MENU_ENTRIES.map((entry) => (
         <MenuEntryRow
           key={entry.path}
@@ -210,7 +210,7 @@ const SIDEBAR_FOOTER = (
 );
 
 const WIDE_PLACEHOLDER = (
-  <View style={{ alignItems: 'center', flex: 1, gap: 6, justifyContent: 'center' }}>
+  <View className="flex-1 items-center justify-center gap-1.5">
     <Text size="lg" weight="semibold">
       {PLACEHOLDER_TITLE}
     </Text>
@@ -281,9 +281,9 @@ function MenuPlayground() {
         visible={visible}
       />
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Sidebar row states">
-        <Variants align="stretch" direction="column" gap={6}>
+        <Variants align="stretch" direction="column">
           <Sample label="Default">
             <MenuRow icon={MENU_ENTRIES[0].icon} iconBackgroundColor={MENU_ENTRIES[0].color} label={MENU_ENTRIES[0].label} />
           </Sample>

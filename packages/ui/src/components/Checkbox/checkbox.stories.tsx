@@ -31,9 +31,9 @@ function CheckboxPlayground(args: ComponentProps<typeof Checkbox>) {
 
       <Checkbox {...args} checked={checked} disabled={disabled} indeterminate={indeterminate} onCheckedChange={setChecked} />
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="States">
-        <Variants direction="column" gap={12}>
+        <Variants direction="column">
           <Sample label="Unchecked">
             <Checkbox {...args} checked={false} label="Unchecked" onCheckedChange={args.onCheckedChange} />
           </Sample>

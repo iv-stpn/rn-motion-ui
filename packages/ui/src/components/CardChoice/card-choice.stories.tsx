@@ -80,11 +80,11 @@ function CardChoicePlayground() {
       </CardChoiceGroup>
       <Note testID="story-plan">{plan}</Note>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       {/* Standalone, each card owns its own dot — no shared indicator, so the
           selection is whatever `selected` says. */}
       <Section title="Standalone (selected / unselected)">
-        <View style={{ flexDirection: 'row', gap: 12 }}>
+        <View className="flex-row gap-3">
           <CardChoice numeric={true} onPress={handlePress} selected={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} />
           <CardChoice
             badge={YEARLY_BADGE}
@@ -117,7 +117,7 @@ export const Interactive: Story = { render: () => <CardChoicePlayground /> };
 export const Default: Story = {
   name: 'Demo: Select a card',
   render: () => (
-    <View style={{ flexDirection: 'row', gap: 12, width: ROW_WIDTH }}>
+    <View className="flex-row gap-3" style={{ width: ROW_WIDTH }}>
       <CardChoice numeric={true} onPress={handlePress} selected={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} />
       <CardChoice
         badge={YEARLY_BADGE}

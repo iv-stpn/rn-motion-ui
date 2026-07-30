@@ -42,11 +42,11 @@ type AppSurfaceProps = { children: ReactNode; hint: string };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
-    <View className="flex-1 bg-surface-1" style={{ minHeight: 380 }}>
+    <View className="min-h-[380px] flex-1 bg-surface-1">
       <View className="border-border border-b px-5 py-3">
         <View className="h-2.5 w-24 rounded-full bg-muted-foreground/20" />
       </View>
-      <View style={{ gap: 12, padding: 20 }}>
+      <View className="gap-3 p-5">
         <View className="h-2.5 w-3/4 rounded-full bg-muted-foreground/15" />
         <View className="h-2.5 w-1/2 rounded-full bg-muted-foreground/15" />
         <View className="h-20 w-full rounded-2xl bg-muted-foreground/[0.06]" />
@@ -89,14 +89,14 @@ function FeedbackPlayground() {
 
   return (
     <AppSurface hint={PLAYGROUND_HINT}>
-      <View style={{ paddingHorizontal: 20, gap: 12 }}>
+      <View className="gap-3 px-5">
         <Controls>
           <Choice label="Corner" onChange={setPosition} options={POSITIONS} value={position} />
           <Choice label="Submit" onChange={setOutcome} options={OUTCOMES} value={outcome} />
           <Toggle label="Custom copy" onChange={setCustomCopy} value={customCopy} />
         </Controls>
         <Section title="Elevation">
-          <View style={{ alignItems: 'flex-start' }}>
+          <View className="items-start">
             <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
           </View>
         </Section>

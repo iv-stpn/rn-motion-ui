@@ -99,8 +99,8 @@ function DropHighlight({ targetIndex, scrollOffset }: DropHighlightProps) {
   return (
     <View
       pointerEvents="none"
-      className="absolute right-0 left-0 rounded-md border border-primary"
-      style={{ height: FS_ROW_HEIGHT, top: targetIndex * FS_ROW_HEIGHT + LIST_PADDING_TOP - scrollOffset, zIndex: 3 }}
+      className="absolute right-0 left-0 z-[3] rounded-md border border-primary"
+      style={{ height: FS_ROW_HEIGHT, top: targetIndex * FS_ROW_HEIGHT + LIST_PADDING_TOP - scrollOffset }}
     />
   );
 }
@@ -112,7 +112,8 @@ function DragPreview({ label, pos }: DragPreviewProps) {
   return (
     <Animated.View
       pointerEvents="none"
-      style={{ left: 0, position: 'absolute', top: 0, transform: pos.getTranslateTransform(), zIndex: 4 }}
+      className="absolute top-0 left-0 z-[4]"
+      style={{ transform: pos.getTranslateTransform() }}
     >
       <View className="rounded-md border border-border bg-surface-4 px-2 py-1">
         <Text className="text-foreground" numberOfLines={1} size="xs">

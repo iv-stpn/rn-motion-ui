@@ -143,8 +143,7 @@ function BouncyAccordionRow({
             animate={{ opacity: open ? 1 : 0 }}
             transition={descTransition}
             onLayout={onContentLayout}
-            className="px-5 pb-5"
-            style={{ position: 'absolute', left: 0, right: 0, top: 0 }}
+            className="absolute top-0 right-0 left-0 px-5 pb-5"
           >
             <Text className="text-[15px] text-muted-foreground leading-6">{item.description}</Text>
           </MotiView>

@@ -38,7 +38,7 @@ function PalettePlayground() {
   const openNote = open ? OPEN_NOTE : CLOSED_NOTE;
 
   return (
-    <Playground style={{ minWidth: 340 }}>
+    <Playground className="min-w-[340px]">
       <Controls>
         <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
       </Controls>

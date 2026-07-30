@@ -64,7 +64,7 @@ function NumberTickerPlayground(args: ComponentProps<typeof NumberTicker>) {
   const value = Number(targetKey) + drift;
 
   return (
-    <Playground style={{ maxWidth: 420 }}>
+    <Playground className="max-w-[420px]">
       <Controls>
         <Choice label="Target" onChange={setTargetKey} options={TARGETS} value={targetKey} />
         <Choice label="Stagger" onChange={setStaggerKey} options={STAGGERS} value={staggerKey} />
@@ -74,7 +74,7 @@ function NumberTickerPlayground(args: ComponentProps<typeof NumberTicker>) {
         <Toggle label="Live feed" onChange={setLive} value={live} />
       </Controls>
 
-      <View style={{ alignItems: 'center', gap: 6 }}>
+      <View className="items-center gap-1.5">
         <NumberTicker
           {...args}
           locale={locale}
@@ -88,7 +88,7 @@ function NumberTickerPlayground(args: ComponentProps<typeof NumberTicker>) {
       </View>
 
       <Section title="Formatting">
-        <Variants direction="column" gap={14}>
+        <Variants direction="column">
           <Sample label="locale separators">
             <NumberTicker {...args} className={NUMERAL} locale={true} stagger={stagger} value={48_273} />
           </Sample>
@@ -102,7 +102,7 @@ function NumberTickerPlayground(args: ComponentProps<typeof NumberTicker>) {
       </Section>
 
       <Section title="Stagger">
-        <Variants direction="column" gap={14}>
+        <Variants direction="column">
           {STAGGERS.map((option) => (
             <Sample key={option.value} label={`stagger ${option.label}`}>
               <NumberTicker {...args} className={NUMERAL} stagger={Number(option.value)} value={value} />

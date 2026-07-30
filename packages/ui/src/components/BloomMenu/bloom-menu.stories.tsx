@@ -26,7 +26,7 @@ type Story = StoryObj<typeof meta>;
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function BloomMenuDemo(props: ComponentProps<typeof BloomMenu>) {
   return (
-    <View style={{ minHeight: 420, alignItems: 'center', justifyContent: 'center' }}>
+    <View className="min-h-[420px] items-center justify-center">
       <BloomMenu {...props} />
     </View>
   );

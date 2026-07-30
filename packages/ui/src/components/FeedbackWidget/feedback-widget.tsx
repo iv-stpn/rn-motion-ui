@@ -187,8 +187,8 @@ export function FeedbackWidget({
       <MotiView
         animate={{ borderRadius: open ? 20 : 40 }}
         transition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 320, easing: EASE_OUT }}
-        className={`overflow-hidden border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
-        style={{ position: 'absolute', bottom: 0, ...(left ? { left: 0 } : { right: 0 }) }}
+        className={`overflow-hidden border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)} absolute bottom-0`}
+        style={{ ...(left ? { left: 0 } : { right: 0 }) }}
       >
         <AnimatePresence exitBeforeEnter={true}>
           {open ? (
@@ -198,7 +198,7 @@ export function FeedbackWidget({
               animate={{ opacity: 1, scale: 1, translateY: 0 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, translateY: 8 }}
               transition={reduce ? { type: 'timing', duration: 120 } : SPRING_PANEL}
-              style={{ width: 300, padding: 8 }}
+              className="w-[300px] p-2"
             >
               <AnimatePresence exitBeforeEnter={true}>
                 {renderFeedbackContent({
@@ -275,7 +275,7 @@ function FormView({
       exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8 }}
       transition={{ type: 'timing', duration: reduce ? 0 : 220, easing: EASE_OUT }}
     >
-      <View className="rounded-[16px] bg-muted px-4 py-3.5" style={{ minHeight: 150 }}>
+      <View className="min-h-[150px] rounded-[16px] bg-muted px-4 py-3.5">
         <View className="flex-row items-start justify-between gap-3">
           <Text className="font-semibold text-foreground text-sm">{title}</Text>
           <Pressable
@@ -298,24 +298,23 @@ function FormView({
           numberOfLines={3}
           accessibilityLabel={title}
           testID="feedback-input"
-          className="mt-2 w-full bg-transparent text-foreground text-sm"
-          style={{ minHeight: 60, textAlignVertical: 'top' }}
+          className="mt-2 min-h-[60px] w-full bg-transparent align-top text-foreground text-sm"
         />
       </View>
       <View className="flex-row items-center gap-2 px-1 pt-2 pb-1">
-        <View style={{ flex: 1 }}>
-          <Button variant="secondary" size="md" onPress={onClose} disabled={busy} style={{ width: '100%' }}>
+        <View className="flex-1">
+          <Button variant="secondary" size="md" onPress={onClose} disabled={busy} className="w-full">
             {CANCEL_LABEL}
           </Button>
         </View>
-        <View style={{ flex: 1 }}>
+        <View className="flex-1">
           <Button
             variant="primary"
             size="md"
             onPress={onSubmit}
             loading={busy}
             disabled={busy || message.trim().length === 0}
-            style={{ width: '100%' }}
+            className="w-full"
           >
             {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
             {busy ? SENDING_LABEL : SUBMIT_LABEL}
@@ -345,21 +344,16 @@ function SentView({ reduce }: SentViewProps) {
                   from={{ opacity: 0, scale: 0, translateX: 0, translateY: 0 }}
                   animate={{ opacity: [0, 1, 0], scale: [0, 1, 0.4], translateX: s.x, translateY: s.y }}
                   transition={{ type: 'timing', duration: 600, delay: 180 + i * 20 }}
-                  style={{
-                    position: 'absolute',
-                    height: 6,
-                    width: 6,
-                    borderRadius: 3,
-                    backgroundColor: i % 2 === 0 ? colors['success-foreground'] : '#6366f1',
-                  }}
+                  className="absolute h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: i % 2 === 0 ? colors['success-foreground'] : '#6366f1' }}
                 />
               ))}
           <MotiView
             from={reduce ? { scale: 1 } : { scale: 0 }}
             animate={{ scale: 1 }}
             transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 500, damping: 22, delay: 40 }}
-            className="h-12 w-12 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.success, borderWidth: 1, borderColor: colors.success }}
+            className="h-12 w-12 items-center justify-center rounded-full border"
+            style={{ backgroundColor: colors.success, borderColor: colors.success }}
           >
             <MotiView
               from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.4 }}

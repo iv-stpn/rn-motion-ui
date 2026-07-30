@@ -1,4 +1,4 @@
-import { hasKey } from '../../../utils/typeguards';
+import { hasKey } from '../../../lib/typeguards';
 
 /**
  * Unwraps a Reanimated SharedValue/DerivedValue wrapper ({ value }) to its inner value,

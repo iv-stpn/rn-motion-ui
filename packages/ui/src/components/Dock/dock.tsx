@@ -83,8 +83,7 @@ export function Dock({ children, size = 44, className, style, testID }: DockProp
               height: active.height - PILL_INSET * 2,
             }}
             transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
-            className="bg-surface-selected"
-            style={{ position: 'absolute', left: 0, top: 0, borderRadius: 12, pointerEvents: 'none' }}
+            className="pointer-events-none absolute top-0 left-0 rounded-xl bg-surface-selected"
           />
         ) : null}
         {children}

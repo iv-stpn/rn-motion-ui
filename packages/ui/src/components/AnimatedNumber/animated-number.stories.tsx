@@ -61,7 +61,7 @@ function AnimatedNumberPlayground(args: ComponentProps<typeof AnimatedNumber>) {
   useInterval(tick, live ? LIVE_STEP_MS : null);
 
   return (
-    <Playground style={{ maxWidth: 420 }}>
+    <Playground className="max-w-[420px]">
       <Controls>
         <Choice label="Target" onChange={setTargetKey} options={TARGETS} value={targetKey} />
         <Choice label="Format" onChange={setFormat} options={FORMATS} value={format} />
@@ -71,9 +71,9 @@ function AnimatedNumberPlayground(args: ComponentProps<typeof AnimatedNumber>) {
 
       <AnimatedNumber {...args} duration={duration} format={FORMATTERS[format]} value={value} />
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Formats (same value, different formatter)">
-        <Variants gap={28}>
+        <Variants>
           {FORMATS.map((name) => (
             <Sample align="center" key={name} label={name}>
               <AnimatedNumber
@@ -91,7 +91,7 @@ function AnimatedNumberPlayground(args: ComponentProps<typeof AnimatedNumber>) {
       {/* `startOnView` gates the roll on the viewport; with it off the number
           counts up the moment it mounts, which is what a dashboard tile wants. */}
       <Section title="startOnView">
-        <View style={{ flexDirection: 'row', gap: 28 }}>
+        <View className="flex-row gap-7">
           <Sample align="center" label="true (rolls when scrolled in)">
             <AnimatedNumber {...args} className="font-semibold text-2xl text-foreground" startOnView={true} value={9480} />
           </Sample>

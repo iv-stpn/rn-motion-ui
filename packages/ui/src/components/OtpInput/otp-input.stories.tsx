@@ -66,7 +66,7 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
   }, []);
 
   return (
-    <Playground style={{ alignItems: 'center' }}>
+    <Playground className="items-center">
       <Controls>
         <Choice label="Length" onChange={handleLength} options={LENGTHS} value={lengthKey} />
         <Toggle label="Mask" onChange={setMask} value={mask} />
@@ -90,7 +90,7 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
       {/* The states below are `status`-driven and read-only — a real form would set
           `status` from its own validation, which is what the live field above does. */}
       <Section title="States">
-        <Variants direction="column" gap={20}>
+        <Variants direction="column">
           <Sample label="partially filled">
             <OTPInput {...args} defaultValue="123" hint="Keep going." />
           </Sample>

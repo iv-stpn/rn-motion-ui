@@ -82,7 +82,7 @@ function BloomCell({ item, className, reduce, open, dist, onSelect, testID }: Bl
       <MotiView
         animate={reduce ? { opacity: open ? 1 : 0 } : { opacity: open ? 1 : 0, scale: open ? 1 : 0.85 }}
         transition={cellTransition(reduce, open, dist)}
-        style={{ alignItems: 'center', gap: 8 }}
+        className="items-center gap-2"
       >
         {/* Icons default to the `foreground` token — no explicit color needed. */}
         <Icon size={20} />
@@ -157,8 +157,7 @@ export function BloomMenu({
         <MotiView
           animate={{ width: open ? PANEL_W : TRIGGER_W, height: open ? (panelH ?? BOX_H) : TRIGGER_H }}
           transition={morph}
-          className="overflow-hidden border border-border bg-surface-3"
-          style={{ borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
+          className="items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-3"
         >
           {/* Panel content, fixed at its open-state size and centred in the
               card, so the growing clip reveals it centre-out (iris). The grid
@@ -225,8 +224,7 @@ export function BloomMenu({
               aria-expanded={open}
               accessibilityLabel={triggerLabel}
               onPress={handleOpen}
-              className="flex-row items-center justify-center gap-2"
-              style={{ flex: 1 }}
+              className="flex-1 flex-row items-center justify-center gap-2"
             >
               <Text className="font-medium text-foreground text-sm">{triggerLabel}</Text>
               <ThemedIcon icon={Plus} variant="secondary" size={16} />

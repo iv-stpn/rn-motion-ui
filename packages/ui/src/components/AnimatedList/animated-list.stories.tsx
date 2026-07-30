@@ -66,7 +66,7 @@ function AnimatedListPlayground() {
   const summary = `${items.length} items, ${expanded.length} expanded`;
 
   return (
-    <Playground style={{ width: 320 }}>
+    <Playground className="w-[320px]">
       <Controls>
         <Action label="Add item" onPress={add} />
         <Action label="Remove last" onPress={removeLast} />

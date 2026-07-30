@@ -60,20 +60,19 @@ export function Drawer({
     <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleRequestClose}>
       <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
-          <View key="drawer" style={{ flex: 1 }} testID={testID}>
+          <View key="drawer" className="flex-1" testID={testID}>
             <MotiView
               from={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ type: 'timing', duration: 250 }}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              className="absolute top-0 right-0 bottom-0 left-0"
             >
               <Pressable
                 accessibilityLabel="Close"
                 disabled={!dismissable}
                 onPress={handleBackdropPress}
-                className="bg-foreground/40"
-                style={{ flex: 1 }}
+                className="flex-1 bg-foreground/40"
               />
             </MotiView>
             <MotiView

@@ -58,17 +58,10 @@ type BallProps = { label: string; color: string };
 function Ball({ label, color }: BallProps) {
   return (
     <View
-      style={{
-        flex: 1,
-        borderRadius: 999,
-        backgroundColor: color,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.08)',
-      }}
+      className="flex-1 items-center justify-center rounded-full border border-[rgba(0,0,0,0.08)]"
+      style={{ backgroundColor: color }}
     >
-      <Text style={{ color: '#ffffff', fontWeight: '600', fontSize: 15 }}>{label}</Text>
+      <Text className="font-semibold text-[15px] text-white">{label}</Text>
     </View>
   );
 }
@@ -117,9 +110,9 @@ function CarouselPlayground() {
       </CylinderCarousel>
       <Note testID="story-front">{`Front: ${front} · ${DRAG_HINT}`}</Note>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Convex rolls on the outside, concave on the inside">
-        <Variants align="stretch" direction="column" gap={12}>
+        <Variants align="stretch" direction="column">
           {VARIANTS.map((option) => (
             <Sample key={option} label={option}>
               <CylinderCarousel height={160} itemSize={90} minScale={0.5} style={{ width: STAGE_WIDTH }} variant={option}>

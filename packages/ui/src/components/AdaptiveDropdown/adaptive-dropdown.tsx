@@ -228,8 +228,8 @@ export function AdaptiveDropdown({
                   exit={{ opacity: 0, translateY: -12 }}
                   transition={enterTransition}
                   exitTransition={exitTransition}
-                  style={{ position: 'absolute', top: panelTop, left: panelLeft, width: panelWidth, maxHeight }}
-                  className={cn('flex-col overflow-hidden rounded-2xl', SURFACE_CLASSNAME[elevation])}
+                  className={cn('absolute flex-col overflow-hidden rounded-2xl', SURFACE_CLASSNAME[elevation])}
+                  style={{ top: panelTop, left: panelLeft, width: panelWidth, maxHeight }}
                   testID={testID ? `${testID}-panel` : undefined}
                 >
                   {/*

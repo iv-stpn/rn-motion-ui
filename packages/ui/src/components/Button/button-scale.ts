@@ -36,7 +36,7 @@ export const BUTTON_METRICS: Record<ButtonSize, { height: number; padX: number; 
 };
 
 /** Space between an adornment (icon, spinner) and the label, at every size. */
-export const BUTTON_GAP = 8;
+export const BUTTON_GAP_CLASSNAME = 'gap-2';
 
 /**
  * Box classes per shape and size, straight from the geometry tokens. Spelled out

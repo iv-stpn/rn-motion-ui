@@ -98,14 +98,14 @@ export function TriggerButton({
 
   if (kind === 'elevated')
     return (
-      <ElevatedButton onPress={onPress} variant={elevatedVariant} style={{ alignSelf: 'flex-start' }}>
+      <ElevatedButton className="self-start" onPress={onPress} variant={elevatedVariant}>
         {label}
       </ElevatedButton>
     );
 
   if (kind === 'glossy')
     return (
-      <GlossyButton onPress={onPress} variant={glossyVariant} style={{ alignSelf: 'flex-start' }}>
+      <GlossyButton className="self-start" onPress={onPress} variant={glossyVariant}>
         {label}
       </GlossyButton>
     );
@@ -125,7 +125,7 @@ export function TriggerButton({
     );
 
   return (
-    <Button onPress={onPress} variant={buttonVariant} style={{ alignSelf: 'flex-start' }}>
+    <Button className="self-start" onPress={onPress} variant={buttonVariant}>
       {label}
     </Button>
   );

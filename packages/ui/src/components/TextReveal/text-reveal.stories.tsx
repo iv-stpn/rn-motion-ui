@@ -54,7 +54,7 @@ function TextRevealPlayground(args: ComponentProps<typeof TextReveal>) {
   const yOffset = Number(offsetKey);
 
   return (
-    <Playground style={{ maxWidth: 460 }}>
+    <Playground className="max-w-[460px]">
       <Controls>
         <Choice label="Split" onChange={setSplit} options={SPLITS} value={split} />
         <Choice label="Stagger" onChange={setPaceKey} options={PACES} value={paceKey} />
@@ -74,7 +74,7 @@ function TextRevealPlayground(args: ComponentProps<typeof TextReveal>) {
       />
 
       <Section title="Split">
-        <Variants direction="column" gap={16}>
+        <Variants direction="column">
           {SPLITS.map((name) => (
             <Sample key={name} label={`${name} split`}>
               <TextReveal {...args} className={HEADING} split={name} stagger={name === 'char' ? 0.04 : 0.09} text={ONE_LINE} />
@@ -90,7 +90,7 @@ function TextRevealPlayground(args: ComponentProps<typeof TextReveal>) {
       {/* `whileInView` defers the reveal until the text scrolls into view; inside a
           story canvas it is already visible, so the two read the same here. */}
       <Section title="Y offset">
-        <Variants direction="column" gap={16}>
+        <Variants direction="column">
           {OFFSETS.map((key) => (
             <Sample key={key} label={`${key}px travel`}>
               <TextReveal {...args} className="font-medium text-base text-foreground" text={ONE_LINE} yOffset={Number(key)} />

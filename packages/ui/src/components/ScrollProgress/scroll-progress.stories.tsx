@@ -105,7 +105,7 @@ function ScrollProgressPlayground() {
       <ScrollBox>
         {(progress) =>
           circle ? (
-            <View style={{ position: 'absolute', right: 12, top: 12, zIndex: 10 }}>
+            <View className="absolute top-[12px] right-[12px] z-10">
               <ScrollProgress
                 color={color}
                 progress={progress}
@@ -129,7 +129,7 @@ function ScrollProgressPlayground() {
 
       {/* Both variants read the same kind of value — only the painting differs. */}
       <Section title="Variants">
-        <Variants gap={16}>
+        <Variants>
           <Sample label="bar (pinned to the top edge)">
             <ScrollBox height={180} width={SMALL_BOX_W}>
               {(progress) => <ScrollProgress height={3} progress={progress} />}
@@ -138,7 +138,7 @@ function ScrollProgressPlayground() {
           <Sample label="circle (free-floating)">
             <ScrollBox height={180} width={SMALL_BOX_W}>
               {(progress) => (
-                <View style={{ position: 'absolute', right: 10, top: 10, zIndex: 10 }}>
+                <View className="absolute top-[10px] right-[10px] z-10">
                   <ScrollProgress progress={progress} size={36} variant="circle" />
                 </View>
               )}
@@ -163,7 +163,7 @@ export const Bar: Story = {
       {(progress) => (
         <>
           <ScrollProgress height={3} progress={progress} testID="bar" />
-          <View style={{ position: 'absolute', right: 12, top: 12, zIndex: 10 }}>
+          <View className="absolute top-[12px] right-[12px] z-10">
             <ScrollProgress progress={progress} size={36} testID="circle" variant="circle" />
           </View>
         </>

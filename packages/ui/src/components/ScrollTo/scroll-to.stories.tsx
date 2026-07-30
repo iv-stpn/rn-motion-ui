@@ -35,8 +35,8 @@ function Demo({ onPress }: DemoProps) {
   };
 
   return (
-    <View className="overflow-hidden rounded-2xl border border-border" style={{ width: 360, height: 320 }}>
-      <View className="flex-row border-border border-b" style={{ gap: 6, padding: 8 }}>
+    <View className="h-[320px] w-[360px] overflow-hidden rounded-2xl border border-border">
+      <View className="flex-row gap-1.5 border-border border-b p-2">
         {SECTIONS.map((s) => (
           <ScrollTo
             key={s.id}
@@ -45,8 +45,7 @@ function Demo({ onPress }: DemoProps) {
             offset={-8}
             onPress={onPress}
             testID={`nav-${s.id}`}
-            className="rounded-full border border-border bg-surface-3"
-            style={{ paddingHorizontal: 12, paddingVertical: 4 }}
+            className="rounded-full border border-border bg-surface-3 px-3 py-1"
           >
             {s.label}
           </ScrollTo>
@@ -54,8 +53,8 @@ function Demo({ onPress }: DemoProps) {
       </View>
       <ScrollView ref={scrollRef} scrollEventThrottle={16}>
         {SECTIONS.map((s) => (
-          <View key={s.id} onLayout={measure(s.id)} style={{ height: 240, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 18, fontWeight: '500' }}>{s.label}</Text>
+          <View key={s.id} onLayout={measure(s.id)} className="h-[240px] items-center justify-center">
+            <Text className="font-medium text-[18px]">{s.label}</Text>
           </View>
         ))}
       </ScrollView>

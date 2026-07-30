@@ -105,7 +105,7 @@ function OverflowActionsPlayground() {
 
       {/* Driving `expanded` from the harness toggle shows the rail is fully
           controllable — the built-in trigger just calls the same setter. */}
-      <View style={{ alignItems: 'center', gap: 8 }}>
+      <View className="items-center gap-2">
         <OverflowActions
           closeLabel="Collapse action rail"
           collapseOnAction={collapseOnAction}
@@ -123,7 +123,7 @@ function OverflowActionsPlayground() {
       {/* The overflow group's width is measured, so a smaller size shrinks both
           the buttons and the distance the toggle travels when it opens. */}
       <Section title="Sizes">
-        <Variants direction="column" gap={16}>
+        <Variants direction="column">
           {SIZES.map((option) => (
             <Sample key={option} label={option}>
               <Demo label={`${option} rail`} size={option} />

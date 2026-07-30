@@ -99,7 +99,7 @@ function LoadingEscapeHatch({ onClose }: LoadingEscapeHatchProps) {
 
   return (
     <Modal visible={true} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={onClose}>
-      <View style={{ flex: 1, alignItems: 'flex-end', padding: 16 }}>
+      <View className="flex-1 items-end p-4">
         <Action label={ESCAPE_LABEL} onPress={onClose} />
       </View>
     </Modal>
@@ -145,7 +145,7 @@ function FeedbackPlayground() {
       </Controls>
 
       <Section title="Elevation">
-        <View style={{ alignItems: 'flex-start' }}>
+        <View className="items-start">
           <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         </View>
       </Section>

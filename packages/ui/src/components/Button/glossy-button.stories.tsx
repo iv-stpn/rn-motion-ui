@@ -103,7 +103,7 @@ function GlossyButtonPlayground(args: ComponentProps<typeof GlossyButton>) {
         <Toggle label="Ripple" onChange={setRipple} value={ripple} />
       </Controls>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+      <View className="flex-row items-center gap-4">
         <GlossyButton {...live} onPress={handlePress}>
           {iconSide === 'left' ? icon : null}
           {CONTINUE_LABEL}
@@ -112,7 +112,7 @@ function GlossyButtonPlayground(args: ComponentProps<typeof GlossyButton>) {
         <Note testID="story-press-count">{pressedLabel(count)}</Note>
       </View>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       {/* Every variant keeps the glossy treatment — a face under a dome gradient +
           rim hairline, with an inset bevel and a cast shadow that snap to 0 while
           pressed so the key sinks. Hover tints the face on fine pointers; touch
@@ -214,7 +214,7 @@ export const Default: Story = {
  */
 export const GrayIsAlwaysGray: Story = {
   render: () => (
-    <View style={{ flexDirection: 'row', gap: 16 }}>
+    <View className="flex-row gap-4">
       <GlossyButton testID={GRAY_KEY} variant="gray">
         {CONTINUE_LABEL}
       </GlossyButton>

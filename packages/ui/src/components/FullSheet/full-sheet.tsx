@@ -65,7 +65,7 @@ function buildBody({
         >
           {dismissable ? (
             <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="ml-2 p-2">
-              <View style={{ transform: [{ rotate: '180deg' }] }}>{backIcon ?? <ChevronRight size={20} />}</View>
+              <View className="rotate-180">{backIcon ?? <ChevronRight size={20} />}</View>
             </Pressable>
           ) : (
             <View className="ml-2 h-10 w-10" />
@@ -79,7 +79,7 @@ function buildBody({
       backOverlay = (
         <View className="absolute top-3 left-4">
           <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="p-2">
-            <View style={{ transform: [{ rotate: '180deg' }] }}>{backIcon ?? <ChevronRight size={20} />}</View>
+            <View className="rotate-180">{backIcon ?? <ChevronRight size={20} />}</View>
           </Pressable>
         </View>
       );

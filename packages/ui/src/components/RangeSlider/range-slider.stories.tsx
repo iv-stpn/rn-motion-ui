@@ -19,7 +19,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <View style={{ width: 340 }}>
+      <View className="w-[340px]">
         <Story />
       </View>
     ),
@@ -55,7 +55,7 @@ function RangeSliderPlayground(args: ComponentProps<typeof RangeSlider>) {
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
       </Controls>
 
-      <View style={{ gap: 10 }}>
+      <View className="gap-2.5">
         <RangeSlider
           {...args}
           accessibilityLabel="Value"
@@ -69,15 +69,15 @@ function RangeSliderPlayground(args: ComponentProps<typeof RangeSlider>) {
       </View>
 
       <Section title="Steps">
-        <Variants direction="column" gap={18}>
+        <Variants direction="column">
           {STEPS.map((option) => (
-            <Sample key={option.value} label={`step ${option.label}`} style={{ alignSelf: 'stretch' }}>
+            <Sample key={option.value} label={`step ${option.label}`} className="self-stretch">
               <RangeSlider
                 accessibilityLabel={`Step ${option.value}`}
                 defaultValue={40}
                 showTicks={true}
                 step={Number(option.value)}
-                style={{ alignSelf: 'stretch' }}
+                className="self-stretch"
               />
             </Sample>
           ))}
@@ -85,14 +85,14 @@ function RangeSliderPlayground(args: ComponentProps<typeof RangeSlider>) {
       </Section>
 
       <Section title="Ranges and states">
-        <Variants direction="column" gap={18}>
-          <Sample label="−50 to 50, centred at 0" style={{ alignSelf: 'stretch' }}>
+        <Variants direction="column">
+          <Sample label="−50 to 50, centred at 0" className="self-stretch">
             <RangeSlider accessibilityLabel="Balance" defaultValue={0} max={50} min={-50} step={10} />
           </Sample>
-          <Sample label="no ticks" style={{ alignSelf: 'stretch' }}>
+          <Sample label="no ticks" className="self-stretch">
             <RangeSlider accessibilityLabel="Smooth" defaultValue={72} showTicks={false} step={1} />
           </Sample>
-          <Sample label="disabled" style={{ alignSelf: 'stretch' }}>
+          <Sample label="disabled" className="self-stretch">
             <RangeSlider accessibilityLabel="Locked" defaultValue={60} disabled={true} />
           </Sample>
         </Variants>
@@ -156,7 +156,7 @@ export const Default: Story = {
 export const RightToLeft: Story = {
   name: 'Demo: Mirrors under RTL',
   render: () => (
-    <View style={{ gap: 24 }}>
+    <View className="gap-6">
       <DirectionalSlider direction="ltr" />
       <DirectionalSlider direction="rtl" />
     </View>

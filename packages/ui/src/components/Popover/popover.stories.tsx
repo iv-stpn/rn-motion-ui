@@ -51,7 +51,7 @@ function PopoverDemo() {
     <Popover align="start" side="bottom">
       <PopoverTrigger>{EDIT_PROFILE}</PopoverTrigger>
       <PopoverContent>
-        <View style={{ gap: 4 }}>
+        <View className="gap-1">
           <Text className="font-medium text-foreground text-sm">{DIMENSIONS_TITLE}</Text>
           <Text className="text-muted-foreground text-xs">{DIMENSIONS_DESC}</Text>
         </View>
@@ -79,11 +79,11 @@ function PopoverPlayground() {
       {/* The panel is measured against the trigger's on-screen rect, so the same
           side/align pair lands differently near a screen edge — the position is
           clamped into the viewport rather than overflowing it. */}
-      <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+      <View className="items-center py-6">
         <Popover align={align} panelRadius={Number(radiusKey)} side={side} sideOffset={Number(offsetKey)}>
           <PopoverTrigger>{EDIT_PROFILE}</PopoverTrigger>
           <PopoverContent>
-            <View style={{ gap: 4, maxWidth: 220 }}>
+            <View className="max-w-[220px] gap-1">
               <Text className="font-medium text-foreground text-sm">{DIMENSIONS_TITLE}</Text>
               <Text className="text-muted-foreground text-xs">{DIMENSIONS_DESC}</Text>
             </View>
@@ -95,7 +95,7 @@ function PopoverPlayground() {
           RN Modal, so only one is ever on screen at a time. */}
       {SIDES.map((sideOption) => (
         <Section key={sideOption} title={`side="${sideOption}"`}>
-          <Variants gap={16}>
+          <Variants>
             {ALIGNS.map((alignOption) => (
               <Sample align="center" key={alignOption} label={alignOption}>
                 <Popover align={alignOption} side={sideOption}>
@@ -111,7 +111,7 @@ function PopoverPlayground() {
       ))}
 
       <Section title="Elevation of the panel">
-        <Variants gap={16}>
+        <Variants>
           <Sample align="center" label="elevation 2">
             <Popover align="center" side="bottom">
               <PopoverTrigger>{FLAT_LABEL}</PopoverTrigger>

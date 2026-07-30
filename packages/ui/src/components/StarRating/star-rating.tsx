@@ -145,7 +145,7 @@ type SparklesBurstProps = { icon: number; burstKey: number; color: string };
 
 export function SparklesBurst({ icon, burstKey, color }: SparklesBurstProps) {
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
+    <View className="absolute inset-0" pointerEvents="none">
       {SPARKLES.map(({ angle, key }) => {
         const dist = icon * 1.2;
         const dotSize = Math.max(2, Math.round(icon * 0.16));
@@ -246,7 +246,7 @@ export function StarButton({
           <MotiView
             animate={{ scale: filled ? 1 : 0, opacity: filled ? 1 : 0 }}
             transition={filled ? FILL_SPRING : UNFILL_TIMING}
-            style={{ position: 'absolute', top: 0, left: 0 }}
+            className="absolute top-0 left-0"
           >
             {renderStar ? (
               renderStar({ size: icon, color: activeStarColor, filled: true })
@@ -343,12 +343,10 @@ export function StarRating({
           const fillPercent = Math.max(0, Math.min(1, value - (starValue - 1))) * 100;
           return (
             <View key={starValue} className={pad}>
-              <View style={{ width: icon, height: icon, position: 'relative' }}>
+              <View className="relative" style={{ width: icon, height: icon }}>
                 <StarSvg size={icon} color={inactiveColor} round={round} />
                 {fillPercent > 0 ? (
-                  <View
-                    style={{ position: 'absolute', top: 0, left: 0, width: `${fillPercent}%`, height: icon, overflow: 'hidden' }}
-                  >
+                  <View className="absolute top-0 left-0 overflow-hidden" style={{ width: `${fillPercent}%`, height: icon }}>
                     <StarSvg size={icon} color={activeStarColor} filled={true} round={round} />
                   </View>
                 ) : null}
@@ -396,8 +394,8 @@ export function StarRating({
             slot stays stable; the animated label is absolutely positioned so the
             entering and exiting digits overlap instead of sitting side-by-side
             and shoving the /max label sideways on every change. Mirrors TextRolling. */}
-          <View style={{ height: lineH, overflow: 'hidden' }}>
-            <Text className={valueLabel} style={{ opacity: 0 }} importantForAccessibility="no">
+          <View className="overflow-hidden" style={{ height: lineH }}>
+            <Text className={cn(valueLabel, 'opacity-0')} importantForAccessibility="no">
               {formatValue(value)}
             </Text>
             <AnimatePresence initial={false}>
@@ -407,7 +405,7 @@ export function StarRating({
                 animate={{ translateY: 0, opacity: 1 }}
                 exit={{ translateY: direction * -12, opacity: 0 }}
                 transition={reduce ? { type: 'timing', duration: 0 } : VALUE_SPRING}
-                style={{ position: 'absolute', left: 0, top: 0 }}
+                className="absolute top-0 left-0"
               >
                 <Text className={valueLabel}>{formatValue(value)}</Text>
               </MotiView>

@@ -94,7 +94,7 @@ type ChecklistItemProps = { icon: ReactNode; text: string };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ChecklistItem({ icon, text }: ChecklistItemProps) {
   return (
-    <View className="flex-row items-center" style={{ gap: 10 }}>
+    <View className="flex-row items-center gap-2.5">
       {icon}
       <Text className="text-muted-foreground text-sm">{text}</Text>
     </View>
@@ -111,7 +111,7 @@ function OptionsView({ onPrivateKey, onRecovery, onClose }: OptionsViewProps) {
         <Text className="font-semibold text-base text-foreground">{OPTIONS_TITLE}</Text>
         <CloseButton label={CLOSE_LABEL} onPress={onClose} />
       </View>
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <Row icon={<Lock size={16} color="#111111" />} label={PRIVATE_KEY_LABEL} onPress={onPrivateKey} />
         <Row icon={<ScrollText size={16} color="#111111" />} label={RECOVERY_LABEL} onPress={onRecovery} />
         <Row icon={<Trash2 size={16} color="#e5484d" />} label="Remove Wallet" danger={true} onPress={onClose} />
@@ -133,16 +133,16 @@ function PrivateKeyView({ onBack }: PrivateKeyViewProps) {
       <Text className="font-semibold text-foreground text-xl">{PRIVATE_KEY_TITLE}</Text>
       <Text className="mt-2 text-muted-foreground text-sm">{PRIVATE_KEY_DESC}</Text>
       <View className="my-4 h-px bg-border" />
-      <View style={{ gap: 10 }}>
+      <View className="gap-2.5">
         <ChecklistItem icon={<ShieldCheck size={16} color="#737373" />} text="Keep your private key safe" />
         <ChecklistItem icon={<ScrollText size={16} color="#737373" />} text="Don't share it with anyone else" />
         <ChecklistItem icon={<Ban size={16} color="#737373" />} text="If you lose it, we can't recover it" />
       </View>
-      <View className="mt-5 flex-row" style={{ gap: 8 }}>
-        <Button variant="secondary" onPress={onBack} style={{ flex: 1 }}>
+      <View className="mt-5 flex-row gap-2">
+        <Button variant="secondary" onPress={onBack} className="flex-1">
           {CANCEL_LABEL}
         </Button>
-        <Button onPress={onBack} style={{ flex: 1 }}>
+        <Button onPress={onBack} className="flex-1">
           <ScanFace size={16} color="#fafafa" />
           {REVEAL_LABEL}
         </Button>
@@ -163,19 +163,15 @@ function RecoveryView({ onBack }: RecoveryViewProps) {
       </View>
       <Text className="font-semibold text-foreground text-xl">{RECOVERY_TITLE}</Text>
       <Text className="mt-2 text-muted-foreground text-sm">{RECOVERY_DESC}</Text>
-      <View className="mt-4 flex-row flex-wrap" style={{ gap: 8 }}>
+      <View className="mt-4 flex-row flex-wrap gap-2">
         {RECOVERY_WORDS.map((word, index) => (
-          <View
-            key={word}
-            className="flex-row rounded-lg border border-border bg-surface-1 px-2 py-1.5"
-            style={{ flexBasis: '30%', flexGrow: 1 }}
-          >
+          <View key={word} className="grow basis-[30%] flex-row rounded-lg border border-border bg-surface-1 px-2 py-1.5">
             <Text className="mr-1 text-muted-foreground text-xs">{`${index + 1}.`}</Text>
             <Text className="text-foreground text-xs">{word}</Text>
           </View>
         ))}
       </View>
-      <Button onPress={onBack} style={{ marginTop: 20 }}>
+      <Button onPress={onBack} className="mt-5">
         {DONE_LABEL}
       </Button>
     </View>
@@ -207,7 +203,7 @@ function MorphingModalDemo({ placement, triggerKind, testID }: MorphingModalDemo
   const showPrivateKey = useCallback(() => setView('private-key'), []);
   const showRecovery = useCallback(() => setView('recovery'), []);
   return (
-    <View className="items-center" style={{ gap: 12 }}>
+    <View className="items-center gap-3">
       <TriggerButton kind={triggerKind} label={OPEN_LABEL} onPress={showOptions} />
       <Text className="text-muted-foreground text-xs">{HINT}</Text>
       <MorphingModal viewId={view} onClose={close} placement={placement} testID={testID}>
@@ -222,7 +218,7 @@ function MorphingModalPlayground() {
   const [placement, setPlacement] = useState<'bottom' | 'center'>('bottom');
   const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
   return (
-    <Playground style={{ minWidth: 340 }}>
+    <Playground className="min-w-[340px]">
       <Controls>
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
         <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />

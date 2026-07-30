@@ -292,7 +292,7 @@ export const MultiStepMenu = function MultiStepMenu({
                     exitTransition={arrowExitTransition}
                   >
                     <Pressable onPress={goBack} accessibilityLabel="Back">
-                      <View style={{ transform: [{ rotate: '180deg' }] }}>
+                      <View className="rotate-180">
                         <ChevronRight />
                       </View>
                     </Pressable>
@@ -347,7 +347,7 @@ export const MultiStepMenu = function MultiStepMenu({
                     exitTransition={arrowExitTransition}
                   >
                     <Pressable onPress={goBack} accessibilityLabel="Back">
-                      <View style={{ transform: [{ rotate: '180deg' }] }}>
+                      <View className="rotate-180">
                         <ChevronRight />
                       </View>
                     </Pressable>

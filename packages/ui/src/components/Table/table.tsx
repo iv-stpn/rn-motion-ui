@@ -228,11 +228,7 @@ export function Table<T>(props: TableProps<T>) {
         <View className="items-center justify-center p-10">
           {emptyIcon ? <View className="mb-2.5 items-center">{emptyIcon}</View> : null}
           {emptyTitle ? <Text className="mb-1 text-center font-semibold text-foreground text-sm">{emptyTitle}</Text> : null}
-          {emptyDescription ? (
-            <Text className="text-center text-muted-foreground" style={{ fontSize: 13 }}>
-              {emptyDescription}
-            </Text>
-          ) : null}
+          {emptyDescription ? <Text className="text-center text-[13px] text-muted-foreground">{emptyDescription}</Text> : null}
         </View>
       );
     return (
@@ -365,8 +361,8 @@ export function Table<T>(props: TableProps<T>) {
               upstream (see `dropIndicatorX`). */}
           {dragKey && indicatorX !== null ? (
             <View
-              className="absolute top-0 bottom-0 z-20 w-0.5 bg-primary"
-              style={{ pointerEvents: 'none', left: indicatorX }}
+              className="pointer-events-none absolute top-0 bottom-0 z-20 w-0.5 bg-primary"
+              style={{ left: indicatorX }}
               testID={`${testID ?? 'table'}-drop-indicator`}
             />
           ) : null}

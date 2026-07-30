@@ -59,7 +59,7 @@ function CascadeDemo({ phrases, interval, className, index }: CascadeDemoProps) 
   const at = index ?? step;
   const current = phrases[at % phrases.length] ?? phrases[0] ?? '';
   return (
-    <View style={{ minWidth: CASCADE_WIDTH, alignItems: 'center' }}>
+    <View className="items-center" style={{ minWidth: CASCADE_WIDTH }}>
       <TextCascade className={className} text={current} />
     </View>
   );
@@ -89,14 +89,14 @@ function CascadePlayground() {
         <Action label="Next" onPress={advance} />
       </Controls>
 
-      <View style={{ minWidth: CASCADE_WIDTH, alignItems: 'center' }}>
+      <View className="items-center" style={{ minWidth: CASCADE_WIDTH }}>
         <TextCascade className={styleKey} text={current} />
       </View>
 
       {/* Letters land left to right, so a longer word takes longer to settle —
           the width snaps to the new label rather than animating with it. */}
       <Section title="Text styles">
-        <Variants align="center" direction="column" gap={16}>
+        <Variants align="center" direction="column">
           {STYLES.map((style) => (
             <Sample align="center" key={style.value} label={style.label}>
               <CascadeDemo className={style.value} interval={2400} phrases={phrases} />
@@ -106,7 +106,7 @@ function CascadePlayground() {
       </Section>
 
       <Section title="Static labels (no cycle)">
-        <Variants align="center" direction="column" gap={12}>
+        <Variants align="center" direction="column">
           {phrases.map((phrase, index) => (
             <CascadeDemo className={styleKey} index={index} interval={null} key={phrase} phrases={phrases} />
           ))}

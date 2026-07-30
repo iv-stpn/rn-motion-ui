@@ -40,7 +40,7 @@ type SheetBodyProps = { long?: boolean; full?: boolean; onClose: () => void };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetBody({ long = false, full = false, onClose }: SheetBodyProps) {
   return (
-    <View style={{ flex: full ? 1 : undefined, padding: 24, gap: 12 }}>
+    <View className="gap-3 p-6" style={{ flex: full ? 1 : undefined }}>
       <Text size="lg" weight="semibold">
         {BOTTOM_SHEET_TITLE}
       </Text>
@@ -74,7 +74,7 @@ function SheetPlayground() {
   const handleAfterClose = useCallback(() => setCloses((count) => count + 1), []);
 
   return (
-    <Playground style={{ minWidth: 340 }}>
+    <Playground className="min-w-[340px]">
       <Controls>
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Long content" onChange={setLongContent} value={longContent} />
@@ -113,7 +113,7 @@ function SheetDemo() {
   const handleOpen = useCallback(() => setOpen(true), []);
   const handleClose = useCallback(() => setOpen(false), []);
   return (
-    <View style={{ gap: 12 }}>
+    <View className="gap-3">
       <TriggerButton label={OPEN_SHEET_LABEL} onPress={handleOpen} />
       <BottomSheet accessibilityLabel={BOTTOM_SHEET_TITLE} onOpenChange={setOpen} open={open}>
         <SheetBody onClose={handleClose} />

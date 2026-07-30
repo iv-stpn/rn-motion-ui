@@ -12,7 +12,7 @@ import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
 import type { MotiTransitionProp } from '../../theme/motion';
 import { Text } from '../Text/text';
-import { BUTTON_GAP } from './button-scale';
+import { BUTTON_GAP_CLASSNAME } from './button-scale';
 
 // ── module-local types & helpers ────────────────────────────────────────────
 // Kept ahead of the exports (useExportsLast). `Ripple` stays local: consumers
@@ -213,12 +213,8 @@ export function buildButtonContent({
       </Text>
     );
 
-  // One gap for the whole family — {@link BUTTON_GAP}. (AlignUI spaces its chips
-  // at 12px and pulls icons back in by `-mx-1`, netting the same 8px beside the
-  // label; the pullback is dropped so an elevated chip and a flat button lay out
-  // their content identically.)
   return (
-    <View className="flex-row items-center justify-center" style={{ gap: BUTTON_GAP }}>
+    <View className={cn('flex-row items-center justify-center', BUTTON_GAP_CLASSNAME)}>
       {leftAdornment}
       {isLeaf ? (
         <Text className={mergedLabelClass} style={labelStyle}>

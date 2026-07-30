@@ -47,7 +47,7 @@ function NotFoundActions({
   const handleBrowsePressOut = useCallback(() => setPressedBrowse(false), []);
 
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'center' }}>
+    <View className="flex-row flex-wrap items-center justify-center gap-3">
       <MotiView animate={{ scale: pressedHome && !reduce ? 0.96 : 1 }} transition={SPRING_PRESS}>
         <Pressable
           accessibilityRole="button"
@@ -119,7 +119,7 @@ export function NotFoundGlitch({
   return (
     <NotFoundStage style={style} testID={testID ?? 'not-found-glitch'}>
       {/* Large code with chromatic ghost layers. */}
-      <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+      <View className="relative items-center justify-center">
         {/* Ghost layers for chromatic aberration (MotiText opacity+translateX) */}
         {reduce ? null : (
           <>
@@ -128,14 +128,8 @@ export function NotFoundGlitch({
               from={{ opacity: 0, translateX: 0 }}
               animate={{ opacity: 0.7, translateX: 3 }}
               transition={{ type: 'timing', duration: 150 }}
-              style={{
-                position: 'absolute',
-                fontSize: 100,
-                fontWeight: 'bold',
-                color: '#ff0040',
-                fontVariant: ['tabular-nums'],
-                letterSpacing: -2,
-              }}
+              className="absolute font-bold text-[#ff0040] text-[100px]"
+              style={{ fontVariant: ['tabular-nums'], letterSpacing: -2 }}
             >
               {display}
             </MotiText>
@@ -144,14 +138,8 @@ export function NotFoundGlitch({
               from={{ opacity: 0, translateX: 0 }}
               animate={{ opacity: 0.7, translateX: -3 }}
               transition={{ type: 'timing', duration: 150 }}
-              style={{
-                position: 'absolute',
-                fontSize: 100,
-                fontWeight: 'bold',
-                color: '#00e5ff',
-                fontVariant: ['tabular-nums'],
-                letterSpacing: -2,
-              }}
+              className="absolute font-bold text-[#00e5ff] text-[100px]"
+              style={{ fontVariant: ['tabular-nums'], letterSpacing: -2 }}
             >
               {display}
             </MotiText>
@@ -160,10 +148,9 @@ export function NotFoundGlitch({
         <Text
           accessibilityRole="header"
           testID="not-found-code"
+          className="font-bold text-[#111111] text-[100px]"
           style={{
-            fontSize: 100,
-            fontWeight: 'bold',
-            color: '#111111' /* theme-exempt: glitch aesthetic, intentionally near-black on both modes */,
+            /* theme-exempt: glitch aesthetic, intentionally near-black on both modes */
             fontVariant: ['tabular-nums'],
             letterSpacing: -2,
           }}
@@ -172,11 +159,9 @@ export function NotFoundGlitch({
         </Text>
       </View>
 
-      <View style={{ alignItems: 'center', gap: 8 }}>
+      <View className="items-center gap-2">
         <Text className="font-semibold text-foreground text-lg">{title}</Text>
-        <Text className="text-muted-foreground text-sm" style={{ maxWidth: 320, textAlign: 'center' }}>
-          {description}
-        </Text>
+        <Text className="max-w-[320px] text-center text-muted-foreground text-sm">{description}</Text>
       </View>
 
       <NotFoundActions onHome={onHome} homeLabel={homeLabel} onBrowse={onBrowse} browseLabel={browseLabel} />

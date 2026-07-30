@@ -135,14 +135,14 @@ function HoverMenuPlayground() {
       </Controls>
 
       <Section title="Elevation">
-        <View style={{ alignItems: 'flex-start' }}>
+        <View className="items-start">
           <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         </View>
       </Section>
 
       <Note>{HINT}</Note>
 
-      <View style={{ alignItems: 'flex-start', paddingVertical: 8 }}>
+      <View className="items-start py-2">
         <HoverMenu
           align={align}
           closeDelay={delay}
@@ -161,9 +161,9 @@ function HoverMenuPlayground() {
 
       <Note>{TRIGGER_NOTE}</Note>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Plain node trigger — uncontrolled, and the wrapper owns the press">
-        <View style={{ alignItems: 'flex-start' }}>
+        <View className="items-start">
           <HoverMenu trigger={renderPlainTrigger} triggerAccessibilityLabel={PLAIN_TRIGGER_LABEL} width="trigger">
             {renderContent}
           </HoverMenu>

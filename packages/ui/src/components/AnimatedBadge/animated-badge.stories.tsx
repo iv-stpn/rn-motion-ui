@@ -53,7 +53,7 @@ function AnimatedBadgePlayground(args: ComponentProps<typeof AnimatedBadge>) {
   useInterval(advance, cycling ? CYCLE_MS : null);
 
   return (
-    <Playground style={{ maxWidth: 380 }}>
+    <Playground className="max-w-[380px]">
       <Controls>
         <Choice label="Status" onChange={setStatus} options={STATUSES} value={status} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
@@ -61,16 +61,16 @@ function AnimatedBadgePlayground(args: ComponentProps<typeof AnimatedBadge>) {
         <Toggle label="Auto-cycle" onChange={setCycling} value={cycling} />
       </Controls>
 
-      <View style={{ alignItems: 'flex-start' }}>
+      <View className="items-start">
         <AnimatedBadge {...args} showIcon={showIcon} size={size} status={status}>
           {STATUS_LABELS[status]}
         </AnimatedBadge>
       </View>
 
-      <View style={{ marginTop: 12 }}>
+      <View className="mt-3">
         {SIZES.map((name) => (
           <Section key={name} title={name === 'sm' ? 'Small' : 'Medium'}>
-            <Variants gap={8}>
+            <Variants>
               {STATUSES.map((value) => (
                 <AnimatedBadge {...args} key={value} showIcon={showIcon} size={name} status={value}>
                   {STATUS_LABELS[value]}
@@ -81,7 +81,7 @@ function AnimatedBadgePlayground(args: ComponentProps<typeof AnimatedBadge>) {
         ))}
 
         <Section title="Without icons">
-          <Variants gap={8}>
+          <Variants>
             {STATUSES.map((value) => (
               <AnimatedBadge {...args} key={value} showIcon={false} size={size} status={value}>
                 {STATUS_LABELS[value]}

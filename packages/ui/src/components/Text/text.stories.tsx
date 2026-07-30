@@ -44,7 +44,7 @@ function TextPlayground(args: ComponentProps<typeof Text>) {
   const sample = numeric ? AMOUNTS.join('  ') : PANGRAM;
 
   return (
-    <Playground style={{ maxWidth: 420 }}>
+    <Playground className="max-w-[420px]">
       <Controls>
         <Choice label="Weight" onChange={setWeight} options={WEIGHTS} value={weight} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
@@ -57,7 +57,7 @@ function TextPlayground(args: ComponentProps<typeof Text>) {
       </Text>
 
       <Section title="Sizes">
-        <Variants direction="column" gap={10}>
+        <Variants direction="column">
           {SIZES.map((name) => (
             <Sample key={name} label={name}>
               <Text {...args} size={name} weight={weight}>
@@ -69,7 +69,7 @@ function TextPlayground(args: ComponentProps<typeof Text>) {
       </Section>
 
       <Section title="Weights">
-        <Variants direction="column" gap={10}>
+        <Variants direction="column">
           {WEIGHTS.map((name) => (
             <Sample key={name} label={name}>
               <Text {...args} size="lg" weight={name}>
@@ -93,9 +93,9 @@ function TextPlayground(args: ComponentProps<typeof Text>) {
       {/* Tabular figures only pay off in a column: the `numeric` digits line up
           across rows while the proportional ones drift. */}
       <Section title="Numeric (tabular figures)">
-        <View style={{ flexDirection: 'row', gap: 32 }}>
+        <View className="flex-row gap-8">
           <Sample label="proportional">
-            <View style={{ gap: 4 }}>
+            <View className="gap-1">
               {AMOUNTS.map((amount) => (
                 <Text {...args} key={amount} numeric={false} size="xl">
                   {amount}
@@ -104,7 +104,7 @@ function TextPlayground(args: ComponentProps<typeof Text>) {
             </View>
           </Sample>
           <Sample label="numeric">
-            <View style={{ gap: 4 }}>
+            <View className="gap-1">
               {AMOUNTS.map((amount) => (
                 <Text {...args} key={amount} numeric={true} size="xl">
                   {amount}

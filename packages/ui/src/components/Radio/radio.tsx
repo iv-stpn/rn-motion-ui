@@ -120,8 +120,7 @@ export function RadioGroup({
             }}
             transition={reduce ? TIMING_INSTANT : indicatorSpring}
             testID={`${testID ?? 'radio-group'}-indicator`}
-            className="h-2.5 w-2.5 rounded-full bg-primary"
-            style={{ pointerEvents: 'none', position: 'absolute', left: 0, top: 0 }}
+            className="pointer-events-none absolute top-0 left-0 h-2.5 w-2.5 rounded-full bg-primary"
           />
         ) : null}
         {children}

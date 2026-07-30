@@ -49,11 +49,11 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
         <Text className="text-muted-foreground text-sm">{BODY}</Text>
       </Card>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       {/* Elevation drives both the surface fill and the shadow recipe, so the
           ladder is best read as a stack — each step is one surface token up. */}
       <Section title="Elevation ladder">
-        <View style={{ gap: 12 }}>
+        <View className="gap-3">
           {SURFACE_LEVELS.map((level) => (
             <Card {...args} elevation={level} key={level} size={size} style={{ width: CARD_WIDTH }}>
               <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>
@@ -63,7 +63,7 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
       </Section>
 
       <Section title="Sizes">
-        <Variants direction="column" gap={12}>
+        <Variants direction="column">
           {SIZES.map((name) => (
             <Sample key={name} label={name}>
               <Card {...args} elevation={elevation} size={name} style={{ width: CARD_WIDTH }}>
@@ -101,7 +101,7 @@ export const Interactive: Story = { render: (args) => <CardPlayground {...args} 
  */
 export const ElevationPairsSurfaceAndShadow: Story = {
   render: () => (
-    <View style={{ gap: 12 }}>
+    <View className="gap-3">
       {SURFACE_LEVELS.map((level) => (
         <Card elevation={level} key={level} style={{ width: CARD_WIDTH }} testID={ladderTestID(level)}>
           <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>

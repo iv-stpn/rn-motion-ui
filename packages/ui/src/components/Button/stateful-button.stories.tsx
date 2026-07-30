@@ -99,7 +99,7 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
         </Variants>
       </Section>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Controlled — an explicit `state` bypasses the machine">
         <Variants align="center">
           {STATES.map((state) => (

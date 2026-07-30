@@ -38,7 +38,7 @@ type RollingDemoProps = { direction: TextRollingDirection; className?: string; i
 function RollingSample({ direction, className, index }: RollingDemoProps) {
   const current = STATUSES[index % STATUSES.length] ?? FIRST_STATUS;
   return (
-    <View style={{ minWidth: 160, alignItems: 'center' }}>
+    <View className="min-w-[160px] items-center">
       <TextRolling className={className} direction={direction} text={current} />
     </View>
   );
@@ -54,21 +54,21 @@ function TextRollingPlayground(args: ComponentProps<typeof TextRolling>) {
   useInterval(advance, auto ? CYCLE_MS : null);
 
   return (
-    <Playground style={{ maxWidth: 380 }}>
+    <Playground className="max-w-[380px]">
       <Controls>
         <Choice label="Direction" onChange={setDirection} options={DIRECTIONS} value={direction} />
         <Toggle label="Auto-cycle" onChange={setAuto} value={auto} />
         <Action label="Next label" onPress={advance} />
       </Controls>
 
-      <View style={{ alignItems: 'center', gap: 6 }}>
+      <View className="items-center gap-1.5">
         <RollingSample className={args.className} direction={direction} index={index} />
         <Note>{`${index + 1} / ${STATUSES.length}`}</Note>
       </View>
 
       {/* Both directions share the index, so one press rolls them opposite ways. */}
       <Section title="Directions">
-        <Variants align="center" gap={24}>
+        <Variants align="center">
           {DIRECTIONS.map((option) => (
             <Sample align="center" key={option.value} label={option.label}>
               <RollingSample className={args.className} direction={option.value} index={index} />

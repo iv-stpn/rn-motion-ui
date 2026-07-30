@@ -3,6 +3,7 @@ import type { Decorator, Preview } from '@storybook/react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DirectionProvider } from 'rn-motion-ui/hooks/direction-provider';
+import { cn } from 'rn-motion-ui/lib/cn';
 import { useGlobals } from 'storybook/preview-api';
 import '../global.css';
 
@@ -38,7 +39,12 @@ const ThemeDecorator: Decorator = (Story) => {
   return (
     <SafeAreaProvider>
       <DirectionProvider value={direction}>
-        <View dir={direction} style={{ flex: 1, backgroundColor: isDark ? '#111111' : '#fafafa', padding: 24 }}>
+        <View
+          // @ts-expect-error - the dir attribute does not exist on RN View, but RNW forwards it to the DOM and to its own locale context
+          dir={direction}
+          className={cn('flex-1 p-6', isDark ? 'bg-black' : 'bg-white')}
+          style={{ flex: 1, backgroundColor: isDark ? '#111111' : '#fafafa', padding: 24 }}
+        >
           <Story />
         </View>
       </DirectionProvider>

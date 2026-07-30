@@ -78,7 +78,7 @@ function ElevatedButtonPlayground(args: ComponentProps<typeof ElevatedButton>) {
         <Toggle label="Ripple" onChange={setRipple} value={ripple} />
       </Controls>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+      <View className="flex-row items-center gap-4">
         <ElevatedButton {...live} onPress={handlePress}>
           {iconSide === 'left' ? icon : null}
           {CONTINUE_LABEL}
@@ -87,7 +87,7 @@ function ElevatedButtonPlayground(args: ComponentProps<typeof ElevatedButton>) {
         <Note testID="story-press-count">{pressedLabel(count)}</Note>
       </View>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       {/* Coloured fills get the white sheen + 1px rim highlight + a drop shadow whose
           ring is the fill darkened toward black; hover lifts the gloss (.16 → .24).
           `white` is a stroke plate that darkens on hover, `gray` a fixed Geist-style

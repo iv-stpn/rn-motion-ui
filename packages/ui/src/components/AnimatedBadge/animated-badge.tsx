@@ -147,7 +147,7 @@ export function AnimatedBadge({
         />
       ) : null}
       {showIcon ? (
-        <View style={{ width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
+        <View className="items-center justify-center" style={{ width: iconSize, height: iconSize }}>
           <AnimatePresence exitBeforeEnter={true}>
             <MotiView
               key={status}
@@ -173,7 +173,7 @@ export function AnimatedBadge({
         </View>
       ) : null}
       {children === null ? null : (
-        <View style={{ overflow: 'hidden' }}>
+        <View className="overflow-hidden">
           <AnimatePresence exitBeforeEnter={true}>
             <MotiView
               key={contentKey}

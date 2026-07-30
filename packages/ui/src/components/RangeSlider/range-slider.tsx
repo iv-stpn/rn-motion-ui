@@ -201,7 +201,7 @@ export function RangeSlider({
       />
 
       {/* ticks — slight inset so the end dots don't clip */}
-      <View style={{ pointerEvents: 'none' }} className="absolute top-0 right-2 bottom-0 left-2">
+      <View className="pointer-events-none absolute top-0 right-2 bottom-0 left-2">
         {ticks.map((t) => {
           const tp = max > min ? ((t - min) / (max - min)) * 100 : 0;
           // Evenly spaced ticks look identical mirrored, but they are not always

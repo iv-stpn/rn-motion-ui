@@ -393,7 +393,7 @@ export function TabsList({ children, testID }: TabsListProps) {
   else indicatorBorderRadius = 0;
 
   return (
-    <View className={list({ variant })} style={{ position: 'relative', alignSelf: 'flex-start' }} testID={testID}>
+    <View className={cn(list({ variant }), 'relative self-start')} testID={testID}>
       {/* Shared-layout indicator: a single MotiView that glides to the active
           trigger's measured rect. Mirrors the web layoutId pill. White for
           pill/segment so trigger text keeps its dark color while the pill is
@@ -407,15 +407,9 @@ export function TabsList({ children, testID }: TabsListProps) {
             height: variant === 'underline' ? 2 : active.height,
           }}
           transition={!hasPositioned.current || reduce ? TIMING_INSTANT : indicatorSpring}
-          className={variant === 'underline' ? 'bg-primary' : 'bg-surface-3'}
+          className={cn(variant === 'underline' ? 'bg-primary' : 'bg-surface-3', 'pointer-events-none absolute top-0 left-0')}
           testID={testID ? `${testID}-indicator` : undefined}
-          style={{
-            pointerEvents: 'none',
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            borderRadius: indicatorBorderRadius,
-          }}
+          style={{ borderRadius: indicatorBorderRadius }}
         />
       ) : null}
       {children}
@@ -501,7 +495,7 @@ export function TabsContent({ value, children, animation, testID }: TabsContentP
       animate={CONTENT_SETTLED}
       transition={mergeTransition(contentTransitionFor(resolved, reduce), contentTransition)}
       testID={testID}
-      style={{ marginTop: 16 }}
+      className="mt-4"
     >
       {children}
     </MotiView>

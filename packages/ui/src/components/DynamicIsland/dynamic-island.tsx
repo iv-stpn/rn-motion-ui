@@ -128,7 +128,7 @@ export function DynamicIsland({ view, compact, children, className, style, acces
           style,
         ]}
       >
-        <View onLayout={onMeasure} style={{ flexShrink: 0, alignItems: 'flex-start' }}>
+        <View onLayout={onMeasure} className="shrink-0 items-start">
           <AnimatePresence initial={false}>
             {!expanded && compact ? (
               <Slot keyId="compact" className="min-h-[37px] min-w-[126px] gap-2 px-4 py-1.5 font-medium text-xs">

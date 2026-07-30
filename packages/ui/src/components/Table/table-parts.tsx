@@ -121,13 +121,9 @@ export function PaginationFooter({
         disabled={prevDisabled}
       >
         {/* Rotated ChevronRight stands in for missing ChevronLeft */}
-        <View style={{ transform: [{ rotate: '180deg' }] }}>
-          {prevIcon ?? <ThemedIcon icon={ChevronRight} variant="secondary" size={16} />}
-        </View>
+        <View className="rotate-180">{prevIcon ?? <ThemedIcon icon={ChevronRight} variant="secondary" size={16} />}</View>
       </Pressable>
-      <Text className="text-muted-foreground" style={{ fontSize: 13 }}>
-        {label}
-      </Text>
+      <Text className="text-[13px] text-muted-foreground">{label}</Text>
       <Pressable
         onPress={nextDisabled ? undefined : goToNextPage}
         className={cn('h-8 w-8 items-center justify-center rounded-md border border-border', nextDisabled && 'opacity-35')}

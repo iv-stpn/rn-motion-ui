@@ -587,10 +587,7 @@ export function WheelPicker({
         className={className}
         style={[{ height, opacity: disabled ? 0.5 : 1 }, style]}
       >
-        <View
-          className={REDUCED_BAND_CLASS[variant]}
-          style={{ pointerEvents: 'none', top: pad, height: itemHeight, zIndex: 10 }}
-        />
+        <View className={cn(REDUCED_BAND_CLASS[variant], 'pointer-events-none z-10')} style={{ top: pad, height: itemHeight }} />
         <ScrollView
           showsVerticalScrollIndicator={false}
           scrollEnabled={!disabled}
@@ -642,7 +639,7 @@ export function WheelPicker({
     >
       {/* Centre band: borderless rounded selection pill, tighter inset under
           `plain` so butted-together wheels each keep a distinct pill. */}
-      <View className={BAND_CLASS[variant]} style={{ pointerEvents: 'none', top: pad, height: itemHeight, zIndex: 10 }} />
+      <View className={cn(BAND_CLASS[variant], 'pointer-events-none z-10')} style={{ top: pad, height: itemHeight }} />
       {options.map((option, i) => (
         <WheelPickerRow
           key={optionValue(option)}
@@ -665,16 +662,8 @@ export function WheelPicker({
           interactive/accessible ones. */}
       <View
         aria-hidden={true}
-        style={{
-          pointerEvents: 'none',
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          top: pad,
-          height: itemHeight,
-          overflow: 'hidden',
-          zIndex: 8,
-        }}
+        className="pointer-events-none absolute inset-x-0 z-[8] overflow-hidden"
+        style={{ top: pad, height: itemHeight }}
       >
         {options.map((option, i) => (
           <WheelPickerRow

@@ -32,8 +32,7 @@ function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) 
       placeholder="Empty"
       placeholderTextColor={mutedForeground}
       testID={testID}
-      className="flex-1 rounded p-1 text-foreground"
-      style={{ fontSize: 13 }}
+      className="flex-1 rounded p-1 text-[13px] text-foreground"
       autoCapitalize="none"
       blurOnSubmit={true}
     />
@@ -99,7 +98,7 @@ export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEd
     );
   else
     cellContent = (
-      <Text className="text-foreground" style={{ fontSize: 13, textAlign }} numberOfLines={1}>
+      <Text className="text-[13px] text-foreground" style={{ textAlign }} numberOfLines={1}>
         {rawValue === null ? '' : String(rawValue)}
       </Text>
     );
@@ -208,8 +207,7 @@ export function TableRow<T>({
       <MotiView
         animate={{ opacity: isSelected ? 1 : 0 }}
         transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
-        className="absolute inset-0 bg-surface-selected"
-        style={{ pointerEvents: 'none' }}
+        className="pointer-events-none absolute inset-0 bg-surface-selected"
       />
 
       {selectable ? (

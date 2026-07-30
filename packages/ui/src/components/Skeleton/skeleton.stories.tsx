@@ -44,7 +44,7 @@ function SkeletonPlayground(args: ComponentProps<typeof Skeleton>) {
       <Skeleton {...args} className="h-10 w-full" shape={shape} speed={speed} />
 
       <Section title="Shapes">
-        <Variants align="center" gap={16}>
+        <Variants align="center">
           {SHAPES.map((name) => (
             <Sample align="center" key={name} label={name}>
               <Skeleton {...args} className="h-10 w-10" shape={name} speed={speed} />
@@ -56,7 +56,7 @@ function SkeletonPlayground(args: ComponentProps<typeof Skeleton>) {
       {/* Sizing is a `className` concern — the component only owns the pulse and
           the corner preset, so real placeholders are composed, not configured. */}
       <Section title="Text block">
-        <View style={{ gap: 8 }}>
+        <View className="gap-2">
           <Skeleton {...args} className="h-4 w-full" speed={speed} />
           <Skeleton {...args} className="h-4 w-full" speed={speed} />
           <Skeleton {...args} className="h-4 w-3/4" speed={speed} />
@@ -64,9 +64,9 @@ function SkeletonPlayground(args: ComponentProps<typeof Skeleton>) {
       </Section>
 
       <Section title="Profile card">
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View className="flex-row items-center gap-3">
           <Skeleton {...args} className="h-12 w-12" shape="circle" speed={speed} />
-          <View style={{ flex: 1, gap: 8 }}>
+          <View className="flex-1 gap-2">
             <Skeleton {...args} className="h-4 w-1/2" speed={speed} />
             <Skeleton {...args} className="h-3 w-3/4" speed={speed} />
           </View>

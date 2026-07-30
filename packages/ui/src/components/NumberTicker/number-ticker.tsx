@@ -3,6 +3,7 @@ import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 're
 import { useArmOnView } from '../../hooks/use-arm-on-view';
 import { useInView } from '../../hooks/use-in-view';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { EASE_OUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { Text } from '../Text/text';
@@ -114,12 +115,7 @@ export function NumberTicker({
       style={[{ flexDirection: 'row', alignItems: 'center' }, style]}
     >
       {/* Hidden measurer sets the per-digit box before columns render. */}
-      <Text
-        className={className}
-        onLayout={onMeasure}
-        importantForAccessibility="no"
-        style={{ position: 'absolute', opacity: 0 }}
-      >
+      <Text onLayout={onMeasure} importantForAccessibility="no" className={cn('absolute opacity-0', className)}>
         {MEASURE_GLYPH}
       </Text>
       {prefix ? <Text className={className}>{prefix}</Text> : null}
@@ -172,7 +168,7 @@ function Digit({ digit, delay, duration, box, className, digitClassName }: Digit
         }
       >
         {DIGITS.map((n) => (
-          <View key={n} style={{ height: box.h, alignItems: 'center', justifyContent: 'center' }}>
+          <View key={n} className="items-center justify-center" style={{ height: box.h }}>
             <Text className={className} style={{ fontVariant: ['tabular-nums'] }}>
               {n}
             </Text>

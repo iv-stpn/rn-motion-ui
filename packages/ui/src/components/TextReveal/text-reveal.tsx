@@ -83,7 +83,7 @@ export function TextReveal({
         const units = split === 'word' ? line.split(' ') : Array.from(line);
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional and derived from a static string; order never changes
-          <View key={`line-${lineIdx}-${line}`} style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          <View key={`line-${lineIdx}-${line}`} className="flex-row flex-wrap">
             {units.map((unit, i) => {
               const d = (delay + unitIndex * stagger) * 1000;
               unitIndex += 1;

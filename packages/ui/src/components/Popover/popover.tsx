@@ -191,12 +191,8 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
     <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose}>
       <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
-          <View key="popover-overlay" style={{ flex: 1 }}>
-            <Pressable
-              accessibilityLabel="Close"
-              onPress={handleClose}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            />
+          <View key="popover-overlay" className="flex-1">
+            <Pressable accessibilityLabel="Close" onPress={handleClose} className="absolute top-0 right-0 bottom-0 left-0" />
             <MotiView
               accessibilityLabel={accessibilityLabel}
               testID={testID}

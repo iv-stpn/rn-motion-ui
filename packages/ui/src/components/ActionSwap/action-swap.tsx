@@ -9,7 +9,7 @@ import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '../../lib/ease
 import { MotiText } from '../../moti/components/text';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
-import { BUTTON_BOX, BUTTON_GAP, type ButtonShape, type ButtonSize, LABEL_TEXT_CLASS } from '../Button/button-scale';
+import { BUTTON_BOX, BUTTON_GAP_CLASSNAME, type ButtonShape, type ButtonSize, LABEL_TEXT_CLASS } from '../Button/button-scale';
 import { Text } from '../Text/text';
 
 export type ActionSwapItem = { id: string; label: ReactNode; icon?: ReactNode; ariaLabel?: string };
@@ -163,11 +163,11 @@ export function ActionSwapText({
       {/* Hidden sizer establishes the slot width/height for the current label.
           String labels size a Text; arbitrary nodes size a wrapping View. */}
       {label === null ? (
-        <View onLayout={onLayout} style={{ opacity: 0 }} importantForAccessibility="no">
+        <View onLayout={onLayout} className="opacity-0" importantForAccessibility="no">
           {children}
         </View>
       ) : (
-        <Text className={textClassName} onLayout={onLayout} style={{ opacity: 0 }} importantForAccessibility="no">
+        <Text className={cn(textClassName, 'opacity-0')} onLayout={onLayout} importantForAccessibility="no">
           {label}
         </Text>
       )}
@@ -180,7 +180,7 @@ export function ActionSwapText({
             // the leaving letters drop away individually rather than as a block.
             from={{ opacity: 1, translateY: 0 }}
             animate={{ opacity: 1, translateY: 0 }}
-            style={{ position: 'absolute', left: 0, top: 0, flexDirection: 'row' }}
+            className="absolute top-0 left-0 flex-row"
           >
             {Array.from(label).map((char, i) => (
               <MotiText
@@ -218,7 +218,7 @@ export function ActionSwapText({
             exit={core === 'blur' ? { opacity: 0, scale: 0.94 } : { opacity: 0, translateY: -roll }}
             transition={core === 'blur' ? BLUR_TRANSITION : ROLL_TRANSITION}
             exitTransition={core === 'blur' ? BLUR_EXIT : ROLL_EXIT}
-            style={{ position: 'absolute', left: 0, top: 0 }}
+            className="absolute top-0 left-0"
           >
             {label === null ? children : <Text className={textClassName}>{label}</Text>}
           </MotiView>
@@ -254,7 +254,7 @@ export function ActionSwapIcon({ value, children, animation = 'blur', size = 16,
           exit={core === 'blur' ? { opacity: 0, scale: 0.25 } : { opacity: 0, translateY: -16 }}
           transition={core === 'blur' ? BLUR_TRANSITION : ROLL_TRANSITION}
           exitTransition={core === 'blur' ? BLUR_EXIT : ROLL_EXIT}
-          style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}
+          className="absolute items-center justify-center"
         >
           {children}
         </MotiView>
@@ -318,11 +318,7 @@ export function ActionSwapButton({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={handlePress}
-        className={cn(container({ variant }), BUTTON_BOX[shape][size])}
-        // The gap is inline, not a class: unlike the rest of the family (whose
-        // content sits in one flex row inside the Pressable) the icon and label
-        // slots are direct children here, so this gap is the live one.
-        style={{ opacity: disabled ? 0.5 : 1, gap: BUTTON_GAP }}
+        className={cn(container({ variant }), BUTTON_BOX[shape][size], disabled && 'opacity-50', BUTTON_GAP_CLASSNAME)}
       >
         {hasIcon ? (
           <ActionSwapIcon value={activeItem.id} animation={animation} size={16}>

@@ -578,10 +578,15 @@
       "types": "./src/moti/interactions/pressable/use-moti-pressable-transition.ts",
       "default": "./src/moti/interactions/pressable/use-moti-pressable-transition.ts"
     },
-    "./utils/typeguards": {
-      "source": "./src/utils/typeguards.ts",
-      "types": "./src/utils/typeguards.ts",
-      "default": "./src/utils/typeguards.ts"
+    "./lib/typeguards": {
+      "source": "./src/lib/typeguards.ts",
+      "types": "./src/lib/typeguards.ts",
+      "default": "./src/lib/typeguards.ts"
+    },
+    "./lib/cn": {
+      "source": "./src/lib/cn.ts",
+      "types": "./src/lib/cn.ts",
+      "default": "./src/lib/cn.ts"
     },
     "./hooks/use-direction": {
       "source": "./src/hooks/use-direction.ts",
@@ -621,6 +626,8 @@
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.6.0",
     "zustand": "5.0.3"
   },
   "peerDependencies": {

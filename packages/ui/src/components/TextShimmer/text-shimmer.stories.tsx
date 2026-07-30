@@ -59,7 +59,7 @@ function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
   const text = swapping ? (PHRASES[phrase] ?? DEFAULT_TEXT) : DEFAULT_TEXT;
 
   return (
-    <Playground style={{ maxWidth: 420 }}>
+    <Playground className="max-w-[420px]">
       <Controls>
         <Choice label="Sweep" onChange={setDurationKey} options={DURATIONS} value={durationKey} />
         <Choice label="Size" onChange={setSizeClass} options={SIZES} value={sizeClass} />
@@ -67,14 +67,14 @@ function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
         <Action label="Next phrase" onPress={advance} />
       </Controls>
 
-      <View style={{ minHeight: 44, justifyContent: 'center' }}>
+      <View className="min-h-[44px] justify-center">
         <TextShimmer {...args} className={`font-semibold ${sizeClass}`} duration={duration}>
           {text}
         </TextShimmer>
       </View>
 
       <Section title="Sweep speeds">
-        <Variants direction="column" gap={12}>
+        <Variants direction="column">
           {DURATIONS.map((option) => (
             <Sample key={option.value} label={option.label}>
               <TextShimmer {...args} className="font-medium text-lg" duration={Number(option.value)}>
@@ -88,7 +88,7 @@ function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
       {/* The sweep interpolates between two colours, so a tinted glint is just a
           different pair of tokens — no gradient or mask needed. */}
       <Section title="Sweep colours">
-        <Variants direction="column" gap={12}>
+        <Variants direction="column">
           <Sample label="default (muted → foreground)">
             <TextShimmer {...args} className="font-medium text-lg" duration={duration}>
               {DEFAULT_TEXT}

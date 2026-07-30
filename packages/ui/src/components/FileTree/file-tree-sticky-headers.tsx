@@ -43,8 +43,8 @@ export function FileTreeStickyHeaders({ headers, transition, itemHeight, renderR
   const deepest = headers.length - 1;
   return (
     <View
-      className="absolute top-0 right-0 left-0 overflow-hidden"
-      style={{ height: headers.length * itemHeight, zIndex: 2 }}
+      className="absolute top-0 right-0 left-0 z-[2] overflow-hidden"
+      style={{ height: headers.length * itemHeight }}
       pointerEvents="box-none"
     >
       {headers.map((row, slot) => (

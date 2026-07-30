@@ -52,7 +52,7 @@ function LoaderPlayground(args: ComponentProps<typeof Loader>) {
   const color = tinted ? colors.primary : undefined;
 
   return (
-    <Playground style={{ maxWidth: 540 }}>
+    <Playground className="max-w-[540px]">
       <Controls>
         <Choice label="Variant" onChange={setVariant} options={GALLERY} value={variant} />
         <Choice label="Size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
@@ -60,16 +60,16 @@ function LoaderPlayground(args: ComponentProps<typeof Loader>) {
         <Toggle label="Tinted" onChange={setTinted} value={tinted} />
       </Controls>
 
-      <View style={{ height: 96, alignItems: 'center', justifyContent: 'center' }}>
+      <View className="h-24 items-center justify-center">
         <Loader {...args} color={color} size={size} speed={speed} variant={variant} />
       </View>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Every variant">
-        <Variants gap={28}>
+        <Variants>
           {GALLERY.map((name) => (
-            <Sample align="center" key={name} label={name} style={{ width: 84 }}>
-              <View style={{ height: 48, justifyContent: 'center' }}>
+            <Sample align="center" key={name} label={name} className="w-[84px]">
+              <View className="h-12 justify-center">
                 <Loader {...args} color={color} size={32} speed={speed} variant={name} />
               </View>
             </Sample>
@@ -78,7 +78,7 @@ function LoaderPlayground(args: ComponentProps<typeof Loader>) {
       </Section>
 
       <Section title="Sizes">
-        <Variants align="center" gap={24}>
+        <Variants align="center">
           {SIZES.map((key) => (
             <Sample align="center" key={key} label={`${key}px`}>
               <Loader {...args} color={color} size={Number(key)} speed={speed} variant={variant} />

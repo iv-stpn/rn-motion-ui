@@ -40,19 +40,7 @@ function ScrollTopButton({ onPress }: ScrollTopButtonProps) {
       accessibilityLabel="Scroll to top"
       testID="scroll-top"
       onPress={handlePress}
-      style={{
-        position: 'absolute',
-        right: 12,
-        bottom: 12,
-        width: 36,
-        height: 36,
-        borderRadius: 999,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#fafafa',
-        borderWidth: 1,
-        borderColor: '#e5e5e5',
-      }}
+      className="absolute right-3 bottom-3 h-9 w-9 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa]"
     >
       <ArrowUp size={16} color="#111111" />
     </Pressable>
@@ -62,11 +50,11 @@ function ScrollTopButton({ onPress }: ScrollTopButtonProps) {
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Demo() {
   return (
-    <View style={{ width: 360, height: 280, borderRadius: 16, borderWidth: 1, borderColor: '#e5e5e5', overflow: 'hidden' }}>
+    <View className="h-[280px] w-[360px] overflow-hidden rounded-2xl border border-[#e5e5e5]">
       <SmoothScroll testID="smooth-scroll" contentContainerStyle={{ padding: 12, gap: 10 }}>
         {SECTIONS.map((n) => (
-          <View key={n} style={{ borderRadius: 10, backgroundColor: '#f4f4f5', paddingHorizontal: 12, paddingVertical: 16 }}>
-            <Text style={{ color: '#71717a', fontSize: 14 }}>{`Section ${n}`}</Text>
+          <View key={n} className="rounded-[10px] bg-[#f4f4f5] px-3 py-4">
+            <Text className="text-[#71717a] text-[14px]">{`Section ${n}`}</Text>
           </View>
         ))}
         <ScrollTopButton onPress={onScrollTop} />

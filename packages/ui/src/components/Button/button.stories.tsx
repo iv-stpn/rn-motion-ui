@@ -108,7 +108,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
         <Toggle label="Ripple" onChange={setRipple} value={ripple} />
       </Controls>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+      <View className="flex-row items-center gap-4">
         <Button {...live} onPress={handlePress}>
           {iconSide === 'left' ? icon : null}
           {CONTINUE_LABEL}
@@ -117,7 +117,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
         <Note testID="story-press-count">{pressedLabel(count)}</Note>
       </View>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Variants">
         <Variants>
           {VARIANTS.map((name) => (
@@ -197,7 +197,7 @@ export const Primary: Story = {
  *  inherited text. This pins each one to the custom property it must resolve to. */
 export const TokenFillsResolve: Story = {
   render: () => (
-    <View style={{ flexDirection: 'row', gap: 16 }}>
+    <View className="flex-row gap-4">
       <Button testID={SPECIAL_KEY} variant="special">
         {CONTINUE_LABEL}
       </Button>

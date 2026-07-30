@@ -92,7 +92,7 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
 
       {/* With `cycle` off the button stops at the last item — the one-way
           "Copy → Copied" case. With it on the press wraps back round. */}
-      <View style={{ alignItems: 'flex-start', gap: 8 }}>
+      <View className="items-start gap-2">
         <ActionSwapButton
           {...args}
           animation={animation}
@@ -109,12 +109,12 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
         <Note testID="story-value">{value}</Note>
       </View>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       {/* The three animations differ in how the outgoing label leaves: blur
           cross-fades it, roll slides both layers vertically, cascade rolls each
           letter on its own delay. */}
       <Section title="Animations">
-        <Variants gap={16}>
+        <Variants>
           <Sample label="blur">
             <Swap animation="blur" variant="secondary" />
           </Sample>
@@ -128,7 +128,7 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
       </Section>
 
       <Section title="Variants">
-        <Variants gap={16}>
+        <Variants>
           {VARIANTS.map((option) => (
             <Sample key={option} label={option}>
               <Swap animation={animation} variant={option} />
@@ -139,7 +139,7 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
 
       {/* `icon` is a square size preset; it pairs with `iconOnly` to drop the label. */}
       <Section title="Sizes">
-        <Variants align="center" gap={16}>
+        <Variants align="center">
           {SIZES.map((option) => (
             <Sample align="center" key={option} label={option}>
               <Swap animation={animation} iconOnly={option === 'icon'} size={option} variant="outline" />
@@ -152,7 +152,7 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
           default here; `rounded` takes the family's radius ramp, so a swapping
           button can sit in a row of Buttons with the same corner. */}
       <Section title="Shapes">
-        <Variants align="center" gap={16}>
+        <Variants align="center">
           {SHAPES.map((option) => (
             <Sample align="center" key={option} label={option}>
               <Swap animation={animation} shape={option} variant="secondary" />

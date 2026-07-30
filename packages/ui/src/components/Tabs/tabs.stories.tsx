@@ -86,7 +86,7 @@ function ContentAnimationSections() {
           what you're picking is how the incoming one arrives. `slide` is the one to
           watch both halves of: the panel you leave is pushed out the other way. */}
       <Section title="Content animations">
-        <Variants direction="column" gap={16}>
+        <Variants direction="column">
           {CONTENT_ANIMATIONS.map((name) => (
             <Sample key={name} label={name}>
               <PanelTabs contentAnimation={name} />
@@ -121,7 +121,7 @@ function TabsPlayground() {
         <Toggle label="Content panels" onChange={setWithPanels} value={withPanels} />
       </Controls>
 
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <Tabs contentAnimation={animation} onValueChange={setTab} value={tab} variant={variant}>
           <TabsList>
             {PANELS.map((panel) => (
@@ -144,7 +144,7 @@ function TabsPlayground() {
       {/* The indicator is the whole point of the variants: a sliding pill, a
           sliding underline, or a segmented plate. Same tree, three treatments. */}
       <Section title="Variants">
-        <Variants direction="column" gap={16}>
+        <Variants direction="column">
           {VARIANTS.map((name) => (
             <Sample key={name} label={name}>
               <Tabs defaultValue="overview" variant={name}>
@@ -265,7 +265,7 @@ export const SlideBothDirections: Story = {
 export const RightToLeft: Story = {
   name: 'Demo: Indicator tracks in RTL',
   render: () => (
-    <View style={{ gap: 24 }}>
+    <View className="gap-6">
       <DirectionalTabs direction="ltr" />
       <DirectionalTabs direction="rtl" />
     </View>

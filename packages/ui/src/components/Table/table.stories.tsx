@@ -53,23 +53,8 @@ type StatusBadgeProps = { status: Person['status'] };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function StatusBadge({ status }: StatusBadgeProps) {
   return (
-    <View
-      style={{
-        borderRadius: 9999,
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        alignSelf: 'flex-start',
-        backgroundColor: statusBackgroundColor(status),
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 11,
-          fontWeight: '500',
-          textTransform: 'capitalize',
-          color: STATUS_COLORS[status],
-        }}
-      >
+    <View className="self-start rounded-full px-2 py-0.5" style={{ backgroundColor: statusBackgroundColor(status) }}>
+      <Text className="font-medium text-[11px]" style={{ textTransform: 'capitalize', color: STATUS_COLORS[status] }}>
         {status}
       </Text>
     </View>
@@ -81,9 +66,9 @@ const ITEM_SEPARATOR = ' · ';
 /** The card body `renderSmallScreen` asks for: the same five fields, stacked instead of columned. */
 function renderPersonCard(row: Person) {
   return (
-    <View style={{ gap: 4 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <Text numberOfLines={1} size="sm" style={{ flex: 1 }} weight="semibold">
+    <View className="gap-1">
+      <View className="flex-row items-center justify-between gap-2">
+        <Text numberOfLines={1} size="sm" className="flex-1" weight="semibold">
           {row.name}
         </Text>
         <StatusBadge status={row.status} />
@@ -91,7 +76,7 @@ function renderPersonCard(row: Person) {
       <Text className="text-muted-foreground" numberOfLines={1} size="xs">
         {row.email}
       </Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <View className="flex-row items-center gap-1.5">
         <Text size="xs">{row.role}</Text>
         <Text className="text-muted-foreground" size="xs">
           {ITEM_SEPARATOR}
@@ -110,7 +95,7 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
     header: 'Name',
     sortable: true,
     width: '1.4fr',
-    cell: (row) => <Text style={{ fontSize: 13, fontWeight: '500' }}>{row.name}</Text>,
+    cell: (row) => <Text className="font-medium text-[13px]">{row.name}</Text>,
   },
   { key: 'email', header: 'Email', width: '1.8fr' },
   { key: 'role', header: 'Role', sortable: true, width: '120px' },
@@ -126,7 +111,7 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
     sortable: true,
     align: 'right',
     width: '100px',
-    cell: (row) => <Text style={{ fontSize: 13, textAlign: 'right' }}>{`$${row.mrr.toLocaleString()}`}</Text>,
+    cell: (row) => <Text className="text-right text-[13px]">{`$${row.mrr.toLocaleString()}`}</Text>,
   },
 ];
 
@@ -212,7 +197,7 @@ function AsyncTableStory() {
       {
         key: 'name',
         header: 'Name',
-        cell: (r) => <Text style={{ fontSize: 13, fontWeight: '500' }}>{r.name}</Text>,
+        cell: (r) => <Text className="font-medium text-[13px]">{r.name}</Text>,
       },
       { key: 'email', header: 'Email', width: '180px' },
       { key: 'role', header: 'Role', width: '110px' },
@@ -227,7 +212,7 @@ function AsyncTableStory() {
         header: 'MRR',
         align: 'right',
         width: '90px',
-        cell: (r) => <Text style={{ fontSize: 13, textAlign: 'right' }}>{`$${r.mrr.toLocaleString()}`}</Text>,
+        cell: (r) => <Text className="text-right text-[13px]">{`$${r.mrr.toLocaleString()}`}</Text>,
       },
     ],
     [],
@@ -241,10 +226,10 @@ function AsyncTableStory() {
   else statusLabel = 'Scroll for more';
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text style={{ fontSize: 12, color: '#6b7280' }}>{`${rows.length} loaded`}</Text>
-        <Text style={{ fontSize: 12, color: '#6b7280' }}>{statusLabel}</Text>
+    <View className="flex-1 p-4">
+      <View className="mb-2 flex-row justify-between">
+        <Text className="text-[#6b7280] text-[12px]">{`${rows.length} loaded`}</Text>
+        <Text className="text-[#6b7280] text-[12px]">{statusLabel}</Text>
       </View>
       <Table
         data={rows}
@@ -354,16 +339,9 @@ function EditableTableStory() {
   const bodyHeight = Math.min(Math.max(rows.length, 1), 6) * 48 + 48; // +header
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 12,
-        }}
-      >
-        <Text style={{ fontSize: 12, color: '#6b7280' }}>
+    <View className="flex-1 p-4">
+      <View className="mb-3 flex-row items-center justify-between">
+        <Text className="text-[#6b7280] text-[12px]">
           {editable ? 'Tap a cell to edit. Long-press row for actions.' : 'Read-only.'}
         </Text>
         <Switch checked={editable} onCheckedChange={setEditable} label="Editable" />
@@ -618,9 +596,9 @@ function SmallScreenTableStory() {
   const getRowId = useCallback((row: Person) => row.id, []);
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <Text style={{ fontSize: 12, color: '#6b7280' }}>
+    <View className="flex-1 p-4">
+      <View className="mb-[12px] flex-row items-center justify-between">
+        <Text className="text-[#6b7280] text-[12px]">
           {useSmallScreen ? 'Card view — each row rendered by renderSmallScreen.' : 'Table view — toggle to switch.'}
         </Text>
         <Switch checked={useSmallScreen} onCheckedChange={setUseSmallScreen} label="Card view" />
@@ -700,7 +678,7 @@ function PaginationTableStory() {
   const getRowId = useCallback((row: Person) => row.id, []);
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
+    <View className="flex-1 p-4">
       <Table
         data={data}
         columns={DEFAULT_COLUMNS}
@@ -762,10 +740,10 @@ function LoadMoreTableStory() {
   else loadMoreStatus = 'All loaded';
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text style={{ fontSize: 12, color: '#6b7280' }}>{`${data.length} / ${allRows.length} rows`}</Text>
-        <Text style={{ fontSize: 12, color: '#6b7280' }}>{loadMoreStatus}</Text>
+    <View className="flex-1 p-4">
+      <View className="mb-2 flex-row justify-between">
+        <Text className="text-[#6b7280] text-[12px]">{`${data.length} / ${allRows.length} rows`}</Text>
+        <Text className="text-[#6b7280] text-[12px]">{loadMoreStatus}</Text>
       </View>
       <Table
         data={data}
@@ -863,7 +841,7 @@ export const RightToLeft: Story = {
   name: 'Demo: Default alignment follows direction',
   args: { columns: [], data: [] },
   render: () => (
-    <View style={{ gap: 24 }}>
+    <View className="gap-6">
       <DirectionalTable direction="ltr" />
       <DirectionalTable direction="rtl" />
     </View>
@@ -1083,7 +1061,7 @@ export const ReorderDirection: Story = {
   name: 'Demo: Reorder drop targets mirror',
   args: { columns: [], data: [] },
   render: () => (
-    <View style={{ gap: 24 }}>
+    <View className="gap-6">
       <ReorderTable direction="ltr" testID="table-reorder-ltr" />
       <ReorderTable direction="rtl" testID="table-reorder-rtl" />
     </View>
@@ -1146,7 +1124,7 @@ export const ReorderIndicatorDirection: Story = {
   name: 'Demo: Drop indicator mirrors',
   args: { columns: [], data: [] },
   render: () => (
-    <View style={{ gap: 24 }}>
+    <View className="gap-6">
       <ReorderTable direction="ltr" testID="table-indicator-ltr" />
       <ReorderTable direction="rtl" testID="table-indicator-rtl" />
     </View>
@@ -1244,7 +1222,7 @@ export const ActionOverlaysDirection: Story = {
   name: 'Demo: Action overlays follow the trailing edge',
   args: { columns: [], data: [] },
   render: () => (
-    <View style={{ gap: 24 }}>
+    <View className="gap-6">
       <OverlayTable direction="ltr" testID="table-overlay-ltr" />
       <OverlayTable direction="rtl" testID="table-overlay-rtl" />
     </View>

@@ -115,7 +115,7 @@ export const Interactive: Story = {
 export const WithAction: Story = {
   name: 'Demo: Trigger an action',
   render: (args) => (
-    <View style={{ width: '100%' }}>
+    <View className="w-full">
       <SwipeableList {...args} />
     </View>
   ),

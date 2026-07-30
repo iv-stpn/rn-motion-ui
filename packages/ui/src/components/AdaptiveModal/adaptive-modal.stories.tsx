@@ -71,7 +71,7 @@ type ModalBodyProps = { long?: boolean };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ModalBody({ long = false }: ModalBodyProps) {
   return (
-    <View style={{ gap: 12 }}>
+    <View className="gap-3">
       <Text className="text-muted-foreground">{BODY}</Text>
       {long
         ? FILLER_KEYS.map((key) => (
@@ -90,12 +90,12 @@ type CustomBodyProps = { onClose: () => void };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function CustomBody({ onClose }: CustomBodyProps) {
   return (
-    <View className="border-border border-t" style={{ gap: 16, padding: 24 }}>
+    <View className="gap-4 border-border border-t p-6">
       <Text size="lg" weight="semibold">
         {CUSTOM_LAYOUT_TITLE}
       </Text>
       <Text className="text-muted-foreground">{BODY}</Text>
-      <Button onPress={onClose} size="sm" style={{ alignSelf: 'flex-end' }} variant="outline">
+      <Button onPress={onClose} size="sm" className="self-end" variant="outline">
         {DONE_LABEL}
       </Button>
     </View>
@@ -123,7 +123,7 @@ function ModalPlayground() {
   const openNote = open ? `Open — ${screenKey} / ${largeMode} / ${smallMode}` : CLOSED_NOTE;
 
   return (
-    <Playground style={{ minWidth: 340 }}>
+    <Playground className="min-w-[340px]">
       <Controls>
         <Choice label="Screen" onChange={setScreenKey} options={SCREENS} value={screenKey} />
         <Choice label="Wide layout" onChange={setLargeMode} options={LARGE_MODES} value={largeMode} />
@@ -139,7 +139,7 @@ function ModalPlayground() {
       </Controls>
 
       <Section title="Elevation">
-        <View style={{ alignItems: 'flex-start' }}>
+        <View className="items-start">
           <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         </View>
       </Section>
@@ -178,7 +178,7 @@ function ModalDemo() {
   const [open, setOpen] = useState(false);
   const handleOpen = useCallback(() => setOpen(true), []);
   return (
-    <View style={{ alignItems: 'center' }}>
+    <View className="items-center">
       <TriggerButton label={OPEN_MODAL_LABEL} onPress={handleOpen} />
       <AdaptiveModal
         isWideScreen={true}

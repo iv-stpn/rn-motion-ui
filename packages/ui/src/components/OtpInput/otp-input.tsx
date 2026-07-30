@@ -130,8 +130,7 @@ function OtpSlot({ index, char, state, isActive, showSuccess, reduce, mask, disa
           from={{ opacity: 1 }}
           animate={{ opacity: 0 }}
           transition={{ type: 'timing', duration: 500, loop: true, repeatReverse: true }}
-          className="absolute h-6 w-px bg-foreground"
-          style={{ top: 16, left: 23, pointerEvents: 'none' }}
+          className="pointer-events-none absolute top-[16px] left-[23px] h-6 w-px bg-foreground"
         />
       ) : null}
 
@@ -144,14 +143,8 @@ function OtpSlot({ index, char, state, isActive, showSuccess, reduce, mask, disa
             animate={{ opacity: 1, translateY: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -14 }}
             transition={{ type: 'timing', duration: reduce ? 0 : 220 }}
-            className="font-semibold text-foreground text-xl"
-            style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              textAlign: 'center',
-              lineHeight: 56,
-            }}
+            className="absolute h-full w-full text-center font-semibold text-foreground text-xl"
+            style={{ lineHeight: 56 }}
           >
             {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
             {mask ? '•' : char}
@@ -271,15 +264,12 @@ export function OTPInput({
           onBlur={handleBlur}
           accessibilityLabel={accessibilityLabel}
           testID={testID ?? 'otp-input'}
-          style={{ position: 'absolute', inset: 0, opacity: 0 }}
+          className="absolute inset-0 opacity-0"
         />
 
         {/* Slots paint above the input (relative + zIndex) so a tap lands on the
             Pressable, not the transparent input, letting us position the caret. */}
-        <Animated.View
-          className="flex-row items-center gap-2"
-          style={{ position: 'relative', zIndex: 1, transform: [{ translateX: shakeX }] }}
-        >
+        <Animated.View className="relative z-[1] flex-row items-center gap-2" style={{ transform: [{ translateX: shakeX }] }}>
           {chars.map((char, i) => (
             <OtpSlot
               // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length slot grid, never reordered.
@@ -306,8 +296,8 @@ export function OTPInput({
               animate={{ opacity: 1, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
               transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-              className="absolute"
-              style={{ pointerEvents: 'none', right: -28, top: 18 }}
+              className="pointer-events-none absolute top-[18px]"
+              style={{ right: -28 }}
             >
               <ThemedIcon icon={Check} token="success-foreground" size={20} strokeWidth={3} />
             </MotiView>

@@ -85,7 +85,7 @@ function BirthdayPicker() {
   }, [day, dayCount]);
 
   return (
-    <View style={{ alignItems: 'center', gap: 12 }}>
+    <View className="items-center gap-3">
       <Note>{`${month} ${day}, ${year}`}</Note>
       {/* Three `plain` wheels butted together inside one frame: no per-wheel
           surface or shadow, so the Card here (rounded, elevated, clipped) is the
@@ -99,7 +99,7 @@ function BirthdayPicker() {
           itemHeight={42}
           onValueChange={setMonth}
           options={MONTHS}
-          style={{ width: 132 }}
+          className="w-[132px]"
           value={month}
           variant="plain"
           visibleCount={7}
@@ -109,7 +109,7 @@ function BirthdayPicker() {
           itemHeight={42}
           onValueChange={setDay}
           options={days}
-          style={{ width: 64 }}
+          className="w-[64px]"
           value={day}
           variant="plain"
           visibleCount={7}
@@ -119,7 +119,7 @@ function BirthdayPicker() {
           itemHeight={42}
           onValueChange={setYear}
           options={YEARS}
-          style={{ width: 88 }}
+          className="w-[88px]"
           value={year}
           variant="plain"
           visibleCount={7}
@@ -146,8 +146,8 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
         <Toggle label="Tick sound" onChange={setSound} value={sound} />
       </Controls>
 
-      <View style={{ alignItems: 'center', gap: 8 }}>
-        <View style={{ width: 200 }}>
+      <View className="items-center gap-2">
+        <View className="w-[200px]">
           <WheelPicker
             {...args}
             accessibilityLabel="Size"
@@ -166,7 +166,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
       {/* Fewer visible rows steepen the drum: the same options bunch harder
           toward the horizon because each row covers more of the arc. */}
       <Section title="Window height">
-        <Variants gap={16}>
+        <Variants>
           {ROWS.map((option) => (
             <Sample align="center" key={option.value} label={option.label}>
               <WheelPicker
@@ -185,7 +185,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
           selection pill, so it still reads on its own — shown unframed here,
           which is how it looks before a parent wraps it. */}
       <Section title="Container variant">
-        <Variants gap={16}>
+        <Variants>
           <Sample align="center" label="card (default)">
             <WheelPicker accessibilityLabel="Size, card" defaultValue="Medium" options={SIZES} style={SAMPLE_WHEEL} />
           </Sample>
@@ -202,7 +202,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
       </Section>
 
       <Section title="Disabled (dimmed, no drag)">
-        <View style={{ width: 200 }}>
+        <View className="w-[200px]">
           <WheelPicker accessibilityLabel="Locked size" defaultValue="Medium" disabled={true} options={SIZES} />
         </View>
       </Section>
@@ -225,7 +225,7 @@ export const Interactive: Story = { render: (args) => <WheelPickerPlayground {..
 export const Default: Story = {
   name: 'Demo: Pick a size',
   render: (args) => (
-    <View style={{ width: 200 }}>
+    <View className="w-[200px]">
       <WheelPicker {...args} accessibilityLabel="Size" defaultValue="Medium" />
     </View>
   ),

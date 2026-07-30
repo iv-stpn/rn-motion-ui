@@ -83,7 +83,7 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
 
   let iconSlot: ReactNode = null;
   if (Icon) iconSlot = <ThemedIcon icon={Icon} token={isActive ? 'foreground' : 'muted-foreground'} size={16} />;
-  else if (hasIcons) iconSlot = <View style={{ width: 16, height: 16 }} />;
+  else if (hasIcons) iconSlot = <View className="h-4 w-4" />;
 
   return (
     <Pressable
@@ -97,19 +97,10 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
       {isActive ? (
         <MotiView
           key={`hl-${item.id}`}
-          className="bg-surface-selected"
+          className="pointer-events-none absolute inset-0 rounded-md bg-surface-selected"
           from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 6,
-            pointerEvents: 'none',
-          }}
         />
       ) : null}
       {iconSlot}

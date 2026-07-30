@@ -57,7 +57,7 @@ const LONG_ITEMS: readonly MenuItemProps[] = Array.from({ length: LONG_LIST_LENG
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function MenuItem({ label, icon: Icon }: MenuItemProps) {
   return (
-    <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
+    <Pressable className="flex-row items-center gap-3 px-4 py-3">
       {Icon ? <Icon size={18} /> : null}
       <Text size="base">{label}</Text>
     </Pressable>
@@ -70,13 +70,13 @@ type MenuBodyProps = { long?: boolean; onClose?: () => void };
 function MenuBody({ long = false, onClose }: MenuBodyProps) {
   const rows = long ? LONG_ITEMS : ITEMS;
   return (
-    <View style={{ paddingVertical: 4 }}>
+    <View className="py-1">
       {rows.map((row) => (
         <MenuItem icon={row.icon} key={row.label} label={row.label} />
       ))}
       {onClose ? (
-        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          <Button onPress={onClose} size="sm" style={{ alignSelf: 'flex-start' }} variant="outline">
+        <View className="px-4 pt-2">
+          <Button onPress={onClose} size="sm" className="self-start" variant="outline">
             {CLOSE_LABEL}
           </Button>
         </View>
@@ -141,7 +141,7 @@ function DropdownPlayground() {
   const openNote = controlled ? `Controlled — open: ${String(open)}` : 'Uncontrolled';
 
   return (
-    <Playground style={{ minWidth: 340 }}>
+    <Playground className="min-w-[340px]">
       <Controls>
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Width" onChange={setWidthKey} options={WIDTHS} value={widthKey} />
@@ -157,7 +157,7 @@ function DropdownPlayground() {
       </Controls>
 
       <Section title="Elevation">
-        <View style={{ alignItems: 'flex-start' }}>
+        <View className="items-start">
           <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         </View>
       </Section>
@@ -195,7 +195,7 @@ export const Interactive: Story = { render: () => <DropdownPlayground /> };
 export const Default: Story = {
   name: 'Demo: Open the menu',
   render: () => (
-    <View style={{ alignItems: 'center' }}>
+    <View className="items-center">
       <AdaptiveDropdown trigger={PlaygroundTrigger}>
         <MenuBody />
       </AdaptiveDropdown>

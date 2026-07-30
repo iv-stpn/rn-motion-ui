@@ -65,7 +65,7 @@ const meta = {
   args: { items: ITEMS, defaultValue: 'calendar', collapsible: true, onValueChange: fn() },
   decorators: [
     (Story) => (
-      <View style={{ width: 360 }}>
+      <View className="w-[360px]">
         <Story />
       </View>
     ),
@@ -113,12 +113,12 @@ function BouncyAccordionPlayground() {
 
       {/* With `collapsible` off, pressing the open row keeps it open — one row is
           always expanded. With it on, the same press closes it and `value` is null. */}
-      <View style={{ gap: 8 }}>
+      <View className="gap-2">
         <BouncyAccordion collapsible={collapsible} items={items} onValueChange={setOpen} value={open} />
         <Note testID="story-open">{open ?? NOTHING_OPEN}</Note>
       </View>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       {/* Rows adjacent to the open one detach: the group's corner radii and the gap
           between rows spring apart, which is the whole point of the bounce. */}
       <Section title="Pre-opened, not collapsible">

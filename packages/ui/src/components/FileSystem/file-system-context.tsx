@@ -9,7 +9,7 @@ import { createContext, type RefObject, useContext } from 'react';
 import type { TextInput } from 'react-native';
 import { createStore, useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import { objectKeys } from '../../utils/typeguards';
+import { objectKeys } from '../../lib/typeguards';
 import type {
   FileEntry,
   FileSystemContextMenuAction,

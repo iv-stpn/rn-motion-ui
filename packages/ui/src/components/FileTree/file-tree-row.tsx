@@ -128,7 +128,8 @@ function RowChevron({ row, metrics, color, reduce, onToggleExpand }: RowChevronP
       hitSlop={6}
       accessibilityRole="button"
       accessibilityLabel={`${row.isExpanded ? 'Collapse' : 'Expand'} ${row.name}`}
-      style={{ width: metrics.chevronSize, height: metrics.chevronSize, alignItems: 'center', justifyContent: 'center' }}
+      className="items-center justify-center"
+      style={{ width: metrics.chevronSize, height: metrics.chevronSize }}
     >
       <MotiView animate={{ rotate: row.isExpanded ? '90deg' : '0deg' }} transition={reduce ? NO_MOTION : CHEVRON_TRANSITION}>
         <ChevronRight size={metrics.chevronSize} color={color} strokeWidth={2} />
@@ -257,8 +258,7 @@ function RowOverlays({ selected, hovered, focused, dropTarget, reduce }: RowOver
       <MotiView
         animate={{ opacity: selected ? 1 : 0 }}
         transition={reduce ? NO_MOTION : SELECT_TRANSITION}
-        className="absolute inset-0 bg-surface-selected"
-        style={{ pointerEvents: 'none' }}
+        className="pointer-events-none absolute inset-0 bg-surface-selected"
       />
       {focused ? <View className="absolute inset-0 rounded-sm border border-primary" pointerEvents="none" /> : null}
       {dropTarget ? <View className="absolute inset-0 rounded-sm border border-primary" pointerEvents="none" /> : null}

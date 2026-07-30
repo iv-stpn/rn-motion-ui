@@ -59,14 +59,15 @@ const BAR_DELAYS = [0, 180, 90, 270];
 function EqBars() {
   const reduce = useReducedMotion();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 16 }}>
+    <View className="h-4 flex-row items-end gap-0.5">
       {BAR_DELAYS.map((delay) => (
         <MotiView
           key={delay}
           from={{ scaleY: 0.4 }}
           animate={reduce ? { scaleY: 0.6 } : { scaleY: 1 }}
           transition={{ type: 'timing', duration: 1100, loop: !reduce, repeatReverse: true, delay }}
-          style={{ width: 2, height: 16, borderRadius: 999, backgroundColor: ACCENT }}
+          className="h-4 w-[2px] rounded-[999px]"
+          style={{ backgroundColor: ACCENT }}
         />
       ))}
     </View>
@@ -83,8 +84,10 @@ function formatClock(totalSeconds: number) {
 function clockPill() {
   return (
     <>
-      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: ACCENT }} />
-      <Text style={{ color: ON_BLACK, fontSize: 12, fontWeight: '500' }}>{CLOCK}</Text>
+      <View className="h-1.5 w-[6px] rounded-[3px]" style={{ backgroundColor: ACCENT }} />
+      <Text className="font-medium text-[12px]" style={{ color: ON_BLACK }}>
+        {CLOCK}
+      </Text>
     </>
   );
 }
@@ -92,8 +95,10 @@ function clockPill() {
 function recordingPill() {
   return (
     <>
-      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: TIMER_TINT }} />
-      <Text style={{ color: ON_BLACK, fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>{RECORDING}</Text>
+      <View className="h-1.5 w-[6px] rounded-[3px]" style={{ backgroundColor: TIMER_TINT }} />
+      <Text className="text-[10px]" style={{ color: ON_BLACK, letterSpacing: 1, opacity: 0.6 }}>
+        {RECORDING}
+      </Text>
     </>
   );
 }
@@ -110,11 +115,15 @@ function Island({ view, seconds = START_SECONDS, compact, onDismiss }: IslandPro
     <DynamicIsland accessibilityLabel="Dynamic island" compact={compact ?? clockPill()} view={view}>
       {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView className="gap-4" id="call">
-        <View style={{ gap: 2 }}>
-          <Text style={{ color: ON_BLACK, fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>{INCOMING_CALL}</Text>
-          <Text style={{ color: ON_BLACK, fontSize: 14, fontWeight: '600' }}>{CALLER}</Text>
+        <View className="gap-0.5">
+          <Text className="text-[10px]" style={{ color: ON_BLACK, letterSpacing: 1, opacity: 0.6 }}>
+            {INCOMING_CALL}
+          </Text>
+          <Text className="font-semibold text-[14px]" style={{ color: ON_BLACK }}>
+            {CALLER}
+          </Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View className="flex-row items-center gap-2">
           <Button accessibilityLabel="Decline" onPress={onDismiss} size="icon" variant="ghost">
             <PhoneOff color={ON_BLACK} size={14} />
           </Button>
@@ -127,8 +136,10 @@ function Island({ view, seconds = START_SECONDS, compact, onDismiss }: IslandPro
       {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView className="gap-3" id="timer">
         <Timer color={TIMER_TINT} size={16} />
-        <Text style={{ color: ON_BLACK, fontSize: 10, letterSpacing: 1, opacity: 0.6 }}>{TIMER_LABEL}</Text>
-        <Text style={{ color: ON_BLACK, fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+        <Text className="text-[10px]" style={{ color: ON_BLACK, letterSpacing: 1, opacity: 0.6 }}>
+          {TIMER_LABEL}
+        </Text>
+        <Text className="font-semibold text-[14px]" style={{ color: ON_BLACK, fontVariant: ['tabular-nums'] }}>
           {formatClock(seconds)}
         </Text>
       </DynamicIslandView>
@@ -136,9 +147,13 @@ function Island({ view, seconds = START_SECONDS, compact, onDismiss }: IslandPro
       {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView className="gap-3" id="music">
         <Music color={ON_BLACK} size={14} />
-        <View style={{ gap: 1 }}>
-          <Text style={{ color: ON_BLACK, fontSize: 12, fontWeight: '600' }}>{TRACK_TITLE}</Text>
-          <Text style={{ color: ON_BLACK, fontSize: 10, opacity: 0.6 }}>{TRACK_ARTIST}</Text>
+        <View className="gap-px">
+          <Text className="font-semibold text-[12px]" style={{ color: ON_BLACK }}>
+            {TRACK_TITLE}
+          </Text>
+          <Text className="text-[10px]" style={{ color: ON_BLACK, opacity: 0.6 }}>
+            {TRACK_ARTIST}
+          </Text>
         </View>
         <EqBars />
       </DynamicIslandView>
@@ -167,13 +182,13 @@ function IslandPlayground() {
         <Toggle label="Run timer" onChange={setRunning} value={running} />
       </Controls>
 
-      <View style={{ height: 132, alignItems: 'center', paddingTop: 8 }}>
+      <View className="h-[132px] items-center pt-2">
         <Island onDismiss={dismiss} seconds={seconds} view={viewKey === 'compact' ? null : viewKey} />
       </View>
 
-      <View style={{ height: 12 }} />
+      <View className="h-3" />
       <Section title="Every view, side by side">
-        <Variants align="center" direction="column" gap={16}>
+        <Variants align="center" direction="column">
           <Sample align="center" label={CALL_ACTION}>
             <Island view="call" />
           </Sample>
@@ -187,7 +202,7 @@ function IslandPlayground() {
       </Section>
 
       <Section title="Compact pill (no view active)">
-        <Variants align="center" direction="column" gap={16}>
+        <Variants align="center" direction="column">
           <Sample align="center" label="Clock">
             <Island view={null} />
           </Sample>
@@ -216,12 +231,12 @@ function IslandDemo() {
   const showMusic = useCallback(() => setView('music'), []);
 
   return (
-    <View style={{ alignItems: 'center', gap: 16 }}>
-      <View style={{ height: 128, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 8 }}>
+    <View className="items-center gap-4">
+      <View className="h-[128px] items-center justify-start pt-2">
         <Island onDismiss={dismiss} seconds={seconds} view={view} />
       </View>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+      <View className="flex-row flex-wrap items-center justify-center gap-2">
         <Button onPress={showCall} size="sm" variant="secondary">
           {CALL_ACTION}
         </Button>

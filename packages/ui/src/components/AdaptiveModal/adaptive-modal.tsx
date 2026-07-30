@@ -247,10 +247,10 @@ export function AdaptiveModal({
     const drawerWidth = Math.min(760, Math.max(460, Math.round(width * 0.44)));
     const maxModalHeight = Math.min(height - 80, 976);
 
-    const widePanelWidth = resolvePanelDimension(widePanelSize?.width, width);
-    const widePanelHeight = resolvePanelDimension(widePanelSize?.height, height);
-    const widePanelMaxWidth = resolvePanelDimension(widePanelSize?.maxWidth, width);
-    const widePanelMaxHeight = resolvePanelDimension(widePanelSize?.maxHeight, height);
+    const wideWidth = resolvePanelDimension(widePanelSize?.width, width);
+    const wideHeight = resolvePanelDimension(widePanelSize?.height, height);
+    const wideMaxWidth = resolvePanelDimension(widePanelSize?.maxWidth, width);
+    const wideMaxHeight = resolvePanelDimension(widePanelSize?.maxHeight, height);
 
     return (
       <Modal
@@ -314,23 +314,18 @@ export function AdaptiveModal({
                   >
                     <TouchableOpacity
                       activeOpacity={1}
-                      className={cn(widePanelWidth === undefined && 'w-full', !widePanelSize && 'min-w-xl max-w-xl')}
-                      style={{
-                        width: widePanelWidth,
-                        height: widePanelHeight,
-                        maxWidth: widePanelMaxWidth,
-                        maxHeight: widePanelMaxHeight,
-                      }}
+                      className={cn(wideWidth === undefined && 'w-full', !widePanelSize && 'min-w-xl max-w-xl')}
+                      style={{ width: wideWidth, height: wideHeight, maxWidth: wideMaxWidth, maxHeight: wideMaxHeight }}
                     >
                       <View
                         className={cn(
                           'rounded-2xl border border-border',
                           surfaceBackground(elevation),
                           elevatedShadow(elevation),
-                          widePanelHeight !== undefined && 'flex-1',
+                          wideHeight !== undefined && 'flex-1',
                           containerPaddingClass,
                         )}
-                        style={widePanelHeight === undefined ? { maxHeight: maxModalHeight } : undefined}
+                        style={wideHeight === undefined ? { maxHeight: maxModalHeight } : undefined}
                         accessibilityViewIsModal={true}
                         aria-modal={true}
                         role="dialog"

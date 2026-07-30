@@ -150,7 +150,7 @@ const meta = {
   component: FileSystem,
   decorators: [
     (Story) => (
-      <View style={{ maxWidth: '100%', width: 880 }}>
+      <View className="w-[880px] max-w-full">
         <Story />
       </View>
     ),
@@ -812,7 +812,7 @@ export const Compact: Story = {
   name: 'Demo: Compact layout',
   decorators: [
     (Story) => (
-      <View style={{ maxWidth: '100%', width: 420 }}>
+      <View className="w-[420px] max-w-full">
         <Story />
       </View>
     ),

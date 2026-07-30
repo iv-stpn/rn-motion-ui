@@ -63,7 +63,7 @@ function StarRatingPlayground(args: ComponentProps<typeof StarRating>) {
         <Toggle label="Round tips" onChange={setRound} value={round} />
       </Controls>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+      <View className="flex-row items-center gap-4">
         <StarRating
           {...args}
           allowClear={allowClear}
@@ -78,7 +78,7 @@ function StarRatingPlayground(args: ComponentProps<typeof StarRating>) {
       </View>
 
       <Section title="Sizes">
-        <Variants direction="column" gap={12}>
+        <Variants direction="column">
           {SIZES.map((name) => (
             <Sample align="center" key={name} label={name}>
               <StarRating defaultValue={3} showValue={true} size={name} />
@@ -88,7 +88,7 @@ function StarRatingPlayground(args: ComponentProps<typeof StarRating>) {
       </Section>
 
       <Section title="Read-only (fractional values allowed)">
-        <Variants direction="column" gap={12}>
+        <Variants direction="column">
           <Sample label="3 / 5">
             <StarRating readOnly={true} value={3} />
           </Sample>
@@ -102,7 +102,7 @@ function StarRatingPlayground(args: ComponentProps<typeof StarRating>) {
       </Section>
 
       <Section title="Custom colours and shape">
-        <Variants direction="column" gap={12}>
+        <Variants direction="column">
           <Sample label="activeStarColor / inactiveStarColor">
             <StarRating
               activeStarColor={colors.primary}

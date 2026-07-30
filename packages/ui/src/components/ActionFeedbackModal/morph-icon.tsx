@@ -1,4 +1,3 @@
-import type { ViewStyle } from 'react-native';
 import { AlertCircle, Check } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -24,16 +23,6 @@ import {
 // rather than announcing "image" between the announcements that matter.
 
 const MORPH_SIZE: Record<ActionFeedbackState, number> = { loading: 40, success: 44, error: 44 };
-
-const morphGlyphStyle: ViewStyle = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  alignItems: 'center',
-  justifyContent: 'center',
-};
 
 export type MorphIconProps = { state: ActionFeedbackState; reduced: boolean };
 
@@ -68,7 +57,7 @@ export function MorphIcon({ state, reduced }: MorphIconProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
             transition={reduced ? RM_TRANSITION : MORPH_SPINNER_TRANSITION}
-            style={morphGlyphStyle}
+            className="absolute inset-0 items-center justify-center"
           >
             <Loader variant="dots" size={28} color={colors['muted-foreground']} />
           </MotiView>
@@ -80,7 +69,7 @@ export function MorphIcon({ state, reduced }: MorphIconProps) {
             animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
             exit={{ opacity: 0, scale: 0.3, rotate: '25deg' }}
             transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
-            style={morphGlyphStyle}
+            className="absolute inset-0 items-center justify-center"
           >
             <ThemedIcon icon={Check} token="success-foreground" size={26} />
           </MotiView>
@@ -92,7 +81,7 @@ export function MorphIcon({ state, reduced }: MorphIconProps) {
             animate={{ opacity: 1, scale: 1, rotate: '0deg' }}
             exit={{ opacity: 0, scale: 0.3, rotate: '-25deg' }}
             transition={reduced ? RM_TRANSITION : MORPH_GLYPH_TRANSITION}
-            style={morphGlyphStyle}
+            className="absolute inset-0 items-center justify-center"
           >
             <ThemedIcon icon={AlertCircle} token="danger-foreground" size={26} />
           </MotiView>

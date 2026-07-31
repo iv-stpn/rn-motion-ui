@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { type ReactNode, useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { View } from 'react-native';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
 import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
 import { Bell, Copy, Pencil, Share, Trash2 } from '../../lib/icons';
+import { MenuItem, type MenuItemIcon } from '../MenuItem/menu-item';
 import { Text } from '../Text/text';
 import { HoverMenu, type HoverMenuProps } from './hover-menu';
 
@@ -50,14 +51,14 @@ const DELAYS = [
 ] as const;
 type DelayKey = (typeof DELAYS)[number]['value'];
 
-type MenuItemDef = { id: string; label: string; icon: ReactNode };
+type MenuItemDef = { id: string; label: string; icon: MenuItemIcon };
 
 const ITEMS: MenuItemDef[] = [
-  { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
-  { id: 'edit', label: 'Edit', icon: <Pencil size={18} /> },
-  { id: 'share', label: 'Share', icon: <Share size={18} /> },
-  { id: 'duplicate', label: 'Duplicate', icon: <Copy size={18} /> },
-  { id: 'delete', label: 'Delete', icon: <Trash2 size={18} /> },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'edit', label: 'Edit', icon: Pencil },
+  { id: 'share', label: 'Share', icon: Share },
+  { id: 'duplicate', label: 'Duplicate', icon: Copy },
+  { id: 'delete', label: 'Delete', icon: Trash2 },
 ];
 
 /** What HoverMenu hands a render-prop trigger. */
@@ -84,10 +85,7 @@ function MenuContent({ close }: MenuContentProps) {
   return (
     <View className="w-full py-1">
       {ITEMS.map((item) => (
-        <Pressable className="flex-row items-center gap-3 px-3 py-2 active:opacity-60" key={item.id} onPress={close}>
-          {item.icon}
-          <Text className="text-foreground text-sm">{item.label}</Text>
-        </Pressable>
+        <MenuItem key={item.id} icon={item.icon} label={item.label} onPress={close} />
       ))}
     </View>
   );

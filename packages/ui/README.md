@@ -113,6 +113,7 @@ Subpaths are namespaced by category:
 | `/adaptive-modal` | `AdaptiveModal` |
 | `/action-feedback-modal` | `ActionFeedbackModal` |
 | `/adaptive-dropdown` | `AdaptiveDropdown` |
+| `/menu-item` | `MenuItem` |
 | `/multi-step-menu` | `MultiStepMenu` |
 | `/bloom-menu` | `BloomMenu` |
 | `/hover-menu` | `HoverMenu` |

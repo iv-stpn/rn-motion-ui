@@ -227,6 +227,11 @@
       "types": "./src/components/Marquee/marquee.tsx",
       "default": "./src/components/Marquee/marquee.tsx"
     },
+    "./menu-item": {
+      "source": "./src/components/MenuItem/menu-item.tsx",
+      "types": "./src/components/MenuItem/menu-item.tsx",
+      "default": "./src/components/MenuItem/menu-item.tsx"
+    },
     "./morphing-modal": {
       "source": "./src/components/MorphingModal/morphing-modal.tsx",
       "types": "./src/components/MorphingModal/morphing-modal.tsx",

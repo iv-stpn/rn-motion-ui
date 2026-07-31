@@ -33,7 +33,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 > `node packages/ui/scripts/check-readme.mjs --fix`, which CI re-runs on every push.
 
 <!-- generated:components -->
-`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `animated-number` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `button` · `card` · `card-choice` · `checkbox` · `command-palette` · `cylinder-carousel` · `dock` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-widget` · `file-system` · `file-tree` · `full-sheet` · `glossy-button` · `hover-menu` · `icon` · `input` · `loader` · `marquee` · `morphing-modal` · `multi-step-menu` · `not-found` · `number-ticker` · `otp-input` · `overflow-actions` · `popover` · `radio` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-reveal` · `text-rolling` · `text-shimmer` · `wheel-picker`
+`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `animated-number` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `button` · `card` · `card-choice` · `checkbox` · `command-palette` · `cylinder-carousel` · `dock` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-widget` · `file-system` · `file-tree` · `full-sheet` · `glossy-button` · `hover-menu` · `icon` · `input` · `loader` · `marquee` · `menu-item` · `morphing-modal` · `multi-step-menu` · `not-found` · `number-ticker` · `otp-input` · `overflow-actions` · `popover` · `radio` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-reveal` · `text-rolling` · `text-shimmer` · `wheel-picker`
 <!-- /generated:components -->
 
 <details>
@@ -50,7 +50,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 Pure helpers and the theme layer — tokens, easings, the surface ladder, the icon set, and the runtime colour resolvers.
 
 <!-- generated:utilities -->
-`breakpoints` · `color` · `ease` · `elevated` · `icons` · `theme/motion` · `theme/use-theme-color` · `utils/typeguards`
+`breakpoints` · `color` · `ease` · `elevated` · `icons` · `lib/cn` · `lib/typeguards` · `theme/motion` · `theme/use-theme-color`
 <!-- /generated:utilities -->
 </details>
 
@@ -215,7 +215,7 @@ bun run test          # Vitest + Playwright interaction tests (real Chromium)
 ```
 
 <!-- generated:counts -->
-56 story files, 171 stories.
+56 story files, 177 stories.
 <!-- /generated:counts -->
 Every story runs as a vitest test; those with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`. `packages/ui` also carries a jsdom unit suite over the pure layers (Moti worklets, `lib/`, the FileTree controller, the OTP edit logic).
 

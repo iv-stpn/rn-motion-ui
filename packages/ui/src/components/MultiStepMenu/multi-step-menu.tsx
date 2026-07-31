@@ -14,11 +14,11 @@ import {
 } from 'react';
 import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, View } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { ChevronRight, type IconProps, X } from '../../lib/icons';
+import { ChevronRight, X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
-import { Text } from '../Text/text';
+import { MenuItem, type MenuItemIcon } from '../MenuItem/menu-item';
 import { TextRolling } from '../TextRolling/text-rolling';
 
 const SLIDE_TRANSITION = { type: 'spring', damping: 28, stiffness: 260, mass: 0.9 } as const;
@@ -44,9 +44,6 @@ function computeDirection(current: string[], next: string[]): 'forward' | 'backw
   if (next.length < current.length) return 'backward';
   return 'forward';
 }
-
-/** A component accepting at least `size` and `color` — compatible with this project's icon set. */
-type IconRenderer = (props: IconProps) => ReactNode;
 
 export type MultiStepDirection = 'forward' | 'backward' | null;
 
@@ -77,7 +74,7 @@ export type MultiStepMenuHandle = {
 };
 
 export type MenuRowProps = Omit<PressableProps, 'children'> & {
-  icon: IconRenderer;
+  icon: MenuItemIcon;
   label: ReactNode;
   active?: boolean;
   iconBackgroundColor: string;
@@ -91,32 +88,16 @@ export type MenuRowProps = Omit<PressableProps, 'children'> & {
 };
 
 /** iOS-style settings sidebar row with a coloured icon background and a subtle active highlight. */
-export function MenuRow({
-  icon: RowIcon,
-  label,
-  active = false,
-  iconBackgroundColor,
-  iconColor = 'white' /* theme-exempt: white on vivid icon square fill */,
-  className,
-  ...props
-}: MenuRowProps) {
-  const bgStyle = useMemo(() => ({ backgroundColor: iconBackgroundColor }), [iconBackgroundColor]);
+export function MenuRow({ icon, label, active = false, iconBackgroundColor, iconColor = 'white', ...props }: MenuRowProps) {
   return (
-    <Pressable
-      // biome-ignore lint/nursery/useSortedClasses: dynamic base + conditional extension — cannot sort across template-literal segments
-      className={`h-11 flex-row items-center gap-2 rounded-lg px-3${active ? ' bg-primary/75' : ''}${className ? ` ${String(className)}` : ''}`}
+    <MenuItem
+      icon={icon}
+      label={label}
+      active={active}
+      iconBackgroundColor={iconBackgroundColor}
+      iconColor={iconColor}
       {...props}
-    >
-      <View
-        // biome-ignore lint/nursery/useSortedClasses: arbitrary shadow with conditional concat can't be split
-        className={`h-6.5 w-6.5 items-center justify-center rounded-md${active ? ' shadow-[0_0_2px_0.5px_rgb(0_0_0_/_0.20)]' : ''}`} // theme-exempt: pure-black drop shadow
-        style={bgStyle}
-      >
-        <RowIcon size={18} color={iconColor} />
-      </View>
-      {/* biome-ignore lint/nursery/useSortedClasses: same reason */}
-      <Text className={`text-base${active ? ' font-semibold text-primary-foreground' : ' text-foreground'}`}>{label}</Text>
-    </Pressable>
+    />
   );
 }
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
 import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
@@ -8,6 +8,7 @@ import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories_
 import { Bell, ChevronDown, Moon, Settings, User } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
+import { MenuItem } from '../MenuItem/menu-item';
 import { Text } from '../Text/text';
 import { AdaptiveDropdown, type ContentRenderProps, type TriggerRenderProps } from './adaptive-dropdown';
 
@@ -41,28 +42,18 @@ type OffsetKey = (typeof OFFSETS)[number];
 const SCROLL_MAX_HEIGHT = 260;
 const LONG_LIST_LENGTH = 18;
 
-type MenuItemProps = { label: string; icon?: typeof User };
+type MenuEntry = { label: string; icon?: typeof User };
 
-const ITEMS = [
+const ITEMS: readonly MenuEntry[] = [
   { label: 'Profile', icon: User },
   { label: 'Notifications', icon: Bell },
   { label: 'Appearance', icon: Moon },
   { label: 'Settings', icon: Settings },
-] as const satisfies readonly MenuItemProps[];
+];
 
-const LONG_ITEMS: readonly MenuItemProps[] = Array.from({ length: LONG_LIST_LENGTH }, (_, index) => ({
+const LONG_ITEMS: readonly MenuEntry[] = Array.from({ length: LONG_LIST_LENGTH }, (_, index) => ({
   label: `Item ${index + 1}`,
 }));
-
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function MenuItem({ label, icon: Icon }: MenuItemProps) {
-  return (
-    <Pressable className="flex-row items-center gap-3 px-4 py-3">
-      {Icon ? <Icon size={18} /> : null}
-      <Text size="base">{label}</Text>
-    </Pressable>
-  );
-}
 
 type MenuBodyProps = { long?: boolean; onClose?: () => void };
 

@@ -1,12 +1,11 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, type StyleProp, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
-import { SPRING_LAYOUT } from '../../lib/ease';
-import { Search } from '../../lib/icons';
-import { MotiView } from '../../moti/components/view';
+import { type IconProps, Search } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
 import { ThemedIcon } from '../Icon/themed-icon';
+import { MenuItem } from '../MenuItem/menu-item';
 import { Text } from '../Text/text';
 
 // Renders inside AdaptiveModal with `customLayout` + `scrollable={false}`: the
@@ -21,7 +20,7 @@ import { Text } from '../Text/text';
 const ESC_LABEL = 'ESC';
 
 /** Props passed to a command palette icon renderer. */
-export type CommandIconProps = { size?: number; color?: string };
+export type CommandIconProps = IconProps;
 
 /** Icon renderer matching the `../../lib/icons` signature. */
 export type CommandIcon = (props: CommandIconProps) => ReactNode;
@@ -77,43 +76,36 @@ type CommandRowProps = {
 };
 
 function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSelect }: CommandRowProps) {
-  const Icon = item.icon;
   const handlePressIn = useCallback(() => onActivate(index), [onActivate, index]);
   const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
 
-  let iconSlot: ReactNode = null;
-  if (Icon) iconSlot = <ThemedIcon icon={Icon} token={isActive ? 'foreground' : 'muted-foreground'} size={16} />;
-  else if (hasIcons) iconSlot = <View className="h-4 w-4" />;
+  // Compose badge + hint into a single trailing node when either is present.
+  const trailing =
+    item.badge || item.hint ? (
+      <>
+        {item.badge ? <View className="shrink-0">{item.badge}</View> : null}
+        {item.hint ? (
+          <Text className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            {item.hint}
+          </Text>
+        ) : null}
+      </>
+    ) : undefined;
 
   return (
-    <Pressable
+    <MenuItem
       accessibilityRole="menuitem"
       accessibilityLabel={item.label}
       onPressIn={handlePressIn}
       onPress={handlePress}
       testID={item.testID}
-      className="relative flex-row items-center gap-3 rounded-md px-2 py-2"
-    >
-      {isActive ? (
-        <MotiView
-          key={`hl-${item.id}`}
-          className="pointer-events-none absolute inset-0 rounded-md bg-surface-selected"
-          from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
-        />
-      ) : null}
-      {iconSlot}
-      <Text numberOfLines={1} className={isActive ? 'flex-1 text-foreground text-sm' : 'flex-1 text-muted-foreground text-sm'}>
-        {item.label}
-      </Text>
-      {item.badge ? <View className="shrink-0">{item.badge}</View> : null}
-      {item.hint ? (
-        <Text className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-          {item.hint}
-        </Text>
-      ) : null}
-    </Pressable>
+      icon={item.icon}
+      label={item.label}
+      active={isActive}
+      trailing={trailing}
+      iconPlaceholder={hasIcons && !item.icon}
+      reduce={reduce}
+    />
   );
 }
 

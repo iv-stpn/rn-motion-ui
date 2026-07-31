@@ -7,6 +7,7 @@ import { useFocusTrap } from '../../hooks/use-focus-trap';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../hooks/use-safe-insets';
 import { cn } from '../../lib/cn';
+import { SURFACE_CLASSNAME } from '../../lib/elevated';
 import { useSheetPresence } from '../Overlay/use-sheet-presence';
 
 const HANDLE_HEIGHT = 28;
@@ -185,8 +186,7 @@ export function BottomSheet({
             <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>
               <View
                 ref={sheetRef}
-                // biome-ignore lint/nursery/useSortedClasses: dynamic class — cannot sort across template-literal segments
-                className={`w-full overflow-hidden bg-surface-3${fullSheet ? '' : ' rounded-t-2xl'}`}
+                className={cn('w-full overflow-hidden', SURFACE_CLASSNAME[3], fullSheet ? 'rounded-t-none' : 'rounded-t-lg')}
                 testID={testID}
                 role="dialog"
                 aria-modal={true}

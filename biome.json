@@ -1,6 +1,18 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["@iv-stpn/biome-config/biome"],
+  "plugins": [
+    "./node_modules/biome-one-liner-plugin/oneLiner.grit",
+    "./node_modules/biome-typescript-best-practices-plugin/typescript.grit",
+    "./node_modules/biome-react-best-practices-plugin/react.grit"
+  ],
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noUnnecessaryConditions": "off"
+      }
+    }
+  },
   "overrides": [
     {
       "includes": ["**/__tests__/**"],

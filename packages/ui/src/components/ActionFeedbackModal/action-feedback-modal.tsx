@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { AccessibilityInfo, Platform, TouchableOpacity, View } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../lib/elevated';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
@@ -211,7 +212,12 @@ export function ActionFeedbackModal({
             exit={{ opacity: 0, scale: 0.96 }}
             transition={reduced ? RM_TRANSITION : { type: 'spring', damping: 24, stiffness: 280, mass: 0.9 }}
             exitTransition={{ type: 'timing', duration: reduced ? 100 : 150 }}
-            className={`w-full max-w-sm rounded-2xl border border-border ${surfaceBackground(elevation)} p-6 ${elevatedShadow(elevation)}`}
+            className={cn(
+              'w-full max-w-sm rounded-2xl border border-border',
+              surfaceBackground(elevation),
+              'p-6',
+              elevatedShadow(elevation),
+            )}
             testID={testID}
           >
             {/* One persistent live region rather than per-state ones: aria-live

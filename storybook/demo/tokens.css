@@ -260,7 +260,6 @@
 
 @layer base {
   @media (prefers-color-scheme: dark) {
-    /* biome-ignore lint/nursery/noUnusedClasses: consumer-facing selector — .light is applied by the app/Storybook to force light mode over an OS-dark preference */
     :root:not(.light) {
       --color-surface-1: oklch(20.5% 0.002 106.5);
       --color-surface-2: oklch(23.5% 0.002 106.5);
@@ -343,7 +342,6 @@
 
   /* Manual dark mode via .dark class on <html> or any ancestor.
      Mirror of the @media block above — keep the two in sync. */
-  /* biome-ignore lint/nursery/noUnusedClasses: consumer-facing selector — applied by the app, not by this library */
   .dark {
     --color-surface-1: oklch(20.5% 0.002 106.5);
     --color-surface-2: oklch(23.5% 0.002 106.5);

@@ -14,7 +14,7 @@
 // background context menu opens on the empty area too — that's where a "New
 // folder" action matters most.
 
-import { type ComponentType, type ReactNode, useRef } from 'react';
+import { type ComponentType, type ReactNode, useMemo, useRef } from 'react';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import { cn } from '../../lib/cn';
 import type { FileSystemBodyState, FileSystemEmptyStateReason, FileSystemView } from './file-system.types';
@@ -128,7 +128,7 @@ function FileSystemBodyContent() {
   const { entries, sortedIndex, sort, view } = useFileSystemEntries();
   const { isSearching, searchInput, searchQuery } = useFileSystemSearch();
   const { hasActiveFilters, fileFilter } = useFileSystemFilters();
-  const { selectedEntry, selectedPath } = useFileSystemSelection();
+  const { selectedEntry, selectedPath, selectedPaths } = useFileSystemSelection();
   const { resolvedUrlCache, pageUrlCache } = useFileSystemViewer();
   const {
     draggable,
@@ -142,9 +142,10 @@ function FileSystemBodyContent() {
     renderEmptyState,
     renderFilePreview,
     renderFileViewer,
+    selectionMode,
     testID,
   } = useFileSystemConsumer();
-  const { openEntry, selectAndPrefetch } = useFileSystemSelectionActions();
+  const { openEntry, selectAndPrefetch, selectMarquee } = useFileSystemSelectionActions();
   const { toggleSortColumn } = useFileSystemEntriesActions();
 
   const viewProps: FileSystemViewProps = {
@@ -161,6 +162,7 @@ function FileSystemBodyContent() {
     loadPreviewImageUrl,
     onBackgroundContextMenuAction,
     onContextMenuAction,
+    onMarquee: selectMarquee,
     onMove,
     onOpen: openEntry,
     onSelect: selectAndPrefetch,
@@ -171,6 +173,8 @@ function FileSystemBodyContent() {
     searchQuery,
     selectedEntry,
     selectedPath,
+    selectedPaths,
+    selectionMode,
     sort,
     testID,
     urlCache: resolvedUrlCache,
@@ -227,11 +231,18 @@ type FileSystemBodyProps = {
 
 export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
   const { currentPath, isLoadingCurrentFolder } = useFileSystemNavigation();
-  const { entries, view } = useFileSystemEntries();
+  const { entries, sortedIndex, view } = useFileSystemEntries();
   const { hasActiveFilters } = useFileSystemFilters();
   const { isSearching, searchInput } = useFileSystemSearch();
-  const { selectedEntry } = useFileSystemSelection();
+  const { selectedEntry, selectedPaths } = useFileSystemSelection();
   const { testID } = useFileSystemConsumer();
+
+  // Resolved here rather than held in the store: the selection is a set of paths,
+  // and only this slot asks for it as entries.
+  const selectedEntries = useMemo(
+    () => [...selectedPaths].flatMap((path) => sortedIndex.files.get(path) ?? sortedIndex.folders.get(path) ?? []),
+    [selectedPaths, sortedIndex],
+  );
 
   const bodyTestID = testID ? `${testID}-body` : undefined;
   const content = <FileSystemBodyContent />;
@@ -253,6 +264,7 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
         isLoadingCurrentFolder,
         isSearching,
         searchValue: searchInput,
+        selectedEntries,
         selectedEntry,
         testID,
         view,

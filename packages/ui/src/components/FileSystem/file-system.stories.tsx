@@ -24,6 +24,7 @@ import type {
 import { FS_EMPTY_STATE_TEST_ID } from './file-system-body';
 import { FS_HOVER_TEST_ID } from './file-system-hover';
 import { FS_TILE_DROP_TARGET_TEST_ID } from './file-system-icons-tile';
+import { FS_MARQUEE_TEST_ID } from './file-system-marquee';
 import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
 
 // ─── Shared data ───────────────────────────────────────────────────────────────
@@ -740,6 +741,178 @@ export const Sort: Story = {
   },
 };
 
+// ─── Selection ─────────────────────────────────────────────────────────────────
+
+/** Long enough to clear RN's 500 ms `delayLongPress`. */
+const LONG_PRESS_MS = 700;
+/** The status bar's count clause, and its selection clause. */
+const ITEM_COUNT_PATTERN = /items$/;
+const SELECTION_CLAUSE_PATTERN = /selected$/;
+
+function mouse(node: Element, type: string, init: MouseEventInit = {}) {
+  node.dispatchEvent(new MouseEvent(type, { bubbles: true, button: 0, cancelable: true, ...init }));
+}
+
+/**
+ * Click `node` with Ctrl or Cmd held.
+ *
+ * A raw `click` rather than `userEvent.keyboard('{Control>}')` + `userEvent.click`:
+ * the direct user-event API does not carry held-key state from one call into the
+ * next, so the modifier never reaches the press. react-native-web derives
+ * `onPress` from the native `click` (not from the responder system), so one
+ * dispatched event is the whole gesture — and it is exactly what a browser sends.
+ */
+function modifierClick(node: Element, ...modifiers: ('ctrlKey' | 'metaKey' | 'shiftKey')[]) {
+  mouse(node, 'click', Object.fromEntries(modifiers.map((key) => [key, true])));
+}
+
+/** The prefix `fileSystemEntryTestID` gives every row and tile. */
+const ENTRY_TEST_ID_PREFIX = 'file-system-entry-';
+
+/**
+ * The paths currently painted as selected, in view order.
+ *
+ * Reads `aria-selected`, which every row and tile carries for assistive tech, so
+ * the assertion is against what a screen reader is told rather than against a
+ * class name. Identity comes from the entry test id — a list row's accessible
+ * name is its cells run together, which is no way to name a file.
+ */
+function selectedPaths(canvas: ReturnType<typeof within>): string[] {
+  const nodes: HTMLElement[] = canvas.getAllByRole('button');
+  return nodes
+    .filter((node) => node.getAttribute('aria-selected') === 'true')
+    .map((node) => node.getAttribute('data-testid') ?? '')
+    .filter((id) => id.startsWith(ENTRY_TEST_ID_PREFIX))
+    .map((id) => id.slice(ENTRY_TEST_ID_PREFIX.length));
+}
+
+/**
+ * Press and hold `node` until the long press resolves.
+ *
+ * Raw MouseEvents rather than `userEvent.pointer`: react-native-web's responder
+ * system listens on `mousedown`/`mouseup`, and user-event's drag-select
+ * emulation fires a `selectionchange` the responder reads as a terminated
+ * gesture — which cancels the press before the long-press timer fires.
+ */
+async function longPress(node: Element): Promise<void> {
+  mouse(node, 'mousedown');
+  await new Promise((resolve) => setTimeout(resolve, LONG_PRESS_MS));
+  mouse(node, 'mouseup');
+  // RNW cancels the click that follows a dispatched long press; the gesture is
+  // already delivered by then, so the event is sent for fidelity, not effect.
+  mouse(node, 'click');
+}
+
+/**
+ * `selectionMode="multiple"` adds the two gestures a file browser is expected to
+ * have: Ctrl-click (Cmd-click on macOS) on web, and a long-press on touch. Both
+ * toggle the entry under the pointer in or out of the selection; a plain press
+ * still replaces it, and a press on the background still clears it.
+ *
+ * The selected set arrives through `onSelectedItemsChange`, in the order the
+ * entries were picked. `onSelectionChange` keeps its single-entry shape and
+ * follows the *lead* — the one added most recently — which is what the columns
+ * trail, the gallery stage and the preview pane keep showing.
+ *
+ * Long-press is the entry context menu's trigger on touch, and multi-selection
+ * takes it over; right-click still opens the menu on web.
+ */
+export const MultiSelect: Story = {
+  name: 'Demo: Select several entries',
+  args: { selectionMode: 'multiple', onSelectedItemsChange: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const footer = await canvas.findByText(ITEM_COUNT_PATTERN);
+
+    // A plain press is still a plain selection.
+    await userEvent.click(await canvas.findByRole('button', { name: 'Documents' }));
+    await canvas.findByText('· “Documents” selected');
+
+    // Ctrl held, the second press adds instead of replacing.
+    modifierClick(await canvas.findByRole('button', { name: 'Photos' }), 'ctrlKey');
+    await canvas.findByText('· 2 selected');
+    await waitFor(() =>
+      expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({ name: 'Documents' }),
+        expect.objectContaining({ name: 'Photos' }),
+      ]),
+    );
+    // The lead follows the entry added last, so single-selection consumers still
+    // get something coherent out of a multi-selection.
+    expect(args.onSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({ name: 'Photos' }));
+
+    // Cmd is the same modifier on macOS, where Ctrl-click is a right-click.
+    modifierClick(await canvas.findByRole('button', { name: 'Budget-2026.xlsx' }), 'metaKey');
+    await canvas.findByText('· 3 selected');
+
+    // A long press is the same toggle without a keyboard — the touch gesture.
+    await longPress(await canvas.findByRole('button', { name: 'README.md' }));
+    await canvas.findByText('· 4 selected');
+
+    // And it takes back out again.
+    await longPress(await canvas.findByRole('button', { name: 'README.md' }));
+    await canvas.findByText('· 3 selected');
+
+    // Clear is the way out where there is no background left to tap.
+    await userEvent.click(await canvas.findByLabelText('Clear selection'));
+    await waitFor(() => expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([]));
+    expect(footer).toBeInTheDocument();
+    await waitFor(() => expect(canvas.queryByText(SELECTION_CLAUSE_PATTERN)).toBeNull());
+  },
+};
+
+/**
+ * Shift-click takes the contiguous run from the *anchor* — the last entry picked
+ * without Shift — to the entry pressed, in the order the surface you pressed
+ * lays its entries out. The anchor deliberately stays put, so shift-clicking
+ * around grows and shrinks one run from a fixed origin rather than accumulating.
+ *
+ * Hold Ctrl/Cmd as well and the run is added to what is already selected, which
+ * is how a selection made of several separate runs gets built.
+ *
+ * The ordering comes from the view, not the store: the list view runs through
+ * its rows as drawn (an expanded folder's children included, since they sit
+ * between their parent and its next sibling), while the columns view keeps each
+ * pane to itself.
+ */
+export const ShiftRange: Story = {
+  name: 'Demo: Select a range',
+  args: { defaultView: 'list', selectionMode: 'multiple', onSelectedItemsChange: fn() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    // Rows sort by name alone, folders and files together:
+    // Archive/, Budget-2026.xlsx, Documents/, Invoice-0042.pdf, Photos/, README.md, Roadmap.pptx.
+    // The plain press sets the anchor the run will measure from.
+    await userEvent.click(await listRow(canvas, 'Budget-2026.xlsx'));
+    await canvas.findByText('· “Budget-2026.xlsx” selected');
+
+    modifierClick(await listRow(canvas, 'Photos'), 'shiftKey');
+    await canvas.findByText('· 4 selected');
+    expect(selectedPaths(canvas)).toEqual(['Budget-2026.xlsx', 'Documents/', 'Invoice-0042.pdf', 'Photos/']);
+
+    // The anchor held, so a second Shift-click re-measures rather than extends.
+    modifierClick(await listRow(canvas, 'Documents'), 'shiftKey');
+    await canvas.findByText('· 2 selected');
+    expect(selectedPaths(canvas)).toEqual(['Budget-2026.xlsx', 'Documents/']);
+
+    // Ctrl moves the anchor and keeps what is there; Shift then runs from it,
+    // replacing — so the two rows added by Ctrl-then-Shift are all that is left.
+    modifierClick(await listRow(canvas, 'Roadmap.pptx'), 'ctrlKey');
+    await canvas.findByText('· 3 selected');
+    modifierClick(await listRow(canvas, 'README.md'), 'shiftKey');
+    await canvas.findByText('· 2 selected');
+    expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']);
+
+    // Shift with Ctrl adds a second run instead of replacing the first.
+    modifierClick(await listRow(canvas, 'Archive'), 'ctrlKey');
+    modifierClick(await listRow(canvas, 'Documents'), 'ctrlKey', 'shiftKey');
+    await canvas.findByText('· 5 selected');
+    expect(selectedPaths(canvas)).toEqual(['Archive/', 'Budget-2026.xlsx', 'Documents/', 'README.md', 'Roadmap.pptx']);
+  },
+};
+
 // ─── Lazy children ─────────────────────────────────────────────────────────────
 
 export const LazyChildren: Story = {
@@ -1126,6 +1299,108 @@ export const DragIntoOwnSubtree: Story = {
     pointer(row, 'pointerdown', source);
     dragTo(container, source, sibling);
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Photos/', sources: ['Documents/'] }));
+  },
+};
+
+/**
+ * A drag lifted from a selected entry carries the whole selection: `onMove`
+ * reports every path at once rather than firing once per entry. Members the drop
+ * would not move — the destination itself, entries already inside it, a folder
+ * dropped into its own subtree — are filtered out first, and nothing fires when
+ * that leaves the list empty.
+ *
+ * Lifting an *unselected* entry is still a single-entry drag; the selection
+ * elsewhere in the folder does not ride along.
+ */
+export const MultiSelectDrag: Story = {
+  name: 'Demo: Drag a multi-selection',
+  args: { defaultView: 'list', draggable: true, selectionMode: 'multiple', onMove: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.list);
+
+    await userEvent.click(await listRow(canvas, 'README.md'));
+    modifierClick(await listRow(canvas, 'Roadmap.pptx'), 'ctrlKey');
+    await canvas.findByText('· 2 selected');
+
+    const row = await listRow(canvas, 'README.md');
+    const source = centreOf(row);
+    const target = centreOf(await listRow(canvas, 'Photos'));
+    pointer(row, 'pointerdown', source);
+    dragTo(container, source, target);
+
+    await waitFor(() =>
+      expect(args.onMove).toHaveBeenCalledWith({
+        destination: 'Photos/',
+        sources: expect.arrayContaining(['README.md', 'Roadmap.pptx']),
+      }),
+    );
+  },
+};
+
+/**
+ * The selection box: press on empty space in the grid and drag, and everything
+ * the band touches is selected live as it is drawn. Web only — a finger dragged
+ * across a grid scrolls it, and there is no modifier on a touchscreen to say
+ * otherwise — and only under `selectionMode="multiple"`.
+ *
+ * It never fights the drag, because the two are cut from one hit test: a press
+ * lands on a tile, where a drag lifts, or it does not, where the band starts.
+ * That same strictness is why a press in the gutter *between* two tiles now
+ * starts a band rather than lifting whichever tile was nearest.
+ *
+ * Hold Ctrl/Cmd as you start the band to add to the selection instead of
+ * replacing it.
+ */
+export const SelectionBox: Story = {
+  name: 'Demo: Drag a selection box',
+  args: { selectionMode: 'multiple', draggable: true, onMove: fn(), onSelectedItemsChange: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.icons);
+    await canvas.findByText('Archive');
+
+    // Tiles run in name order, so the first two are Archive/ and Budget-2026.xlsx.
+    // Start below them — empty space, where no tile can lift — and sweep up.
+    const bounds = container.getBoundingClientRect();
+    const first = centreOf(await canvas.findByRole('button', { name: 'Archive' }));
+    const second = centreOf(await canvas.findByRole('button', { name: 'Budget-2026.xlsx' }));
+    const origin = { x: bounds.left + 4, y: bounds.top + bounds.height - 4 };
+
+    pointer(container, 'pointerdown', origin);
+    dragOver(container, origin, second);
+
+    // The band is up and painting while the pointer is still down.
+    expect(await canvas.findByTestId(FS_MARQUEE_TEST_ID)).toBeInTheDocument();
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['Archive/', 'Budget-2026.xlsx']));
+
+    pointer(container, 'pointerup', second);
+    // The click the browser sends after the release is swallowed: without that,
+    // the container's background press would clear the band on the frame it ended.
+    mouse(container, 'click');
+    await canvas.findByText('· 2 selected');
+    await waitFor(() =>
+      expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({ name: 'Archive' }),
+        expect.objectContaining({ name: 'Budget-2026.xlsx' }),
+      ]),
+    );
+
+    // A band is not a drag: nothing was moved by drawing one over the tiles.
+    expect(args.onMove).not.toHaveBeenCalled();
+
+    // A shorter sweep takes fewer tiles, so the band tracks the pointer rather
+    // than latching onto whatever it first touched.
+    pointer(container, 'pointerdown', origin);
+    dragOver(container, origin, first);
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['Archive/']));
+    pointer(container, 'pointerup', first);
+    mouse(container, 'click');
+
+    // And an ordinary click on the background still clears — the gate only ever
+    // swallows the click that follows a band that actually drew.
+    mouse(container, 'click');
+    await waitFor(() => expect(canvas.queryByText(SELECTION_CLAUSE_PATTERN)).toBeNull());
   },
 };
 

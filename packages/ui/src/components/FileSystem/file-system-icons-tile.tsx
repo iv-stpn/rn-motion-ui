@@ -7,7 +7,7 @@
 // chip and all. Anything that would make the two diverge belongs in the face.
 
 import { useCallback } from 'react';
-import { Animated, Pressable, View } from 'react-native';
+import { Animated, type GestureResponderEvent, Pressable, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import { Text } from '../Text/text';
 import type { FileSystemEntry } from './file-system.types';
@@ -17,6 +17,7 @@ import { GLYPH_BOX_HEIGHT, GLYPH_BOX_WIDTH, ROW_GAP, TILE_HEIGHT } from './file-
 import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
+import { useEntryLongPress } from './use-entry-activation';
 
 // Tile *geometry* lives in file-system-icons-grid.ts — the drag session resolves
 // pointer positions with those constants, and the hover highlight derives the
@@ -107,7 +108,9 @@ type IconTileProps = IconTileFaceProps &
   Pick<FileSystemViewProps, 'getContextMenuActions' | 'onContextMenuAction'> & {
     /** This tile is the one being dragged — faded, since the ghost now carries it. */
     isDragSource: boolean;
-    onActivate: (entry: FileSystemEntry) => void;
+    onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
+    /** Long-press toggles this tile's selection; `undefined` leaves the gesture to the context menu. */
+    onSelectLongPress?: (entry: FileSystemEntry) => void;
     /** Already resolved for this entry by `IconRow` — see `fileSystemEntryTestID`. */
     testID?: string;
   };
@@ -120,12 +123,18 @@ function IconTile({
   isSelected,
   onActivate,
   onContextMenuAction,
+  onSelectLongPress,
   testID,
   width,
   ...faceProps
 }: IconTileProps) {
-  const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
-  const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
+  const {
+    wrapperRef,
+    onLongPress: openContextMenu,
+    contextMenuNode,
+  } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
     <View ref={wrapperRef} style={{ width }}>
@@ -133,6 +142,8 @@ function IconTile({
         accessibilityLabel={entry.name}
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
+        // See ListRow: native reads the state, web reads the ARIA attribute.
+        aria-selected={isSelected}
         // The tile keeps its slot while dragged and just fades — the same "left
         // behind" cue a desktop file manager gives, and it keeps the grid from
         // reflowing under a drag that may still be cancelled.
@@ -160,26 +171,26 @@ function IconTile({
 }
 
 export type IconRowProps = Omit<IconTileProps, 'entry' | 'isDragSource' | 'isDropTarget' | 'isSelected' | 'testID' | 'width'> & {
-  /** Path of the entry being dragged, so its tile can fade. */
-  draggedPath: string | null;
+  /** Paths the drag is carrying, so every tile it lifted can fade — not just the one under the pointer. */
+  draggedPaths: ReadonlySet<string>;
   /** Path of the folder under the pointer, so its tile can outline. */
   dragTargetPath: string | null;
   row: FileSystemEntry[];
-  selectedPath: string | null;
+  selectedPaths: ReadonlySet<string>;
   tileWidth: number;
   /** The browser's root `testID`; each tile derives its own from it. */
   testID?: string;
 };
 
-export function IconRow({ draggedPath, dragTargetPath, row, selectedPath, testID, tileWidth, ...tileProps }: IconRowProps) {
+export function IconRow({ draggedPaths, dragTargetPath, row, selectedPaths, testID, tileWidth, ...tileProps }: IconRowProps) {
   return (
     <View className="flex-row gap-1" style={{ marginBottom: ROW_GAP }}>
       {row.map((entry) => (
         <IconTile
           entry={entry}
-          isDragSource={entry.path === draggedPath}
+          isDragSource={draggedPaths.has(entry.path)}
           isDropTarget={entry.path === dragTargetPath}
-          isSelected={entry.path === selectedPath}
+          isSelected={selectedPaths.has(entry.path)}
           key={entry.path}
           testID={fileSystemEntryTestID(testID, entry.path)}
           width={tileWidth}

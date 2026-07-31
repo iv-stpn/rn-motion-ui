@@ -231,10 +231,10 @@ export type UseFileSystemRowHoverParams = {
   offsetTop: number;
   scrollOffsetRef: MutableRefObject<number>;
   /**
-   * Flat row index of the selected entry, or null. The highlight is suppressed
-   * on the selected row — its own selection style already marks it.
+   * Flat row indexes of the selected entries. The highlight is suppressed on a
+   * selected row — its own selection style already marks it.
    */
-  selectedIndexRef?: MutableRefObject<number | null>;
+  selectedIndexesRef?: MutableRefObject<ReadonlySet<number>>;
   /** Row height plus any gap below it. */
   stride: number;
 };
@@ -251,7 +251,7 @@ export function useFileSystemRowHover({
   isDragging,
   offsetTop,
   scrollOffsetRef,
-  selectedIndexRef,
+  selectedIndexesRef,
   stride,
 }: UseFileSystemRowHoverParams): FileSystemHoverController {
   const resolve = useCallback(
@@ -264,10 +264,10 @@ export function useFileSystemRowHover({
       }
       const index = Math.floor((localY + scrollOffsetRef.current - offsetTop) / stride);
       if (index < 0 || index >= count) return null;
-      if (selectedIndexRef !== undefined && index === selectedIndexRef.current) return null;
+      if (selectedIndexesRef?.current.has(index)) return null;
       return top(index);
     },
-    [count, getTargetIndex, isDragging, offsetTop, scrollOffsetRef, selectedIndexRef, stride],
+    [count, getTargetIndex, isDragging, offsetTop, scrollOffsetRef, selectedIndexesRef, stride],
   );
   return useFileSystemHover({ containerRef, isDragging, resolve });
 }

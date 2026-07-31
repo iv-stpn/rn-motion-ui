@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   FlatList,
+  type GestureResponderEvent,
   type LayoutChangeEvent,
   type ListRenderItemInfo,
   type NativeScrollEvent,
@@ -43,8 +44,8 @@ import type { FileSystemRow } from './file-system-rows';
 import { flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
-import { useEntryActivation } from './use-entry-activation';
-import { FS_DRAG_CONTAINER_TEST_ID, FS_ROW_HEIGHT, useFileSystemDrag } from './use-file-system-drag';
+import { useEntryActivation, useEntryLongPress } from './use-entry-activation';
+import { FS_DRAG_CONTAINER_TEST_ID, FS_ROW_HEIGHT, useDragSources, useFileSystemDrag } from './use-file-system-drag';
 import { useFileSystemDragWeb } from './use-file-system-drag-web';
 
 const NAME_LABEL = 'Name';
@@ -152,8 +153,10 @@ type ListRowProps = {
   childCount: number | undefined;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   isSelected: boolean;
-  onActivate: (entry: FileSystemEntry) => void;
+  onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  /** Long-press toggles this row's selection; `undefined` leaves the gesture to the context menu. */
+  onSelectLongPress?: (entry: FileSystemEntry) => void;
   onToggleExpanded: (path: string) => void;
   row: FileSystemRow;
   showDate: boolean;
@@ -168,25 +171,35 @@ function ListRow({
   isSelected,
   onActivate,
   onContextMenuAction,
+  onSelectLongPress,
   onToggleExpanded,
   row,
   showDate,
   testID,
 }: ListRowProps) {
   const { entry, isExpandable, isExpanded, level } = row;
-  const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
+  const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
   const handleToggle = useCallback(() => onToggleExpanded(entry.path), [entry.path, onToggleExpanded]);
   const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
   const textClassName = isSelected ? 'text-white' : 'text-foreground';
   const metaClassName = isSelected ? 'text-white' : 'text-muted-foreground';
 
-  const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const {
+    wrapperRef,
+    onLongPress: openContextMenu,
+    contextMenuNode,
+  } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
     <View ref={wrapperRef}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: isExpandable ? isExpanded : undefined, selected: isSelected }}
+        // Both, deliberately: `accessibilityState` is what native reads, and
+        // react-native-web maps `aria-selected` but not `accessibilityState`, so
+        // on web the fill would otherwise be the only thing saying "picked".
+        aria-selected={isSelected}
         // Hover is not a class here: it is one sliding node behind the rows, so it
         // can keep tracking under the drag's pointer capture. See file-system-hover.
         className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected && 'bg-info')}
@@ -244,14 +257,14 @@ export function FileSystemListView({
   onOpen,
   onSelect,
   onSortColumnClick,
-  selectedPath,
+  selectedPaths,
+  selectionMode,
   sort,
   testID,
 }: FileSystemViewProps) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set<string>());
   const [width, setWidth] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
-  const activate = useEntryActivation(onOpen, onSelect);
 
   const flatListRef = useRef<FlatList<FileSystemRow> | null>(null);
   const containerRef = useRef<View | null>(null);
@@ -259,13 +272,20 @@ export function FileSystemListView({
   const containerHeightRef = useRef(0);
 
   const rows = useMemo(() => flattenFileSystemRows({ currentPath, expanded, index }), [currentPath, expanded, index]);
+  // A Shift-range runs through the rows as they are drawn — an expanded folder's
+  // children included, since they sit between their parent and its next sibling.
+  const orderedPaths = useMemo(() => rows.map((row) => row.entry.path), [rows]);
   const showDate = width === 0 || width >= DATE_COLUMN_MIN_WIDTH;
+
+  const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
     setWidth(event.nativeEvent.layout.width);
     containerHeightRef.current = event.nativeEvent.layout.height;
   }, []);
   const toggleExpanded = useCallback((path: string) => setExpanded((previous) => toggleExpandedPath(previous, path)), []);
+
+  const getDragSources = useDragSources(selectedPaths);
 
   const { session, previewPos, drag, nativeGesture } = useFileSystemDrag({
     containerHeightRef,
@@ -274,15 +294,21 @@ export function FileSystemListView({
     contentOffsetTop: LIST_PADDING_TOP,
     enabled: draggable,
     flatListRef,
+    getDragSources,
     onMove,
     rows,
     scrollOffsetRef,
   });
   useFileSystemDragWeb({ containerRef, enabled: draggable, session });
 
-  const selectedIndexRef = useRef<number | null>(null);
-  const selIdx = selectedPath === null ? -1 : rows.findIndex((r) => r.entry.path === selectedPath);
-  selectedIndexRef.current = selIdx === -1 ? null : selIdx;
+  const selectedIndexesRef = useRef<ReadonlySet<number>>(new Set());
+  selectedIndexesRef.current = useMemo(() => {
+    const indexes = new Set<number>();
+    rows.forEach((row, rowIndex) => {
+      if (selectedPaths.has(row.entry.path)) indexes.add(rowIndex);
+    });
+    return indexes;
+  }, [rows, selectedPaths]);
 
   const hover = useFileSystemRowHover({
     containerRef,
@@ -291,15 +317,15 @@ export function FileSystemListView({
     isDragging: session.isActive,
     offsetTop: LIST_PADDING_TOP,
     scrollOffsetRef,
-    selectedIndexRef,
+    selectedIndexesRef,
     stride: FS_ROW_HEIGHT,
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPath is the trigger; not read in the body but must be in the deps to re-fire on selection change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPaths is the trigger; not read in the body but must be in the deps to re-fire on selection change
   // biome-ignore lint/plugin: re-resolve is a side-effect on an Animated value, not render state
   useEffect(() => {
     hover.refresh();
-  }, [hover, selectedPath]);
+  }, [hover, selectedPaths]);
 
   const backgroundMenu = useBackgroundContextMenu(
     containerRef,
@@ -326,16 +352,27 @@ export function FileSystemListView({
       <ListRow
         childCount={index.children.get(item.entry.path)?.length}
         getContextMenuActions={getContextMenuActions}
-        isSelected={item.entry.path === selectedPath}
+        isSelected={selectedPaths.has(item.entry.path)}
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
+        onSelectLongPress={selectLongPress}
         onToggleExpanded={toggleExpanded}
         row={item}
         showDate={showDate}
         testID={fileSystemEntryTestID(testID, item.entry.path)}
       />
     ),
-    [activate, getContextMenuActions, index, onContextMenuAction, selectedPath, showDate, testID, toggleExpanded],
+    [
+      activate,
+      getContextMenuActions,
+      index,
+      onContextMenuAction,
+      selectedPaths,
+      selectLongPress,
+      showDate,
+      testID,
+      toggleExpanded,
+    ],
   );
 
   const list = (

@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: one public data model — the props type and the shapes its callbacks pass belong in one place */
 // Public data model for <FileSystem>. Kept RN-free so the logic modules and
 // their unit tests can import it without pulling in the render layer.
 //
@@ -8,6 +9,7 @@
 
 import type { ReactNode } from 'react';
 import type { BreakpointValue } from '../../lib/breakpoints';
+import type { FileSystemSelectionMode } from './file-system-selection';
 
 /** One entry in the list returned by `getContextMenuActions`. */
 export type FileSystemContextMenuAction = {
@@ -144,7 +146,16 @@ export type FileSystemHeaderState = {
 };
 
 /** State snapshot passed to {@link FileSystemProps.renderFooter}. */
-export type FileSystemStatusState = { count: number; isSearching: boolean; selectedName?: string };
+export type FileSystemStatusState = {
+  count: number;
+  isSearching: boolean;
+  /** Name of the lead entry — the sole selection, or the last one added to it. */
+  selectedName?: string;
+  /** How many entries are selected. `0` or `1` unless `selectionMode` is `'multiple'`. */
+  selectedCount: number;
+  /** Empties the selection — the way out of a multi-selection on touch. */
+  clearSelection: () => void;
+};
 
 /**
  * State snapshot passed to {@link FileSystemProps.renderBody}. Unlike the header
@@ -160,7 +171,10 @@ export type FileSystemBodyState = {
   /** Entries of the current folder, sorted and filtered — the search hits while searching. */
   entries: FileSystemEntry[];
   view: FileSystemView;
+  /** The lead entry — see {@link FileSystemProps.onSelectionChange}. */
   selectedEntry: FileSystemEntry | null;
+  /** Every selected entry, in the order they were added. */
+  selectedEntries: FileSystemEntry[];
   searchValue: string;
   isSearching: boolean;
   hasActiveFilters: boolean;
@@ -261,7 +275,53 @@ export type FileSystemProps = {
   onViewChange?: (view: FileSystemView) => void;
   /** Folder prefix to open initially, e.g. `'invoices/'`. */
   defaultPath?: string;
+  /**
+   * How many entries can be selected at once.
+   *
+   * `'multiple'` turns on the gestures a file browser is expected to have:
+   *
+   * - **Ctrl-click** (Cmd-click on macOS), or a **long-press** on touch: toggle
+   *   the entry under the pointer in or out of the selection.
+   * - **Shift-click**: take the contiguous run from the anchor — the last entry
+   *   picked without Shift — to the entry pressed, in the order the surface you
+   *   pressed lays its entries out. Shift-clicking around grows and shrinks one
+   *   run rather than accumulating; hold Ctrl/Cmd as well to add the run to
+   *   what is already selected.
+   * - **A selection box** dragged across empty space in the grid view, web only.
+   *   Everything the box touches is selected live as it is drawn; hold Ctrl/Cmd
+   *   as you start it to add to the selection instead of replacing it. The other
+   *   three views have no empty space to start one from.
+   *
+   * A plain press still replaces the selection, and a press on the background
+   * still clears it.
+   *
+   * Two consequences worth knowing before you switch it on:
+   *
+   * - Long-press is already the entry context menu's trigger on touch, and
+   *   multi-selection takes it over. With `getContextMenuActions` the menu still
+   *   opens on right-click on web, but on touch it becomes unreachable — so pick
+   *   one, or surface those actions elsewhere in your UI.
+   * - With `draggable`, a hold on native starts a drag (at 300 ms) before a long
+   *   press resolves (at 500 ms), so the toggle gesture is effectively web-only
+   *   in the list and icons views.
+   *
+   * @default 'single'
+   */
+  selectionMode?: FileSystemSelectionMode;
+  /**
+   * Called with the lead entry — the one a single-selection surface follows.
+   * Under `selectionMode="multiple"` that is the entry most recently added to
+   * the selection; use {@link FileSystemProps.onSelectedItemsChange} for the
+   * whole set.
+   */
   onSelectionChange?: (item: FileSystemItem | null) => void;
+  /**
+   * Called with the entire selection whenever it changes, in the order the
+   * entries were added. Fires with `[]` when the selection is cleared. Only
+   * interesting under `selectionMode="multiple"` — in `single` mode it mirrors
+   * {@link FileSystemProps.onSelectionChange} one item at a time.
+   */
+  onSelectedItemsChange?: (items: FileSystemItem[]) => void;
   /**
    * Called when a file is opened (double-click on web, second tap on native),
    * replacing the built-in behaviour. By default image files open in a viewer
@@ -315,6 +375,12 @@ export type FileSystemProps = {
   /**
    * Called after the user drops one or more entries onto a destination folder.
    * The component itself does not mutate `items` — update the prop in response.
+   *
+   * Dragging an entry that belongs to a multi-selection moves the whole
+   * selection, so `sources` can hold more than the entry under the pointer.
+   * Members the drop would not be a move for — the destination itself, entries
+   * already in it, a folder dropped into its own subtree — are dropped from the
+   * list, and nothing fires when that leaves it empty.
    */
   onMove?: (event: FileSystemMoveEvent) => void;
   /** Fixed viewport height. Defaults to 480. */

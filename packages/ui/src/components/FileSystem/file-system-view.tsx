@@ -17,6 +17,7 @@ import type {
   FileSystemSortState,
   FileSystemViewerArgs,
 } from './file-system.types';
+import type { FileSystemSelectionMode, FileSystemSelectionModifiers } from './file-system-selection';
 
 export type FileSystemViewProps = {
   currentPath: string;
@@ -32,11 +33,24 @@ export type FileSystemViewProps = {
   index: FileSystemIndex;
   loadingFolders: Set<string>;
   onOpen: (entry: FileSystemEntry) => void;
-  onSelect: (entry: FileSystemEntry | null) => void;
+  onSelect: (
+    entry: FileSystemEntry | null,
+    modifiers?: FileSystemSelectionModifiers,
+    /** The pressed surface's entries in layout order — what a Shift-range runs through. */
+    orderedPaths?: readonly string[],
+  ) => void;
+  /** One frame of a live selection box. Only the icons grid draws one — see `file-system-marquee.tsx`. */
+  onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onSortColumnClick: (key: FileSystemSortKey) => void;
   searchQuery: string;
+  /** The lead entry: what the columns preview pane and the gallery stage follow. */
   selectedEntry: FileSystemEntry | null;
+  /** The lead entry's path. Views paint from `selectedPaths`, not from this. */
   selectedPath: string | null;
+  /** Every selected path. Reference-stable while the selection holds, so it is safe in a memo's deps. */
+  selectedPaths: ReadonlySet<string>;
+  /** See `FileSystemProps.selectionMode` — `'multiple'` is what arms the long-press gesture. */
+  selectionMode: FileSystemSelectionMode;
   sort: FileSystemSortState;
   /** `path#pageIndex` → thumbnail URL, shared by every pager. */
   pageUrlCache: Map<string, string>;

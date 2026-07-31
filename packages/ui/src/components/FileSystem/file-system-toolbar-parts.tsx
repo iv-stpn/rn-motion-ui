@@ -18,6 +18,7 @@ import {
   useFileSystemSearch,
   useFileSystemSearchActions,
   useFileSystemSelection,
+  useFileSystemSelectionActions,
 } from './file-system-context';
 
 /** Width band the header lays itself out for. */
@@ -217,6 +218,18 @@ export function FileSystemCollapsedSearchRow() {
 }
 
 const COUNT_NOUNS = { result: { one: 'result', other: 'results' }, row: { one: 'item', other: 'items' } };
+const CLEAR_SELECTION_LABEL = 'Clear selection';
+const CLEAR_SELECTION_TEXT = 'Clear';
+
+/**
+ * What the status bar says about the selection: the name while it is one entry,
+ * a count once it is more. A name per entry would not fit, and the count is what
+ * a multi-selection is actually about.
+ */
+function selectionLabel(selectedCount: number, selectedName: string | undefined): string | null {
+  if (selectedCount > 1) return `· ${selectedCount} selected`;
+  return selectedName ? `· “${selectedName}” selected` : null;
+}
 
 type FileSystemStatusBarProps = { className?: string };
 
@@ -224,13 +237,15 @@ type FileSystemStatusBarProps = { className?: string };
 export function FileSystemStatusBar({ className }: FileSystemStatusBarProps) {
   const { entries } = useFileSystemEntries();
   const { isSearching } = useFileSystemSearch();
-  const { selectedEntry } = useFileSystemSelection();
+  const { selectedEntry, selectedPaths } = useFileSystemSelection();
+  const { clearSelection } = useFileSystemSelectionActions();
   const { testID } = useFileSystemConsumer();
   const count = entries.length;
-  const selectedName = selectedEntry?.name;
+  const selectedCount = selectedPaths.size;
   const footerTestID = testID ? `${testID}-footer` : undefined;
   const nouns = isSearching ? COUNT_NOUNS.result : COUNT_NOUNS.row;
   const noun = count === 1 ? nouns.one : nouns.other;
+  const selection = selectionLabel(selectedCount, selectedEntry?.name);
   return (
     <View
       accessibilityLiveRegion="polite"
@@ -243,10 +258,25 @@ export function FileSystemStatusBar({ className }: FileSystemStatusBarProps) {
       <Text size="xs" className="text-muted-foreground">
         {`${count} ${noun}`}
       </Text>
-      {selectedName ? (
+      {selection ? (
         <Text size="xs" numberOfLines={1} className="text-muted-foreground">
-          {`· “${selectedName}” selected`}
+          {selection}
         </Text>
+      ) : null}
+      {/* The way out of a multi-selection on touch, where there may be no
+          background left to tap: the columns and gallery views fill their area,
+          so tapping "nothing" is not always available. */}
+      {selectedCount > 1 ? (
+        <Pressable
+          accessibilityLabel={CLEAR_SELECTION_LABEL}
+          accessibilityRole="button"
+          className="ml-1 rounded-sm px-1 py-0.5"
+          onPress={clearSelection}
+        >
+          <Text size="xs" className="text-muted-foreground underline">
+            {CLEAR_SELECTION_TEXT}
+          </Text>
+        </Pressable>
       ) : null}
     </View>
   );

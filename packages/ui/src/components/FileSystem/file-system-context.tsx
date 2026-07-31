@@ -35,6 +35,13 @@ import { fileMatchesFilter, isCustomDateRangeValue } from './file-system-filter'
 import { buildFileSystemIndex } from './file-system-index';
 import { fileTypeFilterGroup, MIME_TYPE_LABELS, mimeTypeForFile, viewerKindForFile } from './file-system-kinds';
 import { normalizeFolderPath, pathName } from './file-system-paths';
+import type { FileSystemSelectionMode, FileSystemSelectionModifiers, FileSystemSelectionState } from './file-system-selection';
+import {
+  applyFileSystemMarquee,
+  applyFileSystemSelection,
+  EMPTY_FILE_SYSTEM_SELECTION,
+  pruneFileSystemSelection,
+} from './file-system-selection';
 import { DEFAULT_SORT, defaultSortDirection } from './file-system-sort';
 import type { HeaderLayout } from './file-system-toolbar-parts';
 import type { FileSystemOpenedFile } from './file-system-viewer-modal';
@@ -74,7 +81,20 @@ type EntriesSlice = {
   sort: FileSystemSortState;
 };
 
-type SelectionSlice = { selectedPath: string | null; selectedEntry: FileSystemEntry | null };
+type SelectionSlice = {
+  /** The lead entry's path — see {@link FileSystemSelectionState.lead}. */
+  selectedPath: string | null;
+  selectedEntry: FileSystemEntry | null;
+  /** Where a Shift-range measures from — see {@link FileSystemSelectionState.anchor}. Internal; no view reads it. */
+  anchorPath: string | null;
+  /**
+   * Every selected path, in the order they were added. Holds exactly
+   * `selectedPath` in `single` mode, and is empty only when nothing is selected.
+   * Identity is stable across renders that leave the selection alone, so views
+   * and `React.memo` boundaries can compare it by reference.
+   */
+  selectedPaths: ReadonlySet<string>;
+};
 
 type SearchSlice = {
   searchInput: string;
@@ -104,6 +124,7 @@ type ConsumerSlice = {
   title: string;
   loadChildren?: (args: FileSystemLoadChildrenArgs) => Promise<FileSystemLoadChildrenResult>;
   draggable?: boolean;
+  selectionMode: FileSystemSelectionMode;
   testID?: string;
   getBackgroundContextMenuActions?: () => FileSystemContextMenuAction[];
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
@@ -113,6 +134,7 @@ type ConsumerSlice = {
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   onFileOpen?: (file: FileSystemFileItem, url: string | null) => void;
   onMove?: (event: FileSystemMoveEvent) => void;
+  onSelectedItemsChange?: (items: FileSystemItem[]) => void;
   onSelectionChange?: (item: FileSystemItem | null) => void;
   onViewChange?: (view: FileSystemView) => void;
   renderEmptyState?: (args: FileSystemEmptyStateArgs) => ReactNode;
@@ -134,9 +156,20 @@ type FileSystemActions = {
   toggleSortColumn: (key: FileSystemSortKey) => void;
   _setItems: (items: FileSystemItem[]) => void;
   // Selection
-  selectEntry: (entry: FileSystemEntry | null) => void;
+  selectEntry: (
+    entry: FileSystemEntry | null,
+    modifiers?: FileSystemSelectionModifiers,
+    orderedPaths?: readonly string[],
+  ) => void;
   openEntry: (entry: FileSystemEntry) => void;
-  selectAndPrefetch: (entry: FileSystemEntry | null) => void;
+  selectAndPrefetch: (
+    entry: FileSystemEntry | null,
+    modifiers?: FileSystemSelectionModifiers,
+    orderedPaths?: readonly string[],
+  ) => void;
+  clearSelection: () => void;
+  /** One frame of a live selection box — see {@link applyFileSystemMarquee}. */
+  selectMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   // Search
   setSearchInput: (value: string) => void;
   setIsSearchExpanded: (expanded: boolean) => void;
@@ -207,10 +240,53 @@ function computeFileTypeOptions(index: FileSystemIndex): FileTypeFilterOption[] 
   return [...byMime.values()].sort((a, b) => a.label.localeCompare(b.label));
 }
 
+/** Resolve a path against the index — a file, a folder, or neither. */
+function entryAt(index: FileSystemIndex, path: string | null): FileSystemEntry | null {
+  if (path === null) return null;
+  return index.files.get(path) ?? index.folders.get(path) ?? null;
+}
+
+/** The selection slice as the store holds it, rebuilt from a pure selection state. */
+function selectionSliceFrom(state: FileSystemSelectionState, index: FileSystemIndex): SelectionSlice {
+  return {
+    anchorPath: state.anchor,
+    selectedEntry: entryAt(index, state.lead),
+    selectedPath: state.lead,
+    selectedPaths: state.paths,
+  };
+}
+
+/** The store's selection slice read back as the pure state the reducer takes. */
+function selectionStateOf(selection: SelectionSlice): FileSystemSelectionState {
+  return { anchor: selection.anchorPath, lead: selection.selectedPath, paths: selection.selectedPaths };
+}
+
+/**
+ * Fire the consumer's selection callbacks for whichever part actually moved.
+ * Both are compared by identity, which the reducer guarantees is meaningful:
+ * a no-op press returns the same state and so notifies nothing.
+ */
+function notifySelectionChange(
+  consumer: ConsumerSlice,
+  index: FileSystemIndex,
+  next: FileSystemSelectionState,
+  previous: FileSystemSelectionState,
+): void {
+  if (next.lead !== previous.lead) consumer.onSelectionChange?.(entryAt(index, next.lead));
+  if (next.paths !== previous.paths) {
+    const items: FileSystemItem[] = [];
+    for (const path of next.paths) {
+      const entry = entryAt(index, path);
+      if (entry) items.push(entry);
+    }
+    consumer.onSelectedItemsChange?.(items);
+  }
+}
+
 /**
  * Recomputes every derived field that depends on `index`, `filters`,
  * `searchQuery`, `sort`, or `currentPath`. Called from any mutating action.
- * Also auto-deselects when the selected path falls outside the visible set.
+ * Also drops any selected path that falls outside the visible set.
  */
 type RecomputedEntries = { entries: EntriesSlice; filters: FiltersSlice; selection: SelectionSlice };
 function _recomputeEntries(s: FileSystemStore): RecomputedEntries {
@@ -227,18 +303,16 @@ function _recomputeEntries(s: FileSystemStore): RecomputedEntries {
   const sortedIndex = sortIndexChildren(visibleIndex, sort);
   const entries = sortedIndex.children.get(currentPath) ?? [];
 
-  const { selectedPath } = s.selection;
-  const deselect = selectedPath !== null && visiblePaths !== null && !visiblePaths.has(selectedPath);
-  const newSelectedPath = deselect ? null : selectedPath;
-  const newSelectedEntry =
-    newSelectedPath === null ? null : (index.files.get(newSelectedPath) ?? index.folders.get(newSelectedPath) ?? null);
-
-  if (deselect) s.consumer.onSelectionChange?.(null);
+  const previousSelection = selectionStateOf(s.selection);
+  const nextSelection = pruneFileSystemSelection(previousSelection, visiblePaths);
+  notifySelectionChange(s.consumer, index, nextSelection, previousSelection);
 
   return {
     entries: { ...s.entries, sortedIndex, entries },
     filters: { ...s.filters, fileFilter, fileTypeOptions, hasActiveFilters: filters.length > 0 },
-    selection: { selectedPath: newSelectedPath, selectedEntry: newSelectedEntry },
+    // Rebuilt even when the set held: `selectedEntry` is resolved against the
+    // index, which a reload can have replaced under an unchanged selection.
+    selection: selectionSliceFrom(nextSelection, index),
   };
 }
 
@@ -251,6 +325,7 @@ export type FileSystemStoreInit = {
   defaultView: FileSystemView;
   loadChildren?: ConsumerSlice['loadChildren'];
   draggable?: boolean;
+  selectionMode: FileSystemSelectionMode;
   testID?: string;
   getBackgroundContextMenuActions?: ConsumerSlice['getBackgroundContextMenuActions'];
   getContextMenuActions?: ConsumerSlice['getContextMenuActions'];
@@ -260,6 +335,7 @@ export type FileSystemStoreInit = {
   onContextMenuAction?: ConsumerSlice['onContextMenuAction'];
   onFileOpen?: ConsumerSlice['onFileOpen'];
   onMove?: ConsumerSlice['onMove'];
+  onSelectedItemsChange?: ConsumerSlice['onSelectedItemsChange'];
   onSelectionChange?: ConsumerSlice['onSelectionChange'];
   onViewChange?: ConsumerSlice['onViewChange'];
   renderEmptyState?: ConsumerSlice['renderEmptyState'];
@@ -279,8 +355,6 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
     filterIdCounter += 1;
     return `filter-${filterIdCounter}`;
   };
-  // Guard: same-path re-selections are no-ops (avoids redundant onSelectionChange calls)
-  let lastSelectedPath: string | null = null;
 
   const initialPath = normalizeFolderPath(init.defaultPath);
   const initialIndex = buildFileSystemIndex(init.items);
@@ -307,7 +381,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       view: init.defaultView,
       sort: DEFAULT_SORT,
     },
-    selection: { selectedPath: null, selectedEntry: null },
+    selection: selectionSliceFrom(EMPTY_FILE_SYSTEM_SELECTION, initialIndex),
     search: {
       searchInput: '',
       searchQuery: '',
@@ -332,6 +406,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       title: init.title,
       loadChildren: init.loadChildren,
       draggable: init.draggable,
+      selectionMode: init.selectionMode,
       testID: init.testID,
       getBackgroundContextMenuActions: init.getBackgroundContextMenuActions,
       getContextMenuActions: init.getContextMenuActions,
@@ -341,6 +416,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       onContextMenuAction: init.onContextMenuAction,
       onFileOpen: init.onFileOpen,
       onMove: init.onMove,
+      onSelectedItemsChange: init.onSelectedItemsChange,
       onSelectionChange: init.onSelectionChange,
       onViewChange: init.onViewChange,
       renderEmptyState: init.renderEmptyState,
@@ -375,7 +451,6 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         selection: next.selection,
         search: newSearch,
       });
-      lastSelectedPath = null;
       get().ensureChildren(path);
     },
 
@@ -397,7 +472,6 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       };
       const next = _recomputeEntries({ ...s, navigation: newNav, search: newSearch });
       set({ navigation: newNav, entries: next.entries, filters: next.filters, selection: next.selection, search: newSearch });
-      lastSelectedPath = null;
     },
 
     goForward: () => {
@@ -419,7 +493,6 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       };
       const next = _recomputeEntries({ ...s, navigation: newNav, search: newSearch });
       set({ navigation: newNav, entries: next.entries, filters: next.filters, selection: next.selection, search: newSearch });
-      lastSelectedPath = null;
     },
 
     ensureChildren: (folderPath) => {
@@ -523,14 +596,21 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
     },
 
     // ── Selection actions ─────────────────────────────────────────────────────
-    selectEntry: (entry) => {
-      const path = entry?.path ?? null;
-      if (lastSelectedPath === path) return;
-      lastSelectedPath = path;
+    // The reducer decides what a press means and returns the previous state
+    // untouched when it means nothing, so the identity check below is the whole
+    // guard against redundant writes and duplicate consumer callbacks.
+    selectEntry: (entry, modifiers, orderedPaths) => {
       const s = get();
-      const selectedEntry = path === null ? null : (s.entries.index.files.get(path) ?? s.entries.index.folders.get(path) ?? null);
-      set({ selection: { selectedPath: path, selectedEntry } });
-      s.consumer.onSelectionChange?.(entry ?? null);
+      const previous = selectionStateOf(s.selection);
+      const next = applyFileSystemSelection(previous, entry?.path ?? null, {
+        mode: s.consumer.selectionMode,
+        modifiers,
+        orderedPaths,
+      });
+      if (next === previous) return;
+      const { index } = s.entries;
+      set({ selection: selectionSliceFrom(next, index) });
+      notifySelectionChange(s.consumer, index, next, previous);
     },
 
     openEntry: (entry) => {
@@ -538,9 +618,23 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       else get().openFile(entry);
     },
 
-    selectAndPrefetch: (entry) => {
-      get().selectEntry(entry);
-      if (entry?.kind === 'folder') get().ensureChildren(entry.path);
+    selectAndPrefetch: (entry, modifiers, orderedPaths) => {
+      get().selectEntry(entry, modifiers, orderedPaths);
+      // Only a plain press walks into a folder's children: a modified press is
+      // building a selection, not stepping through the tree.
+      if (entry?.kind === 'folder' && !(modifiers?.additive || modifiers?.range)) get().ensureChildren(entry.path);
+    },
+
+    clearSelection: () => get().selectEntry(null),
+
+    selectMarquee: (covered, base) => {
+      const s = get();
+      const previous = selectionStateOf(s.selection);
+      const next = applyFileSystemMarquee(previous, covered, base);
+      if (next === previous) return;
+      const { index } = s.entries;
+      set({ selection: selectionSliceFrom(next, index) });
+      notifySelectionChange(s.consumer, index, next, previous);
     },
 
     // ── Search actions ────────────────────────────────────────────────────────
@@ -765,6 +859,8 @@ export function useFileSystemSelectionActions() {
       selectEntry: s.selectEntry,
       openEntry: s.openEntry,
       selectAndPrefetch: s.selectAndPrefetch,
+      clearSelection: s.clearSelection,
+      selectMarquee: s.selectMarquee,
     })),
   );
 }

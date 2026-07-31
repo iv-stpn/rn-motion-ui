@@ -23,6 +23,7 @@ import {
   useFileSystemSearch,
   useFileSystemSearchActions,
   useFileSystemSelection,
+  useFileSystemSelectionActions,
   useFileSystemStoreContext,
 } from './file-system-context';
 import { FileSystemContextMenuProvider } from './file-system-context-menu';
@@ -88,11 +89,14 @@ type FileSystemCustomFooterProps = { renderFooter: NonNullable<FileSystemProps['
 function FileSystemCustomFooter({ renderFooter }: FileSystemCustomFooterProps) {
   const { entries } = useFileSystemEntries();
   const { isSearching } = useFileSystemSearch();
-  const { selectedEntry } = useFileSystemSelection();
+  const { selectedEntry, selectedPaths } = useFileSystemSelection();
   const { testID } = useFileSystemConsumer();
+  const { clearSelection } = useFileSystemSelectionActions();
   return renderFooter({
+    clearSelection,
     count: entries.length,
     isSearching,
+    selectedCount: selectedPaths.size,
     selectedName: selectedEntry?.name,
     testID: testID ? `${testID}-footer` : undefined,
   });
@@ -138,6 +142,7 @@ export function FileSystem({
   onContextMenuAction,
   onFileOpen,
   onMove,
+  onSelectedItemsChange,
   onSelectionChange,
   onViewChange,
   renderBody,
@@ -146,6 +151,7 @@ export function FileSystem({
   renderFileViewer,
   renderFooter,
   renderHeader,
+  selectionMode = 'single',
   title = 'Files',
   view,
   testID,
@@ -168,11 +174,13 @@ export function FileSystem({
       onContextMenuAction,
       onFileOpen,
       onMove,
+      onSelectedItemsChange,
       onSelectionChange,
       onViewChange,
       renderEmptyState,
       renderFilePreview,
       renderFileViewer,
+      selectionMode,
       testID,
     });
   const store = storeRef.current;
@@ -199,11 +207,13 @@ export function FileSystem({
       onContextMenuAction,
       onFileOpen,
       onMove,
+      onSelectedItemsChange,
       onSelectionChange,
       onViewChange,
       renderEmptyState,
       renderFilePreview,
       renderFileViewer,
+      selectionMode,
       testID,
     });
   });
@@ -287,3 +297,7 @@ export type {
   FileTypeFilterOption,
   FolderEntry,
 } from './file-system.types';
+export type {
+  FileSystemSelectionMode,
+  FileSystemSelectionModifiers,
+} from './file-system-selection';

@@ -4,13 +4,14 @@
 // including when it arrives from another view.
 
 import { type ReactNode, useCallback, useEffect, useRef } from 'react';
-import { FlatList, type ListRenderItemInfo, Pressable, View } from 'react-native';
+import { FlatList, type GestureResponderEvent, type ListRenderItemInfo, Pressable, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemFileItem, FileSystemItem } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph } from './file-system-icons';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import { FileVisual } from './file-system-visual';
+import { useEntryLongPress } from './use-entry-activation';
 
 /** Filmstrip geometry (px). Uniform tiles keep `getItemLayout` exact. */
 const STRIP_TILE_SIZE = 56;
@@ -23,9 +24,13 @@ const STRIP_ASPECT_RATIO = 0.78;
 type StripTileProps = {
   entry: FileSystemEntry;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
+  /** This tile is the one on the stage. Always also selected, bar the fallback to entry 0. */
   isActive: boolean;
-  onActivate: (entry: FileSystemEntry) => void;
+  isSelected: boolean;
+  onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  /** Long-press toggles this tile's selection; `undefined` leaves the gesture to the context menu. */
+  onSelectLongPress?: (entry: FileSystemEntry) => void;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
   /** Already resolved for this entry by the strip — see `fileSystemEntryTestID`. */
   testID?: string;
@@ -35,23 +40,36 @@ function StripTile({
   entry,
   getContextMenuActions,
   isActive,
+  isSelected,
   onActivate,
   onContextMenuAction,
+  onSelectLongPress,
   renderFilePreview,
   testID,
 }: StripTileProps) {
-  const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
-  const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
+  const {
+    wrapperRef,
+    onLongPress: openContextMenu,
+    contextMenuNode,
+  } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
     <View ref={wrapperRef} style={{ marginRight: STRIP_TILE_GAP }}>
       <Pressable
         accessibilityLabel={entry.name}
         accessibilityRole="button"
-        accessibilityState={{ selected: isActive }}
+        accessibilityState={{ selected: isSelected || isActive }}
+        // See ListRow: native reads the state, web reads the ARIA attribute.
+        aria-selected={isSelected || isActive}
+        // The fill marks membership of the selection; the border marks which
+        // member the stage is showing, so a multi-selection reads as several
+        // filled tiles with one outlined.
         className={cn(
           'items-center justify-center rounded-md border border-transparent p-1',
-          isActive && 'border-border bg-surface-selected',
+          (isActive || isSelected) && 'bg-surface-selected',
+          isActive && 'border-border',
         )}
         onLongPress={onLongPress}
         onPress={handlePress}
@@ -78,9 +96,11 @@ export type FileSystemGalleryStripProps = {
   activePath: string | null;
   entries: FileSystemEntry[];
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
-  onActivate: (entry: FileSystemEntry) => void;
+  onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  onSelectLongPress?: (entry: FileSystemEntry) => void;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
+  selectedPaths: ReadonlySet<string>;
   /** The browser's root `testID`; each tile derives its own from it. */
   testID?: string;
 };
@@ -91,7 +111,9 @@ export function FileSystemGalleryStrip({
   getContextMenuActions,
   onActivate,
   onContextMenuAction,
+  onSelectLongPress,
   renderFilePreview,
+  selectedPaths,
   testID,
 }: FileSystemGalleryStripProps) {
   const listRef = useRef<FlatList<FileSystemEntry>>(null);
@@ -111,13 +133,24 @@ export function FileSystemGalleryStrip({
         entry={item}
         getContextMenuActions={getContextMenuActions}
         isActive={item.path === activePath}
+        isSelected={selectedPaths.has(item.path)}
         onActivate={onActivate}
         onContextMenuAction={onContextMenuAction}
+        onSelectLongPress={onSelectLongPress}
         renderFilePreview={renderFilePreview}
         testID={fileSystemEntryTestID(testID, item.path)}
       />
     ),
-    [activePath, getContextMenuActions, onActivate, onContextMenuAction, renderFilePreview, testID],
+    [
+      activePath,
+      getContextMenuActions,
+      onActivate,
+      onContextMenuAction,
+      onSelectLongPress,
+      renderFilePreview,
+      selectedPaths,
+      testID,
+    ],
   );
 
   const keyExtractor = useCallback((entry: FileSystemEntry) => entry.path, []);

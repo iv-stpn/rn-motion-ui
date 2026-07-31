@@ -33,13 +33,15 @@ import {
   glyphBoxCorner,
   gridMetrics,
   ROW_STRIDE,
-  TILE_HEIGHT,
-  tileAt,
+  tileHitAt,
+  tilesInRect,
 } from './file-system-icons-grid';
 import { DragGhost, IconRow } from './file-system-icons-tile';
+import type { FileSystemMarqueeController, FileSystemMarqueeRect } from './file-system-marquee';
+import { FileSystemMarqueeBox, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
-import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
+import { FS_DRAG_CONTAINER_TEST_ID, useDragSources } from './use-file-system-drag';
 import { type UseIconsDragReturn, useIconsViewDrag } from './use-file-system-icons-drag';
 
 // Web-only style props (userSelect / touchAction are absent from RN's ViewStyle).
@@ -63,10 +65,21 @@ type IconsGrid = UseIconsDragReturn & {
   containerRef: RefObject<View | null>;
   flatListRef: RefObject<FlatList | null>;
   hover: FileSystemHoverController;
+  marquee: FileSystemMarqueeController;
   onLayout: (event: LayoutChangeEvent) => void;
   onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   rows: FileSystemEntry[][];
   tileWidth: number;
+};
+
+type UseIconsGridParams = {
+  draggable: boolean;
+  entries: FileSystemEntry[];
+  onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
+  onMove: FileSystemViewProps['onMove'];
+  selectedPaths: ReadonlySet<string>;
+  /** `false` outside `selectionMode="multiple"` — see `useFileSystemMarquee`. */
+  marqueeEnabled: boolean;
 };
 
 type UseIconsHoverParams = {
@@ -78,8 +91,8 @@ type UseIconsHoverParams = {
   getTargetIndex: () => number | null;
   isDragging: () => boolean;
   scrollOffsetRef: MutableRefObject<number>;
-  /** Flat index of the selected entry, or null. Selected tiles suppress normal hover. */
-  selectedIndexRef: MutableRefObject<number | null>;
+  /** Flat indexes of the selected entries. Selected tiles suppress normal hover. */
+  selectedIndexesRef: MutableRefObject<ReadonlySet<number>>;
   tileWidthRef: MutableRefObject<number>;
 };
 
@@ -101,7 +114,7 @@ function useIconsHover({
   getTargetIndex,
   isDragging,
   scrollOffsetRef,
-  selectedIndexRef,
+  selectedIndexesRef,
   tileWidthRef,
 }: UseIconsHoverParams): FileSystemHoverController {
   const resolve = useCallback(
@@ -115,13 +128,11 @@ function useIconsHover({
         const target = getTargetIndex();
         return target === null ? null : glyphBoxCorner(target, lookup);
       }
-      const hit = tileAt(localX, localY, lookup);
-      if (hit.index >= entryCount) return null;
-      if (hit.index === selectedIndexRef.current) return null;
-      const inside = localX >= hit.x && localX < hit.x + lookup.tileWidth && localY >= hit.y && localY < hit.y + TILE_HEIGHT;
-      return inside ? glyphBoxCorner(hit.index, lookup) : null;
+      const hit = tileHitAt(localX, localY, lookup, entryCount);
+      if (hit === null || selectedIndexesRef.current.has(hit)) return null;
+      return glyphBoxCorner(hit, lookup);
     },
-    [columnsRef, entryCount, getTargetIndex, isDragging, scrollOffsetRef, selectedIndexRef, tileWidthRef],
+    [columnsRef, entryCount, getTargetIndex, isDragging, scrollOffsetRef, selectedIndexesRef, tileWidthRef],
   );
   return useFileSystemHover({ containerRef, isDragging, resolve });
 }
@@ -132,12 +143,7 @@ function useIconsHover({
  * the session's index resolver reads them on every pointer move, and refs keep
  * a resize from tearing down the session mid-drag.
  */
-function useIconsGrid(
-  entries: FileSystemEntry[],
-  draggable: boolean,
-  onMove: FileSystemViewProps['onMove'],
-  selectedPath: string | null,
-): IconsGrid {
+function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, onMove, selectedPaths }: UseIconsGridParams): IconsGrid {
   const [width, setWidth] = useState(0);
   const flatListRef = useRef<FlatList | null>(null);
   const containerRef = useRef<View | null>(null);
@@ -145,8 +151,14 @@ function useIconsGrid(
   const containerHeightRef = useRef(0);
   const columnsRef = useRef(1);
   const tileWidthRef = useRef(0);
-  const selectedIndexRef = useRef<number | null>(null);
-  selectedIndexRef.current = selectedPath === null ? null : entries.findIndex((e) => e.path === selectedPath);
+  const selectedIndexesRef = useRef<ReadonlySet<number>>(new Set());
+  selectedIndexesRef.current = useMemo(() => {
+    const indexes = new Set<number>();
+    entries.forEach((entry, entryIndex) => {
+      if (selectedPaths.has(entry.path)) indexes.add(entryIndex);
+    });
+    return indexes;
+  }, [entries, selectedPaths]);
 
   const onLayout = useCallback((event: LayoutChangeEvent) => {
     setWidth(event.nativeEvent.layout.width);
@@ -164,16 +176,55 @@ function useIconsGrid(
   // its `click` reaches React, which ignores events on unmounted fibers.
   const rows = useMemo(() => (width > 0 ? chunkEntries(entries, columns) : NO_ROWS), [columns, entries, width]);
 
+  // The one hit test both gestures are cut from: a press is on a tile, where a
+  // drag lifts, or it is not, where the selection box starts. Reading the refs
+  // rather than the render values keeps the two resolvers stable across resizes.
+  const entryCount = entries.length;
+  const hitTest = useCallback(
+    (localX: number, localY: number) =>
+      tileHitAt(
+        localX,
+        localY,
+        { columns: columnsRef.current, scrollOffset: scrollOffsetRef.current, tileWidth: tileWidthRef.current },
+        entryCount,
+      ),
+    [entryCount],
+  );
+  const { canBeginDragAt, canStartMarqueeAt } = useMarqueeGate(hitTest);
+
   const dragSession = useIconsViewDrag({
+    canBeginAt: canBeginDragAt,
     columnsRef,
     containerHeightRef,
     containerRef,
     enabled: draggable,
     entries,
     flatListRef,
+    getDragSources: useDragSources(selectedPaths),
     onMove,
     scrollOffsetRef,
     tileWidthRef,
+  });
+
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
+  const selectedRef = useRef(selectedPaths);
+  selectedRef.current = selectedPaths;
+
+  const marquee = useFileSystemMarquee({
+    canStartAt: canStartMarqueeAt,
+    containerRef,
+    enabled: marqueeEnabled,
+    getScrollOffset: useCallback(() => scrollOffsetRef.current, []),
+    getSelectedPaths: useCallback(() => selectedRef.current, []),
+    onMarquee,
+    resolve: useCallback(
+      (rect: FileSystemMarqueeRect) =>
+        tilesInRect(rect, { columns: columnsRef.current, tileWidth: tileWidthRef.current }, entriesRef.current.length).map(
+          (index) => entriesRef.current[index]?.path ?? '',
+        ),
+      [],
+    ),
   });
 
   const hover = useIconsHover({
@@ -183,7 +234,7 @@ function useIconsGrid(
     getTargetIndex: dragSession.getTargetIndex,
     isDragging: dragSession.isDragging,
     scrollOffsetRef,
-    selectedIndexRef,
+    selectedIndexesRef,
     tileWidthRef,
   });
 
@@ -191,13 +242,16 @@ function useIconsGrid(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
       // The pointer sits still while the tiles move under it, so the highlight has
-      // to re-resolve — including while a drag auto-scrolls the grid.
+      // to re-resolve — including while a drag auto-scrolls the grid. The band is
+      // anchored in the content frame, so it has to be re-placed for the same
+      // reason, and re-resolved: scrolling grows the region it covers.
       hover.refresh();
+      marquee.refresh();
     },
-    [hover],
+    [hover, marquee],
   );
 
-  return { ...dragSession, containerRef, flatListRef, hover, onLayout, onScroll, rows, tileWidth };
+  return { ...dragSession, containerRef, flatListRef, hover, marquee, onLayout, onScroll, rows, tileWidth };
 }
 
 // ── View ───────────────────────────────────────────────────────────────────────
@@ -215,12 +269,17 @@ export function FileSystemIconsView({
   onMove,
   onOpen,
   onSelect,
+  onMarquee,
   pageUrlCache,
   renderFilePreview,
-  selectedPath,
+  selectedPaths,
+  selectionMode,
   testID,
 }: FileSystemViewProps) {
-  const activate = useEntryActivation(onOpen, onSelect);
+  // The grid lays its tiles out in entry order, so the entry list *is* the
+  // ordering a Shift-range runs through.
+  const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
+  const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
   const {
     containerRef,
     drag,
@@ -228,22 +287,30 @@ export function FileSystemIconsView({
     dragTargetPath,
     flatListRef,
     hover,
+    marquee,
     nativeGesture,
     onLayout,
     onScroll,
     previewPos,
     rows,
     tileWidth,
-  } = useIconsGrid(entries, draggable, onMove, selectedPath);
-  const draggedPath = draggedEntry?.path ?? null;
+  } = useIconsGrid({
+    draggable,
+    entries,
+    marqueeEnabled: selectionMode === 'multiple',
+    onMarquee,
+    onMove,
+    selectedPaths,
+  });
+  const draggedPaths = useMemo(() => new Set(drag.draggedPaths), [drag.draggedPaths]);
 
   // When selection changes the pointer hasn't moved, so the highlight won't
   // self-dismiss — re-resolve explicitly so a just-selected tile hides it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPath is the trigger; it is not read in the body but must be in the deps to re-fire on selection change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPaths is the trigger; it is not read in the body but must be in the deps to re-fire on selection change
   // biome-ignore lint/plugin: re-resolve is a side-effect on an Animated value, not render state
   useEffect(() => {
     hover.refresh();
-  }, [hover, selectedPath]);
+  }, [hover, selectedPaths]);
 
   const backgroundMenu = useBackgroundContextMenu(
     containerRef,
@@ -256,30 +323,32 @@ export function FileSystemIconsView({
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry[]>) => (
       <IconRow
-        draggedPath={draggedPath}
+        draggedPaths={draggedPaths}
         dragTargetPath={dragTargetPath}
         getContextMenuActions={getContextMenuActions}
         loadPreviewImageUrl={loadPreviewImageUrl}
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
+        onSelectLongPress={selectLongPress}
         pageUrlCache={pageUrlCache}
         renderFilePreview={renderFilePreview}
         row={item}
-        selectedPath={selectedPath}
+        selectedPaths={selectedPaths}
         testID={testID}
         tileWidth={tileWidth}
       />
     ),
     [
       activate,
-      draggedPath,
+      draggedPaths,
       dragTargetPath,
       getContextMenuActions,
       loadPreviewImageUrl,
       onContextMenuAction,
       pageUrlCache,
       renderFilePreview,
-      selectedPath,
+      selectedPaths,
+      selectLongPress,
       testID,
       tileWidth,
     ],
@@ -324,6 +393,8 @@ export function FileSystemIconsView({
           width={GLYPH_BOX_WIDTH}
         />
         {body}
+        {/* After the grid, so the band paints over the tiles it is sweeping. */}
+        <FileSystemMarqueeBox controller={marquee} />
         {draggedEntry ? (
           <DragGhost
             entry={draggedEntry}

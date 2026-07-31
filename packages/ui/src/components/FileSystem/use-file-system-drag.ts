@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useExportsLast: constants exported alongside the types they configure */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: the session, its refs and the hook that owns them are one unit — the pointer path reads all three */
 // Drag-and-drop session for FileSystem views.
 //
 // Architecture mirrors FileTree: hot-path drag state lives in refs so the
@@ -58,11 +59,20 @@ export type FileSystemDragRender = {
   active: boolean;
   previewLabel: string;
   targetIndex: number | null;
-  /** Flat index of the entry being dragged, so a view can render it as a ghost. */
+  /** Flat index of the entry the drag was lifted from, so a view can render it as a ghost. */
   draggedIndex: number | null;
+  /** Every path the drag carries — the lifted one alone, or the selection it belongs to. */
+  draggedPaths: string[];
 };
 
-const IDLE_DRAG: FileSystemDragRender = { active: false, draggedIndex: null, previewLabel: '', targetIndex: null };
+const NO_PATHS: string[] = [];
+const IDLE_DRAG: FileSystemDragRender = {
+  active: false,
+  draggedIndex: null,
+  draggedPaths: NO_PATHS,
+  previewLabel: '',
+  targetIndex: null,
+};
 
 export type UseFileSystemDragParams = {
   enabled: boolean;
@@ -90,6 +100,19 @@ export type UseFileSystemDragParams = {
    * one the ghost trails the pointer by a fixed offset (the list-view chip).
    */
   getGrabAnchor?: (localX: number, localY: number) => FileSystemGrabAnchor | null;
+  /**
+   * Every path this drag carries, given the one it was lifted from — see
+   * {@link useDragSources}. Defaults to the lifted path alone.
+   */
+  getDragSources?: (draggedPath: string) => string[];
+  /**
+   * Whether a lift may start at this container-local point. `toEntryIndex`
+   * clamps to the nearest entry — which is what a *drop* wants — so without this
+   * a press in the grid's padding would lift whichever tile happened to be
+   * nearest. It is also what keeps the drag and the selection box exclusive:
+   * one starts exactly where the other refuses. Defaults to always.
+   */
+  canBeginAt?: (localX: number, localY: number) => boolean;
 };
 
 export type UseFileSystemDragReturn = {
@@ -113,6 +136,10 @@ type SessionRefs = {
   rowsRef: RefObject<FileSystemRow[]>;
   onMoveRef: RefObject<((event: FileSystemMoveEvent) => void) | undefined>;
   draggedIndexRef: MutableRefObject<number | null>;
+  /** Resolved once at `begin` — the selection can move under a drag it started. */
+  draggedPathsRef: MutableRefObject<string[]>;
+  getDragSources: (draggedPath: string) => string[];
+  canBeginAt: (localX: number, localY: number) => boolean;
   targetIndexRef: MutableRefObject<number | null>;
   isDraggingRef: MutableRefObject<boolean>;
   /** Where inside the grabbed element the press landed — see moveGhost. */
@@ -143,11 +170,25 @@ function isValidDropTarget(source: FileSystemRow | undefined, target: FileSystem
   return !(source.entry.kind === 'folder' && targetPath.startsWith(sourcePath));
 }
 
+/**
+ * The paths a drop onto `target` would actually move, out of everything the
+ * drag carries. Each is re-checked against the destination on its own: a
+ * multi-selection can hold entries the destination is already the parent of, or
+ * a folder the destination lives inside, and those are not moves.
+ */
+function movableSources(sourcePaths: string[], rows: FileSystemRow[], target: FileSystemRow): string[] {
+  const byPath = new Map(rows.map((row) => [row.entry.path, row]));
+  return sourcePaths.filter((path) => isValidDropTarget(byPath.get(path), target));
+}
+
 function buildDragSession(refs: SessionRefs): FileSystemDragSession {
   const {
     rowsRef,
     onMoveRef,
     draggedIndexRef,
+    draggedPathsRef,
+    getDragSources,
+    canBeginAt,
     targetIndexRef,
     isDraggingRef,
     grabOffsetRef,
@@ -182,16 +223,21 @@ function buildDragSession(refs: SessionRefs): FileSystemDragSession {
 
   return {
     begin(localX, localY) {
+      if (!canBeginAt(localX, localY)) return false;
       const entryIndex = toEntryIndex(localX, localY);
       const row = rowsRef.current?.[entryIndex];
       if (!row) return false;
       const anchor = getGrabAnchor(localX, localY);
+      const sources = getDragSources(row.entry.path);
       draggedIndexRef.current = entryIndex;
+      draggedPathsRef.current = sources;
       targetIndexRef.current = null;
       isDraggingRef.current = true;
       grabOffsetRef.current = anchor === null ? null : { x: localX - anchor.x, y: localY - anchor.y };
       moveGhost(localX, localY);
-      setDragDirect({ active: true, draggedIndex: entryIndex, previewLabel: row.entry.name, targetIndex: null });
+      // A multi-drag has no one name to show, so the chip counts instead.
+      const previewLabel = sources.length > 1 ? `${sources.length} items` : row.entry.name;
+      setDragDirect({ active: true, draggedIndex: entryIndex, draggedPaths: sources, previewLabel, targetIndex: null });
       return true;
     },
     move(localX, localY) {
@@ -222,13 +268,16 @@ function buildDragSession(refs: SessionRefs): FileSystemDragSession {
       if (!isDraggingRef.current) return;
       isDraggingRef.current = false;
       stopAutoScroll();
-      const src = draggedIndexRef.current === null ? undefined : rowsRef.current?.[draggedIndexRef.current];
       const dst = targetIndexRef.current === null ? undefined : rowsRef.current?.[targetIndexRef.current];
       // Re-checked rather than trusted: the rows can have changed between the last
-      // move and the release (a lazy folder resolving, a re-sort).
-      if (commit && src && dst && isValidDropTarget(src, dst))
-        onMoveRef.current?.({ destination: dst.entry.path, sources: [src.entry.path] });
+      // move and the release (a lazy folder resolving, a re-sort), and each carried
+      // path stands or falls against the destination on its own.
+      if (commit && dst) {
+        const sources = movableSources(draggedPathsRef.current, rowsRef.current ?? [], dst);
+        if (sources.length > 0) onMoveRef.current?.({ destination: dst.entry.path, sources });
+      }
       draggedIndexRef.current = null;
+      draggedPathsRef.current = [];
       targetIndexRef.current = null;
       grabOffsetRef.current = null;
       setDragDirect(IDLE_DRAG);
@@ -250,6 +299,8 @@ export function useFileSystemDrag({
   toEntryIndex,
   contentOffsetTop = 0,
   getGrabAnchor,
+  getDragSources,
+  canBeginAt,
 }: UseFileSystemDragParams): UseFileSystemDragReturn {
   // biome-ignore lint/plugin: useRef<T>(val) returns MutableRefObject; we need RefObject for the session param type
   const rowsRef = useRef(rows) as RefObject<FileSystemRow[]>;
@@ -259,6 +310,7 @@ export function useFileSystemDrag({
   onMoveRef.current = onMove;
 
   const draggedIndexRef = useRef<number | null>(null);
+  const draggedPathsRef = useRef<string[]>(NO_PATHS);
   const targetIndexRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
   const grabOffsetRef = useRef<FileSystemGrabAnchor | null>(null);
@@ -289,12 +341,27 @@ export function useFileSystemDrag({
   grabAnchorRef.current = getGrabAnchor;
   const stableGetGrabAnchor = useCallback((x: number, y: number) => grabAnchorRef.current?.(x, y) ?? null, []);
 
+  // Same again for the source resolver: it closes over the live selection, which
+  // changes far more often than a session should be torn down and rebuilt.
+  const dragSourcesRef = useRef(getDragSources);
+  dragSourcesRef.current = getDragSources;
+  const stableGetDragSources = useCallback((path: string) => dragSourcesRef.current?.(path) ?? [path], []);
+
+  // And for the lift gate, which the icons view rebuilds whenever the grid
+  // metrics or the entry count change.
+  const canBeginRef = useRef(canBeginAt);
+  canBeginRef.current = canBeginAt;
+  const stableCanBeginAt = useCallback((x: number, y: number) => canBeginRef.current?.(x, y) ?? true, []);
+
   const session = useMemo(
     () =>
       buildDragSession({
         rowsRef,
         onMoveRef,
         draggedIndexRef,
+        draggedPathsRef,
+        getDragSources: stableGetDragSources,
+        canBeginAt: stableCanBeginAt,
         targetIndexRef,
         isDraggingRef,
         grabOffsetRef,
@@ -309,7 +376,17 @@ export function useFileSystemDrag({
         setDragDirect,
       }),
     // All deps are stable refs or stable callbacks — this memo fires exactly once.
-    [containerHeightRef, flatListRef, previewPos, scrollOffsetRef, setDragDirect, stableGetGrabAnchor, stableToEntryIndex],
+    [
+      containerHeightRef,
+      flatListRef,
+      previewPos,
+      scrollOffsetRef,
+      setDragDirect,
+      stableCanBeginAt,
+      stableGetDragSources,
+      stableGetGrabAnchor,
+      stableToEntryIndex,
+    ],
   );
 
   const nativeGesture = useMemo(() => {
@@ -326,4 +403,19 @@ export function useFileSystemDrag({
   }, [enabled, session]);
 
   return { session, previewPos, drag, nativeGesture };
+}
+
+/**
+ * What a drag lifted from `path` should carry: the whole selection when `path`
+ * is part of one, and just `path` otherwise.
+ *
+ * Dragging an unselected entry out of a multi-selection is deliberately not a
+ * "move all of it" — the entry under the pointer is the one the gesture is
+ * about, and a stale selection elsewhere in the folder should not ride along.
+ */
+export function useDragSources(selectedPaths: ReadonlySet<string>): (path: string) => string[] {
+  return useCallback(
+    (path: string) => (selectedPaths.size > 1 && selectedPaths.has(path) ? [...selectedPaths] : [path]),
+    [selectedPaths],
+  );
 }

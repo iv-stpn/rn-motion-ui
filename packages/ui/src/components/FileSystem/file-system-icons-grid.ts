@@ -75,6 +75,64 @@ export function tileAt(localX: number, localY: number, { columns, scrollOffset, 
 }
 
 /**
+ * The tile a point is genuinely *on*, or `null` for the grid's padding, the gaps
+ * between tiles, and the empty run after the last entry.
+ *
+ * The stricter counterpart to {@link tileAt}, which clamps to the nearest tile
+ * because a drop has to commit somewhere. Three callers want the strict answer
+ * instead: the hover highlight (no glow in a gap), the drag (a lift starts on a
+ * tile or not at all), and the selection box (which may only begin off a tile).
+ * The last two must agree exactly, or a press in a gap would start both.
+ */
+export function tileHitAt(localX: number, localY: number, lookup: TileLookup, entryCount: number): number | null {
+  const hit = tileAt(localX, localY, lookup);
+  if (hit.index >= entryCount) return null;
+  const inside = localX >= hit.x && localX < hit.x + lookup.tileWidth && localY >= hit.y && localY < hit.y + TILE_HEIGHT;
+  return inside ? hit.index : null;
+}
+
+/** A rectangle in the grid's *content* frame — scroll already folded into `y`. */
+export type TileRect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Every tile a rectangle touches, in grid order.
+ *
+ * Content-frame in, indexes out: the caller folds the scroll offset into the
+ * rect once, so a selection box started before a wheel-scroll keeps covering the
+ * tiles it was dragged over rather than sliding with the viewport.
+ *
+ * Intersection is against the tile's whole box rather than its glyph box — a box
+ * dragged through the label of a tile has visibly touched it, and a hit test
+ * that disagreed with what the pointer swept over would read as a dead zone.
+ */
+export function tilesInRect(rect: TileRect, { columns, tileWidth }: GridMetrics, entryCount: number): number[] {
+  const stride = tileWidth + TILE_GAP;
+  const left = rect.x - GRID_PADDING;
+  const top = rect.y - GRID_PADDING;
+  const right = left + rect.width;
+  const bottom = top + rect.height;
+
+  // A tile spans [n*stride, n*stride + tileWidth); the gap after it is dead
+  // space, so a column is touched when the rect reaches its box, not its stride.
+  const firstColumn = Math.max(0, Math.floor(left / stride));
+  const lastColumn = Math.min(columns - 1, Math.floor(right / stride));
+  const firstRow = Math.max(0, Math.floor(top / ROW_STRIDE));
+  const lastRow = Math.floor(bottom / ROW_STRIDE);
+
+  const overlaps = (start: number, extent: number, from: number, to: number) => start + extent > from && start < to;
+
+  const indexes: number[] = [];
+  for (let row = firstRow; row <= lastRow; row += 1) {
+    if (overlaps(row * ROW_STRIDE, TILE_HEIGHT, top, bottom))
+      for (let column = firstColumn; column <= lastColumn; column += 1) {
+        const index = row * columns + column;
+        if (index < entryCount && overlaps(column * stride, tileWidth, left, right)) indexes.push(index);
+      }
+  }
+  return indexes;
+}
+
+/**
  * `tileAt` run backwards: the corner of a tile named by index rather than found
  * by position. While a drag is live the hover highlight is placed from the drag's
  * target index rather than from the pointer, so the two marks cannot disagree —

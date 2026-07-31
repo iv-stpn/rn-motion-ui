@@ -11,7 +11,6 @@ import { COLUMN_WIDTH, FileSystemColumn } from './file-system-column';
 import { formatByteSize } from './file-system-format';
 import { FileSystemInformation } from './file-system-information';
 import { fileKindLabel } from './file-system-kinds';
-import { pathParent } from './file-system-paths';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
 import { useEntryActivation } from './use-entry-activation';
@@ -92,12 +91,13 @@ export function FileSystemColumnsView({
   pageUrlCache,
   renderFilePreview,
   selectedEntry,
-  selectedPath,
+  selectedPaths,
+  selectionMode,
   testID,
 }: FileSystemViewProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
-  const activate = useEntryActivation(onOpen, onSelect);
+  const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode);
   const columnPaths = useMemo(() => trailColumnPaths(currentPath, selectedEntry), [currentPath, selectedEntry]);
   const selectedFile = selectedEntry?.kind === 'file' ? selectedEntry : null;
 
@@ -126,9 +126,8 @@ export function FileSystemColumnsView({
           key={columnPath || '(root)'}
           onActivate={activate}
           onContextMenuAction={onContextMenuAction}
-          // Scalar per-column props: a selection deeper in the trail leaves
-          // ancestor columns' memoized renders untouched.
-          selectedChildPath={selectedPath && pathParent(selectedPath) === columnPath ? selectedPath : null}
+          onSelectLongPress={selectLongPress}
+          selectedPaths={selectedPaths}
           testID={testID}
           trailChildPath={columnPaths[columnIndex + 1] ?? null}
         />

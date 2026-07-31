@@ -3,8 +3,8 @@
 // single folder's children. Memoized on scalar selection props so pressing
 // into a deep trail only re-renders the columns whose rows actually change.
 
-import React, { useCallback } from 'react';
-import { FlatList, Image, type ListRenderItemInfo, Pressable, View } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { FlatList, type GestureResponderEvent, Image, type ListRenderItemInfo, Pressable, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import { ChevronRight } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
@@ -15,6 +15,7 @@ import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import { filePreviewUrls, folderHasChildren } from './file-system-index';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import { FileSystemEmptyState } from './file-system-view';
+import { useEntryLongPress } from './use-entry-activation';
 
 const LOADING_LABEL = 'Loading…';
 
@@ -34,8 +35,10 @@ type ColumnRowProps = {
   index: FileSystemIndex;
   isOnTrail: boolean;
   isSelected: boolean;
-  onActivate: (entry: FileSystemEntry) => void;
+  onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  /** Long-press toggles this row's selection; `undefined` leaves the gesture to the context menu. */
+  onSelectLongPress?: (entry: FileSystemEntry) => void;
   /** Already resolved for this entry by the column — see `fileSystemEntryTestID`. */
   testID?: string;
 };
@@ -68,13 +71,19 @@ function ColumnRow({
   isSelected,
   onActivate,
   onContextMenuAction,
+  onSelectLongPress,
   testID,
 }: ColumnRowProps) {
   const colors = useThemeColors();
-  const handlePress = useCallback(() => onActivate(entry), [entry, onActivate]);
+  const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
   const hasChildren = entry.kind === 'folder' && folderHasChildren(index, entry);
 
-  const { wrapperRef, onLongPress, contextMenuNode } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const {
+    wrapperRef,
+    onLongPress: openContextMenu,
+    contextMenuNode,
+  } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
     <View ref={wrapperRef} style={{ marginBottom: COLUMN_ROW_GAP }}>
@@ -82,6 +91,8 @@ function ColumnRow({
         accessibilityLabel={entry.name}
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
+        // See ListRow: native reads the state, web reads the ARIA attribute.
+        aria-selected={isSelected}
         className={cn(
           'flex-row items-center gap-2 rounded-md px-2',
           isSelected && 'bg-info',
@@ -111,10 +122,17 @@ export type FileSystemColumnProps = {
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   index: FileSystemIndex;
   isLoading: boolean;
-  onActivate: (entry: FileSystemEntry) => void;
+  /** Takes this pane's ordering as its third argument — see `orderedPaths` below. */
+  onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent, orderedPaths?: readonly string[]) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
-  /** The selected row when it belongs to this column, else `null`. */
-  selectedChildPath: string | null;
+  onSelectLongPress?: (entry: FileSystemEntry) => void;
+  /**
+   * The whole selection, not this pane's share of it: a multi-selection can span
+   * panes, so there is no per-column scalar that would say enough. Its identity
+   * is stable while the selection holds, which is what keeps the memo below
+   * worth having.
+   */
+  selectedPaths: ReadonlySet<string>;
   /** The child folder the trail continues through, highlighted as the path. */
   trailChildPath: string | null;
   /** The browser's root `testID`; each row derives its own from it. */
@@ -128,10 +146,19 @@ function FileSystemColumnImpl({
   isLoading,
   onActivate,
   onContextMenuAction,
-  selectedChildPath,
+  onSelectLongPress,
+  selectedPaths,
   testID,
   trailChildPath,
 }: FileSystemColumnProps) {
+  // Each pane is its own ordering: a Shift-range runs through the column the
+  // press landed in, never across the trail into a sibling folder's contents.
+  const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
+  const activate = useCallback(
+    (entry: FileSystemEntry, event?: GestureResponderEvent) => onActivate(entry, event, orderedPaths),
+    [onActivate, orderedPaths],
+  );
+
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
       <ColumnRow
@@ -139,13 +166,14 @@ function FileSystemColumnImpl({
         getContextMenuActions={getContextMenuActions}
         index={index}
         isOnTrail={item.kind === 'folder' && item.path === trailChildPath}
-        isSelected={item.path === selectedChildPath}
-        onActivate={onActivate}
+        isSelected={selectedPaths.has(item.path)}
+        onActivate={activate}
         onContextMenuAction={onContextMenuAction}
+        onSelectLongPress={onSelectLongPress}
         testID={fileSystemEntryTestID(testID, item.path)}
       />
     ),
-    [getContextMenuActions, index, onActivate, onContextMenuAction, selectedChildPath, testID, trailChildPath],
+    [activate, getContextMenuActions, index, onContextMenuAction, onSelectLongPress, selectedPaths, testID, trailChildPath],
   );
 
   const keyExtractor = useCallback((entry: FileSystemEntry) => entry.path, []);

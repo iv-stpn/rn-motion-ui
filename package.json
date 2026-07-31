@@ -13,6 +13,7 @@
     "lint:fix": "biome check --write .",
     "test": "bun run --cwd packages/ui test && bun run test:storybook",
     "test:storybook": "bun run --cwd storybook/web test",
+    "count-stories": "echo \"$(git ls-files '*.stories.tsx' | wc -l) story files, $(git ls-files '*.stories.tsx' | xargs grep -hE '^export const .*: Story' | wc -l) stories.\"",
     "storybook": "bun run --cwd storybook/web storybook",
     "storybook:native": "bun run --cwd storybook/native start",
     "storybook:native:build:android": "bun run --cwd storybook/native build:android",

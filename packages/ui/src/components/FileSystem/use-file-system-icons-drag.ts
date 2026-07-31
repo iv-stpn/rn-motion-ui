@@ -38,6 +38,10 @@ export type UseIconsDragParams = {
   enabled: boolean;
   entries: FileSystemEntry[];
   flatListRef: React.RefObject<FlatList | null>;
+  /** See `useDragSources` — every path a drag lifted from one tile carries. */
+  getDragSources?: (draggedPath: string) => string[];
+  /** Strict tile hit test — a lift starts on a tile, never in a gap or the padding. */
+  canBeginAt?: (localX: number, localY: number) => boolean;
   onMove?: (event: FileSystemMoveEvent) => void;
   scrollOffsetRef: React.MutableRefObject<number>;
   /** Ref kept current by the caller — read inside the resolvers without causing re-fires. */
@@ -49,8 +53,10 @@ export function useIconsViewDrag({
   containerHeightRef,
   containerRef,
   enabled,
+  canBeginAt,
   entries,
   flatListRef,
+  getDragSources,
   onMove,
   scrollOffsetRef,
   tileWidthRef,
@@ -85,9 +91,11 @@ export function useIconsViewDrag({
   );
 
   const { drag, nativeGesture, previewPos, session } = useFileSystemDrag({
+    canBeginAt,
     containerHeightRef,
     enabled,
     flatListRef,
+    getDragSources,
     getGrabAnchor,
     onMove,
     rows: dragRows,

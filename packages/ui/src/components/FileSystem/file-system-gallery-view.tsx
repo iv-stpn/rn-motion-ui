@@ -122,9 +122,11 @@ function GallerySidebar({ entry, index, renderFilePreview, sizeLabel }: SidebarP
 export function FileSystemGalleryView(props: FileSystemViewProps) {
   const { entries, getContextMenuActions, index, onContextMenuAction, onOpen, onSelect, renderFilePreview, selectedEntry } =
     props;
-  const { testID } = props;
+  const { selectedPaths, selectionMode, testID } = props;
   const [viewportWidth, setViewportWidth] = useState(0);
-  const activate = useEntryActivation(onOpen, onSelect);
+  // The filmstrip is the only surface a press lands on, and it runs in entry order.
+  const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
+  const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
   const handleLayout = useCallback((event: LayoutChangeEvent) => setViewportWidth(event.nativeEvent.layout.width), []);
 
   // The gallery always shows something: the selection when it belongs to this
@@ -158,7 +160,9 @@ export function FileSystemGalleryView(props: FileSystemViewProps) {
         getContextMenuActions={getContextMenuActions}
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
+        onSelectLongPress={selectLongPress}
         renderFilePreview={renderFilePreview}
+        selectedPaths={selectedPaths}
         testID={testID}
       />
     </View>

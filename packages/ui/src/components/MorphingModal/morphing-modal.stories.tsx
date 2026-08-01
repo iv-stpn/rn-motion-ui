@@ -3,7 +3,7 @@ import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Playground } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, type TriggerState, useTriggerState } from '../../__stories__/story-trigger';
+import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../__stories__/story-trigger';
 import { Ban, Lock, ScanFace, ScrollText, ShieldCheck, Trash2, X } from '../../lib/icons';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
@@ -228,9 +228,9 @@ function MorphingModalPlayground() {
       <ControlCard title="Options">
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
       </ControlCard>
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
       <MorphingModalDemo placement={placement} kind={trigger.kind} size={trigger.size} shape={trigger.shape} />
     </Playground>
   );

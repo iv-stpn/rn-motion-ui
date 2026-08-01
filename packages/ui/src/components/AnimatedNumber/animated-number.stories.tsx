@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useInterval } from '../../hooks/use-interval';
 import { AnimatedNumber } from './animated-number';
 
@@ -63,10 +63,14 @@ function AnimatedNumberPlayground(args: ComponentProps<typeof AnimatedNumber>) {
   return (
     <Playground className="max-w-[420px]">
       <Controls>
-        <Choice label="Target" onChange={setTargetKey} options={TARGETS} value={targetKey} />
-        <Choice label="Format" onChange={setFormat} options={FORMATS} value={format} />
-        <Choice label="Duration" onChange={setDurationKey} options={DURATIONS} value={durationKey} />
-        <Toggle label="Live updates" onChange={setLive} value={live} />
+        <ControlRow>
+          <Choice label="Target" onChange={setTargetKey} options={TARGETS} value={targetKey} />
+          <Choice label="Format" onChange={setFormat} options={FORMATS} value={format} />
+          <Choice label="Duration" onChange={setDurationKey} options={DURATIONS} value={durationKey} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Live updates" onChange={setLive} value={live} />
+        </ControlRow>
       </Controls>
 
       <AnimatedNumber {...args} duration={duration} format={FORMATTERS[format]} value={value} />

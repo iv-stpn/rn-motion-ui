@@ -21,7 +21,6 @@
 
 import { type RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Animated, Platform, type View } from 'react-native';
-import { cn } from '../../lib/cn';
 
 /**
  * The box itself. Fixed rather than a prop, like the drag containers and the
@@ -361,8 +360,7 @@ export function FileSystemMarqueeBox({ controller }: FileSystemMarqueeBoxProps) 
   const { rect, opacity } = controller;
   return (
     <Animated.View
-      className={cn('absolute rounded-sm border border-info bg-info/20')}
-      pointerEvents="none"
+      className="pointer-events-none absolute rounded-sm border border-info bg-info/20"
       style={{ height: rect.height, left: rect.x, opacity, top: rect.y, width: rect.width, zIndex: 5 }}
       testID={FS_MARQUEE_TEST_ID}
     />

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Eye, EyeOff, Mail, Search } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Input } from './input';
@@ -61,11 +61,15 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
   return (
     <Playground style={{ width: FIELD_WIDTH }}>
       <Controls>
-        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
-        <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
-        <Choice label="State" onChange={setState} options={STATES} value={state} />
-        <Toggle label="Left icon" onChange={setLeftIcon} value={leftIcon} />
-        <Toggle label="Hint" onChange={setHint} value={hint} />
+        <ControlRow>
+          <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+          <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
+          <Choice label="State" onChange={setState} options={STATES} value={state} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Left icon" onChange={setLeftIcon} value={leftIcon} />
+          <Toggle label="Hint" onChange={setHint} value={hint} />
+        </ControlRow>
       </Controls>
 
       <Input

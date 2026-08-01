@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { RadioGroup, RadioGroupItem } from './radio';
 
 const meta = {
@@ -42,8 +42,12 @@ function RadioPlayground() {
   return (
     <Playground>
       <Controls>
-        <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
-        <Toggle label="Disabled item" onChange={setShowDisabled} value={showDisabled} />
+        <ControlRow>
+          <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Disabled item" onChange={setShowDisabled} value={showDisabled} />
+        </ControlRow>
       </Controls>
 
       <Section>

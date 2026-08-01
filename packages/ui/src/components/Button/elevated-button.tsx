@@ -251,8 +251,7 @@ function ElevatedHighlights({ id, hovered, radius, width, height }: ElevatedHigh
       <MotiView
         animate={{ opacity: hovered ? 0.24 : 0.16 }}
         transition={{ type: 'timing', duration: 200 }}
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}
+        style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden', pointerEvents: 'none' }]}
       >
         <Svg width="100%" height="100%">
           <Defs>
@@ -400,8 +399,7 @@ export function ElevatedButton({
         <MotiView
           animate={{ opacity: backdropColor === undefined ? 0 : 1 }}
           transition={TIMING_BASE}
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent' }]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent', pointerEvents: 'none' }]}
         />
         {/* Gloss + rim highlights sit above the fill but below the label so the
             text stays crisp; both are pointer-transparent. */}

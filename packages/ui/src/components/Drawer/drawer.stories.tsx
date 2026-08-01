@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Playground } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
+import { TriggerButton, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { Text } from '../Text/text';
 import { Drawer } from './drawer';
 
@@ -37,9 +37,9 @@ function DrawerPlayground() {
       <ControlCard title="Options">
         <Choice label="Side" onChange={setSide} options={SIDES} value={side} />
       </ControlCard>
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
       <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
       <Drawer open={open} onOpenChange={setOpen} side={side} accessibilityLabel="Demo drawer">
         <View className="gap-2 p-6">

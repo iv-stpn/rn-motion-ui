@@ -136,6 +136,8 @@ export type FileSystemGalleryStripProps = {
   entries: FileSystemEntry[];
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
+  /** Called when the user presses empty space in the strip — clears the selection. */
+  onClearSelection?: () => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onSelectLongPress?: (entry: FileSystemEntry) => void;
@@ -151,6 +153,7 @@ export function FileSystemGalleryStrip({
   entries,
   getContextMenuActions,
   onActivate,
+  onClearSelection,
   onContextMenuAction,
   onMarquee,
   onSelectLongPress,
@@ -238,7 +241,11 @@ export function FileSystemGalleryStrip({
   );
 
   return (
-    <View ref={containerRef} className="relative shrink-0 border-border border-t bg-surface-2">
+    <Pressable
+      ref={containerRef}
+      className="relative shrink-0 select-none border-border border-t bg-surface-2"
+      onPress={onClearSelection}
+    >
       <FlatList
         contentContainerClassName="p-2"
         data={entries}
@@ -252,6 +259,6 @@ export function FileSystemGalleryStrip({
         showsHorizontalScrollIndicator={false}
       />
       <FileSystemMarqueeBox controller={marquee} />
-    </View>
+    </Pressable>
   );
 }

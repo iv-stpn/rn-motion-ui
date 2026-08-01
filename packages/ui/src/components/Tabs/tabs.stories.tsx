@@ -2,7 +2,17 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import {
+  Choice,
+  ControlRow,
+  Controls,
+  Note,
+  Playground,
+  Sample,
+  Section,
+  Toggle,
+  Variants,
+} from '../../__stories__/story-harness';
 import { DirectionProvider } from '../../hooks/direction-provider';
 import { Text } from '../Text/text';
 import { Tabs, TabsContent, TabsList, type TabsProps, TabsTrigger } from './tabs';
@@ -116,9 +126,13 @@ function TabsPlayground() {
   return (
     <Playground>
       <Controls>
-        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
-        <Choice label="Content animation" onChange={setAnimation} options={CONTENT_ANIMATIONS} value={animation} />
-        <Toggle label="Content panels" onChange={setWithPanels} value={withPanels} />
+        <ControlRow>
+          <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+          <Choice label="Content animation" onChange={setAnimation} options={CONTENT_ANIMATIONS} value={animation} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Content panels" onChange={setWithPanels} value={withPanels} />
+        </ControlRow>
       </Controls>
 
       <View className="gap-2">

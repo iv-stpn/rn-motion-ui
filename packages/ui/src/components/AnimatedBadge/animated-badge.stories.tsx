@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { Choice, Controls, Playground, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Playground, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useInterval } from '../../hooks/use-interval';
 import { AnimatedBadge, type AnimatedBadgeSize, type AnimatedBadgeStatus } from './animated-badge';
 
@@ -55,10 +55,14 @@ function AnimatedBadgePlayground(args: ComponentProps<typeof AnimatedBadge>) {
   return (
     <Playground className="max-w-[380px]">
       <Controls>
-        <Choice label="Status" onChange={setStatus} options={STATUSES} value={status} />
-        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
-        <Toggle label="Icon" onChange={setShowIcon} value={showIcon} />
-        <Toggle label="Auto-cycle" onChange={setCycling} value={cycling} />
+        <ControlRow>
+          <Choice label="Status" onChange={setStatus} options={STATUSES} value={status} />
+          <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Icon" onChange={setShowIcon} value={showIcon} />
+          <Toggle label="Auto-cycle" onChange={setCycling} value={cycling} />
+        </ControlRow>
       </Controls>
 
       <View className="items-start">

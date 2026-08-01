@@ -3,7 +3,7 @@ import { type ReactNode, useCallback, useState } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, View } from 'react-native';
 import { makeMutable, type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { expect, waitFor, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
 import { ScrollProgress } from './scroll-progress';
@@ -93,11 +93,15 @@ function ScrollProgressPlayground() {
   return (
     <Playground>
       <Controls>
-        <Toggle label="Circle" onChange={setCircle} value={circle} />
-        <Toggle label="Spring" onChange={setSpring} value={spring} />
-        <Toggle label="Tinted" onChange={setTinted} value={tinted} />
-        <Choice label="Bar height" onChange={setThicknessKey} options={THICKNESSES} value={thicknessKey} />
-        <Choice label="Circle size" onChange={setDiameterKey} options={DIAMETERS} value={diameterKey} />
+        <ControlRow>
+          <Choice label="Bar height" onChange={setThicknessKey} options={THICKNESSES} value={thicknessKey} />
+          <Choice label="Circle size" onChange={setDiameterKey} options={DIAMETERS} value={diameterKey} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Circle" onChange={setCircle} value={circle} />
+          <Toggle label="Spring" onChange={setSpring} value={spring} />
+          <Toggle label="Tinted" onChange={setTinted} value={tinted} />
+        </ControlRow>
       </Controls>
 
       {/* With spring off the indicator tracks the offset exactly; with it on the

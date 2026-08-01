@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, type TriggerState, useTriggerState } from '../../__stories__/story-trigger';
+import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../__stories__/story-trigger';
 import { Bell, ChevronDown, Moon, Settings, User } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
@@ -144,10 +144,14 @@ function DropdownPlayground() {
 
   return (
     <Playground className="min-w-[340px]">
-      <ControlCard title="Options">
+      <ControlCard title="Dropdown panel">
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Width" onChange={setWidthKey} options={WIDTHS} value={widthKey} />
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
+      </ControlCard>
+
+      <ControlCard title="Options">
         <Toggle label="Title" onChange={setWithTitle} value={withTitle} />
         <Toggle label="Close button" onChange={setWithClose} value={withClose} />
         <Toggle label="Header action" onChange={setWithHeaderAction} value={withHeaderAction} />
@@ -157,13 +161,9 @@ function DropdownPlayground() {
         <Toggle label="Controlled" onChange={setControlled} value={controlled} />
       </ControlCard>
 
-      <ControlCard title="Elevation">
-        <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-      </ControlCard>
-
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
 
       <AdaptiveDropdown
         align={align}

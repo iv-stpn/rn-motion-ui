@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { fn } from 'storybook/test';
-import { Choice, Controls, Playground, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Playground, Toggle } from '../../__stories__/story-harness';
 import { Bell, ChevronRight, Copy, Moon, Pencil, Settings, ShieldCheck, Trash2, User } from '../../lib/icons';
 import { Text } from '../Text/text';
 import { MenuItem, type MenuItemIcon } from './menu-item';
@@ -63,10 +63,14 @@ function MenuItemPlayground() {
   return (
     <Playground>
       <Controls>
-        <Toggle label="Active" value={active} onChange={setActive} />
-        <Toggle label="Icon" value={showIcon} onChange={setShowIcon} />
-        <Toggle label="iOS style" value={iosMode} onChange={setIosMode} />
-        <Choice label="Trailing" options={TRAILING_OPTS} value={trailingKey} onChange={setTrailingKey} />
+        <ControlRow>
+          <Choice label="Trailing" options={TRAILING_OPTS} value={trailingKey} onChange={setTrailingKey} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Active" value={active} onChange={setActive} />
+          <Toggle label="Icon" value={showIcon} onChange={setShowIcon} />
+          <Toggle label="iOS style" value={iosMode} onChange={setIosMode} />
+        </ControlRow>
       </Controls>
       <View className="w-64 py-1">
         <MenuItem

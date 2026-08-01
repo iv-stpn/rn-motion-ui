@@ -2,7 +2,18 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { Action, Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import {
+  Action,
+  Choice,
+  ControlRow,
+  Controls,
+  Note,
+  Playground,
+  Sample,
+  Section,
+  Toggle,
+  Variants,
+} from '../../__stories__/story-harness';
 import { useInterval } from '../../hooks/use-interval';
 import { TextRolling, type TextRollingDirection } from './text-rolling';
 
@@ -56,9 +67,13 @@ function TextRollingPlayground(args: ComponentProps<typeof TextRolling>) {
   return (
     <Playground className="max-w-[380px]">
       <Controls>
-        <Choice label="Direction" onChange={setDirection} options={DIRECTIONS} value={direction} />
-        <Toggle label="Auto-cycle" onChange={setAuto} value={auto} />
-        <Action label="Next label" onPress={advance} />
+        <ControlRow>
+          <Choice label="Direction" onChange={setDirection} options={DIRECTIONS} value={direction} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Auto-cycle" onChange={setAuto} value={auto} />
+          <Action label="Next label" onPress={advance} />
+        </ControlRow>
       </Controls>
 
       <View className="items-center gap-1.5">

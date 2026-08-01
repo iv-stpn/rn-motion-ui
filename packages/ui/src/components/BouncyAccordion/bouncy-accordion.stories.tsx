@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { CalendarClock, FileText, FolderKanban, PackageCheck, RadioTower, ShieldCheck } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { BouncyAccordion, type BouncyAccordionItem } from './bouncy-accordion';
@@ -105,10 +105,14 @@ function BouncyAccordionPlayground() {
   return (
     <Playground>
       <Controls>
-        <Choice label="Rows" onChange={setCountKey} options={COUNTS} value={countKey} />
-        <Toggle label="Collapsible" onChange={setCollapsible} value={collapsible} />
-        <Toggle label="Icons" onChange={setIcons} value={icons} />
-        <Toggle label="Lock last row" onChange={setLockLast} value={lockLast} />
+        <ControlRow>
+          <Choice label="Rows" onChange={setCountKey} options={COUNTS} value={countKey} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Collapsible" onChange={setCollapsible} value={collapsible} />
+          <Toggle label="Icons" onChange={setIcons} value={icons} />
+          <Toggle label="Lock last row" onChange={setLockLast} value={lockLast} />
+        </ControlRow>
       </Controls>
 
       {/* With `collapsible` off, pressing the open row keeps it open — one row is

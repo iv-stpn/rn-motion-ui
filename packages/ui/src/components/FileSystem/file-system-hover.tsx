@@ -312,7 +312,7 @@ export type FileSystemSourceHighlightProps = {
 export function FileSystemSourceHighlight({ className, height, origin, testID, width }: FileSystemSourceHighlightProps) {
   if (Platform.OS !== 'web' || origin === null) return null;
   return (
-    <View className="absolute inset-0 overflow-hidden" pointerEvents="none">
+    <View className="pointer-events-none absolute inset-0 overflow-hidden">
       <View
         className={cn('absolute rounded-md bg-surface-hover', className)}
         style={{ height, left: origin.x, top: origin.y, width: width ?? '100%' }}
@@ -335,7 +335,7 @@ export function FileSystemSourceHighlight({ className, height, origin, testID, w
 export function FileSystemHoverHighlight({ className, controller, height, testID, width }: FileSystemHoverHighlightProps) {
   if (Platform.OS !== 'web') return null;
   return (
-    <View className="absolute inset-0 overflow-hidden" pointerEvents="none">
+    <View className="pointer-events-none absolute inset-0 overflow-hidden">
       <Animated.View
         style={{
           height,

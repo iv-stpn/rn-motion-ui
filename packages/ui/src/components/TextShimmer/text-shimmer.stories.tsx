@@ -2,7 +2,17 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { Action, Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import {
+  Action,
+  Choice,
+  ControlRow,
+  Controls,
+  Playground,
+  Sample,
+  Section,
+  Toggle,
+  Variants,
+} from '../../__stories__/story-harness';
 import { useInterval } from '../../hooks/use-interval';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
@@ -61,10 +71,14 @@ function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
   return (
     <Playground className="max-w-[420px]">
       <Controls>
-        <Choice label="Sweep" onChange={setDurationKey} options={DURATIONS} value={durationKey} />
-        <Choice label="Size" onChange={setSizeClass} options={SIZES} value={sizeClass} />
-        <Toggle label="Swap text" onChange={setSwapping} value={swapping} />
-        <Action label="Next phrase" onPress={advance} />
+        <ControlRow>
+          <Choice label="Sweep" onChange={setDurationKey} options={DURATIONS} value={durationKey} />
+          <Choice label="Size" onChange={setSizeClass} options={SIZES} value={sizeClass} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Swap text" onChange={setSwapping} value={swapping} />
+          <Action label="Next phrase" onPress={advance} />
+        </ControlRow>
       </Controls>
 
       <View className="min-h-[44px] justify-center">

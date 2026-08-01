@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { FileTree } from './file-tree';
 import type {
   FileTreeDensity,
@@ -161,20 +161,24 @@ function FileTreePlayground() {
   return (
     <Playground>
       <Controls>
-        <Choice label="Density" onChange={setDensity} options={DENSITIES} value={density} />
-        <Choice label="Selection" onChange={setSelectionMode} options={SELECTION_MODES} value={selectionMode} />
-        <Choice label="Expansion" onChange={setExpansionKey} options={EXPANSION_OPTIONS} value={expansionKey} />
-        <Choice label="Search mode" onChange={setSearchMode} options={SEARCH_MODES} value={searchMode} />
-        <Toggle label="Search input" onChange={setShowSearch} value={showSearch} />
-        <Toggle label="Draggable" onChange={setDraggable} value={draggable} />
-        <Toggle label="Renamable" onChange={setRenamable} value={renamable} />
-        <Toggle label="Git lanes" onChange={setWithGitStatus} value={withGitStatus} />
-        <Toggle label="Icons" onChange={setShowIcons} value={showIcons} />
-        <Toggle label="Indent guides" onChange={setShowIndentGuides} value={showIndentGuides} />
-        <Toggle label="Sticky headers" onChange={setStickyHeaders} value={stickyHeaders} />
-        <Toggle label="Flatten chains" onChange={setFlatten} value={flatten} />
-        <Toggle label="Pre-selected" onChange={setPreselected} value={preselected} />
-        <Toggle label="Empty" onChange={setEmpty} value={empty} />
+        <ControlRow>
+          <Choice label="Density" onChange={setDensity} options={DENSITIES} value={density} />
+          <Choice label="Selection" onChange={setSelectionMode} options={SELECTION_MODES} value={selectionMode} />
+          <Choice label="Expansion" onChange={setExpansionKey} options={EXPANSION_OPTIONS} value={expansionKey} />
+          <Choice label="Search mode" onChange={setSearchMode} options={SEARCH_MODES} value={searchMode} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Search input" onChange={setShowSearch} value={showSearch} />
+          <Toggle label="Draggable" onChange={setDraggable} value={draggable} />
+          <Toggle label="Renamable" onChange={setRenamable} value={renamable} />
+          <Toggle label="Git lanes" onChange={setWithGitStatus} value={withGitStatus} />
+          <Toggle label="Icons" onChange={setShowIcons} value={showIcons} />
+          <Toggle label="Indent guides" onChange={setShowIndentGuides} value={showIndentGuides} />
+          <Toggle label="Sticky headers" onChange={setStickyHeaders} value={stickyHeaders} />
+          <Toggle label="Flatten chains" onChange={setFlatten} value={flatten} />
+          <Toggle label="Pre-selected" onChange={setPreselected} value={preselected} />
+          <Toggle label="Empty" onChange={setEmpty} value={empty} />
+        </ControlRow>
       </Controls>
 
       <Note testID="story-note">{note}</Note>

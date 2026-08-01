@@ -179,8 +179,7 @@ export function Button({
         <MotiView
           animate={{ opacity: backdropColor === undefined ? 0 : 1 }}
           transition={TIMING_BASE}
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent' }]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent', pointerEvents: 'none' }]}
         />
         {buttonContent}
         {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}

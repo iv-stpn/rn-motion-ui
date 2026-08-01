@@ -26,8 +26,8 @@
  *   canvas.findByRole('button', { name: OPEN_LABEL })
  */
 
-import { type ReactNode, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable } from 'react-native';
 import type { ButtonVariant } from '../components/Button/button';
 import { Button } from '../components/Button/button';
 import type { ButtonShape, ButtonSize } from '../components/Button/button-scale';
@@ -37,7 +37,6 @@ import type { GlossyVariant } from '../components/Button/glossy-button';
 import { GlossyButton } from '../components/Button/glossy-button';
 import { Text } from '../components/Text/text';
 import { cn } from '../lib/cn';
-import { SURFACE_CLASSNAME } from '../lib/elevated';
 import { useThemeColors } from '../theme/use-theme-color';
 import { Choice } from './story-harness';
 
@@ -46,7 +45,6 @@ import { Choice } from './story-harness';
 const PRESSABLE_H: Record<string, string> = { sm: 'h-8', md: 'h-10', lg: 'h-12' };
 const PRESSABLE_PX: Record<string, string> = { sm: 'px-3', md: 'px-4', lg: 'px-5' };
 const PRESSABLE_SHAPE: Record<string, string> = { rounded: 'rounded-lg', pill: 'rounded-full' };
-const TRIGGER_CARD_LABEL = 'Trigger';
 
 // ─── Kinds ───────────────────────────────────────────────────────────────────
 
@@ -220,31 +218,9 @@ type TriggerControlsProps = { state: TriggerState };
 export function TriggerControls({ state }: TriggerControlsProps) {
   return (
     <>
-      <Choice label="Trigger" onChange={state.setKind} options={TRIGGER_KINDS} value={state.kind} />
+      <Choice label="Button type" onChange={state.setKind} options={TRIGGER_KINDS} value={state.kind} />
       <Choice label="Size" onChange={state.setSize} options={TRIGGER_SIZES} value={state.size} />
       <Choice label="Shape" onChange={state.setShape} options={TRIGGER_SHAPES} value={state.shape} />
     </>
-  );
-}
-
-// ─── TriggerCard ─────────────────────────────────────────────────────────────
-
-type TriggerCardProps = { children: ReactNode };
-
-/**
- * Labelled "Trigger" card that wraps `TriggerControls` in playground stories.
- * Gives the trigger controls the same visual weight as the `ControlCard` blocks.
- *
- * @example
- *   <TriggerCard>
- *     <TriggerControls state={trigger} />
- *   </TriggerCard>
- */
-export function TriggerCard({ children }: TriggerCardProps) {
-  return (
-    <View className={cn('gap-2 rounded-xl p-3', SURFACE_CLASSNAME[2])}>
-      <Text className="text-muted-foreground text-xs">{TRIGGER_CARD_LABEL}</Text>
-      <View className="flex-row flex-wrap items-center gap-4">{children}</View>
-    </View>
   );
 }

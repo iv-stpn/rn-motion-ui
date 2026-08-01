@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, type UserEventObject, userEvent, waitFor, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { DirectionProvider } from '../../hooks/direction-provider';
 import { useMountEffect } from '../../hooks/use-mount-effect';
 import { Switch } from '../Switch/switch';
@@ -344,7 +344,7 @@ function EditableTableStory() {
         <Text className="text-[#6b7280] text-[12px]">
           {editable ? 'Tap a cell to edit. Long-press row for actions.' : 'Read-only.'}
         </Text>
-        <Switch checked={editable} onCheckedChange={setEditable} label="Editable" />
+        <Switch isSelected={editable} onSelectedChange={setEditable} label="Editable" />
       </View>
       <Table
         data={rows}
@@ -464,14 +464,18 @@ function TablePlayground() {
   return (
     <Playground>
       <Controls>
-        <Choice label="Rows" onChange={handleRowCount} options={ROW_COUNT_OPTIONS} value={rowCountKey} />
-        <Choice label="Row height" onChange={setRowHeightKey} options={ROW_HEIGHT_KEYS} value={rowHeightKey} />
-        <Choice label="Footer" onChange={handleFooter} options={FOOTERS} value={footer} />
-        <Toggle label="Selectable" onChange={setSelectable} value={selectable} />
-        <Toggle label="Sortable" onChange={setSortable} value={sortable} />
-        <Toggle label="Reorderable" onChange={setReorderable} value={reorderable} />
-        <Toggle label="Striped" onChange={setStriped} value={striped} />
-        <Toggle label="Card view" onChange={setCardView} value={cardView} />
+        <ControlRow>
+          <Choice label="Rows" onChange={handleRowCount} options={ROW_COUNT_OPTIONS} value={rowCountKey} />
+          <Choice label="Row height" onChange={setRowHeightKey} options={ROW_HEIGHT_KEYS} value={rowHeightKey} />
+          <Choice label="Footer" onChange={handleFooter} options={FOOTERS} value={footer} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Selectable" onChange={setSelectable} value={selectable} />
+          <Toggle label="Sortable" onChange={setSortable} value={sortable} />
+          <Toggle label="Reorderable" onChange={setReorderable} value={reorderable} />
+          <Toggle label="Striped" onChange={setStriped} value={striped} />
+          <Toggle label="Card view" onChange={setCardView} value={cardView} />
+        </ControlRow>
       </Controls>
 
       <Note testID="story-note">{note}</Note>
@@ -601,7 +605,7 @@ function SmallScreenTableStory() {
         <Text className="text-[#6b7280] text-[12px]">
           {useSmallScreen ? 'Card view — each row rendered by renderSmallScreen.' : 'Table view — toggle to switch.'}
         </Text>
-        <Switch checked={useSmallScreen} onCheckedChange={setUseSmallScreen} label="Card view" />
+        <Switch isSelected={useSmallScreen} onSelectedChange={setUseSmallScreen} label="Card view" />
       </View>
       <Table
         data={rows}

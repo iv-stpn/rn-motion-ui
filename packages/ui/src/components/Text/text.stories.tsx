@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Text } from './text';
 
 const meta = {
@@ -46,10 +46,14 @@ function TextPlayground(args: ComponentProps<typeof Text>) {
   return (
     <Playground className="max-w-[420px]">
       <Controls>
-        <Choice label="Weight" onChange={setWeight} options={WEIGHTS} value={weight} />
-        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
-        <Choice label="Colour" onChange={setColor} options={COLORS} value={color} />
-        <Toggle label="Numeric" onChange={setNumeric} value={numeric} />
+        <ControlRow>
+          <Choice label="Weight" onChange={setWeight} options={WEIGHTS} value={weight} />
+          <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+          <Choice label="Colour" onChange={setColor} options={COLORS} value={color} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Numeric" onChange={setNumeric} value={numeric} />
+        </ControlRow>
       </Controls>
 
       <Text {...args} className={color} numeric={numeric} size={size} weight={weight}>

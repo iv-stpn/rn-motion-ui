@@ -80,11 +80,14 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
 
   return (
     <Playground>
-      <ControlCard title="Options">
+      <ControlCard title="Display">
         <Choice label="Animation" onChange={setAnimation} options={ANIMATIONS} value={animation} />
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
+      </ControlCard>
+
+      <ControlCard title="Options">
         <Toggle label="Icon only" onChange={setIconOnly} value={iconOnly} />
         <Toggle label="Cycle" onChange={setCycle} value={cycle} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />

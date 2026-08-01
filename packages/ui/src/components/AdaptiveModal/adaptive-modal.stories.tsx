@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
+import { TriggerButton, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
 import { AdaptiveModal, type LargeScreenMode, type SmallScreenMode, type WidePanelSize } from './adaptive-modal';
@@ -141,9 +141,9 @@ function ModalPlayground() {
         <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
 
       <TriggerButton
         kind={trigger.kind}

@@ -164,6 +164,8 @@ export type FileSystemColumnProps = {
   isLoading: boolean;
   /** Takes this pane's ordering as its third argument — see `orderedPaths` below. */
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent, orderedPaths?: readonly string[]) => void;
+  /** Called when the user presses empty space in the column — clears the selection. */
+  onClearSelection?: () => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onSelectLongPress?: (entry: FileSystemEntry) => void;
@@ -187,6 +189,7 @@ function FileSystemColumnImpl({
   index,
   isLoading,
   onActivate,
+  onClearSelection,
   onContextMenuAction,
   onMarquee,
   onSelectLongPress,
@@ -268,7 +271,7 @@ function FileSystemColumnImpl({
   );
 
   return (
-    <View className="shrink-0 border-border border-r" style={{ width: COLUMN_WIDTH }}>
+    <Pressable className="shrink-0 select-none border-border border-r" onPress={onClearSelection} style={{ width: COLUMN_WIDTH }}>
       {isLoading && entries.length === 0 ? (
         <FileSystemEmptyState isLoading={true} label={LOADING_LABEL} />
       ) : (
@@ -286,7 +289,7 @@ function FileSystemColumnImpl({
           <FileSystemMarqueeBox controller={marquee} />
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 

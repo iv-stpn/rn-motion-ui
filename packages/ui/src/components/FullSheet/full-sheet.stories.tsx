@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
+import { TriggerButton, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
 import { FullSheet, type FullSheetMode } from './full-sheet';
@@ -100,9 +100,9 @@ function SheetPlayground() {
         <Toggle label="Long content" onChange={setLong} value={long} />
       </ControlCard>
 
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
 
       <TriggerButton
         kind={trigger.kind}

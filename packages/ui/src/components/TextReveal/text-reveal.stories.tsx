@@ -1,7 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { expect, within } from 'storybook/test';
-import { Action, Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import {
+  Action,
+  Choice,
+  ControlRow,
+  Controls,
+  Playground,
+  Sample,
+  Section,
+  Toggle,
+  Variants,
+} from '../../__stories__/story-harness';
 import { TextReveal, type TextRevealSplit } from './text-reveal';
 
 const meta = {
@@ -56,11 +66,15 @@ function TextRevealPlayground(args: ComponentProps<typeof TextReveal>) {
   return (
     <Playground className="max-w-[460px]">
       <Controls>
-        <Choice label="Split" onChange={setSplit} options={SPLITS} value={split} />
-        <Choice label="Stagger" onChange={setPaceKey} options={PACES} value={paceKey} />
-        <Choice label="Y offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
-        <Toggle label="Multi-line" onChange={setMultiline} value={multiline} />
-        <Action label="Replay" onPress={replay} />
+        <ControlRow>
+          <Choice label="Split" onChange={setSplit} options={SPLITS} value={split} />
+          <Choice label="Stagger" onChange={setPaceKey} options={PACES} value={paceKey} />
+          <Choice label="Y offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Multi-line" onChange={setMultiline} value={multiline} />
+          <Action label="Replay" onPress={replay} />
+        </ControlRow>
       </Controls>
 
       <TextReveal

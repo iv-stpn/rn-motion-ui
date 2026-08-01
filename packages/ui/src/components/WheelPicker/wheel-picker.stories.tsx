@@ -2,7 +2,17 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import {
+  Choice,
+  ControlRow,
+  Controls,
+  Note,
+  Playground,
+  Sample,
+  Section,
+  Toggle,
+  Variants,
+} from '../../__stories__/story-harness';
 import { Card } from '../Card/card';
 import { WheelPicker } from './wheel-picker';
 
@@ -140,10 +150,14 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
   return (
     <Playground>
       <Controls>
-        <Choice label="Visible rows" onChange={setRowKey} options={ROWS} value={rowKey} />
-        <Choice label="Row height" onChange={setHeightKey} options={HEIGHTS} value={heightKey} />
-        <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
-        <Toggle label="Tick sound" onChange={setSound} value={sound} />
+        <ControlRow>
+          <Choice label="Visible rows" onChange={setRowKey} options={ROWS} value={rowKey} />
+          <Choice label="Row height" onChange={setHeightKey} options={HEIGHTS} value={heightKey} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
+          <Toggle label="Tick sound" onChange={setSound} value={sound} />
+        </ControlRow>
       </Controls>
 
       <View className="items-center gap-2">

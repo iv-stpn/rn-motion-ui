@@ -44,10 +44,11 @@ import { useEntryActivation } from './use-entry-activation';
 import { FS_DRAG_CONTAINER_TEST_ID, useDragSources } from './use-file-system-drag';
 import { type UseIconsDragReturn, useIconsViewDrag } from './use-file-system-icons-drag';
 
-// Web-only style props (userSelect / touchAction are absent from RN's ViewStyle).
-type WebViewStyle = ViewStyle & { userSelect?: string; touchAction?: string };
-const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none' } : null;
-const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none', touchAction: 'none' } : null;
+// Selection is off via `select-none` on the grid surface below; `touchAction` has
+// no utility class and is absent from RN's ViewStyle, so it stays an inline web
+// style — clamped only during a drag, so ordinary touch scrolling is unaffected.
+type WebViewStyle = ViewStyle & { touchAction?: string };
+const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { touchAction: 'none' } : null;
 
 /** Stable empty data for the frame before the width is known — see below. */
 const NO_ROWS: FileSystemEntry[][] = [];
@@ -375,8 +376,8 @@ export function FileSystemIconsView({
     <View className="min-h-0 flex-1" onLayout={onLayout}>
       <Pressable
         ref={containerRef}
-        className="relative min-h-0 flex-1"
-        style={drag.active ? WEB_DRAGGING_STYLE : WEB_BODY_STYLE}
+        className="relative min-h-0 flex-1 select-none"
+        style={drag.active ? WEB_DRAGGING_STYLE : null}
         testID={FS_DRAG_CONTAINER_TEST_ID.icons}
         onPress={handleBackgroundPress}
         onLongPress={backgroundMenu.onLongPress}

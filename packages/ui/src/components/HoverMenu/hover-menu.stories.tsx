@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, type TriggerState, useTriggerState } from '../../__stories__/story-trigger';
+import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../__stories__/story-trigger';
 import { Bell, Copy, Pencil, Share, Trash2 } from '../../lib/icons';
 import { MenuItem, type MenuItemIcon } from '../MenuItem/menu-item';
 import { Text } from '../Text/text';
@@ -146,9 +146,9 @@ function HoverMenuPlayground() {
         <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
 
       <Note>{HINT}</Note>
 

@@ -4,7 +4,7 @@ import { Modal, View } from 'react-native';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
 import { Action, Choice, ControlCard, Playground, Toggle, Variants } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
+import { TriggerButton, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { ActionFeedbackModal, type ActionFeedbackState } from './action-feedback-modal';
 
 const meta = {
@@ -132,14 +132,14 @@ function FeedbackPlayground() {
 
   return (
     <Playground>
-      <ControlCard title="Options">
+      <ControlCard title="Overlay">
         <Choice label="Resolves to" onChange={setOutcome} options={OUTCOMES} value={outcome} />
-        <Toggle label="Message text" onChange={setWithText} value={withText} />
-        <Toggle label="Tagline" onChange={setWithTagline} value={withTagline} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
-      <ControlCard title="Elevation">
-        <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+      <ControlCard title="Optional text">
+        <Toggle label="Message text" onChange={setWithText} value={withText} />
+        <Toggle label="Tagline" onChange={setWithTagline} value={withTagline} />
       </ControlCard>
 
       <ControlCard title="Jump to">
@@ -150,9 +150,9 @@ function FeedbackPlayground() {
         </Variants>
       </ControlCard>
 
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
 
       <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={RUN_LABEL} onPress={run} />
 

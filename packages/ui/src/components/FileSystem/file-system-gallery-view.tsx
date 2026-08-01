@@ -128,6 +128,7 @@ export function FileSystemGalleryView(props: FileSystemViewProps) {
   const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
   const handleLayout = useCallback((event: LayoutChangeEvent) => setViewportWidth(event.nativeEvent.layout.width), []);
+  const handleClearSelection = useCallback(() => onSelect(null), [onSelect]);
 
   // The gallery always shows something: the selection when it belongs to this
   // folder, else the first entry.
@@ -145,7 +146,7 @@ export function FileSystemGalleryView(props: FileSystemViewProps) {
   if (entries.length === 0) return <FileSystemEmptyState label={EMPTY_LABEL} />;
 
   return (
-    <View className="flex-1" onLayout={handleLayout}>
+    <View className="flex-1 select-none" onLayout={handleLayout}>
       <View className="min-h-0 flex-1 flex-row">
         <View className="min-h-0 flex-1 items-center justify-center p-3">
           <GalleryStagePane {...props} entry={activeEntry} file={stagedFile} width={stageWidth} />
@@ -159,6 +160,7 @@ export function FileSystemGalleryView(props: FileSystemViewProps) {
         entries={entries}
         getContextMenuActions={getContextMenuActions}
         onActivate={activate}
+        onClearSelection={handleClearSelection}
         onContextMenuAction={onContextMenuAction}
         onMarquee={onMarquee}
         onSelectLongPress={selectLongPress}

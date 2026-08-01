@@ -99,6 +99,7 @@ export function FileSystemColumnsView({
   const scrollRef = useRef<ScrollView>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode);
+  const handleClearSelection = useCallback(() => onSelect(null), [onSelect]);
   const columnPaths = useMemo(() => trailColumnPaths(currentPath, selectedEntry), [currentPath, selectedEntry]);
   const selectedFile = selectedEntry?.kind === 'file' ? selectedEntry : null;
 
@@ -110,7 +111,7 @@ export function FileSystemColumnsView({
 
   return (
     <ScrollView
-      className="flex-1"
+      className="flex-1 select-none"
       contentContainerClassName="grow"
       horizontal={true}
       onContentSizeChange={handleContentSizeChange}
@@ -126,6 +127,7 @@ export function FileSystemColumnsView({
           isLoading={loadingFolders.has(columnPath)}
           key={columnPath || '(root)'}
           onActivate={activate}
+          onClearSelection={handleClearSelection}
           onContextMenuAction={onContextMenuAction}
           onMarquee={onMarquee}
           onSelectLongPress={selectLongPress}

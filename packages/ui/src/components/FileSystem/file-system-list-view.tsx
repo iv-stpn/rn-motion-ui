@@ -57,17 +57,19 @@ const MISSING_VALUE = '—';
 const INDENT_PER_LEVEL = 14;
 /** The chevron lane, reserved on file rows too so names stay aligned. */
 const CHEVRON_SIZE = 18;
+/** The row's own left inset, matching the `px-2` its className sets. */
+const ROW_PADDING_X = 8;
 const ICON_SIZE = 16;
 const FOLDER_GLYPH_SIZE = 18;
 /** Below this the date column drops out, leaving name + size. */
 const DATE_COLUMN_MIN_WIDTH = 420;
 
-// Web-only style props (userSelect / touchAction are absent from RN's ViewStyle).
-// Selection is off for the whole body; touchAction is clamped only during a drag
-// so ordinary touch scrolling is unaffected the rest of the time.
-type WebViewStyle = ViewStyle & { userSelect?: string; touchAction?: string };
-const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none' } : null;
-const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none', touchAction: 'none' } : null;
+// Selection is off via `select-none` on the body below; `touchAction` has no
+// Tailwind utility and is absent from RN's ViewStyle, so it stays an inline web
+// style — clamped only during a drag, so ordinary touch scrolling is unaffected
+// the rest of the time.
+type WebViewStyle = ViewStyle & { touchAction?: string };
+const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { touchAction: 'none' } : null;
 
 /** Content-container top padding (py-1 = 4 px): where row 0 starts. */
 const LIST_PADDING_TOP = 4;
@@ -125,8 +127,7 @@ function DropHighlight({ targetIndex, scrollOffset }: DropHighlightProps) {
   if (targetIndex === null) return null;
   return (
     <View
-      pointerEvents="none"
-      className="absolute right-0 left-0 z-[3] rounded-md border border-primary"
+      className="pointer-events-none absolute right-0 left-0 z-[3] rounded-md border border-primary"
       style={{ height: FS_ROW_HEIGHT, top: targetIndex * FS_ROW_HEIGHT + LIST_PADDING_TOP - scrollOffset }}
     />
   );
@@ -137,11 +138,7 @@ type DragPreviewProps = { label: string; pos: Animated.ValueXY };
 /** Floating label chip that tracks the pointer during a drag (no re-renders). */
 function DragPreview({ label, pos }: DragPreviewProps) {
   return (
-    <Animated.View
-      pointerEvents="none"
-      className="absolute top-0 left-0 z-[4]"
-      style={{ transform: pos.getTranslateTransform() }}
-    >
+    <Animated.View className="pointer-events-none absolute top-0 left-0 z-[4]" style={{ transform: pos.getTranslateTransform() }}>
       <View className="rounded-md border border-border bg-surface-4 px-2 py-1">
         <Text className="text-foreground" numberOfLines={1} size="xs">
           {label}
@@ -175,6 +172,15 @@ function ColumnHeader({ className, label, onPress, sort, sortKey }: ColumnHeader
   );
 }
 
+/**
+ * Left edge of a row's chevron lane. Read twice per row — once as the row's own
+ * indented padding, once to place the disclosure control over the lane that
+ * padding reserves — so the two can only agree.
+ */
+function chevronLaneLeft(level: number): number {
+  return ROW_PADDING_X + level * INDENT_PER_LEVEL;
+}
+
 type ListRowProps = {
   childCount: number | undefined;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
@@ -190,7 +196,16 @@ type ListRowProps = {
   testID?: string;
 };
 
-/** Disclosure chevron, icon, name, then the metadata columns. */
+/**
+ * Disclosure chevron, icon, name, then the metadata columns.
+ *
+ * The chevron is a sibling of the row button rather than a child of it, laid
+ * over the lane the row's own padding reserves: a button inside a button is
+ * invalid HTML, and on web both Pressables resolve to one. Nothing about the
+ * press behaviour changes — RNW's press responder stops the click before it
+ * reaches an ancestor Pressable, so tapping the chevron never also activated the
+ * row, and the same holds for the responder on native.
+ */
 function ListRow({
   childCount,
   getContextMenuActions,
@@ -221,7 +236,7 @@ function ListRow({
     <View ref={wrapperRef}>
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ expanded: isExpandable ? isExpanded : undefined, selected: isSelected }}
+        accessibilityState={{ selected: isSelected }}
         // Both, deliberately: `accessibilityState` is what native reads, and
         // react-native-web maps `aria-selected` but not `accessibilityState`, so
         // on web the fill would otherwise be the only thing saying "picked".
@@ -231,22 +246,12 @@ function ListRow({
         className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected && 'bg-info')}
         onLongPress={onLongPress}
         onPress={handlePress}
-        style={{ height: FS_ROW_HEIGHT, paddingLeft: 8 + level * INDENT_PER_LEVEL }}
+        style={{ height: FS_ROW_HEIGHT, paddingLeft: chevronLaneLeft(level) }}
         testID={testID}
       >
-        {isExpandable ? (
-          <Pressable
-            accessibilityLabel={isExpanded ? `Collapse ${entry.name}` : `Expand ${entry.name}`}
-            accessibilityRole="button"
-            className="items-center justify-center"
-            onPress={handleToggle}
-            style={{ width: CHEVRON_SIZE }}
-          >
-            <ThemedIcon icon={ChevronIcon} token={isSelected ? 'white' : 'muted-foreground'} size={14} />
-          </Pressable>
-        ) : (
-          <View style={{ width: CHEVRON_SIZE }} />
-        )}
+        {/* The chevron's lane, held open on file rows too so names stay aligned
+            across kinds. On a folder row the control below sits over this box. */}
+        <View style={{ width: CHEVRON_SIZE }} />
         {entry.kind === 'folder' ? (
           <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />
         ) : (
@@ -265,6 +270,23 @@ function ListRow({
         </Text>
         {contextMenuNode}
       </Pressable>
+      {/* Over the lane held open above — see this component's note on why it is a
+          sibling of the row rather than a child. Full row height, so the target is
+          the whole lane rather than just the glyph. */}
+      {isExpandable ? (
+        <Pressable
+          accessibilityLabel={isExpanded ? `Collapse ${entry.name}` : `Expand ${entry.name}`}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: isExpanded }}
+          // See the row above: native reads the state, web reads the ARIA attribute.
+          aria-expanded={isExpanded}
+          className="absolute top-0 items-center justify-center"
+          onPress={handleToggle}
+          style={{ height: FS_ROW_HEIGHT, left: chevronLaneLeft(level), width: CHEVRON_SIZE }}
+        >
+          <ThemedIcon icon={ChevronIcon} token={isSelected ? 'white' : 'muted-foreground'} size={14} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -454,8 +476,8 @@ export function FileSystemListView({
       </View>
       <Pressable
         ref={containerRef}
-        className="relative min-h-0 flex-1"
-        style={drag.active ? WEB_DRAGGING_STYLE : WEB_BODY_STYLE}
+        className="relative min-h-0 flex-1 select-none"
+        style={drag.active ? WEB_DRAGGING_STYLE : null}
         testID={FS_DRAG_CONTAINER_TEST_ID.list}
         onPress={handleBackgroundPress}
         onLongPress={backgroundMenu.onLongPress}

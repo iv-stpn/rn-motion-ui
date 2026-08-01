@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
-import { Playground } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
+import { ControlCard, Playground } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { FileText, Home, Plus, Settings, User } from '../../lib/icons';
 import { type CommandItem, CommandPalette } from './command-palette';
 
@@ -35,9 +35,9 @@ function PalettePlayground() {
 
   return (
     <Playground className="min-w-[340px]">
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
 
       <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
       <CommandPalette items={ITEMS} onOpenChange={setOpen} open={open} shortcut="j" />

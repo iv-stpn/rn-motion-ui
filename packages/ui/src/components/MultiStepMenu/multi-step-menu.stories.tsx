@@ -13,7 +13,7 @@ import {
   Toggle,
   Variants,
 } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
+import { TriggerButton, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { useBreakpointAtLeast } from '../../hooks/use-breakpoint';
 import { Bell, Moon, ShieldCheck, User } from '../../lib/icons';
 import { Button } from '../Button/button';
@@ -275,9 +275,9 @@ function MenuPlayground() {
         <Action label={RESET_LABEL} onPress={handleReset} />
       </ControlCard>
 
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
 
       <TriggerButton
         kind={trigger.kind}

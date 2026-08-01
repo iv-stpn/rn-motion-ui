@@ -3,7 +3,18 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { Action, Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import {
+  Action,
+  Choice,
+  ControlRow,
+  Controls,
+  Note,
+  Playground,
+  Sample,
+  Section,
+  Toggle,
+  Variants,
+} from '../../__stories__/story-harness';
 import { ArrowRight } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { glossyContentColor } from './glossy-button';
@@ -76,12 +87,16 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   return (
     <Playground>
       <Controls>
-        <Choice label="Chip" onChange={setChip} options={CHIP_OPTIONS} value={chip} />
-        <Toggle label="With icon" onChange={setWithIcon} value={withIcon} />
-        <Toggle label="Auto reset" onChange={setShouldAutoReset} value={shouldAutoReset} />
-        <Toggle label="Custom labels" onChange={setCustomLabels} value={customLabels} />
-        <Choice label="Outcome" onChange={setOutcome} options={OUTCOMES} value={outcome} />
-        <Action label="Reset now" onPress={requestReset} />
+        <ControlRow>
+          <Choice label="Chip" onChange={setChip} options={CHIP_OPTIONS} value={chip} />
+          <Choice label="Outcome" onChange={setOutcome} options={OUTCOMES} value={outcome} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="With icon" onChange={setWithIcon} value={withIcon} />
+          <Toggle label="Auto reset" onChange={setShouldAutoReset} value={shouldAutoReset} />
+          <Toggle label="Custom labels" onChange={setCustomLabels} value={customLabels} />
+          <Action label="Reset now" onPress={requestReset} />
+        </ControlRow>
       </Controls>
 
       <Section title="Live — runs a 1.2 s action through the machine">

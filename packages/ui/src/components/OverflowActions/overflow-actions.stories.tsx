@@ -2,7 +2,17 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import {
+  Choice,
+  ControlRow,
+  Controls,
+  Note,
+  Playground,
+  Sample,
+  Section,
+  Toggle,
+  Variants,
+} from '../../__stories__/story-harness';
 import { CalendarClock, Eye, GitBranch, Pin } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { type OverflowActionItem, OverflowActions, type OverflowActionsSize } from './overflow-actions';
@@ -97,10 +107,14 @@ function OverflowActionsPlayground() {
   return (
     <Playground>
       <Controls>
-        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
-        <Toggle label="Expanded" onChange={setExpanded} value={expanded} />
-        <Toggle label="Collapse on action" onChange={setCollapseOnAction} value={collapseOnAction} />
-        <Toggle label="Icons" onChange={setIcons} value={icons} />
+        <ControlRow>
+          <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Expanded" onChange={setExpanded} value={expanded} />
+          <Toggle label="Collapse on action" onChange={setCollapseOnAction} value={collapseOnAction} />
+          <Toggle label="Icons" onChange={setIcons} value={icons} />
+        </ControlRow>
       </Controls>
 
       {/* Driving `expanded` from the harness toggle shows the rail is fully

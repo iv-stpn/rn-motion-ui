@@ -110,8 +110,8 @@ export function ButtonRipples({ ripples, filled }: ButtonRipplesProps) {
       from={{ scale: 0, opacity: 0.3 }}
       animate={{ scale: 1, opacity: 0 }}
       transition={{ type: 'timing', duration: 600 }}
-      pointerEvents="none"
       style={{
+        pointerEvents: 'none',
         position: 'absolute',
         left: rp.x - rp.size / 2,
         top: rp.y - rp.size / 2,

@@ -216,10 +216,10 @@ export type DragGhostProps = Omit<IconTileFaceProps, 'isDropTarget' | 'isSelecte
 export function DragGhost({ pos, ...faceProps }: DragGhostProps) {
   return (
     <Animated.View
-      pointerEvents="none"
       style={{
         left: 0,
         opacity: GHOST_OPACITY,
+        pointerEvents: 'none',
         position: 'absolute',
         top: 0,
         transform: [...pos.getTranslateTransform(), { scale: GHOST_SCALE }],

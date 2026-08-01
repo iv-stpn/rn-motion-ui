@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
-import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
+import { TriggerButton, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
 import { BottomSheet } from './bottom-sheet';
@@ -82,9 +82,9 @@ function SheetPlayground() {
         <Toggle label="Tinted chrome" onChange={setTinted} value={tinted} />
       </ControlCard>
 
-      <TriggerCard>
+      <ControlCard title="Trigger">
         <TriggerControls state={trigger} />
-      </TriggerCard>
+      </ControlCard>
 
       <TriggerButton
         kind={trigger.kind}

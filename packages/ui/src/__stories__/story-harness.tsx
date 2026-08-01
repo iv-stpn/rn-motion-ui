@@ -21,8 +21,11 @@
 import { type ReactNode, useCallback } from 'react';
 import { type FlexAlignType, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { Text } from '../components/Text/text';
+import { useReducedMotion } from '../hooks/use-reduced-motion';
 import { cn } from '../lib/cn';
+import { THUMB_SPRING } from '../lib/ease';
 import { SURFACE_CLASSNAME } from '../lib/elevated';
+import { MotiView } from '../moti/components/view';
 
 const alignClassname: Record<FlexAlignType, string> = {
   'flex-start': 'items-start',
@@ -34,6 +37,7 @@ const alignClassname: Record<FlexAlignType, string> = {
 
 type PlaygroundProps = { children: ReactNode; className?: string; style?: StyleProp<ViewStyle> };
 type ControlsProps = { children: ReactNode };
+type ControlRowProps = { children: ReactNode };
 type ToggleProps = { label: string; value: boolean; onChange: (next: boolean) => void };
 type ActionProps = { label: string; onPress: () => void };
 type ChoiceOption<T extends string> = { value: T; label: string };
@@ -96,17 +100,20 @@ export function Playground({ children, className, style }: PlaygroundProps) {
 /** Bordered card holding the live controls at the top of a playground. */
 export function Controls({ children }: ControlsProps) {
   return (
-    <View
-      className={cn('flex flex-row flex-wrap items-center gap-4 rounded-xl p-3', SURFACE_CLASSNAME[2])}
-      testID="story-controls"
-    >
+    <View className={cn('flex-col gap-3 rounded-xl p-3', SURFACE_CLASSNAME[2])} testID="story-controls">
       {children}
     </View>
   );
 }
 
+/** Horizontal group within a Controls block — wraps controls of the same kind on one line. */
+export function ControlRow({ children }: ControlRowProps) {
+  return <View className="flex-row flex-wrap items-center gap-4">{children}</View>;
+}
+
 /** Boolean control — a compact switch that never answers `role="switch"`. */
 export function Toggle({ label, value, onChange }: ToggleProps) {
+  const reduce = useReducedMotion();
   const handlePress = useCallback(() => onChange(!value), [onChange, value]);
   return (
     <Pressable
@@ -117,8 +124,17 @@ export function Toggle({ label, value, onChange }: ToggleProps) {
       className="flex-row items-center gap-2"
       testID={`story-toggle-${slug(label)}`}
     >
-      <View className={cn('h-5 w-[34px] justify-center rounded-[10px] p-0.5', value ? 'bg-primary' : 'bg-muted-foreground')}>
-        <View className={cn('size-4 rounded-lg', SURFACE_CLASSNAME[3], value ? 'translate-x-[14px]' : 'translate-x-0')} />
+      {/* Dimensions mirror the heroui Switch: 48×24 track, 28×20 pill thumb, 2px inset, 16px travel. */}
+      <View className={cn('relative h-6 w-12 overflow-hidden rounded-full', value ? 'bg-primary' : 'bg-muted-foreground/60')}>
+        <MotiView
+          animate={{ translateX: value ? 16 : 0 }}
+          transition={
+            reduce
+              ? { type: 'timing', duration: 0 }
+              : { type: 'spring', stiffness: THUMB_SPRING.stiffness, damping: THUMB_SPRING.damping, mass: THUMB_SPRING.mass }
+          }
+          className={cn('absolute top-0.5 left-0.5 h-5 w-7 rounded-full', SURFACE_CLASSNAME[3])}
+        />
       </View>
       <Text className="text-foreground" size="sm">
         {label}
@@ -152,11 +168,11 @@ export function Choice<T extends string>({ label, value, options, onChange }: Ch
   return (
     <View className="items-start gap-1.5">
       {label ? (
-        <Text className="text-muted-foreground" size="xs" weight="medium">
+        <Text className="text-muted-foreground" size="xs">
           {label}
         </Text>
       ) : null}
-      <View className={cn('flex-row flex-wrap overflow-hidden rounded-[10px]', SURFACE_CLASSNAME[3])}>
+      <View className={cn('flex-row flex-wrap overflow-hidden rounded-md', SURFACE_CLASSNAME[4])}>
         {items.map((item) => (
           <ChoiceChip
             key={item.value}
@@ -198,8 +214,10 @@ export function Section({ title, children }: SectionProps) {
  */
 export function ControlCard({ title, children }: ControlCardProps) {
   return (
-    <View className={cn('gap-2 rounded-xl p-3', SURFACE_CLASSNAME[2])}>
-      <Text className="text-muted-foreground text-xs">{title}</Text>
+    <View className={cn('gap-3.5 rounded-xl p-3', SURFACE_CLASSNAME[3])}>
+      <Text className="text-muted-foreground" size="xs" weight="semibold">
+        {title}
+      </Text>
       <View className="flex-row flex-wrap items-center gap-4">{children}</View>
     </View>
   );

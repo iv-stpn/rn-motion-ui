@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlRow, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Loader, type LoaderVariant } from './loader';
 
@@ -54,10 +54,14 @@ function LoaderPlayground(args: ComponentProps<typeof Loader>) {
   return (
     <Playground className="max-w-[540px]">
       <Controls>
-        <Choice label="Variant" onChange={setVariant} options={GALLERY} value={variant} />
-        <Choice label="Size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
-        <Choice label="Speed" onChange={setSpeedKey} options={SPEEDS} value={speedKey} />
-        <Toggle label="Tinted" onChange={setTinted} value={tinted} />
+        <ControlRow>
+          <Choice label="Variant" onChange={setVariant} options={GALLERY} value={variant} />
+          <Choice label="Size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
+          <Choice label="Speed" onChange={setSpeedKey} options={SPEEDS} value={speedKey} />
+        </ControlRow>
+        <ControlRow>
+          <Toggle label="Tinted" onChange={setTinted} value={tinted} />
+        </ControlRow>
       </Controls>
 
       <View className="h-24 items-center justify-center">

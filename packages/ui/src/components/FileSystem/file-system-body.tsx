@@ -15,7 +15,7 @@
 // folder" action matters most.
 
 import { type ComponentType, type ReactNode, useMemo, useRef } from 'react';
-import { Platform, Pressable, View, type ViewStyle } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import type { FileSystemBodyState, FileSystemEmptyStateReason, FileSystemView } from './file-system.types';
 import { FileSystemColumnsView } from './file-system-columns-view';
@@ -210,14 +210,6 @@ function FileSystemBodyContent() {
   return <ActiveView {...viewProps} />;
 }
 
-// Names in the file area are labels, not prose. Left selectable, a double-click
-// would select the word under the cursor, and react-native-web's press responder
-// treats that `selectionchange` as a terminated gesture and drops the second
-// press — so opening a file by double-clicking its name would silently fail.
-// (`userSelect` isn't in RN's ViewStyle and means nothing on native.)
-type WebViewStyle = ViewStyle & { userSelect?: string };
-const WEB_BODY_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSelect: 'none' } : null;
-
 // `testID` is the root's, not the body's: it stays in the props handed to the
 // active view so every entry can derive its own id from it (see
 // file-system-test-id.ts). The body's own node takes the `-body` suffix.
@@ -271,8 +263,20 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
       })
     : content;
 
+  // Names in the file area are labels, not prose, and `select-none` is on the file
+  // area as a whole for two reasons. A double-click on a selectable name selects
+  // the word under the cursor, and react-native-web's press responder reads that
+  // `selectionchange` as a terminated gesture and drops the second press — so
+  // opening a file by double-clicking its name would silently fail. And a marquee
+  // pulled across the rows would drag a text selection along with it: the band
+  // calls `preventDefault` on move, but only once the gesture is past its slop
+  // threshold, by which point the browser has already begun selecting.
+  //
+  // `user-select` inherits, so this one class covers every view. Each marquee
+  // surface repeats it anyway — the views are mounted directly in tests and by
+  // consumers reaching for a single view, where this node isn't above them.
   return (
-    <View className={cn('min-h-0 flex-1', className)} style={WEB_BODY_STYLE} testID={bodyTestID}>
+    <View className={cn('min-h-0 flex-1 select-none', className)} testID={bodyTestID}>
       {body}
     </View>
   );

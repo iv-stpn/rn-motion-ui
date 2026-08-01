@@ -24,8 +24,8 @@
 
 import { type ReactNode, useCallback } from 'react';
 import { type FlexAlignType, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
-import { Switch } from '../components/Switch/switch';
-import { Text } from '../components/Text/text';
+import { Switch } from '../components/form/Switch/switch';
+import { Text } from '../components/typography/Text/text';
 import { cn } from '../lib/cn';
 import { SURFACE_CLASSNAME } from '../lib/elevated';
 
@@ -38,8 +38,7 @@ const alignClassname: Record<FlexAlignType, string> = {
 };
 
 type PlaygroundProps = { children: ReactNode; className?: string; style?: StyleProp<ViewStyle> };
-type ControlsProps = { children: ReactNode };
-type ControlRowProps = { children: ReactNode };
+
 type ToggleProps = { label: string; value: boolean; onChange: (next: boolean) => void };
 type ActionProps = { label: string; onPress: () => void };
 type ChoiceOption<T extends string> = { value: T; label: string };

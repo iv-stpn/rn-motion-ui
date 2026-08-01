@@ -28,14 +28,14 @@
 
 import { useState } from 'react';
 import { Pressable } from 'react-native';
-import type { ButtonVariant } from '../components/Button/button';
-import { Button } from '../components/Button/button';
-import type { ButtonShape, ButtonSize } from '../components/Button/button-scale';
-import type { ElevatedVariant } from '../components/Button/elevated-button';
-import { ElevatedButton } from '../components/Button/elevated-button';
-import type { GlossyVariant } from '../components/Button/glossy-button';
-import { GlossyButton } from '../components/Button/glossy-button';
-import { Text } from '../components/Text/text';
+import type { ButtonVariant } from '../components/form/Button/button';
+import { Button } from '../components/form/Button/button';
+import type { ButtonShape, ButtonSize } from '../components/form/Button/button-scale';
+import type { ElevatedVariant } from '../components/form/Button/elevated-button';
+import { ElevatedButton } from '../components/form/Button/elevated-button';
+import type { GlossyVariant } from '../components/form/Button/glossy-button';
+import { GlossyButton } from '../components/form/Button/glossy-button';
+import { Text } from '../components/typography/Text/text';
 import { cn } from '../lib/cn';
 import { useThemeColors } from '../theme/use-theme-color';
 import { Choice, ControlCard } from './story-harness';

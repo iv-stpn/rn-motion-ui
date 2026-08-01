@@ -3,7 +3,7 @@ import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { StarRating, type StarRenderProps } from './star-rating';
 
@@ -74,7 +74,6 @@ function StarRatingPlayground(args: ComponentProps<typeof StarRating>) {
           size={size}
           value={Math.min(rating, max)}
         />
-        <Note testID="story-rating">{`${rating} / ${max}`}</Note>
       </View>
 
       <Section title="Sizes">

@@ -57,7 +57,7 @@ export type StarRatingProps = {
    * theme-independent gold so stars always read as stars.
    */
   activeStarColor?: string;
-  /** Color of the empty/inactive stars. Defaults to the theme `border` color. */
+  /** Color of the empty/inactive stars. Defaults to the theme `accent` color. */
   inactiveStarColor?: string;
   /** Round the star's stroke caps and joins. Set false for sharp points. Default true */
   round?: boolean;
@@ -74,7 +74,7 @@ const SPARKLE_COUNT = 5;
 const BURST_DURATION_MS = 500;
 
 /** Theme-independent gold used for filled stars unless overridden via props. */
-const DEFAULT_ACTIVE_STAR_COLOR = '#edde51'; /* theme-exempt: fixed gold, reads as a star across every theme */
+const DEFAULT_ACTIVE_STAR_COLOR = '#fec700'; /* theme-exempt: fixed gold, reads as a star across every theme */
 
 /** Snappy spring for star fills and press feedback. */
 const FILL_SPRING = { type: 'spring' as const, stiffness: 500, damping: 30 };
@@ -210,12 +210,12 @@ export function StarButton({
   const popScale = useSharedValue(1);
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: popScale.value }] }));
 
-  const prevBurstKeyRef = useRef(-1);
+  const previousBurstKeyRef = useRef(-1);
 
   // biome-ignore lint/plugin: triggering a Reanimated withSequence on a shared value in response to a prop change requires a side effect
   useEffect(() => {
-    if (isBursting && !reduce && burstKey !== prevBurstKeyRef.current) {
-      prevBurstKeyRef.current = burstKey;
+    if (isBursting && !reduce && burstKey !== previousBurstKeyRef.current) {
+      previousBurstKeyRef.current = burstKey;
       popScale.value = withSequence(withTiming(0.7, { duration: 110 }), withSpring(1.0, { stiffness: 500, damping: 14 }));
     }
   }, [isBursting, burstKey, reduce, popScale]);
@@ -283,9 +283,9 @@ export function StarRating({
   renderStar,
 }: StarRatingProps) {
   const reduce = useReducedMotion();
-  const themeBorder = useThemeColor('border');
-  // Inactive stars fall back to the theme `border` color when no prop is given.
-  const inactiveColor = inactiveStarColor ?? themeBorder;
+  const themeAccent = useThemeColor('accent');
+  // Inactive stars fall back to the theme `accent` color when no prop is given.
+  const inactiveColor = inactiveStarColor ?? themeAccent;
   const [internal, setInternal] = useState(defaultValue);
   const [burst, setBurst] = useState<{ key: number; index: number } | null>(null);
 

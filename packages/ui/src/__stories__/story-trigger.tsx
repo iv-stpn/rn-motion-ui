@@ -1,5 +1,6 @@
 /**
  * TriggerButton — reusable open-trigger for overlay Demo and Playground stories.
+ * TriggerControls + useTriggerState — reusable Controls section for trigger customisation.
  *
  * Kept separate from story-harness.tsx because the harness is intentionally
  * built from bare `Pressable` — it must never answer a library-component query
@@ -7,15 +8,16 @@
  * ElevatedButton / GlossyButton / Pressable on purpose: overlay stories need to
  * showcase real launch styles, not harness chrome.
  *
- * Usage:
- *   import { TriggerButton, TRIGGER_KINDS, type TriggerKind } from '../../__stories__/story-trigger';
+ * Usage (playground):
+ *   import { TriggerButton, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
  *
- *   // In a playground, add a Choice for the kind:
- *   const [kind, setKind] = useState<TriggerKind>('button');
- *   <Choice label="Trigger" onChange={setKind} options={TRIGGER_KINDS} value={kind} />
- *   <TriggerButton kind={kind} label={OPEN_LABEL} onPress={handleOpen} />
+ *   const trigger = useTriggerState();
+ *   // In Controls:
+ *   <TriggerControls state={trigger} />
+ *   // Trigger button:
+ *   <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
  *
- *   // In a Demo story, use the default (Button) or pick a specific kind:
+ *   // In a Demo story, use the default (Button, md, rounded) or pick a specific kind:
  *   <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
  *   <TriggerButton kind="elevated" label={OPEN_LABEL} onPress={handleOpen} />
  *
@@ -24,16 +26,29 @@
  *   canvas.findByRole('button', { name: OPEN_LABEL })
  */
 
-import { Pressable } from 'react-native';
+import { type ReactNode, useState } from 'react';
+import { Pressable, View } from 'react-native';
 import type { ButtonVariant } from '../components/Button/button';
 import { Button } from '../components/Button/button';
+import type { ButtonShape, ButtonSize } from '../components/Button/button-scale';
 import type { ElevatedVariant } from '../components/Button/elevated-button';
 import { ElevatedButton } from '../components/Button/elevated-button';
 import type { GlossyVariant } from '../components/Button/glossy-button';
 import { GlossyButton } from '../components/Button/glossy-button';
 import { Text } from '../components/Text/text';
 import { cn } from '../lib/cn';
+import { SURFACE_CLASSNAME } from '../lib/elevated';
 import { useThemeColors } from '../theme/use-theme-color';
+import { Choice } from './story-harness';
+
+// Private Tailwind class maps for the bare Pressable kind, mirroring ButtonMetrics.
+// Kept before the exports so all non-exports precede all exports (useExportsLast).
+const PRESSABLE_H: Record<string, string> = { sm: 'h-8', md: 'h-10', lg: 'h-12' };
+const PRESSABLE_PX: Record<string, string> = { sm: 'px-3', md: 'px-4', lg: 'px-5' };
+const PRESSABLE_SHAPE: Record<string, string> = { rounded: 'rounded-lg', pill: 'rounded-full' };
+const TRIGGER_CARD_LABEL = 'Trigger';
+
+// ─── Kinds ───────────────────────────────────────────────────────────────────
 
 /** The trigger styles an overlay story can showcase. */
 export type TriggerKind = 'button' | 'elevated' | 'glossy' | 'pressable';
@@ -42,12 +57,31 @@ export type TriggerKind = 'button' | 'elevated' | 'glossy' | 'pressable';
 // biome-ignore lint/style/useComponentExportOnlyModules: the chip list belongs with the component it drives
 export const TRIGGER_KINDS: readonly TriggerKind[] = ['button', 'elevated', 'glossy', 'pressable'] as const;
 
+// ─── Sizes & Shapes ──────────────────────────────────────────────────────────
+
+/** Subset of `ButtonSize` that makes sense for a labelled trigger (excludes `icon`). */
+export type TriggerSize = Exclude<ButtonSize, 'icon'>;
+
+/** Sizes available in the trigger controls. */
+// biome-ignore lint/style/useComponentExportOnlyModules: the chip list belongs with the component it drives
+export const TRIGGER_SIZES: readonly TriggerSize[] = ['sm', 'md', 'lg'] as const;
+
+/** Shapes available in the trigger controls. */
+// biome-ignore lint/style/useComponentExportOnlyModules: the chip list belongs with the component it drives
+export const TRIGGER_SHAPES: readonly ButtonShape[] = ['rounded', 'pill'] as const;
+
+// ─── TriggerButton ───────────────────────────────────────────────────────────
+
 export type TriggerButtonProps = {
   /** Which component to render. Defaults to `'button'`. */
   kind?: TriggerKind;
   /** Accessible label — used as button text and `accessibilityLabel`. */
   label: string;
   onPress: () => void;
+  /** Visual size of the trigger button. Defaults to `'md'`. */
+  size?: TriggerSize;
+  /** Corner shape of the trigger button. Defaults to `'rounded'`. */
+  shape?: ButtonShape;
   /**
    * `kind === 'button'` only. Variant forwarded to `Button`.
    * Defaults to `'primary'`.
@@ -64,8 +98,8 @@ export type TriggerButtonProps = {
    */
   glossyVariant?: GlossyVariant;
   /**
-   * `kind === 'pressable'` only. Tailwind/NativeWind classes applied to the
-   * `Pressable` wrapper — useful for one-off layout or colour overrides.
+   * `kind === 'pressable'` only. Extra Tailwind/NativeWind classes merged onto
+   * the `Pressable` wrapper — useful for one-off layout or colour overrides.
    */
   className?: string;
 };
@@ -80,15 +114,15 @@ export type TriggerButtonProps = {
  * | `'glossy'`    | `GlossyButton`    | `glossyVariant`          |
  * | `'pressable'` | bare `Pressable`  | `className`              |
  *
- * The per-kind props are all optional on one flat props type rather than a
- * discriminated union: a story flipping `kind` from a `Choice` would otherwise
- * have to re-shape its whole prop object on every change. Props for the kinds
- * not being rendered are simply ignored.
+ * `size` and `shape` are forwarded to every kind so a single trigger state
+ * object drives both appearance dimensions without re-shaping the props object.
  */
 export function TriggerButton({
   kind = 'button',
   label,
   onPress,
+  size = 'md',
+  shape = 'rounded',
   buttonVariant = 'primary',
   elevatedVariant = 'neutral',
   glossyVariant = 'neutral',
@@ -98,14 +132,14 @@ export function TriggerButton({
 
   if (kind === 'elevated')
     return (
-      <ElevatedButton className="self-start" onPress={onPress} variant={elevatedVariant}>
+      <ElevatedButton className="self-start" onPress={onPress} shape={shape} size={size} variant={elevatedVariant}>
         {label}
       </ElevatedButton>
     );
 
   if (kind === 'glossy')
     return (
-      <GlossyButton className="self-start" onPress={onPress} variant={glossyVariant}>
+      <GlossyButton className="self-start" onPress={onPress} shape={shape} size={size} variant={glossyVariant}>
         {label}
       </GlossyButton>
     );
@@ -115,7 +149,13 @@ export function TriggerButton({
       <Pressable
         accessibilityLabel={label}
         accessibilityRole="button"
-        className={cn('self-start rounded-lg px-4 py-2', className)}
+        className={cn(
+          'items-center justify-center self-start underline decoration-dashed underline-offset-4',
+          PRESSABLE_H[size],
+          PRESSABLE_PX[size],
+          PRESSABLE_SHAPE[shape],
+          className,
+        )}
         onPress={onPress}
       >
         <Text size="sm" weight="medium" style={{ color: colors.primary }}>
@@ -125,8 +165,86 @@ export function TriggerButton({
     );
 
   return (
-    <Button className="self-start" onPress={onPress} variant={buttonVariant}>
+    <Button className="self-start" onPress={onPress} shape={shape} size={size} variant={buttonVariant}>
       {label}
     </Button>
+  );
+}
+
+// ─── Trigger state hook + controls ───────────────────────────────────────────
+
+/** Live state object returned by `useTriggerState`, passed to `TriggerControls`. */
+export type TriggerState = {
+  kind: TriggerKind;
+  setKind: (next: TriggerKind) => void;
+  size: TriggerSize;
+  setSize: (next: TriggerSize) => void;
+  shape: ButtonShape;
+  setShape: (next: ButtonShape) => void;
+};
+
+/**
+ * Returns the three-axis trigger state (kind, size, shape) with their setters.
+ * Pass the result to `<TriggerControls state={…} />` and pick from it onto
+ * `<TriggerButton>`.
+ *
+ * @example
+ *   const trigger = useTriggerState();
+ *   // in Controls:
+ *   <TriggerControls state={trigger} />
+ *   // trigger button:
+ *   <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={…} onPress={…} />
+ */
+// biome-ignore lint/style/useComponentExportOnlyModules: hook co-located with the trigger components it drives
+// biome-ignore lint/style/useExportsLast: TriggerControlsProps is a private prop type kept next to its component
+export function useTriggerState(): TriggerState {
+  const [kind, setKind] = useState<TriggerKind>('button');
+  const [size, setSize] = useState<TriggerSize>('md');
+  const [shape, setShape] = useState<ButtonShape>('rounded');
+  return { kind, setKind, size, setSize, shape, setShape };
+}
+
+/**
+ * Three `Choice` chips — Kind, Size, Shape — ready to drop inside a `Controls`
+ * block. Drives `TriggerButton` through the `TriggerState` object from
+ * `useTriggerState`.
+ *
+ * @example
+ *   <Controls>
+ *     …other controls…
+ *     <TriggerControls state={trigger} />
+ *   </Controls>
+ */
+type TriggerControlsProps = { state: TriggerState };
+
+export function TriggerControls({ state }: TriggerControlsProps) {
+  return (
+    <>
+      <Choice label="Trigger" onChange={state.setKind} options={TRIGGER_KINDS} value={state.kind} />
+      <Choice label="Size" onChange={state.setSize} options={TRIGGER_SIZES} value={state.size} />
+      <Choice label="Shape" onChange={state.setShape} options={TRIGGER_SHAPES} value={state.shape} />
+    </>
+  );
+}
+
+// ─── TriggerCard ─────────────────────────────────────────────────────────────
+
+type TriggerCardProps = { children: ReactNode };
+
+/**
+ * Labelled "Trigger" card that wraps `TriggerControls` in playground stories.
+ * Gives the trigger controls the same visual weight as the `ControlCard` blocks.
+ *
+ * @example
+ *   <TriggerCard>
+ *     <TriggerControls state={trigger} />
+ *   </TriggerCard>
+ */
+export function TriggerCard({ children }: TriggerCardProps) {
+  return (
+    <View className={cn('gap-2 rounded-xl p-3', SURFACE_CLASSNAME[2])}>
+      <Text className="text-muted-foreground text-xs">{TRIGGER_CARD_LABEL}</Text>
+      <View className="flex-row flex-wrap items-center gap-4">{children}</View>
+    </View>
   );
 }

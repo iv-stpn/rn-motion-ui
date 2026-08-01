@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
-import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
+import { ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
 import { BottomSheet } from './bottom-sheet';
@@ -67,7 +67,7 @@ function SheetPlayground() {
   const [tinted, setTinted] = useState(false);
   const [open, setOpen] = useState(false);
   const [closes, setCloses] = useState(0);
-  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+  const trigger = useTriggerState();
 
   const handleOpen = useCallback(() => setOpen(true), []);
   const handleClose = useCallback(() => setOpen(false), []);
@@ -75,18 +75,25 @@ function SheetPlayground() {
 
   return (
     <Playground className="min-w-[340px]">
-      <Controls>
+      <ControlCard title="Options">
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Long content" onChange={setLongContent} value={longContent} />
         <Toggle label="Close on overlay" onChange={setCloseOnOverlay} value={closeOnOverlay} />
         <Toggle label="Tinted chrome" onChange={setTinted} value={tinted} />
-        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
-      </Controls>
+      </ControlCard>
 
-      <Section>
-        <TriggerButton kind={triggerKind} label={OPEN_SHEET_LABEL} onPress={handleOpen} />
-        <Note testID="story-open">{open ? `Open — dismissed ${closes}×` : `${CLOSED_NOTE} — dismissed ${closes}×`}</Note>
-      </Section>
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
+
+      <TriggerButton
+        kind={trigger.kind}
+        size={trigger.size}
+        shape={trigger.shape}
+        label={OPEN_SHEET_LABEL}
+        onPress={handleOpen}
+      />
+      <Note testID="story-open">{open ? `Open — dismissed ${closes}×` : `${CLOSED_NOTE} — dismissed ${closes}×`}</Note>
 
       <Note>{FULL_SHEET_NOTE}</Note>
       <Note>{LOCKED_NOTE}</Note>

@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
-import { Choice, Controls, Playground, Section } from '../../__stories__/story-harness';
-import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
+import { Choice, ControlCard, Playground } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, type TriggerState, useTriggerState } from '../../__stories__/story-trigger';
 import { Ban, Lock, ScanFace, ScrollText, ShieldCheck, Trash2, X } from '../../lib/icons';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
@@ -193,10 +193,16 @@ const PLACEMENTS = [
   { value: 'center', label: 'Center' },
 ] as const satisfies readonly { value: 'bottom' | 'center'; label: string }[];
 
-type MorphingModalDemoProps = { placement: 'bottom' | 'center'; triggerKind?: TriggerKind; testID?: string };
+type MorphingModalDemoProps = {
+  placement: 'bottom' | 'center';
+  kind?: TriggerState['kind'];
+  size?: TriggerState['size'];
+  shape?: TriggerState['shape'];
+  testID?: string;
+};
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function MorphingModalDemo({ placement, triggerKind, testID }: MorphingModalDemoProps) {
+function MorphingModalDemo({ placement, kind, size, shape, testID }: MorphingModalDemoProps) {
   const [view, setView] = useState<WalletView>(null);
   const showOptions = useCallback(() => setView('options'), []);
   const close = useCallback(() => setView(null), []);
@@ -204,7 +210,7 @@ function MorphingModalDemo({ placement, triggerKind, testID }: MorphingModalDemo
   const showRecovery = useCallback(() => setView('recovery'), []);
   return (
     <View className="items-center gap-3">
-      <TriggerButton kind={triggerKind} label={OPEN_LABEL} onPress={showOptions} />
+      <TriggerButton kind={kind} size={size} shape={shape} label={OPEN_LABEL} onPress={showOptions} />
       <Text className="text-muted-foreground text-xs">{HINT}</Text>
       <MorphingModal viewId={view} onClose={close} placement={placement} testID={testID}>
         {renderModalView(view, { close, showOptions, showPrivateKey, showRecovery })}
@@ -216,16 +222,16 @@ function MorphingModalDemo({ placement, triggerKind, testID }: MorphingModalDemo
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function MorphingModalPlayground() {
   const [placement, setPlacement] = useState<'bottom' | 'center'>('bottom');
-  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+  const trigger = useTriggerState();
   return (
     <Playground className="min-w-[340px]">
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
-        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
-      </Controls>
-      <Section>
-        <MorphingModalDemo placement={placement} triggerKind={triggerKind} />
-      </Section>
+      </ControlCard>
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
+      <MorphingModalDemo placement={placement} kind={trigger.kind} size={trigger.size} shape={trigger.shape} />
     </Playground>
   );
 }

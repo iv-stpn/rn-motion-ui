@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
-import { Button } from '../Button/button';
+import { Choice, ControlCard, Playground } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { Text } from '../Text/text';
 import { Drawer } from './drawer';
 
@@ -21,15 +22,44 @@ type Story = StoryObj<typeof meta>;
 const OPEN_LABEL = 'Open drawer';
 const DRAWER_TITLE = 'Drawer';
 
-type DrawerDemoProps = { side: 'left' | 'right' };
+type DrawerSide = 'left' | 'right';
+const SIDES = ['left', 'right'] as const satisfies readonly DrawerSide[];
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function DrawerPlayground() {
+  const [side, setSide] = useState<DrawerSide>('left');
+  const [open, setOpen] = useState(false);
+  const trigger = useTriggerState();
+  const handleOpen = useCallback(() => setOpen(true), []);
+
+  return (
+    <Playground>
+      <ControlCard title="Options">
+        <Choice label="Side" onChange={setSide} options={SIDES} value={side} />
+      </ControlCard>
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
+      <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
+      <Drawer open={open} onOpenChange={setOpen} side={side} accessibilityLabel="Demo drawer">
+        <View className="gap-2 p-6">
+          <Text className="font-semibold text-foreground text-sm">{DRAWER_TITLE}</Text>
+          <Text className="text-muted-foreground text-sm">{`Slides in from the ${side}. Tap outside to close.`}</Text>
+        </View>
+      </Drawer>
+    </Playground>
+  );
+}
+
+type DrawerDemoProps = { side: DrawerSide };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function DrawerDemo({ side }: DrawerDemoProps) {
   const [open, setOpen] = useState(false);
-  const openDrawer = useCallback(() => setOpen(true), []);
+  const handleOpen = useCallback(() => setOpen(true), []);
   return (
     <View className="gap-3">
-      <Button onPress={openDrawer}>{OPEN_LABEL}</Button>
+      <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
       <Drawer open={open} onOpenChange={setOpen} side={side} accessibilityLabel="Demo drawer">
         <View className="gap-2 p-6">
           <Text className="font-semibold text-foreground text-sm">{DRAWER_TITLE}</Text>
@@ -43,7 +73,7 @@ function DrawerDemo({ side }: DrawerDemoProps) {
 export default meta;
 
 export const Interactive: Story = {
-  render: () => <DrawerDemo side="left" />,
+  render: () => <DrawerPlayground />,
 };
 
 export const Right: Story = {

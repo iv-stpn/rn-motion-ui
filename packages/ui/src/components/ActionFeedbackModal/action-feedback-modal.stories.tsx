@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Modal, View } from 'react-native';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
-import { Action, Choice, Controls, Note, Playground, Section, Toggle, Variants } from '../../__stories__/story-harness';
-import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
+import { Action, Choice, ControlCard, Playground, Toggle, Variants } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { ActionFeedbackModal, type ActionFeedbackState } from './action-feedback-modal';
 
 const meta = {
@@ -52,10 +52,6 @@ const COPY = {
 
 const TAGLINE = 'This may take a moment';
 const RUN_LABEL = 'Run the action';
-const IDLE_NOTE = 'Closed — run the action, or jump straight to a state.';
-// `loading` blocks dismissal on purpose; `success` closes itself after 2.5s.
-const DISMISS_HINT =
-  'Only the error state can be dismissed by the component — by its button or the backdrop. The Close button the loading state shows here is story-only chrome so the demo cannot trap you.';
 
 const ESCAPE_LABEL = 'Close';
 
@@ -114,7 +110,7 @@ function FeedbackPlayground() {
   const [withText, setWithText] = useState(true);
   const [withTagline, setWithTagline] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
-  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+  const trigger = useTriggerState();
 
   // The real flow: open on `loading`, then resolve to the chosen outcome.
   const run = useCallback(() => {
@@ -133,34 +129,32 @@ function FeedbackPlayground() {
   const handleClose = useCallback(() => setVisible(false), []);
 
   const text = withText ? COPY : {};
-  const stateNote = visible ? `Open — ${state}` : IDLE_NOTE;
 
   return (
     <Playground>
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Resolves to" onChange={setOutcome} options={OUTCOMES} value={outcome} />
         <Toggle label="Message text" onChange={setWithText} value={withText} />
         <Toggle label="Tagline" onChange={setWithTagline} value={withTagline} />
-        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
-      </Controls>
+      </ControlCard>
 
-      <Section title="Elevation">
-        <View className="items-start">
-          <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        </View>
-      </Section>
+      <ControlCard title="Elevation">
+        <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+      </ControlCard>
 
-      <Section title="Open it">
-        <TriggerButton kind={triggerKind} label={RUN_LABEL} onPress={run} />
+      <ControlCard title="Jump to">
         <Variants>
           <Action label="Loading" onPress={showLoading} />
           <Action label="Success" onPress={showSuccess} />
           <Action label="Error" onPress={showError} />
         </Variants>
-        <Note testID="story-state">{stateNote}</Note>
-      </Section>
+      </ControlCard>
 
-      <Note>{DISMISS_HINT}</Note>
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
+
+      <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={RUN_LABEL} onPress={run} />
 
       <ActionFeedbackModal
         elevation={ELEVATIONS[elevationKey]}

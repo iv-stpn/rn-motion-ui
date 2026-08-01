@@ -2,7 +2,18 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import { Action, Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import {
+  Action,
+  Choice,
+  ControlCard,
+  Note,
+  Playground,
+  Sample,
+  Section,
+  Toggle,
+  Variants,
+} from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { useBreakpointAtLeast } from '../../hooks/use-breakpoint';
 import { Bell, Moon, ShieldCheck, User } from '../../lib/icons';
 import { Button } from '../Button/button';
@@ -238,6 +249,7 @@ function MenuPlayground() {
   const [visible, setVisible] = useState(false);
   const [path, setPath] = useState<string[]>([]);
   const menuRef = useRef<MultiStepMenuHandle | null>(null);
+  const trigger = useTriggerState();
 
   const isWideScreen = layout === 'auto' ? isAutoWide : layout === 'wide';
   const handleOpen = useCallback(() => setVisible(true), []);
@@ -251,15 +263,29 @@ function MenuPlayground() {
 
   return (
     <Playground>
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Layout" onChange={setLayout} options={LAYOUTS} value={layout} />
         <Choice label="Initial selection" onChange={setStartKey} options={START_OPTIONS} value={startKey} />
         <Toggle label="Sidebar footer" onChange={setWithFooter} value={withFooter} />
         <Toggle label="Wide placeholder" onChange={setWithPlaceholder} value={withPlaceholder} />
-        <Action label={OPEN_SETTINGS_LABEL} onPress={handleOpen} />
+      </ControlCard>
+
+      <ControlCard title="Actions">
         <Action label={JUMP_LABEL} onPress={handleJump} />
         <Action label={RESET_LABEL} onPress={handleReset} />
-      </Controls>
+      </ControlCard>
+
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
+
+      <TriggerButton
+        kind={trigger.kind}
+        size={trigger.size}
+        shape={trigger.shape}
+        label={OPEN_SETTINGS_LABEL}
+        onPress={handleOpen}
+      />
 
       <Note testID="story-state">{stateNote}</Note>
       <Note>{START_NOTE}</Note>
@@ -313,7 +339,7 @@ function MultiStepSheetStory({ isWideScreen, defaultPath }: MultiStepSheetStoryP
 
   return (
     <View>
-      <Button onPress={handleOpen}>{OPEN_SETTINGS_LABEL}</Button>
+      <TriggerButton label={OPEN_SETTINGS_LABEL} onPress={handleOpen} />
       <MultiStepMenu
         defaultPath={defaultPath}
         isWideScreen={isWideScreen}

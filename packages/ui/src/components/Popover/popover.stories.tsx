@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
 import { Popover, type PopoverAlign, PopoverContent, type PopoverSide, PopoverTrigger } from './popover';
 
@@ -69,12 +69,12 @@ function PopoverPlayground() {
 
   return (
     <Playground>
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Side" onChange={setSide} options={SIDES} value={side} />
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
         <Choice label="Radius" onChange={setRadiusKey} options={RADII} value={radiusKey} />
-      </Controls>
+      </ControlCard>
 
       {/* The panel is measured against the trigger's on-screen rect, so the same
           side/align pair lands differently near a screen edge — the position is

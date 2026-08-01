@@ -3,8 +3,8 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
-import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
-import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
+import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, type TriggerState, useTriggerState } from '../../__stories__/story-trigger';
 import { Bell, Copy, Pencil, Share, Trash2 } from '../../lib/icons';
 import { MenuItem, type MenuItemIcon } from '../MenuItem/menu-item';
 import { Text } from '../Text/text';
@@ -91,15 +91,24 @@ function MenuContent({ close }: MenuContentProps) {
   );
 }
 
-type SwappableTriggerProps = TriggerRenderProps & { kind: TriggerKind };
+type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape'>;
 
 // The playground's trigger: still the `{ open, toggle }` render prop, but the body
 // is a `TriggerButton` so the Trigger chips can swap Button / ElevatedButton /
 // GlossyButton / bare Pressable under one menu. Each of those is pressable in its
 // own right, which is exactly why `onPress` has to be `toggle` — see TRIGGER_NOTE.
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function SwappableTrigger({ kind, open, toggle }: SwappableTriggerProps) {
-  return <TriggerButton buttonVariant="outline" kind={kind} label={open ? TRIGGER_OPEN : TRIGGER_CLOSED} onPress={toggle} />;
+function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
+  return (
+    <TriggerButton
+      buttonVariant="outline"
+      kind={kind}
+      size={size}
+      shape={shape}
+      label={open ? TRIGGER_OPEN : TRIGGER_CLOSED}
+      onPress={toggle}
+    />
+  );
 }
 
 const renderPlainTrigger = (props: PlainTriggerProps) => <PlainTrigger open={props.open} />;
@@ -112,50 +121,51 @@ function HoverMenuPlayground() {
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('4');
   const [delayKey, setDelayKey] = useState<DelayKey>('100');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
-  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+  const trigger = useTriggerState();
   const [open, setOpen] = useState(false);
 
   const delay = Number(delayKey);
   const renderTrigger = useCallback(
-    (props: TriggerRenderProps) => <SwappableTrigger kind={triggerKind} open={props.open} toggle={props.toggle} />,
-    [triggerKind],
+    (props: TriggerRenderProps) => (
+      <SwappableTrigger kind={trigger.kind} size={trigger.size} shape={trigger.shape} open={props.open} toggle={props.toggle} />
+    ),
+    [trigger.kind, trigger.size, trigger.shape],
   );
 
   return (
     <Playground>
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Width" onChange={setWidthKey} options={WIDTH_KEYS} value={widthKey} />
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
         <Choice label="Hover delay" onChange={setDelayKey} options={DELAYS} value={delayKey} />
-        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
         <Toggle label="Open" onChange={setOpen} value={open} />
-      </Controls>
+      </ControlCard>
 
-      <Section title="Elevation">
-        <View className="items-start">
-          <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        </View>
-      </Section>
+      <ControlCard title="Elevation">
+        <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+      </ControlCard>
+
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
 
       <Note>{HINT}</Note>
 
-      <View className="items-start py-2">
-        <HoverMenu
-          align={align}
-          closeDelay={delay}
-          elevation={ELEVATIONS[elevationKey]}
-          offset={Number(offsetKey)}
-          onOpenChange={setOpen}
-          open={open}
-          openDelay={delay}
-          trigger={renderTrigger}
-          triggerIsPressable={true}
-          width={WIDTHS[widthKey]}
-        >
-          {renderContent}
-        </HoverMenu>
-      </View>
+      <HoverMenu
+        align={align}
+        closeDelay={delay}
+        elevation={ELEVATIONS[elevationKey]}
+        offset={Number(offsetKey)}
+        onOpenChange={setOpen}
+        open={open}
+        openDelay={delay}
+        trigger={renderTrigger}
+        triggerIsPressable={true}
+        width={WIDTHS[widthKey]}
+      >
+        {renderContent}
+      </HoverMenu>
 
       <Note>{TRIGGER_NOTE}</Note>
 

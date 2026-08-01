@@ -39,6 +39,7 @@ type ActionProps = { label: string; onPress: () => void };
 type ChoiceOption<T extends string> = { value: T; label: string };
 type ChipProps<T extends string> = { option: ChoiceOption<T>; selected: boolean; testID: string; onSelect: (next: T) => void };
 type SectionProps = { title?: string; children: ReactNode };
+type ControlCardProps = { title: string; children: ReactNode };
 type VariantsProps = { children: ReactNode; direction?: 'row' | 'column'; align?: ViewStyle['alignItems'] };
 type SampleProps = {
   label?: string;
@@ -180,6 +181,26 @@ export function Section({ title, children }: SectionProps) {
         </Text>
       ) : null}
       {children}
+    </View>
+  );
+}
+
+/**
+ * Labelled surface card for a named group of playground controls.
+ * Use in place of the generic `Controls` block when controls need to be
+ * separated into named regions (e.g. "Options", "Elevation", "Jump to").
+ *
+ * @example
+ *   <ControlCard title="Options">
+ *     <Toggle label="Compact" ... />
+ *     <Choice label="Mode" ... />
+ *   </ControlCard>
+ */
+export function ControlCard({ title, children }: ControlCardProps) {
+  return (
+    <View className={cn('gap-2 rounded-xl p-3', SURFACE_CLASSNAME[2])}>
+      <Text className="text-muted-foreground text-xs">{title}</Text>
+      <View className="flex-row flex-wrap items-center gap-4">{children}</View>
     </View>
   );
 }

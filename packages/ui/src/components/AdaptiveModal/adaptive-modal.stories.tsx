@@ -3,8 +3,8 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
-import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
-import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
+import { Choice, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
 import { AdaptiveModal, type LargeScreenMode, type SmallScreenMode, type WidePanelSize } from './adaptive-modal';
@@ -116,7 +116,7 @@ function ModalPlayground() {
   const [customLayout, setCustomLayout] = useState(false);
   const [closeOnOverlay, setCloseOnOverlay] = useState(true);
   const [open, setOpen] = useState(false);
-  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+  const trigger = useTriggerState();
 
   const handleOpen = useCallback(() => setOpen(true), []);
   const handleClose = useCallback(() => setOpen(false), []);
@@ -124,7 +124,7 @@ function ModalPlayground() {
 
   return (
     <Playground className="min-w-[340px]">
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Screen" onChange={setScreenKey} options={SCREENS} value={screenKey} />
         <Choice label="Wide layout" onChange={setLargeMode} options={LARGE_MODES} value={largeMode} />
         <Choice label="Narrow layout" onChange={setSmallMode} options={SMALL_MODES} value={smallMode} />
@@ -135,19 +135,24 @@ function ModalPlayground() {
         <Toggle label="Scrollable" onChange={setScrollable} value={scrollable} />
         <Toggle label="Custom layout" onChange={setCustomLayout} value={customLayout} />
         <Toggle label="Close on overlay" onChange={setCloseOnOverlay} value={closeOnOverlay} />
-        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
-      </Controls>
+      </ControlCard>
 
-      <Section title="Elevation">
-        <View className="items-start">
-          <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        </View>
-      </Section>
+      <ControlCard title="Elevation">
+        <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+      </ControlCard>
 
-      <Section>
-        <TriggerButton kind={triggerKind} label={OPEN_MODAL_LABEL} onPress={handleOpen} />
-        <Note testID="story-open">{openNote}</Note>
-      </Section>
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
+
+      <TriggerButton
+        kind={trigger.kind}
+        size={trigger.size}
+        shape={trigger.shape}
+        label={OPEN_MODAL_LABEL}
+        onPress={handleOpen}
+      />
+      <Note testID="story-open">{openNote}</Note>
 
       <Note>{SIZE_NOTE}</Note>
 

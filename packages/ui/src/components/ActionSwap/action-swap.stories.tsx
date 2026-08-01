@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Check, Copy, Moon, Send, Sparkles, Sun } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import {
@@ -80,7 +80,7 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
 
   return (
     <Playground>
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Animation" onChange={setAnimation} options={ANIMATIONS} value={animation} />
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
@@ -88,7 +88,7 @@ function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
         <Toggle label="Icon only" onChange={setIconOnly} value={iconOnly} />
         <Toggle label="Cycle" onChange={setCycle} value={cycle} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
-      </Controls>
+      </ControlCard>
 
       {/* With `cycle` off the button stops at the last item — the one-way
           "Copy → Copied" case. With it on the press wraps back round. */}

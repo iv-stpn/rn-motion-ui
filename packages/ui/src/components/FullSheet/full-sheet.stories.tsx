@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
-import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
+import { Choice, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { Button } from '../Button/button';
 import { Text } from '../Text/text';
 import { FullSheet, type FullSheetMode } from './full-sheet';
@@ -77,7 +77,7 @@ function SheetPlayground() {
   const [dismissable, setDismissable] = useState(true);
   const [long, setLong] = useState(false);
   const [open, setOpen] = useState(false);
-  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+  const trigger = useTriggerState();
 
   const handleOpen = useCallback(() => setOpen(true), []);
   const handleClose = useCallback(() => setOpen(false), []);
@@ -89,7 +89,7 @@ function SheetPlayground() {
 
   return (
     <Playground className="min-w-[340px]">
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Mode" onChange={setMode} options={MODES} value={mode} />
         <Toggle label="Subtitle" onChange={setWithSubtitle} value={withSubtitle} />
         <Toggle label="Close button" onChange={setWithClose} value={withClose} />
@@ -98,13 +98,20 @@ function SheetPlayground() {
         <Toggle label="Custom layout" onChange={setCustomLayout} value={customLayout} />
         <Toggle label="Dismissable" onChange={setDismissable} value={dismissable} />
         <Toggle label="Long content" onChange={setLong} value={long} />
-        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
-      </Controls>
+      </ControlCard>
 
-      <Section>
-        <TriggerButton kind={triggerKind} label={OPEN_SHEET_LABEL} onPress={handleOpen} />
-        <Note testID="story-open">{openNote}</Note>
-      </Section>
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
+
+      <TriggerButton
+        kind={trigger.kind}
+        size={trigger.size}
+        shape={trigger.shape}
+        label={OPEN_SHEET_LABEL}
+        onPress={handleOpen}
+      />
+      <Note testID="story-open">{openNote}</Note>
 
       <Note>{MODE_NOTE}</Note>
       <Note>{DISMISS_NOTE}</Note>

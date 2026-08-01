@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Note, Playground, Section } from '../../__stories__/story-harness';
-import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
+import { Playground } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, useTriggerState } from '../../__stories__/story-trigger';
 import { FileText, Home, Plus, Settings, User } from '../../lib/icons';
 import { type CommandItem, CommandPalette } from './command-palette';
 
@@ -26,30 +26,20 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const OPEN_LABEL = 'Open command palette';
-const OPEN_NOTE = 'Open — type to filter, tap a row to run it.';
-const CLOSED_NOTE = 'Closed — open it to search the command list.';
-const SHORTCUT_NOTE = 'shortcut is kept for web parity; there is no window shortcut on native, so it is a no-op.';
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function PalettePlayground() {
   const [open, setOpen] = useState(false);
-  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+  const trigger = useTriggerState();
   const handleOpen = useCallback(() => setOpen(true), []);
-  const openNote = open ? OPEN_NOTE : CLOSED_NOTE;
 
   return (
     <Playground className="min-w-[340px]">
-      <Controls>
-        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
-      </Controls>
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
 
-      <Section>
-        <TriggerButton kind={triggerKind} label={OPEN_LABEL} onPress={handleOpen} />
-        <Note testID="story-open">{openNote}</Note>
-      </Section>
-
-      <Note>{SHORTCUT_NOTE}</Note>
-
+      <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
       <CommandPalette items={ITEMS} onOpenChange={setOpen} open={open} shortcut="j" />
     </Playground>
   );

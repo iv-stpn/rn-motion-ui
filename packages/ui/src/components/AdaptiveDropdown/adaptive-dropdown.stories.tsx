@@ -3,8 +3,8 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
-import { Choice, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
-import { TRIGGER_KINDS, TriggerButton, type TriggerKind } from '../../__stories__/story-trigger';
+import { Choice, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { TriggerButton, TriggerCard, TriggerControls, type TriggerState, useTriggerState } from '../../__stories__/story-trigger';
 import { Bell, ChevronDown, Moon, Settings, User } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
@@ -89,14 +89,23 @@ function PlaygroundTrigger({ open, toggle }: TriggerRenderProps) {
   );
 }
 
-type SwappableTriggerProps = TriggerRenderProps & { kind: TriggerKind };
+type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape'>;
 
 // The playground's trigger: the same `{ open, toggle }` render prop as above, but
 // the body is a `TriggerButton` so the Trigger chips can swap Button /
 // ElevatedButton / GlossyButton / bare Pressable under one dropdown.
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function SwappableTrigger({ kind, open, toggle }: SwappableTriggerProps) {
-  return <TriggerButton buttonVariant="outline" kind={kind} label={open ? CLOSE_MENU_LABEL : MENU_LABEL} onPress={toggle} />;
+function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
+  return (
+    <TriggerButton
+      buttonVariant="outline"
+      kind={kind}
+      size={size}
+      shape={shape}
+      label={open ? CLOSE_MENU_LABEL : MENU_LABEL}
+      onPress={toggle}
+    />
+  );
 }
 
 const HEADER_ACTION = (
@@ -119,12 +128,14 @@ function DropdownPlayground() {
   const [fullSheet, setFullSheet] = useState(false);
   const [controlled, setControlled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [triggerKind, setTriggerKind] = useState<TriggerKind>('button');
+  const trigger = useTriggerState();
 
   const renderContent = useCallback(({ close }: ContentRenderProps) => <MenuBody long={longList} onClose={close} />, [longList]);
   const renderTrigger = useCallback(
-    (props: TriggerRenderProps) => <SwappableTrigger kind={triggerKind} open={props.open} toggle={props.toggle} />,
-    [triggerKind],
+    (props: TriggerRenderProps) => (
+      <SwappableTrigger kind={trigger.kind} size={trigger.size} shape={trigger.shape} open={props.open} toggle={props.toggle} />
+    ),
+    [trigger.kind, trigger.size, trigger.shape],
   );
   // Only hand `open`/`onOpenChange` over when the toggle is on — omitting them lets
   // the component own its state, which is the other half of the API to exhibit.
@@ -133,7 +144,7 @@ function DropdownPlayground() {
 
   return (
     <Playground className="min-w-[340px]">
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Width" onChange={setWidthKey} options={WIDTHS} value={widthKey} />
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
@@ -144,34 +155,33 @@ function DropdownPlayground() {
         <Toggle label="Scrollable" onChange={setScrollable} value={scrollable} />
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Controlled" onChange={setControlled} value={controlled} />
-        <Choice label="Trigger" onChange={setTriggerKind} options={TRIGGER_KINDS} value={triggerKind} />
-      </Controls>
+      </ControlCard>
 
-      <Section title="Elevation">
-        <View className="items-start">
-          <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        </View>
-      </Section>
+      <ControlCard title="Elevation">
+        <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+      </ControlCard>
 
-      <Section>
-        <AdaptiveDropdown
-          align={align}
-          elevation={ELEVATIONS[elevationKey]}
-          fullSheet={fullSheet}
-          headerRight={withHeaderAction ? HEADER_ACTION : undefined}
-          maxHeight={SCROLL_MAX_HEIGHT}
-          offset={Number(offsetKey)}
-          scrollable={scrollable}
-          showClose={withClose}
-          title={withTitle ? PANEL_TITLE : undefined}
-          trigger={renderTrigger}
-          width={Number(widthKey)}
-          {...controlledProps}
-        >
-          {renderContent}
-        </AdaptiveDropdown>
-        <Note testID="story-open">{openNote}</Note>
-      </Section>
+      <TriggerCard>
+        <TriggerControls state={trigger} />
+      </TriggerCard>
+
+      <AdaptiveDropdown
+        align={align}
+        elevation={ELEVATIONS[elevationKey]}
+        fullSheet={fullSheet}
+        headerRight={withHeaderAction ? HEADER_ACTION : undefined}
+        maxHeight={SCROLL_MAX_HEIGHT}
+        offset={Number(offsetKey)}
+        scrollable={scrollable}
+        showClose={withClose}
+        title={withTitle ? PANEL_TITLE : undefined}
+        trigger={renderTrigger}
+        width={Number(widthKey)}
+        {...controlledProps}
+      >
+        {renderContent}
+      </AdaptiveDropdown>
+      <Note testID="story-open">{openNote}</Note>
       <Note>{SMALL_SCREEN_NOTE}</Note>
     </Playground>
   );

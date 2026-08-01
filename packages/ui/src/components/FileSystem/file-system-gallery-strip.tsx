@@ -4,11 +4,21 @@
 // including when it arrives from another view.
 
 import { type ReactNode, useCallback, useEffect, useRef } from 'react';
-import { FlatList, type GestureResponderEvent, type ListRenderItemInfo, Pressable, View } from 'react-native';
+import {
+  FlatList,
+  type GestureResponderEvent,
+  type ListRenderItemInfo,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Pressable,
+  View,
+} from 'react-native';
 import { cn } from '../../lib/cn';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemFileItem, FileSystemItem } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph } from './file-system-icons';
+import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
+import type { FileSystemSelectionMode } from './file-system-selection';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import { FileVisual } from './file-system-visual';
 import { useEntryLongPress } from './use-entry-activation';
@@ -20,6 +30,35 @@ const STRIP_TILE_STRIDE = STRIP_TILE_SIZE + STRIP_TILE_GAP;
 const STRIP_FOLDER_GLYPH_SIZE = 36;
 const STRIP_THUMBNAIL_WIDTH = 34;
 const STRIP_ASPECT_RATIO = 0.78;
+/** Left/right padding inside the FlatList's content container (p-2 = 8 px). */
+const STRIP_PADDING = 8;
+
+/** Container-local point → tile index, or null for padding / gap / past-last-tile. */
+function stripTileHitAt(localX: number, _localY: number, scrollOffset: number, tileCount: number): number | null {
+  const contentX = localX + scrollOffset - STRIP_PADDING;
+  if (contentX < 0) return null;
+  const tileIndex = Math.floor(contentX / STRIP_TILE_STRIDE);
+  if (tileIndex >= tileCount) return null;
+  const intraX = contentX - tileIndex * STRIP_TILE_STRIDE;
+  if (intraX >= STRIP_TILE_SIZE) return null; // inside the gap
+  return tileIndex;
+}
+
+/** Content-frame rect → paths of every tile it overlaps (horizontal). */
+function stripTilesInRect(rect: FileSystemMarqueeRect, entries: FileSystemEntry[]): readonly string[] {
+  const left = rect.x - STRIP_PADDING;
+  const right = rect.x + rect.width - STRIP_PADDING;
+  const result: string[] = [];
+  for (let i = 0; i < entries.length; i += 1) {
+    const tileLeft = i * STRIP_TILE_STRIDE;
+    if (tileLeft >= right) break;
+    if (tileLeft + STRIP_TILE_SIZE > left) {
+      const entry = entries[i];
+      if (entry) result.push(entry.path);
+    }
+  }
+  return result;
+}
 
 type StripTileProps = {
   entry: FileSystemEntry;
@@ -98,9 +137,11 @@ export type FileSystemGalleryStripProps = {
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onSelectLongPress?: (entry: FileSystemEntry) => void;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
   selectedPaths: ReadonlySet<string>;
+  selectionMode: FileSystemSelectionMode;
   /** The browser's root `testID`; each tile derives its own from it. */
   testID?: string;
 };
@@ -111,12 +152,45 @@ export function FileSystemGalleryStrip({
   getContextMenuActions,
   onActivate,
   onContextMenuAction,
+  onMarquee,
   onSelectLongPress,
   renderFilePreview,
   selectedPaths,
+  selectionMode,
   testID,
 }: FileSystemGalleryStripProps) {
   const listRef = useRef<FlatList<FileSystemEntry>>(null);
+  const containerRef = useRef<View | null>(null);
+  const scrollOffsetRef = useRef(0);
+  const tileCountRef = useRef(0);
+  tileCountRef.current = entries.length;
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
+
+  const hitTest = useCallback(
+    (localX: number, localY: number) => stripTileHitAt(localX, localY, scrollOffsetRef.current, tileCountRef.current),
+    [],
+  );
+  const { canStartMarqueeAt } = useMarqueeGate(hitTest);
+
+  const marquee = useFileSystemMarquee({
+    canStartAt: canStartMarqueeAt,
+    containerRef,
+    enabled: selectionMode === 'multiple',
+    getScrollOffset: useCallback(() => scrollOffsetRef.current, []),
+    getSelectedPaths: useCallback(() => selectedPaths, [selectedPaths]),
+    horizontal: true,
+    onMarquee,
+    resolve: useCallback((rect: FileSystemMarqueeRect) => stripTilesInRect(rect, entriesRef.current), []),
+  });
+
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollOffsetRef.current = event.nativeEvent.contentOffset.x;
+      marquee.refresh();
+    },
+    [marquee],
+  );
 
   // The strip follows the selection rather than driving it, so a file picked in
   // another view (or stepped past with the keyboard on web) scrolls into view.
@@ -164,16 +238,20 @@ export function FileSystemGalleryStrip({
   );
 
   return (
-    <FlatList
-      className="shrink-0 border-border border-t bg-surface-2"
-      contentContainerClassName="p-2"
-      data={entries}
-      getItemLayout={getItemLayout}
-      horizontal={true}
-      keyExtractor={keyExtractor}
-      ref={listRef}
-      renderItem={renderTile}
-      showsHorizontalScrollIndicator={false}
-    />
+    <View ref={containerRef} className="relative shrink-0 border-border border-t bg-surface-2">
+      <FlatList
+        contentContainerClassName="p-2"
+        data={entries}
+        getItemLayout={getItemLayout}
+        horizontal={true}
+        keyExtractor={keyExtractor}
+        onScroll={onScroll}
+        ref={listRef}
+        renderItem={renderTile}
+        scrollEventThrottle={16}
+        showsHorizontalScrollIndicator={false}
+      />
+      <FileSystemMarqueeBox controller={marquee} />
+    </View>
   );
 }

@@ -475,6 +475,7 @@ function FileSystemControls(args: FileSystemProps) {
   const [heightKey, setHeightKey] = useState<HeightKey>('460');
   const [compact, setCompact] = useState(false);
   const [draggable, setDraggable] = useState(true);
+  const [multiSelect, setMultiSelect] = useState(true);
   const [contextMenus, setContextMenus] = useState(true);
   const [backgroundMenu, setBackgroundMenu] = useState(true);
   const [lazyChildren, setLazyChildren] = useState(true);
@@ -493,6 +494,7 @@ function FileSystemControls(args: FileSystemProps) {
         <Choice label="Height" onChange={setHeightKey} options={HEIGHT_KEYS} value={heightKey} />
         <Toggle label="Compact width" onChange={setCompact} value={compact} />
         <Toggle label="Draggable" onChange={setDraggable} value={draggable} />
+        <Toggle label="Multi-select" onChange={setMultiSelect} value={multiSelect} />
         <Toggle label="Entry menus" onChange={setContextMenus} value={contextMenus} />
         <Toggle label="Background menu" onChange={setBackgroundMenu} value={backgroundMenu} />
         <Toggle label="Lazy children" onChange={setLazyChildren} value={lazyChildren} />
@@ -510,6 +512,7 @@ function FileSystemControls(args: FileSystemProps) {
           onViewChange={setView}
           options={options}
           renderFileViewer={withViewer ? renderPlaceholderViewer : undefined}
+          selectionMode={multiSelect ? 'multiple' : 'single'}
           view={view}
         />
       </View>

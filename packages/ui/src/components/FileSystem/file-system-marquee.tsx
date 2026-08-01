@@ -68,6 +68,12 @@ export type UseFileSystemMarqueeParams = {
   getScrollOffset: () => number;
   /** The selection as it stands, snapshotted when an additive box starts. */
   getSelectedPaths: () => ReadonlySet<string>;
+  /**
+   * When `true`, the list scrolls horizontally: the scroll offset folds into x
+   * rather than y, and the box's viewport position is adjusted accordingly.
+   * Default `false`.
+   */
+  horizontal?: boolean;
   /** Which entries a content-frame rect covers, in the view's own order. */
   resolve: (rect: FileSystemMarqueeRect) => readonly string[];
   /** One frame of the box: what it covers, and what to union it with. */
@@ -81,6 +87,7 @@ type MarqueeListenerRefs = {
   actions: MarqueeActions;
   canStartRef: RefObject<(localX: number, localY: number) => boolean>;
   gate: ClickGate;
+  horizontalRef: RefObject<boolean>;
   opacity: Animated.Value;
   scrollRef: RefObject<() => number>;
   selectedRef: RefObject<() => ReadonlySet<string>>;
@@ -93,7 +100,7 @@ type MarqueeListenerRefs = {
  * gate, because they run on the pointermove path.
  */
 function buildMarqueeListeners(node: HTMLElement, refs: MarqueeListenerRefs) {
-  const { actions, canStartRef, gate, opacity, scrollRef, selectedRef, sessionRef } = refs;
+  const { actions, canStartRef, gate, horizontalRef, opacity, scrollRef, selectedRef, sessionRef } = refs;
 
   const local = (event: PointerEvent) => {
     const bounds = node.getBoundingClientRect();
@@ -110,11 +117,12 @@ function buildMarqueeListeners(node: HTMLElement, refs: MarqueeListenerRefs) {
       const { x, y } = local(event);
       if (!canStartRef.current(x, y)) return;
       const additive = event.ctrlKey || event.metaKey;
+      const h = horizontalRef.current;
       sessionRef.current = {
         active: false,
         base: additive ? new Set(selectedRef.current()) : null,
-        originX: x,
-        originY: y + scrollRef.current(),
+        originX: h ? x + scrollRef.current() : x,
+        originY: h ? y : y + scrollRef.current(),
         pointerId: event.pointerId,
       };
     },
@@ -124,7 +132,10 @@ function buildMarqueeListeners(node: HTMLElement, refs: MarqueeListenerRefs) {
       if (session === null || event.pointerId !== session.pointerId) return;
       const { x, y } = local(event);
       if (!session.active) {
-        if (Math.hypot(x - session.originX, y + scrollRef.current() - session.originY) < MARQUEE_SLOP) return;
+        const h = horizontalRef.current;
+        const cx = h ? x + scrollRef.current() : x;
+        const cy = h ? y : y + scrollRef.current();
+        if (Math.hypot(cx - session.originX, cy - session.originY) < MARQUEE_SLOP) return;
         session.active = true;
         // Captured only once the gesture has committed, so an ordinary click on
         // the background still reaches the press handler that clears the selection.
@@ -166,6 +177,7 @@ export function useFileSystemMarquee({
   canStartAt,
   getScrollOffset,
   getSelectedPaths,
+  horizontal,
   resolve,
   onMarquee,
 }: UseFileSystemMarqueeParams): FileSystemMarqueeController {
@@ -198,9 +210,11 @@ export function useFileSystemMarquee({
   resolveRef.current = resolve;
   const marqueeRef = useRef(onMarquee);
   marqueeRef.current = onMarquee;
+  const horizontalRef = useRef(horizontal ?? false);
+  horizontalRef.current = horizontal ?? false;
 
   const actions = useMemo(
-    () => buildMarqueeActions({ marqueeRef, opacity, pointRef, rect, resolveRef, scrollRef, sessionRef }),
+    () => buildMarqueeActions({ horizontalRef, marqueeRef, opacity, pointRef, rect, resolveRef, scrollRef, sessionRef }),
     [opacity, rect],
   );
 
@@ -215,6 +229,7 @@ export function useFileSystemMarquee({
       actions,
       canStartRef,
       gate,
+      horizontalRef,
       opacity,
       scrollRef,
       selectedRef,
@@ -265,6 +280,7 @@ export function useFileSystemMarquee({
 // pointermove path.
 
 type MarqueeRefs = {
+  horizontalRef: RefObject<boolean>;
   rect: FileSystemMarqueeController['rect'];
   opacity: Animated.Value;
   sessionRef: RefObject<MarqueeSession | null>;
@@ -276,23 +292,34 @@ type MarqueeRefs = {
 
 type MarqueeActions = { moveTo: (localX: number, localY: number) => void; refresh: () => void; end: () => void };
 
-function buildMarqueeActions({ rect, opacity, sessionRef, pointRef, scrollRef, resolveRef, marqueeRef }: MarqueeRefs) {
+function buildMarqueeActions({
+  horizontalRef,
+  rect,
+  opacity,
+  sessionRef,
+  pointRef,
+  scrollRef,
+  resolveRef,
+  marqueeRef,
+}: MarqueeRefs) {
   function apply(localX: number, localY: number) {
     const session = sessionRef.current;
     if (session === null || !session.active) return;
+    const h = horizontalRef.current;
     const scroll = scrollRef.current();
-    const contentY = localY + scroll;
+    const contentX = h ? localX + scroll : localX;
+    const contentY = h ? localY : localY + scroll;
 
     const box: FileSystemMarqueeRect = {
       height: Math.abs(contentY - session.originY),
-      width: Math.abs(localX - session.originX),
-      x: Math.min(localX, session.originX),
+      width: Math.abs(contentX - session.originX),
+      x: Math.min(contentX, session.originX),
       y: Math.min(contentY, session.originY),
     };
 
     // Painted in the viewport's frame; resolved in the content's.
-    rect.x.setValue(box.x);
-    rect.y.setValue(box.y - scroll);
+    rect.x.setValue(h ? box.x - scroll : box.x);
+    rect.y.setValue(h ? box.y : box.y - scroll);
     rect.width.setValue(box.width);
     rect.height.setValue(box.height);
 

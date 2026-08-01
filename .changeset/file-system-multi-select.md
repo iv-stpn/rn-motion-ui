@@ -8,7 +8,7 @@
 
 - **Ctrl-click** (Cmd-click on macOS), or a **long-press** on touch: toggle the entry under the pointer in or out of the selection.
 - **Shift-click**: take the contiguous run from the anchor — the last entry picked without Shift — to the entry pressed. The anchor stays put, so shift-clicking around grows and shrinks one run rather than accumulating; hold Ctrl/Cmd as well to add the run to what is already selected.
-- **A selection box** dragged across empty space in the grid view, web only. Everything the band touches is selected live as it is drawn; hold Ctrl/Cmd as you start it to add rather than replace.
+- **A selection box** dragged across empty space, web only, in all four views — the list, the icons grid, any columns pane, and the gallery filmstrip (which bands horizontally, being a horizontal list). Everything the band touches is selected live as it is drawn; hold Ctrl/Cmd as you start it to add rather than replace. A box only starts from a point that is not on an entry, so a drag that begins on a row still moves that row.
 
 A plain press still replaces the selection, and a press on the background still clears it. All four views paint the selection, and the status bar counts it with a Clear affordance once there is more than one.
 

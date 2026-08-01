@@ -122,7 +122,7 @@ function GallerySidebar({ entry, index, renderFilePreview, sizeLabel }: SidebarP
 export function FileSystemGalleryView(props: FileSystemViewProps) {
   const { entries, getContextMenuActions, index, onContextMenuAction, onOpen, onSelect, renderFilePreview, selectedEntry } =
     props;
-  const { selectedPaths, selectionMode, testID } = props;
+  const { onMarquee, selectedPaths, selectionMode, testID } = props;
   const [viewportWidth, setViewportWidth] = useState(0);
   // The filmstrip is the only surface a press lands on, and it runs in entry order.
   const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
@@ -160,9 +160,11 @@ export function FileSystemGalleryView(props: FileSystemViewProps) {
         getContextMenuActions={getContextMenuActions}
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
+        onMarquee={onMarquee}
         onSelectLongPress={selectLongPress}
         renderFilePreview={renderFilePreview}
         selectedPaths={selectedPaths}
+        selectionMode={selectionMode}
         testID={testID}
       />
     </View>

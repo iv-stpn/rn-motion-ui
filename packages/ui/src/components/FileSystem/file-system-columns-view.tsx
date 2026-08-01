@@ -86,6 +86,7 @@ export function FileSystemColumnsView({
   loadPreviewImageUrl,
   loadingFolders,
   onContextMenuAction,
+  onMarquee,
   onOpen,
   onSelect,
   pageUrlCache,
@@ -126,8 +127,10 @@ export function FileSystemColumnsView({
           key={columnPath || '(root)'}
           onActivate={activate}
           onContextMenuAction={onContextMenuAction}
+          onMarquee={onMarquee}
           onSelectLongPress={selectLongPress}
           selectedPaths={selectedPaths}
+          selectionMode={selectionMode}
           testID={testID}
           trailChildPath={columnPaths[columnIndex + 1] ?? null}
         />

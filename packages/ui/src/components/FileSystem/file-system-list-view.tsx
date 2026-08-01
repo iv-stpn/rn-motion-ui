@@ -40,6 +40,7 @@ import {
   useFileSystemRowHover,
 } from './file-system-hover';
 import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
+import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
 import type { FileSystemRow } from './file-system-rows';
 import { flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';
 import { fileSystemEntryTestID } from './file-system-test-id';
@@ -70,6 +71,31 @@ const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { userSe
 
 /** Content-container top padding (py-1 = 4 px): where row 0 starts. */
 const LIST_PADDING_TOP = 4;
+
+/** Container-local point → row index, or null for padding / past-last-row. */
+function rowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {
+  const contentY = localY + scrollOffset - LIST_PADDING_TOP;
+  if (contentY < 0) return null;
+  const rowIndex = Math.floor(contentY / FS_ROW_HEIGHT);
+  if (rowIndex >= rowCount) return null;
+  return rowIndex;
+}
+
+/** Content-frame rect → paths of every row it overlaps. */
+function rowsInRect(rect: FileSystemMarqueeRect, rows: FileSystemRow[]): readonly string[] {
+  const top = rect.y - LIST_PADDING_TOP;
+  const bottom = rect.y + rect.height - LIST_PADDING_TOP;
+  const result: string[] = [];
+  for (let i = 0; i < rows.length; i += 1) {
+    const rowTop = i * FS_ROW_HEIGHT;
+    if (rowTop >= bottom) break;
+    if (rowTop + FS_ROW_HEIGHT > top) {
+      const row = rows[i];
+      if (row) result.push(row.entry.path);
+    }
+  }
+  return result;
+}
 const keyExtractor = (row: FileSystemRow) => row.entry.path;
 const getItemLayout = (_data: ArrayLike<FileSystemRow> | null | undefined, index: number) => ({
   index,
@@ -253,6 +279,7 @@ export function FileSystemListView({
   index,
   onBackgroundContextMenuAction,
   onContextMenuAction,
+  onMarquee,
   onMove,
   onOpen,
   onSelect,
@@ -270,8 +297,12 @@ export function FileSystemListView({
   const containerRef = useRef<View | null>(null);
   const scrollOffsetRef = useRef(0);
   const containerHeightRef = useRef(0);
+  const rowCountRef = useRef(0);
+  const rowsRef = useRef<FileSystemRow[]>([]);
 
   const rows = useMemo(() => flattenFileSystemRows({ currentPath, expanded, index }), [currentPath, expanded, index]);
+  rowCountRef.current = rows.length;
+  rowsRef.current = rows;
   // A Shift-range runs through the rows as they are drawn — an expanded folder's
   // children included, since they sit between their parent and its next sibling.
   const orderedPaths = useMemo(() => rows.map((row) => row.entry.path), [rows]);
@@ -321,11 +352,28 @@ export function FileSystemListView({
     stride: FS_ROW_HEIGHT,
   });
 
+  const hitTest = useCallback(
+    (localX: number, localY: number) => rowHitAt(localX, localY, scrollOffsetRef.current, rowCountRef.current),
+    [],
+  );
+  const { canStartMarqueeAt } = useMarqueeGate(hitTest);
+
+  const marquee = useFileSystemMarquee({
+    canStartAt: canStartMarqueeAt,
+    containerRef,
+    enabled: selectionMode === 'multiple',
+    getScrollOffset: useCallback(() => scrollOffsetRef.current, []),
+    getSelectedPaths: useCallback(() => selectedPaths, [selectedPaths]),
+    onMarquee,
+    resolve: useCallback((rect: FileSystemMarqueeRect) => rowsInRect(rect, rowsRef.current), []),
+  });
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPaths is the trigger; not read in the body but must be in the deps to re-fire on selection change
   // biome-ignore lint/plugin: re-resolve is a side-effect on an Animated value, not render state
   useEffect(() => {
     hover.refresh();
-  }, [hover, selectedPaths]);
+    marquee.refresh();
+  }, [hover, marquee, selectedPaths]);
 
   const backgroundMenu = useBackgroundContextMenu(
     containerRef,
@@ -342,9 +390,10 @@ export function FileSystemListView({
       // The pointer has not moved but the rows under it have, so the highlight has
       // to re-resolve — including while a drag auto-scrolls the list.
       hover.refresh();
+      marquee.refresh();
       if (draggable) setScrollOffset(offset);
     },
-    [draggable, hover],
+    [draggable, hover, marquee],
   );
 
   const renderRow = useCallback(
@@ -421,6 +470,7 @@ export function FileSystemListView({
             <DragPreview label={drag.previewLabel} pos={previewPos} />
           </>
         ) : null}
+        <FileSystemMarqueeBox controller={marquee} />
         {backgroundMenu.contextMenuNode}
       </Pressable>
     </View>

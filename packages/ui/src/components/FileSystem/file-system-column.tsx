@@ -3,8 +3,17 @@
 // single folder's children. Memoized on scalar selection props so pressing
 // into a deep trail only re-renders the columns whose rows actually change.
 
-import React, { useCallback, useMemo } from 'react';
-import { FlatList, type GestureResponderEvent, Image, type ListRenderItemInfo, Pressable, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  FlatList,
+  type GestureResponderEvent,
+  Image,
+  type ListRenderItemInfo,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Pressable,
+  View,
+} from 'react-native';
 import { cn } from '../../lib/cn';
 import { ChevronRight } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
@@ -13,6 +22,8 @@ import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemIndex, Fil
 import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import { filePreviewUrls, folderHasChildren } from './file-system-index';
+import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
+import type { FileSystemSelectionMode } from './file-system-selection';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import { FileSystemEmptyState } from './file-system-view';
 import { useEntryLongPress } from './use-entry-activation';
@@ -28,6 +39,35 @@ const COLUMN_ROW_STRIDE = COLUMN_ROW_HEIGHT + COLUMN_ROW_GAP;
 const COLUMN_GLYPH_SIZE = 18;
 const COLUMN_ICON_SIZE = 16;
 const COLUMN_CHEVRON_SIZE = 14;
+/** Top/bottom padding inside the FlatList's content container (p-1.5 = 6 px). */
+const COLUMN_PADDING = 6;
+
+/** Container-local point → row index, or null for padding / gap / past-last-row. */
+function columnRowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {
+  const contentY = localY + scrollOffset - COLUMN_PADDING;
+  if (contentY < 0) return null;
+  const rowIndex = Math.floor(contentY / COLUMN_ROW_STRIDE);
+  if (rowIndex >= rowCount) return null;
+  const intraRow = contentY - rowIndex * COLUMN_ROW_STRIDE;
+  if (intraRow >= COLUMN_ROW_HEIGHT) return null; // inside the gap
+  return rowIndex;
+}
+
+/** Content-frame rect → paths of every row it overlaps. */
+function columnRowsInRect(rect: FileSystemMarqueeRect, entries: FileSystemEntry[]): readonly string[] {
+  const top = rect.y - COLUMN_PADDING;
+  const bottom = rect.y + rect.height - COLUMN_PADDING;
+  const result: string[] = [];
+  for (let i = 0; i < entries.length; i += 1) {
+    const rowTop = i * COLUMN_ROW_STRIDE;
+    if (rowTop >= bottom) break;
+    if (rowTop + COLUMN_ROW_HEIGHT > top) {
+      const entry = entries[i];
+      if (entry) result.push(entry.path);
+    }
+  }
+  return result;
+}
 
 type ColumnRowProps = {
   entry: FileSystemEntry;
@@ -125,6 +165,7 @@ export type FileSystemColumnProps = {
   /** Takes this pane's ordering as its third argument — see `orderedPaths` below. */
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent, orderedPaths?: readonly string[]) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onSelectLongPress?: (entry: FileSystemEntry) => void;
   /**
    * The whole selection, not this pane's share of it: a multi-selection can span
@@ -133,6 +174,7 @@ export type FileSystemColumnProps = {
    * worth having.
    */
   selectedPaths: ReadonlySet<string>;
+  selectionMode: FileSystemSelectionMode;
   /** The child folder the trail continues through, highlighted as the path. */
   trailChildPath: string | null;
   /** The browser's root `testID`; each row derives its own from it. */
@@ -146,8 +188,10 @@ function FileSystemColumnImpl({
   isLoading,
   onActivate,
   onContextMenuAction,
+  onMarquee,
   onSelectLongPress,
   selectedPaths,
+  selectionMode,
   testID,
   trailChildPath,
 }: FileSystemColumnProps) {
@@ -158,6 +202,43 @@ function FileSystemColumnImpl({
     (entry: FileSystemEntry, event?: GestureResponderEvent) => onActivate(entry, event, orderedPaths),
     [onActivate, orderedPaths],
   );
+
+  const containerRef = useRef<View | null>(null);
+  const scrollOffsetRef = useRef(0);
+  const rowCountRef = useRef(0);
+  rowCountRef.current = entries.length;
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
+
+  const hitTest = useCallback(
+    (localX: number, localY: number) => columnRowHitAt(localX, localY, scrollOffsetRef.current, rowCountRef.current),
+    [],
+  );
+  const { canStartMarqueeAt } = useMarqueeGate(hitTest);
+
+  const marquee = useFileSystemMarquee({
+    canStartAt: canStartMarqueeAt,
+    containerRef,
+    enabled: selectionMode === 'multiple',
+    getScrollOffset: useCallback(() => scrollOffsetRef.current, []),
+    getSelectedPaths: useCallback(() => selectedPaths, [selectedPaths]),
+    onMarquee,
+    resolve: useCallback((rect: FileSystemMarqueeRect) => columnRowsInRect(rect, entriesRef.current), []),
+  });
+
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+      marquee.refresh();
+    },
+    [marquee],
+  );
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPaths is the trigger; not read in the body but must be in the deps to re-fire on selection change
+  // biome-ignore lint/plugin: re-resolve is a side-effect on an Animated value, not render state
+  useEffect(() => {
+    marquee.refresh();
+  }, [marquee, selectedPaths]);
 
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
@@ -191,14 +272,19 @@ function FileSystemColumnImpl({
       {isLoading && entries.length === 0 ? (
         <FileSystemEmptyState isLoading={true} label={LOADING_LABEL} />
       ) : (
-        <FlatList
-          contentContainerClassName="p-1.5"
-          data={entries}
-          getItemLayout={getItemLayout}
-          keyExtractor={keyExtractor}
-          renderItem={renderRow}
-          showsVerticalScrollIndicator={false}
-        />
+        <View ref={containerRef} className="relative flex-1">
+          <FlatList
+            contentContainerClassName="p-1.5"
+            data={entries}
+            getItemLayout={getItemLayout}
+            keyExtractor={keyExtractor}
+            onScroll={onScroll}
+            renderItem={renderRow}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+          />
+          <FileSystemMarqueeBox controller={marquee} />
+        </View>
       )}
     </View>
   );

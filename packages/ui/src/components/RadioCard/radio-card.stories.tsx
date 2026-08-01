@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, ControlRow, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
 import { RadioCard, RadioCardGroup, type RadioCardGroupProps } from './radio-card';
 
@@ -53,16 +53,12 @@ function RadioCardPlayground() {
 
   return (
     <Playground style={{ width: ROW_WIDTH }}>
-      <Controls>
-        <ControlRow>
-          <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Badges" onChange={setBadges} value={badges} />
-          <Toggle label="Extra content" onChange={setDetails} value={details} />
-          <Toggle label="Tabular figures" onChange={setNumeric} value={numeric} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        <Toggle label="Badges" onChange={setBadges} value={badges} />
+        <Toggle label="Extra content" onChange={setDetails} value={details} />
+        <Toggle label="Tabular figures" onChange={setNumeric} value={numeric} />
+      </ControlCard>
 
       {/* Each card animates its own selection: the border and tint cross-fade
           and the dot fades and scales in place. Nothing travels between cards,

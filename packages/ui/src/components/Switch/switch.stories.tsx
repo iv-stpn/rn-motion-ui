@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Switch } from './switch';
 import type { SwitchThemeName } from './switch-theme';
 
@@ -73,10 +73,10 @@ function SwitchPlayground(args: ComponentProps<typeof Switch>) {
 
   return (
     <Playground>
-      <Controls>
+      <ControlCard title="Options">
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Choice label="Theme" onChange={setTheme} options={THEMES} value={theme} />
-      </Controls>
+      </ControlCard>
 
       <Switch
         {...args}

@@ -10,7 +10,7 @@ import { useThemeColor } from '../../theme/use-theme-color';
 import { Button } from '../Button/button';
 import { MenuItem } from '../MenuItem/menu-item';
 import { Text } from '../Text/text';
-import { AdaptiveDropdown, type ContentRenderProps, type TriggerRenderProps } from './adaptive-dropdown';
+import { AdaptiveDropdown, type TriggerRenderProps } from './adaptive-dropdown';
 
 const meta = {
   title: 'Components/AdaptiveDropdown',
@@ -24,7 +24,7 @@ type Story = StoryObj<typeof meta>;
 
 const MENU_LABEL = 'Menu';
 const CLOSE_MENU_LABEL = 'Close menu';
-const CLOSE_LABEL = 'Close';
+const _CLOSE_LABEL = 'Close';
 const CLEAR_LABEL = 'Clear';
 const PANEL_TITLE = 'Options';
 const SMALL_SCREEN_NOTE =
@@ -55,23 +55,16 @@ const LONG_ITEMS: readonly MenuEntry[] = Array.from({ length: LONG_LIST_LENGTH }
   label: `Item ${index + 1}`,
 }));
 
-type MenuBodyProps = { long?: boolean; onClose?: () => void };
+type MenuBodyProps = { long?: boolean };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function MenuBody({ long = false, onClose }: MenuBodyProps) {
+function MenuBody({ long = false }: MenuBodyProps) {
   const rows = long ? LONG_ITEMS : ITEMS;
   return (
-    <View className="py-1">
+    <View className="p-1">
       {rows.map((row) => (
         <MenuItem icon={row.icon} key={row.label} label={row.label} />
       ))}
-      {onClose ? (
-        <View className="px-4 pt-2">
-          <Button onPress={onClose} size="sm" className="self-start" variant="outline">
-            {CLOSE_LABEL}
-          </Button>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -130,7 +123,7 @@ function DropdownPlayground() {
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
 
-  const renderContent = useCallback(({ close }: ContentRenderProps) => <MenuBody long={longList} onClose={close} />, [longList]);
+  const renderContent = useCallback(() => <MenuBody long={longList} />, [longList]);
   const renderTrigger = useCallback(
     (props: TriggerRenderProps) => (
       <SwappableTrigger kind={trigger.kind} size={trigger.size} shape={trigger.shape} open={props.open} toggle={props.toggle} />
@@ -161,9 +154,7 @@ function DropdownPlayground() {
         <Toggle label="Controlled" onChange={setControlled} value={controlled} />
       </ControlCard>
 
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
+      <TriggerControls state={trigger} />
 
       <AdaptiveDropdown
         align={align}

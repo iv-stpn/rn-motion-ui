@@ -100,9 +100,7 @@ function SheetPlayground() {
         <Toggle label="Long content" onChange={setLong} value={long} />
       </ControlCard>
 
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
+      <TriggerControls state={trigger} />
 
       <TriggerButton
         kind={trigger.kind}

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import { Choice, ControlRow, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useInterval } from '../../hooks/use-interval';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { Music, Phone, PhoneOff, Timer } from '../../lib/icons';
@@ -177,14 +177,10 @@ function IslandPlayground() {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="View" onChange={selectView} options={VIEWS} value={viewKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Run timer" onChange={setRunning} value={running} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="View" onChange={selectView} options={VIEWS} value={viewKey} />
+        <Toggle label="Run timer" onChange={setRunning} value={running} />
+      </ControlCard>
 
       <View className="h-[132px] items-center pt-2">
         <Island onDismiss={dismiss} seconds={seconds} view={viewKey === 'compact' ? null : viewKey} />

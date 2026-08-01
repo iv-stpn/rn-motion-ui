@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
 import { SURFACE_LEVELS, type SurfaceLevel } from '../../lib/elevated';
 import { Text } from '../Text/text';
 import { Card, type CardSize } from './card';
@@ -39,10 +39,10 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
 
   return (
     <Playground>
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-      </Controls>
+      </ControlCard>
 
       <Card {...args} elevation={elevation} size={size} style={{ width: CARD_WIDTH }}>
         <Text className="font-semibold text-base text-foreground">{TITLE}</Text>

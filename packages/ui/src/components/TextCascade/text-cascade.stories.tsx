@@ -2,17 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import {
-  Action,
-  Choice,
-  ControlRow,
-  Controls,
-  Playground,
-  Sample,
-  Section,
-  Toggle,
-  Variants,
-} from '../../__stories__/story-harness';
+import { Action, Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useInterval } from '../../hooks/use-interval';
 import { TextCascade } from './text-cascade';
 
@@ -91,17 +81,13 @@ function CascadePlayground() {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="Phrases" onChange={setSetKey} options={SETS} value={setKey} />
-          <Choice label="Every" onChange={setIntervalKey} options={INTERVALS} value={intervalKey} />
-          <Choice label="Style" onChange={setStyleKey} options={STYLES} value={styleKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Auto-cycle" onChange={setCycling} value={cycling} />
-          <Action label="Next" onPress={advance} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Phrases" onChange={setSetKey} options={SETS} value={setKey} />
+        <Choice label="Every" onChange={setIntervalKey} options={INTERVALS} value={intervalKey} />
+        <Choice label="Style" onChange={setStyleKey} options={STYLES} value={styleKey} />
+        <Toggle label="Auto-cycle" onChange={setCycling} value={cycling} />
+        <Action label="Next" onPress={advance} />
+      </ControlCard>
 
       <View className="items-center" style={{ minWidth: CASCADE_WIDTH }}>
         <TextCascade className={styleKey} text={current} />

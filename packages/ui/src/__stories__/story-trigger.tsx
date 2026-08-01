@@ -38,7 +38,7 @@ import { GlossyButton } from '../components/Button/glossy-button';
 import { Text } from '../components/Text/text';
 import { cn } from '../lib/cn';
 import { useThemeColors } from '../theme/use-theme-color';
-import { Choice } from './story-harness';
+import { Choice, ControlCard } from './story-harness';
 
 // Private Tailwind class maps for the bare Pressable kind, mirroring ButtonMetrics.
 // Kept before the exports so all non-exports precede all exports (useExportsLast).
@@ -206,21 +206,15 @@ export function useTriggerState(): TriggerState {
  * Three `Choice` chips — Kind, Size, Shape — ready to drop inside a `Controls`
  * block. Drives `TriggerButton` through the `TriggerState` object from
  * `useTriggerState`.
- *
- * @example
- *   <Controls>
- *     …other controls…
- *     <TriggerControls state={trigger} />
- *   </Controls>
  */
 type TriggerControlsProps = { state: TriggerState };
 
 export function TriggerControls({ state }: TriggerControlsProps) {
   return (
-    <>
+    <ControlCard title="Trigger options">
       <Choice label="Button type" onChange={state.setKind} options={TRIGGER_KINDS} value={state.kind} />
       <Choice label="Size" onChange={state.setSize} options={TRIGGER_SIZES} value={state.size} />
       <Choice label="Shape" onChange={state.setShape} options={TRIGGER_SHAPES} value={state.shape} />
-    </>
+    </ControlCard>
   );
 }

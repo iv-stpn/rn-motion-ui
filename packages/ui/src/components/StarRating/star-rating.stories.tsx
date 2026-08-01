@@ -3,7 +3,7 @@ import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, ControlRow, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { StarRating, type StarRenderProps } from './star-rating';
 
@@ -55,17 +55,13 @@ function StarRatingPlayground(args: ComponentProps<typeof StarRating>) {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
-          <Choice label="Max" onChange={setMaxKey} options={MAX_VALUES} value={maxKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Show value" onChange={setShowValue} value={showValue} />
-          <Toggle label="Allow clear" onChange={setAllowClear} value={allowClear} />
-          <Toggle label="Round tips" onChange={setRound} value={round} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+        <Choice label="Max" onChange={setMaxKey} options={MAX_VALUES} value={maxKey} />
+        <Toggle label="Show value" onChange={setShowValue} value={showValue} />
+        <Toggle label="Allow clear" onChange={setAllowClear} value={allowClear} />
+        <Toggle label="Round tips" onChange={setRound} value={round} />
+      </ControlCard>
 
       <View className="flex-row items-center gap-4">
         <StarRating

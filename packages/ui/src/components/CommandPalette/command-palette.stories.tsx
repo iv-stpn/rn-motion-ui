@@ -35,10 +35,7 @@ function PalettePlayground() {
 
   return (
     <Playground className="min-w-[340px]">
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
-
+      <TriggerControls state={trigger} />
       <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
       <CommandPalette items={ITEMS} onOpenChange={setOpen} open={open} shortcut="j" />
     </Playground>

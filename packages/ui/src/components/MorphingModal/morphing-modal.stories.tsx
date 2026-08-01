@@ -228,9 +228,7 @@ function MorphingModalPlayground() {
       <ControlCard title="Options">
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
       </ControlCard>
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
+      <TriggerControls state={trigger} />
       <MorphingModalDemo placement={placement} kind={trigger.kind} size={trigger.size} shape={trigger.shape} />
     </Playground>
   );

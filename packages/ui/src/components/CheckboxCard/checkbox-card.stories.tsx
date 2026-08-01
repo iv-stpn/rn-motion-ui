@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Choice, ControlRow, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
 import { CheckboxCard, CheckboxCardGroup, type CheckboxCardGroupProps } from './checkbox-card';
 
@@ -54,17 +54,13 @@ function CheckboxCardPlayground() {
 
   return (
     <Playground style={{ width: ROW_WIDTH }}>
-      <Controls>
-        <ControlRow>
-          <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Badges" onChange={setBadges} value={badges} />
-          <Toggle label="Extra content" onChange={setDetails} value={details} />
-          <Toggle label="Tabular figures" onChange={setNumeric} value={numeric} />
-          <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        <Toggle label="Badges" onChange={setBadges} value={badges} />
+        <Toggle label="Extra content" onChange={setDetails} value={details} />
+        <Toggle label="Tabular figures" onChange={setNumeric} value={numeric} />
+        <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
+      </ControlCard>
 
       {/* Any number of cards can be checked, so each one animates its own box
           into the `info` accent. The group just owns the selected array. */}

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { fn } from 'storybook/test';
-import { Choice, ControlRow, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { ChevronRight, User } from '../../lib/icons';
 import { Text } from '../Text/text';
 import { MenuItem, type MenuItemMode, type MenuItemSize } from './menu-item';
@@ -50,18 +50,14 @@ function MenuItemPlayground() {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="Trailing" options={TRAILING_OPTS} value={trailingKey} onChange={setTrailingKey} />
-          <Choice label="Size" options={SIZES} value={size} onChange={setSize} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Active" value={active} onChange={setActive} />
-          <Toggle label="Icon" value={showIcon} onChange={setShowIcon} />
-          <Toggle label="iOS style" value={iosMode} onChange={setIosMode} />
-          {!iosMode && <Choice label="Mode" options={MODES} value={mode} onChange={setMode} />}
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Trailing" options={TRAILING_OPTS} value={trailingKey} onChange={setTrailingKey} />
+        <Choice label="Size" options={SIZES} value={size} onChange={setSize} />
+        <Toggle label="Active" value={active} onChange={setActive} />
+        <Toggle label="Icon" value={showIcon} onChange={setShowIcon} />
+        <Toggle label="iOS style" value={iosMode} onChange={setIosMode} />
+        {!iosMode && <Choice label="Mode" options={MODES} value={mode} onChange={setMode} />}
+      </ControlCard>
       <View className="w-64 py-1">
         <MenuItem
           label="Menu item"

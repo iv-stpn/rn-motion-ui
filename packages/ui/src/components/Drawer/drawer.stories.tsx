@@ -37,10 +37,11 @@ function DrawerPlayground() {
       <ControlCard title="Options">
         <Choice label="Side" onChange={setSide} options={SIDES} value={side} />
       </ControlCard>
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
+
+      <TriggerControls state={trigger} />
+
       <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
+
       <Drawer open={open} onOpenChange={setOpen} side={side} accessibilityLabel="Demo drawer">
         <View className="gap-2 p-6">
           <Text className="font-semibold text-foreground text-sm">{DRAWER_TITLE}</Text>

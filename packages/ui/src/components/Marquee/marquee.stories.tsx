@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
 import { DirectionProvider } from '../../hooks/direction-provider';
 import { Text } from '../Text/text';
 import { Marquee, type MarqueeDirection } from './marquee';
@@ -81,11 +81,11 @@ function MarqueePlayground(args: ComponentProps<typeof Marquee>) {
 
   return (
     <Playground>
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Direction" onChange={setDirection} options={DIRECTIONS} value={direction} />
         <Choice label="Loop" onChange={setSpeedKey} options={SPEEDS} value={speedKey} />
         <Choice label="Gap" onChange={setGapKey} options={GAPS} value={gapKey} />
-      </Controls>
+      </ControlCard>
 
       <Marquee
         {...args}

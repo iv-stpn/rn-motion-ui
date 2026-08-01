@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, View } from 'react-native';
 import { makeMutable, useSharedValue } from 'react-native-reanimated';
 import { expect, within } from 'storybook/test';
-import { Choice, ControlRow, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
 import { ScrollReveal } from './scroll-reveal';
 
@@ -93,15 +93,11 @@ function ScrollRevealPlayground() {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="Slide distance" onChange={setSlideKey} options={SLIDES} value={slideKey} />
-          <Choice label="Revealed at" onChange={setAmountKey} options={AMOUNTS} value={amountKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Reveal every time" onChange={setEveryTime} value={everyTime} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Slide distance" onChange={setSlideKey} options={SLIDES} value={slideKey} />
+        <Choice label="Revealed at" onChange={setAmountKey} options={AMOUNTS} value={amountKey} />
+        <Toggle label="Reveal every time" onChange={setEveryTime} value={everyTime} />
+      </ControlCard>
 
       {/* `once` latches the highest progress reached, so scrolling back up leaves
           the cards revealed. Turning it off lets them fade out again. The key

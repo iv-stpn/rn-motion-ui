@@ -99,20 +99,6 @@ export function Playground({ children, className, style }: PlaygroundProps) {
   );
 }
 
-/** Bordered card holding the live controls at the top of a playground. */
-export function Controls({ children }: ControlsProps) {
-  return (
-    <View className={cn('flex-col gap-3 rounded-xl p-3', SURFACE_CLASSNAME[2])} testID="story-controls">
-      {children}
-    </View>
-  );
-}
-
-/** Horizontal group within a Controls block — wraps controls of the same kind on one line. */
-export function ControlRow({ children }: ControlRowProps) {
-  return <View className="flex-row flex-wrap items-center gap-4">{children}</View>;
-}
-
 /**
  * Boolean control — the library's own `Switch`, labelled and driven by a
  * `story-toggle-*` testID.
@@ -150,7 +136,7 @@ export function Choice<T extends string>({ label, value, options, onChange }: Ch
     typeof option === 'string' ? { value: option, label: option } : option,
   );
   return (
-    <View className="items-start gap-1.5">
+    <View className="w-fit items-start gap-1.5">
       {label ? (
         <Text className="text-muted-foreground" size="xs">
           {label}

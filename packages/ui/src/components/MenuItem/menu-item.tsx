@@ -33,16 +33,16 @@ const DEFAULT_SCALE: Record<
   { rowClass: string; highlightClass: string; iconSize: number; iconPlaceholderClass: string; labelClass: string }
 > = {
   sm: {
-    rowClass: 'gap-1.5 rounded px-1.5 py-1',
+    rowClass: 'gap-1.5 rounded px-2 py-2',
     highlightClass: 'rounded',
     iconSize: 14,
     iconPlaceholderClass: 'h-3.5 w-3.5',
     labelClass: 'text-[12px]',
   },
   md: {
-    rowClass: 'gap-2 rounded-md px-2 py-1.5',
-    highlightClass: 'rounded-md',
-    iconSize: 19,
+    rowClass: 'gap-3 rounded-xl px-3 py-3',
+    highlightClass: 'rounded-xl',
+    iconSize: 20,
     iconPlaceholderClass: 'h-5 w-5',
     labelClass: 'text-[14px]',
   },
@@ -242,7 +242,7 @@ export function MenuItem({
   // hasIconBg → iOS style; sidebar → muted+medium when inactive; menu → foreground always
   let labelColorClass = 'text-foreground';
   if (hasIconBg) labelColorClass = active ? 'font-semibold text-primary-foreground' : 'text-foreground';
-  else if (mode === 'sidebar') labelColorClass = active ? 'text-foreground font-medium' : 'text-muted-foreground font-medium';
+  else if (mode === 'sidebar') labelColorClass = active ? 'text-foreground' : 'text-muted-foreground';
 
   return (
     <Pressable
@@ -284,7 +284,11 @@ export function MenuItem({
       />
 
       {/* Label */}
-      <Text numberOfLines={1} className={cn('flex-1', scale.labelClass, labelColorClass)}>
+      <Text
+        numberOfLines={1}
+        className={cn('flex-1', scale.labelClass, labelColorClass)}
+        weight={mode === 'sidebar' ? 'medium' : 'normal'}
+      >
         {label}
       </Text>
 

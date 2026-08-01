@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, waitFor, within } from 'storybook/test';
-import { Choice, Controls, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
 import { Skeleton, type SkeletonShape } from './skeleton';
 
 const meta = {
@@ -36,10 +36,10 @@ function SkeletonPlayground(args: ComponentProps<typeof Skeleton>) {
 
   return (
     <Playground style={{ width: LINE_WIDTH }}>
-      <Controls>
+      <ControlCard title="Options">
         <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
         <Choice label="Pulse" onChange={setSpeedKey} options={SPEEDS} value={speedKey} />
-      </Controls>
+      </ControlCard>
 
       <Skeleton {...args} className="h-10 w-full" shape={shape} speed={speed} />
 

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Checkbox } from './checkbox';
 
 const meta = {
@@ -24,10 +24,10 @@ function CheckboxPlayground(args: ComponentProps<typeof Checkbox>) {
 
   return (
     <Playground>
-      <Controls>
+      <ControlCard title="Options">
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Toggle label="Indeterminate" onChange={setIndeterminate} value={indeterminate} />
-      </Controls>
+      </ControlCard>
 
       <Checkbox {...args} checked={checked} disabled={disabled} indeterminate={indeterminate} onCheckedChange={setChecked} />
 

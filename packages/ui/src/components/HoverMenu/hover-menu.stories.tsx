@@ -146,9 +146,7 @@ function HoverMenuPlayground() {
         <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
+      <TriggerControls state={trigger} />
 
       <Note>{HINT}</Note>
 

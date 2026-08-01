@@ -6,8 +6,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import {
   Action,
   Choice,
-  ControlRow,
-  Controls,
+  ControlCard,
   Note,
   Playground,
   Sample,
@@ -86,18 +85,14 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="Chip" onChange={setChip} options={CHIP_OPTIONS} value={chip} />
-          <Choice label="Outcome" onChange={setOutcome} options={OUTCOMES} value={outcome} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="With icon" onChange={setWithIcon} value={withIcon} />
-          <Toggle label="Auto reset" onChange={setShouldAutoReset} value={shouldAutoReset} />
-          <Toggle label="Custom labels" onChange={setCustomLabels} value={customLabels} />
-          <Action label="Reset now" onPress={requestReset} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Chip" onChange={setChip} options={CHIP_OPTIONS} value={chip} />
+        <Choice label="Outcome" onChange={setOutcome} options={OUTCOMES} value={outcome} />
+        <Toggle label="With icon" onChange={setWithIcon} value={withIcon} />
+        <Toggle label="Auto reset" onChange={setShouldAutoReset} value={shouldAutoReset} />
+        <Toggle label="Custom labels" onChange={setCustomLabels} value={customLabels} />
+        <Action label="Reset now" onPress={requestReset} />
+      </ControlCard>
 
       <Section title="Live — runs a 1.2 s action through the machine">
         <Variants align="center">

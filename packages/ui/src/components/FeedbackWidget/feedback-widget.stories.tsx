@@ -3,7 +3,7 @@ import { type ReactNode, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../__stories__/story-elevations';
-import { Choice, ControlRow, Controls, Section, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Section, Toggle } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
 import { FeedbackWidget } from './feedback-widget';
 
@@ -90,15 +90,11 @@ function FeedbackPlayground() {
   return (
     <AppSurface hint={PLAYGROUND_HINT}>
       <View className="gap-3 px-5">
-        <Controls>
-          <ControlRow>
-            <Choice label="Corner" onChange={setPosition} options={POSITIONS} value={position} />
-            <Choice label="Submit" onChange={setOutcome} options={OUTCOMES} value={outcome} />
-          </ControlRow>
-          <ControlRow>
-            <Toggle label="Custom copy" onChange={setCustomCopy} value={customCopy} />
-          </ControlRow>
-        </Controls>
+        <ControlCard title="Options">
+          <Choice label="Corner" onChange={setPosition} options={POSITIONS} value={position} />
+          <Choice label="Submit" onChange={setOutcome} options={OUTCOMES} value={outcome} />
+          <Toggle label="Custom copy" onChange={setCustomCopy} value={customCopy} />
+        </ControlCard>
         <Section title="Elevation">
           <View className="items-start">
             <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />

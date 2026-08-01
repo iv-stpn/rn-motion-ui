@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentType, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, userEvent, within } from 'storybook/test';
-import { Choice, ControlRow, Controls, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../__stories__/story-harness';
 import { Calendar, GitBranch, Home, Mail, Music, Settings, Sparkles } from '../../lib/icons';
 import { useThemeColor } from '../../theme/use-theme-color';
 import { Dock, DockItem, DockSeparator } from './dock';
@@ -106,14 +106,10 @@ function DockPlayground() {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="Item size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Separator" onChange={setSeparator} value={separator} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Item size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
+        <Toggle label="Separator" onChange={setSeparator} value={separator} />
+      </ControlCard>
 
       {/* The highlight is a single pill that measures each item's box and glides
           between them, so a size change moves both the pill and its travel. */}

@@ -124,11 +124,15 @@ function ModalPlayground() {
 
   return (
     <Playground className="min-w-[340px]">
-      <ControlCard title="Options">
+      <ControlCard title="Modal panel">
         <Choice label="Screen" onChange={setScreenKey} options={SCREENS} value={screenKey} />
         <Choice label="Wide layout" onChange={setLargeMode} options={LARGE_MODES} value={largeMode} />
         <Choice label="Narrow layout" onChange={setSmallMode} options={SMALL_MODES} value={smallMode} />
         <Choice label="Panel size" onChange={setSizeKey} options={PANEL_SIZE_OPTIONS} value={sizeKey} />
+        <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+      </ControlCard>
+
+      <ControlCard title="Options">
         <Toggle label="Subtitle" onChange={setWithSubtitle} value={withSubtitle} />
         <Toggle label="Close button" onChange={setWithClose} value={withClose} />
         <Toggle label="Compact" onChange={setCompact} value={compact} />
@@ -137,13 +141,7 @@ function ModalPlayground() {
         <Toggle label="Close on overlay" onChange={setCloseOnOverlay} value={closeOnOverlay} />
       </ControlCard>
 
-      <ControlCard title="Elevation">
-        <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-      </ControlCard>
-
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
+      <TriggerControls state={trigger} />
 
       <TriggerButton
         kind={trigger.kind}

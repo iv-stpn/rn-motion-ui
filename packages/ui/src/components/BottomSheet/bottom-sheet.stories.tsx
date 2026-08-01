@@ -82,9 +82,7 @@ function SheetPlayground() {
         <Toggle label="Tinted chrome" onChange={setTinted} value={tinted} />
       </ControlCard>
 
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
+      <TriggerControls state={trigger} />
 
       <TriggerButton
         kind={trigger.kind}

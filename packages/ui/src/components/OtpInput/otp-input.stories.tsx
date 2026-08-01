@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { Choice, ControlRow, Controls, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { OTPInput, type OTPStatus } from './otp-input';
 
 const CODE = '123456';
@@ -66,16 +66,14 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
   }, []);
 
   return (
-    <Playground className="items-center">
-      <Controls>
-        <ControlRow>
-          <Choice label="Length" onChange={handleLength} options={LENGTHS} value={lengthKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Mask" onChange={setMask} value={mask} />
-          <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
-        </ControlRow>
-      </Controls>
+    <Playground>
+      <ControlCard title="Input options">
+        <Choice label="Length" onChange={handleLength} options={LENGTHS} value={lengthKey} />
+      </ControlCard>
+      <ControlCard title="Options">
+        <Toggle label="Mask" onChange={setMask} value={mask} />
+        <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
+      </ControlCard>
 
       <OTPInput
         {...args}

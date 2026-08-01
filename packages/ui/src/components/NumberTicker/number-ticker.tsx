@@ -7,20 +7,16 @@ import { cn } from '../../lib/cn';
 import { EASE_OUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { Text } from '../Text/text';
+import { formatNumber, isDigit } from './number-ticker.logic';
 
 const DIGITS = Array.from({ length: 10 }, (_, n) => n);
 const MEASURE_GLYPH = '0';
-const NUMBER_REGEX = /\d/;
-
-function formatNumber(value: number, format?: (value: number) => string, locale?: boolean): string {
-  if (format) return format(value);
-  if (locale) return value.toLocaleString();
-  return value.toString();
-}
 
 export type NumberTickerProps = {
   value: number;
-  /** Digits to pad to (left). */
+  /** Minimum digit count, left-padded with zeros. Counts digits, not characters,
+   *  so group separators land around the zeros ("000,042") and the column count
+   *  holds steady as the value grows. */
   pad?: number;
   /** Per-digit roll duration in seconds. */
   duration?: number;
@@ -71,11 +67,7 @@ export function NumberTicker({
   // Measured "0" glyph box — the roll needs concrete px, not the web's `1ch`/`em`.
   const [box, setBox] = useState({ w: 0, h: 0 });
 
-  const text = useMemo(() => {
-    const rounded = Math.round(value);
-    const formatted = formatNumber(rounded, format, locale);
-    return pad ? formatted.padStart(pad, '0') : formatted;
-  }, [value, pad, format, locale]);
+  const text = useMemo(() => formatNumber(Math.round(value), pad, format, locale), [value, pad, format, locale]);
 
   const glyphs = useMemo(() => {
     const chars = text.split('');
@@ -121,7 +113,7 @@ export function NumberTicker({
       {prefix ? <Text className={className}>{prefix}</Text> : null}
       {measured
         ? glyphs.map(({ char, id }, i) => {
-            if (!NUMBER_REGEX.test(char))
+            if (!isDigit(char))
               return (
                 <Text key={id} className={className}>
                   {char}

@@ -2,17 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import {
-  Choice,
-  ControlRow,
-  Controls,
-  Note,
-  Playground,
-  Sample,
-  Section,
-  Toggle,
-  Variants,
-} from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { ArrowRight, Download, Trash2 } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
 import { Button, type ButtonVariant } from './button';
@@ -108,19 +98,15 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
-          <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
-          <Choice label="Icon" onChange={setIconSide} options={ICON_SIDES} value={iconSide} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Pill" onChange={setPill} value={pill} />
-          <Toggle label="Loading" onChange={setLoading} value={loading} />
-          <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
-          <Toggle label="Ripple" onChange={setRipple} value={ripple} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+        <Choice label="Icon" onChange={setIconSide} options={ICON_SIDES} value={iconSide} />
+        <Toggle label="Pill" onChange={setPill} value={pill} />
+        <Toggle label="Loading" onChange={setLoading} value={loading} />
+        <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
+        <Toggle label="Ripple" onChange={setRipple} value={ripple} />
+      </ControlCard>
 
       <View className="flex-row items-center gap-4">
         <Button {...live} onPress={handlePress}>

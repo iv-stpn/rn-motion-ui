@@ -275,9 +275,7 @@ function MenuPlayground() {
         <Action label={RESET_LABEL} onPress={handleReset} />
       </ControlCard>
 
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
+      <TriggerControls state={trigger} />
 
       <TriggerButton
         kind={trigger.kind}

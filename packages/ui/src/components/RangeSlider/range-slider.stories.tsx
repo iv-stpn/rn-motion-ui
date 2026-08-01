@@ -2,17 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import {
-  Choice,
-  ControlRow,
-  Controls,
-  Note,
-  Playground,
-  Sample,
-  Section,
-  Toggle,
-  Variants,
-} from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { DirectionProvider } from '../../hooks/direction-provider';
 import { RangeSlider } from './range-slider';
 
@@ -59,15 +49,11 @@ function RangeSliderPlayground(args: ComponentProps<typeof RangeSlider>) {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="Step" onChange={setStepKey} options={STEPS} value={stepKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Ticks" onChange={setShowTicks} value={showTicks} />
-          <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Step" onChange={setStepKey} options={STEPS} value={stepKey} />
+        <Toggle label="Ticks" onChange={setShowTicks} value={showTicks} />
+        <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
+      </ControlCard>
 
       <View className="gap-2.5">
         <RangeSlider

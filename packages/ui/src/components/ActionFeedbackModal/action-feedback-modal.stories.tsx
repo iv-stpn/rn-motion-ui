@@ -150,9 +150,7 @@ function FeedbackPlayground() {
         </Variants>
       </ControlCard>
 
-      <ControlCard title="Trigger">
-        <TriggerControls state={trigger} />
-      </ControlCard>
+      <TriggerControls state={trigger} />
 
       <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={RUN_LABEL} onPress={run} />
 

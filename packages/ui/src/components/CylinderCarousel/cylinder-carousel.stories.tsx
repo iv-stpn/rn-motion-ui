@@ -2,17 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import {
-  Choice,
-  ControlRow,
-  Controls,
-  Note,
-  Playground,
-  Sample,
-  Section,
-  Toggle,
-  Variants,
-} from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Text } from '../Text/text';
 import { CylinderCarousel, type CylinderCarouselVariant } from './cylinder-carousel';
 
@@ -96,18 +86,14 @@ function CarouselPlayground() {
 
   return (
     <Playground style={{ width: STAGE_WIDTH }}>
-      <Controls>
-        <ControlRow>
-          <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
-          <Choice label="Item size" onChange={setItemSizeKey} options={ITEM_SIZES} value={itemSizeKey} />
-          <Choice label="Visible slots" onChange={setSlotsKey} options={SLOTS} value={slotsKey} />
-          <Choice label="Min scale" onChange={setMinScaleKey} options={MIN_SCALES} value={minScaleKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Snap" onChange={setSnap} value={snap} />
-          <Toggle label="Auto-rotate" onChange={setAutoRotate} value={autoRotate} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Choice label="Item size" onChange={setItemSizeKey} options={ITEM_SIZES} value={itemSizeKey} />
+        <Choice label="Visible slots" onChange={setSlotsKey} options={SLOTS} value={slotsKey} />
+        <Choice label="Min scale" onChange={setMinScaleKey} options={MIN_SCALES} value={minScaleKey} />
+        <Toggle label="Snap" onChange={setSnap} value={snap} />
+        <Toggle label="Auto-rotate" onChange={setAutoRotate} value={autoRotate} />
+      </ControlCard>
 
       <CylinderCarousel
         autoRotate={autoRotate}

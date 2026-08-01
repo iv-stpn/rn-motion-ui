@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { Action, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { Action, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { X } from '../../lib/icons';
 import { Text } from '../Text/text';
 import { AnimatedList, AnimatedListItem } from './animated-list';
@@ -67,11 +67,11 @@ function AnimatedListPlayground() {
 
   return (
     <Playground className="w-[320px]">
-      <Controls>
+      <ControlCard title="Options">
         <Action label="Add item" onPress={add} />
         <Action label="Remove last" onPress={removeLast} />
         <Toggle label="Expand all" onChange={expandAll} value={allExpanded} />
-      </Controls>
+      </ControlCard>
 
       <Note>{summary}</Note>
 

@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, type UserEventObject, userEvent, waitFor, within } from 'storybook/test';
-import { Choice, ControlRow, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { DirectionProvider } from '../../hooks/direction-provider';
 import { useMountEffect } from '../../hooks/use-mount-effect';
 import { Switch } from '../Switch/switch';
@@ -463,20 +463,16 @@ function TablePlayground() {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="Rows" onChange={handleRowCount} options={ROW_COUNT_OPTIONS} value={rowCountKey} />
-          <Choice label="Row height" onChange={setRowHeightKey} options={ROW_HEIGHT_KEYS} value={rowHeightKey} />
-          <Choice label="Footer" onChange={handleFooter} options={FOOTERS} value={footer} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Selectable" onChange={setSelectable} value={selectable} />
-          <Toggle label="Sortable" onChange={setSortable} value={sortable} />
-          <Toggle label="Reorderable" onChange={setReorderable} value={reorderable} />
-          <Toggle label="Striped" onChange={setStriped} value={striped} />
-          <Toggle label="Card view" onChange={setCardView} value={cardView} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Rows" onChange={handleRowCount} options={ROW_COUNT_OPTIONS} value={rowCountKey} />
+        <Choice label="Row height" onChange={setRowHeightKey} options={ROW_HEIGHT_KEYS} value={rowHeightKey} />
+        <Choice label="Footer" onChange={handleFooter} options={FOOTERS} value={footer} />
+        <Toggle label="Selectable" onChange={setSelectable} value={selectable} />
+        <Toggle label="Sortable" onChange={setSortable} value={sortable} />
+        <Toggle label="Reorderable" onChange={setReorderable} value={reorderable} />
+        <Toggle label="Striped" onChange={setStriped} value={striped} />
+        <Toggle label="Card view" onChange={setCardView} value={cardView} />
+      </ControlCard>
 
       <Note testID="story-note">{note}</Note>
       <Note>{FOOTER_NOTE}</Note>

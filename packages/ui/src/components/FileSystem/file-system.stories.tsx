@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
-import { Choice, ControlRow, Controls, Note, Playground, Toggle } from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Toggle } from '../../__stories__/story-harness';
 import { cn } from '../../lib/cn';
 import { Copy, FolderClosed, Link, Share2, Trash2 } from '../../lib/icons';
 import { useThemeColors } from '../../theme/use-theme-color';
@@ -488,22 +488,18 @@ function FileSystemControls(args: FileSystemProps) {
 
   return (
     <Playground>
-      <Controls>
-        <ControlRow>
-          <Choice label="View" onChange={setView} options={VIEWS} value={view} />
-          <Choice label="Start folder" onChange={setStartKey} options={START_OPTIONS} value={startKey} />
-          <Choice label="Height" onChange={setHeightKey} options={HEIGHT_KEYS} value={heightKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Compact width" onChange={setCompact} value={compact} />
-          <Toggle label="Draggable" onChange={setDraggable} value={draggable} />
-          <Toggle label="Multi-select" onChange={setMultiSelect} value={multiSelect} />
-          <Toggle label="Entry menus" onChange={setContextMenus} value={contextMenus} />
-          <Toggle label="Background menu" onChange={setBackgroundMenu} value={backgroundMenu} />
-          <Toggle label="Lazy children" onChange={setLazyChildren} value={lazyChildren} />
-          <Toggle label="Document viewer" onChange={setWithViewer} value={withViewer} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="View" onChange={setView} options={VIEWS} value={view} />
+        <Choice label="Start folder" onChange={setStartKey} options={START_OPTIONS} value={startKey} />
+        <Choice label="Height" onChange={setHeightKey} options={HEIGHT_KEYS} value={heightKey} />
+        <Toggle label="Compact width" onChange={setCompact} value={compact} />
+        <Toggle label="Draggable" onChange={setDraggable} value={draggable} />
+        <Toggle label="Multi-select" onChange={setMultiSelect} value={multiSelect} />
+        <Toggle label="Entry menus" onChange={setContextMenus} value={contextMenus} />
+        <Toggle label="Background menu" onChange={setBackgroundMenu} value={backgroundMenu} />
+        <Toggle label="Lazy children" onChange={setLazyChildren} value={lazyChildren} />
+        <Toggle label="Document viewer" onChange={setWithViewer} value={withViewer} />
+      </ControlCard>
 
       <Note>{VIEWER_NOTE}</Note>
 

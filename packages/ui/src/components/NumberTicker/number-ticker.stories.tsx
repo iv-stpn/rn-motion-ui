@@ -2,17 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import {
-  Choice,
-  ControlRow,
-  Controls,
-  Note,
-  Playground,
-  Sample,
-  Section,
-  Toggle,
-  Variants,
-} from '../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { useInterval } from '../../hooks/use-interval';
 import { NumberTicker } from './number-ticker';
 
@@ -75,18 +65,16 @@ function NumberTickerPlayground(args: ComponentProps<typeof NumberTicker>) {
 
   return (
     <Playground className="max-w-[420px]">
-      <Controls>
-        <ControlRow>
-          <Choice label="Target" onChange={setTargetKey} options={TARGETS} value={targetKey} />
-          <Choice label="Stagger" onChange={setStaggerKey} options={STAGGERS} value={staggerKey} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Locale separators" onChange={setLocale} value={locale} />
-          <Toggle label="Pad to 6" onChange={setPadded} value={padded} />
-          <Toggle label="Affixes" onChange={setAffixed} value={affixed} />
-          <Toggle label="Live feed" onChange={setLive} value={live} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Controls">
+        <Choice label="Target" onChange={setTargetKey} options={TARGETS} value={targetKey} />
+        <Choice label="Stagger" onChange={setStaggerKey} options={STAGGERS} value={staggerKey} />
+      </ControlCard>
+      <ControlCard title="Options">
+        <Toggle label="Locale separators" onChange={setLocale} value={locale} />
+        <Toggle label="Pad to 6" onChange={setPadded} value={padded} />
+        <Toggle label="Affixes" onChange={setAffixed} value={affixed} />
+        <Toggle label="Live feed" onChange={setLive} value={live} />
+      </ControlCard>
 
       <View className="items-center gap-1.5">
         <NumberTicker

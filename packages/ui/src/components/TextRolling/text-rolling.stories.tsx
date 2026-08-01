@@ -5,8 +5,7 @@ import { expect, within } from 'storybook/test';
 import {
   Action,
   Choice,
-  ControlRow,
-  Controls,
+  ControlCard,
   Note,
   Playground,
   Sample,
@@ -66,15 +65,11 @@ function TextRollingPlayground(args: ComponentProps<typeof TextRolling>) {
 
   return (
     <Playground className="max-w-[380px]">
-      <Controls>
-        <ControlRow>
-          <Choice label="Direction" onChange={setDirection} options={DIRECTIONS} value={direction} />
-        </ControlRow>
-        <ControlRow>
-          <Toggle label="Auto-cycle" onChange={setAuto} value={auto} />
-          <Action label="Next label" onPress={advance} />
-        </ControlRow>
-      </Controls>
+      <ControlCard title="Options">
+        <Choice label="Direction" onChange={setDirection} options={DIRECTIONS} value={direction} />
+        <Toggle label="Auto-cycle" onChange={setAuto} value={auto} />
+        <Action label="Next label" onPress={advance} />
+      </ControlCard>
 
       <View className="items-center gap-1.5">
         <RollingSample className={args.className} direction={direction} index={index} />

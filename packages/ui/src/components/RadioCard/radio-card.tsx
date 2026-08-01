@@ -24,8 +24,10 @@ const TINT_ALPHA = 0.05;
 function tintAt(color: string, alpha: number) {
   const oklch = cssColorToOklch(color);
   // Unparseable token (a named color, `currentColor`): skip the tint rather than
-  // guess at a fill, which would land opaque.
-  if (!oklch) return 'rgba(0, 0, 0, 0)';
+  // guess at a fill, which would land opaque. Both ends of the cross-fade take
+  // this branch together, so the literal here only ever interpolates against
+  // itself — the grey wash described above needs two *different* ends to appear.
+  if (!oklch) return 'transparent';
   return oklchToSrgb(oklch.lightness, oklch.chroma, oklch.hue, alpha);
 }
 

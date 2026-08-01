@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from 'rn-motion-ui/tabs';
 import { type ThemeName, Uniwind, useUniwind } from 'uniwind';
 import { Row } from './demos/demo-chrome';
 import { FileSystemDemo } from './demos/file-system-demo';
-import { FileTreeDemo } from './demos/file-tree-demo';
 import { GlossyButtonDemo } from './demos/glossy-button-demo';
 import './global.css';
 
@@ -28,7 +27,6 @@ const THEME_LABELS = { light: 'Light', dark: 'Dark' } as const;
 const TABS = [
   { value: 'button', label: 'GlossyButton' },
   { value: 'file-system', label: 'FileSystem' },
-  { value: 'file-tree', label: 'FileTree' },
 ] as const;
 
 /**
@@ -77,8 +75,8 @@ export default function App() {
         <ThemeSwitcher />
 
         {/* The tab panels are unmounted while hidden, so each component starts
-            fresh on a switch — a FileSystem manifest rewritten by a drop, or a
-            FileTree move, resets when you come back to it. */}
+            fresh on a switch — a FileSystem manifest rewritten by a drop resets
+            when you come back to it. */}
         <Tabs defaultValue="button" variant="segment">
           <TabsList>
             {TABS.map((tab) => (
@@ -92,9 +90,6 @@ export default function App() {
           </TabsContent>
           <TabsContent value="file-system">
             <FileSystemDemo />
-          </TabsContent>
-          <TabsContent value="file-tree">
-            <FileTreeDemo />
           </TabsContent>
         </Tabs>
       </ScrollView>

@@ -5,7 +5,7 @@
 // native. Implemented as a hook so each row or tile can wire it without an
 // extra wrapper component changing the layout tree.
 //
-// Platform split (mirrors use-file-tree-web.ts):
+// Platform split (mirrors use-file-system-drag-web.ts):
 //  - Web:    a `contextmenu` DOM listener on the entry's wrapper ref.
 //  - Native: `onLongPress` on the row Pressable.
 //

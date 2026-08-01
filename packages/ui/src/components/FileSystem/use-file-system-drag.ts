@@ -2,7 +2,7 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: the session, its refs and the hook that owns them are one unit — the pointer path reads all three */
 // Drag-and-drop session for FileSystem views.
 //
-// Architecture mirrors FileTree: hot-path drag state lives in refs so the
+// Architecture: hot-path drag state lives in refs so the
 // pointer-move path causes zero React re-renders. One setState fires per
 // visual event — drag start, folder boundary crossing, drag end.
 //

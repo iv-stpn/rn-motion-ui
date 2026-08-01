@@ -1,13 +1,115 @@
 /** biome-ignore-all lint/style/useExportsLast: exported tables and module-private resolvers interleave by concern */
-// File-type icon + colour resolution. Reuses FileTree's extension→icon table
-// for the glyph, and adds a per-language colour token so the icon, columns and
-// gallery views draw the same tinted icon a colored file tree would.
+// File-type icon + colour resolution. Maps extensions to a glyph name and a
+// per-language colour token so the icon, columns and gallery views draw the
+// same tinted icon.
 //
 // RN-free: returns a name plus a light/dark colour pair, and the render layer
 // (file-system-icons.tsx) turns that into a react-native-svg component.
 
-import { EXTENSION_ICONS, type FileTreeIconName } from '../FileTree/file-tree-icon';
 import { fileExtension } from './file-system-paths';
+
+/** Icon identifiers the render layer knows how to draw. */
+export type FileIconName =
+  | 'FolderClosed'
+  | 'FileCode2'
+  | 'FileImage'
+  | 'FileVideo'
+  | 'FileAudio'
+  | 'FileArchive'
+  | 'FileSpreadsheet'
+  | 'FileText'
+  | 'FileIcon';
+
+// Extension → icon. Extensions are matched lowercased, without the dot.
+export const EXTENSION_ICONS: Record<string, FileIconName> = {
+  // code
+  ts: 'FileCode2',
+  tsx: 'FileCode2',
+  js: 'FileCode2',
+  jsx: 'FileCode2',
+  mjs: 'FileCode2',
+  cjs: 'FileCode2',
+  json: 'FileCode2',
+  jsonc: 'FileCode2',
+  py: 'FileCode2',
+  rb: 'FileCode2',
+  go: 'FileCode2',
+  rs: 'FileCode2',
+  java: 'FileCode2',
+  kt: 'FileCode2',
+  swift: 'FileCode2',
+  c: 'FileCode2',
+  h: 'FileCode2',
+  cpp: 'FileCode2',
+  hpp: 'FileCode2',
+  cc: 'FileCode2',
+  cs: 'FileCode2',
+  php: 'FileCode2',
+  sh: 'FileCode2',
+  bash: 'FileCode2',
+  zsh: 'FileCode2',
+  sql: 'FileCode2',
+  html: 'FileCode2',
+  htm: 'FileCode2',
+  css: 'FileCode2',
+  scss: 'FileCode2',
+  sass: 'FileCode2',
+  less: 'FileCode2',
+  vue: 'FileCode2',
+  svelte: 'FileCode2',
+  yaml: 'FileCode2',
+  yml: 'FileCode2',
+  toml: 'FileCode2',
+  xml: 'FileCode2',
+  graphql: 'FileCode2',
+  gql: 'FileCode2',
+  // images
+  png: 'FileImage',
+  jpg: 'FileImage',
+  jpeg: 'FileImage',
+  gif: 'FileImage',
+  svg: 'FileImage',
+  webp: 'FileImage',
+  bmp: 'FileImage',
+  ico: 'FileImage',
+  avif: 'FileImage',
+  tiff: 'FileImage',
+  // video
+  mp4: 'FileVideo',
+  mov: 'FileVideo',
+  avi: 'FileVideo',
+  mkv: 'FileVideo',
+  webm: 'FileVideo',
+  // audio
+  mp3: 'FileAudio',
+  wav: 'FileAudio',
+  flac: 'FileAudio',
+  ogg: 'FileAudio',
+  m4a: 'FileAudio',
+  // archives
+  zip: 'FileArchive',
+  tar: 'FileArchive',
+  gz: 'FileArchive',
+  tgz: 'FileArchive',
+  rar: 'FileArchive',
+  '7z': 'FileArchive',
+  bz2: 'FileArchive',
+  xz: 'FileArchive',
+  // spreadsheets / data
+  csv: 'FileSpreadsheet',
+  tsv: 'FileSpreadsheet',
+  xls: 'FileSpreadsheet',
+  xlsx: 'FileSpreadsheet',
+  // text / docs
+  md: 'FileText',
+  mdx: 'FileText',
+  txt: 'FileText',
+  pdf: 'FileText',
+  doc: 'FileText',
+  docx: 'FileText',
+  rtf: 'FileText',
+  log: 'FileText',
+};
 
 /** Colour identities the palette below covers. */
 export type FileIconColorToken =
@@ -127,7 +229,7 @@ const EXTENSION_COLOR_TOKENS: Record<string, FileIconColorToken> = {
 
 /** Colour token implied by the glyph, for extensions without an explicit one. */
 // Return type left inferred: it narrows to the subset of tokens a glyph can imply.
-function colorTokenForIcon(icon: FileTreeIconName) {
+function colorTokenForIcon(icon: FileIconName) {
   switch (icon) {
     case 'FileCode2':
       return 'code';
@@ -147,7 +249,7 @@ function colorTokenForIcon(icon: FileTreeIconName) {
   }
 }
 
-export type ResolvedFileIcon = { name: FileTreeIconName; token: FileIconColorToken };
+export type ResolvedFileIcon = { name: FileIconName; token: FileIconColorToken };
 
 /** Glyph + colour token for a file name (folders are handled by the glyph). */
 export function resolveFileIcon(fileName: string): ResolvedFileIcon {

@@ -2,7 +2,7 @@
 // Public data model for <FileSystem>. Kept RN-free so the logic modules and
 // their unit tests can import it without pulling in the render layer.
 //
-// Path model (after FileTree): every entry IS its path. Folder paths carry a
+// Path model: every entry IS its path. Folder paths carry a
 // trailing slash, file paths never do, and the empty string is the implicit
 // root. Consumers may hand in a flat manifest of files only — missing folder
 // prefixes are inferred by `buildFileSystemIndex`.

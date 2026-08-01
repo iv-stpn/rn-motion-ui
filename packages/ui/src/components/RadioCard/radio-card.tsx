@@ -238,7 +238,8 @@ export function RadioCard({
   const ct = reduce ? TIMING_INSTANT : t;
   // Derive from the group so cards are addressable without threading a testID
   // through every child; an explicit prop still wins. Falls back to the
-  // component name when the group has no testID, matching FileTree/FileSystem.
+  // component name when the group has no testID.
+
   // Standalone there is no value to key on, so only an explicit prop applies.
   const cardTestID = testID ?? (inGroup ? `${groupCtx.testID ?? 'radio-card-group'}-card-${value}` : undefined);
 

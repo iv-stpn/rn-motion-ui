@@ -160,7 +160,7 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
   const selected = groupValue === value;
   // Derive from the group so items are addressable without threading a testID
   // through every child; an explicit prop still wins. Falls back to the
-  // component name when the group has no testID, matching FileTree/FileSystem.
+  // component name when the group has no testID.
   const itemTestID = testID ?? `${groupTestID ?? 'radio-group'}-item-${value}`;
 
   const handlePressIn = useCallback(() => setPressed(true), []);

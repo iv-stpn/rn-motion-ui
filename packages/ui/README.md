@@ -137,7 +137,6 @@ Subpaths are namespaced by category:
 | `/table-utils` | sorting / filtering helpers |
 | `/use-table` | `useTable` |
 | `/use-column-reorder` | `useColumnReorder` |
-| `/file-tree` | `FileTree`, `useFileTree` |
 | `/file-system` | `FileSystem` |
 | `/icons` | icon components |
 | `/icon` | `ThemedIcon` |
@@ -207,36 +206,6 @@ import { breakpointForWidth, isWidthAtLeast } from 'rn-motion-ui/breakpoints';
 
 const tier = breakpointForWidth(measuredWidth);          // 'md'
 const isWide = isWidthAtLeast(measuredWidth, 'lg');      // boolean
-```
-
-## FileTree
-
-A path-first file tree — the path *is* the identity, there are no numeric IDs. Feed it a flat list of paths; missing ancestor directories are inferred, single-child folder chains are flattened, and rows sort dirs-before-files in natural order. Works on native and web (react-native-web): tap to select/expand, long-press to multi-select or open context actions (or, when `draggable`, to pick a row up and drag it — on web a mouse just click-drags, no hold), and on web the usual Ctrl/Shift-click, right-click, double-click, and keyboard navigation all work.
-
-```tsx
-import { FileTree } from 'rn-motion-ui/file-tree';
-
-<FileTree
-  paths={['src/app/index.tsx', 'src/components/button.tsx', 'README.md']}
-  gitStatus={{ 'src/app/index.tsx': 'M', 'README.md': 'A' }}
-  showSearch
-  onSelectionChange={(paths) => console.log(paths)}
-/>;
-```
-
-Directories carry a trailing slash in every callback (`'src/'`), files never do. Selection, expansion, and search are each controllable (`selectedPaths` + `onSelectionChange`, etc.) or uncontrolled (`defaultSelectedPaths`), mirroring `Table`. Opt into `draggable` for drag-to-move (emits `onMove` with a full old→new `remap`) and `renamable` for inline rename (`onRename`).
-
-### Imperative escape hatch
-
-For power users, `useFileTree()` returns a stable `FileTreeController` you can drive directly and hand to `<FileTree model={...} />`. When a `model` is passed it owns all state, so the declarative data/state props are ignored while callbacks still fire.
-
-```tsx
-import { FileTree, useFileTree } from 'rn-motion-ui/file-tree';
-
-function Explorer() {
-  const tree = useFileTree({ paths, initialExpansion: 'open', selectionMode: 'multiple' });
-  return <FileTree model={tree} onSelectionChange={(paths) => save(paths)} />;
-}
 ```
 
 ## Theming

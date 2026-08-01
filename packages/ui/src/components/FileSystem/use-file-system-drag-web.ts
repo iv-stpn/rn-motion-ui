@@ -2,7 +2,7 @@
 //
 // Uses pointer-capture on the scroll container so the pointer stream survives
 // re-renders that would otherwise cause the captured row node to unmount and
-// synthesize a pointercancel. Mirrors use-file-tree-drag-web.ts exactly.
+// synthesize a pointercancel.
 //
 // Coordinates: all values passed to session.begin/move are container-local
 // (relative to the node's top-left corner). clientX/Y from the DOM events are

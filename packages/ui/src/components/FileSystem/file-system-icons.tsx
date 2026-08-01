@@ -2,11 +2,39 @@
 // colour-resolved file-type icon. Both are react-native-svg so they draw
 // identically on native and react-native-web.
 
-import { useId } from 'react';
+import { type ComponentType, useId } from 'react';
 import { useColorScheme } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
-import { FileTreeIcon } from '../FileTree/file-tree-icons';
-import { type FileIconColorToken, fileIconColor, resolveFileIcon } from './file-system-icon';
+import {
+  FileArchive,
+  FileAudio,
+  FileCode2,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  FileIcon as FileUnknown,
+  FileVideo,
+  FolderClosed,
+  type IconProps,
+} from '../../lib/icons';
+import { type FileIconColorToken, type FileIconName, fileIconColor, resolveFileIcon } from './file-system-icon';
+
+const FILE_ICONS: Record<FileIconName, ComponentType<IconProps>> = {
+  FolderClosed,
+  FileCode2,
+  FileImage,
+  FileVideo,
+  FileAudio,
+  FileArchive,
+  FileSpreadsheet,
+  FileText,
+  FileIcon: FileUnknown,
+};
+
+function FileIconRenderer({ name, ...props }: { name: FileIconName } & IconProps) {
+  const Icon = FILE_ICONS[name];
+  return <Icon {...props} />;
+}
 
 /** Aspect ratio of the folder glyph's 64×50 viewBox. */
 const FOLDER_ASPECT_RATIO = 64 / 50;
@@ -63,7 +91,7 @@ export type FileTypeIconProps = {
 export function FileTypeIcon({ color, fileName, size = 16, surface = 'theme' }: FileTypeIconProps) {
   const isDark = useColorScheme() === 'dark';
   const { name, token } = resolveFileIcon(fileName);
-  return <FileTreeIcon name={name} size={size} color={color ?? fileIconColor(token, isDark, surface)} />;
+  return <FileIconRenderer name={name} size={size} color={color ?? fileIconColor(token, isDark, surface)} />;
 }
 
 /** The resolved colour for a token, as a hook (for animated/SVG consumers). */

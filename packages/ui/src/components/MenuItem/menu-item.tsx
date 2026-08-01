@@ -11,7 +11,70 @@ import { Text } from '../Text/text';
 /** Icon renderer — compatible with this project's icon set signature. */
 export type MenuItemIcon = (props: IconProps) => ReactNode;
 
+export type MenuItemSize = 'sm' | 'md' | 'lg';
+
+/**
+ * Scale for the default (CommandPalette-style) variant — padding, icon size,
+ * label type, and active-highlight radius per size.
+ */
+const DEFAULT_SCALE: Record<
+  MenuItemSize,
+  { rowClass: string; highlightClass: string; iconSize: number; iconPlaceholderClass: string; labelClass: string }
+> = {
+  sm: {
+    rowClass: 'gap-1.5 rounded px-1.5 py-1',
+    highlightClass: 'rounded',
+    iconSize: 14,
+    iconPlaceholderClass: 'h-3.5 w-3.5',
+    labelClass: 'text-xs',
+  },
+  md: {
+    rowClass: 'gap-2 rounded-md px-2 py-2',
+    highlightClass: 'rounded-md',
+    iconSize: 19,
+    iconPlaceholderClass: 'h-4 w-4',
+    labelClass: 'text-base',
+  },
+  lg: {
+    rowClass: 'gap-3 rounded-md px-3 py-2.5',
+    highlightClass: 'rounded-md',
+    iconSize: 22,
+    iconPlaceholderClass: 'h-4.5 w-4.5',
+    labelClass: 'text-lg',
+  },
+};
+
+/**
+ * Scale for the iOS-style (iconBackgroundColor) variant — row height, icon
+ * background dimensions, icon size, and label type per size.
+ */
+const IOS_SCALE: Record<MenuItemSize, { rowClass: string; iconBgClass: string; iconSize: number; labelClass: string }> = {
+  sm: {
+    rowClass: 'h-9 gap-1.5 rounded-md px-2.5',
+    iconBgClass: 'h-5.5 w-5.5 rounded',
+    iconSize: 15,
+    labelClass: 'text-sm',
+  },
+  md: {
+    rowClass: 'h-11 gap-2 rounded-lg px-3',
+    iconBgClass: 'h-6.5 w-6.5 rounded-md',
+    iconSize: 18,
+    labelClass: 'text-base',
+  },
+  lg: {
+    rowClass: 'h-13 gap-2.5 rounded-xl px-4',
+    iconBgClass: 'h-8 w-8 rounded-lg',
+    iconSize: 21,
+    labelClass: 'text-lg',
+  },
+};
+
 export type MenuItemProps = Omit<PressableProps, 'children'> & {
+  /**
+   * Row size — controls padding, icon dimensions, and label type ramp.
+   * @default 'md'
+   */
+  size?: MenuItemSize;
   /** Leading icon. */
   icon?: MenuItemIcon;
   /** Row label. */
@@ -45,6 +108,7 @@ export type MenuItemProps = Omit<PressableProps, 'children'> & {
 
 type MenuItemIconSlotProps = {
   icon?: MenuItemIcon;
+  size: MenuItemSize;
   active: boolean;
   /** Rounded-square fill style — presence selects the iOS-style icon variant. */
   bgStyle?: { backgroundColor: string };
@@ -53,21 +117,26 @@ type MenuItemIconSlotProps = {
 };
 
 /** Leading icon slot: coloured square, themed icon, spacer or nothing. */
-function MenuItemIconSlot({ icon: Icon, active, bgStyle, iconColor, iconPlaceholder }: MenuItemIconSlotProps) {
-  if (!Icon) return iconPlaceholder ? <View className="h-4 w-4" /> : null;
+function MenuItemIconSlot({ icon: Icon, size, active, bgStyle, iconColor, iconPlaceholder }: MenuItemIconSlotProps) {
+  if (!Icon) return iconPlaceholder ? <View className={DEFAULT_SCALE[size].iconPlaceholderClass} /> : null;
 
   if (bgStyle) {
+    const { iconBgClass, iconSize } = IOS_SCALE[size];
     return (
       <View
-        className={cn('h-6.5 w-6.5 items-center justify-center rounded-md', active && 'shadow-[0_0_2px_0.5px_rgb(0_0_0_/_0.20)]')} // theme-exempt: pure-black drop shadow
+        className={cn(
+          'items-center justify-center',
+          iconBgClass,
+          active && 'shadow-[0_0_2px_0.5px_rgb(0_0_0_/_0.20)]', // theme-exempt: pure-black drop shadow
+        )}
         style={bgStyle}
       >
-        <Icon size={18} color={iconColor} />
+        <Icon size={iconSize} color={iconColor} />
       </View>
     );
   }
 
-  return <ThemedIcon icon={Icon} token={active ? 'foreground' : 'muted-foreground'} size={16} />;
+  return <ThemedIcon icon={Icon} token={active ? 'foreground' : 'muted-foreground'} size={DEFAULT_SCALE[size].iconSize} />;
 }
 
 /**
@@ -75,12 +144,15 @@ function MenuItemIconSlot({ icon: Icon, active, bgStyle, iconColor, iconPlacehol
  *
  * Two visual modes selected by `iconBackgroundColor`:
  * - **Default** — CommandPalette style: animated `bg-surface-selected` overlay,
- *   16 px themed icon, compact `py-2` padding, `text-sm` label.
+ *   themed icon, compact padding, smaller label.
  * - **iOS-style** (`iconBackgroundColor` set) — Settings/MultiStepMenu style:
  *   coloured rounded-square icon, `bg-primary/75` row highlight on active,
- *   taller `h-11` row, `text-base` label.
+ *   taller row, larger label.
+ *
+ * Both modes scale uniformly via the `size` prop (`'sm'` | `'md'` | `'lg'`).
  */
 export function MenuItem({
+  size = 'md',
   icon: Icon,
   label,
   active = false,
@@ -98,17 +170,25 @@ export function MenuItem({
     [iconBackgroundColor],
   );
 
+  const scale = hasIconBg ? IOS_SCALE[size] : DEFAULT_SCALE[size];
+
+  let labelColorClass: string;
+  if (hasIconBg) {
+    labelColorClass = active ? 'font-semibold text-primary-foreground' : 'text-foreground';
+  } else {
+    labelColorClass = active ? 'text-foreground' : 'text-muted-foreground';
+  }
+
   return (
     <Pressable
-      // biome-ignore lint/nursery/useSortedClasses: dynamic base + conditional extension — cannot sort across template-literal segments
-      className={`relative flex-row items-center${hasIconBg ? ` h-11 gap-2 rounded-lg px-3${active ? ' bg-primary/75' : ''}` : ' gap-3 rounded-md px-2 py-2'}${className ? ` ${String(className)}` : ''}`}
+      className={cn('relative flex-row items-center', scale.rowClass, hasIconBg && active && 'bg-primary/75', className)}
       {...props}
     >
       {/* Animated active highlight — default (non-icon-bg) variant only */}
       {!hasIconBg && active ? (
         <MotiView
           key="hl"
-          className="pointer-events-none absolute inset-0 rounded-md bg-surface-selected"
+          className={cn('pointer-events-none absolute inset-0 bg-surface-selected', DEFAULT_SCALE[size].highlightClass)}
           from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
@@ -116,14 +196,17 @@ export function MenuItem({
       ) : null}
 
       {/* Icon */}
-      <MenuItemIconSlot icon={Icon} active={active} bgStyle={bgStyle} iconColor={iconColor} iconPlaceholder={iconPlaceholder} />
+      <MenuItemIconSlot
+        icon={Icon}
+        size={size}
+        active={active}
+        bgStyle={bgStyle}
+        iconColor={iconColor}
+        iconPlaceholder={iconPlaceholder}
+      />
 
       {/* Label */}
-      <Text
-        numberOfLines={1}
-        // biome-ignore lint/nursery/useSortedClasses: dynamic class — size and colour variant split across conditions
-        className={`flex-1${hasIconBg ? ` text-base${active ? ' font-semibold text-primary-foreground' : ' text-foreground'}` : ` text-sm${active ? ' text-foreground' : ' text-muted-foreground'}`}`}
-      >
+      <Text numberOfLines={1} className={cn('flex-1', scale.labelClass, labelColorClass)}>
         {label}
       </Text>
 

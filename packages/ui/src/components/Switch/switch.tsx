@@ -1,6 +1,5 @@
 // biome-ignore-all lint/style/useComponentExportOnlyModules: switch defines local sub-components
 // biome-ignore-all lint/style/useExportsLast: switch defines local sub-components
-import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, type Ref, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
@@ -9,8 +8,12 @@ import { cn } from '../../lib/cn';
 import { THUMB_SPRING } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { type MotiTransitionProp, mergeTransition } from '../../theme/motion';
-import { useThemeColor } from '../../theme/use-theme-color';
 import { Text } from '../Text/text';
+import { type SwitchColors, type SwitchThemeColors, type SwitchThemeName, useSwitchColors } from './switch-theme';
+
+// The colour system lives in switch-theme.ts; re-exported here so
+// `rn-motion-ui/switch` stays the single import site for the component's types.
+export type { SwitchColor, SwitchColors, SwitchThemeColors, SwitchThemeName } from './switch-theme';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
@@ -23,15 +26,8 @@ const TRAVEL = 16;
 /** 4-step horizontal shake emitted on a disabled-press (2 px, subtle signal). */
 const SWITCH_SHAKE_STEPS = [-2, 2, -1, 0] as const;
 
-// ─── Track CVA ────────────────────────────────────────────────────────────────
-
-// Track colour swaps on selection; thumb/content are all absolute inside it.
-const track = cva('h-6 w-12 items-center justify-center rounded-full overflow-hidden', {
-  variants: {
-    isSelected: { true: 'bg-primary', false: 'bg-muted-foreground/60' },
-  },
-  defaultVariants: { isSelected: false },
-});
+/** Track geometry. The three fills are resolved per theme, not by a class. */
+const TRACK_CLASS = 'h-6 w-12 items-center justify-center rounded-full overflow-hidden';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,6 +74,20 @@ export type SwitchProps = {
   accessibilityLabel?: string;
   testID?: string;
   /**
+   * Colour theme — the selected track fill, the unselected track fill and the
+   * thumb. Pass a built-in name (`'info'` by default), or an object to override
+   * individual slots on top of `info`.
+   *
+   * Each slot takes a semantic token name (so it follows light/dark and consumer
+   * `@theme` overrides), a token with a Tailwind-style alpha suffix, or any
+   * literal CSS colour.
+   *
+   * @example theme="success"
+   * @example theme={{ track: '#0ea5e9' }}                    // grey off-track + white thumb kept
+   * @example theme={{ track: 'accent', trackOff: 'muted', thumb: 'accent-foreground' }}
+   */
+  theme?: SwitchThemeName | SwitchThemeColors;
+  /**
    * Pass-through thumb transition when using the default auto-rendered thumb.
    * When supplying custom children, pass `thumbTransition` to `<Switch.Thumb>` directly.
    */
@@ -98,6 +108,13 @@ type SwitchContextValue = {
   pressed: boolean;
   /** Toggles the switch; no-op when disabled. Used by Switch.Label. */
   onToggle: () => void;
+  /**
+   * The active theme's three fills, resolved to concrete sRGB. `Switch.Thumb`
+   * paints `thumb`; custom content can read the track fills to match them.
+   */
+  colors: SwitchColors;
+  /** The switch's resolved testID. Sub-components derive their own from it. */
+  testID: string;
 };
 
 const SwitchContext = createContext<SwitchContextValue | null>(null);
@@ -117,9 +134,8 @@ export function useSwitch(): SwitchContextValue {
  * pressed. Auto-rendered by `<Switch>` when no children are provided.
  */
 function SwitchThumb({ children, className, style, thumbTransition }: SwitchThumbProps) {
-  const { isSelected, isDisabled, pressed } = useSwitch();
+  const { isSelected, isDisabled, pressed, colors, testID } = useSwitch();
   const reduce = useReducedMotion();
-  const thumbBg = useThemeColor('surface-3');
   const squish = pressed && !isDisabled && !reduce;
 
   const transition = mergeTransition(
@@ -139,6 +155,7 @@ function SwitchThumb({ children, className, style, thumbTransition }: SwitchThum
     <MotiView
       animate={{ translateX: isSelected ? TRAVEL : 0, scaleX: squish ? 1.15 : 1, scale: squish ? 0.92 : 1 }}
       transition={transition}
+      testID={`${testID}-thumb`}
       className={cn('items-center justify-center', className)}
       style={[
         {
@@ -150,7 +167,7 @@ function SwitchThumb({ children, className, style, thumbTransition }: SwitchThum
           height: 20,
           borderRadius: 9999,
           overflow: 'hidden',
-          backgroundColor: thumbBg,
+          backgroundColor: colors.thumb,
           elevation: 3,
           ...Platform.select({
             default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3 },
@@ -226,6 +243,7 @@ function SwitchRoot({
   style,
   accessibilityLabel,
   testID,
+  theme = 'info',
   thumbTransition,
   children,
   ref,
@@ -233,6 +251,8 @@ function SwitchRoot({
   const reduce = useReducedMotion();
   const [pressed, setPressed] = useState(false);
   const shakeX = useRef(new Animated.Value(0)).current;
+  const { track, trackOff, thumb } = useSwitchColors(theme);
+  const resolvedTestID = testID ?? 'switch';
 
   // Disabled + pressed → short horizontal shake to signal "can't toggle".
   useShakeAnimation({ trigger: Boolean(isDisabled && pressed), reduce, shakeX, steps: SWITCH_SHAKE_STEPS, duration: 60 });
@@ -243,9 +263,18 @@ function SwitchRoot({
     if (!isDisabled) onSelectedChange(!isSelected);
   }, [isDisabled, onSelectedChange, isSelected]);
 
+  // Depends on the three resolved strings rather than the object they came in
+  // as, so a `theme` passed as an inline literal doesn't invalidate every render.
   const contextValue = useMemo(
-    () => ({ isSelected, isDisabled: isDisabled ?? false, pressed, onToggle: handleToggle }),
-    [isSelected, isDisabled, pressed, handleToggle],
+    () => ({
+      isSelected,
+      isDisabled: isDisabled ?? false,
+      pressed,
+      onToggle: handleToggle,
+      colors: { track, trackOff, thumb },
+      testID: resolvedTestID,
+    }),
+    [isSelected, isDisabled, pressed, handleToggle, track, trackOff, thumb, resolvedTestID],
   );
 
   const renderProps: SwitchRenderProps = { isSelected, isDisabled: isDisabled ?? false };
@@ -260,15 +289,20 @@ function SwitchRoot({
           aria-checked={isSelected}
           aria-disabled={Boolean(isDisabled)}
           accessibilityLabel={accessibilityLabel ?? label}
-          testID={testID ?? 'switch'}
+          testID={resolvedTestID}
           disabled={isDisabled}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           onPress={handleToggle}
         >
           <Animated.View
-            className={track({ isSelected })}
-            style={{ opacity: isDisabled ? 0.6 : 1, transform: [{ translateX: shakeX }] }}
+            className={TRACK_CLASS}
+            testID={`${resolvedTestID}-track`}
+            style={{
+              backgroundColor: isSelected ? track : trackOff,
+              opacity: isDisabled ? 0.6 : 1,
+              transform: [{ translateX: shakeX }],
+            }}
           >
             {content}
           </Animated.View>
@@ -299,9 +333,18 @@ SwitchEndContent.displayName = 'Switch.EndContent';
  * Props use heroui-native naming: `isSelected` / `onSelectedChange` / `isDisabled`.
  * When no `children` are provided, `<Switch.Thumb>` is rendered automatically.
  *
+ * Colours come from the `theme` prop: `info` by default — an `info` track when
+ * selected, a grey track when not, and a white thumb throughout.
+ *
  * @example Basic
  * ```tsx
  * <Switch isSelected={on} onSelectedChange={setOn} label="Enable notifications" />
+ * ```
+ *
+ * @example Themed
+ * ```tsx
+ * <Switch isSelected={on} onSelectedChange={setOn} theme="success" />
+ * <Switch isSelected={on} onSelectedChange={setOn} theme={{ track: '#0ea5e9', thumb: 'white' }} />
  * ```
  *
  * @example Custom thumb + icon slots

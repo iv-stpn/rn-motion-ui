@@ -83,8 +83,9 @@ Subpaths are namespaced by category:
 | `/glossy-button` | `GlossyButton` |
 | `/switch` | `Switch` |
 | `/checkbox` | `Checkbox` |
+| `/checkbox-card` | `CheckboxCardGroup`, `CheckboxCard` |
 | `/radio` | `Radio` |
-| `/card-choice` | `CardChoiceGroup`, `CardChoice` |
+| `/radio-card` | `RadioCardGroup`, `RadioCard` |
 | `/star-rating` | `StarRating` |
 | `/input` | `Input` |
 | `/tabs` | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` |

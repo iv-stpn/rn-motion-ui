@@ -117,15 +117,15 @@
       "types": "./src/components/Card/card.tsx",
       "default": "./src/components/Card/card.tsx"
     },
-    "./card-choice": {
-      "source": "./src/components/CardChoice/card-choice.tsx",
-      "types": "./src/components/CardChoice/card-choice.tsx",
-      "default": "./src/components/CardChoice/card-choice.tsx"
-    },
     "./checkbox": {
       "source": "./src/components/Checkbox/checkbox.tsx",
       "types": "./src/components/Checkbox/checkbox.tsx",
       "default": "./src/components/Checkbox/checkbox.tsx"
+    },
+    "./checkbox-card": {
+      "source": "./src/components/CheckboxCard/checkbox-card.tsx",
+      "types": "./src/components/CheckboxCard/checkbox-card.tsx",
+      "default": "./src/components/CheckboxCard/checkbox-card.tsx"
     },
     "./color": {
       "source": "./src/lib/color.ts",
@@ -271,6 +271,11 @@
       "source": "./src/components/Radio/radio.tsx",
       "types": "./src/components/Radio/radio.tsx",
       "default": "./src/components/Radio/radio.tsx"
+    },
+    "./radio-card": {
+      "source": "./src/components/RadioCard/radio-card.tsx",
+      "types": "./src/components/RadioCard/radio-card.tsx",
+      "default": "./src/components/RadioCard/radio-card.tsx"
     },
     "./range-slider": {
       "source": "./src/components/RangeSlider/range-slider.tsx",

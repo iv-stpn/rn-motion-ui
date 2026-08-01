@@ -19,8 +19,9 @@ has to win against its neighbours.
 <MenuItem label="General" icon={Settings} mode="sidebar" active={tab === 'general'} onPress={go} />
 ```
 
-`mode` is ignored when `iconBackgroundColor` is set — that variant keeps its
-iOS-style treatment (`primary/75` fill, `primary-foreground` semibold label).
+`mode` is ignored when `iconBackgroundColor` is set — that variant keeps its own
+treatment (coloured icon square, filled active row, label inverted over the
+fill), and `'sidebar'` no longer leaks its medium weight onto that label.
 The default is `'menu'`, which is the previous behaviour for active rows, so
 existing call sites keep their look except for the scale changes below.
 

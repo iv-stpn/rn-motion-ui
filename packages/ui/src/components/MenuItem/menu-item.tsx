@@ -28,7 +28,7 @@ type PressHandler = NonNullable<PressableProps['onPressIn']>;
  * Scale for the default (CommandPalette-style) variant — padding, icon size,
  * label type, and active-highlight radius per size.
  */
-const DEFAULT_SCALE: Record<
+const DEFAULT_VARIANT: Record<
   MenuItemSize,
   { rowClass: string; highlightClass: string; iconSize: number; iconPlaceholderClass: string; labelClass: string }
 > = {
@@ -59,7 +59,7 @@ const DEFAULT_SCALE: Record<
  * Scale for the iOS-style (iconBackgroundColor) variant — row height, icon
  * background dimensions, icon size, and label type per size.
  */
-const IOS_SCALE: Record<MenuItemSize, { rowClass: string; iconBgClass: string; iconSize: number; labelClass: string }> = {
+const ICON_TILE_VARIANT: Record<MenuItemSize, { rowClass: string; iconBgClass: string; iconSize: number; labelClass: string }> = {
   sm: {
     rowClass: 'h-9 gap-1.5 rounded-md px-2.5',
     iconBgClass: 'h-5.5 w-5.5 rounded',
@@ -79,6 +79,20 @@ const IOS_SCALE: Record<MenuItemSize, { rowClass: string; iconBgClass: string; i
     labelClass: 'text-lg',
   },
 };
+
+type LabelColorOptions = { hasIconTile: boolean; mode: MenuItemMode; active: boolean };
+
+/**
+ * Label colour class for a row, by variant → mode → state:
+ * - icon-tile variant — inverted foreground over the `bg-info` active fill.
+ * - `'sidebar'` — muted until active, so the active row reads as selected.
+ * - `'menu'` — always foreground; the highlight overlay carries the state.
+ */
+function getLabelColorClass({ hasIconTile, mode, active }: LabelColorOptions) {
+  if (hasIconTile) return active ? 'text-info-foreground' : 'text-foreground';
+  if (mode === 'sidebar') return active ? 'text-foreground' : 'text-muted-foreground';
+  return 'text-foreground';
+}
 
 export type MenuItemProps = Omit<PressableProps, 'children'> & {
   /**
@@ -127,7 +141,6 @@ type MenuItemIconSlotProps = {
   size: MenuItemSize;
   active: boolean;
   mode: MenuItemMode;
-  /** Rounded-square fill style — presence selects the iOS-style icon variant. */
   bgStyle?: { backgroundColor: string };
   iconColor: string;
   iconPlaceholder: boolean;
@@ -135,10 +148,10 @@ type MenuItemIconSlotProps = {
 
 /** Leading icon slot: coloured square, themed icon, spacer or nothing. */
 function MenuItemIconSlot({ icon: Icon, size, active, mode, bgStyle, iconColor, iconPlaceholder }: MenuItemIconSlotProps) {
-  if (!Icon) return iconPlaceholder ? <View className={DEFAULT_SCALE[size].iconPlaceholderClass} /> : null;
+  if (!Icon) return iconPlaceholder ? <View className={DEFAULT_VARIANT[size].iconPlaceholderClass} /> : null;
 
   if (bgStyle) {
-    const { iconBgClass, iconSize } = IOS_SCALE[size];
+    const { iconBgClass, iconSize } = ICON_TILE_VARIANT[size];
     return (
       <View
         className={cn(
@@ -158,7 +171,7 @@ function MenuItemIconSlot({ icon: Icon, size, active, mode, bgStyle, iconColor, 
     <ThemedIcon
       icon={Icon}
       token={active || mode === 'menu' ? 'foreground' : 'muted-foreground'}
-      size={DEFAULT_SCALE[size].iconSize}
+      size={DEFAULT_VARIANT[size].iconSize}
     />
   );
 }
@@ -169,9 +182,9 @@ function MenuItemIconSlot({ icon: Icon, size, active, mode, bgStyle, iconColor, 
  * Two visual modes selected by `iconBackgroundColor`:
  * - **Default** — CommandPalette style: animated `bg-surface-selected` overlay,
  *   themed icon, compact padding, smaller label.
- * - **iOS-style** (`iconBackgroundColor` set) — Settings/MultiStepMenu style:
- *   coloured rounded-square icon, `bg-primary/75` row highlight on active,
- *   taller row, larger label.
+ * - **Icon-tile** (`iconBackgroundColor` set) — Settings/MultiStepMenu style:
+ *   coloured rounded-square icon, `bg-info` row fill on active, taller row,
+ *   larger label.
  *
  * Both modes scale uniformly via the `size` prop (`'sm'` | `'md'` | `'lg'`).
  */
@@ -229,20 +242,16 @@ export function MenuItem({
     [onPressOut],
   );
 
-  const hasIconBg = Boolean(iconBackgroundColor);
-  const bgStyle = useMemo(
+  const hasIconTile = Boolean(iconBackgroundColor);
+  const backgroundStyle = useMemo(
     () => (iconBackgroundColor ? { backgroundColor: iconBackgroundColor } : undefined),
     [iconBackgroundColor],
   );
 
-  const scale = hasIconBg ? IOS_SCALE[size] : DEFAULT_SCALE[size];
-  // Pre-computed to keep cn() conditions flat
+  const scale = hasIconTile ? ICON_TILE_VARIANT[size] : DEFAULT_VARIANT[size];
   const canInteract = !(active || disabled);
 
-  // hasIconBg → iOS style; sidebar → muted+medium when inactive; menu → foreground always
-  let labelColorClass = 'text-foreground';
-  if (hasIconBg) labelColorClass = active ? 'font-semibold text-primary-foreground' : 'text-foreground';
-  else if (mode === 'sidebar') labelColorClass = active ? 'text-foreground' : 'text-muted-foreground';
+  const labelColorClass = getLabelColorClass({ hasIconTile, mode, active });
 
   return (
     <Pressable
@@ -250,7 +259,7 @@ export function MenuItem({
       className={cn(
         'relative flex-row items-center',
         scale.rowClass,
-        hasIconBg && active && 'bg-primary/75',
+        hasIconTile && active && 'bg-info',
         canInteract && hovered && 'bg-surface-hover',
         canInteract && pressed && 'bg-surface-selected',
         className,
@@ -262,10 +271,10 @@ export function MenuItem({
       onPressOut={handlePressOut}
     >
       {/* Animated active highlight — default (non-icon-bg) variant only */}
-      {!hasIconBg && active ? (
+      {!hasIconTile && active ? (
         <MotiView
           key="hl"
-          className={cn('pointer-events-none absolute inset-0 bg-surface-selected', DEFAULT_SCALE[size].highlightClass)}
+          className={cn('pointer-events-none absolute inset-0 bg-surface-selected', DEFAULT_VARIANT[size].highlightClass)}
           from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
@@ -278,7 +287,7 @@ export function MenuItem({
         size={size}
         active={active}
         mode={mode}
-        bgStyle={bgStyle}
+        bgStyle={backgroundStyle}
         iconColor={iconColor}
         iconPlaceholder={iconPlaceholder}
       />
@@ -287,7 +296,7 @@ export function MenuItem({
       <Text
         numberOfLines={1}
         className={cn('flex-1', scale.labelClass, labelColorClass)}
-        weight={mode === 'sidebar' ? 'medium' : 'normal'}
+        weight={mode === 'sidebar' && !hasIconTile ? 'medium' : 'normal'}
       >
         {label}
       </Text>

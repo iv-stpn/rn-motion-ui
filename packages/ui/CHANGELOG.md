@@ -1,5 +1,396 @@
 # rn-motion-ui
 
+## 4.0.0
+
+### Major Changes
+
+- b430163: Remove `AvailabilityScheduler` component.
+- 45fd462: Remove deprecated `visible`/`onClose` props and clean up internal comments
+
+  **Breaking:** `visible` and `onClose` props have been removed from `BottomSheet`, `FullSheet`, `AdaptiveModal`, and `ActionFeedbackModal`. These were deprecated aliases introduced in the previous minor. Migrate to `open` and `onOpenChange`:
+
+  ```tsx
+  // Before
+  <BottomSheet visible={open} onClose={close} />
+  <FullSheet visible={open} onClose={close} />
+  <AdaptiveModal visible={open} onClose={close} />
+  <ActionFeedbackModal visible={open} onClose={close} />
+
+  // After
+  <BottomSheet open={open} onOpenChange={close} />
+  <FullSheet open={open} onOpenChange={close} />
+  <AdaptiveModal open={open} onOpenChange={close} />
+  <ActionFeedbackModal open={open} onOpenChange={close} />
+  ```
+
+  **Breaking:** `state?: never` has been removed from `MotiPressableProps`. It was a no-op guard and carries no runtime effect.
+
+  Internal call sites (`AdaptiveDropdown`, `CommandPalette`, `MultiStepMenu`) have been updated to the new API. The `PopoverCtx` internal type is renamed to `PopoverContext` (unexported; no public API change). Inline `RN FALLBACK vs web` implementation notes have been removed from component files.
+
+- fc3b682: Remove `NotFound` component.
+
+### Minor Changes
+
+- a2ff66d: `FileSystem`: the background context menu now opens over the empty area
+
+  `getBackgroundContextMenuActions` used to need a view to right-click. The placeholder that stands in for the file area — an empty folder, a search with no hits, filters that match nothing, a folder still loading — is now mounted in the same background surface the list and icons views use, so a right-click (web) or long-press (native) anywhere in it opens the background menu. An empty folder is exactly where a "New folder" action matters most.
+
+  It uses the same single-open coordination as the views, so opening it closes any other file-system menu.
+
+  **Also:** the background menu's title at the root now comes from the `title` prop instead of a hardcoded `'Files'`. Inside a folder it is the folder name, as before.
+
+- 22b260f: `FileSystem`: multi-selection — Ctrl/Cmd-click, Shift-range, long-press, and a selection box
+
+  `selectionMode="multiple"` lets more than one entry be selected at a time, with the gestures a file browser is expected to have:
+
+  - **Ctrl-click** (Cmd-click on macOS), or a **long-press** on touch: toggle the entry under the pointer in or out of the selection.
+  - **Shift-click**: take the contiguous run from the anchor — the last entry picked without Shift — to the entry pressed. The anchor stays put, so shift-clicking around grows and shrinks one run rather than accumulating; hold Ctrl/Cmd as well to add the run to what is already selected.
+  - **A selection box** dragged across empty space, web only, in all four views — the list, the icons grid, any columns pane, and the gallery filmstrip (which bands horizontally, being a horizontal list). Everything the band touches is selected live as it is drawn; hold Ctrl/Cmd as you start it to add rather than replace. A box only starts from a point that is not on an entry, so a drag that begins on a row still moves that row.
+
+  A plain press still replaces the selection, and a press on the background still clears it. All four views paint the selection, and the status bar counts it with a Clear affordance once there is more than one.
+
+  The ordering a Shift-range runs through comes from the view you pressed, not from the store: the list view runs through its rows as drawn (an expanded folder's children included, since they sit between their parent and its next sibling), and the columns view keeps each pane to itself, so a range never jumps across the trail into a sibling folder.
+
+  The selected set arrives through a new `onSelectedItemsChange(items)`, in the order the entries were picked. `onSelectionChange(item)` is unchanged and now follows the _lead_ — the entry added most recently — which is what the columns trail, the columns preview pane and the gallery stage keep showing. `renderBody` gains `selectedEntries`, and `renderFooter` gains `selectedCount` and `clearSelection`.
+
+  Dragging an entry that belongs to a multi-selection now moves the whole selection: `onMove` reports every path in one `sources` array instead of firing per entry. Members the drop would not actually move — the destination itself, entries already inside it, a folder dropped into its own subtree — are filtered out first, and nothing fires when that leaves the list empty. Dragging an _unselected_ entry is still a single-entry drag.
+
+  Two things to know before switching it on:
+
+  - Long-press is already the entry context menu's trigger on touch, and multi-selection takes it over. With `getContextMenuActions` the menu still opens on right-click on web, but on touch it becomes unreachable — so pick one, or surface those actions elsewhere.
+  - With `draggable`, a hold on native starts a drag (at 300 ms) before a long press resolves (at 500 ms), so the toggle gesture is effectively web-only in the list and icons views.
+
+  Two fixes fall out of the same work, and apply whatever `selectionMode` is set to:
+
+  - Entry rows and tiles now carry `aria-selected`. They only ever set `accessibilityState={{ selected }}`, which react-native-web does not map to anything, so on web the highlight fill was the only thing saying an entry was picked — assistive tech was told nothing at all.
+  - A drag in the grid view now only lifts a tile when the press actually landed on one. It used to resolve the press to the _nearest_ tile, so a press in the padding or in a gutter between tiles would lift a neighbour you had not touched.
+
+  The default is `selectionMode="single"`, which behaves exactly as before — except that re-selecting the entry you had already selected before navigating away and back no longer fires a duplicate `onSelectionChange`.
+
+- dd54f5d: `FileSystem`: new `renderEmptyState` slot
+
+  Replaces the placeholder that stands in for the file area when there is nothing to show, so "This folder is empty" is no longer the only option. `args.reason` says which of the four cases you are drawing — `'empty-folder'`, `'no-search-results'`, `'no-filter-matches'`, or `'loading'` — and `args.label` carries the copy the built-in placeholder would have used, ready to reuse. The rest of the args (`currentPath`, `folderName`, `view`, `searchValue`, `isSearching`, `hasActiveFilters`) describe the state that emptied it.
+
+  The slot is per-reason rather than all-or-nothing: return `undefined` to fall through to the built-in placeholder for that state, so you can take over the empty folder and leave the loading spinner and the no-results message alone. Return `null` to draw nothing.
+
+  Like `renderBody`, it is called as a plain function rather than rendered as a component — don't call hooks directly in it, put them in a component you render inside the returned tree.
+
+  ```tsx
+  <FileSystem
+    items={items}
+    renderEmptyState={({ reason, folderName }) =>
+      reason === "empty-folder" ? (
+        <DropZone folder={folderName} onPick={upload} />
+      ) : undefined
+    }
+  />
+  ```
+
+  `FileSystemEmptyStateArgs` and `FileSystemEmptyStateReason` are exported alongside it. Whatever the slot returns is mounted in the same background surface the built-in placeholder uses, so `getBackgroundContextMenuActions` still opens over it.
+
+- 643d0ff: Add `MenuItem` — a shared menu-row primitive, now exported as `rn-motion-ui/menu-item`
+
+  `CommandPalette` and `MultiStepMenu` each carried their own near-identical menu-row markup (leading icon, label, active highlight, trailing slot). That row is now a single component with two visual modes selected by `iconBackgroundColor`:
+
+  - **Default** — CommandPalette style: animated `bg-surface-selected` overlay, 16 px themed icon, `py-2` padding, `text-sm` label.
+  - **iOS-style** (`iconBackgroundColor` set) — Settings/MultiStepMenu style: coloured rounded-square icon, `bg-primary/75` active highlight, `h-11` row, `text-base` label.
+
+  ```tsx
+  import { MenuItem } from "rn-motion-ui/menu-item";
+
+  <MenuItem
+    icon={Bell}
+    label="Notifications"
+    active={isActive}
+    onPress={select}
+  />;
+  ```
+
+  `MultiStepMenu`'s `MenuRow` and `CommandPalette`'s internal `CommandRow` are now thin wrappers over it — no public API change to either, beyond `MenuRowProps['icon']` being typed as the exported `MenuItemIcon` (structurally identical to the previous local `IconRenderer`) and `CommandIconProps` becoming an alias of the shared `IconProps` (widened with the optional `strokeWidth`, `style` and `accessibilityLabel` fields; existing icon renderers stay assignable).
+
+  `BottomSheet`'s sheet container moves onto `cn()` + the `SURFACE_CLASSNAME` ladder. Two visual consequences: it now carries `shadow-elevated-3` alongside `bg-surface-3`, and its non-full-sheet top radius changes from `rounded-t-2xl` to `rounded-t-lg`.
+
+  Also folded template-literal class concatenation into `cn()` in `ActionFeedbackModal`, dropped the now-unneeded `useSortedClasses` biome-ignore comments, and rewrote the `AdaptiveDropdown` / `HoverMenu` stories to use the shared row instead of local one-off copies.
+
+- b2d501d: `CardChoice` → `RadioCard`, now animating per card, plus a new multi-select `CheckboxCard`
+
+  **Breaking:** `CardChoice` has been renamed to `RadioCard` to say what it is — a
+  card-shaped radio — and to pair with the new `CheckboxCard`. The subpath moved
+  with it; there are no deprecated aliases.
+
+  | Old                        | New                       |
+  | -------------------------- | ------------------------- |
+  | `rn-motion-ui/card-choice` | `rn-motion-ui/radio-card` |
+  | `CardChoice`               | `RadioCard`               |
+  | `CardChoiceGroup`          | `RadioCardGroup`          |
+  | `CardChoiceGroupProps`     | `RadioCardGroupProps`     |
+  | `CardChoiceProps`          | `RadioCardProps`          |
+
+  The default group `testID` prefix follows the rename: `card-choice-group` →
+  `radio-card-group`, so derived ids become `radio-card-group-card-<value>`,
+  `-ring`, `-dot` and `-badge`.
+
+  ```tsx
+  // Before
+  import { CardChoice, CardChoiceGroup } from "rn-motion-ui/card-choice";
+  <CardChoiceGroup value={plan} onValueChange={setPlan}>
+    <CardChoice value="monthly" title="Monthly" subtitle="$12/mo" />
+  </CardChoiceGroup>;
+
+  // After
+  import { RadioCard, RadioCardGroup } from "rn-motion-ui/radio-card";
+  <RadioCardGroup value={plan} onValueChange={setPlan}>
+    <RadioCard value="monthly" title="Monthly" subtitle="$12/mo" />
+  </RadioCardGroup>;
+  ```
+
+  **Breaking: the shared gliding dot is gone.** `RadioCardGroup` used to render a
+  single dot that measured each card's radio ring (`measureInWindow`) and glided
+  between them. Selection now animates per card instead: the ring's border and the
+  card's border cross-fade between `border` and `info`, the background tint
+  cross-fades in the same pass, and the dot fades and scales in place. No geometry
+  is measured, so selection no longer depends on layout settling.
+
+  What changes for callers:
+
+  - **The selected accent is `info`, not `primary`.** The ring border, dot, card
+    border and background tint all resolve from `--color-info`, so selection reads
+    as state rather than as the page's brand action colour. The dot also grew from
+    10 px to 14 px inside the 20 px ring. The `badge` pill is unaffected — it stays
+    `primary`, since it labels the offer, not the selection.
+  - **`radio-card-group-indicator` no longer exists.** Each selected card renders
+    its own dot at `<card testID>-dot`. Previously that id only appeared on
+    standalone cards; inside a group it is now present too.
+  - **`transition` retimes the cross-fade, not a glide.** The default moved from
+    `MOTION_SNAPPY` (a spring, appropriate for travel) to `TIMING_FAST` (150 ms
+    timing, appropriate for a fade). A spring is still accepted.
+  - **`RadioCard` takes its own `transition`**, overriding the group's — the same
+    group-cascades-to-card shape `CheckboxCard` uses for `checkTransition`.
+  - **`className` and `style` now target the animated card surface**, the bordered
+    padded box inside the pressable. A `Pressable` can't be animated directly, so
+    the border and tint live on a `MotiView` inside it and the pressable keeps only
+    `flex-1`. Visual overrides (padding, radius, border) behave as before; an
+    override of the card's _outer_ footprint (e.g. a fixed `width`) now sizes the
+    surface within `flex-1` rather than the pressable itself. Wrap the card to
+    control its outer box.
+
+  **Fixed:** `RadioCard` now sets `aria-checked` directly instead of
+  `accessibilityState={{ checked }}`, which react-native-web does not forward — the
+  selected state never reached the DOM on web, so screen readers announced every
+  card as unchecked. Matches `Radio` and `Checkbox`. `RadioCard` also gained an
+  `accessibilityLabel` prop, defaulting to `title`, so a card answers with its own
+  name rather than its concatenated text content.
+
+  **New: `rn-motion-ui/checkbox-card`** — exports `CheckboxCard` and
+  `CheckboxCardGroup`, the multi-select counterpart to `RadioCard`. Same card
+  anatomy (title, subtitle, badge, `numeric` subtitle, custom children), with
+  `Checkbox`'s animated box in place of the radio ring: the `info` fill and the
+  check mark cross-fade on toggle and the box springs down on press. Selection uses
+  the same `info` accent as `RadioCard`, so the two read as one family.
+
+  Because any number of cards can be checked at once, `CheckboxCardGroup` owns only
+  the selected-value array. It takes `role="group"`; each card answers
+  `accessibilityRole="checkbox"` with `aria-checked` / `aria-disabled`.
+
+  Props follow the heroui-native names already used by `Switch` — `isSelected`,
+  `onSelectedChange`, `isDisabled`. Group-level `isDisabled` and `checkTransition`
+  cascade to every card, and a card can override either.
+
+  ```tsx
+  import { CheckboxCard, CheckboxCardGroup } from 'rn-motion-ui/checkbox-card';
+
+  // Grouped — the group owns the selected array
+  const [addons, setAddons] = useState<string[]>(['support']);
+  <CheckboxCardGroup value={addons} onValueChange={setAddons}>
+    <CheckboxCard value="seats" title="Extra seats" subtitle="$4/mo each" numeric />
+    <CheckboxCard value="support" title="Priority support" subtitle="$29/mo" badge="Popular" numeric />
+  </CheckboxCardGroup>
+
+  // Standalone — the card is driven directly
+  <CheckboxCard isSelected={on} onSelectedChange={setOn} title="Audit log" subtitle="$12/mo" />
+  ```
+
+  New types: `CheckboxCardProps`, `CheckboxCardGroupProps`.
+
+- 7bb97f1: `StatefulButton`: external reset signal, `afterReset`, and `autoReset` → `shouldAutoReset`
+
+  **Breaking:** `autoReset` is renamed to `shouldAutoReset`. It keeps the same meaning — return to idle once the success/error window closes — and the same `false` default. Rename the prop at the call site; there is no deprecated alias.
+
+  **New `shouldReset`.** A reactive signal, not a mode: raise it and the button resets to idle immediately, wherever it happens to be. It is edge-triggered on the rise, so a parent that leaves it pinned `true` resets the button once rather than on every press — lower it and raise it again to reset again. Raising it on an idle button with nothing in flight does nothing.
+
+  A mid-flight reset takes effect at once instead of waiting for the pending action: the in-flight run is orphaned, so when its promise finally settles it neither shows its outcome nor opens a terminal window, and `afterSuccess` / `afterError` stay silent for that run.
+
+  **New `afterReset`.** Fires whenever a reset actually returns the button to idle, from either path — the `shouldReset` signal or the `shouldAutoReset` window end.
+
+  The two props answer different questions and compose: `shouldAutoReset` decides what happens when a run's terminal window ends, `shouldReset` lets the parent cut a run short at any point.
+
+  ```tsx
+  const [resetSignal, setResetSignal] = useState(false);
+
+  <StatefulButton
+    onPress={submit}
+    shouldReset={resetSignal}
+    afterReset={() => setResetSignal(false)}
+  />;
+  ```
+
+- 736a452: `Switch`: heroui-native prop names + compound sub-components
+
+  **Breaking:** Props have been renamed to align with heroui-native conventions. Update call sites accordingly — there are no deprecated aliases.
+
+  | Old               | New                |
+  | ----------------- | ------------------ |
+  | `checked`         | `isSelected`       |
+  | `onCheckedChange` | `onSelectedChange` |
+  | `disabled`        | `isDisabled`       |
+
+  **Compound sub-components.** `Switch` is now a compound component; the following sub-components are available:
+
+  - `Switch.Thumb` — sliding pill thumb. Spring-animated; squishes lightly on press. Accepts a `thumbTransition` override and render-function children `(props: SwitchRenderProps) => ReactNode`.
+  - `Switch.Label` — pressable label container. Tapping it toggles the switch (like an HTML `<label>`). Disabled automatically when `isDisabled` is set.
+  - `Switch.StartContent` — absolutely-positioned icon slot on the left (start) side of the track; typically holds an icon visible when the switch is off.
+  - `Switch.EndContent` — absolutely-positioned icon slot on the right (end) side of the track; typically holds an icon visible when the switch is on.
+
+  When no `children` are provided, `<Switch.Thumb>` is rendered automatically, preserving the existing visual behaviour.
+
+  **New exports:** `useSwitch()` hook for accessing switch state from within sub-components, and `SwitchRenderProps`, `SwitchThumbProps`, `SwitchLabelProps`, `SwitchContentProps` types.
+
+  ```tsx
+  // Before
+  <Switch checked={on} onCheckedChange={setOn} disabled={false} label="Enable" />
+
+  // After — basic (drop-in)
+  <Switch isSelected={on} onSelectedChange={setOn} isDisabled={false} label="Enable" />
+
+  // After — custom thumb with icon slots
+  <Switch isSelected={on} onSelectedChange={setOn}>
+    <Switch.StartContent><MoonIcon /></Switch.StartContent>
+    <Switch.Thumb />
+    <Switch.EndContent><SunIcon /></Switch.EndContent>
+  </Switch>
+  ```
+
+- 6b591be: `Switch`: custom colour themes, defaulting to `info`
+
+  **New: `theme`.** The switch's three fills — the selected track, the unselected
+  track and the thumb — are now a theme rather than two hardcoded classes. Pass a
+  built-in name, or an object to override individual slots.
+
+  ```tsx
+  <Switch isSelected={on} onSelectedChange={setOn} theme="success" />
+  ```
+
+  Six built-ins, one per status token plus the monochrome `primary`: `info`
+  (default), `primary`, `success`, `warning`, `danger`, `special`. Each pairs a
+  vivid track with the thumb colour that stays legible on it — the status fills
+  take a `white` thumb, `primary` takes `primary-foreground` instead, because
+  `primary` is near-white in dark mode and a white thumb would vanish into it. The
+  grey off-track is shared by all six, so a row of mixed themes reads as one
+  family.
+
+  **Breaking: the default look changed.** The selected track was `bg-primary`
+  (near-black on light, near-white on dark) and the thumb was `surface-3`. The
+  default `info` theme makes the track the `info` blue and the thumb `white` in
+  both schemes, matching the accent `RadioCard` and `CheckboxCard` already use for
+  selection — selection reads as state rather than as the page's brand action
+  colour. The unselected track is unchanged (`muted-foreground` at 60%). Pass
+  `theme="primary"` for the previous appearance:
+
+  ```tsx
+  // What theme="primary" restores — the previous default look
+  <Switch isSelected={on} onSelectedChange={setOn} theme="primary" />
+  ```
+
+  **Custom themes.** An object overrides slots on top of `info`, so anything left
+  out keeps the default — `{ track: '#0ea5e9' }` still gets the grey off-track and
+  the white thumb. Each slot takes one of three things:
+
+  | Slot value                       | Resolves to                                                                          |
+  | -------------------------------- | ------------------------------------------------------------------------------------ |
+  | `'accent'`                       | the `--color-accent` token, so it follows light/dark and consumer `@theme` overrides |
+  | `'special/70'`                   | the same token re-alphaed to 70%, as Tailwind's slash modifier does                  |
+  | `'#0ea5e9'`, `'rgba(0,0,0,0.4)'` | itself — any literal CSS colour RN parses                                            |
+
+  ```tsx
+  // Tokens — tracks the theme
+  <Switch
+    isSelected={on}
+    onSelectedChange={setOn}
+    theme={{ track: 'accent', trackOff: 'muted', thumb: 'accent-foreground' }}
+  />
+
+  // A literal brand colour for the on-track, defaults for the rest
+  <Switch isSelected={on} onSelectedChange={setOn} theme={{ track: '#0ea5e9' }} />
+  ```
+
+  Fills are set through `style` from resolved values rather than by a utility
+  class, because a slot accepts an arbitrary CSS colour, which no class can carry.
+  Token names still go through the theme bridge, so a themed slot follows
+  light/dark exactly as a class would.
+
+  **New testIDs.** The track and thumb now carry ids derived from the switch's own:
+  `<testID>-track` and `<testID>-thumb` (`switch-track` / `switch-thumb` by
+  default). Previously neither was addressable.
+
+  **`useSwitch()` gained two fields.** `colors` holds the active theme's three
+  fills resolved to concrete sRGB — `Switch.Thumb` paints `thumb`, and custom
+  content can read the track fills to match them. `testID` is the switch's
+  resolved id, which sub-components derive their own from.
+
+  New types: `SwitchThemeName`, `SwitchThemeColors`, `SwitchColor`, `SwitchColors`
+  — all exported from `rn-motion-ui/switch`.
+
+- e7fe0f1: Theme: `white` and `black` are now first-class tokens
+
+  Two absolute colors join the token sheet. Unlike every other color token they do **not** flip with the theme — `oklch(100% 0 0)` and `oklch(0% 0 0)` in light, dark, and on native — so they cover the places where a fixed color is the design intent rather than an oversight: a glyph sitting on a vivid status fill, a gloss highlight, a scrim.
+
+  They are available everywhere the other tokens are — the `bg-white` / `text-black` / `border-white` utilities, and `useThemeColor` / `useThemeColors`:
+
+  ```tsx
+  <Text className="text-white">Legible on a vivid fill in both schemes</Text>
+  ```
+
+  ```ts
+  const white = useThemeColor("white"); // "rgb(255, 255, 255)"
+  ```
+
+  `ThemeToken` gains `'white' | 'black'`, and both are declared in all three places a token lives — the `@theme` block, the two dark blocks, and the native OKLCH tables — so `check-token-parity` covers them like the rest. Being achromatic, they pass through `npx rn-motion-ui-tokens` retinting untouched.
+
+  Reach for these instead of a hardcoded `#fff` / `#000`. For anything that should track the theme, `foreground` / `surface-N` are still the answer.
+
+### Patch Changes
+
+- 5c135e4: `FileSystem`: fix filter-pill preset no-op and date-range modal stale draft
+
+  **Filter-pill date preset** — picking a new date preset on an existing filter pill (e.g. changing "1 month ago" to "3 days ago" via the value chip) was a silent no-op. `setFilterDatePreset` matches on `filter.id`; the pill was passing the filter's facet type instead, so nothing ever matched.
+
+  **Date-range modal draft** — closing and reopening the custom date range modal for the same facet showed the previous visit's draft instead of reseeding from the filter's stored bounds. The draft state is now scoped inside `AdaptiveModal`, which unmounts its children on close (wide path via `AnimatePresence` + `useModalRender`; narrow path via `BottomSheet`'s `isMounted` guard). The `DateRangeRequest` carries an `id` counter so reopening the same facet gets a `key` change and re-runs the lazy initialisers from the updated `initialRange`.
+
+  Two regression stories cover both fixes: `Demo: Re-value a filter pill` and `Demo: Custom range starts fresh each visit`.
+
+- 74d2e8b: `FileSystem`: the selected row now reads as a selection rather than as the primary fill
+
+  Selection in the list, icons and columns views was painted with `primary` — the monochrome token consumers are meant to override with their own brand color. So a selected row went near-black in light mode and near-white in dark, and any consumer who retinted `primary` got their brand color as the selection highlight whether or not that was the intent.
+
+  It is `info` now — the vivid blue that already reads as "this one is picked" in a file browser, on both schemes, and is not the token a consumer is invited to repaint. The label, the row's metadata columns, and the expand chevron sit on that fill as `white` rather than `primary-foreground`, which on a vivid blue is what legibility actually wants.
+
+  Nothing to change on your side unless you were relying on `primary` to tint file-system selection; if you were, that hook is gone on purpose.
+
+- f3dd5fa: `FileSystem`: migrate internal state from React Context to per-instance Zustand store
+
+  No public API change. Each `FileSystem` mount now owns a `createStore`-based Zustand store instead of a single React Context value, so sibling instances never share state and re-renders are limited to the slices that actually changed (`useShallow` on every slice hook).
+
+  The old `use-file-system`, `use-file-system-filters`, and `use-file-open` internal hooks are removed; all consumers now call the new granular slice hooks (`useFileSystemNavigation`, `useFileSystemEntries`, `useFileSystemSearch`, `useFileSystemFilters`, `useFileSystemSelection`, `useFileSystemViewer`, `useFileSystemLayout`, `useFileSystemConsumer`) and their matching action hooks.
+
+- fe8d207: `StarRating`: warmer default gold, and inactive stars sit on `accent` rather than `border`
+
+  Two color changes, both visible without touching a prop:
+
+  - The default `activeStarColor` moves from `#edde51` to `#fec700` — the same fixed, theme-exempt gold intent, but warmer and more saturated, so a filled star reads as gold rather than as pale yellow.
+  - Inactive stars now fall back to the theme `accent` color instead of `border`. `border` is a translucent hairline token (`oklch(0% 0 0 / 0.1)`), which is right for a 1 px rule and too faint for a filled glyph — empty stars were nearly invisible on light surfaces. `accent` is opaque and tracks the theme, so the empty half of a rating stays legible on both schemes.
+
+  Pass `activeStarColor` / `inactiveStarColor` to keep the previous values.
+
 ## 3.4.0
 
 ### Minor Changes

@@ -139,7 +139,6 @@ Subpaths are namespaced by category:
 | `/use-column-reorder` | `useColumnReorder` |
 | `/file-tree` | `FileTree`, `useFileTree` |
 | `/file-system` | `FileSystem` |
-| `/not-found` | `NotFound` |
 | `/icons` | icon components |
 | `/icon` | `ThemedIcon` |
 | `/ease` | easing constants |

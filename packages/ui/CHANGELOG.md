@@ -294,7 +294,6 @@
 - 1e3c1c6: Extract shared Button family machinery (`usePressRipples`, `buildButtonContent`, `ButtonRipples`, `BaseButtonProps`) into `button-internals.tsx`. `Button` now delegates to those helpers, removing ~120 lines of duplication. `StatefulButton` cascade animation simplified to a whole-label roll (per-character stagger removed).
 - 3dbc485: Docs: update the README colour-token table and `useThemeColors` example to use `danger` instead of the old `destructive` token name (the token was renamed in a prior release). Also refine the `useMotify` presence-unmount effect's dependency list and lint suppressions (no behavioural change).
 - 064ecb6: Fix `DynamicIsland` pill background: use `bg-black` instead of `bg-foreground` so the pill stays black in both light and dark themes.
-- fbde0be: Fix `NotFound` home button label colour: use `text-foreground` instead of `text-primary-foreground` so the label is readable on the button's `bg-primary` fill.
 - d68328b: Storybook: rebuild the component stories around a single interactive playground per component, and expand `play`-function coverage.
 
   Each component now exposes one `Interactive` story that doubles as its catalogue — live controls on top, then rows of samples for the states a press can't reach — replacing the long tails of one-argument stories (`Loading`, `Disabled`, `Pill`, …) that used to sit beside each other in the sidebar. The shared chrome lives in `src/__stories__/story-harness.tsx` (`Playground`, `Controls`, `Toggle`, `Choice`, `Action`, `Section`, `Variants`, `Sample`, `Note`), with `story-trigger.tsx` supplying a swappable open-trigger for the overlay stories and `story-elevations.ts` the shared 1–8 elevation chip table.
@@ -515,9 +514,8 @@
 
 ### Minor Changes
 
-- 4f9f467: **Breaking**: remove `NotFoundStacked` and `NotFoundTerminal`; unexport `InputType`.
+- 4f9f467: **Breaking**: unexport `InputType`.
 
-  - `NotFoundStacked` and `NotFoundTerminal` are removed from the `not-found` export — use `NotFoundGlitch` instead.
   - `InputType` is no longer re-exported from `input`; it is an internal type.
 
 - 4f9f467: Table overhaul: pagination, load-more, infinite scroll, striped rows, sortable master switch, `getSortValue`, rich empty state. New `hasKey<K>` worklet typeguard.
@@ -623,9 +621,9 @@
 
 ### Patch Changes
 
-- 0a456d5: fix: update Card, NotFound, OtpInput, and WheelPicker selection pill to rounded-2xl
+- 0a456d5: fix: update Card, OtpInput, and WheelPicker selection pill to rounded-2xl
 
-  Aligns rounding with the Button default `rounded` shape (`rounded-xl`) across the component suite. Affected: `Card`, `NotFoundTerminal` container, `OtpInput` slot, `WheelPicker` selection pill.
+  Aligns rounding with the Button default `rounded` shape (`rounded-xl`) across the component suite. Affected: `Card`, `OtpInput` slot, `WheelPicker` selection pill.
 
 - c6b4e91: fix(table): use `alignItems` for SkeletonCellPulse cell alignment
 

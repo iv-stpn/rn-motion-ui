@@ -242,11 +242,6 @@
       "types": "./src/components/MultiStepMenu/multi-step-menu.tsx",
       "default": "./src/components/MultiStepMenu/multi-step-menu.tsx"
     },
-    "./not-found": {
-      "source": "./src/components/NotFound/not-found.tsx",
-      "types": "./src/components/NotFound/not-found.tsx",
-      "default": "./src/components/NotFound/not-found.tsx"
-    },
     "./number-ticker": {
       "source": "./src/components/NumberTicker/number-ticker.tsx",
       "types": "./src/components/NumberTicker/number-ticker.tsx",

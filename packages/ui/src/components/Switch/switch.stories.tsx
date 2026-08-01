@@ -8,7 +8,7 @@ const meta = {
   title: 'Components/Switch',
   component: Switch,
   parameters: { layout: 'centered' },
-  args: { checked: false, label: 'Enable notifications', onCheckedChange: fn() },
+  args: { isSelected: false, label: 'Enable notifications', onSelectedChange: fn() },
 } satisfies Meta<typeof Switch>;
 
 type Story = StoryObj<typeof meta>;
@@ -28,22 +28,22 @@ function SwitchPlayground(args: ComponentProps<typeof Switch>) {
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
       </Controls>
 
-      <Switch {...args} checked={on} disabled={disabled} label="Enable notifications" onCheckedChange={setOn} />
+      <Switch {...args} isSelected={on} isDisabled={disabled} label="Enable notifications" onSelectedChange={setOn} />
 
       <Section title="States">
         <Variants direction="column">
           <Sample label="Off">
-            <Switch {...args} checked={false} label="Off" onCheckedChange={noop} />
+            <Switch {...args} isSelected={false} label="Off" onSelectedChange={noop} />
           </Sample>
           <Sample label="On">
-            <Switch {...args} checked={true} label="On" onCheckedChange={noop} />
+            <Switch {...args} isSelected={true} label="On" onSelectedChange={noop} />
           </Sample>
           {/* Pressing a disabled switch runs a short 2px shake instead of toggling. */}
           <Sample label="Disabled, off">
-            <Switch {...args} checked={false} disabled={true} label="Disabled" onCheckedChange={noop} />
+            <Switch {...args} isSelected={false} isDisabled={true} label="Disabled" onSelectedChange={noop} />
           </Sample>
           <Sample label="Disabled, on">
-            <Switch {...args} checked={true} disabled={true} label="Disabled" onCheckedChange={noop} />
+            <Switch {...args} isSelected={true} isDisabled={true} label="Disabled" onSelectedChange={noop} />
           </Sample>
         </Variants>
       </Section>
@@ -65,6 +65,6 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     const toggle = await canvas.findByRole('switch');
     await userEvent.click(toggle);
-    await expect(args.onCheckedChange).toHaveBeenCalledWith(true);
+    await expect(args.onSelectedChange).toHaveBeenCalledWith(true);
   },
 };

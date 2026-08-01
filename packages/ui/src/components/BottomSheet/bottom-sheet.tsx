@@ -186,7 +186,7 @@ export function BottomSheet({
             <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>
               <View
                 ref={sheetRef}
-                className={cn('w-full overflow-hidden', SURFACE_CLASSNAME[3], fullSheet ? 'rounded-t-none' : 'rounded-t-lg')}
+                className={cn('w-full overflow-hidden', SURFACE_CLASSNAME[3], fullSheet ? 'rounded-t-none' : 'rounded-t-2xl')}
                 testID={testID}
                 role="dialog"
                 aria-modal={true}

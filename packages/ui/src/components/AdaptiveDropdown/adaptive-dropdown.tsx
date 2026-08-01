@@ -5,7 +5,6 @@ import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { type BreakpointValue, isWidthAtLeast } from '../../lib/breakpoints';
 import { cn } from '../../lib/cn';
 import { SURFACE_CLASSNAME, type SurfaceLevel } from '../../lib/elevated';
-import { X } from '../../lib/icons';
 import { MotiView } from '../../moti/components/view';
 import { AnimatePresence } from '../../moti/presence/animate-presence';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
@@ -35,10 +34,8 @@ export type AdaptiveDropdownProps = {
   children: ReactNode | ((props: ContentRenderProps) => ReactNode);
   /** Title shown in the panel header. */
   title?: string;
-  /** Show a dismiss button in the panel header. */
-  showClose?: boolean;
   /** Trailing node in the panel header (e.g. an action button). */
-  headerRight?: ReactNode;
+  headerSuffix?: ReactNode;
   /** Controls visibility from outside. Omit to let the component manage its own state. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -74,8 +71,7 @@ export function AdaptiveDropdown({
   trigger,
   children,
   title,
-  showClose,
-  headerRight,
+  headerSuffix,
   open: openProp,
   onOpenChange,
   triggerAccessibilityLabel,
@@ -166,24 +162,19 @@ export function AdaptiveDropdown({
   const resolvedTrigger = typeof trigger === 'function' ? trigger({ open, toggle }) : trigger;
   const resolvedContent = typeof children === 'function' ? children({ close }) : children;
 
-  const hasHeader = Boolean(title || showClose || headerRight);
-  const header = hasHeader ? (
-    <View className="h-14 flex-row items-center justify-between gap-3 border-border border-b px-4">
-      {title ? (
-        <Text className="flex-1 font-semibold text-base text-foreground/75" numberOfLines={1}>
-          {title}
-        </Text>
-      ) : (
-        <View className="flex-1" />
-      )}
-      {headerRight}
-      {showClose ? (
-        <Pressable onPress={close} hitSlop={8} accessibilityLabel="Close">
-          <X size={18} />
-        </Pressable>
-      ) : null}
-    </View>
-  ) : null;
+  const header =
+    title || headerSuffix ? (
+      <View className="flex-row items-center justify-between gap-3 px-3">
+        {title ? (
+          <Text className="flex-1 font-medium text-sm text-foreground/75 pt-3" numberOfLines={1}>
+            {title}
+          </Text>
+        ) : (
+          <View className="flex-1" />
+        )}
+        {headerSuffix}
+      </View>
+    ) : null;
 
   const body = scrollable ? (
     <ScrollView
@@ -240,7 +231,7 @@ export function AdaptiveDropdown({
                    * negotiation — so claiming the responder on the panel view is
                    * not enough; a Pressable that handles the press is.
                    */}
-                  <Pressable className="min-h-0 flex-col" onPress={noop}>
+                  <Pressable className="min-h-0 flex-col p-1" onPress={noop}>
                     {header}
                     {body}
                   </Pressable>

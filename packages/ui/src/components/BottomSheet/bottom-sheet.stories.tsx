@@ -40,7 +40,7 @@ type SheetBodyProps = { long?: boolean; full?: boolean; onClose: () => void };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetBody({ long = false, full = false, onClose }: SheetBodyProps) {
   return (
-    <View className="gap-3 p-6" style={{ flex: full ? 1 : undefined }}>
+    <View className="gap-3 px-6 pb-6" style={{ flex: full ? 1 : undefined }}>
       <Text size="lg" weight="semibold">
         {BOTTOM_SHEET_TITLE}
       </Text>

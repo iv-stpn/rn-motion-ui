@@ -114,7 +114,6 @@ function DropdownPlayground() {
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('8');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
   const [withTitle, setWithTitle] = useState(true);
-  const [withClose, setWithClose] = useState(true);
   const [withHeaderAction, setWithHeaderAction] = useState(false);
   const [scrollable, setScrollable] = useState(false);
   const [longList, setLongList] = useState(false);
@@ -146,7 +145,6 @@ function DropdownPlayground() {
 
       <ControlCard title="Options">
         <Toggle label="Title" onChange={setWithTitle} value={withTitle} />
-        <Toggle label="Close button" onChange={setWithClose} value={withClose} />
         <Toggle label="Header action" onChange={setWithHeaderAction} value={withHeaderAction} />
         <Toggle label="Long list" onChange={setLongList} value={longList} />
         <Toggle label="Scrollable" onChange={setScrollable} value={scrollable} />
@@ -160,11 +158,10 @@ function DropdownPlayground() {
         align={align}
         elevation={ELEVATIONS[elevationKey]}
         fullSheet={fullSheet}
-        headerRight={withHeaderAction ? HEADER_ACTION : undefined}
+        headerSuffix={withHeaderAction ? HEADER_ACTION : undefined}
         maxHeight={SCROLL_MAX_HEIGHT}
         offset={Number(offsetKey)}
         scrollable={scrollable}
-        showClose={withClose}
         title={withTitle ? PANEL_TITLE : undefined}
         trigger={renderTrigger}
         width={Number(widthKey)}

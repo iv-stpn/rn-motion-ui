@@ -7,7 +7,7 @@ import { useShakeAnimation } from '../../hooks/use-shake-animation';
 import { cn } from '../../lib/cn';
 import { THUMB_SPRING } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
-import { type MotiTransitionProp, mergeTransition } from '../../theme/motion';
+import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../theme/motion';
 import { Text } from '../Text/text';
 import { type SwitchColors, type SwitchThemeColors, type SwitchThemeName, useSwitchColors } from './switch-theme';
 
@@ -19,7 +19,6 @@ export type { SwitchColor, SwitchColors, SwitchThemeColors, SwitchThemeName } fr
 
 /**
  * Thumb travel: track (48) − left-offset (2) − thumb-width (28) − right-offset (2).
- * Matches heroui-native's absolute-position approach (off: left 2px, on: left 18px).
  */
 const TRAVEL = 16;
 
@@ -138,15 +137,19 @@ function SwitchThumb({ children, className, style, thumbTransition }: SwitchThum
   const reduce = useReducedMotion();
   const squish = pressed && !isDisabled && !reduce;
 
-  const transition = mergeTransition(
-    {
-      type: 'spring' as const,
-      stiffness: THUMB_SPRING.stiffness,
-      damping: THUMB_SPRING.damping,
-      mass: THUMB_SPRING.mass,
-    },
-    thumbTransition,
-  );
+  // Reduced motion wins over `thumbTransition`: the thumb cuts to its position
+  // instead of springing, as every other animated control in the library does.
+  const transition = reduce
+    ? TIMING_INSTANT
+    : mergeTransition(
+        {
+          type: 'spring' as const,
+          stiffness: THUMB_SPRING.stiffness,
+          damping: THUMB_SPRING.damping,
+          mass: THUMB_SPRING.mass,
+        },
+        thumbTransition,
+      );
 
   const renderProps: SwitchRenderProps = { isSelected, isDisabled };
   const content = typeof children === 'function' ? children(renderProps) : children;
@@ -159,7 +162,6 @@ function SwitchThumb({ children, className, style, thumbTransition }: SwitchThum
       className={cn('items-center justify-center', className)}
       style={[
         {
-          // heroui: position absolute, 28×20 pill at left: 2px / top: 2px
           position: 'absolute',
           top: 2,
           left: 2,
@@ -283,7 +285,7 @@ function SwitchRoot({
 
   return (
     <SwitchContext.Provider value={contextValue}>
-      <View ref={ref} className={cn('flex-row items-center', className)} style={[{ gap: 12 }, style]}>
+      <View ref={ref} className={cn('flex-row items-center gap-2', className)} style={style}>
         <Pressable
           accessibilityRole="switch"
           aria-checked={isSelected}
@@ -330,7 +332,6 @@ SwitchEndContent.displayName = 'Switch.EndContent';
 /**
  * Toggle with a sliding thumb and optional content slots.
  *
- * Props use heroui-native naming: `isSelected` / `onSelectedChange` / `isDisabled`.
  * When no `children` are provided, `<Switch.Thumb>` is rendered automatically.
  *
  * Colours come from the `theme` prop: `info` by default — an `info` track when

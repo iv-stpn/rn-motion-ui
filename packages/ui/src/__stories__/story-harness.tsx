@@ -7,11 +7,15 @@
  * replaces the long tails of one-arg stories (`Loading`, `Disabled`, `Pill`, …)
  * that used to sit next to each other in the sidebar.
  *
- * The chrome is deliberately built from bare `Pressable`/`View` rather than the
- * library's own `Switch`/`Radio`: a story for `Switch` must not have the harness
- * and the subject answer the same `findByRole('switch')` query. Harness controls
- * are plain buttons with `aria-pressed`, and every one carries a `story-*`
- * testID so a `play` function can drive them unambiguously.
+ * `Toggle` renders the library's own `Switch`, so the chrome tracks the real
+ * component instead of re-deriving its track geometry, thumb spring and
+ * reduced-motion handling by hand. `Action` and `Choice` are plain buttons.
+ *
+ * Every control carries a `story-*` testID, and that is what a `play` function
+ * should drive it by. A `Toggle` is a real switch and therefore *does* answer
+ * `findByRole('switch')` — so in a story whose playground mounts one, a bare
+ * `findByRole('switch')` is ambiguous with the subject. Query the chrome by its
+ * testID, and the subject by its accessible name.
  *
  * This directory is excluded from the published package (see package.json
  * `files`), and the filename is not `*.stories.tsx`, so Storybook's glob never
@@ -20,12 +24,10 @@
 
 import { type ReactNode, useCallback } from 'react';
 import { type FlexAlignType, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { Switch } from '../components/Switch/switch';
 import { Text } from '../components/Text/text';
-import { useReducedMotion } from '../hooks/use-reduced-motion';
 import { cn } from '../lib/cn';
-import { THUMB_SPRING } from '../lib/ease';
 import { SURFACE_CLASSNAME } from '../lib/elevated';
-import { MotiView } from '../moti/components/view';
 
 const alignClassname: Record<FlexAlignType, string> = {
   'flex-start': 'items-start',
@@ -111,35 +113,17 @@ export function ControlRow({ children }: ControlRowProps) {
   return <View className="flex-row flex-wrap items-center gap-4">{children}</View>;
 }
 
-/** Boolean control — a compact switch that never answers `role="switch"`. */
+/**
+ * Boolean control — the library's own `Switch`, labelled and driven by a
+ * `story-toggle-*` testID.
+ *
+ * Being a real `Switch` means it answers `role="switch"`; see the note in the
+ * file header on querying it without colliding with the subject.
+ */
 export function Toggle({ label, value, onChange }: ToggleProps) {
-  const reduce = useReducedMotion();
-  const handlePress = useCallback(() => onChange(!value), [onChange, value]);
+  // `onSelectedChange` already receives the next value, so it is `onChange` exactly.
   return (
-    <Pressable
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      aria-pressed={value}
-      onPress={handlePress}
-      className="flex-row items-center gap-2"
-      testID={`story-toggle-${slug(label)}`}
-    >
-      {/* Dimensions mirror the heroui Switch: 48×24 track, 28×20 pill thumb, 2px inset, 16px travel. */}
-      <View className={cn('relative h-6 w-12 overflow-hidden rounded-full', value ? 'bg-primary' : 'bg-muted-foreground/60')}>
-        <MotiView
-          animate={{ translateX: value ? 16 : 0 }}
-          transition={
-            reduce
-              ? { type: 'timing', duration: 0 }
-              : { type: 'spring', stiffness: THUMB_SPRING.stiffness, damping: THUMB_SPRING.damping, mass: THUMB_SPRING.mass }
-          }
-          className={cn('absolute top-0.5 left-0.5 h-5 w-7 rounded-full', SURFACE_CLASSNAME[3])}
-        />
-      </View>
-      <Text className="text-foreground" size="sm">
-        {label}
-      </Text>
-    </Pressable>
+    <Switch label={label} isSelected={value} onSelectedChange={onChange} testID={`story-toggle-${slug(label)}`} theme="info" />
   );
 }
 

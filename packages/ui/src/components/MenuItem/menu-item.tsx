@@ -1,5 +1,5 @@
 // biome-ignore-all lint/style/useExportsLast: MenuItem defines inline subcomponents
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Pressable, type PressableProps, View } from 'react-native';
 import { cn } from '../../lib/cn';
 import { SPRING_LAYOUT } from '../../lib/ease';
@@ -14,6 +14,17 @@ export type MenuItemIcon = (props: IconProps) => ReactNode;
 export type MenuItemSize = 'sm' | 'md' | 'lg';
 
 /**
+ * Visual mode for the default (non-icon-bg) variant.
+ * - `'menu'`    — text is always foreground, normal weight (CommandPalette style).
+ * - `'sidebar'` — medium weight; non-active text and icon use a muted colour.
+ */
+export type MenuItemMode = 'menu' | 'sidebar';
+
+/** Pressable's own handler types, so the row can wrap them without restating the event shapes. */
+type HoverHandler = NonNullable<PressableProps['onHoverIn']>;
+type PressHandler = NonNullable<PressableProps['onPressIn']>;
+
+/**
  * Scale for the default (CommandPalette-style) variant — padding, icon size,
  * label type, and active-highlight radius per size.
  */
@@ -26,21 +37,21 @@ const DEFAULT_SCALE: Record<
     highlightClass: 'rounded',
     iconSize: 14,
     iconPlaceholderClass: 'h-3.5 w-3.5',
-    labelClass: 'text-xs',
+    labelClass: 'text-[12px]',
   },
   md: {
-    rowClass: 'gap-2 rounded-md px-2 py-2',
+    rowClass: 'gap-2 rounded-md px-2 py-1.5',
     highlightClass: 'rounded-md',
     iconSize: 19,
-    iconPlaceholderClass: 'h-4 w-4',
-    labelClass: 'text-base',
+    iconPlaceholderClass: 'h-5 w-5',
+    labelClass: 'text-[14px]',
   },
   lg: {
-    rowClass: 'gap-3 rounded-md px-3 py-2.5',
+    rowClass: 'gap-3 rounded-md px-4 py-2.5',
     highlightClass: 'rounded-md',
-    iconSize: 22,
-    iconPlaceholderClass: 'h-4.5 w-4.5',
-    labelClass: 'text-lg',
+    iconSize: 24,
+    iconPlaceholderClass: 'h-6 w-6',
+    labelClass: 'text-[18px]',
   },
 };
 
@@ -87,6 +98,11 @@ export type MenuItemProps = Omit<PressableProps, 'children'> & {
    */
   trailing?: ReactNode;
   /**
+   * Visual mode — only affects the default (non-`iconBackgroundColor`) variant.
+   * @default 'menu'
+   */
+  mode?: MenuItemMode;
+  /**
    * When set, the icon is placed inside a coloured rounded square
    * (iOS-style settings rows, e.g. MultiStepMenu sidebar).
    * When omitted the icon is rendered with themed muted/foreground colours.
@@ -110,6 +126,7 @@ type MenuItemIconSlotProps = {
   icon?: MenuItemIcon;
   size: MenuItemSize;
   active: boolean;
+  mode: MenuItemMode;
   /** Rounded-square fill style — presence selects the iOS-style icon variant. */
   bgStyle?: { backgroundColor: string };
   iconColor: string;
@@ -117,7 +134,7 @@ type MenuItemIconSlotProps = {
 };
 
 /** Leading icon slot: coloured square, themed icon, spacer or nothing. */
-function MenuItemIconSlot({ icon: Icon, size, active, bgStyle, iconColor, iconPlaceholder }: MenuItemIconSlotProps) {
+function MenuItemIconSlot({ icon: Icon, size, active, mode, bgStyle, iconColor, iconPlaceholder }: MenuItemIconSlotProps) {
   if (!Icon) return iconPlaceholder ? <View className={DEFAULT_SCALE[size].iconPlaceholderClass} /> : null;
 
   if (bgStyle) {
@@ -136,7 +153,14 @@ function MenuItemIconSlot({ icon: Icon, size, active, bgStyle, iconColor, iconPl
     );
   }
 
-  return <ThemedIcon icon={Icon} token={active ? 'foreground' : 'muted-foreground'} size={DEFAULT_SCALE[size].iconSize} />;
+  // menu mode: icon is always foreground; sidebar mode: muted when inactive
+  return (
+    <ThemedIcon
+      icon={Icon}
+      token={active || mode === 'menu' ? 'foreground' : 'muted-foreground'}
+      size={DEFAULT_SCALE[size].iconSize}
+    />
+  );
 }
 
 /**
@@ -153,6 +177,7 @@ function MenuItemIconSlot({ icon: Icon, size, active, bgStyle, iconColor, iconPl
  */
 export function MenuItem({
   size = 'md',
+  mode = 'menu',
   icon: Icon,
   label,
   active = false,
@@ -162,8 +187,48 @@ export function MenuItem({
   iconPlaceholder = false,
   reduce = false,
   className,
+  disabled,
+  onHoverIn,
+  onHoverOut,
+  onPressIn,
+  onPressOut,
   ...props
 }: MenuItemProps) {
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+
+  // The row owns these four to drive its own hover/press fills, so each must
+  // forward to the caller's handler rather than replace it — CommandPalette
+  // passes `onPressIn` to move its active row.
+  const handleHoverIn = useCallback<HoverHandler>(
+    (event) => {
+      setHovered(true);
+      onHoverIn?.(event);
+    },
+    [onHoverIn],
+  );
+  const handleHoverOut = useCallback<HoverHandler>(
+    (event) => {
+      setHovered(false);
+      onHoverOut?.(event);
+    },
+    [onHoverOut],
+  );
+  const handlePressIn = useCallback<PressHandler>(
+    (event) => {
+      setPressed(true);
+      onPressIn?.(event);
+    },
+    [onPressIn],
+  );
+  const handlePressOut = useCallback<PressHandler>(
+    (event) => {
+      setPressed(false);
+      onPressOut?.(event);
+    },
+    [onPressOut],
+  );
+
   const hasIconBg = Boolean(iconBackgroundColor);
   const bgStyle = useMemo(
     () => (iconBackgroundColor ? { backgroundColor: iconBackgroundColor } : undefined),
@@ -171,18 +236,30 @@ export function MenuItem({
   );
 
   const scale = hasIconBg ? IOS_SCALE[size] : DEFAULT_SCALE[size];
+  // Pre-computed to keep cn() conditions flat
+  const canInteract = !(active || disabled);
 
-  let labelColorClass: string;
-  if (hasIconBg) {
-    labelColorClass = active ? 'font-semibold text-primary-foreground' : 'text-foreground';
-  } else {
-    labelColorClass = active ? 'text-foreground' : 'text-muted-foreground';
-  }
+  // hasIconBg → iOS style; sidebar → muted+medium when inactive; menu → foreground always
+  let labelColorClass = 'text-foreground';
+  if (hasIconBg) labelColorClass = active ? 'font-semibold text-primary-foreground' : 'text-foreground';
+  else if (mode === 'sidebar') labelColorClass = active ? 'text-foreground font-medium' : 'text-muted-foreground font-medium';
 
   return (
     <Pressable
-      className={cn('relative flex-row items-center', scale.rowClass, hasIconBg && active && 'bg-primary/75', className)}
       {...props}
+      className={cn(
+        'relative flex-row items-center',
+        scale.rowClass,
+        hasIconBg && active && 'bg-primary/75',
+        canInteract && hovered && 'bg-surface-hover',
+        canInteract && pressed && 'bg-surface-selected',
+        className,
+      )}
+      disabled={disabled}
+      onHoverIn={handleHoverIn}
+      onHoverOut={handleHoverOut}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
     >
       {/* Animated active highlight — default (non-icon-bg) variant only */}
       {!hasIconBg && active ? (
@@ -200,6 +277,7 @@ export function MenuItem({
         icon={Icon}
         size={size}
         active={active}
+        mode={mode}
         bgStyle={bgStyle}
         iconColor={iconColor}
         iconPlaceholder={iconPlaceholder}

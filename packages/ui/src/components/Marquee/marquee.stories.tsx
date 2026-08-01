@@ -87,7 +87,14 @@ function MarqueePlayground(args: ComponentProps<typeof Marquee>) {
         <Choice label="Gap" onChange={setGapKey} options={GAPS} value={gapKey} />
       </Controls>
 
-      <Marquee {...args} direction={direction} gap={gap} speed={speed} style={vertical ? { height: VERTICAL_HEIGHT } : undefined}>
+      <Marquee
+        {...args}
+        direction={direction}
+        gap={gap}
+        speed={speed}
+        className="w-full"
+        style={vertical ? { height: VERTICAL_HEIGHT } : undefined}
+      >
         {chips()}
       </Marquee>
 
@@ -95,12 +102,12 @@ function MarqueePlayground(args: ComponentProps<typeof Marquee>) {
       <Section title="Horizontal">
         <Variants direction="column">
           <Sample label="left">
-            <Marquee {...args} direction="left" gap={gap} speed={speed}>
+            <Marquee {...args} direction="left" gap={gap} speed={speed} className="w-full">
               {chips()}
             </Marquee>
           </Sample>
           <Sample label="right">
-            <Marquee {...args} direction="right" gap={gap} speed={speed}>
+            <Marquee {...args} direction="right" gap={gap} speed={speed} className="w-full">
               {chips()}
             </Marquee>
           </Sample>
@@ -134,7 +141,7 @@ export const Interactive: Story = { render: (args) => <MarqueePlayground {...arg
 export const Horizontal: Story = {
   name: 'Demo: Duplicates its track',
   render: (args) => (
-    <Marquee {...args} testID="marquee">
+    <Marquee {...args} testID="marquee" className="w-full">
       {chips()}
     </Marquee>
   ),
@@ -169,15 +176,15 @@ export const RightToLeft: Story = {
   render: (args) => (
     <View className="gap-4">
       <DirectionProvider value="ltr">
-        <View style={LTR_STYLE}>
-          <Marquee {...args} direction="start" testID="marquee-ltr">
+        <View style={LTR_STYLE} className="w-full">
+          <Marquee {...args} direction="start" testID="marquee-ltr" className="w-full">
             {chips()}
           </Marquee>
         </View>
       </DirectionProvider>
       <DirectionProvider value="rtl">
-        <View style={RTL_STYLE}>
-          <Marquee {...args} direction="start" testID="marquee-rtl">
+        <View style={RTL_STYLE} className="w-full">
+          <Marquee {...args} direction="start" testID="marquee-rtl" className="w-full">
             {chips()}
           </Marquee>
         </View>

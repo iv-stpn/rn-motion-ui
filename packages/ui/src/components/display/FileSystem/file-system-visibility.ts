@@ -5,6 +5,9 @@ import type { FileEntry, FileSystemEntry, FileSystemIndex, FileSystemSortState }
 import { pathParent } from './file-system-paths';
 import { compareEntriesBySort, DEFAULT_SORT } from './file-system-sort';
 
+type NamedEntry = { name: string };
+type AncestorEntry = { path: string; parentPath: string };
+
 export type VisibilityArgs = {
   currentPath: string;
   index: FileSystemIndex;
@@ -27,24 +30,48 @@ export function computeVisiblePaths({ currentPath, fileFilter, index, searchQuer
   if (!(isSearching || fileFilter)) return null;
 
   const visible = new Set<string>();
+
   // Walk up to (but not including) the current folder, stopping early once a
-  // branch is already marked.
+  // branch is already marked. Uses `parentPath` from the index rather than
+  // path-string slicing so flat id-based manifests are handled correctly.
+  const getParentPath = (path: string): string => {
+    const entry = index.folders.get(path) ?? index.files.get(path);
+    return entry?.parentPath ?? pathParent(path);
+  };
   const markVisible = (path: string) => {
     let cursor = path;
     while (cursor && cursor !== currentPath && !visible.has(cursor)) {
       visible.add(cursor);
-      cursor = pathParent(cursor);
+      cursor = getParentPath(cursor);
     }
   };
-  const matchesQuery = (path: string) => !isSearching || path.slice(currentPath.length).toLowerCase().includes(searchQuery);
-  const isUnderCurrent = (path: string) => path !== currentPath && (!currentPath || path.startsWith(currentPath));
 
-  for (const [path, file] of index.files) {
-    if (isUnderCurrent(path) && matchesQuery(path) && (!fileFilter || fileFilter(file))) markVisible(path);
+  // Match against the entry's display name, not its path. Id-based paths don't
+  // embed the name, so path-substring matching eliminates every result.
+  const matchesQuery = (entry: NamedEntry): boolean => !isSearching || entry.name.toLowerCase().includes(searchQuery);
+
+  // An entry is "under current" when its parentPath ancestry chain passes
+  // through currentPath. path.startsWith(currentPath) only works when paths
+  // encode depth; flat parentPath manifests need the chain walk instead.
+  const isUnderCurrent = (entry: AncestorEntry): boolean => {
+    if (entry.path === currentPath) return false;
+    if (!currentPath) return true;
+    let cursor: string = entry.parentPath;
+    while (cursor) {
+      if (cursor === currentPath) return true;
+      const folder = index.folders.get(cursor);
+      if (!folder) return false;
+      cursor = folder.parentPath;
+    }
+    return false;
+  };
+
+  for (const file of index.files.values()) {
+    if (isUnderCurrent(file) && matchesQuery(file) && (!fileFilter || fileFilter(file))) markVisible(file.path);
   }
   if (!fileFilter) {
-    for (const path of index.folders.keys()) {
-      if (isUnderCurrent(path) && matchesQuery(path)) markVisible(path);
+    for (const folder of index.folders.values()) {
+      if (isUnderCurrent(folder) && matchesQuery(folder)) markVisible(folder.path);
     }
   }
   return visible;

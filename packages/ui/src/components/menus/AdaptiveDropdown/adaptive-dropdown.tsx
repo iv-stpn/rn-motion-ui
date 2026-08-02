@@ -50,6 +50,11 @@ export type AdaptiveDropdownProps = {
   maxHeight?: number;
   /** When true, panel content is wrapped in a ScrollView. @default false */
   scrollable?: boolean;
+  /**
+   * Class applied to the panel's content wrapper. The panel adds no inset of its
+   * own, so this is where one goes: `"p-1"` for a menu whose rows should not run
+   * to the edge, nothing at all for content that should.
+   */
   contentClassName?: string;
   /** Class applied to the trigger wrapper — use `"flex-1"` to stretch in a flex-row parent. */
   triggerClassName?: string;
@@ -241,7 +246,7 @@ export function AdaptiveDropdown({
                    * negotiation — so claiming the responder on the panel view is
                    * not enough; a Pressable that handles the press is.
                    */}
-                  <Pressable className="min-h-0 flex-col p-1" onPress={noop}>
+                  <Pressable className="min-h-0 flex-col" onPress={noop}>
                     {header}
                     {body}
                   </Pressable>

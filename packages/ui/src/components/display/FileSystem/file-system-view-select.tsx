@@ -73,7 +73,14 @@ export function FileSystemViewSelect({ onViewChange, view }: FileSystemViewSelec
   );
 
   return (
-    <AdaptiveDropdown onOpenChange={setOpen} open={open} title={MENU_TITLE} trigger={renderTrigger} width={MENU_WIDTH}>
+    <AdaptiveDropdown
+      contentClassName="p-1"
+      onOpenChange={setOpen}
+      open={open}
+      title={MENU_TITLE}
+      trigger={renderTrigger}
+      width={MENU_WIDTH}
+    >
       {VIEW_OPTIONS.map((option) => (
         <ViewSelectRow isSelected={option.value === view} key={option.value} onSelect={handleSelect} option={option} />
       ))}

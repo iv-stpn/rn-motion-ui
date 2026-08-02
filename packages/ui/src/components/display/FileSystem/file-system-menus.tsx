@@ -121,7 +121,15 @@ export function FileSystemSortSelect({ layout, onKeyChange, showLabel, sort }: F
   );
 
   return (
-    <AdaptiveDropdown align="end" onOpenChange={setOpen} open={open} title="Sort by" trigger={renderTrigger} width={200}>
+    <AdaptiveDropdown
+      align="end"
+      contentClassName="p-1"
+      onOpenChange={setOpen}
+      open={open}
+      title="Sort by"
+      trigger={renderTrigger}
+      width={200}
+    >
       {SORT_OPTIONS.map((option) => (
         <SortMenuRow isSelected={option.key === sort.key} key={option.key} onSelect={handleSelect} option={option} />
       ))}

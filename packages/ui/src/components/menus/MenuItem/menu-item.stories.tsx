@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { fn } from 'storybook/test';
-import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { ChevronRight, User } from '../../../lib/icons';
 import { Text } from '../../typography/Text/text';
 import { MenuItem, type MenuItemMode, type MenuItemSize } from './menu-item';
@@ -34,6 +34,9 @@ const TRAILING_OPTS = ['none', 'hint', 'chevron'] as const satisfies readonly Tr
 const SIZES: MenuItemSize[] = ['sm', 'md', 'lg'];
 const MODES: MenuItemMode[] = ['menu', 'sidebar'];
 
+const DESTRUCTIVE_NOTE =
+  "Destructive tints the label and icon with the danger token. The icon-tile variant's active fill wins over it — red on blue is the less legible of the two.";
+
 function trailingNode(key: TrailingKey) {
   if (key === 'hint') return <HintChip hint="⌘ K" />;
   if (key === 'chevron') return <ChevronRight size={14} />;
@@ -44,6 +47,8 @@ function MenuItemPlayground() {
   const [active, setActive] = useState(false);
   const [showIcon, setShowIcon] = useState(true);
   const [iosMode, setIosMode] = useState(false);
+  const [destructive, setDestructive] = useState(false);
+  const [disabled, setDisabled] = useState(false);
   const [mode, setMode] = useState<MenuItemMode>('menu');
   const [trailingKey, setTrailingKey] = useState<TrailingKey>('none');
   const [size, setSize] = useState<MenuItemSize>('md');
@@ -56,6 +61,8 @@ function MenuItemPlayground() {
         <Toggle label="Active" value={active} onChange={setActive} />
         <Toggle label="Icon" value={showIcon} onChange={setShowIcon} />
         <Toggle label="iOS style" value={iosMode} onChange={setIosMode} />
+        <Toggle label="Destructive" value={destructive} onChange={setDestructive} />
+        <Toggle label="Disabled" value={disabled} onChange={setDisabled} />
         {!iosMode && <Choice label="Mode" options={MODES} value={mode} onChange={setMode} />}
       </ControlCard>
       <View className="w-64 py-1">
@@ -65,12 +72,15 @@ function MenuItemPlayground() {
           size={size}
           active={active}
           mode={mode}
+          destructive={destructive}
+          disabled={disabled}
           trailing={trailingNode(trailingKey)}
           // theme-exempt: decorative iOS accent colour
           iconBackgroundColor={iosMode ? '#3b82f6' : undefined}
           onPress={onPress}
         />
       </View>
+      <Note>{DESTRUCTIVE_NOTE}</Note>
     </Playground>
   );
 }

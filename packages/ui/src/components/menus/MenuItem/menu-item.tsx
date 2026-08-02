@@ -79,18 +79,38 @@ const ICON_TILE_VARIANT: Record<MenuItemSize, { rowClass: string; iconBgClass: s
   },
 };
 
-type LabelColorOptions = { hasIconTile: boolean; mode: MenuItemMode; active: boolean };
+type LabelColorOptions = { hasIconTile: boolean; mode: MenuItemMode; active: boolean; destructive: boolean };
 
 /**
  * Label colour class for a row, by variant → mode → state:
- * - icon-tile variant — inverted foreground over the `bg-info` active fill.
+ * - `destructive` — the `danger` token, except over the `bg-info` active fill of
+ *   the icon-tile variant, where red on blue is the less legible of the two.
+ * - icon-tile variant — inverted foreground over that active fill.
  * - `'sidebar'` — muted until active, so the active row reads as selected.
  * - `'menu'` — always foreground; the highlight overlay carries the state.
  */
-function getLabelColorClass({ hasIconTile, mode, active }: LabelColorOptions) {
-  if (hasIconTile) return active ? 'text-info-foreground' : 'text-foreground';
+function getLabelColorClass({ hasIconTile, mode, active, destructive }: LabelColorOptions) {
+  if (hasIconTile && active) return 'text-info-foreground';
+  if (destructive) return 'text-danger';
+  if (hasIconTile) return 'text-foreground';
   if (mode === 'sidebar') return active ? 'text-foreground' : 'text-muted-foreground';
   return 'text-foreground';
+}
+
+type IconTokenOptions = Omit<LabelColorOptions, 'hasIconTile'>;
+
+/** The three theme tokens the default variant's leading icon is ever painted in. */
+type MenuItemIconToken = 'danger' | 'foreground' | 'muted-foreground';
+
+/**
+ * Themed-icon token for the leading icon of the default variant. Tracks the
+ * label: `danger` when destructive, foreground when active or in a menu, muted
+ * for an inactive sidebar row.
+ */
+function getIconToken({ mode, active, destructive }: IconTokenOptions): MenuItemIconToken {
+  if (destructive) return 'danger';
+  if (active || mode === 'menu') return 'foreground';
+  return 'muted-foreground';
 }
 
 export type MenuItemProps = Omit<PressableProps, 'children'> & {
@@ -131,6 +151,14 @@ export type MenuItemProps = Omit<PressableProps, 'children'> & {
    * same-size spacer — keeps labels aligned in mixed-icon lists.
    */
   iconPlaceholder?: boolean;
+  /**
+   * Paints the label and icon in the `danger` token — a delete/remove row.
+   *
+   * The `bg-info` active fill of the icon-tile variant wins over it: red on blue
+   * is the less legible of the two, so an active destructive tile row keeps the
+   * inverted foreground.
+   */
+  destructive?: boolean;
   /** Pass `useReducedMotion()` to skip the active-highlight spring. */
   reduce?: boolean;
 };
@@ -139,14 +167,15 @@ type MenuItemIconSlotProps = {
   icon?: MenuItemIcon;
   size: MenuItemSize;
   active: boolean;
-  mode: MenuItemMode;
+  /** Themed token for the default variant's icon — from `getIconToken`. */
+  token: MenuItemIconToken;
   bgStyle?: { backgroundColor: string };
   iconColor: string;
   iconPlaceholder: boolean;
 };
 
 /** Leading icon slot: coloured square, themed icon, spacer or nothing. */
-function MenuItemIconSlot({ icon: Icon, size, active, mode, bgStyle, iconColor, iconPlaceholder }: MenuItemIconSlotProps) {
+function MenuItemIconSlot({ icon: Icon, size, active, token, bgStyle, iconColor, iconPlaceholder }: MenuItemIconSlotProps) {
   if (!Icon) return iconPlaceholder ? <View className={DEFAULT_VARIANT[size].iconPlaceholderClass} /> : null;
 
   if (bgStyle) {
@@ -165,14 +194,7 @@ function MenuItemIconSlot({ icon: Icon, size, active, mode, bgStyle, iconColor, 
     );
   }
 
-  // menu mode: icon is always foreground; sidebar mode: muted when inactive
-  return (
-    <ThemedIcon
-      icon={Icon}
-      token={active || mode === 'menu' ? 'foreground' : 'muted-foreground'}
-      size={DEFAULT_VARIANT[size].iconSize}
-    />
-  );
+  return <ThemedIcon icon={Icon} token={token} size={DEFAULT_VARIANT[size].iconSize} />;
 }
 
 /**
@@ -186,6 +208,9 @@ function MenuItemIconSlot({ icon: Icon, size, active, mode, bgStyle, iconColor, 
  *   larger label.
  *
  * Both modes scale uniformly via the `size` prop (`'sm'` | `'md'` | `'lg'`).
+ *
+ * `destructive` tints the label and icon with the `danger` token; `disabled`
+ * dims the row and blocks the press, in both modes.
  */
 export function MenuItem({
   size = 'md',
@@ -197,6 +222,7 @@ export function MenuItem({
   iconBackgroundColor,
   iconColor = 'white' /* theme-exempt: white on vivid icon square fill */,
   iconPlaceholder = false,
+  destructive = false,
   reduce = false,
   className,
   disabled,
@@ -250,7 +276,8 @@ export function MenuItem({
   const scale = hasIconTile ? ICON_TILE_VARIANT[size] : DEFAULT_VARIANT[size];
   const canInteract = !(active || disabled);
 
-  const labelColorClass = getLabelColorClass({ hasIconTile, mode, active });
+  const labelColorClass = getLabelColorClass({ hasIconTile, mode, active, destructive });
+  const iconToken = getIconToken({ mode, active, destructive });
 
   return (
     <Pressable
@@ -262,6 +289,9 @@ export function MenuItem({
         hasIconTile && active && 'bg-info',
         canInteract && hovered && 'bg-surface-hover',
         canInteract && pressed && 'bg-surface-selected',
+        // Dimmed *and* blocked: `disabled` alone would leave the row looking live,
+        // and the fills above are already suppressed for it via `canInteract`.
+        disabled && 'opacity-40',
         className,
       )}
       disabled={disabled}
@@ -286,7 +316,7 @@ export function MenuItem({
         icon={Icon}
         size={size}
         active={active}
-        mode={mode}
+        token={iconToken}
         bgStyle={backgroundStyle}
         iconColor={iconColor}
         iconPlaceholder={iconPlaceholder}

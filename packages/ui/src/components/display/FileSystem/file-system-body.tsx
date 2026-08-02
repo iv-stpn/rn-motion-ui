@@ -143,6 +143,7 @@ function FileSystemBodyContent() {
     renderEmptyState,
     renderFilePreview,
     renderFileViewer,
+    rootLabel,
     selectionMode,
     testID,
   } = useFileSystemConsumer();
@@ -171,6 +172,7 @@ function FileSystemBodyContent() {
     pageUrlCache,
     renderFilePreview,
     renderFileViewer,
+    rootLabel,
     searchQuery,
     selectedEntry,
     selectedPath,

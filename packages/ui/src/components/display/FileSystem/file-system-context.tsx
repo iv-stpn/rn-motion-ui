@@ -23,6 +23,7 @@ import type {
   FileSystemLoadChildrenArgs,
   FileSystemLoadChildrenResult,
   FileSystemMoveEvent,
+  FileSystemSearchScope,
   FileSystemSortKey,
   FileSystemSortState,
   FileSystemView,
@@ -34,6 +35,7 @@ import { fileMatchesFilter, isCustomDateRangeValue } from './file-system-filter'
 import { buildFileSystemIndex } from './file-system-index';
 import { fileTypeFilterGroup, MIME_TYPE_LABELS, mimeTypeForFile, viewerKindForFile } from './file-system-kinds';
 import { normalizeFolderPath, pathName } from './file-system-paths';
+import { flatSearchResults } from './file-system-search';
 import type { FileSystemSelectionMode, FileSystemSelectionModifiers, FileSystemSelectionState } from './file-system-selection';
 import {
   applyFileSystemMarquee,
@@ -95,7 +97,13 @@ type SelectionSlice = {
   selectedPaths: ReadonlySet<string>;
 };
 
-type SearchSlice = { searchInput: string; searchQuery: string; isSearching: boolean };
+type SearchSlice = {
+  searchInput: string;
+  searchQuery: string;
+  isSearching: boolean;
+  /** How much of the tree the query runs over — see {@link FileSystemSearchScope}. */
+  scope: FileSystemSearchScope;
+};
 
 type FiltersSlice = {
   filters: FileSystemFilter[];
@@ -115,6 +123,8 @@ type LayoutSlice = { layout: HeaderLayout; isCompact: boolean };
 
 type ConsumerSlice = {
   title: string;
+  /** Leading breadcrumb segment — the `rootLabel` prop, falling back to `title`. */
+  rootLabel: string;
   loadChildren?: (args: FileSystemLoadChildrenArgs) => Promise<FileSystemLoadChildrenResult>;
   draggable?: boolean;
   selectionMode: FileSystemSelectionMode;
@@ -165,6 +175,7 @@ type FileSystemActions = {
   selectMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   // Search
   setSearchInput: (value: string) => void;
+  setSearchScope: (scope: FileSystemSearchScope) => void;
   // Filters
   toggleFileTypeFilterValue: (mime: string, checked: boolean) => void;
   setDatePresetFilter: (type: FileSystemDateFilterType, preset: string) => void;
@@ -285,15 +296,27 @@ function _recomputeEntries(s: FileSystemStore): RecomputedEntries {
   const { currentPath } = s.navigation;
   const { index, sort } = s.entries;
   const { filters } = s.filters;
-  const { searchQuery } = s.search;
+  const { scope, searchQuery } = s.search;
 
   const fileFilter = filters.length === 0 ? null : (file: FileEntry) => filters.every((f) => fileMatchesFilter(file, f));
   const fileTypeOptions = computeFileTypeOptions(index);
 
-  const visiblePaths = computeVisiblePaths({ currentPath, fileFilter, index, searchQuery });
+  // A root-scoped query walks the whole manifest rather than the open folder's
+  // subtree. Only a *query* widens: filters stay scoped to the folder they are
+  // shown against, so the base falls back to `currentPath` whenever the query is
+  // empty, however the scope is set.
+  const isSearching = searchQuery.length > 0;
+  const searchBase = isSearching && scope === 'root' ? '' : currentPath;
+
+  const visiblePaths = computeVisiblePaths({ currentPath: searchBase, fileFilter, index, searchQuery });
   const visibleIndex = filterIndexToVisible(index, visiblePaths);
   const sortedIndex = sortIndexChildren(visibleIndex, sort);
-  const entries = sortedIndex.children.get(currentPath) ?? [];
+  // While searching, `entries` is the flat hit list the search view draws —
+  // every match at every depth, not the open folder's children. That is what the
+  // status bar counts and what `renderBody` is handed, so all three agree; a
+  // root-scoped hit outside the open folder would otherwise be drawn but not
+  // counted.
+  const entries = isSearching ? flatSearchResults(sortedIndex, searchQuery) : (sortedIndex.children.get(currentPath) ?? []);
 
   const previousSelection = selectionStateOf(s.selection);
   const nextSelection = pruneFileSystemSelection(previousSelection, visiblePaths);
@@ -313,6 +336,7 @@ function _recomputeEntries(s: FileSystemStore): RecomputedEntries {
 export type FileSystemStoreInit = {
   items: FileSystemItem[];
   title: string;
+  rootLabel: string;
   defaultPath: string;
   defaultView: FileSystemView;
   loadChildren?: ConsumerSlice['loadChildren'];
@@ -386,6 +410,9 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       searchInput: '',
       searchQuery: '',
       isSearching: false,
+      // The open folder's subtree, which is what the pipeline searched before the
+      // scope existed. Widening is the deliberate act, not the default.
+      scope: 'folder',
     },
     filters: {
       filters: [],
@@ -402,6 +429,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
     layout: { layout: 'full', isCompact: false },
     consumer: {
       title: init.title,
+      rootLabel: init.rootLabel,
       loadChildren: init.loadChildren,
       draggable: init.draggable,
       selectionMode: init.selectionMode,
@@ -654,6 +682,22 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       }, 200);
     },
 
+    // Immediate, unlike `setSearchInput`: this is a press, not typing, so there
+    // is no keystroke run to debounce. Recomputes only when a query is actually
+    // running — with an empty field the scope is just remembered for the next
+    // one, and any pending debounce reads it off the store when it fires.
+    setSearchScope: (scope) => {
+      const s = get();
+      if (s.search.scope === scope) return;
+      const newSearch = { ...s.search, scope };
+      if (!s.search.isSearching) {
+        set({ search: newSearch });
+        return;
+      }
+      const next = _recomputeEntries({ ...s, search: newSearch });
+      set({ search: newSearch, entries: next.entries, filters: next.filters, selection: next.selection });
+    },
+
     // ── Filter actions ────────────────────────────────────────────────────────
     toggleFileTypeFilterValue: (mime, checked) => {
       const s = get();
@@ -872,7 +916,7 @@ export function useFileSystemSelectionActions() {
 export function useFileSystemSearchActions() {
   return useStore(
     useFileSystemStoreContext(),
-    useShallow((s) => ({ setSearchInput: s.setSearchInput })),
+    useShallow((s) => ({ setSearchInput: s.setSearchInput, setSearchScope: s.setSearchScope })),
   );
 }
 

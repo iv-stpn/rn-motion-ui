@@ -28,6 +28,12 @@ export type FileSystemViewProps = {
    * for.
    */
   folderName: string;
+  /**
+   * Leading breadcrumb segment — the `rootLabel` prop, falling back to `title`.
+   * The search view's result rows name the folder each match came from as a
+   * breadcrumb trail, and this is the segment standing for the root.
+   */
+  rootLabel: string;
   entries: FileSystemEntry[];
   fileFilter: ((file: FileEntry) => boolean) | null;
   index: FileSystemIndex;

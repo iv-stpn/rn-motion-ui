@@ -97,6 +97,18 @@ export type FileSystemFilterOperator = 'after' | 'before' | 'in-range' | 'is' | 
 export type FileSystemFilter = { id: string; operator: FileSystemFilterOperator; type: FileSystemFilterType; value: string[] };
 
 /** Coarse buckets the file-type checklist groups MIME types under. */
+/**
+ * How much of the tree a query runs over.
+ *
+ * - `'folder'` — the open folder and everything under it. What a query has
+ *   always done, and the default.
+ * - `'root'` — the whole manifest, wherever you happen to be standing.
+ *
+ * Filters are unaffected either way: they stay scoped to the open folder, which
+ * is the surface they are shown against.
+ */
+export type FileSystemSearchScope = 'folder' | 'root';
+
 export type FileTypeFilterGroup = 'Documents' | 'Spreadsheets' | 'Images' | 'Code' | 'Text' | 'Archives & binary';
 
 export type FileTypeFilterOption = {
@@ -121,6 +133,22 @@ export type FileSystemFiltersState = {
   searchValue: string;
   setSearchValue: (value: string) => void;
   isSearching: boolean;
+  /** How much of the tree the query runs over — see {@link FileSystemSearchScope}. */
+  searchScope: FileSystemSearchScope;
+  setSearchScope: (scope: FileSystemSearchScope) => void;
+  /**
+   * The two things a scope control names: the whole tree, and the folder that is
+   * open. `rootLabel` is the {@link FileSystemProps.rootLabel} prop (falling back
+   * to `title`); `folderName` is the open folder's display name.
+   */
+  rootLabel: string;
+  folderName: string;
+  /**
+   * `true` while the open folder *is* the root, where the two scopes select the
+   * same set. A scope control wants to show one option there rather than two that
+   * do the same thing.
+   */
+  isAtRoot: boolean;
   // Sort
   sort: FileSystemSortState;
   setSortKey: (key: FileSystemSortKey) => void;
@@ -132,7 +160,11 @@ export type FileSystemFiltersState = {
   openCustomRange: (type: FileSystemDateFilterType) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
-  /** Visible entry count in the current folder (after search / filter / sort). */
+  /**
+   * How many entries are visible: the open folder's, after filters and sort — or,
+   * while a query is running, how many results it found across the scope it ran
+   * over, which is what the search view draws.
+   */
   count: number;
 };
 
@@ -286,6 +318,15 @@ export type FileSystemProps = {
   contextMenuWideBreakpoint?: BreakpointValue;
   /** Label for the root folder. */
   title?: string;
+  /**
+   * Name the root carries in breadcrumb trails — the leading segment of the bar
+   * under the header, and of the folder line under each search result.
+   *
+   * Defaults to {@link FileSystemProps.title}, so the trail reads the same as
+   * the header unless you want a shorter or more literal root than the title
+   * (`'Files'` in the header, `'My Drive'` in the trail).
+   */
+  rootLabel?: string;
   defaultView?: FileSystemView;
   view?: FileSystemView;
   onViewChange?: (view: FileSystemView) => void;

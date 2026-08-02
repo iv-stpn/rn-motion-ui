@@ -99,22 +99,28 @@ type FileSystemCustomFiltersProps = { renderFilters: NonNullable<FileSystemProps
 // public FileSystemFiltersState shape.
 function FileSystemCustomFilters({ renderFilters }: FileSystemCustomFiltersProps) {
   const { entries, sort } = useFileSystemEntries();
-  const { searchInput, isSearching } = useFileSystemSearch();
+  const { currentFolderName, currentPath } = useFileSystemNavigation();
+  const { searchInput, isSearching, scope } = useFileSystemSearch();
   const { filters, fileTypeOptions, hasActiveFilters } = useFileSystemFilters();
-  const { testID } = useFileSystemConsumer();
+  const { rootLabel, testID } = useFileSystemConsumer();
   const { applySortKey } = useFileSystemEntriesActions();
-  const { setSearchInput } = useFileSystemSearchActions();
+  const { setSearchInput, setSearchScope } = useFileSystemSearchActions();
   const { clearFilters, toggleFileTypeFilterValue, openDateRangeRequest, setDatePresetFilter } = useFileSystemFilterActions();
   return renderFilters({
     clearFilters,
     count: entries.length,
     fileTypeOptions,
     filters,
+    folderName: currentFolderName,
     hasActiveFilters,
+    isAtRoot: currentPath === '',
     isSearching,
     openCustomRange: openDateRangeRequest,
+    rootLabel,
+    searchScope: scope,
     searchValue: searchInput,
     selectDatePreset: setDatePresetFilter,
+    setSearchScope,
     setSearchValue: setSearchInput,
     setSortKey: applySortKey,
     sort,
@@ -173,17 +179,23 @@ export function FileSystem({
   renderFilters,
   renderFooter,
   renderHeader,
+  rootLabel,
   selectionMode = 'single',
   title = 'Files',
   view,
   testID,
 }: FileSystemProps) {
+  // The breadcrumb root falls back to the header title, so the trail names the
+  // root the same way the header does unless a consumer says otherwise.
+  const resolvedRootLabel = rootLabel ?? title;
+
   // Create ONE store per mount; never recreate on re-render.
   const storeRef = useRef<FileSystemStoreApi | null>(null);
   if (storeRef.current === null)
     storeRef.current = createFileSystemStore({
       items,
       title,
+      rootLabel: resolvedRootLabel,
       defaultPath,
       defaultView,
       draggable,
@@ -219,6 +231,7 @@ export function FileSystem({
   useEffect(() => {
     store.getState()._syncConsumer({
       title,
+      rootLabel: resolvedRootLabel,
       draggable,
       getBackgroundContextMenuActions,
       getContextMenuActions,
@@ -309,6 +322,7 @@ export type {
   FileSystemLoadChildrenResult,
   FileSystemMoveEvent,
   FileSystemProps,
+  FileSystemSearchScope,
   FileSystemSortDirection,
   FileSystemSortKey,
   FileSystemSortState,

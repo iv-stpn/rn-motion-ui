@@ -28,6 +28,7 @@ import { FS_EMPTY_STATE_TEST_ID } from './file-system-body';
 import { FS_HOVER_TEST_ID } from './file-system-hover';
 import { FS_TILE_DROP_TARGET_TEST_ID } from './file-system-icons-tile';
 import { FS_MARQUEE_TEST_ID } from './file-system-marquee';
+import { FS_SEARCH_MATCH_TEST_ID } from './file-system-search-view';
 import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
 
 // ─── Shared data ───────────────────────────────────────────────────────────────
@@ -617,7 +618,8 @@ export const Navigate: Story = {
 /**
  * The breadcrumb trail under the header names every folder on the way to the
  * current one, and each is a way back. It appears only below the root, where
- * there is somewhere to go back to; the trail's first segment is the `title`.
+ * there is somewhere to go back to; the trail's first segment is `rootLabel`,
+ * which falls back to the `title`.
  */
 export const Breadcrumbs: Story = {
   name: 'Demo: Breadcrumb trail',
@@ -643,6 +645,43 @@ export const Breadcrumbs: Story = {
   },
 };
 
+/**
+ * `rootLabel` names the root wherever a trail leads back to it — the breadcrumb
+ * bar's first segment, and the folder line under every search result. It defaults
+ * to `title`, so setting it is how the root reads in a trail (`'My Drive'`)
+ * without changing what the header calls the folder (`'Files'`).
+ */
+export const RootLabel: Story = {
+  name: 'Demo: Name the root in trails',
+  args: { rootLabel: 'My Drive', renderFilters: undefined },
+  render: renderWithFilterBar,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Photos');
+
+    // The header still calls the root by its `title`.
+    await canvas.findByText('Files');
+
+    // The trail calls it `rootLabel` instead, and that is the link back.
+    await openTile(canvas, 'Documents');
+    await canvas.findByLabelText('Go to My Drive');
+    expect(canvas.queryByLabelText('Go to Files')).toBeNull();
+
+    // Back to the root: a search runs over the open folder's subtree, and the hit
+    // below sits at the top level.
+    await userEvent.click(await canvas.findByLabelText('Go to My Drive'));
+    await canvas.findByText('Photos');
+
+    // The same label leads the trail under a search result — here a hit at the
+    // root, whose trail is that label on its own. An entry keeps one test id in
+    // every view, so the wait for the folder view to drop out is what makes the
+    // row below the search row rather than the grid tile it was a moment ago.
+    await userEvent.type(await canvas.findByLabelText('Search files'), 'invoice');
+    await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
+    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`)).toHaveTextContent('My Drive');
+  },
+};
+
 // ─── Search ────────────────────────────────────────────────────────────────────
 
 export const Search: Story = {
@@ -660,15 +699,137 @@ export const Search: Story = {
     await userEvent.type(await canvas.findByLabelText('Search files'), 'report');
     await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
 
+    // Queried by entry test id, not by text: a result row marks the matched run
+    // inside its name, which splits the name across nested nodes, and
+    // `getByText` reads a single node's own text.
+    //
     // Both reports, plus `Reports/` on its own name — but not `Documents/`, which
     // is visible only as their ancestor and so is not a match itself.
-    await canvas.findByText('Q1-report.pdf');
-    await canvas.findByText('Q2-report.pdf');
-    await canvas.findByText('Reports');
+    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`);
+    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q2-report.pdf`);
+    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/`);
+    expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/`)).toBeNull();
+
+    // Each row names where it lives as a caret-separated trail under its name,
+    // asserted through the row's whole text because both the trail separators and
+    // the highlighted runs are nested nodes.
+    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`)).toHaveTextContent(
+      'Files › Documents › Reports',
+    );
+
+    // A hit at the root keeps the line rather than dropping it — the trail is
+    // just the root label on its own. Clearing the field puts the folder view
+    // back for the length of the debounce, and this entry has a tile there under
+    // the same test id, so the wait for `README.md` to drop out is what pins the
+    // assertion to the search row.
+    await userEvent.clear(await canvas.findByLabelText('Search files'));
+    await userEvent.type(await canvas.findByLabelText('Search files'), 'invoice');
+    await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
+    const rootHit = await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`);
+    expect(rootHit).toHaveTextContent('Invoice-0042.pdf');
+    expect(rootHit).toHaveTextContent('Files');
 
     // Clearing restores the folder.
     await userEvent.click(await canvas.findByLabelText('Clear search'));
     await canvas.findByText('README.md');
+  },
+};
+
+/**
+ * Whatever the query matched is marked in place — in the name, in the trail, or
+ * in both — and a label the query matches end to end is marked whole rather than
+ * left as the one plain row in a list of highlighted ones.
+ */
+export const SearchHighlight: Story = {
+  name: 'Demo: Highlight the match',
+  args: { renderFilters: undefined },
+  render: renderWithFilterBar,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    // A partial hit marks only the matched run, leaving the rest of the name plain.
+    await userEvent.type(await canvas.findByLabelText('Search files'), 'repo');
+    await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
+    const partial = await canvas.findAllByTestId(FS_SEARCH_MATCH_TEST_ID);
+    expect(partial.every((mark) => (mark.textContent ?? '').toLowerCase() === 'repo')).toBe(true);
+
+    // `Reports/` is here on its own name, and is also the folder the two reports
+    // live in — so the query is marked in that row's trail as well as in its name.
+    const q1 = await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`);
+    expect(within(q1).getAllByTestId(FS_SEARCH_MATCH_TEST_ID)).toHaveLength(2);
+
+    // A query that is the whole name is one single matched run: the mark covers
+    // the label end to end rather than the row rendering unmarked.
+    await userEvent.clear(await canvas.findByLabelText('Search files'));
+    await userEvent.type(await canvas.findByLabelText('Search files'), 'notes.txt');
+    await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
+    const fullHit = await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/notes.txt`);
+    const marks = within(fullHit).getAllByTestId(FS_SEARCH_MATCH_TEST_ID);
+    expect(marks).toHaveLength(1);
+    expect(marks[0]).toHaveTextContent('notes.txt');
+  },
+};
+
+/** The folder chip's label, whatever folder is open — absent at the root. */
+const FOLDER_SCOPE_LABEL_PATTERN = /^Search only /;
+
+/**
+ * `searchScope` chooses what a query reaches: the open folder's subtree, or the
+ * whole manifest. The slot renders it as the two chips beside the count — the
+ * count is what the scope changes, so they read together.
+ *
+ * Only a query widens. Filters stay scoped to the folder they are shown against
+ * whatever the scope says, and the scope survives navigation while the query
+ * does not.
+ */
+export const SearchScope: Story = {
+  name: 'Demo: Scope the search',
+  render: renderWithFilterBar,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Photos');
+
+    // At the root the two scopes are the same tree, so only the root chip shows.
+    await canvas.findByLabelText('Search all of Files');
+    expect(canvas.queryByLabelText(FOLDER_SCOPE_LABEL_PATTERN)).toBeNull();
+
+    // Inside a folder both are offered, and the folder one is active by default.
+    await openTile(canvas, 'Documents');
+    await canvas.findByText('Contract.docx');
+    const folderChip = await canvas.findByLabelText('Search only Documents');
+    const rootChip = await canvas.findByLabelText('Search all of Files');
+    expect(folderChip).toHaveAttribute('aria-checked', 'true');
+    expect(rootChip).toHaveAttribute('aria-checked', 'false');
+
+    // Folder-scoped, a hit that lives outside `Documents/` is not reachable.
+    await userEvent.type(await canvas.findByLabelText('Search files'), 'invoice');
+    await canvas.findByText('No results for “invoice”');
+    expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`)).toBeNull();
+
+    // Widening to the root surfaces it, without leaving the folder: the trail
+    // under the hit says it came from the root, and the breadcrumb bar still
+    // has `Documents` open behind the results.
+    await userEvent.click(rootChip);
+    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`)).toHaveTextContent('Files');
+    await canvas.findByLabelText('Go to Files');
+    expect(rootChip).toHaveAttribute('aria-checked', 'true');
+
+    // The count reports the widened list, so the chips and the number agree.
+    await canvas.findByText('Showing 1 result');
+
+    // Narrowing back drops it again — the same query, a smaller reach.
+    await userEvent.click(folderChip);
+    await canvas.findByText('No results for “invoice”');
+
+    // Scope outlives the query: widening, then clearing the field, leaves the
+    // folder view behind with the root scope still armed for the next query.
+    await userEvent.click(rootChip);
+    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`);
+    await userEvent.click(await canvas.findByLabelText('Clear search'));
+    await canvas.findByText('Contract.docx');
+    await userEvent.type(await canvas.findByLabelText('Search files'), 'roadmap');
+    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Roadmap.pptx`);
   },
 };
 
@@ -763,6 +924,62 @@ export const CustomRangeDraftIsPerVisit: Story = {
 /** The two presets the stories exercise; `DATE_FILTER_PRESETS` has the full set. */
 const DATE_PRESETS = ['3 days ago', '1 month ago'];
 
+type ScopeChipsProps = Pick<FileSystemFiltersState, 'folderName' | 'isAtRoot' | 'rootLabel' | 'searchScope' | 'setSearchScope'>;
+
+/**
+ * The scope control: `Search:` followed by one chip per scope, the active one
+ * filled. At the root the two scopes are the same tree, so only the root chip is
+ * offered — `isAtRoot` is what the slot hands over to say so.
+ */
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function ScopeChips({ folderName, isAtRoot, rootLabel, searchScope, setSearchScope }: ScopeChipsProps) {
+  const scopeToRoot = useCallback(() => setSearchScope('root'), [setSearchScope]);
+  const scopeToFolder = useCallback(() => setSearchScope('folder'), [setSearchScope]);
+  // At the root the folder chip would repeat the root one, so the scope reads as
+  // root there whatever it is set to.
+  const rootActive = isAtRoot || searchScope === 'root';
+
+  return (
+    <View className="flex-row items-center gap-1.5">
+      <Text className="text-muted-foreground" size="xs">
+        Search:
+      </Text>
+      <Pressable
+        accessibilityLabel={`Search all of ${rootLabel}`}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: rootActive }}
+        aria-checked={rootActive}
+        className={cn(
+          'rounded-md border px-2 py-0.5',
+          rootActive ? 'border-primary bg-primary/10' : 'border-border bg-surface-1',
+        )}
+        onPress={scopeToRoot}
+      >
+        <Text className={rootActive ? 'text-primary' : undefined} size="xs">
+          {rootLabel}
+        </Text>
+      </Pressable>
+      {isAtRoot ? null : (
+        <Pressable
+          accessibilityLabel={`Search only ${folderName}`}
+          accessibilityRole="radio"
+          accessibilityState={{ checked: !rootActive }}
+          aria-checked={!rootActive}
+          className={cn(
+            'rounded-md border px-2 py-0.5',
+            rootActive ? 'border-border bg-surface-1' : 'border-primary bg-primary/10',
+          )}
+          onPress={scopeToFolder}
+        >
+          <Text className={rootActive ? undefined : 'text-primary'} size="xs">
+            {folderName}
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 type FilterBarProps = FileSystemFiltersState & { testID?: string };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
@@ -771,11 +988,16 @@ function FilterBar({
   count,
   fileTypeOptions,
   filters,
+  folderName,
   hasActiveFilters,
+  isAtRoot,
   isSearching,
   openCustomRange,
+  rootLabel,
+  searchScope,
   searchValue,
   selectDatePreset,
+  setSearchScope,
   setSearchValue,
   toggleFileType,
 }: FilterBarProps) {
@@ -870,6 +1092,16 @@ function FilterBar({
           </Text>
         </Pressable>
       ) : null}
+      {/* Scope control, then the count. Both sit on the same line: the count is
+          what the scope changes, so reading one right after the other is how you
+          tell a widened search from a narrowed one. */}
+      <ScopeChips
+        folderName={folderName}
+        isAtRoot={isAtRoot}
+        rootLabel={rootLabel}
+        searchScope={searchScope}
+        setSearchScope={setSearchScope}
+      />
       {/* "Showing …" rather than the bare count the built-in status bar renders,
           so a story asserting on one of them is never ambiguous. */}
       <Text className="ml-auto text-muted-foreground" size="xs">
@@ -914,8 +1146,13 @@ export const WithFiltersAndSearch: Story = {
     // Search is debounced 200 ms — wait for the results to update.
     await userEvent.type(await canvas.findByLabelText('Search files'), 'report');
     await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull(), { timeout: 1000 });
-    // The ancestor folder leading to the match stays visible.
-    await canvas.findByText('Documents');
+    // The results view names the folder each hit came from, so `Documents`
+    // appears in the matched rows' trails. Asserted through the row's whole text:
+    // the trail's separators and its highlighted runs are both nested nodes, and
+    // `getByText` reads a single node's own text.
+    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`)).toHaveTextContent(
+      'Files › Documents › Reports',
+    );
 
     // Clearing the search field restores the full list.
     await userEvent.click(await canvas.findByLabelText('Clear search'));

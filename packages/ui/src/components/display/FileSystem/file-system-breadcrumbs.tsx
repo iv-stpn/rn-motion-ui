@@ -14,11 +14,12 @@ import { useFileSystemConsumer, useFileSystemNavigation, useFileSystemNavigation
 type BreadcrumbSegment = { label: string; path: string; isCurrent: boolean };
 
 /** Build the ordered segment list from root down to `currentPath`. */
-function buildSegments(currentPath: string, title: string): BreadcrumbSegment[] {
-  // At the root there is nothing to trail; the title lives in the header.
+function buildSegments(currentPath: string, rootLabel: string): BreadcrumbSegment[] {
+  // At the root there is nothing to trail; the header names it instead. The
+  // search view's per-row trails do show the root — see file-system-search-view.
   if (!currentPath) return [];
 
-  const segments: BreadcrumbSegment[] = [{ isCurrent: false, label: title, path: '' }];
+  const segments: BreadcrumbSegment[] = [{ isCurrent: false, label: rootLabel, path: '' }];
   const parts = getPathParts(currentPath);
 
   for (let i = 0; i < parts.length; i += 1) {
@@ -58,10 +59,10 @@ function Separator() {
  */
 export function FileSystemBreadcrumbs() {
   const { currentPath } = useFileSystemNavigation();
-  const { title } = useFileSystemConsumer();
+  const { rootLabel } = useFileSystemConsumer();
   const { navigateTo } = useFileSystemNavigationActions();
 
-  const segments = buildSegments(currentPath, title);
+  const segments = buildSegments(currentPath, rootLabel);
   if (segments.length === 0) return null;
 
   return (

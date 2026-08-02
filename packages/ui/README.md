@@ -118,6 +118,7 @@ Subpaths are namespaced by category:
 | `/multi-step-menu` | `MultiStepMenu` |
 | `/bloom-menu` | `BloomMenu` |
 | `/hover-menu` | `HoverMenu` |
+| `/hold-context-menu` | `HoldContextMenu` |
 | `/overflow-actions` | `OverflowActions` |
 | `/bouncy-accordion` | `BouncyAccordion` |
 | `/dynamic-island` | `DynamicIsland` |

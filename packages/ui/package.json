@@ -192,6 +192,11 @@
       "types": "./src/components/form/Button/glossy-button.tsx",
       "default": "./src/components/form/Button/glossy-button.tsx"
     },
+    "./hold-context-menu": {
+      "source": "./src/components/menus/HoldContextMenu/hold-context-menu.tsx",
+      "types": "./src/components/menus/HoldContextMenu/hold-context-menu.tsx",
+      "default": "./src/components/menus/HoldContextMenu/hold-context-menu.tsx"
+    },
     "./hover-menu": {
       "source": "./src/components/menus/HoverMenu/hover-menu.tsx",
       "types": "./src/components/menus/HoverMenu/hover-menu.tsx",

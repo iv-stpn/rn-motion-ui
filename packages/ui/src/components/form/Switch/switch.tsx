@@ -1,5 +1,6 @@
 // biome-ignore-all lint/style/useComponentExportOnlyModules: switch defines local sub-components
 // biome-ignore-all lint/style/useExportsLast: switch defines local sub-components
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: switch is a large component with multiple sub-components in one file
 import { createContext, type ReactNode, type Ref, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';

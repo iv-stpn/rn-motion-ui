@@ -95,11 +95,7 @@ type SelectionSlice = {
   selectedPaths: ReadonlySet<string>;
 };
 
-type SearchSlice = {
-  searchInput: string;
-  searchQuery: string;
-  isSearching: boolean;
-};
+type SearchSlice = { searchInput: string; searchQuery: string; isSearching: boolean };
 
 type FiltersSlice = {
   filters: FileSystemFilter[];

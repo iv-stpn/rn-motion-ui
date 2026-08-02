@@ -6,15 +6,12 @@
 import { useCallback } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { ChevronRight } from '../../../lib/icons';
+import { getPathParts } from '../../../lib/path';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import { useFileSystemConsumer, useFileSystemNavigation, useFileSystemNavigationActions } from './file-system-context';
 
-type BreadcrumbSegment = {
-  label: string;
-  path: string;
-  isCurrent: boolean;
-};
+type BreadcrumbSegment = { label: string; path: string; isCurrent: boolean };
 
 /** Build the ordered segment list from root down to `currentPath`. */
 function buildSegments(currentPath: string, title: string): BreadcrumbSegment[] {
@@ -22,26 +19,17 @@ function buildSegments(currentPath: string, title: string): BreadcrumbSegment[] 
   if (!currentPath) return [];
 
   const segments: BreadcrumbSegment[] = [{ isCurrent: false, label: title, path: '' }];
-  const parts = currentPath.replace(/\/$/, '').split('/');
+  const parts = getPathParts(currentPath);
 
-  for (let i = 0; i < parts.length; i++) {
+  for (let i = 0; i < parts.length; i += 1) {
     const folderPath = `${parts.slice(0, i + 1).join('/')}/`;
-    segments.push({
-      isCurrent: i === parts.length - 1,
-      label: parts[i] ?? '',
-      path: folderPath,
-    });
+    segments.push({ isCurrent: i === parts.length - 1, label: parts[i] ?? '', path: folderPath });
   }
 
   return segments;
 }
 
-type BreadcrumbItemProps = {
-  label: string;
-  onNavigate: (path: string) => void;
-  path: string;
-};
-
+type BreadcrumbItemProps = { label: string; onNavigate: (path: string) => void; path: string };
 function BreadcrumbLink({ label, onNavigate, path }: BreadcrumbItemProps) {
   const handlePress = useCallback(() => onNavigate(path), [onNavigate, path]);
   return (

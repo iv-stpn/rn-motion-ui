@@ -1,5 +1,7 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: stories + interaction tests for the whole browser kept together for easy editing
-/** biome-ignore-all lint/style/useExportsLast: this a stories file */
+// biome-ignore-all lint/style/useExportsLast: this a stories file
+// biome-ignore-all lint/style/noJsxLiterals: stories only
+// biome-ignore-all lint/performance/noJsxPropsBind: stories only
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useState } from 'react';
@@ -781,6 +783,8 @@ function FilterBar({
   const checkedMimes = new Set(filters.find((f) => f.type === 'fileType')?.value ?? []);
   const showClear = hasActiveFilters || searchValue.length > 0;
 
+  const resetSearch = useCallback(() => setSearchValue(''), [setSearchValue]);
+
   const handleClearAll = useCallback(() => {
     clearFilters();
     setSearchValue('');
@@ -803,7 +807,7 @@ function FilterBar({
           value={searchValue}
         />
         {searchValue.length > 0 && (
-          <Pressable accessibilityLabel="Clear search" onPress={() => setSearchValue('')}>
+          <Pressable accessibilityLabel="Clear search" onPress={resetSearch}>
             <X color={colors['muted-foreground']} size={13} />
           </Pressable>
         )}
@@ -812,6 +816,8 @@ function FilterBar({
       {/* File-type chips — one per MIME group in the manifest */}
       {fileTypeOptions.map((option) => {
         const active = checkedMimes.has(option.mime);
+        const toggleType = () => toggleFileType(option.mime, !active);
+
         return (
           <Pressable
             accessibilityLabel={`Filter by ${option.label}`}
@@ -826,7 +832,7 @@ function FilterBar({
               active ? 'border-primary bg-primary/10' : 'border-border bg-surface-1',
             )}
             key={option.mime}
-            onPress={() => toggleFileType(option.mime, !active)}
+            onPress={toggleType}
           >
             <Text className={active ? 'text-primary' : undefined} size="xs">
               {option.label}
@@ -857,13 +863,13 @@ function FilterBar({
       </Pressable>
 
       {/* Clear-all + result count */}
-      {showClear && (
+      {showClear ? (
         <Pressable accessibilityRole="button" onPress={handleClearAll}>
           <Text className="text-muted-foreground" size="xs">
             Clear
           </Text>
         </Pressable>
-      )}
+      ) : null}
       {/* "Showing …" rather than the bare count the built-in status bar renders,
           so a story asserting on one of them is never ambiguous. */}
       <Text className="ml-auto text-muted-foreground" size="xs">

@@ -1,4 +1,5 @@
-/** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
+// biome-ignore-all lint/style/useExportsLast: props types sit with their components
+// biome-ignore-all lint/style/useComponentExportOnlyModules: exports utils
 // Flat results list shown while a search query is active. Replaces the normal
 // view so every match at every folder depth is visible at once. Files are
 // always included (they appear in the index only when they matched); folders
@@ -9,6 +10,7 @@ import { useCallback, useMemo } from 'react';
 import { FlatList, type GestureResponderEvent, type ListRenderItemInfo, Pressable, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { ChevronRight } from '../../../lib/icons';
+import { stripTrailingSlash } from '../../../lib/path';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemIndex, FileSystemItem } from './file-system.types';
@@ -36,9 +38,10 @@ function flatSearchResults(index: FileSystemIndex, searchQuery: string): FileSys
   const seen = new Set<string>();
   for (const childList of index.children.values()) {
     for (const entry of childList) {
-      if (seen.has(entry.path)) continue;
-      seen.add(entry.path);
-      if (entry.kind === 'file' || entry.name.toLowerCase().includes(searchQuery)) results.push(entry);
+      if (!seen.has(entry.path)) {
+        seen.add(entry.path);
+        if (entry.kind === 'file' || entry.name.toLowerCase().includes(searchQuery)) results.push(entry);
+      }
     }
   }
   // Folders before files; alphabetical within each kind.
@@ -81,7 +84,7 @@ function SearchRow({
   const textClass = isSelected ? 'text-white' : 'text-foreground';
   const metaClass = isSelected ? 'text-white' : 'text-muted-foreground';
   // Strip the trailing folder slash; `null` when at root (no second line needed).
-  const parentLabel = entry.parentPath ? entry.parentPath.replace(/\/$/, '') : null;
+  const parentLabel = entry.parentPath ? stripTrailingSlash(entry.parentPath) : null;
 
   return (
     <View ref={wrapperRef}>
@@ -138,6 +141,14 @@ export function FileSystemSearchView({
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
 
   const handleBackgroundPress = useCallback(() => onSelect(null), [onSelect]);
+  const getItemLayout = useCallback(
+    (_: ArrayLike<FileSystemEntry> | null | undefined, idx: number) => ({
+      index: idx,
+      length: SEARCH_ROW_HEIGHT,
+      offset: SEARCH_ROW_HEIGHT * idx,
+    }),
+    [],
+  );
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
@@ -162,7 +173,7 @@ export function FileSystemSearchView({
         className="flex-1"
         contentContainerClassName="px-2 py-1"
         data={results}
-        getItemLayout={(_data, i) => ({ index: i, length: SEARCH_ROW_HEIGHT, offset: SEARCH_ROW_HEIGHT * i })}
+        getItemLayout={getItemLayout}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}

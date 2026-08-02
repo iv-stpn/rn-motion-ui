@@ -5,8 +5,7 @@
 // useShallow so components only re-render when their slice changes.
 
 import type { ReactNode } from 'react';
-import { createContext, type RefObject, useContext } from 'react';
-import type { TextInput } from 'react-native';
+import { createContext, useContext } from 'react';
 import { createStore, useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { objectKeys } from '../../../lib/typeguards';
@@ -100,8 +99,6 @@ type SearchSlice = {
   searchInput: string;
   searchQuery: string;
   isSearching: boolean;
-  isSearchExpanded: boolean;
-  searchInputRef: RefObject<TextInput | null>;
 };
 
 type FiltersSlice = {
@@ -172,7 +169,6 @@ type FileSystemActions = {
   selectMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   // Search
   setSearchInput: (value: string) => void;
-  setIsSearchExpanded: (expanded: boolean) => void;
   // Filters
   toggleFileTypeFilterValue: (mime: string, checked: boolean) => void;
   setDatePresetFilter: (type: FileSystemDateFilterType, preset: string) => void;
@@ -356,6 +352,14 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
     return `filter-${filterIdCounter}`;
   };
 
+  let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  const cancelSearchDebounce = () => {
+    if (searchDebounceTimer !== null) {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = null;
+    }
+  };
+
   const initialPath = normalizeFolderPath(init.defaultPath);
   const initialIndex = buildFileSystemIndex(init.items);
 
@@ -386,8 +390,6 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       searchInput: '',
       searchQuery: '',
       isSearching: false,
-      isSearchExpanded: false,
-      searchInputRef: { current: null },
     },
     filters: {
       filters: [],
@@ -426,6 +428,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
 
     // ── Navigation actions ────────────────────────────────────────────────────
     navigateTo: (folderPath) => {
+      cancelSearchDebounce();
       const path = normalizeFolderPath(folderPath);
       const s = get();
       if (s.navigation.currentPath === path) return;
@@ -455,6 +458,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
     },
 
     goBack: () => {
+      cancelSearchDebounce();
       const s = get();
       if (s.navigation.historyIndex === 0) return;
       const historyIndex = s.navigation.historyIndex - 1;
@@ -475,6 +479,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
     },
 
     goForward: () => {
+      cancelSearchDebounce();
       const s = get();
       const maxIndex = s.navigation.historyStack.length - 1;
       if (s.navigation.historyIndex >= maxIndex) return;
@@ -639,15 +644,18 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
 
     // ── Search actions ────────────────────────────────────────────────────────
     setSearchInput: (value) => {
-      const s = get();
-      const searchQuery = value.trim().replaceAll('\\', '/').toLowerCase();
-      const newSearch = { ...s.search, searchInput: value, searchQuery, isSearching: searchQuery.length > 0 };
-      const next = _recomputeEntries({ ...s, search: newSearch });
-      set({ search: newSearch, entries: next.entries, filters: next.filters, selection: next.selection });
-    },
-
-    setIsSearchExpanded: (isSearchExpanded) => {
-      set((s) => ({ search: { ...s.search, isSearchExpanded } }));
+      // Immediate update for UI responsiveness
+      set((s) => ({ search: { ...s.search, searchInput: value } }));
+      // Deferred recompute (200 ms debounce) for performance
+      if (searchDebounceTimer !== null) clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        searchDebounceTimer = null;
+        const s = get();
+        const searchQuery = value.trim().replaceAll('\\', '/').toLowerCase();
+        const newSearch = { ...s.search, searchInput: value, searchQuery, isSearching: searchQuery.length > 0 };
+        const next = _recomputeEntries({ ...s, search: newSearch });
+        set({ search: newSearch, entries: next.entries, filters: next.filters, selection: next.selection });
+      }, 200);
     },
 
     // ── Filter actions ────────────────────────────────────────────────────────
@@ -868,7 +876,7 @@ export function useFileSystemSelectionActions() {
 export function useFileSystemSearchActions() {
   return useStore(
     useFileSystemStoreContext(),
-    useShallow((s) => ({ setSearchInput: s.setSearchInput, setIsSearchExpanded: s.setIsSearchExpanded })),
+    useShallow((s) => ({ setSearchInput: s.setSearchInput })),
   );
 }
 

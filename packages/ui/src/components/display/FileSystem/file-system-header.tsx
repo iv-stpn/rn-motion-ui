@@ -1,11 +1,8 @@
-// The toolbar row: back/forward plus the folder name, the view picker, and the
-// sort/filter/search cluster. What collapses is driven by the measured root
-// width rather than a media query, so the header adapts inside a narrow
-// container as well as on a narrow screen.
-//
-// Nothing is drilled in: the root pools its state on FileSystemContext and each
-// cluster reads the slice it needs, so adding a control here doesn't ripple
-// back through the root's JSX.
+// The toolbar row: back/forward, the folder name, and the view-mode switcher.
+// Sort, filter and search have been moved to the headless `renderFilters` slot
+// so consumers can supply their own controls without losing the built-in
+// filtering logic. Nothing is drilled in: each cluster reads the slice it
+// needs from the store context.
 
 import { View } from 'react-native';
 import { cn } from '../../../lib/cn';
@@ -16,17 +13,11 @@ import {
   useFileSystemConsumer,
   useFileSystemEntries,
   useFileSystemEntriesActions,
-  useFileSystemFilterActions,
-  useFileSystemFilters,
   useFileSystemLayout,
   useFileSystemNavigation,
   useFileSystemNavigationActions,
-  useFileSystemSearch,
-  useFileSystemSearchActions,
 } from './file-system-context';
-import { FileSystemFilterMenu } from './file-system-filter-menu';
-import { FileSystemSortSelect } from './file-system-menus';
-import { FileSystemSearchField, FileSystemViewSwitcher, ToolbarIconButton } from './file-system-toolbar-parts';
+import { FileSystemViewSwitcher, ToolbarIconButton } from './file-system-toolbar-parts';
 import { FileSystemViewSelect } from './file-system-view-select';
 
 const BACK_LABEL = 'Back';
@@ -55,37 +46,6 @@ function HeaderNav() {
   );
 }
 
-/** The right-hand cluster: sort, filter, search. */
-function HeaderTools() {
-  const { fileTypeOptions, filters } = useFileSystemFilters();
-  const { isSearchExpanded, searchInput, searchInputRef } = useFileSystemSearch();
-  const { layout } = useFileSystemLayout();
-  const { sort } = useFileSystemEntries();
-  const { applySortKey } = useFileSystemEntriesActions();
-  const { openDateRangeRequest, setDatePresetFilter, toggleFileTypeFilterValue } = useFileSystemFilterActions();
-  const { setIsSearchExpanded, setSearchInput } = useFileSystemSearchActions();
-  return (
-    <View className="min-w-0 flex-1 flex-row items-center justify-end gap-1">
-      <FileSystemSortSelect layout={layout} onKeyChange={applySortKey} showLabel={layout === 'full'} sort={sort} />
-      <FileSystemFilterMenu
-        fileTypeOptions={fileTypeOptions}
-        filters={filters}
-        onOpenCustomRange={openDateRangeRequest}
-        onSelectDatePreset={setDatePresetFilter}
-        onToggleFileType={toggleFileTypeFilterValue}
-      />
-      <FileSystemSearchField
-        inputRef={searchInputRef}
-        isExpanded={isSearchExpanded}
-        layout={layout}
-        onExpandedChange={setIsSearchExpanded}
-        onValueChange={setSearchInput}
-        value={searchInput}
-      />
-    </View>
-  );
-}
-
 type FileSystemHeaderProps = { className?: string };
 
 export function FileSystemHeader({ className }: FileSystemHeaderProps) {
@@ -105,7 +65,6 @@ export function FileSystemHeader({ className }: FileSystemHeaderProps) {
       ) : (
         <FileSystemViewSwitcher onViewChange={setView} view={view} />
       )}
-      <HeaderTools />
     </View>
   );
 }

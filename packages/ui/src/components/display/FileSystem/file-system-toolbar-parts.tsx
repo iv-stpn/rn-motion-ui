@@ -1,22 +1,19 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
-// Small toolbar primitives shared by the header and the filter pill row: the
-// ghost icon button, the icon-only view switcher, and the collapsible search
-// field.
+// Small toolbar primitives shared by the header and the status bar: the ghost
+// icon button and the icon-only view switcher. Search is now fully headless —
+// consumers supply their own input via the `renderFilters` slot.
 
 import { type ReactNode, useCallback, useState } from 'react';
-import { Platform, Pressable, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { cn } from '../../../lib/cn';
-import { Columns3, Images, LayoutGrid, Search, Table, X } from '../../../lib/icons';
-import { useThemeColors } from '../../../theme/use-theme-color';
+import { Columns3, Images, LayoutGrid, Table } from '../../../lib/icons';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemView } from './file-system.types';
 import {
   useFileSystemConsumer,
   useFileSystemEntries,
-  useFileSystemLayout,
   useFileSystemSearch,
-  useFileSystemSearchActions,
   useFileSystemSelection,
   useFileSystemSelectionActions,
 } from './file-system-context';
@@ -109,110 +106,6 @@ export function FileSystemViewSwitcher({ onViewChange, view }: ViewSwitcherProps
       {VIEW_OPTIONS.map((option) => (
         <ViewSwitcherTab isActive={option.value === view} key={option.value} onViewChange={onViewChange} option={option} />
       ))}
-    </View>
-  );
-}
-
-export type SearchFieldProps = {
-  value: string;
-  onValueChange: (value: string) => void;
-  /** `full` keeps the field inline; narrower layouts collapse it to a button. */
-  layout: HeaderLayout;
-  isExpanded: boolean;
-  onExpandedChange: (isExpanded: boolean) => void;
-  inputRef?: React.RefObject<TextInput | null>;
-};
-
-type SearchInputProps = Pick<SearchFieldProps, 'inputRef' | 'onValueChange' | 'value'> & { autoFocus?: boolean };
-
-/** The bare input, shared by the inline and popover presentations. */
-function SearchInput({ autoFocus, inputRef, onValueChange, value }: SearchInputProps) {
-  const colors = useThemeColors();
-  const handleClear = useCallback(() => onValueChange(''), [onValueChange]);
-  return (
-    <View className="h-7 min-w-0 flex-1 flex-row items-center rounded-lg border border-border bg-surface-3 px-2">
-      <ThemedIcon icon={Search} variant="ghost" size={14} />
-      <TextInput
-        accessibilityLabel="Search files"
-        autoFocus={autoFocus}
-        onChangeText={onValueChange}
-        placeholder="Search"
-        placeholderTextColor={colors['muted-foreground']}
-        ref={inputRef}
-        // `outline-none` only exists on web; RN ignores the class either way.
-        className="ml-1.5 h-full min-w-0 flex-1 text-foreground text-sm outline-none"
-        value={value}
-      />
-      {value ? (
-        <Pressable
-          accessibilityLabel="Clear search"
-          accessibilityRole="button"
-          onPress={handleClear}
-          className="size-5 items-center justify-center rounded-sm"
-        >
-          <ThemedIcon icon={X} variant="ghost" size={12} />
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-
-/**
- * Finder-style toolbar search: inline at the full layout, and a ghost icon
- * button that reveals the field beneath the header at narrower widths (a dot
- * marks the button while a query keeps filtering).
- */
-export function FileSystemSearchField({
-  inputRef,
-  isExpanded,
-  layout,
-  onExpandedChange,
-  onValueChange,
-  value,
-}: SearchFieldProps) {
-  const handleToggle = useCallback(() => onExpandedChange(!isExpanded), [isExpanded, onExpandedChange]);
-
-  if (layout === 'full') {
-    // A fixed basis keeps the toolbar cluster packed against the right edge;
-    // the input shrinks first when the header tightens.
-    return (
-      <View className="w-56 min-w-32 flex-row items-center">
-        <SearchInput inputRef={inputRef} onValueChange={onValueChange} value={value} />
-      </View>
-    );
-  }
-
-  return (
-    <ToolbarIconButton accessibilityLabel="Search" marked={value.length > 0} onPress={handleToggle}>
-      <SearchGlyph />
-    </ToolbarIconButton>
-  );
-}
-
-/** Muted search glyph for the collapsed trigger. */
-function SearchGlyph() {
-  const colors = useThemeColors();
-  return <Search color={colors['muted-foreground']} size={16} />;
-}
-
-/**
- * The revealed search row under the header at compact widths. Rendered by the
- * component root (not the popover-less trigger) so it participates in layout
- * instead of floating — Finder's own behaviour on a narrow window.
- */
-export function FileSystemCollapsedSearchRow() {
-  const { isSearchExpanded, searchInput, searchInputRef } = useFileSystemSearch();
-  const { layout } = useFileSystemLayout();
-  const { setSearchInput } = useFileSystemSearchActions();
-  if (layout === 'full' || !isSearchExpanded) return null;
-  return (
-    <View className="shrink-0 flex-row items-center border-border border-b bg-surface-2 px-2 py-1.5">
-      <SearchInput
-        autoFocus={Platform.OS === 'web'}
-        inputRef={searchInputRef}
-        onValueChange={setSearchInput}
-        value={searchInput}
-      />
     </View>
   );
 }

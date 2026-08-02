@@ -34,6 +34,7 @@ import { useBackgroundContextMenu } from './file-system-context-menu';
 import { FileSystemGalleryView } from './file-system-gallery-view';
 import { FileSystemIconsView } from './file-system-icons-view';
 import { FileSystemListView } from './file-system-list-view';
+import { FileSystemSearchView } from './file-system-search-view';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileSystemEmptyState } from './file-system-view';
 
@@ -206,7 +207,7 @@ function FileSystemBodyContent() {
     return <FileSystemBodyPlaceholder>{placeholder}</FileSystemBodyPlaceholder>;
   }
 
-  const ActiveView = VIEW_COMPONENTS[view];
+  const ActiveView = isSearching ? FileSystemSearchView : VIEW_COMPONENTS[view];
   return <ActiveView {...viewProps} />;
 }
 

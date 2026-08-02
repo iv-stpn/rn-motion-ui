@@ -3,17 +3,18 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
-import { Copy, FolderClosed, Link, Share2, Trash2 } from '../../../lib/icons';
+import { Copy, FolderClosed, Link, Search as SearchIcon, Share2, Trash2, X } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
 import { FileSystem } from './file-system';
 import type {
   FileSystemContextMenuAction,
+  FileSystemFiltersState,
   FileSystemItem,
   FileSystemLoadChildrenArgs,
   FileSystemMoveEvent,
@@ -142,9 +143,13 @@ async function loadPreviewImageUrl() {
 }
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
-// 880px wide, which is above the tablet breakpoint: the four-tab view switcher
-// and the inline search field are both shown. Narrower containers collapse them
+// 880px wide, which is above the tablet breakpoint, so the four-tab view
+// switcher is shown rather than the dropdown a narrow container collapses it to
 // (see Compact) — the header reads the component's own width, not the window's.
+//
+// Search, sort and filtering are not in the header: they live in the headless
+// `renderFilters` slot, so the stories that drive them pass their own bar (see
+// `renderWithFilterBar`).
 
 const meta = {
   title: 'Display/FileSystem',
@@ -480,6 +485,7 @@ function FileSystemControls(args: FileSystemProps) {
   const [backgroundMenu, setBackgroundMenu] = useState(true);
   const [lazyChildren, setLazyChildren] = useState(true);
   const [withViewer, setWithViewer] = useState(true);
+  const [withFilters, setWithFilters] = useState(false);
 
   const options = useMemo(
     () => ({ backgroundMenu, contextMenus, draggable, lazyChildren }),
@@ -499,6 +505,7 @@ function FileSystemControls(args: FileSystemProps) {
         <Toggle label="Background menu" onChange={setBackgroundMenu} value={backgroundMenu} />
         <Toggle label="Lazy children" onChange={setLazyChildren} value={lazyChildren} />
         <Toggle label="Document viewer" onChange={setWithViewer} value={withViewer} />
+        <Toggle label="Filters & search" onChange={setWithFilters} value={withFilters} />
       </ControlCard>
 
       <Note>{VIEWER_NOTE}</Note>
@@ -512,6 +519,7 @@ function FileSystemControls(args: FileSystemProps) {
           onViewChange={setView}
           options={options}
           renderFileViewer={withViewer ? renderPlaceholderViewer : undefined}
+          renderFilters={withFilters ? (state) => <FilterBar {...state} /> : undefined}
           selectionMode={multiSelect ? 'multiple' : 'single'}
           view={view}
         />
@@ -596,10 +604,40 @@ export const Navigate: Story = {
     await canvas.findByText('Reports');
     await waitFor(() => expect(canvas.queryByText('Photos')).toBeNull());
 
-    // The folder name lands in the header, and Back is now live.
-    await canvas.findByText('Documents');
+    // The folder name lands in the header — and in the breadcrumb trail too, so
+    // the trail's root link is what identifies the row rather than the name.
+    await canvas.findByLabelText('Go to Files');
     await userEvent.click(await canvas.findByLabelText('Back'));
     await canvas.findByText('Photos');
+  },
+};
+
+/**
+ * The breadcrumb trail under the header names every folder on the way to the
+ * current one, and each is a way back. It appears only below the root, where
+ * there is somewhere to go back to; the trail's first segment is the `title`.
+ */
+export const Breadcrumbs: Story = {
+  name: 'Demo: Breadcrumb trail',
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Photos');
+
+    // At the root there is no trail — the folder name is in the header alone.
+    expect(canvas.queryByLabelText('Go to Files')).toBeNull();
+
+    await openTile(canvas, 'Documents');
+    await canvas.findByLabelText('Go to Files');
+
+    // Two levels down, the trail holds the folder in between as its own link.
+    await openTile(canvas, 'Reports');
+    await canvas.findByText('Q1-report.pdf');
+    await canvas.findByLabelText('Go to Documents');
+
+    // A segment jumps straight there rather than stepping back one folder.
+    await userEvent.click(await canvas.findByLabelText('Go to Files'));
+    await canvas.findByText('Photos');
+    await waitFor(() => expect(canvas.queryByLabelText('Go to Files')).toBeNull());
   },
 };
 
@@ -607,18 +645,24 @@ export const Navigate: Story = {
 
 export const Search: Story = {
   name: 'Demo: Search the folder',
+  args: { renderFilters: undefined },
+  render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('README.md');
 
-    // Search spans the whole subtree, not just the open folder: a match keeps
-    // the folders leading down to it, so `Documents/` stays for its reports.
+    // Search spans the whole subtree, not just the open folder. A query swaps the
+    // folder view for the flat results view, so every match at every depth shows
+    // at once, each row naming the folder it came from. The query is debounced
+    // 200ms, so the results land a beat after the typing.
     await userEvent.type(await canvas.findByLabelText('Search files'), 'report');
-    await canvas.findByText('Documents');
     await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
 
-    // The status bar counts results rather than items while a query is active.
-    await canvas.findByText('1 result');
+    // Both reports, plus `Reports/` on its own name — but not `Documents/`, which
+    // is visible only as their ancestor and so is not a match itself.
+    await canvas.findByText('Q1-report.pdf');
+    await canvas.findByText('Q2-report.pdf');
+    await canvas.findByText('Reports');
 
     // Clearing restores the folder.
     await userEvent.click(await canvas.findByLabelText('Clear search'));
@@ -627,62 +671,52 @@ export const Search: Story = {
 };
 
 // ─── Filters ───────────────────────────────────────────────────────────────────
-// The filter menu is a popover, so its rows are queried through `screen`; the
-// resulting pill renders in the component itself.
+// Filtering is headless: the component runs the pipeline and `renderFilters`
+// supplies the controls. These stories drive the story-local `FilterBar` below,
+// which reads each active filter back as `type operator value` text.
 
 export const Filter: Story = {
   name: 'Demo: Filter by file type',
+  render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('Photos');
 
-    await userEvent.click(await canvas.findByLabelText('Filter'));
-    await userEvent.click(await screen.findByText('File type'));
-
-    // Options come from the loaded manifest, labeled by MIME type.
-    await userEvent.click(await screen.findByText('PDF'));
+    // Chip options come from the loaded manifest, labeled by MIME type.
+    await userEvent.click(await canvas.findByLabelText('Filter by PDF'));
 
     // Only PDFs pass, so `Photos/` drops out while `Documents/` stays for its
     // reports. Folders are never filtered directly — they live through matches.
     await waitFor(() => expect(canvas.queryByText('Photos')).toBeNull());
     await canvas.findByText('Invoice-0042.pdf');
 
-    // The applied filter reads back as a pill under the header.
-    await canvas.findByLabelText('File types: PDF');
+    // The chip reports itself checked, and the slot reads the filter back.
+    expect(await canvas.findByLabelText('Filter by PDF')).toHaveAttribute('aria-checked', 'true');
+    // One MIME reads back with `is`; a second would widen it to `is-any-of`.
+    await canvas.findByText('fileType is application/pdf');
   },
 };
 
-/** Opens the toolbar filter menu on a date facet's preset panel. */
-async function openDatePanel(canvas: ReturnType<typeof within>, facet: string) {
-  await userEvent.click(await canvas.findByLabelText('Filter'));
-  await userEvent.click(await screen.findByText(facet));
-}
-
 /**
- * A pill's value segment re-values the filter it stands for, rather than adding
- * another. Regression test: the pill's preset dropdown used to be handed the
- *facet* where its mutator matches on the filter's `id`, so nothing matched and
- * picking a preset was a silent no-op.
+ * Picking a date preset re-values the existing filter of that type rather than
+ * stacking another beside it. Regression test: the value mutator matches on the
+ * filter's `type`, so a second preset replaces the first.
  */
-export const FilterPillRevalue: Story = {
-  name: 'Demo: Re-value a filter pill',
+export const DatePresetRevalue: Story = {
+  name: 'Demo: Re-value a date filter',
+  render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('README.md');
 
-    await openDatePanel(canvas, 'Date modified');
-    await userEvent.click(await screen.findByText('1 month ago'));
+    await userEvent.click(await canvas.findByLabelText('Modified after 1 month ago'));
+    await canvas.findByText('dateModified after 1 month ago');
 
-    // The pill reads back as `Date modified · after · 1 month ago`.
-    await canvas.findByLabelText('Date: 1 month ago');
-
-    // Re-valuing goes through the pill's own value segment, not the menu.
-    await userEvent.click(await canvas.findByLabelText('Date: 1 month ago'));
-    await userEvent.click(await screen.findByText('3 days ago'));
-
-    await canvas.findByLabelText('Date: 3 days ago');
-    // Re-valued in place: the older value is gone rather than sitting beside it.
-    await waitFor(() => expect(canvas.queryByLabelText('Date: 1 month ago')).toBeNull());
+    // A second preset re-values in place: the older value is gone rather than
+    // sitting beside it as a second `dateModified` filter.
+    await userEvent.click(await canvas.findByLabelText('Modified after 3 days ago'));
+    await canvas.findByText('dateModified after 3 days ago');
+    await waitFor(() => expect(canvas.queryByText('dateModified after 1 month ago')).toBeNull());
   },
 };
 
@@ -693,12 +727,14 @@ export const FilterPillRevalue: Story = {
  */
 export const CustomRangeDraftIsPerVisit: Story = {
   name: 'Demo: Custom range starts fresh each visit',
+  render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('README.md');
 
-    await openDatePanel(canvas, 'Date modified');
-    await userEvent.click(await screen.findByText('Custom date range…'));
+    // The slot's `openCustomRange` raises the built-in modal; the component
+    // still owns the picker itself.
+    await userEvent.click(await canvas.findByLabelText('Custom date range'));
 
     // Type a draft, then abandon it.
     await userEvent.type(await screen.findByLabelText('From date'), '2026-03-01');
@@ -706,13 +742,189 @@ export const CustomRangeDraftIsPerVisit: Story = {
     await waitFor(() => expect(screen.queryByLabelText('From date')).toBeNull());
 
     // Reopening the same facet starts empty rather than resuming the draft.
-    await openDatePanel(canvas, 'Date modified');
-    await userEvent.click(await screen.findByText('Custom date range…'));
+    await userEvent.click(await canvas.findByLabelText('Custom date range'));
     await waitFor(() => expect(screen.getByLabelText('From date')).toHaveValue(''));
   },
 };
 
-// ─── Sort ──────────────────────────────────────────────────────────────────────
+// ─── Headless filters + search ────────────────────────────────────────────────
+// renderFilters drives the full search/filter/sort pipeline from any UI the
+// consumer provides. This bar wires up a text field for search, pressable chips
+// for file-type filtering, and date-preset buttons — all without importing any
+// FileSystem-internal component; the slot's state object is the only contract.
+//
+// Since the component ships no filter UI of its own any more, this bar is also
+// what the filter stories below drive. It renders each active filter back as
+// `type operator value` text so those stories can assert on the filter state the
+// slot reports.
+
+/** The two presets the stories exercise; `DATE_FILTER_PRESETS` has the full set. */
+const DATE_PRESETS = ['3 days ago', '1 month ago'];
+
+type FilterBarProps = FileSystemFiltersState & { testID?: string };
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function FilterBar({
+  clearFilters,
+  count,
+  fileTypeOptions,
+  filters,
+  hasActiveFilters,
+  isSearching,
+  openCustomRange,
+  searchValue,
+  selectDatePreset,
+  setSearchValue,
+  toggleFileType,
+}: FilterBarProps) {
+  const colors = useThemeColors();
+  const checkedMimes = new Set(filters.find((f) => f.type === 'fileType')?.value ?? []);
+  const showClear = hasActiveFilters || searchValue.length > 0;
+
+  const handleClearAll = useCallback(() => {
+    clearFilters();
+    setSearchValue('');
+  }, [clearFilters, setSearchValue]);
+
+  const handleOpenCustomRange = useCallback(() => openCustomRange('dateModified'), [openCustomRange]);
+
+  return (
+    <View className="flex-row flex-wrap items-center gap-2 border-border border-b bg-surface-2 px-3 py-2">
+      {/* Search field */}
+      <View className="min-w-[140px] flex-1 flex-row items-center gap-1.5 rounded-md border border-border bg-surface-1 px-2.5 py-1.5">
+        <SearchIcon color={colors['muted-foreground']} size={13} />
+        <TextInput
+          accessibilityLabel="Search files"
+          onChangeText={setSearchValue}
+          placeholder="Search…"
+          placeholderTextColor={colors['muted-foreground']}
+          // @ts-expect-error outline is web-only
+          style={{ color: colors.foreground, flex: 1, fontSize: 13, outline: 'none' }}
+          value={searchValue}
+        />
+        {searchValue.length > 0 && (
+          <Pressable accessibilityLabel="Clear search" onPress={() => setSearchValue('')}>
+            <X color={colors['muted-foreground']} size={13} />
+          </Pressable>
+        )}
+      </View>
+
+      {/* File-type chips — one per MIME group in the manifest */}
+      {fileTypeOptions.map((option) => {
+        const active = checkedMimes.has(option.mime);
+        return (
+          <Pressable
+            accessibilityLabel={`Filter by ${option.label}`}
+            accessibilityRole="checkbox"
+            // `aria-checked` as well as `accessibilityState`: react-native-web
+            // only reads the aria form, native only the other. Same pairing as
+            // Radio and Checkbox.
+            accessibilityState={{ checked: active }}
+            aria-checked={active}
+            className={cn(
+              'rounded-md border px-2.5 py-1',
+              active ? 'border-primary bg-primary/10' : 'border-border bg-surface-1',
+            )}
+            key={option.mime}
+            onPress={() => toggleFileType(option.mime, !active)}
+          >
+            <Text className={active ? 'text-primary' : undefined} size="xs">
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+
+      {/* Date presets + the custom-range modal, driven by the same slot state */}
+      {DATE_PRESETS.map((preset) => (
+        <Pressable
+          accessibilityLabel={`Modified after ${preset}`}
+          accessibilityRole="button"
+          className="rounded-md border border-border bg-surface-1 px-2.5 py-1"
+          key={preset}
+          onPress={() => selectDatePreset('dateModified', preset)}
+        >
+          <Text size="xs">{preset}</Text>
+        </Pressable>
+      ))}
+      <Pressable
+        accessibilityLabel="Custom date range"
+        accessibilityRole="button"
+        className="rounded-md border border-border bg-surface-1 px-2.5 py-1"
+        onPress={handleOpenCustomRange}
+      >
+        <Text size="xs">Custom range…</Text>
+      </Pressable>
+
+      {/* Clear-all + result count */}
+      {showClear && (
+        <Pressable accessibilityRole="button" onPress={handleClearAll}>
+          <Text className="text-muted-foreground" size="xs">
+            Clear
+          </Text>
+        </Pressable>
+      )}
+      {/* "Showing …" rather than the bare count the built-in status bar renders,
+          so a story asserting on one of them is never ambiguous. */}
+      <Text className="ml-auto text-muted-foreground" size="xs">
+        {`Showing ${count} ${isSearching ? 'result' : 'item'}${count === 1 ? '' : 's'}`}
+      </Text>
+
+      {/* Each active filter read back as `type operator value`. */}
+      {filters.map((filter) => (
+        <Text className="text-muted-foreground" key={filter.id} size="xs">
+          {`${filter.type} ${filter.operator} ${filter.value.join(', ')}`}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
+/** Renders the slot's state through the story `FilterBar`. */
+function renderFilterBar(state: FileSystemFiltersState & { testID?: string }) {
+  return <FilterBar {...state} />;
+}
+
+/**
+ * Shared `render` for every story that needs filter or search controls. Hoisted
+ * out of the story objects so the slot callback is a stable reference.
+ */
+function renderWithFilterBar(args: FileSystemProps) {
+  return <FileSystem {...args} renderFilters={renderFilterBar} />;
+}
+
+/**
+ * A fully headless filter bar: a search field and per-MIME-type toggle chips,
+ * all wired up through `renderFilters`. The component runs its normal
+ * search/filter pipeline; only the UI driving it is custom.
+ */
+export const WithFiltersAndSearch: Story = {
+  name: 'Demo: Headless filters and search',
+  render: renderWithFilterBar,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    // Search is debounced 200 ms — wait for the results to update.
+    await userEvent.type(await canvas.findByLabelText('Search files'), 'report');
+    await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull(), { timeout: 1000 });
+    // The ancestor folder leading to the match stays visible.
+    await canvas.findByText('Documents');
+
+    // Clearing the search field restores the full list.
+    await userEvent.click(await canvas.findByLabelText('Clear search'));
+    await waitFor(() => canvas.findByText('README.md'));
+
+    // A file-type chip filters immediately.
+    await userEvent.click(await canvas.findByLabelText('Filter by PDF'));
+    await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
+    await canvas.findByText('Invoice-0042.pdf');
+
+    // Clear all removes both search and filters.
+    await userEvent.click(await canvas.findByText('Clear'));
+    await waitFor(() => canvas.findByText('README.md'));
+  },
+};
 
 /** Matches a file name by its extension, so folder rows drop out of the order check. */
 const FILE_NAME_PATTERN = /\.(docx|jpg|md|pdf|png|pptx|txt|xlsx|zip)$/;
@@ -979,10 +1191,10 @@ export const WithFileViewer: Story = {
 // ─── Compact ───────────────────────────────────────────────────────────────────
 
 /**
- * A narrow container. The view switcher becomes a dropdown, search collapses to
- * a button that reveals its field beneath the header, and the sort trigger drops
- * its label — all driven by the component's measured width, so this is what a
- * sidebar-width panel looks like on a desktop too.
+ * A narrow container. The view switcher becomes a dropdown — driven by the
+ * component's measured width, so this is what a sidebar-width panel looks like
+ * on a desktop too. Search and filters are the consumer's own UI now (see
+ * `renderFilters`), so how they collapse is up to the bar you supply.
  */
 export const Compact: Story = {
   name: 'Demo: Compact layout',
@@ -1000,16 +1212,6 @@ export const Compact: Story = {
     // window width and only knows its own after the first layout pass, so the
     // narrow arrangement lands a frame in.
     await waitFor(() => expect(canvas.queryByLabelText('Gallery view')).toBeNull());
-
-    // Search is a toggle here, and the field arrives in its own row. Do this
-    // before touching the view dropdown: react-native-web's Modal traps focus
-    // for as long as it is mounted — the whole exit animation included — and
-    // hands focus back to the trigger when the trap unmounts, so a field that
-    // autofocuses in that window loses the caret twice over.
-    await userEvent.click(await canvas.findByLabelText('Search'));
-    await userEvent.type(await canvas.findByLabelText('Search files'), 'notes');
-    await canvas.findByText('1 result');
-    await userEvent.click(await canvas.findByLabelText('Clear search'));
 
     await userEvent.click(await canvas.findByLabelText('View'));
     await userEvent.click(await screen.findByText('List'));
@@ -1627,6 +1829,7 @@ export const WithCustomEmptyState: Story = {
         </View>
       ) : undefined,
   },
+  render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 

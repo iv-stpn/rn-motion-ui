@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: assembly point — store init, 4 render-prop adapters, layout sync and public re-exports all belong here */
 // <FileSystem>: assembly point — creates the per-instance Zustand store, syncs
 // consumer props into it, and renders the context provider with all regions.
 
@@ -8,6 +9,7 @@ import { cn } from '../../../lib/cn';
 import type { FileSystemProps, ResolvedFileSystemBreakpoints } from './file-system.types';
 import { defaultFileSystemBreakpoints } from './file-system.types';
 import { FileSystemBody } from './file-system-body';
+import { FileSystemBreadcrumbs } from './file-system-breadcrumbs';
 import {
   createFileSystemStore,
   type FileSystemStoreApi,
@@ -28,10 +30,9 @@ import {
 } from './file-system-context';
 import { FileSystemContextMenuProvider } from './file-system-context-menu';
 import { FileSystemDateRangeModal } from './file-system-date-range-modal';
-import { FileSystemFilterPills } from './file-system-filter-pills';
 import { FileSystemHeader } from './file-system-header';
 import type { HeaderLayout } from './file-system-toolbar-parts';
-import { FileSystemCollapsedSearchRow, FileSystemStatusBar } from './file-system-toolbar-parts';
+import { FileSystemStatusBar } from './file-system-toolbar-parts';
 import { FileSystemViewerModal } from './file-system-viewer-modal';
 
 /** Default viewport height, matching the web original's `h-[480px]`. */
@@ -49,35 +50,25 @@ type FileSystemCustomHeaderProps = { renderHeader: NonNullable<FileSystemProps['
 function FileSystemCustomHeader({ renderHeader }: FileSystemCustomHeaderProps) {
   const { currentFolderName, canGoBack, canGoForward } = useFileSystemNavigation();
   const { view, sort } = useFileSystemEntries();
-  const { searchInput, isSearchExpanded } = useFileSystemSearch();
-  const { filters, fileTypeOptions } = useFileSystemFilters();
+  const { searchInput } = useFileSystemSearch();
   const { layout, isCompact } = useFileSystemLayout();
   const { testID } = useFileSystemConsumer();
   const { goBack, goForward } = useFileSystemNavigationActions();
   const { setView, applySortKey } = useFileSystemEntriesActions();
-  const { setSearchInput, setIsSearchExpanded } = useFileSystemSearchActions();
-  const { clearFilters, toggleFileTypeFilterValue, openDateRangeRequest, setDatePresetFilter } = useFileSystemFilterActions();
+  const { setSearchInput } = useFileSystemSearchActions();
   return renderHeader({
     canGoBack,
     canGoForward,
-    clearFilters,
-    fileTypeOptions,
-    filters,
     folderName: currentFolderName,
     goBack,
     goForward,
     isCompact,
-    isSearchExpanded,
     layout,
-    openCustomRange: openDateRangeRequest,
     searchValue: searchInput,
-    selectDatePreset: setDatePresetFilter,
-    setSearchExpanded: setIsSearchExpanded,
     setSearchValue: setSearchInput,
     setSortKey: applySortKey,
     setView,
     sort,
-    toggleFileType: toggleFileTypeFilterValue,
     view,
     testID: testID ? `${testID}-header` : undefined,
   });
@@ -99,6 +90,36 @@ function FileSystemCustomFooter({ renderFooter }: FileSystemCustomFooterProps) {
     selectedCount: selectedPaths.size,
     selectedName: selectedEntry?.name,
     testID: testID ? `${testID}-footer` : undefined,
+  });
+}
+
+type FileSystemCustomFiltersProps = { renderFilters: NonNullable<FileSystemProps['renderFilters']> };
+
+// Renders the consumer's renderFilters render prop, mapping slice state to the
+// public FileSystemFiltersState shape.
+function FileSystemCustomFilters({ renderFilters }: FileSystemCustomFiltersProps) {
+  const { entries, sort } = useFileSystemEntries();
+  const { searchInput, isSearching } = useFileSystemSearch();
+  const { filters, fileTypeOptions, hasActiveFilters } = useFileSystemFilters();
+  const { testID } = useFileSystemConsumer();
+  const { applySortKey } = useFileSystemEntriesActions();
+  const { setSearchInput } = useFileSystemSearchActions();
+  const { clearFilters, toggleFileTypeFilterValue, openDateRangeRequest, setDatePresetFilter } = useFileSystemFilterActions();
+  return renderFilters({
+    clearFilters,
+    count: entries.length,
+    fileTypeOptions,
+    filters,
+    hasActiveFilters,
+    isSearching,
+    openCustomRange: openDateRangeRequest,
+    searchValue: searchInput,
+    selectDatePreset: setDatePresetFilter,
+    setSearchValue: setSearchInput,
+    setSortKey: applySortKey,
+    sort,
+    toggleFileType: toggleFileTypeFilterValue,
+    testID: testID ? `${testID}-filters` : undefined,
   });
 }
 
@@ -149,6 +170,7 @@ export function FileSystem({
   renderEmptyState,
   renderFilePreview,
   renderFileViewer,
+  renderFilters,
   renderFooter,
   renderHeader,
   selectionMode = 'single',
@@ -243,8 +265,8 @@ export function FileSystem({
     <FileSystemStoreContext.Provider value={store}>
       <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
         {renderHeader ? <FileSystemCustomHeader renderHeader={renderHeader} /> : <FileSystemHeader className={headerClassName} />}
-        <FileSystemCollapsedSearchRow />
-        <FileSystemFilterPills />
+        <FileSystemBreadcrumbs />
+        {renderFilters ? <FileSystemCustomFilters renderFilters={renderFilters} /> : null}
         <FileSystemContextMenuProvider wideBreakpoint={contextMenuWideBreakpoint}>
           <FileSystemBody className={bodyClassName} renderBody={renderBody} />
         </FileSystemContextMenuProvider>
@@ -277,6 +299,7 @@ export type {
   FileSystemFileItem,
   FileSystemFilter,
   FileSystemFilterOperator,
+  FileSystemFiltersState,
   FileSystemFilterType,
   FileSystemFolderItem,
   FileSystemHeaderState,

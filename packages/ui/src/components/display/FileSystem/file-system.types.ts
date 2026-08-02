@@ -111,6 +111,31 @@ export type FileTypeFilterOption = {
 // Passed to renderHeader / renderFooter so consumers drive their own UI from
 // the same state the built-in toolbar uses.
 
+/**
+ * State snapshot passed to {@link FileSystemProps.renderFilters}. Exposes every
+ * search / sort / filter action so a fully-custom filter bar can drive the same
+ * built-in filtering logic without re-implementing it.
+ */
+export type FileSystemFiltersState = {
+  // Search
+  searchValue: string;
+  setSearchValue: (value: string) => void;
+  isSearching: boolean;
+  // Sort
+  sort: FileSystemSortState;
+  setSortKey: (key: FileSystemSortKey) => void;
+  // Filters
+  filters: FileSystemFilter[];
+  fileTypeOptions: FileTypeFilterOption[];
+  toggleFileType: (mime: string, checked: boolean) => void;
+  selectDatePreset: (type: FileSystemDateFilterType, preset: string) => void;
+  openCustomRange: (type: FileSystemDateFilterType) => void;
+  clearFilters: () => void;
+  hasActiveFilters: boolean;
+  /** Visible entry count in the current folder (after search / filter / sort). */
+  count: number;
+};
+
 /** State snapshot passed to {@link FileSystemProps.renderHeader}. */
 export type FileSystemHeaderState = {
   // Navigation
@@ -126,18 +151,9 @@ export type FileSystemHeaderState = {
   // Search
   searchValue: string;
   setSearchValue: (value: string) => void;
-  isSearchExpanded: boolean;
-  setSearchExpanded: (expanded: boolean) => void;
   // Sort
   sort: FileSystemSortState;
   setSortKey: (key: FileSystemSortKey) => void;
-  // Filters
-  filters: FileSystemFilter[];
-  fileTypeOptions: FileTypeFilterOption[];
-  toggleFileType: (mime: string, checked: boolean) => void;
-  selectDatePreset: (type: FileSystemDateFilterType, preset: string) => void;
-  openCustomRange: (type: FileSystemDateFilterType) => void;
-  clearFilters: () => void;
   // Responsive layout hints (derived from the measured root width)
   /** Width band the component has measured itself at. */
   layout: 'full' | 'compact' | 'minimal';
@@ -392,6 +408,19 @@ export type FileSystemProps = {
    * When provided, `headerClassName` is ignored.
    */
   renderHeader?: (state: FileSystemHeaderState & { testID?: string }) => ReactNode;
+  /**
+   * Render a custom filter / search / sort bar between the breadcrumbs and the
+   * file area. Receives every search, sort and filter action so your bar drives
+   * the same built-in filtering logic without re-implementing it.
+   *
+   * When omitted, no default filter UI is shown — the header only contains
+   * navigation and the view-mode switcher.
+   *
+   * The node is rendered inside the same root container as the header and body,
+   * so it participates in layout normally. Give it `shrink-0` if it should not
+   * be squashed by the file area.
+   */
+  renderFilters?: (state: FileSystemFiltersState & { testID?: string }) => ReactNode;
   /**
    * Replace the built-in status-bar footer with your own. Receives the count /
    * search / selection state the default status bar displays.

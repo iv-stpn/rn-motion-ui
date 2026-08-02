@@ -56,6 +56,10 @@ export function computeVisiblePaths({ currentPath, fileFilter, index, searchQuer
   const isUnderCurrent = (entry: AncestorEntry): boolean => {
     if (entry.path === currentPath) return false;
     if (!currentPath) return true;
+    // Fast path: hierarchical paths encode ancestry in the string itself.
+    // Avoids O(depth) chain walks for the common case.
+    if (entry.parentPath === currentPath || entry.parentPath.startsWith(`${currentPath}/`)) return true;
+    // Fallback for flat / id-based manifests where paths don't encode depth.
     let cursor: string = entry.parentPath;
     while (cursor) {
       if (cursor === currentPath) return true;

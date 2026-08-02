@@ -1,5 +1,5 @@
 ---
-'rn-motion-ui': major
+'rn-motion-ui': minor
 ---
 
 refactor(menus)!: the anchored panels fill themselves with `Menu`

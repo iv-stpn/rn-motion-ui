@@ -1,12 +1,12 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
-import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
 import { SURFACE_CLASSNAME, type SurfaceLevel } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
 
@@ -63,6 +63,20 @@ export type AdaptiveDropdownProps = {
    * pixel number. @default 'md'
    */
   wideBreakpoint?: BreakpointValue;
+  /**
+   * Open/close animation for the floating panel — the shared anchored-menu motion
+   * every menu in this package uses. Override one field and the rest of the preset
+   * stands.
+   *
+   * Wide screen only: below `wideBreakpoint` the content is a `BottomSheet`, which
+   * slides from the edge on its own spring rather than scaling out of a corner.
+   * Reduced motion overrides all of it — the panel cross-fades in place.
+   *
+   * @example
+   * // Slower, and no slide
+   * motion={{ enter: { damping: 30, stiffness: 180 }, offset: 0 }}
+   */
+  motion?: MenuMotion;
   testID?: string;
 };
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small screen paths are tightly coupled to shared anchor/dimension state
@@ -85,6 +99,7 @@ export function AdaptiveDropdown({
   fullSheet = false,
   elevation = 5,
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
+  motion,
   testID,
 }: AdaptiveDropdownProps) {
   const { width: vpWidth, height: vpHeight } = useWindowDimensions();
@@ -189,14 +204,10 @@ export function AdaptiveDropdown({
     <View className={`overflow-hidden${contentClassName ? ` ${contentClassName}` : ''}`}>{resolvedContent}</View>
   );
 
-  const exitTransition = {
-    type: 'timing' as const,
-    duration: reduced ? 160 : 230,
-    easing: reduced ? Easing.linear : Easing.in(Easing.cubic),
-  };
-  const enterTransition = reduced
-    ? { type: 'timing' as const, duration: 160 }
-    : { type: 'spring' as const, damping: 26, stiffness: 280, mass: 0.9 };
+  // Shared with Popover, HoverMenu and HoldContextMenu, so every panel this
+  // package anchors to a trigger opens and closes the same way.
+  const panelMotion = resolveMenuMotion({ motion, reduce: reduced, side: openAbove ? 'top' : 'bottom' });
+  const transformOrigin = menuTransformOrigin({ align, side: openAbove ? 'top' : 'bottom' });
 
   return (
     <>
@@ -214,13 +225,12 @@ export function AdaptiveDropdown({
                 <MotiView
                   key="panel"
                   onLayout={handlePanelLayout}
-                  from={{ opacity: 0, translateY: -12 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  exit={{ opacity: 0, translateY: -12 }}
-                  transition={enterTransition}
-                  exitTransition={exitTransition}
+                  {...panelMotion}
                   className={cn('absolute flex-col overflow-hidden rounded-2xl', SURFACE_CLASSNAME[elevation])}
-                  style={{ top: panelTop, left: panelLeft, width: panelWidth, maxHeight }}
+                  // `transformOrigin` is static, so it composes with the animated
+                  // scale rather than competing with it: the panel grows out of the
+                  // corner facing the trigger.
+                  style={{ top: panelTop, left: panelLeft, width: panelWidth, maxHeight, transformOrigin }}
                   testID={testID ? `${testID}-panel` : undefined}
                 >
                   {/*

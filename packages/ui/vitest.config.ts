@@ -15,6 +15,7 @@ export default defineConfig({
       'src/lib/__tests__/**/*.test.ts',
       'src/hooks/__tests__/**/*.test.ts',
       'src/hooks/__tests__/**/*.test.tsx',
+      'src/theme/__tests__/**/*.test.ts',
       'src/components/**/__tests__/**/*.test.ts',
     ],
   },

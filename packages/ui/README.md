@@ -318,6 +318,34 @@ import { useThemeColors } from 'rn-motion-ui/theme/use-theme-color';
 const { primary, danger, success } = useThemeColors();
 ```
 
+## Menu motion
+
+Every panel a trigger summons — `AdaptiveDropdown` (on wide screens), `HoverMenu`, `Popover`, `HoldContextMenu` — opens on one shared animation: a fade up from `0.96` scale, sliding 8px toward its trigger, out of the corner nearest it. They close the reverse way on a 200ms ease-in. Sheets are deliberately not in this group; `BottomSheet`, `FullSheet`, `Drawer` and `AdaptiveModal` slide from an edge, which is a different gesture with a different feel.
+
+All four take the same `motion` prop to retune it:
+
+```tsx
+import { Popover, PopoverTrigger, PopoverContent } from 'rn-motion-ui/popover';
+
+<Popover motion={{ enter: { type: 'spring', stiffness: 140, damping: 22 }, offset: 16 }}>
+  <PopoverTrigger>…</PopoverTrigger>
+  <PopoverContent>…</PopoverContent>
+</Popover>
+```
+
+| Key | Default | |
+| --- | --- | --- |
+| `enter` | `MOTION_STANDARD` — spring, 300 stiffness / 24 damping / 0.8 mass | merged over the default, so `{ stiffness: 140 }` keeps the rest |
+| `exit` | 200ms `Easing.in(Easing.cubic)` | same merge |
+| `scale` | `0.96` | `1` opens with no scale |
+| `offset` | `8` | px traveled toward the trigger; `0` opens with no slide |
+
+`HoldContextMenu` adds `scrim` and `lift` for the two surfaces only it has — the dim behind the lifted item, and the item's own rise off the page. `lift` falls back to `enter`, so retuning the panel moves the item with it by default.
+
+`useReducedMotion` wins over all of it: whatever `motion` says, an OS reduced-motion preference collapses these to a 150ms opacity fade with no scale and no travel.
+
+The pieces are exported from `rn-motion-ui/theme/motion` if you're building a panel of your own that should match — `resolveMenuMotion({ motion, reduce, side })` returns the whole `from` / `animate` / `exit` / `transition` / `exitTransition` set for a `MotiView`, and `menuTransformOrigin({ side, align })` gives the matching CSS `transform-origin`.
+
 ## License
 
 [MIT](./LICENSE) © Ivan Stepanian

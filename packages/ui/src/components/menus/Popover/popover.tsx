@@ -5,6 +5,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
 
 export type PopoverSide = 'top' | 'bottom';
@@ -24,6 +25,7 @@ type PopoverContext = {
   align: PopoverAlign;
   gap: number;
   panelRadius: number;
+  motion?: MenuMotion;
   reduce: boolean;
 };
 
@@ -52,6 +54,15 @@ export type PopoverProps = {
   sideOffset?: number;
   /** Corner radius of the panel, in px. Default 16. */
   panelRadius?: number;
+  /**
+   * Overrides the shared open/close animation — the same `motion` prop
+   * `AdaptiveDropdown`, `HoverMenu` and `HoldContextMenu` take. Reduced motion
+   * overrides all of it: the panel cross-fades in place.
+   *
+   * @example
+   * motion={{ enter: { stiffness: 420 }, scale: 0.9 }}
+   */
+  motion?: MenuMotion;
   /** No-op on RN (drove the web goo blur). Kept for API parity. */
   gooStrength?: number;
   style?: StyleProp<ViewStyle>;
@@ -67,6 +78,7 @@ export function Popover({
   align = 'center',
   sideOffset = 14,
   panelRadius = 16,
+  motion,
   style,
   testID,
 }: PopoverProps) {
@@ -87,8 +99,8 @@ export function Popover({
   const toggle = useCallback(() => setOpen(!open), [setOpen, open]);
 
   const ctx = useMemo<PopoverContext>(
-    () => ({ open, setOpen, toggle, rect, setRect, side, align, gap: sideOffset, panelRadius, reduce }),
-    [open, setOpen, toggle, rect, side, align, sideOffset, panelRadius, reduce],
+    () => ({ open, setOpen, toggle, rect, setRect, side, align, gap: sideOffset, panelRadius, motion, reduce }),
+    [open, setOpen, toggle, rect, side, align, sideOffset, panelRadius, motion, reduce],
   );
 
   return (
@@ -144,11 +156,6 @@ function alignLeft(align: PopoverAlign, rect: Rect, panelW: number): number {
   return rect.x + rect.w / 2 - panelW / 2;
 }
 
-function resolveEnterY(reduce: boolean, side: PopoverSide): number {
-  if (reduce) return 0;
-  return side === 'bottom' ? -8 : 8;
-}
-
 export type PopoverContentProps = {
   children: ReactNode;
   accessibilityLabel?: string;
@@ -159,7 +166,7 @@ export type PopoverContentProps = {
 };
 
 export function PopoverContent({ children, accessibilityLabel, elevation = 4, style, testID }: PopoverContentProps) {
-  const { open, setOpen, rect, side, align, gap, panelRadius, reduce } = usePopover('PopoverContent');
+  const { open, setOpen, rect, side, align, gap, panelRadius, motion, reduce } = usePopover('PopoverContent');
   const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
   const [panel, setPanel] = useState({ w: 0, h: 0 });
 
@@ -185,7 +192,10 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
     top = Math.max(8, Math.min(top, screen.height - panel.h - 8));
   }
 
-  const enterY = resolveEnterY(reduce, side);
+  // Shared with AdaptiveDropdown, HoverMenu and HoldContextMenu, so every panel
+  // this package anchors to a trigger opens and closes the same way.
+  const panelMotion = resolveMenuMotion({ motion, reduce, side });
+  const transformOrigin = menuTransformOrigin({ align, side });
 
   return (
     <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose}>
@@ -197,12 +207,16 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
               accessibilityLabel={accessibilityLabel}
               testID={testID}
               onLayout={handleLayout}
-              from={{ opacity: 0, scale: reduce ? 1 : 0.96, translateY: enterY }}
-              animate={{ opacity: measured ? 1 : 0, scale: 1, translateY: 0 }}
-              exit={{ opacity: 0, scale: reduce ? 1 : 0.96, translateY: enterY }}
-              transition={reduce ? { type: 'timing', duration: 120 } : { type: 'spring', stiffness: 300, damping: 26, mass: 0.8 }}
+              {...panelMotion}
+              // Held at 0 until the panel has been measured, so it is never
+              // painted at an unresolved position — the rest of the pose is the
+              // shared one.
+              animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0 }}
               className={`max-w-xs border border-border p-4 ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
-              style={[{ position: 'absolute', left, top, borderRadius: panelRadius }, style]}
+              // `transformOrigin` is static, so it composes with the animated
+              // scale rather than competing with it: the panel grows out of the
+              // corner facing the trigger.
+              style={[{ position: 'absolute', left, top, borderRadius: panelRadius, transformOrigin }, style]}
             >
               {children}
             </MotiView>

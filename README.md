@@ -241,6 +241,7 @@ CI (`.github/workflows/release.yml`) runs the changesets action on every push to
 - **No barrels** — every component has its own subpath export; consumers only bundle what they import.
 - **`sideEffects: ["**/*.css"]`** — CSS token file is side-effectful; all TS source is tree-shakeable.
 - **`useReducedMotion`** consumed by every animated component — respects the OS reduced-motion preference.
+- **One motion definition per family** — `theme/motion` holds the shared presets; every trigger-summoned panel (`AdaptiveDropdown`, `HoverMenu`, `Popover`, `HoldContextMenu`) resolves its animation through `resolveMenuMotion` and takes the same `motion` prop.
 - **Strict TypeScript** across the workspace (`noUncheckedIndexedAccess`, `verbatimModuleSyntax`).
 - **Biome** for linting and formatting (184 files, lint-clean baseline).
 - **Husky** pre-commit (lint + typecheck) and pre-push (test) hooks.

@@ -228,7 +228,7 @@ export const Default: Story = {
     await waitFor(() => expect(canvas.getByTestId(DEMO_PANEL_TESTID)).toBeInTheDocument());
     await expect(await canvas.findByText('Duplicate')).toBeInTheDocument();
 
-    // closeDelay (150ms) then the 180ms exit animation before it unmounts.
+    // closeDelay (150ms) then the shared 200ms menu exit before it unmounts.
     await userEvent.unhover(trigger);
     await waitFor(() => expect(canvas.queryByTestId(DEMO_PANEL_TESTID)).toBeNull(), { timeout: 2000 });
   },

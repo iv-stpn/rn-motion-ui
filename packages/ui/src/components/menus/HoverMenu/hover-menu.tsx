@@ -6,10 +6,10 @@ import { useHoverCapable } from '../../../hooks/use-hover-capable';
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { EASE_IN_OUT, SPRING_PANEL } from '../../../lib/ease';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
 
 const DEFAULT_WIDTH = 200;
 const DEFAULT_OFFSET = 4;
@@ -62,6 +62,18 @@ export type HoverMenuProps = {
   contentClassName?: string;
   /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 5 */
   elevation?: SurfaceLevel;
+  /**
+   * Overrides the shared open/close animation — the same `motion` prop
+   * `AdaptiveDropdown`, `Popover` and `HoldContextMenu` take, so a consumer can
+   * retune every menu in an app from one object. Partial: name one field and the
+   * rest of the preset stands.
+   *
+   * Reduced motion overrides all of it: the panel cross-fades in place.
+   *
+   * @example
+   * motion={{ enter: { stiffness: 420 }, offset: 16 }}
+   */
+  motion?: MenuMotion;
   testID?: string;
 };
 
@@ -112,10 +124,8 @@ const POSITION_ABSOLUTE = { position: 'absolute' as const };
 // fixed full-viewport container would cover the trigger and break hover.)
 // biome-ignore lint/plugin: 'fixed' is honoured by react-native-web but absent from RN's LayoutPosition union, so the web-only style is cast
 const WEB_PANEL_POSITION = { position: 'fixed' } as unknown as ViewStyle;
-const REDUCED_TRANSITION = { type: 'timing', duration: 0 } as const;
-const EXIT_TRANSITION = { type: 'timing', duration: 180, easing: EASE_IN_OUT } as const;
 
-type PanelLayout = { left: number; top: number; openAbove: boolean; panelWidth: number; enterY: number; measured: boolean };
+type PanelLayout = { left: number; top: number; openAbove: boolean; panelWidth: number; measured: boolean };
 
 type ComputePanelLayoutOptions = {
   rect: Rect | null;
@@ -125,14 +135,14 @@ type ComputePanelLayoutOptions = {
   align: 'start' | 'end';
   offset: number;
   width: number | 'trigger';
-  reduce: boolean;
 };
 
-// Pure geometry for the floating panel: clamps it to the viewport, flips it above
-// the trigger when it wouldn't fit below, and picks a slide-in direction. Pulled
-// out of the component so the math is testable and the render stays readable.
+// Pure geometry for the floating panel: clamps it to the viewport and flips it
+// above the trigger when it wouldn't fit below. Pulled out of the component so
+// the math is testable and the render stays readable. The slide direction that
+// follows from `openAbove` is `resolveMenuMotion`'s job.
 function computePanelLayout(options: ComputePanelLayoutOptions): PanelLayout {
-  const { rect, panelSize, viewportWidth, viewportHeight, align, offset, width, reduce } = options;
+  const { rect, panelSize, viewportWidth, viewportHeight, align, offset, width } = options;
   const triggerWidth = rect === null ? DEFAULT_WIDTH : rect.w;
   const panelWidth = width === 'trigger' ? triggerWidth : width;
   const panelH = panelSize.h;
@@ -153,10 +163,7 @@ function computePanelLayout(options: ComputePanelLayoutOptions): PanelLayout {
     top = Math.min(Math.max(rawTop, VIEWPORT_PADDING), maxTop);
   }
 
-  let enterY = -12;
-  if (reduce) enterY = 0;
-  else if (openAbove) enterY = 12;
-  return { left, top, openAbove, panelWidth, enterY, measured };
+  return { left, top, openAbove, panelWidth, measured };
 }
 
 const handlePanelPress = () => undefined;
@@ -176,6 +183,7 @@ export function HoverMenu({
   closeDelay = DEFAULT_CLOSE_DELAY,
   contentClassName,
   elevation = 5,
+  motion,
   testID,
 }: HoverMenuProps) {
   const canHover = useHoverCapable();
@@ -356,7 +364,7 @@ export function HoverMenu({
     if (styleProp === 'opacity' && finished && value === 1) openingRef.current = false;
   }, []);
 
-  const { left, top, panelWidth, enterY, measured } = computePanelLayout({
+  const { left, top, openAbove, panelWidth, measured } = computePanelLayout({
     rect,
     panelSize,
     viewportWidth,
@@ -364,8 +372,13 @@ export function HoverMenu({
     align,
     offset,
     width,
-    reduce,
   });
+
+  // Shared with AdaptiveDropdown, Popover and HoldContextMenu, so every panel
+  // this package anchors to a trigger opens and closes the same way.
+  const side = openAbove ? 'top' : 'bottom';
+  const panelMotion = resolveMenuMotion({ motion, reduce, side });
+  const transformOrigin = menuTransformOrigin({ align, side });
 
   const resolvedTrigger = typeof trigger === 'function' ? trigger({ open, toggle }) : trigger;
   const resolvedContent = typeof children === 'function' ? children({ close }) : children;
@@ -397,13 +410,15 @@ export function HoverMenu({
         testID={testID ? `${testID}-panel` : undefined}
       >
         <MotiView
-          from={{ opacity: 0, translateY: enterY }}
-          animate={{ opacity: measured ? 1 : 0, translateY: 0 }}
-          exit={{ opacity: 0, translateY: enterY }}
-          transition={reduce ? REDUCED_TRANSITION : SPRING_PANEL}
-          exitTransition={reduce ? REDUCED_TRANSITION : EXIT_TRANSITION}
+          {...panelMotion}
+          // Held at 0 until the panel has been measured, so it is never painted
+          // at an unresolved position — the rest of the pose is the shared one.
+          animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0 }}
           onDidAnimate={handleDidAnimate}
           className={`z-50 overflow-hidden rounded-2xl border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)} ${contentClassName ?? ''}`}
+          // Static, so it composes with the animated scale rather than competing
+          // with it: the panel grows out of the corner facing the trigger.
+          style={{ transformOrigin }}
         >
           {resolvedContent}
         </MotiView>

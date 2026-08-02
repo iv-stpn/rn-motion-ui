@@ -17,16 +17,55 @@ export type { SwitchColor, SwitchColors, SwitchThemeColors, SwitchThemeName } fr
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
-/**
- * Thumb travel: track (48) − left-offset (2) − thumb-width (28) − right-offset (2).
- */
-const TRAVEL = 16;
-
 /** 4-step horizontal shake emitted on a disabled-press (2 px, subtle signal). */
 const SWITCH_SHAKE_STEPS = [-2, 2, -1, 0] as const;
 
-/** Track geometry. The three fills are resolved per theme, not by a class. */
-const TRACK_CLASS = 'h-6 w-12 items-center justify-center rounded-full overflow-hidden';
+/** Available size variants for the switch track. */
+export type SwitchSize = 'sm' | 'md' | 'lg';
+
+type SwitchSizeConfig = {
+  trackClass: string;
+  thumbW: number;
+  thumbH: number;
+  thumbOffset: number;
+  travel: number;
+  labelClass: string;
+};
+
+/**
+ * Per-size track geometry; fills are resolved by `theme`, not here.
+ *
+ * `travel` is the thumb's slide distance — track width − thumb width − twice the
+ * offset (sm: 32 − 20 − 4, md: 48 − 28 − 4, lg: 64 − 38 − 4). The thumb height
+ * plus twice the offset likewise fills the track height, so the thumb sits inset
+ * by `thumbOffset` on all four sides at every size.
+ */
+const SWITCH_SIZE_CONFIG: Record<SwitchSize, SwitchSizeConfig> = {
+  sm: {
+    trackClass: 'h-4 w-8 items-center justify-center rounded-full overflow-hidden',
+    thumbW: 20,
+    thumbH: 12,
+    thumbOffset: 2,
+    travel: 8,
+    labelClass: 'text-xs',
+  },
+  md: {
+    trackClass: 'h-6 w-12 items-center justify-center rounded-full overflow-hidden',
+    thumbW: 28,
+    thumbH: 20,
+    thumbOffset: 2,
+    travel: 16,
+    labelClass: 'text-sm',
+  },
+  lg: {
+    trackClass: 'h-8 w-16 items-center justify-center rounded-full overflow-hidden',
+    thumbW: 38,
+    thumbH: 28,
+    thumbOffset: 2,
+    travel: 22,
+    labelClass: 'text-base',
+  },
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,6 +130,8 @@ export type SwitchProps = {
    * When supplying custom children, pass `thumbTransition` to `<Switch.Thumb>` directly.
    */
   thumbTransition?: Partial<MotiTransitionProp>;
+  /** Size variant — `'sm'`, `'md'` (default), or `'lg'`. */
+  size?: SwitchSize;
   /**
    * Custom children. Pass a render function to receive `{ isSelected, isDisabled }`,
    * or pass React elements. When omitted, a default `<Switch.Thumb />` is rendered.
@@ -112,6 +153,8 @@ type SwitchContextValue = {
    * paints `thumb`; custom content can read the track fills to match them.
    */
   colors: SwitchColors;
+  /** Active size variant — used by `Switch.Thumb` to look up geometry. */
+  size: SwitchSize;
   /** The switch's resolved testID. Sub-components derive their own from it. */
   testID: string;
 };
@@ -127,13 +170,12 @@ export function useSwitch(): SwitchContextValue {
 
 // ─── Switch.Thumb ─────────────────────────────────────────────────────────────
 
-/**
- * Sliding thumb inside the switch track. Spring-animates `translateX` between
- * off (0) and on (20 px) positions, and squishes lightly while the track is
- * pressed. Auto-rendered by `<Switch>` when no children are provided.
+/** Sliding thumb. Spring-animates `translateX` off → on; squishes on press.
+ * Auto-rendered by `<Switch>` when no children are provided.
  */
 function SwitchThumb({ children, className, style, thumbTransition }: SwitchThumbProps) {
-  const { isSelected, isDisabled, pressed, colors, testID } = useSwitch();
+  const { isSelected, isDisabled, pressed, colors, testID, size } = useSwitch();
+  const { thumbW, thumbH, thumbOffset, travel } = SWITCH_SIZE_CONFIG[size];
   const reduce = useReducedMotion();
   const squish = pressed && !isDisabled && !reduce;
 
@@ -156,17 +198,17 @@ function SwitchThumb({ children, className, style, thumbTransition }: SwitchThum
 
   return (
     <MotiView
-      animate={{ translateX: isSelected ? TRAVEL : 0, scaleX: squish ? 1.15 : 1, scale: squish ? 0.92 : 1 }}
+      animate={{ translateX: isSelected ? travel : 0, scaleX: squish ? 1.15 : 1, scale: squish ? 0.92 : 1 }}
       transition={transition}
       testID={`${testID}-thumb`}
       className={cn('items-center justify-center', className)}
       style={[
         {
           position: 'absolute',
-          top: 2,
-          left: 2,
-          width: 28,
-          height: 20,
+          top: thumbOffset,
+          left: thumbOffset,
+          width: thumbW,
+          height: thumbH,
           borderRadius: 9999,
           overflow: 'hidden',
           backgroundColor: colors.thumb,
@@ -247,6 +289,7 @@ function SwitchRoot({
   testID,
   theme = 'info',
   thumbTransition,
+  size = 'md',
   children,
   ref,
 }: SwitchProps & { ref?: Ref<View> }) {
@@ -254,6 +297,7 @@ function SwitchRoot({
   const [pressed, setPressed] = useState(false);
   const shakeX = useRef(new Animated.Value(0)).current;
   const { track, trackOff, thumb } = useSwitchColors(theme);
+  const { trackClass, labelClass } = SWITCH_SIZE_CONFIG[size];
   const resolvedTestID = testID ?? 'switch';
 
   // Disabled + pressed → short horizontal shake to signal "can't toggle".
@@ -274,9 +318,10 @@ function SwitchRoot({
       pressed,
       onToggle: handleToggle,
       colors: { track, trackOff, thumb },
+      size,
       testID: resolvedTestID,
     }),
-    [isSelected, isDisabled, pressed, handleToggle, track, trackOff, thumb, resolvedTestID],
+    [isSelected, isDisabled, pressed, handleToggle, track, trackOff, thumb, size, resolvedTestID],
   );
 
   const renderProps: SwitchRenderProps = { isSelected, isDisabled: isDisabled ?? false };
@@ -298,7 +343,7 @@ function SwitchRoot({
           onPress={handleToggle}
         >
           <Animated.View
-            className={TRACK_CLASS}
+            className={trackClass}
             testID={`${resolvedTestID}-track`}
             style={{
               backgroundColor: isSelected ? track : trackOff,
@@ -311,7 +356,7 @@ function SwitchRoot({
         </Pressable>
         {label ? (
           <SwitchLabel>
-            <Text className="select-none text-foreground text-sm">{label}</Text>
+            <Text className={`select-none text-foreground ${labelClass}`}>{label}</Text>
           </SwitchLabel>
         ) : null}
       </View>

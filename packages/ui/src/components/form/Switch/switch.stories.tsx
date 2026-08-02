@@ -3,7 +3,7 @@ import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { Switch } from './switch';
+import { Switch, type SwitchSize } from './switch';
 import type { SwitchThemeName } from './switch-theme';
 
 const meta = {
@@ -21,6 +21,9 @@ const noop = () => {
 
 /** Every built-in theme, in the order the docs list them. */
 const THEMES: readonly SwitchThemeName[] = ['info', 'primary', 'success', 'warning', 'danger', 'special'];
+
+/** All size variants. */
+const SIZES: readonly SwitchSize[] = ['sm', 'md', 'lg'];
 
 /**
  * Shared props for a bare colour swatch: static, and with the meta's `label`
@@ -70,12 +73,14 @@ function SwitchPlayground(args: ComponentProps<typeof Switch>) {
   const [on, setOn] = useState(true);
   const [disabled, setDisabled] = useState(false);
   const [theme, setTheme] = useState<SwitchThemeName>('info');
+  const [size, setSize] = useState<SwitchSize>('md');
 
   return (
     <Playground>
       <ControlCard title="Options">
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Choice label="Theme" onChange={setTheme} options={THEMES} value={theme} />
+        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
       </ControlCard>
 
       <Switch
@@ -85,23 +90,53 @@ function SwitchPlayground(args: ComponentProps<typeof Switch>) {
         label="Enable notifications"
         onSelectedChange={setOn}
         theme={theme}
+        size={size}
       />
 
       <Section title="States">
         <Variants direction="column">
           <Sample label="Off">
-            <Switch {...args} isSelected={false} label="Off" onSelectedChange={noop} theme={theme} />
+            <Switch {...args} isSelected={false} label="Off" onSelectedChange={noop} theme={theme} size={size} />
           </Sample>
           <Sample label="On">
-            <Switch {...args} isSelected={true} label="On" onSelectedChange={noop} theme={theme} />
+            <Switch {...args} isSelected={true} label="On" onSelectedChange={noop} theme={theme} size={size} />
           </Sample>
           {/* Pressing a disabled switch runs a short 2px shake instead of toggling. */}
           <Sample label="Disabled, off">
-            <Switch {...args} isSelected={false} isDisabled={true} label="Disabled" onSelectedChange={noop} theme={theme} />
+            <Switch
+              {...args}
+              isSelected={false}
+              isDisabled={true}
+              label="Disabled"
+              onSelectedChange={noop}
+              theme={theme}
+              size={size}
+            />
           </Sample>
           <Sample label="Disabled, on">
-            <Switch {...args} isSelected={true} isDisabled={true} label="Disabled" onSelectedChange={noop} theme={theme} />
+            <Switch
+              {...args}
+              isSelected={true}
+              isDisabled={true}
+              label="Disabled"
+              onSelectedChange={noop}
+              theme={theme}
+              size={size}
+            />
           </Sample>
+        </Variants>
+      </Section>
+
+      <Section title="Sizes">
+        <Variants direction="column">
+          {SIZES.map((s) => (
+            <Sample key={s} label={s}>
+              <Variants>
+                <Switch {...args} {...SWATCH} accessibilityLabel={`${s}, off`} isSelected={false} size={s} theme={theme} />
+                <Switch {...args} {...SWATCH} accessibilityLabel={`${s}, on`} isSelected={true} size={s} theme={theme} />
+              </Variants>
+            </Sample>
+          ))}
         </Variants>
       </Section>
 

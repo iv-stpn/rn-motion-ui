@@ -30,30 +30,29 @@ type PressHandler = NonNullable<PressableProps['onPressIn']>;
  */
 const DEFAULT_VARIANT: Record<
   MenuItemSize,
-  { rowClass: string; highlightClass: string; iconSize: number; iconPlaceholderClass: string; labelClass: string }
+  { rowClass: string; iconSize: number; iconPlaceholderClass: string; labelClass: string }
 > = {
   sm: {
-    rowClass: 'gap-1.5 rounded px-2 py-2',
-    highlightClass: 'rounded',
+    rowClass: 'gap-1.5 px-2 py-1',
     iconSize: 14,
     iconPlaceholderClass: 'h-3.5 w-3.5',
     labelClass: 'text-[12px]',
   },
   md: {
-    rowClass: 'gap-3 rounded-xl px-3 py-3',
-    highlightClass: 'rounded-xl',
-    iconSize: 20,
+    rowClass: 'gap-3 px-3 py-1.5',
+    iconSize: 19,
     iconPlaceholderClass: 'h-5 w-5',
     labelClass: 'text-[14px]',
   },
   lg: {
-    rowClass: 'gap-3 rounded-md px-4 py-2.5',
-    highlightClass: 'rounded-md',
+    rowClass: 'gap-3 px-4 py-2',
     iconSize: 24,
     iconPlaceholderClass: 'h-6 w-6',
     labelClass: 'text-[18px]',
   },
 };
+
+const ROUNDED_VARIANT: Record<MenuItemSize, string> = { sm: 'rounded', md: 'rounded-md', lg: 'rounded-lg' };
 
 /**
  * Scale for the iOS-style (iconBackgroundColor) variant — row height, icon
@@ -61,19 +60,19 @@ const DEFAULT_VARIANT: Record<
  */
 const ICON_TILE_VARIANT: Record<MenuItemSize, { rowClass: string; iconBgClass: string; iconSize: number; labelClass: string }> = {
   sm: {
-    rowClass: 'h-9 gap-1.5 rounded-md px-2.5',
+    rowClass: 'h-9 gap-1.5 px-2.5',
     iconBgClass: 'h-5.5 w-5.5 rounded',
     iconSize: 15,
     labelClass: 'text-sm',
   },
   md: {
-    rowClass: 'h-11 gap-2 rounded-lg px-3',
+    rowClass: 'h-11 gap-2 px-3',
     iconBgClass: 'h-6.5 w-6.5 rounded-md',
     iconSize: 18,
     labelClass: 'text-base',
   },
   lg: {
-    rowClass: 'h-13 gap-2.5 rounded-xl px-4',
+    rowClass: 'h-13 gap-2.5 px-4',
     iconBgClass: 'h-8 w-8 rounded-lg',
     iconSize: 21,
     labelClass: 'text-lg',
@@ -257,7 +256,8 @@ export function MenuItem({
     <Pressable
       {...props}
       className={cn(
-        'relative flex-row items-center',
+        'relative flex-row items-center overflow-hidden',
+        mode === 'sidebar' && ROUNDED_VARIANT[size],
         scale.rowClass,
         hasIconTile && active && 'bg-info',
         canInteract && hovered && 'bg-surface-hover',
@@ -274,7 +274,7 @@ export function MenuItem({
       {!hasIconTile && active ? (
         <MotiView
           key="hl"
-          className={cn('pointer-events-none absolute inset-0 bg-surface-selected', DEFAULT_VARIANT[size].highlightClass)}
+          className="pointer-events-none absolute inset-0 bg-surface-selected"
           from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}

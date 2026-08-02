@@ -205,20 +205,56 @@ export type HoldMenuLayout = {
 // ── Metrics ──────────────────────────────────────────────────────────────────
 
 /**
- * Row and panel metrics, in px. These mirror the Tailwind classes in
- * `hold-context-menu-row.tsx` — change one, change the other, or the pre-layout
- * height estimate drifts and the panel opens a few px off before its first
- * `onLayout` lands.
+ * Row and panel metrics, in px, each paired with the Tailwind class that
+ * produces it. The panel's rows are `Menu` rows, whose height comes from padding
+ * plus a text line box — which is a font measurement, not a number this module
+ * can know. So the panel pins its own floor with the `*_CLASS` strings below and
+ * mirrors it here, and the pair being declared together is what keeps the two in
+ * step. Apply the class without updating the number and the pre-layout estimate
+ * drifts; the panel then opens a few px off until its first `onLayout` lands.
+ *
+ * The classes are floors (`min-h-*`), not fixed heights: a large accessibility
+ * font must grow a row rather than clip its label. When that happens the
+ * estimate under-reports, `onLayout` reports the real height, and the layout
+ * re-resolves — the documented correction path, not a failure.
  */
 
-/** Action row minimum height — `min-h-11`. */
-export const HOLD_MENU_ROW_HEIGHT = 44;
-/** Heading row minimum height — `min-h-[34px]`. */
-export const HOLD_MENU_HEADING_HEIGHT = 34;
-/** Separator band between groups — `h-2`. */
-export const HOLD_MENU_SEPARATOR_HEIGHT = 8;
+/** Action row minimum height. */
+export const HOLD_MENU_ROW_HEIGHT = 32;
+/** Floor applied to each action row, mirroring {@link HOLD_MENU_ROW_HEIGHT}. */
+export const HOLD_MENU_ROW_CLASS = 'min-h-8';
+/** Heading row minimum height. */
+export const HOLD_MENU_HEADING_HEIGHT = 24;
+/** Floor applied to the heading row, mirroring {@link HOLD_MENU_HEADING_HEIGHT}. */
+export const HOLD_MENU_HEADING_CLASS = 'min-h-6 justify-center';
+/**
+ * The list's vertical inset inside the panel. `Menu` ships a default one, but
+ * this panel overrides it with a number of its own: the estimate below has to be
+ * exact, and a value the list is free to retune is not one to predict a position
+ * from.
+ */
+export const HOLD_MENU_LIST_PADDING = 8;
+/** Vertical inset applied to the list, mirroring {@link HOLD_MENU_LIST_PADDING}. */
+export const HOLD_MENU_LIST_CLASS = 'py-1';
+/**
+ * Separator band between groups — `Menu`'s own `md` separator: a `h-1` hairline
+ * with `my-1` around it. Explicit in `Menu`'s size scale, so unlike the rows
+ * above there is nothing to pin here, only to mirror.
+ *
+ * Mirrored rather than imported: this module is pure geometry with no component
+ * imports, which is what lets it be unit-tested without a renderer. The source of
+ * truth is `MENU_SEPARATOR_HEIGHT.md` in `../Menu/menu`, whose doc comment points
+ * back here.
+ */
+export const HOLD_MENU_SEPARATOR_HEIGHT = 12;
 /** Panel hairline border, top + bottom — `border`. */
 export const HOLD_MENU_BORDER_HEIGHT = 2;
+/**
+ * Smallest the panel is ever capped to: border, list inset and one row. A panel
+ * clamped below this shows no whole row at all, and the held item is the thing
+ * that can afford to hang off the edge instead.
+ */
+export const HOLD_MENU_MIN_PANEL_HEIGHT = HOLD_MENU_BORDER_HEIGHT + HOLD_MENU_LIST_PADDING + HOLD_MENU_ROW_HEIGHT;
 /** Gap between the held item's edge and the panel. */
 export const HOLD_MENU_GAP = 8;
 /** Margin kept between the panel and the safe-area edges. */
@@ -245,16 +281,16 @@ export const HOLD_ITEM_SCALE = 0.95;
  * `min-h-*` rather than fixed, so a larger accessibility font grows the row and
  * the measurement corrects the estimate rather than clipping the text.
  *
- * Row dividers add nothing: React Native's box model is `border-box`, so a
- * row's 1 px bottom border sits inside its own height.
+ * Counts the panel's border and the list's own vertical inset once, then a row
+ * per item. Nothing is added between rows: the list runs them flush, and the
+ * band that ends a group is the only thing that ever sits between two.
  */
 export function estimateHoldMenuHeight(items: readonly HoldMenuHeightItem[]) {
   if (items.length === 0) return 0;
-  let height = HOLD_MENU_BORDER_HEIGHT;
+  let height = HOLD_MENU_BORDER_HEIGHT + HOLD_MENU_LIST_PADDING;
   for (const [index, item] of items.entries()) {
     height += item.heading ? HOLD_MENU_HEADING_HEIGHT : HOLD_MENU_ROW_HEIGHT;
-    // The band replaces the divider rather than stacking with it, and the last
-    // row has neither.
+    // A band ends a group, so the last row has nothing to end.
     if (item.separator && index < items.length - 1) height += HOLD_MENU_SEPARATOR_HEIGHT;
   }
   return height;
@@ -291,8 +327,10 @@ export function resolveHoldMenuLayout({
     : resolveTravel({ side: resolvedSide, item, menuHeight, viewport, insets });
 
   // Never below one row: a panel clamped to nothing would be invisible, and the
-  // held item is the thing that can afford to hang off the edge instead.
-  const maxHeight = Math.max(HOLD_MENU_ROW_HEIGHT + HOLD_MENU_BORDER_HEIGHT, travel.maxHeight);
+  // held item is the thing that can afford to hang off the edge instead. The
+  // border and the list's inset are part of what one visible row costs, so the
+  // floor counts them — capped to the row alone, the inset would eat it.
+  const maxHeight = Math.max(HOLD_MENU_MIN_PANEL_HEIGHT, travel.maxHeight);
   // The panel's own edge: `bottom` grows down from the item, so its top is fixed;
   // `top` grows up, so its top follows whatever height it ends up with.
   const height = Math.min(menuHeight, maxHeight);

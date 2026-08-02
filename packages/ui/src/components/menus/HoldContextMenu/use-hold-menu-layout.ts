@@ -10,6 +10,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
+import type { HoldContextMenuItem } from './hold-context-menu-item';
 import {
   estimateHoldMenuHeight,
   type HoldMenuAlign,
@@ -18,7 +19,6 @@ import {
   type HoldMenuSide,
   resolveHoldMenuLayout,
 } from './hold-context-menu-layout';
-import type { HoldContextMenuItem } from './hold-context-menu-row';
 
 export type UseHoldMenuLayoutOptions = {
   items: readonly HoldContextMenuItem[];

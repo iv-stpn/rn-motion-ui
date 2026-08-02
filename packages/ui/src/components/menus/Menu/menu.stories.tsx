@@ -34,14 +34,15 @@ const DISABLED_LABEL = 'Move to…';
 const EDIT_LABEL = 'Edit';
 const DROPDOWN_TEST_ID = 'menu-dropdown';
 
-const FRAMED_NOTE = 'Framed: the surface, radius and p-1 inset come from the container, not from the list.';
+const FRAMED_NOTE = 'Framed: surface, radius and width come from the container; the top and bottom inset from the list.';
 const BARE_NOTE = 'Bare: the list has no frame of its own — rows go edge to edge, on whatever is behind them.';
 
 type PanelProps = { children: ReactNode; width?: number; framed?: boolean };
 
 /**
- * Stand-in for the panel a dropdown would supply — surface, radius, and the `p-1`
- * inset, all of which belong to the container rather than to the list inside it.
+ * Stand-in for the panel a dropdown would supply — surface, radius and width, all
+ * of which belong to the container rather than to the list inside it. It supplies
+ * no inset: the list caps its own top and bottom.
  *
  * `framed={false}` drops the whole frame, which is what the list looks like on its
  * own: rows edge to edge, no surface of their own, nothing between them and
@@ -50,7 +51,7 @@ type PanelProps = { children: ReactNode; width?: number; framed?: boolean };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function Panel({ children, width = 260, framed = true }: PanelProps) {
   return (
-    <View className={framed ? `overflow-hidden rounded-2xl p-1 ${SURFACE_CLASSNAME[3]}` : undefined} style={{ width }}>
+    <View className={framed ? `overflow-hidden rounded-2xl ${SURFACE_CLASSNAME[3]}` : undefined} style={{ width }}>
       {children}
     </View>
   );
@@ -230,12 +231,7 @@ function DropdownDemo() {
 
   return (
     <View className="items-center gap-3">
-      {/*
-       * `contentClassName="p-1"` is the container supplying the inset. The list
-       * has none of its own, so without this the rows sit against the panel's
-       * rounded edge — which is a legitimate look, but not the usual one.
-       */}
-      <AdaptiveDropdown contentClassName="p-1" testID={DROPDOWN_TEST_ID} trigger={renderTrigger} width={260}>
+      <AdaptiveDropdown testID={DROPDOWN_TEST_ID} trigger={renderTrigger} width={260}>
         {renderContent}
       </AdaptiveDropdown>
       <Note testID="story-chosen">{chosen ? `Chose: ${chosen}` : 'Nothing chosen yet'}</Note>

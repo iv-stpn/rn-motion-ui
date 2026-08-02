@@ -152,10 +152,10 @@ function HoldContextMenuPlayground() {
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Width" onChange={setWidthKey} options={WIDTHS} value={widthKey} />
         <Choice label="Motion" onChange={setMotionKey} options={MOTIONS} value={motionKey} />
+        <Choice label="Activate on" onChange={setActivateOn} options={ACTIVATIONS} value={activateOn} />
       </ControlCard>
 
       <ControlCard title="Gesture">
-        <Choice label="Activate on" onChange={setActivateOn} options={ACTIVATIONS} value={activateOn} />
         <Toggle label="Close on tap" onChange={setCloseOnTap} value={closeOnTap} />
         <Toggle label="Pin item in place" onChange={setDisableMove} value={disableMove} />
       </ControlCard>

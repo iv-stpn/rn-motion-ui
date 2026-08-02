@@ -10,6 +10,12 @@
  * provider is needed and no shared `SharedValue` has to be threaded between the
  * item and the panel.
  *
+ * The rows are not this module's either: upstream's `MenuList` and `MenuItem` are
+ * this package's {@link Menu}, which every anchored panel here fills its panel
+ * with. What is left below is the surface — where it sits, how big it may get,
+ * whether it scrolls — and the two things only this menu has, the scrim and the
+ * lifted copy.
+ *
  * The lift is a *copy* of the children painted at the measured rect while the
  * original is held invisible in place, so the item appears to rise out of the
  * page. `children` therefore renders twice — the same constraint upstream has,
@@ -20,7 +26,7 @@
  * where it already sits. `children` renders once there.
  */
 
-import { type ReactNode, useCallback } from 'react';
+import { type ReactNode, useCallback, useMemo } from 'react';
 import { type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
@@ -34,9 +40,10 @@ import {
   resolveMenuMotion,
   TIMING_FAST,
 } from '../../../theme/motion';
-import { HOLD_ITEM_SCALE, type HoldMenuLayout, type HoldMenuRect } from './hold-context-menu-layout';
+import { Menu } from '../Menu/menu';
+import { type HoldContextMenuItem, holdMenuEntries } from './hold-context-menu-item';
+import { HOLD_ITEM_SCALE, HOLD_MENU_LIST_CLASS, type HoldMenuLayout, type HoldMenuRect } from './hold-context-menu-layout';
 import type { HoldContextMenuMotion } from './hold-context-menu-motion';
-import { type HoldContextMenuItem, HoldContextMenuRow, HoldContextMenuSeparator } from './hold-context-menu-row';
 import { HOLD_MENU_LIFTS } from './use-hold-activation';
 
 type PanelProps = {
@@ -50,6 +57,7 @@ type PanelProps = {
   accessibilityLabel: string;
   onSelect: (item: HoldContextMenuItem) => void;
   onLayout: (event: LayoutChangeEvent) => void;
+  /** Base testID. The surface takes `-panel`, the list `-menu`, its rows `-menu-item-<id>`. */
   testID?: string;
 };
 
@@ -71,23 +79,29 @@ function HoldContextMenuPanel({
   // the slide is applied on top of it rather than replacing it.
   const panelMotion = resolveMenuMotion({ motion, reduce, restingTranslateY: layout.shift, side: layout.side });
 
-  const rows = items.map((item, index) => (
-    <View key={item.id}>
-      <HoldContextMenuRow
-        isLast={index === items.length - 1}
-        item={item}
-        onSelect={onSelect}
-        testID={testID ? `${testID}-item-${item.id}` : undefined}
-      />
-      {item.separator && index < items.length - 1 ? <HoldContextMenuSeparator /> : null}
-    </View>
-  ));
+  const entries = useMemo(() => holdMenuEntries(items, onSelect), [items, onSelect]);
+
+  /*
+   * The list is the menu; the panel is the surface it sits on. `role="menu"`, the
+   * accessible name and the testID all go on `Menu` rather than on the panel, so
+   * each `menuitem` is owned directly by the element carrying that role instead
+   * of reaching it through a wrapper — and so the two don't nest one menu inside
+   * another. `HOLD_MENU_LIST_CLASS` is the inset: the list ships a default one,
+   * and overriding it with a number this panel chose is what keeps the pre-layout
+   * height estimate exact.
+   */
+  const list = (
+    <Menu
+      accessibilityLabel={accessibilityLabel}
+      className={HOLD_MENU_LIST_CLASS}
+      entries={entries}
+      testID={testID ? `${testID}-menu` : undefined}
+    />
+  );
 
   return (
     <MotiView
       {...panelMotion}
-      accessibilityLabel={accessibilityLabel}
-      aria-label={accessibilityLabel}
       className={cn(
         'absolute overflow-hidden rounded-2xl border border-border',
         surfaceBackground(elevation),
@@ -95,7 +109,6 @@ function HoldContextMenuPanel({
       )}
       key="hold-context-menu-panel"
       onLayout={onLayout}
-      role="menu"
       style={{
         left: layout.left,
         maxHeight: layout.maxHeight,
@@ -105,14 +118,14 @@ function HoldContextMenuPanel({
         transformOrigin: layout.transformOrigin,
         width: layout.width,
       }}
-      testID={testID}
+      testID={testID ? `${testID}-panel` : undefined}
     >
       {scrolls ? (
         <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
-          {rows}
+          {list}
         </ScrollView>
       ) : (
-        rows
+        list
       )}
     </MotiView>
   );
@@ -257,7 +270,7 @@ export function HoldContextMenuOverlay({
             onLayout={handlePanelLayout}
             onSelect={onSelect}
             reduce={reduce}
-            testID={testID ? `${testID}-menu` : undefined}
+            testID={testID}
           />
         </View>
       ) : null}

@@ -5,6 +5,8 @@ import {
   HOLD_MENU_DEFAULT_WIDTH,
   HOLD_MENU_GAP,
   HOLD_MENU_HEADING_HEIGHT,
+  HOLD_MENU_LIST_PADDING,
+  HOLD_MENU_MIN_PANEL_HEIGHT,
   HOLD_MENU_ROW_HEIGHT,
   HOLD_MENU_SEPARATOR_HEIGHT,
   HOLD_MENU_VIEWPORT_PADDING,
@@ -20,8 +22,11 @@ const NO_INSETS = { top: 0, bottom: 0, left: 0, right: 0 };
 const PHONE = { width: 390, height: 844 };
 const PHONE_INSETS = { top: 47, bottom: 34, left: 0, right: 0 };
 
-/** The default menu in these tests: three plain action rows. */
-const THREE_ROWS = HOLD_MENU_BORDER_HEIGHT + HOLD_MENU_ROW_HEIGHT * 3;
+/**
+ * The default menu in these tests: three plain action rows, plus the two things
+ * the panel costs whatever it holds — its border and the list's vertical inset.
+ */
+const THREE_ROWS = HOLD_MENU_BORDER_HEIGHT + HOLD_MENU_LIST_PADDING + HOLD_MENU_ROW_HEIGHT * 3;
 
 /** Bottom edge of the safe viewport, where a panel or item is allowed to end. */
 const SAFE_BOTTOM = VIEWPORT.height - HOLD_MENU_VIEWPORT_PADDING;
@@ -44,8 +49,14 @@ describe('estimateHoldMenuHeight', () => {
     expect(estimateHoldMenuHeight([])).toBe(0);
   });
 
-  it('counts one row per item, plus the panel borders', () => {
+  it('counts one row per item, plus the panel border and the list inset', () => {
     expect(estimateHoldMenuHeight([{}, {}, {}])).toBe(THREE_ROWS);
+  });
+
+  it('counts the border and the inset once, not per row', () => {
+    const fixed = HOLD_MENU_BORDER_HEIGHT + HOLD_MENU_LIST_PADDING;
+    expect(estimateHoldMenuHeight([{}])).toBe(fixed + HOLD_MENU_ROW_HEIGHT);
+    expect(estimateHoldMenuHeight([{}, {}])).toBe(fixed + HOLD_MENU_ROW_HEIGHT * 2);
   });
 
   it('gives a heading its own shorter height', () => {
@@ -71,10 +82,12 @@ describe('resolveHoldMenuLayout — side', () => {
   });
 
   it('flips above when below cannot fit it and above has more room', () => {
-    const result = layout({ item: { x: 40, y: 600, width: 200, height: 60 } });
+    // Low enough that the three rows genuinely do not fit under it: 24px of room
+    // below, 684px above.
+    const result = layout({ item: { x: 40, y: 700, width: 200, height: 60 } });
     expect(result.side).toBe('top');
     // Grows up from the item, so its top edge follows its height.
-    expect(result.top).toBe(600 - HOLD_MENU_GAP - THREE_ROWS);
+    expect(result.top).toBe(700 - HOLD_MENU_GAP - THREE_ROWS);
   });
 
   it('stays below when neither side fits but below has more room', () => {
@@ -119,8 +132,8 @@ describe('resolveHoldMenuLayout — align', () => {
   });
 
   it('reports a bottom transform origin when the panel opens above', () => {
-    // Tall enough that the three rows no longer fit below, so the side flips.
-    const result = layout({ item: { x: 20, y: 600, width: 80, height: 60 } });
+    // Low enough that the three rows no longer fit below, so the side flips.
+    const result = layout({ item: { x: 20, y: 700, width: 80, height: 60 } });
     expect(result.side).toBe('top');
     expect(result.transformOrigin).toBe('left bottom');
   });
@@ -184,10 +197,13 @@ describe('resolveHoldMenuLayout — disableMove', () => {
     expect(result.top + result.maxHeight).toBe(SAFE_BOTTOM);
   });
 
-  it('never caps below a single row, however little room is left', () => {
+  it('never caps below one visible row — border and list inset included', () => {
     // Item flush with the bottom edge: the space below it is negative.
     const result = layout({ disableMove: true, item: { x: 40, y: 790, width: 200, height: 10 }, side: 'bottom' });
-    expect(result.maxHeight).toBe(HOLD_MENU_ROW_HEIGHT + HOLD_MENU_BORDER_HEIGHT);
+    expect(result.maxHeight).toBe(HOLD_MENU_MIN_PANEL_HEIGHT);
+    // The floor is what one row actually costs: capped to the row alone, the
+    // panel's own border and the list's inset would eat into it.
+    expect(HOLD_MENU_MIN_PANEL_HEIGHT).toBe(HOLD_MENU_BORDER_HEIGHT + HOLD_MENU_LIST_PADDING + HOLD_MENU_ROW_HEIGHT);
   });
 });
 

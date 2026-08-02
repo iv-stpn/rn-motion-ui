@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, type StyleProp, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { type IconProps, Search } from '../../../lib/icons';
 import { useThemeColor } from '../../../theme/use-theme-color';
@@ -123,8 +123,6 @@ export function CommandPalette({
   const reduce = useReducedMotion();
   const placeholderColor = useThemeColor('muted-foreground');
 
-  const { height: windowHeight } = useWindowDimensions();
-
   const [internalOpen, setInternalOpen] = useState(false);
 
   const controlled = controlledOpen !== undefined;
@@ -216,7 +214,7 @@ export function CommandPalette({
             <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
           </Pressable>
         </View>
-        <ScrollView className="p-2" style={{ maxHeight: Math.round(windowHeight * 0.6) }} keyboardShouldPersistTaps="handled">
+        <ScrollView className="max-h-[60vh] py-2" keyboardShouldPersistTaps="handled">
           {filtered.length === 0 ? (
             <View className="p-8">
               <Text className="text-center text-muted-foreground text-sm">{emptyMessage}</Text>

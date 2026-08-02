@@ -3,13 +3,13 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
 import { Bell, ChevronDown, Moon, Settings, User } from '../../../lib/icons';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
-import { MenuItem } from '../MenuItem/menu-item';
+import { Menu, type MenuEntry } from '../Menu/menu';
 import { AdaptiveDropdown, type TriggerRenderProps } from './adaptive-dropdown';
 
 const meta = {
@@ -24,11 +24,8 @@ type Story = StoryObj<typeof meta>;
 
 const MENU_LABEL = 'Menu';
 const CLOSE_MENU_LABEL = 'Close menu';
-const _CLOSE_LABEL = 'Close';
 const CLEAR_LABEL = 'Clear';
 const PANEL_TITLE = 'Options';
-const SMALL_SCREEN_NOTE =
-  'Narrow viewports swap the floating panel for a bottom sheet, where "Full sheet" stretches it to the full height.';
 
 const ALIGNS = ['start', 'end'] as const;
 type Align = (typeof ALIGNS)[number];
@@ -42,32 +39,17 @@ type OffsetKey = (typeof OFFSETS)[number];
 const SCROLL_MAX_HEIGHT = 260;
 const LONG_LIST_LENGTH = 18;
 
-type MenuEntry = { label: string; icon?: typeof User };
-
 const ITEMS: readonly MenuEntry[] = [
-  { label: 'Profile', icon: User },
-  { label: 'Notifications', icon: Bell },
-  { label: 'Appearance', icon: Moon },
-  { label: 'Settings', icon: Settings },
+  { label: 'Profile', icon: User, id: 'profile' },
+  { label: 'Notifications', icon: Bell, id: 'notifications' },
+  { label: 'Appearance', icon: Moon, id: 'appearance' },
+  { label: 'Settings', icon: Settings, id: 'settings' },
 ];
 
 const LONG_ITEMS: readonly MenuEntry[] = Array.from({ length: LONG_LIST_LENGTH }, (_, index) => ({
   label: `Item ${index + 1}`,
+  id: `item-${index + 1}`,
 }));
-
-type MenuBodyProps = { long?: boolean };
-
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function MenuBody({ long = false }: MenuBodyProps) {
-  const rows = long ? LONG_ITEMS : ITEMS;
-  return (
-    <View className="p-1">
-      {rows.map((row) => (
-        <MenuItem icon={row.icon} key={row.label} label={row.label} />
-      ))}
-    </View>
-  );
-}
 
 // The render-prop `trigger` gets `{ open, toggle }`; the chevron tracks the theme so
 // the open state stays legible on dark surfaces (a fixed dark hex vanished there).
@@ -122,7 +104,7 @@ function DropdownPlayground() {
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
 
-  const renderContent = useCallback(() => <MenuBody long={longList} />, [longList]);
+  const renderContent = useCallback(() => <Menu entries={longList ? LONG_ITEMS : ITEMS} />, [longList]);
   const renderTrigger = useCallback(
     (props: TriggerRenderProps) => (
       <SwappableTrigger kind={trigger.kind} size={trigger.size} shape={trigger.shape} open={props.open} toggle={props.toggle} />
@@ -132,7 +114,6 @@ function DropdownPlayground() {
   // Only hand `open`/`onOpenChange` over when the toggle is on — omitting them lets
   // the component own its state, which is the other half of the API to exhibit.
   const controlledProps = controlled ? { onOpenChange: setOpen, open } : {};
-  const openNote = controlled ? `Controlled — open: ${String(open)}` : 'Uncontrolled';
 
   return (
     <Playground className="min-w-[340px]">
@@ -169,8 +150,6 @@ function DropdownPlayground() {
       >
         {renderContent}
       </AdaptiveDropdown>
-      <Note testID="story-open">{openNote}</Note>
-      <Note>{SMALL_SCREEN_NOTE}</Note>
     </Playground>
   );
 }
@@ -186,7 +165,7 @@ export const Default: Story = {
   render: () => (
     <View className="items-center">
       <AdaptiveDropdown trigger={PlaygroundTrigger}>
-        <MenuBody />
+        <Menu entries={ITEMS} />
       </AdaptiveDropdown>
     </View>
   ),

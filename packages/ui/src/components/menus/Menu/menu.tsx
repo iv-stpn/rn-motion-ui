@@ -1,4 +1,5 @@
 // biome-ignore-all lint/style/useExportsLast: the entry types head the module so the components below read against them
+// biome-ignore-all lint/style/useComponentExportOnlyModules: the separator metric is exported alongside the components
 /**
  * Menu — the list that goes *inside* a dropdown, a popover or a context menu.
  *
@@ -10,23 +11,30 @@
  *
  * ## It is the inside, not the frame
  *
- * The list draws no surface, no border, no radius and — the one worth saying out
- * loud — **no padding**. Rows run edge to edge and separators span the full
- * width. Whatever holds the list decides how it is inset, because only that
- * component knows: a dropdown pads by a hair, a bottom sheet pads by more, a
- * sidebar column may pad on one axis only.
+ * The list draws no surface, no border, no radius and no width. Rows run edge to
+ * edge horizontally and separators span the full width, because a row's press
+ * highlight reaching the panel's sides is what makes it read as a menu row rather
+ * than a floating button.
+ *
+ * The one thing it does own is its **vertical** inset. A row flush against a
+ * rounded panel edge is wrong in every panel that holds this list, so the list
+ * caps itself top and bottom rather than making four containers each remember to.
+ * The frame around it stays the caller's:
  *
  * ```tsx
- * // The frame is the caller's. `contentClassName` is AdaptiveDropdown's slot for it.
- * <AdaptiveDropdown contentClassName="p-1" trigger={trigger}>
+ * // Surface, radius and width are the panel's; the top and bottom inset is the list's.
+ * <AdaptiveDropdown trigger={trigger} width={260}>
  *   {({ close }) => <Menu entries={entries} onClose={close} />}
  * </AdaptiveDropdown>
  * ```
  *
- * One element does survive: the list renders a single `View` to hang
- * `role="menu"` and the accessible name on. It carries no classes of its own, so
- * it costs a node and changes no layout — a `Fragment` would be marginally
- * leaner and would leave the menu semantics with nowhere to live.
+ * Pass `className="py-*"` to retune that inset, or `py-0` to drop it — a panel
+ * that has to predict its own height before layout wants a number it pinned
+ * itself, which is what `HoldContextMenu` does.
+ *
+ * The list renders a single `View` to hang `role="menu"`, the accessible name and
+ * that inset on — a `Fragment` would be marginally leaner and would leave the
+ * menu semantics with nowhere to live.
  *
  * ## The interface
  *
@@ -72,20 +80,20 @@
  *
  * ## What it deliberately does not do
  *
- * **No frame.** No background, no border, no radius, no padding, no width, no
- * scrolling. The rows go edge to edge and the surface around them belongs to
- * whatever is holding it — `AdaptiveDropdown`'s panel, `HoldContextMenu`'s, a
- * `Card`, a sidebar column. A menu that painted its own surface would sit as a
- * second visible box inside the first one, and its padding would fight the
- * panel's.
+ * **No frame.** No background, no border, no radius, no horizontal padding, no
+ * width, no scrolling. The rows go edge to edge and the surface around them
+ * belongs to whatever is holding it — `AdaptiveDropdown`'s panel,
+ * `HoldContextMenu`'s, a `Card`, a sidebar column. A menu that painted its own
+ * surface would sit as a second visible box inside the first one.
  *
- * That includes the inset: pass `contentClassName="p-1"` to `AdaptiveDropdown`,
- * or `className="p-1"` here, and pick whichever of the two owns it in your app —
- * but only one of them.
+ * The vertical inset is the exception, and the reason is that it is not really
+ * part of the frame: it is the space the first and last row need from the panel's
+ * rounded corners, which is the same in every panel. Horizontal padding is not,
+ * so it stays out — indent the rows and the highlight stops reaching the edge.
  *
- * The list element that remains is not a frame; it exists to carry `role="menu"`
- * and the accessible name, and to space the rows in `'sidebar'` mode where they
- * are individually rounded. It has no visual styling.
+ * The list element that remains is not a frame; it carries `role="menu"`, the
+ * accessible name, that vertical inset, and the gap between the individually
+ * rounded rows of `'sidebar'` mode.
  */
 
 import { Fragment, isValidElement, type ReactElement, type ReactNode, useCallback } from 'react';
@@ -191,16 +199,19 @@ export type MenuProps = {
   iconGutter?: 'auto' | 'on' | 'off';
   /**
    * `'menu'` (default) announces the list as a menu and each row as a menuitem.
-   * `'none'` drops the list's own role — use it when the panel around it already
-   * carries `role="menu"` (`HoldContextMenu`'s does), so the two don't nest.
+   * `'none'` drops the list's own role — for a panel that already carries
+   * `role="menu"` itself, so the two don't nest one menu inside another. The
+   * panels in this package leave the role to the list, which is the arrangement
+   * that puts each `menuitem` directly inside the element owning `menu`.
    */
   role?: 'menu' | 'none';
   /** Accessible name for the list. */
   accessibilityLabel?: string;
   /**
-   * Merged onto the list element. That element has no styling of its own, so
-   * this is additive rather than an override — see the note on the frame in the
-   * module header before reaching for it.
+   * Merged onto the list element. The only style that element carries of its own
+   * is the vertical inset, so `py-*` here replaces it (`py-0` drops it) and
+   * everything else is additive — see the note on the frame in the module header
+   * before reaching for it.
    */
   className?: string;
   testID?: string;
@@ -212,19 +223,58 @@ export type MenuProps = {
  * from its neighbours, and the caption's own padding (matching the row padding at
  * that size, so a group label lines up with the labels under it).
  *
- * There is deliberately no entry for the list's own padding. See {@link Menu}.
+ * The list's own vertical inset is not here on purpose: it is the gap the end
+ * rows need from a rounded panel corner, which is a property of the panel rather
+ * than of the row scale, so it is one fixed value at every size. See {@link Menu}.
  */
 const SIZE_SCALE: Record<MenuItemSize, { gapClass: string; separatorClass: string; labelClass: string }> = {
-  sm: { gapClass: 'gap-0.5', separatorClass: 'my-0.5', labelClass: 'px-2 pt-1 pb-0.5' },
-  md: { gapClass: 'gap-0.5', separatorClass: 'my-1', labelClass: 'px-3 pt-1.5 pb-0.5' },
-  lg: { gapClass: 'gap-1', separatorClass: 'my-1.5', labelClass: 'px-4 pt-2 pb-1' },
+  sm: { gapClass: 'gap-0.5', separatorClass: 'my-0.5', labelClass: 'px-2 pt-0.5 pb-1' },
+  md: { gapClass: 'gap-0.5', separatorClass: 'my-1', labelClass: 'px-3 pt-0.5 pb-1.5' },
+  lg: { gapClass: 'gap-1', separatorClass: 'my-1.5', labelClass: 'px-4 pt-1 pb-2' },
+};
+
+/**
+ * The list's own vertical inset — the one piece of spacing it does not leave to
+ * the panel around it, because the first and last row need clearance from a
+ * rounded corner in every panel that holds this list. Not per-size: it answers to
+ * the panel's radius, which the row scale knows nothing about.
+ *
+ * Overridable through `className` (`cn` resolves the conflict last-wins), which is
+ * how `HoldContextMenu` pins its own — it has to predict its height before layout
+ * and wants a number it chose.
+ */
+const LIST_INSET_CLASS = 'py-2.5';
+
+/** The separator band's own height, mirroring the `h-1` below. */
+const SEPARATOR_BAR_HEIGHT = 4;
+
+/**
+ * Total vertical space a `separator` entry takes at each size — the band plus the
+ * margins `SIZE_SCALE` puts around it.
+ *
+ * Published because a panel that places itself *before* it has been laid out has
+ * to predict its own height, and a separator is the one entry whose height is
+ * fixed in px rather than following a text line box — every other entry ends up
+ * as tall as its text line box, which is a font measurement no caller can do
+ * ahead of layout.
+ *
+ * `HoldContextMenu` is the one panel here that needs that, and it mirrors the `md`
+ * value rather than importing it: its layout module is deliberately free of
+ * component imports so it stays a pure unit under test. This constant is what
+ * that mirror points at — retune the scale above and the two numbers to check are
+ * here and in `HOLD_MENU_SEPARATOR_HEIGHT`.
+ */
+export const MENU_SEPARATOR_HEIGHT: Record<MenuItemSize, number> = {
+  sm: SEPARATOR_BAR_HEIGHT + 4, // my-0.5 — 2px each side
+  md: SEPARATOR_BAR_HEIGHT + 8, // my-1   — 4px each side
+  lg: SEPARATOR_BAR_HEIGHT + 12, // my-1.5 — 6px each side
 };
 
 export type MenuSeparatorProps = { className?: string };
 
 /** The hairline between two groups. Exported so a `node` entry can draw a matching one. */
 export function MenuSeparator({ className }: MenuSeparatorProps) {
-  return <View className={cn('h-px bg-border', className)} />;
+  return <View className={cn('h-1 bg-border', className)} />;
 }
 
 export type MenuLabelProps = { children: ReactNode; className?: string };
@@ -232,9 +282,6 @@ export type MenuLabelProps = { children: ReactNode; className?: string };
 /** The caption above a group. Exported for the same reason as {@link MenuSeparator}. */
 export function MenuLabel({ children, className }: MenuLabelProps) {
   return (
-    // Not a menuitem — it does nothing when pressed. `presentation` drops the
-    // wrapper from the tree while leaving its text readable, so a screen reader
-    // reaches the caption without being offered a dead command.
     <View className={className} role="presentation">
       <Text className="text-muted-foreground" numberOfLines={1} size="xs" weight="medium">
         {children}
@@ -377,9 +424,7 @@ export function Menu({
     <View
       accessibilityLabel={accessibilityLabel}
       aria-label={accessibilityLabel}
-      // No padding, no background, no radius: the panel around it owns the frame.
-      // A `View` is column by default, so the only class here is the inter-row gap.
-      className={cn(mode === 'sidebar' && scale.gapClass, className)}
+      className={cn(mode === 'sidebar' && scale.gapClass, LIST_INSET_CLASS, className)}
       role={isMenu ? 'menu' : undefined}
       testID={testID}
     >

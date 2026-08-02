@@ -64,10 +64,10 @@ import type { StyleProp, View, ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import type { SurfaceLevel } from '../../../lib/elevated';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
+import type { HoldContextMenuItem } from './hold-context-menu-item';
 import { HOLD_MENU_DEFAULT_WIDTH, type HoldMenuAlign, type HoldMenuSide } from './hold-context-menu-layout';
 import type { HoldContextMenuMotion } from './hold-context-menu-motion';
 import { HoldContextMenuOverlay } from './hold-context-menu-overlay';
-import type { HoldContextMenuItem } from './hold-context-menu-row';
 import { HoldContextMenuTrigger } from './hold-context-menu-trigger';
 import {
   HOLD_MENU_LIFTS,
@@ -352,6 +352,7 @@ export function HoldContextMenu({
   );
 }
 
+export type { HoldContextMenuIcon, HoldContextMenuItem } from './hold-context-menu-item';
 export type {
   HoldMenuAlign,
   HoldMenuInsets,
@@ -361,5 +362,4 @@ export type {
   HoldMenuViewport,
 } from './hold-context-menu-layout';
 export type { HoldContextMenuMotion } from './hold-context-menu-motion';
-export type { HoldContextMenuIcon, HoldContextMenuItem } from './hold-context-menu-row';
 export type { HoldContextMenuActivation, HoldContextMenuHaptics } from './use-hold-activation';

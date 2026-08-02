@@ -21,11 +21,11 @@ It carries the semantics (`role="menu"`, `role="menuitem"`, `accessibilityState`
 running the action so a navigating row does not strand a modal, and aligns labels
 across a mixed list via an auto-detected icon gutter (`iconGutter`).
 
-`Menu` owns no frame: no background, border, radius, padding, or width. The
-surface belongs to whatever holds it — `AdaptiveDropdown`'s panel,
-`HoldContextMenu`'s, a `Card`, a sidebar column — including the inset, which you
-supply with `contentClassName="p-1"` on the container or `className="p-1"` here,
-whichever of the two owns it in your app.
+`Menu` owns no frame: no background, border, radius, width, or horizontal
+padding. The surface belongs to whatever holds it — `AdaptiveDropdown`'s panel,
+`HoldContextMenu`'s, a `Card`, a sidebar column. The one exception is the
+vertical inset, which the list keeps for itself so the end rows clear a rounded
+panel corner without every container having to remember to pad for them.
 
 Also: `MenuItem` gains a `destructive` prop (danger-tinted label and icon, with
 the `bg-info` active fill still winning over it) and now dims while `disabled`.

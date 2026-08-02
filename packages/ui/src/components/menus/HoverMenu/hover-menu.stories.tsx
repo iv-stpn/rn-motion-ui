@@ -7,7 +7,8 @@ import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../..
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
 import { Bell, Copy, Pencil, Share, Trash2 } from '../../../lib/icons';
 import { Text } from '../../typography/Text/text';
-import { MenuItem, type MenuItemIcon } from '../MenuItem/menu-item';
+import { Menu } from '../Menu/menu';
+import type { MenuItemIcon } from '../MenuItem/menu-item';
 import { HoverMenu, type HoverMenuProps } from './hover-menu';
 
 const meta = {
@@ -64,7 +65,6 @@ const ITEMS: MenuItemDef[] = [
 /** What HoverMenu hands a render-prop trigger. */
 type TriggerRenderProps = { open: boolean; toggle: () => void };
 type PlainTriggerProps = { open: boolean };
-type MenuContentProps = { close: () => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function PlainTrigger({ open }: PlainTriggerProps) {
@@ -74,19 +74,6 @@ function PlainTrigger({ open }: PlainTriggerProps) {
   return (
     <View className={containerClass}>
       <Text className={textClass}>{label}</Text>
-    </View>
-  );
-}
-
-// `w-full` rather than a fixed width so the panel's own width — including
-// `width="trigger"` — is what shows.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function MenuContent({ close }: MenuContentProps) {
-  return (
-    <View className="w-full py-1">
-      {ITEMS.map((item) => (
-        <MenuItem key={item.id} icon={item.icon} label={item.label} onPress={close} />
-      ))}
     </View>
   );
 }
@@ -112,7 +99,6 @@ function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerP
 }
 
 const renderPlainTrigger = (props: PlainTriggerProps) => <PlainTrigger open={props.open} />;
-const renderContent = (props: MenuContentProps) => <MenuContent close={props.close} />;
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function HoverMenuPlayground() {
@@ -162,7 +148,7 @@ function HoverMenuPlayground() {
         triggerIsPressable={true}
         width={WIDTHS[widthKey]}
       >
-        {renderContent}
+        <Menu entries={ITEMS} />
       </HoverMenu>
 
       <Note>{TRIGGER_NOTE}</Note>
@@ -171,7 +157,7 @@ function HoverMenuPlayground() {
       <Section title="Plain node trigger — uncontrolled, and the wrapper owns the press">
         <View className="items-start">
           <HoverMenu trigger={renderPlainTrigger} triggerAccessibilityLabel={PLAIN_TRIGGER_LABEL} width="trigger">
-            {renderContent}
+            <Menu entries={ITEMS} />
           </HoverMenu>
         </View>
       </Section>
@@ -189,7 +175,7 @@ const DEMO_PANEL_TESTID = `${DEMO_TESTID}-panel`;
 function HoverMenuDemo() {
   return (
     <HoverMenu testID={DEMO_TESTID} trigger={renderPlainTrigger} triggerAccessibilityLabel={PLAIN_TRIGGER_LABEL} width="trigger">
-      {renderContent}
+      <Menu entries={ITEMS} />
     </HoverMenu>
   );
 }

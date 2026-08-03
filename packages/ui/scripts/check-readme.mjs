@@ -49,19 +49,24 @@ const FIX = process.argv.includes('--fix');
  *
  *   src/hooks/                       -> hooks
  *   src/lib/, src/theme/, src/utils/ -> utilities
- *   src/components/Overlay/          -> internal (infra behind the sheet family)
- *   src/components/Table/ (helper)   -> table
+ *   .../Overlay/                     -> internal (infra behind the sheet family)
+ *   .../Table/ (helper)              -> table
  *   src/components/                  -> components
  */
 function sectionFor(key, source) {
   if (source.startsWith('./src/hooks/')) return 'hooks';
   if (source.startsWith('./src/lib/') || source.startsWith('./src/theme/') || source.startsWith('./src/utils/'))
     return 'utilities';
-  if (source.startsWith('./src/components/Overlay/')) return 'internal';
+  if (!source.startsWith('./src/components/')) return null;
+  // Match on the folder holding the file rather than the path from src/, so the
+  // depth between components/ and the component folder doesn't matter. Anchoring
+  // on the full path is exactly how Overlay and Table landed in the component
+  // list once the category folders (menus/, display/, …) came between them.
+  const componentDir = source.split('/').at(-2);
+  if (componentDir === 'Overlay') return 'internal';
   // `./table` is the component; every other Table file is a helper around it.
-  if (source.startsWith('./src/components/Table/')) return key === './table' ? 'components' : 'table';
-  if (source.startsWith('./src/components/')) return 'components';
-  return null;
+  if (componentDir === 'Table') return key === './table' ? 'components' : 'table';
+  return 'components';
 }
 
 // Subpaths that live in hand-written prose rather than a generated list. The

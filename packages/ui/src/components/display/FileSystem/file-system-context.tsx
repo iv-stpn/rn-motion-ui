@@ -141,6 +141,7 @@ type ConsumerSlice = {
   onSelectionChange?: (item: FileSystemItem | null) => void;
   onViewChange?: (view: FileSystemView) => void;
   renderEmptyState?: (args: FileSystemEmptyStateArgs) => ReactNode;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
   renderFileViewer?: (args: FileSystemViewerArgs) => ReactNode;
 };
@@ -355,6 +356,7 @@ export type FileSystemStoreInit = {
   onSelectionChange?: ConsumerSlice['onSelectionChange'];
   onViewChange?: ConsumerSlice['onViewChange'];
   renderEmptyState?: ConsumerSlice['renderEmptyState'];
+  renderEntryIcon?: ConsumerSlice['renderEntryIcon'];
   renderFilePreview?: ConsumerSlice['renderFilePreview'];
   renderFileViewer?: ConsumerSlice['renderFileViewer'];
 };
@@ -446,6 +448,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       onSelectionChange: init.onSelectionChange,
       onViewChange: init.onViewChange,
       renderEmptyState: init.renderEmptyState,
+      renderEntryIcon: init.renderEntryIcon,
       renderFilePreview: init.renderFilePreview,
       renderFileViewer: init.renderFileViewer,
     },

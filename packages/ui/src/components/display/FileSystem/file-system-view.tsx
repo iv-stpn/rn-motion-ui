@@ -63,6 +63,7 @@ export type FileSystemViewProps = {
   /** `path` → resolved file URL, shared by the gallery stage and the viewer modal. */
   urlCache: Map<string, string>;
   loadPreviewImageUrl?: (file: FileSystemFileItem, pageIndex: number) => Promise<string | null>;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
   getFileUrl?: (file: FileSystemFileItem) => string | Promise<string>;
   renderFileViewer?: (args: FileSystemViewerArgs) => ReactNode;

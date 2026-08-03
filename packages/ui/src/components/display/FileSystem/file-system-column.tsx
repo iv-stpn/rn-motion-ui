@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import { cn } from '../../../lib/cn';
-import { ChevronRight } from '../../../lib/icons';
+import { ChevronRight, Heart, Pin } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemIndex, FileSystemItem } from './file-system.types';
@@ -39,6 +39,8 @@ const COLUMN_ROW_STRIDE = COLUMN_ROW_HEIGHT + COLUMN_ROW_GAP;
 const COLUMN_GLYPH_SIZE = 18;
 const COLUMN_ICON_SIZE = 16;
 const COLUMN_CHEVRON_SIZE = 14;
+const COLUMN_PIN_ICON_SIZE = 10;
+const COLUMN_FAV_ICON_SIZE = 10;
 /** Top/bottom padding inside the FlatList's content container (p-1.5 = 6 px). */
 const COLUMN_PADDING = 6;
 
@@ -79,23 +81,31 @@ type ColumnRowProps = {
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   /** Long-press toggles this row's selection; `undefined` leaves the gesture to the context menu. */
   onSelectLongPress?: (entry: FileSystemEntry) => void;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => React.ReactNode | null | undefined;
   /** Already resolved for this entry by the column — see `fileSystemEntryTestID`. */
   testID?: string;
 };
 
 /** The row's leading glyph: folder, cover thumbnail, or file-type icon. */
-function ColumnRowGlyph({ entry, isSelected }: Pick<ColumnRowProps, 'entry' | 'isSelected'>) {
-  if (entry.kind === 'folder') return <FileSystemFolderGlyph size={COLUMN_GLYPH_SIZE} />;
+function ColumnRowGlyph({
+  entry,
+  isSelected,
+  renderEntryIcon,
+}: Pick<ColumnRowProps, 'entry' | 'isSelected' | 'renderEntryIcon'>) {
+  if (entry.kind === 'folder')
+    return renderEntryIcon?.(entry, COLUMN_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={COLUMN_GLYPH_SIZE} />;
 
   const coverUrl = filePreviewUrls(entry)[0];
   if (coverUrl)
     return (
-      <Image
-        className="shrink-0 rounded-[3px] bg-white"
-        resizeMode="cover"
-        source={{ uri: coverUrl }}
-        style={{ height: COLUMN_ICON_SIZE, width: COLUMN_ICON_SIZE }}
-      />
+      renderEntryIcon?.(entry, COLUMN_ICON_SIZE) ?? (
+        <Image
+          className="shrink-0 rounded-[3px] bg-white"
+          resizeMode="cover"
+          source={{ uri: coverUrl }}
+          style={{ height: COLUMN_ICON_SIZE, width: COLUMN_ICON_SIZE }}
+        />
+      )
     );
 
   // A selected row sits on the primary surface, the inverse of the pane behind
@@ -112,6 +122,7 @@ function ColumnRow({
   onActivate,
   onContextMenuAction,
   onSelectLongPress,
+  renderEntryIcon,
   testID,
 }: ColumnRowProps) {
   const colors = useThemeColors();
@@ -144,10 +155,12 @@ function ColumnRow({
         style={{ height: COLUMN_ROW_HEIGHT }}
         testID={testID}
       >
-        <ColumnRowGlyph entry={entry} isSelected={isSelected} />
+        <ColumnRowGlyph entry={entry} isSelected={isSelected} renderEntryIcon={renderEntryIcon} />
+        {entry.pinnedAt ? <Pin color={isSelected ? colors.white : colors.primary} size={COLUMN_PIN_ICON_SIZE} /> : null}
         <Text className={cn('flex-1', isSelected && 'text-white')} numberOfLines={1} size="sm">
           {entry.name}
         </Text>
+        {entry.favoritedAt ? <Heart color={isSelected ? colors.white : colors.danger} size={COLUMN_FAV_ICON_SIZE} /> : null}
         {hasChildren ? (
           <ChevronRight color={isSelected ? colors.white : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
         ) : null}
@@ -169,6 +182,7 @@ export type FileSystemColumnProps = {
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onSelectLongPress?: (entry: FileSystemEntry) => void;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => React.ReactNode | null | undefined;
   /**
    * The whole selection, not this pane's share of it: a multi-selection can span
    * panes, so there is no per-column scalar that would say enough. Its identity
@@ -193,6 +207,7 @@ function FileSystemColumnImpl({
   onContextMenuAction,
   onMarquee,
   onSelectLongPress,
+  renderEntryIcon,
   selectedPaths,
   selectionMode,
   testID,
@@ -254,10 +269,21 @@ function FileSystemColumnImpl({
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
         onSelectLongPress={onSelectLongPress}
+        renderEntryIcon={renderEntryIcon}
         testID={fileSystemEntryTestID(testID, item.path)}
       />
     ),
-    [activate, getContextMenuActions, index, onContextMenuAction, onSelectLongPress, selectedPaths, testID, trailChildPath],
+    [
+      activate,
+      getContextMenuActions,
+      index,
+      onContextMenuAction,
+      onSelectLongPress,
+      renderEntryIcon,
+      selectedPaths,
+      testID,
+      trailChildPath,
+    ],
   );
 
   const keyExtractor = useCallback((entry: FileSystemEntry) => entry.path, []);

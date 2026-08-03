@@ -272,6 +272,7 @@ export function FileSystemIconsView({
   onSelect,
   onMarquee,
   pageUrlCache,
+  renderEntryIcon,
   renderFilePreview,
   selectedPaths,
   selectionMode,
@@ -332,6 +333,7 @@ export function FileSystemIconsView({
         onContextMenuAction={onContextMenuAction}
         onSelectLongPress={selectLongPress}
         pageUrlCache={pageUrlCache}
+        renderEntryIcon={renderEntryIcon}
         renderFilePreview={renderFilePreview}
         row={item}
         selectedPaths={selectedPaths}
@@ -347,6 +349,7 @@ export function FileSystemIconsView({
       loadPreviewImageUrl,
       onContextMenuAction,
       pageUrlCache,
+      renderEntryIcon,
       renderFilePreview,
       selectedPaths,
       selectLongPress,

@@ -34,12 +34,24 @@ export function entrySortTimestamp(entry: FileSystemEntry, key: 'createdAt' | 'u
   return Number.isNaN(time) ? 0 : time;
 }
 
+/** True when an entry is pinned to the top of its folder. */
+export function isEntryPinned(entry: FileSystemEntry): boolean {
+  return typeof entry.pinnedAt === 'string';
+}
+
 /**
  * Primary key per the active sort; ties (and missing metadata) fall back to the
  * name order so results stay stable. The name tiebreak ignores the direction,
  * like Finder.
+ *
+ * Pinned entries always precede unpinned ones, regardless of sort key or
+ * direction. Within the pinned group the active sort applies normally.
  */
 export function compareEntriesBySort(left: FileSystemEntry, right: FileSystemEntry, sort: FileSystemSortState): number {
+  const leftPinned = isEntryPinned(left);
+  const rightPinned = isEntryPinned(right);
+  if (leftPinned !== rightPinned) return leftPinned ? -1 : 1;
+
   let result = 0;
 
   if (sort.key === 'name') result = compareEntryNames(left, right);

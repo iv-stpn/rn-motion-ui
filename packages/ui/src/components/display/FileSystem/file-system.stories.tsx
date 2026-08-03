@@ -67,12 +67,33 @@ const DATES = {
 
 const SAMPLE_ITEMS: FileSystemItem[] = [
   { hasChildren: true, kind: 'folder', path: 'Archive/', updatedAt: DATES.january },
-  { createdAt: DATES.june, kind: 'file', path: 'README.md', size: 2480, updatedAt: DATES.june },
-  { createdAt: DATES.may, kind: 'file', path: 'Invoice-0042.pdf', previewImageUrl: PREVIEWS.page, size: 84_120 },
-  { createdAt: DATES.april, kind: 'file', path: 'Roadmap.pptx', size: 1_204_000, updatedAt: DATES.may },
+  { createdAt: DATES.june, kind: 'file', path: 'README.md', pinnedAt: DATES.june, size: 2480, updatedAt: DATES.june },
+  {
+    createdAt: DATES.may,
+    favoritedAt: DATES.may,
+    kind: 'file',
+    path: 'Invoice-0042.pdf',
+    previewImageUrl: PREVIEWS.page,
+    size: 84_120,
+  },
+  { createdAt: DATES.april, kind: 'file', path: 'Roadmap.pptx', pinnedAt: DATES.april, size: 1_204_000, updatedAt: DATES.may },
   { createdAt: DATES.march, kind: 'file', path: 'Budget-2026.xlsx', size: 96_400, updatedAt: DATES.june },
-  { createdAt: DATES.january, kind: 'file', path: 'Documents/Contract.docx', size: 48_900, updatedAt: DATES.february },
-  { createdAt: DATES.february, kind: 'file', path: 'Documents/notes.txt', size: 1120, updatedAt: DATES.march },
+  {
+    createdAt: DATES.january,
+    kind: 'file',
+    path: 'Documents/Contract.docx',
+    pinnedAt: DATES.january,
+    size: 48_900,
+    updatedAt: DATES.february,
+  },
+  {
+    createdAt: DATES.february,
+    favoritedAt: DATES.february,
+    kind: 'file',
+    path: 'Documents/notes.txt',
+    size: 1120,
+    updatedAt: DATES.march,
+  },
   {
     createdAt: DATES.january,
     kind: 'file',
@@ -86,6 +107,7 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
   },
   {
     createdAt: DATES.april,
+    favoritedAt: DATES.april,
     kind: 'file',
     path: 'Documents/Reports/Q2-report.pdf',
     previewImageUrl: PREVIEWS.page,
@@ -96,6 +118,7 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
     createdAt: DATES.march,
     kind: 'file',
     path: 'Photos/dunes.jpg',
+    pinnedAt: DATES.march,
     previewAspectRatio: PHOTO_RATIO,
     previewImageUrl: PREVIEWS.dunes,
     size: 2_140_000,
@@ -114,6 +137,7 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
   },
   {
     createdAt: DATES.june,
+    favoritedAt: DATES.june,
     kind: 'file',
     path: 'Photos/forest.png',
     previewAspectRatio: PHOTO_RATIO,
@@ -128,6 +152,14 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
 const ARCHIVE_ITEMS: FileSystemItem[] = [
   { createdAt: DATES.january, kind: 'file', path: 'Archive/2024-summary.pdf', previewImageUrl: PREVIEWS.page, size: 210_300 },
   { createdAt: DATES.january, kind: 'file', path: 'Archive/legacy.zip', size: 8_412_000 },
+  {
+    createdAt: DATES.january,
+    favoritedAt: DATES.january,
+    hasChildren: true,
+    kind: 'folder',
+    path: 'Archive/2024/',
+    updatedAt: DATES.january,
+  },
   { createdAt: DATES.january, kind: 'file', path: 'Archive/2024/minutes.docx', size: 22_600 },
 ];
 
@@ -1185,8 +1217,9 @@ export const Sort: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('README.md');
 
-    // Name ascending to begin with.
-    expect(fileNames(canvas)[0]).toBe('Budget-2026.xlsx');
+    // Pinned items sort first; name ascending within each group.
+    // README.md and Roadmap.pptx are pinned, so README.md leads.
+    expect(fileNames(canvas)[0]).toBe('README.md');
 
     // Size starts at its own default direction — largest first, like Finder.
     const sizeHeader = await canvas.findByText('Size');
@@ -1340,9 +1373,9 @@ export const ShiftRange: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('README.md');
 
-    // Rows sort by name alone, folders and files together:
-    // Archive/, Budget-2026.xlsx, Documents/, Invoice-0042.pdf, Photos/, README.md, Roadmap.pptx.
-    // The plain press sets the anchor the run will measure from.
+    // Pinned items sort first (README.md, Roadmap.pptx), then the rest by name:
+    // README.md, Roadmap.pptx, Archive/, Budget-2026.xlsx, Documents/, Invoice-0042.pdf, Photos/.
+    // The plain press on an unpinned entry sets the anchor the run will measure from.
     await userEvent.click(await listRow(canvas, 'Budget-2026.xlsx'));
     await canvas.findByText('· “Budget-2026.xlsx” selected');
 
@@ -1808,11 +1841,11 @@ export const SelectionBox: Story = {
     const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.icons);
     await canvas.findByText('Archive');
 
-    // Tiles run in name order, so the first two are Archive/ and Budget-2026.xlsx.
+    // Pinned items sort first, so the first two tiles are README.md and Roadmap.pptx.
     // Start below them — empty space, where no tile can lift — and sweep up.
     const bounds = container.getBoundingClientRect();
-    const first = centreOf(await canvas.findByRole('button', { name: 'Archive' }));
-    const second = centreOf(await canvas.findByRole('button', { name: 'Budget-2026.xlsx' }));
+    const first = centreOf(await canvas.findByRole('button', { name: 'README.md' }));
+    const second = centreOf(await canvas.findByRole('button', { name: 'Roadmap.pptx' }));
     const origin = { x: bounds.left + 4, y: bounds.top + bounds.height - 4 };
 
     pointer(container, 'pointerdown', origin);
@@ -1820,7 +1853,7 @@ export const SelectionBox: Story = {
 
     // The band is up and painting while the pointer is still down.
     expect(await canvas.findByTestId(FS_MARQUEE_TEST_ID)).toBeInTheDocument();
-    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['Archive/', 'Budget-2026.xlsx']));
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
 
     pointer(container, 'pointerup', second);
     // The click the browser sends after the release is swallowed: without that,
@@ -1829,8 +1862,8 @@ export const SelectionBox: Story = {
     await canvas.findByText('· 2 selected');
     await waitFor(() =>
       expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([
-        expect.objectContaining({ name: 'Archive' }),
-        expect.objectContaining({ name: 'Budget-2026.xlsx' }),
+        expect.objectContaining({ name: 'README.md' }),
+        expect.objectContaining({ name: 'Roadmap.pptx' }),
       ]),
     );
 
@@ -1841,7 +1874,7 @@ export const SelectionBox: Story = {
     // than latching onto whatever it first touched.
     pointer(container, 'pointerdown', origin);
     dragOver(container, origin, first);
-    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['Archive/']));
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md']));
     pointer(container, 'pointerup', first);
     mouse(container, 'click');
 

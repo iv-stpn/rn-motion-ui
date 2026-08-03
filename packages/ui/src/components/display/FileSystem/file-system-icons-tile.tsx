@@ -9,6 +9,8 @@
 import { useCallback } from 'react';
 import { Animated, type GestureResponderEvent, Pressable, View } from 'react-native';
 import { cn } from '../../../lib/cn';
+import { Heart, Pin } from '../../../lib/icons';
+import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemEntry } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
@@ -44,7 +46,10 @@ const DRAG_SOURCE_CLASSNAME = 'opacity-40';
  */
 export const FS_TILE_DROP_TARGET_TEST_ID = 'file-system-icons-drop-target';
 
-type IconTileFaceProps = Pick<FileSystemViewProps, 'loadPreviewImageUrl' | 'pageUrlCache' | 'renderFilePreview'> & {
+type IconTileFaceProps = Pick<
+  FileSystemViewProps,
+  'loadPreviewImageUrl' | 'pageUrlCache' | 'renderEntryIcon' | 'renderFilePreview'
+> & {
   entry: FileSystemEntry;
   /** A drop would land here — the label chip fills, under the hover-tinted glyph. */
   isDropTarget?: boolean;
@@ -62,8 +67,10 @@ type IconTileFaceProps = Pick<FileSystemViewProps, 'loadPreviewImageUrl' | 'page
  * lighting up beneath a hovered glyph: no outline, nothing added to the layout,
  * just the two shapes the tile already has going up a strength.
  */
-function IconTileFace({ entry, isDropTarget = false, isSelected, width, ...visualProps }: IconTileFaceProps) {
+function IconTileFace({ entry, isDropTarget = false, isSelected, renderEntryIcon, width, ...visualProps }: IconTileFaceProps) {
   const isLandscape = entry.kind === 'file' && (entry.previewAspectRatio ?? 0) > LANDSCAPE_RATIO;
+  const colors = useThemeColors();
+  const active = isSelected || isDropTarget;
 
   return (
     <View className="items-center gap-1.5" style={{ height: TILE_HEIGHT, width }}>
@@ -74,30 +81,48 @@ function IconTileFace({ entry, isDropTarget = false, isSelected, width, ...visua
         )}
         style={{ height: GLYPH_BOX_HEIGHT, width: GLYPH_BOX_WIDTH }}
       >
-        {entry.kind === 'folder' ? (
-          <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />
-        ) : (
-          <FileVisual
-            file={entry}
-            previewAspectRatio={TILE_PREVIEW_RATIO}
-            width={isLandscape ? LANDSCAPE_TILE_WIDTH : PORTRAIT_TILE_WIDTH}
-            {...visualProps}
-          />
-        )}
+        {entry.kind === 'folder'
+          ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
+          : (renderEntryIcon?.(entry, GLYPH_BOX_HEIGHT) ?? (
+              <FileVisual
+                file={entry}
+                previewAspectRatio={TILE_PREVIEW_RATIO}
+                width={isLandscape ? LANDSCAPE_TILE_WIDTH : PORTRAIT_TILE_WIDTH}
+                {...visualProps}
+              />
+            ))}
       </View>
       {/* The label chip carries two of the three states, and the same fill for
           both: a drop lands *in* this folder, so marking it the way selection
-          does says "this one" without adding a third visual language. */}
+          does says "this one" without adding a third visual language.
+          `self-center` shrinks the chip to its content width; `maxWidth` caps it
+          at the tile boundary so long names still wrap rather than overflow. */}
       <View
-        className={cn('max-w-full rounded-sm px-1.5 py-px', (isSelected || isDropTarget) && 'bg-info')}
+        className={cn('self-center rounded-sm px-1.5 py-px', active && 'bg-info')}
+        style={{ maxWidth: width }}
         testID={isDropTarget ? FS_TILE_DROP_TARGET_TEST_ID : undefined}
       >
         <Text
-          className={cn('text-center leading-tight', isSelected || isDropTarget ? 'text-white' : 'text-foreground')}
+          className={cn('shrink text-center leading-tight', active ? 'text-white' : 'text-foreground')}
           numberOfLines={2}
           size="xs"
         >
+          {entry.pinnedAt ? (
+            <>
+              <View style={{ height: 8, width: 8 }}>
+                <Pin color={active ? colors.white : colors.primary} size={8} />
+              </View>{' '}
+            </>
+          ) : null}
           {entry.name}
+          {entry.favoritedAt ? (
+            <>
+              {' '}
+              <View style={{ height: 8, width: 8 }}>
+                <Heart color={active ? colors.white : colors.danger} size={8} />
+              </View>
+            </>
+          ) : null}
         </Text>
       </View>
     </View>

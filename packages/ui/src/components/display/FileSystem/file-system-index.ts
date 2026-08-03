@@ -4,6 +4,7 @@
 
 import type { FileEntry, FileSystemEntry, FileSystemIndex, FileSystemItem, FolderEntry } from './file-system.types';
 import { compareEntryNames, normalizeFolderPath, pathName, pathParent } from './file-system-paths';
+import { isEntryPinned } from './file-system-sort';
 
 type CollectedEntries = { files: Map<string, FileEntry>; folders: Map<string, FolderEntry> };
 
@@ -96,7 +97,13 @@ export function buildFileSystemIndex(items: FileSystemItem[]): FileSystemIndex {
 
   for (const folder of folders.values()) pushChild(folder);
   for (const file of files.values()) pushChild(file);
-  for (const siblings of children.values()) siblings.sort(compareEntryNames);
+  for (const siblings of children.values())
+    siblings.sort((left, right) => {
+      const leftPinned = isEntryPinned(left);
+      const rightPinned = isEntryPinned(right);
+      if (leftPinned !== rightPinned) return leftPinned ? -1 : 1;
+      return compareEntryNames(left, right);
+    });
 
   inheritFolderTimestamps(folders, children);
 

@@ -5,7 +5,7 @@
 // index (see file-system-rows) and render through a FlatList, so the same
 // folder-first ordering and per-folder disclosure survive without the DOM.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   FlatList,
@@ -21,7 +21,8 @@ import {
 } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { cn } from '../../../lib/cn';
-import { ChevronDown, ChevronRight, ChevronUp } from '../../../lib/icons';
+import { ChevronDown, ChevronRight, ChevronUp, Heart, Pin } from '../../../lib/icons';
+import { useThemeColors } from '../../../theme/use-theme-color';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 import type {
@@ -61,6 +62,8 @@ const CHEVRON_SIZE = 18;
 const ROW_PADDING_X = 8;
 const ICON_SIZE = 16;
 const FOLDER_GLYPH_SIZE = 18;
+const PIN_ICON_SIZE = 10;
+const FAV_ICON_SIZE = 10;
 /** Below this the date column drops out, leaving name + size. */
 const DATE_COLUMN_MIN_WIDTH = 420;
 
@@ -190,6 +193,7 @@ type ListRowProps = {
   /** Long-press toggles this row's selection; `undefined` leaves the gesture to the context menu. */
   onSelectLongPress?: (entry: FileSystemEntry) => void;
   onToggleExpanded: (path: string) => void;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   row: FileSystemRow;
   showDate: boolean;
   /** Already resolved for this entry by the view — see `fileSystemEntryTestID`. */
@@ -214,6 +218,7 @@ function ListRow({
   onContextMenuAction,
   onSelectLongPress,
   onToggleExpanded,
+  renderEntryIcon,
   row,
   showDate,
   testID,
@@ -224,6 +229,7 @@ function ListRow({
   const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
   const textClassName = isSelected ? 'text-white' : 'text-foreground';
   const metaClassName = isSelected ? 'text-white' : 'text-muted-foreground';
+  const colors = useThemeColors();
 
   const {
     wrapperRef,
@@ -252,14 +258,14 @@ function ListRow({
         {/* The chevron's lane, held open on file rows too so names stay aligned
             across kinds. On a folder row the control below sits over this box. */}
         <View style={{ width: CHEVRON_SIZE }} />
-        {entry.kind === 'folder' ? (
-          <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />
-        ) : (
-          <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />
-        )}
+        {entry.kind === 'folder'
+          ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
+          : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
+        {entry.pinnedAt ? <Pin color={isSelected ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}
         <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
           {entry.name}
         </Text>
+        {entry.favoritedAt ? <Heart color={isSelected ? colors.white : colors.danger} size={FAV_ICON_SIZE} /> : null}
         {showDate ? (
           <Text className={cn('w-44', metaClassName)} numberOfLines={1} size="xs">
             {formatTimestamp(entry.updatedAt ?? entry.createdAt) ?? MISSING_VALUE}
@@ -306,6 +312,7 @@ export function FileSystemListView({
   onOpen,
   onSelect,
   onSortColumnClick,
+  renderEntryIcon,
   selectedPaths,
   selectionMode,
   sort,
@@ -428,6 +435,7 @@ export function FileSystemListView({
         onContextMenuAction={onContextMenuAction}
         onSelectLongPress={selectLongPress}
         onToggleExpanded={toggleExpanded}
+        renderEntryIcon={renderEntryIcon}
         row={item}
         showDate={showDate}
         testID={fileSystemEntryTestID(testID, item.entry.path)}
@@ -438,6 +446,7 @@ export function FileSystemListView({
       getContextMenuActions,
       index,
       onContextMenuAction,
+      renderEntryIcon,
       selectedPaths,
       selectLongPress,
       showDate,
@@ -467,6 +476,7 @@ export function FileSystemListView({
     <View className="min-h-0 flex-1" onLayout={handleLayout}>
       {/* The header's left padding matches a level-0 row: chevron lane + icon. */}
       <View className="shrink-0 flex-row items-center gap-1 border-border border-b py-1 pr-2 pl-2">
+        {/* Chevron lane + icon + their gap — matches a level-0 row. */}
         <View style={{ width: CHEVRON_SIZE + ICON_SIZE + 4 }} />
         <ColumnHeader className="flex-1" label={NAME_LABEL} onPress={onSortColumnClick} sort={sort} sortKey="name" />
         {showDate ? (

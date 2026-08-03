@@ -35,6 +35,10 @@ export type FileSystemFolderItem = {
   hasChildren?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  /** ISO-8601 timestamp when pinned; absent or `null` means not pinned. Pinned entries float above all others in their parent folder regardless of the active sort key. */
+  pinnedAt?: string | null;
+  /** ISO-8601 timestamp when favorited. Boosts the entry in search results but does not affect per-folder ordering. */
+  favoritedAt?: string | null;
 };
 
 export type FileSystemFileItem = {
@@ -50,6 +54,10 @@ export type FileSystemFileItem = {
   createdAt?: string;
   updatedAt?: string;
   etag?: string;
+  /** ISO-8601 timestamp when pinned; absent or `null` means not pinned. Pinned entries float above all others in their parent folder regardless of the active sort key. */
+  pinnedAt?: string | null;
+  /** ISO-8601 timestamp when favorited. Boosts the entry in search results but does not affect per-folder ordering. */
+  favoritedAt?: string | null;
   /** Optional if already public/presigned. Otherwise resolved via `getFileUrl`. */
   url?: string;
   /** Externally generated thumbnail. The component never rasterizes documents itself. */
@@ -391,6 +399,12 @@ export type FileSystemProps = {
   loadChildren?: (args: FileSystemLoadChildrenArgs) => Promise<FileSystemLoadChildrenResult>;
   /** Custom preview node for files without `previewImageUrl`. */
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
+  /**
+   * Render a custom icon for an entry instead of the default file-type icon or
+   * folder glyph. Receives the entry and the pixel size that fits the current
+   * view context. Return `null` or `undefined` to fall back to the default.
+   */
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   /**
    * Document viewer body for the open-file modal and the gallery stage. The
    * component ships no PDF/DOCX/PPTX/XLSX renderers — return one here to make

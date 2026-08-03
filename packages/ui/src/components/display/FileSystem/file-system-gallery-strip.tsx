@@ -14,6 +14,8 @@ import {
   View,
 } from 'react-native';
 import { cn } from '../../../lib/cn';
+import { Heart, Pin } from '../../../lib/icons';
+import { useThemeColors } from '../../../theme/use-theme-color';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemFileItem, FileSystemItem } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph } from './file-system-icons';
@@ -70,6 +72,7 @@ type StripTileProps = {
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   /** Long-press toggles this tile's selection; `undefined` leaves the gesture to the context menu. */
   onSelectLongPress?: (entry: FileSystemEntry) => void;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
   /** Already resolved for this entry by the strip — see `fileSystemEntryTestID`. */
   testID?: string;
@@ -83,10 +86,12 @@ function StripTile({
   onActivate,
   onContextMenuAction,
   onSelectLongPress,
+  renderEntryIcon,
   renderFilePreview,
   testID,
 }: StripTileProps) {
   const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
+  const colors = useThemeColors();
   const {
     wrapperRef,
     onLongPress: openContextMenu,
@@ -106,7 +111,7 @@ function StripTile({
         // member the stage is showing, so a multi-selection reads as several
         // filled tiles with one outlined.
         className={cn(
-          'items-center justify-center rounded-md border border-transparent p-1',
+          'relative items-center justify-center rounded-md border border-transparent p-1',
           (isActive || isSelected) && 'bg-surface-selected',
           isActive && 'border-border',
         )}
@@ -115,16 +120,28 @@ function StripTile({
         style={{ height: STRIP_TILE_SIZE, width: STRIP_TILE_SIZE }}
         testID={testID}
       >
-        {entry.kind === 'folder' ? (
-          <FileSystemFolderGlyph size={STRIP_FOLDER_GLYPH_SIZE} />
-        ) : (
-          <FileVisual
-            file={entry}
-            previewAspectRatio={STRIP_ASPECT_RATIO}
-            renderFilePreview={renderFilePreview}
-            width={STRIP_THUMBNAIL_WIDTH}
-          />
-        )}
+        {entry.kind === 'folder'
+          ? (renderEntryIcon?.(entry, STRIP_FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={STRIP_FOLDER_GLYPH_SIZE} />)
+          : (renderEntryIcon?.(entry, STRIP_THUMBNAIL_WIDTH) ?? (
+              <FileVisual
+                file={entry}
+                previewAspectRatio={STRIP_ASPECT_RATIO}
+                renderFilePreview={renderFilePreview}
+                width={STRIP_THUMBNAIL_WIDTH}
+              />
+            ))}
+        {/* Pin badge: bottom-left corner, halo keeps it readable on any tile content. */}
+        {entry.pinnedAt ? (
+          <View className="pointer-events-none absolute bottom-0.5 left-0.5 rounded-full bg-surface/80 p-px">
+            <Pin color={colors.primary} size={8} />
+          </View>
+        ) : null}
+        {/* Favorite badge: bottom-right corner. */}
+        {entry.favoritedAt ? (
+          <View className="pointer-events-none absolute right-0.5 bottom-0.5 rounded-full bg-surface/80 p-px">
+            <Heart color={colors.danger} size={8} />
+          </View>
+        ) : null}
         {contextMenuNode}
       </Pressable>
     </View>
@@ -141,6 +158,7 @@ export type FileSystemGalleryStripProps = {
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onSelectLongPress?: (entry: FileSystemEntry) => void;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
   selectedPaths: ReadonlySet<string>;
   selectionMode: FileSystemSelectionMode;
@@ -157,6 +175,7 @@ export function FileSystemGalleryStrip({
   onContextMenuAction,
   onMarquee,
   onSelectLongPress,
+  renderEntryIcon,
   renderFilePreview,
   selectedPaths,
   selectionMode,
@@ -214,6 +233,7 @@ export function FileSystemGalleryStrip({
         onActivate={onActivate}
         onContextMenuAction={onContextMenuAction}
         onSelectLongPress={onSelectLongPress}
+        renderEntryIcon={renderEntryIcon}
         renderFilePreview={renderFilePreview}
         testID={fileSystemEntryTestID(testID, item.path)}
       />
@@ -224,6 +244,7 @@ export function FileSystemGalleryStrip({
       onActivate,
       onContextMenuAction,
       onSelectLongPress,
+      renderEntryIcon,
       renderFilePreview,
       selectedPaths,
       testID,

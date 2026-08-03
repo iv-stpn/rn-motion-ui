@@ -90,6 +90,7 @@ export function FileSystemColumnsView({
   onOpen,
   onSelect,
   pageUrlCache,
+  renderEntryIcon,
   renderFilePreview,
   selectedEntry,
   selectedPaths,
@@ -131,6 +132,7 @@ export function FileSystemColumnsView({
           onContextMenuAction={onContextMenuAction}
           onMarquee={onMarquee}
           onSelectLongPress={selectLongPress}
+          renderEntryIcon={renderEntryIcon}
           selectedPaths={selectedPaths}
           selectionMode={selectionMode}
           testID={testID}

@@ -65,12 +65,33 @@ const NEW_FOLDER_NAME = 'untitled folder';
 // and no entries, so it only fills in through `loadChildren`.
 const ITEMS: FileSystemItem[] = [
   { hasChildren: true, kind: 'folder', path: 'Archive/', updatedAt: DATES.january },
-  { createdAt: DATES.june, kind: 'file', path: 'README.md', size: 2480, updatedAt: DATES.june },
-  { createdAt: DATES.may, kind: 'file', path: 'Invoice-0042.pdf', previewImageUrl: PREVIEWS.page, size: 84_120 },
-  { createdAt: DATES.april, kind: 'file', path: 'Roadmap.pptx', size: 1_204_000, updatedAt: DATES.may },
+  { createdAt: DATES.june, kind: 'file', path: 'README.md', pinnedAt: DATES.june, size: 2480, updatedAt: DATES.june },
+  {
+    createdAt: DATES.may,
+    kind: 'file',
+    favoritedAt: DATES.may,
+    path: 'Invoice-0042.pdf',
+    previewImageUrl: PREVIEWS.page,
+    size: 84_120,
+  },
+  { createdAt: DATES.april, kind: 'file', path: 'Roadmap.pptx', pinnedAt: DATES.april, size: 1_204_000, updatedAt: DATES.may },
   { createdAt: DATES.march, kind: 'file', path: 'Budget-2026.xlsx', size: 96_400, updatedAt: DATES.june },
-  { createdAt: DATES.january, kind: 'file', path: 'Documents/Contract.docx', size: 48_900, updatedAt: DATES.february },
-  { createdAt: DATES.february, kind: 'file', path: 'Documents/notes.txt', size: 1120, updatedAt: DATES.march },
+  {
+    createdAt: DATES.january,
+    kind: 'file',
+    path: 'Documents/Contract.docx',
+    pinnedAt: DATES.january,
+    size: 48_900,
+    updatedAt: DATES.february,
+  },
+  {
+    createdAt: DATES.february,
+    kind: 'file',
+    favoritedAt: DATES.february,
+    path: 'Documents/notes.txt',
+    size: 1120,
+    updatedAt: DATES.march,
+  },
   {
     createdAt: DATES.january,
     kind: 'file',
@@ -81,6 +102,7 @@ const ITEMS: FileSystemItem[] = [
   },
   {
     createdAt: DATES.april,
+    favoritedAt: DATES.april,
     kind: 'file',
     path: 'Documents/Reports/Q2-report.pdf',
     previewImageUrl: PREVIEWS.page,
@@ -91,6 +113,7 @@ const ITEMS: FileSystemItem[] = [
     createdAt: DATES.march,
     kind: 'file',
     path: 'Photos/dunes.jpg',
+    pinnedAt: DATES.march,
     previewAspectRatio: PHOTO_RATIO,
     previewImageUrl: PREVIEWS.dunes,
     size: 2_140_000,
@@ -109,6 +132,7 @@ const ITEMS: FileSystemItem[] = [
   },
   {
     createdAt: DATES.june,
+    favoritedAt: DATES.june,
     kind: 'file',
     path: 'Photos/forest.png',
     previewAspectRatio: PHOTO_RATIO,

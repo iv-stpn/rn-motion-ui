@@ -1,9 +1,11 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: the column pane, its drag session and its overlay parts are one render layer */
+/** biome-ignore-all lint/style/useComponentExportOnlyModules: geometry constants and hit-test helpers are exported alongside the column they size */
 // One pane of the columns view: a fixed-width, vertically scrolling list of a
 // single folder's children. Memoized on scalar selection props so pressing
 // into a deep trail only re-renders the columns whose rows actually change.
 
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   type GestureResponderEvent,
@@ -20,6 +22,12 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemIndex, FileSystemItem } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
+import {
+  FileSystemHoverHighlight,
+  FileSystemSourceHighlight,
+  FS_HOVER_TEST_ID,
+  useFileSystemRowHover,
+} from './file-system-hover';
 import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import { filePreviewUrls, folderHasChildren } from './file-system-index';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
@@ -27,25 +35,25 @@ import type { FileSystemSelectionMode } from './file-system-selection';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import { FileSystemEmptyState } from './file-system-view';
 import { useEntryLongPress } from './use-entry-activation';
+import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
 
 const LOADING_LABEL = 'Loading…';
 
 /** Column geometry (px). Rows are uniform so `getItemLayout` stays exact. */
-// biome-ignore lint/style/useComponentExportOnlyModules: the width belongs with the column it sizes — the view reads it to lay out the preview pane beside one column
 export const COLUMN_WIDTH = 240;
-const COLUMN_ROW_HEIGHT = 28;
+export const COLUMN_ROW_HEIGHT = 28;
 const COLUMN_ROW_GAP = 1;
-const COLUMN_ROW_STRIDE = COLUMN_ROW_HEIGHT + COLUMN_ROW_GAP;
+export const COLUMN_ROW_STRIDE = COLUMN_ROW_HEIGHT + COLUMN_ROW_GAP;
 const COLUMN_GLYPH_SIZE = 18;
 const COLUMN_ICON_SIZE = 16;
 const COLUMN_CHEVRON_SIZE = 14;
 const COLUMN_PIN_ICON_SIZE = 10;
 const COLUMN_FAV_ICON_SIZE = 10;
 /** Top/bottom padding inside the FlatList's content container (p-1.5 = 6 px). */
-const COLUMN_PADDING = 6;
+export const COLUMN_PADDING = 6;
 
 /** Container-local point → row index, or null for padding / gap / past-last-row. */
-function columnRowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {
+export function columnRowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {
   const contentY = localY + scrollOffset - COLUMN_PADDING;
   if (contentY < 0) return null;
   const rowIndex = Math.floor(contentY / COLUMN_ROW_STRIDE);
@@ -69,6 +77,25 @@ function columnRowsInRect(rect: FileSystemMarqueeRect, entries: FileSystemEntry[
     }
   }
   return result;
+}
+
+/** Container-local top-left of a row, or `null` for no row. */
+function columnRowOrigin(index: number | null, scrollOffset: number) {
+  if (index === null) return null;
+  return { x: 0, y: index * COLUMN_ROW_STRIDE + COLUMN_PADDING - scrollOffset };
+}
+
+type ColumnDropHighlightProps = { targetIndex: number | null; scrollOffset: number };
+
+/** Border outline over the row currently under the pointer (drop feedback). */
+function ColumnDropHighlight({ targetIndex, scrollOffset }: ColumnDropHighlightProps) {
+  if (targetIndex === null) return null;
+  return (
+    <View
+      className="pointer-events-none absolute right-0 left-0 z-[3] rounded-md border border-primary"
+      style={{ height: COLUMN_ROW_HEIGHT, top: targetIndex * COLUMN_ROW_STRIDE + COLUMN_PADDING - scrollOffset }}
+    />
+  );
 }
 
 type ColumnRowProps = {
@@ -170,8 +197,20 @@ function ColumnRow({
   );
 }
 
+/**
+ * Drag state passed from the columns view for any active cross-column drag that
+ * touches this pane. `null` means the drag is active but this pane is not involved.
+ */
+export type ColumnDragState =
+  | { kind: 'source'; rowIndex: number }
+  | { kind: 'row-target'; rowIndex: number }
+  | { kind: 'column-target' }
+  | null;
+
 export type FileSystemColumnProps = {
   entries: FileSystemEntry[];
+  /** Drag render state for any active cross-column drag that touches this pane. */
+  dragState?: ColumnDragState;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   index: FileSystemIndex;
   isLoading: boolean;
@@ -182,6 +221,11 @@ export type FileSystemColumnProps = {
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onSelectLongPress?: (entry: FileSystemEntry) => void;
+  /**
+   * Called from the column's onScroll so the parent can track the vertical scroll
+   * offset for drop-target resolution.
+   */
+  onScrollOffsetChange?: (offset: number) => void;
   renderEntryIcon?: (entry: FileSystemEntry, size: number) => React.ReactNode | null | undefined;
   /**
    * The whole selection, not this pane's share of it: a multi-selection can span
@@ -197,7 +241,9 @@ export type FileSystemColumnProps = {
   testID?: string;
 };
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: hover, marquee, and row layout are tightly coupled around shared refs — splitting would scatter interdependent state
 function FileSystemColumnImpl({
+  dragState,
   entries,
   getContextMenuActions,
   index,
@@ -207,12 +253,14 @@ function FileSystemColumnImpl({
   onContextMenuAction,
   onMarquee,
   onSelectLongPress,
+  onScrollOffsetChange,
   renderEntryIcon,
   selectedPaths,
   selectionMode,
   testID,
   trailChildPath,
 }: FileSystemColumnProps) {
+  // Each pane is its own ordering: a Shift-range runs through the column the
   // Each pane is its own ordering: a Shift-range runs through the column the
   // press landed in, never across the trail into a sibling folder's contents.
   const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
@@ -222,11 +270,31 @@ function FileSystemColumnImpl({
   );
 
   const containerRef = useRef<View | null>(null);
+  const flatListRef = useRef<FlatList<FileSystemEntry> | null>(null);
   const scrollOffsetRef = useRef(0);
   const rowCountRef = useRef(0);
   rowCountRef.current = entries.length;
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
+  // Scroll offset as render state — only tracked when this pane participates in
+  // a cross-column drag (dragState defined), so overlays re-position as the list
+  // scrolls under a held drag.
+  const [scrollOffset, setScrollOffset] = useState(0);
+
+  // Feed hover from the drag state rather than a session: the columns drag lives
+  // at the view level, so the column receives its resolved target as a prop.
+  const getTargetIndex = useCallback(() => (dragState?.kind === 'row-target' ? dragState.rowIndex : null), [dragState]);
+  const isDragging = useCallback(() => dragState !== null, [dragState]);
+
+  const hover = useFileSystemRowHover({
+    containerRef,
+    count: entries.length,
+    getTargetIndex,
+    isDragging,
+    offsetTop: COLUMN_PADDING,
+    scrollOffsetRef,
+    stride: COLUMN_ROW_STRIDE,
+  });
 
   const hitTest = useCallback(
     (localX: number, localY: number) => columnRowHitAt(localX, localY, scrollOffsetRef.current, rowCountRef.current),
@@ -246,17 +314,31 @@ function FileSystemColumnImpl({
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+      const offset = event.nativeEvent.contentOffset.y;
+      scrollOffsetRef.current = offset;
+      hover.refresh();
       marquee.refresh();
+      onScrollOffsetChange?.(offset);
+      // Track scroll state when this pane participates in drag so overlays stay
+      // in sync as the list scrolls beneath a held drag.
+      if (dragState !== undefined) setScrollOffset(offset);
     },
-    [marquee],
+    [dragState, hover, marquee, onScrollOffsetChange],
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPaths is the trigger; not read in the body but must be in the deps to re-fire on selection change
   // biome-ignore lint/plugin: re-resolve is a side-effect on an Animated value, not render state
   useEffect(() => {
+    hover.refresh();
     marquee.refresh();
-  }, [marquee, selectedPaths]);
+  }, [hover, marquee, selectedPaths]);
+
+  // Sync scroll state when a drag starts so overlays are positioned correctly
+  // even if the list was already scrolled before the drag began.
+  // biome-ignore lint/plugin: re-resolve scroll state on drag start is a side-effect on a ref, not render state
+  useEffect(() => {
+    if (dragState !== null && dragState !== undefined) setScrollOffset(scrollOffsetRef.current);
+  }, [dragState]);
 
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
@@ -296,13 +378,30 @@ function FileSystemColumnImpl({
     [],
   );
 
+  const sourceRowIndex = dragState?.kind === 'source' ? dragState.rowIndex : null;
+
   return (
-    <Pressable className="shrink-0 select-none border-border border-r" onPress={onClearSelection} style={{ width: COLUMN_WIDTH }}>
+    <Pressable
+      ref={containerRef}
+      className="shrink-0 select-none border-border border-r"
+      onPress={onClearSelection}
+      style={{ width: COLUMN_WIDTH }}
+      testID={FS_DRAG_CONTAINER_TEST_ID.column}
+    >
+      {/* Overlay ring for column-level drop target — absolutely positioned so it
+          never adds to the column's width or shifts the list content. */}
+      {dragState?.kind === 'column-target' ? (
+        <View className="pointer-events-none absolute inset-0 z-[3] rounded-lg border-2 border-primary" />
+      ) : null}
       {isLoading && entries.length === 0 ? (
         <FileSystemEmptyState isLoading={true} label={LOADING_LABEL} />
       ) : (
-        <View ref={containerRef} className="relative flex-1">
+        <View className="relative flex-1">
+          {/* Both before the list, so they paint behind the rows — see FileSystemHoverHighlight. */}
+          <FileSystemHoverHighlight controller={hover} height={COLUMN_ROW_HEIGHT} testID={FS_HOVER_TEST_ID.columns} />
+          <FileSystemSourceHighlight height={COLUMN_ROW_HEIGHT} origin={columnRowOrigin(sourceRowIndex, scrollOffset)} />
           <FlatList
+            ref={flatListRef}
             contentContainerClassName="p-1.5"
             data={entries}
             getItemLayout={getItemLayout}
@@ -312,6 +411,9 @@ function FileSystemColumnImpl({
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
           />
+          {dragState?.kind === 'row-target' ? (
+            <ColumnDropHighlight scrollOffset={scrollOffset} targetIndex={dragState.rowIndex} />
+          ) : null}
           <FileSystemMarqueeBox controller={marquee} />
         </View>
       )}

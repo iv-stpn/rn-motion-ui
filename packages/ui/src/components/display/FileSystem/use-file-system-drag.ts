@@ -30,7 +30,11 @@ export const FS_ROW_HEIGHT = 30;
  * active on it — and there is one per view, so there is nothing for a consumer
  * to disambiguate.
  */
-export const FS_DRAG_CONTAINER_TEST_ID = { icons: 'file-system-icons-drag-container', list: 'file-system-list-drag-container' };
+export const FS_DRAG_CONTAINER_TEST_ID = {
+  column: 'file-system-column-drag-container',
+  icons: 'file-system-icons-drag-container',
+  list: 'file-system-list-drag-container',
+};
 
 const GHOST_OFFSET_X = 14;
 const GHOST_OFFSET_Y = -10;
@@ -161,7 +165,7 @@ type SessionRefs = {
  * onto anything inside its own subtree — the last one would reparent a folder
  * under its own child. Only folders can receive a drop.
  */
-function isValidDropTarget(source: FileSystemRow | undefined, target: FileSystemRow | undefined): boolean {
+export function isValidDropTarget(source: FileSystemRow | undefined, target: FileSystemRow | undefined): boolean {
   if (!source || target?.entry.kind !== 'folder') return false;
   const sourcePath = source.entry.path;
   const targetPath = target.entry.path;
@@ -176,7 +180,7 @@ function isValidDropTarget(source: FileSystemRow | undefined, target: FileSystem
  * multi-selection can hold entries the destination is already the parent of, or
  * a folder the destination lives inside, and those are not moves.
  */
-function movableSources(sourcePaths: string[], rows: FileSystemRow[], target: FileSystemRow): string[] {
+export function movableSources(sourcePaths: string[], rows: FileSystemRow[], target: FileSystemRow): string[] {
   const byPath = new Map(rows.map((row) => [row.entry.path, row]));
   return sourcePaths.filter((path) => isValidDropTarget(byPath.get(path), target));
 }

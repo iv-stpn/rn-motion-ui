@@ -1400,7 +1400,7 @@ export const ShiftRange: Story = {
     modifierClick(await listRow(canvas, 'Archive'), 'ctrlKey');
     modifierClick(await listRow(canvas, 'Documents'), 'ctrlKey', 'shiftKey');
     await canvas.findByText('· 5 selected');
-    expect(selectedPaths(canvas)).toEqual(['Archive/', 'Budget-2026.xlsx', 'Documents/', 'README.md', 'Roadmap.pptx']);
+    expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx', 'Archive/', 'Budget-2026.xlsx', 'Documents/']);
   },
 };
 

@@ -161,11 +161,39 @@ export type FileSystemFiltersState = {
   sort: FileSystemSortState;
   setSortKey: (key: FileSystemSortKey) => void;
   // Filters
+  /**
+   * The active filter rows, ANDed together. Each carries the `id` the
+   * row-addressed actions below take, so a filter-pill UI can re-value or drop
+   * one row without touching the rest.
+   */
   filters: FileSystemFilter[];
   fileTypeOptions: FileTypeFilterOption[];
   toggleFileType: (mime: string, checked: boolean) => void;
+  /**
+   * Set the date filter for `type` from a relative preset, replacing any filter
+   * of that type rather than stacking beside it. Presets slide with the clock —
+   * they resolve at filter time, not when they are picked.
+   *
+   * Accepts `'1 day ago'`, `'3 days ago'`, `'1 week ago'`, `'1 month ago'`,
+   * `'3 months ago'`, `'6 months ago'`, `'1 year ago'` — or any other string
+   * `Date.parse` understands, for a fixed cutoff.
+   */
   selectDatePreset: (type: FileSystemDateFilterType, preset: string) => void;
-  openCustomRange: (type: FileSystemDateFilterType) => void;
+  /**
+   * Set the date filter for `type` to an explicit range, replacing any filter of
+   * that type. The component ships no date picker — bring your own, then hand
+   * the two ends over here.
+   */
+  applyCustomRange: (type: FileSystemDateFilterType, from: Date, to: Date) => void;
+  /**
+   * Switch one row's operator, addressed by `FileSystemFilter.id` — negating a
+   * filter without rebuilding its value.
+   */
+  setFilterOperator: (id: string, operator: FileSystemFilterOperator) => void;
+  /** Re-value one date row from a preset, addressed by `FileSystemFilter.id`. */
+  setFilterDatePreset: (id: string, preset: string) => void;
+  /** Drop one row, addressed by `FileSystemFilter.id`. */
+  removeFilter: (id: string) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
   /**

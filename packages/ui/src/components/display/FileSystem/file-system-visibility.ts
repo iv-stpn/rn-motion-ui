@@ -1,7 +1,9 @@
-// Search/filter visibility and per-sort child ordering. Pure so the whole
-// query→visible-rows pipeline is unit-testable without the render layer.
+// Search/filter visibility, the filter model's matcher, and per-sort child
+// ordering. Pure so the whole query→visible-rows pipeline is unit-testable
+// without the render layer.
 
-import type { FileEntry, FileSystemEntry, FileSystemIndex, FileSystemSortState } from './file-system.types';
+import type { FileEntry, FileSystemEntry, FileSystemFilter, FileSystemIndex, FileSystemSortState } from './file-system.types';
+import { mimeTypeForFile } from './file-system-kinds';
 import { pathParent } from './file-system-paths';
 import { compareEntriesBySort, DEFAULT_SORT } from './file-system-sort';
 
@@ -11,7 +13,7 @@ type AncestorEntry = { path: string; parentPath: string };
 export type VisibilityArgs = {
   currentPath: string;
   index: FileSystemIndex;
-  /** Normalized query (see `normalizeSearchQuery`); `''` disables name matching. */
+  /** Trimmed, slash-folded, lowercased query; `''` disables name matching. */
   searchQuery: string;
   fileFilter: ((file: FileEntry) => boolean) | null;
 };
@@ -107,4 +109,78 @@ export function sortIndexChildren(index: FileSystemIndex, sort: FileSystemSortSt
       [...parentChildren].sort((left, right) => compareEntriesBySort(left, right, sort)),
     );
   return { ...index, children };
+}
+
+// ── Filter model ──────────────────────────────────────────────────────────────
+// A filter list is {type, operator, value[]} rows ANDed together into the
+// `fileFilter` predicate above. Date filters hold either one relative preset
+// ("1 week ago") or two ISO timestamps (a custom range); file-type filters hold
+// a set of MIME types.
+
+/**
+ * Resolve a relative preset to its cutoff instant. Anything else parseable is
+ * read as an absolute date, so a custom range's ISO timestamps come through
+ * here too. Evaluated at filter time, so "1 week ago" keeps sliding with the
+ * clock rather than freezing at the moment the filter was added.
+ *
+ * The presets, which is also the vocabulary `selectDatePreset` accepts:
+ * `1 day ago`, `3 days ago`, `1 week ago`, `1 month ago`, `3 months ago`,
+ * `6 months ago`, `1 year ago`.
+ */
+export function dateFilterPresetCutoff(preset: string, now: Date = new Date()): Date {
+  const date = new Date(now.getTime());
+
+  switch (preset) {
+    case '1 day ago':
+      date.setDate(date.getDate() - 1);
+      break;
+    case '3 days ago':
+      date.setDate(date.getDate() - 3);
+      break;
+    case '1 week ago':
+      date.setDate(date.getDate() - 7);
+      break;
+    case '1 month ago':
+      date.setMonth(date.getMonth() - 1);
+      break;
+    case '3 months ago':
+      date.setMonth(date.getMonth() - 3);
+      break;
+    case '6 months ago':
+      date.setMonth(date.getMonth() - 6);
+      break;
+    case '1 year ago':
+      date.setFullYear(date.getFullYear() - 1);
+      break;
+    default: {
+      const parsed = Date.parse(preset);
+      if (!Number.isNaN(parsed)) return new Date(parsed);
+    }
+  }
+  return date;
+}
+
+/** An empty value list matches everything, so a half-built filter hides nothing. */
+export function fileMatchesFilter(file: FileEntry, filter: FileSystemFilter): boolean {
+  const [firstValue, secondValue] = filter.value;
+  if (firstValue === undefined) return true;
+
+  if (filter.type === 'fileType') {
+    const matches = filter.value.includes(mimeTypeForFile(file));
+    return filter.operator === 'is-not' ? !matches : matches;
+  }
+
+  const timestamp = filter.type === 'dateCreated' ? file.createdAt : file.updatedAt;
+  const time = timestamp ? Date.parse(timestamp) : Number.NaN;
+  if (Number.isNaN(time)) return false;
+
+  if (filter.operator === 'in-range' || filter.operator === 'not-in-range') {
+    const from = Date.parse(firstValue);
+    const to = Date.parse(secondValue ?? firstValue);
+    const isInRange = time >= from && time <= to;
+    return filter.operator === 'not-in-range' ? !isInRange : isInRange;
+  }
+
+  const cutoff = dateFilterPresetCutoff(firstValue).getTime();
+  return filter.operator === 'before' ? time <= cutoff : time >= cutoff;
 }

@@ -16,6 +16,7 @@ import { Text } from '../../typography/Text/text';
 import { FileSystem } from './file-system';
 import type {
   FileSystemContextMenuAction,
+  FileSystemFilterOperator,
   FileSystemFiltersState,
   FileSystemItem,
   FileSystemLoadChildrenArgs,
@@ -870,6 +871,10 @@ export const SearchScope: Story = {
 // supplies the controls. These stories drive the story-local `FilterBar` below,
 // which reads each active filter back as `type operator value` text.
 
+/** Matches a readback row by its facet, so the row's value need not be spelled out. */
+const DATE_RANGE_READBACK_PATTERN = /^dateModified in-range/;
+const FILE_TYPE_READBACK_PATTERN = /^fileType /;
+
 export const Filter: Story = {
   name: 'Demo: Filter by file type',
   render: renderWithFilterBar,
@@ -916,29 +921,60 @@ export const DatePresetRevalue: Story = {
 };
 
 /**
- * The custom-range modal starts each visit from the filter's stored bounds.
- * Regression test: its draft used to live in a component mounted above the modal,
- * which outlived the request — so an abandoned draft came back on the next open.
+ * A custom range is applied by the consumer's own picker: `applyCustomRange`
+ * takes the two ends and stores them as an `in-range` filter, replacing whatever
+ * filter that facet held. The component ships no date picker of its own.
  */
-export const CustomRangeDraftIsPerVisit: Story = {
-  name: 'Demo: Custom range starts fresh each visit',
+export const CustomDateRange: Story = {
+  name: 'Demo: Apply a custom date range',
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('README.md');
 
-    // The slot's `openCustomRange` raises the built-in modal; the component
-    // still owns the picker itself.
-    await userEvent.click(await canvas.findByLabelText('Custom date range'));
+    // A preset first, so the range has something to replace.
+    await userEvent.click(await canvas.findByLabelText('Modified after 1 month ago'));
+    await canvas.findByText('dateModified after 1 month ago');
 
-    // Type a draft, then abandon it.
-    await userEvent.type(await screen.findByLabelText('From date'), '2026-03-01');
-    await userEvent.click(await screen.findByText('Cancel'));
-    await waitFor(() => expect(screen.queryByLabelText('From date')).toBeNull());
+    // The story bar hands over two fixed dates, standing in for a real picker.
+    await userEvent.click(await canvas.findByLabelText('Modified in Q1 2026'));
+    await canvas.findByText(DATE_RANGE_READBACK_PATTERN);
 
-    // Reopening the same facet starts empty rather than resuming the draft.
-    await userEvent.click(await canvas.findByLabelText('Custom date range'));
-    await waitFor(() => expect(screen.getByLabelText('From date')).toHaveValue(''));
+    // Replaced in place rather than stacked beside the preset.
+    await waitFor(() => expect(canvas.queryByText('dateModified after 1 month ago')).toBeNull());
+
+    // The range is a real cutoff, not just stored state: README.md is a June
+    // file, so it falls outside Q1 and drops out of the view.
+    await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
+  },
+};
+
+/**
+ * The row-addressed actions: every active filter carries an `id`, so a pill UI
+ * can negate one row or drop it without disturbing the others.
+ */
+export const FilterRowActions: Story = {
+  name: 'Demo: Negate and remove one filter row',
+  render: renderWithFilterBar,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Photos');
+
+    await userEvent.click(await canvas.findByLabelText('Filter by PDF'));
+    await canvas.findByText('fileType is application/pdf');
+    await waitFor(() => expect(canvas.queryByText('Photos')).toBeNull());
+
+    // `setFilterOperator` flips the row to `is-not`, so everything *but* PDFs
+    // passes — the folders come back and the PDFs go.
+    await userEvent.click(await canvas.findByLabelText('Negate fileType filter'));
+    await canvas.findByText('fileType is-not application/pdf');
+    await waitFor(() => expect(canvas.queryByText('Invoice-0042.pdf')).toBeNull());
+    await canvas.findByText('Photos');
+
+    // `removeFilter` drops that row alone, leaving no filters active.
+    await userEvent.click(await canvas.findByLabelText('Remove fileType filter'));
+    await waitFor(() => expect(canvas.queryByText(FILE_TYPE_READBACK_PATTERN)).toBeNull());
+    await canvas.findByText('Invoice-0042.pdf');
   },
 };
 
@@ -953,8 +989,26 @@ export const CustomRangeDraftIsPerVisit: Story = {
 // `type operator value` text so those stories can assert on the filter state the
 // slot reports.
 
-/** The two presets the stories exercise; `DATE_FILTER_PRESETS` has the full set. */
+/** The two presets the stories exercise; `selectDatePreset`'s docs list the full set. */
 const DATE_PRESETS = ['3 days ago', '1 month ago'];
+
+// A fixed range for the custom-range chip. The component ships no picker, so the
+// bar supplies both ends itself; hard-coding them keeps the story deterministic
+// where a calendar would not be. Q1 covers part of the manifest, so applying it
+// visibly drops the later files rather than matching everything.
+const CUSTOM_RANGE_FROM = new Date('2026-01-01T00:00:00.000Z');
+const CUSTOM_RANGE_TO = new Date('2026-03-31T23:59:59.999Z');
+
+/** The opposite of each operator, for the readback row's negate affordance. */
+const NEGATED_OPERATOR: Record<FileSystemFilterOperator, FileSystemFilterOperator> = {
+  after: 'before',
+  before: 'after',
+  'in-range': 'not-in-range',
+  is: 'is-not',
+  'is-any-of': 'is-not',
+  'is-not': 'is',
+  'not-in-range': 'in-range',
+};
 
 type ScopeChipsProps = Pick<FileSystemFiltersState, 'folderName' | 'isAtRoot' | 'rootLabel' | 'searchScope' | 'setSearchScope'>;
 
@@ -1016,6 +1070,7 @@ type FilterBarProps = FileSystemFiltersState & { testID?: string };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function FilterBar({
+  applyCustomRange,
   clearFilters,
   count,
   fileTypeOptions,
@@ -1024,11 +1079,12 @@ function FilterBar({
   hasActiveFilters,
   isAtRoot,
   isSearching,
-  openCustomRange,
+  removeFilter,
   rootLabel,
   searchScope,
   searchValue,
   selectDatePreset,
+  setFilterOperator,
   setSearchScope,
   setSearchValue,
   toggleFileType,
@@ -1044,7 +1100,13 @@ function FilterBar({
     setSearchValue('');
   }, [clearFilters, setSearchValue]);
 
-  const handleOpenCustomRange = useCallback(() => openCustomRange('dateModified'), [openCustomRange]);
+  // The component ships no picker any more, so the bar owns the two ends and
+  // hands them over. A real bar would raise a calendar here; a fixed range keeps
+  // the story deterministic.
+  const handleApplyCustomRange = useCallback(
+    () => applyCustomRange('dateModified', CUSTOM_RANGE_FROM, CUSTOM_RANGE_TO),
+    [applyCustomRange],
+  );
 
   return (
     <View className="flex-row flex-wrap items-center gap-2 border-border border-b bg-surface-2 px-3 py-2">
@@ -1108,12 +1170,12 @@ function FilterBar({
         </Pressable>
       ))}
       <Pressable
-        accessibilityLabel="Custom date range"
+        accessibilityLabel="Modified in Q1 2026"
         accessibilityRole="button"
         className="rounded-md border border-border bg-surface-1 px-2.5 py-1"
-        onPress={handleOpenCustomRange}
+        onPress={handleApplyCustomRange}
       >
-        <Text size="xs">Custom range…</Text>
+        <Text size="xs">Q1 2026</Text>
       </Pressable>
 
       {/* Clear-all + result count */}
@@ -1140,11 +1202,31 @@ function FilterBar({
         {`Showing ${count} ${isSearching ? 'result' : 'item'}${count === 1 ? '' : 's'}`}
       </Text>
 
-      {/* Each active filter read back as `type operator value`. */}
+      {/* Each active filter read back as `type operator value`, with the two
+          row-addressed actions beside it. Both take the filter's `id`, so they
+          reach one row without disturbing the others. */}
       {filters.map((filter) => (
-        <Text className="text-muted-foreground" key={filter.id} size="xs">
-          {`${filter.type} ${filter.operator} ${filter.value.join(', ')}`}
-        </Text>
+        <View className="flex-row items-center gap-1" key={filter.id}>
+          <Text className="text-muted-foreground" size="xs">
+            {`${filter.type} ${filter.operator} ${filter.value.join(', ')}`}
+          </Text>
+          <Pressable
+            accessibilityLabel={`Negate ${filter.type} filter`}
+            accessibilityRole="button"
+            onPress={() => setFilterOperator(filter.id, NEGATED_OPERATOR[filter.operator])}
+          >
+            <Text className="text-muted-foreground" size="xs">
+              ¬
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel={`Remove ${filter.type} filter`}
+            accessibilityRole="button"
+            onPress={() => removeFilter(filter.id)}
+          >
+            <X color={colors['muted-foreground']} size={11} />
+          </Pressable>
+        </View>
       ))}
     </View>
   );

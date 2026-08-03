@@ -5,10 +5,10 @@
 **FileSystem: filtering goes headless, and the browser gets breadcrumbs and a
 real search view.** The component used to own its own toolbar: a sort select, a
 filter menu, a Finder-style search field that collapsed to a button at narrow
-widths, and a row of filter pills beneath the header. All of it is gone. What
-stays is the pipeline behind it — search, sort, file-type and date filtering,
-custom ranges — now reachable through a `renderFilters` slot that hands you
-every action and no markup.
+widths, a row of filter pills beneath the header, and the date-range modal the
+filter menu raised. All of it is gone. What stays is the pipeline behind it —
+search, sort, file-type and date filtering, custom ranges — now reachable
+through a `renderFilters` slot that hands you every action and no markup.
 
 ```tsx
 <FileSystem
@@ -36,14 +36,25 @@ Migrating:
 | built-in search field, sort select, filter menu and filter pills                                                               | supply them through `renderFilters`, or ship no filter UI at all                                     |
 | `FileSystemHeaderState.isSearchExpanded` / `setSearchExpanded`                                                                 | gone — the collapse-to-a-button behaviour was the built-in field's, and there is no built-in field   |
 | `renderHeader` receiving `filters`, `fileTypeOptions`, `toggleFileType`, `selectDatePreset`, `openCustomRange`, `clearFilters` | those moved to `renderFilters`; `renderHeader` keeps navigation, view, sort and the raw search value |
+| `openCustomRange(type)`, which raised the built-in date-range modal                                                            | `applyCustomRange(type, from, to)` — bring your own picker, hand the two ends over                   |
 
 `renderFilters` gets everything the old toolbar drove — `searchValue` /
 `setSearchValue`, `sort` / `setSortKey`, `filters`, `fileTypeOptions`,
-`toggleFileType`, `selectDatePreset`, `openCustomRange`, `clearFilters`,
+`toggleFileType`, `selectDatePreset`, `applyCustomRange`, `clearFilters`,
 `hasActiveFilters`, `isSearching` — plus `count`, the visible entry count after
-search and filtering. The custom-range modal is still the component's, so
-`openCustomRange` opens the same picker the old filter menu did. Omit the prop
-and no filter row renders.
+search and filtering. Omit the prop and no filter row renders.
+
+Headless goes all the way down: the date-range modal the filter menu used to
+raise is gone too, so the component now ships no filter UI whatsoever. Dates come
+in through `selectDatePreset(type, preset)` for a relative cutoff (`'1 week ago'`
+and friends) or `applyCustomRange(type, from, to)` for two explicit ends, which
+is where your own calendar hands off.
+
+Each active filter carries an `id`, and three actions take one: `setFilterOperator`
+negates a row, `setFilterDatePreset` re-values a date row, and `removeFilter`
+drops it. That's what a filter-pill UI needs to reach one row without rebuilding
+the rest — previously only `clearFilters` was reachable, which emptied all of
+them.
 
 Two additions that are not about the slot:
 

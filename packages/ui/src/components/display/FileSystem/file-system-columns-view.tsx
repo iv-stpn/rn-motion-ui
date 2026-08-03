@@ -111,7 +111,6 @@ function PreviewPane({ file, index, viewportWidth, ...visualProps }: PreviewPane
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: drag wiring, scroll offset callbacks, and the render are tightly coupled around shared refs
 export function FileSystemColumnsView({
   currentPath,
   draggable,

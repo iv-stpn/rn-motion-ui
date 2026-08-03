@@ -30,8 +30,6 @@ import type {
   FileSystemViewerArgs,
   FileTypeFilterOption,
 } from './file-system.types';
-import type { DateRange } from './file-system-calendar';
-import { fileMatchesFilter, isCustomDateRangeValue } from './file-system-filter';
 import { buildFileSystemIndex } from './file-system-index';
 import { fileTypeFilterGroup, MIME_TYPE_LABELS, mimeTypeForFile, viewerKindForFile } from './file-system-kinds';
 import { normalizeFolderPath, pathName } from './file-system-paths';
@@ -46,18 +44,7 @@ import {
 import { DEFAULT_SORT, defaultSortDirection } from './file-system-sort';
 import type { HeaderLayout } from './file-system-toolbar-parts';
 import type { FileSystemOpenedFile } from './file-system-viewer-modal';
-import { computeVisiblePaths, filterIndexToVisible, sortIndexChildren } from './file-system-visibility';
-
-// ── DateRangeRequest ─────────────────────────────────────────────────────────
-// Moved here from use-file-system-filters.ts (deleted in this refactor).
-// Re-exported so file-system-date-range-modal.tsx can update its import path.
-// biome-ignore lint/style/useExportsLast: co-located with the filter slice types it belongs to
-export type DateRangeRequest = {
-  /** Monotonically increasing — ensures a re-open of the same facet remounts the form. */
-  id: number;
-  initialRange?: DateRange;
-  type: FileSystemDateFilterType;
-};
+import { computeVisiblePaths, fileMatchesFilter, filterIndexToVisible, sortIndexChildren } from './file-system-visibility';
 
 // ── Slice types ───────────────────────────────────────────────────────────────
 
@@ -110,7 +97,6 @@ type FiltersSlice = {
   fileFilter: ((file: FileEntry) => boolean) | null;
   fileTypeOptions: FileTypeFilterOption[];
   hasActiveFilters: boolean;
-  dateRangeRequest: DateRangeRequest | null;
 };
 
 type ViewerSlice = {
@@ -180,8 +166,6 @@ type FileSystemActions = {
   // Filters
   toggleFileTypeFilterValue: (mime: string, checked: boolean) => void;
   setDatePresetFilter: (type: FileSystemDateFilterType, preset: string) => void;
-  openDateRangeRequest: (type: FileSystemDateFilterType) => void;
-  closeDateRangeRequest: () => void;
   applyCustomDateRange: (type: FileSystemDateFilterType, from: Date, to: Date) => void;
   setFilterOperator: (id: string, operator: FileSystemFilterOperator) => void;
   setFilterDatePreset: (id: string, preset: string) => void;
@@ -368,7 +352,6 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
   // Non-reactive closure state — never needs to trigger re-renders
   const requestedFolders = new Set<string>();
   let filterIdCounter = 0;
-  let requestIdCounter = 0;
   const nextFilterId = () => {
     filterIdCounter += 1;
     return `filter-${filterIdCounter}`;
@@ -421,7 +404,6 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       fileFilter: null,
       fileTypeOptions: computeFileTypeOptions(initialIndex),
       hasActiveFilters: false,
-      dateRangeRequest: null,
     },
     viewer: {
       opened: null,
@@ -721,27 +703,9 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       set({ filters: next.filters, entries: next.entries, selection: next.selection });
     },
 
-    openDateRangeRequest: (type) => {
-      const s = get();
-      const existing = s.filters.filters.find((f) => f.type === type);
-      const bounds = existing && isCustomDateRangeValue(existing.value) ? existing.value : null;
-      requestIdCounter += 1;
-      set((cur) => ({
-        filters: {
-          ...cur.filters,
-          dateRangeRequest: {
-            id: requestIdCounter,
-            initialRange: bounds ? { from: new Date(bounds[0]), to: new Date(bounds[1]) } : undefined,
-            type,
-          },
-        },
-      }));
-    },
-
-    closeDateRangeRequest: () => {
-      set((s) => ({ filters: { ...s.filters, dateRangeRequest: null } }));
-    },
-
+    // Replaces any existing filter of the same facet, keeping a negated range
+    // negated — re-picking dates on a "not in range" filter re-values it rather
+    // than silently flipping what it means.
     applyCustomDateRange: (type, from, to) => {
       const s = get();
       const id = nextFilterId();
@@ -929,8 +893,6 @@ export function useFileSystemFilterActions() {
     useShallow((s) => ({
       toggleFileTypeFilterValue: s.toggleFileTypeFilterValue,
       setDatePresetFilter: s.setDatePresetFilter,
-      openDateRangeRequest: s.openDateRangeRequest,
-      closeDateRangeRequest: s.closeDateRangeRequest,
       applyCustomDateRange: s.applyCustomDateRange,
       setFilterOperator: s.setFilterOperator,
       setFilterDatePreset: s.setFilterDatePreset,

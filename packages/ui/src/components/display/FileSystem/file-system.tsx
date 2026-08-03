@@ -29,7 +29,6 @@ import {
   useFileSystemStoreContext,
 } from './file-system-context';
 import { FileSystemContextMenuProvider } from './file-system-context-menu';
-import { FileSystemDateRangeModal } from './file-system-date-range-modal';
 import { FileSystemHeader } from './file-system-header';
 import type { HeaderLayout } from './file-system-toolbar-parts';
 import { FileSystemStatusBar } from './file-system-toolbar-parts';
@@ -105,8 +104,17 @@ function FileSystemCustomFilters({ renderFilters }: FileSystemCustomFiltersProps
   const { rootLabel, testID } = useFileSystemConsumer();
   const { applySortKey } = useFileSystemEntriesActions();
   const { setSearchInput, setSearchScope } = useFileSystemSearchActions();
-  const { clearFilters, toggleFileTypeFilterValue, openDateRangeRequest, setDatePresetFilter } = useFileSystemFilterActions();
+  const {
+    applyCustomDateRange,
+    clearFilters,
+    removeFilter,
+    setDatePresetFilter,
+    setFilterDatePreset,
+    setFilterOperator,
+    toggleFileTypeFilterValue,
+  } = useFileSystemFilterActions();
   return renderFilters({
+    applyCustomRange: applyCustomDateRange,
     clearFilters,
     count: entries.length,
     fileTypeOptions,
@@ -115,11 +123,13 @@ function FileSystemCustomFilters({ renderFilters }: FileSystemCustomFiltersProps
     hasActiveFilters,
     isAtRoot: currentPath === '',
     isSearching,
-    openCustomRange: openDateRangeRequest,
+    removeFilter,
     rootLabel,
     searchScope: scope,
     searchValue: searchInput,
     selectDatePreset: setDatePresetFilter,
+    setFilterDatePreset,
+    setFilterOperator,
     setSearchScope,
     setSearchValue: setSearchInput,
     setSortKey: applySortKey,
@@ -291,7 +301,6 @@ export function FileSystem({
         ) : (
           <FileSystemStatusBar className={footerClassName} />
         )}
-        <FileSystemDateRangeModal />
         <FileSystemViewerModal />
         <FileSystemSideEffects />
       </View>

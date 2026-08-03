@@ -4,19 +4,44 @@
 // the tablet width the switcher becomes this icon-only dropdown, the same shape
 // the web original's <Select> took.
 
-import { useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable } from 'react-native';
+import { cn } from '../../../lib/cn';
 import { Check, ChevronDown } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import type { TriggerRenderProps } from '../../menus/AdaptiveDropdown/adaptive-dropdown';
 import { AdaptiveDropdown } from '../../menus/AdaptiveDropdown/adaptive-dropdown';
+import { Text } from '../../typography/Text/text';
 import type { FileSystemView } from './file-system.types';
-import { MenuRow } from './file-system-menus';
 import type { ViewOption } from './file-system-toolbar-parts';
 import { VIEW_OPTIONS } from './file-system-toolbar-parts';
 
 const MENU_TITLE = 'View';
 const MENU_WIDTH = 180;
+
+type MenuRowProps = { label: string; onPress: () => void; leading?: ReactNode; trailing?: ReactNode; isSelected?: boolean };
+
+function MenuRow({ isSelected, label, leading, onPress, trailing }: MenuRowProps) {
+  const [hovered, setHovered] = useState(false);
+  const handleHoverIn = useCallback(() => setHovered(true), []);
+  const handleHoverOut = useCallback(() => setHovered(false), []);
+  return (
+    <Pressable
+      accessibilityRole="menuitem"
+      accessibilityState={{ selected: isSelected }}
+      onHoverIn={handleHoverIn}
+      onHoverOut={handleHoverOut}
+      onPress={onPress}
+      className={cn('h-9 flex-row items-center gap-2 rounded-md px-2', hovered && 'bg-surface-hover')}
+    >
+      {leading}
+      <Text size="sm" className="flex-1">
+        {label}
+      </Text>
+      {trailing}
+    </Pressable>
+  );
+}
 
 type ViewSelectRowProps = { isSelected: boolean; onSelect: (view: FileSystemView) => void; option: ViewOption };
 

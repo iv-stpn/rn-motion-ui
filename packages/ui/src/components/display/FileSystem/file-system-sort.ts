@@ -4,7 +4,7 @@ import type { FileSystemEntry, FileSystemSortDirection, FileSystemSortKey, FileS
 import { entryKindLabel } from './file-system-kinds';
 import { compareEntryNames } from './file-system-paths';
 
-export type FileSystemSortOption = {
+type FileSystemSortOption = {
   defaultDirection: FileSystemSortDirection;
   key: FileSystemSortKey;
   label: string;

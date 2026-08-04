@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
@@ -167,6 +167,44 @@ function HoverMenuPlayground() {
 
 const DEMO_TESTID = 'hover-menu-demo';
 const DEMO_PANEL_TESTID = `${DEMO_TESTID}-panel`;
+const PRESSABLE_TESTID = 'hover-menu-pressable';
+const PRESSABLE_PANEL_TESTID = `${PRESSABLE_TESTID}-panel`;
+const EXTERNAL_TESTID = 'hover-menu-external';
+const EXTERNAL_PANEL_TESTID = `${EXTERNAL_TESTID}-panel`;
+
+// The playground's shape reduced to what the assertions need: controlled, and a
+// trigger that is pressable in its own right (so the wrapper nests one pressable
+// inside another — the case the two demos below pin).
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function ControlledPressableDemo() {
+  const [open, setOpen] = useState(false);
+  const renderTrigger = useCallback(
+    (props: TriggerRenderProps) => (
+      <TriggerButton buttonVariant="outline" kind="button" label={TRIGGER_CLOSED} onPress={props.toggle} />
+    ),
+    [],
+  );
+  return (
+    <HoverMenu onOpenChange={setOpen} open={open} testID={PRESSABLE_TESTID} trigger={renderTrigger} triggerIsPressable={true}>
+      <Menu entries={ITEMS} />
+    </HoverMenu>
+  );
+}
+
+// Controlled open driven from somewhere that is not the trigger — the Toggle in
+// the playground, a keyboard shortcut in an app.
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function ExternallyOpenedDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Toggle label="Open" onChange={setOpen} value={open} />
+      <HoverMenu onOpenChange={setOpen} open={open} testID={EXTERNAL_TESTID} trigger={renderPlainTrigger}>
+        <Menu entries={ITEMS} />
+      </HoverMenu>
+    </>
+  );
+}
 
 // Uncontrolled, plain-node trigger — the wrapper owns both the hover and the
 // press, so the play function exercises the component's own state machine
@@ -217,5 +255,61 @@ export const Default: Story = {
     // closeDelay (150ms) then the shared 200ms menu exit before it unmounts.
     await userEvent.unhover(trigger);
     await waitFor(() => expect(canvas.queryByTestId(DEMO_PANEL_TESTID)).toBeNull(), { timeout: 2000 });
+  },
+};
+
+/**
+ * Hover-open when the trigger is pressable in its own right — the playground's
+ * shape, and the case that only ever worked on press.
+ *
+ * The hover pair used to be `Pressable`'s `onHoverIn`/`onHoverOut`, which
+ * react-native-web implements via `useHover` with `contain: true`. That dispatches
+ * a bubbling `react-gui:hover:lock` event on enter, and an ancestor using the same
+ * hook treats a lock from a different target as its own hover-end. So entering the
+ * inner button fired the wrapper's hover-out one tick after its hover-in, killing
+ * the pending open timer every time: press worked, hover never did. The handlers
+ * are now on `onPointerEnter`/`onPointerLeave` — plain DOM events with no lock
+ * protocol, and `pointerleave` fires only when the pointer leaves the wrapper
+ * together with its descendants, which is exactly the wanted semantics.
+ *
+ * `pointerover` with an outside `relatedTarget` is what React's EnterLeave plugin
+ * turns into `onPointerEnter` on each ancestor; it never dispatches the native
+ * `pointerenter` that `useHover` binds, so this passes only on the pointer-event
+ * implementation. Verified independently against a real CDP mouse.
+ */
+export const HoverOpensPressableTrigger: Story = {
+  name: 'Demo: Hover opens a pressable trigger',
+  render: () => <ControlledPressableDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByTestId(PRESSABLE_PANEL_TESTID)).toBeNull();
+
+    // Enter the inner button, not the wrapper — nesting is the whole point.
+    fireEvent.pointerOver(await canvas.findByText(TRIGGER_CLOSED), { relatedTarget: document.body });
+    await waitFor(() => expect(canvas.getByTestId(PRESSABLE_PANEL_TESTID)).toBeInTheDocument(), { timeout: 2000 });
+
+    fireEvent.pointerOut(canvas.getByTestId(PRESSABLE_TESTID), { relatedTarget: document.body });
+    await waitFor(() => expect(canvas.queryByTestId(PRESSABLE_PANEL_TESTID)).toBeNull(), { timeout: 2000 });
+  },
+};
+
+/**
+ * A controlled `open` flipped from outside the menu must still render the panel.
+ *
+ * The panel needs the trigger's measured rect to position itself, and measuring
+ * only ever happened on the paths the menu drives itself — the hover timer and
+ * `toggle`. An `open` that arrived as a prop (the Toggle here, a keyboard
+ * shortcut in an app) left `rect` null, and the panel renders on `open && rect`,
+ * so nothing appeared until something else happened to measure. Measuring is now
+ * keyed on `open` becoming true, whatever set it.
+ */
+export const ExternalOpenRendersPanel: Story = {
+  name: 'Demo: Opens from outside the trigger',
+  render: () => <ExternallyOpenedDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByTestId(EXTERNAL_PANEL_TESTID)).toBeNull();
+    await userEvent.click(canvas.getByTestId('story-toggle-open'));
+    await waitFor(() => expect(canvas.getByTestId(EXTERNAL_PANEL_TESTID)).toBeInTheDocument(), { timeout: 2000 });
   },
 };

@@ -217,7 +217,12 @@ export function HoverMenu({
   const close = useCallback(() => setOpen(false), [setOpen]);
 
   const measure = useCallback(() => {
-    triggerRef.current?.measureInWindow((x, y, w, h) => setRect({ x, y, w, h }));
+    triggerRef.current?.measureInWindow((x, y, w, h) =>
+      // Same-value bail as handlePanelLayout: the open path measures and the
+      // open-effect measures again, so an unconditional setRect would re-render
+      // twice per open for an identical rect.
+      setRect((prev) => (prev && prev.x === x && prev.y === y && prev.w === w && prev.h === h ? prev : { x, y, w, h })),
+    );
   }, []);
 
   const clearTimers = useCallback(() => {
@@ -237,16 +242,30 @@ export function HoverMenu({
   // schedules a close. `onPress` (toggle) clears both timers first so a click and
   // a queued hover never fight over the same state.
   //
-  // These read `open` from `openRef` (not the closure) and keep a stable identity
-  // across open changes. react-native-web's `useHover` captures the hover-end
-  // handler when the pointer ENTERS — it attaches the `pointerleave` listener
-  // inside the `pointerenter` handler and does not re-bind it when the prop
-  // changes. A handler that closed over `open` was captured at enter time, while
-  // the menu was still closed (hover opens on a timer AFTER enter), so the first
-  // hover's `pointerleave` ran `handleHoverOut` with `open === false` and bailed
-  // (`if (!open) return`) — never scheduling the close. The menu only closed once
-  // a later hover entered while already open (capturing `open === true`), i.e.
-  // from the second hover on. Reading the ref defeats the stale capture.
+  // These are wired to `onPointerEnter`/`onPointerLeave` — the raw DOM events —
+  // and NOT to Pressable's `onHoverIn`/`onHoverOut`. react-native-web implements
+  // those via `useHover({ contain: true })`, which dispatches a bubbling
+  // `react-gui:hover:lock` custom event on enter and ends the hover of any
+  // ancestor whose own lock listener sees a different target. Every nested
+  // Pressable therefore cancels its ancestors' hover:
+  //
+  //   - Trigger: a pressable trigger (a `Button`) inside the wrapper fired the
+  //     lock as the pointer reached it, so the wrapper's hover ended immediately
+  //     after starting. `handleHoverOut` cleared the pending open timer and the
+  //     menu never opened on hover at all — only on press.
+  //   - Panel: `MenuItem` is a Pressable too, so moving onto an item ended the
+  //     panel's hover and scheduled a close while the pointer was still inside.
+  //
+  // `pointerenter`/`pointerleave` have exactly the semantics wanted here: they
+  // fire once for the element-plus-descendants region and ignore movement between
+  // children, so a nested pressable is invisible to them. RNW forwards both props
+  // straight to the DOM node (`forwardedProps.clickProps`), and they are part of
+  // RN's own `ViewProps`, so this stays type-safe and is inert on native — where
+  // it never runs anyway, since `canHover` gates it.
+  //
+  // These read `open` from `openRef` rather than the closure, and keep a stable
+  // identity across open changes, so a listener captured at enter time can never
+  // act on a stale value.
   const handleHoverIn = useCallback(() => {
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
@@ -281,6 +300,17 @@ export function HoverMenu({
 
   // Clear hover timers on unmount so a pending open/close can't fire after teardown.
   useMountEffect(() => () => clearTimers());
+
+  // Measure whenever the menu opens. Hover and press already measure on their way
+  // through, but a *controlled* consumer can flip `open` to true on its own (a
+  // switch, a keyboard shortcut, a route change) and never touch either path — the
+  // panel renders only `open && rect`, so without this it stayed invisible until
+  // something else happened to measure. Re-measuring on every open is also the
+  // correct thing anyway: the trigger may have moved since the last one.
+  // biome-ignore lint/plugin: measuring a host node via measureInWindow is an imperative side effect keyed on open state
+  useEffect(() => {
+    if (open) measure();
+  }, [open, measure]);
 
   // Arm the opening guard while the enter animation runs so a trigger click can't
   // toggle the menu straight back to closed (blur/Escape/outside-click still close
@@ -404,8 +434,8 @@ export function HoverMenu({
         ref={panelRef}
         onPress={handlePanelPress}
         onLayout={handlePanelLayout}
-        onHoverIn={canHover ? handleHoverIn : undefined}
-        onHoverOut={canHover ? handleHoverOut : undefined}
+        onPointerEnter={canHover ? handleHoverIn : undefined}
+        onPointerLeave={canHover ? handleHoverOut : undefined}
         style={[canHover ? WEB_PANEL_POSITION : POSITION_ABSOLUTE, { left, top, width: panelWidth, zIndex: 50 }]}
         testID={testID ? `${testID}-panel` : undefined}
       >
@@ -434,8 +464,8 @@ export function HoverMenu({
         ref={triggerRef}
         collapsable={false}
         {...wrapperSemantics}
-        onHoverIn={canHover ? handleHoverIn : undefined}
-        onHoverOut={canHover ? handleHoverOut : undefined}
+        onPointerEnter={canHover ? handleHoverIn : undefined}
+        onPointerLeave={canHover ? handleHoverOut : undefined}
         testID={testID}
       >
         {resolvedTrigger}

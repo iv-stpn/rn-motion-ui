@@ -97,6 +97,11 @@
       "types": "./src/components/menus/BottomSheet/bottom-sheet.tsx",
       "default": "./src/components/menus/BottomSheet/bottom-sheet.tsx"
     },
+    "./breadcrumbs": {
+      "source": "./src/components/display/Breadcrumbs/breadcrumbs.tsx",
+      "types": "./src/components/display/Breadcrumbs/breadcrumbs.tsx",
+      "default": "./src/components/display/Breadcrumbs/breadcrumbs.tsx"
+    },
     "./breakpoints": {
       "source": "./src/lib/breakpoints.ts",
       "types": "./src/lib/breakpoints.ts",

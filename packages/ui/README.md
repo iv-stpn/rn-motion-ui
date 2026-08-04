@@ -89,6 +89,7 @@ Subpaths are namespaced by category:
 | `/star-rating` | `StarRating` |
 | `/input` | `Input` |
 | `/tabs` | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` |
+| `/breadcrumbs` | `Breadcrumbs` |
 | `/card` | `Card` |
 | `/text` | `Text` |
 | `/skeleton` | `Skeleton` |

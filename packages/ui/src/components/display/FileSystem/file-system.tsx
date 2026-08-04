@@ -1,15 +1,15 @@
-/** biome-ignore-all lint/style/noExcessiveLinesPerFile: assembly point — store init, 4 render-prop adapters, layout sync and public re-exports all belong here */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: assembly point — store init, 4 render-prop adapters, the breadcrumb binding, layout sync and public re-exports all belong here */
 // <FileSystem>: assembly point — creates the per-instance Zustand store, syncs
 // consumer props into it, and renders the context provider with all regions.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { useWindowDimensions, View } from 'react-native';
 import { cn } from '../../../lib/cn';
+import { Breadcrumbs } from '../Breadcrumbs/breadcrumbs';
 import type { FileSystemProps, ResolvedFileSystemBreakpoints } from './file-system.types';
 import { defaultFileSystemBreakpoints } from './file-system.types';
 import { FileSystemBody } from './file-system-body';
-import { FileSystemBreadcrumbs } from './file-system-breadcrumbs';
 import {
   createFileSystemStore,
   type FileSystemStoreApi,
@@ -30,6 +30,7 @@ import {
 } from './file-system-context';
 import { FileSystemContextMenuProvider } from './file-system-context-menu';
 import { FileSystemHeader } from './file-system-header';
+import { buildCrumbs } from './file-system-search';
 import type { HeaderLayout } from './file-system-toolbar-parts';
 import { FileSystemStatusBar } from './file-system-toolbar-parts';
 import { FileSystemViewerModal } from './file-system-viewer-modal';
@@ -137,6 +138,33 @@ function FileSystemCustomFilters({ renderFilters }: FileSystemCustomFiltersProps
     toggleFileType: toggleFileTypeFilterValue,
     testID: testID ? `${testID}-filters` : undefined,
   });
+}
+
+// Binds the generic <Breadcrumbs> to the store: folder paths in, navigation out.
+// Hidden at the root — the header already names it, and there is no trail back.
+// The search view builds its own per-row trails from the same `buildCrumbs`.
+function FileSystemBreadcrumbs() {
+  const { currentPath } = useFileSystemNavigation();
+  const { rootLabel, testID } = useFileSystemConsumer();
+  const { navigateTo } = useFileSystemNavigationActions();
+
+  // `buildCrumbs` keys each crumb by its folder path, which is exactly what
+  // `navigateTo` takes — it normalizes the trailing slash itself.
+  const items = useMemo(
+    () => buildCrumbs(currentPath, rootLabel).map((crumb) => ({ id: crumb.key, label: crumb.label })),
+    [currentPath, rootLabel],
+  );
+
+  if (!currentPath) return null;
+
+  return (
+    <Breadcrumbs
+      className="border-border border-b bg-surface-2"
+      items={items}
+      onNavigate={navigateTo}
+      testID={testID ? `${testID}-breadcrumbs` : undefined}
+    />
+  );
 }
 
 // Null-rendering component that subscribes to store path changes and triggers

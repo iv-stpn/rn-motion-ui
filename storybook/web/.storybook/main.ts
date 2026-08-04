@@ -69,16 +69,6 @@ const config: StorybookConfig = {
       // node_modules/.cache/storybook/…/@storybook_addon-docs…".
       '@storybook/addon-docs',
     ];
-    viteConfig.plugins.push({
-      name: 'debug-alias',
-      enforce: 'post',
-      config(resolved) {
-        console.error(
-          'DEBUG_RESOLVED_ALIAS=' +
-            JSON.stringify(resolved.resolve?.alias, (_k, v) => (typeof v === 'function' ? '[Function]' : v)),
-        );
-      },
-    });
     return viteConfig;
   },
 };

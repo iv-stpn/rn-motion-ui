@@ -68,6 +68,29 @@ is still Apache-2.0 — if MingCute relicenses, both the SPDX expression and
 `NOTICE` have to follow. `rn-motion-ui` itself stays plain MIT: it contains no
 MingCute artwork, only imports from the icon package.
 
+## Storybook web build
+
+### Why `packages/icons` devDepends on `react-native-web`
+
+Nothing in the icon package imports `react-native-web`, and it is still required.
+
+Storybook's `react-docgen` pass follows type imports across files. Every icon
+imports `IconProps`, which imports `StyleProp`/`ViewStyle` from `react-native`,
+so docgen resolves `react-native` from the importing file's directory. Its
+importer rewrites a resolved `…/react-native/index.js` to
+`…/react-native-web/dist/index.js`, but only when that sibling path exists —
+and bun only links a package into `packages/<pkg>/node_modules` if that package
+declares it.
+
+Without the declaration the rewrite is skipped and docgen parses React Native's
+real entry point, which since 0.86 is TypeScript in a `.js` file. docgen parses
+`.js` with Babel's Flow plugin, so it dies on `} as ReactNativePublicAPI;` and
+fails `build:storybook` once per docgen'd icon. `packages/ui` already declares
+`react-native-web` for its own web build, which is why only icons broke.
+
+Any future workspace package that imports `react-native` types needs the same
+devDependency.
+
 ## Accessibility
 
 Every component either carries accessibility semantics or is on the exemption

@@ -1,6 +1,14 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { AlertCircle, AlertTriangle, Check, Circle, Info, LoaderCircle } from '../../../lib/icons';
@@ -8,6 +16,20 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
+
+/** One full revolution of the loading spinner. */
+const SPIN_DURATION_MS = 1000;
+/** Degrees per revolution — the loop restarts from 0, which is the same pose. */
+const SPIN_TO_DEG = 360;
+/** Half a pulse — the ping-pong doubles it into a full breathe cycle. */
+const PULSE_DURATION_MS = 800;
+// cubic-bezier(0.4, 0, 0.6, 1) — Tailwind's `animate-pulse` easing, same as Skeleton.
+const PULSE_EASING = Easing.bezier(0.4, 0, 0.6, 1);
+const PULSE_OPACITY_FROM = 0.08;
+const PULSE_OPACITY_TO = 0.16;
+const PULSE_SCALE_FROM = 0.94;
+const PULSE_SCALE_TO = 1.08;
+const PULSE_STYLE = { position: 'absolute', inset: 0, borderRadius: 999, pointerEvents: 'none' } as const;
 
 export type AnimatedBadgeStatus = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'loading';
 // biome-ignore lint/style/useExportsLast: these type aliases are used directly by the cva constants below; moving them after inverts the natural dependency order
@@ -73,6 +95,67 @@ function useBadgeBackground(colors: ReturnType<typeof useThemeColors>): Record<A
   };
 }
 
+type BadgeSpinnerProps = { children: ReactNode };
+type BadgePulseProps = { color: string };
+
+/**
+ * Continuous 0°→360° rotation, driven imperatively.
+ *
+ * This deliberately does *not* use MotiView's `animate`/`loop` transition. Moti
+ * resolves its pose inside a `useAnimatedStyle` whose dependencies include the
+ * `animate` object, and that object is a fresh literal on every render — so any
+ * parent re-render (a status change, an interval tick, a theme swap) re-ran the
+ * worklet and re-issued `withTiming(360deg)` *from the current angle*. The spin
+ * restarted mid-revolution and took the full duration to cover the remaining
+ * arc, which read as a stutter and a speed change rather than one steady spin.
+ *
+ * A shared value started once in an effect is immune to that: the loop lives on
+ * the UI thread and re-renders never touch it. `Easing.linear` is the other half
+ * — `withTiming` defaults to `Easing.inOut(Easing.quad)`, which eases to a stop
+ * at each revolution boundary, so even an uninterrupted loop visibly paused
+ * once per turn. Mirrors the Marquee/TextShimmer loops.
+ */
+function BadgeSpinner({ children }: BadgeSpinnerProps) {
+  const angle = useSharedValue(0);
+
+  // biome-ignore lint/plugin: Reanimated withRepeat loop must be started and cancelled as a side effect — not expressible as derived state
+  useEffect(() => {
+    angle.value = 0;
+    angle.value = withRepeat(withTiming(SPIN_TO_DEG, { duration: SPIN_DURATION_MS, easing: Easing.linear }), -1, false);
+    return () => cancelAnimation(angle);
+  }, [angle]);
+
+  const style = useAnimatedStyle(() => ({ transform: [{ rotate: `${angle.value}deg` }] }));
+
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
+/**
+ * The soft halo behind a loading badge. Imperative for the same reason as
+ * BadgeSpinner — a re-render restarted the ping-pong from wherever it had got
+ * to, so the breathing lost its rhythm. One shared value drives both opacity and
+ * scale, which also keeps them exactly in phase: the declarative version left
+ * them as two independent properties, and moti defaults `scale` to spring while
+ * `opacity` is timing, so they drifted apart as they looped.
+ */
+function BadgePulse({ color }: BadgePulseProps) {
+  const progress = useSharedValue(0);
+
+  // biome-ignore lint/plugin: Reanimated withRepeat loop must be started and cancelled as a side effect — not expressible as derived state
+  useEffect(() => {
+    progress.value = 0;
+    progress.value = withRepeat(withTiming(1, { duration: PULSE_DURATION_MS, easing: PULSE_EASING }), -1, true);
+    return () => cancelAnimation(progress);
+  }, [progress]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: PULSE_OPACITY_FROM + (PULSE_OPACITY_TO - PULSE_OPACITY_FROM) * progress.value,
+    transform: [{ scale: PULSE_SCALE_FROM + (PULSE_SCALE_TO - PULSE_SCALE_FROM) * progress.value }],
+  }));
+
+  return <Animated.View style={[PULSE_STYLE, { backgroundColor: color }, style]} />;
+}
+
 type BadgeIconProps = { size: number; color: string; strokeWidth?: number };
 
 const ICONS: Record<AnimatedBadgeStatus, (p: BadgeIconProps) => ReactNode> = {
@@ -135,17 +218,7 @@ export function AnimatedBadge({
         backgroundColor: { type: 'timing', duration: 300 },
       }}
     >
-      {doPulse ? (
-        <MotiView
-          from={{ opacity: 0.08, scale: 0.94 }}
-          animate={{ opacity: 0.16, scale: 1.08 }}
-          transition={{ type: 'timing', duration: 800, loop: true, repeatReverse: true }}
-          style={[
-            { position: 'absolute', inset: 0, borderRadius: 999, backgroundColor: ICON_COLOR[status] },
-            { pointerEvents: 'none' },
-          ]}
-        />
-      ) : null}
+      {doPulse ? <BadgePulse color={ICON_COLOR[status]} /> : null}
       {showIcon ? (
         <View className="items-center justify-center" style={{ width: iconSize, height: iconSize }}>
           <AnimatePresence exitBeforeEnter={true}>
@@ -158,13 +231,9 @@ export function AnimatedBadge({
               exitTransition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 160 }}
             >
               {status === 'loading' && !reduce && !icon ? (
-                <MotiView
-                  from={{ rotate: '0deg' }}
-                  animate={{ rotate: '360deg' }}
-                  transition={{ type: 'timing', duration: 1000, loop: true, repeatReverse: false }}
-                >
+                <BadgeSpinner>
                   <Icon size={iconSize} color={ICON_COLOR[status]} strokeWidth={2.5} />
-                </MotiView>
+                </BadgeSpinner>
               ) : (
                 (icon ?? <Icon size={iconSize} color={ICON_COLOR[status]} strokeWidth={2.5} />)
               )}

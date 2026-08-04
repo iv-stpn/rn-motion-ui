@@ -207,11 +207,6 @@
       "types": "./src/components/icon/themed-icon.tsx",
       "default": "./src/components/icon/themed-icon.tsx"
     },
-    "./icons": {
-      "source": "./src/lib/icons.tsx",
-      "types": "./src/lib/icons.tsx",
-      "default": "./src/lib/icons.tsx"
-    },
     "./input": {
       "source": "./src/components/form/Input/input.tsx",
       "types": "./src/components/form/Input/input.tsx",
@@ -637,6 +632,7 @@
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "rn-motion-ui-icons": "workspace:*",
     "tailwind-merge": "^3.6.0",
     "zustand": "5.0.3"
   },

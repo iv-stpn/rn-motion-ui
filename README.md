@@ -1,6 +1,7 @@
 # rn-motion-ui
 
 [![npm version](https://img.shields.io/npm/v/rn-motion-ui.svg)](https://www.npmjs.com/package/rn-motion-ui)
+[![icons npm version](https://img.shields.io/npm/v/rn-motion-ui-icons.svg?label=icons)](https://www.npmjs.com/package/rn-motion-ui-icons)
 [![license](https://img.shields.io/npm/l/rn-motion-ui.svg)](./packages/ui/LICENSE)
 
 **[Live demo →](https://iv-stpn.github.io/rn-motion-ui/)**
@@ -16,6 +17,7 @@ Components are written as React Native primitives — they compile to native (iO
 | Package | Description |
 | --- | --- |
 | [`rn-motion-ui`](./packages/ui/) | Components, hooks, Moti layer, and utils — published as one package with subpath exports (no barrels) |
+| [`rn-motion-ui-icons`](./packages/icons/) | The MingCute icon set — 3,335 `react-native-svg` icons, one subpath export each |
 
 ---
 
@@ -47,7 +49,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 <details>
 <summary>Utilities</summary>
 
-Pure helpers and the theme layer — tokens, easings, the surface ladder, the icon set, and the runtime colour resolvers.
+Pure helpers and the theme layer — tokens, easings, the surface ladder, and the runtime colour resolvers. Icons live in [`rn-motion-ui-icons`](./packages/icons/).
 
 <!-- generated:utilities -->
 `breakpoints` · `color` · `ease` · `elevated` · `lib/cn` · `lib/typeguards` · `theme/motion` · `theme/use-theme-color`
@@ -253,9 +255,14 @@ CI (`.github/workflows/release.yml`) runs the changesets action on every push to
 - Many components in this library are inspired by or adapted from **[beUI](https://github.com/starc007/ui-components)** — a motion component library for React / Next.js by Saurabh Chauhan. beUI's component designs and interaction patterns were ported to the React Native primitive model, swapping Framer Motion for Moti / Reanimated.
 - Token system and surface ladder follow the conventions of **[cubby-ui](https://www.cubby-ui.dev/docs/getting-started/surfaces)**.
 - Animation layer built on **[Moti](https://moti.fyi/)** by Fernando Rojo.
+- Icon artwork is **[MingCute](https://github.com/Richard9394/MingCute)** by MingCute Design, licensed Apache-2.0 and redistributed in `rn-motion-ui-icons`.
 
 ---
 
 ## License
 
 [MIT](./packages/ui/LICENSE) © Ivan Stepanian
+
+`rn-motion-ui-icons` is `(MIT AND Apache-2.0)`: the wrapper components are MIT,
+and the MingCute icon artwork they draw is [Apache-2.0](./packages/icons/LICENSE-APACHE).
+See [`packages/icons/NOTICE`](./packages/icons/NOTICE).

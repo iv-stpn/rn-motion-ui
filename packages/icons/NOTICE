@@ -1,0 +1,28 @@
+rn-motion-ui-icons
+Copyright (c) 2026 Ivan Stepanian
+
+This package is distributed under `(MIT AND Apache-2.0)`. It contains material
+under two licenses:
+
+1. The wrapper code — `src/icon-props.ts`, the generator, and the React
+   component scaffolding around each glyph — is MIT licensed.
+   See LICENSE.
+
+2. The icon artwork — every SVG path in `src/icons/` — is from the MingCute
+   icon set by MingCute Design, licensed under the Apache License, Version 2.0.
+   See LICENSE-APACHE.
+
+     MingCute Icon
+     Copyright MingCute Design
+     https://github.com/Richard9394/MingCute
+     Licensed under the Apache License, Version 2.0
+
+Every file under `src/icons/` is generated from `@iconify-json/mingcute` and is
+a derivative work of the corresponding MingCute SVG: the path data is
+reproduced unaltered and wrapped in a react-native-svg component. Each file
+carries a header naming the source icon and the `@iconify-json/mingcute`
+version it came from.
+
+"MingCute" is the name of the upstream project and is used here only to
+identify the origin of the artwork. No trademark rights are claimed or granted
+(Apache-2.0 §6).

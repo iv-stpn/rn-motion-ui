@@ -1,8 +1,72 @@
 # Contributing to rn-motion-ui
 
-> This file currently covers **accessibility conventions** only. The full
-> new-component checklist (stories, testIDs, tokens, exports, changesets) is
-> tracked separately in `.agent/IMPROVEMENT_PLAN.md` §3.1 and will land here.
+> This file currently covers **accessibility conventions** and **releases**. The
+> full new-component checklist (stories, testIDs, tokens, exports) is tracked
+> separately in `.agent/IMPROVEMENT_PLAN.md` §3.1 and will land here.
+
+## Releases
+
+Two packages publish to npm, and both are versioned by
+[changesets](https://github.com/changesets/changesets):
+
+| Package | Directory |
+| --- | --- |
+| `rn-motion-ui` | `packages/ui` |
+| `rn-motion-ui-icons` | `packages/icons` |
+
+Any change to either one needs a changeset — `bun changeset`, pick the packages,
+pick a bump. A change to `packages/icons` is not covered by a `rn-motion-ui`
+changeset: they version independently.
+
+Everything after that is automatic. Pushing to `main` runs the Release workflow,
+which opens a "chore: version packages" PR; merging that PR publishes whatever
+the changesets described. Nothing is published from a laptop.
+
+### Never use `workspace:` for a dependency that ships
+
+`rn-motion-ui` depends on `rn-motion-ui-icons`, and that range must be plain
+semver (`^0.1.0`), **not** `workspace:*`.
+
+Changesets deliberately leaves `workspace:` ranges alone, and `changeset publish`
+shells out to `npm publish`, which does not substitute them either. A
+`workspace:*` range therefore reaches the registry verbatim, and every consumer
+install fails with `EUNSUPPORTEDPROTOCOL Unsupported URL Type "workspace:"`.
+
+A plain range costs nothing locally — bun still links the workspace copy — and
+changesets rewrites it when the version moves out of range.
+
+### Why `onlyUpdatePeerDependentsWhenOutOfRange` is set
+
+`rn-motion-ui-icons` peer-depends on `rn-motion-ui` (icons read their default
+colour from its theme layer). By default, changesets force-majors every
+**peer**-dependent whenever a package takes a non-patch bump — so a routine
+`rn-motion-ui` feature release would have majored the icon package too, with no
+icon changed.
+
+`.changeset/config.json` opts out:
+
+```json
+"___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+  "onlyUpdatePeerDependentsWhenOutOfRange": true
+}
+```
+
+Now icons only majors when a `rn-motion-ui` release actually leaves its declared
+peer range (`^4.0.0`) — i.e. at `rn-motion-ui@5`, when the compatibility claim
+genuinely expires. The option name warns it may change in a patch release; if a
+changesets upgrade ever drops it, expect the phantom majors to return.
+
+### The icon package is dual-licensed
+
+`rn-motion-ui-icons` declares `(MIT AND Apache-2.0)`: the wrapper components and
+`IconProps` are ours under MIT (`LICENSE`), the glyph geometry is MingCute's
+under Apache-2.0 (`LICENSE-APACHE`), and `NOTICE` carries the attribution
+Apache-2.0 §4 requires. All three ship in the tarball.
+
+If you ever bump `@iconify-json/mingcute` and regenerate, re-check that upstream
+is still Apache-2.0 — if MingCute relicenses, both the SPDX expression and
+`NOTICE` have to follow. `rn-motion-ui` itself stays plain MIT: it contains no
+MingCute artwork, only imports from the icon package.
 
 ## Accessibility
 

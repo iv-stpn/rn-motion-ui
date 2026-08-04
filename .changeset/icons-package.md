@@ -43,3 +43,9 @@ dev-time dependency and never ships.
 There is no `strokeWidth`. A MingCute glyph is drawn at the weight it was
 designed at — outline icons at stroke 2, filled ones with no stroke at all — so a
 width prop would only let a caller distort the geometry.
+
+The package declares `(MIT AND Apache-2.0)`: the wrapper code is MIT like the
+rest of this repo, and the icon artwork is MingCute's, under Apache-2.0. Both
+licence texts and a `NOTICE` ship in the tarball. `rn-motion-ui` itself stays
+MIT — Apache-2.0 is permissive and not copyleft, so depending on the icons
+imposes nothing on your own licence.

@@ -9,7 +9,7 @@
     "mingcute",
     "svg"
   ],
-  "license": "MIT",
+  "license": "(MIT AND Apache-2.0)",
   "author": "Ivan Stepanian <iv.stpn@gmail.com>",
   "homepage": "https://github.com/iv-stpn/rn-motion-ui#readme",
   "repository": {
@@ -16701,6 +16701,13 @@
       "default": "./src/icons/zoom-out-line.tsx"
     }
   },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "LICENSE-APACHE",
+    "NOTICE"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -16712,12 +16719,11 @@
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
     "react-native-svg": ">=15.0.0",
-    "rn-motion-ui": "*"
+    "rn-motion-ui": "^4.0.0"
   },
   "devDependencies": {
     "@iconify-json/mingcute": "^1.2.8",
     "@types/react": "19.2.17",
-    "@types/react-native": "^0.73.0",
     "typescript": "^7"
   }
 }

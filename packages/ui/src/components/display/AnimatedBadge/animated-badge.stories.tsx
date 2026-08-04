@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/useExportsLast: stories demo
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
@@ -118,6 +119,7 @@ const ROTATE_DEG = /rotate\((-?[\d.]+)deg\)/;
 // each parent render hands MotiView a fresh `animate` literal, and moti's
 // useAnimatedStyle re-ran and re-issued withTiming(360deg) *from the current
 // angle* — so the rotation kept restarting mid-turn instead of cycling.
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ChurningParent() {
   const [, setTick] = useState(0);
@@ -125,7 +127,7 @@ function ChurningParent() {
   useInterval(bump, CHURN_MS);
   return (
     <AnimatedBadge size="md" status="loading" testID={SPIN_TESTID}>
-      Indexing
+      {STATUS_LABELS.loading}
     </AnimatedBadge>
   );
 }

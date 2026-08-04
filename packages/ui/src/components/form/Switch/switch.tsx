@@ -24,14 +24,7 @@ const SWITCH_SHAKE_STEPS = [-2, 2, -1, 0] as const;
 /** Available size variants for the switch track. */
 export type SwitchSize = 'sm' | 'md' | 'lg';
 
-type SwitchSizeConfig = {
-  trackClass: string;
-  thumbW: number;
-  thumbH: number;
-  thumbOffset: number;
-  travel: number;
-  labelClass: string;
-};
+type SwitchSizeConfig = { trackClass: string; thumbW: number; thumbOffset: number; travel: number; labelClass: string };
 
 /**
  * Per-size track geometry; fills are resolved by `theme`, not here.
@@ -45,25 +38,22 @@ const SWITCH_SIZE_CONFIG: Record<SwitchSize, SwitchSizeConfig> = {
   sm: {
     trackClass: 'h-4 w-8 items-center justify-center rounded-full overflow-hidden',
     thumbW: 20,
-    thumbH: 12,
     thumbOffset: 2,
     travel: 8,
     labelClass: 'text-xs',
   },
   md: {
-    trackClass: 'h-6 w-12 items-center justify-center rounded-full overflow-hidden',
-    thumbW: 28,
-    thumbH: 20,
+    trackClass: 'h-5 w-11 items-center justify-center rounded-full overflow-hidden',
+    thumbW: 26,
     thumbOffset: 2,
-    travel: 16,
+    travel: 14,
     labelClass: 'text-sm',
   },
   lg: {
-    trackClass: 'h-8 w-16 items-center justify-center rounded-full overflow-hidden',
-    thumbW: 38,
-    thumbH: 28,
+    trackClass: 'h-7 w-14 items-center justify-center rounded-full overflow-hidden',
+    thumbW: 36,
     thumbOffset: 2,
-    travel: 22,
+    travel: 16,
     labelClass: 'text-base',
   },
 };
@@ -176,7 +166,7 @@ export function useSwitch(): SwitchContextValue {
  */
 function SwitchThumb({ children, className, style, thumbTransition }: SwitchThumbProps) {
   const { isSelected, isDisabled, pressed, colors, testID, size } = useSwitch();
-  const { thumbW, thumbH, thumbOffset, travel } = SWITCH_SIZE_CONFIG[size];
+  const { thumbW, thumbOffset, travel } = SWITCH_SIZE_CONFIG[size];
   const reduce = useReducedMotion();
   const squish = pressed && !isDisabled && !reduce;
 
@@ -207,9 +197,9 @@ function SwitchThumb({ children, className, style, thumbTransition }: SwitchThum
         {
           position: 'absolute',
           top: thumbOffset,
+          bottom: thumbOffset,
           left: thumbOffset,
           width: thumbW,
-          height: thumbH,
           borderRadius: 9999,
           overflow: 'hidden',
           backgroundColor: colors.thumb,

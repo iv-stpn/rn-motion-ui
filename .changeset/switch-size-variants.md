@@ -16,8 +16,12 @@ The track, thumb, travel distance and label text scale now all respond to a sing
 | size | track | thumb | travel |
 | ---- | ----- | ----- | ------ |
 | `sm` | 16 × 32 px | 12 × 20 px | 8 px |
-| `md` | 24 × 48 px | 20 × 28 px | 16 px |
-| `lg` | 32 × 64 px | 28 × 38 px | 22 px |
+| `md` | 20 × 44 px | 16 × 26 px | 14 px |
+| `lg` | 28 × 56 px | 24 × 36 px | 16 px |
+
+The thumb's height is not a per-size number: it insets 2px from the top and the
+bottom of whatever track holds it, so the two always agree and a retuned track
+carries the thumb with it.
 
 Size is threaded through context, so `Switch.Thumb` and custom children pick it up
 automatically — no extra prop is needed on sub-components.

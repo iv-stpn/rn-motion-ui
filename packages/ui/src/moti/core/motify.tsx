@@ -1,4 +1,4 @@
-import React, { type ComponentType, forwardRef, useContext } from 'react';
+import { type ComponentType, forwardRef, type ReactNode, useContext } from 'react';
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 import Animated, {
   type BaseAnimationBuilder,
@@ -27,12 +27,7 @@ export default function motify<Props extends object, Ref, Animate = ViewStyle | 
     // biome-ignore lint/suspicious/noReactForwardRef: package targets React >=18 where forwardRef is required; ref-as-prop is React 19+ only
     const Motified = forwardRef<
       Ref,
-      Props &
-        AnimatedProps<Props> &
-        MotiProps<Animate> & {
-          children?: React.ReactNode;
-          style?: unknown;
-        }
+      Props & AnimatedProps<Props> & MotiProps<Animate> & { children?: ReactNode; style?: unknown }
     >(function Moti(props, ref) {
       const animated = useMotify({
         ...props,

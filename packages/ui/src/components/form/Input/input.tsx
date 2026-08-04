@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import { type ReactNode, type Ref, useCallback, useRef, useState } from 'react';
 import {
   Animated,
   type KeyboardTypeOptions,
@@ -138,6 +138,8 @@ function renderSubtext({ errorMessage, hint, reduce }: SubtextProps): ReactNode 
 }
 
 export type InputProps = {
+  /** Ref forwarded to the underlying TextInput (React 19 direct-prop style). */
+  ref?: Ref<TextInput>;
   label?: string;
   value?: string;
   defaultValue?: string;
@@ -178,8 +180,6 @@ export type InputProps = {
   inputStyle?: StyleProp<TextStyle>;
   accessibilityLabel?: string;
   testID?: string;
-  /** Ref forwarded to the underlying TextInput (React 19 direct-prop style). */
-  ref?: React.Ref<TextInput>;
 };
 
 export function Input({

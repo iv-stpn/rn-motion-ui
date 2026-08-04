@@ -7,7 +7,7 @@
 // and tileWidthRef and must keep them current on every render so the resolver
 // always sees the latest grid metrics without causing the session to rebuild.
 
-import { useCallback, useMemo } from 'react';
+import { type RefObject, useCallback, useMemo } from 'react';
 import type { Animated, FlatList, View } from 'react-native';
 import type { FileSystemEntry, FileSystemMoveEvent } from './file-system.types';
 import { tileAt } from './file-system-icons-grid';
@@ -32,20 +32,20 @@ export type UseIconsDragReturn = {
 
 export type UseIconsDragParams = {
   /** Ref kept current by the caller — read inside the resolvers without causing re-fires. */
-  columnsRef: React.MutableRefObject<number>;
-  containerHeightRef: React.MutableRefObject<number>;
-  containerRef: React.RefObject<View | null>;
+  columnsRef: RefObject<number>;
+  containerHeightRef: RefObject<number>;
+  containerRef: RefObject<View | null>;
   enabled: boolean;
   entries: FileSystemEntry[];
-  flatListRef: React.RefObject<FlatList | null>;
+  flatListRef: RefObject<FlatList | null>;
   /** See `useDragSources` — every path a drag lifted from one tile carries. */
   getDragSources?: (draggedPath: string) => string[];
   /** Strict tile hit test — a lift starts on a tile, never in a gap or the padding. */
   canBeginAt?: (localX: number, localY: number) => boolean;
   onMove?: (event: FileSystemMoveEvent) => void;
-  scrollOffsetRef: React.MutableRefObject<number>;
+  scrollOffsetRef: RefObject<number>;
   /** Ref kept current by the caller — read inside the resolvers without causing re-fires. */
-  tileWidthRef: React.MutableRefObject<number>;
+  tileWidthRef: RefObject<number>;
 };
 
 export function useIconsViewDrag({

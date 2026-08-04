@@ -1,7 +1,7 @@
 // credit to https://gist.github.com/ianmartorell/32bb7df95e5eff0a5ee2b2f55095e6a6
 // adapted from https://gist.github.com/necolas/1c494e44e23eb7f8c5864a2fac66299a
 // click listeners from https://gist.github.com/roryabraham/65cd1d2d5e8a48da78fec6a6e3105398
-import React, { type ReactElement, useCallback, useRef } from 'react';
+import { Children, cloneElement, type ReactElement, type Ref, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
 import { useAnimatedReaction, useSharedValue } from 'react-native-reanimated';
 import { HoveredContext } from './hoverable-context';
@@ -32,13 +32,7 @@ function isHoverEnabled() {
   return isEnabled;
 }
 
-export type HoverableProps = {
-  onHoverIn?: () => void;
-  onHoverOut?: () => void;
-  children: ReactElement;
-  childRef?: React.Ref<unknown>;
-};
-
+export type HoverableProps = { onHoverIn?: () => void; onHoverOut?: () => void; children: ReactElement; childRef?: Ref<unknown> };
 export function Hoverable({ onHoverIn, onHoverOut, children, childRef }: HoverableProps) {
   const isHovered = useSharedValue(false);
 
@@ -73,11 +67,11 @@ export function Hoverable({ onHoverIn, onHoverOut, children, childRef }: Hoverab
     if (isHovered.value) isHovered.value = false;
   }, [isHovered]);
 
-  const child = React.Children.only(children);
+  const child = Children.only(children);
 
   return (
     <HoveredContext.Provider value={isHovered}>
-      {React.cloneElement(
+      {cloneElement(
         child,
         // biome-ignore lint/plugin: cloneElement can't statically know the injected DOM handler/ref props are valid for an arbitrary child element type
         {

@@ -215,7 +215,7 @@ bun run test          # Vitest + Playwright interaction tests (real Chromium)
 ```
 
 <!-- generated:counts -->
-57 story files, 183 stories.
+57 story files, 184 stories.
 <!-- /generated:counts -->
 
 Every story runs as a vitest test; those with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`. `packages/ui` also carries a jsdom unit suite over the pure layers (Moti worklets, `lib/`, and the OTP edit logic).

@@ -1,4 +1,4 @@
-import type { ComponentProps, Ref } from 'react';
+import type { ComponentProps, ReactNode, Ref } from 'react';
 import type { Insets, PressableProps, View, ViewStyle } from 'react-native';
 import type { DerivedValue, SharedValue } from 'react-native-reanimated';
 
@@ -41,7 +41,7 @@ export type MotiPressableProps = {
   onContainerLayout?: PressableProps['onLayout'];
   href?: string;
   testID?: PressableProps['testID'];
-  children?: React.ReactNode | ((interaction: DerivedValue<MotiPressableInteractionState>) => React.ReactNode);
+  children?: ReactNode | ((interaction: DerivedValue<MotiPressableInteractionState>) => ReactNode);
 } & Pick<ComponentProps<typeof MotiView>, 'exit' | 'from' | 'exitTransition' | 'style' | 'onLayout'> &
   Pick<
     PressableProps,

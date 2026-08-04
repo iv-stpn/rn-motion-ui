@@ -1,4 +1,4 @@
-import React, { type ReactElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { Children, isValidElement, type ReactElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { PresenceContext } from './animate-presence-context';
 
 function getChildKey(child: ReactElement): string {
@@ -7,8 +7,8 @@ function getChildKey(child: ReactElement): string {
 
 function getValidChildren(children: ReactNode): ReactElement[] {
   const valid: ReactElement[] = [];
-  React.Children.forEach(children, (child) => {
-    if (React.isValidElement(child)) valid.push(child);
+  Children.forEach(children, (child) => {
+    if (isValidElement(child)) valid.push(child);
   });
   return valid;
 }

@@ -29,9 +29,9 @@ export function flatSearchResults(index: FileSystemIndex, searchQuery: string): 
   // Folders before files; alphabetical within each kind. Deliberately not the
   // active sort: a flat list spanning depths is scanned by name, and the columns
   // the sort keys name are not on screen here.
-  results.sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === 'folder' ? -1 : 1;
-    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+  results.sort((entry1, entry2) => {
+    if (entry1.kind !== entry2.kind) return entry1.kind === 'folder' ? -1 : 1;
+    return entry1.name.localeCompare(entry2.name, undefined, { numeric: true, sensitivity: 'base' });
   });
   return results;
 }

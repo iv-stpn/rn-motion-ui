@@ -14,7 +14,7 @@
 // listener, so tracking the pointer costs zero React re-renders — the same
 // invariant use-file-system-drag.ts holds for the drag itself.
 
-import { type MutableRefObject, type RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, Platform, View } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
@@ -70,12 +70,12 @@ type HoverRefs = {
   pos: Animated.ValueXY;
   opacity: Animated.Value;
   /** Whether the highlight is currently faded in — decides snap vs glide. */
-  shownRef: MutableRefObject<boolean>;
-  cellRef: MutableRefObject<FileSystemHoverCell | null>;
+  shownRef: RefObject<boolean>;
+  cellRef: RefObject<FileSystemHoverCell | null>;
   /** Last pointer position, container-local — what `refresh` re-resolves. */
-  pointRef: MutableRefObject<FileSystemHoverCell | null>;
-  reduceRef: MutableRefObject<boolean>;
-  resolveRef: MutableRefObject<FileSystemHoverResolve>;
+  pointRef: RefObject<FileSystemHoverCell | null>;
+  reduceRef: RefObject<boolean>;
+  resolveRef: RefObject<FileSystemHoverResolve>;
 };
 
 type HoverActions = {
@@ -229,12 +229,12 @@ export type UseFileSystemRowHoverParams = {
   isDragging?: () => boolean;
   /** The list's content-container top padding: where row 0 starts. */
   offsetTop: number;
-  scrollOffsetRef: MutableRefObject<number>;
+  scrollOffsetRef: RefObject<number>;
   /**
    * Flat row indexes of the selected entries. The highlight is suppressed on a
    * selected row — its own selection style already marks it.
    */
-  selectedIndexesRef?: MutableRefObject<ReadonlySet<number>>;
+  selectedIndexesRef?: RefObject<ReadonlySet<number>>;
   /** Row height plus any gap below it. */
   stride: number;
 };

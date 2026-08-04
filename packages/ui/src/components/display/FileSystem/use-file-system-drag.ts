@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/useExportsLast: constants exported alongside the types they configure */
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: the session, its refs and the hook that owns them are one unit — the pointer path reads all three */
+
 // Drag-and-drop session for FileSystem views.
 //
 // Architecture: hot-path drag state lives in refs so the
@@ -306,11 +307,10 @@ export function useFileSystemDrag({
   getDragSources,
   canBeginAt,
 }: UseFileSystemDragParams): UseFileSystemDragReturn {
-  // biome-ignore lint/plugin: useRef<T>(val) returns MutableRefObject; we need RefObject for the session param type
-  const rowsRef = useRef(rows) as RefObject<FileSystemRow[]>;
+  const rowsRef = useRef(rows);
   rowsRef.current = rows;
-  // biome-ignore lint/plugin: same — coerce MutableRefObject to RefObject for the session param
-  const onMoveRef = useRef(onMove) as RefObject<((e: FileSystemMoveEvent) => void) | undefined>;
+
+  const onMoveRef = useRef(onMove);
   onMoveRef.current = onMove;
 
   const draggedIndexRef = useRef<number | null>(null);

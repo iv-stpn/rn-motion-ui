@@ -1,8 +1,7 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: the view and its row/header/overlay parts are one render layer */
 // The list view: a disclosure tree with Name / Date Modified / Size columns.
-// The web version drives @pierre/trees; here the rows come from the sorted
-// index (see file-system-rows) and render through a FlatList, so the same
+// Here the rows come from the sorted index (see file-system-rows) and render through a FlatList, so the same
 // folder-first ordering and per-folder disclosure survive without the DOM.
 
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';

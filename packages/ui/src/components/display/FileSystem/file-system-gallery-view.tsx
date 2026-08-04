@@ -35,6 +35,7 @@ const SIDEBAR_LANDSCAPE_WIDTH = 64;
 const SIDEBAR_ASPECT_RATIO = 0.78;
 const LANDSCAPE_RATIO = 1.2;
 const STAGE_LOADER_SIZE = 24;
+
 /** How long the selection must hold still before the stage resolves a URL. */
 const SETTLE_DELAY_MS = 200;
 

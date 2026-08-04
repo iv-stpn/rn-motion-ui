@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import type { View } from 'react-native';
 
 // Web-only globals absent from the react-native tsconfig but present at
@@ -34,7 +34,7 @@ export type UseInViewOptions = {
   amount?: number;
 };
 
-export function useInView(options: UseInViewOptions = {}): [React.RefObject<View | null>, boolean] {
+export function useInView(options: UseInViewOptions = {}): [RefObject<View | null>, boolean] {
   const ref = useRef<View | null>(null);
   const { once = false, amount = 0 } = options;
   const [inView, setInView] = useState(false);

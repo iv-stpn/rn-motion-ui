@@ -1,5 +1,4 @@
-// The list view's row model. The web version hands its path list to
-// @pierre/trees; here the rows are flattened from the index the same way — one
+// The list view's row model. Here the rows are flattened from the index the same way — one
 // row per visible entry, folders before files at each level, recursing only
 // into expanded folders — so the order matches what the other views show.
 

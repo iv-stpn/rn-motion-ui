@@ -6,6 +6,7 @@
 // documents on revisit — here the viewer is the consumer's, so pooling is
 // theirs too and a single stage is mounted at a time.
 
+import type { ReactNode } from 'react';
 import { Image, View } from 'react-native';
 import { Loader } from '../Loader/loader';
 import type { FileEntry, FileSystemFileItem, FileSystemViewerArgs } from './file-system.types';
@@ -25,8 +26,8 @@ export type FileSystemGalleryStageProps = {
   getFileUrl?: (file: FileSystemFileItem) => string | Promise<string>;
   loadPreviewImageUrl?: (file: FileSystemFileItem, pageIndex: number) => Promise<string | null>;
   pageUrlCache?: Map<string, string>;
-  renderFilePreview?: (file: FileSystemFileItem) => React.ReactNode;
-  renderFileViewer?: (args: FileSystemViewerArgs) => React.ReactNode;
+  renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
+  renderFileViewer?: (args: FileSystemViewerArgs) => ReactNode;
   urlCache: Map<string, string>;
 };
 

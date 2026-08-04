@@ -127,7 +127,7 @@ export type FileVisualProps = {
   pageUrlCache?: Map<string, string>;
   /** Fallback ratio when the file declares none. */
   previewAspectRatio?: number;
-  renderFilePreview?: (file: FileSystemFileItem) => React.ReactNode;
+  renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
 };
 
 export type FileVisualPagerProps = Pick<FilePagesState, 'goToPage' | 'pageIndex' | 'totalPages'>;

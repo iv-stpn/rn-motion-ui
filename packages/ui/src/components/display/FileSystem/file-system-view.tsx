@@ -9,6 +9,7 @@ import type {
   FileEntry,
   FileSystemContextMenuAction,
   FileSystemEntry,
+  FileSystemExternalDropEvent,
   FileSystemFileItem,
   FileSystemIndex,
   FileSystemItem,
@@ -79,6 +80,8 @@ export type FileSystemViewProps = {
   draggable?: boolean;
   /** See `FileSystemProps.onMove`. */
   onMove?: (event: FileSystemMoveEvent) => void;
+  /** See `FileSystemProps.onExternalDrop`. */
+  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
   /**
    * The root `testID`, not the view's own: each view derives one id per entry
    * from it through `entryTestID`, so the same entry answers to the same query

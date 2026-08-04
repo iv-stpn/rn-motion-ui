@@ -15,6 +15,7 @@ import type {
   FileSystemDateFilterType,
   FileSystemEmptyStateArgs,
   FileSystemEntry,
+  FileSystemExternalDropEvent,
   FileSystemFileItem,
   FileSystemFilter,
   FileSystemFilterOperator,
@@ -123,6 +124,7 @@ type ConsumerSlice = {
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   onFileOpen?: (file: FileSystemFileItem, url: string | null) => void;
   onMove?: (event: FileSystemMoveEvent) => void;
+  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
   onSelectedItemsChange?: (items: FileSystemItem[]) => void;
   onSelectionChange?: (item: FileSystemItem | null) => void;
   onViewChange?: (view: FileSystemView) => void;
@@ -338,6 +340,7 @@ export type FileSystemStoreInit = {
   onContextMenuAction?: ConsumerSlice['onContextMenuAction'];
   onFileOpen?: ConsumerSlice['onFileOpen'];
   onMove?: ConsumerSlice['onMove'];
+  onExternalDrop?: ConsumerSlice['onExternalDrop'];
   onSelectedItemsChange?: ConsumerSlice['onSelectedItemsChange'];
   onSelectionChange?: ConsumerSlice['onSelectionChange'];
   onViewChange?: ConsumerSlice['onViewChange'];
@@ -428,6 +431,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       onContextMenuAction: init.onContextMenuAction,
       onFileOpen: init.onFileOpen,
       onMove: init.onMove,
+      onExternalDrop: init.onExternalDrop,
       onSelectedItemsChange: init.onSelectedItemsChange,
       onSelectionChange: init.onSelectionChange,
       onViewChange: init.onViewChange,

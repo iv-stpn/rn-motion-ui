@@ -475,6 +475,19 @@ export type FileSystemProps = {
    * list, and nothing fires when that leaves it empty.
    */
   onMove?: (event: FileSystemMoveEvent) => void;
+  /**
+   * Called when the user drops something from outside the component onto the
+   * file area — an OS file, or a custom element on the page that sets drag data
+   * in its `dragstart` handler. Web only; ignored on native.
+   *
+   * The component does not inspect the transfer — read `dataTransfer.files` for
+   * OS files, or `dataTransfer.getData(mime)` for data from another element.
+   * `destination` is the folder open at the time of the drop.
+   *
+   * When provided, the file area accepts external drags and shows a drop-zone
+   * overlay while an external drag hovers over it.
+   */
+  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
   /** Fixed viewport height. Defaults to 480. */
   height?: number;
   // ── Headless slots ──────────────────────────────────────────────────────
@@ -574,4 +587,23 @@ export type FileSystemMoveEvent = {
    * implicit root — entries are moved to the top level.
    */
   destination: string;
+};
+
+/**
+ * Emitted by {@link FileSystemProps.onExternalDrop} when the user drops
+ * something from outside the component — the OS file picker, another element
+ * on the page, or anything else the browser delivers via the HTML5 drag API.
+ *
+ * The component does not inspect the transfer — that is the consumer's job.
+ * Read `dataTransfer.files` for OS files, or `dataTransfer.getData(mime)` for
+ * data set by another element's `dragstart` handler.
+ */
+export type FileSystemExternalDropEvent = {
+  /**
+   * Folder path the drop landed in (trailing slash). Empty string `''` is the
+   * implicit root. Reflects the folder open at the time of the drop.
+   */
+  destination: string;
+  /** The raw HTML5 DataTransfer object from the browser drop event. */
+  dataTransfer: DataTransfer;
 };

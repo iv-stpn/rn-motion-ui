@@ -93,11 +93,14 @@ function buildPointerListeners(node: HTMLElement, session: FileSystemDragSession
     }
     if (!trip.dragging) {
       if (Math.hypot(dx, dy) < MOUSE_DRAG_SLOP) return;
-      capturePointer(node, trip.pointerId);
+      // Only capture after begin() confirms a valid drag source. If begin()
+      // returns false (e.g. the press landed on empty space), leave the pointer
+      // free so a child listener — like a column's marquee — can capture it.
       if (!session.begin(trip.startX, trip.startY)) {
         reset();
         return;
       }
+      capturePointer(node, trip.pointerId);
       trip.dragging = true;
       gate.swallow = false;
     }

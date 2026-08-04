@@ -13,7 +13,13 @@ import { ChevronRight, Heart, Pin } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
-import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemIndex, FileSystemItem } from './file-system.types';
+import type {
+  FileSystemContextMenuAction,
+  FileSystemEntry,
+  FileSystemExternalDropEvent,
+  FileSystemIndex,
+  FileSystemItem,
+} from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
 import {
   FileSystemHoverHighlight,
@@ -29,6 +35,7 @@ import { fileSystemEntryTestID } from './file-system-test-id';
 import { FileSystemEmptyState } from './file-system-view';
 import { useEntryLongPress } from './use-entry-activation';
 import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
+import { useFileSystemExternalDrop } from './use-file-system-external-drop';
 
 const LOADING_LABEL = 'Loading…';
 
@@ -201,14 +208,16 @@ export type FileSystemColumnProps = {
   entries: FileSystemEntry[];
   /** Drag render state for any active cross-column drag that touches this pane. */
   dragState?: ColumnDragState;
+  /** Path of the folder this column displays — used to scope external drop to this pane. */
+  folderPath: string;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   index: FileSystemIndex;
   isLoading: boolean;
   /** Takes this pane's ordering as its third argument — see `orderedPaths` below. */
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent, orderedPaths?: readonly string[]) => void;
-  /** Called when the user presses empty space in the column — clears the selection. */
-  onClearSelection?: () => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  /** Called when an external item (OS file, drag chip) is dropped onto this column. */
+  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onSelectLongPress?: (entry: FileSystemEntry) => void;
   /**
@@ -235,12 +244,13 @@ export type FileSystemColumnProps = {
 function FileSystemColumnImpl({
   dragState,
   entries,
+  folderPath,
   getContextMenuActions,
   index,
   isLoading,
   onActivate,
-  onClearSelection,
   onContextMenuAction,
+  onExternalDrop,
   onMarquee,
   onSelectLongPress,
   onScrollOffsetChange,
@@ -330,6 +340,22 @@ function FileSystemColumnImpl({
     if (dragState !== null && dragState !== undefined) setScrollOffset(scrollOffsetRef.current);
   }, [dragState]);
 
+  // External (OS / page element) drag-and-drop — one row target per folder row,
+  // falling back to the whole column when hovering over a file or padding.
+  const externalDropRows = useMemo(
+    () => entries.map((entry) => ({ entry, isExpandable: entry.kind === 'folder', isExpanded: false, level: 0 })),
+    [entries],
+  );
+  const { isOver: isExternalDropOver, targetIndex: externalTargetIndex } = useFileSystemExternalDrop({
+    containerRef,
+    contentOffsetTop: COLUMN_PADDING,
+    currentPath: folderPath,
+    onExternalDrop,
+    rowHeight: COLUMN_ROW_STRIDE,
+    rows: externalDropRows,
+    scrollOffsetRef,
+  });
+
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
       <ColumnRow
@@ -374,7 +400,6 @@ function FileSystemColumnImpl({
     <Pressable
       ref={containerRef}
       className="shrink-0 select-none border-border border-r"
-      onPress={onClearSelection}
       style={{ width: COLUMN_WIDTH }}
       testID={FS_DRAG_CONTAINER_TEST_ID.column}
     >
@@ -403,6 +428,12 @@ function FileSystemColumnImpl({
           />
           {dragState?.kind === 'row-target' ? (
             <ColumnDropHighlight scrollOffset={scrollOffset} targetIndex={dragState.rowIndex} />
+          ) : null}
+          {isExternalDropOver && externalTargetIndex === null ? (
+            <View className="pointer-events-none absolute inset-0 border border-foreground/20 border-dashed bg-foreground/[0.03]" />
+          ) : null}
+          {isExternalDropOver && externalTargetIndex !== null ? (
+            <ColumnDropHighlight scrollOffset={scrollOffset} targetIndex={externalTargetIndex} />
           ) : null}
           <FileSystemMarqueeBox controller={marquee} />
         </View>

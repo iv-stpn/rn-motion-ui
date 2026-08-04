@@ -49,6 +49,7 @@ import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation, useEntryLongPress } from './use-entry-activation';
 import { FS_DRAG_CONTAINER_TEST_ID, FS_ROW_HEIGHT, useDragSources, useFileSystemDrag } from './use-file-system-drag';
 import { useFileSystemDragWeb } from './use-file-system-drag-web';
+import { useFileSystemExternalDrop } from './use-file-system-external-drop';
 
 const NAME_LABEL = 'Name';
 const DATE_LABEL = 'Date Modified';
@@ -301,6 +302,7 @@ export function FileSystemListView({
   index,
   onBackgroundContextMenuAction,
   onContextMenuAction,
+  onExternalDrop,
   onMarquee,
   onMove,
   onOpen,
@@ -354,6 +356,20 @@ export function FileSystemListView({
     scrollOffsetRef,
   });
   useFileSystemDragWeb({ containerRef, enabled: draggable, session });
+
+  // External drop — attaches to the same scrollable container as the internal
+  // drag so pointer-position resolution uses the same coordinate frame and row
+  // geometry. Folder rows get a per-row border highlight; file rows and empty
+  // space get a background overlay (same fallback the non-list views show).
+  const { isOver: isExternalDropOver, targetIndex: externalTargetIndex } = useFileSystemExternalDrop({
+    containerRef,
+    contentOffsetTop: LIST_PADDING_TOP,
+    currentPath,
+    onExternalDrop,
+    rowHeight: FS_ROW_HEIGHT,
+    rows,
+    scrollOffsetRef,
+  });
 
   const selectedIndexesRef = useRef<ReadonlySet<number>>(new Set());
   selectedIndexesRef.current = useMemo(() => {
@@ -489,6 +505,16 @@ export function FileSystemListView({
         <FileSystemHoverHighlight controller={hover} height={FS_ROW_HEIGHT} testID={FS_HOVER_TEST_ID.list} />
         <FileSystemSourceHighlight height={FS_ROW_HEIGHT} origin={rowOrigin(drag.draggedIndex, scrollOffset)} />
         {body}
+        {/* External drop: folder rows get a per-row border; file rows and empty
+            space get a background overlay. Mutually exclusive with the internal
+            drag highlight — both use the same pointer capture, so only one can
+            be active at a time. */}
+        {isExternalDropOver && externalTargetIndex === null ? (
+          <View className="pointer-events-none absolute inset-0 border border-foreground/20 border-dashed bg-foreground/[0.03]" />
+        ) : null}
+        {isExternalDropOver && externalTargetIndex !== null ? (
+          <DropHighlight scrollOffset={scrollOffset} targetIndex={externalTargetIndex} />
+        ) : null}
         {drag.active ? (
           <>
             <DropHighlight scrollOffset={scrollOffset} targetIndex={drag.targetIndex} />

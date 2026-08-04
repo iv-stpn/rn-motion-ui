@@ -4,18 +4,19 @@
 // biome-ignore-all lint/performance/noJsxPropsBind: stories only
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
-import { Copy, FolderClosed, Link, Search as SearchIcon, Share2, Trash2, X } from '../../../lib/icons';
+import { Copy, FileText, FolderClosed, Link, Search as SearchIcon, Share2, Trash2, X } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
 import { FileSystem } from './file-system';
 import type {
   FileSystemContextMenuAction,
+  FileSystemExternalDropEvent,
   FileSystemFilterOperator,
   FileSystemFiltersState,
   FileSystemItem,
@@ -176,6 +177,61 @@ async function loadArchiveChildren() {
 async function loadPreviewImageUrl() {
   await new Promise((resolve) => setTimeout(resolve, LOAD_DELAY_MS));
   return PREVIEWS.page;
+}
+
+// ─── External-drop tray ───────────────────────────────────────────────────────
+
+const EXTERNAL_DROP_MIME = 'application/x-fs-item';
+
+/** Draggable items that live outside the FileSystem and can be dropped into it. */
+const TRAY_ITEMS: FileSystemItem[] = [
+  { kind: 'file', name: 'invoice.pdf', path: 'invoice.pdf' },
+  { kind: 'file', name: 'photo.jpg', path: 'photo.jpg' },
+  { kind: 'file', name: 'notes.txt', path: 'notes.txt' },
+];
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function DraggableChip({ item }: { item: FileSystemItem }) {
+  const ref = useRef<View | null>(null);
+
+  useEffect(() => {
+    // RN Web renders View as a div but does not forward unknown HTML attributes,
+    // so `draggable` and `onDragStart` passed as JSX props are silently dropped.
+    // Reach into the DOM node directly to set them.
+    const el = ref.current as unknown as HTMLElement | null;
+    if (!el) return;
+    el.draggable = true;
+    const handler = (e: DragEvent) => {
+      if (!e.dataTransfer) return;
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData(EXTERNAL_DROP_MIME, JSON.stringify(item));
+    };
+    el.addEventListener('dragstart', handler);
+    return () => {
+      el.removeEventListener('dragstart', handler);
+    };
+  }, [item]);
+
+  return (
+    <View
+      ref={ref}
+      className="cursor-grab flex-row items-center gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-1.5"
+    >
+      <FileText size={14} />
+      <Text size="sm">{item.name}</Text>
+    </View>
+  );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function ExternalFileTray() {
+  return (
+    <View className="mb-3 flex-row flex-wrap gap-2">
+      {TRAY_ITEMS.map((item) => (
+        <DraggableChip key={item.path} item={item} />
+      ))}
+    </View>
+  );
 }
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
@@ -358,9 +414,21 @@ function PlaygroundStatus({ message, onReset }: PlaygroundStatusProps) {
 }
 
 /** Which consumer-side features the playground wires up. Defaults to all of them. */
-type PlaygroundOptions = { backgroundMenu: boolean; contextMenus: boolean; draggable: boolean; lazyChildren: boolean };
+type PlaygroundOptions = {
+  backgroundMenu: boolean;
+  contextMenus: boolean;
+  draggable: boolean;
+  externalDrop: boolean;
+  lazyChildren: boolean;
+};
 
-const ALL_FEATURES: PlaygroundOptions = { backgroundMenu: true, contextMenus: true, draggable: true, lazyChildren: true };
+const ALL_FEATURES: PlaygroundOptions = {
+  backgroundMenu: true,
+  contextMenus: true,
+  draggable: true,
+  externalDrop: false,
+  lazyChildren: true,
+};
 
 type FileSystemPlaygroundProps = FileSystemProps & { options?: PlaygroundOptions };
 
@@ -385,6 +453,17 @@ function FileSystemPlayground({ options = ALL_FEATURES, ...args }: FileSystemPla
     await new Promise((resolve) => setTimeout(resolve, LOAD_DELAY_MS));
     if (path === 'Archive/') setState((previous) => ({ ...previous, items: [...previous.items, ...ARCHIVE_ITEMS] }));
     return { items: [] };
+  }, []);
+
+  const handleExternalDrop = useCallback(({ destination, dataTransfer }: FileSystemExternalDropEvent) => {
+    const raw = dataTransfer.getData(EXTERNAL_DROP_MIME);
+    if (!raw) return;
+    const item: FileSystemItem = JSON.parse(raw);
+    const destLabel = folderLabel(destination);
+    setState((previous) => ({
+      items: [...previous.items, { ...item, path: destination + item.name }],
+      status: `Added ${item.name} to ${destLabel}`,
+    }));
   }, []);
 
   const handleMove = useCallback(({ sources, destination }: FileSystemMoveEvent) => {
@@ -439,6 +518,7 @@ function FileSystemPlayground({ options = ALL_FEATURES, ...args }: FileSystemPla
 
   return (
     <View>
+      {options.externalDrop ? <ExternalFileTray /> : null}
       <FileSystem
         {...args}
         draggable={options.draggable}
@@ -448,6 +528,7 @@ function FileSystemPlayground({ options = ALL_FEATURES, ...args }: FileSystemPla
         loadChildren={options.lazyChildren ? loadChildren : undefined}
         onBackgroundContextMenuAction={handleBackgroundAction}
         onContextMenuAction={handleAction}
+        onExternalDrop={options.externalDrop ? handleExternalDrop : undefined}
         onMove={handleMove}
       />
       <PlaygroundStatus message={state.status} onReset={reset} />
@@ -516,6 +597,7 @@ function FileSystemControls(args: FileSystemProps) {
   const [heightKey, setHeightKey] = useState<HeightKey>('460');
   const [compact, setCompact] = useState(false);
   const [draggable, setDraggable] = useState(true);
+  const [externalDrop, setExternalDrop] = useState(false);
   const [multiSelect, setMultiSelect] = useState(true);
   const [contextMenus, setContextMenus] = useState(true);
   const [backgroundMenu, setBackgroundMenu] = useState(true);
@@ -524,8 +606,8 @@ function FileSystemControls(args: FileSystemProps) {
   const [withFilters, setWithFilters] = useState(false);
 
   const options = useMemo(
-    () => ({ backgroundMenu, contextMenus, draggable, lazyChildren }),
-    [backgroundMenu, contextMenus, draggable, lazyChildren],
+    () => ({ backgroundMenu, contextMenus, draggable, externalDrop, lazyChildren }),
+    [backgroundMenu, contextMenus, draggable, externalDrop, lazyChildren],
   );
 
   return (
@@ -536,6 +618,7 @@ function FileSystemControls(args: FileSystemProps) {
         <Choice label="Height" onChange={setHeightKey} options={HEIGHT_KEYS} value={heightKey} />
         <Toggle label="Compact width" onChange={setCompact} value={compact} />
         <Toggle label="Draggable" onChange={setDraggable} value={draggable} />
+        <Toggle label="External drop" onChange={setExternalDrop} value={externalDrop} />
         <Toggle label="Multi-select" onChange={setMultiSelect} value={multiSelect} />
         <Toggle label="Entry menus" onChange={setContextMenus} value={contextMenus} />
         <Toggle label="Background menu" onChange={setBackgroundMenu} value={backgroundMenu} />

@@ -15,7 +15,7 @@
 // folder" action matters most.
 
 import { type ComponentType, type ReactNode, useMemo, useRef } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import type { FileSystemBodyState, FileSystemEmptyStateReason, FileSystemView } from './file-system.types';
 import { FileSystemColumnsView } from './file-system-columns-view';
@@ -37,10 +37,12 @@ import { FileSystemListView } from './file-system-list-view';
 import { FileSystemSearchView } from './file-system-search-view';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileSystemEmptyState } from './file-system-view';
+import { useFileSystemExternalDrop } from './use-file-system-external-drop';
 
 const LOADING_LABEL = 'Loading…';
 const EMPTY_FOLDER_LABEL = 'This folder is empty';
 const NO_FILTER_MATCH_LABEL = 'No items match the active filters';
+const EXTERNAL_DROP_LABEL = 'Drop to add';
 
 /**
  * The placeholder's own node — the surface that answers a background
@@ -137,6 +139,7 @@ function FileSystemBodyContent() {
     loadPreviewImageUrl,
     onBackgroundContextMenuAction,
     onContextMenuAction,
+    onExternalDrop,
     onMove,
     renderEmptyState,
     renderEntryIcon,
@@ -163,6 +166,7 @@ function FileSystemBodyContent() {
     loadPreviewImageUrl,
     onBackgroundContextMenuAction,
     onContextMenuAction,
+    onExternalDrop,
     onMarquee: selectMarquee,
     onMove,
     onOpen: openEntry,
@@ -206,6 +210,20 @@ function FileSystemBodyContent() {
   return <ActiveView {...viewProps} />;
 }
 
+// Rendered over the file area while an external drag (OS file, page element)
+// hovers over the component. Absolutely positioned so it does not displace
+// views or alter layout; `pointer-events-none` so the underlying views keep
+// receiving the DOM drag events that keep `isOver` accurate.
+function FileSystemExternalDropOverlay() {
+  return (
+    <View className="pointer-events-none absolute inset-0 items-center justify-center border border-foreground/20 border-dashed bg-foreground/[0.03]">
+      <Text className="font-medium text-foreground/50 text-sm" selectable={false}>
+        {EXTERNAL_DROP_LABEL}
+      </Text>
+    </View>
+  );
+}
+
 // `testID` is the root's, not the body's: it stays in the props handed to the
 // active view so every entry can derive its own id from it (see
 // file-system-test-id.ts). The body's own node takes the `-body` suffix.
@@ -223,7 +241,18 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
   const { hasActiveFilters } = useFileSystemFilters();
   const { isSearching, searchInput: searchValue } = useFileSystemSearch();
   const { selectedEntry, selectedPaths } = useFileSystemSelection();
-  const { testID } = useFileSystemConsumer();
+  const { onExternalDrop, testID } = useFileSystemConsumer();
+
+  const containerRef = useRef<View | null>(null);
+  // The list and columns views wire their own per-row / per-column external drop
+  // hooks directly, so the body-level hook is only active for other views
+  // (icons, gallery) where a background overlay is the right feedback.
+  const skipBodyDrop = !isSearching && (view === 'list' || view === 'columns');
+  const { isOver: isExternalDropOver } = useFileSystemExternalDrop({
+    containerRef,
+    currentPath,
+    onExternalDrop: skipBodyDrop ? undefined : onExternalDrop,
+  });
 
   // Resolved here rather than held in the store: the selection is a set of paths,
   // and only this slot asks for it as entries.
@@ -273,8 +302,9 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
   // surface repeats it anyway — the views are mounted directly in tests and by
   // consumers reaching for a single view, where this node isn't above them.
   return (
-    <View className={cn('min-h-0 flex-1 select-none', className)} testID={bodyTestID}>
+    <View ref={containerRef} className={cn('relative min-h-0 flex-1 select-none', className)} testID={bodyTestID}>
       {body}
+      {isExternalDropOver ? <FileSystemExternalDropOverlay /> : null}
     </View>
   );
 }

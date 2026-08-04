@@ -111,6 +111,7 @@ function PreviewPane({ file, index, viewportWidth, ...visualProps }: PreviewPane
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: trail-preserving marquee handlers, drag geometry refs, and layout callbacks are tightly coupled — splitting would scatter refs across modules
 export function FileSystemColumnsView({
   currentPath,
   draggable,
@@ -119,6 +120,7 @@ export function FileSystemColumnsView({
   loadPreviewImageUrl,
   loadingFolders,
   onContextMenuAction,
+  onExternalDrop,
   onMarquee,
   onMove,
   onOpen,
@@ -134,7 +136,6 @@ export function FileSystemColumnsView({
   const scrollRef = useRef<ScrollView>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode);
-  const handleClearSelection = useCallback(() => onSelect(null), [onSelect]);
   const columnPaths = useMemo(() => trailColumnPaths(currentPath, selectedEntry), [currentPath, selectedEntry]);
   const selectedFile = selectedEntry?.kind === 'file' ? selectedEntry : null;
 
@@ -179,6 +180,34 @@ export function FileSystemColumnsView({
     scrollOffsetHandlersRef.current.set(colIdx, handler);
     return handler;
   }, []);
+
+  // Stable per-column marquee callbacks, keyed by index. Each one injects the
+  // trail paths (the parent folders that opened this sub-column) into the base
+  // so a marquee in a sub-column never clears the trail selection — which would
+  // collapse the column it's running inside. Column 0 has no trail to protect
+  // and falls through to the raw onMarquee unchanged.
+  const columnPathsRef = useRef(columnPaths);
+  columnPathsRef.current = columnPaths;
+  const onMarqueeRef = useRef(onMarquee);
+  onMarqueeRef.current = onMarquee;
+  const marqueeHandlersRef = useRef(new Map<number, (covered: readonly string[], base: ReadonlySet<string> | null) => void>());
+  const getMarqueeHandler = useCallback((colIdx: number) => {
+    const existing = marqueeHandlersRef.current.get(colIdx);
+    if (existing) return existing;
+    const handler = (covered: readonly string[], base: ReadonlySet<string> | null) => {
+      // columnPaths[1..colIdx] are the folders selected in the parent columns —
+      // they must stay selected or the trail collapses under the marquee.
+      const trailPaths = columnPathsRef.current.slice(1, colIdx + 1);
+      if (trailPaths.length === 0) {
+        onMarqueeRef.current(covered, base);
+        return;
+      }
+      const fullBase = base ? new Set([...base, ...trailPaths]) : new Set(trailPaths);
+      onMarqueeRef.current(covered, fullBase);
+    };
+    marqueeHandlersRef.current.set(colIdx, handler);
+    return handler;
+  }, []);
   // the active column at the right edge.
   const handleContentSizeChange = useCallback(() => scrollRef.current?.scrollToEnd({ animated: true }), []);
 
@@ -197,14 +226,15 @@ export function FileSystemColumnsView({
         <FileSystemColumn
           dragState={columnDragStateFor(columnIndex, drag)}
           entries={index.children.get(columnPath) ?? []}
+          folderPath={columnPath}
           getContextMenuActions={getContextMenuActions}
           index={index}
           isLoading={loadingFolders.has(columnPath)}
           key={columnPath || '(root)'}
           onActivate={activate}
-          onClearSelection={handleClearSelection}
           onContextMenuAction={onContextMenuAction}
-          onMarquee={onMarquee}
+          onExternalDrop={onExternalDrop}
+          onMarquee={getMarqueeHandler(columnIndex)}
           onScrollOffsetChange={getScrollOffsetHandler(columnIndex)}
           onSelectLongPress={selectLongPress}
           renderEntryIcon={renderEntryIcon}

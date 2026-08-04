@@ -9,9 +9,13 @@ import type {
 } from 'rn-motion-ui/file-system';
 import { FileSystem } from 'rn-motion-ui/file-system';
 import { GlossyButton } from 'rn-motion-ui/glossy-button';
-import { Copy, FolderClosed, Link, Share2, Trash2 } from 'rn-motion-ui/icons';
 import { Text } from 'rn-motion-ui/text';
 import { useThemeColors } from 'rn-motion-ui/theme/use-theme-color';
+import { Copy2Line } from 'rn-motion-ui-icons/icons/copy-2-line';
+import { Delete2Line } from 'rn-motion-ui-icons/icons/delete-2-line';
+import { Link3Line } from 'rn-motion-ui-icons/icons/link-3-line';
+import { NewFolderLine } from 'rn-motion-ui-icons/icons/new-folder-line';
+import { ShareForwardLine } from 'rn-motion-ui-icons/icons/share-forward-line';
 import { Caption, Panel } from './demo-chrome';
 import {
   ARCHIVE_ITEMS,
@@ -67,18 +71,22 @@ function applyAction(state: DemoState, actionId: string, path: string): DemoStat
 /** Menus differ by kind, and `Share…` is disabled to show that state. */
 function menuActionsFor(item: FileSystemItem, tint: string, danger: string): FileSystemContextMenuAction[] {
   const shared: FileSystemContextMenuAction[] = [
-    { icon: <Copy color={tint} size={16} />, id: ACTION.duplicate, label: 'Duplicate' },
-    { icon: <Link color={tint} size={16} />, id: ACTION.copyPath, label: 'Copy path' },
-    { icon: <FolderClosed color={tint} size={16} />, id: ACTION.newFolder, label: 'New folder' },
+    { icon: <Copy2Line color={tint} size={16} />, id: ACTION.duplicate, label: 'Duplicate' },
+    { icon: <Link3Line color={tint} size={16} />, id: ACTION.copyPath, label: 'Copy path' },
+    { icon: <NewFolderLine color={tint} size={16} />, id: ACTION.newFolder, label: 'New folder' },
   ];
   const remove: FileSystemContextMenuAction = {
     destructive: true,
-    icon: <Trash2 color={danger} size={16} />,
+    icon: <Delete2Line color={danger} size={16} />,
     id: ACTION.delete,
     label: 'Delete',
   };
   if (item.kind === 'folder') return [...shared, remove];
-  return [...shared, { disabled: true, icon: <Share2 color={tint} size={16} />, id: ACTION.share, label: 'Share…' }, remove];
+  return [
+    ...shared,
+    { disabled: true, icon: <ShareForwardLine color={tint} size={16} />, id: ACTION.share, label: 'Share…' },
+    remove,
+  ];
 }
 
 /** Stand-in for the document renderer the package leaves to the consumer. */
@@ -137,7 +145,7 @@ export function FileSystemDemo() {
   // Background actions carry no path, so `newFolder` creates in the root here.
   const getBackgroundContextMenuActions = useCallback(
     (): FileSystemContextMenuAction[] => [
-      { icon: <FolderClosed color={colors.foreground} size={16} />, id: ACTION.newFolder, label: 'New folder' },
+      { icon: <NewFolderLine color={colors.foreground} size={16} />, id: ACTION.newFolder, label: 'New folder' },
     ],
     [colors],
   );

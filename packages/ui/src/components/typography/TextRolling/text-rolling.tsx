@@ -46,7 +46,7 @@ export type TextRollingProps = {
  *
  * Use this when you want the full string to move together (e.g. a status
  * label cycling through states). For a character-by-character cascade see
- * `TextCascade`; for digit-by-digit rolling numbers see `NumberTicker`.
+ * `TextCascade`; for digit-by-digit rolling numbers see `TextNumberTicker`.
  */
 export function TextRolling({ text, direction = 'forward', className, style, accessibilityLabel, testID }: TextRollingProps) {
   const reduce = useReducedMotion();

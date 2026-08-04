@@ -95,9 +95,8 @@ Subpaths are namespaced by category:
 | `/skeleton` | `Skeleton` |
 | `/loader` | `Loader` |
 | `/animated-badge` | `AnimatedBadge` |
-| `/animated-number` | `AnimatedNumber` |
-| `/number-ticker` | `NumberTicker` |
 | `/text-cascade` | `TextCascade` |
+| `/text-number-ticker` | `TextNumberTicker` |
 | `/text-reveal` | `TextReveal` |
 | `/text-rolling` | `TextRolling` |
 | `/text-shimmer` | `TextShimmer` |

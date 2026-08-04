@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatNumber, padDigits } from '../number-ticker.logic';
+import { formatNumber, padDigits } from '../text-number-ticker.logic';
 
 // The suite runs under whatever locale the host provides, so nothing asserts a
 // separator character. Digits are compared directly; grouping is compared as a

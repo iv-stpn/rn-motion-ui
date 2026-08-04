@@ -82,11 +82,6 @@
       "types": "./src/components/display/AnimatedList/animated-list.tsx",
       "default": "./src/components/display/AnimatedList/animated-list.tsx"
     },
-    "./animated-number": {
-      "source": "./src/components/typography/AnimatedNumber/animated-number.tsx",
-      "types": "./src/components/typography/AnimatedNumber/animated-number.tsx",
-      "default": "./src/components/typography/AnimatedNumber/animated-number.tsx"
-    },
     "./bloom-menu": {
       "source": "./src/components/menus/BloomMenu/bloom-menu.tsx",
       "types": "./src/components/menus/BloomMenu/bloom-menu.tsx",
@@ -252,11 +247,6 @@
       "types": "./src/components/menus/MultiStepMenu/multi-step-menu.tsx",
       "default": "./src/components/menus/MultiStepMenu/multi-step-menu.tsx"
     },
-    "./number-ticker": {
-      "source": "./src/components/typography/NumberTicker/number-ticker.tsx",
-      "types": "./src/components/typography/NumberTicker/number-ticker.tsx",
-      "default": "./src/components/typography/NumberTicker/number-ticker.tsx"
-    },
     "./otp-input": {
       "source": "./src/components/form/OtpInput/otp-input.tsx",
       "types": "./src/components/form/OtpInput/otp-input.tsx",
@@ -371,6 +361,11 @@
       "source": "./src/components/typography/TextCascade/text-cascade.tsx",
       "types": "./src/components/typography/TextCascade/text-cascade.tsx",
       "default": "./src/components/typography/TextCascade/text-cascade.tsx"
+    },
+    "./text-number-ticker": {
+      "source": "./src/components/typography/TextNumberTicker/text-number-ticker.tsx",
+      "types": "./src/components/typography/TextNumberTicker/text-number-ticker.tsx",
+      "default": "./src/components/typography/TextNumberTicker/text-number-ticker.tsx"
     },
     "./text-reveal": {
       "source": "./src/components/typography/TextReveal/text-reveal.tsx",

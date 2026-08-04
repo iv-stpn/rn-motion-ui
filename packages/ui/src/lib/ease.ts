@@ -18,7 +18,7 @@ export const EASE_IN_OUT = Easing.bezier(...EASE_IN_OUT_POINTS);
 export const EASE_DRAWER = Easing.bezier(...EASE_DRAWER_POINTS);
 
 // Plain (t) => number form of EASE_OUT for JS-thread interpolation
-// (AnimatedNumber's requestAnimationFrame loop), where a factory isn't callable.
+// (TextNumberTicker's requestAnimationFrame loop), where a factory isn't callable.
 export const EASE_OUT_FN = Easing.bezierFn(...EASE_OUT_POINTS);
 
 /** Press feedback on buttons and other tappable surfaces. */

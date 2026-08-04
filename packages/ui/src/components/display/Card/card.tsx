@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { Ref } from 'react';
-import { View, type ViewProps } from 'react-native';
+import { Pressable, type PressableProps, View, type ViewProps } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
 
@@ -23,11 +23,15 @@ export type CardProps = ViewProps & {
    * @default 3
    */
   elevation?: SurfaceLevel;
+  /** When provided the card renders as a `Pressable` instead of a plain `View`. */
+  onPress?: PressableProps['onPress'];
   ref?: Ref<View>;
 };
 
-export function Card({ size = 'md', elevation = 3, className, ...props }: CardProps) {
+export function Card({ size = 'md', elevation = 3, className, onPress, ...props }: CardProps) {
   // The surface derives both its background and shadow from `elevation` so the
   // fill and the dark-mode rim highlight sit at the same ladder level.
-  return <View className={cn(card({ size }), surfaceBackground(elevation), elevatedShadow(elevation), className)} {...props} />;
+  const cn_ = cn(card({ size }), surfaceBackground(elevation), elevatedShadow(elevation), className);
+  if (onPress !== undefined) return <Pressable className={cn_} onPress={onPress} {...props} />;
+  return <View className={cn_} {...props} />;
 }

@@ -8,10 +8,11 @@
  * halves of that — a long press that must do *nothing*, and a right-click that
  * must open the panel with no lifted copy behind it.
  */
+/** biome-ignore-all lint/style/useExportsLast: story helpers are co-located with the stories they serve */
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Sample, Toggle, Variants } from '../../../__stories__/story-harness';
@@ -296,4 +297,40 @@ export const Default: Story = {
     await userEvent.click(await screen.findByRole('button', { name: CLOSE_MENU }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 2000 });
   },
+};
+
+const PASSIVE_NOTE =
+  'trigger="passive" — the host calls setOpen(true) on press; the contextmenu listener handles right-click without extra wiring.';
+const PASSIVE_LABEL = 'Press to open · Right-click also works';
+
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+function PassiveTriggerDemo() {
+  const [open, setOpen] = useState(false);
+  const handlePress = useCallback(() => setOpen(true), []);
+  return (
+    <View className="items-center gap-4">
+      <HoldContextMenu items={DEMO_ITEMS} open={open} onOpenChange={setOpen} trigger="passive">
+        <Pressable
+          accessibilityLabel="Open menu"
+          accessibilityRole="button"
+          className="rounded-lg bg-surface-3 px-4 py-2.5"
+          onPress={handlePress}
+        >
+          <Text size="sm">{PASSIVE_LABEL}</Text>
+        </Pressable>
+      </HoldContextMenu>
+      <Note>{PASSIVE_NOTE}</Note>
+    </View>
+  );
+}
+
+/**
+ * `trigger="passive"` — the wrapper never installs its own Pressable, so the host
+ * owns the open gesture entirely. `open`/`onOpenChange` give the host full
+ * control; the `contextmenu` DOM listener on the outer View still fires on web,
+ * so right-clicking also opens the panel.
+ */
+export const PassiveTrigger: Story = {
+  name: 'Demo: Passive trigger (host-controlled)',
+  render: () => <PassiveTriggerDemo />,
 };

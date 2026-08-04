@@ -153,6 +153,16 @@ export type HoldContextMenuOverlayProps = {
   onClose: () => void;
   /** Whether a press on the lifted item dismisses the menu. */
   closeOnTap: boolean;
+  /**
+   * Whether the trigger squeezed before this opened — i.e. the lift starts from
+   * {@link HOLD_ITEM_SCALE} and springs out of it, continuing a shrink the user
+   * already saw.
+   *
+   * False for a `'passive'` trigger, which has no press to squeeze from: starting
+   * the copy at 0.95 there would be a 5% pop out of an item that never moved. The
+   * lift then travels without scaling.
+   */
+  squeezes: boolean;
   elevation: SurfaceLevel;
   /** Panel / scrim / lift transition overrides. */
   motion?: HoldContextMenuMotion;
@@ -174,6 +184,7 @@ export function HoldContextMenuOverlay({
   onSelect,
   onClose,
   closeOnTap,
+  squeezes,
   elevation,
   motion,
   reduce,
@@ -243,7 +254,7 @@ export function HoldContextMenuOverlay({
               aria-hidden={true}
               exit={{ scale: 1, translateY: 0 }}
               exitTransition={liftExitTransition}
-              from={{ scale: reduce ? 1 : HOLD_ITEM_SCALE, translateY: reduce ? layout.shift : 0 }}
+              from={{ scale: reduce || !squeezes ? 1 : HOLD_ITEM_SCALE, translateY: reduce ? layout.shift : 0 }}
               importantForAccessibility="no-hide-descendants"
               style={{ height: rect.height, left: rect.x, position: 'absolute', top: rect.y, width: rect.width }}
               testID={testID ? `${testID}-lifted` : undefined}

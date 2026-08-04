@@ -38,6 +38,23 @@ function fireHaptics(haptics: HoldContextMenuHaptics) {
 }
 
 /**
+ * Window rect of the trigger, handed to `setRect` and then to `onMeasured`.
+ *
+ * Shared by the two ways the menu opens — a gesture, which measures before it
+ * flips `open`, and a host setting `open` itself, which is measured a commit
+ * later. Both refuse a zero-sized rect: that means the trigger is not laid out
+ * (or is hidden on web), and anchoring to it would put the panel at the window
+ * origin.
+ */
+function measureAnchor(wrapperRef: RefObject<View | null>, setRect: (rect: HoldMenuRect) => void, onMeasured?: () => void) {
+  wrapperRef.current?.measureInWindow((x, y, width, height) => {
+    if (width === 0 || height === 0) return;
+    setRect({ x, y, width, height });
+    onMeasured?.();
+  });
+}
+
+/**
  * Whether this platform performs the lift — hold the item, it rises off a dimmed
  * page, and the panel pops out beside it.
  *
@@ -88,6 +105,13 @@ export type UseHoldActivationOptions = {
   openOnContextMenu: boolean;
   haptics: HoldContextMenuHaptics;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Controlled open state. When set, the hook stops holding its own: activation
+   * reports through `onOpenChange` and the caller decides. The anchor is then
+   * measured by the effect below rather than by the activation that requested it,
+   * since a host can open the menu without going through one.
+   */
+  open?: boolean;
 };
 
 export type HoldActivation = {
@@ -119,35 +143,56 @@ export function useHoldActivation({
   openOnContextMenu,
   haptics,
   onOpenChange,
+  open: openProp,
 }: UseHoldActivationOptions): HoldActivation {
   const [rect, setRect] = useState<HoldMenuRect | null>(null);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [pressed, setPressed] = useState(false);
   const lastTapRef = useRef(0);
+
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
 
   // Read through refs inside the measure callback and the DOM listener: both run
   // outside the render that created them, and neither should force a re-bind (or
   // a fresh `openMenu` identity) when a consumer passes an inline closure.
-  const latest = useRef({ enabled, haptics, onOpenChange });
-  latest.current = { enabled, haptics, onOpenChange };
+  const latest = useRef({ enabled, haptics, isControlled, onOpenChange });
+  latest.current = { enabled, haptics, isControlled, onOpenChange };
+
+  const measure = useCallback((onMeasured?: () => void) => measureAnchor(wrapperRef, setRect, onMeasured), [wrapperRef]);
 
   const openMenu = useCallback(() => {
     if (!latest.current.enabled) return;
-    wrapperRef.current?.measureInWindow((x, y, width, height) => {
-      // A zero-sized rect means the trigger is not laid out (or is hidden on
-      // web). Opening would anchor the panel at the window origin, so don't.
-      if (width === 0 || height === 0) return;
-      setRect({ x, y, width, height });
-      setOpen(true);
+    // Measure first, open second: the panel is placed from the rect on the frame
+    // it opens, so there is nothing to anchor to until this lands.
+    measure(() => {
+      if (!latest.current.isControlled) setInternalOpen(true);
       latest.current.onOpenChange?.(true);
       fireHaptics(latest.current.haptics);
     });
-  }, [wrapperRef]);
+  }, [measure]);
 
   const close = useCallback(() => {
-    setOpen(false);
+    if (!latest.current.isControlled) setInternalOpen(false);
     latest.current.onOpenChange?.(false);
   }, []);
+
+  /*
+   * The controlled path's measurement.
+   *
+   * An activation measures before it opens (above), so the rect is already there
+   * by the time `open` flips. A host that sets `open` itself never went through
+   * one, so the anchor is measured here instead — one commit later, which is why
+   * the component null-checks `rect` and paints nothing until it lands.
+   *
+   * `enabled` is not consulted: a host asking for the menu directly is not making
+   * a gesture that could be swallowed, and refusing it would leave `open` true
+   * with nothing on screen.
+   */
+  // biome-ignore lint/plugin: measuring a laid-out node is imperative — the rect is not derivable during render
+  useEffect(() => {
+    if (open && !rect) measure();
+  }, [measure, open, rect]);
 
   const clearRect = useCallback(() => setRect(null), []);
   const onPressIn = useCallback(() => setPressed(true), []);

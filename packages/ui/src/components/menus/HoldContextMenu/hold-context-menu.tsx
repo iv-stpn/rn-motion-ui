@@ -59,7 +59,7 @@
  * ```
  */
 
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { StyleProp, View, ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import type { SurfaceLevel } from '../../../lib/elevated';
@@ -68,7 +68,7 @@ import type { HoldContextMenuItem } from './hold-context-menu-item';
 import { HOLD_MENU_DEFAULT_WIDTH, type HoldMenuAlign, type HoldMenuSide } from './hold-context-menu-layout';
 import type { HoldContextMenuMotion } from './hold-context-menu-motion';
 import { HoldContextMenuOverlay } from './hold-context-menu-overlay';
-import { HoldContextMenuTrigger } from './hold-context-menu-trigger';
+import { HoldContextMenuTrigger, type HoldContextMenuTriggerMode } from './hold-context-menu-trigger';
 import {
   HOLD_MENU_LIFTS,
   type HoldContextMenuActivation,
@@ -174,6 +174,38 @@ export type HoldContextMenuProps = {
    * @default true
    */
   openOnContextMenu?: boolean;
+  /**
+   * Who owns the press.
+   *
+   * `'pressable'` (default) is the component: it wraps `children` in a
+   * `Pressable`, activates on {@link HoldContextMenuProps.activateOn}, and
+   * squeezes under the finger.
+   *
+   * `'passive'` is you. Nothing is wrapped, so no second button nests inside a
+   * child that is already one and no extra tab stop lands in a long list — but
+   * the trigger then has no gesture of its own, and nothing squeezes. Drive it
+   * with {@link HoldContextMenuProps.open} (and, on web, either this component's
+   * `contextmenu` listener or your own on {@link HoldContextMenuProps.wrapperRef}).
+   * @default 'pressable'
+   */
+  trigger?: HoldContextMenuTriggerMode;
+  /**
+   * Controls whether the menu is open, making the component controlled.
+   *
+   * The anchor is measured when this flips true, so a host may open the menu
+   * without a gesture having measured anything first. The panel paints one commit
+   * later, once that measurement lands.
+   *
+   * Leave it out to let the trigger own the state.
+   */
+  open?: boolean;
+  /**
+   * Receives the measured wrapper — the node the panel anchors to, and on web a
+   * real DOM element. Pass one to attach your own listeners to it (a `contextmenu`
+   * handler that resolves items before opening, say) under
+   * `trigger="passive"`.
+   */
+  wrapperRef?: RefObject<View | null>;
   /** Inert trigger — no activation, no menu. */
   disabled?: boolean;
   /** Called whenever an item is chosen, after that item's own `onPress`. */
@@ -234,6 +266,9 @@ export function HoldContextMenu({
   disabled = false,
   onSelect,
   onOpenChange,
+  open: openProp,
+  trigger = 'pressable',
+  wrapperRef: wrapperRefProp,
   elevation = 6,
   motion,
   accessibilityLabel,
@@ -245,7 +280,10 @@ export function HoldContextMenu({
   testID,
 }: HoldContextMenuProps) {
   const reduce = useReducedMotion();
-  const wrapperRef = useRef<View>(null);
+  const ownWrapperRef = useRef<View | null>(null);
+  // The host's ref when it passed one, so it can reach the same node this
+  // measures — see the `wrapperRef` prop.
+  const wrapperRef = wrapperRefProp ?? ownWrapperRef;
 
   const { rect, open, pressed, close, clearRect, onAccessibilityAction, onLongPress, onPress, onPressIn, onPressOut } =
     useHoldActivation({
@@ -253,6 +291,7 @@ export function HoldContextMenu({
       enabled: !disabled && items.length > 0,
       haptics,
       onOpenChange,
+      open: openProp,
       openOnContextMenu,
       wrapperRef,
     });
@@ -305,6 +344,7 @@ export function HoldContextMenu({
         disabled={disabled}
         holdDuration={holdDuration}
         lifted={lifted}
+        mode={trigger}
         onAccessibilityAction={onAccessibilityAction}
         onLongPress={onLongPress}
         onPress={onPress}
@@ -341,6 +381,7 @@ export function HoldContextMenu({
               open={animating}
               rect={rect}
               reduce={reduce}
+              squeezes={trigger !== 'passive' && HOLD_MENU_LIFTS}
               testID={testID}
             >
               {children}

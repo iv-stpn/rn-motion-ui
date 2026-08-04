@@ -12,6 +12,11 @@
  * On web the squeeze never runs — the hook hands over no press handlers for
  * `'hold'` there, so `pressed` stays false and the only job left is the measured
  * wrapper. See `HOLD_MENU_LIFTS`.
+ *
+ * `'passive'` mode drops the `Pressable` entirely: see
+ * {@link HoldContextMenuTriggerMode}. What is left is the measured wrapper and
+ * the hide-while-lifted opacity — the two things the overlay needs from this
+ * side regardless of who owns the gesture.
  */
 
 import type { ReactNode, RefObject } from 'react';
@@ -54,6 +59,27 @@ const ACTIVATION_HINT: Record<HoldContextMenuActivation, string> = {
  */
 const LONG_PRESS_ACTIONS = [{ name: 'longpress', label: 'Open actions menu' }] as const;
 
+/**
+ * Who owns the press.
+ *
+ * `'pressable'` is the component: it wraps the children in a `Pressable`, reads
+ * the gesture named by `activateOn`, squeezes under the finger and announces
+ * itself as the button that opens the menu.
+ *
+ * `'passive'` is the host. The trigger is then only the measured wrapper the
+ * panel anchors to — no `Pressable`, so no second button around children that
+ * are already one, no extra tab stop per item, and on native no inner press
+ * responder for the host's own to fight. The host opens the menu by driving the
+ * controlled `open` prop, and owns the accessibility path to it as well. Web's
+ * right-click still works: the `contextmenu` listener sits on the wrapper, and
+ * the event bubbles to it from whatever the children render.
+ *
+ * There is no squeeze in `'passive'` — the press it previewed belongs to someone
+ * else — so the lifted copy springs from rest instead of from
+ * {@link HOLD_ITEM_SCALE}.
+ */
+export type HoldContextMenuTriggerMode = 'pressable' | 'passive';
+
 type ScaleInput = { reduce: boolean; squeezed: boolean; activateOn: HoldContextMenuActivation; holdDuration: number };
 
 /**
@@ -73,6 +99,8 @@ export type HoldContextMenuTriggerProps = {
   children: ReactNode;
   /** Attached to the untransformed wrapper — the rect the panel anchors to. */
   wrapperRef: RefObject<View | null>;
+  /** Whether this component wraps the children in a `Pressable` at all. */
+  mode: HoldContextMenuTriggerMode;
   activateOn: HoldContextMenuActivation;
   holdDuration: number;
   disabled: boolean;
@@ -103,6 +131,7 @@ export type HoldContextMenuTriggerProps = {
 export function HoldContextMenuTrigger({
   children,
   wrapperRef,
+  mode,
   activateOn,
   holdDuration,
   disabled,
@@ -122,7 +151,8 @@ export function HoldContextMenuTrigger({
   testID,
 }: HoldContextMenuTriggerProps) {
   // Squeezing stops the moment the copy takes over, so the original is back at
-  // rest by the time it is revealed again.
+  // rest by the time it is revealed again. Never true in `'passive'` mode, which
+  // tracks no press — so the animate below resolves to a plain `scale: 1`.
   const squeezed = pressed && !lifted;
 
   // Both are `undefined` on web under `'hold'`, where the hook activates from a
@@ -143,23 +173,27 @@ export function HoldContextMenuTrigger({
           opacity: { type: 'timing' as const, duration: 0, delay: lifted ? HANDOVER_DELAY : 0 },
         }}
       >
-        <Pressable
-          accessibilityActions={LONG_PRESS_ACTIONS}
-          accessibilityHint={accessibilityHint ?? ACTIVATION_HINT[activateOn]}
-          accessibilityLabel={accessibilityLabel}
-          accessibilityRole="button"
-          aria-expanded={open}
-          delayLongPress={holdDuration}
-          disabled={disabled}
-          onAccessibilityAction={onAccessibilityAction}
-          onLongPress={onLongPress}
-          onPress={onPress}
-          onPressIn={onPressIn}
-          onPressOut={onPressOut}
-          style={pressActivates ? undefined : NO_POINTER_STYLE}
-        >
-          {children}
-        </Pressable>
+        {mode === 'passive' ? (
+          children
+        ) : (
+          <Pressable
+            accessibilityActions={LONG_PRESS_ACTIONS}
+            accessibilityHint={accessibilityHint ?? ACTIVATION_HINT[activateOn]}
+            accessibilityLabel={accessibilityLabel}
+            accessibilityRole="button"
+            aria-expanded={open}
+            delayLongPress={holdDuration}
+            disabled={disabled}
+            onAccessibilityAction={onAccessibilityAction}
+            onLongPress={onLongPress}
+            onPress={onPress}
+            onPressIn={onPressIn}
+            onPressOut={onPressOut}
+            style={pressActivates ? undefined : NO_POINTER_STYLE}
+          >
+            {children}
+          </Pressable>
+        )}
       </MotiView>
     </View>
   );

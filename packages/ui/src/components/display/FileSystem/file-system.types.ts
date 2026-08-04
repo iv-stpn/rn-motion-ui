@@ -263,7 +263,7 @@ export type FileSystemBodyState = {
   isSearching: boolean;
   hasActiveFilters: boolean;
   /** `true` while the current folder's children are being fetched. */
-  isLoadingCurrentFolder: boolean;
+  isLoading: boolean;
   /**
    * `true` when the current folder has no entries to show. The columns view
    * still renders its panes in that case, so this does not always mean `content`

@@ -57,12 +57,12 @@ const VIEW_COMPONENTS: Record<FileSystemView, ComponentType<FileSystemViewProps>
   list: FileSystemListView,
 };
 
-type EmptyStateArgs = { hasActiveFilters: boolean; isLoadingCurrentFolder: boolean; isSearching: boolean };
+type EmptyStateArgs = { hasActiveFilters: boolean; isLoading: boolean; isSearching: boolean };
 
 // Loading wins over the other three: a folder still fetching its children looks
 // empty, and saying so would be wrong rather than merely early.
-function emptyReason({ hasActiveFilters, isLoadingCurrentFolder, isSearching }: EmptyStateArgs): FileSystemEmptyStateReason {
-  if (isLoadingCurrentFolder) return 'loading';
+function emptyReason({ hasActiveFilters, isLoading, isSearching }: EmptyStateArgs): FileSystemEmptyStateReason {
+  if (isLoading) return 'loading';
   if (isSearching) return 'no-search-results';
   return hasActiveFilters ? 'no-filter-matches' : 'empty-folder';
 }
@@ -125,9 +125,9 @@ function FileSystemBodyPlaceholder({ children }: PlaceholderProps) {
  * `onSortColumnClick` — so the views stay unaware of how the state is shaped.
  */
 function FileSystemBodyContent() {
-  const { currentPath, currentFolderName, loadingFolders, isLoadingCurrentFolder } = useFileSystemNavigation();
+  const { currentPath, currentFolderName: folderName, loadingFolders, isLoading } = useFileSystemNavigation();
   const { entries, sortedIndex, sort, view } = useFileSystemEntries();
-  const { isSearching, searchInput, searchQuery } = useFileSystemSearch();
+  const { isSearching, searchInput: searchValue, searchQuery } = useFileSystemSearch();
   const { hasActiveFilters, fileFilter } = useFileSystemFilters();
   const { selectedEntry, selectedPath, selectedPaths } = useFileSystemSelection();
   const { resolvedUrlCache, pageUrlCache } = useFileSystemViewer();
@@ -156,7 +156,7 @@ function FileSystemBodyContent() {
     draggable,
     entries,
     fileFilter,
-    folderName: currentFolderName,
+    folderName,
     getBackgroundContextMenuActions,
     getContextMenuActions,
     getFileUrl,
@@ -190,24 +190,17 @@ function FileSystemBodyContent() {
   // The columns view keeps its panes over an empty folder so the trail stays
   // walkable, and only yields to the placeholder when a query or a filter is what
   // emptied it — or while the folder is still loading.
-  if (isEmpty && (isLoadingCurrentFolder || view !== 'columns' || isSearching || hasActiveFilters)) {
-    const reason = emptyReason({ hasActiveFilters, isLoadingCurrentFolder, isSearching });
-    const label = emptyLabel(reason, searchInput);
+  if (isEmpty && (isLoading || view !== 'columns' || isSearching || hasActiveFilters)) {
+    const reason = emptyReason({ hasActiveFilters, isLoading, isSearching });
+    const label = emptyLabel(reason, searchValue);
+    const isEmptyStateLoading = reason === 'loading';
+
     // `undefined` means "not mine to draw" and falls back to the default, so a
     // slot can take over the empty folder and leave the spinner alone. `null` is
     // a decision, and draws nothing.
-    const custom = renderEmptyState?.({
-      currentPath,
-      folderName: currentFolderName,
-      hasActiveFilters,
-      isSearching,
-      label,
-      reason,
-      searchValue: searchInput,
-      view,
-    });
-    const placeholder = custom === undefined ? <FileSystemEmptyState isLoading={reason === 'loading'} label={label} /> : custom;
-
+    const emptyStateConfig = { currentPath, folderName, hasActiveFilters, isSearching, label, reason, searchValue, view };
+    const custom = renderEmptyState?.(emptyStateConfig);
+    const placeholder = custom === undefined ? <FileSystemEmptyState isLoading={isEmptyStateLoading} label={label} /> : custom;
     return <FileSystemBodyPlaceholder>{placeholder}</FileSystemBodyPlaceholder>;
   }
 
@@ -227,10 +220,10 @@ type FileSystemBodyProps = {
 };
 
 export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
-  const { currentPath, isLoadingCurrentFolder } = useFileSystemNavigation();
+  const { currentPath, isLoading } = useFileSystemNavigation();
   const { entries, sortedIndex, view } = useFileSystemEntries();
   const { hasActiveFilters } = useFileSystemFilters();
-  const { isSearching, searchInput } = useFileSystemSearch();
+  const { isSearching, searchInput: searchValue } = useFileSystemSearch();
   const { selectedEntry, selectedPaths } = useFileSystemSelection();
   const { testID } = useFileSystemConsumer();
 
@@ -251,16 +244,17 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
   // search field would reset its scroll offset, panes and in-flight drag.
   // Calling it keeps the returned elements in the parent's own tree, where
   // reconciliation compares them by position as usual.
+  const isEmpty = entries.length === 0;
   const body = renderBody
     ? renderBody({
         content,
         currentPath,
         entries,
         hasActiveFilters,
-        isEmpty: entries.length === 0,
-        isLoadingCurrentFolder,
+        isEmpty,
+        isLoading,
         isSearching,
-        searchValue: searchInput,
+        searchValue,
         selectedEntries,
         selectedEntry,
         testID,

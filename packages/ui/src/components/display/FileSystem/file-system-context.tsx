@@ -56,7 +56,7 @@ type NavigationSlice = {
   historyIndex: number;
   historyStack: string[];
   loadingFolders: Set<string>;
-  isLoadingCurrentFolder: boolean;
+  isLoading: boolean;
   loadedItems: FileSystemItem[];
 };
 
@@ -225,7 +225,9 @@ function computeFileTypeOptions(index: FileSystemIndex): FileTypeFilterOption[] 
       });
     }
   }
-  return [...byMime.values()].sort((a, b) => a.label.localeCompare(b.label));
+  return [...byMime.values()].sort((fileTypeOptions1, fileTypeOptions2) =>
+    fileTypeOptions1.label.localeCompare(fileTypeOptions2.label),
+  );
 }
 
 /** Resolve a path against the index — a file, a folder, or neither. */
@@ -379,7 +381,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       historyIndex: 0,
       historyStack: [initialPath],
       loadingFolders: new Set<string>(),
-      isLoadingCurrentFolder: false,
+      isLoading: false,
       loadedItems: [],
     },
     entries: {
@@ -457,7 +459,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       };
       const next = _recomputeEntries({ ...s, navigation: newNav, search: newSearch });
       set({
-        navigation: { ...newNav, isLoadingCurrentFolder: newNav.loadingFolders.has(path) },
+        navigation: { ...newNav, isLoading: newNav.loadingFolders.has(path) },
         entries: next.entries,
         filters: next.filters,
         selection: next.selection,
@@ -481,7 +483,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         currentFolderName,
         canGoBack: historyIndex > 0,
         canGoForward: true,
-        isLoadingCurrentFolder: s.navigation.loadingFolders.has(currentPath),
+        isLoading: s.navigation.loadingFolders.has(currentPath),
       };
       const next = _recomputeEntries({ ...s, navigation: newNav, search: newSearch });
       set({ navigation: newNav, entries: next.entries, filters: next.filters, selection: next.selection, search: newSearch });
@@ -503,7 +505,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         currentFolderName,
         canGoBack: true,
         canGoForward: historyIndex < maxIndex,
-        isLoadingCurrentFolder: s.navigation.loadingFolders.has(currentPath),
+        isLoading: s.navigation.loadingFolders.has(currentPath),
       };
       const next = _recomputeEntries({ ...s, navigation: newNav, search: newSearch });
       set({ navigation: newNav, entries: next.entries, filters: next.filters, selection: next.selection, search: newSearch });
@@ -521,7 +523,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         navigation: {
           ...s.navigation,
           loadingFolders: newLoadingFolders,
-          isLoadingCurrentFolder: newLoadingFolders.has(s.navigation.currentPath),
+          isLoading: newLoadingFolders.has(s.navigation.currentPath),
         },
       });
       const drain = async () => {
@@ -561,7 +563,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
             navigation: {
               ...cur.navigation,
               loadingFolders: lf,
-              isLoadingCurrentFolder: lf.has(cur.navigation.currentPath),
+              isLoading: lf.has(cur.navigation.currentPath),
             },
           });
         }

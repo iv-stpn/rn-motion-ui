@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import {
@@ -18,6 +18,7 @@ import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { Bell, Moon, ShieldCheck, User } from '../../../lib/icons';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
+import { MenuItem } from '../MenuItem/menu-item';
 import {
   MenuRow,
   type MultiStepHelpers,
@@ -149,37 +150,41 @@ const MENU_ENTRIES = [
   { path: 'privacy', label: 'Privacy & Security', icon: ShieldCheck, color: '#10b981' },
 ] as const satisfies readonly MenuEntry[];
 
-type MenuEntryRowProps = { entry: MenuEntry; active?: boolean; onNavigate: (path: string) => void };
+type MenuEntryRowProps = { entry: MenuEntry; active?: boolean; iosStyle?: boolean; onNavigate?: (path: string) => void };
 
+/**
+ * One navigation row in either of the two shapes a menu list can take:
+ * `MenuRow` (iOS-style coloured icon tile) or a plain `MenuItem` in `sidebar`
+ * mode, whose icon and label follow the theme's muted/foreground tokens.
+ */
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function MenuEntryRow({ entry, active = false, onNavigate }: MenuEntryRowProps) {
-  const handlePress = useCallback(() => onNavigate(entry.path), [entry.path, onNavigate]);
-  return (
-    <MenuRow icon={entry.icon} label={entry.label} iconBackgroundColor={entry.color} active={active} onPress={handlePress} />
-  );
+function MenuEntryRow({ entry, active = false, iosStyle = false, onNavigate }: MenuEntryRowProps) {
+  const handlePress = useCallback(() => onNavigate?.(entry.path), [entry.path, onNavigate]);
+  // Everything but the icon treatment is shared, so only that part differs per style.
+  const shared = { icon: entry.icon, label: entry.label, active, onPress: handlePress };
+  return iosStyle ? <MenuRow {...shared} iconBackgroundColor={entry.color} /> : <MenuItem {...shared} mode="sidebar" />;
 }
 
-type MenuListProps = { helpers: MultiStepHelpers; showActive: boolean };
+type MenuListProps = { helpers: MultiStepHelpers; iosStyle: boolean };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function MenuList({ helpers, showActive }: MenuListProps) {
+function MenuList({ helpers, iosStyle }: MenuListProps) {
   const navigate = useCallback((path: string) => helpers.navigate([path]), [helpers]);
+  // Only the wide sidebar keeps a visible selection; the small-screen root is a launcher.
+  const selected = helpers.isWideScreen ? helpers.path[0] : undefined;
   return (
     <View className="gap-1">
       {MENU_ENTRIES.map((entry) => (
-        <MenuEntryRow
-          key={entry.path}
-          entry={entry}
-          active={showActive && helpers.path[0] === entry.path}
-          onNavigate={navigate}
-        />
+        <MenuEntryRow entry={entry} active={entry.path === selected} iosStyle={iosStyle} key={entry.path} onNavigate={navigate} />
       ))}
     </View>
   );
 }
 
-const renderSidebar = (h: MultiStepHelpers) => <MenuList helpers={h} showActive={true} />;
-const renderSmallScreenMenu = (h: MultiStepHelpers) => <MenuList helpers={h} showActive={false} />;
+/** The same list serves both slots — `isWideScreen` already tells it which one it is. */
+const makeMenuRenderer = (iosStyle: boolean) => (h: MultiStepHelpers) => <MenuList helpers={h} iosStyle={iosStyle} />;
+
+const DEFAULT_MENU_RENDERER = makeMenuRenderer(false);
 
 // ── Playground ─────────────────────────────────────────────────────────────
 
@@ -246,6 +251,7 @@ function MenuPlayground() {
   const [startKey, setStartKey] = useState<StartKey>('account');
   const [withFooter, setWithFooter] = useState(true);
   const [withPlaceholder, setWithPlaceholder] = useState(true);
+  const [iosStyle, setIosStyle] = useState(false);
   const [visible, setVisible] = useState(false);
   const [path, setPath] = useState<string[]>([]);
   const menuRef = useRef<MultiStepMenuHandle | null>(null);
@@ -261,6 +267,8 @@ function MenuPlayground() {
   const pathNote = path.length > 0 ? path.join(' → ') : SETTINGS_ROOT_TITLE;
   const stateNote = visible ? `Open — ${pathNote}` : CLOSED_NOTE;
 
+  const renderMenu = useMemo(() => makeMenuRenderer(iosStyle), [iosStyle]);
+
   return (
     <Playground>
       <ControlCard title="Options">
@@ -268,6 +276,7 @@ function MenuPlayground() {
         <Choice label="Initial selection" onChange={setStartKey} options={START_OPTIONS} value={startKey} />
         <Toggle label="Sidebar footer" onChange={setWithFooter} value={withFooter} />
         <Toggle label="Wide placeholder" onChange={setWithPlaceholder} value={withPlaceholder} />
+        <Toggle label="iOS-style rows" onChange={setIosStyle} value={iosStyle} />
       </ControlCard>
 
       <ControlCard title="Actions">
@@ -297,9 +306,9 @@ function MenuPlayground() {
         ref={menuRef}
         rootTitle={SETTINGS_ROOT_TITLE}
         sections={sections}
-        sidebar={renderSidebar}
+        sidebar={renderMenu}
         sidebarFooter={withFooter ? SIDEBAR_FOOTER : undefined}
-        smallScreenMenu={renderSmallScreenMenu}
+        smallScreenMenu={renderMenu}
         widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
         widePlaceholder={withPlaceholder ? WIDE_PLACEHOLDER : undefined}
         visible={visible}
@@ -309,15 +318,10 @@ function MenuPlayground() {
       <Section title="Sidebar row states">
         <Variants align="stretch" direction="column">
           <Sample label="Default">
-            <MenuRow icon={MENU_ENTRIES[0].icon} iconBackgroundColor={MENU_ENTRIES[0].color} label={MENU_ENTRIES[0].label} />
+            <MenuEntryRow entry={MENU_ENTRIES[0]} iosStyle={iosStyle} />
           </Sample>
           <Sample label="Active">
-            <MenuRow
-              active={true}
-              icon={MENU_ENTRIES[3].icon}
-              iconBackgroundColor={MENU_ENTRIES[3].color}
-              label={MENU_ENTRIES[3].label}
-            />
+            <MenuEntryRow active={true} entry={MENU_ENTRIES[3]} iosStyle={iosStyle} />
           </Sample>
         </Variants>
       </Section>
@@ -346,8 +350,8 @@ function MultiStepSheetStory({ isWideScreen, defaultPath }: MultiStepSheetStoryP
         ref={menuRef}
         rootTitle={SETTINGS_ROOT_TITLE}
         sections={sections}
-        sidebar={renderSidebar}
-        smallScreenMenu={renderSmallScreenMenu}
+        sidebar={DEFAULT_MENU_RENDERER}
+        smallScreenMenu={DEFAULT_MENU_RENDERER}
         visible={visible}
         widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
       />

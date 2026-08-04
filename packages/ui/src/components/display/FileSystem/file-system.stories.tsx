@@ -6,10 +6,17 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
+import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
+import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
+import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
+import { FileLine as FileText } from 'rn-motion-ui-icons/icons/file-line';
+import { FolderLine as FolderClosed } from 'rn-motion-ui-icons/icons/folder-line';
+import { LinkLine as Link } from 'rn-motion-ui-icons/icons/link-line';
+import { SearchLine as SearchIcon } from 'rn-motion-ui-icons/icons/search-line';
+import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
-import { Copy, FileText, FolderClosed, Link, Search as SearchIcon, Share2, Trash2, X } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';

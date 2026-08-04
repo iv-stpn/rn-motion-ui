@@ -1,9 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentType, useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { CalendarLine as Calendar } from 'rn-motion-ui-icons/icons/calendar-line';
+import { GitBranchLine as GitBranch } from 'rn-motion-ui-icons/icons/git-branch-line';
+import { Home2Line as Home } from 'rn-motion-ui-icons/icons/home-2-line';
+import { MailLine as Mail } from 'rn-motion-ui-icons/icons/mail-line';
+import { MusicLine as Music } from 'rn-motion-ui-icons/icons/music-line';
+import { Settings1Line as Settings } from 'rn-motion-ui-icons/icons/settings-1-line';
+import { SparklesLine as Sparkles } from 'rn-motion-ui-icons/icons/sparkles-line';
 import { expect, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
-import { Calendar, GitBranch, Home, Mail, Music, Settings, Sparkles } from '../../../lib/icons';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Dock, DockItem, DockSeparator } from './dock';
 

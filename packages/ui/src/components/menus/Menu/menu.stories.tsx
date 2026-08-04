@@ -1,10 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
+import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
+import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
+import { MoonLine as Moon } from 'rn-motion-ui-icons/icons/moon-line';
+import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-line';
+import { PencilLine as Pencil } from 'rn-motion-ui-icons/icons/pencil-line';
+import { Share2Line as Share } from 'rn-motion-ui-icons/icons/share-2-line';
+import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { SURFACE_CLASSNAME } from '../../../lib/elevated';
-import { Bell, Copy, Moon, Pencil, Share, Trash2, User } from '../../../lib/icons';
 import { Button } from '../../form/Button/button';
 import { Switch } from '../../form/Switch/switch';
 import { Text } from '../../typography/Text/text';

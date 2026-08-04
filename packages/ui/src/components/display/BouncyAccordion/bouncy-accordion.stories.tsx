@@ -1,9 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
+import { FileLine as FileText } from 'rn-motion-ui-icons/icons/file-line';
+import { FolderLine as FolderKanban } from 'rn-motion-ui-icons/icons/folder-line';
+import { PackageLine as PackageCheck } from 'rn-motion-ui-icons/icons/package-line';
+import { RadioLine as RadioTower } from 'rn-motion-ui-icons/icons/radio-line';
+import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line';
+import { TimeLine as CalendarClock } from 'rn-motion-ui-icons/icons/time-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
-import { CalendarClock, FileText, FolderKanban, PackageCheck, RadioTower, ShieldCheck } from '../../../lib/icons';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { BouncyAccordion, type BouncyAccordionItem } from './bouncy-accordion';
 

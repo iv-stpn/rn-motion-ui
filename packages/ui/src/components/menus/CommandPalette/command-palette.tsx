@@ -1,7 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
+import type { IconProps } from 'rn-motion-ui-icons/icon-props';
+import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { type IconProps, Search } from '../../../lib/icons';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
@@ -22,7 +23,7 @@ const ESC_LABEL = 'ESC';
 /** Props passed to a command palette icon renderer. */
 export type CommandIconProps = IconProps;
 
-/** Icon renderer matching the `../../lib/icons` signature. */
+/** Icon renderer — compatible with this project's icon set signature. */
 export type CommandIcon = (props: CommandIconProps) => ReactNode;
 
 export type CommandItem = {

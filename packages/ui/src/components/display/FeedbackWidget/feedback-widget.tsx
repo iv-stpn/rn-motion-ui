@@ -3,10 +3,12 @@
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
+import { InformationLine as AlertCircle } from 'rn-motion-ui-icons/icons/information-line';
+import { Message1Line as MessageSquare } from 'rn-motion-ui-icons/icons/message-1-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { EASE_OUT, SPRING_PANEL } from '../../../lib/ease';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
-import { AlertCircle, MessageSquare, X } from '../../../lib/icons';
 import { MotiText } from '../../../moti/components/text';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';

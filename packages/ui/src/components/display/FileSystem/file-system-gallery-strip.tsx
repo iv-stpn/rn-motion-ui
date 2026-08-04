@@ -6,8 +6,9 @@
 import { type ReactNode, useCallback, useEffect, useRef } from 'react';
 import type { GestureResponderEvent, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { FlatList, Pressable, View } from 'react-native';
+import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
+import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
 import { cn } from '../../../lib/cn';
-import { Heart, Pin } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemFileItem, FileSystemItem } from './file-system.types';

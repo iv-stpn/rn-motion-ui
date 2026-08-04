@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { IconProps } from '../../lib/icons';
+import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { type ThemeToken, useThemeColors } from '../../theme/use-theme-color';
 import type { ButtonVariant } from '../form/Button/button';
 import type { ElevatedVariant } from '../form/Button/elevated-button';
@@ -73,8 +73,8 @@ export type ThemedIconProps = Omit<IconProps, 'color'> & {
  * icons inside buttons, badges, or status indicators stay legible across both
  * light and dark modes without manually threading a color prop.
  *
- * All other {@link IconProps} (size, strokeWidth, style, accessibilityLabel)
- * are forwarded to the wrapped icon unchanged.
+ * All other {@link IconProps} (size, style, accessibilityLabel) are forwarded to
+ * the wrapped icon unchanged.
  *
  * @example
  * // Adornment in a primary button — picks up primary-foreground automatically

@@ -50,7 +50,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 Pure helpers and the theme layer — tokens, easings, the surface ladder, the icon set, and the runtime colour resolvers.
 
 <!-- generated:utilities -->
-`breakpoints` · `color` · `ease` · `elevated` · `icons` · `lib/cn` · `lib/typeguards` · `theme/motion` · `theme/use-theme-color`
+`breakpoints` · `color` · `ease` · `elevated` · `lib/cn` · `lib/typeguards` · `theme/motion` · `theme/use-theme-color`
 <!-- /generated:utilities -->
 </details>
 

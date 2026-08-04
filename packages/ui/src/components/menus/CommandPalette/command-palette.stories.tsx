@@ -1,9 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
+import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
+import { FileLine as FileText } from 'rn-motion-ui-icons/icons/file-line';
+import { Home2Line as Home } from 'rn-motion-ui-icons/icons/home-2-line';
+import { Settings1Line as Settings } from 'rn-motion-ui-icons/icons/settings-1-line';
+import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { Playground } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
-import { FileText, Home, Plus, Settings, User } from '../../../lib/icons';
 import { type CommandItem, CommandPalette } from './command-palette';
 
 const onSelect = fn();

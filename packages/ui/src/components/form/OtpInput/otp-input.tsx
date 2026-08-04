@@ -2,10 +2,10 @@
 import { cva } from 'class-variance-authority';
 import { useCallback, useRef, useState } from 'react';
 import { Animated, Pressable, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
+import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../../hooks/use-shake-animation';
 import { cn } from '../../../lib/cn';
-import { Check } from '../../../lib/icons';
 import { MotiText } from '../../../moti/components/text';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
@@ -299,7 +299,7 @@ export function OTPInput({
               className="pointer-events-none absolute top-[18px]"
               style={{ right: -28 }}
             >
-              <ThemedIcon icon={Check} token="success-foreground" size={20} strokeWidth={3} />
+              <ThemedIcon icon={Check} token="success-foreground" size={20} />
             </MotiView>
           ) : null}
         </AnimatePresence>

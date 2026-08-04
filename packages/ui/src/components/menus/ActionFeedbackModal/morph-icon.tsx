@@ -1,4 +1,5 @@
-import { AlertCircle, Check } from '../../../lib/icons';
+import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
+import { InformationLine as AlertCircle } from 'rn-motion-ui-icons/icons/information-line';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';

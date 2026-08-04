@@ -6,8 +6,9 @@
 
 import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable } from 'react-native';
+import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
+import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { cn } from '../../../lib/cn';
-import { Check, ChevronDown } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import type { TriggerRenderProps } from '../../menus/AdaptiveDropdown/adaptive-dropdown';
 import { AdaptiveDropdown } from '../../menus/AdaptiveDropdown/adaptive-dropdown';

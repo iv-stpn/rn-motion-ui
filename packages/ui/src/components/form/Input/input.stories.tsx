@@ -1,9 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { EyeCloseLine as EyeOff } from 'rn-motion-ui-icons/icons/eye-close-line';
+import { EyeLine as Eye } from 'rn-motion-ui-icons/icons/eye-line';
+import { MailLine as Mail } from 'rn-motion-ui-icons/icons/mail-line';
+import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { Eye, EyeOff, Mail, Search } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Input } from './input';
 

@@ -11,11 +11,11 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../../hooks/use-shake-animation';
 import { cn } from '../../../lib/cn';
-import { Check } from '../../../lib/icons';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
@@ -105,7 +105,7 @@ function renderRightElement({ success, rightSlot, reduce, successIcon }: RightEl
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 250 }}
       >
-        {successIcon ?? <ThemedIcon icon={Check} token="success-foreground" size={20} strokeWidth={2.5} />}
+        {successIcon ?? <ThemedIcon icon={Check} token="success-foreground" size={20} />}
       </MotiView>
     );
   if (rightSlot) return <View className="absolute top-0 right-3 bottom-0 z-10 items-center justify-center">{rightSlot}</View>;
@@ -154,7 +154,7 @@ export type InputProps = {
   success?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
-  /** Replace the success checkmark icon. Default: `<Check size={20} color={successColor} strokeWidth={2.5} />`. */
+  /** Replace the success checkmark icon. Default: `<Check size={20} color={successColor} />`. */
   successIcon?: ReactNode;
   /** Semantic type — automatically wires keyboard, autoComplete, and textContentType. */
   inputType?: InputType;

@@ -1,11 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
+import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
+import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-line';
+import { PencilLine as Pencil } from 'rn-motion-ui-icons/icons/pencil-line';
+import { Share2Line as Share } from 'rn-motion-ui-icons/icons/share-2-line';
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
-import { Bell, Copy, Pencil, Share, Trash2 } from '../../../lib/icons';
 import { Text } from '../../typography/Text/text';
 import { Menu } from '../Menu/menu';
 import type { MenuItemIcon } from '../MenuItem/menu-item';

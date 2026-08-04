@@ -13,11 +13,15 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { Chat1Line as MessageCircle } from 'rn-motion-ui-icons/icons/chat-1-line';
+import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
+import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
+import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
+import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Sample, Toggle, Variants } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
-import { Copy, MessageCircle, Pin, Share2, Trash2 } from '../../../lib/icons';
 import { Text } from '../../typography/Text/text';
 import {
   HoldContextMenu,

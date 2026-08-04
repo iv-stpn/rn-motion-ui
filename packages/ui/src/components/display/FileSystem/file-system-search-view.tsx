@@ -22,8 +22,8 @@
 
 import { Fragment, type ReactNode, useCallback, useMemo } from 'react';
 import { FlatList, type GestureResponderEvent, type ListRenderItemInfo, Pressable, View } from 'react-native';
+import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
-import { ChevronRight } from '../../../lib/icons';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';

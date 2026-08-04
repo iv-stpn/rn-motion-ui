@@ -5,18 +5,16 @@
 import { type ComponentType, useId } from 'react';
 import { useColorScheme } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
-import {
-  FileArchive,
-  FileAudio,
-  FileCode2,
-  FileImage,
-  FileSpreadsheet,
-  FileText,
-  FileIcon as FileUnknown,
-  FileVideo,
-  FolderClosed,
-  type IconProps,
-} from '../../../lib/icons';
+import type { IconProps } from 'rn-motion-ui-icons/icon-props';
+import { FileCodeLine as FileCode2 } from 'rn-motion-ui-icons/icons/file-code-line';
+import { FileLine as FileText } from 'rn-motion-ui-icons/icons/file-line';
+import { FileMusicLine as FileAudio } from 'rn-motion-ui-icons/icons/file-music-line';
+import { FileUnknownLine as FileUnknown } from 'rn-motion-ui-icons/icons/file-unknown-line';
+import { FileZipLine as FileArchive } from 'rn-motion-ui-icons/icons/file-zip-line';
+import { FolderLine as FolderClosed } from 'rn-motion-ui-icons/icons/folder-line';
+import { PicLine as FileImage } from 'rn-motion-ui-icons/icons/pic-line';
+import { TableLine as FileSpreadsheet } from 'rn-motion-ui-icons/icons/table-line';
+import { VideoLine as FileVideo } from 'rn-motion-ui-icons/icons/video-line';
 import { type FileIconColorToken, type FileIconName, fileIconColor, resolveFileIcon } from './file-system-icon';
 
 const FILE_ICONS: Record<FileIconName, ComponentType<IconProps>> = {

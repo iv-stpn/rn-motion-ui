@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { ArrowRightLine as ArrowRight } from 'rn-motion-ui-icons/icons/arrow-right-line';
+import { DownloadLine as Download } from 'rn-motion-ui-icons/icons/download-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { ArrowRight, Download } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './elevated-button';
 

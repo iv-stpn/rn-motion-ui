@@ -1,9 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
+import { EyeLine as Eye } from 'rn-motion-ui-icons/icons/eye-line';
+import { GitBranchLine as GitBranch } from 'rn-motion-ui-icons/icons/git-branch-line';
+import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
+import { TimeLine as CalendarClock } from 'rn-motion-ui-icons/icons/time-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { CalendarClock, Eye, GitBranch, Pin } from '../../../lib/icons';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { type OverflowActionItem, OverflowActions, type OverflowActionsSize } from './overflow-actions';
 

@@ -1,9 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
+import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
+import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
+import { MoonLine as Moon } from 'rn-motion-ui-icons/icons/moon-line';
+import { SendPlaneLine as Send } from 'rn-motion-ui-icons/icons/send-plane-line';
+import { SparklesLine as Sparkles } from 'rn-motion-ui-icons/icons/sparkles-line';
+import { SunLine as Sun } from 'rn-motion-ui-icons/icons/sun-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { Check, Copy, Moon, Send, Sparkles, Sun } from '../../../lib/icons';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import {
   type ActionSwapAnimation,

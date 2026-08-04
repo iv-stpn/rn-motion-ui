@@ -5,8 +5,9 @@
 // needs from the store context.
 
 import { View } from 'react-native';
+import { ArrowLeftLine as ArrowLeft } from 'rn-motion-ui-icons/icons/arrow-left-line';
+import { ArrowRightLine as ArrowRight } from 'rn-motion-ui-icons/icons/arrow-right-line';
 import { cn } from '../../../lib/cn';
-import { ArrowLeft, ArrowRight } from '../../../lib/icons';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 import {

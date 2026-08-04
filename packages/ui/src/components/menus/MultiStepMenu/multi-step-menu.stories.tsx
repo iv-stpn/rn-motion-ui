@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
+import { MoonLine as Moon } from 'rn-motion-ui-icons/icons/moon-line';
+import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-line';
+import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line';
+import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import {
   Action,
@@ -15,17 +19,11 @@ import {
 } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
-import { Bell, Moon, ShieldCheck, User } from '../../../lib/icons';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
 import { MenuItem } from '../MenuItem/menu-item';
-import {
-  MenuRow,
-  type MultiStepHelpers,
-  MultiStepMenu,
-  type MultiStepMenuHandle,
-  type MultiStepSection,
-} from './multi-step-menu';
+import type { MultiStepHelpers, MultiStepMenuHandle, MultiStepSection } from './multi-step-menu';
+import { MenuRow, MultiStepMenu } from './multi-step-menu';
 
 const EMPTY_SECTIONS: MultiStepSection[] = [];
 

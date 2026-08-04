@@ -1,11 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
+import { MoonLine as Moon } from 'rn-motion-ui-icons/icons/moon-line';
+import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-line';
+import { Settings1Line as Settings } from 'rn-motion-ui-icons/icons/settings-1-line';
+import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
-import { Bell, ChevronDown, Moon, Settings, User } from '../../../lib/icons';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';

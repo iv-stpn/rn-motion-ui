@@ -19,8 +19,12 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
+import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
+import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
+import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
+import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
+import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { cn } from '../../../lib/cn';
-import { ChevronDown, ChevronRight, ChevronUp, Heart, Pin } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';

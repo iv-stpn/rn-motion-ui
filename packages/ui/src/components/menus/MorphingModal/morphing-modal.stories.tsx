@@ -1,10 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
+import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
+import { FaceidLine as ScanFace } from 'rn-motion-ui-icons/icons/faceid-line';
+import { FileLine as ScrollText } from 'rn-motion-ui-icons/icons/file-line';
+import { ForbidCircleLine as Ban } from 'rn-motion-ui-icons/icons/forbid-circle-line';
+import { LockLine as Lock } from 'rn-motion-ui-icons/icons/lock-line';
+import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
-import { Ban, Lock, ScanFace, ScrollText, ShieldCheck, Trash2, X } from '../../../lib/icons';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
 import { MorphingModal } from './morphing-modal';

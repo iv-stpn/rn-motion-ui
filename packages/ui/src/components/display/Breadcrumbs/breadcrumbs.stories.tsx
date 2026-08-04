@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { Home2Line as Home } from 'rn-motion-ui-icons/icons/home-2-line';
 import { expect, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Variants } from '../../../__stories__/story-harness';
-import { Home } from '../../../lib/icons';
 import { Text } from '../../typography/Text/text';
 import { type BreadcrumbItem, Breadcrumbs, type BreadcrumbsSize } from './breadcrumbs';
 

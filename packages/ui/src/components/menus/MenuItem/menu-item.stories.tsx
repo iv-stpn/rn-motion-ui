@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
+import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { fn } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { ChevronRight, User } from '../../../lib/icons';
 import { Text } from '../../typography/Text/text';
 import { MenuItem, type MenuItemMode, type MenuItemSize } from './menu-item';
 

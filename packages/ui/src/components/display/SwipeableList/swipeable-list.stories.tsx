@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { View } from 'react-native';
+import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
+import { ClockLine as Clock3 } from 'rn-motion-ui-icons/icons/clock-line';
+import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
+import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Check, Clock3, Pin, Trash2 } from '../../../lib/icons';
 import { SWIPE_TONE_ICON_COLOR, type SwipeAction, SwipeableList, type SwipeableListItem } from './swipeable-list';
 
 // -- Shared story data -------------------------------------------------------

@@ -5,8 +5,11 @@
 
 import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { Columns3Line as Columns3 } from 'rn-motion-ui-icons/icons/columns-3-line';
+import { LayoutGridLine as LayoutGrid } from 'rn-motion-ui-icons/icons/layout-grid-line';
+import { PicLine as Images } from 'rn-motion-ui-icons/icons/pic-line';
+import { TableLine as Table } from 'rn-motion-ui-icons/icons/table-line';
 import { cn } from '../../../lib/cn';
-import { Columns3, Images, LayoutGrid, Table } from '../../../lib/icons';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemView } from './file-system.types';

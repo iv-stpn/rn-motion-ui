@@ -3,10 +3,11 @@
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
+import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
+import { InformationLine as AlertCircle } from 'rn-motion-ui-icons/icons/information-line';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { EASE_IN_OUT, SPRING_SWAP } from '../../../lib/ease';
-import { AlertCircle, Check } from '../../../lib/icons';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -625,13 +626,13 @@ export function StatefulButton({
       <AnimatePresence>
         {state === 'success' ? (
           <IconSlot keyId="success-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
-            <Check size={stateIconSize} strokeWidth={stateIconStrokeWidth} color={iconColor} />
+            <Check size={stateIconSize} color={iconColor} />
           </IconSlot>
         ) : null}
 
         {state === 'error' ? (
           <IconSlot keyId="error-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
-            <AlertCircle size={stateIconSize} strokeWidth={stateIconStrokeWidth} color={iconColor} />
+            <AlertCircle size={stateIconSize} color={iconColor} />
           </IconSlot>
         ) : null}
       </AnimatePresence>

@@ -140,7 +140,6 @@ Subpaths are namespaced by category:
 | `/use-table` | `useTable` |
 | `/use-column-reorder` | `useColumnReorder` |
 | `/file-system` | `FileSystem` |
-| `/icons` | icon components |
 | `/icon` | `ThemedIcon` |
 | `/ease` | easing constants |
 | `/tokens.css` | design token stylesheet |

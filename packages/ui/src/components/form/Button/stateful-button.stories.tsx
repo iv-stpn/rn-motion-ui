@@ -2,6 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { ArrowRightLine as ArrowRight } from 'rn-motion-ui-icons/icons/arrow-right-line';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import {
   Action,
@@ -14,7 +15,6 @@ import {
   Toggle,
   Variants,
 } from '../../../__stories__/story-harness';
-import { ArrowRight } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { glossyContentColor } from './glossy-button';
 import { StatefulButton } from './stateful-button';

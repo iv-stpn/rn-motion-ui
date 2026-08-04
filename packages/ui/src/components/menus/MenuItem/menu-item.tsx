@@ -1,9 +1,9 @@
 // biome-ignore-all lint/style/useExportsLast: MenuItem defines inline subcomponents
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Pressable, type PressableProps, View } from 'react-native';
+import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { cn } from '../../../lib/cn';
 import { SPRING_LAYOUT } from '../../../lib/ease';
-import type { IconProps } from '../../../lib/icons';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';

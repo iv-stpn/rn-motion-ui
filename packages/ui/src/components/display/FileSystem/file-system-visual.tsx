@@ -6,8 +6,9 @@
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
+import { LeftLine as ChevronLeft } from 'rn-motion-ui-icons/icons/left-line';
+import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
-import { ChevronLeft, ChevronRight } from '../../../lib/icons';
 import { Text } from '../../typography/Text/text';
 import { Loader } from '../Loader/loader';
 import type { FileEntry, FileSystemFileItem } from './file-system.types';

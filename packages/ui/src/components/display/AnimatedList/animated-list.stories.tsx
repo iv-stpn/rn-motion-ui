@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Action, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
-import { X } from '../../../lib/icons';
 import { Text } from '../../typography/Text/text';
 import { AnimatedList, AnimatedListItem } from './animated-list';
 

@@ -9,9 +9,13 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { AlertLine as AlertTriangle } from 'rn-motion-ui-icons/icons/alert-line';
+import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
+import { InformationLine as AlertCircle, InformationLine as Info } from 'rn-motion-ui-icons/icons/information-line';
+import { LoadingLine as LoaderCircle } from 'rn-motion-ui-icons/icons/loading-line';
+import { RoundLine as Circle } from 'rn-motion-ui-icons/icons/round-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { AlertCircle, AlertTriangle, Check, Circle, Info, LoaderCircle } from '../../../lib/icons';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -156,7 +160,7 @@ function BadgePulse({ color }: BadgePulseProps) {
   return <Animated.View style={[PULSE_STYLE, { backgroundColor: color }, style]} />;
 }
 
-type BadgeIconProps = { size: number; color: string; strokeWidth?: number };
+type BadgeIconProps = { size: number; color: string };
 
 const ICONS: Record<AnimatedBadgeStatus, (p: BadgeIconProps) => ReactNode> = {
   neutral: Circle,
@@ -232,10 +236,10 @@ export function AnimatedBadge({
             >
               {status === 'loading' && !reduce && !icon ? (
                 <BadgeSpinner>
-                  <Icon size={iconSize} color={ICON_COLOR[status]} strokeWidth={2.5} />
+                  <Icon size={iconSize} color={ICON_COLOR[status]} />
                 </BadgeSpinner>
               ) : (
-                (icon ?? <Icon size={iconSize} color={ICON_COLOR[status]} strokeWidth={2.5} />)
+                (icon ?? <Icon size={iconSize} color={ICON_COLOR[status]} />)
               )}
             </MotiView>
           </AnimatePresence>

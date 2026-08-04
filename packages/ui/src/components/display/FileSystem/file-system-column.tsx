@@ -8,8 +8,10 @@
 import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GestureResponderEvent, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { FlatList, Image, Pressable, View } from 'react-native';
+import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
+import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
+import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
-import { ChevronRight, Heart, Pin } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';

@@ -1,8 +1,9 @@
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
+import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { Plus, X } from '../../../lib/icons';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
@@ -10,7 +11,7 @@ import { Text } from '../../typography/Text/text';
 /** Props passed to a bloom menu icon renderer. */
 export type BloomIconProps = { size?: number; color?: string };
 
-/** Icon renderer matching the `../../lib/icons` signature. */
+/** Icon renderer — compatible with this project's icon set signature. */
 export type BloomIcon = (props: BloomIconProps) => ReactNode;
 
 // biome-ignore lint/style/useExportsLast: type collocated with sibling BloomIcon export for readability

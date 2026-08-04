@@ -13,8 +13,9 @@ import {
   useState,
 } from 'react';
 import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, View } from 'react-native';
+import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
+import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { ChevronRight, X } from '../../../lib/icons';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';

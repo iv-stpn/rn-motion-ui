@@ -1,8 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import type { ComponentProps } from 'react';
 import { View } from 'react-native';
+import { FileLine as FileText } from 'rn-motion-ui-icons/icons/file-line';
+import { FolderLine as FolderClosed } from 'rn-motion-ui-icons/icons/folder-line';
+import { LayoutGridLine as LayoutGrid } from 'rn-motion-ui-icons/icons/layout-grid-line';
+import { LinkLine as Link } from 'rn-motion-ui-icons/icons/link-line';
+import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-line';
+import { TableLine as Table } from 'rn-motion-ui-icons/icons/table-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { Bell, FileText, FolderClosed, LayoutGrid, Link, Table } from '../../../lib/icons';
 import { BloomMenu, type BloomMenuItem } from './bloom-menu';
 
 const ITEMS: BloomMenuItem[] = [

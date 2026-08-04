@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback } from 'react';
 import { Pressable, View } from 'react-native';
+import { ArrowUpLine as ArrowUp } from 'rn-motion-ui-icons/icons/arrow-up-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { ArrowUp } from '../../../lib/icons';
 import { Text } from '../../typography/Text/text';
 import { SmoothScroll, useSmoothScroll } from './smooth-scroll';
 

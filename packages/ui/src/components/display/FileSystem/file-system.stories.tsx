@@ -1,10 +1,11 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: stories + interaction tests for the whole browser kept together for easy editing
 // biome-ignore-all lint/style/useExportsLast: this a stories file
-// biome-ignore-all lint/style/noJsxLiterals: stories only
+// biome-ignore-all lint/style/useComponentExportOnlyModules: stories only
 // biome-ignore-all lint/performance/noJsxPropsBind: stories only
+// biome-ignore-all lint/style/noJsxLiterals: stories only
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
@@ -20,6 +21,7 @@ import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
+import { Draggable } from '../Draggable/draggable';
 import { FileSystem } from './file-system';
 import type {
   FileSystemContextMenuAction,
@@ -197,40 +199,33 @@ const TRAY_ITEMS: FileSystemItem[] = [
   { kind: 'file', name: 'notes.txt', path: 'notes.txt' },
 ];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function DraggableChip({ item }: { item: FileSystemItem }) {
-  const ref = useRef<View | null>(null);
+type DraggableChipProps = { item: FileSystemItem };
 
-  useEffect(() => {
-    // RN Web renders View as a div but does not forward unknown HTML attributes,
-    // so `draggable` and `onDragStart` passed as JSX props are silently dropped.
-    // Reach into the DOM node directly to set them.
-    const el = ref.current as unknown as HTMLElement | null;
-    if (!el) return;
-    el.draggable = true;
-    const handler = (e: DragEvent) => {
-      if (!e.dataTransfer) return;
-      e.dataTransfer.effectAllowed = 'copy';
-      e.dataTransfer.setData(EXTERNAL_DROP_MIME, JSON.stringify(item));
-    };
-    el.addEventListener('dragstart', handler);
-    return () => {
-      el.removeEventListener('dragstart', handler);
-    };
-  }, [item]);
-
+/**
+ * A tray chip, dragged by `Draggable`.
+ *
+ * The payload is the whole point: `data` writes the item under the same MIME
+ * `handleExternalDrop` reads it back from, so the drop side of this story needs to
+ * know nothing about where the drag came from. On web that is a real HTML5 drag
+ * and `dataTransfer` is the browser's own; on native the same payload reaches the
+ * FileSystem through the drag registry.
+ */
+function DraggableChip({ item }: DraggableChipProps) {
   return (
-    <View
-      ref={ref}
-      className="cursor-grab flex-row items-center gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-1.5"
+    <Draggable
+      accessibilityLabel={`Drag ${item.name} into the file browser`}
+      accessibilityRole="button"
+      data={{ [EXTERNAL_DROP_MIME]: JSON.stringify(item) }}
+      effectAllowed="copy"
     >
-      <FileText size={14} />
-      <Text size="sm">{item.name}</Text>
-    </View>
+      <View className="flex-row items-center gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-1.5">
+        <FileText size={14} />
+        <Text size="sm">{item.name}</Text>
+      </View>
+    </Draggable>
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ExternalFileTray() {
   return (
     <View className="mb-3 flex-row flex-wrap gap-2">
@@ -406,7 +401,6 @@ const RESET_LABEL = 'Reset';
 type PlaygroundStatusProps = { message: string | null; onReset: () => void };
 
 /** Reads back the last mutation, so a move or a delete is legible without diffing rows. */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function PlaygroundStatus({ message, onReset }: PlaygroundStatusProps) {
   return (
     <View className="mt-3 flex-row items-center gap-3">
@@ -444,7 +438,6 @@ type FileSystemPlaygroundProps = FileSystemProps & { options?: PlaygroundOptions
  * the context menu are the two places where <FileSystem> asks the consumer to
  * change the data, so a playground for them has to own it.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function FileSystemPlayground({ options = ALL_FEATURES, ...args }: FileSystemPlaygroundProps) {
   // One state, so each handler is a single pure rewrite: the status line always
   // describes the list rendered beside it, and nothing needs a second setState.
@@ -597,7 +590,6 @@ function renderPlaceholderViewer({ file }: FileSystemViewerArgs) {
  * its children on first visit, and the quarterly report's third page loads when
  * the tile pager reaches it.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function FileSystemControls(args: FileSystemProps) {
   const [view, setView] = useState<FileSystemView>('icons');
   const [startKey, setStartKey] = useState<StartKey>('root');
@@ -1107,7 +1099,6 @@ type ScopeChipsProps = Pick<FileSystemFiltersState, 'folderName' | 'isAtRoot' | 
  * filled. At the root the two scopes are the same tree, so only the root chip is
  * offered — `isAtRoot` is what the slot hands over to say so.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ScopeChips({ folderName, isAtRoot, rootLabel, searchScope, setSearchScope }: ScopeChipsProps) {
   const scopeToRoot = useCallback(() => setSearchScope('root'), [setSearchScope]);
   const scopeToFolder = useCallback(() => setSearchScope('folder'), [setSearchScope]);
@@ -1158,7 +1149,6 @@ function ScopeChips({ folderName, isAtRoot, rootLabel, searchScope, setSearchSco
 
 type FilterBarProps = FileSystemFiltersState & { testID?: string };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function FilterBar({
   applyCustomRange,
   clearFilters,

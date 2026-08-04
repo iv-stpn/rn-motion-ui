@@ -147,6 +147,11 @@
       "types": "./src/components/navigation/Dock/dock.tsx",
       "default": "./src/components/navigation/Dock/dock.tsx"
     },
+    "./draggable": {
+      "source": "./src/components/display/Draggable/draggable.tsx",
+      "types": "./src/components/display/Draggable/draggable.tsx",
+      "default": "./src/components/display/Draggable/draggable.tsx"
+    },
     "./drawer": {
       "source": "./src/components/menus/Drawer/drawer.tsx",
       "types": "./src/components/menus/Drawer/drawer.tsx",

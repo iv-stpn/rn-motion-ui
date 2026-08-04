@@ -106,6 +106,7 @@ Subpaths are namespaced by category:
 | `/scroll-to` | `ScrollTo` |
 | `/smooth-scroll` | `SmoothScroll` |
 | `/dock` | `Dock` |
+| `/draggable` | `Draggable` |
 | `/popover` | `Popover` |
 | `/drawer` | `Drawer` |
 | `/bottom-sheet` | `BottomSheet` |

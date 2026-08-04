@@ -45,6 +45,7 @@ wrapper instead of the content.
 | `ScrollReveal` | An animated wrapper that fades and slides its child on scroll. Purely visual; the child is untouched and always present in the tree. |
 | `SmoothScroll` | A `ScrollView` that publishes its scroll state. Scroll containers already have platform semantics. |
 | `AnimatedList` | Layout and enter/exit animation only. It does carry documented obligations for the *consumer* around focus and announcements — see its JSDoc. |
+| `Draggable` | A grab handle around a child. The child is the control and carries the role and name; a role on the wrapper would announce the grip instead of the thing gripped. Its `ViewProps` a11y props forward for the case where the wrapper *is* the control. A drag is pointer-only on both platforms, so it carries a consumer obligation: every `Draggable` needs a second, non-pointer path to the same outcome — see its JSDoc. |
 
 If you exempt a new component, add a row here with the reason. "Nothing to
 announce" is a reason; "did not get to it" is not.

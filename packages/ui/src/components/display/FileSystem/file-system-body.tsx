@@ -91,26 +91,24 @@ type PlaceholderProps = { children: ReactNode };
 // gesture, not a control, and anything focusable a consumer renders inside it
 // stays reachable regardless.
 function FileSystemBodyPlaceholder({ children }: PlaceholderProps) {
-  const { currentFolderName } = useFileSystemNavigation();
   const { getBackgroundContextMenuActions, onBackgroundContextMenuAction } = useFileSystemConsumer();
   const containerRef = useRef<View | null>(null);
-  const backgroundMenu = useBackgroundContextMenu(
+  const { onLongPress: bgLongPress, menuNode: bgMenuNode } = useBackgroundContextMenu(
     containerRef,
     getBackgroundContextMenuActions,
     onBackgroundContextMenuAction,
-    currentFolderName,
   );
 
   return (
     <Pressable
       ref={containerRef}
       className="min-h-0 flex-1"
-      onLongPress={backgroundMenu.onLongPress}
+      onLongPress={bgLongPress}
       tabIndex={-1}
       testID={FS_EMPTY_STATE_TEST_ID}
     >
       {children}
-      {backgroundMenu.contextMenuNode}
+      {bgMenuNode}
     </Pressable>
   );
 }

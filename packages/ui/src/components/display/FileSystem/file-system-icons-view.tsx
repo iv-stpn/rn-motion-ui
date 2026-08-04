@@ -261,7 +261,6 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, onMove, s
 export function FileSystemIconsView({
   draggable = false,
   entries,
-  folderName,
   getBackgroundContextMenuActions,
   getContextMenuActions,
   loadPreviewImageUrl,
@@ -314,11 +313,10 @@ export function FileSystemIconsView({
     hover.refresh();
   }, [hover, selectedPaths]);
 
-  const backgroundMenu = useBackgroundContextMenu(
+  const { onLongPress: bgLongPress, menuNode: bgMenuNode } = useBackgroundContextMenu(
     containerRef,
     getBackgroundContextMenuActions,
     onBackgroundContextMenuAction,
-    folderName,
   );
   const handleBackgroundPress = useCallback(() => onSelect(null), [onSelect]);
 
@@ -383,7 +381,7 @@ export function FileSystemIconsView({
         style={drag.active ? WEB_DRAGGING_STYLE : null}
         testID={FS_DRAG_CONTAINER_TEST_ID.icons}
         onPress={handleBackgroundPress}
-        onLongPress={backgroundMenu.onLongPress}
+        onLongPress={bgLongPress}
       >
         {/* Before the grid, so it paints behind the tiles — see FileSystemHoverHighlight.
             Sized to the glyph box, not the tile: that box is what selection fills
@@ -409,7 +407,7 @@ export function FileSystemIconsView({
             width={tileWidth}
           />
         ) : null}
-        {backgroundMenu.contextMenuNode}
+        {bgMenuNode}
       </Pressable>
     </View>
   );

@@ -23,6 +23,7 @@ import { cn } from '../../../lib/cn';
 import { ChevronDown, ChevronRight, ChevronUp, Heart, Pin } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { ThemedIcon } from '../../icon/themed-icon';
+import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import type {
   FileSystemContextMenuAction,
@@ -230,15 +231,11 @@ function ListRow({
   const metaClassName = isSelected ? 'text-white' : 'text-muted-foreground';
   const colors = useThemeColors();
 
-  const {
-    wrapperRef,
-    onLongPress: openContextMenu,
-    contextMenuNode,
-  } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
   const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
-    <View ref={wrapperRef}>
+    <HoldContextMenu {...menuProps}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
@@ -273,7 +270,6 @@ function ListRow({
         <Text className={cn('w-20 text-right', metaClassName)} numberOfLines={1} numeric={true} size="xs">
           {entry.kind === 'folder' ? itemCountLabel(childCount) : (formatByteSize(entry.size) ?? MISSING_VALUE)}
         </Text>
-        {contextMenuNode}
       </Pressable>
       {/* Over the lane held open above — see this component's note on why it is a
           sibling of the row rather than a child. Full row height, so the target is
@@ -292,7 +288,7 @@ function ListRow({
           <ThemedIcon icon={ChevronIcon} token={isSelected ? 'white' : 'muted-foreground'} size={14} />
         </Pressable>
       ) : null}
-    </View>
+    </HoldContextMenu>
   );
 }
 
@@ -300,7 +296,6 @@ function ListRow({
 export function FileSystemListView({
   currentPath,
   draggable = false,
-  folderName,
   getBackgroundContextMenuActions,
   getContextMenuActions,
   index,
@@ -403,11 +398,10 @@ export function FileSystemListView({
     marquee.refresh();
   }, [hover, marquee, selectedPaths]);
 
-  const backgroundMenu = useBackgroundContextMenu(
+  const { onLongPress: bgLongPress, menuNode: bgMenuNode } = useBackgroundContextMenu(
     containerRef,
     getBackgroundContextMenuActions,
     onBackgroundContextMenuAction,
-    folderName,
   );
   const handleBackgroundPress = useCallback(() => onSelect(null), [onSelect]);
 
@@ -489,7 +483,7 @@ export function FileSystemListView({
         style={drag.active ? WEB_DRAGGING_STYLE : null}
         testID={FS_DRAG_CONTAINER_TEST_ID.list}
         onPress={handleBackgroundPress}
-        onLongPress={backgroundMenu.onLongPress}
+        onLongPress={bgLongPress}
       >
         {/* Both before the list, so they paint behind the rows — see FileSystemHoverHighlight. */}
         <FileSystemHoverHighlight controller={hover} height={FS_ROW_HEIGHT} testID={FS_HOVER_TEST_ID.list} />
@@ -502,7 +496,7 @@ export function FileSystemListView({
           </>
         ) : null}
         <FileSystemMarqueeBox controller={marquee} />
-        {backgroundMenu.contextMenuNode}
+        {bgMenuNode}
       </Pressable>
     </View>
   );

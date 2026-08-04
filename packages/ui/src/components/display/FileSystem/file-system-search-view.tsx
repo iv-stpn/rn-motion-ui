@@ -1,5 +1,6 @@
 // biome-ignore-all lint/style/useExportsLast: props types sit with their components
 // biome-ignore-all lint/style/useComponentExportOnlyModules: exports utils
+
 // Flat results list shown while a search query is active. Replaces the normal
 // view so every match at every folder depth is visible at once.
 //
@@ -24,6 +25,7 @@ import { FlatList, type GestureResponderEvent, type ListRenderItemInfo, Pressabl
 import { cn } from '../../../lib/cn';
 import { ChevronRight } from '../../../lib/icons';
 import { ThemedIcon } from '../../icon/themed-icon';
+import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemItem } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
@@ -103,11 +105,7 @@ function SearchRow({
   testID,
 }: SearchRowProps) {
   const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
-  const {
-    wrapperRef,
-    onLongPress: openContextMenu,
-    contextMenuNode,
-  } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
   const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   const textClass = isSelected ? 'text-white' : 'text-foreground';
@@ -120,7 +118,7 @@ function SearchRow({
   const crumbs = buildCrumbs(entry.parentPath, rootLabel);
 
   return (
-    <View ref={wrapperRef}>
+    <HoldContextMenu {...menuProps}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
@@ -154,9 +152,8 @@ function SearchRow({
         {entry.kind === 'folder' ? (
           <ThemedIcon icon={ChevronRight} token={isSelected ? 'white' : 'muted-foreground'} size={14} />
         ) : null}
-        {contextMenuNode}
       </Pressable>
-    </View>
+    </HoldContextMenu>
   );
 }
 

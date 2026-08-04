@@ -28,7 +28,6 @@ import {
   useFileSystemSelectionActions,
   useFileSystemStoreContext,
 } from './file-system-context';
-import { FileSystemContextMenuProvider } from './file-system-context-menu';
 import { FileSystemHeader } from './file-system-header';
 import { buildCrumbs } from './file-system-search';
 import type { HeaderLayout } from './file-system-toolbar-parts';
@@ -190,7 +189,6 @@ export function FileSystem({
   bodyClassName,
   breakpoints,
   className,
-  contextMenuWideBreakpoint,
   defaultPath = '',
   defaultView = 'icons',
   draggable,
@@ -321,9 +319,7 @@ export function FileSystem({
         {renderHeader ? <FileSystemCustomHeader renderHeader={renderHeader} /> : <FileSystemHeader className={headerClassName} />}
         <FileSystemBreadcrumbs />
         {renderFilters ? <FileSystemCustomFilters renderFilters={renderFilters} /> : null}
-        <FileSystemContextMenuProvider wideBreakpoint={contextMenuWideBreakpoint}>
-          <FileSystemBody className={bodyClassName} renderBody={renderBody} />
-        </FileSystemContextMenuProvider>
+        <FileSystemBody className={bodyClassName} renderBody={renderBody} />
         {renderFooter ? (
           <FileSystemCustomFooter renderFooter={renderFooter} />
         ) : (

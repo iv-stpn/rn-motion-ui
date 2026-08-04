@@ -4,18 +4,12 @@
 // including when it arrives from another view.
 
 import { type ReactNode, useCallback, useEffect, useRef } from 'react';
-import {
-  FlatList,
-  type GestureResponderEvent,
-  type ListRenderItemInfo,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  Pressable,
-  View,
-} from 'react-native';
+import type { GestureResponderEvent, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { FlatList, Pressable, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { Heart, Pin } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemFileItem, FileSystemItem } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
 import { FileSystemFolderGlyph } from './file-system-icons';
@@ -92,15 +86,11 @@ function StripTile({
 }: StripTileProps) {
   const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
   const colors = useThemeColors();
-  const {
-    wrapperRef,
-    onLongPress: openContextMenu,
-    contextMenuNode,
-  } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
   const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
-    <View ref={wrapperRef} style={{ marginRight: STRIP_TILE_GAP }}>
+    <HoldContextMenu {...menuProps} style={{ marginRight: STRIP_TILE_GAP }}>
       <Pressable
         accessibilityLabel={entry.name}
         accessibilityRole="button"
@@ -142,9 +132,8 @@ function StripTile({
             <Heart color={colors.danger} size={8} />
           </View>
         ) : null}
-        {contextMenuNode}
       </Pressable>
-    </View>
+    </HoldContextMenu>
   );
 }
 

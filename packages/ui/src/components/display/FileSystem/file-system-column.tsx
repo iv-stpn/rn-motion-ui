@@ -5,20 +5,13 @@
 // single folder's children. Memoized on scalar selection props so pressing
 // into a deep trail only re-renders the columns whose rows actually change.
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  FlatList,
-  type GestureResponderEvent,
-  Image,
-  type ListRenderItemInfo,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  Pressable,
-  View,
-} from 'react-native';
+import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { GestureResponderEvent, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { FlatList, Image, Pressable, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { ChevronRight, Heart, Pin } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemIndex, FileSystemItem } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
@@ -43,12 +36,14 @@ const LOADING_LABEL = 'Loading…';
 export const COLUMN_WIDTH = 240;
 export const COLUMN_ROW_HEIGHT = 28;
 const COLUMN_ROW_GAP = 1;
+
 export const COLUMN_ROW_STRIDE = COLUMN_ROW_HEIGHT + COLUMN_ROW_GAP;
 const COLUMN_GLYPH_SIZE = 18;
 const COLUMN_ICON_SIZE = 16;
 const COLUMN_CHEVRON_SIZE = 14;
 const COLUMN_PIN_ICON_SIZE = 10;
 const COLUMN_FAV_ICON_SIZE = 10;
+
 /** Top/bottom padding inside the FlatList's content container (p-1.5 = 6 px). */
 export const COLUMN_PADDING = 6;
 
@@ -108,7 +103,7 @@ type ColumnRowProps = {
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
   /** Long-press toggles this row's selection; `undefined` leaves the gesture to the context menu. */
   onSelectLongPress?: (entry: FileSystemEntry) => void;
-  renderEntryIcon?: (entry: FileSystemEntry, size: number) => React.ReactNode | null | undefined;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   /** Already resolved for this entry by the column — see `fileSystemEntryTestID`. */
   testID?: string;
 };
@@ -156,15 +151,11 @@ function ColumnRow({
   const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
   const hasChildren = entry.kind === 'folder' && folderHasChildren(index, entry);
 
-  const {
-    wrapperRef,
-    onLongPress: openContextMenu,
-    contextMenuNode,
-  } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
   const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
-    <View ref={wrapperRef} style={{ marginBottom: COLUMN_ROW_GAP }}>
+    <HoldContextMenu {...menuProps} style={{ marginBottom: COLUMN_ROW_GAP }}>
       <Pressable
         accessibilityLabel={entry.name}
         accessibilityRole="button"
@@ -191,9 +182,8 @@ function ColumnRow({
         {hasChildren ? (
           <ChevronRight color={isSelected ? colors.white : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
         ) : null}
-        {contextMenuNode}
       </Pressable>
-    </View>
+    </HoldContextMenu>
   );
 }
 
@@ -226,7 +216,7 @@ export type FileSystemColumnProps = {
    * offset for drop-target resolution.
    */
   onScrollOffsetChange?: (offset: number) => void;
-  renderEntryIcon?: (entry: FileSystemEntry, size: number) => React.ReactNode | null | undefined;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   /**
    * The whole selection, not this pane's share of it: a multi-selection can span
    * panes, so there is no per-column scalar that would say enough. Its identity
@@ -421,4 +411,4 @@ function FileSystemColumnImpl({
   );
 }
 
-export const FileSystemColumn = React.memo(FileSystemColumnImpl);
+export const FileSystemColumn = memo(FileSystemColumnImpl);

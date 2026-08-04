@@ -8,15 +8,18 @@
 // prefixes are inferred by `buildFileSystemIndex`.
 
 import type { ReactNode } from 'react';
-import type { BreakpointValue } from '../../../lib/breakpoints';
+import type { MenuItemIcon } from '../../menus/MenuItem/menu-item';
 import type { FileSystemSelectionMode } from './file-system-selection';
 
 /** One entry in the list returned by `getContextMenuActions`. */
 export type FileSystemContextMenuAction = {
   id: string;
   label: string;
-  /** Optional leading icon — pass a `<IconName size={16} color={...} />` node. */
-  icon?: ReactNode;
+  /**
+   * Leading icon. Pass either a sized ReactNode (`<Trash2 size={16} />`) or a
+   * component matching `MenuItemIcon` (`(props: IconProps) => ReactNode`).
+   */
+  icon?: ReactNode | MenuItemIcon;
   /** Renders the label in the destructive color. */
   destructive?: boolean;
   disabled?: boolean;
@@ -342,16 +345,6 @@ export type FileSystemProps = {
    * `{ tablet: 700 }` moves only that edge. See {@link FileSystemBreakpoints}.
    */
   breakpoints?: FileSystemBreakpoints;
-  /**
-   * Minimum *window* width at which entry context menus open as a
-   * cursor-anchored panel instead of a bottom sheet. Separate from
-   * {@link FileSystemProps.breakpoints} because those tiers measure the
-   * component's own container, while the menu is a Modal clamped to the
-   * viewport. A name from the default scale or a raw pixel number.
-   *
-   * @default 'md'
-   */
-  contextMenuWideBreakpoint?: BreakpointValue;
   /** Label for the root folder. */
   title?: string;
   /**

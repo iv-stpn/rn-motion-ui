@@ -11,6 +11,7 @@ import { Animated, type GestureResponderEvent, Pressable, View } from 'react-nat
 import { cn } from '../../../lib/cn';
 import { Heart, Pin } from '../../../lib/icons';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemEntry } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
@@ -154,15 +155,11 @@ function IconTile({
   ...faceProps
 }: IconTileProps) {
   const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
-  const {
-    wrapperRef,
-    onLongPress: openContextMenu,
-    contextMenuNode,
-  } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
   const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
-    <View ref={wrapperRef} style={{ width }}>
+    <HoldContextMenu {...menuProps} style={{ width }}>
       <Pressable
         accessibilityLabel={entry.name}
         accessibilityRole="button"
@@ -189,9 +186,8 @@ function IconTile({
           width={width}
           {...faceProps}
         />
-        {contextMenuNode}
       </Pressable>
-    </View>
+    </HoldContextMenu>
   );
 }
 

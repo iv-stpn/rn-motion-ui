@@ -196,6 +196,16 @@ type FileSystemStore = {
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
+/**
+ * A folder's display name: the consumer's title at the root, and for anything
+ * else the last path segment — falling back to the title for a path that has no
+ * nameable segment.
+ */
+function resolveFolderName(path: string, title: string): string {
+  if (path === '') return title;
+  return pathName(path) || title;
+}
+
 /** Add/remove a MIME from the single file-type pill, retiring it when empty. */
 function nextFileTypeFilters(previous: FileSystemFilter[], id: string, mime: string, checked: boolean): FileSystemFilter[] {
   const existing = previous.find((f) => f.type === 'fileType');
@@ -211,8 +221,7 @@ function nextFileTypeFilters(previous: FileSystemFilter[], id: string, mime: str
   return previous.map((f) => (f === existing ? { ...f, operator, value } : f));
 }
 
-/** Distinct MIME types across the index, labeled for the filter menu. */
-function computeFileTypeOptions(index: FileSystemIndex): FileTypeFilterOption[] {
+function collectFileTypeOptions(index: FileSystemIndex): FileTypeFilterOption[] {
   const byMime = new Map<string, FileTypeFilterOption>();
   for (const file of index.files.values()) {
     const mime = mimeTypeForFile(file);
@@ -227,9 +236,54 @@ function computeFileTypeOptions(index: FileSystemIndex): FileTypeFilterOption[] 
       });
     }
   }
-  return [...byMime.values()].sort((fileTypeOptions1, fileTypeOptions2) =>
-    fileTypeOptions1.label.localeCompare(fileTypeOptions2.label),
-  );
+  return [...byMime.values()].sort((left, right) => left.label.localeCompare(right.label));
+}
+
+// The options depend on the index alone, but `_recomputeEntries` runs on every
+// mutating action — a selection, a sort, a filter — and most of those leave the
+// index untouched. Keyed on index identity, so the walk-and-sort happens once
+// per index rather than once per action, and the array stays reference-stable
+// for the `useShallow` comparison in the filters slice.
+let cachedFileTypeIndex: FileSystemIndex | null = null;
+let cachedFileTypeOptions: FileTypeFilterOption[] = [];
+
+/** Distinct MIME types across the index, labeled for the filter menu. */
+function computeFileTypeOptions(index: FileSystemIndex): FileTypeFilterOption[] {
+  if (cachedFileTypeIndex === index) return cachedFileTypeOptions;
+  cachedFileTypeIndex = index;
+  cachedFileTypeOptions = collectFileTypeOptions(index);
+  return cachedFileTypeOptions;
+}
+
+type HistoryStep = {
+  navigation: NavigationSlice;
+  search: SearchSlice;
+  entries: EntriesSlice;
+  filters: FiltersSlice;
+  selection: SelectionSlice;
+};
+
+/**
+ * The full patch for a step through the history stack, shared by `goBack` and
+ * `goForward`. Both directions do the same work — land on an index, drop any
+ * running query, re-derive the two can-go flags from where the index now sits,
+ * and recompute everything downstream of the folder that is now open — so
+ * neither needs to know which way it moved.
+ */
+function historyStep(s: FileSystemStore, historyIndex: number): HistoryStep {
+  const currentPath = s.navigation.historyStack[historyIndex] ?? '';
+  const navigation: NavigationSlice = {
+    ...s.navigation,
+    historyIndex,
+    currentPath,
+    currentFolderName: resolveFolderName(currentPath, s.consumer.title),
+    canGoBack: historyIndex > 0,
+    canGoForward: historyIndex < s.navigation.historyStack.length - 1,
+    isLoading: s.navigation.loadingFolders.has(currentPath),
+  };
+  const search: SearchSlice = { ...s.search, searchInput: '', searchQuery: '', isSearching: false };
+  const next = _recomputeEntries({ ...s, navigation, search });
+  return { navigation, search, entries: next.entries, filters: next.filters, selection: next.selection };
 }
 
 /** Resolve a path against the index — a file, a folder, or neither. */
@@ -378,7 +432,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
     // ── Initial slice state ─────────────────────────────────────────────────
     navigation: {
       currentPath: initialPath,
-      currentFolderName: initialPath === '' ? init.title : pathName(initialPath) || init.title,
+      currentFolderName: resolveFolderName(initialPath, init.title),
       canGoBack: false,
       canGoForward: false,
       historyIndex: 0,
@@ -449,7 +503,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       if (s.navigation.currentPath === path) return;
       const { historyIndex, historyStack } = s.navigation;
       const newStack = [...historyStack.slice(0, historyIndex + 1), path];
-      const currentFolderName = path === '' ? s.consumer.title : pathName(path) || s.consumer.title;
+      const currentFolderName = resolveFolderName(path, s.consumer.title);
       const newSearch = { ...s.search, searchInput: '', searchQuery: '', isSearching: false };
       const newHistoryIndex = newStack.length - 1;
       const newNav = {
@@ -476,43 +530,14 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       cancelSearchDebounce();
       const s = get();
       if (s.navigation.historyIndex === 0) return;
-      const historyIndex = s.navigation.historyIndex - 1;
-      const currentPath = s.navigation.historyStack[historyIndex] ?? '';
-      const currentFolderName = currentPath === '' ? s.consumer.title : pathName(currentPath) || s.consumer.title;
-      const newSearch = { ...s.search, searchInput: '', searchQuery: '', isSearching: false };
-      const newNav = {
-        ...s.navigation,
-        historyIndex,
-        currentPath,
-        currentFolderName,
-        canGoBack: historyIndex > 0,
-        canGoForward: true,
-        isLoading: s.navigation.loadingFolders.has(currentPath),
-      };
-      const next = _recomputeEntries({ ...s, navigation: newNav, search: newSearch });
-      set({ navigation: newNav, entries: next.entries, filters: next.filters, selection: next.selection, search: newSearch });
+      set(historyStep(s, s.navigation.historyIndex - 1));
     },
 
     goForward: () => {
       cancelSearchDebounce();
       const s = get();
-      const maxIndex = s.navigation.historyStack.length - 1;
-      if (s.navigation.historyIndex >= maxIndex) return;
-      const historyIndex = s.navigation.historyIndex + 1;
-      const currentPath = s.navigation.historyStack[historyIndex] ?? '';
-      const currentFolderName = currentPath === '' ? s.consumer.title : pathName(currentPath) || s.consumer.title;
-      const newSearch = { ...s.search, searchInput: '', searchQuery: '', isSearching: false };
-      const newNav = {
-        ...s.navigation,
-        historyIndex,
-        currentPath,
-        currentFolderName,
-        canGoBack: true,
-        canGoForward: historyIndex < maxIndex,
-        isLoading: s.navigation.loadingFolders.has(currentPath),
-      };
-      const next = _recomputeEntries({ ...s, navigation: newNav, search: newSearch });
-      set({ navigation: newNav, entries: next.entries, filters: next.filters, selection: next.selection, search: newSearch });
+      if (s.navigation.historyIndex >= s.navigation.historyStack.length - 1) return;
+      set(historyStep(s, s.navigation.historyIndex + 1));
     },
 
     ensureChildren: (folderPath) => {
@@ -604,8 +629,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       const s = get();
       const allItems = s.navigation.loadedItems.length ? [...items, ...s.navigation.loadedItems] : items;
       const index = buildFileSystemIndex(allItems);
-      const currentPath = s.navigation.currentPath;
-      const currentFolderName = currentPath === '' ? s.consumer.title : pathName(currentPath) || s.consumer.title;
+      const currentFolderName = resolveFolderName(s.navigation.currentPath, s.consumer.title);
       const next = _recomputeEntries({ ...s, entries: { ...s.entries, items, index } });
       set({
         entries: { ...next.entries, items, index },
@@ -662,7 +686,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       // Immediate update for UI responsiveness
       set((s) => ({ search: { ...s.search, searchInput: value } }));
       // Deferred recompute (200 ms debounce) for performance
-      if (searchDebounceTimer !== null) clearTimeout(searchDebounceTimer);
+      cancelSearchDebounce();
       searchDebounceTimer = setTimeout(() => {
         searchDebounceTimer = null;
         const s = get();

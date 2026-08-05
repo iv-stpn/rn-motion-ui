@@ -107,7 +107,6 @@ export type FileSystemFilterOperator = 'after' | 'before' | 'in-range' | 'is' | 
 
 export type FileSystemFilter = { id: string; operator: FileSystemFilterOperator; type: FileSystemFilterType; value: string[] };
 
-/** Coarse buckets the file-type checklist groups MIME types under. */
 /**
  * How much of the tree a query runs over.
  *
@@ -120,6 +119,7 @@ export type FileSystemFilter = { id: string; operator: FileSystemFilterOperator;
  */
 export type FileSystemSearchScope = 'folder' | 'root';
 
+/** Coarse buckets the file-type checklist groups MIME types under. */
 export type FileTypeFilterGroup = 'Documents' | 'Spreadsheets' | 'Images' | 'Code' | 'Text' | 'Archives & binary';
 
 export type FileTypeFilterOption = {

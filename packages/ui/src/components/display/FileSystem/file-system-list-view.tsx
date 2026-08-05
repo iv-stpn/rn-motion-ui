@@ -5,19 +5,15 @@
 // folder-first ordering and per-folder disclosure survive without the DOM.
 
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Animated,
-  FlatList,
-  type GestureResponderEvent,
-  type LayoutChangeEvent,
-  type ListRenderItemInfo,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  Platform,
-  Pressable,
-  View,
-  type ViewStyle,
+import type {
+  GestureResponderEvent,
+  LayoutChangeEvent,
+  ListRenderItemInfo,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ViewStyle,
 } from 'react-native';
+import { Animated, FlatList, Platform, Pressable, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
@@ -139,6 +135,22 @@ function DropHighlight({ targetIndex, scrollOffset }: DropHighlightProps) {
       style={{ height: FS_ROW_HEIGHT, top: targetIndex * FS_ROW_HEIGHT + LIST_PADDING_TOP - scrollOffset }}
     />
   );
+}
+
+/** Dashed fill shown when an external drag is over the area but not over a folder row. */
+const EXTERNAL_DROP_AREA_CLASS =
+  'pointer-events-none absolute inset-0 border border-foreground/20 border-dashed bg-foreground/[0.03]';
+
+type ExternalDropIndicatorProps = { targetIndex: number | null; scrollOffset: number };
+
+/**
+ * Feedback for a drag from outside the component. A folder row under the pointer
+ * gets that row outlined; a file row or empty space gets the whole area hatched,
+ * the same fallback the non-list views show.
+ */
+function ExternalDropIndicator({ targetIndex, scrollOffset }: ExternalDropIndicatorProps) {
+  if (targetIndex === null) return <View className={EXTERNAL_DROP_AREA_CLASS} />;
+  return <DropHighlight scrollOffset={scrollOffset} targetIndex={targetIndex} />;
 }
 
 type DragPreviewProps = { label: string; pos: Animated.ValueXY };
@@ -319,23 +331,25 @@ export function FileSystemListView({
   testID,
 }: FileSystemViewProps) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set<string>());
-  const [width, setWidth] = useState(0);
+  /** `null` until the first layout pass — distinct from a measured zero. */
+  const [width, setWidth] = useState<number | null>(null);
   const [scrollOffset, setScrollOffset] = useState(0);
 
   const flatListRef = useRef<FlatList<FileSystemRow> | null>(null);
   const containerRef = useRef<View | null>(null);
   const scrollOffsetRef = useRef(0);
   const containerHeightRef = useRef(0);
-  const rowCountRef = useRef(0);
+  /** The drawn rows, readable from callbacks that outlive the render that made them. */
   const rowsRef = useRef<FileSystemRow[]>([]);
 
   const rows = useMemo(() => flattenFileSystemRows({ currentPath, expanded, index }), [currentPath, expanded, index]);
-  rowCountRef.current = rows.length;
   rowsRef.current = rows;
   // A Shift-range runs through the rows as they are drawn — an expanded folder's
   // children included, since they sit between their parent and its next sibling.
   const orderedPaths = useMemo(() => rows.map((row) => row.entry.path), [rows]);
-  const showDate = width === 0 || width >= DATE_COLUMN_MIN_WIDTH;
+  // Shown before the first measurement so the header does not visibly gain a
+  // column on mount at the widths where it belongs.
+  const showDate = width === null || width >= DATE_COLUMN_MIN_WIDTH;
 
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
 
@@ -396,7 +410,7 @@ export function FileSystemListView({
   });
 
   const hitTest = useCallback(
-    (localX: number, localY: number) => rowHitAt(localX, localY, scrollOffsetRef.current, rowCountRef.current),
+    (localX: number, localY: number) => rowHitAt(localX, localY, scrollOffsetRef.current, rowsRef.current.length),
     [],
   );
   const { canStartMarqueeAt } = useMarqueeGate(hitTest);
@@ -509,16 +523,9 @@ export function FileSystemListView({
         <FileSystemHoverHighlight controller={hover} height={FS_ROW_HEIGHT} testID={FS_HOVER_TEST_ID.list} />
         <FileSystemSourceHighlight height={FS_ROW_HEIGHT} origin={rowOrigin(drag.draggedIndex, scrollOffset)} />
         {body}
-        {/* External drop: folder rows get a per-row border; file rows and empty
-            space get a background overlay. Mutually exclusive with the internal
-            drag highlight — both use the same pointer capture, so only one can
-            be active at a time. */}
-        {isExternalDropOver && externalTargetIndex === null ? (
-          <View className="pointer-events-none absolute inset-0 border border-foreground/20 border-dashed bg-foreground/[0.03]" />
-        ) : null}
-        {isExternalDropOver && externalTargetIndex !== null ? (
-          <DropHighlight scrollOffset={scrollOffset} targetIndex={externalTargetIndex} />
-        ) : null}
+        {/* Mutually exclusive with the internal drag highlight below — both use the
+            same pointer capture, so only one can be active at a time. */}
+        {isExternalDropOver ? <ExternalDropIndicator scrollOffset={scrollOffset} targetIndex={externalTargetIndex} /> : null}
         {drag.active ? (
           <>
             <DropHighlight scrollOffset={scrollOffset} targetIndex={drag.targetIndex} />

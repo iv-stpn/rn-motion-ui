@@ -4,7 +4,7 @@ import { Svg, Circle as SvgCircle, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function LivePhotoLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function LivePhotoLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function LivePhotoLine({ size = 24, color: colorProp, style, accessibilit
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgCircle cx="12" cy="12" r="9" fill="none" stroke={color} strokeDasharray=".5 5" strokeLinecap="round" strokeWidth="2" />
       <SvgPath fill="none" stroke={color} strokeWidth="2" d="M17 12a5 5 0 1 1-10 0a5 5 0 0 1 10 0Z" />

@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function UnderlineLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function UnderlineLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function UnderlineLine({ size = 24, color: colorProp, style, accessibilit
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill="none" stroke={color} strokeLinecap="round" strokeWidth="2" d="M6 20h12M7 4v7a5 5 0 0 0 10 0V4" />
     </Svg>

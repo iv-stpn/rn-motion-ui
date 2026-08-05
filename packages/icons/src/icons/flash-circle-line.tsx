@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function FlashCircleLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function FlashCircleLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function FlashCircleLine({ size = 24, color: colorProp, style, accessibil
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="M12.5 11.5L13 7l-4.5 6l3-.5L11 17l4.5-6z" />
       <SvgPath fill="none" stroke={color} strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0Z" />

@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function MastercardLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function MastercardLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function MastercardLine({ size = 24, color: colorProp, style, accessibili
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill="none" stroke={color} strokeWidth="2" d="M14 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0Z" />
       <SvgPath fill="none" stroke={color} strokeWidth="2" d="M21 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0Z" />

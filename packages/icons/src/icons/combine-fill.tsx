@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function CombineFill({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function CombineFill({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function CombineFill({ size = 24, color: colorProp, style, accessibilityL
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="M3 5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3h-6a2 2 0 0 0-2 2v6H5a2 2 0 0 1-2-2z" />
       <SvgPath fill={color} d="M8 16h6a2 2 0 0 0 2-2V8h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2z" />

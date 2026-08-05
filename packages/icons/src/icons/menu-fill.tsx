@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function MenuFill({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function MenuFill({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function MenuFill({ size = 24, color: colorProp, style, accessibilityLabe
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill="none" stroke={color} strokeLinecap="round" strokeWidth="3" d="M4 6h16M4 12h16M4 18h16" />
     </Svg>

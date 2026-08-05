@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function ToiletPaperFill({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function ToiletPaperFill({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function ToiletPaperFill({ size = 24, color: colorProp, style, accessibil
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="M6 12.5c.552 0 1-.895 1-2s-.448-2-1-2s-1 .895-1 2s.448 2 1 2" />
       <SvgPath

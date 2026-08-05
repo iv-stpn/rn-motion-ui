@@ -79,6 +79,7 @@ import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 | `color` | `string` | `foreground` token | Fill / stroke colour. |
 | `style` | `StyleProp<ViewStyle>` | — | Passed to the root `Svg`. |
 | `accessibilityLabel` | `string` | — | Omit to leave the icon decorative. |
+| `testID` | `string` | — | Passed to the root `Svg`. |
 
 An icon takes `accessibilityRole="image"` only when `accessibilityLabel` is
 present. Leave the label off for icons sitting next to text that already names

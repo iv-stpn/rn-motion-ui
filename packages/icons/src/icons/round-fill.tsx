@@ -4,7 +4,7 @@ import { Svg, Circle as SvgCircle } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function RoundFill({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function RoundFill({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function RoundFill({ size = 24, color: colorProp, style, accessibilityLab
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgCircle cx="12" cy="12" r="10" fill={color} />
     </Svg>

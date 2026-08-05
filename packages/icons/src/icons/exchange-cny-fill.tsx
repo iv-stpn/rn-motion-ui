@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function ExchangeCnyFill({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function ExchangeCnyFill({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function ExchangeCnyFill({ size = 24, color: colorProp, style, accessibil
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill="none" stroke={color} strokeLinecap="round" strokeWidth="2" d="M9 12h6m-6 3h6m-3-3v5m0-5L9 8m3 4l3-4" />
       <SvgPath

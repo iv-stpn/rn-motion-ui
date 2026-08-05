@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function PisaTowerLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function PisaTowerLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function PisaTowerLine({ size = 24, color: colorProp, style, accessibilit
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="m16.336 11.73l-7.879-1.39l3.94.694z" />
       <SvgPath

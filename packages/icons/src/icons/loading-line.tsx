@@ -12,7 +12,7 @@ import {
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function LoadingLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function LoadingLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   const id = useId();
@@ -25,6 +25,7 @@ export function LoadingLine({ size = 24, color: colorProp, style, accessibilityL
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgDefs>
         <SvgLinearGradient id={`${id}-0`} x1="50%" x2="50%" y1="5.271%" y2="91.793%">

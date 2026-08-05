@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function EyeLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function EyeLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function EyeLine({ size = 24, color: colorProp, style, accessibilityLabel
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill="none" stroke={color} strokeWidth="2" d="M21 12c0 2.5-4.03 7-9 7s-9-4.5-9-7s4.03-7 9-7s9 4.5 9 7Z" />
       <SvgPath

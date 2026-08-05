@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function ListOrderedLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function ListOrderedLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function ListOrderedLine({ size = 24, color: colorProp, style, accessibil
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill="none" stroke={color} strokeLinecap="round" strokeWidth="2" d="M9 5h11M9 12h11M9 19h11" />
       <SvgPath

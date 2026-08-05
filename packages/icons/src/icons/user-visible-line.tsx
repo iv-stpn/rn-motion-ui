@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function UserVisibleLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function UserVisibleLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function UserVisibleLine({ size = 24, color: colorProp, style, accessibil
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="M17.996 17.913a.667.667 0 0 1-.91-.91L17.001 17a1 1 0 1 0 .996.913" />
       <SvgPath

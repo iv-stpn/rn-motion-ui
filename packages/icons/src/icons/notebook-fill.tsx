@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function NotebookFill({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function NotebookFill({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function NotebookFill({ size = 24, color: colorProp, style, accessibility
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="M8 2v20H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm9 0a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3h-7V2z" />
     </Svg>

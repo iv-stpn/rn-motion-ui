@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function LifebuoyLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function LifebuoyLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function LifebuoyLine({ size = 24, color: colorProp, style, accessibility
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill="none" stroke={color} strokeWidth="2" d="M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0Z" />
       <SvgPath fill="none" stroke={color} strokeWidth="2" d="M16 12a4 4 0 1 1-8 0a4 4 0 0 1 8 0Z" />

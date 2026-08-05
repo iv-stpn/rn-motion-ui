@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function AlignRightLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function AlignRightLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function AlignRightLine({ size = 24, color: colorProp, style, accessibili
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill="none" stroke={color} strokeLinecap="round" strokeWidth="2" d="M4 4h16M10 9h10M4 14h16m-10 5h10" />
     </Svg>

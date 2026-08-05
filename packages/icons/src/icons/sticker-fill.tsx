@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function StickerFill({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function StickerFill({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function StickerFill({ size = 24, color: colorProp, style, accessibilityL
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="M6 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h6v-6a3 3 0 0 1 3-3h6V6a3 3 0 0 0-3-3z" />
       <SvgPath fill={color} d="M20.883 14H15a1 1 0 0 0-1 1v5.883a3 3 0 0 0 1.293-.762l4.828-4.828A3 3 0 0 0 20.883 14" />

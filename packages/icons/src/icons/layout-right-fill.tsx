@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function LayoutRightFill({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function LayoutRightFill({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function LayoutRightFill({ size = 24, color: colorProp, style, accessibil
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="M14 3v18H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm5 0a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3V3z" />
     </Svg>

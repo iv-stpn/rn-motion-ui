@@ -18,4 +18,5 @@ export type IconProps = {
   style?: StyleProp<ViewStyle>;
   /** Accessibility label; when omitted the icon is treated as decorative. */
   accessibilityLabel?: string;
+  testID?: string;
 };

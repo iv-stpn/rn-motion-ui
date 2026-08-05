@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath, Rect as SvgRect } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function SiriFrameLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function SiriFrameLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function SiriFrameLine({ size = 24, color: colorProp, style, accessibilit
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgRect width="16" height="16" x="4" y="4" fill="none" stroke={color} strokeWidth="1.5" rx="3" />
       <SvgPath

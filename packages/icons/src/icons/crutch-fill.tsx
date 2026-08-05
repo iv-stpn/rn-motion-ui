@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function CrutchFill({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function CrutchFill({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function CrutchFill({ size = 24, color: colorProp, style, accessibilityLa
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="M13 19.5a2.5 2.5 0 0 0 5 0V8A6 6 0 0 0 6 8v1.5a2.5 2.5 0 0 0 5 0V8a1 1 0 1 1 2 0z" />
     </Svg>

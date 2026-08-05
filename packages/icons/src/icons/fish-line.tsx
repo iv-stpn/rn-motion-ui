@@ -4,7 +4,7 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function FishLine({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function FishLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;
   return (
@@ -16,6 +16,7 @@ export function FishLine({ size = 24, color: colorProp, style, accessibilityLabe
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <SvgPath fill={color} d="M16.244 8.46a.5.5 0 1 1-.708-.708a.5.5 0 0 1 .708.707" />
       <SvgPath

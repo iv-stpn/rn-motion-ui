@@ -323,7 +323,7 @@ ${useIdImport}${svgImport}
 import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
 
-export function ${compName}({ size = 24, color: colorProp, style, accessibilityLabel }: IconProps) {
+export function ${compName}({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
   const defaultColor = useThemeColor('foreground');
   const color = colorProp ?? defaultColor;${useIdCall}
   return (
@@ -335,6 +335,7 @@ export function ${compName}({ size = 24, color: colorProp, style, accessibilityL
       style={style}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
 ${renderedChildren}
     </Svg>

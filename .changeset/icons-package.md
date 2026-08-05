@@ -32,9 +32,9 @@ a peer here, and why an icon dropped into a themed surface is already the right
 colour.
 
 `IconProps` (`rn-motion-ui-icons/icon-props`) is shared by all of them: `size`
-(default 24), `color`, `style`, `accessibilityLabel`. Omitting the label leaves
-the icon decorative rather than announcing it; the icon takes `accessibilityRole="image"`
-only when a label is present.
+(default 24), `color`, `style`, `accessibilityLabel`, `testID`. Omitting the
+label leaves the icon decorative rather than announcing it; the icon takes
+`accessibilityRole="image"` only when a label is present.
 
 Icons are generated from `@iconify-json/mingcute` by `scripts/gen-icons.mjs`
 (`bun run --cwd packages/icons gen`) and committed, so the generator is a

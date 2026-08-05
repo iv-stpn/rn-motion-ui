@@ -57,7 +57,11 @@ type PanelProps = {
   accessibilityLabel: string;
   onSelect: (item: HoldContextMenuItem) => void;
   onLayout: (event: LayoutChangeEvent) => void;
-  /** Base testID. The surface takes `-panel`, the list `-menu`, its rows `-menu-item-<id>`. */
+  /**
+   * Base testID. The surface takes `-panel`, the list `-menu`, and the list
+   * derives its own rows from that: `-menu-item-<id>` for an action row,
+   * `-menu-<id>` for a heading, `-menu-<id>-separator` for a separator.
+   */
   testID?: string;
 };
 

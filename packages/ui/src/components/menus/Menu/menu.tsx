@@ -73,6 +73,9 @@
  *   toggle) set `closeOnSelect: false`.
  * - **Aligns the labels.** If any row has an icon, the rows without one reserve
  *   the slot, so nothing shifts left. `iconGutter` forces it either way.
+ * - **Names every entry for tests.** Give the list a `testID` and each entry
+ *   derives one from it, so a row, a caption or a separator can be reached
+ *   without a role query. See {@link MenuProps.testID}.
  * - **Carries the semantics.** `role="menu"` on the list, `menuitem` on each row,
  *   selected/disabled state on both a11y trees. A group caption is
  *   `presentation` — readable, never offered as a dead command. Set
@@ -146,13 +149,13 @@ export type MenuActionEntry = {
 };
 
 /** A hairline between two groups of rows. */
-export type MenuSeparatorEntry = { type: 'separator'; id?: string; className?: string };
+export type MenuSeparatorEntry = { type: 'separator'; id?: string; className?: string; testID?: string };
 
 /** A caption naming the group below it. Readable, never selectable. */
-export type MenuLabelEntry = { type: 'label'; id?: string; label: ReactNode; className?: string };
+export type MenuLabelEntry = { type: 'label'; id?: string; label: ReactNode; className?: string; testID?: string };
 
 /** Anything at all, dropped into the list as-is. */
-export type MenuNodeEntry = { type: 'node'; id?: string; node: ReactNode; className?: string };
+export type MenuNodeEntry = { type: 'node'; id?: string; node: ReactNode; className?: string; testID?: string };
 
 /**
  * One thing in a menu. A bare `ReactElement` is shorthand for
@@ -214,6 +217,22 @@ export type MenuProps = {
    * before reaching for it.
    */
   className?: string;
+  /**
+   * Goes on the list element, and every entry derives its own from it:
+   *
+   * | Entry | testID |
+   * | --- | --- |
+   * | action row | `<testID>-item-<id>` |
+   * | separator / caption / node | `<testID>-<id>` |
+   *
+   * An action row is named by its `id`, which it always has. The other three
+   * are named by the React key instead — the same string, when they carry an
+   * `id`, and a positional `separator-0` / `label-1` fallback when they don't,
+   * which is the one name guaranteed not to collide with a neighbour.
+   *
+   * Any entry's own `testID` overrides its derived one, and with no `testID`
+   * here nothing is named at all.
+   */
   testID?: string;
 };
 
@@ -270,19 +289,19 @@ export const MENU_SEPARATOR_HEIGHT: Record<MenuItemSize, number> = {
   lg: SEPARATOR_BAR_HEIGHT + 12, // my-1.5 — 6px each side
 };
 
-export type MenuSeparatorProps = { className?: string };
+export type MenuSeparatorProps = { className?: string; testID?: string };
 
 /** The hairline between two groups. Exported so a `node` entry can draw a matching one. */
-export function MenuSeparator({ className }: MenuSeparatorProps) {
-  return <View className={cn('h-1 bg-border', className)} />;
+export function MenuSeparator({ className, testID }: MenuSeparatorProps) {
+  return <View className={cn('h-1 bg-border', className)} testID={testID} />;
 }
 
-export type MenuLabelProps = { children: ReactNode; className?: string };
+export type MenuLabelProps = { children: ReactNode; className?: string; testID?: string };
 
 /** The caption above a group. Exported for the same reason as {@link MenuSeparator}. */
-export function MenuLabel({ children, className }: MenuLabelProps) {
+export function MenuLabel({ children, className, testID }: MenuLabelProps) {
   return (
-    <View className={className} role="presentation">
+    <View className={className} role="presentation" testID={testID}>
       <Text className="text-muted-foreground" numberOfLines={1} size="xs" weight="medium">
         {children}
       </Text>
@@ -433,18 +452,24 @@ export function Menu({
         // Fragment carries the one `keyEntries` assigned and adds no node.
         if (isElementEntry(entry)) return <Fragment key={key}>{entry}</Fragment>;
 
+        // The non-action entries take the React key rather than the bare `id` an
+        // action row uses: `key` is the one string `keyEntries` already
+        // guarantees is unique across the list, so an unnamed separator gets a
+        // stable `-separator-0` instead of colliding with its neighbours.
+        const entryTestID = entry.testID ?? (testID ? `${testID}-${key}` : undefined);
+
         switch (entry.type) {
           case 'separator':
-            return <MenuSeparator className={cn(scale.separatorClass, entry.className)} key={key} />;
+            return <MenuSeparator className={cn(scale.separatorClass, entry.className)} key={key} testID={entryTestID} />;
           case 'label':
             return (
-              <MenuLabel className={cn(scale.labelClass, entry.className)} key={key}>
+              <MenuLabel className={cn(scale.labelClass, entry.className)} key={key} testID={entryTestID}>
                 {entry.label}
               </MenuLabel>
             );
           case 'node':
             return (
-              <View className={entry.className} key={key}>
+              <View className={entry.className} key={key} testID={entryTestID}>
                 {entry.node}
               </View>
             );

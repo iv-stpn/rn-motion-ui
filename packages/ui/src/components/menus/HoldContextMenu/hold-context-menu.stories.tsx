@@ -282,6 +282,11 @@ export const Default: Story = {
     // as something to activate.
     await expect(within(menu).getByText(HEADING)).toBeInTheDocument();
     await expect(within(menu).queryByRole('menuitem', { name: HEADING })).toBeNull();
+    // Every row kind is addressable by testID, not just the pressable ones — a
+    // caption and a band carry no role or name to query by.
+    await expect(within(menu).getByTestId(`${DEMO_TEST_ID}-menu-item-reply`)).toBeInTheDocument();
+    await expect(within(menu).getByTestId(`${DEMO_TEST_ID}-menu-heading`)).toBeInTheDocument();
+    await expect(within(menu).getByTestId(`${DEMO_TEST_ID}-menu-pin-separator`)).toBeInTheDocument();
     // A disabled row stays announced, and says that it is disabled — dimming
     // alone would leave it looking live to a screen reader.
     await expect(await screen.findByRole('menuitem', { name: FORWARD })).toHaveAttribute('aria-disabled', 'true');

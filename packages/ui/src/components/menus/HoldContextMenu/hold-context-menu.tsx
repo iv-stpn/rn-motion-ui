@@ -248,6 +248,21 @@ export type HoldContextMenuProps = {
   /** Merged onto the trigger wrapper — e.g. `"max-w-[80%] self-end"` for a chat bubble. */
   className?: string;
   style?: StyleProp<ViewStyle>;
+  /**
+   * Base testID for the trigger wrapper. Everything the menu mounts derives from
+   * it, so one `testID` here is enough to reach any part of an open menu:
+   *
+   * | Suffix | Element |
+   * | --- | --- |
+   * | *(none)* | the trigger wrapper, in the page |
+   * | `-backdrop` | the scrim — the click-outside target |
+   * | `-lifted` | the copy of the children painted at the item's rect (native only) |
+   * | `-panel` | the floating surface |
+   * | `-menu` | the list inside it |
+   * | `-menu-item-<id>` | one action row, by its item `id` |
+   * | `-menu-<id>` | a `heading` row |
+   * | `-menu-<id>-separator` | the band a row's `separator` draws below it |
+   */
   testID?: string;
 };
 

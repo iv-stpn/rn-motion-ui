@@ -147,6 +147,15 @@ Subpaths are namespaced by category:
 | `/theme/use-theme-color` | `useThemeColor`, `useThemeColors` |
 | `/breakpoints` | breakpoint scale + pure resolvers |
 | `/hooks/use-breakpoint` | `useBreakpoint`, `useBreakpointAtLeast` |
+| `/hooks/use-calendar` | `useCalendar` |
+| `/hooks/use-date-picker` | `useDatePicker` |
+| `/hooks/use-date-range-picker` | `useDateRangePicker` |
+| `/calendar` | ISO date arithmetic + month grids |
+| `/calendar-format` | `Intl` label formatters |
+| `/calendar-props` | calendar prop types + builders |
+| `/calendar-selection` | selection, per-cell state, focus movement |
+| `/date-field` | text ⇄ date parsing for the pickers' fields |
+| `/date-picker-props` | trigger / panel / field prop types |
 
 ## Responsive breakpoints
 
@@ -209,6 +218,99 @@ import { breakpointForWidth, isWidthAtLeast } from 'rn-motion-ui/breakpoints';
 const tier = breakpointForWidth(measuredWidth);          // 'md'
 const isWide = isWidthAtLeast(measuredWidth, 'lg');      // boolean
 ```
+
+## Headless calendar and date pickers
+
+Three hooks — `useCalendar`, `useDatePicker`, `useDateRangePicker` — that own the date logic, the keyboard, and the accessibility payload, and render nothing. There is no styled `<Calendar />` in the package: the markup is yours, so the grid can be seven `Pressable`s in a `View`, a `FlatList`, or a table, without fighting a wrapper's opinions.
+
+Dates are ISO `'YYYY-MM-DD'` strings throughout — arguments, return values, and callbacks. No `Date` objects cross the API, so a value can be compared with `===`, sorted as a string, stored as JSON, and put in a dependency array without a stable-reference dance.
+
+### `useCalendar`
+
+The month grid. State plus a prop getter per element, each returning an object to spread:
+
+```tsx
+import { useCalendar } from 'rn-motion-ui/hooks/use-calendar';
+
+const calendar = useCalendar({ mode: 'range', numberOfMonths: 2, minDate: '2026-01-01' });
+
+<View {...calendar.getRootProps()}>
+  <Pressable {...calendar.getPreviousMonthProps()}><Text>‹</Text></Pressable>
+  {calendar.months.map((month) => (
+    <View key={month.month} {...calendar.getMonthProps(month.month)}>
+      <Text {...calendar.getMonthLabelProps(month.month)}>{month.label}</Text>
+      <View {...calendar.getWeekdayRowProps(month.month)}>
+        {calendar.weekdays.map((weekday) => (
+          <Text key={weekday.weekday} {...calendar.getWeekdayProps(weekday, month.month)}>{weekday.short}</Text>
+        ))}
+      </View>
+      <View {...calendar.getGridProps(month.month)}>
+        {month.weeks.map((week, index) => (
+          <View key={index} {...calendar.getWeekProps(month.month, index)}>
+            {week.map((day) => (
+              <Pressable key={day.date} {...calendar.getDayProps(day)}>
+                <Text>{day.day}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ))}
+      </View>
+    </View>
+  ))}
+</View>
+```
+
+Every cell arrives decorated — `isSelected`, `isToday`, `isInRange`, `isRangeStart`, `isRangeEnd`, `isPreview`, `isDisabled`, `isWeekend`, and `outside` for an adjacent-month day — so styling is a lookup rather than a recomputation per render.
+
+What the getters carry beyond the obvious:
+
+- **Roving tab stop.** Exactly one cell per calendar has `tabIndex: 0`; the rest are `-1`. Tab reaches the grid once and the arrow keys move within it, which is the WAI-ARIA grid pattern — 42 cells in the tab order is not.
+- **Keyboard.** Arrows step a day or a week, `Home`/`End` go to the ends of the week, `PageUp`/`PageDown` step a month (a year with shift). A step that leaves the visible months pages the view. `isRTL` mirrors the horizontal axis only — up is still up. `preventDefault` is called only for keys the grid acts on, so Tab still leaves.
+- **Focus.** Moving the cursor focuses the destination cell through its `ref`, including when that cell mounts after the step (paging to a month that isn't rendered yet).
+- **Disabled days keep their tab stop.** They get `aria-disabled` and `accessibilityState`, but not `disabled` — an unreachable day cannot announce why it is unavailable. The press handler refuses.
+- **Both a11y dialects.** Native `accessibilityState`/`accessibilityRole` and web `aria-*` are emitted together, because react-native-web maps only the `aria-` form.
+
+### `useDatePicker` / `useDateRangePicker`
+
+The grid plus a disclosure, a typeable text field per date, and a backdrop:
+
+```tsx
+import { useDatePicker } from 'rn-motion-ui/hooks/use-date-picker';
+
+const picker = useDatePicker({ onSelectDate: setValue, testID: 'depart' });
+
+<TextInput {...picker.getFieldProps()} />
+<Pressable {...picker.getTriggerProps()}><Text>Pick a date</Text></Pressable>
+{picker.isOpen ? (
+  <>
+    <Pressable {...picker.getDismissProps()} />
+    <View {...picker.getPanelProps()}>
+      {/* render picker.calendar exactly as above */}
+      <Pressable {...picker.getClearProps()}><Text>Clear</Text></Pressable>
+    </View>
+  </>
+) : null}
+```
+
+The field is forgiving in the ways a date field has to be. Typing shows a draft without committing it; blur commits, submit commits and closes. Text that doesn't parse snaps back to the current value rather than silently discarding it, and a complete, allowed date moves the grid as you type so the two never disagree. `format` takes a `{ parse, format }` pair for a non-ISO field order.
+
+The range picker differs where a range genuinely differs: two months by default, two independent field drafts, and it closes when the range is **complete** — not on the first press, which only starts it. A range typed backwards is reordered rather than rejected, clearing one field leaves a half-open range the next press can complete, and a date typed in the end field is revealed in the *last* month on screen so the start stays visible beside it.
+
+The trigger is a **button with `aria-expanded`**, deliberately not a `combobox`: React Native has neither `aria-controls` nor `aria-haspopup`, so a combobox would announce a popup assistive tech cannot then find. The panel is a `dialog` whose three modal flags (`role`, `aria-modal`, `accessibilityViewIsModal`) all follow one `modal` option, so an inline calendar never claims to trap focus that nothing has trapped.
+
+### Test IDs
+
+Pass `testID` and every child derives its own; pass nothing and no `testID` is emitted anywhere, so a tree stays clean by default.
+
+```tsx
+useDatePicker({ testID: 'depart' });
+// depart-trigger · depart-panel · depart-field · depart-clear · depart-dismiss
+// depart-day-2026-08-05 · depart-grid-2026-08 · depart-month-label-2026-08 · depart-prev-month
+```
+
+### Pure helpers
+
+The logic underneath is exported separately, all React-free: `rn-motion-ui/calendar` (ISO arithmetic, `buildMonthGrid`, range helpers), `rn-motion-ui/calendar-format` (`Intl` labels), `rn-motion-ui/calendar-selection` (selection transitions, per-cell state, focus movement), `rn-motion-ui/calendar-props` and `rn-motion-ui/date-picker-props` (the prop shapes, for typing your own render functions), and `rn-motion-ui/date-field` (parse/format and commit resolution).
 
 ## Theming
 

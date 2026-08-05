@@ -37,6 +37,17 @@ export type SwipeableListProps = {
   actionWidth?: number;
   revealThreshold?: number;
   closeOnAction?: boolean;
+  /**
+   * Root testID, defaulting to `'swipeable-list'`. Each row takes
+   * `<testID>-row-<item.id>` and each of its action buttons
+   * `<testID>-row-<item.id>-action-<action.id>` — the buttons are behind the
+   * draggable surface, so a testID is the only way to reach one without first
+   * swiping the row open.
+   *
+   * With no `testID`, rows keep the standalone `swipeable-row-<item.id>` they
+   * have always had. Pass one and the rows nest under it instead, which is what
+   * keeps two lists on a screen from colliding.
+   */
   testID?: string;
   /** Additional NativeWind class names merged onto the outer wrapper. */
   className?: string;
@@ -133,9 +144,11 @@ type SwipeActionButtonProps = {
   actionWidth: number;
   side: SwipeSide;
   onAction: (action: SwipeAction, side: SwipeSide) => void;
+  /** The owning row's testID; the button takes `-action-<action id>` from it. */
+  testID?: string;
 };
 
-function SwipeActionButton({ action, actionWidth, side, onAction }: SwipeActionButtonProps) {
+function SwipeActionButton({ action, actionWidth, side, onAction, testID }: SwipeActionButtonProps) {
   const tone = action.tone ?? 'neutral';
   const colors = useThemeColors();
   // Reactive per-tone icon colour. neutral/primary track the theme — their badge
@@ -161,6 +174,7 @@ function SwipeActionButton({ action, actionWidth, side, onAction }: SwipeActionB
       onPress={handlePress}
       className="h-full items-center justify-center"
       style={{ width: actionWidth }}
+      testID={testID ? `${testID}-action-${action.id}` : undefined}
     >
       <View className={cn(BADGE_BACKGROUND({ tone }), 'h-9 w-[36px]')}>
         {isValidElement(action.icon)
@@ -190,6 +204,8 @@ export type SwipeableListRowProps = {
   setOpenId: (id: string | null) => void;
   closeOnAction: boolean;
   onAction?: SwipeableListProps['onAction'];
+  /** The row's own testID; its action buttons derive `-action-<id>` from it. */
+  testID?: string;
 };
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: gesture, wheel, and rendering are unified to share PanResponder and animation values
@@ -201,6 +217,7 @@ function SwipeableListRow({
   setOpenId,
   closeOnAction,
   onAction,
+  testID,
 }: SwipeableListRowProps) {
   const reduce = useReducedMotion();
   const translateX = useRef(new Animated.Value(0)).current;
@@ -475,7 +492,7 @@ function SwipeableListRow({
         // horizontal intent (it calls preventDefault only when it acts).
         Platform.OS === 'web' && WEB_ROW_STYLE,
       ]}
-      testID={`swipeable-row-${item.id}`}
+      testID={testID}
     >
       {/* Action rail — rendered behind the draggable surface */}
       <View
@@ -485,13 +502,27 @@ function SwipeableListRow({
         {/* Left actions */}
         <View className="h-full flex-row overflow-hidden rounded-l-2xl">
           {leftActions.map((action) => (
-            <SwipeActionButton key={action.id} action={action} actionWidth={actionWidth} side="left" onAction={handleAction} />
+            <SwipeActionButton
+              key={action.id}
+              action={action}
+              actionWidth={actionWidth}
+              side="left"
+              onAction={handleAction}
+              testID={testID}
+            />
           ))}
         </View>
         {/* Right actions */}
         <View className="ml-auto h-full flex-row overflow-hidden rounded-r-2xl">
           {rightActions.map((action) => (
-            <SwipeActionButton key={action.id} action={action} actionWidth={actionWidth} side="right" onAction={handleAction} />
+            <SwipeActionButton
+              key={action.id}
+              action={action}
+              actionWidth={actionWidth}
+              side="right"
+              onAction={handleAction}
+              testID={testID}
+            />
           ))}
         </View>
       </View>
@@ -544,6 +575,10 @@ export function SwipeableList({
           setOpenId={setOpenId}
           closeOnAction={closeOnAction}
           onAction={onAction}
+          // Derived from the root when there is one, so two lists on a screen
+          // don't collide. The bare `swipeable-row-<id>` is the shape this
+          // component has always emitted, kept as the no-root fallback.
+          testID={testID ? `${testID}-row-${item.id}` : `swipeable-row-${item.id}`}
         />
       ))}
     </View>

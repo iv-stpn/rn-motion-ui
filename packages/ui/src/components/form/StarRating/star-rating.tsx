@@ -51,6 +51,10 @@ export type StarRatingProps = {
   /** Additional NativeWind class names merged onto the outer row. */
   className?: string;
   style?: StyleProp<ViewStyle>;
+  /**
+   * Root testID. Each star takes `<testID>-star-<n>`, 1-based — under `readOnly`
+   * too, so a test selects the same node whichever mode it renders in.
+   */
   testID?: string;
   /**
    * Color of the filled/active stars and the sparkle burst. Defaults to a
@@ -189,6 +193,7 @@ type StarButtonProps = {
   round: boolean;
   onSelect: (starValue: number) => void;
   renderStar?: (props: StarRenderProps) => ReactNode;
+  testID?: string;
 };
 
 export function StarButton({
@@ -205,6 +210,7 @@ export function StarButton({
   round,
   onSelect,
   renderStar,
+  testID,
 }: StarButtonProps) {
   const [pressed, setPressed] = useState(false);
   const popScale = useSharedValue(1);
@@ -233,6 +239,7 @@ export function StarButton({
       onPressOut={handlePressOut}
       onPress={handlePress}
       className={padClass}
+      testID={testID}
     >
       <MotiView animate={{ scale: pressed && !reduce ? 0.9 : 1 }} transition={SPRING_PRESS}>
         <Animated.View style={[{ width: icon, height: icon, position: 'relative' }, popStyle]}>
@@ -342,7 +349,7 @@ export function StarRating({
         {starValues.map((starValue) => {
           const fillPercent = Math.max(0, Math.min(1, value - (starValue - 1))) * 100;
           return (
-            <View key={starValue} className={pad}>
+            <View key={starValue} className={pad} testID={testID ? `${testID}-star-${starValue}` : undefined}>
               <View className="relative" style={{ width: icon, height: icon }}>
                 <StarSvg size={icon} color={inactiveColor} round={round} />
                 {fillPercent > 0 ? (
@@ -384,6 +391,7 @@ export function StarRating({
             round={round}
             onSelect={handleSelect}
             renderStar={renderStar}
+            testID={testID ? `${testID}-star-${starValue}` : undefined}
           />
         ))}
       </View>

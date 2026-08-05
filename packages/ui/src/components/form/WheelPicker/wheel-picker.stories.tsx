@@ -226,14 +226,18 @@ export const Default: Story = {
   name: 'Demo: Pick a size',
   render: (args) => (
     <View className="w-[200px]">
-      <WheelPicker {...args} accessibilityLabel="Size" defaultValue="Medium" />
+      <WheelPicker {...args} accessibilityLabel="Size" defaultValue="Medium" testID="story-wheel" />
     </View>
   ),
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     // Tapping a row snaps to it and emits the new value (drag-scroll isn't
     // reproducible in jsdom/Chromium, so the row press stands in for a flick).
-    await userEvent.click(await canvas.findByRole('button', { name: 'X-Large' }));
+    // Addressed by testID rather than role, which pins two things at once: the
+    // drum paints its rows twice and only the interactive copy is named, so a
+    // single match proves the `aria-hidden` centre drum stayed anonymous — and
+    // the value landing proves the named one is the live row.
+    await userEvent.click(canvas.getByTestId('story-wheel-option-X-Large'));
     await expect(args.onValueChange).toHaveBeenCalledWith('X-Large');
   },
 };

@@ -40,6 +40,12 @@ export type OverflowActionsProps = {
   /** Additional NativeWind class names merged onto the outer row. */
   className?: string;
   style?: StyleProp<ViewStyle>;
+  /**
+   * Root testID. Every action derives `-item-<id>` from it and the toggle takes
+   * `-toggle`. An action's own `testID` wins over its derived one. The offscreen
+   * measurer that duplicates the overflow actions stays unnamed either way, so a
+   * query matches the visible button only.
+   */
   testID?: string;
   /** Replace the open-state close icon. Default: `<X size={14|16} color={iconOnPrimary} />`. */
   closeIcon?: ReactNode;
@@ -127,7 +133,14 @@ export function OverflowActions({
       <View className={track({ size })}>
         <View className={group({ size })}>
           {primaryActions.map((item) => (
-            <ActionButton key={item.id} item={item} size={size} reduce={reduce} onAction={handleAction} />
+            <ActionButton
+              key={item.id}
+              item={item}
+              size={size}
+              reduce={reduce}
+              onAction={handleAction}
+              testID={item.testID ?? (testID ? `${testID}-item-${item.id}` : undefined)}
+            />
           ))}
         </View>
 
@@ -146,7 +159,9 @@ export function OverflowActions({
         >
           {/* Offscreen measurer at natural size — feeds the spring its target.
               aria-hidden keeps the duplicate buttons out of the accessibility tree
-              so queries like findByRole('button', { name }) don't match twice. */}
+              so queries like findByRole('button', { name }) don't match twice, and
+              these get no testID for the same reason: aria-hidden is invisible to
+              getByTestId, so a named measurer would match alongside the real row. */}
           <View
             aria-hidden={true}
             onLayout={handleOverflowLayout}
@@ -158,7 +173,14 @@ export function OverflowActions({
           </View>
           <View className={cn(group({ size }), 'self-start')}>
             {overflowActions.map((item) => (
-              <ActionButton key={item.id} item={item} size={size} reduce={reduce} onAction={handleAction} />
+              <ActionButton
+                key={item.id}
+                item={item}
+                size={size}
+                reduce={reduce}
+                onAction={handleAction}
+                testID={item.testID ?? (testID ? `${testID}-item-${item.id}` : undefined)}
+              />
             ))}
           </View>
         </MotiView>
@@ -199,9 +221,15 @@ export type ActionButtonProps = {
   size: OverflowActionsSize;
   reduce: boolean;
   onAction: (item: OverflowActionItem) => void;
+  /**
+   * Already derived by the caller rather than built from a root here, because the
+   * offscreen measurer renders the same actions a second time and must stay
+   * unnamed — two nodes under one testID would make every query ambiguous.
+   */
+  testID?: string;
 };
 
-function ActionButton({ item, size, reduce, onAction }: ActionButtonProps) {
+function ActionButton({ item, size, reduce, onAction, testID }: ActionButtonProps) {
   const [pressed, setPressed] = useState(false);
   const handlePressIn = useCallback(() => setPressed(true), []);
   const handlePressOut = useCallback(() => setPressed(false), []);
@@ -219,7 +247,7 @@ function ActionButton({ item, size, reduce, onAction }: ActionButtonProps) {
         onPress={handlePress}
         className={action({ size })}
         style={{ opacity: item.disabled ? 0.45 : 1 }}
-        testID={item.testID}
+        testID={testID}
       >
         {item.icon === null ? null : item.icon}
         {typeof item.label === 'string' || typeof item.label === 'number' ? (

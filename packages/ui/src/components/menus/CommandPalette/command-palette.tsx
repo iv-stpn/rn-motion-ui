@@ -20,6 +20,9 @@ import { MenuItem } from '../MenuItem/menu-item';
 
 const ESC_LABEL = 'ESC';
 
+/** The group caption above each run of rows. */
+const GROUP_LABEL_CLASS = 'px-2 py-1.5 font-semibold text-[10px] text-muted-foreground uppercase tracking-wider';
+
 /** Props passed to a command palette icon renderer. */
 export type CommandIconProps = IconProps;
 
@@ -49,6 +52,11 @@ export type CommandPaletteProps = {
   onOpenChange?: (open: boolean) => void;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  /**
+   * Root testID. Each row derives `-item-<id>` from it and each group heading
+   * `-group-<name>` — the heading is plain text with no role to query by. An
+   * item's own `testID` wins over its derived one.
+   */
   testID?: string;
   /** Replace the search input icon. Default: `<Search size={16} color={mutedForeground} />`. */
   searchIcon?: ReactNode;
@@ -74,9 +82,11 @@ type CommandRowProps = {
   reduce: boolean;
   onActivate: (index: number) => void;
   onSelect: (item: CommandItem) => void;
+  /** The palette's root `testID`; the row derives its own from it. */
+  testID?: string;
 };
 
-function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSelect }: CommandRowProps) {
+function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSelect, testID }: CommandRowProps) {
   const handlePressIn = useCallback(() => onActivate(index), [onActivate, index]);
   const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
 
@@ -99,7 +109,7 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
       accessibilityLabel={item.label}
       onPressIn={handlePressIn}
       onPress={handlePress}
-      testID={item.testID}
+      testID={item.testID ?? (testID ? `${testID}-item-${item.id}` : undefined)}
       icon={item.icon}
       label={item.label}
       active={isActive}
@@ -223,7 +233,7 @@ export function CommandPalette({
           ) : (
             grouped.map(([group, list]) => (
               <View key={group} className="mb-1">
-                <Text className="px-2 py-1.5 font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
+                <Text className={GROUP_LABEL_CLASS} testID={testID ? `${testID}-group-${group}` : undefined}>
                   {group}
                 </Text>
                 {list.map((it) => {
@@ -239,6 +249,7 @@ export function CommandPalette({
                       reduce={reduce}
                       onActivate={setActive}
                       onSelect={handleSelect}
+                      testID={testID}
                     />
                   );
                 })}

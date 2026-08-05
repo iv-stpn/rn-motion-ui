@@ -127,11 +127,15 @@ export const Interactive: Story = { render: (args) => <StarRatingPlayground {...
 
 export const Default: Story = {
   name: 'Demo: Rate four stars',
-  args: { showValue: true },
+  args: { showValue: true, testID: 'story-stars' },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const fourth = await canvas.findByRole('radio', { name: '4 stars' });
     await userEvent.click(fourth);
     await expect(args.onValueChange).toHaveBeenCalledWith(4);
+    // Each star is addressable by position as well as by name. The read-only
+    // branch draws its own stars under the same `-star-<n>` suffix, so a test
+    // can target the fourth star without knowing which branch rendered it.
+    await expect(canvas.getByTestId('story-stars-star-4')).toBe(fourth);
   },
 };

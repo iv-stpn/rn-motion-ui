@@ -148,6 +148,11 @@ type WheelPickerRowProps = {
   /** Render at full opacity regardless of angle (used for the clipped bright centre drum). */
   opaque?: boolean;
   onPress?: () => void;
+  /**
+   * Left undefined for the bright centre drum, which is an `aria-hidden` second
+   * copy of these same rows: naming both would make every option match twice.
+   */
+  testID?: string;
 };
 
 // One row on the drum wall. Its angular offset from the front is `θ = (index −
@@ -173,6 +178,7 @@ function WheelPickerRow({
   center,
   onPress,
   opaque = false,
+  testID,
 }: WheelPickerRowProps) {
   const animatedStyle = useAnimatedStyle(() => {
     const offset = index - scroll.value;
@@ -208,6 +214,7 @@ function WheelPickerRow({
         onPress={onPress}
         className="text-center font-medium text-foreground"
         style={{ height: itemHeight, lineHeight: itemHeight }}
+        testID={testID}
       >
         {label}
       </Text>
@@ -283,6 +290,16 @@ export type WheelPickerProps = {
   className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  /**
+   * Base testID. Each row takes `-option-<value>`, under either variant and under
+   * reduced motion, so one selector works everywhere.
+   *
+   * Only the interactive rows are named. The drum paints a second, `aria-hidden`
+   * copy of every row for the bright centre band, and naming those would leave
+   * each option matching twice.
+   *
+   * @default 'wheel-picker'
+   */
   testID?: string;
 };
 
@@ -608,6 +625,7 @@ export function WheelPicker({
                   v === currentValue ? 'text-center font-medium text-foreground' : 'text-center font-medium text-muted-foreground'
                 }
                 style={{ height: itemHeight, lineHeight: itemHeight }}
+                testID={`${testID ?? 'wheel-picker'}-option-${v}`}
               >
                 {optionLabel(option)}
               </Text>
@@ -652,6 +670,7 @@ export function WheelPicker({
           hideBeyond={hideBeyond}
           center={pad}
           onPress={disabled ? undefined : () => glideTo(i)}
+          testID={`${testID ?? 'wheel-picker'}-option-${optionValue(option)}`}
         />
       ))}
       {/* Bright centre drum — same rows, clipped to one row height and drawn at

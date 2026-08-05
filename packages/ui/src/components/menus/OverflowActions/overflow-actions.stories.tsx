@@ -33,11 +33,11 @@ type Story = StoryObj<typeof meta>;
 const SIZES = ['sm', 'md'] as const satisfies readonly OverflowActionsSize[];
 const NO_ACTION = 'no action yet';
 
-type DemoProps = { size?: OverflowActionsSize; label?: string };
+type DemoProps = { size?: OverflowActionsSize; label?: string; testID?: string };
 
 // The uncontrolled variant used by the size rows — each rail owns its own state.
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Demo({ size, label = 'action rail' }: DemoProps) {
+function Demo({ size, label = 'action rail', testID }: DemoProps) {
   const iconColor = useThemeColor('foreground');
   const iconSize = size === 'sm' ? 14 : 16;
 
@@ -64,6 +64,7 @@ function Demo({ size, label = 'action rail' }: DemoProps) {
       overflowActions={overflowActions}
       primaryActions={primaryActions}
       size={size}
+      testID={testID}
     />
   );
 }
@@ -156,11 +157,17 @@ export const Interactive: Story = { render: () => <OverflowActionsPlayground /> 
 
 export const Default: Story = {
   name: 'Demo: Expand actions',
-  render: () => <Demo />,
+  render: () => <Demo testID="story-rail" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // The toggle reveals the overflow group; its actions then become visible.
-    await userEvent.click(await canvas.findByRole('button', { name: 'Open action rail' }));
+    await userEvent.click(await canvas.findByTestId('story-rail-toggle'));
     await expect(await canvas.findByRole('button', { name: 'Branch' })).toBeTruthy();
+    // A primary action and an overflow action, each matching exactly once.
+    // `getByTestId` throws on a second match, which is the real assertion here:
+    // the overflow rows render twice — once in the offscreen width measurer —
+    // and only the visible copy is named.
+    await expect(canvas.getByTestId('story-rail-item-preview')).toBeTruthy();
+    await expect(canvas.getByTestId('story-rail-item-branch')).toBeTruthy();
   },
 };

@@ -36,6 +36,11 @@ export type BloomMenuProps = {
   /** Additional NativeWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
+  /**
+   * Root testID. The trigger takes `-trigger`, the close button `-close`, and
+   * each cell `-item-<index>` — positional, since `BloomMenuItem` has no `id`.
+   * An item's own `testID` overrides the one derived for it.
+   */
   testID?: string;
 };
 
@@ -177,7 +182,12 @@ export function BloomMenu({
               className="flex-row items-center justify-between border-border border-b px-4 py-3"
             >
               <Text className="font-medium text-muted-foreground text-sm">{title}</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={handleClose}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close menu"
+                onPress={handleClose}
+                testID={testID ? `${testID}-close` : undefined}
+              >
                 <ThemedIcon icon={X} variant="ghost" size={16} />
               </Pressable>
             </MotiView>
@@ -199,7 +209,7 @@ export function BloomMenu({
                     open={open}
                     dist={dist}
                     onSelect={select}
-                    testID={item.testID}
+                    testID={item.testID ?? (testID ? `${testID}-item-${i}` : undefined)}
                   />
                 );
               })}
@@ -226,6 +236,7 @@ export function BloomMenu({
               accessibilityLabel={triggerLabel}
               onPress={handleOpen}
               className="flex-1 flex-row items-center justify-center gap-2"
+              testID={testID ? `${testID}-trigger` : undefined}
             >
               <Text className="font-medium text-foreground text-sm">{triggerLabel}</Text>
               <ThemedIcon icon={Plus} variant="secondary" size={16} />

@@ -119,24 +119,27 @@ export const WithAction: Story = {
   name: 'Demo: Trigger an action',
   render: (args) => (
     <View className="w-full">
-      <SwipeableList {...args} />
+      <SwipeableList {...args} testID="story-swipe" />
     </View>
   ),
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
-    // Action buttons are rendered in the DOM (behind the surface); accessible by label.
-    // We find the first "Trash" button and press it.
-    const trashButtons = await canvas.findAllByRole('button', { name: 'Trash' });
-    await expect(trashButtons.length).toBeGreaterThan(0);
+    // Every row repeats the same four action labels, so a role query matches
+    // four Trash buttons and says nothing about which row was pressed. The
+    // testID names the row and the action together, which is the only way to
+    // assert the payload — these buttons sit behind the draggable surface, so
+    // there is no swipe to reveal one first in jsdom.
+    const trash = canvas.getByTestId('story-swipe-row-feedback-action-trash');
+    await userEvent.click(trash);
 
-    // Pressing the button should call onAction.
-    const firstTrash = trashButtons[0];
-    if (firstTrash) {
-      await userEvent.click(firstTrash);
-      // Give event handlers a tick.
-      await new Promise((r) => setTimeout(r, 50));
-      await expect(args.onAction).toHaveBeenCalled();
-    }
+    // Give event handlers a tick.
+    await new Promise((r) => setTimeout(r, 50));
+    await expect(args.onAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: expect.objectContaining({ id: 'trash' }),
+        item: expect.objectContaining({ id: 'feedback' }),
+      }),
+    );
   },
 };

@@ -27,6 +27,11 @@ export type BouncyAccordionProps = {
   /** Additional NativeWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
+  /**
+   * Root testID. Each row's header takes `<testID>-item-<item.id>`, so a row is
+   * addressable without querying on its title. An item's own `testID` wins over
+   * the derived one.
+   */
   testID?: string;
   /** Replace the expand/collapse chevron. Default: `<ChevronDown size={16} color={chevronColor} />`. */
   chevronIcon?: ReactNode;
@@ -69,6 +74,8 @@ export type BouncyAccordionRowProps = {
   onToggle: (id: string) => void;
   /** Replace the expand/collapse chevron. Default: `<ChevronDown size={16} color={chevronColor} />`. */
   chevronIcon?: ReactNode;
+  /** Derived from the accordion's own `testID`. The item's overrides it. */
+  testID?: string;
 };
 
 function BouncyAccordionRow({
@@ -80,6 +87,7 @@ function BouncyAccordionRow({
   reduce,
   onToggle,
   chevronIcon,
+  testID,
 }: BouncyAccordionRowProps) {
   const [contentHeight, setContentHeight] = useState(0);
   const onContentLayout = useCallback((e: LayoutChangeEvent) => {
@@ -116,7 +124,7 @@ function BouncyAccordionRow({
           accessibilityLabel={item.title}
           disabled={item.disabled}
           onPress={handleToggle}
-          testID={item.testID}
+          testID={item.testID ?? testID}
           className="min-h-[54px] w-full flex-row items-center gap-4 px-5"
         >
           {item.icon ? <View className="h-7 w-7 shrink-0 items-center justify-center">{item.icon}</View> : null}
@@ -200,6 +208,7 @@ export function BouncyAccordion({
             reduce={reduce}
             onToggle={toggleItem}
             chevronIcon={chevronIcon}
+            testID={testID ? `${testID}-item-${item.id}` : undefined}
           />
         );
       })}

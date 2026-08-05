@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { useWindowDimensions, View } from 'react-native';
 import { cn } from '../../../lib/cn';
-import { Breadcrumbs } from '../Breadcrumbs/breadcrumbs';
+import { Breadcrumbs } from '../../display/Breadcrumbs/breadcrumbs';
 import type { FileSystemProps, ResolvedFileSystemBreakpoints } from './file-system.types';
 import { defaultFileSystemBreakpoints } from './file-system.types';
 import { FileSystemBody } from './file-system-body';

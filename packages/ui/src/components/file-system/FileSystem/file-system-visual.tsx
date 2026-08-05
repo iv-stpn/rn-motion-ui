@@ -9,10 +9,10 @@ import { Image, Pressable, View } from 'react-native';
 import { LeftLine as ChevronLeft } from 'rn-motion-ui-icons/icons/left-line';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
+import { Loader } from '../../display/Loader/loader';
 import { Text } from '../../typography/Text/text';
-import { Loader } from '../Loader/loader';
+import { FileTypeIcon } from './FileIcon/file-icons';
 import type { FileEntry, FileSystemFileItem } from './file-system.types';
-import { FileTypeIcon } from './file-system-icons';
 import { filePreviewUrls } from './file-system-index';
 import { fileExtension } from './file-system-paths';
 

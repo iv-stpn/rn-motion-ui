@@ -15,7 +15,7 @@ import { FolderLine as FolderClosed } from 'rn-motion-ui-icons/icons/folder-line
 import { PicLine as FileImage } from 'rn-motion-ui-icons/icons/pic-line';
 import { TableLine as FileSpreadsheet } from 'rn-motion-ui-icons/icons/table-line';
 import { VideoLine as FileVideo } from 'rn-motion-ui-icons/icons/video-line';
-import { type FileIconColorToken, type FileIconName, fileIconColor, resolveFileIcon } from './file-system-icon';
+import { type FileIconColorToken, type FileIconName, fileIconColor, resolveFileIcon } from './file-icon';
 
 const FILE_ICONS: Record<FileIconName, ComponentType<IconProps>> = {
   FolderClosed,

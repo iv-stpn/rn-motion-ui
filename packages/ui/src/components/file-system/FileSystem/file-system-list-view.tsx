@@ -25,6 +25,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
+import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,
@@ -40,7 +41,6 @@ import {
   FS_HOVER_TEST_ID,
   useFileSystemRowHover,
 } from './file-system-hover';
-import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
 import type { FileSystemRow } from './file-system-rows';
 import { flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';

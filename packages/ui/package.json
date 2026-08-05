@@ -213,9 +213,14 @@
       "default": "./src/components/display/FeedbackWidget/feedback-widget.tsx"
     },
     "./file-system": {
-      "source": "./src/components/display/FileSystem/file-system.tsx",
-      "types": "./src/components/display/FileSystem/file-system.tsx",
-      "default": "./src/components/display/FileSystem/file-system.tsx"
+      "source": "./src/components/file-system/FileSystem/file-system.tsx",
+      "types": "./src/components/file-system/FileSystem/file-system.tsx",
+      "default": "./src/components/file-system/FileSystem/file-system.tsx"
+    },
+    "./file-icon": {
+      "source": "./src/components/file-system/FileSystem/FileIcon/file-icons.tsx",
+      "types": "./src/components/file-system/FileSystem/FileIcon/file-icons.tsx",
+      "default": "./src/components/file-system/FileSystem/FileIcon/file-icons.tsx"
     },
     "./full-sheet": {
       "source": "./src/components/menus/FullSheet/full-sheet.tsx",

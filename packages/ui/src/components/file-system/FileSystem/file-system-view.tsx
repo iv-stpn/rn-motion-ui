@@ -3,8 +3,8 @@
 
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
+import { Loader } from '../../display/Loader/loader';
 import { Text } from '../../typography/Text/text';
-import { Loader } from '../Loader/loader';
 import type {
   FileEntry,
   FileSystemContextMenuAction,

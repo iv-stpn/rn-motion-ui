@@ -19,9 +19,9 @@ import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { Draggable } from '../../display/Draggable/draggable';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
-import { Draggable } from '../Draggable/draggable';
 import { FileSystem } from './file-system';
 import type {
   FileSystemContextMenuAction,
@@ -246,7 +246,7 @@ function ExternalFileTray() {
 // `renderWithFilterBar`).
 
 const meta = {
-  title: 'Display/FileSystem',
+  title: 'File System/FileSystem',
   component: FileSystem,
   decorators: [
     (Story) => (

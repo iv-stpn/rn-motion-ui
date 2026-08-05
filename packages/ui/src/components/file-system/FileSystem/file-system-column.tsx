@@ -15,6 +15,7 @@ import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
+import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,
@@ -29,7 +30,6 @@ import {
   FS_HOVER_TEST_ID,
   useFileSystemRowHover,
 } from './file-system-hover';
-import { FileSystemFolderGlyph, FileTypeIcon } from './file-system-icons';
 import { filePreviewUrls, folderHasChildren } from './file-system-index';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
 import type { FileSystemSelectionMode } from './file-system-selection';

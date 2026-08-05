@@ -8,7 +8,7 @@
 
 import type { ReactNode } from 'react';
 import { Image, View } from 'react-native';
-import { Loader } from '../Loader/loader';
+import { Loader } from '../../display/Loader/loader';
 import type { FileEntry, FileSystemFileItem, FileSystemViewerArgs } from './file-system.types';
 import { viewerKindForFile } from './file-system-kinds';
 import { FileVisual } from './file-system-visual';

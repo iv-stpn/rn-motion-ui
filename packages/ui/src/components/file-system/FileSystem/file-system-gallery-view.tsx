@@ -6,13 +6,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, ScrollView, View } from 'react-native';
+import { Loader } from '../../display/Loader/loader';
 import { Text } from '../../typography/Text/text';
-import { Loader } from '../Loader/loader';
+import { FileSystemFolderGlyph } from './FileIcon/file-icons';
 import type { FileEntry, FileSystemEntry } from './file-system.types';
 import { formatByteSize } from './file-system-format';
 import { FileSystemGalleryStage } from './file-system-gallery-stage';
 import { FileSystemGalleryStrip } from './file-system-gallery-strip';
-import { FileSystemFolderGlyph } from './file-system-icons';
 import { FileSystemInformation } from './file-system-information';
 import { fileKindLabel } from './file-system-kinds';
 import type { FileSystemViewProps } from './file-system-view';

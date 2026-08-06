@@ -177,10 +177,30 @@
       "types": "./src/components/navigation/Dock/dock.tsx",
       "default": "./src/components/navigation/Dock/dock.tsx"
     },
+    "./drag-manager": {
+      "source": "./src/components/gestures/DragManager/drag-manager.tsx",
+      "types": "./src/components/gestures/DragManager/drag-manager.tsx",
+      "default": "./src/components/gestures/DragManager/drag-manager.tsx"
+    },
+    "./drag-store": {
+      "source": "./src/components/gestures/drag-store.ts",
+      "types": "./src/components/gestures/drag-store.ts",
+      "default": "./src/components/gestures/drag-store.ts"
+    },
+    "./drag-types": {
+      "source": "./src/components/gestures/drag.types.ts",
+      "types": "./src/components/gestures/drag.types.ts",
+      "default": "./src/components/gestures/drag.types.ts"
+    },
     "./draggable": {
-      "source": "./src/components/display/Draggable/draggable.tsx",
-      "types": "./src/components/display/Draggable/draggable.tsx",
-      "default": "./src/components/display/Draggable/draggable.tsx"
+      "source": "./src/components/gestures/Draggable/draggable.tsx",
+      "types": "./src/components/gestures/Draggable/draggable.tsx",
+      "default": "./src/components/gestures/Draggable/draggable.tsx"
+    },
+    "./dragzone": {
+      "source": "./src/components/gestures/Dragzone/dragzone.tsx",
+      "types": "./src/components/gestures/Dragzone/dragzone.tsx",
+      "default": "./src/components/gestures/Dragzone/dragzone.tsx"
     },
     "./drawer": {
       "source": "./src/components/menus/Drawer/drawer.tsx",
@@ -276,6 +296,26 @@
       "source": "./src/components/menus/MorphingModal/morphing-modal.tsx",
       "types": "./src/components/menus/MorphingModal/morphing-modal.tsx",
       "default": "./src/components/menus/MorphingModal/morphing-modal.tsx"
+    },
+    "./multi-drag": {
+      "source": "./src/components/gestures/DragManager/multi-drag.ts",
+      "types": "./src/components/gestures/DragManager/multi-drag.ts",
+      "default": "./src/components/gestures/DragManager/multi-drag.ts"
+    },
+    "./multi-drag-manager": {
+      "source": "./src/components/gestures/DragManager/multi-drag-manager.tsx",
+      "types": "./src/components/gestures/DragManager/multi-drag-manager.tsx",
+      "default": "./src/components/gestures/DragManager/multi-drag-manager.tsx"
+    },
+    "./multi-drag-scope": {
+      "source": "./src/components/gestures/DragManager/multi-drag-scope.ts",
+      "types": "./src/components/gestures/DragManager/multi-drag-scope.ts",
+      "default": "./src/components/gestures/DragManager/multi-drag-scope.ts"
+    },
+    "./multi-draggable": {
+      "source": "./src/components/gestures/DragManager/multi-draggable.tsx",
+      "types": "./src/components/gestures/DragManager/multi-draggable.tsx",
+      "default": "./src/components/gestures/DragManager/multi-draggable.tsx"
     },
     "./multi-step-menu": {
       "source": "./src/components/menus/MultiStepMenu/multi-step-menu.tsx",
@@ -421,6 +461,11 @@
       "source": "./src/components/display/Table/use-column-reorder.ts",
       "types": "./src/components/display/Table/use-column-reorder.ts",
       "default": "./src/components/display/Table/use-column-reorder.ts"
+    },
+    "./use-drag-store": {
+      "source": "./src/components/gestures/use-drag-store.ts",
+      "types": "./src/components/gestures/use-drag-store.ts",
+      "default": "./src/components/gestures/use-drag-store.ts"
     },
     "./use-table": {
       "source": "./src/components/display/Table/use-table.ts",

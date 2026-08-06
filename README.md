@@ -35,7 +35,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 > `node packages/ui/scripts/check-readme.mjs --fix`, which CI re-runs on every push.
 
 <!-- generated:components -->
-`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `card` · `checkbox` · `checkbox-card` · `command-palette` · `cylinder-carousel` · `dock` · `draggable` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-widget` · `file-system` · `full-sheet` · `glossy-button` · `hold-context-menu` · `hover-menu` · `icon` · `input` · `loader` · `marquee` · `menu` · `menu-item` · `morphing-modal` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `radio` · `radio-card` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `wheel-picker`
+`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `card` · `checkbox` · `checkbox-card` · `command-palette` · `cylinder-carousel` · `dock` · `drag-manager` · `drag-store` · `drag-types` · `draggable` · `dragzone` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-widget` · `file-icon` · `file-system` · `full-sheet` · `glossy-button` · `hold-context-menu` · `hover-menu` · `icon` · `input` · `loader` · `marquee` · `menu` · `menu-item` · `morphing-modal` · `multi-drag` · `multi-drag-manager` · `multi-drag-scope` · `multi-draggable` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `radio` · `radio-card` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `use-drag-store` · `wheel-picker`
 <!-- /generated:components -->
 
 <details>
@@ -219,7 +219,7 @@ bun run test          # Vitest + Playwright interaction tests (real Chromium)
 ```
 
 <!-- generated:counts -->
-58 story files, 199 stories.
+62 story files, 217 stories.
 <!-- /generated:counts -->
 
 Every story runs as a vitest test; those with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`. `packages/ui` also carries a jsdom unit suite over the pure layers (Moti worklets, `lib/`, and the OTP edit logic).

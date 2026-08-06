@@ -107,6 +107,15 @@ Subpaths are namespaced by category:
 | `/smooth-scroll` | `SmoothScroll` |
 | `/dock` | `Dock` |
 | `/draggable` | `Draggable` |
+| `/dragzone` | `Dragzone` |
+| `/drag-manager` | `DragManager` |
+| `/multi-drag-manager` | `MultiDragManager` |
+| `/multi-draggable` | `MultiDraggable` |
+| `/multi-drag-scope` | `useMultiDragScope`, `useIsLifting` |
+| `/multi-drag` | `readMultiDragIds`, `MULTI_DRAG_IDS_MIME` |
+| `/drag-types` | drag system type definitions |
+| `/drag-store` | the drag registry, for custom sources and targets |
+| `/use-drag-store` | `useActiveDrag`, `useDragSnapshot`, `useDragzoneState`, `useDragMove` |
 | `/popover` | `Popover` |
 | `/drawer` | `Drawer` |
 | `/bottom-sheet` | `BottomSheet` |

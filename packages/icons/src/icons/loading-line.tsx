@@ -9,12 +9,11 @@ import {
   Path as SvgPath,
   Stop as SvgStop,
 } from 'react-native-svg';
-import { useThemeColor } from 'rn-motion-ui/theme/use-theme-color';
 import type { IconProps } from '../icon-props';
+import { useIconColor } from '../resolve-icon-color';
 
 export function LoadingLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
-  const defaultColor = useThemeColor('foreground');
-  const color = colorProp ?? defaultColor;
+  const color = useIconColor(colorProp);
   const id = useId();
   return (
     <Svg

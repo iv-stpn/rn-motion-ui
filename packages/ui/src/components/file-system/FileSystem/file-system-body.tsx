@@ -17,6 +17,7 @@
 import { type ComponentType, type ReactNode, useMemo, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { cn } from '../../../lib/cn';
+import type { DragzoneRenderState } from '../../gestures/drag.types';
 import type { FileSystemBodyState, FileSystemEmptyStateReason, FileSystemView } from './file-system.types';
 import { FileSystemColumnsView } from './file-system-columns-view';
 import {
@@ -31,13 +32,13 @@ import {
   useFileSystemViewer,
 } from './file-system-context';
 import { useBackgroundContextMenu } from './file-system-context-menu';
+import { FileSystemDropzone } from './file-system-dropzone';
 import { FileSystemGalleryView } from './file-system-gallery-view';
 import { FileSystemIconsView } from './file-system-icons-view';
 import { FileSystemListView } from './file-system-list-view';
 import { FileSystemSearchView } from './file-system-search-view';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileSystemEmptyState } from './file-system-view';
-import { useFileSystemExternalDrop } from './use-file-system-external-drop';
 
 const LOADING_LABEL = 'Loading…';
 const EMPTY_FOLDER_LABEL = 'This folder is empty';
@@ -210,16 +211,28 @@ function FileSystemBodyContent() {
   return <ActiveView {...viewProps} />;
 }
 
-// Rendered over the file area while an external drag (OS file, page element)
-// hovers over the component. Absolutely positioned so it does not displace
-// views or alter layout; `pointer-events-none` so the underlying views keep
-// receiving the DOM drag events that keep `isOver` accurate.
-function FileSystemExternalDropOverlay() {
+/**
+ * Loses to every zone inside it — a folder row, a tile, a column — so the body
+ * only takes a drop nothing more specific wanted. One step below the columns
+ * view's own pane fallback, which is itself already negative.
+ */
+const BODY_ZONE_PRIORITY = -2;
+
+// Drawn over the file area while a drag bound for the current folder hovers it.
+// Absolute so it never displaces the view; `pointer-events-none` so the drag
+// events the zone reads keep arriving. The label is for an external payload only:
+// a drag from inside carries entries the view is already showing, and captioning
+// the whole area says less than the ring on the folder under the pointer.
+type BodyDropSurfaceProps = { external: boolean };
+
+function BodyDropSurface({ external }: BodyDropSurfaceProps) {
   return (
     <View className="pointer-events-none absolute inset-0 items-center justify-center border border-foreground/20 border-dashed bg-foreground/[0.03]">
-      <Text className="font-medium text-foreground/50 text-sm" selectable={false}>
-        {EXTERNAL_DROP_LABEL}
-      </Text>
+      {external ? (
+        <Text className="font-medium text-foreground/50 text-sm" selectable={false}>
+          {EXTERNAL_DROP_LABEL}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -241,18 +254,7 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
   const { hasActiveFilters } = useFileSystemFilters();
   const { isSearching, searchInput: searchValue } = useFileSystemSearch();
   const { selectedEntry, selectedPaths } = useFileSystemSelection();
-  const { onExternalDrop, testID } = useFileSystemConsumer();
-
-  const containerRef = useRef<View | null>(null);
-  // The list and columns views wire their own per-row / per-column external drop
-  // hooks directly, so the body-level hook is only active for other views
-  // (icons, gallery) where a background overlay is the right feedback.
-  const skipBodyDrop = !isSearching && (view === 'list' || view === 'columns');
-  const { isOver: isExternalDropOver } = useFileSystemExternalDrop({
-    containerRef,
-    currentPath,
-    onExternalDrop: skipBodyDrop ? undefined : onExternalDrop,
-  });
+  const { draggable, onExternalDrop, onMove, testID } = useFileSystemConsumer();
 
   // Resolved here rather than held in the store: the selection is a set of paths,
   // and only this slot asks for it as entries.
@@ -301,10 +303,26 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
   // `user-select` inherits, so this one class covers every view. Each marquee
   // surface repeats it anyway — the views are mounted directly in tests and by
   // consumers reaching for a single view, where this node isn't above them.
+  //
+  // The zone is this node rather than a child of it: it renders a plain `View` and
+  // takes the same className, so the file area's box is unchanged and the drop
+  // target is exactly the area a consumer sees.
   return (
-    <View ref={containerRef} className={cn('relative min-h-0 flex-1 select-none', className)} testID={bodyTestID}>
-      {body}
-      {isExternalDropOver ? <FileSystemExternalDropOverlay /> : null}
-    </View>
+    <FileSystemDropzone
+      className={cn('relative min-h-0 flex-1 select-none', className)}
+      destination={currentPath}
+      disabled={!draggable}
+      onExternalDrop={onExternalDrop}
+      onMove={onMove}
+      priority={BODY_ZONE_PRIORITY}
+      testID={bodyTestID}
+    >
+      {({ external, isOver }: DragzoneRenderState) => (
+        <>
+          {body}
+          {isOver ? <BodyDropSurface external={external} /> : null}
+        </>
+      )}
+    </FileSystemDropzone>
   );
 }

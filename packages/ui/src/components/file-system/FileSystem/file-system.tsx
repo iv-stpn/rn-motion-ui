@@ -28,6 +28,7 @@ import {
   useFileSystemSelectionActions,
   useFileSystemStoreContext,
 } from './file-system-context';
+import { FileSystemDragScope } from './file-system-drag-scope';
 import { FileSystemHeader } from './file-system-header';
 import { buildCrumbs } from './file-system-search';
 import type { HeaderLayout } from './file-system-toolbar-parts';
@@ -322,7 +323,13 @@ export function FileSystem({
         {renderHeader ? <FileSystemCustomHeader renderHeader={renderHeader} /> : <FileSystemHeader className={headerClassName} />}
         <FileSystemBreadcrumbs />
         {renderFilters ? <FileSystemCustomFilters renderFilters={renderFilters} /> : null}
-        <FileSystemBody className={bodyClassName} renderBody={renderBody} />
+        {/* Around the body alone: everything that drags or receives a drop is in
+            there, and the manager's box is the frame its ghost is drawn in — a
+            frame that included the header would let a ghost float over the
+            toolbar, which is not a place anything can be dropped. */}
+        <FileSystemDragScope>
+          <FileSystemBody className={bodyClassName} renderBody={renderBody} />
+        </FileSystemDragScope>
         {renderFooter ? (
           <FileSystemCustomFooter renderFooter={renderFooter} />
         ) : (

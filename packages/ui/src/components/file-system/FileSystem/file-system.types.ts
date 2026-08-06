@@ -562,7 +562,7 @@ export type FileSystemProps = {
    *
    * ```tsx
    * renderEmptyState={({ reason, label }) =>
-   *   reason === 'empty-folder' ? <DropZone onPick={upload} /> : undefined
+   *   reason === 'empty-folder' ? <EmptyFolderPlaceholder onPick={upload} /> : undefined
    * }
    * ```
    */

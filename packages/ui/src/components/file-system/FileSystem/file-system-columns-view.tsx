@@ -4,16 +4,7 @@
 // it and the horizontal scroll follows the deepest pane.
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  Animated,
-  type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  Platform,
-  ScrollView,
-  View,
-} from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
+import { type LayoutChangeEvent, ScrollView, View } from 'react-native';
 import { Text } from '../../typography/Text/text';
 import type { FileEntry, FileSystemEntry } from './file-system.types';
 import { COLUMN_WIDTH, FileSystemColumn } from './file-system-column';
@@ -23,18 +14,11 @@ import { fileKindLabel } from './file-system-kinds';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
 import { useEntryActivation } from './use-entry-activation';
-import { columnDragStateFor, useFileSystemColumnsDrag } from './use-file-system-columns-drag';
-import { useFileSystemDragWeb } from './use-file-system-drag-web';
 
 /** Preview pane geometry (px). */
 const PREVIEW_MIN_WIDTH = 240;
 const PREVIEW_MAX_WIDTH = 512;
 
-// `touchAction` has no Tailwind utility and is absent from RN's ViewStyle, so
-// it stays an inline web style — clamped only during a drag, so ordinary touch
-// scrolling is unaffected the rest of the time.
-type WebViewStyle = import('react-native').ViewStyle & { touchAction?: string };
-const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { touchAction: 'none' } : null;
 const PREVIEW_PADDING = 16;
 const PREVIEW_ASPECT_RATIO = 0.78;
 const KIND_SIZE_SEPARATOR = ' · ';
@@ -57,21 +41,6 @@ function trailColumnPaths(currentPath: string, selectedEntry: FileSystemEntry | 
     }
   }
   return paths;
-}
-
-type DragPreviewProps = { label: string; pos: Animated.ValueXY };
-
-/** Floating label chip that tracks the pointer during a drag (no re-renders). */
-function DragPreview({ label, pos }: DragPreviewProps) {
-  return (
-    <Animated.View className="pointer-events-none absolute top-0 left-0 z-[4]" style={{ transform: pos.getTranslateTransform() }}>
-      <View className="rounded-md border border-border bg-surface-4 px-2 py-1">
-        <Text className="text-foreground" numberOfLines={1} size="xs">
-          {label}
-        </Text>
-      </View>
-    </Animated.View>
-  );
 }
 
 type PreviewPaneProps = Pick<FileSystemViewProps, 'index' | 'loadPreviewImageUrl' | 'pageUrlCache' | 'renderFilePreview'> & {
@@ -111,7 +80,6 @@ function PreviewPane({ file, index, viewportWidth, ...visualProps }: PreviewPane
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: trail-preserving marquee handlers, drag geometry refs, and layout callbacks are tightly coupled — splitting would scatter refs across modules
 export function FileSystemColumnsView({
   currentPath,
   draggable,
@@ -139,47 +107,7 @@ export function FileSystemColumnsView({
   const columnPaths = useMemo(() => trailColumnPaths(currentPath, selectedEntry), [currentPath, selectedEntry]);
   const selectedFile = selectedEntry?.kind === 'file' ? selectedEntry : null;
 
-  // Refs for drag geometry — mutable, never cause re-renders.
-  const containerRef = useRef<View | null>(null);
-  const containerHeightRef = useRef(0);
-  const horizontalScrollOffsetRef = useRef(0);
-  const columnScrollOffsetsRef = useRef<number[]>([]);
-
-  const { drag, session, nativeGesture, previewPos } = useFileSystemColumnsDrag({
-    columnPaths,
-    columnScrollOffsetsRef,
-    containerHeightRef,
-    containerRef,
-    enabled: draggable ?? false,
-    horizontalScrollOffsetRef,
-    index,
-    onMove,
-    selectedPaths,
-  });
-  useFileSystemDragWeb({ containerRef, enabled: draggable ?? false, session });
-
-  const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    setViewportWidth(event.nativeEvent.layout.width);
-    containerHeightRef.current = event.nativeEvent.layout.height;
-  }, []);
-
-  const handleHorizontalScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    horizontalScrollOffsetRef.current = e.nativeEvent.contentOffset.x;
-  }, []);
-
-  // Stable per-column scroll-offset callbacks, keyed by index. Created lazily
-  // so FileSystemColumn's React.memo is not defeated by a new function reference
-  // on every render.
-  const scrollOffsetHandlersRef = useRef(new Map<number, (offset: number) => void>());
-  const getScrollOffsetHandler = useCallback((colIdx: number) => {
-    const existing = scrollOffsetHandlersRef.current.get(colIdx);
-    if (existing) return existing;
-    const handler = (offset: number) => {
-      columnScrollOffsetsRef.current[colIdx] = offset;
-    };
-    scrollOffsetHandlersRef.current.set(colIdx, handler);
-    return handler;
-  }, []);
+  const handleLayout = useCallback((event: LayoutChangeEvent) => setViewportWidth(event.nativeEvent.layout.width), []);
 
   // Stable per-column marquee callbacks, keyed by index. Each one injects the
   // trail paths (the parent folders that opened this sub-column) into the base
@@ -208,7 +136,8 @@ export function FileSystemColumnsView({
     marqueeHandlersRef.current.set(colIdx, handler);
     return handler;
   }, []);
-  // the active column at the right edge.
+  // A pane opening at the far right scrolls itself into view, so pressing into a
+  // deep trail keeps the active column at the right edge.
   const handleContentSizeChange = useCallback(() => scrollRef.current?.scrollToEnd({ animated: true }), []);
 
   const scrollView = (
@@ -218,13 +147,12 @@ export function FileSystemColumnsView({
       contentContainerClassName="grow"
       horizontal={true}
       onContentSizeChange={handleContentSizeChange}
-      onScroll={handleHorizontalScroll}
       scrollEventThrottle={16}
       showsHorizontalScrollIndicator={false}
     >
       {columnPaths.map((columnPath, columnIndex) => (
         <FileSystemColumn
-          dragState={columnDragStateFor(columnIndex, drag)}
+          draggable={draggable ?? false}
           entries={index.children.get(columnPath) ?? []}
           folderPath={columnPath}
           getContextMenuActions={getContextMenuActions}
@@ -235,7 +163,7 @@ export function FileSystemColumnsView({
           onContextMenuAction={onContextMenuAction}
           onExternalDrop={onExternalDrop}
           onMarquee={getMarqueeHandler(columnIndex)}
-          onScrollOffsetChange={getScrollOffsetHandler(columnIndex)}
+          onMove={onMove}
           onSelectLongPress={selectLongPress}
           renderEntryIcon={renderEntryIcon}
           selectedPaths={selectedPaths}
@@ -257,17 +185,13 @@ export function FileSystemColumnsView({
     </ScrollView>
   );
 
+  // No drop zone at this level: each pane owns one for the folder it displays, so
+  // a trail is droppable at every step. A view-wide fallback would have to pick a
+  // single destination, and the columns view is precisely the one with no single
+  // current folder.
   return (
-    <View
-      ref={containerRef}
-      className="flex-1"
-      onLayout={handleLayout}
-      // Prevent the browser's scroll gesture from stealing the pointer while a
-      // drag is in flight — pointer capture alone is not enough on touch web.
-      style={drag.active ? (WEB_DRAGGING_STYLE ?? undefined) : undefined}
-    >
-      {nativeGesture === null ? scrollView : <GestureDetector gesture={nativeGesture}>{scrollView}</GestureDetector>}
-      {drag.active ? <DragPreview label={drag.previewLabel} pos={previewPos} /> : null}
+    <View className="flex-1" onLayout={handleLayout}>
+      {scrollView}
     </View>
   );
 }

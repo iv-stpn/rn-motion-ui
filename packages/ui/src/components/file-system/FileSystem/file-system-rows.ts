@@ -9,6 +9,9 @@ function isExpandableFolder(entry: FileSystemEntry, index: FileSystemIndex): boo
   return entry.hasChildren === true || (index.children.get(entry.path)?.length ?? 0) > 0;
 }
 
+/** Row height in the list view — import this in the view instead of re-defining it. */
+export const FS_ROW_HEIGHT = 30;
+
 export type FileSystemRow = {
   entry: FileSystemEntry;
   /** Depth below the open folder, driving the row's indent. */

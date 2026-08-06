@@ -16,11 +16,12 @@ import { LinkLine as Link } from 'rn-motion-ui-icons/icons/link-line';
 import { SearchLine as SearchIcon } from 'rn-motion-ui-icons/icons/search-line';
 import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
+import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer } from '../../../__stories__/story-drag';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { Draggable } from '../../display/Draggable/draggable';
 import { Button } from '../../form/Button/button';
+import { Draggable } from '../../gestures/Draggable/draggable';
 import { Text } from '../../typography/Text/text';
 import { FileSystem } from './file-system';
 import type {
@@ -40,7 +41,7 @@ import { FS_HOVER_TEST_ID } from './file-system-hover';
 import { FS_TILE_DROP_TARGET_TEST_ID } from './file-system-icons-tile';
 import { FS_MARQUEE_TEST_ID } from './file-system-marquee';
 import { FS_SEARCH_MATCH_TEST_ID } from './file-system-search-view';
-import { FS_DRAG_CONTAINER_TEST_ID } from './use-file-system-drag';
+import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
 
 // ─── Shared data ───────────────────────────────────────────────────────────────
 // A small, deterministic manifest. Only files are listed at the top level —
@@ -430,6 +431,9 @@ const ALL_FEATURES: PlaygroundOptions = {
   externalDrop: false,
   lazyChildren: true,
 };
+
+/** The same playground with the tray showing — see PlaygroundExternalDrop. */
+const EXTERNAL_DROP_FEATURES: PlaygroundOptions = { ...ALL_FEATURES, externalDrop: true };
 
 type FileSystemPlaygroundProps = FileSystemProps & { options?: PlaygroundOptions };
 
@@ -1748,25 +1752,21 @@ export const WithBackgroundContextMenu: Story = {
 };
 
 // ─── Drag and drop ─────────────────────────────────────────────────────────────
-// The play tests drive the drag with real PointerEvents rather than `userEvent`:
-// the web transport takes pointer capture, and capture only works for a pointer
-// the browser considers active, so the ids and coordinates have to line up. Each
-// call below is one event the browser itself would send.
-
-type ClientPoint = { x: number; y: number };
-
-const DRAG_POINTER_ID = 9;
-
-/** Centre of `node`, in the client coordinates the pointer stream carries. */
-function centreOf(node: Element): ClientPoint {
-  const rect = node.getBoundingClientRect();
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-}
+// Every entry is a `<Draggable>` and every folder a `<Dragzone>` (see the
+// `Gestures/*` stories), so on web a mouse drag here is the browser's own HTML5
+// drag. The play tests dispatch that sequence by hand through the shared helpers
+// in `story-drag.ts` — `userEvent` has no drag to give — and one `DataTransfer`
+// threaded through the events of one drag is what makes them a drag.
+//
+// `dragend` is always the caller's: the DOM `drop` deliberately delivers nothing,
+// because the store resolves a drop off measured rects so that a native pan and a
+// web drag land on the same zone. Both `onMove` and the source's `onDragEnd` fire
+// from that release.
 
 /**
  * The row carrying `name` in the list view. Its accessible name concatenates the
  * date and size cells, so the name text is the anchor and the row is the
- * Pressable above it — the element whose 30px box the resolver maps back to.
+ * Pressable above it — the element whose 30px box the zone's rect matches.
  */
 async function listRow(canvas: ReturnType<typeof within>, name: string): Promise<Element> {
   const label = await canvas.findByText(name);
@@ -1775,11 +1775,42 @@ async function listRow(canvas: ReturnType<typeof within>, name: string): Promise
   return row;
 }
 
+/**
+ * The `<Draggable>` host above `node` — the element the transport wires, and the
+ * only place the `draggable` attribute lives.
+ *
+ * A story never needs this to *drive* a drag, since `dragstart` bubbles from the row
+ * it is dispatched on. It is here for the assertion that cannot be synthesised: that
+ * the browser would lift this node in the first place.
+ */
+function dragHost(node: Element): Element {
+  const host = node.closest('[draggable="true"]');
+  if (!host) throw new Error('no Draggable host above the entry');
+  return host;
+}
+
+// ─── The selection box ─────────────────────────────────────────────────────────
+// Not a drag, and driven differently: the band is the view's own pointer stream
+// (see file-system-marquee), so these two stay on PointerEvents while everything
+// above moved to DragEvents. The ids and coordinates have to line up because the
+// band takes pointer capture, and capture only works for a pointer the browser
+// considers active.
+
+type ClientPoint = { x: number; y: number };
+
+const MARQUEE_POINTER_ID = 9;
+
+/** Centre of `node`, in the client coordinates the pointer stream carries. */
+function centreOf(node: Element): ClientPoint {
+  const rect = node.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
 /** Dispatch one pointer event of `type` at a client point, as the browser would. */
 function pointer(node: Element, type: string, point: ClientPoint) {
   node.dispatchEvent(
     new PointerEvent(type, {
-      pointerId: DRAG_POINTER_ID,
+      pointerId: MARQUEE_POINTER_ID,
       pointerType: 'mouse',
       isPrimary: true,
       button: 0,
@@ -1792,33 +1823,32 @@ function pointer(node: Element, type: string, point: ClientPoint) {
   );
 }
 
+/** The hover highlight's opacity — the whole of what says whether it is up. */
+function opacityOf(node: Element): number {
+  return Number(getComputedStyle(node).opacity);
+}
+
 /**
- * Walk the pointer from `source` to `target` in steps, as a real stream would
- * arrive, and stop there — still pressed. Split from the release below so a test
- * can inspect the live drop feedback before the drag commits and it disappears.
+ * Walk the pointer from `origin` to `target` in steps, as a real stream would
+ * arrive, and stop there — still pressed. Split from the release so a test can read
+ * the live band before it commits and disappears.
  */
-function dragOver(container: Element, source: ClientPoint, target: ClientPoint) {
+function sweep(container: Element, origin: ClientPoint, target: ClientPoint) {
   const steps = 6;
   for (let step = 1; step <= steps; step += 1) {
     const ratio = step / steps;
     pointer(container, 'pointermove', {
-      x: source.x + (target.x - source.x) * ratio,
-      y: source.y + (target.y - source.y) * ratio,
+      x: origin.x + (target.x - origin.x) * ratio,
+      y: origin.y + (target.y - origin.y) * ratio,
     });
   }
 }
 
-/** Walk the pointer to `target` and release it there, committing the drop. */
-function dragTo(container: Element, source: ClientPoint, target: ClientPoint) {
-  dragOver(container, source, target);
-  pointer(container, 'pointerup', target);
-}
-
 /**
- * `draggable` enables pointer-capture drag on web and long-press pan on native.
- * Drag an entry onto a folder — an outline marks the live drop target — to fire
- * `onMove` with the dragged path and the destination folder path. The list and
- * grid views wire the gesture; columns and gallery accept the props silently.
+ * `draggable` makes every entry a drag source and every folder a drop target: the
+ * browser's own drag on web with a mouse, a held pan for touch and on native. Drag
+ * an entry onto a folder — an outline marks the live drop target — to fire `onMove`
+ * with the dragged paths and the destination folder path. All four views wire it.
  *
  * `onMove` reports; it does not mutate. Nothing appears to move here because the
  * story hands back the same `items` either way — see Interactive for the half
@@ -1835,33 +1865,32 @@ export const WithDragAndDrop: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('Roadmap.pptx');
 
-    // The transport listens on the scroll container, which is also the frame the
-    // drop outline is drawn in — the same node a real press bubbles up to.
-    const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.list);
     const row = await listRow(canvas, 'Roadmap.pptx');
-    const source = centreOf(row);
-    const target = centreOf(await listRow(canvas, 'Documents'));
+    const folder = await listRow(canvas, 'Documents');
 
-    // Press and go straight into the drag: a mouse has nothing to disambiguate,
-    // so movement past the slop is the whole arming signal.
-    pointer(row, 'pointerdown', source);
-    dragTo(container, source, target);
+    // The one part of a drag no play function can perform: the browser lifting a
+    // node at all. What the component owes it is the attribute, set on the host
+    // `<Draggable>` above the row — so that is what gets asserted directly.
+    await expect(dragHost(row)).toHaveAttribute('draggable', 'true');
+
+    const transfer = newDragTransfer();
+    await dragOnto({ source: row, target: folder, to: centerOf(folder), transfer });
+    // Nothing has been reported yet: the DOM `drop` carries no payload, because
+    // the store resolves the target off measured rects for both platforms.
+    await expect(args.onMove).not.toHaveBeenCalled();
+
+    fireDrag(row, 'dragend', transfer, centerOf(folder));
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
 
-    // The release also fires a click on whatever the drag ended on. It must not
-    // land: letting it through would select or open the drop target. The
-    // container swallows it in the capture phase, above the row, so the row's own
-    // listeners never run — which is what this spy checks.
-    const dropRow = await listRow(canvas, 'Documents');
-    const clicked = fn();
-    dropRow.addEventListener('click', clicked);
-    dropRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-    await expect(clicked).not.toHaveBeenCalled();
-
-    // Suppression is one-shot: the next click is a real one and gets through.
-    dropRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-    await expect(clicked).toHaveBeenCalledTimes(1);
-    dropRow.removeEventListener('click', clicked);
+    // A file row is no destination, so the same drag onto one falls through to the
+    // background zone — the open folder, which is where the entry already is, so
+    // it is not a move either. Without this the assertion above would also pass on
+    // a component that reported every release as a drop.
+    const file = await listRow(canvas, 'Budget-2026.xlsx');
+    const second = newDragTransfer();
+    await dragOnto({ source: row, target: file, to: centerOf(file), transfer: second });
+    fireDrag(row, 'dragend', second, centerOf(file));
+    await expect(args.onMove).toHaveBeenCalledTimes(1);
   },
 };
 
@@ -1878,40 +1907,47 @@ export const GridDragAndDrop: Story = {
 
     const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.icons);
     // A tile's accessible name is just the entry name, so the button role is the
-    // whole query — the tile box is what the 2-D resolver maps a point back to.
+    // whole query — and the tile's own box is the zone's rect.
     const tile = await canvas.findByRole('button', { name: 'Roadmap.pptx' });
     const folderTile = await canvas.findByRole('button', { name: 'Documents' });
-    const source = centreOf(tile);
-    const target = centreOf(folderTile);
+    const target = centerOf(folderTile);
 
-    pointer(tile, 'pointerdown', source);
-    dragOver(container, source, target);
-
-    // Hold the drag over the folder and read its two marks. The pending drop is
-    // the folder's *name* lighting up, with the hover tint on the glyph above it
-    // — so the drop mark sits below the highlight, not around it.
-    const dropTarget = await canvas.findByTestId(FS_TILE_DROP_TARGET_TEST_ID);
+    // Hover the grid first, so the highlight is up and there is something to see
+    // suppressed: the resolvers return null for the length of a drag, because the
+    // folder's own zone is what marks the pending drop now.
     const highlight = await canvas.findByTestId(FS_HOVER_TEST_ID.icons);
-    // The highlight glides between cells (MOVE_MS), so wait for it to land on
-    // the folder's glyph box: narrower than the tile, centred, pinned to its top.
-    const tileBox = folderTile.getBoundingClientRect();
-    await waitFor(async () => {
-      const highlightBox = highlight.getBoundingClientRect();
-      await expect(highlightBox.width).toBeLessThan(tileBox.width);
-      await expect(highlightBox.height).toBeLessThan(tileBox.height);
-      await expect(highlightBox.left + highlightBox.width / 2).toBeCloseTo(tileBox.left + tileBox.width / 2, 0);
-      await expect(highlightBox.top).toBeCloseTo(tileBox.top, 0);
-    });
+    const hovered = centerOf(tile);
+    pointer(container, 'pointermove', hovered);
+    await waitFor(() => expect(opacityOf(highlight)).toBe(1));
 
-    // And the drop mark is the label chip under that glyph, inside the same tile.
-    const targetBox = dropTarget.getBoundingClientRect();
-    const highlightBox = highlight.getBoundingClientRect();
-    await expect(targetBox.top).toBeGreaterThanOrEqual(highlightBox.bottom - 1);
-    await expect(targetBox.bottom).toBeLessThanOrEqual(tileBox.bottom + 1);
+    const transfer = newDragTransfer();
+    await liftDrag(tile, transfer, hovered);
+    fireDrag(tile, 'drag', transfer, target);
+    fireDrag(folderTile, 'dragover', transfer, target);
+
+    // Hold the drag over the folder and read the mark. A pending drop is the
+    // folder's *name* filling in — the same fill selection uses, so the tile about
+    // to receive the drop reads as its label lighting up.
+    const dropTarget = await canvas.findByTestId(FS_TILE_DROP_TARGET_TEST_ID);
     await expect(dropTarget).toHaveTextContent('Documents');
+    const tileBox = folderTile.getBoundingClientRect();
+    const targetBox = dropTarget.getBoundingClientRect();
+    await expect(targetBox.top).toBeGreaterThanOrEqual(tileBox.top);
+    await expect(targetBox.bottom).toBeLessThanOrEqual(tileBox.bottom + 1);
+    await expect(targetBox.width).toBeLessThanOrEqual(tileBox.width + 1);
+    // And the pointer-driven highlight has stood down for the drag, so the two
+    // cannot mark different cells at once.
+    await waitFor(() => expect(opacityOf(highlight)).toBe(0));
 
-    pointer(container, 'pointerup', target);
+    fireDrag(tile, 'dragend', transfer, target);
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
+
+    // The drag is over, so the highlight comes back on the next move — the
+    // suppression is tied to the drag, not a one-way door. Onto a tile, not just
+    // anywhere in the grid: hover is the stricter of the two questions and refuses
+    // the padding and the gaps, where a drop would still clamp to a neighbour.
+    pointer(container, 'pointermove', centerOf(folderTile));
+    await waitFor(() => expect(opacityOf(highlight)).toBe(1));
   },
 };
 
@@ -1922,25 +1958,27 @@ export const DragIntoOwnSubtree: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
-    const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.list);
     // Expand `Documents/` so its own child folder is a row beneath it.
     await userEvent.click(await canvas.findByLabelText('Expand Documents'));
     const row = await listRow(canvas, 'Documents');
-    const source = centreOf(row);
-    const target = centreOf(await listRow(canvas, 'Reports'));
+    const child = await listRow(canvas, 'Reports');
 
-    // `Documents/Reports/` is inside `Documents/`: a valid-looking folder row
-    // that would make the path circular, so the drop finds no target at all.
-    pointer(row, 'pointerdown', source);
-    dragTo(container, source, target);
+    // `Documents/Reports/` is inside `Documents/`: a valid-looking folder row that
+    // would make the path circular. Its zone refuses the drag outright, so the
+    // release falls through to the background zone — the open folder, which is
+    // where `Documents/` already sits, so that is not a move either.
+    const transfer = newDragTransfer();
+    await dragOnto({ source: row, target: child, to: centerOf(child), transfer });
+    fireDrag(row, 'dragend', transfer, centerOf(child));
     await expect(args.onMove).not.toHaveBeenCalled();
 
     // The same folder, the same gesture, a destination outside its subtree: this
     // one reports. Without it the assertion above would also pass on a drag that
     // never armed at all.
-    const sibling = centreOf(await listRow(canvas, 'Photos'));
-    pointer(row, 'pointerdown', source);
-    dragTo(container, source, sibling);
+    const sibling = await listRow(canvas, 'Photos');
+    const second = newDragTransfer();
+    await dragOnto({ source: row, target: sibling, to: centerOf(sibling), transfer: second });
+    fireDrag(row, 'dragend', second, centerOf(sibling));
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Photos/', sources: ['Documents/'] }));
   },
 };
@@ -1960,17 +1998,16 @@ export const MultiSelectDrag: Story = {
   args: { defaultView: 'list', draggable: true, selectionMode: 'multiple', onMove: fn() },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.list);
 
     await userEvent.click(await listRow(canvas, 'README.md'));
     modifierClick(await listRow(canvas, 'Roadmap.pptx'), 'ctrlKey');
     await canvas.findByText('· 2 selected');
 
     const row = await listRow(canvas, 'README.md');
-    const source = centreOf(row);
-    const target = centreOf(await listRow(canvas, 'Photos'));
-    pointer(row, 'pointerdown', source);
-    dragTo(container, source, target);
+    const folder = await listRow(canvas, 'Photos');
+    const transfer = newDragTransfer();
+    await dragOnto({ source: row, target: folder, to: centerOf(folder), transfer });
+    fireDrag(row, 'dragend', transfer, centerOf(folder));
 
     await waitFor(() =>
       expect(args.onMove).toHaveBeenCalledWith({
@@ -1978,6 +2015,14 @@ export const MultiSelectDrag: Story = {
         sources: expect.arrayContaining(['README.md', 'Roadmap.pptx']),
       }),
     );
+
+    // Lifting an entry outside the selection is a single-entry drag: the two rows
+    // still selected do not ride along.
+    const outside = await listRow(canvas, 'Budget-2026.xlsx');
+    const second = newDragTransfer();
+    await dragOnto({ source: outside, target: folder, to: centerOf(folder), transfer: second });
+    fireDrag(outside, 'dragend', second, centerOf(folder));
+    await waitFor(() => expect(args.onMove).toHaveBeenLastCalledWith({ destination: 'Photos/', sources: ['Budget-2026.xlsx'] }));
   },
 };
 
@@ -2011,7 +2056,7 @@ export const SelectionBox: Story = {
     const origin = { x: bounds.left + 4, y: bounds.top + bounds.height - 4 };
 
     pointer(container, 'pointerdown', origin);
-    dragOver(container, origin, second);
+    sweep(container, origin, second);
 
     // The band is up and painting while the pointer is still down.
     expect(await canvas.findByTestId(FS_MARQUEE_TEST_ID)).toBeInTheDocument();
@@ -2035,7 +2080,7 @@ export const SelectionBox: Story = {
     // A shorter sweep takes fewer tiles, so the band tracks the pointer rather
     // than latching onto whatever it first touched.
     pointer(container, 'pointerdown', origin);
-    dragOver(container, origin, first);
+    sweep(container, origin, first);
     await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md']));
     pointer(container, 'pointerup', first);
     mouse(container, 'click');
@@ -2065,13 +2110,11 @@ export const PlaygroundDrop: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('Roadmap.pptx');
 
-    const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.list);
     const row = await listRow(canvas, 'Roadmap.pptx');
-    const source = centreOf(row);
-    const target = centreOf(await listRow(canvas, 'Documents'));
-
-    pointer(row, 'pointerdown', source);
-    dragTo(container, source, target);
+    const folder = await listRow(canvas, 'Documents');
+    const transfer = newDragTransfer();
+    await dragOnto({ source: row, target: folder, to: centerOf(folder), transfer });
+    fireDrag(row, 'dragend', transfer, centerOf(folder));
 
     // The status line names the move, and the root no longer lists the entry:
     // it is inside `Documents/`, which is still collapsed.
@@ -2085,6 +2128,53 @@ export const PlaygroundDrop: Story = {
     // Reset restores the manifest and clears the status line back to the hint.
     await userEvent.click(await canvas.findByText('Reset'));
     await canvas.findByText(PLAYGROUND_HINT);
+  },
+};
+
+/**
+ * The other end of a drop: something arriving from *outside* the component.
+ *
+ * `onExternalDrop` is the callback, and it covers two things that look different and
+ * are not: an OS file drag, and an element elsewhere on the page that attached a
+ * payload of its own — here the tray above the browser, whose chips are plain
+ * `<Draggable>`s. Neither carries FileSystem entries, so neither is a move; the
+ * component hands the transfer over and the consumer decides what it meant.
+ *
+ * The destination is the folder the drop landed on, exactly as for a move, so a file
+ * dragged in from the desktop lands in the folder under the pointer rather than
+ * always at the root.
+ */
+export const PlaygroundExternalDrop: Story = {
+  name: 'Demo: Playground — a payload from outside',
+  args: { defaultView: 'list' },
+  render: (args) => <FileSystemPlayground {...args} options={EXTERNAL_DROP_FEATURES} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chip = await canvas.findByRole('button', { name: 'Drag invoice.pdf into the file browser' });
+    const folder = await listRow(canvas, 'Documents');
+
+    const transfer = newDragTransfer();
+    await dragOnto({ source: chip, target: folder, to: centerOf(folder), transfer });
+    fireDrag(chip, 'dragend', transfer, centerOf(folder));
+
+    // The chip's payload reached the consumer, and the destination is the row it was
+    // dropped on rather than the open folder.
+    await canvas.findByText('Added invoice.pdf to Documents/');
+    await userEvent.click(await canvas.findByLabelText('Expand Documents'));
+    // By testID, not by text: the tray chip that was dragged says `invoice.pdf`
+    // too, so the name alone matches two nodes once the drop has landed.
+    await canvas.findByTestId(fileSystemEntryTestID(undefined, 'Documents/invoice.pdf'));
+
+    // A drop on empty space below the rows takes the folder that is open — the
+    // background zone — so the same gesture always lands somewhere nameable.
+    await userEvent.click(await canvas.findByText('Reset'));
+    const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.list);
+    const bounds = container.getBoundingClientRect();
+    const empty = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height - 6 };
+    const second = newDragTransfer();
+    await dragOnto({ source: chip, target: container, to: empty, transfer: second });
+    fireDrag(chip, 'dragend', second, empty);
+    await canvas.findByText('Added invoice.pdf to Files');
   },
 };
 

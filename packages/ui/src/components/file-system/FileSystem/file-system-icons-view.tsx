@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
-/** biome-ignore-all lint/style/noExcessiveLinesPerFile: the grid, its drag session and its hover controller are one render layer */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: the grid, its marquee and its hover controller are one render layer */
 // The icons view: a Finder-style tile grid. The web original leans on CSS
 // `auto-fill` plus a hand-rolled virtual window; here the measured viewport
 // width picks a column count and the entries are pre-chunked into rows so a
@@ -12,12 +12,10 @@ import {
   type ListRenderItemInfo,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  Platform,
   Pressable,
   View,
-  type ViewStyle,
 } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
+import { useActiveDrag } from '../../gestures/use-drag-store';
 import type { FileSystemEntry } from './file-system.types';
 import { useBackgroundContextMenu } from './file-system-context-menu';
 import {
@@ -36,19 +34,13 @@ import {
   tileHitAt,
   tilesInRect,
 } from './file-system-icons-grid';
-import { DragGhost, IconRow } from './file-system-icons-tile';
+import { IconRow } from './file-system-icons-tile';
 import type { FileSystemMarqueeController, FileSystemMarqueeRect } from './file-system-marquee';
 import { FileSystemMarqueeBox, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
+import { FS_DRAG_CONTAINER_TEST_ID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
-import { FS_DRAG_CONTAINER_TEST_ID, useDragSources } from './use-file-system-drag';
-import { type UseIconsDragReturn, useIconsViewDrag } from './use-file-system-icons-drag';
-
-// Selection is off via `select-none` on the grid surface below; `touchAction` has
-// no utility class and is absent from RN's ViewStyle, so it stays an inline web
-// style — clamped only during a drag, so ordinary touch scrolling is unaffected.
-type WebViewStyle = ViewStyle & { touchAction?: string };
-const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { touchAction: 'none' } : null;
+import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
 
 /** Stable empty data for the frame before the width is known — see below. */
 const NO_ROWS: FileSystemEntry[][] = [];
@@ -62,7 +54,7 @@ const getItemLayout = (_: ArrayLike<FileSystemEntry[]> | null | undefined, index
   offset: ROW_STRIDE * index,
 });
 
-type IconsGrid = UseIconsDragReturn & {
+type IconsGrid = {
   containerRef: RefObject<View | null>;
   flatListRef: RefObject<FlatList | null>;
   hover: FileSystemHoverController;
@@ -77,7 +69,6 @@ type UseIconsGridParams = {
   draggable: boolean;
   entries: FileSystemEntry[];
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
-  onMove: FileSystemViewProps['onMove'];
   selectedPaths: ReadonlySet<string>;
   /** `false` outside `selectionMode="multiple"` — see `useFileSystemMarquee`. */
   marqueeEnabled: boolean;
@@ -88,8 +79,6 @@ type UseIconsHoverParams = {
   containerRef: RefObject<View | null>;
   /** Past the last entry the grid has slots but no tiles — nothing to highlight. */
   entryCount: number;
-  /** The entry index a drop would commit to, read live — see the resolver below. */
-  getTargetIndex: () => number | null;
   isDragging: () => boolean;
   scrollOffsetRef: MutableRefObject<number>;
   /** Flat indexes of the selected entries. Selected tiles suppress normal hover. */
@@ -102,17 +91,20 @@ type UseIconsHoverParams = {
  * that box is the tile's state surface, so hover, selection and a pending drop all
  * describe the same rect.
  *
- * `tileAt` clamps to the nearest tile, which is what a drag wants — a drop should
- * commit somewhere. Hover is the stricter question, so the hit is rejected unless
- * the pointer is inside the tile's own box: no highlight in the grid padding or
- * the gaps between tiles. It is also suppressed on the selected tile, whose
+ * `tileHitAt` clamps to the nearest tile, which is what a drag wants — a drop
+ * should commit somewhere. Hover is the stricter question, so the hit is rejected
+ * unless the pointer is inside the tile's own box: no highlight in the grid padding
+ * or the gaps between tiles. It is also suppressed on the selected tile, whose
  * `bg-surface-selected` box already marks it and reads as a flicker under a hover.
+ *
+ * Under a drag it goes quiet entirely: each folder tile's own `<Dragzone>` fills
+ * its label chip when a release would land there, so a second mark placed from the
+ * pointer could only be a chance to disagree with it.
  */
 function useIconsHover({
   columnsRef,
   containerRef,
   entryCount,
-  getTargetIndex,
   isDragging,
   scrollOffsetRef,
   selectedIndexesRef,
@@ -120,36 +112,28 @@ function useIconsHover({
 }: UseIconsHoverParams): FileSystemHoverController {
   const resolve = useCallback(
     (localX: number, localY: number) => {
+      if (isDragging()) return null;
       const lookup = { columns: columnsRef.current, scrollOffset: scrollOffsetRef.current, tileWidth: tileWidthRef.current };
-      // Under a drag the highlight is placed from the drop target instead of the
-      // pointer, so it cannot disagree with the label chip that names the same
-      // index: the source tile does not stay lit, a file passed over never lights
-      // up, and the pointer may sit in a gap while the target is a real folder.
-      if (isDragging()) {
-        const target = getTargetIndex();
-        return target === null ? null : glyphBoxCorner(target, lookup);
-      }
       const hit = tileHitAt(localX, localY, lookup, entryCount);
       if (hit === null || selectedIndexesRef.current.has(hit)) return null;
       return glyphBoxCorner(hit, lookup);
     },
-    [columnsRef, entryCount, getTargetIndex, isDragging, scrollOffsetRef, selectedIndexesRef, tileWidthRef],
+    [columnsRef, entryCount, isDragging, scrollOffsetRef, selectedIndexesRef, tileWidthRef],
   );
-  return useFileSystemHover({ containerRef, isDragging, resolve });
+  return useFileSystemHover({ containerRef, resolve });
 }
 
 /**
- * Measures the grid, chunks the entries into rows, and opens the drag session.
- * The column count and tile width live in refs as well as in the render output:
- * the session's index resolver reads them on every pointer move, and refs keep
- * a resize from tearing down the session mid-drag.
+ * Measures the grid and chunks the entries into rows. The column count and tile
+ * width live in refs as well as in the render output: the marquee and hover
+ * resolvers read them on every pointer move, and refs keep a resize from rebuilding
+ * a resolver mid-gesture.
  */
-function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, onMove, selectedPaths }: UseIconsGridParams): IconsGrid {
+function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedPaths }: UseIconsGridParams): IconsGrid {
   const [width, setWidth] = useState(0);
   const flatListRef = useRef<FlatList | null>(null);
   const containerRef = useRef<View | null>(null);
   const scrollOffsetRef = useRef(0);
-  const containerHeightRef = useRef(0);
   const columnsRef = useRef(1);
   const tileWidthRef = useRef(0);
   const selectedIndexesRef = useRef<ReadonlySet<number>>(new Set());
@@ -161,10 +145,7 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, onMove, s
     return indexes;
   }, [entries, selectedPaths]);
 
-  const onLayout = useCallback((event: LayoutChangeEvent) => {
-    setWidth(event.nativeEvent.layout.width);
-    containerHeightRef.current = event.nativeEvent.layout.height;
-  }, []);
+  const onLayout = useCallback((event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width), []);
 
   const { columns, tileWidth } = gridMetrics(width);
   columnsRef.current = columns;
@@ -177,9 +158,10 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, onMove, s
   // its `click` reaches React, which ignores events on unmounted fibers.
   const rows = useMemo(() => (width > 0 ? chunkEntries(entries, columns) : NO_ROWS), [columns, entries, width]);
 
-  // The one hit test both gestures are cut from: a press is on a tile, where a
-  // drag lifts, or it is not, where the selection box starts. Reading the refs
-  // rather than the render values keeps the two resolvers stable across resizes.
+  // Where the marquee may begin: on a tile the press belongs to that tile — its
+  // own `<MultiDraggable>` lifts it — and off one it is the selection box's.
+  // Reading the refs rather than the render values keeps the resolver stable
+  // across resizes.
   const entryCount = entries.length;
   const hitTest = useCallback(
     (localX: number, localY: number) =>
@@ -191,21 +173,14 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, onMove, s
       ),
     [entryCount],
   );
-  const { canBeginDragAt, canStartMarqueeAt } = useMarqueeGate(hitTest);
+  const { canStartMarqueeAt } = useMarqueeGate(hitTest);
 
-  const dragSession = useIconsViewDrag({
-    canBeginAt: canBeginDragAt,
-    columnsRef,
-    containerHeightRef,
-    containerRef,
-    enabled: draggable,
-    entries,
-    flatListRef,
-    getDragSources: useDragSources(selectedPaths),
-    onMove,
-    scrollOffsetRef,
-    tileWidthRef,
-  });
+  // A drag near the top or bottom edge scrolls the grid, so a folder below the
+  // fold is reachable without releasing.
+  useFileSystemDragScroll({ containerRef, enabled: draggable, flatListRef, scrollOffsetRef });
+
+  const activeDrag = useActiveDrag();
+  const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
 
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
@@ -232,8 +207,7 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, onMove, s
     columnsRef,
     containerRef,
     entryCount: entries.length,
-    getTargetIndex: dragSession.getTargetIndex,
-    isDragging: dragSession.isDragging,
+    isDragging,
     scrollOffsetRef,
     selectedIndexesRef,
     tileWidthRef,
@@ -252,12 +226,11 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, onMove, s
     [hover, marquee],
   );
 
-  return { ...dragSession, containerRef, flatListRef, hover, marquee, onLayout, onScroll, rows, tileWidth };
+  return { containerRef, flatListRef, hover, marquee, onLayout, onScroll, rows, tileWidth };
 }
 
 // ── View ───────────────────────────────────────────────────────────────────────
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: drag, hover, context-menu, and tile layout are tightly coupled around shared state — splitting would scatter interdependent logic
 export function FileSystemIconsView({
   draggable = false,
   entries,
@@ -266,6 +239,7 @@ export function FileSystemIconsView({
   loadPreviewImageUrl,
   onBackgroundContextMenuAction,
   onContextMenuAction,
+  onExternalDrop,
   onMove,
   onOpen,
   onSelect,
@@ -281,29 +255,13 @@ export function FileSystemIconsView({
   // ordering a Shift-range runs through.
   const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
-  const {
-    containerRef,
-    drag,
-    draggedEntry,
-    dragTargetPath,
-    flatListRef,
-    hover,
-    marquee,
-    nativeGesture,
-    onLayout,
-    onScroll,
-    previewPos,
-    rows,
-    tileWidth,
-  } = useIconsGrid({
+  const { containerRef, flatListRef, hover, marquee, onLayout, onScroll, rows, tileWidth } = useIconsGrid({
     draggable,
     entries,
     marqueeEnabled: selectionMode === 'multiple',
     onMarquee,
-    onMove,
     selectedPaths,
   });
-  const draggedPaths = useMemo(() => new Set(drag.draggedPaths), [drag.draggedPaths]);
 
   // When selection changes the pointer hasn't moved, so the highlight won't
   // self-dismiss — re-resolve explicitly so a just-selected tile hides it.
@@ -323,12 +281,13 @@ export function FileSystemIconsView({
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry[]>) => (
       <IconRow
-        draggedPaths={draggedPaths}
-        dragTargetPath={dragTargetPath}
+        draggable={draggable}
         getContextMenuActions={getContextMenuActions}
         loadPreviewImageUrl={loadPreviewImageUrl}
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
+        onExternalDrop={onExternalDrop}
+        onMove={onMove}
         onSelectLongPress={selectLongPress}
         pageUrlCache={pageUrlCache}
         renderEntryIcon={renderEntryIcon}
@@ -341,11 +300,12 @@ export function FileSystemIconsView({
     ),
     [
       activate,
-      draggedPaths,
-      dragTargetPath,
+      draggable,
       getContextMenuActions,
       loadPreviewImageUrl,
       onContextMenuAction,
+      onExternalDrop,
+      onMove,
       pageUrlCache,
       renderEntryIcon,
       renderFilePreview,
@@ -370,15 +330,11 @@ export function FileSystemIconsView({
       showsVerticalScrollIndicator={false}
     />
   );
-  const isNativeDrag = draggable && Platform.OS !== 'web' && nativeGesture !== null;
-  const body = isNativeDrag ? <GestureDetector gesture={nativeGesture}>{list}</GestureDetector> : list;
-
   return (
     <View className="min-h-0 flex-1" onLayout={onLayout}>
       <Pressable
         ref={containerRef}
         className="relative min-h-0 flex-1 select-none"
-        style={drag.active ? WEB_DRAGGING_STYLE : null}
         testID={FS_DRAG_CONTAINER_TEST_ID.icons}
         onPress={handleBackgroundPress}
         onLongPress={bgLongPress}
@@ -394,19 +350,14 @@ export function FileSystemIconsView({
           testID={FS_HOVER_TEST_ID.icons}
           width={GLYPH_BOX_WIDTH}
         />
-        {body}
-        {/* After the grid, so the band paints over the tiles it is sweeping. */}
+        {/* No background zone here: a drop that misses every folder tile belongs to
+            the folder that is open, and that fallback is mounted once in
+            file-system-body so all four views answer an empty-space drop alike. */}
+        {list}
+        {/* After the grid, so the band paints over the tiles it is sweeping. The
+            drag ghost is drawn by the manager's overlay now, above this whole
+            subtree, so nothing about it is mounted here. */}
         <FileSystemMarqueeBox controller={marquee} />
-        {draggedEntry ? (
-          <DragGhost
-            entry={draggedEntry}
-            loadPreviewImageUrl={loadPreviewImageUrl}
-            pageUrlCache={pageUrlCache}
-            pos={previewPos}
-            renderFilePreview={renderFilePreview}
-            width={tileWidth}
-          />
-        ) : null}
         {bgMenuNode}
       </Pressable>
     </View>

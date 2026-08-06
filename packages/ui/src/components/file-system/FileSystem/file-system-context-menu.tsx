@@ -7,7 +7,7 @@
 // keep the long-press on native. The background uses a 1×1 anchor View
 // absolutely positioned at the click/press point so the panel anchors there.
 //
-// Platform split (mirrors use-file-system-drag-web.ts):
+// Platform split (the same one the drag transports make):
 //  - Web:    a `contextmenu` DOM listener — on each entry's HoldContextMenu wrapper
 //            for entries, on the scroll container for the background.
 //  - Native: `onLongPress` on the entry/background Pressable.

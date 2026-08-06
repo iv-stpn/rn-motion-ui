@@ -1,22 +1,29 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
 /** biome-ignore-all lint/style/useComponentExportOnlyModules: the drop-target test id belongs with the node it names */
-// Render layer for the icons view: one tile, a row of them, and the drag ghost.
+// Render layer for the icons view: one tile, and a row of them.
 //
 // The tile's contents live in their own component (IconTileFace) because the
-// ghost has to be the same picture as the tile it was lifted from — glyph, label
-// chip and all. Anything that would make the two diverge belongs in the face.
+// drag ghost has to be the same picture as the tile it was lifted from — glyph,
+// label chip and all. Anything that would make the two diverge belongs in the
+// face. The ghost itself is no longer drawn here: `<Draggable>` lifts the child
+// it wraps, so a single-tile drag ghosts this very node, and a group drag ghosts
+// what the manager's `renderPreview` returns.
 
 import { useCallback } from 'react';
-import { Animated, type GestureResponderEvent, Pressable, View } from 'react-native';
+import { type GestureResponderEvent, Pressable, View } from 'react-native';
 import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
 import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
+import { MultiDraggable } from '../../gestures/DragManager/multi-draggable';
+import type { DragzoneRenderState } from '../../gestures/drag.types';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph } from './FileIcon/file-icons';
-import type { FileSystemEntry } from './file-system.types';
+import type { FileSystemEntry, FileSystemExternalDropEvent, FileSystemMoveEvent } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
+import { FileSystemDropzone } from './file-system-dropzone';
 import { GLYPH_BOX_HEIGHT, GLYPH_BOX_WIDTH, ROW_GAP, TILE_HEIGHT } from './file-system-icons-grid';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
@@ -34,9 +41,6 @@ const PORTRAIT_TILE_WIDTH = 48;
 const LANDSCAPE_TILE_WIDTH = 76;
 const TILE_PREVIEW_RATIO = 0.78;
 
-/** How far the lifted copy is scaled up, and how much of it shows through. */
-const GHOST_SCALE = 1.06;
-const GHOST_OPACITY = 0.85;
 /** How faint the tile left behind under a drag reads. */
 const DRAG_SOURCE_CLASSNAME = 'opacity-40';
 
@@ -131,25 +135,35 @@ function IconTileFace({ entry, isDropTarget = false, isSelected, renderEntryIcon
   );
 }
 
-type IconTileProps = IconTileFaceProps &
+type IconTileProps = Omit<IconTileFaceProps, 'isDropTarget'> &
   Pick<FileSystemViewProps, 'getContextMenuActions' | 'onContextMenuAction'> & {
-    /** This tile is the one being dragged — faded, since the ghost now carries it. */
-    isDragSource: boolean;
+    /** Whether this view drags at all — off, and the tile is neither source nor target. */
+    draggable: boolean;
     onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
+    onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
+    onMove?: (event: FileSystemMoveEvent) => void;
     /** Long-press toggles this tile's selection; `undefined` leaves the gesture to the context menu. */
     onSelectLongPress?: (entry: FileSystemEntry) => void;
     /** Already resolved for this entry by `IconRow` — see `fileSystemEntryTestID`. */
     testID?: string;
   };
 
+/**
+ * One tile: a drag source always, and a drop target when it is a folder.
+ *
+ * The zone is nested inside the source rather than beside it, because a folder
+ * tile is both ends of the gesture and the zone's box has to be exactly the
+ * tile's for the rect hit test to agree with what the pointer is over.
+ */
 function IconTile({
+  draggable,
   entry,
   getContextMenuActions,
-  isDragSource,
-  isDropTarget,
   isSelected,
   onActivate,
   onContextMenuAction,
+  onExternalDrop,
+  onMove,
   onSelectLongPress,
   testID,
   width,
@@ -158,8 +172,11 @@ function IconTile({
   const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
   const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
   const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
+  // Every tile the drag carries fades, not just the one that was grabbed — which
+  // is the whole point of dragging a selection.
+  const isDragSource = useIsLifting(entry.path);
 
-  return (
+  const face = (isDropTarget: boolean) => (
     <HoldContextMenu {...menuProps} style={{ width }}>
       <Pressable
         accessibilityLabel={entry.name}
@@ -175,11 +192,9 @@ function IconTile({
         onPress={handlePress}
         testID={testID}
       >
-        {/* The source wears the selected face for the length of the drag. The
-            sliding highlight has moved to the drop target by then, and a pointer
-            under capture sends no boundary events, so without this the tile the
-            drag came from is the only cell on screen with no mark at all — even
-            though it is still the subject of the gesture. */}
+        {/* The source wears the selected face for the length of the drag: the
+            sliding highlight has moved on by then, so without this the tiles the
+            drag came from are the only cells on screen with no mark at all. */}
         <IconTileFace
           entry={entry}
           isDropTarget={isDropTarget}
@@ -190,13 +205,21 @@ function IconTile({
       </Pressable>
     </HoldContextMenu>
   );
+
+  return (
+    <MultiDraggable disabled={!draggable} effectAllowed="move" id={entry.path}>
+      {entry.kind === 'folder' ? (
+        <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
+          {({ isOver }: DragzoneRenderState) => face(isOver)}
+        </FileSystemDropzone>
+      ) : (
+        face(false)
+      )}
+    </MultiDraggable>
+  );
 }
 
-export type IconRowProps = Omit<IconTileProps, 'entry' | 'isDragSource' | 'isDropTarget' | 'isSelected' | 'testID' | 'width'> & {
-  /** Paths the drag is carrying, so every tile it lifted can fade — not just the one under the pointer. */
-  draggedPaths: ReadonlySet<string>;
-  /** Path of the folder under the pointer, so its tile can outline. */
-  dragTargetPath: string | null;
+export type IconRowProps = Omit<IconTileProps, 'entry' | 'isSelected' | 'testID' | 'width'> & {
   row: FileSystemEntry[];
   selectedPaths: ReadonlySet<string>;
   tileWidth: number;
@@ -204,14 +227,12 @@ export type IconRowProps = Omit<IconTileProps, 'entry' | 'isDragSource' | 'isDro
   testID?: string;
 };
 
-export function IconRow({ draggedPaths, dragTargetPath, row, selectedPaths, testID, tileWidth, ...tileProps }: IconRowProps) {
+export function IconRow({ row, selectedPaths, testID, tileWidth, ...tileProps }: IconRowProps) {
   return (
     <View className="flex-row gap-1" style={{ marginBottom: ROW_GAP }}>
       {row.map((entry) => (
         <IconTile
           entry={entry}
-          isDragSource={draggedPaths.has(entry.path)}
-          isDropTarget={entry.path === dragTargetPath}
           isSelected={selectedPaths.has(entry.path)}
           key={entry.path}
           testID={fileSystemEntryTestID(testID, entry.path)}
@@ -220,35 +241,5 @@ export function IconRow({ draggedPaths, dragTargetPath, row, selectedPaths, test
         />
       ))}
     </View>
-  );
-}
-
-export type DragGhostProps = Omit<IconTileFaceProps, 'isDropTarget' | 'isSelected'> & { pos: Animated.ValueXY };
-
-/**
- * The lifted copy of the dragged tile, tracking the pointer. Its position comes
- * from an `Animated.ValueXY` the drag session writes to directly, so the whole
- * drag runs without a React re-render. The translate is listed before the scale
- * so the grow happens about the ghost's own centre instead of also shifting it.
- *
- * Always painted selected, and never a drop target: it is the picture lifted off
- * the source tile, which wears the selected face for the length of the drag, and
- * a ghost is the subject of the gesture rather than a destination for it.
- */
-export function DragGhost({ pos, ...faceProps }: DragGhostProps) {
-  return (
-    <Animated.View
-      style={{
-        left: 0,
-        opacity: GHOST_OPACITY,
-        pointerEvents: 'none',
-        position: 'absolute',
-        top: 0,
-        transform: [...pos.getTranslateTransform(), { scale: GHOST_SCALE }],
-        zIndex: 4,
-      }}
-    >
-      <IconTileFace isSelected={true} {...faceProps} />
-    </Animated.View>
   );
 }

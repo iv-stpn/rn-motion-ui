@@ -11,10 +11,8 @@ import type {
   ListRenderItemInfo,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  ViewStyle,
 } from 'react-native';
-import { Animated, FlatList, Platform, Pressable, View } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
+import { FlatList, Pressable, View } from 'react-native';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
 import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
@@ -22,6 +20,10 @@ import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
+import { MultiDraggable } from '../../gestures/DragManager/multi-draggable';
+import type { DragzoneRenderState } from '../../gestures/drag.types';
+import { useActiveDrag } from '../../gestures/use-drag-store';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
@@ -29,27 +31,23 @@ import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,
+  FileSystemExternalDropEvent,
   FileSystemItem,
+  FileSystemMoveEvent,
   FileSystemSortKey,
   FileSystemSortState,
 } from './file-system.types';
 import { useBackgroundContextMenu, useContextMenu } from './file-system-context-menu';
+import { FileSystemDropOutline, FileSystemDropzone } from './file-system-dropzone';
 import { formatByteSize, formatTimestamp } from './file-system-format';
-import {
-  FileSystemHoverHighlight,
-  FileSystemSourceHighlight,
-  FS_HOVER_TEST_ID,
-  useFileSystemRowHover,
-} from './file-system-hover';
+import { FileSystemHoverHighlight, FS_HOVER_TEST_ID, useFileSystemRowHover } from './file-system-hover';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
 import type { FileSystemRow } from './file-system-rows';
-import { flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';
-import { fileSystemEntryTestID } from './file-system-test-id';
+import { FS_ROW_HEIGHT, flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';
+import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation, useEntryLongPress } from './use-entry-activation';
-import { FS_DRAG_CONTAINER_TEST_ID, FS_ROW_HEIGHT, useDragSources, useFileSystemDrag } from './use-file-system-drag';
-import { useFileSystemDragWeb } from './use-file-system-drag-web';
-import { useFileSystemExternalDrop } from './use-file-system-external-drop';
+import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
 
 const NAME_LABEL = 'Name';
 const DATE_LABEL = 'Date Modified';
@@ -68,15 +66,15 @@ const FAV_ICON_SIZE = 10;
 /** Below this the date column drops out, leaving name + size. */
 const DATE_COLUMN_MIN_WIDTH = 420;
 
-// Selection is off via `select-none` on the body below; `touchAction` has no
-// Tailwind utility and is absent from RN's ViewStyle, so it stays an inline web
-// style — clamped only during a drag, so ordinary touch scrolling is unaffected
-// the rest of the time.
-type WebViewStyle = ViewStyle & { touchAction?: string };
-const WEB_DRAGGING_STYLE: WebViewStyle | null = Platform.OS === 'web' ? { touchAction: 'none' } : null;
-
 /** Content-container top padding (py-1 = 4 px): where row 0 starts. */
 const LIST_PADDING_TOP = 4;
+
+/**
+ * The tint a row in flight keeps for the length of the drag. The sliding highlight
+ * has moved to the drop target by then, so without this the rows the gesture is
+ * actually about are the only ones on screen with no mark at all.
+ */
+const LIFTING_ROW_CLASS = 'rounded-md bg-surface-hover';
 
 /** Container-local point → row index, or null for padding / past-last-row. */
 function rowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {
@@ -112,60 +110,6 @@ const getItemLayout = (_data: ArrayLike<FileSystemRow> | null | undefined, index
 function itemCountLabel(count: number | undefined): string {
   if (count === undefined) return MISSING_VALUE;
   return `${count} ${count === 1 ? 'item' : 'items'}`;
-}
-
-/**
- * Container-local top-left of a row, or `null` for no row. Takes the live scroll
- * offset because a drag can scroll the list out from under the row it lifted, so
- * the source position is not fixed for the length of the drag.
- */
-function rowOrigin(index: number | null, scrollOffset: number) {
-  if (index === null) return null;
-  return { x: 0, y: index * FS_ROW_HEIGHT + LIST_PADDING_TOP - scrollOffset };
-}
-
-type DropHighlightProps = { targetIndex: number | null; scrollOffset: number };
-
-/** Border outline over the row currently under the pointer (drop feedback). */
-function DropHighlight({ targetIndex, scrollOffset }: DropHighlightProps) {
-  if (targetIndex === null) return null;
-  return (
-    <View
-      className="pointer-events-none absolute right-0 left-0 z-[3] rounded-md border border-primary"
-      style={{ height: FS_ROW_HEIGHT, top: targetIndex * FS_ROW_HEIGHT + LIST_PADDING_TOP - scrollOffset }}
-    />
-  );
-}
-
-/** Dashed fill shown when an external drag is over the area but not over a folder row. */
-const EXTERNAL_DROP_AREA_CLASS =
-  'pointer-events-none absolute inset-0 border border-foreground/20 border-dashed bg-foreground/[0.03]';
-
-type ExternalDropIndicatorProps = { targetIndex: number | null; scrollOffset: number };
-
-/**
- * Feedback for a drag from outside the component. A folder row under the pointer
- * gets that row outlined; a file row or empty space gets the whole area hatched,
- * the same fallback the non-list views show.
- */
-function ExternalDropIndicator({ targetIndex, scrollOffset }: ExternalDropIndicatorProps) {
-  if (targetIndex === null) return <View className={EXTERNAL_DROP_AREA_CLASS} />;
-  return <DropHighlight scrollOffset={scrollOffset} targetIndex={targetIndex} />;
-}
-
-type DragPreviewProps = { label: string; pos: Animated.ValueXY };
-
-/** Floating label chip that tracks the pointer during a drag (no re-renders). */
-function DragPreview({ label, pos }: DragPreviewProps) {
-  return (
-    <Animated.View className="pointer-events-none absolute top-0 left-0 z-[4]" style={{ transform: pos.getTranslateTransform() }}>
-      <View className="rounded-md border border-border bg-surface-4 px-2 py-1">
-        <Text className="text-foreground" numberOfLines={1} size="xs">
-          {label}
-        </Text>
-      </View>
-    </Animated.View>
-  );
 }
 
 type ColumnHeaderProps = {
@@ -309,6 +253,55 @@ function ListRow({
   );
 }
 
+type ListRowShellProps = {
+  children: ReactNode;
+  draggable: boolean;
+  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
+  onMove?: (event: FileSystemMoveEvent) => void;
+  row: FileSystemRow;
+};
+
+/**
+ * The drag wrapper around a row: a source always, and a drop target when the row
+ * is a folder.
+ *
+ * Nested rather than side by side, because a folder row is both ends of the
+ * gesture and the zone's box has to be exactly the row's for the hit test to agree
+ * with what the pointer is over.
+ *
+ * A row in flight takes the same tint the old source highlight painted behind it —
+ * and now every row the drag carries takes it, not just the one under the pointer,
+ * which is what a multi-selection drag should look like.
+ */
+function ListRowShell({ children, draggable, onExternalDrop, onMove, row }: ListRowShellProps) {
+  const { entry } = row;
+  const isLifting = useIsLifting(entry.path);
+  const body = (
+    <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: FS_ROW_HEIGHT }}>
+      {children}
+    </View>
+  );
+
+  return (
+    <MultiDraggable disabled={!draggable} effectAllowed="move" id={entry.path}>
+      {entry.kind === 'folder' ? (
+        <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
+          {/* The outline is drawn over the row, not around it: a border in the row's
+              own box would resize it and shift every row below by a pixel. */}
+          {({ isOver }: DragzoneRenderState) => (
+            <>
+              {body}
+              {isOver ? <FileSystemDropOutline /> : null}
+            </>
+          )}
+        </FileSystemDropzone>
+      ) : (
+        body
+      )}
+    </MultiDraggable>
+  );
+}
+
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: drag, hover, context-menu, and row layout are tightly coupled around shared state — splitting would scatter interdependent logic
 export function FileSystemListView({
   currentPath,
@@ -333,12 +326,10 @@ export function FileSystemListView({
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set<string>());
   /** `null` until the first layout pass — distinct from a measured zero. */
   const [width, setWidth] = useState<number | null>(null);
-  const [scrollOffset, setScrollOffset] = useState(0);
 
   const flatListRef = useRef<FlatList<FileSystemRow> | null>(null);
   const containerRef = useRef<View | null>(null);
   const scrollOffsetRef = useRef(0);
-  const containerHeightRef = useRef(0);
   /** The drawn rows, readable from callbacks that outlive the render that made them. */
   const rowsRef = useRef<FileSystemRow[]>([]);
 
@@ -353,41 +344,15 @@ export function FileSystemListView({
 
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
 
-  const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    setWidth(event.nativeEvent.layout.width);
-    containerHeightRef.current = event.nativeEvent.layout.height;
-  }, []);
+  const handleLayout = useCallback((event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width), []);
   const toggleExpanded = useCallback((path: string) => setExpanded((previous) => toggleExpandedPath(previous, path)), []);
 
-  const getDragSources = useDragSources(selectedPaths);
+  // A drag near the top or bottom edge scrolls the list, so a folder below the
+  // fold is reachable without releasing. Runs for external drags too.
+  useFileSystemDragScroll({ containerRef, enabled: draggable, flatListRef, scrollOffsetRef });
 
-  const { session, previewPos, drag, nativeGesture } = useFileSystemDrag({
-    containerHeightRef,
-    // The rows start below the content container's top padding — without this the
-    // resolved row is one boundary off from the one under the pointer.
-    contentOffsetTop: LIST_PADDING_TOP,
-    enabled: draggable,
-    flatListRef,
-    getDragSources,
-    onMove,
-    rows,
-    scrollOffsetRef,
-  });
-  useFileSystemDragWeb({ containerRef, enabled: draggable, session });
-
-  // External drop — attaches to the same scrollable container as the internal
-  // drag so pointer-position resolution uses the same coordinate frame and row
-  // geometry. Folder rows get a per-row border highlight; file rows and empty
-  // space get a background overlay (same fallback the non-list views show).
-  const { isOver: isExternalDropOver, targetIndex: externalTargetIndex } = useFileSystemExternalDrop({
-    containerRef,
-    contentOffsetTop: LIST_PADDING_TOP,
-    currentPath,
-    onExternalDrop,
-    rowHeight: FS_ROW_HEIGHT,
-    rows,
-    scrollOffsetRef,
-  });
+  const activeDrag = useActiveDrag();
+  const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
 
   const selectedIndexesRef = useRef<ReadonlySet<number>>(new Set());
   selectedIndexesRef.current = useMemo(() => {
@@ -401,8 +366,9 @@ export function FileSystemListView({
   const hover = useFileSystemRowHover({
     containerRef,
     count: rows.length,
-    // getTargetIndex omitted: DropHighlight handles drag indication; hover is suppressed during drag
-    isDragging: session.isActive,
+    // No `getTargetIndex`: each folder row's own zone paints the pending drop now,
+    // so the sliding highlight has nothing to say during a drag and suppresses itself.
+    isDragging,
     offsetTop: LIST_PADDING_TOP,
     scrollOffsetRef,
     selectedIndexesRef,
@@ -447,32 +413,36 @@ export function FileSystemListView({
       // to re-resolve — including while a drag auto-scrolls the list.
       hover.refresh();
       marquee.refresh();
-      if (draggable) setScrollOffset(offset);
     },
-    [draggable, hover, marquee],
+    [hover, marquee],
   );
 
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemRow>) => (
-      <ListRow
-        childCount={index.children.get(item.entry.path)?.length}
-        getContextMenuActions={getContextMenuActions}
-        isSelected={selectedPaths.has(item.entry.path)}
-        onActivate={activate}
-        onContextMenuAction={onContextMenuAction}
-        onSelectLongPress={selectLongPress}
-        onToggleExpanded={toggleExpanded}
-        renderEntryIcon={renderEntryIcon}
-        row={item}
-        showDate={showDate}
-        testID={fileSystemEntryTestID(testID, item.entry.path)}
-      />
+      <ListRowShell draggable={draggable} onExternalDrop={onExternalDrop} onMove={onMove} row={item}>
+        <ListRow
+          childCount={index.children.get(item.entry.path)?.length}
+          getContextMenuActions={getContextMenuActions}
+          isSelected={selectedPaths.has(item.entry.path)}
+          onActivate={activate}
+          onContextMenuAction={onContextMenuAction}
+          onSelectLongPress={selectLongPress}
+          onToggleExpanded={toggleExpanded}
+          renderEntryIcon={renderEntryIcon}
+          row={item}
+          showDate={showDate}
+          testID={fileSystemEntryTestID(testID, item.entry.path)}
+        />
+      </ListRowShell>
     ),
     [
       activate,
+      draggable,
       getContextMenuActions,
       index,
       onContextMenuAction,
+      onExternalDrop,
+      onMove,
       renderEntryIcon,
       selectedPaths,
       selectLongPress,
@@ -496,8 +466,6 @@ export function FileSystemListView({
       showsVerticalScrollIndicator={false}
     />
   );
-  const useNativePan = draggable && Platform.OS !== 'web' && nativeGesture !== null;
-  const body = useNativePan ? <GestureDetector gesture={nativeGesture}>{list}</GestureDetector> : list;
 
   return (
     <View className="min-h-0 flex-1" onLayout={handleLayout}>
@@ -514,24 +482,16 @@ export function FileSystemListView({
       <Pressable
         ref={containerRef}
         className="relative min-h-0 flex-1 select-none"
-        style={drag.active ? WEB_DRAGGING_STYLE : null}
         testID={FS_DRAG_CONTAINER_TEST_ID.list}
         onPress={handleBackgroundPress}
         onLongPress={bgLongPress}
       >
-        {/* Both before the list, so they paint behind the rows — see FileSystemHoverHighlight. */}
+        {/* Before the list, so it paints behind the rows — see FileSystemHoverHighlight. */}
         <FileSystemHoverHighlight controller={hover} height={FS_ROW_HEIGHT} testID={FS_HOVER_TEST_ID.list} />
-        <FileSystemSourceHighlight height={FS_ROW_HEIGHT} origin={rowOrigin(drag.draggedIndex, scrollOffset)} />
-        {body}
-        {/* Mutually exclusive with the internal drag highlight below — both use the
-            same pointer capture, so only one can be active at a time. */}
-        {isExternalDropOver ? <ExternalDropIndicator scrollOffset={scrollOffset} targetIndex={externalTargetIndex} /> : null}
-        {drag.active ? (
-          <>
-            <DropHighlight scrollOffset={scrollOffset} targetIndex={drag.targetIndex} />
-            <DragPreview label={drag.previewLabel} pos={previewPos} />
-          </>
-        ) : null}
+        {/* No background zone here: a drop that misses every folder row belongs to the
+            folder that is open, and that fallback is mounted once in file-system-body
+            so all four views answer an empty-space drop the same way. */}
+        {list}
         <FileSystemMarqueeBox controller={marquee} />
         {bgMenuNode}
       </Pressable>

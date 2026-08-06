@@ -2,22 +2,24 @@
 /** biome-ignore-all lint/style/useComponentExportOnlyModules: the hook and the node it drives are one unit — the Animated values are useless apart */
 // Pointer-driven hover highlight for the FileSystem views (web only).
 //
-// Why not CSS `:hover`? The web drag transport takes setPointerCapture on the
-// scroll container, and while a pointer is captured the browser stops updating
-// `:hover` and stops sending the boundary events RNW's onHoverIn/onHoverOut are
-// built on. A CSS hover therefore freezes on whatever cell the drag started
-// from — the opposite of showing the highlight while dragging.
+// Why not CSS `:hover`? Because a marquee selection takes setPointerCapture on
+// the scroll container, and while a pointer is captured the browser stops
+// updating `:hover` and stops sending the boundary events RNW's
+// onHoverIn/onHoverOut are built on. A CSS hover would therefore freeze on
+// whatever cell the rubber band started from and stay there for the length of a
+// drag-select, which is when knowing what is under the pointer matters most.
 //
 // So the highlight reads the container's own pointermove stream, which does keep
 // firing under capture. One absolutely-positioned node slides between cells; its
 // position and opacity live in Animated values written straight from the DOM
 // listener, so tracking the pointer costs zero React re-renders — the same
-// invariant use-file-system-drag.ts holds for the drag itself.
+// invariant the drag store's move channel holds for a drag.
 
 import { type RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, Platform, View } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { getActiveDrag, subscribeDragStore } from '../../gestures/drag-store';
 
 /** Mirrors EASE_OUT in lib/ease — that one is a Reanimated factory, this API needs RN's own Easing. */
 const EASE_OUT = Easing.bezier(0.16, 1, 0.3, 1);
@@ -144,20 +146,14 @@ function buildHoverActions({ pos, opacity, shownRef, cellRef, pointRef, reduceRe
 export type UseFileSystemHoverParams = {
   containerRef: RefObject<View | null>;
   /**
-   * Where the highlight goes. A draggable view narrows this under a drag — see
-   * the row helper below — so the one highlight doubles as the drop indicator
-   * instead of trailing the ghost across every cell it passes.
+   * Where the highlight goes. Resolvers return `null` while a drag is in flight:
+   * each cell's own `<Dragzone>` marks itself when a release would land there, so
+   * a second mark placed from the pointer could only disagree with it.
    */
   resolve: FileSystemHoverResolve;
-  /**
-   * Whether a drag is in flight. Touch hover is suppressed otherwise — a tap
-   * would flash a highlight under the finger that no pointer is there to hold —
-   * but a touch drag wants the same target feedback the mouse gets.
-   */
-  isDragging?: () => boolean;
 };
 
-export function useFileSystemHover({ containerRef, resolve, isDragging }: UseFileSystemHoverParams): FileSystemHoverController {
+export function useFileSystemHover({ containerRef, resolve }: UseFileSystemHoverParams): FileSystemHoverController {
   const pos = useRef(new Animated.ValueXY()).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -171,8 +167,6 @@ export function useFileSystemHover({ containerRef, resolve, isDragging }: UseFil
   reduceRef.current = reduce;
   const resolveRef = useRef(resolve);
   resolveRef.current = resolve;
-  const isDraggingRef = useRef(isDragging);
-  isDraggingRef.current = isDragging;
 
   const actions = useMemo(
     () => buildHoverActions({ cellRef, opacity, pointRef, pos, reduceRef, resolveRef, shownRef }),
@@ -189,15 +183,20 @@ export function useFileSystemHover({ containerRef, resolve, isDragging }: UseFil
     // An arrow, not a `function` declaration: a declaration is hoisted, so TS dates
     // its capture of `node` to before the null check above and loses the narrowing.
     const onPointerMove = (event: PointerEvent) => {
-      if (event.pointerType === 'touch' && !isDraggingRef.current?.()) return;
+      // A finger has no hover: it is either not touching, or it is pressing. The
+      // one case that used to want this — a touch drag, where the highlight stood
+      // in for a drop indicator — is now each zone's own job.
+      if (event.pointerType === 'touch') return;
       const rect = node.getBoundingClientRect();
       actions.moveTo(event.clientX - rect.left, event.clientY - rect.top);
     };
     const onLeave = () => actions.leave();
 
     node.addEventListener('pointermove', onPointerMove);
-    // Under pointer capture these hold off until the capture is released, which
-    // is exactly the point — the highlight keeps tracking for the whole drag.
+    // A mouse drag is an HTML5 drag, and the browser stops the pointer stream for
+    // its duration — usually with a `pointercancel` first. So the highlight puts
+    // itself away on lift and comes back on the first move after the drop, which
+    // is the behaviour the resolvers ask for anyway.
     node.addEventListener('pointerleave', onLeave);
     node.addEventListener('pointercancel', onLeave);
 
@@ -209,6 +208,24 @@ export function useFileSystemHover({ containerRef, resolve, isDragging }: UseFil
     };
   }, [actions, containerRef]);
 
+  // The resolvers answer `null` for the length of a drag, but nothing above would
+  // ask them again: a mouse drag is an HTML5 drag and the browser stops the pointer
+  // stream while it runs, so the last highlight would simply stay lit next to the
+  // zone outline it is meant to defer to. `pointercancel` covers it on some engines
+  // and not others, and a touch pan gets none at all — so the lift itself is the
+  // signal, taken off the store's channel rather than `useActiveDrag` to keep this
+  // hook's zero-re-render promise.
+  // biome-ignore lint/plugin: subscribing to an external store must run in an effect; no data-fetching or render-driving state
+  useEffect(
+    () =>
+      subscribeDragStore(() => {
+        // Also on zone crossings, which is harmless and wanted: `leave` forgets the
+        // pointer too, so a scroll mid-drag cannot bring the highlight back either.
+        if (getActiveDrag() !== null) actions.leave();
+      }),
+    [actions],
+  );
+
   return useMemo(() => ({ opacity, pos, refresh: actions.refresh }), [actions, opacity, pos]);
 }
 
@@ -219,13 +236,10 @@ export type UseFileSystemRowHoverParams = {
   /** Number of rows — past the last one there is no cell to mark. */
   count: number;
   /**
-   * The row index a drop would commit to, read live. Given one, a drag places
-   * the highlight from it and ignores the pointer: the source row does not stay
-   * lit, a file passed over never lights up, and the highlight sits exactly
-   * under the drop outline that reads the same index.
-   * Omit to suppress the highlight entirely while dragging.
+   * Whether a drag is in flight, read live. While one is, the highlight stands
+   * down: each folder row's own `<Dragzone>` outlines itself when a release would
+   * land there, and a second mark placed from the pointer could only disagree.
    */
-  getTargetIndex?: () => number | null;
   isDragging?: () => boolean;
   /** The list's content-container top padding: where row 0 starts. */
   offsetTop: number;
@@ -247,7 +261,6 @@ export type UseFileSystemRowHoverParams = {
 export function useFileSystemRowHover({
   containerRef,
   count,
-  getTargetIndex,
   isDragging,
   offsetTop,
   scrollOffsetRef,
@@ -256,20 +269,15 @@ export function useFileSystemRowHover({
 }: UseFileSystemRowHoverParams): FileSystemHoverController {
   const resolve = useCallback(
     (_localX: number, localY: number) => {
-      const top = (row: number) => ({ x: 0, y: row * stride + offsetTop - scrollOffsetRef.current });
-      if (isDragging?.()) {
-        if (!getTargetIndex) return null;
-        const target = getTargetIndex();
-        return target === null ? null : top(target);
-      }
+      if (isDragging?.()) return null;
       const index = Math.floor((localY + scrollOffsetRef.current - offsetTop) / stride);
       if (index < 0 || index >= count) return null;
       if (selectedIndexesRef?.current.has(index)) return null;
-      return top(index);
+      return { x: 0, y: index * stride + offsetTop - scrollOffsetRef.current };
     },
-    [count, getTargetIndex, isDragging, offsetTop, scrollOffsetRef, selectedIndexesRef, stride],
+    [count, isDragging, offsetTop, scrollOffsetRef, selectedIndexesRef, stride],
   );
-  return useFileSystemHover({ containerRef, isDragging, resolve });
+  return useFileSystemHover({ containerRef, resolve });
 }
 
 // ── Node ───────────────────────────────────────────────────────────────────────
@@ -284,43 +292,6 @@ export type FileSystemHoverHighlightProps = {
   /** Cell width. Omit for a cell that spans the container, like a list row. */
   width?: number;
 };
-
-export type FileSystemSourceHighlightProps = {
-  /** Rounding matched to the cell it sits behind, as with the sliding highlight. */
-  className?: string;
-  height: number;
-  /** Container-local top-left of the cell the drag was lifted from, or `null`. */
-  origin: FileSystemHoverCell | null;
-  testID?: string;
-  /** Cell width. Omit for a cell that spans the container, like a list row. */
-  width?: number;
-};
-
-/**
- * The hover tint held on the cell a drag was lifted from, for the length of the
- * drag. By then the sliding highlight has moved to the drop target, and a
- * captured pointer sends no boundary events, so without this the source cell is
- * the one on screen with nothing marking it — even though it is still the subject
- * of the gesture.
- *
- * Static, not animated: the source does not move, so there is nothing to glide.
- * It only re-positions when the view scrolls, which the caller already re-renders
- * for. Mounted alongside the sliding highlight, behind the cells for the same
- * reason: a selected source is opaque and covers it, the same yield-to-selection
- * an ordinary hover does.
- */
-export function FileSystemSourceHighlight({ className, height, origin, testID, width }: FileSystemSourceHighlightProps) {
-  if (Platform.OS !== 'web' || origin === null) return null;
-  return (
-    <View className="pointer-events-none absolute inset-0 overflow-hidden">
-      <View
-        className={cn('absolute rounded-md bg-surface-hover', className)}
-        style={{ height, left: origin.x, top: origin.y, width: width ?? '100%' }}
-        testID={testID}
-      />
-    </View>
-  );
-}
 
 /**
  * The highlight itself: absolute, non-interactive, inside its own clipping layer

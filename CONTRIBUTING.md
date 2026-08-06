@@ -133,6 +133,8 @@ wrapper instead of the content.
 | `SmoothScroll` | A `ScrollView` that publishes its scroll state. Scroll containers already have platform semantics. |
 | `AnimatedList` | Layout and enter/exit animation only. It does carry documented obligations for the *consumer* around focus and announcements — see its JSDoc. |
 | `Draggable` | A grab handle around a child. The child is the control and carries the role and name; a role on the wrapper would announce the grip instead of the thing gripped. Its `ViewProps` a11y props forward for the case where the wrapper *is* the control. A drag is pointer-only on both platforms, so it carries a consumer obligation: every `Draggable` needs a second, non-pointer path to the same outcome — see its JSDoc. |
+| `Dragzone` | A region that receives, not a control that acts. Its `ViewProps` a11y props forward for when the region should be announced. Same consumer obligation as `Draggable` — dropping is pointer-only, so the outcome a drop produces must also be reachable without a pointer. The `isOver` highlight is a visual cue; announce it yourself if it carries meaning. |
+| `DragManager` | A coordinator that renders a plain `View` around a subtree. It has no interaction of its own to announce. It is, however, the natural *home* for the non-pointer path the other two owe: a manager sees every drop in its subtree, so the command that performs the same move from a menu or the keyboard belongs next to the handler that performs it on drop. |
 
 If you exempt a new component, add a row here with the reason. "Nothing to
 announce" is a reason; "did not get to it" is not.

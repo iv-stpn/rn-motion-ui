@@ -27,14 +27,18 @@ by hand. `Draggable` is that work done once:
 `onDragStart`/`onDragMove`/`onDragEnd` fire the same shapes on both platforms,
 with points in window coordinates.
 
-Web rides a real HTML5 drag rather than synthesizing one, and hands the browser's
-own `DataTransfer` straight through. That is what makes the payload cross to code
-that has never heard of this component: an existing `dragover`/`drop` listener,
-or `<FileSystem onExternalDrop>`, receives these drags with no adapter. Native
-arms a pan after a 300ms hold (matching the context-menu hold, so the two never
-both fire), draws a ghost that follows the finger, and publishes the drag to a
-small registry a drop zone can subscribe to — the stand-in for the OS drag
-session native does not have.
+Three transports sit behind that one contract, each the one actually native to
+where it runs. A mouse on web rides a real HTML5 drag rather than a synthesized
+one, and hands the browser's own `DataTransfer` straight through — which is what
+makes the payload cross to code that has never heard of this component: an
+existing `dragover`/`drop` listener, or `<FileSystem onExternalDrop>`, receives
+these drags with no adapter. Touch on web gets a pointer-driven pan instead,
+because mobile browsers fire no HTML5 drag for touch at all and the component
+would otherwise simply not work on a phone. Native arms an RNGH pan. Both pans
+wait out a 300ms hold, matching the context-menu hold so the two never both fire,
+and draw a ghost that follows the finger. `transports` pins the choice when you
+need to: `'pan'` keeps a drag inside the library with a uniform ghost and no OS
+drag session, `'html5'` opts a component out of touch dragging.
 
 `onDragEnd` reports the platform's verdict instead of guessing: `dropEffect` is
 what a zone claimed, and `canceled` is `dropEffect === 'none'` on both sides. A
@@ -45,10 +49,15 @@ The ref is a `DraggableHandle`: `isDragging()`, `getTransfer()`, `getNode()`,
 `measure()` (a promise on both platforms, since native's `measureInWindow` is
 callback-based), and `cancel()`. `cancel()` is honestly partial on web — once the
 browser owns a drag, only the user can end it, so it clears component state and
-the registry entry while the browser's drag image keeps following the cursor.
+the store's session while the browser's drag image keeps following the cursor.
+
+`groups` names what this drag is, and a `<Dragzone>` takes it when their labels
+intersect — omit them on both sides and everything matches everything, which is
+the right default for a tree with one kind of drag in it. See the drag system
+changeset for the receiving half.
 
 A drag is pointer-only on both platforms, so anything expressed only as a drag
 needs a second non-pointer path to the same outcome. New types:
-`DraggableProps`, `DraggableHandle`, `DragTransfer`, `DragStartEvent`,
-`DragMoveEvent`, `DragEndEvent`, `DragPoint`, `DragRect`, `DragDropEffect`,
-`DragEffectAllowed`.
+`DraggableProps`, `DraggableTransports`, `DraggableHandle`, `DragTransfer`,
+`DragStartEvent`, `DragMoveEvent`, `DragEndEvent`, `DragPoint`, `DragRect`,
+`DragDropEffect`, `DragEffectAllowed`, `DragGroups`.

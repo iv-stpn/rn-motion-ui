@@ -32,11 +32,38 @@ const NO_GROUPS: DragGroups = [];
 /**
  * How long a hold arms a pan, on both pan transports.
  *
- * 300ms matches the hold that opens a context menu, so a press can resolve to one
- * or the other but never both. Shared from here rather than repeated per transport:
- * two pans that armed at different times would feel like two different components.
+ * Arms it — it does not start it. A hold this long makes the pan *eligible* to
+ * take the gesture; what actually takes it is the first movement afterwards (see
+ * {@link DRAG_MOVE_SLOP}). That split is what lets a hold and a drag live on the
+ * same node: hold still and the press belongs to whoever else wanted it — a
+ * `<HoldContextMenu>`, a `Pressable`'s `onLongPress` — and hold *and move* and it
+ * is a drag. Activating on the hold alone means the drag wins every hold there
+ * has ever been, and the menu underneath it can never open.
+ *
+ * Shared from here rather than repeated per transport: two pans that armed at
+ * different times would feel like two different components.
  */
 export const DRAG_HOLD_MS = 300;
+
+/**
+ * How far a finger may travel *before* the hold lands and still arm the pan.
+ *
+ * Past this it was a scroll, not a lift, so the pan gives the gesture up rather
+ * than fight the list it is in. 10px matches UIKit's own allowance for a long
+ * press, which is what a finger resting on a moving surface actually drifts.
+ */
+export const DRAG_ARM_SLOP = 10;
+
+/**
+ * How far the finger must travel *after* the hold before the pan takes over.
+ *
+ * Deliberately small: by this point the hold has already happened, so the only
+ * question left is whether the finger is moving at all. Large enough not to fire
+ * on the jitter of a finger holding still — which would lift a drag under a menu
+ * that hold just opened — and small enough that the lift feels like it happened
+ * the moment the finger moved.
+ */
+export const DRAG_MOVE_SLOP = 4;
 
 export type DraggableBeginParams = {
   point: DragPoint;

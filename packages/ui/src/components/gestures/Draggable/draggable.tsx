@@ -11,12 +11,17 @@
 //                 this the component would simply not work on a phone's browser.
 //  - Native:      an RNGH pan armed by the same hold.
 //
+// Both pans arm on the hold and lift on the *move* after it, never on the hold
+// alone — which is what leaves a bare hold to whatever the child does with one.
+// See `DRAG_MOVE_SLOP`.
+//
 // What is identical across all three: the `data` you attach, the callbacks, the
 // groups that decide which `<Dragzone>` will have it, and the handle on the ref.
 
 import { type ReactNode, type Ref, useCallback, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, View, type ViewProps, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS, type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { cn } from '../../../lib/cn';
 import type {
   DragEffectAllowed,
@@ -32,7 +37,14 @@ import type {
 import { DragGhost } from '../drag-ghost';
 import { useDragScope } from '../drag-scope';
 import { createDragTransfer } from '../drag-transfer';
-import { buildSession, DRAG_HOLD_MS, type DraggableLiveProps, type DraggableSession } from './draggable-session';
+import {
+  buildSession,
+  DRAG_ARM_SLOP,
+  DRAG_HOLD_MS,
+  DRAG_MOVE_SLOP,
+  type DraggableLiveProps,
+  type DraggableSession,
+} from './draggable-session';
 import { useDraggableHtml5 } from './use-draggable-html5';
 import { useDraggablePointer } from './use-draggable-pointer';
 
@@ -45,29 +57,118 @@ const WEB_HOST_STYLE: WebViewStyle = { userSelect: 'none' };
 /** Only the fields the pan handlers read — RNGH's own event type varies by version. */
 type PanEvent = { absoluteX: number; absoluteY: number };
 
-type PanGestureParams = { effectAllowed: DragEffectAllowed; session: DraggableSession };
+/**
+ * What the hold-then-move decision needs to remember between touch callbacks.
+ *
+ * On a shared value because those callbacks are worklets: the decision runs on the
+ * UI thread, where a plain closure variable would be a different copy each frame.
+ * Written whole rather than field by field — Reanimated does not propagate a
+ * mutation of `value`'s interior.
+ */
+type PanArm = {
+  /** The pan activated. The touch callbacks stop deciding anything from here. */
+  active: boolean;
+  /** Travelled before the hold landed, so this touch is a scroll and never arms. */
+  failed: boolean;
+  startAt: number;
+  startX: number;
+  startY: number;
+};
+
+const PAN_ARM_IDLE: PanArm = { active: false, failed: false, startAt: 0, startX: 0, startY: 0 };
+
+type PanGestureParams = { arm: SharedValue<PanArm>; effectAllowed: DragEffectAllowed; session: DraggableSession };
 
 /**
- * The native transport: an RNGH pan armed by a hold.
+ * The native transport: an RNGH pan armed by a hold and lifted by the move after it.
  *
- * `runOnJS(true)` because every handler reaches the store, which is plain JS state —
- * there is no worklet half to this, and the pointer stream is well under the rate
- * where that would matter.
+ * `manualActivation` rather than `activateAfterLongPress`, because that prop cannot
+ * express this gesture: it flips the pan to ACTIVE off a timer with no regard for
+ * whether the finger moved, and RNGH cancels the touches under an activating
+ * handler — so a bare hold *became* a drag, and the press responder underneath
+ * (`Pressable.onLongPress`, which is how `HoldContextMenu` is opened in
+ * `'passive'` mode) had its timer cleared before it could fire. Holding an entry
+ * in `<FileSystem draggable>` could therefore never open its context menu.
+ * Requiring the move makes the two mutually exclusive by construction rather than
+ * by a timing coincidence: hold still and the press keeps the gesture, hold and
+ * move and the drag takes it. See {@link DRAG_MOVE_SLOP}.
+ *
+ * The callbacks are worklets, which is what `manualActivation` demands —
+ * `GestureStateManager.activate()` writes gesture state through Reanimated's
+ * `setGestureState`, and that warns and does nothing off the UI runtime, so the
+ * old `.runOnJS(true)` is not an option here. Everything that reaches the store
+ * hops back with `runOnJS`, since the store is plain JS state.
  */
-function buildPanGesture({ effectAllowed, session }: PanGestureParams) {
-  return Gesture.Pan()
-    .activateAfterLongPress(DRAG_HOLD_MS)
-    .runOnJS(true)
-    .onStart(({ absoluteX, absoluteY }: PanEvent) =>
-      session.begin({ point: { x: absoluteX, y: absoluteY }, transfer: createDragTransfer(effectAllowed), transport: 'pan' }),
-    )
-    .onUpdate(({ absoluteX, absoluteY }: PanEvent) => session.move({ x: absoluteX, y: absoluteY }))
-    .onEnd(({ absoluteX, absoluteY }: PanEvent) => session.finish({ commit: true, point: { x: absoluteX, y: absoluteY } }))
-    .onFinalize(({ absoluteX, absoluteY }: PanEvent) => {
-      // A gesture the system took away (a scroll won, the view unmounted) ends
-      // here and nowhere else — `onEnd` does not fire for it, so it is a cancel.
-      if (session.isDragging()) session.finish({ commit: false, point: { x: absoluteX, y: absoluteY } });
-    });
+function buildPanGesture({ arm, effectAllowed, session }: PanGestureParams) {
+  // Hoisted so each hop wrapper is built once, not per event.
+  const beginJS = runOnJS((x: number, y: number) => {
+    session.begin({ point: { x, y }, transfer: createDragTransfer(effectAllowed), transport: 'pan' });
+  });
+  const moveJS = runOnJS((x: number, y: number) => {
+    session.move({ x, y });
+  });
+  const finishJS = runOnJS((x: number, y: number, commit: boolean) => {
+    // The cancel path checks first: a gesture the system took away (a scroll won,
+    // the view unmounted) reaches `onFinalize` and never `onEnd`, so that is the
+    // only place it can be ended — and the only one that can arrive twice.
+    if (commit || session.isDragging()) session.finish({ commit, point: { x, y } });
+  });
+
+  return (
+    Gesture.Pan()
+      .manualActivation(true)
+      .onTouchesDown((event) => {
+        'worklet';
+        const touch = event.allTouches[0];
+        if (!touch) return;
+        arm.value = { active: false, failed: false, startAt: Date.now(), startX: touch.absoluteX, startY: touch.absoluteY };
+      })
+      .onTouchesMove((event, manager) => {
+        'worklet';
+        const state = arm.value;
+        if (state.active || state.failed) return;
+        const touch = event.allTouches[0];
+        if (!touch) return;
+        const travel = Math.hypot(touch.absoluteX - state.startX, touch.absoluteY - state.startY);
+        if (Date.now() - state.startAt < DRAG_HOLD_MS) {
+          // Moved before the hold landed: the finger is scrolling. Fail explicitly
+          // so RNGH stops tracking it rather than leaving the pan armed behind a
+          // scroll that has already started.
+          if (travel > DRAG_ARM_SLOP) {
+            arm.value = { ...state, failed: true };
+            manager.fail();
+          }
+          return;
+        }
+        if (travel > DRAG_MOVE_SLOP) manager.activate();
+      })
+      .onTouchesUp((_event, manager) => {
+        'worklet';
+        // A hold that never moved: nothing to drag. Ending it releases the
+        // recognizer instead of leaving it BEGAN until the next touch.
+        if (!arm.value.active) manager.fail();
+      })
+      // Activation only — the pan is never active without one, so this is the lift.
+      .onStart(({ absoluteX, absoluteY }: PanEvent) => {
+        'worklet';
+        arm.value = { ...arm.value, active: true };
+        beginJS(absoluteX, absoluteY);
+      })
+      .onUpdate(({ absoluteX, absoluteY }: PanEvent) => {
+        'worklet';
+        moveJS(absoluteX, absoluteY);
+      })
+      .onEnd(({ absoluteX, absoluteY }: PanEvent) => {
+        'worklet';
+        finishJS(absoluteX, absoluteY, true);
+      })
+      .onFinalize(({ absoluteX, absoluteY }: PanEvent) => {
+        'worklet';
+        const wasActive = arm.value.active;
+        arm.value = PAN_ARM_IDLE;
+        if (wasActive) finishJS(absoluteX, absoluteY, false);
+      })
+  );
 }
 
 /** Which transports may run. `'auto'` is the right answer unless you are working around one. */
@@ -133,8 +234,13 @@ export type DraggableProps = Omit<ViewProps, 'children'> & {
  * crosses to code that never heard of this library — a bare `dragover`/`drop` pair,
  * `<FileSystem onExternalDrop>`, another window. Touch on web has no such API, so it
  * gets a pointer-driven pan after a {@link DRAG_HOLD_MS} hold; native gets an RNGH
- * pan on the same timing, which matches the context-menu hold so the two never both
- * fire. Which one ran is on `transport` in the store's `ActiveDrag`.
+ * pan on the same timing. Which one ran is on `transport` in the store's `ActiveDrag`.
+ *
+ * **A hold alone never drags.** Both pans treat the hold as arming only: the lift
+ * happens on the first move past {@link DRAG_MOVE_SLOP} after it. So a child that
+ * wants the bare hold for itself — a `Pressable` with `onLongPress`, a
+ * `<HoldContextMenu trigger="passive">` — keeps it, and the two are exclusive by
+ * construction: hold still and the press has it, hold and move and the drag does.
  *
  * **Accessibility.** This is a wrapper: it adds no semantics, and the child's own
  * role and name are what a screen reader announces. `accessibilityLabel`,
@@ -171,6 +277,8 @@ export function Draggable({
   const rectRef = useRef<DragRect | null>(null);
   const ghostPos = useRef(new Animated.ValueXY()).current;
   const [ghost, setGhost] = useState(false);
+  // The native pan's hold-then-move decision, which runs in worklets — see PanArm.
+  const panArm = useSharedValue<PanArm>(PAN_ARM_IDLE);
 
   // Live props for the session, which is built once: a callback identity that
   // changes every render must not tear down a drag in flight.
@@ -244,8 +352,8 @@ export function Draggable({
   useDraggablePointer({ effectAllowed, enabled: pointerPan, nodeRef, session });
 
   const gesture = useMemo(
-    () => (Platform.OS === 'web' || !pointerPan ? null : buildPanGesture({ effectAllowed, session })),
-    [effectAllowed, pointerPan, session],
+    () => (Platform.OS === 'web' || !pointerPan ? null : buildPanGesture({ arm: panArm, effectAllowed, session })),
+    [effectAllowed, panArm, pointerPan, session],
   );
 
   const host = (

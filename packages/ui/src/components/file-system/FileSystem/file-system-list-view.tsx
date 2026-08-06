@@ -145,12 +145,46 @@ function chevronLaneLeft(level: number): number {
   return ROW_PADDING_X + level * INDENT_PER_LEVEL;
 }
 
+type RowChevronProps = { isExpanded: boolean; isSelected: boolean; level: number; name: string; onToggle: () => void };
+
+/**
+ * A folder row's disclosure control, laid over the lane the row's own padding
+ * reserves.
+ *
+ * A sibling of the row button rather than a child of it: a button inside a button
+ * is invalid HTML, and on web both Pressables resolve to one. Nothing about the
+ * press behaviour changes — RNW's press responder stops the click before it
+ * reaches an ancestor Pressable, so tapping the chevron never also activated the
+ * row, and the same holds for the responder on native.
+ *
+ * Full row height, so the target is the whole lane rather than just the glyph.
+ */
+function RowChevron({ isExpanded, isSelected, level, name, onToggle }: RowChevronProps) {
+  return (
+    <Pressable
+      accessibilityLabel={isExpanded ? `Collapse ${name}` : `Expand ${name}`}
+      accessibilityRole="button"
+      accessibilityState={{ expanded: isExpanded }}
+      // See ListRow: native reads the state, web reads the ARIA attribute.
+      aria-expanded={isExpanded}
+      className="absolute top-0 items-center justify-center"
+      onPress={onToggle}
+      style={{ height: FS_ROW_HEIGHT, left: chevronLaneLeft(level), width: CHEVRON_SIZE }}
+    >
+      <ThemedIcon icon={isExpanded ? ChevronDown : ChevronRight} token={isSelected ? 'white' : 'muted-foreground'} size={14} />
+    </Pressable>
+  );
+}
+
 type ListRowProps = {
   childCount: number | undefined;
+  draggable: boolean;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
+  onMove?: (event: FileSystemMoveEvent) => void;
   /** Long-press toggles this row's selection; `undefined` leaves the gesture to the context menu. */
   onSelectLongPress?: (entry: FileSystemEntry) => void;
   onToggleExpanded: (path: string) => void;
@@ -164,19 +198,19 @@ type ListRowProps = {
 /**
  * Disclosure chevron, icon, name, then the metadata columns.
  *
- * The chevron is a sibling of the row button rather than a child of it, laid
- * over the lane the row's own padding reserves: a button inside a button is
- * invalid HTML, and on web both Pressables resolve to one. Nothing about the
- * press behaviour changes — RNW's press responder stops the click before it
- * reaches an ancestor Pressable, so tapping the chevron never also activated the
- * row, and the same holds for the responder on native.
+ * Renders its own {@link ListRowShell} rather than being handed one: the shell's
+ * drag source has to know whether this row's context menu is open, and that state
+ * lives in the hook called here.
  */
 function ListRow({
   childCount,
+  draggable,
   getContextMenuActions,
   isSelected,
   onActivate,
   onContextMenuAction,
+  onExternalDrop,
+  onMove,
   onSelectLongPress,
   onToggleExpanded,
   renderEntryIcon,
@@ -187,7 +221,6 @@ function ListRow({
   const { entry, isExpandable, isExpanded, level } = row;
   const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
   const handleToggle = useCallback(() => onToggleExpanded(entry.path), [entry.path, onToggleExpanded]);
-  const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
   const textClassName = isSelected ? 'text-white' : 'text-foreground';
   const metaClassName = isSelected ? 'text-white' : 'text-muted-foreground';
   const colors = useThemeColors();
@@ -196,66 +229,56 @@ function ListRow({
   const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
-    <HoldContextMenu {...menuProps}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ selected: isSelected }}
-        // Both, deliberately: `accessibilityState` is what native reads, and
-        // react-native-web maps `aria-selected` but not `accessibilityState`, so
-        // on web the fill would otherwise be the only thing saying "picked".
-        aria-selected={isSelected}
-        // Hover is not a class here: it is one sliding node behind the rows, so it
-        // can keep tracking under the drag's pointer capture. See file-system-hover.
-        className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected && 'bg-info')}
-        onLongPress={onLongPress}
-        onPress={handlePress}
-        style={{ height: FS_ROW_HEIGHT, paddingLeft: chevronLaneLeft(level) }}
-        testID={testID}
-      >
-        {/* The chevron's lane, held open on file rows too so names stay aligned
-            across kinds. On a folder row the control below sits over this box. */}
-        <View style={{ width: CHEVRON_SIZE }} />
-        {entry.kind === 'folder'
-          ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
-          : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
-        {entry.pinnedAt ? <Pin color={isSelected ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}
-        <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
-          {entry.name}
-        </Text>
-        {entry.favoritedAt ? <Heart color={isSelected ? colors.white : colors.danger} size={FAV_ICON_SIZE} /> : null}
-        {showDate ? (
-          <Text className={cn('w-44', metaClassName)} numberOfLines={1} size="xs">
-            {formatTimestamp(entry.updatedAt ?? entry.createdAt) ?? MISSING_VALUE}
-          </Text>
-        ) : null}
-        <Text className={cn('w-20 text-right', metaClassName)} numberOfLines={1} numeric={true} size="xs">
-          {entry.kind === 'folder' ? itemCountLabel(childCount) : (formatByteSize(entry.size) ?? MISSING_VALUE)}
-        </Text>
-      </Pressable>
-      {/* Over the lane held open above — see this component's note on why it is a
-          sibling of the row rather than a child. Full row height, so the target is
-          the whole lane rather than just the glyph. */}
-      {isExpandable ? (
+    <ListRowShell draggable={draggable} menuOpen={menuProps.open} onExternalDrop={onExternalDrop} onMove={onMove} row={row}>
+      <HoldContextMenu {...menuProps}>
         <Pressable
-          accessibilityLabel={isExpanded ? `Collapse ${entry.name}` : `Expand ${entry.name}`}
           accessibilityRole="button"
-          accessibilityState={{ expanded: isExpanded }}
-          // See the row above: native reads the state, web reads the ARIA attribute.
-          aria-expanded={isExpanded}
-          className="absolute top-0 items-center justify-center"
-          onPress={handleToggle}
-          style={{ height: FS_ROW_HEIGHT, left: chevronLaneLeft(level), width: CHEVRON_SIZE }}
+          accessibilityState={{ selected: isSelected }}
+          // Both, deliberately: `accessibilityState` is what native reads, and
+          // react-native-web maps `aria-selected` but not `accessibilityState`, so
+          // on web the fill would otherwise be the only thing saying "picked".
+          aria-selected={isSelected}
+          // Hover is not a class here: it is one sliding node behind the rows, so it
+          // can keep tracking under the drag's pointer capture. See file-system-hover.
+          className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected && 'bg-info')}
+          onLongPress={onLongPress}
+          onPress={handlePress}
+          style={{ height: FS_ROW_HEIGHT, paddingLeft: chevronLaneLeft(level) }}
+          testID={testID}
         >
-          <ThemedIcon icon={ChevronIcon} token={isSelected ? 'white' : 'muted-foreground'} size={14} />
+          {/* The chevron's lane, held open on file rows too so names stay aligned
+              across kinds. On a folder row the control below sits over this box. */}
+          <View style={{ width: CHEVRON_SIZE }} />
+          {entry.kind === 'folder'
+            ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
+            : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
+          {entry.pinnedAt ? <Pin color={isSelected ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}
+          <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
+            {entry.name}
+          </Text>
+          {entry.favoritedAt ? <Heart color={isSelected ? colors.white : colors.danger} size={FAV_ICON_SIZE} /> : null}
+          {showDate ? (
+            <Text className={cn('w-44', metaClassName)} numberOfLines={1} size="xs">
+              {formatTimestamp(entry.updatedAt ?? entry.createdAt) ?? MISSING_VALUE}
+            </Text>
+          ) : null}
+          <Text className={cn('w-20 text-right', metaClassName)} numberOfLines={1} numeric={true} size="xs">
+            {entry.kind === 'folder' ? itemCountLabel(childCount) : (formatByteSize(entry.size) ?? MISSING_VALUE)}
+          </Text>
         </Pressable>
-      ) : null}
-    </HoldContextMenu>
+        {isExpandable ? (
+          <RowChevron isExpanded={isExpanded} isSelected={isSelected} level={level} name={entry.name} onToggle={handleToggle} />
+        ) : null}
+      </HoldContextMenu>
+    </ListRowShell>
   );
 }
 
 type ListRowShellProps = {
   children: ReactNode;
   draggable: boolean;
+  /** This row's own menu — see `ContextMenuHookReturn.menuProps`. */
+  menuOpen: boolean;
   onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
   onMove?: (event: FileSystemMoveEvent) => void;
   row: FileSystemRow;
@@ -273,7 +296,7 @@ type ListRowShellProps = {
  * and now every row the drag carries takes it, not just the one under the pointer,
  * which is what a multi-selection drag should look like.
  */
-function ListRowShell({ children, draggable, onExternalDrop, onMove, row }: ListRowShellProps) {
+function ListRowShell({ children, draggable, menuOpen, onExternalDrop, onMove, row }: ListRowShellProps) {
   const { entry } = row;
   const isLifting = useIsLifting(entry.path);
   const body = (
@@ -283,7 +306,9 @@ function ListRowShell({ children, draggable, onExternalDrop, onMove, row }: List
   );
 
   return (
-    <MultiDraggable disabled={!draggable} effectAllowed="move" id={entry.path}>
+    // Not a source while this row's own menu is open — see `ContextMenuHookReturn.menuProps`.
+    // Still a target: another row's drag can land on this folder either way.
+    <MultiDraggable disabled={!draggable || menuOpen} effectAllowed="move" id={entry.path}>
       {entry.kind === 'folder' ? (
         <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
           {/* The outline is drawn over the row, not around it: a border in the row's
@@ -419,21 +444,22 @@ export function FileSystemListView({
 
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemRow>) => (
-      <ListRowShell draggable={draggable} onExternalDrop={onExternalDrop} onMove={onMove} row={item}>
-        <ListRow
-          childCount={index.children.get(item.entry.path)?.length}
-          getContextMenuActions={getContextMenuActions}
-          isSelected={selectedPaths.has(item.entry.path)}
-          onActivate={activate}
-          onContextMenuAction={onContextMenuAction}
-          onSelectLongPress={selectLongPress}
-          onToggleExpanded={toggleExpanded}
-          renderEntryIcon={renderEntryIcon}
-          row={item}
-          showDate={showDate}
-          testID={fileSystemEntryTestID(testID, item.entry.path)}
-        />
-      </ListRowShell>
+      <ListRow
+        childCount={index.children.get(item.entry.path)?.length}
+        draggable={draggable}
+        getContextMenuActions={getContextMenuActions}
+        isSelected={selectedPaths.has(item.entry.path)}
+        onActivate={activate}
+        onContextMenuAction={onContextMenuAction}
+        onExternalDrop={onExternalDrop}
+        onMove={onMove}
+        onSelectLongPress={selectLongPress}
+        onToggleExpanded={toggleExpanded}
+        renderEntryIcon={renderEntryIcon}
+        row={item}
+        showDate={showDate}
+        testID={fileSystemEntryTestID(testID, item.entry.path)}
+      />
     ),
     [
       activate,

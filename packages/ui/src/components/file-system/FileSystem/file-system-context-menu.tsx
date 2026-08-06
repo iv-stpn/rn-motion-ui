@@ -68,6 +68,17 @@ function holdMenuItems(
 export type ContextMenuHookReturn = {
   menuProps: {
     items: readonly HoldContextMenuItem[];
+    /**
+     * Whether this entry's menu is open.
+     *
+     * Also the entry's own drag source's cue to stand down: pass it to the
+     * `<MultiDraggable>` around this entry as part of `disabled`. On touch the
+     * finger that opened the menu is still on the entry, and `<Draggable>` lifts
+     * on the first move after its hold — so without this a drift of a few pixels
+     * lifts a drag out from under a panel that is already open. Nothing to
+     * suppress on web, where the menu is a right-click and no press is being held,
+     * but the prop is platform-free and passing it is what keeps it that way.
+     */
     open: boolean;
     onOpenChange: (open: boolean) => void;
     trigger: 'passive';

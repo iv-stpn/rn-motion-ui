@@ -120,6 +120,7 @@ function ColumnDropSurface({ external }: ColumnDropSurfaceProps) {
 }
 
 type ColumnRowProps = {
+  draggable: boolean;
   entry: FileSystemEntry;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   index: FileSystemIndex;
@@ -127,6 +128,8 @@ type ColumnRowProps = {
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
+  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
+  onMove?: (event: FileSystemMoveEvent) => void;
   /** Long-press toggles this row's selection; `undefined` leaves the gesture to the context menu. */
   onSelectLongPress?: (entry: FileSystemEntry) => void;
   renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
@@ -161,7 +164,13 @@ function ColumnRowGlyph({
   return <FileTypeIcon fileName={entry.name} size={COLUMN_ICON_SIZE} surface={isSelected ? 'inverted' : 'theme'} />;
 }
 
+/**
+ * Renders its own {@link ColumnRowShell} rather than being handed one: the shell's
+ * drag source has to know whether this row's context menu is open, and that state
+ * lives in the hook called here.
+ */
 function ColumnRow({
+  draggable,
   entry,
   getContextMenuActions,
   index,
@@ -169,6 +178,8 @@ function ColumnRow({
   isSelected,
   onActivate,
   onContextMenuAction,
+  onExternalDrop,
+  onMove,
   onSelectLongPress,
   renderEntryIcon,
   testID,
@@ -181,37 +192,39 @@ function ColumnRow({
   const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
 
   return (
-    // No `marginBottom` here: the gap belongs to `ColumnRowShell`, so this node's
-    // box is exactly the row's and matches the drop zone measured around it.
-    <HoldContextMenu {...menuProps}>
-      <Pressable
-        accessibilityLabel={entry.name}
-        accessibilityRole="button"
-        accessibilityState={{ selected: isSelected }}
-        // See ListRow: native reads the state, web reads the ARIA attribute.
-        aria-selected={isSelected}
-        className={cn(
-          'flex-row items-center gap-2 rounded-md px-2',
-          isSelected && 'bg-info',
-          !isSelected && isOnTrail && 'bg-surface-selected',
-          !(isSelected || isOnTrail) && 'hover:bg-surface-hover',
-        )}
-        onLongPress={onLongPress}
-        onPress={handlePress}
-        style={{ height: COLUMN_ROW_HEIGHT }}
-        testID={testID}
-      >
-        <ColumnRowGlyph entry={entry} isSelected={isSelected} renderEntryIcon={renderEntryIcon} />
-        {entry.pinnedAt ? <Pin color={isSelected ? colors.white : colors.primary} size={COLUMN_PIN_ICON_SIZE} /> : null}
-        <Text className={cn('flex-1', isSelected && 'text-white')} numberOfLines={1} size="sm">
-          {entry.name}
-        </Text>
-        {entry.favoritedAt ? <Heart color={isSelected ? colors.white : colors.danger} size={COLUMN_FAV_ICON_SIZE} /> : null}
-        {hasChildren ? (
-          <ChevronRight color={isSelected ? colors.white : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
-        ) : null}
-      </Pressable>
-    </HoldContextMenu>
+    <ColumnRowShell draggable={draggable} entry={entry} menuOpen={menuProps.open} onExternalDrop={onExternalDrop} onMove={onMove}>
+      {/* No `marginBottom` here: the gap belongs to `ColumnRowShell`, so this node's
+          box is exactly the row's and matches the drop zone measured around it. */}
+      <HoldContextMenu {...menuProps}>
+        <Pressable
+          accessibilityLabel={entry.name}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isSelected }}
+          // See ListRow: native reads the state, web reads the ARIA attribute.
+          aria-selected={isSelected}
+          className={cn(
+            'flex-row items-center gap-2 rounded-md px-2',
+            isSelected && 'bg-info',
+            !isSelected && isOnTrail && 'bg-surface-selected',
+            !(isSelected || isOnTrail) && 'hover:bg-surface-hover',
+          )}
+          onLongPress={onLongPress}
+          onPress={handlePress}
+          style={{ height: COLUMN_ROW_HEIGHT }}
+          testID={testID}
+        >
+          <ColumnRowGlyph entry={entry} isSelected={isSelected} renderEntryIcon={renderEntryIcon} />
+          {entry.pinnedAt ? <Pin color={isSelected ? colors.white : colors.primary} size={COLUMN_PIN_ICON_SIZE} /> : null}
+          <Text className={cn('flex-1', isSelected && 'text-white')} numberOfLines={1} size="sm">
+            {entry.name}
+          </Text>
+          {entry.favoritedAt ? <Heart color={isSelected ? colors.white : colors.danger} size={COLUMN_FAV_ICON_SIZE} /> : null}
+          {hasChildren ? (
+            <ChevronRight color={isSelected ? colors.white : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
+          ) : null}
+        </Pressable>
+      </HoldContextMenu>
+    </ColumnRowShell>
   );
 }
 
@@ -219,6 +232,8 @@ type ColumnRowShellProps = {
   children: ReactNode;
   draggable: boolean;
   entry: FileSystemEntry;
+  /** This row's own menu — see `ContextMenuHookReturn.menuProps`. */
+  menuOpen: boolean;
   onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
   onMove?: (event: FileSystemMoveEvent) => void;
 };
@@ -231,7 +246,7 @@ type ColumnRowShellProps = {
  * The row gap moves out here so the zone's box is exactly the row's: a zone that
  * included the gap would claim a pointer sitting between two rows.
  */
-function ColumnRowShell({ children, draggable, entry, onExternalDrop, onMove }: ColumnRowShellProps) {
+function ColumnRowShell({ children, draggable, entry, menuOpen, onExternalDrop, onMove }: ColumnRowShellProps) {
   const isLifting = useIsLifting(entry.path);
   const body = (
     <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: COLUMN_ROW_HEIGHT }}>
@@ -240,7 +255,14 @@ function ColumnRowShell({ children, draggable, entry, onExternalDrop, onMove }: 
   );
 
   return (
-    <MultiDraggable disabled={!draggable} effectAllowed="move" id={entry.path} style={{ marginBottom: COLUMN_ROW_GAP }}>
+    // Not a source while this row's own menu is open — see `ContextMenuHookReturn.menuProps`.
+    // Still a target: another row's drag can land on this folder either way.
+    <MultiDraggable
+      disabled={!draggable || menuOpen}
+      effectAllowed="move"
+      id={entry.path}
+      style={{ marginBottom: COLUMN_ROW_GAP }}
+    >
       {entry.kind === 'folder' ? (
         <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
           {({ isOver }: DragzoneRenderState) => (
@@ -378,20 +400,21 @@ function FileSystemColumnImpl({
 
   const renderRow = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
-      <ColumnRowShell draggable={draggable} entry={item} onExternalDrop={onExternalDrop} onMove={onMove}>
-        <ColumnRow
-          entry={item}
-          getContextMenuActions={getContextMenuActions}
-          index={index}
-          isOnTrail={item.kind === 'folder' && item.path === trailChildPath}
-          isSelected={selectedPaths.has(item.path)}
-          onActivate={activate}
-          onContextMenuAction={onContextMenuAction}
-          onSelectLongPress={onSelectLongPress}
-          renderEntryIcon={renderEntryIcon}
-          testID={fileSystemEntryTestID(testID, item.path)}
-        />
-      </ColumnRowShell>
+      <ColumnRow
+        draggable={draggable}
+        entry={item}
+        getContextMenuActions={getContextMenuActions}
+        index={index}
+        isOnTrail={item.kind === 'folder' && item.path === trailChildPath}
+        isSelected={selectedPaths.has(item.path)}
+        onActivate={activate}
+        onContextMenuAction={onContextMenuAction}
+        onExternalDrop={onExternalDrop}
+        onMove={onMove}
+        onSelectLongPress={onSelectLongPress}
+        renderEntryIcon={renderEntryIcon}
+        testID={fileSystemEntryTestID(testID, item.path)}
+      />
     ),
     [
       activate,

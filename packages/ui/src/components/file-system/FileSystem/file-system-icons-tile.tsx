@@ -207,7 +207,8 @@ function IconTile({
   );
 
   return (
-    <MultiDraggable disabled={!draggable} effectAllowed="move" id={entry.path}>
+    // Not a source while its own menu is open — see `ContextMenuHookReturn.menuProps`.
+    <MultiDraggable disabled={!draggable || menuProps.open} effectAllowed="move" id={entry.path}>
       {entry.kind === 'folder' ? (
         <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
           {({ isOver }: DragzoneRenderState) => face(isOver)}

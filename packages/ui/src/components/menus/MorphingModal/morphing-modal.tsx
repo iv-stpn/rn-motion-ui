@@ -63,7 +63,7 @@ export function MorphingModal({
   const open = viewId !== null;
   const reduce = useReducedMotion();
   const enterY = resolveEnterY(reduce, placement);
-  const enterScale = reduce ? 1 : 0.97;
+  const enterScale = reduce ? 1 : 0.95;
 
   const handleClose = useCallback(() => {
     onClose();

@@ -118,9 +118,9 @@ function OptionsView({ onPrivateKey, onRecovery, onClose }: OptionsViewProps) {
         <CloseButton label={CLOSE_LABEL} onPress={onClose} />
       </View>
       <View className="gap-2">
-        <Row icon={<Lock size={16} color="#111111" />} label={PRIVATE_KEY_LABEL} onPress={onPrivateKey} />
-        <Row icon={<ScrollText size={16} color="#111111" />} label={RECOVERY_LABEL} onPress={onRecovery} />
-        <Row icon={<Trash2 size={16} color="#e5484d" />} label="Remove Wallet" danger={true} onPress={onClose} />
+        <Row icon={<Lock size={16} />} label={PRIVATE_KEY_LABEL} onPress={onPrivateKey} />
+        <Row icon={<ScrollText size={16} />} label={RECOVERY_LABEL} onPress={onRecovery} />
+        <Row icon={<Trash2 size={16} />} label="Remove Wallet" danger={true} onPress={onClose} />
       </View>
     </View>
   );

@@ -80,7 +80,7 @@
     items={items}
     renderEmptyState={({ reason, folderName }) =>
       reason === "empty-folder" ? (
-        <DropZone folder={folderName} onPick={upload} />
+        <EmptyFolderPlaceholder folder={folderName} onPick={upload} />
       ) : undefined
     }
   />

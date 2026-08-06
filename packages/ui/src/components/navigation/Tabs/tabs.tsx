@@ -488,16 +488,19 @@ export function TabsContent({ value, children, animation, testID }: TabsContentP
         {children}
       </TabsSlidePanel>
     );
-  if (!isCurrent) return null;
-  return (
-    <MotiView
-      from={contentEnterFrom(resolved, reduce)}
-      animate={CONTENT_SETTLED}
-      transition={mergeTransition(contentTransitionFor(resolved, reduce), contentTransition)}
-      testID={testID}
-      className="mt-4"
-    >
-      {children}
-    </MotiView>
-  );
+
+  if (isCurrent)
+    return (
+      <MotiView
+        from={contentEnterFrom(resolved, reduce)}
+        animate={CONTENT_SETTLED}
+        transition={mergeTransition(contentTransitionFor(resolved, reduce), contentTransition)}
+        testID={testID}
+        className="mt-4"
+      >
+        {children}
+      </MotiView>
+    );
+
+  return null;
 }

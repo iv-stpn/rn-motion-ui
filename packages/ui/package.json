@@ -562,20 +562,10 @@
       "types": "./src/moti/components/safe-area-view.tsx",
       "default": "./src/moti/components/safe-area-view.tsx"
     },
-    "./moti/progress": {
-      "source": "./src/moti/components/progress.tsx",
-      "types": "./src/moti/components/progress.tsx",
-      "default": "./src/moti/components/progress.tsx"
-    },
     "./moti/motify": {
       "source": "./src/moti/core/motify.tsx",
       "types": "./src/moti/core/motify.tsx",
       "default": "./src/moti/core/motify.tsx"
-    },
-    "./moti/motify-svg": {
-      "source": "./src/moti/svg/motify-svg.tsx",
-      "types": "./src/moti/svg/motify-svg.tsx",
-      "default": "./src/moti/svg/motify-svg.tsx"
     },
     "./moti/use-motify": {
       "source": "./src/moti/core/use-motify.ts",

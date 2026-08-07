@@ -1,5 +1,5 @@
 ---
-"rn-motion-ui": minor
+"rn-motion-ui": major
 ---
 
 **Breaking**: `rn-motion-ui/icons` is gone. Icons live in `rn-motion-ui-icons`.

@@ -10,16 +10,25 @@
 // but drops unknown HTML attributes, so `draggable` and `onDragStart` passed as
 // JSX props reach nothing.
 //
-// Touch never gets here. No mobile browser starts an HTML5 drag from a finger, so
-// that case is `use-draggable-pointer.ts` instead.
+// Touch is the pan's (`use-draggable-pointer.ts`) — but it can knock on this door:
+// Chromium starts a *native* drag from a touch long-press on any `draggable=true`
+// element, and the moment it does, the pointer stream gets a `pointercancel` that
+// kills the pan mid-gesture. `onDragStart` below refuses that drag outright.
 
 import { type RefObject, useEffect } from 'react';
 import { Platform, type View } from 'react-native';
+import type { PressTimeline } from '../use-press-timeline';
 import type { DraggableSession } from './draggable-session';
 
-export type UseDraggableHtml5Params = { enabled: boolean; nodeRef: RefObject<View | null>; session: DraggableSession };
+export type UseDraggableHtml5Params = {
+  enabled: boolean;
+  nodeRef: RefObject<View | null>;
+  session: DraggableSession;
+  /** The pan's press timeline — how a touch-initiated native drag is recognised and refused. */
+  timeline: PressTimeline;
+};
 
-export function useDraggableHtml5({ enabled, nodeRef, session }: UseDraggableHtml5Params): void {
+export function useDraggableHtml5({ enabled, nodeRef, session, timeline }: UseDraggableHtml5Params): void {
   // biome-ignore lint/plugin: DOM event wiring must run in an effect; no data-fetching or render-driving state
   useEffect(() => {
     if (Platform.OS !== 'web' || !enabled) return;
@@ -28,12 +37,19 @@ export function useDraggableHtml5({ enabled, nodeRef, session }: UseDraggableHtm
     if (!node?.addEventListener) return;
 
     function onDragStart(e: DragEvent) {
+      // A press the timeline is tracking is the pan's gesture — this `dragstart`
+      // is Chromium turning a touch long-press into a native drag, and letting
+      // it proceed fires the `pointercancel` that kills the pan (and the hold
+      // menu riding it). Same for a pan session already up on a hybrid device.
+      // Prevented, not just ignored: an unprevented native drag runs — and
+      // cancels the pointer stream — whether or not we begin a session for it.
+      if (timeline.phase.current !== 'idle' || session.isDragging()) {
+        e.preventDefault();
+        return;
+      }
       // No dataTransfer means no drag to run — bail rather than lift a session
       // whose payload nothing could read.
       if (!e.dataTransfer) return;
-      // A pan already in flight (a touch that armed first on a hybrid device) owns
-      // this drag; two transports on one gesture would double every callback.
-      if (session.isDragging()) return;
       session.begin({ point: { x: e.clientX, y: e.clientY }, transfer: e.dataTransfer, transport: 'html5' });
     }
 
@@ -67,5 +83,6 @@ export function useDraggableHtml5({ enabled, nodeRef, session }: UseDraggableHtm
       node.removeEventListener('drag', onDrag);
       node.removeEventListener('dragend', onDragEnd);
     };
-  }, [enabled, nodeRef, session]);
+    // `timeline` is stable for the life of the component, so it never rebinds here.
+  }, [enabled, nodeRef, session, timeline]);
 }

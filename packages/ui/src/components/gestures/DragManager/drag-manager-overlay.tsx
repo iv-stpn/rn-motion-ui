@@ -10,7 +10,7 @@
 // pointer stream never reaches React: this component re-renders when a drag starts
 // and when it ends, and in between the ghost moves on the animated value alone.
 
-import { type RefObject, useCallback, useEffect, useRef } from 'react';
+import { type RefObject, useCallback, useLayoutEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
 import type { DragPoint, DragRect } from '../drag.types';
 import { ghostOffset } from '../drag-geometry';
@@ -54,9 +54,10 @@ export function DragManagerOverlay({ hostId, rectRef }: DragManagerOverlayProps)
 
   // The lift itself produces no move event, so without this the ghost would spend
   // its first frame at the manager's top-left corner and snap into place on the
-  // next pointer sample.
-  // biome-ignore lint/plugin: syncing an animated value to store state must run in an effect; no data-fetching or render-driving state
-  useEffect(() => {
+  // next pointer sample. `useLayoutEffect` runs synchronously after mutations but
+  // before the screen paints, so the ghost lands at the right spot on its very
+  // first frame instead of flickering at (0,0).
+  useLayoutEffect(() => {
     if (!mine) return;
     place(getDragPoint() ?? drag?.origin.grab ?? { x: 0, y: 0 });
   }, [drag, mine, place]);

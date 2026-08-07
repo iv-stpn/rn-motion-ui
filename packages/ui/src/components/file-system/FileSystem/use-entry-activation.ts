@@ -44,8 +44,8 @@ export type EntryActivation = {
    */
   onPress: (entry: FileSystemEntry, event?: GestureResponderEvent, orderedPaths?: readonly string[]) => void;
   /**
-   * Wire to the entry Pressable's `onLongPress` — but see `useEntryLongPress`,
-   * which resolves it against the context menu's claim on the same gesture.
+   * The multi-selection toggle. Pass to `<HoldContextMenu onHold>` when in
+   * `multiple` mode — `HoldContextMenu` calls it instead of opening the panel.
    * `undefined` outside `multiple` mode, so the menu keeps the gesture.
    */
   onLongPress: ((entry: FileSystemEntry) => void) | undefined;
@@ -105,22 +105,4 @@ export function useEntryActivation(
   );
 
   return { onPress, onLongPress: selectionMode === 'multiple' ? selectAdditive : undefined };
-}
-
-/**
- * Which handler gets the long press on one entry.
- *
- * Touch has one gesture here and two claimants — multi-selection and the entry
- * context menu — so multi-selection wins when it is on. That is the Android/
- * Files convention (hold to start picking), and the menu is still a right-click
- * away on web; on touch a consumer who needs both has to surface the actions
- * somewhere other than the entry itself.
- */
-export function useEntryLongPress(
-  entry: FileSystemEntry,
-  onSelectLongPress: ((entry: FileSystemEntry) => void) | undefined,
-  openContextMenu: (() => void) | undefined,
-): (() => void) | undefined {
-  const selectThis = useCallback(() => onSelectLongPress?.(entry), [entry, onSelectLongPress]);
-  return onSelectLongPress ? selectThis : openContextMenu;
 }

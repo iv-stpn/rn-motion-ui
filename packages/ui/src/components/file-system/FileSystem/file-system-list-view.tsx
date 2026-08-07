@@ -20,12 +20,12 @@ import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
-import { MultiDraggable } from '../../gestures/DragManager/multi-draggable';
+import { withMultiDragIds } from '../../gestures/DragManager/multi-drag';
+import { useIsLifting, useMultiDragScope } from '../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../gestures/drag.types';
 import { useActiveDrag } from '../../gestures/use-drag-store';
 import { ThemedIcon } from '../../icon/themed-icon';
-import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
+import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
 import type {
@@ -46,7 +46,7 @@ import type { FileSystemRow } from './file-system-rows';
 import { FS_ROW_HEIGHT, flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
-import { useEntryActivation, useEntryLongPress } from './use-entry-activation';
+import { useEntryActivation } from './use-entry-activation';
 import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
 
 const NAME_LABEL = 'Name';
@@ -198,9 +198,9 @@ type ListRowProps = {
 /**
  * Disclosure chevron, icon, name, then the metadata columns.
  *
- * Renders its own {@link ListRowShell} rather than being handed one: the shell's
- * drag source has to know whether this row's context menu is open, and that state
- * lives in the hook called here.
+ * Owns the hold gesture (via `HoldContextMenu`), the context menu, and the drag
+ * source. No separate shell component — the drop target wraps the row directly
+ * for folder entries, and the drag is handled by `HoldContextMenu dragOptions`.
  */
 function ListRow({
   childCount,
@@ -219,18 +219,64 @@ function ListRow({
   testID,
 }: ListRowProps) {
   const { entry, isExpandable, isExpanded, level } = row;
-  const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
   const handleToggle = useCallback(() => onToggleExpanded(entry.path), [entry.path, onToggleExpanded]);
   const textClassName = isSelected ? 'text-white' : 'text-foreground';
   const metaClassName = isSelected ? 'text-white' : 'text-muted-foreground';
   const colors = useThemeColors();
 
-  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
-  const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
+  const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
 
-  return (
-    <ListRowShell draggable={draggable} menuOpen={menuProps.open} onExternalDrop={onExternalDrop} onMove={onMove} row={row}>
-      <HoldContextMenu {...menuProps}>
+  // Multi-drag: resolve the same payload MultiDraggable used to resolve
+  const { getGroupData, renderPreview, resolveIds } = useMultiDragScope();
+  const ids = useMemo(() => resolveIds(entry.path), [entry.path, resolveIds]);
+  const multiData = useMemo(() => withMultiDragIds(getGroupData(ids), ids), [getGroupData, ids]);
+  const dragOptions = useMemo<HoldContextMenuDragOptions | undefined>(
+    () => (draggable ? { data: multiData, effectAllowed: 'move', preview: renderPreview?.(ids) } : undefined),
+    [draggable, ids, multiData, renderPreview],
+  );
+
+  // A hold (menu-open or multi-select toggle) must not also register as a tap
+  const heldRef = useRef(false);
+  const onOpenChangeRef = useRef(menuProps.onOpenChange);
+  onOpenChangeRef.current = menuProps.onOpenChange;
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (open) heldRef.current = true;
+    onOpenChangeRef.current(open);
+  }, []);
+
+  const handlePress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (heldRef.current) {
+        heldRef.current = false;
+        return;
+      }
+      onActivate(entry, event);
+    },
+    [entry, onActivate],
+  );
+
+  // In multi-select mode, hold toggles selection instead of opening the menu.
+  // heldRef is set so the finger release does not also fire as a tap.
+  const onHoldAction = useMemo(
+    () =>
+      onSelectLongPress
+        ? () => {
+            heldRef.current = true;
+            onSelectLongPress(entry);
+          }
+        : undefined,
+    [entry, onSelectLongPress],
+  );
+
+  const handlePressIn = useCallback(() => {
+    heldRef.current = false;
+  }, []);
+
+  const isLifting = useIsLifting(entry.path);
+
+  const body = (
+    <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: FS_ROW_HEIGHT }}>
+      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ selected: isSelected }}
@@ -241,8 +287,8 @@ function ListRow({
           // Hover is not a class here: it is one sliding node behind the rows, so it
           // can keep tracking under the drag's pointer capture. See file-system-hover.
           className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected && 'bg-info')}
-          onLongPress={onLongPress}
           onPress={handlePress}
+          onPressIn={handlePressIn}
           style={{ height: FS_ROW_HEIGHT, paddingLeft: chevronLaneLeft(level) }}
           testID={testID}
         >
@@ -270,60 +316,22 @@ function ListRow({
           <RowChevron isExpanded={isExpanded} isSelected={isSelected} level={level} name={entry.name} onToggle={handleToggle} />
         ) : null}
       </HoldContextMenu>
-    </ListRowShell>
-  );
-}
-
-type ListRowShellProps = {
-  children: ReactNode;
-  draggable: boolean;
-  /** This row's own menu — see `ContextMenuHookReturn.menuProps`. */
-  menuOpen: boolean;
-  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
-  onMove?: (event: FileSystemMoveEvent) => void;
-  row: FileSystemRow;
-};
-
-/**
- * The drag wrapper around a row: a source always, and a drop target when the row
- * is a folder.
- *
- * Nested rather than side by side, because a folder row is both ends of the
- * gesture and the zone's box has to be exactly the row's for the hit test to agree
- * with what the pointer is over.
- *
- * A row in flight takes the same tint the old source highlight painted behind it —
- * and now every row the drag carries takes it, not just the one under the pointer,
- * which is what a multi-selection drag should look like.
- */
-function ListRowShell({ children, draggable, menuOpen, onExternalDrop, onMove, row }: ListRowShellProps) {
-  const { entry } = row;
-  const isLifting = useIsLifting(entry.path);
-  const body = (
-    <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: FS_ROW_HEIGHT }}>
-      {children}
     </View>
   );
 
-  return (
-    // Not a source while this row's own menu is open — see `ContextMenuHookReturn.menuProps`.
-    // Still a target: another row's drag can land on this folder either way.
-    <MultiDraggable disabled={!draggable || menuOpen} effectAllowed="move" id={entry.path}>
-      {entry.kind === 'folder' ? (
-        <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
-          {/* The outline is drawn over the row, not around it: a border in the row's
-              own box would resize it and shift every row below by a pixel. */}
-          {({ isOver }: DragzoneRenderState) => (
-            <>
-              {body}
-              {isOver ? <FileSystemDropOutline /> : null}
-            </>
-          )}
-        </FileSystemDropzone>
-      ) : (
-        body
+  return entry.kind === 'folder' ? (
+    <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
+      {/* The outline is drawn over the row, not around it: a border in the row's
+          own box would resize it and shift every row below by a pixel. */}
+      {({ isOver }: DragzoneRenderState) => (
+        <>
+          {body}
+          {isOver ? <FileSystemDropOutline /> : null}
+        </>
       )}
-    </MultiDraggable>
+    </FileSystemDropzone>
+  ) : (
+    body
   );
 }
 

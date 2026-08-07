@@ -59,16 +59,22 @@
  * ```
  */
 
-import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StyleProp, View, ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import type { SurfaceLevel } from '../../../lib/elevated';
+import type { DragBehavior } from '../../gestures/drag-behavior';
+import { useHoldBehavior } from '../../gestures/use-drag-behavior';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 import type { HoldContextMenuItem } from './hold-context-menu-item';
 import { HOLD_MENU_DEFAULT_WIDTH, type HoldMenuAlign, type HoldMenuSide } from './hold-context-menu-layout';
 import type { HoldContextMenuMotion } from './hold-context-menu-motion';
 import { HoldContextMenuOverlay } from './hold-context-menu-overlay';
-import { HoldContextMenuTrigger, type HoldContextMenuTriggerMode } from './hold-context-menu-trigger';
+import {
+  type HoldContextMenuDragOptions,
+  HoldContextMenuTrigger,
+  type HoldContextMenuTriggerMode,
+} from './hold-context-menu-trigger';
 import {
   HOLD_MENU_LIFTS,
   type HoldContextMenuActivation,
@@ -106,11 +112,29 @@ export type HoldContextMenuProps = {
    */
   activateOn?: HoldContextMenuActivation;
   /**
-   * Hold before the menu opens, in ms. Also the squeeze duration, so the two
-   * finish together. Native-only — nothing is held on web.
+   * Hold before the menu opens, in ms. Sets `holdDelay` on the resolved
+   * behavior; the squeeze animation fills that same window.
+   * Native-only — nothing is held on web.
    * @default 300
    */
   holdDuration?: number;
+  /**
+   * Timing and slop overrides for the hold gesture — forwarded to
+   * `<Holdable>` / `<HoldDraggable>`. Merged with `holdDuration` if given:
+   * `{ holdDelay: holdDuration, ...behavior }`.
+   */
+  behavior?: DragBehavior;
+  /**
+   * Drag options that upgrade the hold gesture to a `<HoldDraggable>`.
+   *
+   * When provided, a move past `escapeSlop` after arming lifts a drag. The
+   * hold still opens the menu, and an escape closes it before the drag takes
+   * over.
+   *
+   * Only active on native; on web the menu is a right-click and there is no
+   * gesture widget to upgrade.
+   */
+  dragOptions?: HoldContextMenuDragOptions;
   /**
    * Which side of the item the panel opens on. `'auto'` prefers below and flips
    * when there is more room above.
@@ -208,6 +232,15 @@ export type HoldContextMenuProps = {
   wrapperRef?: RefObject<View | null>;
   /** Inert trigger — no activation, no menu. */
   disabled?: boolean;
+  /**
+   * Fires when a hold lands, right after the menu opens — one gesture, both
+   * outcomes. Use it for an action that should ride the same hold, e.g. a
+   * multi-select toggle that flips as the panel appears.
+   *
+   * To get the gesture without the panel, use `trigger="passive"` and drive the
+   * controlled {@link HoldContextMenuProps.open} yourself.
+   */
+  onHold?: () => void;
   /** Called whenever an item is chosen, after that item's own `onPress`. */
   onSelect?: (item: HoldContextMenuItem) => void;
   /** Called when the menu opens and when it closes. */
@@ -266,11 +299,37 @@ export type HoldContextMenuProps = {
   testID?: string;
 };
 
+/**
+ * Tracks whether the in-place item is currently hidden behind its lifted copy,
+ * and resets layout state when the exit animation finishes.
+ *
+ * Extracted so its `useState`/`useEffect` lines do not count toward
+ * `HoldContextMenu`'s line limit.
+ */
+function useLiftedState(open: boolean, clearRect: () => void, resetMenuHeight: () => void) {
+  const [lifted, setLifted] = useState(false);
+
+  // biome-ignore lint/plugin: the handover has to land in a later commit than the one that opens the Modal — a value derived during render is by definition the same commit
+  useEffect(() => {
+    if (open && HOLD_MENU_LIFTS) setLifted(true);
+  }, [open]);
+
+  const handleAfterClose = useCallback(() => {
+    setLifted(false);
+    resetMenuHeight();
+    clearRect();
+  }, [clearRect, resetMenuHeight]);
+
+  return { lifted, handleAfterClose };
+}
+
 export function HoldContextMenu({
   items,
   children,
   activateOn = 'hold',
   holdDuration = DEFAULT_HOLD_DURATION,
+  behavior,
+  dragOptions,
   side = 'auto',
   align = 'auto',
   menuWidth = HOLD_MENU_DEFAULT_WIDTH,
@@ -279,6 +338,7 @@ export function HoldContextMenu({
   haptics = true,
   openOnContextMenu = true,
   disabled = false,
+  onHold: onHoldProp,
   onSelect,
   onOpenChange,
   open: openProp,
@@ -300,11 +360,24 @@ export function HoldContextMenu({
   // measures — see the `wrapperRef` prop.
   const wrapperRef = wrapperRefProp ?? ownWrapperRef;
 
-  const { rect, open, pressed, close, clearRect, onAccessibilityAction, onLongPress, onPress, onPressIn, onPressOut } =
+  // `holdDelay` is always pinned to `holdDuration`: this component is named for
+  // the hold, so when it owns the gesture the hold must exist on every platform
+  // — including a draggable trigger on mobile web, where the *drag* tuning
+  // defaults `holdDelay` to `null` and a `<HoldDraggable>` would otherwise
+  // never fire it. `behavior` spreads on top, so an explicit `holdDelay` (or
+  // any other override) from the host still wins.
+  const holdBehavior = useMemo<DragBehavior>(() => ({ holdDelay: holdDuration, ...behavior }), [behavior, holdDuration]);
+  const tuning = useHoldBehavior(holdBehavior);
+  // Squeeze starts when `isPressed` fires (at armDelay) and ends when the hold
+  // fires (at holdDelay) — so the animation duration is exactly the gap.
+  const squeezeDuration = (tuning.holdDelay ?? DEFAULT_HOLD_DURATION) - tuning.armDelay;
+
+  const { rect, open, pressed, close, clearRect, onAccessibilityAction, onHold, onPress, onPressIn, onPressOut } =
     useHoldActivation({
       activateOn,
       enabled: !disabled && items.length > 0,
       haptics,
+      afterHold: onHoldProp,
       onOpenChange,
       open: openProp,
       openOnContextMenu,
@@ -322,21 +395,7 @@ export function HoldContextMenu({
     side,
   });
 
-  // Trails `open` in both directions: one commit behind on the way in (so the
-  // Modal has painted), and to the end of the exit on the way out. Stays false
-  // on web, where there is no copy to hand over to.
-  const [lifted, setLifted] = useState(false);
-
-  // biome-ignore lint/plugin: the handover has to land in a later commit than the one that opens the Modal — a value derived during render is by definition the same commit
-  useEffect(() => {
-    if (open && HOLD_MENU_LIFTS) setLifted(true);
-  }, [open]);
-
-  const handleAfterClose = useCallback(() => {
-    setLifted(false);
-    resetMenuHeight();
-    clearRect();
-  }, [clearRect, resetMenuHeight]);
+  const { lifted, handleAfterClose } = useLiftedState(open, clearRect, resetMenuHeight);
 
   const handleSelect = useCallback(
     (item: HoldContextMenuItem) => {
@@ -355,13 +414,16 @@ export function HoldContextMenu({
         accessibilityHint={accessibilityHint}
         accessibilityLabel={accessibilityLabel}
         activateOn={activateOn}
+        behavior={holdBehavior}
         className={className}
         disabled={disabled}
-        holdDuration={holdDuration}
+        dragOptions={dragOptions}
+        holdDuration={squeezeDuration}
         lifted={lifted}
         mode={trigger}
         onAccessibilityAction={onAccessibilityAction}
-        onLongPress={onLongPress}
+        onHold={onHold}
+        onHoldEscape={close}
         onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
@@ -418,4 +480,5 @@ export type {
   HoldMenuViewport,
 } from './hold-context-menu-layout';
 export type { HoldContextMenuMotion } from './hold-context-menu-motion';
+export type { HoldContextMenuDragOptions, HoldContextMenuTriggerMode } from './hold-context-menu-trigger';
 export type { HoldContextMenuActivation, HoldContextMenuHaptics } from './use-hold-activation';

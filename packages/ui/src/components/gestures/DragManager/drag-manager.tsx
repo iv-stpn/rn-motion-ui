@@ -24,7 +24,8 @@ import type {
   DragRect,
   DragzoneDropEvent,
 } from '../drag.types';
-import { DragScopeContext, useDragScope } from '../drag-scope';
+import type { DragBehavior } from '../drag-behavior';
+import { type DragScope, DragScopeContext, useDragScope } from '../drag-scope';
 import { cancelActiveDrag, getActiveDrag, refreshDragzones, registerDragManager } from '../drag-store';
 import { useEvent } from '../use-drag-store';
 import { DragManagerOverlay } from './drag-manager-overlay';
@@ -38,6 +39,21 @@ export type DragManagerProps = Omit<ViewProps, 'children'> & {
    * A child that names its own groups overrides this rather than adding to it.
    */
   groups?: DragGroups;
+  /**
+   * The press timeline every `<Draggable>` beneath this manager inherits when it
+   * sets none of its own — arm window, hold delay, and the two slops, each settable
+   * per OS. A source that sets its own `behavior` replaces this rather than merging
+   * with it.
+   *
+   * This is the right grain for the setting: a list whose rows are all sources needs
+   * one arm window agreed on by every row, because the `ScrollView` underneath them
+   * is one gesture competing with all of them at once. See {@link DragBehavior}.
+   *
+   * ```tsx
+   * <DragManager behavior={{ armDelay: 0, android: { slop: 8 }, web: { holdDelay: null } }}>
+   * ```
+   */
+  behavior?: DragBehavior;
   /**
    * Confine drags to this subtree: a source under here reaches only zones under
    * here, and a zone under here is reachable only from inside. Group labels are
@@ -92,6 +108,7 @@ export type DragManagerProps = Omit<ViewProps, 'children'> & {
  * keyboard belongs at this level, next to the handler that performs it on drop.
  */
 export function DragManager({
+  behavior,
   children,
   groups,
   isolate = false,
@@ -156,8 +173,13 @@ export function DragManager({
   // three managers racing to re-measure the same boxes off one scroll.
   useZoneRemeasure(parentId === null);
 
-  const scope = useMemo(
+  // Annotated rather than inferred, so a field added to `DragScope` fails here
+  // instead of silently not being provided to the subtree.
+  const scope = useMemo<DragScope>(
     () => ({
+      // Same rule as `groups`: the nearest manager that names one wins, and a source
+      // naming its own overrides rather than merging into it.
+      behavior: behavior ?? parent.behavior,
       groups: inheritedGroups,
       managerId: id,
       managerPath: path,
@@ -165,7 +187,7 @@ export function DragManager({
       // `overlay={false}` hands it up rather than dropping it.
       overlayHostId: overlay ? id : parent.overlayHostId,
     }),
-    [id, inheritedGroups, overlay, parent.overlayHostId, path],
+    [behavior, id, inheritedGroups, overlay, parent.behavior, parent.overlayHostId, path],
   );
 
   useImperativeHandle(ref, () => ({ cancelDrag: cancelActiveDrag, getActiveDrag, refreshZones: refreshDragzones }), []);

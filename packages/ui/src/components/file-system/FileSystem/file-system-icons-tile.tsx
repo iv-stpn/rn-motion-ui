@@ -9,16 +9,16 @@
 // it wraps, so a single-tile drag ghosts this very node, and a group drag ghosts
 // what the manager's `renderPreview` returns.
 
-import { useCallback } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { type GestureResponderEvent, Pressable, View } from 'react-native';
 import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
 import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
-import { MultiDraggable } from '../../gestures/DragManager/multi-draggable';
+import { withMultiDragIds } from '../../gestures/DragManager/multi-drag';
+import { useIsLifting, useMultiDragScope } from '../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../gestures/drag.types';
-import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
+import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph } from './FileIcon/file-icons';
 import type { FileSystemEntry, FileSystemExternalDropEvent, FileSystemMoveEvent } from './file-system.types';
@@ -28,7 +28,6 @@ import { GLYPH_BOX_HEIGHT, GLYPH_BOX_WIDTH, ROW_GAP, TILE_HEIGHT } from './file-
 import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
-import { useEntryLongPress } from './use-entry-activation';
 
 // Tile *geometry* lives in file-system-icons-grid.ts — the drag session resolves
 // pointer positions with those constants, and the hover highlight derives the
@@ -115,7 +114,7 @@ function IconTileFace({ entry, isDropTarget = false, isSelected, renderEntryIcon
         >
           {entry.pinnedAt ? (
             <>
-              <View style={{ height: 8, width: 8 }}>
+              <View className="h-2 w-2">
                 <Pin color={active ? colors.white : colors.primary} size={8} />
               </View>{' '}
             </>
@@ -124,7 +123,7 @@ function IconTileFace({ entry, isDropTarget = false, isSelected, renderEntryIcon
           {entry.favoritedAt ? (
             <>
               {' '}
-              <View style={{ height: 8, width: 8 }}>
+              <View className="h-2 w-2">
                 <Heart color={active ? colors.white : colors.danger} size={8} />
               </View>
             </>
@@ -149,11 +148,8 @@ type IconTileProps = Omit<IconTileFaceProps, 'isDropTarget'> &
   };
 
 /**
- * One tile: a drag source always, and a drop target when it is a folder.
- *
- * The zone is nested inside the source rather than beside it, because a folder
- * tile is both ends of the gesture and the zone's box has to be exactly the
- * tile's for the rect hit test to agree with what the pointer is over.
+ * One tile: owns the hold gesture, context menu, and drag source. Drop target
+ * when it is a folder — the zone is nested inside so the box matches the tile.
  */
 function IconTile({
   draggable,
@@ -169,15 +165,65 @@ function IconTile({
   width,
   ...faceProps
 }: IconTileProps) {
-  const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
-  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
-  const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
+  const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+
+  // Multi-drag: resolve the same payload MultiDraggable used to resolve
+  const { getGroupData, renderPreview, resolveIds } = useMultiDragScope();
+  const ids = useMemo(() => resolveIds(entry.path), [entry.path, resolveIds]);
+  const multiData = useMemo(() => withMultiDragIds(getGroupData(ids), ids), [getGroupData, ids]);
+  const dragOptions = useMemo<HoldContextMenuDragOptions | undefined>(
+    () => (draggable ? { data: multiData, effectAllowed: 'move', preview: renderPreview?.(ids) } : undefined),
+    [draggable, ids, multiData, renderPreview],
+  );
+
+  // A hold (menu-open or multi-select toggle) must not also register as a tap
+  const heldRef = useRef(false);
+  const onOpenChangeRef = useRef(menuProps.onOpenChange);
+  onOpenChangeRef.current = menuProps.onOpenChange;
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (open) heldRef.current = true;
+    onOpenChangeRef.current(open);
+  }, []);
+
+  const handlePress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (heldRef.current) {
+        heldRef.current = false;
+        return;
+      }
+      onActivate(entry, event);
+    },
+    [entry, onActivate],
+  );
+
+  const handlePressIn = useCallback(() => {
+    heldRef.current = false;
+  }, []);
+
+  // In multi-select mode, hold toggles selection instead of opening the menu.
+  const onHoldAction = useMemo(
+    () =>
+      onSelectLongPress
+        ? () => {
+            heldRef.current = true;
+            onSelectLongPress(entry);
+          }
+        : undefined,
+    [entry, onSelectLongPress],
+  );
+
   // Every tile the drag carries fades, not just the one that was grabbed — which
   // is the whole point of dragging a selection.
   const isDragSource = useIsLifting(entry.path);
 
   const face = (isDropTarget: boolean) => (
-    <HoldContextMenu {...menuProps} style={{ width }}>
+    <HoldContextMenu
+      {...menuProps}
+      dragOptions={dragOptions}
+      onHold={onHoldAction}
+      onOpenChange={handleOpenChange}
+      style={{ width }}
+    >
       <Pressable
         accessibilityLabel={entry.name}
         accessibilityRole="button"
@@ -188,8 +234,8 @@ function IconTile({
         // behind" cue a desktop file manager gives, and it keeps the grid from
         // reflowing under a drag that may still be cancelled.
         className={cn(isDragSource && DRAG_SOURCE_CLASSNAME)}
-        onLongPress={onLongPress}
         onPress={handlePress}
+        onPressIn={handlePressIn}
         testID={testID}
       >
         {/* The source wears the selected face for the length of the drag: the
@@ -206,17 +252,12 @@ function IconTile({
     </HoldContextMenu>
   );
 
-  return (
-    // Not a source while its own menu is open — see `ContextMenuHookReturn.menuProps`.
-    <MultiDraggable disabled={!draggable || menuProps.open} effectAllowed="move" id={entry.path}>
-      {entry.kind === 'folder' ? (
-        <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
-          {({ isOver }: DragzoneRenderState) => face(isOver)}
-        </FileSystemDropzone>
-      ) : (
-        face(false)
-      )}
-    </MultiDraggable>
+  return entry.kind === 'folder' ? (
+    <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
+      {({ isOver }: DragzoneRenderState) => face(isOver)}
+    </FileSystemDropzone>
+  ) : (
+    face(false)
   );
 }
 

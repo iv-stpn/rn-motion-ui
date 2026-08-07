@@ -29,42 +29,6 @@ import { mirrorDragTransfer, writeTransferData } from '../drag-transfer';
 
 const NO_GROUPS: DragGroups = [];
 
-/**
- * How long a hold arms a pan, on both pan transports.
- *
- * Arms it — it does not start it. A hold this long makes the pan *eligible* to
- * take the gesture; what actually takes it is the first movement afterwards (see
- * {@link DRAG_MOVE_SLOP}). That split is what lets a hold and a drag live on the
- * same node: hold still and the press belongs to whoever else wanted it — a
- * `<HoldContextMenu>`, a `Pressable`'s `onLongPress` — and hold *and move* and it
- * is a drag. Activating on the hold alone means the drag wins every hold there
- * has ever been, and the menu underneath it can never open.
- *
- * Shared from here rather than repeated per transport: two pans that armed at
- * different times would feel like two different components.
- */
-export const DRAG_HOLD_MS = 300;
-
-/**
- * How far a finger may travel *before* the hold lands and still arm the pan.
- *
- * Past this it was a scroll, not a lift, so the pan gives the gesture up rather
- * than fight the list it is in. 10px matches UIKit's own allowance for a long
- * press, which is what a finger resting on a moving surface actually drifts.
- */
-export const DRAG_ARM_SLOP = 10;
-
-/**
- * How far the finger must travel *after* the hold before the pan takes over.
- *
- * Deliberately small: by this point the hold has already happened, so the only
- * question left is whether the finger is moving at all. Large enough not to fire
- * on the jitter of a finger holding still — which would lift a drag under a menu
- * that hold just opened — and small enough that the lift feels like it happened
- * the moment the finger moved.
- */
-export const DRAG_MOVE_SLOP = 4;
-
 export type DraggableBeginParams = {
   point: DragPoint;
   /** The browser's own `DataTransfer` under HTML5, the stand-in under a pan. */
@@ -125,6 +89,16 @@ export type SessionRefs = {
   propsRef: RefObject<DraggableLiveProps>;
   /** The host's window rect as of the last layout — the ghost's size and anchor. */
   rectRef: MutableRefObject<DragRect | null>;
+  /**
+   * Publishes "a drag is up from here" as render state.
+   *
+   * Distinct from {@link setGhost}, which is true only when this component is also
+   * the one drawing the ghost — under HTML5, or with a manager hosting the overlay,
+   * a drag is very much in flight while nothing is drawn here. This is the flag a
+   * consumer styles the source itself from, so it has to mean the drag and not the
+   * ghost. Both are set in the same tick, so the pair costs one render per lift.
+   */
+  setDragging: (next: boolean) => void;
   setGhost: (next: boolean) => void;
   transferRef: MutableRefObject<DragTransfer | null>;
 };
@@ -137,7 +111,7 @@ export type SessionRefs = {
  */
 export function buildSession(refs: SessionRefs): DraggableSession {
   const { draggingRef, ghostPos, grabRef, id, managerId, managerPath, overlayHostId } = refs;
-  const { previewRef, propsRef, rectRef, setGhost, transferRef } = refs;
+  const { previewRef, propsRef, rectRef, setDragging, setGhost, transferRef } = refs;
 
   return {
     begin({ point, transfer, transport }) {
@@ -173,7 +147,13 @@ export function buildSession(refs: SessionRefs): DraggableSession {
         },
       });
 
+      // The ghost starts exactly over the source: `move` translates by the delta
+      // from the grab point, so zero is the value it would compute at the lift.
+      // Seeding the grab's within-source offset here instead displaces the first
+      // frame by that offset and lets the next move snap it back — a visible
+      // jump right as the drag starts.
       ghostPos.setValue({ x: 0, y: 0 });
+      setDragging(true);
       // Only when this component is the one drawing it: with a manager hosting the
       // ghost, a re-render here on every lift buys nothing.
       setGhost(drawsGhost && overlayHostId === null);
@@ -202,6 +182,7 @@ export function buildSession(refs: SessionRefs): DraggableSession {
       // gesture was cancelled late, must not end a drag another source started.
       const outcome = endDrag({ commit, point, sourceId: id, transportDropEffect });
       ghostPos.setValue({ x: 0, y: 0 });
+      setDragging(false);
       setGhost(false);
       propsRef.current?.onDragEnd?.({ ...outcome, transfer });
     },

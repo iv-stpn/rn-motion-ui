@@ -20,7 +20,7 @@
 // trail both: a folder can be the reason a row is here (its own name matched),
 // and pointing at the match is what makes a long list scannable.
 
-import { Fragment, type ReactNode, useCallback, useMemo } from 'react';
+import { Fragment, type ReactNode, useCallback, useMemo, useRef } from 'react';
 import { FlatList, type GestureResponderEvent, type ListRenderItemInfo, Pressable, View } from 'react-native';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
@@ -33,7 +33,7 @@ import { useContextMenu } from './file-system-context-menu';
 import { buildCrumbs, CRUMB_SEPARATOR, splitSearchMatches } from './file-system-search';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
-import { useEntryActivation, useEntryLongPress } from './use-entry-activation';
+import { useEntryActivation } from './use-entry-activation';
 
 const ICON_SIZE = 16;
 const FOLDER_GLYPH_SIZE = 18;
@@ -104,9 +104,43 @@ function SearchRow({
   searchQuery,
   testID,
 }: SearchRowProps) {
-  const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
-  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
-  const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
+  const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+
+  // A hold (menu-open or multi-select toggle) must not also register as a tap.
+  const heldRef = useRef(false);
+  const onOpenChangeRef = useRef(menuProps.onOpenChange);
+  onOpenChangeRef.current = menuProps.onOpenChange;
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (open) heldRef.current = true;
+    onOpenChangeRef.current(open);
+  }, []);
+
+  const handlePress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (heldRef.current) {
+        heldRef.current = false;
+        return;
+      }
+      onActivate(entry, event);
+    },
+    [entry, onActivate],
+  );
+
+  const handlePressIn = useCallback(() => {
+    heldRef.current = false;
+  }, []);
+
+  // In multi-select mode, hold toggles selection instead of opening the menu.
+  const onHoldAction = useMemo(
+    () =>
+      onSelectLongPress
+        ? () => {
+            heldRef.current = true;
+            onSelectLongPress(entry);
+          }
+        : undefined,
+    [entry, onSelectLongPress],
+  );
 
   const textClass = isSelected ? 'text-white' : 'text-foreground';
   const metaClass = isSelected ? 'text-white' : 'text-muted-foreground';
@@ -118,14 +152,14 @@ function SearchRow({
   const crumbs = buildCrumbs(entry.parentPath, rootLabel);
 
   return (
-    <HoldContextMenu {...menuProps}>
+    <HoldContextMenu {...menuProps} onHold={onHoldAction} onOpenChange={handleOpenChange}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
         aria-selected={isSelected}
         className={cn('flex-row items-center gap-2.5 rounded-md px-3', isSelected && 'bg-info')}
-        onLongPress={onLongPress}
         onPress={handlePress}
+        onPressIn={handlePressIn}
         style={{ height: SEARCH_ROW_HEIGHT }}
         testID={testID}
       >

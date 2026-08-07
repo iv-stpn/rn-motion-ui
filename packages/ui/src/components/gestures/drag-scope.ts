@@ -6,12 +6,19 @@
 // path, and who draws the ghost — while everything about the drag itself lives in
 // `drag-store.ts`.
 //
-// Nothing but the path travels here. Groups are resolved at registration by the
-// components (a manager's groups are a default the child may override), so a
-// consumer reading this context sees structure, not policy.
+// Mostly position, with one exception. Groups are resolved at registration by the
+// components (a manager's groups are a default the child may override) rather than
+// carried resolved, and the drag itself is never here.
+//
+// The exception is `behavior`, which is policy: the press timeline is the one
+// setting that has to apply to a whole surface at once, because the scroll view a
+// list of sources sits in makes the decision for all of them at the same time. It
+// travels as the consumer wrote it and is resolved per source — see
+// `use-drag-behavior.ts`.
 
 import { createContext, useContext } from 'react';
 import type { DragGroups } from './drag.types';
+import type { DragBehavior } from './drag-behavior';
 
 const EMPTY_PATH: readonly string[] = [];
 const NO_GROUPS: DragGroups = [];
@@ -23,6 +30,16 @@ export type DragScope = {
   managerId: string | null;
   /** Groups the nearest manager hands down to sources and zones that declare none. */
   groups: DragGroups;
+  /**
+   * The press timeline the nearest manager hands down to sources declaring none —
+   * `undefined` for "the platform default", which is what a bare tree runs on.
+   *
+   * Policy, unlike everything else here, and deliberately so: a timeline is the one
+   * thing that has to be settable for a whole surface at once. A list where every
+   * row is a `<Draggable>` needs its arm window agreed on by all of them, and per
+   * source is the wrong grain for a decision the scroll view underneath forces.
+   */
+  behavior?: DragBehavior;
   /**
    * The manager that should draw the ghost for drags lifted here, or `null` when
    * there is none and each source draws its own inside itself.

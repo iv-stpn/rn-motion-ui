@@ -2,15 +2,17 @@
 /** biome-ignore-all lint/style/useComponentExportOnlyModules: hooks co-located with their return types */
 // Context-menu support for file entries and the view background.
 //
-// Each entry wraps its Pressable in a HoldContextMenu (trigger="passive"), which
-// owns the contextmenu DOM listener on web and lets the entry's own Pressable
-// keep the long-press on native. The background uses a 1×1 anchor View
-// absolutely positioned at the click/press point so the panel anchors there.
+// Each entry wraps its content in a HoldContextMenu (trigger="pressable" default),
+// which owns the hold gesture, the contextmenu DOM listener on web, and the drag when
+// dragOptions are provided. The background uses a 1×1 anchor View absolutely
+// positioned at the click/press point so the panel anchors there.
 //
-// Platform split (the same one the drag transports make):
-//  - Web:    a `contextmenu` DOM listener — on each entry's HoldContextMenu wrapper
-//            for entries, on the scroll container for the background.
-//  - Native: `onLongPress` on the entry/background Pressable.
+// How the menu is opened, by pointer rather than by platform:
+//  - Right-click:  a `contextmenu` DOM listener — on each entry's HoldContextMenu
+//                  wrapper for entries, on the scroll container for the background.
+//  - Hold:         HoldContextMenu's own hold gesture (Holdable / HoldDraggable).
+//                  In multi-select mode, `onHold` is overridden to toggle selection
+//                  instead; the menu remains reachable via right-click on web.
 
 import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type GestureResponderEvent, Platform, View } from 'react-native';
@@ -66,36 +68,28 @@ function holdMenuItems(
 // ── Entry context menu ─────────────────────────────────────────────────────────
 
 export type ContextMenuHookReturn = {
+  /**
+   * Take the menu down — idempotent.
+   *
+   * `HoldContextMenu` also closes itself via `onHoldEscape` when a drag escapes
+   * after a hold; this is the escape hatch for callers that need to close
+   * programmatically from outside the component.
+   */
+  closeMenu: () => void;
   menuProps: {
     items: readonly HoldContextMenuItem[];
-    /**
-     * Whether this entry's menu is open.
-     *
-     * Also the entry's own drag source's cue to stand down: pass it to the
-     * `<MultiDraggable>` around this entry as part of `disabled`. On touch the
-     * finger that opened the menu is still on the entry, and `<Draggable>` lifts
-     * on the first move after its hold — so without this a drift of a few pixels
-     * lifts a drag out from under a panel that is already open. Nothing to
-     * suppress on web, where the menu is a right-click and no press is being held,
-     * but the prop is platform-free and passing it is what keeps it that way.
-     */
+    /** Whether this entry's menu is open. */
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    trigger: 'passive';
   };
-  /**
-   * Pass to the entry Pressable's `onLongPress`. `undefined` when
-   * `getContextMenuActions` was not provided so the prop is truly absent.
-   */
-  onLongPress: (() => void) | undefined;
 };
 
 /**
- * Wires up a right-click / long-press context menu for one file-system entry.
+ * Wires up a right-click / hold context menu for one file-system entry.
  *
- * Returns `menuProps` to spread onto `<HoldContextMenu trigger="passive">` and
- * `onLongPress` for the entry's own `Pressable`. When `getActions` is omitted the
- * menu is disabled and `onLongPress` is `undefined`.
+ * Returns `menuProps` to spread onto `<HoldContextMenu>` (trigger defaults to
+ * `'pressable'`, which owns the hold gesture). When `getActions` is omitted the
+ * menu is disabled — `items` is empty, so the trigger is inert.
  *
  * Items are resolved eagerly on every path/resolver change (cheap, synchronous)
  * so they are always current when the menu opens — no async gap between a
@@ -113,7 +107,7 @@ export function useContextMenu(
   onActionRef.current = onAction;
 
   // Resolved eagerly so items are always current when the menu opens regardless
-  // of whether the trigger was a long-press or a web contextmenu event.
+  // of whether the trigger was a hold or a web contextmenu event.
   // item.path is the stable entry identity — if the path does not change the
   // actions are not re-resolved even when the full `item` object is recreated.
   // biome-ignore lint/correctness/useExhaustiveDependencies: item.path is the stable key; re-running on the full item object would re-resolve on every render
@@ -122,12 +116,12 @@ export function useContextMenu(
     [getActions, item.path],
   );
 
-  const openMenu = useCallback(() => setOpen(true), []);
+  const closeMenu = useCallback(() => setOpen(false), []);
   const handleOpenChange = useCallback((next: boolean) => setOpen(next), []);
 
   return {
-    menuProps: { items, onOpenChange: handleOpenChange, open: getActions ? open : false, trigger: 'passive' },
-    onLongPress: getActions ? openMenu : undefined,
+    closeMenu,
+    menuProps: { items, onOpenChange: handleOpenChange, open: getActions ? open : false },
   };
 }
 

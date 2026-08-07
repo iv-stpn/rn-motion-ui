@@ -3,7 +3,7 @@
 // under the stage. The active tile is kept in view as the selection moves,
 // including when it arrives from another view.
 
-import { type ReactNode, useCallback, useEffect, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { GestureResponderEvent, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { FlatList, Pressable, View } from 'react-native';
 import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
@@ -18,7 +18,6 @@ import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee,
 import type { FileSystemSelectionMode } from './file-system-selection';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import { FileVisual } from './file-system-visual';
-import { useEntryLongPress } from './use-entry-activation';
 
 /** Filmstrip geometry (px). Uniform tiles keep `getItemLayout` exact. */
 const STRIP_TILE_SIZE = 56;
@@ -85,13 +84,47 @@ function StripTile({
   renderFilePreview,
   testID,
 }: StripTileProps) {
-  const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
   const colors = useThemeColors();
-  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
-  const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
+  const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+
+  // A hold (menu-open or multi-select toggle) must not also register as a tap.
+  const heldRef = useRef(false);
+  const onOpenChangeRef = useRef(menuProps.onOpenChange);
+  onOpenChangeRef.current = menuProps.onOpenChange;
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (open) heldRef.current = true;
+    onOpenChangeRef.current(open);
+  }, []);
+
+  const handlePress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (heldRef.current) {
+        heldRef.current = false;
+        return;
+      }
+      onActivate(entry, event);
+    },
+    [entry, onActivate],
+  );
+
+  const handlePressIn = useCallback(() => {
+    heldRef.current = false;
+  }, []);
+
+  // In multi-select mode, hold toggles selection instead of opening the menu.
+  const onHoldAction = useMemo(
+    () =>
+      onSelectLongPress
+        ? () => {
+            heldRef.current = true;
+            onSelectLongPress(entry);
+          }
+        : undefined,
+    [entry, onSelectLongPress],
+  );
 
   return (
-    <HoldContextMenu {...menuProps} style={{ marginRight: STRIP_TILE_GAP }}>
+    <HoldContextMenu {...menuProps} onHold={onHoldAction} onOpenChange={handleOpenChange} style={{ marginRight: STRIP_TILE_GAP }}>
       <Pressable
         accessibilityLabel={entry.name}
         accessibilityRole="button"
@@ -106,8 +139,8 @@ function StripTile({
           (isActive || isSelected) && 'bg-surface-selected',
           isActive && 'border-border',
         )}
-        onLongPress={onLongPress}
         onPress={handlePress}
+        onPressIn={handlePressIn}
         style={{ height: STRIP_TILE_SIZE, width: STRIP_TILE_SIZE }}
         testID={testID}
       >

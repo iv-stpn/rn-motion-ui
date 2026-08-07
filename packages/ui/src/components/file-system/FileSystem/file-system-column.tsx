@@ -13,11 +13,11 @@ import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
-import { MultiDraggable } from '../../gestures/DragManager/multi-draggable';
+import { withMultiDragIds } from '../../gestures/DragManager/multi-drag';
+import { useIsLifting, useMultiDragScope } from '../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../gestures/drag.types';
 import { useActiveDrag } from '../../gestures/use-drag-store';
-import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
+import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
 import type {
@@ -36,7 +36,6 @@ import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee,
 import type { FileSystemSelectionMode } from './file-system-selection';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
 import { FileSystemEmptyState } from './file-system-view';
-import { useEntryLongPress } from './use-entry-activation';
 import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
 
 const LOADING_LABEL = 'Loading…';
@@ -165,9 +164,13 @@ function ColumnRowGlyph({
 }
 
 /**
- * Renders its own {@link ColumnRowShell} rather than being handed one: the shell's
- * drag source has to know whether this row's context menu is open, and that state
- * lives in the hook called here.
+ * Renders its own drag source and drop target rather than delegating to a shell:
+ * the hold gesture, context menu, and multi-drag payload are resolved here and
+ * forwarded to `HoldContextMenu dragOptions`.
+ *
+ * The row gap (`marginBottom`) lives on the outermost element so the drop zone's
+ * box matches the row exactly — a zone that included the gap would claim a pointer
+ * sitting between two rows.
  */
 function ColumnRow({
   draggable,
@@ -185,17 +188,61 @@ function ColumnRow({
   testID,
 }: ColumnRowProps) {
   const colors = useThemeColors();
-  const handlePress = useCallback((event: GestureResponderEvent) => onActivate(entry, event), [entry, onActivate]);
   const hasChildren = entry.kind === 'folder' && folderHasChildren(index, entry);
 
-  const { menuProps, onLongPress: openContextMenu } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
-  const onLongPress = useEntryLongPress(entry, onSelectLongPress, openContextMenu);
+  const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
 
-  return (
-    <ColumnRowShell draggable={draggable} entry={entry} menuOpen={menuProps.open} onExternalDrop={onExternalDrop} onMove={onMove}>
-      {/* No `marginBottom` here: the gap belongs to `ColumnRowShell`, so this node's
-          box is exactly the row's and matches the drop zone measured around it. */}
-      <HoldContextMenu {...menuProps}>
+  // Multi-drag: resolve the same payload MultiDraggable used to resolve
+  const { getGroupData, renderPreview, resolveIds } = useMultiDragScope();
+  const ids = useMemo(() => resolveIds(entry.path), [entry.path, resolveIds]);
+  const multiData = useMemo(() => withMultiDragIds(getGroupData(ids), ids), [getGroupData, ids]);
+  const dragOptions = useMemo<HoldContextMenuDragOptions | undefined>(
+    () => (draggable ? { data: multiData, effectAllowed: 'move', preview: renderPreview?.(ids) } : undefined),
+    [draggable, ids, multiData, renderPreview],
+  );
+
+  // A hold (menu-open or multi-select toggle) must not also register as a tap
+  const heldRef = useRef(false);
+  const onOpenChangeRef = useRef(menuProps.onOpenChange);
+  onOpenChangeRef.current = menuProps.onOpenChange;
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (open) heldRef.current = true;
+    onOpenChangeRef.current(open);
+  }, []);
+
+  const handlePress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (heldRef.current) {
+        heldRef.current = false;
+        return;
+      }
+      onActivate(entry, event);
+    },
+    [entry, onActivate],
+  );
+
+  const handlePressIn = useCallback(() => {
+    heldRef.current = false;
+  }, []);
+
+  // In multi-select mode, hold toggles selection instead of opening the menu.
+  const onHoldAction = useMemo(
+    () =>
+      onSelectLongPress
+        ? () => {
+            heldRef.current = true;
+            onSelectLongPress(entry);
+          }
+        : undefined,
+    [entry, onSelectLongPress],
+  );
+
+  const isLifting = useIsLifting(entry.path);
+
+  const body = (
+    // No `marginBottom` here: see the comment on the outermost element below.
+    <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: COLUMN_ROW_HEIGHT }}>
+      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
         <Pressable
           accessibilityLabel={entry.name}
           accessibilityRole="button"
@@ -208,8 +255,8 @@ function ColumnRow({
             !isSelected && isOnTrail && 'bg-surface-selected',
             !(isSelected || isOnTrail) && 'hover:bg-surface-hover',
           )}
-          onLongPress={onLongPress}
           onPress={handlePress}
+          onPressIn={handlePressIn}
           style={{ height: COLUMN_ROW_HEIGHT }}
           testID={testID}
         >
@@ -224,58 +271,24 @@ function ColumnRow({
           ) : null}
         </Pressable>
       </HoldContextMenu>
-    </ColumnRowShell>
-  );
-}
-
-type ColumnRowShellProps = {
-  children: ReactNode;
-  draggable: boolean;
-  entry: FileSystemEntry;
-  /** This row's own menu — see `ContextMenuHookReturn.menuProps`. */
-  menuOpen: boolean;
-  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
-  onMove?: (event: FileSystemMoveEvent) => void;
-};
-
-/**
- * The drag wrapper around a column row: a source always, a drop target when the
- * row is a folder. The same shape the list view uses, for the same reasons — see
- * `ListRowShell`.
- *
- * The row gap moves out here so the zone's box is exactly the row's: a zone that
- * included the gap would claim a pointer sitting between two rows.
- */
-function ColumnRowShell({ children, draggable, entry, menuOpen, onExternalDrop, onMove }: ColumnRowShellProps) {
-  const isLifting = useIsLifting(entry.path);
-  const body = (
-    <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: COLUMN_ROW_HEIGHT }}>
-      {children}
     </View>
   );
 
-  return (
-    // Not a source while this row's own menu is open — see `ContextMenuHookReturn.menuProps`.
-    // Still a target: another row's drag can land on this folder either way.
-    <MultiDraggable
-      disabled={!draggable || menuOpen}
-      effectAllowed="move"
-      id={entry.path}
-      style={{ marginBottom: COLUMN_ROW_GAP }}
-    >
-      {entry.kind === 'folder' ? (
-        <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
-          {({ isOver }: DragzoneRenderState) => (
-            <>
-              {body}
-              {isOver ? <FileSystemDropOutline /> : null}
-            </>
-          )}
-        </FileSystemDropzone>
-      ) : (
-        body
-      )}
-    </MultiDraggable>
+  // The gap belongs here so the zone's box is exactly the row's: a zone that
+  // included the gap would claim a pointer sitting between two rows.
+  return entry.kind === 'folder' ? (
+    <View style={{ marginBottom: COLUMN_ROW_GAP }}>
+      <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
+        {({ isOver }: DragzoneRenderState) => (
+          <>
+            {body}
+            {isOver ? <FileSystemDropOutline /> : null}
+          </>
+        )}
+      </FileSystemDropzone>
+    </View>
+  ) : (
+    <View style={{ marginBottom: COLUMN_ROW_GAP }}>{body}</View>
   );
 }
 

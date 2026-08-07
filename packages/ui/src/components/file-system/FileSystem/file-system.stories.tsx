@@ -1444,20 +1444,21 @@ function selectedPaths(canvas: ReturnType<typeof within>): string[] {
 }
 
 /**
- * Press and hold `node` until the long press resolves.
+ * Press and hold `node` until the hold fires — as a *touch* pointer.
  *
- * Raw MouseEvents rather than `userEvent.pointer`: react-native-web's responder
- * system listens on `mousedown`/`mouseup`, and user-event's drag-select
- * emulation fires a `selectionchange` the responder reads as a terminated
- * gesture — which cancels the press before the long-press timer fires.
+ * The hold gesture is touch-only by design: on a desktop the right button is
+ * what means "tell me about this thing", so the transports filter
+ * `pointerType === 'touch'` and a mouse held down is no gesture at all. The
+ * events bubble from the row's inner button up to the `Holdable` /
+ * `HoldDraggable` host that listens for them.
  */
 async function longPress(node: Element): Promise<void> {
-  mouse(node, 'mousedown');
+  node.dispatchEvent(
+    new PointerEvent('pointerdown', { bubbles: true, buttons: 1, cancelable: true, pointerId: 1, pointerType: 'touch' }),
+  );
+  // Past the resolved holdDelay (300ms), where the hold fires the toggle.
   await new Promise((resolve) => setTimeout(resolve, LONG_PRESS_MS));
-  mouse(node, 'mouseup');
-  // RNW cancels the click that follows a dispatched long press; the gesture is
-  // already delivered by then, so the event is sent for fidelity, not effect.
-  mouse(node, 'click');
+  node.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'touch' }));
 }
 
 /**

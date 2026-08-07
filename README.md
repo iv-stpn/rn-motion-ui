@@ -35,7 +35,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 > `node packages/ui/scripts/check-readme.mjs --fix`, which CI re-runs on every push.
 
 <!-- generated:components -->
-`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `card` · `checkbox` · `checkbox-card` · `command-palette` · `cylinder-carousel` · `dock` · `drag-manager` · `drag-store` · `drag-types` · `draggable` · `dragzone` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-widget` · `file-icon` · `file-system` · `full-sheet` · `glossy-button` · `hold-context-menu` · `hover-menu` · `icon` · `input` · `loader` · `marquee` · `menu` · `menu-item` · `morphing-modal` · `multi-drag` · `multi-drag-manager` · `multi-drag-scope` · `multi-draggable` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `radio` · `radio-card` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `use-drag-store` · `wheel-picker`
+`action-feedback-modal` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `card` · `checkbox` · `checkbox-card` · `command-palette` · `cylinder-carousel` · `dock` · `drag-behavior` · `drag-manager` · `drag-store` · `drag-types` · `draggable` · `dragzone` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-widget` · `file-icon` · `file-system` · `full-sheet` · `glossy-button` · `hold-context-menu` · `hover-menu` · `icon` · `input` · `loader` · `marquee` · `menu` · `menu-item` · `morphing-modal` · `multi-drag` · `multi-drag-manager` · `multi-drag-scope` · `multi-draggable` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `radio` · `radio-card` · `range-slider` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `use-drag-behavior` · `use-drag-store` · `use-draggable` · `wheel-picker`
 <!-- /generated:components -->
 
 <details>
@@ -61,13 +61,13 @@ Pure helpers and the theme layer — tokens, easings, the surface ladder, and th
 <details>
 <summary>Moti layer</summary>
 
-Animated primitives: `moti/view` · `moti/text` · `moti/image` · `moti/scroll-view` · `moti/safe-area-view` · `moti/progress`
+Animated primitives: `moti/view` · `moti/text` · `moti/image` · `moti/scroll-view` · `moti/safe-area-view`
 
 Presence: `moti/presence` · `moti/presence-context`
 
 Pressable / hover: `moti/pressable` · `moti/pressable-context` · `moti/pressable-types` · `moti/hover` · `moti/hover-context` · `moti/merge`
 
-Core / hooks: `moti/motify` · `moti/motify-svg` · `moti/use-motify` · `moti/use-animation-state` · `moti/use-dynamic-animation` · `moti/use-moti-pressable` · `moti/use-moti-pressables` · `moti/use-moti-pressable-animated-props` · `moti/use-moti-pressable-interpolate` · `moti/use-moti-pressable-transition`
+Core / hooks: `moti/motify` · `moti/use-motify` · `moti/use-animation-state` · `moti/use-dynamic-animation` · `moti/use-moti-pressable` · `moti/use-moti-pressables` · `moti/use-moti-pressable-animated-props` · `moti/use-moti-pressable-interpolate` · `moti/use-moti-pressable-transition`
 
 Types / constants: `moti/types` · `moti/color-keys`
 </details>

@@ -107,6 +107,8 @@ Subpaths are namespaced by category:
 | `/smooth-scroll` | `SmoothScroll` |
 | `/dock` | `Dock` |
 | `/draggable` | `Draggable` |
+| `/hold-draggable` | `HoldDraggable` — hold + drag in one gesture, with phase render-prop |
+| `/holdable` | `Holdable` — hold-only, four-phase timeline, no drag |
 | `/dragzone` | `Dragzone` |
 | `/drag-manager` | `DragManager` |
 | `/multi-drag-manager` | `MultiDragManager` |
@@ -116,6 +118,9 @@ Subpaths are namespaced by category:
 | `/drag-types` | drag system type definitions |
 | `/drag-store` | the drag registry, for custom sources and targets |
 | `/use-drag-store` | `useActiveDrag`, `useDragSnapshot`, `useDragzoneState`, `useDragMove` |
+| `/use-draggable` | `useDraggable` — a drag with no markup attached |
+| `/drag-behavior` | `resolveDragBehavior`, `DRAG_TUNING_DEFAULTS`, the per-OS press timeline |
+| `/use-drag-behavior` | `useDragBehavior` — that timeline resolved for the running platform |
 | `/popover` | `Popover` |
 | `/drawer` | `Drawer` |
 | `/bottom-sheet` | `BottomSheet` |

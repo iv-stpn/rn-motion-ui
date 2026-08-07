@@ -1,0 +1,275 @@
+/**
+ * Stories for `HoldDraggable` — hold + drag in one gesture.
+ *
+ * `<HoldDraggable>` is `<Draggable trackPhase>` with the render-prop always on:
+ * same four-phase timeline, same ghost, same `<DragManager>` integration. The
+ * drag half is covered by draggable.stories.tsx; these stories focus on the hold
+ * half and the render-prop child.
+ *
+ * **Web hold defaults.** The drag pointer transport defaults to `holdDelay: null`
+ * on web — a long press there already means context menu or text selection. To
+ * enable `onHold` on web, pass `behavior={{ holdDelay: 300 }}` (or use a touch
+ * device). The play functions below do exactly that, and dispatch synthetic touch
+ * pointer events.
+ */
+/** biome-ignore-all lint/style/useExportsLast: this a stories file */
+/** biome-ignore-all lint/style/useComponentExportOnlyModules: stories only */
+/** biome-ignore-all lint/style/noJsxLiterals: stories only */
+/** biome-ignore-all lint/performance/noJsxPropsBind: stories only */
+
+import type { Meta, StoryObj } from '@storybook/react';
+import { useCallback, useState } from 'react';
+import { View } from 'react-native';
+import { Chat1Line as MessageCircle } from 'rn-motion-ui-icons/icons/chat-1-line';
+import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
+import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
+import { expect, within } from 'storybook/test';
+import { ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
+import { HoldContextMenu, type HoldContextMenuItem } from '../../menus/HoldContextMenu/hold-context-menu';
+import { Text } from '../../typography/Text/text';
+import { HoldDraggable } from './hold-draggable';
+
+/** The MIME the chip writes and a `<Dragzone>` would read. */
+const MIME = 'application/x-story-hold-item';
+
+const CHIP_TEST_ID = 'story-hold-draggable-chip';
+const READOUT_TEST_ID = 'story-hold-draggable-readout';
+
+type TouchPoint = { x?: number; y?: number };
+
+/** Dispatch a synthetic touch pointer event directly on a DOM node. */
+function touchPointer(node: Element, type: string, point: TouchPoint = {}) {
+  node.dispatchEvent(
+    new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      pointerId: 1,
+      pointerType: 'touch',
+      buttons: type === 'pointerdown' ? 1 : 0,
+      clientX: point.x ?? 0,
+      clientY: point.y ?? 0,
+    }),
+  );
+}
+
+type HoldDragDemoProps = { disabled?: boolean; showMenu?: boolean };
+
+function chipClass(isHeld: boolean, isPressed: boolean) {
+  if (isHeld) return 'rounded-xl border border-primary bg-primary/10 px-6 py-4';
+  if (isPressed) return 'rounded-xl border border-border bg-surface-2 px-6 py-4 opacity-70';
+  return 'rounded-xl border border-border bg-surface-2 px-6 py-4';
+}
+
+function chipLabel(isHeld: boolean, isPressed: boolean) {
+  if (isHeld) return 'Held — move to drag';
+  if (isPressed) return 'Armed…';
+  return 'Hold or drag me';
+}
+
+/** A few actions for the hold context menu. */
+const MENU_ITEMS: HoldContextMenuItem[] = [
+  { icon: MessageCircle, id: 'reply', label: 'Reply' },
+  { icon: Copy, id: 'copy', label: 'Copy' },
+  { icon: Share2, id: 'share', label: 'Share' },
+];
+
+/**
+ * A chip that logs each significant phase event to a readout.
+ *
+ * `behavior={{ holdDelay: 300 }}` is set explicitly so `onHold` fires on web —
+ * the drag pointer transport defaults to `holdDelay: null` there.
+ *
+ * When `showMenu` is on the chip is wrapped in a `<HoldContextMenu>` with
+ * `dragOptions` — hold opens the action panel, and a move past `escapeSlop`
+ * after arming lifts a drag. On web the menu opens on right-click.
+ */
+function HoldDragDemo({ disabled = false, showMenu = false }: HoldDragDemoProps) {
+  const [status, setStatus] = useState('Waiting');
+  const [picked, setPicked] = useState('—');
+
+  const handleHold = useCallback(() => setStatus('Held'), []);
+  const handleEscape = useCallback(() => setStatus('Escaped (drag started)'), []);
+  const handleDragStart = useCallback(() => setStatus('Dragging'), []);
+  const handleDragEnd = useCallback(() => setStatus('Done'), []);
+  const handleSelect = useCallback((item: HoldContextMenuItem) => {
+    setPicked(String(item.label));
+    setStatus(`Menu: ${String(item.label)}`);
+  }, []);
+
+  const chipBody = (
+    <View className="rounded-xl border border-border bg-surface-2 px-6 py-4">
+      <Text size="sm" weight="medium">
+        Hold for menu · Move to drag
+      </Text>
+    </View>
+  );
+
+  return (
+    <View className="items-start gap-3">
+      {showMenu ? (
+        <HoldContextMenu
+          activateOn="hold"
+          behavior={{ holdDelay: 300 }}
+          dragOptions={{
+            data: { [MIME]: 'item' },
+            onDragEnd: handleDragEnd,
+            onDragStart: handleDragStart,
+          }}
+          items={MENU_ITEMS}
+          onHold={handleHold}
+          onSelect={handleSelect}
+          testID="story-hold-menu-chip"
+        >
+          {chipBody}
+        </HoldContextMenu>
+      ) : (
+        <HoldDraggable
+          // Enable hold on web: the drag transport defaults to holdDelay: null there.
+          behavior={{ holdDelay: 300 }}
+          data={{ [MIME]: 'item' }}
+          disabled={disabled}
+          onDragEnd={handleDragEnd}
+          onDragStart={handleDragStart}
+          onHold={handleHold}
+          onHoldEscape={handleEscape}
+          testID={CHIP_TEST_ID}
+        >
+          {({ isHeld, isPressed }) => (
+            <View className={chipClass(isHeld, isPressed)}>
+              <Text size="sm" weight="medium">
+                {chipLabel(isHeld, isPressed)}
+              </Text>
+            </View>
+          )}
+        </HoldDraggable>
+      )}
+      <Note testID={READOUT_TEST_ID}>{status}</Note>
+      {showMenu ? <Note testID="story-hold-menu-picked">{`Picked: ${picked}`}</Note> : null}
+      <Note>
+        {showMenu
+          ? 'Hold 300ms for the menu; move after arming to drag. Right-click on web.'
+          : 'Hold 300ms for the menu path; move after 150ms to drag instead.'}
+      </Note>
+    </View>
+  );
+}
+
+function HoldDragPlayground() {
+  const [disabled, setDisabled] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+
+  return (
+    <Playground>
+      <ControlCard title="Options">
+        <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
+        <Toggle label="Hold context menu" onChange={setShowMenu} value={showMenu} />
+      </ControlCard>
+      <HoldDragDemo disabled={disabled} showMenu={showMenu} />
+    </Playground>
+  );
+}
+
+const meta = {
+  title: 'Gestures/HoldDraggable',
+  component: HoldDraggable,
+  parameters: { layout: 'centered' },
+  args: { children: null, data: {} },
+} satisfies Meta<typeof HoldDraggable>;
+
+type Story = StoryObj<typeof meta>;
+
+export default meta;
+
+/** Every knob: phase callbacks, drag callbacks, and the `disabled` toggle. */
+export const Interactive: Story = { render: () => <HoldDragPlayground /> };
+
+/**
+ * A hold that runs to completion — the drag path not taken.
+ *
+ * The pointer stays down past `holdDelay` without moving; `onHold` fires and the
+ * chip enters the held visual state. Moving after this point would start a drag
+ * with the escape threshold (`escapeSlop`) rather than the regular slop.
+ */
+export const Default: Story = {
+  name: 'Demo: Hold fires onHold at 300ms (no drag)',
+  render: () => <HoldDragDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chip = await canvas.findByTestId(CHIP_TEST_ID);
+
+    touchPointer(chip, 'pointerdown');
+    // Hold past holdDelay (300ms).
+    await new Promise((r) => setTimeout(r, 350));
+
+    await expect(await canvas.findByTestId(READOUT_TEST_ID)).toHaveTextContent('Held');
+
+    touchPointer(chip, 'pointerup');
+    await new Promise((r) => setTimeout(r, 0));
+  },
+};
+
+/**
+ * The drag path out of an open hold context menu — and the close it forces.
+ *
+ * Hold 300ms and the menu opens (`onHold` reports 'Held'). A move past
+ * `escapeSlop` after that lifts a drag: `onHoldEscape` closes the menu and
+ * `onDragStart` fires in the same gesture. The trigger stays motionless through
+ * that handover — its squeeze released when the menu opened, not now (the
+ * `HoldContent` latch in hold-context-menu-trigger.tsx), so nothing pops back
+ * to full size under the exiting panel.
+ */
+export const MenuEscapeToDrag: Story = {
+  name: 'Behaviour: Move after the menu opens escapes into a drag',
+  render: () => <HoldDragDemo showMenu={true} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The menu chip's testID sits on the measured wrapper; the pointer transport
+    // listens on the HoldDraggable host inside it, so dispatch on the label and
+    // let the events bubble up to it.
+    const chip = await canvas.findByText('Hold for menu · Move to drag');
+
+    touchPointer(chip, 'pointerdown');
+    // Hold past holdDelay (300ms) — the menu opens and the hold reports.
+    // findByText retries, so a busy frame cannot race the hold timer.
+    await new Promise((r) => setTimeout(r, 350));
+    await canvas.findByText('Held');
+
+    // A shove past escapeSlop (24px on web): the drag lifts, the menu closes.
+    touchPointer(chip, 'pointermove', { x: 60 });
+    await canvas.findByText('Dragging');
+
+    // The ghost's first frame sits over the source. A displaced seed in
+    // `session.begin` (anything but the zero `move` would compute at the lift)
+    // paints the first frame offset by the within-source grab position — 60px
+    // here — and snaps back on the next move. The tolerance only absorbs the
+    // few px the chip's own un-squeeze spring is still moving it.
+    const copies = canvas.getAllByText('Hold for menu · Move to drag');
+    await expect(copies).toHaveLength(2);
+    const [chipRect, ghostRect] = copies.map((el) => el.getBoundingClientRect());
+    await expect(Math.abs((chipRect?.x ?? 0) - (ghostRect?.x ?? 0))).toBeLessThan(10);
+    await expect(Math.abs((chipRect?.y ?? 0) - (ghostRect?.y ?? 0))).toBeLessThan(10);
+
+    touchPointer(chip, 'pointerup', { x: 60 });
+    await canvas.findByText('Done');
+  },
+};
+
+/**
+ * `disabled` removes both transports: no hold fires and no drag starts, even
+ * with a long touch press.
+ */
+export const Disabled: Story = {
+  name: 'Behaviour: Disabled — neither hold nor drag fires',
+  render: () => <HoldDragDemo disabled={true} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chip = await canvas.findByTestId(CHIP_TEST_ID);
+
+    touchPointer(chip, 'pointerdown');
+    await new Promise((r) => setTimeout(r, 350));
+    touchPointer(chip, 'pointerup');
+    await new Promise((r) => setTimeout(r, 0));
+
+    await expect(await canvas.findByTestId(READOUT_TEST_ID)).toHaveTextContent('Waiting');
+  },
+};

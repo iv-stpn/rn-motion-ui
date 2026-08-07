@@ -56,6 +56,22 @@ screen readers open it through a `longpress` accessibility action. Rows are
 `aria-disabled`, and the scrim is a named button rather than a bare tap target.
 `useReducedMotion` swaps every spring for a short fade.
 
+The right-click is the *mouse* path on web; a touch press still holds — mobile
+web has no right button, so `holdDuration` is always pinned into the gesture's
+`holdDelay`, even for a draggable trigger whose drag tuning would otherwise
+have no hold on web at all. While the hold charges, the trigger squeezes to
+95%, and the squeeze releases the moment the menu opens, not when the press
+ends: on native the lifted copy takes the scale over, and on web — where
+nothing lifts — a squeeze that outlived the open would spring back to full size
+exactly as the menu closed or a drag escaped, a flicker on the trigger at the
+worst moment. Either way, closing the menu leaves the trigger motionless. The
+drag ghost a menu-escape lifts starts exactly over the item it came from, too —
+its first frame used to sit offset by wherever the finger grabbed.
+
+`onHold` fires *alongside* the menu, right after it opens — one gesture, both
+outcomes — and still fires when the menu has no items to show, so a
+multi-select toggle riding it keeps working while the panel stays silent.
+
 Panel placement is measured per-open from `useWindowDimensions` and the safe-area
 insets, not from module-level `Dimensions` constants read at import time, so it
 survives a rotation. The height estimate the layout runs on is corrected from the

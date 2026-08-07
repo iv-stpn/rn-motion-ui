@@ -16,6 +16,7 @@
  * default `'hold'`, and the `contextmenu` listener below is the whole activation.
  */
 
+// biome-ignore-all lint/style/useExportsLast: the module groups exports next to their related declarations for readability — same convention as the other HoldContextMenu modules
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { AccessibilityActionEvent, View } from 'react-native';
 import { Platform, Vibration } from 'react-native';
@@ -112,30 +113,65 @@ export type UseHoldActivationOptions = {
    * since a host can open the menu without going through one.
    */
   open?: boolean;
+  /**
+   * Fires right after an activation opens the menu — the consumer's own hold
+   * action riding the same gesture, e.g. a multi-select toggle that should flip
+   * while the panel appears. Never *instead* of the menu: a host that wants the
+   * gesture without the panel drives the controlled `open` itself.
+   */
+  afterHold?: () => void;
 };
 
 export type HoldActivation = {
   /** Window rect captured at activation. `null` until the first open. */
   rect: HoldMenuRect | null;
   open: boolean;
-  /** Held down but not yet activated — drives the squeeze. Always false on web. */
+  /**
+   * Held down but not yet activated — drives the squeeze.
+   *
+   * For `'hold'` on native this is always `false`: the squeeze is driven by
+   * the `isPressed` render-prop from `<Holdable>` / `<HoldDraggable>` instead.
+   * For `'tap'` / `'double-tap'` it is set by `onPressIn` / `onPressOut` below.
+   */
   pressed: boolean;
   close: () => void;
   /** Clears the anchor once the overlay has fully left. */
   clearRect: () => void;
-  /** `undefined` when nothing is tracking the press, so no state changes on a hover-click. */
+  /**
+   * `undefined` for `'hold'` (native) and on web — `<Holdable>` owns the gesture
+   * there; for `'tap'` / `'double-tap'` it drives the Pressable squeeze.
+   */
   onPressIn: (() => void) | undefined;
   onPressOut: (() => void) | undefined;
   /**
-   * `undefined` outside `'hold'`, so RN never swallows a press for a long one —
-   * and on web, where `'hold'` is a right-click instead.
+   * Fed to `<Holdable onHold>` (or `<HoldDraggable onHold>`) on native.
+   * `undefined` outside `'hold'` and on web, where `'hold'` is a right-click.
    */
-  onLongPress: (() => void) | undefined;
-  /** `undefined` in `'hold'`, where a completed long press already handled it. */
+  onHold: (() => void) | undefined;
+  /** `undefined` in `'hold'`, where the hold callback already handled it. */
   onPress: (() => void) | undefined;
   onAccessibilityAction: (event: AccessibilityActionEvent) => void;
 };
 
+/** An object that has the two DOM event methods the contextmenu listener needs. */
+type DOMEventTarget = {
+  addEventListener: (type: string, listener: (event: Event) => void) => void;
+  removeEventListener: (type: string, listener: (event: Event) => void) => void;
+};
+
+/**
+ * Whether the ref resolved to a real DOM node. RNW hands `View` refs to
+ * `HTMLElement`s on web; anything else (native hosts, `null`) fails the check.
+ *
+ * `instanceof` rather than an own-property probe: both listener methods are
+ * inherited from `EventTarget.prototype`, so `Object.hasOwn` rejects every
+ * actual element.
+ */
+function isDOMEventTarget(value: unknown): value is DOMEventTarget {
+  return typeof EventTarget !== 'undefined' && value instanceof EventTarget;
+}
+
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the openMenu rewrite added two lines to fix the hold-on-mobile regression — extracting would fragment the state it shares with the rest of the hook
 export function useHoldActivation({
   wrapperRef,
   activateOn,
@@ -144,6 +180,7 @@ export function useHoldActivation({
   haptics,
   onOpenChange,
   open: openProp,
+  afterHold,
 }: UseHoldActivationOptions): HoldActivation {
   const [rect, setRect] = useState<HoldMenuRect | null>(null);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -156,20 +193,34 @@ export function useHoldActivation({
   // Read through refs inside the measure callback and the DOM listener: both run
   // outside the render that created them, and neither should force a re-bind (or
   // a fresh `openMenu` identity) when a consumer passes an inline closure.
-  const latest = useRef({ enabled, haptics, isControlled, onOpenChange });
-  latest.current = { enabled, haptics, isControlled, onOpenChange };
+  const latest = useRef({ afterHold, enabled, haptics, isControlled, onOpenChange });
+  latest.current = { afterHold, enabled, haptics, isControlled, onOpenChange };
 
   const measure = useCallback((onMeasured?: () => void) => measureAnchor(wrapperRef, setRect, onMeasured), [wrapperRef]);
 
   const openMenu = useCallback(() => {
-    if (!latest.current.enabled) return;
-    // Measure first, open second: the panel is placed from the rect on the frame
-    // it opens, so there is nothing to anchor to until this lands.
-    measure(() => {
-      if (!latest.current.isControlled) setInternalOpen(true);
-      latest.current.onOpenChange?.(true);
-      fireHaptics(latest.current.haptics);
-    });
+    if (!latest.current.enabled) {
+      // The menu may be inert — no items to show — while the hold still means
+      // something to the consumer: a multi-select toggle rides `afterHold`, and
+      // it must not die with the panel.
+      latest.current.afterHold?.();
+      return;
+    }
+    // Open synchronously — the panel may need a frame before the anchor lands, but
+    // deferring to `measureInWindow` would drop the open entirely when the
+    // callback never fires (e.g. a zero-sized node inside a nested GestureDetector
+    // layout). The effect below measures when `open && !rect`, so the anchor
+    // arrives a commit later — same as the pre-refactor path where `setOpen(true)`
+    // ran directly.
+    if (!latest.current.isControlled) setInternalOpen(true);
+    latest.current.onOpenChange?.(true);
+    fireHaptics(latest.current.haptics);
+    measure();
+    // Fire the consumer's own hold action after the menu opens, so both
+    // outcomes happen from one gesture — e.g. multi-select toggle while the
+    // context menu appears. The callback is read off a ref so an inline
+    // function on the consumer side never forces a re-bind here.
+    latest.current.afterHold?.();
   }, [measure]);
 
   const close = useCallback(() => {
@@ -228,9 +279,9 @@ export function useHoldActivation({
   // biome-ignore lint/plugin: a native `contextmenu` DOM listener has no RN prop equivalent; the Platform guard makes this branch unreachable off web
   useEffect(() => {
     if (Platform.OS !== 'web' || !openOnContextMenu) return;
-    // biome-ignore lint/plugin: RNW resolves View refs to HTMLElement; RN's View type cannot express that
-    const node = wrapperRef.current as unknown as HTMLElement | null;
-    if (!node?.addEventListener) return;
+    // RNW resolves View refs to HTMLElement on web — duck-type the DOM API we need.
+    const node = wrapperRef.current;
+    if (!isDOMEventTarget(node)) return;
 
     const handler = (event: Event) => {
       if (!latest.current.enabled) return;
@@ -250,18 +301,27 @@ export function useHoldActivation({
   return {
     rect,
     open,
-    pressed,
+    // `<Holdable>` / `<HoldDraggable>` own the pressed state for `'hold'` on
+    // native — their render-prop delivers `isPressed` directly to the squeeze
+    // animation, so the hook does not need to track it there.
+    pressed: isHold ? false : pressed,
     close,
     clearRect,
-    // Press tracking exists to drive the squeeze, which previews the lift — so
-    // it is native-only. Nothing on web reads `pressed`, and leaving the
-    // handlers off means a click does not re-render the trigger twice for it.
-    onPressIn: HOLD_MENU_LIFTS ? onPressIn : undefined,
-    onPressOut: HOLD_MENU_LIFTS ? onPressOut : undefined,
-    // A hold on web is a right-click (see HOLD_MENU_LIFTS), so the long press is
-    // not wired there at all — left-click and Enter fall through to whatever the
-    // children do with them.
-    onLongPress: isHold && HOLD_MENU_LIFTS ? openMenu : undefined,
+    // `openMenu` is always the hold callback, even when the consumer also
+    // passed an `afterHold`. `openMenu` internally calls both — it opens the
+    // menu and fires `afterHold` (the consumer's custom action like a
+    // multi-select toggle) afterward, so one gesture produces both outcomes.
+    //
+    // `HOLD_MENU_LIFTS` is not consulted here: the platform split lives in the
+    // tuning defaults (`holdDelay: null` on web for drag transports), which
+    // control whether the timer is armed at all. Removing the LIFTS gate also
+    // fixes a regression where `Platform.OS` misread at module init time caused
+    // HoldContextMenuTrigger to render a DragOnlyBody without an `onHold`.
+    onHold: isHold ? openMenu : undefined,
+    // Press tracking for the squeeze — only for `'tap'` / `'double-tap'` on native.
+    // `'hold'` never needs it here because the Holdable render-prop provides it.
+    onPressIn: !isHold && HOLD_MENU_LIFTS ? onPressIn : undefined,
+    onPressOut: !isHold && HOLD_MENU_LIFTS ? onPressOut : undefined,
     onPress: isHold ? undefined : handleTap,
     onAccessibilityAction,
   };

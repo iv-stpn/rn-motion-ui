@@ -41,7 +41,7 @@ Each icon lives at its own subpath. Import it directly:
 import { CheckLine } from 'rn-motion-ui-icons/icons/check-line';
 import { FolderFill } from 'rn-motion-ui-icons/icons/folder-fill';
 
-<CheckLine size={20} />
+<CheckLine size={20} color="success" />
 <FolderFill size={32} color="#2563eb" />
 ```
 

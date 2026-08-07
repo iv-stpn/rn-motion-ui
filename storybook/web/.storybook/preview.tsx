@@ -29,6 +29,7 @@ import '../global.css';
 const ThemeDecorator: Decorator = (Story) => {
   const [globals] = useGlobals();
   const isDark = globals.theme === 'dark';
+
   // Both halves of the direction story, because they are separate mechanisms:
   // `dir` on the wrapping View is what makes react-native-web actually flip the
   // layout (it forwards to the DOM attribute and to RNW's own locale context),
@@ -36,6 +37,7 @@ const ThemeDecorator: Decorator = (Story) => {
   // Setting only one would give a canvas whose layout and logic disagree —
   // exactly the bug the harness exists to catch.
   const direction = globals.direction === 'rtl' ? 'rtl' : 'ltr';
+
   return (
     <SafeAreaProvider>
       <DirectionProvider value={direction}>
@@ -43,7 +45,6 @@ const ThemeDecorator: Decorator = (Story) => {
           // @ts-expect-error - the dir attribute does not exist on RN View, but RNW forwards it to the DOM and to its own locale context
           dir={direction}
           className={cn('flex-1 p-6', isDark ? 'bg-black' : 'bg-white')}
-          style={{ flex: 1, backgroundColor: isDark ? '#111111' : '#fafafa', padding: 24 }}
         >
           <Story />
         </View>
@@ -54,11 +55,7 @@ const ThemeDecorator: Decorator = (Story) => {
 
 const preview: Preview = {
   decorators: [
-    withThemeByClassName({
-      themes: { light: 'light', dark: 'dark' },
-      defaultTheme: 'light',
-      parentSelector: 'html',
-    }),
+    withThemeByClassName({ themes: { light: 'light', dark: 'dark' }, defaultTheme: 'light', parentSelector: 'html' }),
     ThemeDecorator,
   ],
   globalTypes: {

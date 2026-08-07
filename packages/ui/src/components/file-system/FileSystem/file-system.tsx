@@ -381,7 +381,4 @@ export type {
   FileTypeFilterOption,
   FolderEntry,
 } from './file-system.types';
-export type {
-  FileSystemSelectionMode,
-  FileSystemSelectionModifiers,
-} from './file-system-selection';
+export type { FileSystemSelectionMode, FileSystemSelectionModifiers } from './file-system-selection';

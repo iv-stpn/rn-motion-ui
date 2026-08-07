@@ -1,4 +1,14 @@
-import { Children, isValidElement, type ReactElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { PresenceContext } from './animate-presence-context';
 
 function getChildKey(child: ReactElement): string {
@@ -247,8 +257,11 @@ export function AnimatePresence({
   // unmounts its Modal on this callback; firing it after a rapid re-open would
   // tear down a modal that is open again.
   const prevExitingRef = useRef<ReadonlySet<string>>(new Set());
-  // biome-ignore lint/plugin: detecting the exiting-set drain and firing onExitComplete must happen after commit — calling it during render (or inside a setState updater) would double-fire under StrictMode
-  useEffect(() => {
+  // Fire onExitComplete with useLayoutEffect so the callback runs synchronously after
+  // commit but before paint. State updates (unmounting a Modal, resetting a lifted
+  // trigger) land in the same frame as the exit animation completing — no gap where
+  // neither the exiting copy nor the original is visible.
+  useLayoutEffect(() => {
     const prevExiting = prevExitingRef.current;
     prevExitingRef.current = exitingKeys;
     if (prevExiting.size === 0 || exitingKeys.size > 0) return;

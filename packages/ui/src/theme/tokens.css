@@ -58,20 +58,34 @@
  * that survives that round trip unrounded (see BUTTON_METRICS in
  * components/Button/button-scale.ts).
  *
- * Dark-mode overrides are applied automatically via
- * @media (prefers-color-scheme: dark). For manual dark-mode (a .dark class on
- * <html>), also add:
- *   @variant dark (&:is(.dark *));
- * and the overrides will respect that selector too.
- * A `.light` class opts out of the automatic @media dark values (see below),
- * so a manual toggle can force light even when the OS prefers dark.
+ * ## How the two themes are expressed
+ *
+ * Every token that flips is declared three times: once in `@theme` and once in
+ * each of the `@variant light` / `@variant dark` blocks at the bottom of this
+ * file.
+ *
+ *  - `@theme` holds the light values. It is what registers each token with
+ *    Tailwind (so `bg-surface-1` and `shadow-surface-3` exist at all) and what
+ *    lands on `:root` for the web base.
+ *  - `@variant light` / `@variant dark` hold the per-theme values. `@variant`
+ *    expands to `:where(.light, .light *)` / `:where(.dark, .dark *)`, which is
+ *    the selector shape both the web class-switching decorator and uniwind's
+ *    native theme extraction look for. Native only ever reads these two blocks:
+ *    uniwind derives `vars.light` / `vars.dark` from a shared global base that
+ *    diverges solely via the `@variant`-scoped declarations, so a value that
+ *    lives only in `@theme` is theme-independent by construction.
+ *
+ * Both `@variant` blocks must declare the identical token set — uniwind logs a
+ * parity error per missing token otherwise. `scripts/check-token-parity.mjs`
+ * enforces that, plus `@theme` ⇄ `@variant light` agreement and both blocks
+ * against the native OKLCH tables.
  *
  * Native note: the sRGB equivalents used by useThemeColor() are derived from
  * these same oklch numbers via lib/color.ts — keep the TOKEN_OKLCH table in
  * theme/use-theme-color.ts in sync when editing values here.
  */
 
-/* ── Light mode (default) ──────────────────────────────────────────────── */
+/* ── Token registration + light values + web :root base ────────────────── */
 
 @theme {
   /* Surface ladder — page is surface-1; cards/popovers rest at surface-3.
@@ -155,17 +169,39 @@
     0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04),
     0 48px 48px -24px oklch(0% 0 0 / 0.03), 0 96px 96px -48px oklch(0% 0 0 / 0.03);
 
+  /* Elevated shadow ingredients — the inset rim recipe (highlight + ring) that
+     composites in front of the drop layers. Declared here in @theme so Tailwind
+     registers them (no `unset` in the theme layer for tokens referenced via
+     var() below), with their light-mode no-op values. Both @variant blocks below
+     restate the full set — dark fills them with the real recipe, light mirrors
+     these no-ops — so uniwind can extract per-theme maps. */
+  --surface-hi-base: transparent;
+  --surface-hi-mid: transparent;
+  --surface-hi-high: transparent;
+  --surface-hi-peak: transparent;
+  --surface-ring-base: transparent;
+  --surface-ring-mid: transparent;
+  --surface-ring-high: transparent;
+  --surface-rim-1: 0 0 transparent;
+  --surface-rim-2: 0 0 transparent;
+  --surface-rim-3: 0 0 transparent;
+  --surface-rim-4: 0 0 transparent;
+  --surface-rim-5: 0 0 transparent;
+  --surface-rim-6: 0 0 transparent;
+  --surface-rim-7: 0 0 transparent;
+  --surface-rim-8: 0 0 transparent;
+
   /* Elevated shadow recipe — the shadow applied by the `elevated()` util and
      the `elevation` prop. Each level composites the surface *rim* (inset
-     highlight + ring, the `--surface-rim-N` tokens in @layer base) in front of
-     the `shadow-surface-N` drop layers, in a SINGLE box-shadow. React Native
-     has no `::after`, so cubby-ui's pseudo-element rim can't be used — the two
-     layers are combined instead (cubby's own `SURFACE_SHADOW_COMBINED` path).
-     One definition covers both schemes: `--surface-rim-N` is a transparent
-     no-op in light and the inset recipe in dark, and `--shadow-surface-N`
-     already flips per scheme, so this token tracks the active theme through its
-     dependencies (via the CSS cascade on web, uniwind's scoped vars on native)
-     without a separate .dark override. */
+     highlight + ring, declared above) in front of the `shadow-surface-N` drop
+     layers, in a SINGLE box-shadow. React Native has no `::after`, so
+     cubby-ui's pseudo-element rim can't be used — the two layers are combined
+     instead (cubby's own `SURFACE_SHADOW_COMBINED` path).
+     One definition covers both schemes, and it belongs in @theme rather than in
+     the variants: `--surface-rim-N` is a transparent no-op in light and the
+     inset recipe in dark, and `--shadow-surface-N` also flips, so this token
+     tracks the active theme through its dependencies — via the CSS cascade on
+     web, and via uniwind's per-theme scoped vars on native. */
   --shadow-elevated-1: var(--surface-rim-1), var(--shadow-surface-1);
   --shadow-elevated-2: var(--surface-rim-2), var(--shadow-surface-2);
   --shadow-elevated-3: var(--surface-rim-3), var(--shadow-surface-3);
@@ -197,24 +233,36 @@
   --radius-button-lg: 12px;
 }
 
-/* ── Neutral tint + surface rim recipe ────────────────────────────────────
+/* ── Neutral tint ─────────────────────────────────────────────────────────
  *
- * These live in @layer base (plain custom properties, not @theme utilities) so
- * they are always emitted verbatim and stay overridable, mirroring cubby-ui's
- * globals.css. `--neutral-hue` / `--neutral-chroma` document the tint baked
- * into the surface/foreground ladder (hue 270, chroma 0.004); the surface
- * ladder values in the @theme blocks spell that tint out literally so uniwind
- * resolves them on native. The `--surface-rim-N` tokens are the inset portion
- * of the elevation recipe — a top highlight (`--surface-hi-*`) plus a
- * full-perimeter ring (`--surface-ring-*`) that steps up with elevation. Light
- * mode has no rim (outer rings alone carry elevation), so they are no-ops.
+ * `--neutral-hue` / `--neutral-chroma` document the tint baked into the
+ * surface/foreground ladder (hue 270, chroma 0.004); the surface ladder values
+ * in the theme blocks spell that tint out literally so uniwind resolves them on
+ * native. They live in @layer base (plain custom properties, not @theme
+ * utilities) so they are always emitted verbatim and stay overridable,
+ * mirroring cubby-ui's globals.css. Nothing resolves them at runtime — a
+ * var() inside oklch() never folds on native — so they are documentation, and
+ * the input `npx rn-motion-ui-tokens` reads to retune the ramp.
  */
 @layer base {
   :root {
     --neutral-hue: 270;
     --neutral-chroma: 0.004;
 
-    /* Light mode uses outer rings only — no rim needed, so these are no-ops. */
+    /* Light-mode no-ops for the tokens that feed --shadow-elevated-N via var().
+       They are re-declared in the @variant blocks below so that uniwind can
+       extract per-theme maps, but those blocks live outside any @layer — which
+       means Tailwind v4 fills the @theme layer with `unset` for anything it
+       can't find a declaration for. These :root entries prevent that, keeping
+       a reliable fallback for web regardless of which variant (if any) matches
+       at a given moment. */
+    --surface-hi-base: transparent;
+    --surface-hi-mid: transparent;
+    --surface-hi-high: transparent;
+    --surface-hi-peak: transparent;
+    --surface-ring-base: transparent;
+    --surface-ring-mid: transparent;
+    --surface-ring-high: transparent;
     --surface-rim-1: 0 0 transparent;
     --surface-rim-2: 0 0 transparent;
     --surface-rim-3: 0 0 transparent;
@@ -226,20 +274,41 @@
   }
 }
 
-/* ── Dark mode — system preference ────────────────────────────────────── */
+/* ── Per-scheme values — @variant light / @variant dark ────────────────── */
 /*
- * In Tailwind v4 the @theme block registers CSS custom properties as design
- * tokens at compile time. To change their runtime values for dark mode we
- * override the same properties under a @media or a .dark selector in
- * @layer base. Tailwind's utility classes (bg-surface-3, text-foreground, …)
- * then pick up the overridden values automatically.
+ * The @theme block above registers every token as a Tailwind design token and
+ * carries the light values. The two blocks below restate the tokens that FLIP
+ * with the scheme, once per scheme, via `@variant`.
  *
- * The @media block is gated on `:root:not(.light)` so a `.light` class is an
- * ABSOLUTE override: it opts out of the automatic OS-preference dark values and
- * falls back to the @theme light defaults, even when the OS reports
- * prefers-color-scheme: dark. `.dark` likewise forces dark over an OS-light
- * preference. Without `:not(.light)`, selecting light while the OS is dark
- * would still resolve to the dark tokens.
+ * ## Why @variant, and not @media + .dark
+ *
+ * `@variant light` / `@variant dark` expand to uniwind's `@custom-variant`
+ * definitions, which cover both switch mechanisms in one declaration:
+ *
+ *   &:where(.dark, .dark *)                          → a manual .dark class
+ *   @media (prefers-color-scheme: dark) {             → the OS preference,
+ *     &:not(:where(.light, .light *, .dark, .dark *)) }  suppressed by either class
+ *
+ * Web keeps the behaviour the previous hand-written pair of blocks
+ * (`@media (prefers-color-scheme: dark) { :root:not(.light) }` plus a separate
+ * `.dark`) gave it: a `.light` class is still an ABSOLUTE override that opts out
+ * of OS dark, and `.dark` still forces dark over an OS-light preference. It also
+ * gains a case the old form could not express — the class matches DESCENDANTS
+ * (`.dark *`), so a subtree can be themed against the document, not just the
+ * document root. Both selectors are `:where()`, i.e. specificity 0, so a theme
+ * value never fights an author override.
+ *
+ * It is also the ONLY form that works on native. Uniwind resolves a token per
+ * theme from `scopedVars['__uniwind-theme-<scheme>']`, and it fills that bucket
+ * only for declarations whose selector carries `:where(.light|.dark, …)` — i.e.
+ * only for `@variant`. Under the old form nothing landed there, so uniwind's
+ * light and dark var maps were byte-identical and every surface rendered with
+ * whichever block the bundler wrote last (dark), in both schemes.
+ *
+ * Both blocks must declare the SAME token set: uniwind logs one error per
+ * missing token when they diverge (it does not fail the build).
+ * scripts/check-token-parity.mjs enforces that, and that the light values here
+ * agree with the @theme block and the native OKLCH tables.
  *
  * Dark surfaces: progressive lightness per ladder level, hue-270 tint at
  * chroma 0.004 throughout. Dark shadows: the 1px ring darkens as elevation
@@ -247,176 +316,182 @@
  * they stay visible against the dark substrate.
  */
 
-@layer base {
-  @media (prefers-color-scheme: dark) {
-    :root:not(.light) {
-      --color-surface-1: oklch(20.5% 0.004 270);
-      --color-surface-2: oklch(23.5% 0.004 270);
-      --color-surface-3: oklch(26.4% 0.004 270);
-      --color-surface-4: oklch(29.3% 0.004 270);
-      --color-surface-5: oklch(32.1% 0.004 270);
-      --color-surface-6: oklch(34.8% 0.004 270);
-      --color-surface-7: oklch(37.5% 0.004 270);
-      --color-surface-8: oklch(40.2% 0.004 270);
-      --color-surface-hover: oklch(100% 0 0 / 0.04);
-      --color-surface-selected: oklch(100% 0 0 / 0.08);
-      --color-foreground: oklch(94% 0.004 270);
-      --color-muted: oklch(24% 0.004 270);
-      --color-muted-foreground: oklch(73% 0.004 270);
-      --color-border: oklch(100% 0 0 / 0.1);
-      --color-primary: oklch(95% 0.004 270);
-      --color-primary-foreground: oklch(13% 0.004 270);
-      --color-secondary: oklch(35% 0.004 270);
-      --color-secondary-foreground: oklch(94% 0.004 270);
-      --color-accent: oklch(31% 0.004 270);
-      --color-accent-foreground: oklch(95% 0.004 270);
-      --color-success: oklch(72% 0.18 155);
-      --color-success-foreground: oklch(100% 0 0);
-      --color-warning: oklch(58% 0.18 40);
-      --color-warning-foreground: oklch(100% 0 0);
-      --color-info: oklch(52% 0.24 264);
-      --color-info-foreground: oklch(100% 0 0);
-      --color-danger: oklch(66% 0.22 25);
-      --color-danger-foreground: oklch(100% 0 0);
-      --color-special: oklch(59% 0.25 295);
-      --color-special-foreground: oklch(100% 0 0);
+@variant dark {
+  --color-surface-1: oklch(20.5% 0.004 270);
+  --color-surface-2: oklch(23.5% 0.004 270);
+  --color-surface-3: oklch(26.4% 0.004 270);
+  --color-surface-4: oklch(29.3% 0.004 270);
+  --color-surface-5: oklch(32.1% 0.004 270);
+  --color-surface-6: oklch(34.8% 0.004 270);
+  --color-surface-7: oklch(37.5% 0.004 270);
+  --color-surface-8: oklch(40.2% 0.004 270);
+  --color-surface-hover: oklch(100% 0 0 / 0.04);
+  --color-surface-selected: oklch(100% 0 0 / 0.08);
+  --color-foreground: oklch(94% 0.004 270);
+  --color-muted: oklch(24% 0.004 270);
+  --color-muted-foreground: oklch(73% 0.004 270);
+  --color-border: oklch(100% 0 0 / 0.1);
+  --color-primary: oklch(95% 0.004 270);
+  --color-primary-foreground: oklch(13% 0.004 270);
+  --color-secondary: oklch(35% 0.004 270);
+  --color-secondary-foreground: oklch(94% 0.004 270);
+  --color-accent: oklch(31% 0.004 270);
+  --color-accent-foreground: oklch(95% 0.004 270);
+  --color-success: oklch(72% 0.18 155);
+  --color-success-foreground: oklch(100% 0 0);
+  --color-warning: oklch(58% 0.18 40);
+  --color-warning-foreground: oklch(100% 0 0);
+  --color-info: oklch(52% 0.24 264);
+  --color-info-foreground: oklch(100% 0 0);
+  --color-danger: oklch(66% 0.22 25);
+  --color-danger-foreground: oklch(100% 0 0);
+  --color-special: oklch(59% 0.25 295);
+  --color-special-foreground: oklch(100% 0 0);
 
-      /* Absolute colors — same value in both schemes, restated so the two dark
-         blocks stay a complete mirror of the @theme block. */
-      --color-white: oklch(100% 0 0);
-      --color-black: oklch(0% 0 0);
+  /* Absolute colors — same value in both schemes, restated so both variant
+     blocks stay a complete mirror of each other. */
+  --color-white: oklch(100% 0 0);
+  --color-black: oklch(0% 0 0);
 
-      --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
-      --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
-      --shadow-surface-3:
-        0 0 0 1px oklch(0% 0 0 / 0.12), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16);
-      --shadow-surface-4:
-        0 0 0 1px oklch(0% 0 0 / 0.14), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-        0 6px 6px -3px oklch(0% 0 0 / 0.16);
-      --shadow-surface-5:
-        0 0 0 1px oklch(0% 0 0 / 0.16), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-        0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14);
-      --shadow-surface-6:
-        0 0 0 1px oklch(0% 0 0 / 0.18), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-        0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14),
-        0 24px 24px -12px oklch(0% 0 0 / 0.14);
-      --shadow-surface-7:
-        0 0 0 1px oklch(0% 0 0 / 0.2), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-        0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14),
-        0 24px 24px -12px oklch(0% 0 0 / 0.14), 0 48px 48px -24px oklch(0% 0 0 / 0.12);
-      --shadow-surface-8:
-        0 0 0 1px oklch(0% 0 0 / 0.22), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-        0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14),
-        0 24px 24px -12px oklch(0% 0 0 / 0.14), 0 48px 48px -24px oklch(0% 0 0 / 0.12),
-        0 96px 96px -48px oklch(0% 0 0 / 0.12);
+  --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
+  --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
+  --shadow-surface-3:
+    0 0 0 1px oklch(0% 0 0 / 0.12), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16);
+  --shadow-surface-4:
+    0 0 0 1px oklch(0% 0 0 / 0.14), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
+    0 6px 6px -3px oklch(0% 0 0 / 0.16);
+  --shadow-surface-5:
+    0 0 0 1px oklch(0% 0 0 / 0.16), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
+    0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14);
+  --shadow-surface-6:
+    0 0 0 1px oklch(0% 0 0 / 0.18), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
+    0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14);
+  --shadow-surface-7:
+    0 0 0 1px oklch(0% 0 0 / 0.2), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
+    0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14),
+    0 48px 48px -24px oklch(0% 0 0 / 0.12);
+  --shadow-surface-8:
+    0 0 0 1px oklch(0% 0 0 / 0.22), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
+    0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14),
+    0 48px 48px -24px oklch(0% 0 0 / 0.12), 0 96px 96px -48px oklch(0% 0 0 / 0.12);
 
-      /* Rim highlight (top edge) and ring (full perimeter). Both step up with
-         elevation and feed the inset --surface-rim-N recipe below. */
-      --surface-hi-base: oklch(1 0 0 / 0.01);
-      --surface-hi-mid: oklch(1 0 0 / 0.02);
-      --surface-hi-high: oklch(1 0 0 / 0.04);
-      --surface-hi-peak: oklch(1 0 0 / 0.06);
-      --surface-ring-base: oklch(1 0 0 / 0.02);
-      --surface-ring-mid: oklch(1 0 0 / 0.04);
-      --surface-ring-high: oklch(1 0 0 / 0.06);
+  /* Rim highlight (top edge) and ring (full perimeter). Both step up with
+     elevation and feed the inset --surface-rim-N recipe below. */
+  --surface-hi-base: oklch(1 0 0 / 0.01);
+  --surface-hi-mid: oklch(1 0 0 / 0.02);
+  --surface-hi-high: oklch(1 0 0 / 0.04);
+  --surface-hi-peak: oklch(1 0 0 / 0.06);
+  --surface-ring-base: oklch(1 0 0 / 0.02);
+  --surface-ring-mid: oklch(1 0 0 / 0.04);
+  --surface-ring-high: oklch(1 0 0 / 0.06);
 
-      /* Inset portion of the dark elevation recipe. In cubby-ui these are
-         painted via an ::after pseudo-element so they sit above opaque
-         children; RN has no pseudo-elements, so --shadow-elevated-N composites
-         this rim in front of the drop layers within one box-shadow instead. */
-      --surface-rim-1: inset 0 0 0 1px var(--surface-ring-base);
-      --surface-rim-2: inset 0 1px 0 0 var(--surface-hi-base), inset 0 0 0 1px var(--surface-ring-base);
-      --surface-rim-3: inset 0 1px 0 0 var(--surface-hi-mid), inset 0 0 0 1px var(--surface-ring-base);
-      --surface-rim-4: inset 0 1px 0 0 var(--surface-hi-mid), inset 0 0 0 1px var(--surface-ring-mid);
-      --surface-rim-5: inset 0 1px 0 0 var(--surface-hi-high), inset 0 0 0 1px var(--surface-ring-mid);
-      --surface-rim-6: inset 0 1px 0 0 var(--surface-hi-high), inset 0 0 0 1px var(--surface-ring-high);
-      --surface-rim-7: inset 0 1px 0 0 var(--surface-hi-peak), inset 0 0 0 1px var(--surface-ring-high);
-      --surface-rim-8: inset 0 1px 0 0 var(--surface-hi-peak), inset 0 0 0 1px var(--surface-ring-high);
-    }
-  }
+  /* Inset portion of the dark elevation recipe. In cubby-ui these are painted
+     via an ::after pseudo-element so they sit above opaque children; RN has no
+     pseudo-elements, so --shadow-elevated-N composites this rim in front of the
+     drop layers within one box-shadow instead. */
+  --surface-rim-1: inset 0 0 0 1px var(--surface-ring-base);
+  --surface-rim-2: inset 0 1px 0 0 var(--surface-hi-base), inset 0 0 0 1px var(--surface-ring-base);
+  --surface-rim-3: inset 0 1px 0 0 var(--surface-hi-mid), inset 0 0 0 1px var(--surface-ring-base);
+  --surface-rim-4: inset 0 1px 0 0 var(--surface-hi-mid), inset 0 0 0 1px var(--surface-ring-mid);
+  --surface-rim-5: inset 0 1px 0 0 var(--surface-hi-high), inset 0 0 0 1px var(--surface-ring-mid);
+  --surface-rim-6: inset 0 1px 0 0 var(--surface-hi-high), inset 0 0 0 1px var(--surface-ring-high);
+  --surface-rim-7: inset 0 1px 0 0 var(--surface-hi-peak), inset 0 0 0 1px var(--surface-ring-high);
+  --surface-rim-8: inset 0 1px 0 0 var(--surface-hi-peak), inset 0 0 0 1px var(--surface-ring-high);
+}
 
-  /* Manual dark mode via .dark class on <html> or any ancestor.
-     Mirror of the @media block above — keep the two in sync. */
-  .dark {
-    --color-surface-1: oklch(20.5% 0.004 270);
-    --color-surface-2: oklch(23.5% 0.004 270);
-    --color-surface-3: oklch(26.4% 0.004 270);
-    --color-surface-4: oklch(29.3% 0.004 270);
-    --color-surface-5: oklch(32.1% 0.004 270);
-    --color-surface-6: oklch(34.8% 0.004 270);
-    --color-surface-7: oklch(37.5% 0.004 270);
-    --color-surface-8: oklch(40.2% 0.004 270);
-    --color-surface-hover: oklch(100% 0 0 / 0.04);
-    --color-surface-selected: oklch(100% 0 0 / 0.08);
-    --color-foreground: oklch(94% 0.004 270);
-    --color-muted: oklch(24% 0.004 270);
-    --color-muted-foreground: oklch(73% 0.004 270);
-    --color-border: oklch(100% 0 0 / 0.1);
-    --color-primary: oklch(95% 0.004 270);
-    --color-primary-foreground: oklch(13% 0.004 270);
-    --color-secondary: oklch(35% 0.004 270);
-    --color-secondary-foreground: oklch(94% 0.004 270);
-    --color-accent: oklch(31% 0.004 270);
-    --color-accent-foreground: oklch(95% 0.004 270);
-    --color-success: oklch(72% 0.18 155);
-    --color-success-foreground: oklch(100% 0 0);
-    --color-warning: oklch(58% 0.18 40);
-    --color-warning-foreground: oklch(100% 0 0);
-    --color-info: oklch(52% 0.24 264);
-    --color-info-foreground: oklch(100% 0 0);
-    --color-danger: oklch(66% 0.22 25);
-    --color-danger-foreground: oklch(100% 0 0);
-    --color-special: oklch(59% 0.25 295);
-    --color-special-foreground: oklch(100% 0 0);
+/* ── Light mode — the scoped mirror of the @theme defaults ────────────────
+ *
+ * The same values as the @theme block above, restated as a theme variant.
+ * @theme registers the tokens (so `bg-surface-3` exists) and supplies the
+ * unscoped fallback; this block is what makes light an ADDRESSABLE theme
+ * rather than just the absence of dark.
+ *
+ * It is not redundant: uniwind derives its per-theme variable maps solely from
+ * `@variant` blocks, and expects every theme to declare the same variable set. A
+ * token present in `dark` but not `light` does not fail the build — it logs one
+ * error per missing token and then resolves to the unscoped `@theme` value in
+ * the theme that lacks it, which reads as "this token ignores the toggle". Keep
+ * the three blocks (@theme, @variant light, @variant dark) in agreement;
+ * scripts/check-token-parity.mjs enforces it.
+ */
 
-    /* Absolute colors — same value in both schemes, restated so the two dark
-       blocks stay a complete mirror of the @theme block. */
-    --color-white: oklch(100% 0 0);
-    --color-black: oklch(0% 0 0);
+@variant light {
+  --color-surface-1: oklch(97% 0 0);
+  --color-surface-2: oklch(98.5% 0 0);
+  --color-surface-3: oklch(100% 0 0);
+  --color-surface-4: oklch(100% 0 0);
+  --color-surface-5: oklch(100% 0 0);
+  --color-surface-6: oklch(100% 0 0);
+  --color-surface-7: oklch(100% 0 0);
+  --color-surface-8: oklch(100% 0 0);
+  --color-surface-hover: oklch(0% 0 0 / 0.04);
+  --color-surface-selected: oklch(0% 0 0 / 0.08);
+  --color-foreground: oklch(18% 0.004 270);
+  --color-muted: oklch(94% 0 0);
+  --color-muted-foreground: oklch(50% 0.004 270);
+  --color-border: oklch(0% 0 0 / 0.1);
+  --color-primary: oklch(22% 0 0);
+  --color-primary-foreground: oklch(98% 0.002 270);
+  --color-secondary: oklch(92% 0 0);
+  --color-secondary-foreground: oklch(32% 0.004 270);
+  --color-accent: oklch(91% 0 0);
+  --color-accent-foreground: oklch(22% 0.004 270);
+  --color-success: oklch(70% 0.18 155);
+  --color-success-foreground: oklch(100% 0 0);
+  --color-warning: oklch(58% 0.18 40);
+  --color-warning-foreground: oklch(100% 0 0);
+  --color-info: oklch(52% 0.24 264);
+  --color-info-foreground: oklch(100% 0 0);
+  --color-danger: oklch(62% 0.22 25);
+  --color-danger-foreground: oklch(100% 0 0);
+  --color-special: oklch(59% 0.25 295);
+  --color-special-foreground: oklch(100% 0 0);
 
-    --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
-    --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
-    --shadow-surface-3:
-      0 0 0 1px oklch(0% 0 0 / 0.12), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16);
-    --shadow-surface-4:
-      0 0 0 1px oklch(0% 0 0 / 0.14), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-      0 6px 6px -3px oklch(0% 0 0 / 0.16);
-    --shadow-surface-5:
-      0 0 0 1px oklch(0% 0 0 / 0.16), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-      0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14);
-    --shadow-surface-6:
-      0 0 0 1px oklch(0% 0 0 / 0.18), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-      0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14);
-    --shadow-surface-7:
-      0 0 0 1px oklch(0% 0 0 / 0.2), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-      0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14),
-      0 48px 48px -24px oklch(0% 0 0 / 0.12);
-    --shadow-surface-8:
-      0 0 0 1px oklch(0% 0 0 / 0.22), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-      0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14),
-      0 48px 48px -24px oklch(0% 0 0 / 0.12), 0 96px 96px -48px oklch(0% 0 0 / 0.12);
+  /* Absolute colors — same value in both schemes, restated so all three
+     declarations stay a complete mirror of one another. */
+  --color-white: oklch(100% 0 0);
+  --color-black: oklch(0% 0 0);
 
-    /* Rim highlight (top edge) and ring (full perimeter). Both step up with
-       elevation and feed the inset --surface-rim-N recipe below. */
-    --surface-hi-base: oklch(1 0 0 / 0.01);
-    --surface-hi-mid: oklch(1 0 0 / 0.02);
-    --surface-hi-high: oklch(1 0 0 / 0.04);
-    --surface-hi-peak: oklch(1 0 0 / 0.06);
-    --surface-ring-base: oklch(1 0 0 / 0.02);
-    --surface-ring-mid: oklch(1 0 0 / 0.04);
-    --surface-ring-high: oklch(1 0 0 / 0.06);
+  --shadow-surface-1: 0 0 0 1px oklch(0% 0 0 / 0.06);
+  --shadow-surface-2: 0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06);
+  --shadow-surface-3:
+    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05);
+  --shadow-surface-4:
+    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
+    0 6px 6px -3px oklch(0% 0 0 / 0.05);
+  --shadow-surface-5:
+    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
+    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04);
+  --shadow-surface-6:
+    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
+    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04);
+  --shadow-surface-7:
+    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
+    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04),
+    0 48px 48px -24px oklch(0% 0 0 / 0.03);
+  --shadow-surface-8:
+    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
+    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04),
+    0 48px 48px -24px oklch(0% 0 0 / 0.03), 0 96px 96px -48px oklch(0% 0 0 / 0.03);
 
-    /* Inset portion of the dark elevation recipe. In cubby-ui these are painted
-       via an ::after pseudo-element so they sit above opaque children; RN has
-       no pseudo-elements, so --shadow-elevated-N composites this rim in front
-       of the drop layers within one box-shadow instead. */
-    --surface-rim-1: inset 0 0 0 1px var(--surface-ring-base);
-    --surface-rim-2: inset 0 1px 0 0 var(--surface-hi-base), inset 0 0 0 1px var(--surface-ring-base);
-    --surface-rim-3: inset 0 1px 0 0 var(--surface-hi-mid), inset 0 0 0 1px var(--surface-ring-base);
-    --surface-rim-4: inset 0 1px 0 0 var(--surface-hi-mid), inset 0 0 0 1px var(--surface-ring-mid);
-    --surface-rim-5: inset 0 1px 0 0 var(--surface-hi-high), inset 0 0 0 1px var(--surface-ring-mid);
-    --surface-rim-6: inset 0 1px 0 0 var(--surface-hi-high), inset 0 0 0 1px var(--surface-ring-high);
-    --surface-rim-7: inset 0 1px 0 0 var(--surface-hi-peak), inset 0 0 0 1px var(--surface-ring-high);
-    --surface-rim-8: inset 0 1px 0 0 var(--surface-hi-peak), inset 0 0 0 1px var(--surface-ring-high);
-  }
+  /* Light mode has no rim — the outer rings alone carry elevation. Declared as
+     fully transparent (rather than omitted) because every theme must define the
+     same variable set, and because --shadow-elevated-N composites them
+     unconditionally. */
+  --surface-hi-base: transparent;
+  --surface-hi-mid: transparent;
+  --surface-hi-high: transparent;
+  --surface-hi-peak: transparent;
+  --surface-ring-base: transparent;
+  --surface-ring-mid: transparent;
+  --surface-ring-high: transparent;
+
+  --surface-rim-1: 0 0 transparent;
+  --surface-rim-2: 0 0 transparent;
+  --surface-rim-3: 0 0 transparent;
+  --surface-rim-4: 0 0 transparent;
+  --surface-rim-5: 0 0 transparent;
+  --surface-rim-6: 0 0 transparent;
+  --surface-rim-7: 0 0 transparent;
+  --surface-rim-8: 0 0 transparent;
 }

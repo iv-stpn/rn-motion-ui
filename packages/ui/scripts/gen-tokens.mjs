@@ -29,8 +29,11 @@
  *
  * Reads the tokens.css shipped inside this package, rewrites every `oklch()`
  * declaration that carries the neutral tint, and passes everything else through
- * verbatim — comments, shadow recipes, surface rims, the light/@media-dark/.dark
- * blocks, and any token added upstream. A declaration counts as tinted when its
+ * verbatim — comments, shadow recipes, surface rims, the @theme block and both
+ * @variant blocks, and any token added upstream. The rewrite is structural only
+ * in the sense that it does not care about structure: it walks every `oklch()`
+ * in the file wherever it sits, so adding or reshaping a theme block upstream
+ * needs no change here. A declaration counts as tinted when its
  * hue equals the source `--neutral-hue` and its chroma is above zero and no
  * greater than the source `--neutral-chroma`; chroma is then scaled
  * proportionally, so a token authored at half tint (primary-foreground) stays at

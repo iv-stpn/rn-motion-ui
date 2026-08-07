@@ -4,9 +4,13 @@
  * in agreement.
  *
  * A token value is written down three times:
- *   1. tokens.css `@theme`            — the light values (web, build time)
- *   2. tokens.css `@media (…dark)` + `.dark` — the dark values, twice, because
- *      one serves the OS preference and the other a manual class
+ *   1. tokens.css `@theme`         — the light values, which register the token
+ *      with Tailwind (so `bg-surface-3` exists) and are the web `:root` base
+ *   2. tokens.css `@variant light` / `@variant dark` — the per-theme values.
+ *      These are what uniwind compiles into its scoped theme buckets: it fills
+ *      `scopedVars['__uniwind-theme-<theme>']` only from selectors carrying
+ *      `:where(.light|.dark, …)`, which is what `@variant` expands to. A value
+ *      that lives only in `@theme` is theme-independent by construction.
  *   3. use-theme-color.ts LIGHT_OKLCH / DARK_OKLCH — the native tables, which
  *      are also the web SSR fallback
  *
@@ -72,17 +76,34 @@ function tsTable(name) {
 
 const problems = [];
 
-// ── the two dark CSS blocks must be identical ───────────────────────────────
-const mediaDark = cssTokens(block(css, '    :root:not(.light) {'));
-const classDark = cssTokens(block(css, '  .dark {'));
+// Anchored to a line start: the file's doc comment shows example `@variant`
+// blocks, which a bare substring search would find first.
+const themeLight = cssTokens(block(css, '\n@theme {'));
+const variantLight = cssTokens(block(css, '\n@variant light {'));
+const variantDark = cssTokens(block(css, '\n@variant dark {'));
 
-for (const [token, value] of mediaDark) {
-  if (!classDark.has(token)) problems.push(`.dark is missing --color-${token} (present in the @media block)`);
-  else if (classDark.get(token) !== value)
-    problems.push(`--color-${token}: @media block has "${value}", .dark has "${classDark.get(token)}"`);
+// ── @theme and @variant light must agree ────────────────────────────────────
+// Both hold the light values. @theme registers the token with Tailwind and is
+// the web `:root` base; @variant light is what uniwind reads into its scoped
+// light bucket. A token edited in one and missed in the other renders one value
+// on web at :root and a different one once the theme resolves.
+for (const [token, value] of themeLight) {
+  if (!variantLight.has(token))
+    problems.push(`@variant light is missing --color-${token} (present in @theme)`);
+  else if (variantLight.get(token) !== value)
+    problems.push(`--color-${token}: @theme has "${value}", @variant light has "${variantLight.get(token)}"`);
 }
-for (const token of classDark.keys())
-  if (!mediaDark.has(token)) problems.push(`@media block is missing --color-${token} (present in .dark)`);
+for (const token of variantLight.keys())
+  if (!themeLight.has(token)) problems.push(`@theme is missing --color-${token} (present in @variant light)`);
+
+// ── both variants must declare the same token set ───────────────────────────
+// uniwind's own gate: generateCSSForThemes errors per missing variable when the
+// themes disagree, and it only logs, so a mismatch is bundle noise rather than
+// a failed build. Fail here instead.
+for (const token of variantLight.keys())
+  if (!variantDark.has(token)) problems.push(`@variant dark is missing --color-${token} (present in @variant light)`);
+for (const token of variantDark.keys())
+  if (!variantLight.has(token)) problems.push(`@variant light is missing --color-${token} (present in @variant dark)`);
 
 // ── the native tables must match their CSS counterparts ─────────────────────
 const EPSILON = 0.0005;
@@ -109,16 +130,14 @@ function compare(scheme, cssMap, table) {
     if (!table.has(token)) problems.push(`${scheme}: --color-${token} has no entry in the native table`);
 }
 
-// Anchored to a line start: the file's doc comment shows an example `@theme {
-// --color-primary: … }` override, which a bare substring search finds first.
-compare('light', cssTokens(block(css, '\n@theme {')), tsTable('LIGHT_OKLCH'));
-compare('dark', classDark, tsTable('DARK_OKLCH'));
+compare('light', variantLight, tsTable('LIGHT_OKLCH'));
+compare('dark', variantDark, tsTable('DARK_OKLCH'));
 
 if (problems.length > 0) {
   console.error('✖  Colour token declarations are out of sync:\n');
   for (const p of problems) console.error(`   ${p}`);
-  console.error('\n   tokens.css (@theme / @media / .dark) and use-theme-color.ts');
-  console.error('   (LIGHT_OKLCH / DARK_OKLCH) must all agree.\n');
+  console.error('\n   tokens.css (@theme / @variant light / @variant dark) and');
+  console.error('   use-theme-color.ts (LIGHT_OKLCH / DARK_OKLCH) must all agree.\n');
   process.exit(1);
 }
 

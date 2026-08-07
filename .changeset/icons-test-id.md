@@ -1,5 +1,5 @@
 ---
-"rn-motion-ui-icons": minor
+"rn-motion-ui-icons": patch
 ---
 
 Every icon takes a `testID`

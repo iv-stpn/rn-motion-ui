@@ -1,6 +1,6 @@
 {
   "name": "rn-motion-ui-icons",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "MingCute icon set for rn-motion-ui — one subpath export per icon, no barrel.",
   "keywords": [
     "react-native",

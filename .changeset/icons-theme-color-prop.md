@@ -1,5 +1,5 @@
 ---
-"rn-motion-ui-icons": minor
+"rn-motion-ui-icons": patch
 ---
 
 **Icon `color` prop now accepts theme tokens with full autocomplete.**

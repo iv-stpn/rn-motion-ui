@@ -1,6 +1,6 @@
 {
   "name": "rn-motion-ui-icons",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "MingCute icon set for rn-motion-ui — one subpath export per icon, no barrel.",
   "keywords": [
     "react-native",
@@ -16719,7 +16719,7 @@
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
     "react-native-svg": ">=15.0.0",
-    "rn-motion-ui": "^4.0.0"
+    "rn-motion-ui": "^5.0.0"
   },
   "devDependencies": {
     "@iconify-json/mingcute": "^1.2.8",

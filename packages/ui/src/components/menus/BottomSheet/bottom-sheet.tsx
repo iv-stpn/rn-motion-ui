@@ -8,6 +8,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
 import { SURFACE_CLASSNAME } from '../../../lib/elevated';
+import { OverlayOutlet } from '../Overlay/overlay-portal';
 import { useSheetPresence } from '../Overlay/use-sheet-presence';
 
 const HANDLE_HEIGHT = 28;
@@ -209,6 +210,9 @@ export function BottomSheet({
             </Animated.View>
           </GestureDetector>
         </View>
+        {/* Overlay outlet: above the sheet, outside the scroll containers and
+            drag gesture. Touch-transparent on its empty areas. */}
+        <OverlayOutlet />
       </View>
     </Modal>
   );

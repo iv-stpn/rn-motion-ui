@@ -26,7 +26,7 @@ type Story = StoryObj<typeof meta>;
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SHAPES = ['rounded', 'pill'] as const;
 const STATES = ['default', 'error', 'success', 'disabled'] as const;
-const FIELD_WIDTH = 288;
+const _FIELD_WIDTH = 288;
 const EMAIL_ERROR = 'Enter a valid email address.';
 
 type FieldState = (typeof STATES)[number];
@@ -62,7 +62,7 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
   const typedError = email.length > 0 && !email.includes('@') ? EMAIL_ERROR : undefined;
 
   return (
-    <Playground style={{ width: FIELD_WIDTH }}>
+    <Playground>
       <ControlCard title="Options">
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
@@ -90,20 +90,13 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
       <Section title="States">
         <Variants direction="column">
           <Sample label="error">
-            <Input {...args} error={EMAIL_ERROR} label="Email" style={{ width: FIELD_WIDTH }} value="not-an-email" />
+            <Input {...args} error={EMAIL_ERROR} label="Email" value="not-an-email" />
           </Sample>
           <Sample label="success">
-            <Input
-              {...args}
-              label="Search"
-              leftIcon={<Search color={icon} size={16} />}
-              style={{ width: FIELD_WIDTH }}
-              success={true}
-              value="Ada"
-            />
+            <Input {...args} label="Search" leftIcon={<Search color={icon} size={16} />} success={true} value="Ada" />
           </Sample>
           <Sample label="disabled">
-            <Input {...args} disabled={true} label="Email" style={{ width: FIELD_WIDTH }} value="you@example.com" />
+            <Input {...args} disabled={true} label="Email" value="you@example.com" />
           </Sample>
           <Sample label="secure entry with a reveal toggle">
             <Input
@@ -112,21 +105,14 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
               onChange={setPass}
               rightIcon={<RevealButton color={icon} onToggle={toggleShown} shown={shown} />}
               secureTextEntry={!shown}
-              style={{ width: FIELD_WIDTH }}
               value={pass}
             />
           </Sample>
           <Sample label="pill shape">
-            <Input
-              {...args}
-              label="Search"
-              leftIcon={<Search color={icon} size={16} />}
-              shape="pill"
-              style={{ width: FIELD_WIDTH }}
-            />
+            <Input {...args} label="Search" leftIcon={<Search color={icon} size={16} />} shape="pill" />
           </Sample>
           <Sample label="multiline">
-            <Input {...args} label="Notes" multiline={true} placeholder="Anything else?" style={{ width: FIELD_WIDTH }} />
+            <Input {...args} label="Notes" multiline={true} placeholder="Anything else?" />
           </Sample>
         </Variants>
       </Section>
@@ -134,7 +120,7 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
       <Section title="Sizes">
         <View className="gap-4">
           {SIZES.map((name) => (
-            <Input {...args} key={name} label={name} size={name} style={{ width: FIELD_WIDTH }} />
+            <Input {...args} key={name} label={name} size={name} />
           ))}
         </View>
       </Section>

@@ -7,6 +7,7 @@ import { SPRING_PANEL } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
+import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 export type DrawerSide = 'left' | 'right';
 
@@ -98,6 +99,8 @@ export function Drawer({
           </View>
         ) : null}
       </AnimatePresence>
+      {/* Overlay outlet: above the panel, outside the slide animation. */}
+      <OverlayOutlet />
     </Modal>
   );
 }

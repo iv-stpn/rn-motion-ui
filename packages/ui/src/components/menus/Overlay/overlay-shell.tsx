@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useRef } from 'react';
 import { Modal, View } from 'react-native';
 import { useFocusTrap } from '../../../hooks/use-focus-trap';
 import { useModalRender } from '../../../hooks/use-modal-render';
+import { OverlayOutlet } from './overlay-portal';
 
 const FILL = { flex: 1 } as const;
 
@@ -93,6 +94,10 @@ export function OverlayShell({
       >
         {children({ open, onExitComplete: handleExitComplete })}
       </View>
+      {/* Overlay outlet: full-bleed layer above the panel, outside the dialog's
+          focus trap and accessibilityViewIsModal scope. touch-transparent on its
+          empty areas; injected content still receives its own touches. */}
+      <OverlayOutlet />
     </Modal>
   );
 }

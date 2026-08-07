@@ -282,12 +282,11 @@ export function StarRating({
   showValue = false,
   label = 'Rating',
   className,
-  style,
-  testID,
   activeStarColor = DEFAULT_ACTIVE_STAR_COLOR,
   inactiveStarColor,
   round = true,
   renderStar,
+  ...props
 }: StarRatingProps) {
   const reduce = useReducedMotion();
   const themeAccent = useThemeColor('accent');
@@ -342,14 +341,13 @@ export function StarRating({
       <View
         accessibilityRole="image"
         accessibilityLabel={`${label}: ${formatValue(value)} out of ${max}`}
-        style={style}
-        testID={testID}
         className="flex-row items-center"
+        {...props}
       >
         {starValues.map((starValue) => {
           const fillPercent = Math.max(0, Math.min(1, value - (starValue - 1))) * 100;
           return (
-            <View key={starValue} className={pad} testID={testID ? `${testID}-star-${starValue}` : undefined}>
+            <View key={starValue} className={pad} testID={props.testID ? `${props.testID}-star-${starValue}` : undefined}>
               <View className="relative" style={{ width: icon, height: icon }}>
                 <StarSvg size={icon} color={inactiveColor} round={round} />
                 {fillPercent > 0 ? (
@@ -370,9 +368,8 @@ export function StarRating({
       accessibilityLabel={label}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={handleAccessibilityAction}
-      style={style}
-      testID={testID}
       className={cn('flex-row items-center', className)}
+      {...props}
     >
       <View className="flex-row items-center">
         {starValues.map((starValue) => (
@@ -391,7 +388,7 @@ export function StarRating({
             round={round}
             onSelect={handleSelect}
             renderStar={renderStar}
-            testID={testID ? `${testID}-star-${starValue}` : undefined}
+            testID={props.testID ? `${props.testID}-star-${starValue}` : undefined}
           />
         ))}
       </View>

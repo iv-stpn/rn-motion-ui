@@ -90,12 +90,8 @@ function ChoiceChip<T extends string>({ option, selected, testID, onSelect }: Ch
 }
 
 /** Vertical frame for a playground story: controls, then sample rows. */
-export function Playground({ children, className, style }: PlaygroundProps) {
-  return (
-    <View className={cn('min-w-[280px] gap-5', className)} style={style}>
-      {children}
-    </View>
-  );
+export function Playground({ children, className }: PlaygroundProps) {
+  return <View className={cn('min-w-[280px] gap-5', className)}>{children}</View>;
 }
 
 /**
@@ -204,7 +200,7 @@ export function Variants({ children, direction = 'row', align = 'flex-start' }: 
 /** One specimen with a caption underneath. */
 export function Sample({ label, children, className, align = 'flex-start', style }: SampleProps) {
   return (
-    <View className={cn('gap-1.5', className)} style={[{ alignItems: align }, style]}>
+    <View className={cn('gap-1.5', alignClassname[align], className)} style={style}>
       {children}
       {label ? (
         <Text className="text-muted-foreground" size="xs">

@@ -11,6 +11,7 @@ import { PicLine as Images } from 'rn-motion-ui-icons/icons/pic-line';
 import { TableLine as Table } from 'rn-motion-ui-icons/icons/table-line';
 import { cn } from '../../../lib/cn';
 import { ThemedIcon } from '../../icon/themed-icon';
+import type { MenuItemIcon } from '../../menus/MenuItem/menu-item';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemView } from './file-system.types';
 import {
@@ -68,7 +69,7 @@ export function ToolbarIconButton({
   );
 }
 
-export type ViewOption = { icon: typeof LayoutGrid; label: string; value: FileSystemView };
+export type ViewOption = { icon: MenuItemIcon; label: string; value: FileSystemView };
 
 /** The four views, in switcher order. */
 // biome-ignore lint/style/useComponentExportOnlyModules: the switcher's option table belongs with the switcher

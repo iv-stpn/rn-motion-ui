@@ -9,6 +9,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
+import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 /** Floating panel vs. bottom sheet cutoff. */
 const DEFAULT_WIDE_BREAKPOINT: BreakpointValue = 'md';
@@ -254,6 +255,8 @@ export function AdaptiveDropdown({
               ) : null}
             </AnimatePresence>
           </Pressable>
+          {/* Overlay outlet: above the panel, outside the scale animation. */}
+          <OverlayOutlet />
         </Modal>
       ) : (
         <BottomSheet open={open} onOpenChange={close} fullSheet={fullSheet}>

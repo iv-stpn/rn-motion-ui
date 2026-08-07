@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { Pressable, View } from 'react-native';
 import { ArrowUpLine as ArrowUp } from 'rn-motion-ui-icons/icons/arrow-up-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import { SmoothScroll, useSmoothScroll } from './smooth-scroll';
 
@@ -30,6 +31,7 @@ type ScrollTopButtonProps = { onPress?: () => void };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ScrollTopButton({ onPress }: ScrollTopButtonProps) {
   const { scrollTo } = useSmoothScroll();
+  const color = useThemeColor('foreground');
   const handlePress = useCallback(() => {
     scrollTo(0);
     onPress?.();
@@ -42,7 +44,7 @@ function ScrollTopButton({ onPress }: ScrollTopButtonProps) {
       onPress={handlePress}
       className="absolute right-3 bottom-3 h-9 w-9 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa]"
     >
-      <ArrowUp size={16} color="#111111" />
+      <ArrowUp size={16} color={color} />
     </Pressable>
   );
 }

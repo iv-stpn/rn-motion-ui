@@ -12,10 +12,9 @@ import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../..
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { BouncyAccordion, type BouncyAccordionItem } from './bouncy-accordion';
 
-// Icons need an explicit colour (RN icons don't inherit currentColor). The meta
-// args are static, so they use a fixed grey; the playground re-tints the same set
-// from the theme so it tracks light/dark.
-const STATIC_ICON = '#71717a';
+// Icons need an explicit colour (RN icons don't inherit currentColor) and
+// useThemeColor can only run inside a component, so module-level items omit
+// the icon. Each render wrapper below adds themed icons at render time.
 
 const SOURCE = [
   {
@@ -56,11 +55,10 @@ const SOURCE = [
   },
 ] as const;
 
-const ITEMS: BouncyAccordionItem[] = SOURCE.map(({ id, title, description, Icon }) => ({
+const ITEMS: BouncyAccordionItem[] = SOURCE.map(({ id, title, description }) => ({
   id,
   title,
   description,
-  icon: <Icon color={STATIC_ICON} size={16} />,
 }));
 
 const meta = {
@@ -133,6 +131,17 @@ function BouncyAccordionPlayground() {
   );
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+function DefaultDemo(props: React.ComponentProps<typeof BouncyAccordion>) {
+  const iconColor = useThemeColor('muted-foreground');
+  const items = useMemo<BouncyAccordionItem[]>(
+    () =>
+      SOURCE.map(({ id, title, description, Icon }) => ({ id, title, description, icon: <Icon color={iconColor} size={16} /> })),
+    [iconColor],
+  );
+  return <BouncyAccordion {...props} items={items} />;
+}
+
 export default meta;
 
 /** One controlled accordion with a live value readout, plus the non-collapsible
@@ -141,6 +150,7 @@ export const Interactive: Story = { render: () => <BouncyAccordionPlayground /> 
 
 export const Default: Story = {
   name: 'Demo: Expand a row',
+  render: (args) => <DefaultDemo {...args} />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     // A closed row toggles open on press (aria-expanded flips true).

@@ -20,7 +20,7 @@
  *
  * {picker.isOpen ? (
  *   <Modal transparent={true} visible={true} onRequestClose={picker.close}>
- *     <Pressable {...picker.getDismissProps()} style={StyleSheet.absoluteFill} />
+ *     <Pressable {...picker.getDismissProps()} />
  *     <View {...picker.getPanelProps()}>
  *       <CalendarGrid calendar={picker.calendar} />
  *       <Pressable {...picker.getClearProps()}><Text>Clear</Text></Pressable>

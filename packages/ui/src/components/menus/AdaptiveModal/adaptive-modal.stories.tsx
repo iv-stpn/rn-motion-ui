@@ -5,6 +5,7 @@ import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
+import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
 import { AdaptiveModal, type LargeScreenMode, type SmallScreenMode, type WidePanelSize } from './adaptive-modal';
@@ -30,13 +31,6 @@ const TITLE = 'Settings';
 const SUBTITLE = 'Manage your preferences';
 const CUSTOM_LAYOUT_TITLE = 'Custom layout';
 const CLOSED_NOTE = 'Closed';
-const SIZE_NOTE = 'Panel size, elevation and the wide layout only apply while "Wide screen" is on.';
-
-const SCREENS = [
-  { value: 'wide', label: 'Wide screen' },
-  { value: 'narrow', label: 'Narrow screen' },
-] as const;
-type ScreenKey = (typeof SCREENS)[number]['value'];
 
 const LARGE_MODES = [
   { value: 'modal', label: 'Centered modal' },
@@ -104,7 +98,7 @@ function CustomBody({ onClose }: CustomBodyProps) {
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ModalPlayground() {
-  const [screenKey, setScreenKey] = useState<ScreenKey>('wide');
+  const isAutoWide = useBreakpointAtLeast('sm');
   const [largeMode, setLargeMode] = useState<LargeScreenMode>('modal');
   const [smallMode, setSmallMode] = useState<SmallScreenMode>('bottomSheet');
   const [sizeKey, setSizeKey] = useState<PanelSizeKey>('auto');
@@ -120,12 +114,11 @@ function ModalPlayground() {
 
   const handleOpen = useCallback(() => setOpen(true), []);
   const handleClose = useCallback(() => setOpen(false), []);
-  const openNote = open ? `Open — ${screenKey} / ${largeMode} / ${smallMode}` : CLOSED_NOTE;
+  const openNote = open ? `Open — ${largeMode} / ${smallMode}` : CLOSED_NOTE;
 
   return (
     <Playground className="min-w-[340px]">
       <ControlCard title="Modal panel">
-        <Choice label="Screen" onChange={setScreenKey} options={SCREENS} value={screenKey} />
         <Choice label="Wide layout" onChange={setLargeMode} options={LARGE_MODES} value={largeMode} />
         <Choice label="Narrow layout" onChange={setSmallMode} options={SMALL_MODES} value={smallMode} />
         <Choice label="Panel size" onChange={setSizeKey} options={PANEL_SIZE_OPTIONS} value={sizeKey} />
@@ -152,14 +145,12 @@ function ModalPlayground() {
       />
       <Note testID="story-open">{openNote}</Note>
 
-      <Note>{SIZE_NOTE}</Note>
-
       <AdaptiveModal
         closeOnOverlayClick={closeOnOverlay}
         compact={compact}
         customLayout={customLayout}
         elevation={ELEVATIONS[elevationKey]}
-        isWideScreen={screenKey === 'wide'}
+        isWideScreen={isAutoWide}
         largeScreenMode={largeMode}
         onOpenChange={setOpen}
         open={open}

@@ -48,15 +48,15 @@ export type TextRollingProps = {
  * label cycling through states). For a character-by-character cascade see
  * `TextCascade`; for digit-by-digit rolling numbers see `TextNumberTicker`.
  */
-export function TextRolling({ text, direction = 'forward', className, style, accessibilityLabel, testID }: TextRollingProps) {
+export function TextRolling({ text, direction = 'forward', className, accessibilityLabel, ...props }: TextRollingProps) {
   const reduce = useReducedMotion();
   const pageVisible = usePageVisible();
   const [rollHeight, setRollHeight] = useState(0);
 
   const onLayout = useCallback(
     (e: LayoutChangeEvent) => {
-      const h = e.nativeEvent.layout.height;
-      if (h && h !== rollHeight) setRollHeight(h);
+      const height = e.nativeEvent.layout.height;
+      if (height && height !== rollHeight) setRollHeight(height);
     },
     [rollHeight],
   );
@@ -65,7 +65,7 @@ export function TextRolling({ text, direction = 'forward', className, style, acc
   // would queue then replay all queued swaps on return — settled label avoids that.
   if (reduce || !pageVisible)
     return (
-      <View testID={testID} accessibilityRole="text" accessibilityLabel={accessibilityLabel ?? text} style={style}>
+      <View accessibilityRole="text" accessibilityLabel={accessibilityLabel ?? text} {...props}>
         <Text className={className}>{text}</Text>
       </View>
     );
@@ -77,12 +77,7 @@ export function TextRolling({ text, direction = 'forward', className, style, acc
   const exitY = direction === 'backward' ? roll : -roll;
 
   return (
-    <View
-      testID={testID}
-      accessibilityRole="text"
-      accessibilityLabel={accessibilityLabel ?? text}
-      style={[{ overflow: 'hidden' }, style]}
-    >
+    <View accessibilityRole="text" accessibilityLabel={accessibilityLabel ?? text} className="overflow-hidden" {...props}>
       {/* Hidden sizer keeps the slot at the correct line height. Always renders
           the current text so the clip region tracks text size changes. */}
       <Text className={cn(className, 'opacity-0')} onLayout={onLayout} importantForAccessibility="no">

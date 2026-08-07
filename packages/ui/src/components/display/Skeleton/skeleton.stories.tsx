@@ -18,7 +18,6 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const LINE_WIDTH = 240;
 const SHAPES = ['rounded', 'circle', 'square'] as const satisfies readonly SkeletonShape[];
 const SPEEDS = [
   { value: '1', label: '1s' },
@@ -35,7 +34,7 @@ function SkeletonPlayground(args: ComponentProps<typeof Skeleton>) {
   const speed = Number(speedKey);
 
   return (
-    <Playground style={{ width: LINE_WIDTH }}>
+    <Playground className="w-60">
       <ControlCard title="Options">
         <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
         <Choice label="Pulse" onChange={setSpeedKey} options={SPEEDS} value={speedKey} />

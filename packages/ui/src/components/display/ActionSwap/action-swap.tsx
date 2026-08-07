@@ -126,9 +126,8 @@ export function ActionSwapText({
   value,
   children,
   animation = 'blur',
-  style,
   textClassName = 'text-foreground',
-  testID,
+  ...props
 }: ActionSwapTextProps) {
   const reduce = useReducedMotion();
   const pageVisible = usePageVisible();
@@ -158,14 +157,10 @@ export function ActionSwapText({
   // the settled label instead lands background swaps instantly, and the swap
   // picks up from the current value once the page is visible again.
   if (reduce || !pageVisible)
-    return (
-      <View testID={testID} style={style}>
-        {label === null ? children : <Text className={textClassName}>{label}</Text>}
-      </View>
-    );
+    return <View {...props}>{label === null ? children : <Text className={textClassName}>{label}</Text>}</View>;
 
   return (
-    <View testID={testID} style={[{ overflow: 'hidden' }, style]}>
+    <View className="overflow-hidden" {...props}>
       {/* Hidden sizer establishes the slot width/height for the current label.
           String labels size a Text; arbitrary nodes size a wrapping View. */}
       {label === null ? (

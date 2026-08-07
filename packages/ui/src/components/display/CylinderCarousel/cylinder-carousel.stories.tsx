@@ -44,7 +44,6 @@ type Story = StoryObj<typeof meta>;
 const DRAG_HINT = 'Drag the ring — or flick it and let the momentum settle.';
 /** The default `accessibilityValueText` shape: "3 of 12". */
 const POSITION_TEXT = /^\d+ of \d+$/;
-const STAGE_WIDTH = 480;
 const STAGE_HEIGHT = 200;
 
 const VARIANTS = ['concave', 'convex'] as const satisfies readonly CylinderCarouselVariant[];
@@ -85,7 +84,7 @@ function CarouselPlayground() {
   const front = SLIDES[index % SLIDES.length]?.label ?? '';
 
   return (
-    <Playground style={{ width: STAGE_WIDTH }}>
+    <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Choice label="Item size" onChange={setItemSizeKey} options={ITEM_SIZES} value={itemSizeKey} />
@@ -115,7 +114,7 @@ function CarouselPlayground() {
         <Variants align="stretch" direction="column">
           {VARIANTS.map((option) => (
             <Sample key={option} label={option}>
-              <CylinderCarousel height={160} itemSize={90} minScale={0.5} style={{ width: STAGE_WIDTH }} variant={option}>
+              <CylinderCarousel height={160} itemSize={90} minScale={0.5} className="w-120" variant={option}>
                 {balls()}
               </CylinderCarousel>
             </Sample>

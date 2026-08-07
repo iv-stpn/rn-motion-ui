@@ -126,7 +126,7 @@ export function TriggerButton({
   glossyVariant = 'neutral',
   className,
 }: TriggerButtonProps) {
-  const colors = useThemeColors();
+  const _colors = useThemeColors();
 
   if (kind === 'elevated')
     return (
@@ -156,7 +156,7 @@ export function TriggerButton({
         )}
         onPress={onPress}
       >
-        <Text size="sm" weight="medium" style={{ color: colors.primary }}>
+        <Text size="sm" weight="medium" className="text-primary">
           {label}
         </Text>
       </Pressable>

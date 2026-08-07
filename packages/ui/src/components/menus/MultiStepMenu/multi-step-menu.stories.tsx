@@ -186,13 +186,6 @@ const DEFAULT_MENU_RENDERER = makeMenuRenderer(false);
 
 // ── Playground ─────────────────────────────────────────────────────────────
 
-const LAYOUTS = [
-  { value: 'auto', label: 'Auto (window)' },
-  { value: 'wide', label: 'Wide' },
-  { value: 'small', label: 'Small' },
-] as const;
-type LayoutKey = (typeof LAYOUTS)[number]['value'];
-
 const START_OPTIONS = [
   { value: 'none', label: 'Placeholder' },
   { value: 'account', label: 'Account' },
@@ -245,7 +238,6 @@ function MenuPlayground() {
   // Only the wide/narrow answer matters here, so this subscribes to the tier
   // rather than the width — dragging the viewport re-renders at the edge only.
   const isAutoWide = useBreakpointAtLeast('sm');
-  const [layout, setLayout] = useState<LayoutKey>('auto');
   const [startKey, setStartKey] = useState<StartKey>('account');
   const [withFooter, setWithFooter] = useState(true);
   const [withPlaceholder, setWithPlaceholder] = useState(true);
@@ -255,7 +247,7 @@ function MenuPlayground() {
   const menuRef = useRef<MultiStepMenuHandle | null>(null);
   const trigger = useTriggerState();
 
-  const isWideScreen = layout === 'auto' ? isAutoWide : layout === 'wide';
+  const isWideScreen = isAutoWide;
   const handleOpen = useCallback(() => setVisible(true), []);
   const handleClose = useCallback(() => setVisible(false), []);
   const handleAfterClose = useCallback(() => menuRef.current?.reset(), []);
@@ -270,7 +262,6 @@ function MenuPlayground() {
   return (
     <Playground>
       <ControlCard title="Options">
-        <Choice label="Layout" onChange={setLayout} options={LAYOUTS} value={layout} />
         <Choice label="Initial selection" onChange={setStartKey} options={START_OPTIONS} value={startKey} />
         <Toggle label="Sidebar footer" onChange={setWithFooter} value={withFooter} />
         <Toggle label="Wide placeholder" onChange={setWithPlaceholder} value={withPlaceholder} />

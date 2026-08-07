@@ -53,7 +53,7 @@ function CheckboxCardPlayground() {
   const [disabled, setDisabled] = useState(false);
 
   return (
-    <Playground style={{ width: ROW_WIDTH }}>
+    <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />

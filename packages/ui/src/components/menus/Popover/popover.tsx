@@ -7,6 +7,7 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
+import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 export type PopoverSide = 'top' | 'bottom';
 export type PopoverAlign = 'start' | 'center' | 'end';
@@ -223,6 +224,8 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
           </View>
         ) : null}
       </AnimatePresence>
+      {/* Overlay outlet: above the panel, outside the scale animation. */}
+      <OverlayOutlet />
     </Modal>
   );
 }

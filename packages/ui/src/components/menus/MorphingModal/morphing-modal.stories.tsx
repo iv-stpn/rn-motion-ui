@@ -11,6 +11,7 @@ import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line'
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
+import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
 import { MorphingModal } from './morphing-modal';
@@ -63,6 +64,7 @@ type CloseButtonProps = { label: string; onPress: () => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function CloseButton({ label, onPress }: CloseButtonProps) {
+  const mutedForeground = useThemeColor('muted-foreground');
   return (
     <Pressable
       accessibilityRole="button"
@@ -70,7 +72,7 @@ function CloseButton({ label, onPress }: CloseButtonProps) {
       onPress={onPress}
       className="h-7 w-7 items-center justify-center rounded-full"
     >
-      <X size={14} color="#737373" />
+      <X size={14} color={mutedForeground} />
     </Pressable>
   );
 }
@@ -120,7 +122,7 @@ function OptionsView({ onPrivateKey, onRecovery, onClose }: OptionsViewProps) {
       <View className="gap-2">
         <Row icon={<Lock size={16} />} label={PRIVATE_KEY_LABEL} onPress={onPrivateKey} />
         <Row icon={<ScrollText size={16} />} label={RECOVERY_LABEL} onPress={onRecovery} />
-        <Row icon={<Trash2 size={16} />} label="Remove Wallet" danger={true} onPress={onClose} />
+        <Row icon={<Trash2 color="danger" size={16} />} label="Remove Wallet" danger={true} onPress={onClose} />
       </View>
     </View>
   );
@@ -130,26 +132,29 @@ type PrivateKeyViewProps = { onBack: () => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function PrivateKeyView({ onBack }: PrivateKeyViewProps) {
+  const foreground = useThemeColor('foreground');
+  const mutedForeground = useThemeColor('muted-foreground');
+  const primaryForeground = useThemeColor('primary-foreground');
   return (
     <View>
       <View className="mb-3 flex-row items-start justify-between">
-        <Lock size={20} color="#111111" />
+        <Lock size={20} color={foreground} />
         <CloseButton label={BACK_LABEL} onPress={onBack} />
       </View>
       <Text className="font-semibold text-foreground text-xl">{PRIVATE_KEY_TITLE}</Text>
       <Text className="mt-2 text-muted-foreground text-sm">{PRIVATE_KEY_DESC}</Text>
       <View className="my-4 h-px bg-border" />
       <View className="gap-2.5">
-        <ChecklistItem icon={<ShieldCheck size={16} color="#737373" />} text="Keep your private key safe" />
-        <ChecklistItem icon={<ScrollText size={16} color="#737373" />} text="Don't share it with anyone else" />
-        <ChecklistItem icon={<Ban size={16} color="#737373" />} text="If you lose it, we can't recover it" />
+        <ChecklistItem icon={<ShieldCheck size={16} color={mutedForeground} />} text="Keep your private key safe" />
+        <ChecklistItem icon={<ScrollText size={16} color={mutedForeground} />} text="Don't share it with anyone else" />
+        <ChecklistItem icon={<Ban size={16} color={mutedForeground} />} text="If you lose it, we can't recover it" />
       </View>
       <View className="mt-5 flex-row gap-2">
         <Button variant="secondary" onPress={onBack} className="flex-1">
           {CANCEL_LABEL}
         </Button>
         <Button onPress={onBack} className="flex-1">
-          <ScanFace size={16} color="#fafafa" />
+          <ScanFace size={16} color={primaryForeground} />
           {REVEAL_LABEL}
         </Button>
       </View>
@@ -161,10 +166,11 @@ type RecoveryViewProps = { onBack: () => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function RecoveryView({ onBack }: RecoveryViewProps) {
+  const foreground = useThemeColor('foreground');
   return (
     <View>
       <View className="mb-3 flex-row items-start justify-between">
-        <ScrollText size={20} color="#111111" />
+        <ScrollText size={20} color={foreground} />
         <CloseButton label={BACK_LABEL} onPress={onBack} />
       </View>
       <Text className="font-semibold text-foreground text-xl">{RECOVERY_TITLE}</Text>

@@ -4,62 +4,19 @@
 // the tablet width the switcher becomes this icon-only dropdown, the same shape
 // the web original's <Select> took.
 
-import { type ReactNode, useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable } from 'react-native';
 import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
-import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import type { TriggerRenderProps } from '../../menus/AdaptiveDropdown/adaptive-dropdown';
-import { AdaptiveDropdown } from '../../menus/AdaptiveDropdown/adaptive-dropdown';
-import { Text } from '../../typography/Text/text';
+import { AdaptiveDropdown, type TriggerRenderProps } from '../../menus/AdaptiveDropdown/adaptive-dropdown';
+import { Menu, type MenuEntry } from '../../menus/Menu/menu';
 import type { FileSystemView } from './file-system.types';
 import type { ViewOption } from './file-system-toolbar-parts';
 import { VIEW_OPTIONS } from './file-system-toolbar-parts';
 
 const MENU_TITLE = 'View';
 const MENU_WIDTH = 180;
-
-type MenuRowProps = { label: string; onPress: () => void; leading?: ReactNode; trailing?: ReactNode; isSelected?: boolean };
-
-function MenuRow({ isSelected, label, leading, onPress, trailing }: MenuRowProps) {
-  const [hovered, setHovered] = useState(false);
-  const handleHoverIn = useCallback(() => setHovered(true), []);
-  const handleHoverOut = useCallback(() => setHovered(false), []);
-  return (
-    <Pressable
-      accessibilityRole="menuitem"
-      accessibilityState={{ selected: isSelected }}
-      onHoverIn={handleHoverIn}
-      onHoverOut={handleHoverOut}
-      onPress={onPress}
-      className={cn('h-9 flex-row items-center gap-2 rounded-md px-2', hovered && 'bg-surface-hover')}
-    >
-      {leading}
-      <Text size="sm" className="flex-1">
-        {label}
-      </Text>
-      {trailing}
-    </Pressable>
-  );
-}
-
-type ViewSelectRowProps = { isSelected: boolean; onSelect: (view: FileSystemView) => void; option: ViewOption };
-
-function ViewSelectRow({ isSelected, onSelect, option }: ViewSelectRowProps) {
-  const colors = useThemeColors();
-  const handlePress = useCallback(() => onSelect(option.value), [onSelect, option.value]);
-  const Icon = option.icon;
-  return (
-    <MenuRow
-      isSelected={isSelected}
-      label={option.label}
-      leading={<Icon color={colors['muted-foreground']} size={16} />}
-      onPress={handlePress}
-      trailing={isSelected ? <Check color={colors.foreground} size={14} /> : null}
-    />
-  );
-}
 
 type ViewSelectTriggerProps = { option: ViewOption | undefined; toggle: () => void };
 
@@ -84,15 +41,22 @@ export type FileSystemViewSelectProps = { onViewChange: (view: FileSystemView) =
 /** Icon-only view dropdown, the narrow-toolbar stand-in for the tab switcher. */
 export function FileSystemViewSelect({ onViewChange, view }: FileSystemViewSelectProps) {
   const [open, setOpen] = useState(false);
+  const colors = useThemeColors();
   const activeOption = VIEW_OPTIONS.find((option) => option.value === view);
 
-  const handleSelect = useCallback(
-    (nextView: FileSystemView) => {
-      onViewChange(nextView);
-      setOpen(false);
-    },
-    [onViewChange],
+  const entries = useMemo<MenuEntry[]>(
+    () =>
+      VIEW_OPTIONS.map((option) => ({
+        id: option.value,
+        label: option.label,
+        icon: option.icon,
+        active: option.value === view,
+        onSelect: () => onViewChange(option.value),
+        trailing: option.value === view ? <Check color={colors.foreground} size={14} /> : undefined,
+      })),
+    [view, colors.foreground, onViewChange],
   );
+
   const renderTrigger = useCallback(
     ({ toggle }: TriggerRenderProps) => <ViewSelectTrigger option={activeOption} toggle={toggle} />,
     [activeOption],
@@ -100,9 +64,7 @@ export function FileSystemViewSelect({ onViewChange, view }: FileSystemViewSelec
 
   return (
     <AdaptiveDropdown onOpenChange={setOpen} open={open} title={MENU_TITLE} trigger={renderTrigger} width={MENU_WIDTH}>
-      {VIEW_OPTIONS.map((option) => (
-        <ViewSelectRow isSelected={option.value === view} key={option.value} onSelect={handleSelect} option={option} />
-      ))}
+      {({ close }) => <Menu entries={entries} onClose={close} />}
     </AdaptiveDropdown>
   );
 }

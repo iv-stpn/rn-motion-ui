@@ -15,6 +15,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
 import { FullSheet } from '../FullSheet/full-sheet';
+import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 /** Narrow vs. wide layout cutoff — matches FullSheet's default. */
 const DEFAULT_WIDE_BREAKPOINT: BreakpointValue = 'sm';
@@ -342,6 +343,8 @@ export function AdaptiveModal({
             </MotiView>
           ) : null}
         </AnimatePresence>
+        {/* Overlay outlet: above the panel, outside the scrim and panel animations. */}
+        <OverlayOutlet />
       </Modal>
     );
   }

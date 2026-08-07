@@ -246,11 +246,15 @@ const NEUTRAL_DARK: GlossySlots = {
 
 // ── hand-authored recipes: inverse ──────────────────────────────────────────
 //
-// The high-contrast slab, and the one variant deliberately *not* `primary`:
-// `primary` is the consumer's brand token, designed to be overridden, so a key
-// built on it can't promise contrast. `inverse` is built on `foreground` over
-// `surface` — the two colours a theme guarantees read against each other — so it
-// stays the loudest key in the set no matter what a consumer retints.
+// The "other scheme" key: on a light page it renders as a dark-theme key (light
+// slab, white rim, dark label), and on a dark page it renders as a light-theme
+// key (dark slab, black rim, light label). The two tables below define what an
+// inverse key looks like in each scheme; `resolveFace` and `glossyRecipe` select
+// the *opposite* one so the key always looks like it belongs to the other theme.
+//
+// The face is `surface-1` (the page colour) and the label is `foreground` — the
+// slab is the page punched through to the opposite theme's foreground, which is
+// what makes it the loudest key in the set no matter what a consumer retints.
 //
 // Both edges are inherited from the neutral root in the web source rather than
 // re-declared, so they're spread in here for the same reason.
@@ -440,12 +444,17 @@ function resolveFace(variant: GlossyVariant, color: string | undefined, colors: 
       return { paint: glass, base: compositeOver(glass, page), content: colors.foreground, kind: 'neutral' };
     }
     case 'inverse': {
-      // `foreground` over `surface-1`, both straight from the theme, which is
-      // what makes this the one key whose contrast a retint can't break. The
-      // label is the *page* rather than `surface`, so it reads as a hole punched
-      // through the slab to the backdrop behind it.
-      const paint = colors.foreground;
-      return { paint, base: paint, content: page, kind: 'inverse' };
+      // Inverse renders the key as it would appear in the *opposite* scheme: on a
+      // light page it shows the dark-theme key (near-white slab, dark label,
+      // white-rim lighting), and on a dark page it shows the light-theme key
+      // (near-black slab, light label, black-rim lighting).
+      //
+      // `surface-1` on the current page approximates `foreground` of the opposite
+      // scheme — near-white on a light page (≈ dark foreground), the dark surface
+      // on a dark page (≈ light foreground). Similarly `foreground` of the current
+      // page approximates `surface-1` of the opposite scheme.
+      const paint = page;
+      return { paint, base: paint, content: colors.foreground, kind: 'inverse' };
     }
     case 'gray':
       return { paint: GRAY_FILL, base: GRAY_FILL, content: GRAY_CONTENT, kind: 'derived' };
@@ -459,10 +468,11 @@ function resolveFace(variant: GlossyVariant, color: string | undefined, colors: 
 /** The whole slot table for a face: hand-authored pair, or derived from the colour. */
 function glossyRecipe(kind: FaceKind, base: string, pageDark: boolean): GlossySlots {
   if (kind === 'neutral') return pageDark ? NEUTRAL_DARK : NEUTRAL_LIGHT;
-  // `inverse` branches on the page alone — its face already flipped with it, and
-  // running it through the derived cutoffs would read a near-black light-theme
-  // face as "pinned against the page" and flip it straight back.
-  if (kind === 'inverse') return pageDark ? INVERSE_DARK : INVERSE_LIGHT;
+  // `inverse` uses the *opposite* page's lighting — on a light page it shows the
+  // dark-theme key, on a dark page it shows the light-theme key. The derived
+  // cutoffs would misread the face and flip it straight back, so it's handled
+  // here directly with the page branch reversed.
+  if (kind === 'inverse') return pageDark ? INVERSE_LIGHT : INVERSE_DARK;
   return derivedRecipe(base, pageDark);
 }
 

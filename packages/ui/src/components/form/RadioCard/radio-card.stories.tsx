@@ -15,8 +15,6 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const ROW_WIDTH = 480;
-const NARROW_WIDTH = 240;
 const MONTHLY_TITLE = 'Monthly';
 const MONTHLY_SUB = '$12/mo';
 const YEARLY_TITLE = 'Yearly';
@@ -36,7 +34,7 @@ const ORIENTATIONS = ['horizontal', 'vertical'] as const satisfies readonly Orie
 function RadioCardGroupDemo() {
   const [plan, setPlan] = useState('monthly');
   return (
-    <RadioCardGroup onValueChange={setPlan} style={{ width: ROW_WIDTH }} value={plan}>
+    <RadioCardGroup onValueChange={setPlan} className="w-120" value={plan}>
       <RadioCard numeric={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} value="monthly" />
       <RadioCard badge={YEARLY_BADGE} numeric={true} subtitle={YEARLY_SUB} title={YEARLY_TITLE} value="yearly" />
     </RadioCardGroup>
@@ -52,7 +50,7 @@ function RadioCardPlayground() {
   const [numeric, setNumeric] = useState(true);
 
   return (
-    <Playground style={{ width: ROW_WIDTH }}>
+    <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />
@@ -98,7 +96,7 @@ function RadioCardPlayground() {
       </Section>
 
       <Section title="With custom content">
-        <View style={{ width: NARROW_WIDTH }}>
+        <View className="w-60">
           <RadioCard onPress={handlePress} selected={false} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE}>
             <Text className="text-muted-foreground text-xs">{SEAT_TEXT}</Text>
           </RadioCard>
@@ -117,7 +115,7 @@ export const Interactive: Story = { render: () => <RadioCardPlayground /> };
 export const Default: Story = {
   name: 'Demo: Select a card',
   render: () => (
-    <View className="flex-row gap-3" style={{ width: ROW_WIDTH }}>
+    <View className="w-120 flex-row gap-3">
       <RadioCard numeric={true} onPress={handlePress} selected={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} />
       <RadioCard
         badge={YEARLY_BADGE}

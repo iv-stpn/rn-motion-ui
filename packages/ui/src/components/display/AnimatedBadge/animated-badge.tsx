@@ -33,6 +33,7 @@ const PULSE_OPACITY_FROM = 0.08;
 const PULSE_OPACITY_TO = 0.16;
 const PULSE_SCALE_FROM = 0.94;
 const PULSE_SCALE_TO = 1.08;
+
 const PULSE_STYLE = { position: 'absolute', inset: 0, borderRadius: 999, pointerEvents: 'none' } as const;
 
 export type AnimatedBadgeStatus = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'loading';

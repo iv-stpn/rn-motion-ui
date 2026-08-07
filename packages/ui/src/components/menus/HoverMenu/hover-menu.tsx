@@ -10,6 +10,7 @@ import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../l
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
+import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 const DEFAULT_WIDTH = 200;
 const DEFAULT_OFFSET = 4;
@@ -477,6 +478,8 @@ export function HoverMenu({
         <Modal visible={rendered} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={close}>
           <Pressable onPress={close} style={OVERLAY_STYLE} />
           <AnimatePresence onExitComplete={onExitComplete}>{panel}</AnimatePresence>
+          {/* Overlay outlet: native path only — web uses fixed-position in one document. */}
+          <OverlayOutlet />
         </Modal>
       )}
     </>

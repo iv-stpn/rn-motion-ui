@@ -114,8 +114,7 @@ function BouncyAccordionRow({
           borderBottomRightRadius: bottomRadius,
         }}
         transition={reduce ? { type: 'timing', duration: 0 } : ROW_TRANSITION}
-        className="overflow-hidden bg-surface-3"
-        style={{ opacity: item.disabled ? 0.5 : 1 }}
+        className={cn('overflow-hidden bg-surface-3', item.disabled ? 'opacity-50' : 'opacity-100')}
       >
         <Pressable
           accessibilityRole="button"

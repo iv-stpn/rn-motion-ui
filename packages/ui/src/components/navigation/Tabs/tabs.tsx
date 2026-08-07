@@ -195,11 +195,7 @@ function TabsSlidePanel({ children, direction, exiting, panelWidth, transition, 
       aria-hidden={exiting}
       accessibilityElementsHidden={exiting}
       importantForAccessibility={exiting ? 'no-hide-descendants' : 'auto'}
-      style={{
-        marginTop: 16,
-        overflow: exiting || enterClip ? 'hidden' : 'visible',
-        ...(pinned ? { position: 'absolute' as const, ...pinned, marginTop: 0, pointerEvents: 'none' as const } : null),
-      }}
+      className={cn(pinned ? 'pointer-events-none absolute mt-0' : 'mt-4', exiting || (enterClip && 'overflow-hidden'))}
     >
       <MotiView
         // Only `animate` moves this panel out: the same MotiView plays both halves,
@@ -407,7 +403,10 @@ export function TabsList({ children, testID }: TabsListProps) {
             height: variant === 'underline' ? 2 : active.height,
           }}
           transition={!hasPositioned.current || reduce ? TIMING_INSTANT : indicatorSpring}
-          className={cn(variant === 'underline' ? 'bg-primary' : 'bg-surface-3', 'pointer-events-none absolute top-0 left-0')}
+          className={cn(
+            variant === 'underline' ? 'bg-primary' : 'bg-surface-3 dark:bg-black',
+            'pointer-events-none absolute top-0 left-0',
+          )}
           testID={testID ? `${testID}-indicator` : undefined}
           style={{ borderRadius: indicatorBorderRadius }}
         />

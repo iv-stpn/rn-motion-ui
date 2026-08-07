@@ -153,13 +153,7 @@ function Bars({ size, speed, color, reduce }: PartProps) {
           key={i}
           from={{ height: minH }}
           animate={reduce ? { height: size * 0.6 } : { height: size }}
-          transition={{
-            type: 'timing',
-            duration: speed * 500,
-            loop: true,
-            repeatReverse: true,
-            delay: i * speed * 120,
-          }}
+          transition={{ type: 'timing', duration: speed * 500, loop: true, repeatReverse: true, delay: i * speed * 120 }}
           style={{ width: bar, borderRadius: bar / 2, backgroundColor: color }}
         />
       ))}
@@ -177,6 +171,7 @@ function DotMatrix({ size, speed, color, reduce }: PartProps) {
       {cells.map((idx) => {
         const x = idx % n;
         const y = Math.floor(idx / n);
+
         // Diagonal wave: cells light in order of their distance from the corner.
         const delay = ((x + y) / (2 * (n - 1))) * speed * 1000;
         return (

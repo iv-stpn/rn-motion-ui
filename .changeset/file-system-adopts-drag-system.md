@@ -1,5 +1,5 @@
 ---
-"rn-motion-ui": minor
+"rn-motion-ui": major
 ---
 
 **FileSystem**: drag and drop now runs on `Draggable`/`Dragzone`/`MultiDragManager`.

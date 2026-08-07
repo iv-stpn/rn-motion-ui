@@ -1,5 +1,5 @@
 ---
-"rn-motion-ui-icons": minor
+"rn-motion-ui-icons": major
 ---
 
 **New package**: `rn-motion-ui-icons` — the MingCute set, one subpath per icon.

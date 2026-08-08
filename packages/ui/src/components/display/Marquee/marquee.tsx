@@ -90,6 +90,7 @@ export function Marquee({
     const distance = size + gap;
     const from = reverse ? -distance : 0;
     const to = reverse ? 0 : -distance;
+
     offset.value = from;
     offset.value = withRepeat(withTiming(to, { duration: speed * 1000, easing: Easing.linear }), -1, false);
     return () => cancelAnimation(offset);
@@ -108,9 +109,9 @@ export function Marquee({
   );
 
   return (
-    <View testID={testID} style={[{ overflow: 'hidden' }, style]} className={cn('relative', className)}>
-      <Animated.View style={[{ flexDirection: vertical ? 'column' : 'row', gap }, animatedStyle]}>
-        <View onLayout={onLayout} style={{ flexDirection: vertical ? 'column' : 'row', gap }}>
+    <View testID={testID} style={style} className={cn('relative overflow-hidden', className)}>
+      <Animated.View style={[{ gap }, animatedStyle]} className={cn(vertical ? 'flex-col' : 'flex-row')}>
+        <View onLayout={onLayout} style={{ gap }} className={cn(vertical ? 'flex-col' : 'flex-row')}>
           {items.map((child, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static duplicated slots, order never mutates
             <View key={i}>{child}</View>
@@ -125,7 +126,8 @@ export function Marquee({
           aria-hidden={true}
           accessibilityElementsHidden={true}
           importantForAccessibility="no-hide-descendants"
-          style={{ flexDirection: vertical ? 'column' : 'row', gap }}
+          className={cn(vertical ? 'flex-col' : 'flex-row')}
+          style={{ gap }}
         >
           {items.map((child, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static duplicated slots, order never mutates

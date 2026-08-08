@@ -9,7 +9,7 @@ import { HeaderCell } from './table-header';
 import { LoadingMoreFooter, LoadMoreFooter, PaginationFooter, SkeletonFooter, TableCard } from './table-parts';
 import { SkeletonCellPulse, TableRow } from './table-row';
 import type { RowEntry, TableProps } from './table-types';
-import { CHECKBOX_COL_WIDTH } from './table-types';
+import { CHECKBOX_COLUMN_WIDTH } from './table-utils';
 import { useTable } from './use-table';
 
 const PAGINATION_FOOTER_HEIGHT = 52; // footer paddingVertical (10×2) + button height (32)
@@ -109,7 +109,7 @@ export function Table<T>(props: TableProps<T>) {
   // claims pointer events for potential scrolling), which breaks long-press menus
   // and shifts the coordinate space for the column-reorder drop indicator.
   const totalContentWidth = useMemo(() => {
-    let w = selectable ? CHECKBOX_COL_WIDTH : 0;
+    let w = selectable ? CHECKBOX_COLUMN_WIDTH : 0;
     for (const col of orderedColumns) w += colWidths[col.key] ?? 0;
     return w;
   }, [orderedColumns, colWidths, selectable]);
@@ -191,7 +191,9 @@ export function Table<T>(props: TableProps<T>) {
         {Array.from({ length: count }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows, fixed length, never reordered
           <View key={i} className="relative flex-row overflow-hidden border-border border-b" style={{ height: rowHeight }}>
-            {selectable ? <View className="justify-center overflow-hidden px-4" style={{ width: CHECKBOX_COL_WIDTH }} /> : null}
+            {selectable ? (
+              <View className="justify-center overflow-hidden px-4" style={{ width: CHECKBOX_COLUMN_WIDTH }} />
+            ) : null}
             {orderedColumns.map((col) => (
               <SkeletonCellPulse
                 key={col.key}
@@ -359,7 +361,7 @@ export function Table<T>(props: TableProps<T>) {
         {selectable ? (
           <View
             className="relative flex-col items-center justify-center overflow-hidden px-4"
-            style={{ width: CHECKBOX_COL_WIDTH }}
+            style={{ width: CHECKBOX_COLUMN_WIDTH }}
           >
             <Checkbox
               checked={allSelected}

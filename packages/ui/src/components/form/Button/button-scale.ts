@@ -77,8 +77,7 @@ export function buttonRadius(shape: ButtonShape, size: ButtonSize): number {
  * through a per-variant class, GlossyButton inline from the face colour), and a
  * shared colour class here would fight those.
  *
- * ElevatedButton is the one opt-out — AlignUI pins its chips to a 14px
- * `text-label-sm` at every size, so it spells its own label class.
+ * ElevatedButton is the one opt-out.
  *
  * Static literals so the Tailwind/uniwind scanner picks them up.
  */

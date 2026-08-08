@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHECKBOX_COL_WIDTH } from '../table-types';
-import { columnBoundaries, dropIndexAt, dropIndicatorX } from '../table-utils';
+import { CHECKBOX_COLUMN_WIDTH, columnBoundaries, dropIndexAt, dropIndicatorX } from '../table-utils';
 
 type Col = { key: string; header: string };
 
@@ -27,8 +26,8 @@ describe('columnBoundaries', () => {
   });
 
   it('offsets everything by the checkbox column when selectable', () => {
-    const w = CHECKBOX_COL_WIDTH;
-    expect(edges(true)).toEqual([w, w + 100, w + 300, w + 400]);
+    const width = CHECKBOX_COLUMN_WIDTH;
+    expect(edges(true)).toEqual([width, width + 100, width + 300, width + 400]);
   });
 
   it('treats an unmeasured column as zero-width rather than NaN', () => {
@@ -72,12 +71,12 @@ describe('dropIndexAt', () => {
   });
 
   it('offsets by the checkbox column in both directions', () => {
-    const w = CHECKBOX_COL_WIDTH;
+    const width = CHECKBOX_COLUMN_WIDTH;
     // First column now spans [w, w+100); its midpoint is w+50.
-    expect(indexAt(w + 49, false, true)).toBe(0);
-    expect(indexAt(w + 51, false, true)).toBe(1);
-    expect(indexAt(WIDTH - (w + 49), true, true)).toBe(0);
-    expect(indexAt(WIDTH - (w + 51), true, true)).toBe(1);
+    expect(indexAt(width + 49, false, true)).toBe(0);
+    expect(indexAt(width + 51, false, true)).toBe(1);
+    expect(indexAt(WIDTH - (width + 49), true, true)).toBe(0);
+    expect(indexAt(WIDTH - (width + 51), true, true)).toBe(1);
   });
 
   it('clamps rather than throwing when the pointer leaves the container', () => {

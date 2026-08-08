@@ -125,8 +125,8 @@ export function Button({
   pressTransition,
   fitWidth,
   className,
-  labelClassName,
   contentStyle,
+  labelClassName,
   style,
   accessibilityLabel,
   testID,
@@ -172,8 +172,13 @@ export function Button({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={onPress}
-        className={cn(container({ variant }), BUTTON_BOX[shape][size])}
-        style={[{ opacity: isDisabled && !noDisabledOpacity ? 0.5 : 1, overflow: 'hidden' }, contentStyle]}
+        className={cn(
+          container({ variant }),
+          BUTTON_BOX[shape][size],
+          isDisabled && !noDisabledOpacity && 'opacity-50',
+          'overflow-hidden',
+        )}
+        style={contentStyle}
       >
         {/* State backdrop — animates in/out by opacity so the variant background
             shows through when idle and the state colour fills it on success/error. */}

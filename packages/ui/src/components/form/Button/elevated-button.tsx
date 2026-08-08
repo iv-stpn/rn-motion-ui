@@ -150,9 +150,8 @@ function parseRgb(color: string): [number, number, number] {
  * web: a soft 1px-blur shadow at 48% plus a crisp 1px ring. The monochrome fills
  * (`neutral`, `inverse`) and `white` cast a dark-neutral shadow
  * (`rgba(27,28,29,.48)`); vivid fills tint the shadow
- * with the fill darkened toward black (AlignUI derives e.g. `#253ea7` from
- * primary `#375dfb`). The ring is the fill itself, or the theme border for
- * `white`. `boxShadow` composes both layers in one value (web and native ≥ 0.76
+ * with the fill darkened toward black. The ring is the fill itself, or the theme border
+ * for `white`. `boxShadow` composes both layers in one value (web and native ≥ 0.76
  * New Arch).
  */
 function elevatedShadow(variant: ElevatedVariant, fill: string, borderColor: string): string {
@@ -213,13 +212,12 @@ function resolveAppearance({ variant, size, shape, hovered, isDisabled, colors }
       if (!hovered) boxShadow = elevatedShadow('white', '', colors.border);
     } else boxShadow = elevatedShadow(variant, colors[ELEVATED_FILL_TOKEN[variant]], colors.border);
   }
+
   return {
     // The box is the family's ({@link BUTTON_BOX}) so an elevated chip and a flat
-    // button at the same size occupy the same rectangle. The label is not: AlignUI
-    // pins its chips to the 14px `text-label-sm` at every size rather than
-    // stepping the type down with the box, so this is the family's one type opt-out.
+    // button at the same size occupy the same rectangle.
     containerClass: cn(
-      'flex-row items-center justify-center',
+      'flex-row items-center justify-center overflow-hidden',
       BUTTON_BOX[shape][size],
       backgroundClass(variant, hovered, isDisabled),
     ),
@@ -235,15 +233,6 @@ function resolveAppearance({ variant, size, shape, hovered, isDisabled, colors }
 
 type ElevatedHighlightsProps = { id: string; hovered: boolean; radius: number; width: number; height: number };
 
-// The two white highlights that give a coloured elevated chip its elevated-surface
-// quality, both drawn in SVG (RN has no CSS pseudo-elements/gradients).
-//   • Gloss — AlignUI's `after:` overlay: a full-height top-to-bottom wash from
-//     white to transparent (`bg-gradient-to-b from-static-white to-transparent`)
-//     held at opacity .16, rising to .24 on hover over 200 ms ease-out. The
-//     parent clips overflow so it rounds to the chip.
-//   • Rim — AlignUI's `before:` overlay: a 1px inset ring stroked with the same
-//     top-down gradient at .12 → 0 (`from-static-white/[.12] to-transparent`),
-//     the lit-top-edge cue. Needs pixel dims for a crisp line, so waits for layout.
 function ElevatedHighlights({ id, hovered, radius, width, height }: ElevatedHighlightsProps) {
   const rimInset = Math.max(0, radius - 0.5);
   return (
@@ -391,9 +380,7 @@ export function ElevatedButton({
         onHoverIn={handleHoverIn}
         onHoverOut={handleHoverOut}
         className={containerClass}
-        // No disabled dim: AlignUI disabled chips restyle to the flat muted plate
-        // (grey label, no gloss/shadow) at full opacity instead of fading.
-        style={[{ overflow: 'hidden' }, contentStyle]}
+        style={contentStyle}
       >
         {/* State backdrop — animates in/out by opacity so the fill shows through
             when idle and the state colour fills it on success/error. */}

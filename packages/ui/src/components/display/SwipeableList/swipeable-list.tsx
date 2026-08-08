@@ -564,7 +564,7 @@ export function SwipeableList({
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <View testID={testID ?? 'swipeable-list'} className={className} style={[{ width: '100%', gap: 8 }, style]}>
+    <View testID={testID ?? 'swipeable-list'} className={cn(className, 'w-full gap-2')} style={style}>
       {items.map((item) => (
         <SwipeableListRow
           key={item.id}

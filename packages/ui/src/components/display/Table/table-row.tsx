@@ -10,8 +10,8 @@ import { MotiView } from '../../../moti/components/view';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Checkbox } from '../../form/Checkbox/checkbox';
 import { Text } from '../../typography/Text/text';
-import { CHECKBOX_COL_WIDTH, type TableColumn } from './table-types';
-import { alignToItemsClass, alignToTextClass, columnLayoutStyle, readCellValue } from './table-utils';
+import type { TableColumn } from './table-types';
+import { alignToItemsClass, alignToTextClass, CHECKBOX_COLUMN_WIDTH, columnLayoutStyle, readCellValue } from './table-utils';
 
 // ─── Editable cell input ──────────────────────────────────────────────────────
 
@@ -215,7 +215,7 @@ export function TableRow<T>({
       />
 
       {selectable ? (
-        <View className="items-center justify-center overflow-hidden px-4" style={{ width: CHECKBOX_COL_WIDTH }}>
+        <View className="items-center justify-center overflow-hidden px-4" style={{ width: CHECKBOX_COLUMN_WIDTH }}>
           <Checkbox checked={isSelected} onCheckedChange={handleToggleRow} accessibilityLabel={`Select row ${index + 1}`} />
         </View>
       ) : null}

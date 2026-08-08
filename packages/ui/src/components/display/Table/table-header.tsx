@@ -12,7 +12,7 @@ import { MotiView } from '../../../moti/components/view';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import type { SortDirection, TableColumn } from './table-types';
-import { alignStyle, alignToJustifyClass, columnLayoutStyle } from './table-utils';
+import { alignToJustifyClass, alignToTextClass, columnLayoutStyle } from './table-utils';
 
 export type HeaderCellProps<T> = {
   column: TableColumn<T>;
@@ -67,7 +67,8 @@ export function HeaderCell<T>({
   sortIcon,
 }: HeaderCellProps<T>) {
   const isRTL = useIsRTL();
-  const { textAlign } = alignStyle(column.align, isRTL);
+  const textAlignClass = alignToTextClass(column.align, isRTL);
+
   const mutedForeground = useThemeColor('muted-foreground');
   const foregroundForeground = useThemeColor('foreground');
   const primaryForeground = useThemeColor('primary-foreground');
@@ -122,16 +123,14 @@ export function HeaderCell<T>({
           <TextInput
             value={column.header}
             onChangeText={handleRename}
-            className="flex-1 p-0 font-medium text-muted-foreground text-xs"
-            style={{ textAlign }}
+            className={cn('flex-1 p-0 font-medium text-muted-foreground text-xs', textAlignClass)}
             accessibilityLabel={`Rename ${column.key} column`}
           />
         ) : (
           <View className={cn('flex-1 flex-row items-center gap-1', alignToJustifyClass(column.align))}>
             <Text
               selectable={false}
-              className={cn('flex-1 font-medium text-muted-foreground text-xs', isActive && 'text-foreground')}
-              style={{ textAlign }}
+              className={cn('flex-1 font-medium text-muted-foreground text-xs', textAlignClass, isActive && 'text-foreground')}
               numberOfLines={1}
             >
               {column.header}

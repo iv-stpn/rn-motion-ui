@@ -1,5 +1,6 @@
 import type { ParsedWidth, RowEntry, SortState, TableColumn } from './table-types';
-import { CHECKBOX_COL_WIDTH } from './table-types';
+
+const CHECKBOX_COLUMN_WIDTH = 44;
 
 /**
  * Physical x → logical x, so everything downstream can ignore the direction.
@@ -43,7 +44,7 @@ export function computeColumnWidths<T>(
   containerWidth: number,
   selectable: boolean,
 ): Record<string, number> {
-  let totalFixed = selectable ? CHECKBOX_COL_WIDTH : 0;
+  let totalFixed = selectable ? CHECKBOX_COLUMN_WIDTH : 0;
   let totalFr = 0;
 
   const parsed = columns.map((col) => {
@@ -137,7 +138,7 @@ export function columnBoundaries<T>(
   selectable: boolean,
 ): number[] {
   const edges: number[] = [];
-  let x = selectable ? CHECKBOX_COL_WIDTH : 0;
+  let x = selectable ? CHECKBOX_COLUMN_WIDTH : 0;
   for (const col of orderedColumns) {
     edges.push(x);
     x += colWidths[col.key] ?? 0;
@@ -263,3 +264,5 @@ export function columnLayoutClass(
   }
   return `w-[${parsed.value}px]`;
 }
+
+export { CHECKBOX_COLUMN_WIDTH };

@@ -144,5 +144,3 @@ export type TableProps<T> = {
 export type RowEntry<T> = { row: T; id: string };
 
 export type ParsedWidth = { type: 'px'; value: number } | { type: 'fr'; value: number };
-
-export const CHECKBOX_COL_WIDTH = 44;

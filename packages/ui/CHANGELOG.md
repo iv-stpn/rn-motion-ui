@@ -1,5 +1,47 @@
 # rn-motion-ui
 
+## 5.1.0
+
+### Minor Changes
+
+- 2a3f08b: **Breaking: token rename — `--spacing-button-*` → `--spacing-interactive-*`, `--radius-button-*` → `--radius-interactive`**
+
+  The box geometry tokens (height, horizontal padding, corner radius) that were previously named after buttons have been renamed because they are shared by Button, Input, OtpInput, Tabs, and ButtonGroup. Consumers who overrode `--spacing-button-md`, `--radius-button-md` or their CSS utility classes `h-button-*`, `rounded-button-*`, `px-button-pad-*` must update to the new names.
+
+  **New: four-category corner radius system**
+
+  Radius is now split into `--radius-interactive` (buttons, inputs, tabs), `--radius-card`, `--radius-menu`, and `--radius-modal` — each family independently tunable. A new shared `lib/radius.ts` module exports the corresponding pixel constants and Tailwind class strings, replacing the definitions that lived inside `button-scale.ts`.
+
+  **Menu: staggered item entry, faster exit, size-aware separators**
+
+  Each menu item now fades in with a 25ms stagger delay, driven by a new `MOTION_MENU_ENTER` spring preset. Exit duration was cut to 150ms, enter scale deepened to 0.85, and per-item offset increased to 12px. `MenuSeparator` and `MenuLabel` now accept a `size` prop so their thickness and font size track the menu scale.
+
+  **Button: press animation modes and continuous spinner**
+
+  Buttons gain a `pressMode` prop — `scale` (default, uniform), `scaleY` (vertical compression for segmented controls), and `none`. The loading spinner was rewritten from declarative MotiView loop to imperative Reanimated `withRepeat` so it no longer restarts on every parent re-render.
+
+  **Tabs: new `size` prop**
+
+  Tabs now accepts `size` (`sm` | `md` | `lg`) to control trigger height via the interactive surface family tokens, aligning with Button and Input at the same size.
+
+  **Input: size-aware text and padding**
+
+  The Input text box now scales its font size and horizontal padding per the `size` prop, matching the interactive surface family.
+
+  **Dock, Table, Loader, FeedbackWidget, ButtonGroup, and others**
+
+  All components updated to use the renamed tokens and consolidated radius constants.
+
+### Patch Changes
+
+- b561c15: **Tighten interactive surface sizing**
+
+  Interactive component heights reduced by 4px per tier (sm: 28, md: 36, lg: 44) and horizontal padding trimmed by 2px (sm: 10, md: 14, lg: 18). MenuItem, MultiStepMenu sidebar, and OTP slot line height updated accordingly. CSS spacing tokens synced across `tokens.css` and `storybook/demo/tokens.css`.
+
+- f5b3a55: **refactor: migrate inline style props to className where possible**
+
+  Inline `style` props (flexDirection, overflow, width, opacity, textAlign) moved to Tailwind utility classes across Marquee, SwipeableList, Table, Button, and ElevatedButton. `CHECKBOX_COL_WIDTH` renamed to `CHECKBOX_COLUMN_WIDTH` and relocated from `table-types.ts` to `table-utils.ts`. No behavioural changes.
+
 ## 5.0.3
 
 ### Patch Changes
@@ -246,7 +288,7 @@
   ```tsx
   <Card elevation={2} onPress={() => open(project.id)}>
     <Text>{project.name}</Text>
-  </Card>;
+  </Card>
   ```
 
   Omit it and nothing changes — the card is the plain `View` it always was, with
@@ -352,7 +394,7 @@
     }}
   >
     <Chip label={item.name} />
-  </Draggable>;
+  </Draggable>
   ```
 
   `data` is a MIME-keyed payload, written into the transfer when the drag
@@ -423,7 +465,7 @@
     onExternalDrop={({ dataTransfer, destination }) => {
       for (const file of dataTransfer.files) upload(file, destination);
     }}
-  />;
+  />
   ```
 
   `destination` is the folder the drop landed in, with a trailing slash; `''` is
@@ -473,7 +515,7 @@
         types={fileTypeOptions}
       />
     )}
-  />;
+  />
   ```
 
   The header keeps back/forward, the folder name and the view switcher.
@@ -652,7 +694,7 @@
   The prop is forwarded into every view context — icons, list, column, gallery
   strip — so one callback covers the whole component.
 
-  ---
+  ***
 
   All three additions are purely additive. Existing items without `pinnedAt` or
   `favoritedAt` render exactly as before, and `renderEntryIcon` is optional.
@@ -670,7 +712,7 @@
   That name is the new `rootLabel` prop:
 
   ```tsx
-  <FileSystem items={items} title="Files" rootLabel="My Drive" />;
+  <FileSystem items={items} title="Files" rootLabel="My Drive" />
   ```
 
   It defaults to `title`, so nothing changes unless you set it. It also names
@@ -697,7 +739,7 @@
   ```tsx
   // `<root testID>-entry-<path>`, or `file-system-entry-<path>` untagged
   const row = await canvas.findByTestId(
-    "file-system-entry-Reports/Q1-report.pdf",
+    "file-system-entry-Reports/Q1-report.pdf"
   );
   expect(row).toHaveTextContent("Files › Reports");
   ```
@@ -1012,7 +1054,7 @@
   // Upstream's entrance, for anyone who ported from it and wants the old feel back.
   <HoldContextMenu motion={{ offset: 0, scale: 0.6 }} items={items}>
     <MessageBubble message={message} />
-  </HoldContextMenu>;
+  </HoldContextMenu>
   ```
 
 - e9f5fe0: feat(Menu): composable menu list for dropdowns and context menus
@@ -1068,7 +1110,7 @@
     mode="sidebar"
     active={tab === "general"}
     onPress={go}
-  />;
+  />
   ```
 
   `mode` is ignored when `iconBackgroundColor` is set — that variant keeps its
@@ -1167,7 +1209,7 @@
       { type: "separator", id: "after-reply" }, // row-actions-after-reply
       { type: "separator" }, // row-actions-separator-0
     ]}
-  />;
+  />
   ```
 
   An entry with an `id` is named by it. One without falls back to the same
@@ -1312,7 +1354,7 @@
       </MultiDraggable>
     ))}
     <Dragzone onDrop={({ transfer }) => move(readMultiDragIds(transfer))} />
-  </MultiDragManager>;
+  </MultiDragManager>
   ```
 
   Lifting a selected item carries every selected id; lifting an unselected one
@@ -1621,7 +1663,7 @@
     {({ isPressed, isHeld }) => (
       <Chip pressed={isPressed} selected={isHeld} label={name} />
     )}
-  </Holdable>;
+  </Holdable>
   ```
 
   `isPressed` flips at `armDelay`; `onHold` fires at `holdDelay`. A cancel or
@@ -1646,7 +1688,7 @@
     {({ isPressed, isHeld }) => (
       <Row row={item} pressed={isPressed} selected={isHeld} />
     )}
-  </HoldDraggable>;
+  </HoldDraggable>
   ```
 
   Web's drag transport defaults to `holdDelay: null`, so `onHold` on web needs
@@ -2044,10 +2086,11 @@
   <FileSystem
     items={items}
     renderEmptyState={({ reason, folderName }) =>
-      reason === "empty-folder"
-        ? <EmptyFolderPlaceholder folder={folderName} onPick={upload} />
-        : undefined}
-  />;
+      reason === "empty-folder" ? (
+        <EmptyFolderPlaceholder folder={folderName} onPick={upload} />
+      ) : undefined
+    }
+  />
   ```
 
   `FileSystemEmptyStateArgs` and `FileSystemEmptyStateReason` are exported
@@ -2291,7 +2334,7 @@
   classes. Pass a built-in name, or an object to override individual slots.
 
   ```tsx
-  <Switch isSelected={on} onSelectedChange={setOn} theme="success" />;
+  <Switch isSelected={on} onSelectedChange={setOn} theme="success" />
   ```
 
   Six built-ins, one per status token plus the monochrome `primary`: `info`
@@ -2312,7 +2355,7 @@
 
   ```tsx
   // What theme="primary" restores — the previous default look
-  <Switch isSelected={on} onSelectedChange={setOn} theme="primary" />;
+  <Switch isSelected={on} onSelectedChange={setOn} theme="primary" />
   ```
 
   **Custom themes.** An object overrides slots on top of `info`, so anything
@@ -2367,7 +2410,7 @@
   `useThemeColors`:
 
   ```tsx
-  <Text className="text-white">Legible on a vivid fill in both schemes</Text>;
+  <Text className="text-white">Legible on a vivid fill in both schemes</Text>
   ```
 
   ```ts
@@ -2568,7 +2611,7 @@
         {isEmpty ? <DropHint /> : null}
       </View>
     )}
-  />;
+  />
   ```
 
   The snapshot is the state that produced the content — `currentPath`,

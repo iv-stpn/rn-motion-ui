@@ -1,5 +1,12 @@
 # rn-motion-ui
 
+## 5.0.1
+
+### Patch Changes
+
+- Updated dependencies [646025b]
+  - rn-motion-ui-icons@0.0.2
+
 ## 5.0.0
 
 ### Major Changes

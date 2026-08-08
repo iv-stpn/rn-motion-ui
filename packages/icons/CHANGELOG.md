@@ -1,5 +1,11 @@
 # rn-motion-ui-icons
 
+## 0.0.2
+
+### Patch Changes
+
+- 646025b: Icon components now forward all remaining props to the underlying `<Svg>` element via `...props`. `IconProps` extends `SvgProps` from react-native-svg, so consumers can pass any SVG prop (hitSlop, onLayout, pointerEvents, opacity, etc.) through to the root SVG.
+
 ## 0.0.1
 
 ### Patch Changes

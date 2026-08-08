@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 5.0.2
+
+### Patch Changes
+
+- 01a8bf9: fix: replace workspace:\* protocol with ^0.0.2 for rn-motion-ui-icons dependency so upstream consumers can resolve it
+
 ## 5.0.1
 
 ### Patch Changes

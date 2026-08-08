@@ -567,13 +567,13 @@ export type FileSystemProps = {
    * ```
    */
   renderEmptyState?: (args: FileSystemEmptyStateArgs) => ReactNode;
-  /** Extra NativeWind classes merged onto the root container. */
+  /** Extra UniWind classes merged onto the root container. */
   className?: string;
-  /** Extra NativeWind classes merged onto the built-in header's root view. Ignored when `renderHeader` is provided. */
+  /** Extra UniWind classes merged onto the built-in header's root view. Ignored when `renderHeader` is provided. */
   headerClassName?: string;
-  /** Extra NativeWind classes merged onto the file-area root view. */
+  /** Extra UniWind classes merged onto the file-area root view. */
   bodyClassName?: string;
-  /** Extra NativeWind classes merged onto the built-in footer's root view. Ignored when `renderFooter` is provided. */
+  /** Extra UniWind classes merged onto the built-in footer's root view. Ignored when `renderFooter` is provided. */
   footerClassName?: string;
   testID?: string;
 };

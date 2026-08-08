@@ -2393,7 +2393,7 @@
 - 425529d: Add `pressTransition` and `labelClassName` props to `Button`.
 
   - `pressTransition` — partial override for the press-scale spring; defaults to `MOTION_SNAPPY`
-  - `labelClassName` — additional NativeWind class names merged onto the label `Text`
+  - `labelClassName` — additional UniWind class names merged onto the label `Text`
 
 - 425529d: Add `checkIcon` and `checkTransition` props to `Checkbox`.
 
@@ -2423,7 +2423,7 @@
 
   - New `sortIcon` prop on `HeaderCell` — replaces the default `ChevronUp` sort indicator with a custom node
 
-- 5e6a72c: Restyle `Table` with NativeWind `className` and expose per-slot customization props.
+- 5e6a72c: Restyle `Table` with UniWind `className` and expose per-slot customization props.
 
   - Table internals now use Tailwind/uniwind `className` (merged via `cn`) instead of `StyleSheet` + the `useTableColors` hook. Colors resolve through the existing theme tokens (`bg-muted`, `border-border`, `text-foreground`, `text-muted-foreground`, `bg-primary`, …) and are overridable with classes. Numeric values that can't be classes (column widths, row/container height, drop-indicator offset) stay inline.
   - New flat customization props on `Table`: `headerClassName`, `rowClassName`, `cellClassName`, `cardClassName`, `footerClassName` (the existing `className` covers the outer container). Each merges last-wins over the defaults — e.g. `rowClassName="bg-card"` overrides the row background. `style` / `cardStyle` / `stripedStyle` are retained for dynamic inline overrides.
@@ -2443,7 +2443,7 @@
 
 - 3afe9e5: Resolve the remaining Biome `info`-level diagnostics from `bun lint` (no runtime change).
 
-  - **`useSortedClasses` (36)** across the Table components: let Biome sort the NativeWind `className` tokens into canonical order. Each reorder was verified safe against this repo's `cn` resolver — no string contained two tokens in the same conflict group, so the surviving class set is identical before and after (last-wins resolution is unchanged).
+  - **`useSortedClasses` (36)** across the Table components: let Biome sort the UniWind `className` tokens into canonical order. Each reorder was verified safe against this repo's `cn` resolver — no string contained two tokens in the same conflict group, so the surviving class set is identical before and after (last-wins resolution is unchanged).
   - **`noAwaitInLoops` (2)** in `ActionFeedbackModal`'s `LoadingLoops` story `play`: suppressed with `biome-ignore` because both loops are intentionally sequential and time-dependent (polling for an animated dot to mount; sampling `translateY` 250 ms apart across theme re-renders). The rule's `Promise.all` suggestion would run the iterations concurrently and defeat the test's purpose.
 
 - 5e6a72c: Fix `cn` conflict-resolution group collisions for `flex-*` and `border-*` utilities.
@@ -2565,7 +2565,7 @@
 
   **All other components**
 
-  - Every component now accepts `className?: string` (NativeWind classes merged onto the outer container) and `style?: StyleProp<ViewStyle>` where previously missing.
+  - Every component now accepts `className?: string` (UniWind classes merged onto the outer container) and `style?: StyleProp<ViewStyle>` where previously missing.
 
   **Shared utility**
 

@@ -170,12 +170,12 @@ export type InputProps = {
   autoFocus?: boolean;
   onFocus?: () => void;
   onBlur?: () => void;
-  /** NativeWind class names merged onto the outer wrapper. */
+  /** UniWind class names merged onto the outer wrapper. */
   className?: string;
-  /** NativeWind class names merged onto the label Text. */
+  /** UniWind class names merged onto the label Text. */
   labelClassName?: string;
   style?: StyleProp<ViewStyle>;
-  /** NativeWind class names applied to the TextInput element. */
+  /** UniWind class names applied to the TextInput element. */
   inputClassName?: string;
   inputStyle?: StyleProp<TextStyle>;
   accessibilityLabel?: string;

@@ -66,7 +66,7 @@ export default function App() {
   return (
     <View className="flex-1 bg-surface-1">
       <StatusBar style="auto" />
-      <ScrollView contentContainerClassName="gap-8 px-6 pb-16 pt-24">
+      <ScrollView contentContainerClassName="gap-8 px-6 pb-16 pt-24" nestedScrollEnabled={true}>
         <View className="gap-1">
           <Text className="font-semibold text-2xl text-foreground">{TITLE}</Text>
           <Text className="text-muted-foreground text-sm">{SUBTITLE}</Text>

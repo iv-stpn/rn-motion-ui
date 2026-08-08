@@ -6,7 +6,7 @@
 
 **[Live demo →](https://iv-stpn.github.io/rn-motion-ui/)**
 
-Animated React Native + React Native Web UI components, styled with Tailwind via [uniwind](https://github.com/nativewind/uniwind) and driven by a Moti / Reanimated 4 animation layer.
+Animated React Native + React Native Web UI components, styled with Tailwind via [uniwind](https://github.com/uni-stack/uniwind) and driven by a Moti / Reanimated 4 animation layer.
 
 Components are written as React Native primitives — they compile to native (iOS / Android via Expo or bare RN) **and** to the web via `react-native-web` with a single shared codebase. No platform forks.
 
@@ -110,7 +110,7 @@ module.exports = {
 };
 ```
 
-Set up `uniwind` per its [docs](https://github.com/nativewind/uniwind) (Metro transformer + `global.css` Tailwind entry).
+Set up `uniwind` per its [docs](https://github.com/uni-stack/uniwind) (Metro transformer + `global.css` Tailwind entry).
 
 ### Web (Vite / react-native-web)
 

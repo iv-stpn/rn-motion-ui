@@ -6,6 +6,7 @@ import { useHoverCapable } from '../../../hooks/use-hover-capable';
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
+import { cn } from '../../../lib/cn';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
@@ -449,7 +450,12 @@ export function HoverMenu({
           // at an unresolved position — the rest of the pose is the shared one.
           animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0 }}
           onDidAnimate={handleDidAnimate}
-          className={`z-50 overflow-hidden rounded-2xl border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)} ${contentClassName ?? ''}`}
+          className={cn(
+            'z-50 overflow-hidden rounded-2xl border border-border',
+            surfaceBackground(elevation),
+            elevatedShadow(elevation),
+            contentClassName,
+          )}
           // Static, so it composes with the animated scale rather than competing
           // with it: the panel grows out of the corner facing the trigger.
           style={{ transformOrigin }}

@@ -33,7 +33,7 @@ export type BloomMenuProps = {
   title?: string;
   /** Trigger label. Default "Create". */
   triggerLabel?: string;
-  /** Additional NativeWind class names merged onto the outer wrapper. */
+  /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   /**

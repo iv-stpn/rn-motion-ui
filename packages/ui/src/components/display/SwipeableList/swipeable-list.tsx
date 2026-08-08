@@ -49,7 +49,7 @@ export type SwipeableListProps = {
    * keeps two lists on a screen from colliding.
    */
   testID?: string;
-  /** Additional NativeWind class names merged onto the outer wrapper. */
+  /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
 };

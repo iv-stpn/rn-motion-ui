@@ -90,7 +90,7 @@ export type BaseButtonProps = {
   pressTransition?: Partial<MotiTransitionProp>;
   /** Stretch the button to fill its container width. */
   fitWidth?: boolean;
-  /** Additional NativeWind class names merged onto the outer wrapper. */
+  /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
   /** Additional class names merged onto the label Text. */
   labelClassName?: string;

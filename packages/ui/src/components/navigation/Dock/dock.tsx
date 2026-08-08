@@ -28,7 +28,7 @@ export type DockProps = {
   children: ReactNode;
   /** Size of each item in px. */
   size?: number;
-  /** Additional NativeWind class names merged onto the dock bar. */
+  /** Additional UniWind class names merged onto the dock bar. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;

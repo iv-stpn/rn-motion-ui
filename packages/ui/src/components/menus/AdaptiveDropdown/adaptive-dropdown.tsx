@@ -207,7 +207,7 @@ export function AdaptiveDropdown({
       <View className={contentClassName}>{resolvedContent}</View>
     </ScrollView>
   ) : (
-    <View className={`overflow-hidden${contentClassName ? ` ${contentClassName}` : ''}`}>{resolvedContent}</View>
+    <View className={cn('overflow-hidden', contentClassName)}>{resolvedContent}</View>
   );
 
   // Shared with Popover, HoverMenu and HoldContextMenu, so every panel this

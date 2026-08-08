@@ -32,7 +32,7 @@ export type RangeSliderProps = {
   /** Render a tick dot at each step. */
   showTicks?: boolean;
   disabled?: boolean;
-  /** Additional NativeWind class names merged onto the track. */
+  /** Additional UniWind class names merged onto the track. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;

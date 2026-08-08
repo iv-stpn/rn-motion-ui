@@ -25,7 +25,7 @@ export type ScrollRevealProps = {
   amount?: number;
   /** Reveal only once (default) or every time it re-enters view. */
   once?: boolean;
-  /** Additional NativeWind class names forwarded to the outer animated wrapper. */
+  /** Additional UniWind class names forwarded to the outer animated wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;

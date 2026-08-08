@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: complex component */
 import { useCallback, useMemo } from 'react';
 import type { ListRenderItemInfo } from 'react-native';
-import { FlatList, View } from 'react-native';
+import { FlatList, ScrollView, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { Checkbox } from '../../form/Checkbox/checkbox';
 import { Text } from '../../typography/Text/text';
@@ -104,6 +104,17 @@ export function Table<T>(props: TableProps<T>) {
   // Reduce FlatList height when pagination footer is pinned below it.
   const effectiveFlatListHeight = mode === 'pagination' ? flatListHeight - PAGINATION_FOOTER_HEIGHT : flatListHeight;
 
+  // Only wrap in a horizontal ScrollView when columns actually overflow.  A
+  // ScrollView that stays idle still changes the responder tree (react-native-web
+  // claims pointer events for potential scrolling), which breaks long-press menus
+  // and shifts the coordinate space for the column-reorder drop indicator.
+  const totalContentWidth = useMemo(() => {
+    let w = selectable ? CHECKBOX_COL_WIDTH : 0;
+    for (const col of orderedColumns) w += colWidths[col.key] ?? 0;
+    return w;
+  }, [orderedColumns, colWidths, selectable]);
+  const needsHorizontalScroll = totalContentWidth > containerWidth;
+
   // ── Render callbacks ───────────────────────────────────────────────────────
 
   const renderItem = useCallback(
@@ -132,7 +143,6 @@ export function Table<T>(props: TableProps<T>) {
           selectable={selectable}
           orderedColumns={orderedColumns}
           colWidths={colWidths}
-          containerWidth={containerWidth}
           rowHeight={rowHeight}
           reduce={reduce}
           hasRowMenu={hasRowMenu}
@@ -155,8 +165,6 @@ export function Table<T>(props: TableProps<T>) {
       cardStyle,
       cardClassName,
       orderedColumns,
-      colWidths,
-      containerWidth,
       selectable,
       selected,
       toggleRow,
@@ -173,6 +181,7 @@ export function Table<T>(props: TableProps<T>) {
       reduce,
       setPressedRowId,
       testID,
+      colWidths,
     ],
   );
 
@@ -186,7 +195,8 @@ export function Table<T>(props: TableProps<T>) {
             {orderedColumns.map((col) => (
               <SkeletonCellPulse
                 key={col.key}
-                width={containerWidth > 0 ? (colWidths[col.key] ?? 0) : 80}
+                columnWidth={col.width}
+                colWidth={colWidths[col.key]}
                 align={col.align}
                 skeletonWidth={col.skeletonWidth}
                 reduce={reduce}
@@ -196,7 +206,7 @@ export function Table<T>(props: TableProps<T>) {
         ))}
       </View>
     ),
-    [orderedColumns, colWidths, containerWidth, selectable, rowHeight, reduce],
+    [orderedColumns, selectable, rowHeight, reduce, colWidths],
   );
 
   const renderSkeletonCards = useCallback(
@@ -304,6 +314,116 @@ export function Table<T>(props: TableProps<T>) {
       />
     ) : null;
 
+  // FlatList body — shared between card and table mode.  In table mode the
+  // header row and this FlatList are siblings inside a horizontal ScrollView
+  // so they scroll together when columns overflow.  Card mode fills the width
+  // naturally — no horizontal wrapper needed.
+  const flatListBody = (
+    <FlatList
+      data={sortedRows}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      // Card heights vary — skip getItemLayout.  Table rows are fixed-height.
+      getItemLayout={isCardMode ? undefined : getItemLayout}
+      style={{ height: isCardMode ? height : effectiveFlatListHeight }}
+      showsVerticalScrollIndicator={false}
+      onEndReached={mode === 'infiniteScroll' ? onEndReached : undefined}
+      onEndReachedThreshold={onEndReachedThreshold}
+      ListEmptyComponent={ListEmptyComponent}
+      ListFooterComponent={ListFooterComponent}
+      removeClippedSubviews={true}
+      // Mobile performance: limit the render window and batch updates so large
+      // tables stay responsive.
+      windowSize={5}
+      maxToRenderPerBatch={10}
+      initialNumToRender={8}
+      updateCellsBatchingPeriod={50}
+      // Silences the "VirtualizedLists should never be nested inside plain
+      // ScrollViews" warning when a consumer wraps the table in a vertical
+      // ScrollView.  The outer horizontal ScrollView (table mode) has a
+      // different orientation so it would not trigger the warning either way.
+      nestedScrollEnabled={true}
+      testID={`${testID ?? 'table'}-list`}
+    />
+  );
+
+  // Header row + FlatList body together — conditionally wrapped in a horizontal
+  // ScrollView when columns overflow below.
+  const tableBody = (
+    <>
+      {/* Sticky header row */}
+      <View
+        className={cn('relative select-none flex-row border-border border-b bg-muted', headerClassName)}
+        style={{ height: rowHeight }}
+      >
+        {selectable ? (
+          <View
+            className="relative flex-col items-center justify-center overflow-hidden px-4"
+            style={{ width: CHECKBOX_COL_WIDTH }}
+          >
+            <Checkbox
+              checked={allSelected}
+              indeterminate={someSelected}
+              onCheckedChange={toggleAll}
+              accessibilityLabel="Select all rows"
+              testID={`${testID ?? 'table'}-select-all`}
+            />
+          </View>
+        ) : null}
+        {orderedColumns.map((col, colIndex) => (
+          <HeaderCell
+            key={col.key}
+            column={col}
+            colIndex={colIndex}
+            colWidth={colWidths[col.key]}
+            isActive={activeSort?.key === col.key}
+            activeDirection={activeSort?.direction}
+            isColPressed={pressedColKey === col.key}
+            isDragging={dragKey === col.key}
+            reorderable={reorderable}
+            hasColMenu={hasColMenu}
+            reduce={reduce}
+            sortEnabled={sortable && (col.sortable ?? false)}
+            gripHandlers={gripHandlers}
+            toggleSort={toggleSort}
+            setPressedColKey={setPressedColKey}
+            onColumnRename={onColumnRename}
+            onInsertColumn={onInsertColumn}
+            onDeleteColumn={onDeleteColumn}
+            testID={testID}
+          />
+        ))}
+        {/* Drop indicator: a line at the insertion boundary while dragging.
+            `left` is physical, so the position is resolved for the direction
+            upstream (see `dropIndicatorX`). */}
+        {dragKey && indicatorX !== null ? (
+          <View
+            className="pointer-events-none absolute top-0 bottom-0 z-20 w-0.5 bg-primary"
+            style={{ left: indicatorX }}
+            testID={`${testID ?? 'table'}-drop-indicator`}
+          />
+        ) : null}
+      </View>
+
+      {/* Body FlatList — vertical scroll, fixed height */}
+      {flatListBody}
+    </>
+  );
+
+  const renderTableBody = useCallback(() => {
+    if (!needsHorizontalScroll) return tableBody;
+    return (
+      <ScrollView
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ minWidth: '100%' }}
+        testID={`${testID ?? 'table'}-scroll`}
+      >
+        {tableBody}
+      </ScrollView>
+    );
+  }, [needsHorizontalScroll, tableBody, testID]);
+
   return (
     <View
       ref={containerRef}
@@ -312,82 +432,10 @@ export function Table<T>(props: TableProps<T>) {
       onLayout={onContainerLayout}
       testID={testID}
     >
-      {/* ── Sticky header — hidden in card mode ── */}
-      {isCardMode ? null : (
-        <View
-          className={cn('select-none flex-row border-border border-b bg-muted', headerClassName)}
-          style={{ height: rowHeight }}
-        >
-          {selectable ? (
-            <View
-              className="relative flex-col items-center justify-center overflow-hidden px-4"
-              style={{ width: CHECKBOX_COL_WIDTH }}
-            >
-              <Checkbox
-                checked={allSelected}
-                indeterminate={someSelected}
-                onCheckedChange={toggleAll}
-                accessibilityLabel="Select all rows"
-                testID={`${testID ?? 'table'}-select-all`}
-              />
-            </View>
-          ) : null}
-          {orderedColumns.map((col, colIndex) => (
-            <HeaderCell
-              key={col.key}
-              column={col}
-              colIndex={colIndex}
-              colWidth={colWidths[col.key] ?? 0}
-              containerWidth={containerWidth}
-              isActive={activeSort?.key === col.key}
-              activeDirection={activeSort?.direction}
-              isColPressed={pressedColKey === col.key}
-              isDragging={dragKey === col.key}
-              reorderable={reorderable}
-              hasColMenu={hasColMenu}
-              reduce={reduce}
-              sortEnabled={sortable && (col.sortable ?? false)}
-              gripHandlers={gripHandlers}
-              toggleSort={toggleSort}
-              setPressedColKey={setPressedColKey}
-              onColumnRename={onColumnRename}
-              onInsertColumn={onInsertColumn}
-              onDeleteColumn={onDeleteColumn}
-              testID={testID}
-            />
-          ))}
-          {/* Drop indicator: a line at the insertion boundary while dragging.
-              `left` is physical, so the position is resolved for the direction
-              upstream (see `dropIndicatorX`). */}
-          {dragKey && indicatorX !== null ? (
-            <View
-              className="pointer-events-none absolute top-0 bottom-0 z-20 w-0.5 bg-primary"
-              style={{ left: indicatorX }}
-              testID={`${testID ?? 'table'}-drop-indicator`}
-            />
-          ) : null}
-        </View>
-      )}
+      {/* ── Card mode: full-width cards, no horizontal scroll ── */}
+      {isCardMode ? flatListBody : renderTableBody()}
 
-      {/* ── Body ── */}
-      <FlatList
-        data={sortedRows}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        // Card heights are set by renderSmallScreen content — skip getItemLayout to avoid
-        // incorrect scroll offsets. Table rows are fixed-height so the optimisation holds.
-        getItemLayout={isCardMode ? undefined : getItemLayout}
-        style={{ height: isCardMode ? height : effectiveFlatListHeight }}
-        showsVerticalScrollIndicator={false}
-        onEndReached={mode === 'infiniteScroll' ? onEndReached : undefined}
-        onEndReachedThreshold={onEndReachedThreshold}
-        ListEmptyComponent={ListEmptyComponent}
-        ListFooterComponent={ListFooterComponent}
-        removeClippedSubviews={true}
-        testID={`${testID ?? 'table'}-list`}
-      />
-
-      {/* ── Pagination footer (fixed, outside FlatList) ── */}
+      {/* ── Pagination footer (fixed, outside ScrollView / FlatList) ── */}
       {paginationFooter}
     </View>
   );

@@ -180,7 +180,7 @@ export interface AnimatedBadgeProps extends VariantProps<typeof container> {
   showIcon?: boolean;
   /** Soft pulse behind the badge (defaults on for `loading`). */
   pulse?: boolean;
-  /** Additional NativeWind class names merged onto the outer badge. */
+  /** Additional UniWind class names merged onto the outer badge. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;

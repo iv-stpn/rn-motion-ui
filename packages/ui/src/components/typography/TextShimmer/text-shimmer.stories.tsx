@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { Action, Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { useInterval } from '../../../hooks/use-interval';
+import { cn } from '../../../lib/cn';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../Text/text';
 import { TextShimmer } from './text-shimmer';
@@ -68,7 +69,7 @@ function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
       </ControlCard>
 
       <View className="min-h-[44px] justify-center">
-        <TextShimmer {...args} className={`font-semibold ${sizeClass}`} duration={duration}>
+        <TextShimmer {...args} className={cn('font-semibold', sizeClass)} duration={duration}>
           {text}
         </TextShimmer>
       </View>

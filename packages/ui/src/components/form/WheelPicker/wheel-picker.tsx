@@ -286,7 +286,7 @@ export type WheelPickerProps = {
   variant?: WheelPickerVariant;
   /** Surface elevation of the outer Card container (1–8). Default 3. Ignored when `variant="plain"`. */
   elevation?: SurfaceLevel;
-  /** Additional NativeWind class names forwarded to the container. */
+  /** Additional UniWind class names forwarded to the container. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;

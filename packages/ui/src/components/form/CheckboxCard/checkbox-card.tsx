@@ -106,7 +106,7 @@ export type CheckboxCardGroupProps = {
   orientation?: 'vertical' | 'horizontal';
   /** Disables every card. A card can opt back in with `isDisabled={false}`. */
   isDisabled?: boolean;
-  /** Additional NativeWind class names merged onto the group container. */
+  /** Additional UniWind class names merged onto the group container. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;

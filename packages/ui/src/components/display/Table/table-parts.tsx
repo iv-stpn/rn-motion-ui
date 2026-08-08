@@ -19,7 +19,7 @@ export type TableCardProps<T> = {
   isSelected: boolean;
   selectable: boolean;
   cardStyle?: StyleProp<ViewStyle>;
-  /** NativeWind classes merged onto the card (alongside `cardStyle`). */
+  /** UniWind classes merged onto the card (alongside `cardStyle`). */
   cardClassName?: string;
   toggleRow: (id: string) => void;
   renderSmallScreen: (row: T, selected: boolean) => ReactNode;
@@ -90,7 +90,7 @@ export type PaginationFooterProps = {
   paginationLabel?: (page: number, totalPages: number) => string;
   goToPreviousPage: () => void;
   goToNextPage: () => void;
-  /** NativeWind classes merged onto the footer container. */
+  /** UniWind classes merged onto the footer container. */
   footerClassName?: string;
   /** Replace the previous-page icon. Default: rotated `<ChevronRight size={16} />`. */
   prevIcon?: ReactNode;
@@ -142,7 +142,7 @@ export function PaginationFooter({
 export type LoadMoreFooterProps = {
   onLoadMore?: () => void;
   loadMoreLabel: string;
-  /** NativeWind classes merged onto the footer container. */
+  /** UniWind classes merged onto the footer container. */
   footerClassName?: string;
 };
 

@@ -27,7 +27,7 @@ const preview: Preview = {
       }, [isDark]);
 
       return (
-        <ScrollView className="flex-1" contentContainerClassName="items-start p-4">
+        <ScrollView className="flex-1" contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
           <Story />
         </ScrollView>
       );

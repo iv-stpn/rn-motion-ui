@@ -32,7 +32,7 @@ type CommonProps = {
   progress: SharedValue<number>;
   /** Spring-smooth the value. Disabled automatically under reduced motion. */
   spring?: boolean;
-  /** Additional NativeWind class names merged onto the outer wrapper. */
+  /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   color?: string;

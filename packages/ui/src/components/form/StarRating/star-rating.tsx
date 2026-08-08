@@ -48,7 +48,7 @@ export type StarRatingProps = {
   showValue?: boolean;
   /** Accessible name of the rating group. Default "Rating" */
   label?: string;
-  /** Additional NativeWind class names merged onto the outer row. */
+  /** Additional UniWind class names merged onto the outer row. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   /**
@@ -394,7 +394,7 @@ export function StarRating({
       </View>
 
       {showValue ? (
-        <View accessible={false} importantForAccessibility="no" className={`flex-row items-center ${valueGap}`}>
+        <View accessible={false} importantForAccessibility="no" className={cn('flex-row items-center', valueGap)}>
           {/* Rolling value digit. A hidden sizer reserves the digit's width so the
             slot stays stable; the animated label is absolutely positioned so the
             entering and exiting digits overlap instead of sitting side-by-side

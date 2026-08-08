@@ -12,7 +12,7 @@ import { Checkbox } from '../../form/Checkbox/checkbox';
 import { Text } from '../../typography/Text/text';
 import type { TableColumn } from './table-types';
 import { CHECKBOX_COL_WIDTH } from './table-types';
-import { alignStyle, alignToJustify, readCellValue } from './table-utils';
+import { alignStyle, alignToJustify, columnLayoutStyle, readCellValue } from './table-utils';
 
 // ─── Editable cell input ──────────────────────────────────────────────────────
 
@@ -43,17 +43,23 @@ function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) 
 // ─── Skeleton cell pulse ──────────────────────────────────────────────────────
 
 export type SkeletonCellPulseProps = {
-  width: number;
+  /** Column width spec — passed directly to `columnLayoutStyle` for flex/px resolution. */
+  columnWidth: number | string | undefined;
+  /** Resolved pixel width for this column (from `computeColumnWidths`). */
+  colWidth?: number;
   align: TableColumn<unknown>['align'];
   /** Override skeleton bar width. Defaults to `'60%'` (or `40` for right-aligned). */
   skeletonWidth?: DimensionValue;
   reduce: boolean;
 };
 
-export function SkeletonCellPulse({ width, align, skeletonWidth, reduce }: SkeletonCellPulseProps) {
+export function SkeletonCellPulse({ columnWidth, colWidth, align, skeletonWidth, reduce }: SkeletonCellPulseProps) {
   const barWidth: DimensionValue = skeletonWidth ?? (align === 'right' ? 40 : '60%');
   return (
-    <View className="justify-center overflow-hidden px-4" style={{ width, alignItems: alignToJustify(align) }}>
+    <View
+      className="justify-center overflow-hidden px-4"
+      style={[columnLayoutStyle(columnWidth, colWidth), { alignItems: alignToJustify(align) }]}
+    >
       <MotiView
         from={{ opacity: 0.5 }}
         animate={{ opacity: reduce ? 0.5 : 1 }}
@@ -73,15 +79,15 @@ export type RowCellProps<T> = {
   row: T;
   column: TableColumn<T>;
   id: string;
-  colWidth: number;
-  containerWidth: number;
+  /** Resolved pixel width for this column (from `computeColumnWidths`). */
+  colWidth?: number;
   onCellEdit?: (rowId: string, key: string, value: string) => void;
-  /** NativeWind classes merged onto this cell. */
+  /** UniWind classes merged onto this cell. */
   cellClassName?: string;
   testID?: string;
 };
 
-export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEdit, cellClassName, testID }: RowCellProps<T>) {
+export function RowCell<T>({ row, column, id, colWidth, onCellEdit, cellClassName, testID }: RowCellProps<T>) {
   const isRTL = useIsRTL();
   const { textAlign } = alignStyle(column.align, isRTL);
   const rawValue = readCellValue(row, column);
@@ -105,10 +111,7 @@ export function RowCell<T>({ row, column, id, colWidth, containerWidth, onCellEd
     );
 
   return (
-    <View
-      className={cn('justify-center overflow-hidden px-4', cellClassName)}
-      style={{ width: containerWidth > 0 ? colWidth : undefined, flex: containerWidth > 0 ? undefined : 1 }}
-    >
+    <View className={cn('justify-center overflow-hidden px-4', cellClassName)} style={columnLayoutStyle(column.width, colWidth)}>
       {cellContent}
     </View>
   );
@@ -126,8 +129,8 @@ export type TableRowProps<T> = {
   isRowPressed: boolean;
   selectable: boolean;
   orderedColumns: TableColumn<T>[];
+  /** Resolved pixel widths per column key (from `computeColumnWidths`). */
   colWidths: Record<string, number>;
-  containerWidth: number;
   rowHeight: number;
   reduce: boolean;
   hasRowMenu: boolean;
@@ -135,9 +138,9 @@ export type TableRowProps<T> = {
   isStriped?: boolean;
   /** Style applied when `isStriped` is true. Falls back to a subtle grey tint. */
   stripedStyle?: StyleProp<ViewStyle>;
-  /** NativeWind classes merged onto the row. */
+  /** UniWind classes merged onto the row. */
   rowClassName?: string;
-  /** NativeWind classes merged onto each cell in this row. */
+  /** UniWind classes merged onto each cell in this row. */
   cellClassName?: string;
   setPressedRowId: (id: string | null) => void;
   toggleRow: (id: string) => void;
@@ -159,7 +162,6 @@ export function TableRow<T>({
   selectable,
   orderedColumns,
   colWidths,
-  containerWidth,
   rowHeight,
   reduce,
   hasRowMenu,
@@ -223,8 +225,7 @@ export function TableRow<T>({
           row={row}
           column={column}
           id={id}
-          colWidth={colWidths[column.key] ?? 0}
-          containerWidth={containerWidth}
+          colWidth={colWidths[column.key]}
           onCellEdit={onCellEdit}
           cellClassName={cellClassName}
           testID={testID}

@@ -37,7 +37,7 @@ export type OverflowActionsProps = {
   openLabel?: string;
   /** Toggle a11y label when expanded. */
   closeLabel?: string;
-  /** Additional NativeWind class names merged onto the outer row. */
+  /** Additional UniWind class names merged onto the outer row. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   /**

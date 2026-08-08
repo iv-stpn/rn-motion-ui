@@ -12,13 +12,13 @@ import { MotiView } from '../../../moti/components/view';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import type { SortDirection, TableColumn } from './table-types';
-import { alignStyle, alignToJustify } from './table-utils';
+import { alignStyle, alignToJustify, columnLayoutStyle } from './table-utils';
 
 export type HeaderCellProps<T> = {
   column: TableColumn<T>;
   colIndex: number;
-  colWidth: number;
-  containerWidth: number;
+  /** Resolved pixel width for this column (from `computeColumnWidths`). */
+  colWidth?: number;
   isActive: boolean;
   activeDirection: SortDirection | undefined;
   isColPressed: boolean;
@@ -49,7 +49,6 @@ export function HeaderCell<T>({
   column,
   colIndex,
   colWidth,
-  containerWidth,
   isActive,
   activeDirection,
   isColPressed,
@@ -91,7 +90,7 @@ export function HeaderCell<T>({
     <Pressable
       key={column.key}
       className="relative flex-col justify-center overflow-hidden px-4"
-      style={{ width: containerWidth > 0 ? colWidth : undefined, flex: containerWidth > 0 ? undefined : 1 }}
+      style={columnLayoutStyle(column.width, colWidth)}
       onLongPress={handleLongPress}
       onPress={sortEnabled ? handleSort : undefined}
       accessibilityRole={sortEnabled ? 'button' : undefined}

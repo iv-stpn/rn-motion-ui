@@ -96,7 +96,7 @@ export type RadioCardGroupProps = {
   onValueChange?: (value: string) => void;
   children: ReactNode;
   orientation?: 'vertical' | 'horizontal';
-  /** Additional NativeWind class names merged onto the group container. */
+  /** Additional UniWind class names merged onto the group container. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -163,7 +163,7 @@ export type RadioCardProps = {
   /** Custom content rendered below the title/subtitle. */
   children?: ReactNode;
   /**
-   * Additional NativeWind class names merged onto the card surface — the
+   * Additional UniWind class names merged onto the card surface — the
    * bordered, padded box that carries the selected styling.
    */
   className?: string;

@@ -18,7 +18,7 @@ export type ScrollToProps = {
   disabled?: boolean;
   /** Scale the control settles to while pressed. */
   pressScale?: number;
-  /** Additional NativeWind class names forwarded to the outer wrapper. */
+  /** Additional UniWind class names forwarded to the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;

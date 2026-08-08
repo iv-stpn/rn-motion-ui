@@ -27,7 +27,7 @@ const SmoothScrollContext = createContext<SmoothScrollApi | null>(null);
 export type SmoothScrollProps = {
   children: ReactNode;
   orientation?: 'vertical' | 'horizontal';
-  /** Additional NativeWind class names forwarded to the ScrollView. */
+  /** Additional UniWind class names forwarded to the ScrollView. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;

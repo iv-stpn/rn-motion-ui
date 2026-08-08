@@ -1,6 +1,6 @@
 # rn-motion-ui
 
-Animated React Native + React Native Web UI components, styled with [Tailwind](https://tailwindcss.com/) via [uniwind](https://github.com/nativewind/uniwind) and powered by an in-package Moti / [Reanimated](https://docs.swmansion.com/react-native-reanimated/) 4 layer.
+Animated React Native + React Native Web UI components, styled with [Tailwind](https://tailwindcss.com/) via [uniwind](https://github.com/uni-stack/uniwind) and powered by an in-package Moti / [Reanimated](https://docs.swmansion.com/react-native-reanimated/) 4 layer.
 
 The components are written as React Native primitives, so they run on native (iOS/Android via Expo or bare RN) and on the web through `react-native-web`.
 

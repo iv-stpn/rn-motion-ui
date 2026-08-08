@@ -2,6 +2,7 @@ import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef
 import { Dimensions, type LayoutChangeEvent, Modal, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
+import { cn } from '../../../lib/cn';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
@@ -213,7 +214,7 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
               // painted at an unresolved position — the rest of the pose is the
               // shared one.
               animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0 }}
-              className={`max-w-xs border border-border p-4 ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
+              className={cn('max-w-xs border border-border p-4', surfaceBackground(elevation), elevatedShadow(elevation))}
               // `transformOrigin` is static, so it composes with the animated
               // scale rather than competing with it: the panel grows out of the
               // corner facing the trigger.

@@ -38,7 +38,7 @@ export type OTPInputProps = {
   disabled?: boolean;
   autoFocus?: boolean;
   accessibilityLabel?: string;
-  /** Additional NativeWind class names merged onto the outer wrapper. */
+  /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;

@@ -40,7 +40,7 @@ export type RadioGroupProps = {
   onValueChange?: (value: string) => void;
   children: ReactNode;
   orientation?: 'vertical' | 'horizontal';
-  /** Additional NativeWind class names merged onto the group container. */
+  /** Additional UniWind class names merged onto the group container. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;

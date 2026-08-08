@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
+import { cn } from '../../../lib/cn';
 import { EASE_OUT, SPRING_PANEL } from '../../../lib/ease';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
@@ -130,7 +131,11 @@ export function MorphingModal({
               animate={{ opacity: 1, translateY: 0, scale: 1 }}
               exit={{ opacity: 0, translateY: enterY, scale: reduce ? 1 : 0.98 }}
               transition={reduce ? { type: 'timing', duration: 180, easing: EASE_OUT } : SPRING_PANEL}
-              className={`w-full max-w-sm overflow-hidden rounded-3xl border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)}`}
+              className={cn(
+                'w-full max-w-sm overflow-hidden rounded-3xl border border-border',
+                surfaceBackground(elevation),
+                elevatedShadow(elevation),
+              )}
               style={style}
             >
               {/*

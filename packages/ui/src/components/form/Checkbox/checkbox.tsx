@@ -19,7 +19,7 @@ export type CheckboxProps = {
   disabled?: boolean;
   indeterminate?: boolean;
   label?: string;
-  /** Additional NativeWind class names merged onto the outer row. */
+  /** Additional UniWind class names merged onto the outer row. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
@@ -79,7 +79,10 @@ export function Checkbox({
       <MotiView animate={{ scale: pressed && !reduce && !disabled ? 0.92 : 1 }} transition={SPRING_PRESS}>
         {/* Base box is always in the unchecked state; the primary fill animates in/out. */}
         <View
-          className={`h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-surface-3 ${showMark ? 'border-primary' : 'border-muted-foreground/50'}`}
+          className={cn(
+            'h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-surface-3',
+            showMark ? 'border-primary' : 'border-muted-foreground/50',
+          )}
         >
           {/* Fill fades in on check and out on uncheck, same timing as the mark. */}
           <MotiView

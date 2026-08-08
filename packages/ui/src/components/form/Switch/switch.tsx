@@ -66,7 +66,7 @@ export type SwitchRenderProps = { isSelected: boolean; isDisabled: boolean };
 /** Props for the sliding thumb sub-component. */
 export type SwitchThumbProps = {
   children?: ReactNode | ((props: SwitchRenderProps) => ReactNode);
-  /** Additional NativeWind class names merged onto the thumb. */
+  /** Additional UniWind class names merged onto the thumb. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   /**
@@ -79,7 +79,7 @@ export type SwitchThumbProps = {
 /** Props for the label container sub-component. */
 export type SwitchLabelProps = {
   children?: ReactNode;
-  /** Additional NativeWind class names merged onto the pressable wrapper. */
+  /** Additional UniWind class names merged onto the pressable wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
 };
@@ -87,7 +87,7 @@ export type SwitchLabelProps = {
 /** Props for the start/end content slot sub-components. */
 export type SwitchContentProps = {
   children?: ReactNode;
-  /** Additional NativeWind class names. */
+  /** Additional UniWind class names. */
   className?: string;
   style?: StyleProp<ViewStyle>;
 };
@@ -97,7 +97,7 @@ export type SwitchProps = {
   onSelectedChange: (isSelected: boolean) => void;
   isDisabled?: boolean;
   label?: string;
-  /** Additional NativeWind class names merged onto the outer row. */
+  /** Additional UniWind class names merged onto the outer row. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
@@ -347,7 +347,7 @@ function SwitchRoot({
         </Pressable>
         {label ? (
           <SwitchLabel>
-            <Text className={`select-none text-foreground ${labelClass}`}>{label}</Text>
+            <Text className={cn('select-none text-foreground', labelClass)}>{label}</Text>
           </SwitchLabel>
         ) : null}
       </View>

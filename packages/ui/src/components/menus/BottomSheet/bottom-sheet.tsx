@@ -201,7 +201,7 @@ export function BottomSheet({
               >
                 {fullSheet ? null : <SheetHandle className={handleClassName} />}
                 <View
-                  className={`min-h-0 flex-1${containerClassName ? ` ${containerClassName}` : ''}`}
+                  className={cn('min-h-0 grow', containerClassName)}
                   style={safeArea ? { paddingTop: fullSheet ? insets.top : 0, paddingBottom: insets.bottom } : undefined}
                 >
                   {children}

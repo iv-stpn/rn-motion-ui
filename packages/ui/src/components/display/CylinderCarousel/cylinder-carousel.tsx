@@ -181,7 +181,7 @@ export type CylinderCarouselProps = {
   onIndexChange?: (index: number) => void;
   /** Stage height in px. Defaults to `itemSize`. */
   height?: number;
-  /** Additional NativeWind class names merged onto the outer wrapper. */
+  /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   /**

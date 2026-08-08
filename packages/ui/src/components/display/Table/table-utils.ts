@@ -203,3 +203,25 @@ export function nextSort(activeSort: SortState | null, key: string): SortState |
   }
   return { key, direction: 'asc' };
 }
+
+/**
+ * Returns the flexbox style for a column's width.  When `resolvedWidth` is
+ * known (from `computeColumnWidths` → `containerWidth`), every column gets an
+ * explicit `width` — required inside a horizontal `ScrollView` where `flex`
+ * cannot distribute space.  When it is unknown (initial render before layout),
+ * fractional columns fall back to `flex` with a proportional `minWidth` so the
+ * table still renders reasonable geometry.
+ */
+export function columnLayoutStyle(
+  columnWidth: number | string | undefined,
+  /** Known pixel width from `computeColumnWidths`. When available, all columns use explicit `width`. */
+  resolvedWidth?: number,
+): { width: number } | { flex: number; minWidth: number } {
+  if (resolvedWidth !== undefined && resolvedWidth > 0) return { width: resolvedWidth };
+  const parsed = parseColumnWidth(columnWidth);
+  if (parsed.type === 'fr') {
+    // Proportional floor: a 2fr column stays at least twice as wide as a 1fr one.
+    return { flex: parsed.value, minWidth: Math.round(parsed.value * 80) };
+  }
+  return { width: parsed.value };
+}

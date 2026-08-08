@@ -96,7 +96,7 @@ export type TriggerButtonProps = {
    */
   glossyVariant?: GlossyVariant;
   /**
-   * `kind === 'pressable'` only. Extra Tailwind/NativeWind classes merged onto
+   * `kind === 'pressable'` only. Extra Tailwind/UniWind classes merged onto
    * the `Pressable` wrapper — useful for one-off layout or colour overrides.
    */
   className?: string;

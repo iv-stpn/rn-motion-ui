@@ -24,7 +24,7 @@ export type BouncyAccordionProps = {
   defaultValue?: string | null;
   onValueChange?: (value: string | null) => void;
   collapsible?: boolean;
-  /** Additional NativeWind class names merged onto the outer wrapper. */
+  /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
   /**

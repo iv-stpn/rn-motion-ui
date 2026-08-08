@@ -6,6 +6,7 @@ import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
+import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
@@ -121,7 +122,7 @@ function buildBody({
   } else resolvedHeader = typeof headerSlot === 'function' ? headerSlot({ close: handleClose }) : headerSlot;
 
   return (
-    <View className={`flex-1 ${px} ${pt}`}>
+    <View className={cn('flex-1', px, pt)}>
       {resolvedHeader}
       {scrollable ? (
         <ScrollView
@@ -134,7 +135,7 @@ function buildBody({
           <View className={pb}>{children}</View>
         </ScrollView>
       ) : (
-        <View className={`w-full flex-1 ${pb}`}>{children}</View>
+        <View className={cn('w-full flex-1', pb)}>{children}</View>
       )}
     </View>
   );

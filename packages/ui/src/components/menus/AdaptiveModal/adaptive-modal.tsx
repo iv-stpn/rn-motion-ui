@@ -285,7 +285,7 @@ export function AdaptiveModal({
                     >
                       <TouchableOpacity activeOpacity={1} className="h-full" style={{ width: drawerWidth }}>
                         <View
-                          className={`h-full px-8 pt-8 pb-8 ${surfaceBackground(elevation)}`}
+                          className={cn('h-full px-8 pt-8 pb-8', surfaceBackground(elevation))}
                           accessibilityViewIsModal={true}
                           aria-modal={true}
                           role="dialog"

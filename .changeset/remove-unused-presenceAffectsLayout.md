@@ -1,5 +1,6 @@
 ---
-'@rn-motion-ui/ui': patch
+'rn-motion-ui': patch
 ---
 
-- **AnimatePresence**: removed unused `presenceAffectsLayout` prop (was accepted for API compatibility but never implemented)
+- **AnimatePresence**: removed unused `presenceAffectsLayout` prop (was accepted
+  for API compatibility but never implemented)

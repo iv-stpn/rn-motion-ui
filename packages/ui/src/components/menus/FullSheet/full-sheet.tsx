@@ -58,7 +58,7 @@ function buildBody({
   backIcon,
 }: BuildBodyArgs): ReactNode {
   if (mode === 'back-button') {
-    const headerH = isSmallScreen && title ? BACK_BUTTON_HEADER_HEIGHT : 0;
+    const headerHeight = isSmallScreen && title ? BACK_BUTTON_HEADER_HEIGHT : 0;
     let backOverlay: ReactNode = null;
     if (isSmallScreen && title)
       backOverlay = (
@@ -88,7 +88,7 @@ function buildBody({
       );
     return (
       <>
-        <View className="flex-1" style={{ paddingTop: headerH }}>
+        <View className="flex-1" style={{ paddingTop: headerHeight }}>
           {children}
         </View>
         {backOverlay}

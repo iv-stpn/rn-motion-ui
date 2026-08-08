@@ -601,8 +601,8 @@ export function WheelPicker({
         accessibilityLabel={accessibilityLabel}
         accessibilityValue={{ text: currentValue }}
         testID={testID ?? 'wheel-picker'}
-        className={className}
-        style={[{ height, opacity: disabled ? 0.5 : 1 }, style]}
+        className={cn(className, disabled && 'opacity-50')}
+        style={[{ height }, style]}
       >
         <View className={cn(REDUCED_BAND_CLASS[variant], 'pointer-events-none z-10')} style={{ top: pad, height: itemHeight }} />
         <ScrollView

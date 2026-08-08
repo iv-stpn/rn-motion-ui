@@ -10,8 +10,8 @@ import { MotiView } from '../../../moti/components/view';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Checkbox } from '../../form/Checkbox/checkbox';
 import { Text } from '../../typography/Text/text';
-import type { TableColumn } from './table-types';
-import { alignToItemsClass, alignToTextClass, columnLayoutClass, readCellValue } from './table-utils';
+import { CHECKBOX_COL_WIDTH, type TableColumn } from './table-types';
+import { alignToItemsClass, alignToTextClass, columnLayoutStyle, readCellValue } from './table-utils';
 
 // ─── Editable cell input ──────────────────────────────────────────────────────
 
@@ -41,9 +41,7 @@ function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) 
 
 // ─── Skeleton cell pulse ──────────────────────────────────────────────────────
 
-function widthClass(w: DimensionValue): `w-[${string}]` {
-  return typeof w === 'number' ? `w-[${w}px]` : `w-[${w}]`;
-}
+// ─── Skeleton cell pulse ──────────────────────────────────────────────────────
 
 export type SkeletonCellPulseProps = {
   /** Column width spec — passed directly to `columnLayoutClass` for flex/px resolution. */
@@ -60,13 +58,15 @@ export function SkeletonCellPulse({ columnWidth, colWidth, align, skeletonWidth,
   const barWidth: DimensionValue = skeletonWidth ?? (align === 'right' ? 40 : '60%');
   return (
     <View
-      className={cn('justify-center overflow-hidden px-4', alignToItemsClass(align), columnLayoutClass(columnWidth, colWidth))}
+      className={cn('justify-center overflow-hidden px-4', alignToItemsClass(align))}
+      style={columnLayoutStyle(columnWidth, colWidth)}
     >
       <MotiView
         from={{ opacity: 0.5 }}
         animate={{ opacity: reduce ? 0.5 : 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 800, loop: !reduce, repeatReverse: true }}
-        className={cn('h-3 rounded-md bg-border', widthClass(barWidth))}
+        className="h-3 rounded-md bg-border"
+        style={{ width: barWidth }}
       />
     </View>
   );
@@ -112,7 +112,7 @@ export function RowCell<T>({ row, column, id, colWidth, onCellEdit, cellClassNam
     );
 
   return (
-    <View className={cn('justify-center overflow-hidden px-4', cellClassName, columnLayoutClass(column.width, colWidth))}>
+    <View className={cn('justify-center overflow-hidden px-4', cellClassName)} style={columnLayoutStyle(column.width, colWidth)}>
       {cellContent}
     </View>
   );
@@ -215,7 +215,7 @@ export function TableRow<T>({
       />
 
       {selectable ? (
-        <View className="w-11 items-center justify-center overflow-hidden px-4">
+        <View className="items-center justify-center overflow-hidden px-4" style={{ width: CHECKBOX_COL_WIDTH }}>
           <Checkbox checked={isSelected} onCheckedChange={handleToggleRow} accessibilityLabel={`Select row ${index + 1}`} />
         </View>
       ) : null}

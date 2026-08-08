@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
+import { cn } from '../../../lib/cn';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
 import { FullSheet, type FullSheetMode } from './full-sheet';
@@ -45,7 +46,7 @@ type SheetBodyProps = { long?: boolean; padded?: boolean; centered?: boolean; on
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetBody({ long = false, padded = false, centered = false, onClose }: SheetBodyProps) {
   return (
-    <View className="flex-1 gap-3" style={{ alignItems: centered ? 'center' : 'stretch', padding: padded ? 24 : 0 }}>
+    <View className={cn('flex-1 gap-3', centered ? 'items-center' : 'items-stretch', padded ? 'p-6' : 'p-0')}>
       {centered ? (
         <Text size="2xl" weight="bold">
           {CUSTOM_LAYOUT_TITLE}

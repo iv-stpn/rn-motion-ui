@@ -1,2 +1,11 @@
 node packages/ui/scripts/check-readme.mjs --fix
+
+# If README.md was resynced, auto-commit the change so it goes out with the push.
+if ! git diff --quiet README.md; then
+  git add README.md packages/ui/README.md
+  git commit -m "chore: auto-sync README
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+fi
+
 bun run test

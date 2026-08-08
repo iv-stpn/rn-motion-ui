@@ -185,7 +185,7 @@ function HoldContent({ activateOn, children, holdDuration, isHeld, isPressed, li
   );
 
   return (
-    <MotiView animate={animate} style={{ opacity: lifted ? 0 : 1 }} transition={transition}>
+    <MotiView animate={animate} className={lifted ? 'opacity-0' : 'opacity-100'} transition={transition}>
       {children}
     </MotiView>
   );

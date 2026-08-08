@@ -62,7 +62,6 @@ type HeightKey = (typeof HEIGHTS)[number]['value'];
 // (`alignItems: center`) sizes children to content instead of stretching them —
 // which collapsed these specimens to ~32px. Setting the width on the picker
 // itself, not the `Sample`, is what actually sizes the drum.
-const SAMPLE_WHEEL = { width: 180 } as const;
 
 function daysIn(month: number, year: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -173,7 +172,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
                 accessibilityLabel={`Size in ${option.label}`}
                 defaultValue="Medium"
                 options={SIZES}
-                style={SAMPLE_WHEEL}
+                className="w-[180px]"
                 visibleCount={Number(option.value)}
               />
             </Sample>
@@ -187,14 +186,14 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
       <Section title="Container variant">
         <Variants>
           <Sample align="center" label="card (default)">
-            <WheelPicker accessibilityLabel="Size, card" defaultValue="Medium" options={SIZES} style={SAMPLE_WHEEL} />
+            <WheelPicker accessibilityLabel="Size, card" defaultValue="Medium" options={SIZES} className="w-[180px]" />
           </Sample>
           <Sample align="center" label="plain">
             <WheelPicker
               accessibilityLabel="Size, plain"
               defaultValue="Medium"
               options={SIZES}
-              style={SAMPLE_WHEEL}
+              className="w-[180px]"
               variant="plain"
             />
           </Sample>

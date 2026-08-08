@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type LayoutChangeEvent, type StyleProp, type TextStyle, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useArmOnView } from '../../../hooks/use-arm-on-view';
 import { useInView } from '../../../hooks/use-in-view';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
@@ -11,7 +11,6 @@ import { formatNumber, isDigit } from './text-number-ticker.logic';
 
 const DIGITS = Array.from({ length: 10 }, (_, n) => n);
 const MEASURE_GLYPH = '0';
-const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
 const ROW: ViewStyle = { flexDirection: 'row', alignItems: 'center' };
 /** Animation duration defaults, per mode (seconds). */
 const DEFAULT_DURATION = { roll: 0.9, count: 1.2 } as const;
@@ -162,8 +161,8 @@ function RollingDigits({ text, armed, duration, stagger, prefix, suffix, classNa
   useEffect(() => {
     if (!armed || entered) return;
     const total = (duration + glyphs.length * stagger) * 1000;
-    const t = setTimeout(() => setEntered(true), total);
-    return () => clearTimeout(t);
+    const timeout = setTimeout(() => setEntered(true), total);
+    return () => clearTimeout(timeout);
   }, [armed, entered, duration, stagger, glyphs.length]);
 
   const onMeasure = useCallback(
@@ -231,11 +230,9 @@ function Digit({ digit, delay, duration, box, className, digitClassName }: Digit
             : { type: 'timing', duration: duration * 1000, delay: delay * 1000, easing: EASE_OUT }
         }
       >
-        {DIGITS.map((n) => (
-          <View key={n} className="items-center justify-center" style={{ height: box.h }}>
-            <Text className={className} style={TABULAR}>
-              {n}
-            </Text>
+        {DIGITS.map((number) => (
+          <View key={number} className="items-center justify-center" style={{ height: box.h }}>
+            <Text className={cn('tabular-nums', className)}>{number}</Text>
           </View>
         ))}
       </MotiView>
@@ -269,13 +266,14 @@ function CountingLabel({ value, armed, duration, format, prefix, suffix, classNa
 
     const from = fromRef.current;
     const delta = value - from;
-    const durMs = Math.max(1, duration * 1000);
+
+    const durationMs = Math.max(1, duration * 1000);
     let raf = 0;
     let start = 0;
 
     const tick = (now: number) => {
       if (!start) start = now;
-      const t = Math.min(1, (now - start) / durMs);
+      const t = Math.min(1, (now - start) / durationMs);
       setDisplay(from + delta * EASE_OUT_FN(t));
       if (t < 1) raf = requestAnimationFrame(tick);
     };
@@ -285,9 +283,5 @@ function CountingLabel({ value, armed, duration, format, prefix, suffix, classNa
     return () => cancelAnimationFrame(raf);
   }, [value, duration, armed, reduce]);
 
-  return (
-    <Text className={className} style={TABULAR}>
-      {`${prefix ?? ''}${format(display)}${suffix ?? ''}`}
-    </Text>
-  );
+  return <Text className={cn('tabular-nums', className)}>{`${prefix ?? ''}${format(display)}${suffix ?? ''}`}</Text>;
 }

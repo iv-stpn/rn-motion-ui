@@ -2,7 +2,15 @@
 
 import { useEffect } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
@@ -67,17 +75,33 @@ function Spinner({ size, speed, color, reduce }: PartProps) {
   const stroke = Math.max(2, size * 0.09);
   const r = (size - stroke) / 2;
   const dur = speed * 1000;
+
+  // Drive the rotation imperatively — same pattern as BadgeSpinner. MotiView's
+  // declarative `loop` re-issues the animation on every parent re-render (theme
+  // toggle, presence context churn), restarting mid-revolution; `Easing.linear`
+  // keeps the speed constant through the repeat boundary so the arc never pauses.
+  const rotation = useSharedValue(0);
+  const opacity = useSharedValue(1);
+
+  // biome-ignore lint/plugin: Reanimated withRepeat loop must be started and cancelled as a side effect — not expressible as derived state
+  useEffect(() => {
+    if (reduce) {
+      rotation.value = 0;
+      opacity.value = withRepeat(withTiming(0.5, { duration: 700 }), -1, true);
+      return () => cancelAnimation(opacity);
+    }
+    opacity.value = 1;
+    rotation.value = withRepeat(withTiming(360, { duration: dur, easing: Easing.linear }), -1, false);
+    return () => cancelAnimation(rotation);
+  }, [reduce, dur, rotation, opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+    opacity: opacity.value,
+  }));
+
   return (
-    <MotiView
-      from={{ rotate: '0deg' }}
-      animate={reduce ? { opacity: 0.5 } : { rotate: '360deg' }}
-      transition={
-        reduce
-          ? { type: 'timing', duration: 700, loop: true, repeatReverse: true }
-          : { type: 'timing', duration: dur, loop: true, repeatReverse: false, easing: undefined }
-      }
-      style={{ width: size, height: size }}
-    >
+    <Animated.View style={[animatedStyle, { width: size, height: size }]}>
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <Circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeOpacity={0.2} strokeWidth={stroke} />
         <Path
@@ -88,7 +112,7 @@ function Spinner({ size, speed, color, reduce }: PartProps) {
           strokeLinecap="round"
         />
       </Svg>
-    </MotiView>
+    </Animated.View>
   );
 }
 

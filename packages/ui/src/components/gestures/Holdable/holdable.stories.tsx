@@ -6,6 +6,10 @@
  * purpose — a held mouse already means right-click on desktop — and the plays
  * below dispatch synthetic touch pointer events to exercise the timeline.
  *
+ * Set `cursorMode` to allow a mouse left-button press to run the same timeline
+ * a touch press does. The "Cursor" story below exercises this path with
+ * synthetic mouse pointer events.
+ *
  * The four-phase timeline:
  *   `pending` → (armDelay 150ms) → `active` (isPressed) → (holdDelay 300ms) → `hold` (isHeld + onHold)
  *
@@ -42,7 +46,21 @@ function touchPointer(node: Element, type: string, pointerId = 1) {
   );
 }
 
-type HoldDemoProps = { disabled?: boolean };
+/** Dispatch a synthetic mouse pointer event — for exercising `cursorMode`. */
+function mousePointer(node: Element, type: string, pointerId = 1) {
+  node.dispatchEvent(
+    new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      buttons: type === 'pointerdown' ? 1 : 0,
+      pointerId,
+      pointerType: 'mouse',
+    }),
+  );
+}
+
+type HoldDemoProps = { cursorMode?: boolean; disabled?: boolean };
 
 function chipClass(isHeld: boolean, isPressed: boolean) {
   if (isHeld) return 'rounded-xl border border-primary bg-primary/10 px-6 py-4';
@@ -62,7 +80,7 @@ function chipLabel(isHeld: boolean, isPressed: boolean) {
  * The visual state matches the phase: unstyled in `pending`, slightly dimmed in
  * `active` (armed), and highlighted in `hold`.
  */
-function HoldDemo({ disabled = false }: HoldDemoProps) {
+function HoldDemo({ cursorMode = false, disabled = false }: HoldDemoProps) {
   const [status, setStatus] = useState('Waiting');
 
   const handleActive = useCallback(() => setStatus('Armed'), []);
@@ -71,7 +89,14 @@ function HoldDemo({ disabled = false }: HoldDemoProps) {
 
   return (
     <View className="items-start gap-3">
-      <Holdable disabled={disabled} onActive={handleActive} onHold={handleHold} onHoldEscape={handleEscape} testID={CHIP_TEST_ID}>
+      <Holdable
+        cursorMode={cursorMode}
+        disabled={disabled}
+        onActive={handleActive}
+        onHold={handleHold}
+        onHoldEscape={handleEscape}
+        testID={CHIP_TEST_ID}
+      >
         {({ isHeld, isPressed }) => (
           <View className={chipClass(isHeld, isPressed)}>
             <Text size="sm" weight="medium">
@@ -87,14 +112,16 @@ function HoldDemo({ disabled = false }: HoldDemoProps) {
 }
 
 function HoldPlayground() {
+  const [cursorMode, setCursorMode] = useState(false);
   const [disabled, setDisabled] = useState(false);
 
   return (
     <Playground>
       <ControlCard title="Options">
+        <Toggle label="Cursor mode" onChange={setCursorMode} value={cursorMode} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
       </ControlCard>
-      <HoldDemo disabled={disabled} />
+      <HoldDemo cursorMode={cursorMode} disabled={disabled} />
     </Playground>
   );
 }
@@ -167,6 +194,30 @@ export const Escape: Story = {
     // no 'Escaped'; the chip itself is back at rest.
     await expect(await canvas.findByTestId(READOUT_TEST_ID)).toHaveTextContent('Armed');
     await expect(await canvas.findByText('Hold me')).toBeVisible();
+  },
+};
+
+/**
+ * With `cursorMode`, a mouse left-button press runs the same hold timeline a
+ * touch press does. The synthetic mouse pointer events stay down past
+ * `holdDelay` (300ms) and `onHold` fires; the chip shows the held visual state.
+ * Right-click is still the browser's own context menu.
+ */
+export const Cursor: Story = {
+  name: 'Demo: cursorMode enables mouse-hold on web',
+  render: () => <HoldDemo cursorMode={true} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chip = await canvas.findByTestId(CHIP_TEST_ID);
+
+    mousePointer(chip, 'pointerdown');
+    // Hold past holdDelay (300ms).
+    await new Promise((r) => setTimeout(r, 350));
+
+    await expect(await canvas.findByTestId(READOUT_TEST_ID)).toHaveTextContent('Held');
+
+    mousePointer(chip, 'pointerup');
+    await new Promise((r) => setTimeout(r, 0));
   },
 };
 

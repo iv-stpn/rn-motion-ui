@@ -132,7 +132,7 @@ export function MorphingModal({
               exit={{ opacity: 0, translateY: enterY, scale: reduce ? 1 : 0.98 }}
               transition={reduce ? { type: 'timing', duration: 180, easing: EASE_OUT } : SPRING_PANEL}
               className={cn(
-                'w-full max-w-sm overflow-hidden rounded-3xl border border-border',
+                'w-full max-w-sm overflow-hidden rounded-modal border border-border',
                 surfaceBackground(elevation),
                 elevatedShadow(elevation),
               )}

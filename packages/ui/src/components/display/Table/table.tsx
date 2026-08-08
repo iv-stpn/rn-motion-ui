@@ -416,7 +416,7 @@ export function Table<T>(props: TableProps<T>) {
       <ScrollView
         horizontal={true}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ minWidth: '100%' }}
+        contentContainerClassName="min-w-full"
         testID={`${testID ?? 'table'}-scroll`}
       >
         {tableBody}

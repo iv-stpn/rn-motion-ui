@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { describe, expect, it } from 'vitest';
+import { INTERACTIVE_RADIUS } from '../../../../lib/radius';
 import { BUTTON_BOX, BUTTON_METRICS, type ButtonSize, buttonRadius } from '../button-scale';
 
 // The button family's geometry is declared twice: as `@theme` tokens in
@@ -18,7 +19,9 @@ const css = readFileSync(resolve(process.cwd(), 'src/theme/tokens.css'), 'utf8')
 
 // Every geometry token in the sheet, by property name minus the leading `--`.
 const DECLARED = new Map<string, number>();
-for (const [, property = '', value = ''] of css.matchAll(/--((?:spacing|radius)-button-[a-z-]+):\s*(\d+(?:\.\d+)?)px;/g))
+for (const [, property = '', value = ''] of css.matchAll(
+  /--((?:spacing|radius)-(?:interactive(?:-(?:pad-)?[a-z]+)?)):\s*(\d+(?:\.\d+)?)px;/g,
+))
   DECLARED.set(property, Number(value));
 
 /** The px value of a geometry token declared in tokens.css. */
@@ -34,24 +37,33 @@ const TOKEN_SIZE: Record<ButtonSize, string> = { sm: 'sm', md: 'md', lg: 'lg', i
 describe('button geometry', () => {
   it.each(['sm', 'md', 'lg', 'icon'] as const)('%s matches its tokens.css declaration', (size) => {
     const token = TOKEN_SIZE[size];
-    expect(BUTTON_METRICS[size].height).toBe(cssPx(`spacing-button-${token}`));
-    expect(BUTTON_METRICS[size].radius).toBe(cssPx(`radius-button-${token}`));
+    expect(BUTTON_METRICS[size].height).toBe(cssPx(`spacing-interactive-${token}`));
+    expect(BUTTON_METRICS[size].radius).toBe(INTERACTIVE_RADIUS);
     // An icon button is square: the box is the padding, so it declares none.
-    expect(BUTTON_METRICS[size].padX).toBe(size === 'icon' ? 0 : cssPx(`spacing-button-pad-${token}`));
+    expect(BUTTON_METRICS[size].padX).toBe(size === 'icon' ? 0 : cssPx(`spacing-interactive-pad-${token}`));
+  });
+
+  it('radius-interactive token matches the JS constant', () => {
+    expect(INTERACTIVE_RADIUS).toBe(cssPx('radius-interactive'));
   });
 
   it.each(['sm', 'md', 'lg', 'icon'] as const)('%s names the geometry tokens in its classes', (size) => {
     const token = TOKEN_SIZE[size];
-    expect(BUTTON_BOX.rounded[size]).toContain(`h-button-${token}`);
-    expect(BUTTON_BOX.rounded[size]).toContain(`rounded-button-${token}`);
-    expect(BUTTON_BOX.pill[size]).toContain(`h-button-${token}`);
+    expect(BUTTON_BOX.rounded[size]).toContain(`h-interactive-${token}`);
+    expect(BUTTON_BOX.rounded[size]).toContain('rounded-interactive');
+    expect(BUTTON_BOX.pill[size]).toContain(`h-interactive-${token}`);
     expect(BUTTON_BOX.pill[size]).toContain('rounded-full');
+    // Icon buttons are square — the box IS the padding, so no pad class.
+    if (size !== 'icon') {
+      expect(BUTTON_BOX.rounded[size]).toContain(`px-interactive-pad-${token}`);
+      expect(BUTTON_BOX.pill[size]).toContain(`px-interactive-pad-${token}`);
+    }
   });
 
-  it('rounds a pill to half its height and everything else to its size radius', () => {
+  it('rounds a pill to half its height and everything else to the interactive radius', () => {
     for (const size of ['sm', 'md', 'lg', 'icon'] as const) {
       expect(buttonRadius('pill', size)).toBe(BUTTON_METRICS[size].height / 2);
-      expect(buttonRadius('rounded', size)).toBe(BUTTON_METRICS[size].radius);
+      expect(buttonRadius('rounded', size)).toBe(INTERACTIVE_RADIUS);
     }
   });
 
@@ -60,10 +72,10 @@ describe('button geometry', () => {
     // either dead or a size the table forgot.
     const named = new Set<string>();
     for (const size of ['sm', 'md', 'lg'] as const) {
-      named.add(`spacing-button-${size}`);
-      named.add(`spacing-button-pad-${size}`);
-      named.add(`radius-button-${size}`);
+      named.add(`spacing-interactive-${size}`);
+      named.add(`spacing-interactive-pad-${size}`);
     }
+    named.add('radius-interactive');
     const byName = (a: string, b: string) => a.localeCompare(b);
     expect([...DECLARED.keys()].sort(byName)).toStrictEqual([...named].sort(byName));
   });
@@ -73,6 +85,6 @@ describe('button geometry', () => {
     const heights = (['sm', 'md', 'lg'] as const).map((size) => BUTTON_METRICS[size].height);
     expect(heights).toStrictEqual([...heights].sort((a, b) => a - b));
     expect(BUTTON_METRICS.icon.height).toBe(BUTTON_METRICS.md.height);
-    expect(BUTTON_METRICS.icon.radius).toBe(BUTTON_METRICS.md.radius);
+    expect(BUTTON_METRICS.icon.radius).toBe(INTERACTIVE_RADIUS);
   });
 });

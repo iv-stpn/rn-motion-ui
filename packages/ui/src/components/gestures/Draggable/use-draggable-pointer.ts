@@ -1,4 +1,4 @@
-// Web transport #2: a pointer-driven pan, for touch.
+// Web transport #2: a pointer-driven pan, for touch (and for mouse when `cursorMode`).
 //
 // No mobile browser starts an HTML5 drag from a finger — `dragstart` simply never
 // fires — so without this a `<Draggable>` is inert on every phone and tablet on the
@@ -10,6 +10,11 @@
 // Except that on web `holdDelay` defaults to `null`, so the third phase does not
 // exist unless a consumer asks for it — a long press in a browser already means the
 // context menu or a text selection. See `resolveDragBehavior`.
+//
+// Touch only by default: a mouse on this same element is the HTML5 transport's
+// business, and arming both would run two drags off one gesture. `cursorMode` opts
+// in to mouse left-button presses here — when set, this transport handles both hold
+// and drag from a mouse, and the HTML5 transport is disabled to avoid a conflict.
 //
 // Built on pointer events rather than RNGH deliberately: react-native-gesture-handler
 // needs a `GestureHandlerRootView` in the consumer's tree to work under
@@ -40,6 +45,12 @@ function capturePointer(node: HTMLElement, pointerId: number) {
 }
 
 type ListenerParams = {
+  /**
+   * When true, a mouse left-button press runs the same timeline a touch press
+   * does — hold fires at `holdDelay`, and a drag past `slop` lifts through
+   * this transport instead of HTML5. Right-click is never intercepted.
+   */
+  cursorMode: boolean;
   effectAllowed: DragEffectAllowed;
   node: HTMLElement;
   session: DraggableSession;
@@ -53,12 +64,20 @@ type ListenerParams = {
   timeline: PressTimeline;
 };
 
-function buildListeners({ effectAllowed, node, session, timeline }: ListenerParams) {
+function buildListeners({ cursorMode, effectAllowed, node, session, timeline }: ListenerParams) {
   let trip: Trip | null = null;
   // Set at `pointerup` when the press had reached `'hold'`, read at the
-  // `touchend` that follows it — see `onTouchEnd`. `pointerup` arrives first
-  // and ends the timeline, so the phase has to be carried across the gap.
+  // `touchend` that follows it — see `onTouchEnd`, and at the `click` listener
+  // for mouse-mode. `pointerup` arrives first and ends the timeline, so the
+  // phase has to be carried across the gap.
   let holdReleased = false;
+
+  function acceptsPointer(e: PointerEvent): boolean {
+    if (e.pointerType === 'touch') return true;
+    // A mouse — right-click is never a hold: button 2 must still open the
+    // browser's own context menu. `e.button` on pointerdown for button 2 is 2.
+    return cursorMode && e.pointerType === 'mouse' && e.button === 0;
+  }
 
   function reset() {
     trip = null;
@@ -66,9 +85,7 @@ function buildListeners({ effectAllowed, node, session, timeline }: ListenerPara
   }
 
   function onPointerDown(e: PointerEvent) {
-    // Touch only. A mouse on this same element is the HTML5 transport's business,
-    // and arming both would run two drags off one gesture.
-    if (trip !== null || e.pointerType !== 'touch') return;
+    if (trip !== null || !acceptsPointer(e)) return;
     trip = { dragging: false, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY };
     timeline.press();
   }
@@ -167,10 +184,24 @@ function buildListeners({ effectAllowed, node, session, timeline }: ListenerPara
     e.preventDefault();
   }
 
-  return { onLostCapture, onPointerAbort, onPointerDown, onPointerMove, onPointerUp, onTouchEnd, onTouchMove, reset };
+  /**
+   * Mouse-mode equivalent of `onTouchEnd`: a mouse left-button release after a
+   * hold fires a real `click` event, and whatever the hold opened would see it
+   * as a dismissal. Capture-phase to stop it before any other handler.
+   */
+  function onClick(e: MouseEvent) {
+    if (!holdReleased) return;
+    holdReleased = false;
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+  }
+
+  return { onClick, onLostCapture, onPointerAbort, onPointerDown, onPointerMove, onPointerUp, onTouchEnd, onTouchMove, reset };
 }
 
 export type UseDraggablePointerParams = {
+  /** When true, a mouse left-button press runs the same timeline a touch press does. */
+  cursorMode: boolean;
   effectAllowed: DragEffectAllowed;
   enabled: boolean;
   nodeRef: RefObject<View | null>;
@@ -179,7 +210,14 @@ export type UseDraggablePointerParams = {
   timeline: PressTimeline;
 };
 
-export function useDraggablePointer({ effectAllowed, enabled, nodeRef, session, timeline }: UseDraggablePointerParams): void {
+export function useDraggablePointer({
+  cursorMode,
+  effectAllowed,
+  enabled,
+  nodeRef,
+  session,
+  timeline,
+}: UseDraggablePointerParams): void {
   // Live, so a changed `effectAllowed` does not rebind the listeners mid-gesture.
   const effectRef = useRef(effectAllowed);
   effectRef.current = effectAllowed;
@@ -191,7 +229,7 @@ export function useDraggablePointer({ effectAllowed, enabled, nodeRef, session, 
     const node = nodeRef.current as unknown as HTMLElement | null;
     if (!node?.addEventListener) return;
 
-    const listeners = buildListeners({ effectAllowed: effectRef.current, node, session, timeline });
+    const listeners = buildListeners({ cursorMode, effectAllowed: effectRef.current, node, session, timeline });
 
     node.addEventListener('pointerdown', listeners.onPointerDown);
     node.addEventListener('pointermove', listeners.onPointerMove, { passive: false });
@@ -200,6 +238,7 @@ export function useDraggablePointer({ effectAllowed, enabled, nodeRef, session, 
     node.addEventListener('lostpointercapture', listeners.onLostCapture);
     node.addEventListener('touchmove', listeners.onTouchMove, { passive: false });
     node.addEventListener('touchend', listeners.onTouchEnd, { passive: false });
+    node.addEventListener('click', listeners.onClick, { capture: true });
 
     return () => {
       listeners.reset();
@@ -210,7 +249,8 @@ export function useDraggablePointer({ effectAllowed, enabled, nodeRef, session, 
       node.removeEventListener('lostpointercapture', listeners.onLostCapture);
       node.removeEventListener('touchmove', listeners.onTouchMove);
       node.removeEventListener('touchend', listeners.onTouchEnd);
+      node.removeEventListener('click', listeners.onClick, { capture: true });
     };
     // `timeline` is stable for the life of the component, so it never rebinds here.
-  }, [enabled, nodeRef, session, timeline]);
+  }, [cursorMode, enabled, nodeRef, session, timeline]);
 }

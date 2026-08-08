@@ -66,6 +66,7 @@ export function Holdable({
   behavior,
   children,
   className,
+  cursorMode = false,
   disabled,
   onActive,
   onHold,
@@ -76,7 +77,7 @@ export function Holdable({
   testID,
   ...viewProps
 }: HoldableProps) {
-  const hold = useHoldable({ behavior, disabled, onActive, onHold, onHoldEscape, onPhaseChange });
+  const hold = useHoldable({ behavior, cursorMode, disabled, onActive, onHold, onHoldEscape, onPhaseChange });
 
   const root = hold.getRootProps();
   const state: HoldableState = { isHeld: hold.isHeld, isPressed: hold.isPressed, phase: hold.phase };

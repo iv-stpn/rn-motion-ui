@@ -92,6 +92,18 @@ export const MOTION_GENTLE = {
   mass: 1.0,
 };
 
+/**
+ * Menu enter — a little bouncier than `MOTION_STANDARD`, so the panel settles into
+ * place with a subtle overshoot rather than stopping dead. The damping ratio (~0.7)
+ * is roughly a framer-motion `bounce: 0.1`.
+ */
+export const MOTION_MENU_ENTER = {
+  type: 'spring' as const,
+  stiffness: 350,
+  damping: 22,
+  mass: 0.7,
+};
+
 // ── Merge helper ─────────────────────────────────────────────────────────────
 
 /**
@@ -114,7 +126,7 @@ export function mergeTransition<T extends Record<string, unknown>>(preset: T, ov
 // ── Anchored menu motion ─────────────────────────────────────────────────────
 
 /**
- * Exit for a menu panel — `{ type: 'timing', duration: 200, easing: in(cubic) }`.
+ * Exit for a menu panel — `{ type: 'timing', duration: 150, easing: in(cubic) }`.
  *
  * A tween rather than a spring: a panel that is leaving has nothing to settle
  * into, and an ease-*in* accelerates it away so the dismissal reads as decisive
@@ -122,18 +134,21 @@ export function mergeTransition<T extends Record<string, unknown>>(preset: T, ov
  */
 export const MENU_EXIT_TRANSITION = {
   type: 'timing' as const,
-  duration: DURATION_BASE,
+  duration: DURATION_FAST,
   easing: Easing.in(Easing.cubic),
 };
 
 /** Backdrop / scrim fade behind a menu — `{ type: 'timing', duration: 150 }`, both ways. */
 export const MENU_SCRIM_TRANSITION = { type: 'timing' as const, duration: DURATION_FAST };
 
-/** Scale a menu panel enters from and leaves to — a settle, not a pop. */
-export const MENU_ENTER_SCALE = 0.96;
+/** Scale a menu panel enters from and leaves to — visible pop-in, not a subtle settle. */
+export const MENU_ENTER_SCALE = 0.85;
 
 /** Distance (px) a menu panel travels toward its trigger as it opens. */
-export const MENU_ENTER_OFFSET = 8;
+export const MENU_ENTER_OFFSET = 12;
+
+/** Stagger delay between consecutive menu items entering, in ms. */
+export const MENU_ITEM_STAGGER_MS = 25;
 
 /** Which side of the trigger a menu panel opened on. */
 export type MenuSide = 'top' | 'bottom';
@@ -221,7 +236,7 @@ export function resolveMenuMotion({ motion, reduce, side, restingTranslateY = 0 
     from: hidden,
     animate: { opacity: 1, scale: 1, translateY: restingTranslateY },
     exit: hidden,
-    transition: reduce ? TIMING_FAST : mergeTransition(MOTION_STANDARD, motion?.enter),
+    transition: reduce ? TIMING_FAST : mergeTransition(MOTION_MENU_ENTER, motion?.enter),
     exitTransition: reduce ? TIMING_FAST : mergeTransition(MENU_EXIT_TRANSITION, motion?.exit),
   };
 }

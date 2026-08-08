@@ -246,7 +246,7 @@ export const HOLD_MENU_LIST_CLASS = 'py-1';
  * truth is `MENU_SEPARATOR_HEIGHT.md` in `../Menu/menu`, whose doc comment points
  * back here.
  */
-export const HOLD_MENU_SEPARATOR_HEIGHT = 12;
+export const HOLD_MENU_SEPARATOR_HEIGHT = 10;
 /** Panel hairline border, top + bottom — `border`. */
 export const HOLD_MENU_BORDER_HEIGHT = 2;
 /**

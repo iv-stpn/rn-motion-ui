@@ -4,35 +4,37 @@
 // ActionSwapButton at the same `size` are therefore the same box with the same
 // text inside it, and a row of mixed types lines up.
 //
-// The geometry itself lives in theme/tokens.css (`--spacing-button-*`,
-// `--spacing-button-pad-*`, `--radius-button-*`) — the classes below only name
-// those tokens, so a consumer retunes the whole family by overriding one custom
-// property rather than by passing a class to every button. BUTTON_METRICS
-// mirrors the same numbers for the effect layers that need a number instead of a
-// class: GlossyButton's seven shadow slots and ElevatedButton's SVG rim both
-// have to follow the same curve as the Pressable, and neither can read a class.
-// scripts/check-token-parity.mjs fails the build if the two ever drift.
+// The geometry itself lives in theme/tokens.css (`--spacing-interactive-*`,
+// `--spacing-interactive-pad-*`) and lib/radius.ts (`INTERACTIVE_RADIUS`) — the
+// classes below only name those tokens, so a consumer retunes the whole family
+// by overriding one custom property rather than by passing a class to every
+// button. BUTTON_METRICS mirrors the same number for the effect layers that need
+// a number instead of a class: GlossyButton's seven shadow slots and
+// ElevatedButton's SVG rim both have to follow the same curve as the Pressable,
+// and neither can read a class.
 //
 // Data only, no React — ActionSwap imports this without pulling in the family's
 // press/ripple machinery (button-internals.tsx, which re-exports the two types
 // below so existing import sites keep working).
 
+import { INTERACTIVE_RADIUS, TEXT_INTERACTIVE } from '../../../lib/radius';
+
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 export type ButtonShape = 'rounded' | 'pill';
 
 /**
- * The pixel twin of the geometry tokens. `radius` is the `rounded` corner only —
- * a pill's radius depends on the height, so ask {@link buttonRadius} for the
- * resolved value rather than reading this directly.
+ * The pixel twin of the geometry tokens. `radius` is the shared interactive
+ * corner — a pill's radius depends on the height, so ask {@link buttonRadius}
+ * for the resolved value rather than reading this directly.
  *
  * `icon` is the `md` box squared: same height, same curve, no horizontal padding
  * (the square is the padding).
  */
 export const BUTTON_METRICS: Record<ButtonSize, { height: number; padX: number; radius: number }> = {
-  sm: { height: 32, padX: 12, radius: 8 },
-  md: { height: 40, padX: 16, radius: 10 },
-  lg: { height: 48, padX: 20, radius: 12 },
-  icon: { height: 40, padX: 0, radius: 10 },
+  sm: { height: 32, padX: 12, radius: INTERACTIVE_RADIUS },
+  md: { height: 40, padX: 16, radius: INTERACTIVE_RADIUS },
+  lg: { height: 48, padX: 20, radius: INTERACTIVE_RADIUS },
+  icon: { height: 40, padX: 0, radius: INTERACTIVE_RADIUS },
 };
 
 /** Space between an adornment (icon, spinner) and the label, at every size. */
@@ -46,26 +48,26 @@ export const BUTTON_GAP_CLASSNAME = 'gap-2';
  */
 export const BUTTON_BOX: Record<ButtonShape, Record<ButtonSize, string>> = {
   rounded: {
-    sm: 'h-button-sm rounded-button-sm px-button-pad-sm',
-    md: 'h-button-md rounded-button-md px-button-pad-md',
-    lg: 'h-button-lg rounded-button-lg px-button-pad-lg',
-    icon: 'h-button-md w-button-md rounded-button-md',
+    sm: 'h-interactive-sm rounded-interactive px-interactive-pad-sm',
+    md: 'h-interactive-md rounded-interactive px-interactive-pad-md',
+    lg: 'h-interactive-lg rounded-interactive px-interactive-pad-lg',
+    icon: 'h-interactive-md w-interactive-md rounded-interactive',
   },
   pill: {
-    sm: 'h-button-sm rounded-full px-button-pad-sm',
-    md: 'h-button-md rounded-full px-button-pad-md',
-    lg: 'h-button-lg rounded-full px-button-pad-lg',
-    icon: 'h-button-md w-button-md rounded-full',
+    sm: 'h-interactive-sm rounded-full px-interactive-pad-sm',
+    md: 'h-interactive-md rounded-full px-interactive-pad-md',
+    lg: 'h-interactive-lg rounded-full px-interactive-pad-lg',
+    icon: 'h-interactive-md w-interactive-md rounded-full',
   },
 };
 
 /**
  * Resolved corner radius in px, for the layers that can't read a class — the
  * glossy shadow slots and the elevated rim/ring. A pill rounds to half its
- * height; everything else takes the size's `rounded` radius.
+ * height; everything else takes the shared interactive radius.
  */
 export function buttonRadius(shape: ButtonShape, size: ButtonSize): number {
-  return shape === 'pill' ? BUTTON_METRICS[size].height / 2 : BUTTON_METRICS[size].radius;
+  return shape === 'pill' ? BUTTON_METRICS[size].height / 2 : INTERACTIVE_RADIUS;
 }
 
 /**
@@ -81,8 +83,8 @@ export function buttonRadius(shape: ButtonShape, size: ButtonSize): number {
  * Static literals so the Tailwind/uniwind scanner picks them up.
  */
 export const LABEL_TEXT_CLASS: Record<ButtonSize, string> = {
-  sm: 'font-medium text-xs',
-  md: 'font-medium text-sm',
-  lg: 'font-medium text-base',
-  icon: 'font-medium text-sm',
+  sm: `font-medium ${TEXT_INTERACTIVE.sm}`,
+  md: `font-medium ${TEXT_INTERACTIVE.md}`,
+  lg: `font-medium ${TEXT_INTERACTIVE.lg}`,
+  icon: `font-medium ${TEXT_INTERACTIVE.icon}`,
 };

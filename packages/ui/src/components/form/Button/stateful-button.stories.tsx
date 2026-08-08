@@ -36,6 +36,7 @@ type Story = StoryObj<typeof meta>;
 const CHIP_OPTIONS = ['none', 'elevated', 'glossy'] as const;
 const STATES = ['idle', 'loading', 'success', 'error'] as const;
 const OUTCOMES = ['success', 'error'] as const;
+const SIZES = ['sm', 'md', 'lg'] as const;
 const CUSTOM_LABELS = {
   children: 'Upload',
   loadingText: 'Uploading…',
@@ -47,6 +48,7 @@ const CUSTOM_LABELS = {
 function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   const colors = useThemeColors();
   const [chip, setChip] = useState<(typeof CHIP_OPTIONS)[number]>('none');
+  const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [withIcon, setWithIcon] = useState(false);
   const [shouldAutoReset, setShouldAutoReset] = useState(true);
   const [customLabels, setCustomLabels] = useState(false);
@@ -80,6 +82,7 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
     ...args,
     ...(customLabels ? CUSTOM_LABELS : {}),
     chip: chip === 'none' ? undefined : chip,
+    size,
     icon: withIcon ? <ArrowRight size={16} color={iconColor} /> : undefined,
   };
 
@@ -87,6 +90,7 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
     <Playground>
       <ControlCard title="Options">
         <Choice label="Chip" onChange={setChip} options={CHIP_OPTIONS} value={chip} />
+        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Outcome" onChange={setOutcome} options={OUTCOMES} value={outcome} />
         <Toggle label="With icon" onChange={setWithIcon} value={withIcon} />
         <Toggle label="Auto reset" onChange={setShouldAutoReset} value={shouldAutoReset} />
@@ -115,6 +119,17 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
           {STATES.map((state) => (
             <Sample key={state} label={state}>
               <StatefulButton {...shared} state={state} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      <View className="h-3" />
+      <Section title="Sizes">
+        <Variants align="center">
+          {SIZES.map((name) => (
+            <Sample key={name} label={name}>
+              <StatefulButton {...shared} size={name} />
             </Sample>
           ))}
         </Variants>

@@ -119,7 +119,7 @@ export const Spaced: Story = {
   },
 };
 
-/** Bordered: buttons sit flush inside a shared border with dividers between them. */
+/** Bordered: a segmented control — each button carries its own border, inner edges stay sharp. */
 export const Bordered: Story = {
   render: () => (
     <ButtonGroup variant="bordered" orientation="horizontal" size="md" testID="bordered-group">
@@ -135,16 +135,17 @@ export const Bordered: Story = {
     const group = await canvas.findByTestId('bordered-group');
     const btns = within(group).findAllByRole('button');
     expect(await btns).toHaveLength(3);
-    // The group should contain dividers (w-px views between buttons)
-    expect(group.className).toContain('rounded');
-    expect(group.className).toContain('border');
+    // Only inner-facing edges carry a border (border-r on non-last buttons).
+    // No border forms on the outer perimeter of the group.
+    const dividers = group.querySelectorAll(':scope > [class*="border-r"]');
+    expect(dividers).toHaveLength(2);
   },
 };
 
 /** Vertical orientation — buttons stack top-to-bottom. */
 export const Vertical: Story = {
   render: () => (
-    <View style={{ width: 200 }}>
+    <View className="w-50">
       <ButtonGroup variant="bordered" orientation="vertical" size="md" testID="vertical-group">
         {BUTTONS.map((btn) => (
           <Button key={btn.label} variant={btn.variant} size="md">

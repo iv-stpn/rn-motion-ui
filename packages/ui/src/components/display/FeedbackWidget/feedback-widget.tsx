@@ -8,7 +8,7 @@ import { InformationLine as AlertCircle } from 'rn-motion-ui-icons/icons/informa
 import { Message1Line as MessageSquare } from 'rn-motion-ui-icons/icons/message-1-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from '../../../lib/ease';
+import { EASE_OUT, SPRING_SWAP } from '../../../lib/ease';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
 import { MotiText } from '../../../moti/components/text';
 import { MotiView } from '../../../moti/components/view';
@@ -23,7 +23,7 @@ type Status = 'idle' | 'open' | 'sending' | 'sent' | 'error';
 const SUCCESS_DURATION_MS = 1600;
 // Open-morph duration; the field focus waits this long so the caret never
 // appears inside a still-expanding panel (mirrors the web widget's staged focus).
-const MORPH_OPEN_MS = 320;
+const MORPH_OPEN_MS = 420;
 
 const CANCEL_LABEL = 'Cancel';
 const SENDING_LABEL = 'Sending';
@@ -179,7 +179,17 @@ export function FeedbackWidget({
     setStatus('open');
   }, [clearCloseTimer]);
 
-  const morphTransition = reduce ? { type: 'timing' as const, duration: 0 } : SPRING_LAYOUT;
+  // Staggered springs: width snaps open fast, height bounces — reads as unfolding.
+  const morphTransition = reduce
+    ? { type: 'timing' as const, duration: 0 }
+    : ({
+        type: 'spring' as const,
+        stiffness: 200,
+        damping: 18,
+        mass: 0.95,
+        width: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
+        borderRadius: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
+      } satisfies import('../../../moti/core/types').MotiTransition);
 
   return (
     <View
@@ -192,6 +202,7 @@ export function FeedbackWidget({
       <MotiView
         animate={{
           width: open ? 300 : 48,
+          height: open ? 230 : 48,
           borderRadius: open ? 20 : 40,
         }}
         transition={morphTransition}
@@ -201,7 +212,7 @@ export function FeedbackWidget({
           elevatedShadow(elevation),
           'absolute bottom-0',
         )}
-        style={{ ...(left ? { left: 0 } : { right: 0 }), ...(open ? {} : { height: 48 }) }}
+        style={{ ...(left ? { left: 0 } : { right: 0 }) }}
       >
         {open ? (
           <MotiView
@@ -210,7 +221,7 @@ export function FeedbackWidget({
             transition={
               reduce
                 ? { type: 'timing' as const, duration: 0 }
-                : { type: 'timing' as const, duration: 220, delay: 60, easing: EASE_OUT }
+                : { type: 'timing' as const, duration: 200, delay: 150, easing: EASE_OUT }
             }
             className="w-[300px] p-2"
           >

@@ -60,6 +60,15 @@ export type UseHoldableOptions = {
    * pressed-state-only primitive.
    */
   behavior?: DragBehavior;
+  /**
+   * When true, a mouse left-button press on web runs the same hold timeline a touch
+   * press does. Right-click is never intercepted — it still opens the browser's
+   * own context menu.
+   *
+   * Without this, `<Holdable>` is touch-only on every platform (the default).
+   * @default false
+   */
+  cursorMode?: boolean;
   /** Nothing binds and no timeline runs. @default false */
   disabled?: boolean;
   /**
@@ -143,7 +152,7 @@ export type UseHoldableReturn = {
  * `longpress` action is the worked example.
  */
 export function useHoldable(options: UseHoldableOptions = {}): UseHoldableReturn {
-  const { behavior, disabled = false, onActive, onHold, onHoldEscape, onPhaseChange } = options;
+  const { behavior, cursorMode = false, disabled = false, onActive, onHold, onHoldEscape, onPhaseChange } = options;
 
   const nodeRef = useRef<View | null>(null);
   // Resolved against the hold table rather than the drag one: a component named for
@@ -166,7 +175,7 @@ export function useHoldable(options: UseHoldableOptions = {}): UseHoldableReturn
   });
 
   const enabled = !disabled;
-  useHoldablePointer({ enabled, nodeRef, timeline });
+  useHoldablePointer({ cursorMode, enabled, nodeRef, timeline });
   const gesture = useHoldableTouches({ enabled, timeline, tuning });
 
   const getRootProps = useCallback(

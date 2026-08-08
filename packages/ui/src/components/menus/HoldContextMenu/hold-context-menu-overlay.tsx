@@ -107,7 +107,7 @@ function HoldContextMenuPanel({
     <MotiView
       {...panelMotion}
       className={cn(
-        'absolute overflow-hidden rounded-2xl border border-border',
+        'absolute overflow-hidden rounded-menu border border-border',
         surfaceBackground(elevation),
         elevatedShadow(elevation),
       )}

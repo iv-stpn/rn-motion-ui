@@ -9,7 +9,7 @@ import { compositeOver, cssColorToOklch, oklchToSrgb } from '../../../lib/color'
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
 import { type ThemeToken, useThemeColors } from '../../../theme/use-theme-color';
-import { type BaseButtonProps, ButtonRipples, buildButtonContent, usePressRipples } from './button-internals';
+import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
 import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadius, LABEL_TEXT_CLASS } from './button-scale';
 
 /**
@@ -691,6 +691,7 @@ export function GlossyButton({
   // The press feedback IS the sink (the lit layers drop away, the tint deepens),
   // so the key doesn't also shrink by default — pass a pressScale to opt in.
   pressScale = 1,
+  pressMode = 'scale',
   backdropColor,
   pressTransition,
   fitWidth,
@@ -757,7 +758,10 @@ export function GlossyButton({
 
   return (
     <MotiView
-      animate={{ scale: pressed && !reduce && !isDisabled ? pressScale : 1, opacity: keyOpacity(interaction) }}
+      animate={{
+        ...pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale }),
+        opacity: keyOpacity(interaction),
+      }}
       // Scale keeps the family press spring; opacity cross-fades on the same
       // clock as the lit layers so the touch dim and the sink move together.
       transition={{ ...pressSpring, opacity: fade }}

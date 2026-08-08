@@ -259,8 +259,8 @@ const SwitchLabel = ({ children, className, style }: SwitchLabelProps) => {
     <Pressable
       onPress={onToggle}
       disabled={isDisabled}
-      className={cn('flex-row items-center', className)}
-      style={[{ opacity: isDisabled ? 0.6 : 1 }, style]}
+      className={cn('flex-row items-center', isDisabled ? 'opacity-60' : 'opacity-100', className)}
+      style={style}
     >
       {children}
     </Pressable>

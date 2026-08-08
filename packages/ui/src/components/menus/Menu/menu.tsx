@@ -103,6 +103,8 @@ import { Fragment, isValidElement, type ReactElement, type ReactNode, useCallbac
 import { View } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { MotiView } from '../../../moti/components/view';
+import { MENU_ITEM_STAGGER_MS, MOTION_STANDARD, TIMING_INSTANT } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
 import { MenuItem, type MenuItemIcon, type MenuItemMode, type MenuItemSize } from '../MenuItem/menu-item';
 
@@ -246,12 +248,13 @@ export type MenuProps = {
  * rows need from a rounded panel corner, which is a property of the panel rather
  * than of the row scale, so it is one fixed value at every size. See {@link Menu}.
  */
-const SIZE_SCALE: Record<MenuItemSize, { gapClass: string; separatorClass: string; labelClass: string }> = {
-  sm: { gapClass: 'gap-0.5', separatorClass: 'my-0.5', labelClass: 'px-2 pt-0.5 pb-1' },
-  md: { gapClass: 'gap-0.5', separatorClass: 'my-1', labelClass: 'px-3 pt-0.5 pb-1.5' },
-  lg: { gapClass: 'gap-1', separatorClass: 'my-1.5', labelClass: 'px-4 pt-1 pb-2' },
+const SIZE_SCALE: Record<MenuItemSize, { gapClass: string; labelClass: string }> = {
+  sm: { gapClass: 'gap-0.5', labelClass: 'px-2 pt-0.5 pb-1' },
+  md: { gapClass: 'gap-0.5', labelClass: 'px-3 pt-0.5 pb-1.5' },
+  lg: { gapClass: 'gap-1', labelClass: 'px-4 pt-1 pb-2' },
 };
-
+/** One text-size step below each menu size — keeps the caption subordinate to the rows. */
+const LABEL_TEXT_SIZE: Record<MenuItemSize, 'xs' | 'sm' | 'base'> = { sm: 'xs', md: 'sm', lg: 'base' };
 /**
  * The list's own vertical inset — the one piece of spacing it does not leave to
  * the panel around it, because the first and last row need clearance from a
@@ -264,12 +267,8 @@ const SIZE_SCALE: Record<MenuItemSize, { gapClass: string; separatorClass: strin
  */
 const LIST_INSET_CLASS = 'py-2.5';
 
-/** The separator band's own height, mirroring the `h-1` below. */
-const SEPARATOR_BAR_HEIGHT = 4;
-
 /**
- * Total vertical space a `separator` entry takes at each size — the band plus the
- * margins `SIZE_SCALE` puts around it.
+ * Total vertical space a `separator` entry takes at each size.
  *
  * Published because a panel that places itself *before* it has been laid out has
  * to predict its own height, and a separator is the one entry whose height is
@@ -284,25 +283,27 @@ const SEPARATOR_BAR_HEIGHT = 4;
  * here and in `HOLD_MENU_SEPARATOR_HEIGHT`.
  */
 export const MENU_SEPARATOR_HEIGHT: Record<MenuItemSize, number> = {
-  sm: SEPARATOR_BAR_HEIGHT + 4, // my-0.5 — 2px each side
-  md: SEPARATOR_BAR_HEIGHT + 8, // my-1   — 4px each side
-  lg: SEPARATOR_BAR_HEIGHT + 12, // my-1.5 — 6px each side
+  sm: 5, // h-px (1px) + my-0.5 (2px ×2)
+  md: 10, // h-0.5 (2px) + my-1   (4px ×2)
+  lg: 16, // h-1   (4px) + my-1.5 (6px ×2)
 };
 
-export type MenuSeparatorProps = { className?: string; testID?: string };
+export type MenuSeparatorProps = { className?: string; testID?: string; size?: MenuItemSize };
+
+const SEPARATOR_SIZE_CLASS: Record<MenuItemSize, string> = { sm: 'h-px my-0.5', md: 'h-0.5 my-1', lg: 'h-1 my-1.5' };
 
 /** The hairline between two groups. Exported so a `node` entry can draw a matching one. */
-export function MenuSeparator({ className, testID }: MenuSeparatorProps) {
-  return <View className={cn('h-1 bg-border', className)} testID={testID} />;
+export function MenuSeparator({ className, testID, size = 'md' }: MenuSeparatorProps) {
+  return <View className={cn('bg-border', SEPARATOR_SIZE_CLASS[size], className)} testID={testID} />;
 }
 
-export type MenuLabelProps = { children: ReactNode; className?: string; testID?: string };
+export type MenuLabelProps = { children: ReactNode; className?: string; testID?: string; size?: MenuItemSize };
 
 /** The caption above a group. Exported for the same reason as {@link MenuSeparator}. */
-export function MenuLabel({ children, className, testID }: MenuLabelProps) {
+export function MenuLabel({ children, className, testID, size = 'md' }: MenuLabelProps) {
   return (
     <View className={className} role="presentation" testID={testID}>
-      <Text className="text-muted-foreground" numberOfLines={1} size="xs" weight="medium">
+      <Text className="text-muted-foreground" numberOfLines={1} size={LABEL_TEXT_SIZE[size]}>
         {children}
       </Text>
     </View>
@@ -316,13 +317,15 @@ type MenuRowProps = {
   iconPlaceholder: boolean;
   isMenu: boolean;
   reduce: boolean;
+  /** Zero-based position among action rows — drives the staggered enter delay. */
+  index: number;
   onClose?: () => void;
   onSelect?: (entry: MenuActionEntry) => void;
   testID?: string;
 };
 
 /** One action row. Its own component so `onPress` is a stable per-row callback. */
-function MenuRow({ entry, size, mode, iconPlaceholder, isMenu, reduce, onClose, onSelect, testID }: MenuRowProps) {
+function MenuRow({ entry, size, mode, iconPlaceholder, isMenu, reduce, onClose, onSelect, testID, index }: MenuRowProps) {
   const handlePress = useCallback(() => {
     // Close first, then act: the panel starts leaving while the action runs, so
     // an action that navigates does not leave a modal stranded on the old screen.
@@ -331,31 +334,42 @@ function MenuRow({ entry, size, mode, iconPlaceholder, isMenu, reduce, onClose, 
     onSelect?.(entry);
   }, [entry, onClose, onSelect]);
 
+  // Each row fades and slides in from the side, staggered 25 ms apart so the list
+  // reads as arriving rather than popping into place. Reduced motion skips both
+  // the travel and the stagger — the row appears in place.
+  const staggerDelay = reduce ? 0 : index * MENU_ITEM_STAGGER_MS;
+
   return (
-    <MenuItem
-      accessibilityLabel={entry.accessibilityLabel}
-      accessibilityRole={isMenu ? 'menuitem' : undefined}
-      // `selected` rides alongside the `disabled` Pressable already reports.
-      accessibilityState={{ selected: entry.active }}
-      active={entry.active}
-      // Web: RN maps `disabled` to the DOM attribute, which is not read on a
-      // non-form element; `aria-disabled` is what leaves the row announced.
-      aria-disabled={entry.disabled}
-      className={entry.className}
-      destructive={entry.destructive}
-      disabled={entry.disabled}
-      icon={entry.icon}
-      iconBackgroundColor={entry.iconBackgroundColor}
-      iconColor={entry.iconColor}
-      iconPlaceholder={iconPlaceholder}
-      label={entry.label}
-      mode={entry.mode ?? mode}
-      onPress={handlePress}
-      reduce={reduce}
-      size={entry.size ?? size}
-      testID={entry.testID ?? (testID ? `${testID}-item-${entry.id}` : undefined)}
-      trailing={entry.trailing}
-    />
+    <MotiView
+      animate={{ opacity: 1, translateX: 0 }}
+      from={reduce ? { opacity: 1 } : { opacity: 0, translateX: -8 }}
+      transition={reduce ? TIMING_INSTANT : { ...MOTION_STANDARD, delay: staggerDelay }}
+    >
+      <MenuItem
+        accessibilityLabel={entry.accessibilityLabel}
+        accessibilityRole={isMenu ? 'menuitem' : undefined}
+        // `selected` rides alongside the `disabled` Pressable already reports.
+        accessibilityState={{ selected: entry.active }}
+        active={entry.active}
+        // Web: RN maps `disabled` to the DOM attribute, which is not read on a
+        // non-form element; `aria-disabled` is what leaves the row announced.
+        aria-disabled={entry.disabled}
+        className={entry.className}
+        destructive={entry.destructive}
+        disabled={entry.disabled}
+        icon={entry.icon}
+        iconBackgroundColor={entry.iconBackgroundColor}
+        iconColor={entry.iconColor}
+        iconPlaceholder={iconPlaceholder}
+        label={entry.label}
+        mode={entry.mode ?? mode}
+        onPress={handlePress}
+        reduce={reduce}
+        size={entry.size ?? size}
+        testID={entry.testID ?? (testID ? `${testID}-item-${entry.id}` : undefined)}
+        trailing={entry.trailing}
+      />
+    </MotiView>
   );
 }
 
@@ -447,49 +461,54 @@ export function Menu({
       role={isMenu ? 'menu' : undefined}
       testID={testID}
     >
-      {keyed.map(({ key, entry }) => {
-        // A caller writing an element inline should not have to key it, so the
-        // Fragment carries the one `keyEntries` assigned and adds no node.
-        if (isElementEntry(entry)) return <Fragment key={key}>{entry}</Fragment>;
+      {(() => {
+        let actionIndex = 0;
+        return keyed.map(({ key, entry }) => {
+          // A caller writing an element inline should not have to key it, so the
+          // Fragment carries the one `keyEntries` assigned and adds no node.
+          if (isElementEntry(entry)) return <Fragment key={key}>{entry}</Fragment>;
 
-        // The non-action entries take the React key rather than the bare `id` an
-        // action row uses: `key` is the one string `keyEntries` already
-        // guarantees is unique across the list, so an unnamed separator gets a
-        // stable `-separator-0` instead of colliding with its neighbours.
-        const entryTestID = entry.testID ?? (testID ? `${testID}-${key}` : undefined);
+          // The non-action entries take the React key rather than the bare `id` an
+          // action row uses: `key` is the one string `keyEntries` already
+          // guarantees is unique across the list, so an unnamed separator gets a
+          // stable `-separator-0` instead of colliding with its neighbours.
+          const entryTestID = entry.testID ?? (testID ? `${testID}-${key}` : undefined);
 
-        switch (entry.type) {
-          case 'separator':
-            return <MenuSeparator className={cn(scale.separatorClass, entry.className)} key={key} testID={entryTestID} />;
-          case 'label':
-            return (
-              <MenuLabel className={cn(scale.labelClass, entry.className)} key={key} testID={entryTestID}>
-                {entry.label}
-              </MenuLabel>
-            );
-          case 'node':
-            return (
-              <View className={entry.className} key={key} testID={entryTestID}>
-                {entry.node}
-              </View>
-            );
-          default:
-            return (
-              <MenuRow
-                entry={entry}
-                iconPlaceholder={iconPlaceholder && !entry.icon}
-                isMenu={isMenu}
-                key={key}
-                mode={mode}
-                onClose={onClose}
-                onSelect={onSelect}
-                reduce={reduce}
-                size={size}
-                testID={testID}
-              />
-            );
-        }
-      })}
+          switch (entry.type) {
+            case 'separator':
+              return <MenuSeparator size={size} className={entry.className} key={key} testID={entryTestID} />;
+            case 'label':
+              return (
+                <MenuLabel className={cn(scale.labelClass, entry.className)} key={key} size={size} testID={entryTestID}>
+                  {entry.label}
+                </MenuLabel>
+              );
+            case 'node':
+              return (
+                <View className={entry.className} key={key} testID={entryTestID}>
+                  {entry.node}
+                </View>
+              );
+            default:
+              actionIndex += 1; // the `MenuRow` below also increments, but this is the one that counts for the stagger
+              return (
+                <MenuRow
+                  entry={entry}
+                  iconPlaceholder={iconPlaceholder && !entry.icon}
+                  index={actionIndex}
+                  isMenu={isMenu}
+                  key={key}
+                  mode={mode}
+                  onClose={onClose}
+                  onSelect={onSelect}
+                  reduce={reduce}
+                  size={size}
+                  testID={testID}
+                />
+              );
+          }
+        });
+      })()}
     </View>
   );
 }

@@ -12,7 +12,7 @@ import { MotiView } from '../../../moti/components/view';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import type { SortDirection, TableColumn } from './table-types';
-import { alignStyle, alignToJustify, columnLayoutStyle } from './table-utils';
+import { alignStyle, alignToJustifyClass, columnLayoutClass } from './table-utils';
 
 export type HeaderCellProps<T> = {
   column: TableColumn<T>;
@@ -89,8 +89,7 @@ export function HeaderCell<T>({
   return (
     <Pressable
       key={column.key}
-      className="relative flex-col justify-center overflow-hidden px-4"
-      style={columnLayoutStyle(column.width, colWidth)}
+      className={cn('relative flex-col justify-center overflow-hidden px-4', columnLayoutClass(column.width, colWidth))}
       onLongPress={handleLongPress}
       onPress={sortEnabled ? handleSort : undefined}
       accessibilityRole={sortEnabled ? 'button' : undefined}
@@ -127,7 +126,7 @@ export function HeaderCell<T>({
             accessibilityLabel={`Rename ${column.key} column`}
           />
         ) : (
-          <View className="flex-1 flex-row items-center gap-1" style={{ justifyContent: alignToJustify(column.align) }}>
+          <View className={cn('flex-1 flex-row items-center gap-1', alignToJustifyClass(column.align))}>
             <Text
               selectable={false}
               className={cn('flex-1 font-medium text-muted-foreground text-xs', isActive && 'text-foreground')}

@@ -64,6 +64,7 @@ export function HoldDraggable({
   behavior,
   children,
   className,
+  cursorMode = false,
   data,
   disabled = false,
   effectAllowed = 'copy',
@@ -85,6 +86,7 @@ export function HoldDraggable({
 
   const drag = useDraggable({
     behavior,
+    cursorMode,
     data,
     disabled,
     effectAllowed,

@@ -11,6 +11,11 @@
  * enable `onHold` on web, pass `behavior={{ holdDelay: 300 }}` (or use a touch
  * device). The play functions below do exactly that, and dispatch synthetic touch
  * pointer events.
+ *
+ * **Cursor mode.** `cursorMode` opts in to mouse left-button holds (and drags)
+ * on web. When set, the pointer transport accepts mouse events and the HTML5
+ * transport is disabled for this source. The "Cursor" story below exercises
+ * the hold path with synthetic mouse pointer events.
  */
 /** biome-ignore-all lint/style/useExportsLast: this a stories file */
 /** biome-ignore-all lint/style/useComponentExportOnlyModules: stories only */
@@ -52,7 +57,23 @@ function touchPointer(node: Element, type: string, point: TouchPoint = {}) {
   );
 }
 
-type HoldDragDemoProps = { disabled?: boolean; showMenu?: boolean };
+/** Dispatch a synthetic mouse pointer event — for exercising `cursorMode`. */
+function mousePointer(node: Element, type: string, point: TouchPoint = {}) {
+  node.dispatchEvent(
+    new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      buttons: type === 'pointerdown' ? 1 : 0,
+      clientX: point.x ?? 0,
+      clientY: point.y ?? 0,
+      pointerId: 1,
+      pointerType: 'mouse',
+    }),
+  );
+}
+
+type HoldDragDemoProps = { cursorMode?: boolean; disabled?: boolean; showMenu?: boolean };
 
 function chipClass(isHeld: boolean, isPressed: boolean) {
   if (isHeld) return 'rounded-xl border border-primary bg-primary/10 px-6 py-4';
@@ -83,7 +104,7 @@ const MENU_ITEMS: HoldContextMenuItem[] = [
  * `dragOptions` — hold opens the action panel, and a move past `escapeSlop`
  * after arming lifts a drag. On web the menu opens on right-click.
  */
-function HoldDragDemo({ disabled = false, showMenu = false }: HoldDragDemoProps) {
+function HoldDragDemo({ cursorMode = false, disabled = false, showMenu = false }: HoldDragDemoProps) {
   const [status, setStatus] = useState('Waiting');
   const [picked, setPicked] = useState('—');
 
@@ -126,6 +147,7 @@ function HoldDragDemo({ disabled = false, showMenu = false }: HoldDragDemoProps)
         <HoldDraggable
           // Enable hold on web: the drag transport defaults to holdDelay: null there.
           behavior={{ holdDelay: 300 }}
+          cursorMode={cursorMode}
           data={{ [MIME]: 'item' }}
           disabled={disabled}
           onDragEnd={handleDragEnd}
@@ -155,16 +177,18 @@ function HoldDragDemo({ disabled = false, showMenu = false }: HoldDragDemoProps)
 }
 
 function HoldDragPlayground() {
+  const [cursorMode, setCursorMode] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   return (
     <Playground>
       <ControlCard title="Options">
+        <Toggle label="Cursor mode" onChange={setCursorMode} value={cursorMode} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Toggle label="Hold context menu" onChange={setShowMenu} value={showMenu} />
       </ControlCard>
-      <HoldDragDemo disabled={disabled} showMenu={showMenu} />
+      <HoldDragDemo cursorMode={cursorMode} disabled={disabled} showMenu={showMenu} />
     </Playground>
   );
 }
@@ -251,6 +275,30 @@ export const MenuEscapeToDrag: Story = {
 
     touchPointer(chip, 'pointerup', { x: 60 });
     await canvas.findByText('Done');
+  },
+};
+
+/**
+ * With `cursorMode`, a mouse left-button press runs the same hold timeline a
+ * touch press does. The synthetic mouse pointer events stay down past
+ * `holdDelay` (300ms) and `onHold` fires. Right-click is still the browser's
+ * own context menu.
+ */
+export const Cursor: Story = {
+  name: 'Demo: cursorMode enables mouse-hold on web',
+  render: () => <HoldDragDemo cursorMode={true} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chip = await canvas.findByTestId(CHIP_TEST_ID);
+
+    mousePointer(chip, 'pointerdown');
+    // Hold past holdDelay (300ms).
+    await new Promise((r) => setTimeout(r, 350));
+
+    await expect(await canvas.findByTestId(READOUT_TEST_ID)).toHaveTextContent('Held');
+
+    mousePointer(chip, 'pointerup');
+    await new Promise((r) => setTimeout(r, 0));
   },
 };
 

@@ -115,7 +115,7 @@ export function Action({ label, onPress }: ActionProps) {
       accessibilityLabel={label}
       accessibilityRole="button"
       onPress={onPress}
-      className={cn('rounded-[10px] px-3 py-1.5', SURFACE_CLASSNAME[4])}
+      className={cn('rounded-interactive px-3 py-1.5', SURFACE_CLASSNAME[4])}
       testID={`story-action-${slug(label)}`}
     >
       <Text className="text-foreground" size="sm" weight="medium">

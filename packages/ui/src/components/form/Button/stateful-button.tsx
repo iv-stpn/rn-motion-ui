@@ -588,7 +588,7 @@ export function StatefulButton({
   const stateIconSlotWidth = stateIconSize + 12;
   // In success/error the button shrinks its horizontal padding slightly to
   // compensate for the extra width the icon slot adds. Derived from the family's
-  // padding rather than tabulated, so retuning a `--spacing-button-pad-*` token
+  // padding rather than tabulated, so retuning a `--spacing-interactive-pad-*` token
   // keeps the squeeze proportional (and `icon`, which has no padding, stays 0).
   const contentStyle =
     state === 'success' || state === 'error'

@@ -1,12 +1,18 @@
-// The web press observer: pointer events, touch only.
+// The web press observer: pointer events, touch only by default.
 //
-// Touch only, and that is the design rather than a gap. A mouse held still for
-// 300ms is not a gesture anybody makes on purpose — the right button is what means
-// "tell me about this thing" on a desktop — and a hold layered onto a held left
-// button fights text selection. So a `<Holdable>` on a desktop browser reports
-// nothing, and the hold on a *phone's* browser is what this is for: the one platform
-// with no right button to fall back on. `use-draggable-pointer.ts` filters the same
-// way, for the same reason.
+// Touch only by default, and that is the design rather than a gap. A mouse held still
+// for 300ms is not a gesture anybody makes on purpose — the right button is what means
+// "tell me about this thing" on a desktop — and a hold layered onto a held left button
+// fights text selection. So a `<Holdable>` on a desktop browser reports nothing, and
+// the hold on a *phone's* browser is what this is for: the one platform with no right
+// button to fall back on. `use-draggable-pointer.ts` filters the same way, for the
+// same reason.
+//
+// `cursorMode` opts in to mouse left-button holds on web. When set, a primary-button
+// mouse press runs the same timeline a touch press does: the hold fires at `holdDelay`,
+// and the `click` that follows a released hold is suppressed (the same way `touchend`
+// is cancelled for touch). Right-click is never intercepted — it still opens the
+// browser's own context menu.
 //
 // Nothing here calls `preventDefault` on a move, which is the difference between
 // this and the draggable pointer transport: a `<Holdable>` must never stop the page
@@ -22,6 +28,11 @@ type Trip = { pointerId: number; startX: number; startY: number };
 type ListenerParams = {
   node: HTMLElement;
   /**
+   * When true, a mouse left-button press runs the same timeline a touch press does.
+   * Right-click is never intercepted — it still opens the browser's own context menu.
+   */
+  cursorMode: boolean;
+  /**
    * Carries its own thresholds, so nothing here reads a `DragTuning` at all: the
    * listeners hand it a raw distance and it answers against the phase it is in. Which
    * is also why retuning a live surface needs no rebind — the timeline reads the new
@@ -30,12 +41,20 @@ type ListenerParams = {
   timeline: PressTimeline;
 };
 
-function buildListeners({ node, timeline }: ListenerParams) {
+function buildListeners({ cursorMode, node, timeline }: ListenerParams) {
   let trip: Trip | null = null;
   // Set at `pointerup` when the press had reached `'hold'`, read at the
-  // `touchend` that follows it — see `onTouchEnd`. `pointerup` arrives first
-  // and ends the timeline, so the phase has to be carried across the gap.
+  // `touchend` that follows it — see `onTouchEnd`, and at the `click` listener
+  // for mouse-mode. `pointerup` arrives first and ends the timeline, so the
+  // phase has to be carried across the gap.
   let holdReleased = false;
+
+  function acceptsPointer(e: PointerEvent): boolean {
+    if (e.pointerType === 'touch') return true;
+    // A mouse — right-click is never a hold: button 2 must still open the
+    // browser's own context menu. `e.buttons` on pointerdown for button 2 is 2.
+    return cursorMode && e.pointerType === 'mouse' && e.button === 0;
+  }
 
   function end() {
     trip = null;
@@ -43,7 +62,7 @@ function buildListeners({ node, timeline }: ListenerParams) {
   }
 
   function onPointerDown(e: PointerEvent) {
-    if (trip !== null || e.pointerType !== 'touch') return;
+    if (trip !== null || !acceptsPointer(e)) return;
     trip = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY };
     timeline.press();
   }
@@ -79,6 +98,18 @@ function buildListeners({ node, timeline }: ListenerParams) {
   }
 
   /**
+   * Mouse-mode equivalent of `onTouchEnd`: a mouse left-button release after a
+   * hold fires a real `click` event, and whatever the hold opened would see it
+   * as a dismissal. Capture-phase to stop it before any other handler.
+   */
+  function onClick(e: MouseEvent) {
+    if (!holdReleased) return;
+    holdReleased = false;
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+  }
+
+  /**
    * Chrome on Android raises `contextmenu` for a touch long press at ~500ms, which
    * would put the browser's own menu on top of whatever the hold just opened. Only
    * cancelled while a touch press is in flight: a right-click never reaches `trip`
@@ -96,6 +127,7 @@ function buildListeners({ node, timeline }: ListenerParams) {
   node.addEventListener('lostpointercapture', onPointerEnd);
   node.addEventListener('contextmenu', onContextMenu);
   node.addEventListener('touchend', onTouchEnd, { passive: false });
+  node.addEventListener('click', onClick, { capture: true });
 
   return () => {
     end();
@@ -106,24 +138,27 @@ function buildListeners({ node, timeline }: ListenerParams) {
     node.removeEventListener('lostpointercapture', onPointerEnd);
     node.removeEventListener('contextmenu', onContextMenu);
     node.removeEventListener('touchend', onTouchEnd);
+    node.removeEventListener('click', onClick, { capture: true });
   };
 }
 
 export type UseHoldablePointerParams = {
+  /** When true, a mouse left-button press runs the same timeline a touch press does. */
+  cursorMode: boolean;
   enabled: boolean;
   nodeRef: RefObject<View | null>;
   /** Stable across renders, so listing it as a dependency does not rebind anything. */
   timeline: PressTimeline;
 };
 
-export function useHoldablePointer({ enabled, nodeRef, timeline }: UseHoldablePointerParams): void {
+export function useHoldablePointer({ cursorMode, enabled, nodeRef, timeline }: UseHoldablePointerParams): void {
   // biome-ignore lint/plugin: DOM event wiring must run in an effect; no data-fetching or render-driving state
   useEffect(() => {
     if (Platform.OS !== 'web' || !enabled) return;
     // biome-ignore lint/plugin: RN View refs resolve to HTMLElement in react-native-web
     const node = nodeRef.current as unknown as HTMLElement | null;
     if (!node?.addEventListener) return;
-    return buildListeners({ node, timeline });
+    return buildListeners({ cursorMode, node, timeline });
     // `timeline` is stable for the life of the component, so it never rebinds here.
-  }, [enabled, nodeRef, timeline]);
+  }, [cursorMode, enabled, nodeRef, timeline]);
 }

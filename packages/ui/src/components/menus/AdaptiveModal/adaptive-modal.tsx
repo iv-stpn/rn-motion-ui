@@ -320,7 +320,7 @@ export function AdaptiveModal({
                     >
                       <View
                         className={cn(
-                          'rounded-2xl border border-border',
+                          'rounded-modal border border-border',
                           surfaceBackground(elevation),
                           elevatedShadow(elevation),
                           wideHeight !== undefined && 'flex-1',

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
@@ -15,6 +15,7 @@ const meta = {
   args: { children: null },
   argTypes: {
     variant: { control: 'select', options: ['pill', 'underline', 'segment'] },
+    size: { control: 'select', options: ['sm', 'md', 'lg'] },
     contentAnimation: { control: 'select', options: ['fade', 'slide', 'dropIn'] },
   },
 } satisfies Meta<typeof Tabs>;
@@ -25,6 +26,7 @@ type Variant = NonNullable<TabsProps['variant']>;
 type ContentAnimation = NonNullable<TabsProps['contentAnimation']>;
 
 const VARIANTS = ['pill', 'underline', 'segment'] as const satisfies readonly Variant[];
+const SIZES = ['sm', 'md', 'lg'] as const satisfies readonly TabsProps['size'][];
 const CONTENT_ANIMATIONS = ['fade', 'slide', 'dropIn'] as const satisfies readonly ContentAnimation[];
 
 const TAB_OVERVIEW = 'Overview';
@@ -44,6 +46,7 @@ const MODAL_WIDTH = 320;
 
 type PanelTabsProps = {
   variant?: Variant;
+  size?: TabsProps['size'];
   contentAnimation?: ContentAnimation;
   defaultValue?: string;
   testID?: string;
@@ -53,9 +56,24 @@ type PanelTabsProps = {
 };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function PanelTabs({ variant = 'pill', contentAnimation, defaultValue = 'overview', testID, style, detailed }: PanelTabsProps) {
+function PanelTabs({
+  variant = 'pill',
+  size,
+  contentAnimation,
+  defaultValue = 'overview',
+  testID,
+  style,
+  detailed,
+}: PanelTabsProps) {
   return (
-    <Tabs contentAnimation={contentAnimation} defaultValue={defaultValue} style={style} testID={testID} variant={variant}>
+    <Tabs
+      contentAnimation={contentAnimation}
+      defaultValue={defaultValue}
+      size={size}
+      style={style}
+      testID={testID}
+      variant={variant}
+    >
       <TabsList>
         {PANELS.map((panel) => (
           <TabsTrigger key={panel.value} value={panel.value}>
@@ -109,20 +127,25 @@ function ContentAnimationSections() {
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TabsPlayground() {
   const [variant, setVariant] = useState<Variant>('pill');
+  const [size, setSize] = useState<TabsProps['size']>('md');
   const [animation, setAnimation] = useState<ContentAnimation>('fade');
   const [withPanels, setWithPanels] = useState(true);
   const [tab, setTab] = useState('overview');
+
+  // biome-ignore lint: Choice onChange is typed as (next: string), size is the narrower union
+  const handleSizeChange = useCallback((v: string) => setSize(v as TabsProps['size']), []);
 
   return (
     <Playground>
       <ControlCard title="Options">
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Choice label="Size" onChange={handleSizeChange} options={SIZES} value={size ?? 'md'} />
         <Choice label="Content animation" onChange={setAnimation} options={CONTENT_ANIMATIONS} value={animation} />
         <Toggle label="Content panels" onChange={setWithPanels} value={withPanels} />
       </ControlCard>
 
       <View className="gap-2">
-        <Tabs contentAnimation={animation} onValueChange={setTab} value={tab} variant={variant}>
+        <Tabs contentAnimation={animation} onValueChange={setTab} size={size} value={tab} variant={variant}>
           <TabsList>
             {PANELS.map((panel) => (
               <TabsTrigger key={panel.value} value={panel.value}>
@@ -148,6 +171,25 @@ function TabsPlayground() {
           {VARIANTS.map((name) => (
             <Sample key={name} label={name}>
               <Tabs defaultValue="overview" variant={name}>
+                <TabsList>
+                  {PANELS.map((panel) => (
+                    <TabsTrigger key={panel.value} value={panel.value}>
+                      {panel.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      {/* Size ladder: the three interactive height steps on the baseline pill variant. */}
+      <Section title="Sizes">
+        <Variants direction="column">
+          {SIZES.map((s) => (
+            <Sample key={s} label={`${s} (${{ sm: '32', md: '40', lg: '48' }[s]}px)`}>
+              <Tabs defaultValue="overview" size={s} variant="pill">
                 <TabsList>
                   {PANELS.map((panel) => (
                     <TabsTrigger key={panel.value} value={panel.value}>

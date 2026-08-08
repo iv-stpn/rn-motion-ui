@@ -7,7 +7,7 @@ import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { type ThemeToken, useThemeColors } from '../../../theme/use-theme-color';
-import { type BaseButtonProps, ButtonRipples, buildButtonContent, usePressRipples } from './button-internals';
+import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
 import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadius } from './button-scale';
 
 /**
@@ -311,6 +311,7 @@ export function ElevatedButton({
   noDisabledOpacity = false,
   ripple = false,
   pressScale = 0.93,
+  pressMode = 'scale',
   backdropColor,
   pressTransition,
   fitWidth,
@@ -362,7 +363,7 @@ export function ElevatedButton({
 
   return (
     <MotiView
-      animate={{ scale: pressed && !reduce && !isDisabled ? pressScale : 1 }}
+      animate={pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale })}
       transition={pressSpring}
       className={cn(fitWidth && 'w-full', className)}
       // The drop-shadow (and its coloured ring) live here on the wrapper: the

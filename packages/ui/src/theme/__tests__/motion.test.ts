@@ -3,7 +3,7 @@ import {
   MENU_ENTER_OFFSET,
   MENU_ENTER_SCALE,
   MENU_EXIT_TRANSITION,
-  MOTION_STANDARD,
+  MOTION_MENU_ENTER,
   menuTransformOrigin,
   resolveMenuMotion,
   TIMING_FAST,
@@ -32,7 +32,7 @@ describe('resolveMenuMotion', () => {
   it('springs in and tweens out by default', () => {
     const motion = resolveMenuMotion({ reduce: false, side: 'bottom' });
 
-    expect(motion.transition).toEqual(MOTION_STANDARD);
+    expect(motion.transition).toEqual(MOTION_MENU_ENTER);
     expect(motion.exitTransition).toEqual(MENU_EXIT_TRANSITION);
   });
 
@@ -78,7 +78,7 @@ describe('resolveMenuMotion', () => {
       const motion = resolveMenuMotion({ motion: { offset: 24, scale: 0.6 }, reduce: false, side: 'bottom' });
 
       expect(motion.from).toEqual({ opacity: 0, scale: 0.6, translateY: -24 });
-      expect(motion.transition).toEqual(MOTION_STANDARD);
+      expect(motion.transition).toEqual(MOTION_MENU_ENTER);
     });
 
     it('disables the scale at 1 and the slide at 0, leaving a plain fade', () => {
@@ -90,7 +90,7 @@ describe('resolveMenuMotion', () => {
     it('merges one spring field into the enter preset and leaves the others alone', () => {
       const motion = resolveMenuMotion({ motion: { enter: { stiffness: 900 } }, reduce: false, side: 'bottom' });
 
-      expect(motion.transition).toEqual({ ...MOTION_STANDARD, stiffness: 900 });
+      expect(motion.transition).toEqual({ ...MOTION_MENU_ENTER, stiffness: 900 });
     });
 
     it('swaps the enter spring for a tween when the override changes its type', () => {
@@ -110,7 +110,7 @@ describe('resolveMenuMotion', () => {
         side: 'bottom',
       });
 
-      expect(motion.transition).toEqual({ ...MOTION_STANDARD, stiffness: 900 });
+      expect(motion.transition).toEqual({ ...MOTION_MENU_ENTER, stiffness: 900 });
       expect(motion.exitTransition).toEqual({ ...MENU_EXIT_TRANSITION, duration: 40 });
     });
   });

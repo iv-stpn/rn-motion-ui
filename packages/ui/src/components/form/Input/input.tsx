@@ -40,25 +40,38 @@ const field = cva('relative flex-row items-center overflow-hidden border', {
       error: 'border-danger',
     },
     size: {
-      sm: 'h-9',
-      md: 'h-11',
-      lg: 'h-13',
+      sm: 'h-interactive-sm',
+      md: 'h-interactive-md',
+      lg: 'h-interactive-lg',
     },
     shape: {
-      rounded: 'rounded-xl',
+      rounded: 'rounded-interactive',
       pill: 'rounded-full',
     },
   },
   defaultVariants: { state: 'idle', size: 'md', shape: 'rounded' },
 });
 
-// Padding shifts to make room for icon slots.
-const inputBox = cva('h-full flex-1 bg-transparent text-base text-foreground outline-none', {
+// Size-aware input box: font size and padding track --spacing-interactive-* tokens.
+const inputBox = cva('h-full flex-1 bg-transparent text-foreground outline-none', {
   variants: {
-    left: { true: 'pl-10', false: 'pl-3.5' },
-    right: { true: 'pr-10', false: 'pr-3.5' },
+    left: { true: 'pl-10', false: '' },
+    right: { true: 'pr-10', false: '' },
+    size: {
+      sm: 'text-xs',
+      md: 'text-sm',
+      lg: 'text-base',
+    },
   },
-  defaultVariants: { left: false, right: false },
+  compoundVariants: [
+    { left: false, size: 'sm', class: 'pl-interactive-pad-sm' },
+    { left: false, size: 'md', class: 'pl-interactive-pad-md' },
+    { left: false, size: 'lg', class: 'pl-interactive-pad-lg' },
+    { right: false, size: 'sm', class: 'pr-interactive-pad-sm' },
+    { right: false, size: 'md', class: 'pr-interactive-pad-md' },
+    { right: false, size: 'lg', class: 'pr-interactive-pad-lg' },
+  ],
+  defaultVariants: { left: false, right: false, size: 'md' },
 });
 
 /** Semantic input type — drives keyboard, autoComplete, and textContentType automatically. */
@@ -278,8 +291,8 @@ export function Input({
       {label ? <Text className={cn('px-1 font-medium text-foreground text-sm', labelClassName)}>{label}</Text> : null}
 
       <Animated.View
-        className={field({ state, size, shape })}
-        style={{ opacity: disabled ? 0.6 : 1, transform: [{ translateX: shakeX }] }}
+        className={cn(field({ state, size, shape }), disabled ? 'opacity-60' : 'opacity-100')}
+        style={{ transform: [{ translateX: shakeX }] }}
       >
         {leftIcon ? (
           <View className="pointer-events-none absolute top-0 bottom-0 left-3 z-10 items-center justify-center">{leftIcon}</View>
@@ -305,7 +318,7 @@ export function Input({
           onBlur={handleBlur}
           accessibilityLabel={accessibilityLabel ?? label}
           testID={testID ?? 'input'}
-          className={cn(inputBox({ left: Boolean(leftIcon), right: Boolean(rightSlot || success) }), inputClassName)}
+          className={cn(inputBox({ left: Boolean(leftIcon), right: Boolean(rightSlot || success), size }), inputClassName)}
           style={[{ textAlignVertical: 'center' }, Platform.OS === 'ios' && { lineHeight: 0 }, inputStyle]}
         />
 

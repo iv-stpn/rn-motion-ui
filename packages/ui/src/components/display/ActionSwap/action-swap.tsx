@@ -237,16 +237,13 @@ export function ActionSwapIcon({ value, children, animation = 'blur', size = 16,
   // Same hidden-page fallback as ActionSwapText — see the comment there.
   if (reduce || !pageVisible)
     return (
-      <View testID={testID} style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
+      <View testID={testID} className="items-center justify-center" style={[{ width: size, height: size }, style]}>
         {children}
       </View>
     );
 
   return (
-    <View
-      testID={testID}
-      style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, style]}
-    >
+    <View testID={testID} className="items-center justify-center overflow-hidden" style={[{ width: size, height: size }, style]}>
       <AnimatePresence initial={false}>
         <MotiView
           key={`${animation}-${value}`}

@@ -3,18 +3,19 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
+import { cn } from '../../../lib/cn';
 import { Text } from '../../typography/Text/text';
 import { CylinderCarousel, type CylinderCarouselVariant } from './cylinder-carousel';
 
 const SLIDES = [
-  { label: 'Aurora', color: '#6a7bff' },
-  { label: 'Ember', color: '#ff6a3d' },
-  { label: 'Citrus', color: '#ffce54' },
-  { label: 'Mint', color: '#00ffb2' },
-  { label: 'Grape', color: '#9f50d3' },
-  { label: 'Coral', color: '#ff5cf4' },
-  { label: 'Ocean', color: '#4d9eff' },
-  { label: 'Slate', color: '#8a8a9a' },
+  { label: 'Aurora', bgClass: 'bg-[#6a7bff]' },
+  { label: 'Ember', bgClass: 'bg-[#ff6a3d]' },
+  { label: 'Citrus', bgClass: 'bg-[#ffce54]' },
+  { label: 'Mint', bgClass: 'bg-[#00ffb2]' },
+  { label: 'Grape', bgClass: 'bg-[#9f50d3]' },
+  { label: 'Coral', bgClass: 'bg-[#ff5cf4]' },
+  { label: 'Ocean', bgClass: 'bg-[#4d9eff]' },
+  { label: 'Slate', bgClass: 'bg-[#8a8a9a]' },
 ];
 
 const meta = {
@@ -51,15 +52,12 @@ const ITEM_SIZES = ['90', '120', '160'] as const;
 const SLOTS = ['3', '5', '7'] as const;
 const MIN_SCALES = ['0.3', '0.55', '0.8'] as const;
 
-type BallProps = { label: string; color: string };
+type BallProps = { label: string; bgClass: string };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function Ball({ label, color }: BallProps) {
+function Ball({ label, bgClass }: BallProps) {
   return (
-    <View
-      className="flex-1 items-center justify-center rounded-full border border-[rgba(0,0,0,0.08)]"
-      style={{ backgroundColor: color }}
-    >
+    <View className={cn('flex-1 items-center justify-center rounded-full border border-[rgba(0,0,0,0.08)]', bgClass)}>
       <Text className="font-semibold text-[15px] text-white">{label}</Text>
     </View>
   );
@@ -67,7 +65,7 @@ function Ball({ label, color }: BallProps) {
 
 /** The eight balls, rebuilt per carousel instance (children can't be shared). */
 function balls() {
-  return SLIDES.map((slide) => <Ball color={slide.color} key={slide.label} label={slide.label} />);
+  return SLIDES.map((slide) => <Ball bgClass={slide.bgClass} key={slide.label} label={slide.label} />);
 }
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper

@@ -7,6 +7,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
+import { CARD_RADIUS } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
@@ -266,9 +267,9 @@ export function FullSheet({
               <MotiView
                 key="fullsheet"
                 className="flex-1 bg-surface-3"
-                from={{ translateY: height }}
-                animate={{ translateY: 0 }}
-                exit={{ translateY: height }}
+                from={{ translateY: height, borderRadius: CARD_RADIUS }}
+                animate={{ translateY: 0, borderRadius: 0 }}
+                exit={{ translateY: height, borderRadius: CARD_RADIUS }}
                 transition={enterTransition}
                 exitTransition={exitTransition}
                 testID={testID}

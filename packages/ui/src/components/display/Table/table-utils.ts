@@ -196,6 +196,28 @@ export function alignToJustify(align: TableColumn<unknown>['align']): 'flex-end'
   return 'flex-start';
 }
 
+export function alignToJustifyClass(align: TableColumn<unknown>['align']): 'justify-end' | 'justify-center' | 'justify-start' {
+  if (align === 'right') return 'justify-end';
+  if (align === 'center') return 'justify-center';
+  return 'justify-start';
+}
+
+export function alignToItemsClass(align: TableColumn<unknown>['align']): 'items-end' | 'items-center' | 'items-start' {
+  if (align === 'right') return 'items-end';
+  if (align === 'center') return 'items-center';
+  return 'items-start';
+}
+
+export function alignToTextClass(
+  align: TableColumn<unknown>['align'],
+  isRTL: boolean,
+): 'text-right' | 'text-center' | 'text-left' {
+  if (align === 'center') return 'text-center';
+  if (align === 'right') return 'text-right';
+  if (align === 'left') return 'text-left';
+  return isRTL ? 'text-right' : 'text-left';
+}
+
 export function nextSort(activeSort: SortState | null, key: string): SortState | null {
   if (activeSort?.key === key) {
     if (activeSort.direction === 'asc') return { key, direction: 'desc' };
@@ -224,4 +246,22 @@ export function columnLayoutStyle(
     return { flex: parsed.value, minWidth: Math.round(parsed.value * 80) };
   }
   return { width: parsed.value };
+}
+
+/**
+ * Tailwind-class equivalent of {@link columnLayoutStyle}.
+ * Returns a space-separated list of utility classes for the column's width.
+ */
+export function columnLayoutClass(
+  columnWidth: number | string | undefined,
+  /** Known pixel width from `computeColumnWidths`. */
+  resolvedWidth?: number,
+): string {
+  if (resolvedWidth !== undefined && resolvedWidth > 0) return `w-[${resolvedWidth}px]`;
+  const parsed = parseColumnWidth(columnWidth);
+  if (parsed.type === 'fr') {
+    const grow = parsed.value === 1 ? 'flex-1' : `flex-[${parsed.value}]`;
+    return `${grow} min-w-[${Math.round(parsed.value * 80)}px]`;
+  }
+  return `w-[${parsed.value}px]`;
 }

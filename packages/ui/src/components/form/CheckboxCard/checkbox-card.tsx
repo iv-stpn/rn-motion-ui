@@ -272,9 +272,10 @@ export function CheckboxCard({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
-      style={[{ opacity: disabled ? 0.6 : 1 }, style]}
+      style={style}
       className={cn(
         'flex-1 gap-3 rounded-2xl border p-4',
+        disabled ? 'opacity-60' : 'opacity-100',
         checked ? 'border-info bg-info/5' : 'border-border bg-transparent',
         className,
       )}

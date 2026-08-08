@@ -10,7 +10,6 @@ import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } fr
 import { useInterval } from '../../../hooks/use-interval';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
-import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
 import { DynamicIsland, DynamicIslandView } from './dynamic-island';
@@ -56,7 +55,6 @@ const BAR_DELAYS = [0, 180, 90, 270];
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function EqBars() {
   const reduce = useReducedMotion();
-  const accent = useThemeColor('success');
   return (
     <View className="h-4 flex-row items-end gap-0.5">
       {BAR_DELAYS.map((delay) => (
@@ -65,8 +63,7 @@ function EqBars() {
           from={{ scaleY: 0.4 }}
           animate={reduce ? { scaleY: 0.6 } : { scaleY: 1 }}
           transition={{ type: 'timing', duration: 1100, loop: !reduce, repeatReverse: true, delay }}
-          className="h-4 w-[2px] rounded-[999px]"
-          style={{ backgroundColor: accent }}
+          className="h-4 w-[2px] rounded-[999px] bg-success"
         />
       ))}
     </View>
@@ -82,28 +79,20 @@ function formatClock(totalSeconds: number) {
 /** Compact pills — whatever the island shows while no view is active. */
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ClockPill() {
-  const onBlack = useThemeColor('white');
-  const accent = useThemeColor('success');
   return (
     <>
-      <View className="h-1.5 w-[6px] rounded-[3px]" style={{ backgroundColor: accent }} />
-      <Text className="font-medium text-[12px]" style={{ color: onBlack }}>
-        {CLOCK}
-      </Text>
+      <View className="h-1.5 w-[6px] rounded-[3px] bg-success" />
+      <Text className="font-medium text-[12px] text-white">{CLOCK}</Text>
     </>
   );
 }
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function RecordingPill() {
-  const onBlack = useThemeColor('white');
-  const timerTint = useThemeColor('warning');
   return (
     <>
-      <View className="h-1.5 w-[6px] rounded-[3px]" style={{ backgroundColor: timerTint }} />
-      <Text className="text-[10px]" style={{ color: onBlack, letterSpacing: 1, opacity: 0.6 }}>
-        {RECORDING}
-      </Text>
+      <View className="h-1.5 w-[6px] rounded-[3px] bg-warning" />
+      <Text className="text-[10px] text-white tracking-px opacity-60">{RECORDING}</Text>
     </>
   );
 }
@@ -116,51 +105,37 @@ type IslandProps = { view: IslandView; seconds?: number; compact?: ReactNode; on
  */
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Island({ view, seconds = START_SECONDS, compact, onDismiss }: IslandProps) {
-  const onBlack = useThemeColor('white');
-  const timerTint = useThemeColor('warning');
   return (
     <DynamicIsland accessibilityLabel="Dynamic island" compact={compact ?? <ClockPill />} view={view}>
       {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView className="gap-4" id="call">
         <View className="gap-0.5">
-          <Text className="text-[10px]" style={{ color: onBlack, letterSpacing: 1, opacity: 0.6 }}>
-            {INCOMING_CALL}
-          </Text>
-          <Text className="font-semibold text-[14px]" style={{ color: onBlack }}>
-            {CALLER}
-          </Text>
+          <Text className="text-[10px] text-white tracking-px opacity-60">{INCOMING_CALL}</Text>
+          <Text className="font-semibold text-[14px] text-white">{CALLER}</Text>
         </View>
         <View className="flex-row items-center gap-2">
           <Button accessibilityLabel="Decline" onPress={onDismiss} size="icon" variant="ghost">
-            <PhoneOff color={onBlack} size={14} />
+            <PhoneOff className="text-white" size={14} />
           </Button>
           <Button accessibilityLabel="Accept" onPress={onDismiss} size="icon" variant="ghost">
-            <Phone color={onBlack} size={14} />
+            <Phone className="text-white" size={14} />
           </Button>
         </View>
       </DynamicIslandView>
 
       {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView className="gap-3" id="timer">
-        <Timer color={timerTint} size={16} />
-        <Text className="text-[10px]" style={{ color: onBlack, letterSpacing: 1, opacity: 0.6 }}>
-          {TIMER_LABEL}
-        </Text>
-        <Text className="font-semibold text-[14px]" style={{ color: onBlack, fontVariant: ['tabular-nums'] }}>
-          {formatClock(seconds)}
-        </Text>
+        <Timer className="text-warning" size={16} />
+        <Text className="text-[10px] text-white tracking-px opacity-60">{TIMER_LABEL}</Text>
+        <Text className="font-semibold text-[14px] text-white tabular-nums">{formatClock(seconds)}</Text>
       </DynamicIslandView>
 
       {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView className="gap-3" id="music">
-        <Music color={onBlack} size={14} />
+        <Music className="text-white" size={14} />
         <View className="gap-px">
-          <Text className="font-semibold text-[12px]" style={{ color: onBlack }}>
-            {TRACK_TITLE}
-          </Text>
-          <Text className="text-[10px]" style={{ color: onBlack, opacity: 0.6 }}>
-            {TRACK_ARTIST}
-          </Text>
+          <Text className="font-semibold text-[12px] text-white">{TRACK_TITLE}</Text>
+          <Text className="text-[10px] text-white opacity-60">{TRACK_ARTIST}</Text>
         </View>
         <EqBars />
       </DynamicIslandView>

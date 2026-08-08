@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Children, isValidElement, type ReactNode } from 'react';
+import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { cn } from '../../../lib/cn';
 import type { ButtonSize } from '../Button/button-scale';
@@ -14,7 +14,7 @@ const container = cva('flex', {
     },
     variant: {
       spaced: '',
-      bordered: 'border border-border rounded-button-md overflow-hidden',
+      bordered: '',
     },
   },
   defaultVariants: { orientation: 'horizontal', variant: 'spaced' },
@@ -29,6 +29,41 @@ const GAP_CLASS: Record<ButtonSize, string> = { sm: 'gap-2', md: 'gap-3', lg: 'g
 function alignmentClass(bordered: boolean, horizontal: boolean): 'items-stretch' | 'items-center' {
   if (bordered) return 'items-stretch';
   return horizontal ? 'items-center' : 'items-stretch';
+}
+
+/**
+ * Per-button `contentStyle` for the bordered variant. Zeros out the inner
+ * corner radii so adjacent buttons sit flush; outer corners keep the
+ * interactive radius. A single child keeps its natural `rounded-interactive`.
+ */
+function borderedContentStyle(index: number, total: number, horizontal: boolean): ViewStyle {
+  if (total === 1) return {}; // keep the button's own rounded-interactive
+
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+
+  if (horizontal) {
+    if (isFirst) return { borderTopRightRadius: 0, borderBottomRightRadius: 0 };
+    if (isLast) return { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 };
+  } else {
+    if (isFirst) return { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 };
+    if (isLast) return { borderTopLeftRadius: 0, borderTopRightRadius: 0 };
+  }
+  return { borderRadius: 0 };
+}
+
+/**
+ * Type guard that narrows a React node to an element whose props accept
+ * `contentStyle`, `className`, and `pressMode`. Used by the bordered variant
+ * to inject border, corner-radius, and press-animation overrides directly
+ * into Button children without an `as` cast.
+ */
+function isPressableElement(child: ReactNode): child is ReactElement<{
+  className?: string;
+  contentStyle?: StyleProp<ViewStyle>;
+  pressMode?: 'scale' | 'scaleY' | 'none';
+}> {
+  return isValidElement(child);
 }
 
 // ── props ────────────────────────────────────────────────────────────────────
@@ -48,12 +83,12 @@ export interface ButtonGroupProps extends VariantProps<typeof container> {
  * A horizontal (or vertical) row of buttons.
  *
  * `spaced` — each button keeps its own border-radius; a consistent gap separates them.
- * `bordered` — buttons sit flush inside a shared border with thin dividers between
- * them; the container's `overflow-hidden` clips the outer corners while inner edges
- * stay sharp, giving a segmented-control look.
- *
- * Individual button press animations are handled by the Button children themselves
- * (pressScale + MOTION_SNAPPY spring) — the group is purely a layout container.
+ * `bordered` — a segmented control: inner-facing edges carry a single divider
+ * border (`border-r` / `border-b`); no border forms on the outer perimeter.
+ * Inner corner radii are zeroed via `contentStyle` so adjacent buttons sit
+ * flush. Outer corners keep the interactive radius from the button's own
+ * variant. Horizontal groups press down (`scaleY` + `translateY`); vertical
+ * groups have no press animation.
  */
 export function ButtonGroup({
   variant = 'spaced',
@@ -80,26 +115,34 @@ export function ButtonGroup({
       </View>
     );
 
-  // ── bordered (dividers between children) ─────────────────────────────────
+  // ── bordered (segmented) ─────────────────────────────────────────────────
 
   const kids = Children.toArray(children).filter(Boolean);
 
-  const content = kids.flatMap((child, index) => {
-    // Use the child's own key as a stable identifier; fall back to index for
-    // host containers (strings, fragments) that don't carry a key.
-    const childKey = isValidElement(child) ? child.key : index;
-    const isLast = index === kids.length - 1;
-    const item = (
-      <View key={`bg-btn-${childKey}`} className="flex-1">
-        {child}
-      </View>
-    );
+  const total = kids.length;
 
-    if (isLast) return [item];
+  const content = kids.map((child, index) => {
+    const isFirst = index === 0;
+    const isLast = index === total - 1;
 
-    const divider = <View key={`bg-div-${childKey}`} className={cn(isHorizontal ? 'w-px bg-border' : 'h-px bg-border')} />;
+    // Borders go only on inner-facing sides so no perimeter border forms
+    // around the group.  Each non-last button contributes a single divider
+    // edge; adjacent buttons overlap 1 px to merge them.
+    let positionClass = 'flex-1';
+    if (total > 1) {
+      if (isHorizontal && !isLast) positionClass += ' border-r border-border';
+      else if (!isLast) positionClass += ' border-b border-border';
 
-    return [item, divider];
+      if (!isFirst) positionClass += isHorizontal ? ' -ml-px' : ' -mt-px';
+    }
+
+    if (!isPressableElement(child)) return child;
+
+    return cloneElement(child, {
+      className: positionClass,
+      contentStyle: borderedContentStyle(index, total, isHorizontal),
+      pressMode: isHorizontal ? 'scaleY' : 'none',
+    });
   });
 
   return (

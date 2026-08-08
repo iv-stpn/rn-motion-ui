@@ -213,7 +213,7 @@ export function ActionFeedbackModal({
             transition={reduced ? RM_TRANSITION : { type: 'spring', damping: 24, stiffness: 280, mass: 0.9 }}
             exitTransition={{ type: 'timing', duration: reduced ? 100 : 150 }}
             className={cn(
-              'w-full max-w-sm rounded-2xl border border-border',
+              'w-full max-w-sm rounded-modal border border-border',
               surfaceBackground(elevation),
               'p-6',
               elevatedShadow(elevation),

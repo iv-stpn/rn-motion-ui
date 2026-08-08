@@ -6,7 +6,7 @@ import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../l
 
 // cva drives the static styling layer — class strings are static literals so
 // the Tailwind/uniwind scanner picks them up. Mirrors the Button pattern.
-const card = cva('rounded-2xl', {
+const card = cva('rounded-card', {
   variants: {
     size: { compact: 'gap-2 p-3', md: 'gap-3 p-4', lg: 'gap-4 p-6' },
   },

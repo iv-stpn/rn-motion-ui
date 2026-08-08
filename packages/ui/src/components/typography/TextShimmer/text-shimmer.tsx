@@ -147,12 +147,7 @@ export function TextShimmer({
   const label = accessibilityLabel ?? children;
 
   return (
-    <View
-      testID={testID}
-      accessibilityRole={role}
-      accessibilityLabel={label}
-      style={[{ flexDirection: 'row', flexWrap: 'wrap' }, style]}
-    >
+    <View testID={testID} accessibilityRole={role} accessibilityLabel={label} className="flex-row flex-wrap" style={style}>
       {chars.map((char, i) => (
         <ShimmerChar
           char={char}

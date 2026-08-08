@@ -3,6 +3,7 @@ import { type LayoutRectangle, Pressable, type StyleProp, View, type ViewStyle }
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../../lib/ease';
+import { H_INTERACTIVE, INTERACTIVE_HEIGHT, PX_INTERACTIVE } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { Text } from '../../typography/Text/text';
 
@@ -26,8 +27,8 @@ const PILL_INSET = 2;
 
 export type DockProps = {
   children: ReactNode;
-  /** Size of each item in px. */
-  size?: number;
+  /** Height variant — drives the container's interactive size token and item dimensions. Default `lg`. */
+  size?: 'sm' | 'md' | 'lg';
   /** Additional UniWind class names merged onto the dock bar. */
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -35,10 +36,13 @@ export type DockProps = {
 };
 
 // biome-ignore lint/style/useExportsLast: type LayoutEvent (private) must stay adjacent to DockItem below; hoisting all private types above would scatter the context-private/component-public grouping
-export function Dock({ children, size = 44, className, style, testID }: DockProps) {
+export function Dock({ children, size = 'lg', className, style, testID }: DockProps) {
   const reduce = useReducedMotion();
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Item pixel size = container height less 4 px — 2 px inset on each side so the
+  // active pill centres on the item.
+  const itemPx = INTERACTIVE_HEIGHT[size] - 4;
 
   const register = useCallback((id: string, layout: LayoutRectangle) => {
     setLayouts((prev) => {
@@ -57,8 +61,8 @@ export function Dock({ children, size = 44, className, style, testID }: DockProp
   }, []);
 
   const ctx = useMemo<DockContextValue>(
-    () => ({ size, reduce, layouts, register, activeId, setActive }),
-    [size, reduce, layouts, register, activeId, setActive],
+    () => ({ size: itemPx, reduce, layouts, register, activeId, setActive }),
+    [itemPx, reduce, layouts, register, activeId, setActive],
   );
 
   const active = activeId ? layouts[activeId] : undefined;
@@ -67,8 +71,13 @@ export function Dock({ children, size = 44, className, style, testID }: DockProp
     <DockContext.Provider value={ctx}>
       <View
         testID={testID}
-        className={cn('flex-row items-end gap-1.5 self-start rounded-2xl border border-border bg-surface-3 px-2 py-1', className)}
-        style={[{ position: 'relative' }, style]}
+        className={cn(
+          H_INTERACTIVE[size],
+          PX_INTERACTIVE[size],
+          'relative flex-row items-center gap-1.5 self-start rounded-2xl border border-border bg-surface-3',
+          className,
+        )}
+        style={style}
       >
         {/* Shared-layout pill glides to the active item's measured rect. Item
             layouts are reported relative to the container's border box, but this

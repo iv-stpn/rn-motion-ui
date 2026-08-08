@@ -4,9 +4,17 @@
 // spinner), so those pieces live here rather than being duplicated per sibling.
 // Nothing here is variant-aware: each component resolves its own colours/classes
 // and passes the results in.
-import { Children, isValidElement, type ReactNode, useCallback, useRef, useState } from 'react';
+import { Children, isValidElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { GestureResponderEvent, LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import { View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
@@ -52,6 +60,27 @@ function renderChild(child: ReactNode, className: string, labelClassName?: strin
   return isValidElement(child) ? child : null;
 }
 
+export type PressAnimateOpts = {
+  pressed: boolean;
+  blocked: boolean;
+  pressMode: 'scale' | 'scaleY' | 'none';
+  pressScale: number;
+};
+
+/**
+ * Resolves the MotiView `animate` value for the press animation.  Each button
+ * component calls this and spreads the result into its own animate object so
+ * it can merge additional properties (e.g. GlossyButton's opacity).
+ */
+// biome-ignore lint/style/useComponentExportOnlyModules: shared press-animation helper consumed by every button component alongside the other machinery already exempted below
+export function pressAnimate(opts: PressAnimateOpts): { scale: number } | { scaleY: number; translateY: number } {
+  const { pressed, blocked, pressMode, pressScale } = opts;
+  if (pressMode === 'none' || blocked) return { scale: 1 };
+  if (!pressed) return pressMode === 'scaleY' ? { scaleY: 1, translateY: 0 } : { scale: 1 };
+  if (pressMode === 'scaleY') return { scaleY: 0.96, translateY: 2 };
+  return { scale: pressScale };
+}
+
 // ── exports ─────────────────────────────────────────────────────────────────
 
 // The size/shape axes and the label ramp live in button-scale.ts, next to the
@@ -79,6 +108,13 @@ export type BaseButtonProps = {
   ripple?: boolean;
   /** Scale the button settles to while pressed. */
   pressScale?: number;
+  /**
+   * Shape of the press animation.
+   * - `scale` (default) — uniform pressScale, the current behaviour.
+   * - `scaleY` — compresses vertically and nudges down (segmented controls).
+   * - `none` — no press animation at all.
+   */
+  pressMode?: 'scale' | 'scaleY' | 'none';
   /** When true, skip the 0.5 opacity applied to disabled buttons. */
   noDisabledOpacity?: boolean;
   /** Colour shown as an absolutely-positioned overlay behind the button content. */
@@ -132,6 +168,7 @@ export function ButtonRipples({ ripples, filled }: ButtonRipplesProps) {
 // ElevatedButton rim SVG needs it to re-render; that state write is gated behind
 // `trackDims` so no other button pays for a render on layout.
 // biome-ignore lint/style/useComponentExportOnlyModules: shared button machinery — the hook and content builder are consumed alongside ButtonRipples by both Button and ElevatedButton; splitting them off would fragment tightly-coupled press/layout logic
+// biome-ignore lint/style/useExportsLast: ButtonSpinner (non-export) sits between usePressRipples and other exports; moving it would separate the continuous spinner from the press machinery it belongs with
 export function usePressRipples({ ripple, reduce, trackDims }: UsePressRipplesArgs) {
   const [pressed, setPressed] = useState(false);
   const [ripples, setRipples] = useState<Ripple[]>([]);
@@ -166,6 +203,51 @@ export function usePressRipples({ ripple, reduce, trackDims }: UsePressRipplesAr
   return { pressed, ripples, dims, onLayout, handlePressIn, handlePressOut };
 }
 
+/**
+ * Continuous 0°→360° rotation for the loading spinner. Imperative
+ * (shared value + withRepeat) for the same reason as BadgeSpinner —
+ * MotiView's declarative `loop` re-issues the animation on every
+ * parent re-render, restarting mid-revolution, and default easing
+ * pauses at the repeat boundary.
+ */
+type ButtonSpinnerProps = { color: string; reduce: boolean };
+
+function ButtonSpinner({ color, reduce }: ButtonSpinnerProps) {
+  const rotation = useSharedValue(0);
+
+  // biome-ignore lint/plugin: Reanimated withRepeat loop must be started and cancelled as a side effect — not expressible as derived state
+  useEffect(() => {
+    if (reduce) {
+      rotation.value = 0;
+      return;
+    }
+    rotation.value = withRepeat(withTiming(360, { duration: 800, easing: Easing.linear }), -1, false);
+    return () => cancelAnimation(rotation);
+  }, [reduce, rotation]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Svg width={16} height={16} viewBox="0 0 16 16">
+        <Circle cx={8} cy={8} r={6} stroke={color} strokeOpacity={0.25} strokeWidth={2} fill="none" />
+        <Circle
+          cx={8}
+          cy={8}
+          r={6}
+          stroke={color}
+          strokeWidth={2}
+          strokeLinecap="round"
+          fill="none"
+          strokeDasharray={`${Math.PI * 6} ${Math.PI * 12}`}
+        />
+      </Svg>
+    </Animated.View>
+  );
+}
+
 // biome-ignore lint/style/useComponentExportOnlyModules: see usePressRipples — buildButtonContent is the layout half of the same shared press/content machinery
 export function buildButtonContent({
   loading,
@@ -178,28 +260,7 @@ export function buildButtonContent({
   spinnerColor,
   labelClassName,
 }: BuildContentArgs): ReactNode {
-  if (loading)
-    return (
-      <MotiView
-        from={{ rotate: '0deg' }}
-        animate={{ rotate: reduce ? '0deg' : '360deg' }}
-        transition={{ type: 'timing', duration: 800, loop: !reduce, repeatReverse: false }}
-      >
-        <Svg width={16} height={16} viewBox="0 0 16 16">
-          <Circle cx={8} cy={8} r={6} stroke={spinnerColor} strokeOpacity={0.25} strokeWidth={2} fill="none" />
-          <Circle
-            cx={8}
-            cy={8}
-            r={6}
-            stroke={spinnerColor}
-            strokeWidth={2}
-            strokeLinecap="round"
-            fill="none"
-            strokeDasharray={`${Math.PI * 6} ${Math.PI * 12}`}
-          />
-        </Svg>
-      </MotiView>
-    );
+  if (loading) return <ButtonSpinner color={spinnerColor} reduce={reduce} />;
 
   const hasAdornments = leftAdornment !== undefined || rightAdornment !== undefined;
   const isLeaf = typeof children === 'string' || typeof children === 'number';

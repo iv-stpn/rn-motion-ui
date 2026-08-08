@@ -10,6 +10,7 @@ import { Settings1Line as Settings } from 'rn-motion-ui-icons/icons/settings-1-l
 import { SparklesLine as Sparkles } from 'rn-motion-ui-icons/icons/sparkles-line';
 import { expect, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
+import { INTERACTIVE_HEIGHT } from '../../../lib/radius';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Dock, DockItem, DockSeparator } from './dock';
 
@@ -17,9 +18,9 @@ const meta = {
   title: 'Navigation/Dock',
   component: Dock,
   parameters: { layout: 'centered' },
-  args: { children: null, size: 44 },
+  args: { children: null, size: 'lg' as const },
   argTypes: {
-    size: { control: { type: 'number' } },
+    size: { control: 'select', options: ['sm', 'md', 'lg'] },
   },
 } satisfies Meta<typeof Dock>;
 
@@ -33,10 +34,23 @@ const ITEMS = [
   { id: 'discover', icon: Sparkles, label: 'Discover' },
 ] as const;
 
+/** Item pixel size per interactive size key (container height − 4 px). */
+const ITEM_PX = {
+  sm: INTERACTIVE_HEIGHT.sm - 4,
+  md: INTERACTIVE_HEIGHT.md - 4,
+  lg: INTERACTIVE_HEIGHT.lg - 4,
+} as const;
+
+const SIZE_LABEL = {
+  sm: `sm (${INTERACTIVE_HEIGHT.sm}px)`,
+  md: `md (${INTERACTIVE_HEIGHT.md}px)`,
+  lg: `lg (${INTERACTIVE_HEIGHT.lg}px)`,
+} as const;
+
 const SIZES = [
-  { value: '36', label: '36px' },
-  { value: '44', label: '44px' },
-  { value: '56', label: '56px' },
+  { value: 'sm', label: SIZE_LABEL.sm },
+  { value: 'md', label: SIZE_LABEL.md },
+  { value: 'lg', label: SIZE_LABEL.lg },
 ] as const;
 
 type SizeKey = (typeof SIZES)[number]['value'];
@@ -62,13 +76,14 @@ function DockButton({ id, label, icon: Icon, active, iconSize, onSelect }: DockB
   );
 }
 
-type DockDemoProps = { size?: number; separator?: boolean; onSelect?: (id: string) => void };
+type DockDemoProps = { size?: SizeKey; separator?: boolean; onSelect?: (id: string) => void };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function DockDemo({ size = 44, separator = true, onSelect }: DockDemoProps) {
+function DockDemo({ size = 'lg', separator = true, onSelect }: DockDemoProps) {
   const [active, setActive] = useState('home');
   const color = useThemeColor('foreground');
-  const iconSize = Math.round(size * 0.45);
+  const itemPx = ITEM_PX[size];
+  const iconSize = Math.round(itemPx * 0.45);
 
   const select = useCallback(
     (id: string) => {
@@ -106,29 +121,29 @@ function DockDemo({ size = 44, separator = true, onSelect }: DockDemoProps) {
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function DockPlayground() {
-  const [sizeKey, setSizeKey] = useState<SizeKey>('44');
+  const [sizeKey, setSizeKey] = useState<SizeKey>('lg');
   const [separator, setSeparator] = useState(true);
   const [selected, setSelected] = useState('home');
 
   return (
     <Playground>
       <ControlCard title="Options">
-        <Choice label="Item size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
+        <Choice label="Size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
         <Toggle label="Separator" onChange={setSeparator} value={separator} />
       </ControlCard>
 
       {/* The highlight is a single pill that measures each item's box and glides
           between them, so a size change moves both the pill and its travel. */}
       <View className="items-center gap-2">
-        <DockDemo onSelect={setSelected} separator={separator} size={Number(sizeKey)} />
+        <DockDemo onSelect={setSelected} separator={separator} size={sizeKey} />
         <Note testID="story-selected">{selected}</Note>
       </View>
 
       <View className="h-3" />
-      <Section title="Item sizes">
+      <Section title="Sizes">
         <View className="items-center gap-4">
           {SIZES.map((option) => (
-            <DockDemo key={option.value} size={Number(option.value)} />
+            <DockDemo key={option.value} size={option.value} />
           ))}
         </View>
       </Section>

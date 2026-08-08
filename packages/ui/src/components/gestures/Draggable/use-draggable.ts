@@ -66,6 +66,7 @@ const WEB_HOST_STYLE: WebViewStyle = { userSelect: 'none' };
 const GHOST_STYLE: ViewStyle = { left: 0, pointerEvents: 'none', position: 'absolute', top: 0 };
 
 type UseTransportsParams = {
+  cursorMode: boolean;
   effectAllowed: DragEffectAllowed;
   enabled: boolean;
   timeline: PressTimeline;
@@ -84,12 +85,23 @@ type UseTransportsParams = {
  * one decision made three ways, and reading it in one place is the only way to see
  * that a mouse and a finger on the same web page take different paths.
  */
-function useTransports({ effectAllowed, enabled, timeline, nodeRef, session, transports, tuning }: UseTransportsParams) {
+function useTransports({
+  cursorMode,
+  effectAllowed,
+  enabled,
+  timeline,
+  nodeRef,
+  session,
+  transports,
+  tuning,
+}: UseTransportsParams) {
   // Both pans are "the touch one", so they share a flag: whichever platform this is
   // running on, only one of them can bind.
-  const pan = enabled && transports !== 'html5';
-  useDraggableHtml5({ enabled: enabled && transports !== 'pan', nodeRef, session, timeline });
-  useDraggablePointer({ effectAllowed, enabled: pan, nodeRef, session, timeline });
+  const pan = enabled && (transports !== 'html5' || cursorMode);
+  // When cursorMode is on, the pointer transport handles mouse events — disable
+  // HTML5 to avoid two transports competing for the same mouse gesture.
+  useDraggableHtml5({ enabled: enabled && transports !== 'pan' && !cursorMode, nodeRef, session, timeline });
+  useDraggablePointer({ cursorMode, effectAllowed, enabled: pan, nodeRef, session, timeline });
   return useDraggablePan({ effectAllowed, enabled: pan, session, timeline, tuning });
 }
 
@@ -236,6 +248,17 @@ export type UseDraggableOptions = {
    * when the HTML5 transport ran.
    */
   data?: Record<string, string>;
+  /**
+   * When true, a mouse left-button press on web runs the same hold-and-drag
+   * timeline a touch press does — hold fires at `holdDelay`, and a drag past
+   * `slop` lifts through the pointer transport instead of HTML5. Right-click is
+   * never intercepted.
+   *
+   * When set, the HTML5 transport is disabled for this source (it would compete
+   * with the pointer transport for the same mouse events).
+   * @default false
+   */
+  cursorMode?: boolean;
   /** Turns the drag off. Nothing binds, and no timeline runs. @default false */
   disabled?: boolean;
   /** What a drop may do with the payload. @default 'copy' */
@@ -390,7 +413,7 @@ export type UseDraggableReturn = {
  * non-pointer path to the same outcome** — a menu item, a keyboard command.
  */
 export function useDraggable(options: UseDraggableOptions = {}): UseDraggableReturn {
-  const { behavior, data, disabled = false, effectAllowed = 'copy', groups, preview, testID } = options;
+  const { behavior, cursorMode = false, data, disabled = false, effectAllowed = 'copy', groups, preview, testID } = options;
   const {
     onDragEnd,
     onDragMove,
@@ -438,6 +461,7 @@ export function useDraggable(options: UseDraggableOptions = {}): UseDraggableRet
   const enabled = !disabled;
   const host = useDraggableHost({ enabled, live, preview });
   const gesture = useTransports({
+    cursorMode,
     effectAllowed,
     enabled,
     nodeRef: host.nodeRef,

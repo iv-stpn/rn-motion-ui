@@ -231,7 +231,7 @@ export function AdaptiveDropdown({
                   key="panel"
                   onLayout={handlePanelLayout}
                   {...panelMotion}
-                  className={cn('absolute flex-col overflow-hidden rounded-2xl', SURFACE_CLASSNAME[elevation])}
+                  className={cn('absolute flex-col overflow-hidden rounded-menu', SURFACE_CLASSNAME[elevation])}
                   // `transformOrigin` is static, so it composes with the animated
                   // scale rather than competing with it: the panel grows out of the
                   // corner facing the trigger.

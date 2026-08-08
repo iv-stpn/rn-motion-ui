@@ -44,7 +44,7 @@ import { Choice, ControlCard } from './story-harness';
 // Kept before the exports so all non-exports precede all exports (useExportsLast).
 const PRESSABLE_H: Record<string, string> = { sm: 'h-8', md: 'h-10', lg: 'h-12' };
 const PRESSABLE_PX: Record<string, string> = { sm: 'px-3', md: 'px-4', lg: 'px-5' };
-const PRESSABLE_SHAPE: Record<string, string> = { rounded: 'rounded-lg', pill: 'rounded-full' };
+const PRESSABLE_SHAPE: Record<string, string> = { rounded: 'rounded-interactive', pill: 'rounded-full' };
 
 // ─── Kinds ───────────────────────────────────────────────────────────────────
 

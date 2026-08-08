@@ -11,8 +11,7 @@ import { useThemeColor } from '../../../theme/use-theme-color';
 import { Checkbox } from '../../form/Checkbox/checkbox';
 import { Text } from '../../typography/Text/text';
 import type { TableColumn } from './table-types';
-import { CHECKBOX_COL_WIDTH } from './table-types';
-import { alignStyle, alignToJustify, columnLayoutStyle, readCellValue } from './table-utils';
+import { alignToItemsClass, alignToTextClass, columnLayoutClass, readCellValue } from './table-utils';
 
 // ─── Editable cell input ──────────────────────────────────────────────────────
 
@@ -42,8 +41,12 @@ function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) 
 
 // ─── Skeleton cell pulse ──────────────────────────────────────────────────────
 
+function widthClass(w: DimensionValue): `w-[${string}]` {
+  return typeof w === 'number' ? `w-[${w}px]` : `w-[${w}]`;
+}
+
 export type SkeletonCellPulseProps = {
-  /** Column width spec — passed directly to `columnLayoutStyle` for flex/px resolution. */
+  /** Column width spec — passed directly to `columnLayoutClass` for flex/px resolution. */
   columnWidth: number | string | undefined;
   /** Resolved pixel width for this column (from `computeColumnWidths`). */
   colWidth?: number;
@@ -57,15 +60,13 @@ export function SkeletonCellPulse({ columnWidth, colWidth, align, skeletonWidth,
   const barWidth: DimensionValue = skeletonWidth ?? (align === 'right' ? 40 : '60%');
   return (
     <View
-      className="justify-center overflow-hidden px-4"
-      style={[columnLayoutStyle(columnWidth, colWidth), { alignItems: alignToJustify(align) }]}
+      className={cn('justify-center overflow-hidden px-4', alignToItemsClass(align), columnLayoutClass(columnWidth, colWidth))}
     >
       <MotiView
         from={{ opacity: 0.5 }}
         animate={{ opacity: reduce ? 0.5 : 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 800, loop: !reduce, repeatReverse: true }}
-        className="h-3 rounded-md bg-border"
-        style={{ width: barWidth }}
+        className={cn('h-3 rounded-md bg-border', widthClass(barWidth))}
       />
     </View>
   );
@@ -89,7 +90,7 @@ export type RowCellProps<T> = {
 
 export function RowCell<T>({ row, column, id, colWidth, onCellEdit, cellClassName, testID }: RowCellProps<T>) {
   const isRTL = useIsRTL();
-  const { textAlign } = alignStyle(column.align, isRTL);
+  const textClass = alignToTextClass(column.align, isRTL);
   const rawValue = readCellValue(row, column);
   const handleCommit = useCallback((v: string) => onCellEdit?.(id, column.key, v), [onCellEdit, id, column.key]);
 
@@ -105,13 +106,13 @@ export function RowCell<T>({ row, column, id, colWidth, onCellEdit, cellClassNam
     );
   else
     cellContent = (
-      <Text className="text-[13px] text-foreground" style={{ textAlign }} numberOfLines={1}>
+      <Text className={cn('text-[13px] text-foreground', textClass)} numberOfLines={1}>
         {rawValue === null ? '' : String(rawValue)}
       </Text>
     );
 
   return (
-    <View className={cn('justify-center overflow-hidden px-4', cellClassName)} style={columnLayoutStyle(column.width, colWidth)}>
+    <View className={cn('justify-center overflow-hidden px-4', cellClassName, columnLayoutClass(column.width, colWidth))}>
       {cellContent}
     </View>
   );
@@ -214,7 +215,7 @@ export function TableRow<T>({
       />
 
       {selectable ? (
-        <View className="items-center justify-center overflow-hidden px-4" style={{ width: CHECKBOX_COL_WIDTH }}>
+        <View className="w-11 items-center justify-center overflow-hidden px-4">
           <Checkbox checked={isSelected} onCheckedChange={handleToggleRow} accessibilityLabel={`Select row ${index + 1}`} />
         </View>
       ) : null}

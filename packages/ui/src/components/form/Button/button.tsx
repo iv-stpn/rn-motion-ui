@@ -5,7 +5,7 @@ import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { type BaseButtonProps, ButtonRipples, buildButtonContent, usePressRipples } from './button-internals';
+import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
 import { BUTTON_BOX, type ButtonShape, type ButtonSize, LABEL_TEXT_CLASS } from './button-scale';
 
 export type { ButtonShape, ButtonSize } from './button-scale';
@@ -119,6 +119,7 @@ export function Button({
   loading,
   ripple = false,
   pressScale = 0.93,
+  pressMode = 'scale',
   noDisabledOpacity = false,
   backdropColor,
   pressTransition,
@@ -155,7 +156,7 @@ export function Button({
 
   return (
     <MotiView
-      animate={{ scale: pressed && !reduce && !isDisabled ? pressScale : 1 }}
+      animate={pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale })}
       transition={pressSpring}
       className={cn(fitWidth && 'w-full', className)}
       style={style}

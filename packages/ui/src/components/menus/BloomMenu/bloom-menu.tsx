@@ -163,7 +163,7 @@ export function BloomMenu({
         <MotiView
           animate={{ width: open ? PANEL_W : TRIGGER_W, height: open ? (panelH ?? BOX_H) : TRIGGER_H }}
           transition={morph}
-          className="items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-3"
+          className="items-center justify-center overflow-hidden rounded-menu border border-border bg-surface-3"
         >
           {/* Panel content, fixed at its open-state size and centred in the
               card, so the growing clip reveals it centre-out (iris). The grid

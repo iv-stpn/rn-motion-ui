@@ -107,7 +107,7 @@ export function Popover({
 
   return (
     <Ctx.Provider value={ctx}>
-      <View testID={testID} style={[{ alignSelf: 'flex-start' }, style]}>
+      <View testID={testID} className="self-start" style={style}>
         {children}
       </View>
     </Ctx.Provider>
@@ -211,9 +211,10 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
               onLayout={handleLayout}
               {...panelMotion}
               // Held at 0 until the panel has been measured, so it is never
-              // painted at an unresolved position — the rest of the pose is the
-              // shared one.
-              animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0 }}
+              // painted at an unresolved position. Scale is gated alongside
+              // opacity — otherwise the scale animation completes invisibly and
+              // the panel pops at full size.
+              animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0, scale: measured ? 1 : panelMotion.from.scale }}
               className={cn('max-w-xs border border-border p-4', surfaceBackground(elevation), elevatedShadow(elevation))}
               // `transformOrigin` is static, so it composes with the animated
               // scale rather than competing with it: the panel grows out of the

@@ -447,11 +447,12 @@ export function HoverMenu({
         <MotiView
           {...panelMotion}
           // Held at 0 until the panel has been measured, so it is never painted
-          // at an unresolved position — the rest of the pose is the shared one.
-          animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0 }}
+          // at an unresolved position. Scale is gated alongside opacity — otherwise
+          // the scale animation completes invisibly and the panel pops at full size.
+          animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0, scale: measured ? 1 : panelMotion.from.scale }}
           onDidAnimate={handleDidAnimate}
           className={cn(
-            'z-50 overflow-hidden rounded-2xl border border-border',
+            'z-50 overflow-hidden rounded-menu border border-border',
             surfaceBackground(elevation),
             elevatedShadow(elevation),
             contentClassName,

@@ -75,18 +75,28 @@
  * hardcoded `#fff` / `#000`. Anything that should follow the theme wants
  * `foreground` / `surface-N` / `*-foreground` instead.
  *
- * ## Button geometry
+ * ## Interactive surface family
  *
- * `--spacing-button-*`, `--spacing-button-pad-*` and `--radius-button-*` are the
- * one box every button type shares — flat Button, ElevatedButton, GlossyButton
- * and ActionSwapButton all read the same height, horizontal padding and corner
- * radius per size, so a row of mixed button types lines up. Override a token to
- * retune the whole family at once. Unlike the colors, these carry no dark-mode
- * counterpart — geometry doesn't flip with the theme. Values are px (not rem):
- * the effect layers that trace a button's curve — the glossy dome, the elevated
- * rim SVG, the shadow rings — need the same number in JS, and px is the one unit
- * that survives that round trip unrounded (see BUTTON_METRICS in
- * components/Button/button-scale.ts).
+ * `--spacing-interactive-*` is the shared height for every interactive component —
+ * Button, ElevatedButton, GlossyButton, ActionSwap, Input, OtpInput and Tabs all
+ * read the same height per size, so a row of mixed controls lines up.
+ * `--spacing-interactive-pad-*` is the shared horizontal padding for the same
+ * family. Override a token to retune the whole family at once.
+ *
+ * ## Corner radius
+ *
+ * Four tokens partition corner curves by surface category:
+ *
+ * - `--radius-interactive` (10 px) — buttons, inputs, tabs, button groups.
+ * - `--radius-card` (16 px) — card containers.
+ * - `--radius-menu` (16 px) — HoverMenu, Dropdown, HoldContextMenu overlays.
+ * - `--radius-modal` (16 px) — Modals, Popovers, MorphingModal, BottomSheet.
+ *
+ * Unlike the colors, geometry tokens carry no dark-mode counterpart — geometry
+ * doesn't flip with the theme. Values are px (not rem): the effect layers that
+ * trace a button's curve — the glossy dome, the elevated rim SVG, the shadow
+ * rings — need the same number in JS, and px is the one unit that survives
+ * that round trip unrounded (see lib/radius.ts).
  *
  * ## How the two themes are expressed
  *
@@ -241,26 +251,26 @@
   --shadow-elevated-7: var(--surface-rim-7), var(--shadow-surface-7);
   --shadow-elevated-8: var(--surface-rim-8), var(--shadow-surface-8);
 
-  /* Button geometry — the shared box every button type is built on. Three
-     tokens per size: the height (`h-button-md`, and the square edge of an
-     `icon` button), the horizontal padding (`px-button-pad-md`) and the corner
-     radius (`rounded-button-md`). One scheme only: geometry doesn't flip with
-     the theme, so there are no dark-mode counterparts below.
+  /* Interactive surface family — height, horizontal padding and corner radius
+     are the same box for every interactive component (buttons, inputs, tabs,
+     button groups) at a given size, so a row of mixed controls lines up.
+     Cards have their own `--radius-card`.
 
-     The ramp steps 8px in height, 4px in padding and 2px in radius, so the
-     curve stays proportional to the box as it grows. `icon` reuses the `md`
-     numbers as a square. A `pill` button ignores the radius token and takes
-     half its height instead — see BUTTON_RADIUS in components/Button/
-     button-scale.ts, which mirrors this table for the effect layers. */
-  --spacing-button-sm: 32px;
-  --spacing-button-md: 40px;
-  --spacing-button-lg: 48px;
-  --spacing-button-pad-sm: 12px;
-  --spacing-button-pad-md: 16px;
-  --spacing-button-pad-lg: 20px;
-  --radius-button-sm: 8px;
-  --radius-button-md: 10px;
-  --radius-button-lg: 12px;
+     The height ramp steps 8px. `icon` reuses the `md` numbers as a square.
+     A `pill` button ignores the corner radius and takes half its height
+     instead. See lib/radius.ts for the pixel constants used by the effect
+     layers. One scheme only: geometry doesn't flip with the theme, so there
+     are no dark-mode counterparts below. */
+  --spacing-interactive-sm: 32px;
+  --spacing-interactive-md: 40px;
+  --spacing-interactive-lg: 48px;
+  --spacing-interactive-pad-sm: 12px;
+  --spacing-interactive-pad-md: 16px;
+  --spacing-interactive-pad-lg: 20px;
+  --radius-interactive: 10px;
+  --radius-card: 16px;
+  --radius-menu: 16px;
+  --radius-modal: 16px;
 }
 
 /* ── Neutral tint ─────────────────────────────────────────────────────────

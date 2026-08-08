@@ -8,6 +8,7 @@ import { expect, fn, type UserEventObject, userEvent, waitFor, within } from 'st
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { DirectionProvider } from '../../../hooks/direction-provider';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
+import { cn } from '../../../lib/cn';
 import { Switch } from '../../form/Switch/switch';
 import { Text } from '../../typography/Text/text';
 import { type SortState, Table, type TableColumn, type TableProps } from './table';
@@ -40,12 +41,16 @@ function buildPeople(count: number): Person[] {
   return out;
 }
 
-const STATUS_COLORS: Record<Person['status'], string> = { active: '#059669', invited: '#d97706', suspended: '#dc2626' };
+function statusBackgroundClass(status: Person['status']): `bg-[${string}]` {
+  if (status === 'active') return 'bg-[rgba(5,150,105,0.1)]';
+  if (status === 'invited') return 'bg-[rgba(217,119,6,0.1)]';
+  return 'bg-[rgba(220,38,38,0.1)]';
+}
 
-function statusBackgroundColor(status: string): 'rgba(5,150,105,0.1)' | 'rgba(217,119,6,0.1)' | 'rgba(220,38,38,0.1)' {
-  if (status === 'active') return 'rgba(5,150,105,0.1)';
-  if (status === 'invited') return 'rgba(217,119,6,0.1)';
-  return 'rgba(220,38,38,0.1)';
+function statusTextColorClass(status: Person['status']): `text-[${string}]` {
+  if (status === 'active') return 'text-[#059669]';
+  if (status === 'invited') return 'text-[#d97706]';
+  return 'text-[#dc2626]';
 }
 
 type StatusBadgeProps = { status: Person['status'] };
@@ -53,10 +58,8 @@ type StatusBadgeProps = { status: Person['status'] };
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function StatusBadge({ status }: StatusBadgeProps) {
   return (
-    <View className="self-start rounded-full px-2 py-0.5" style={{ backgroundColor: statusBackgroundColor(status) }}>
-      <Text className="font-medium text-[11px]" style={{ textTransform: 'capitalize', color: STATUS_COLORS[status] }}>
-        {status}
-      </Text>
+    <View className={cn('self-start rounded-full px-2 py-0.5', statusBackgroundClass(status))}>
+      <Text className={cn('font-medium text-[11px] capitalize', statusTextColorClass(status))}>{status}</Text>
     </View>
   );
 }

@@ -15,6 +15,7 @@ import { Easing } from 'react-native-reanimated';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { H_INTERACTIVE, INTERACTIVE_RADIUS, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../../theme/motion';
 
@@ -55,6 +56,7 @@ type Ctx = {
   value: string;
   setValue: (v: string) => void;
   variant: Variant;
+  size: 'sm' | 'md' | 'lg';
   layouts: Record<string, Layout>;
   register: (value: string, layout: Layout) => void;
   reduce: boolean;
@@ -91,7 +93,7 @@ const list = cva('flex-row items-center', {
     variant: {
       pill: 'gap-1 rounded-full bg-muted p-1',
       underline: 'gap-1 border-b border-border',
-      segment: 'gap-0 rounded-lg bg-muted p-0.5',
+      segment: 'gap-0 rounded-interactive bg-muted p-0.5',
     },
   },
   defaultVariants: { variant: 'pill' },
@@ -270,6 +272,8 @@ export type TabsProps = {
   value?: string;
   onValueChange?: (v: string) => void;
   variant?: Variant;
+  /** Height variant — drives the trigger's interactive size token. Default `md`. */
+  size?: 'sm' | 'md' | 'lg';
   children: ReactNode;
   /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
@@ -295,6 +299,7 @@ export function Tabs({
   value,
   onValueChange,
   variant = 'pill',
+  size = 'md',
   children,
   className,
   style,
@@ -346,6 +351,7 @@ export function Tabs({
         value: current,
         setValue,
         variant,
+        size,
         layouts,
         register,
         reduce,
@@ -385,7 +391,7 @@ export function TabsList({ children, testID }: TabsListProps) {
 
   let indicatorBorderRadius: number;
   if (variant === 'pill') indicatorBorderRadius = 9999;
-  else if (variant === 'segment') indicatorBorderRadius = 8;
+  else if (variant === 'segment') indicatorBorderRadius = INTERACTIVE_RADIUS;
   else indicatorBorderRadius = 0;
 
   return (
@@ -417,7 +423,7 @@ export function TabsList({ children, testID }: TabsListProps) {
 }
 
 export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
-  const { value: current, setValue, variant, register } = useTabs();
+  const { value: current, setValue, size, register } = useTabs();
   const active = current === value;
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -449,10 +455,16 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
       onBlur={onBlur}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
-      className={variant === 'underline' ? 'px-3 pt-1 pb-2.5' : 'px-3.5 py-1.5'}
+      className={`${H_INTERACTIVE[size]} ${PX_INTERACTIVE[size]} justify-center`}
       testID={testID}
     >
-      <Text className={highlighted ? 'font-medium text-foreground text-sm' : 'font-medium text-muted-foreground text-sm'}>
+      <Text
+        className={
+          highlighted
+            ? `font-medium text-foreground ${TEXT_INTERACTIVE.md}`
+            : `font-medium text-muted-foreground ${TEXT_INTERACTIVE.md}`
+        }
+      >
         {children}
       </Text>
     </Pressable>

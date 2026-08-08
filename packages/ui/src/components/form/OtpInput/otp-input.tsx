@@ -50,18 +50,21 @@ const OTP_SHAKE_STEPS = [-5, 5, -3, 3, -1, 0] as const;
 // Slot border reflects one resolved state: success > error > active > filled > idle.
 type SlotState = 'success' | 'error' | 'active' | 'filled' | 'idle';
 
-const slot = cva('relative h-14 w-12 items-center justify-center overflow-hidden rounded-2xl border', {
-  variants: {
-    state: {
-      success: 'border-success',
-      error: 'border-danger/60',
-      active: 'border-foreground',
-      filled: 'border-foreground/40',
-      idle: 'border-border',
+const slot = cva(
+  'relative h-interactive-lg w-interactive-lg items-center justify-center overflow-hidden rounded-interactive border',
+  {
+    variants: {
+      state: {
+        success: 'border-success',
+        error: 'border-danger/60',
+        active: 'border-foreground',
+        filled: 'border-foreground/40',
+        idle: 'border-border',
+      },
     },
+    defaultVariants: { state: 'idle' },
   },
-  defaultVariants: { state: 'idle' },
-});
+);
 
 const message = cva('text-sm', {
   variants: {
@@ -130,7 +133,7 @@ function OtpSlot({ index, char, state, isActive, showSuccess, reduce, mask, disa
           from={{ opacity: 1 }}
           animate={{ opacity: 0 }}
           transition={{ type: 'timing', duration: 500, loop: true, repeatReverse: true }}
-          className="pointer-events-none absolute top-[16px] left-[23px] h-6 w-px bg-foreground"
+          className="pointer-events-none absolute top-[12px] left-[23px] h-6 w-px bg-foreground"
         />
       ) : null}
 
@@ -144,7 +147,7 @@ function OtpSlot({ index, char, state, isActive, showSuccess, reduce, mask, disa
             exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -14 }}
             transition={{ type: 'timing', duration: reduce ? 0 : 220 }}
             className="absolute h-full w-full text-center font-semibold text-foreground text-xl"
-            style={{ lineHeight: 56 }}
+            style={{ lineHeight: 48 }}
           >
             {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
             {mask ? '•' : char}
@@ -296,7 +299,7 @@ export function OTPInput({
               animate={{ opacity: 1, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
               transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-              className="pointer-events-none absolute top-[18px]"
+              className="pointer-events-none absolute top-[14px]"
               style={{ right: -28 }}
             >
               <ThemedIcon icon={Check} token="success-foreground" size={20} />

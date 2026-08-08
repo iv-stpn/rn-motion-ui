@@ -20,7 +20,6 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const CARD_WIDTH = 280;
 const SIZES = ['compact', 'md', 'lg'] as const satisfies readonly CardSize[];
 const SIZE_LABELS: Record<CardSize, string> = { compact: 'Compact', md: 'Medium', lg: 'Large' };
 const ELEVATION_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8'] as const;
@@ -44,7 +43,7 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
-      <Card {...args} elevation={elevation} size={size} style={{ width: CARD_WIDTH }}>
+      <Card {...args} elevation={elevation} size={size} className="w-[280px]">
         <Text className="font-semibold text-base text-foreground">{TITLE}</Text>
         <Text className="text-muted-foreground text-sm">{BODY}</Text>
       </Card>
@@ -55,7 +54,7 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
       <Section title="Elevation ladder">
         <View className="gap-3">
           {SURFACE_LEVELS.map((level) => (
-            <Card {...args} elevation={level} key={level} size={size} style={{ width: CARD_WIDTH }}>
+            <Card {...args} elevation={level} key={level} size={size} className="w-[280px]">
               <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>
             </Card>
           ))}
@@ -66,7 +65,7 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
         <Variants direction="column">
           {SIZES.map((name) => (
             <Sample key={name} label={name}>
-              <Card {...args} elevation={elevation} size={name} style={{ width: CARD_WIDTH }}>
+              <Card {...args} elevation={elevation} size={name}>
                 <Text className="font-semibold text-foreground text-sm">{SIZE_LABELS[name]}</Text>
               </Card>
             </Sample>
@@ -103,7 +102,7 @@ export const ElevationPairsSurfaceAndShadow: Story = {
   render: () => (
     <View className="gap-3">
       {SURFACE_LEVELS.map((level) => (
-        <Card elevation={level} key={level} style={{ width: CARD_WIDTH }} testID={ladderTestID(level)}>
+        <Card elevation={level} key={level} className="w-[280px]" testID={ladderTestID(level)}>
           <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>
         </Card>
       ))}

@@ -1,1 +1,2 @@
+node packages/ui/scripts/check-readme.mjs --fix
 bun run test

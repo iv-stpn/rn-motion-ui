@@ -19,7 +19,8 @@
  *
  * Usage:
  *   node scripts/check-readme.mjs        # exits 1 if README is stale
- *   node scripts/check-readme.mjs --fix  # rewrites the generated blocks
+ *   node scripts/check-readme.mjs --fix  # rewrites generated blocks AND inserts
+ *                                        # missing rows into packages/ui/README.md
  *
  * Wired into .github/workflows/check.yml so the lists can't drift again.
  */
@@ -67,6 +68,29 @@ function sectionFor(key, source) {
   // `./table` is the component; every other Table file is a helper around it.
   if (componentDir === 'Table') return key === './table' ? 'components' : 'table';
   return 'components';
+}
+
+/**
+ * Read a component source file and extract every PascalCase name exported with
+ * `export function` or `export const` — those are the symbols the README table
+ * should document. Returns an empty array when the file can't be read (binary,
+ * missing) or when there are no matches (the subpath re-exports from elsewhere).
+ */
+function extractExports(sourcePath) {
+  const fullPath = resolve(pkgRoot, sourcePath.replace(/^\.\//, ''));
+  let content;
+  try {
+    content = readFileSync(fullPath, 'utf8');
+  } catch {
+    return [];
+  }
+  const names = [];
+  const re = /^export (?:function|const) ([A-Z]\w*)/gm;
+  let match;
+  while ((match = re.exec(content)) !== null) {
+    names.push(match[1]);
+  }
+  return names;
 }
 
 // Subpaths that live in hand-written prose rather than a generated list. The
@@ -171,16 +195,74 @@ for (const key of unclassified) {
 }
 
 // The published README (packages/ui/README.md) carries its own "UI components"
-// table — subpath alongside the symbols it exports, so it can't be generated
-// from the exports map. It drifted the same way the root lists did (nine
-// components were absent), so every component row is checked for presence; the
-// symbol column stays hand-written. Scoped to components on purpose: hooks, the
-// moti layer and utils are documented there as namespaced categories rather
-// than row by row.
+// table — subpath alongside the symbols it exports. The symbol column was
+// hand-written, but when --fix is passed the script now reads each missing
+// component's source, extracts PascalCase exports, and inserts a row in
+// alphabetical order. Scoped to components on purpose: hooks, the moti layer and
+// utils are documented there as namespaced categories rather than row by row.
 const pkgReadme = readFileSync(pkgReadmePath, 'utf8');
+const missingFromPkgReadme = [];
 for (const name of [...sections.components, ...sections.table]) {
-  if (!pkgReadme.includes(`\`/${name}\``))
+  if (!pkgReadme.includes(`\`/${name}\``)) missingFromPkgReadme.push(name);
+}
+
+if (missingFromPkgReadme.length > 0 && FIX) {
+  // Build rows for every missing subpath, extracting symbols from source.
+  const newRows = [];
+  for (const name of missingFromPkgReadme) {
+    const entry = pkg.exports[`./${name}`];
+    const source = typeof entry === 'string' ? entry : (entry.source ?? entry.default);
+    const symbols = extractExports(source);
+    const symbolStr =
+      symbols.length > 0 ? symbols.map((s) => `\`${s}\``).join(', ') : '<!-- TODO: fill in symbols -->';
+    newRows.push({ name, row: `| \`/${name}\` | ${symbolStr} |` });
+  }
+
+  // Find the table bracketed by the header row and the first non-row line after it.
+  const tableHeader = '| Subpath | Component / hook |';
+  const headerIdx = pkgReadme.indexOf(tableHeader);
+  if (headerIdx === -1) {
+    for (const { name } of newRows) {
+      errors.push(`UNPUBLISHED    ./${name} is exported but missing from the UI components table in packages/ui/README.md (table header not found)`);
+    }
+  } else {
+    // Parse every existing row: { name, start, end }.
+    const existing = [];
+    let pos = pkgReadme.indexOf('\n', pkgReadme.indexOf('\n', headerIdx) + 1) + 1; // skip header + sep
+    while (pos < pkgReadme.length) {
+      const lineEnd = pkgReadme.indexOf('\n', pos);
+      const line = pkgReadme.slice(pos, lineEnd === -1 ? pkgReadme.length : lineEnd);
+      const m = line.match(/^\| `\/([^`]+)` \|/);
+      if (!m) break;
+      existing.push({ name: m[1], start: pos, end: lineEnd === -1 ? pkgReadme.length : lineEnd + 1 });
+      if (lineEnd === -1) break;
+      pos = lineEnd + 1;
+    }
+
+    // Insert in reverse-alphabetical order so earlier positions stay valid.
+    let updatedPkgReadme = pkgReadme;
+    const sorted = [...newRows].sort((a, b) => b.name.localeCompare(a.name));
+    for (const { name, row } of sorted) {
+      // Find the row this goes before (first existing with name > ours).
+      const before = existing.find((r) => r.name > name);
+      const insertPos = before ? before.start : existing[existing.length - 1].end;
+      updatedPkgReadme = updatedPkgReadme.slice(0, insertPos) + row + '\n' + updatedPkgReadme.slice(insertPos);
+    }
+    writeFileSync(pkgReadmePath, updatedPkgReadme);
+    console.log(`✔  Inserted ${sorted.length} row(s) into packages/ui/README.md.`);
+
+    // Verify the fix actually worked — re-check each one.
+    const fixedReadme = readFileSync(pkgReadmePath, 'utf8');
+    for (const { name } of newRows) {
+      if (!fixedReadme.includes(`\`/${name}\``)) {
+        errors.push(`UNPUBLISHED    ./${name} fix was applied but the row is still not found in packages/ui/README.md`);
+      }
+    }
+  }
+} else {
+  for (const name of missingFromPkgReadme) {
     errors.push(`UNPUBLISHED    ./${name} is exported but missing from the UI components table in packages/ui/README.md`);
+  }
 }
 
 if (FIX && updated !== readme) {

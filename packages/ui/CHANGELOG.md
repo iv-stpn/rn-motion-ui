@@ -1,5 +1,50 @@
 # rn-motion-ui
 
+## 5.0.3
+
+### Patch Changes
+
+- 4754dab: - **ButtonGroup**: new form component for grouping buttons with segmented,
+  toolbar, and grid layouts
+  - **FeedbackWidget**: refactored morphing animation using shared layout springs;
+    replaced `AnimatePresence` wrapper with coordinated scale/translate
+    transitions on individual views (`SPRING_SWAP`, `SPRING_LAYOUT`); container
+    now animates `width` instead of just `borderRadius`
+  - **Input**: added `outline-none` to the text field; fixed iOS text vertical
+    alignment via `textAlignVertical: 'center'` and `lineHeight: 0`
+  - **FileSystem header**: removed bottom border
+  - **HoverMenu**: `width="trigger"` now sets `minWidth` from the trigger
+    measurement instead of a fixed `width`, allowing panels to grow wider than the
+    trigger when content overflows
+  - **MorphingModal**: added `elevation` prop and storybook elevation control
+  - **AdaptiveModal**: fixed missing `label` on the elevation `Choice` control in
+    storybook
+- 1cc4430: - **check-readme script**: `--fix` now auto-inserts missing component rows into
+  `packages/ui/README.md` by extracting PascalCase exports from each component's
+  source, so the UI components table stays in sync without manual edits
+  - **Husky pre-push hook**: runs `check-readme.mjs --fix` automatically,
+    regenerating stale README blocks and inserting unpublished component rows
+    before every push
+- 880c1b7: - **AnimatePresence**: removed unused `presenceAffectsLayout` prop (was accepted
+  for API compatibility but never implemented)
+- df6a662: - **Table**: new `columnLayoutStyle()` utility for consistent column width
+  resolution across header, row cells, and skeleton pulses; `containerWidth`
+  removed from `HeaderCell`, `RowCell`, `TableRow`, and `SkeletonCellPulse` —
+  each now uses `columnLayoutStyle(column.width, colWidth)` internally
+  - **Table**: horizontal `ScrollView` now only wraps the header + body when
+    columns actually overflow the container; when they fit, no scroll wrapper is
+    added, avoiding responder-tree interference with long-press menus and the
+    column-reorder drop indicator
+  - **Table**: FlatList performance tuned with `windowSize`,
+    `maxToRenderPerBatch`, `initialNumToRender`, `updateCellsBatchingPeriod`, and
+    `nestedScrollEnabled` for smoother large-table rendering
+  - **BottomSheet**: replaced `flex-1` with `grow` in the sheet body for UniWind
+    v4 compatibility
+  - Replaced template-literal `className` concatenation with the `cn()` utility
+    across `FeedbackWidget`, `Checkbox`, `StarRating`, `Switch`,
+    `AdaptiveDropdown`, `AdaptiveModal`, `BottomSheet`, `FullSheet`, `HoverMenu`,
+    `MorphingModal`, and `Popover`
+
 ## 5.0.2
 
 ### Patch Changes
@@ -199,7 +244,7 @@
   ```tsx
   <Card elevation={2} onPress={() => open(project.id)}>
     <Text>{project.name}</Text>
-  </Card>;
+  </Card>
   ```
 
   Omit it and nothing changes — the card is the plain `View` it always was, with
@@ -305,7 +350,7 @@
     }}
   >
     <Chip label={item.name} />
-  </Draggable>;
+  </Draggable>
   ```
 
   `data` is a MIME-keyed payload, written into the transfer when the drag
@@ -376,7 +421,7 @@
     onExternalDrop={({ dataTransfer, destination }) => {
       for (const file of dataTransfer.files) upload(file, destination);
     }}
-  />;
+  />
   ```
 
   `destination` is the folder the drop landed in, with a trailing slash; `''` is
@@ -426,7 +471,7 @@
         types={fileTypeOptions}
       />
     )}
-  />;
+  />
   ```
 
   The header keeps back/forward, the folder name and the view switcher.
@@ -605,7 +650,7 @@
   The prop is forwarded into every view context — icons, list, column, gallery
   strip — so one callback covers the whole component.
 
-  ---
+  ***
 
   All three additions are purely additive. Existing items without `pinnedAt` or
   `favoritedAt` render exactly as before, and `renderEntryIcon` is optional.
@@ -623,7 +668,7 @@
   That name is the new `rootLabel` prop:
 
   ```tsx
-  <FileSystem items={items} title="Files" rootLabel="My Drive" />;
+  <FileSystem items={items} title="Files" rootLabel="My Drive" />
   ```
 
   It defaults to `title`, so nothing changes unless you set it. It also names
@@ -650,7 +695,7 @@
   ```tsx
   // `<root testID>-entry-<path>`, or `file-system-entry-<path>` untagged
   const row = await canvas.findByTestId(
-    "file-system-entry-Reports/Q1-report.pdf",
+    "file-system-entry-Reports/Q1-report.pdf"
   );
   expect(row).toHaveTextContent("Files › Reports");
   ```
@@ -965,7 +1010,7 @@
   // Upstream's entrance, for anyone who ported from it and wants the old feel back.
   <HoldContextMenu motion={{ offset: 0, scale: 0.6 }} items={items}>
     <MessageBubble message={message} />
-  </HoldContextMenu>;
+  </HoldContextMenu>
   ```
 
 - e9f5fe0: feat(Menu): composable menu list for dropdowns and context menus
@@ -1021,7 +1066,7 @@
     mode="sidebar"
     active={tab === "general"}
     onPress={go}
-  />;
+  />
   ```
 
   `mode` is ignored when `iconBackgroundColor` is set — that variant keeps its
@@ -1120,7 +1165,7 @@
       { type: "separator", id: "after-reply" }, // row-actions-after-reply
       { type: "separator" }, // row-actions-separator-0
     ]}
-  />;
+  />
   ```
 
   An entry with an `id` is named by it. One without falls back to the same
@@ -1265,7 +1310,7 @@
       </MultiDraggable>
     ))}
     <Dragzone onDrop={({ transfer }) => move(readMultiDragIds(transfer))} />
-  </MultiDragManager>;
+  </MultiDragManager>
   ```
 
   Lifting a selected item carries every selected id; lifting an unselected one
@@ -1574,7 +1619,7 @@
     {({ isPressed, isHeld }) => (
       <Chip pressed={isPressed} selected={isHeld} label={name} />
     )}
-  </Holdable>;
+  </Holdable>
   ```
 
   `isPressed` flips at `armDelay`; `onHold` fires at `holdDelay`. A cancel or
@@ -1599,7 +1644,7 @@
     {({ isPressed, isHeld }) => (
       <Row row={item} pressed={isPressed} selected={isHeld} />
     )}
-  </HoldDraggable>;
+  </HoldDraggable>
   ```
 
   Web's drag transport defaults to `holdDelay: null`, so `onHold` on web needs
@@ -1997,10 +2042,11 @@
   <FileSystem
     items={items}
     renderEmptyState={({ reason, folderName }) =>
-      reason === "empty-folder"
-        ? <EmptyFolderPlaceholder folder={folderName} onPick={upload} />
-        : undefined}
-  />;
+      reason === "empty-folder" ? (
+        <EmptyFolderPlaceholder folder={folderName} onPick={upload} />
+      ) : undefined
+    }
+  />
   ```
 
   `FileSystemEmptyStateArgs` and `FileSystemEmptyStateReason` are exported
@@ -2244,7 +2290,7 @@
   classes. Pass a built-in name, or an object to override individual slots.
 
   ```tsx
-  <Switch isSelected={on} onSelectedChange={setOn} theme="success" />;
+  <Switch isSelected={on} onSelectedChange={setOn} theme="success" />
   ```
 
   Six built-ins, one per status token plus the monochrome `primary`: `info`
@@ -2265,7 +2311,7 @@
 
   ```tsx
   // What theme="primary" restores — the previous default look
-  <Switch isSelected={on} onSelectedChange={setOn} theme="primary" />;
+  <Switch isSelected={on} onSelectedChange={setOn} theme="primary" />
   ```
 
   **Custom themes.** An object overrides slots on top of `info`, so anything
@@ -2320,7 +2366,7 @@
   `useThemeColors`:
 
   ```tsx
-  <Text className="text-white">Legible on a vivid fill in both schemes</Text>;
+  <Text className="text-white">Legible on a vivid fill in both schemes</Text>
   ```
 
   ```ts
@@ -2521,7 +2567,7 @@
         {isEmpty ? <DropHint /> : null}
       </View>
     )}
-  />;
+  />
   ```
 
   The snapshot is the state that produced the content — `currentPath`,

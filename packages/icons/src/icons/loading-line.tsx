@@ -12,11 +12,12 @@ import {
 import type { IconProps } from '../icon-props';
 import { useIconColor } from '../resolve-icon-color';
 
-export function LoadingLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
+export function LoadingLine({ size = 24, color: colorProp, style, accessibilityLabel, testID, ...props }: IconProps) {
   const color = useIconColor(colorProp);
   const id = useId();
   return (
     <Svg
+      {...props}
       width={size}
       height={size}
       viewBox="0 0 24 24"

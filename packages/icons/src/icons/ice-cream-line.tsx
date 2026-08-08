@@ -4,10 +4,11 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import type { IconProps } from '../icon-props';
 import { useIconColor } from '../resolve-icon-color';
 
-export function IceCreamLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
+export function IceCreamLine({ size = 24, color: colorProp, style, accessibilityLabel, testID, ...props }: IconProps) {
   const color = useIconColor(colorProp);
   return (
     <Svg
+      {...props}
       width={size}
       height={size}
       viewBox="0 0 24 24"

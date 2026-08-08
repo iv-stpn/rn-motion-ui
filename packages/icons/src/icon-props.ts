@@ -1,4 +1,4 @@
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { SvgProps } from 'react-native-svg';
 import type { ThemeToken } from 'rn-motion-ui/theme/use-theme-color';
 
 /**
@@ -7,8 +7,13 @@ import type { ThemeToken } from 'rn-motion-ui/theme/use-theme-color';
  * All icons are fill- or stroke-rendered SVGs via react-native-svg, so they
  * work on both React Native and react-native-web without any native-code icon
  * font dependency.
+ *
+ * Extends {@link SvgProps} so that any prop accepted by the underlying
+ * `<Svg>` element (hitSlop, onLayout, pointerEvents, …) can be forwarded.
+ * `width` / `height` / `viewBox` / `color` are omitted because the icon
+ * components manage them directly.
  */
-export type IconProps = {
+export type IconProps = Omit<SvgProps, 'width' | 'height' | 'color' | 'viewBox'> & {
   /** Square edge length in px. Default: 24. */
   size?: number;
   /**
@@ -20,8 +25,4 @@ export type IconProps = {
    * the `foreground` token when omitted.
    */
   color?: ThemeToken | (string & {});
-  style?: StyleProp<ViewStyle>;
-  /** Accessibility label; when omitted the icon is treated as decorative. */
-  accessibilityLabel?: string;
-  testID?: string;
 };

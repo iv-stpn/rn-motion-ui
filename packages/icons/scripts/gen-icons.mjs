@@ -323,10 +323,11 @@ ${useIdImport}${svgImport}
 import type { IconProps } from '../icon-props';
 import { useIconColor } from '../resolve-icon-color';
 
-export function ${compName}({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
+export function ${compName}({ size = 24, color: colorProp, style, accessibilityLabel, testID, ...props }: IconProps) {
   const color = useIconColor(colorProp);${useIdCall}
   return (
     <Svg
+      {...props}
       width={size}
       height={size}
       viewBox="${viewBox}"

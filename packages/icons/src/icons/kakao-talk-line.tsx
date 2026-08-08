@@ -4,10 +4,11 @@ import { Svg, Path as SvgPath } from 'react-native-svg';
 import type { IconProps } from '../icon-props';
 import { useIconColor } from '../resolve-icon-color';
 
-export function KakaoTalkLine({ size = 24, color: colorProp, style, accessibilityLabel, testID }: IconProps) {
+export function KakaoTalkLine({ size = 24, color: colorProp, style, accessibilityLabel, testID, ...props }: IconProps) {
   const color = useIconColor(colorProp);
   return (
     <Svg
+      {...props}
       width={size}
       height={size}
       viewBox="0 0 24 24"

@@ -52,7 +52,7 @@ export type HoverMenuProps = {
   triggerAccessibilityLabel?: string;
   /** Which edge of the trigger the panel is aligned to. @default 'start' */
   align?: 'start' | 'end';
-  /** Panel width in pixels, or 'trigger' to match the trigger's measured width. @default 200 */
+  /** Panel width in pixels, or 'trigger' to use the trigger's measured width as a minimum. @default 200 */
   width?: number | 'trigger';
   /** Vertical gap between the trigger and the panel. @default 4 */
   offset?: number;
@@ -437,7 +437,10 @@ export function HoverMenu({
         onLayout={handlePanelLayout}
         onPointerEnter={canHover ? handleHoverIn : undefined}
         onPointerLeave={canHover ? handleHoverOut : undefined}
-        style={[canHover ? WEB_PANEL_POSITION : POSITION_ABSOLUTE, { left, top, width: panelWidth, zIndex: 50 }]}
+        style={[
+          canHover ? WEB_PANEL_POSITION : POSITION_ABSOLUTE,
+          { left, top, ...(width === 'trigger' ? { minWidth: panelWidth } : { width: panelWidth }), zIndex: 50 },
+        ]}
         testID={testID ? `${testID}-panel` : undefined}
       >
         <MotiView

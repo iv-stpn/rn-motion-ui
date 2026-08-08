@@ -53,7 +53,7 @@ const field = cva('relative flex-row items-center overflow-hidden border', {
 });
 
 // Padding shifts to make room for icon slots.
-const inputBox = cva('h-full flex-1 bg-transparent text-base text-foreground', {
+const inputBox = cva('h-full flex-1 bg-transparent text-base text-foreground outline-none', {
   variants: {
     left: { true: 'pl-10', false: 'pl-3.5' },
     right: { true: 'pr-10', false: 'pr-3.5' },
@@ -306,7 +306,7 @@ export function Input({
           accessibilityLabel={accessibilityLabel ?? label}
           testID={testID ?? 'input'}
           className={cn(inputBox({ left: Boolean(leftIcon), right: Boolean(rightSlot || success) }), inputClassName)}
-          style={inputStyle}
+          style={[{ textAlignVertical: 'center' }, Platform.OS === 'ios' && { lineHeight: 0 }, inputStyle]}
         />
 
         {rightElement}

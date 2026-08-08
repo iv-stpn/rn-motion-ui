@@ -7,7 +7,7 @@ import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { InformationLine as AlertCircle } from 'rn-motion-ui-icons/icons/information-line';
 import { Message1Line as MessageSquare } from 'rn-motion-ui-icons/icons/message-1-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { EASE_OUT, SPRING_PANEL } from '../../../lib/ease';
+import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from '../../../lib/ease';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
 import { MotiText } from '../../../moti/components/text';
 import { MotiView } from '../../../moti/components/view';
@@ -178,6 +178,8 @@ export function FeedbackWidget({
     setStatus('open');
   }, [clearCloseTimer]);
 
+  const morphTransition = reduce ? { type: 'timing' as const, duration: 0 } : SPRING_LAYOUT;
+
   return (
     <View
       testID={testID ?? 'feedback-widget'}
@@ -187,58 +189,53 @@ export function FeedbackWidget({
       ]}
     >
       <MotiView
-        animate={{ borderRadius: open ? 20 : 40 }}
-        transition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 320, easing: EASE_OUT }}
+        animate={{
+          width: open ? 300 : 48,
+          borderRadius: open ? 20 : 40,
+        }}
+        transition={morphTransition}
         className={`overflow-hidden border border-border ${surfaceBackground(elevation)} ${elevatedShadow(elevation)} absolute bottom-0`}
-        style={{ ...(left ? { left: 0 } : { right: 0 }) }}
+        style={{ ...(left ? { left: 0 } : { right: 0 }), ...(open ? {} : { height: 48 }) }}
       >
-        <AnimatePresence exitBeforeEnter={true}>
-          {open ? (
-            <MotiView
-              key="panel"
-              from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, translateY: 8 }}
-              animate={{ opacity: 1, scale: 1, translateY: 0 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, translateY: 8 }}
-              transition={reduce ? { type: 'timing', duration: 120 } : SPRING_PANEL}
-              className="w-[300px] p-2"
-            >
-              <AnimatePresence exitBeforeEnter={true}>
-                {renderFeedbackContent({
-                  status,
-                  reduce,
-                  inputRef,
-                  title,
-                  placeholder,
-                  message,
-                  busy,
-                  setMessage,
-                  close,
-                  submit,
-                  closeIcon,
-                  errorIcon,
-                })}
-              </AnimatePresence>
-            </MotiView>
-          ) : (
-            <MotiView
-              key="trigger"
-              from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
-              transition={reduce ? { type: 'timing', duration: 120 } : SPRING_PANEL}
-            >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={accessibilityLabel ?? title}
-                testID="feedback-trigger"
-                onPress={handleOpen}
-                className="h-12 w-12 items-center justify-center"
-              >
-                {icon ?? <ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
-              </Pressable>
-            </MotiView>
-          )}
-        </AnimatePresence>
+        {open ? (
+          <MotiView
+            from={reduce ? { opacity: 1 } : { opacity: 0, translateY: 6 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={
+              reduce
+                ? { type: 'timing' as const, duration: 0 }
+                : { type: 'timing' as const, duration: 220, delay: 60, easing: EASE_OUT }
+            }
+            className="w-[300px] p-2"
+          >
+            <AnimatePresence exitBeforeEnter={true}>
+              {renderFeedbackContent({
+                status,
+                reduce,
+                inputRef,
+                title,
+                placeholder,
+                message,
+                busy,
+                setMessage,
+                close,
+                submit,
+                closeIcon,
+                errorIcon,
+              })}
+            </AnimatePresence>
+          </MotiView>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel ?? title}
+            testID="feedback-trigger"
+            onPress={handleOpen}
+            className="h-12 w-12 items-center justify-center"
+          >
+            {icon ?? <ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
+          </Pressable>
+        )}
       </MotiView>
     </View>
   );
@@ -272,10 +269,10 @@ function FormView({
   const colors = useThemeColors();
   return (
     <MotiView
-      from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8 }}
-      transition={{ type: 'timing', duration: reduce ? 0 : 220, easing: EASE_OUT }}
+      from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, translateY: 8 }}
+      animate={{ opacity: 1, scale: 1, translateY: 0 }}
+      exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, translateY: -8 }}
+      transition={reduce ? { type: 'timing', duration: 0 } : SPRING_SWAP}
     >
       <View className="min-h-[150px] rounded-[16px] bg-muted px-4 py-3.5">
         <View className="flex-row items-start justify-between gap-3">
@@ -331,10 +328,10 @@ function SentView({ reduce }: SentViewProps) {
   const colors = useThemeColors();
   return (
     <MotiView
-      from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8 }}
-      transition={{ type: 'timing', duration: reduce ? 0 : 220, easing: EASE_OUT }}
+      from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, translateY: 8 }}
+      animate={{ opacity: 1, scale: 1, translateY: 0 }}
+      exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, translateY: -8 }}
+      transition={reduce ? { type: 'timing', duration: 0 } : SPRING_SWAP}
     >
       <View className="items-center justify-center gap-1.5 rounded-[16px] bg-muted px-4 py-6">
         <View className="mb-1 h-12 w-12 items-center justify-center">
@@ -345,7 +342,7 @@ function SentView({ reduce }: SentViewProps) {
                   key={`${s.x}-${s.y}`}
                   from={{ opacity: 0, scale: 0, translateX: 0, translateY: 0 }}
                   animate={{ opacity: [0, 1, 0], scale: [0, 1, 0.4], translateX: s.x, translateY: s.y }}
-                  transition={{ type: 'timing', duration: 600, delay: 180 + i * 20 }}
+                  transition={{ type: 'timing', duration: 600, delay: 180 + i * 20, easing: EASE_OUT }}
                   className="absolute h-1.5 w-1.5 rounded-full"
                   style={{ backgroundColor: i % 2 === 0 ? colors['success-foreground'] : '#6366f1' }}
                 />
@@ -353,7 +350,7 @@ function SentView({ reduce }: SentViewProps) {
           <MotiView
             from={reduce ? { scale: 1 } : { scale: 0 }}
             animate={{ scale: 1 }}
-            transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 500, damping: 22, delay: 40 }}
+            transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 500, damping: 30, delay: 40 }}
             className="h-12 w-12 items-center justify-center rounded-full border"
             style={{ backgroundColor: colors.success, borderColor: colors.success }}
           >
@@ -385,10 +382,10 @@ function SentView({ reduce }: SentViewProps) {
 function ErrorView({ reduce, onRetry, errorIcon }: ErrorViewProps) {
   return (
     <MotiView
-      from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8 }}
-      transition={{ type: 'timing', duration: reduce ? 0 : 220, easing: EASE_OUT }}
+      from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, translateY: 8 }}
+      animate={{ opacity: 1, scale: 1, translateY: 0 }}
+      exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, translateY: -8 }}
+      transition={reduce ? { type: 'timing', duration: 0 } : SPRING_SWAP}
     >
       <View accessibilityRole="alert" className="items-center rounded-[16px] bg-muted px-4 py-5">
         <View className="h-12 w-12 items-center justify-center rounded-full border border-danger bg-danger">

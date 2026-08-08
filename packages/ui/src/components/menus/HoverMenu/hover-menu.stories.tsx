@@ -160,7 +160,7 @@ function HoverMenuPlayground() {
       <View className="h-3" />
       <Section title="Plain node trigger — uncontrolled, and the wrapper owns the press">
         <View className="items-start">
-          <HoverMenu trigger={renderPlainTrigger} triggerAccessibilityLabel={PLAIN_TRIGGER_LABEL} width="trigger">
+          <HoverMenu trigger={renderPlainTrigger} triggerAccessibilityLabel={PLAIN_TRIGGER_LABEL} width={200}>
             <Menu entries={ITEMS} />
           </HoverMenu>
         </View>

@@ -8,7 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:android": "export NODE_ENV=development && expo prebuild -p android --no-install --no-clean && cd android && ./gradlew :app:assembleDebug -x lint -x test",
-    "build:ios": "expo run:ios",
+    "build:ios": "cd ios && pod install && cd .. && expo run:ios",
     "storybook-generate": "sb-rn-get-stories --config-path .rnstorybook",
     "typecheck": "bun run storybook-generate && tsc --noEmit"
   },

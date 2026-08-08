@@ -9,8 +9,10 @@ import { ForbidCircleLine as Ban } from 'rn-motion-ui-icons/icons/forbid-circle-
 import { LockLine as Lock } from 'rn-motion-ui-icons/icons/lock-line';
 import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
+import type { SurfaceLevel } from '../../../lib/elevated';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
@@ -207,6 +209,7 @@ const PLACEMENTS = [
 
 type MorphingModalDemoProps = {
   placement: 'bottom' | 'center';
+  elevation?: SurfaceLevel;
   kind?: TriggerState['kind'];
   size?: TriggerState['size'];
   shape?: TriggerState['shape'];
@@ -214,7 +217,7 @@ type MorphingModalDemoProps = {
 };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function MorphingModalDemo({ placement, kind, size, shape, testID }: MorphingModalDemoProps) {
+function MorphingModalDemo({ placement, elevation = 6, kind, size, shape, testID }: MorphingModalDemoProps) {
   const [view, setView] = useState<WalletView>(null);
   const showOptions = useCallback(() => setView('options'), []);
   const close = useCallback(() => setView(null), []);
@@ -224,7 +227,7 @@ function MorphingModalDemo({ placement, kind, size, shape, testID }: MorphingMod
     <View className="items-center gap-3">
       <TriggerButton kind={kind} size={size} shape={shape} label={OPEN_LABEL} onPress={showOptions} />
       <Text className="text-muted-foreground text-xs">{HINT}</Text>
-      <MorphingModal viewId={view} onClose={close} placement={placement} testID={testID}>
+      <MorphingModal viewId={view} onClose={close} placement={placement} elevation={elevation} testID={testID}>
         {renderModalView(view, { close, showOptions, showPrivateKey, showRecovery })}
       </MorphingModal>
     </View>
@@ -234,14 +237,22 @@ function MorphingModalDemo({ placement, kind, size, shape, testID }: MorphingMod
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function MorphingModalPlayground() {
   const [placement, setPlacement] = useState<'bottom' | 'center'>('bottom');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const trigger = useTriggerState();
   return (
     <Playground className="min-w-[340px]">
       <ControlCard title="Options">
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
       <TriggerControls state={trigger} />
-      <MorphingModalDemo placement={placement} kind={trigger.kind} size={trigger.size} shape={trigger.shape} />
+      <MorphingModalDemo
+        placement={placement}
+        elevation={ELEVATIONS[elevationKey]}
+        kind={trigger.kind}
+        size={trigger.size}
+        shape={trigger.shape}
+      />
     </Playground>
   );
 }

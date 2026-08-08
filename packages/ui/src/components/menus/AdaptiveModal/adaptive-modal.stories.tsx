@@ -122,7 +122,7 @@ function ModalPlayground() {
         <Choice label="Wide layout" onChange={setLargeMode} options={LARGE_MODES} value={largeMode} />
         <Choice label="Narrow layout" onChange={setSmallMode} options={SMALL_MODES} value={smallMode} />
         <Choice label="Panel size" onChange={setSizeKey} options={PANEL_SIZE_OPTIONS} value={sizeKey} />
-        <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
       <ControlCard title="Options">

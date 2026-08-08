@@ -1,19 +1,6 @@
-import {
-  Children,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import { Children, isValidElement, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { PresenceContext } from './animate-presence-context';
-
-function getChildKey(child: ReactElement): string {
-  return child.key ?? '';
-}
 
 function getValidChildren(children: ReactNode): ReactElement[] {
   const valid: ReactElement[] = [];
@@ -48,28 +35,16 @@ export type AnimatePresenceProps = {
    * @default false
    */
   exitBeforeEnter?: boolean;
-  /**
-   * Whether an exiting child's presence should continue to affect layout
-   * while it exits. Accepted for API compatibility; not yet implemented.
-   */
-  presenceAffectsLayout?: boolean;
 };
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: AnimatePresence orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining complexity is setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: AnimatePresence orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining lines are setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
-export function AnimatePresence({
-  children,
-  custom,
-  initial = true,
-  onExitComplete,
-  exitBeforeEnter = false,
-  presenceAffectsLayout: _presenceAffectsLayout,
-}: AnimatePresenceProps) {
+export function AnimatePresence({ children, custom, initial = true, onExitComplete, exitBeforeEnter }: AnimatePresenceProps) {
   const validChildren = getValidChildren(children);
 
   // Build a key → element map for the current render
   const currentMap = new Map<string, ReactElement>();
-  for (const child of validChildren) currentMap.set(getChildKey(child), child);
+  for (const child of validChildren) currentMap.set(child.key ?? '', child);
 
   // Store of elements we may need to re-render while they exit. Pruned in the
   // cleanup effect once a key is neither current nor exiting.
@@ -228,13 +203,13 @@ export function AnimatePresence({
   keyOrderRef.current = keyOrderRef.current.filter((k) => allActive.has(k));
   // Insert new current keys at the position their sibling order implies.
   const inOrder = new Set(keyOrderRef.current);
-  const currentKeysInOrder = validChildren.map(getChildKey).filter((k): k is string => k !== undefined);
-  for (const [i, key] of currentKeysInOrder.entries()) {
+  const currentKeysInOrder = validChildren.map((child) => child.key ?? '');
+  for (const [index, key] of currentKeysInOrder.entries()) {
     if (!inOrder.has(key)) {
-      if (i === 0) keyOrderRef.current.unshift(key);
+      if (index === 0) keyOrderRef.current.unshift(key);
       else {
-        // i > 0 is guaranteed by the else branch above; fall back to append if somehow undefined
-        const prevKey = currentKeysInOrder[i - 1];
+        // index > 0 is guaranteed by the else branch above; fall back to append if somehow undefined
+        const prevKey = currentKeysInOrder[index - 1];
         const prevIdx = prevKey === undefined ? -1 : keyOrderRef.current.indexOf(prevKey);
         keyOrderRef.current.splice(prevIdx >= 0 ? prevIdx + 1 : keyOrderRef.current.length, 0, key);
       }

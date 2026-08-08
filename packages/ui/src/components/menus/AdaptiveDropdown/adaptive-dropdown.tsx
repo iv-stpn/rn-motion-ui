@@ -85,8 +85,7 @@ export type AdaptiveDropdownProps = {
   motion?: MenuMotion;
   testID?: string;
 };
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small screen paths are tightly coupled to shared anchor/dimension state
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: same reason
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: wide and small screen paths are tightly coupled to shared anchor/dimension state
 export function AdaptiveDropdown({
   trigger,
   children,

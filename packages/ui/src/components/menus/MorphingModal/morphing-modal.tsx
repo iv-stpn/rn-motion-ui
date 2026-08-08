@@ -148,12 +148,7 @@ export function MorphingModal({
                 transition={reduce || !morphing ? INSTANT : SPRING_PANEL}
                 className="overflow-hidden"
               >
-                {/*
-                 * presenceAffectsLayout={false}: the exiting view is absolutely
-                 * positioned, so only the entering view is measured. Each view
-                 * reports its height via onLayout to drive the morph above.
-                 */}
-                <AnimatePresence presenceAffectsLayout={false}>
+                <AnimatePresence>
                   <MotiView
                     key={viewId}
                     from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}

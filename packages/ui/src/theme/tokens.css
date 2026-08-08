@@ -232,12 +232,12 @@
      instead. See lib/radius.ts for the pixel constants used by the effect
      layers. One scheme only: geometry doesn't flip with the theme, so there
      are no dark-mode counterparts below. */
-  --spacing-interactive-sm: 32px;
-  --spacing-interactive-md: 40px;
-  --spacing-interactive-lg: 48px;
-  --spacing-interactive-pad-sm: 12px;
-  --spacing-interactive-pad-md: 16px;
-  --spacing-interactive-pad-lg: 20px;
+  --spacing-interactive-sm: 28px;
+  --spacing-interactive-md: 36px;
+  --spacing-interactive-lg: 44px;
+  --spacing-interactive-pad-sm: 10px;
+  --spacing-interactive-pad-md: 14px;
+  --spacing-interactive-pad-lg: 18px;
   --radius-interactive: 10px;
   --radius-card: 16px;
   --radius-menu: 16px;

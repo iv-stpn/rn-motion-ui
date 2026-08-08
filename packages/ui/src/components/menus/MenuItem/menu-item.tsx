@@ -33,19 +33,19 @@ const DEFAULT_VARIANT: Record<
   { rowClass: string; iconSize: number; iconPlaceholderClass: string; labelClass: string }
 > = {
   sm: {
-    rowClass: 'gap-1.5 px-2 py-1',
+    rowClass: 'gap-1.5 px-1.5 py-1',
     iconSize: 16,
     iconPlaceholderClass: 'h-3.5 w-3.5',
     labelClass: 'text-[12px]',
   },
   md: {
-    rowClass: 'gap-3 px-3 py-1.5',
+    rowClass: 'gap-3 px-2 py-1.5',
     iconSize: 21,
     iconPlaceholderClass: 'h-5 w-5',
     labelClass: 'text-[14px]',
   },
   lg: {
-    rowClass: 'gap-3 px-4 py-2',
+    rowClass: 'gap-3 px-3 py-2',
     iconSize: 26,
     iconPlaceholderClass: 'h-6 w-6',
     labelClass: 'text-[18px]',

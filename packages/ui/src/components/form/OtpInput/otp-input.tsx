@@ -147,7 +147,7 @@ function OtpSlot({ index, char, state, isActive, showSuccess, reduce, mask, disa
             exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -14 }}
             transition={{ type: 'timing', duration: reduce ? 0 : 220 }}
             className="absolute h-full w-full text-center font-semibold text-foreground text-xl"
-            style={{ lineHeight: 48 }}
+            style={{ lineHeight: 44 }}
           >
             {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
             {mask ? '•' : char}

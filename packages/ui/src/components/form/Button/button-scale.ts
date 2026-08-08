@@ -31,10 +31,10 @@ export type ButtonShape = 'rounded' | 'pill';
  * (the square is the padding).
  */
 export const BUTTON_METRICS: Record<ButtonSize, { height: number; padX: number; radius: number }> = {
-  sm: { height: 32, padX: 12, radius: INTERACTIVE_RADIUS },
-  md: { height: 40, padX: 16, radius: INTERACTIVE_RADIUS },
-  lg: { height: 48, padX: 20, radius: INTERACTIVE_RADIUS },
-  icon: { height: 40, padX: 0, radius: INTERACTIVE_RADIUS },
+  sm: { height: 28, padX: 10, radius: INTERACTIVE_RADIUS },
+  md: { height: 36, padX: 14, radius: INTERACTIVE_RADIUS },
+  lg: { height: 44, padX: 18, radius: INTERACTIVE_RADIUS },
+  icon: { height: 36, padX: 0, radius: INTERACTIVE_RADIUS },
 };
 
 /** Space between an adornment (icon, spinner) and the label, at every size. */

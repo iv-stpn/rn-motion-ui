@@ -41,7 +41,7 @@ export const ROUNDED_MODAL = 'rounded-modal' as const;
 // ── Height ────────────────────────────────────────────────────────────────────
 
 /** Height in px per interactive size. */
-export const INTERACTIVE_HEIGHT = { sm: 32, md: 40, lg: 48 } as const;
+export const INTERACTIVE_HEIGHT = { sm: 28, md: 36, lg: 44 } as const;
 
 /** Tailwind class: height per interactive size. Static literals so the
  *  uniwind/Tailwind scanner registers them. */
@@ -55,7 +55,7 @@ export const H_INTERACTIVE: Record<InteractiveSize, string> = {
 // ── Padding ──────────────────────────────────────────────────────────────────
 
 /** Horizontal padding in px per interactive size. */
-export const INTERACTIVE_PAD_X = { sm: 12, md: 16, lg: 20 } as const;
+export const INTERACTIVE_PAD_X = { sm: 10, md: 14, lg: 18 } as const;
 
 /** Tailwind class: horizontal padding per interactive size. Static literals so
  *  the uniwind/Tailwind scanner registers them. */

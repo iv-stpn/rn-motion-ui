@@ -104,11 +104,6 @@ export type { ButtonShape, ButtonSize } from './button-scale';
  */
 export type BaseButtonProps = {
   children?: ReactNode;
-  /**
-   * Opaque identifier consumed by container components (e.g. ToggleGroup) to
-   * track which child is selected. Not rendered; purely a signalling prop.
-   */
-  value?: string;
   /** Node rendered to the left of the button label. */
   leftAdornment?: ReactNode;
   /** Node rendered to the right of the button label. */
@@ -239,10 +234,14 @@ export function usePressRipples({ ripple, reduce, trackDims }: UsePressRipplesAr
  * parent re-render, restarting mid-revolution, and default easing
  * pauses at the repeat boundary.
  */
-type ButtonSpinnerProps = { color: string; reduce: boolean };
+type ButtonSpinnerProps = { color: string; reduce: boolean /** Diameter in px. @default 16 */; size?: number };
 
-function ButtonSpinner({ color, reduce }: ButtonSpinnerProps) {
+export function ButtonSpinner({ color, reduce, size = 16 }: ButtonSpinnerProps) {
   const rotation = useSharedValue(0);
+  const r = size * 0.375; // proportional radius (6/16 = 0.375)
+  const sw = size * 0.125; // proportional stroke width (2/16 = 0.125)
+  const c = size / 2;
+  const circumference = Math.PI * 2 * r;
 
   // biome-ignore lint/plugin: Reanimated withRepeat loop must be started and cancelled as a side effect — not expressible as derived state
   useEffect(() => {
@@ -260,17 +259,17 @@ function ButtonSpinner({ color, reduce }: ButtonSpinnerProps) {
 
   return (
     <Animated.View style={animatedStyle}>
-      <Svg width={16} height={16} viewBox="0 0 16 16">
-        <Circle cx={8} cy={8} r={6} stroke={color} strokeOpacity={0.25} strokeWidth={2} fill="none" />
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Circle cx={c} cy={c} r={r} stroke={color} strokeOpacity={0.25} strokeWidth={sw} fill="none" />
         <Circle
-          cx={8}
-          cy={8}
-          r={6}
+          cx={c}
+          cy={c}
+          r={r}
           stroke={color}
-          strokeWidth={2}
+          strokeWidth={sw}
           strokeLinecap="round"
           fill="none"
-          strokeDasharray={`${Math.PI * 6} ${Math.PI * 12}`}
+          strokeDasharray={`${circumference * 0.5} ${circumference}`}
         />
       </Svg>
     </Animated.View>

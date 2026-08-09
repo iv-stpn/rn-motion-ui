@@ -10,8 +10,8 @@
 // pointer stream never reaches React: this component re-renders when a drag starts
 // and when it ends, and in between the ghost moves on the animated value alone.
 
-import { type RefObject, useCallback, useLayoutEffect, useRef } from 'react';
-import { Animated, View } from 'react-native';
+import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Animated, Easing } from 'react-native';
 import type { DragPoint, DragRect } from '../drag.types';
 import { ghostOffset } from '../drag-geometry';
 import { DragGhost } from '../drag-ghost';
@@ -39,13 +39,62 @@ export type DragManagerOverlayProps = {
 export function DragManagerOverlay({ hostId, rectRef }: DragManagerOverlayProps) {
   const { drag, preview } = useDragSnapshot();
   const pos = useRef(new Animated.ValueXY()).current;
-  const mine = preview !== null && preview.hostId === hostId;
+  const opacity = useRef(new Animated.Value(1)).current;
+  const [settling, setSettling] = useState(false);
+
+  // Cache the last non-null drag & preview so the ghost can fade out after the
+  // store has already cleared them.
+  const lastDragRef = useRef(drag);
+  const lastPreviewRef = useRef(preview);
+  if (drag !== null) lastDragRef.current = drag;
+  if (preview !== null) lastPreviewRef.current = preview;
+
+  const prevDragRef = useRef<typeof drag>(null);
+
+  // When the drag transitions from active to null, fade out the ghost instead
+  // of hiding it instantly — the ghost smoothly settles into the item's new position.
+  // biome-ignore lint/plugin: subscribing to drag-store transitions across renders
+  useEffect(() => {
+    const wasDragging = prevDragRef.current !== null;
+    const isDragging = drag !== null;
+    prevDragRef.current = drag;
+
+    if (wasDragging && !isDragging) {
+      setSettling(true);
+      opacity.setValue(1);
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => setSettling(false));
+    } else if (isDragging) {
+      setSettling(false);
+      opacity.setValue(1);
+    }
+  }, [drag, opacity]);
+
+  // Use the cached values during settle so the ghost renders until fade-out ends.
+  const active = settling ? lastDragRef.current : drag;
+  const activePreview = settling ? lastPreviewRef.current : preview;
+  const mine = activePreview !== null && activePreview.hostId === hostId;
 
   const place = useCallback(
     (point: DragPoint) => {
-      const active = getDragSnapshot().drag;
-      if (active === null) return;
-      pos.setValue(ghostOffset({ grab: active.origin.grab, host: rectRef.current, origin: active.origin.rect, point }));
+      const activeDrag = getDragSnapshot().drag;
+      if (activeDrag === null) return;
+      const frame = rectRef.current ?? { x: 0, y: 0, height: 0, width: 0 };
+      if (activeDrag.transport === 'html5') {
+        // Under HTML5 the browser positions its native drag image with the
+        // top-left corner at the cursor.  When we hide that image and draw our
+        // own overlay ghost, we match the browser's vertical placement (top at
+        // cursor y) but anchor horizontally to the source's left edge — so the
+        // ghost stays aligned with the div the user lifted rather than jumping
+        // to wherever inside it the cursor happened to land.
+        const sourceX = activeDrag.origin.rect?.x ?? activeDrag.origin.grab.x;
+        pos.setValue({ x: sourceX - frame.x + (point.x - activeDrag.origin.grab.x), y: point.y - frame.y });
+      } else
+        pos.setValue(ghostOffset({ grab: activeDrag.origin.grab, host: rectRef.current, origin: activeDrag.origin.rect, point }));
     },
     [pos, rectRef],
   );
@@ -62,13 +111,13 @@ export function DragManagerOverlay({ hostId, rectRef }: DragManagerOverlayProps)
     place(getDragPoint() ?? drag?.origin.grab ?? { x: 0, y: 0 });
   }, [drag, mine, place]);
 
-  if (!(mine && preview !== null && drag !== null)) return null;
+  if (!(mine && activePreview !== null && active !== null)) return null;
 
   return (
-    <View className="pointer-events-none absolute inset-0 z-50" pointerEvents="none">
-      <DragGhost pos={pos} size={drag.origin.rect}>
-        {preview.node}
+    <Animated.View className="pointer-events-none absolute inset-0 z-50" pointerEvents="none" style={{ opacity }}>
+      <DragGhost pos={pos} size={active.origin.rect}>
+        {activePreview.node}
       </DragGhost>
-    </View>
+    </Animated.View>
   );
 }

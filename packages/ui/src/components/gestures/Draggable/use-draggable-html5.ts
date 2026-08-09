@@ -23,6 +23,13 @@ import type { DraggableSession } from './draggable-session';
 export type UseDraggableHtml5Params = {
   enabled: boolean;
   nodeRef: RefObject<View | null>;
+  /**
+   * When non-null, a `<DragManager>` above this source will draw the ghost in its
+   * overlay, so the browser's own drag image must be hidden to prevent a double ghost
+   * and to keep the ghost position under our control (Safari snaps the native image
+   * back to the lift point when the cursor leaves the window).
+   */
+  overlayHostId: string | null;
   /** When set, the preview element that `setDragImage` draws instead of the browser's default screenshot. */
   previewElementRef?: RefObject<View | null>;
   session: DraggableSession;
@@ -56,13 +63,29 @@ function setDragImageFromRef(dataTransfer: DataTransfer, previewRef: RefObject<V
   setTimeout(() => image.remove(), 0);
 }
 
-export function useDraggableHtml5({ enabled, nodeRef, previewElementRef, session, timeline }: UseDraggableHtml5Params): void {
+/** A 1×1 transparent GIF — used as the drag image to hide the browser's native ghost. */
+const EMPTY_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+export function useDraggableHtml5({
+  enabled,
+  nodeRef,
+  overlayHostId,
+  previewElementRef,
+  session,
+  timeline,
+}: UseDraggableHtml5Params): void {
   // biome-ignore lint/plugin: DOM event wiring must run in an effect; no data-fetching or render-driving state
   useEffect(() => {
     if (Platform.OS !== 'web' || !enabled) return;
     // biome-ignore lint/plugin: RN View refs resolve to HTMLElement in react-native-web
     const node = nodeRef.current as unknown as HTMLElement | null;
     if (!node?.addEventListener) return;
+
+    // Safari fires `drag` events with the grab point when the cursor leaves the
+    // browser window — non-zero coordinates that look valid but teleport the ghost
+    // back to the lift position.  Tracking the grab lets us reject those events.
+    let grab: { x: number; y: number } | null = null;
+    let lastPoint: { x: number; y: number } | null = null;
 
     function onDragStart(e: DragEvent) {
       // A press the timeline is tracking is the pan's gesture — this `dragstart`
@@ -78,8 +101,18 @@ export function useDraggableHtml5({ enabled, nodeRef, previewElementRef, session
       // No dataTransfer means no drag to run — bail rather than lift a session
       // whose payload nothing could read.
       if (!e.dataTransfer) return;
-      session.begin({ point: { x: e.clientX, y: e.clientY }, transfer: e.dataTransfer, transport: 'html5' });
-      if (previewElementRef) setDragImageFromRef(e.dataTransfer, previewElementRef);
+      grab = { x: e.clientX, y: e.clientY };
+      lastPoint = grab;
+      session.begin({ point: grab, transfer: e.dataTransfer, transport: 'html5' });
+      // When a DragManager overlay will draw the ghost instead, hide the browser's
+      // own drag image so Safari cannot snap it back to the lift point when the
+      // cursor leaves the window.  Without an overlay host the browser's image is
+      // the only ghost, so keep it.
+      if (overlayHostId !== null) {
+        const empty = document.createElement('img');
+        empty.src = EMPTY_IMAGE;
+        e.dataTransfer.setDragImage(empty, 0, 0);
+      } else if (previewElementRef) setDragImageFromRef(e.dataTransfer, previewElementRef);
     }
 
     function onDrag(e: DragEvent) {
@@ -87,6 +120,17 @@ export function useDraggableHtml5({ enabled, nodeRef, previewElementRef, session
       // through would snap the hit test — and any consumer's read-out — to the
       // top-left corner one frame before the drop.
       if (e.clientX === 0 && e.clientY === 0) return;
+      // Safari fires `drag` with the grab point when the cursor leaves the window —
+      // the browser stops tracking and reports the lift coordinates.  Reject those
+      // so the ghost does not snap back to the source position mid-drag.
+      // A legitimate return to the exact grab point (step-by-step, not a teleport)
+      // still passes because `lastPoint` was already at or near the grab.
+      // `grab` is set in `dragstart` before any `drag` fires and cleared only
+      // in `dragend` which arrives after the last `drag` — safe to narrow.
+      if (grab !== null && e.clientX === grab.x && e.clientY === grab.y) {
+        if (lastPoint !== null && (lastPoint.x !== grab.x || lastPoint.y !== grab.y)) return;
+      }
+      lastPoint = { x: e.clientX, y: e.clientY };
       session.move({ x: e.clientX, y: e.clientY });
     }
 
@@ -94,6 +138,8 @@ export function useDraggableHtml5({ enabled, nodeRef, previewElementRef, session
       // The browser's verdict, read off the event rather than the transfer kept at
       // lift time. A zone of ours claimed the drag in its own `dragover`; anything
       // else that did — or nothing at all — is reported here and nowhere else.
+      grab = null;
+      lastPoint = null;
       session.finish({
         commit: true,
         point: { x: e.clientX, y: e.clientY },
@@ -112,7 +158,7 @@ export function useDraggableHtml5({ enabled, nodeRef, previewElementRef, session
       node.removeEventListener('drag', onDrag);
       node.removeEventListener('dragend', onDragEnd);
     };
-    // `timeline` and `previewElementRef` are stable for the life of the component,
-    // so they never rebind here.
-  }, [enabled, nodeRef, previewElementRef, session, timeline]);
+    // `timeline`, `previewElementRef` and `overlayHostId` are stable for the life of
+    // the component, so they never rebind here.
+  }, [enabled, nodeRef, overlayHostId, previewElementRef, session, timeline]);
 }

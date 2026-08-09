@@ -103,7 +103,14 @@ function useTransports({
   const pan = enabled && (transports !== 'html5' || cursorMode);
   // When cursorMode is on, the pointer transport handles mouse events — disable
   // HTML5 to avoid two transports competing for the same mouse gesture.
-  useDraggableHtml5({ enabled: enabled && transports !== 'pan' && !cursorMode, nodeRef, previewElementRef, session, timeline });
+  useDraggableHtml5({
+    enabled: enabled && transports !== 'pan' && !cursorMode,
+    nodeRef,
+    overlayHostId: session.overlayHostId,
+    previewElementRef,
+    session,
+    timeline,
+  });
   useDraggablePointer({ cursorMode, effectAllowed, enabled: pan, nodeRef, session, timeline });
   return useDraggablePan({ effectAllowed, enabled: pan, session, timeline, tuning });
 }

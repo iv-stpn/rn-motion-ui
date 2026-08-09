@@ -55,6 +55,8 @@ export type DraggableSession = {
   move: (point: DragPoint) => string | null;
   finish: (params: DraggableFinishParams) => void;
   isDragging: () => boolean;
+  /** The DragManager that will draw the ghost, or `null` when the source must. */
+  readonly overlayHostId: string | null;
 };
 
 /**
@@ -114,6 +116,8 @@ export function buildSession(refs: SessionRefs): DraggableSession {
   const { previewRef, propsRef, rectRef, setDragging, setGhost, transferRef } = refs;
 
   return {
+    overlayHostId,
+
     begin({ point, transfer, transport }) {
       const live = propsRef.current;
       transfer.effectAllowed = live?.effectAllowed ?? 'copy';
@@ -136,9 +140,11 @@ export function buildSession(refs: SessionRefs): DraggableSession {
         transfer: payload,
         transport,
       };
-      // The browser draws its own drag image under HTML5, and a second ghost would
-      // double it. Under a pan there is nothing on screen unless we draw one.
-      const drawsGhost = transport !== 'html5';
+      // Under a pan the browser draws nothing so we must.  Under HTML5 a manager
+      // still draws its own ghost (to keep control of the position — Safari snaps
+      // the native drag image back to the lift point when the cursor leaves the
+      // window), and the HTML5 transport hides the browser's image to match.
+      const drawsGhost = transport !== 'html5' || overlayHostId !== null;
       beginDrag({
         drag,
         preview: drawsGhost && overlayHostId !== null ? { hostId: overlayHostId, node: previewRef.current } : null,

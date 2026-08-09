@@ -42,7 +42,7 @@
 - Theme tokens expanded from 3 generic font stacks to 12 per-weight tokens (`--font-sans-normal` through `--font-mono-bold`). Geist @font-face declarations in both web and demo updated to match: each weight gets its own font-family.
 - `--radius-menu` token added to the theme.
 
-**New components: ToggleGroup and DnDList**
+**New components: ToggleGroup and ReorderableList**
 
 - `ToggleGroup` — form component for mutually-exclusive or multi-select toggle buttons.
-- `DnDList` — gesture-driven reorderable list with drag handles, `DnDItem`, and `dndReorder` helper. Both new components are registered in the package exports map.
+- `ReorderableList` — gesture-driven reorderable list with drag handles, `ReorderableItem`, and `ReorderableList` reorder helper. Both new components are registered in the package exports map.

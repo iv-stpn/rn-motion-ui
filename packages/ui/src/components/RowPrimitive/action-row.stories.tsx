@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noJsxLiterals: stories only
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';

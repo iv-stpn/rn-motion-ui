@@ -32,7 +32,7 @@ Two new hooks replace duplicated code across all five views (column, list, galle
 
 Each slot's digit animates inside a `MotiView` with `items-center justify-center` instead of a `MotiText` with a hardcoded `lineHeight: 44`, so the digit stays vertically centred regardless of slot size.
 
-**DnDList: smoother reorder animations**
+**ReorderableList: smoother reorder animations**
 
 Reorder durations increased from 200→300ms; pushed-row easing switched from `linear` to `Easing.bezier(0.16, 1, 0.3, 1)`. Story examples gain `transition-all duration-300 ease-out`.
 

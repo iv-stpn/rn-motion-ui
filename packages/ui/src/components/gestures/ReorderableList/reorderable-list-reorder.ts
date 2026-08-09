@@ -1,4 +1,4 @@
-// Pure reorder arithmetic for the DnD list — no React, no react-native.
+// Pure reorder arithmetic for the ReorderableList — no React, no react-native.
 //
 // What lives here: computing where a dragged item would land, and applying that
 // move to an array. What lives in the component: the drag state, the zone rect
@@ -20,6 +20,16 @@ export function isTopHalf(pointY: number, rect: DragRect): boolean {
   return pointY < rect.y + rect.height / 2;
 }
 
+/**
+ * Like `isTopHalf`, but when `ghostHeight` is provided the threshold is
+ * crossed as soon as half the ghost is below the target's top edge.
+ * Feels more direct — the user sees the ghost overlap the item, not the pointer.
+ */
+export function isPastThreshold(pointY: number, rect: DragRect, ghostHeight?: number): boolean {
+  if (ghostHeight !== undefined) return pointY + ghostHeight / 2 > rect.y;
+  return isTopHalf(pointY, rect);
+}
+
 export type InsertionParams = {
   /** Every item key in display order, before the drag. */
   keys: readonly string[];
@@ -31,6 +41,11 @@ export type InsertionParams = {
   overKey: string;
   /** Pointer Y in window coordinates. */
   pointY: number;
+  /**
+   * Height of the dragged ghost. When set, insertion uses `isPastThreshold`
+   * (ghost overlap) instead of `isTopHalf` (pointer midline).
+   */
+  ghostHeight?: number;
 };
 
 export type InsertionResult = {
@@ -48,7 +63,7 @@ export type InsertionResult = {
  * itself, at its own position — or when the over-key is not in the rects map.
  */
 export function insertionPosition(params: InsertionParams): InsertionResult | null {
-  const { keys, draggedKey, rects, overKey, pointY } = params;
+  const { keys, draggedKey, rects, overKey, pointY, ghostHeight } = params;
 
   const overRect = rects.get(overKey);
   if (overRect === undefined) return null;
@@ -59,7 +74,7 @@ export function insertionPosition(params: InsertionParams): InsertionResult | nu
   const overIndex = keys.indexOf(overKey);
   if (overIndex === -1) return null;
 
-  const before = isTopHalf(pointY, overRect);
+  const before = isPastThreshold(pointY, overRect, ghostHeight);
 
   // The target index in the list *with the dragged item still in it*.
   // After removal, indices shift — the caller applies `toIndex`.

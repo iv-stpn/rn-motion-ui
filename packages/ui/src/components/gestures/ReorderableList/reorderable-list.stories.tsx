@@ -1,5 +1,5 @@
 /**
- * Stories for `<DnDList>` — drag-to-reorder list built on the gesture primitives.
+ * Stories for `<ReorderableList>` — drag-to-reorder list built on the gesture primitives.
  *
  * These run under react-native-web, so the drag transport is the browser's own
  * HTML5 drag. The assertions below dispatch synthetic `DragEvent`s through the
@@ -14,17 +14,18 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer } from '../../../__stories__/story-drag';
+import { Choice, ControlCard, Note, Playground, Section } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
-import { DnDList } from './dnd-list';
-import type { DnDListProps } from './dnd-list.types';
+import { ReorderableList } from './reorderable-list';
+import type { ReorderableListProps } from './reorderable-list.types';
 
-const MIME = 'application/x-dnd-item';
-const LIST_TEST_ID = 'story-dnd-list';
+const MIME = 'application/x-reorderable-item';
+const LIST_TEST_ID = 'story-reorderable-list';
 const ITEM_PREFIX = `${LIST_TEST_ID}-item`;
-const REORDER_READOUT = 'story-dnd-reorder-readout';
+const REORDER_READOUT = 'story-reorderable-reorder-readout';
 
 type Todo = { id: string; title: string };
 
@@ -111,8 +112,14 @@ type Variant = 'grouped' | 'separated';
 
 type InteractiveDemoProps = { disabled?: boolean; items?: Todo[] };
 
+type ReorderMode = 'indicator' | 'ghost';
+
+const VARIANTS = ['grouped', 'separated'] as const;
+const MODES: ReorderMode[] = ['indicator', 'ghost'];
+
 function InteractiveDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS }: InteractiveDemoProps) {
   const [variant, setVariant] = useState<Variant>('grouped');
+  const [mode, setMode] = useState<ReorderMode>('indicator');
   const [groupedItems, setGroupedItems] = useState(initialItems);
   const [spacedItems, setSpacedItems] = useState(initialItems);
   const [lastReorder, setLastReorder] = useState('None');
@@ -128,69 +135,60 @@ function InteractiveDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS
     [setItems],
   );
 
-  const renderGroupedItem: DnDListProps<Todo>['renderItem'] = useCallback(
+  const renderGroupedItem: ReorderableListProps<Todo>['renderItem'] = useCallback(
     (item, index, isDragging) => (
       <GroupedRow first={index === 0} isDragging={isDragging} item={item} last={index === items.length - 1} />
     ),
     [items.length],
   );
 
-  const renderSeparatedItem: DnDListProps<Todo>['renderItem'] = useCallback(
+  const renderSeparatedItem: ReorderableListProps<Todo>['renderItem'] = useCallback(
     (item, _index, isDragging) => <SeparatedRow isDragging={isDragging} item={item} />,
     [],
   );
 
+  const renderItem = variant === 'grouped' ? renderGroupedItem : renderSeparatedItem;
+
+  // In ghost mode, provide a rounded preview for grouped items so the flying
+  // ghost matches the "rounded version of the item" design. In indicator mode
+  // the default drag image (the rendered item itself) is fine.
+  const renderPreview =
+    mode === 'ghost' && variant === 'grouped'
+      ? (item: Todo, index: number) => (
+          <View className="overflow-hidden rounded-lg">
+            <GroupedRow first={index === 0} isDragging={false} item={item} last={index === items.length - 1} />
+          </View>
+        )
+      : undefined;
+
   return (
-    <View className="gap-4">
-      <View className="flex-row gap-2">
-        <Pressable
-          className={`rounded-full px-3 py-1 ${variant === 'grouped' ? 'bg-primary' : 'bg-muted'}`}
-          onPress={() => setVariant('grouped')}
-          testID="variant-grouped"
-        >
-          <Text className={variant === 'grouped' ? 'text-primary-foreground' : ''}>Grouped</Text>
-        </Pressable>
-        <Pressable
-          className={`rounded-full px-3 py-1 ${variant === 'separated' ? 'bg-primary' : 'bg-muted'}`}
-          onPress={() => setVariant('separated')}
-          testID="variant-separated"
-        >
-          <Text className={variant === 'separated' ? 'text-primary-foreground' : ''}>Separated</Text>
-        </Pressable>
-      </View>
-      <View testID={REORDER_READOUT}>
-        <Text>{lastReorder}</Text>
-      </View>
-      {variant === 'grouped' ? (
-        <View className="overflow-hidden rounded-lg border border-border">
-          <DnDList
+    <Playground>
+      <ControlCard title="Options">
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Choice label="Mode" onChange={setMode} options={MODES} value={mode} />
+      </ControlCard>
+      <Note testID={REORDER_READOUT}>{lastReorder}</Note>
+      <Section title="List">
+        <View className={variant === 'grouped' ? 'overflow-hidden rounded-lg border border-border' : undefined}>
+          <ReorderableList
+            className={variant === 'separated' ? 'gap-2' : undefined}
             disabled={disabled}
             items={items}
             keyExtractor={(todo) => todo.id}
             mimeType={MIME}
+            mode={mode}
             onReorder={handleReorder}
-            renderItem={renderGroupedItem}
+            renderItem={renderItem}
+            renderPreview={renderPreview}
             testID={LIST_TEST_ID}
           />
         </View>
-      ) : (
-        <View className="gap-2">
-          <DnDList
-            disabled={disabled}
-            items={items}
-            keyExtractor={(todo) => todo.id}
-            mimeType={MIME}
-            onReorder={handleReorder}
-            renderItem={renderSeparatedItem}
-            testID={LIST_TEST_ID}
-          />
-        </View>
-      )}
-    </View>
+      </Section>
+    </Playground>
   );
 }
 
-const meta: Meta<typeof InteractiveDemo> = { component: InteractiveDemo, title: 'Gestures / DnDList' };
+const meta: Meta<typeof InteractiveDemo> = { component: InteractiveDemo, title: 'Gestures / ReorderableList' };
 
 export default meta;
 
@@ -213,7 +211,7 @@ function StaticDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS }: S
     setLastReorder(`${from} → ${to}`);
   }, []);
 
-  const renderItem: DnDListProps<Todo>['renderItem'] = useCallback(
+  const renderItem: ReorderableListProps<Todo>['renderItem'] = useCallback(
     (item, _i, isDragging) => <SeparatedRow isDragging={isDragging} item={item} />,
     [],
   );
@@ -223,7 +221,7 @@ function StaticDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS }: S
       <View testID={REORDER_READOUT}>
         <Text>{lastReorder}</Text>
       </View>
-      <DnDList
+      <ReorderableList
         disabled={disabled}
         items={items}
         keyExtractor={(todo) => todo.id}
@@ -327,6 +325,90 @@ export const SelfDrop: Story = {
     fireDrag(source, 'dragend', transfer, to);
 
     // Self-drop is a no-op: the zone's `accepts` rejects its own key.
+    await expect(readout).toHaveTextContent('None');
+  },
+};
+
+// ── Ghost mode ────────────────────────────────────────────────────────────
+
+function GhostDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS }: StaticDemoProps) {
+  const [items, setItems] = useState(initialItems);
+  const [lastReorder, setLastReorder] = useState('None');
+
+  const handleReorder = useCallback((newItems: Todo[], from: number, to: number) => {
+    setItems(newItems);
+    setLastReorder(`${from} → ${to}`);
+  }, []);
+
+  const renderItem: ReorderableListProps<Todo>['renderItem'] = useCallback(
+    (item, _i, isDragging) => <SeparatedRow isDragging={isDragging} item={item} />,
+    [],
+  );
+
+  return (
+    <View className="gap-4">
+      <View testID={REORDER_READOUT}>
+        <Text>{lastReorder}</Text>
+      </View>
+      <ReorderableList
+        disabled={disabled}
+        items={items}
+        keyExtractor={(todo) => todo.id}
+        mimeType={MIME}
+        mode="ghost"
+        onReorder={handleReorder}
+        renderItem={renderItem}
+        testID={LIST_TEST_ID}
+      />
+    </View>
+  );
+}
+
+/** Ghost mode renders without the insertion indicator and items shift during drag. */
+export const GhostMode: Story = {
+  render: () => <GhostDemo />,
+};
+
+/**
+ * In ghost mode, dragging item "a" over item "c" and dropping should still
+ * produce the correct reorder callback.
+ */
+export const ReorderInGhostMode: Story = {
+  render: () => <GhostDemo />,
+  play: async ({ canvasElement }) => {
+    const frame = within(canvasElement);
+    const readout = frame.getByTestId(REORDER_READOUT);
+    await expect(readout).toHaveTextContent('None');
+
+    const source = frame.getByTestId(`${ITEM_PREFIX}-a`);
+    const target = frame.getByTestId(`${ITEM_PREFIX}-c`);
+    const transfer = newDragTransfer();
+    const to = centerOf(target);
+
+    await dragOnto({ source, target, to, transfer });
+    fireDrag(source, 'dragend', transfer, to);
+
+    await expect(readout).toHaveTextContent('0 → 2');
+  },
+};
+
+/**
+ * In ghost mode, cancelling a drag (Escape) should revert items to their
+ * original order with no callback.
+ */
+export const CancelledDragGhostMode: Story = {
+  render: () => <GhostDemo />,
+  play: async ({ canvasElement }) => {
+    const frame = within(canvasElement);
+    const readout = frame.getByTestId(REORDER_READOUT);
+
+    const source = frame.getByTestId(`${ITEM_PREFIX}-a`);
+    const transfer = newDragTransfer();
+    const from = centerOf(source);
+
+    await liftDrag(source, transfer, from);
+    fireDrag(source, 'dragend', transfer, from);
+
     await expect(readout).toHaveTextContent('None');
   },
 };

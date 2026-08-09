@@ -112,7 +112,7 @@ Subpaths are namespaced by category:
 | `/scroll-to` | `ScrollTo` |
 | `/smooth-scroll` | `SmoothScroll` |
 | `/dock` | `Dock` |
-| `/dnd-list` | `DnDList` — drag-to-reorder list built on the gesture primitives |
+| `/reorderable-list` | `ReorderableList` — drag-to-reorder list built on the gesture primitives |
 | `/draggable` | `Draggable` |
 | `/hold-draggable` | `HoldDraggable` — hold + drag in one gesture, with phase render-prop |
 | `/holdable` | `Holdable` — hold-only, four-phase timeline, no drag |
@@ -165,6 +165,7 @@ Subpaths are namespaced by category:
 | `/file-system` | `FileSystem` |
 | `/file-icon` | `FileTypeIcon`, `FileSystemFolderGlyph` |
 | `/icon` | `ThemedIcon` |
+| `/icon-button` | `IconButton` |
 | `/ease` | easing constants |
 | `/tokens.css` | design token stylesheet |
 | `/theme/use-theme-color` | `useThemeColor`, `useThemeColors` |

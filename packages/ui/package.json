@@ -192,10 +192,10 @@
       "types": "./src/components/navigation/Dock/dock.tsx",
       "default": "./src/components/navigation/Dock/dock.tsx"
     },
-    "./dnd-list": {
-      "source": "./src/components/gestures/DnDList/dnd-list.tsx",
-      "types": "./src/components/gestures/DnDList/dnd-list.tsx",
-      "default": "./src/components/gestures/DnDList/dnd-list.tsx"
+    "./reorderable-list": {
+      "source": "./src/components/gestures/ReorderableList/reorderable-list.tsx",
+      "types": "./src/components/gestures/ReorderableList/reorderable-list.tsx",
+      "default": "./src/components/gestures/ReorderableList/reorderable-list.tsx"
     },
     "./drag-behavior": {
       "source": "./src/components/gestures/drag-behavior.ts",
@@ -301,6 +301,11 @@
       "source": "./src/components/icon/themed-icon.tsx",
       "types": "./src/components/icon/themed-icon.tsx",
       "default": "./src/components/icon/themed-icon.tsx"
+    },
+    "./icon-button": {
+      "source": "./src/components/form/IconButton/icon-button.tsx",
+      "types": "./src/components/form/IconButton/icon-button.tsx",
+      "default": "./src/components/form/IconButton/icon-button.tsx"
     },
     "./input": {
       "source": "./src/components/form/Input/input.tsx",

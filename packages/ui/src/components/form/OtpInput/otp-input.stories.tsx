@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { type ComponentProps, useCallback, useState } from 'react';
+import { type ComponentProps, useCallback, useRef, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { OTPInput, type OTPStatus } from './otp-input';
+import { OTPInput, type OtpInputRef, type OtpInputStatus } from './otp-input';
 
 const CODE = '123456';
 
@@ -13,13 +13,14 @@ const meta = {
   args: {
     label: 'Verification code',
     hint: `Enter ${CODE} to verify.`,
-    onChange: fn(),
-    onComplete: fn(),
+    onTextChange: fn(),
+    onFilled: fn(),
   },
   argTypes: {
     status: { control: 'select', options: ['idle', 'error', 'success'] },
-    length: { control: 'number' },
-    mask: { control: 'boolean' },
+    numberOfDigits: { control: 'number' },
+    secureTextEntry: { control: 'boolean' },
+    type: { control: 'select', options: ['alpha', 'numeric', 'alphanumeric'] },
   },
 } satisfies Meta<typeof OTPInput>;
 
@@ -32,13 +33,14 @@ const ERROR_MESSAGE = 'Wrong code, try again.';
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
   const [lengthKey, setLengthKey] = useState<(typeof LENGTHS)[number]>('6');
-  const [mask, setMask] = useState(false);
+  const [secureTextEntry, setSecureTextEntry] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [value, setValue] = useState('');
-  const [status, setStatus] = useState<OTPStatus>('idle');
+  const [status, setStatus] = useState<OtpInputStatus>('idle');
+  const ref = useRef<OtpInputRef>(null);
 
-  const length = Number(lengthKey);
-  const expected = CODE.slice(0, length);
+  const numberOfDigits = Number(lengthKey);
+  const expected = CODE.slice(0, numberOfDigits);
 
   // Editing after a verdict clears it, so the shake/check can be re-triggered
   // without reloading the story.
@@ -46,17 +48,17 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
     (next: string) => {
       setValue(next);
       setStatus('idle');
-      args.onChange?.(next);
+      args.onTextChange?.(next);
     },
-    [args.onChange],
+    [args.onTextChange],
   );
 
-  const handleComplete = useCallback(
+  const handleFilled = useCallback(
     (next: string) => {
       setStatus(next === expected ? 'success' : 'error');
-      args.onComplete?.(next);
+      args.onFilled?.(next);
     },
-    [expected, args.onComplete],
+    [expected, args.onFilled],
   );
 
   const handleLength = useCallback((next: (typeof LENGTHS)[number]) => {
@@ -68,22 +70,23 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
   return (
     <Playground>
       <ControlCard title="Input options">
-        <Choice label="Length" onChange={handleLength} options={LENGTHS} value={lengthKey} />
+        <Choice label="Number of digits" onChange={handleLength} options={LENGTHS} value={lengthKey} />
       </ControlCard>
       <ControlCard title="Options">
-        <Toggle label="Mask" onChange={setMask} value={mask} />
+        <Toggle label="Mask (secureTextEntry)" onChange={setSecureTextEntry} value={secureTextEntry} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
       </ControlCard>
 
       <OTPInput
         {...args}
+        ref={ref}
         disabled={disabled}
         errorMessage={ERROR_MESSAGE}
         hint={`Enter ${expected} to verify.`}
-        length={length}
-        mask={mask}
-        onChange={handleChange}
-        onComplete={handleComplete}
+        numberOfDigits={numberOfDigits}
+        secureTextEntry={secureTextEntry}
+        onTextChange={handleChange}
+        onFilled={handleFilled}
         status={status}
         successMessage={SUCCESS_MESSAGE}
         value={value}
@@ -97,7 +100,7 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
             <OTPInput {...args} defaultValue="123" hint="Keep going." />
           </Sample>
           <Sample label="masked">
-            <OTPInput {...args} defaultValue="1234" hint="Digits are hidden." mask={true} />
+            <OTPInput {...args} defaultValue="1234" hint="Digits are hidden." secureTextEntry={true} />
           </Sample>
           <Sample label="success">
             <OTPInput {...args} defaultValue={CODE} status="success" successMessage={SUCCESS_MESSAGE} />
@@ -108,8 +111,17 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
           <Sample label="disabled">
             <OTPInput {...args} defaultValue="12" disabled={true} hint="Locked while we re-send." />
           </Sample>
-          <Sample label="four slots">
-            <OTPInput {...args} hint="Shorter codes just take a lower `length`." length={4} />
+          <Sample label="four digits">
+            <OTPInput {...args} hint="Shorter codes just take a lower `numberOfDigits`." numberOfDigits={4} />
+          </Sample>
+          <Sample label="with placeholder">
+            <OTPInput {...args} hint="Placeholder shown in empty slots." placeholder="0" />
+          </Sample>
+          <Sample label="focus color">
+            <OTPInput {...args} defaultValue="12" focusColor="#6366f1" hint="Indigo focus ring." />
+          </Sample>
+          <Sample label="alpha type">
+            <OTPInput {...args} type="alpha" hint="Only letters accepted." placeholder="A" />
           </Sample>
         </Variants>
       </Section>
@@ -119,7 +131,7 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
 
 export default meta;
 
-/** Type into the live field — matching the hint verifies (check draw), anything
+/** Type into the live field — matching the hint verifies (check drawn), anything
  *  else shakes. The rows below hold the states a parent sets via `status`. */
 export const Interactive: Story = { render: (args) => <OtpPlayground {...args} /> };
 
@@ -129,13 +141,13 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     const input = await canvas.findByRole('textbox');
     await userEvent.type(input, CODE);
-    await expect(args.onChange).toHaveBeenCalled();
-    await expect(args.onComplete).toHaveBeenCalledWith(CODE);
+    await expect(args.onTextChange).toHaveBeenCalled();
+    await expect(args.onFilled).toHaveBeenCalledWith(CODE);
   },
 };
 
 // Retyping a slot of an already-complete code keeps the value full-length while
-// its content changes, so onComplete must re-fire to let the parent re-validate.
+// its content changes, so onFilled must re-fire to let the parent re-validate.
 export const Retype: Story = {
   name: 'Demo: Overwrite a digit',
   args: { defaultValue: '' },
@@ -144,17 +156,16 @@ export const Retype: Story = {
     const input = await canvas.findByRole('textbox');
     if (!(input instanceof HTMLInputElement)) throw new Error('expected an input element');
     await userEvent.type(input, CODE);
-    await expect(args.onComplete).toHaveBeenLastCalledWith(CODE);
+    await expect(args.onFilled).toHaveBeenLastCalledWith(CODE);
     // Retype a slot of the already-complete code: the value stays full-length
-    // (6 -> 6) while its content changes, never dipping below `length`. Drive the
-    // input event directly with the replacement — a faithful stand-in for
+    // (6 -> 6) while its content changes, never dipping below `numberOfDigits`. Drive
+    // the input event directly with the replacement — a faithful stand-in for
     // select-all + paste that dodges the harness collapsing programmatic
-    // selections. Pre-fix onComplete only fired on the incomplete->complete
-    // transition, so this edit was swallowed and the parent never re-validated.
+    // selections.
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
     setValue?.call(input, '923456');
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await expect(args.onComplete).toHaveBeenLastCalledWith('923456');
+    await expect(args.onFilled).toHaveBeenLastCalledWith('923456');
   },
 };
 
@@ -182,6 +193,6 @@ export const ReselectCell: Story = {
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
     setValue?.call(input, '1239456');
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await expect(args.onComplete).toHaveBeenLastCalledWith('129456');
+    await expect(args.onFilled).toHaveBeenLastCalledWith('129456');
   },
 };

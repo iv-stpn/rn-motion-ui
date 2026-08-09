@@ -2,11 +2,18 @@
 // jsdom (the component itself pulls in react-native / moti / svg, which don't
 // resolve under vitest's node env).
 
+import type { OtpInputType } from './otp-input';
+
+const REGEX_MAP: Record<OtpInputType, RegExp> = { alpha: /[^a-zA-Z]/g, numeric: /\D/g, alphanumeric: /[^a-zA-Z\d]/g };
+
 export type OtpEdit = { value: string; caret: number };
 
-/** Strip non-digits and clamp to the slot count. */
-export function sanitize(raw: string, length: number): string {
-  return raw.replace(/\D/g, '').slice(0, length);
+export type ApplyEditOptions = { prev: string; raw: string; length: number; anchor: number; type?: OtpInputType };
+
+/** Strip characters that don't match `type` and clamp to the slot count. */
+export function sanitize(raw: string, length: number, type: OtpInputType = 'numeric'): string {
+  const pattern = REGEX_MAP[type];
+  return raw.replace(pattern, '').slice(0, length);
 }
 
 /**
@@ -30,7 +37,7 @@ export function sanitize(raw: string, length: number): string {
  *
  * Returns the next value plus where the caret should land.
  */
-export function applyEdit(prev: string, raw: string, length: number, anchor: number): OtpEdit {
+export function applyEdit({ prev, raw, length, anchor, type = 'numeric' }: ApplyEditOptions): OtpEdit {
   // Longest common prefix, then longest common suffix that doesn't overlap it.
   const max = Math.min(prev.length, raw.length);
   let p = 0;
@@ -39,12 +46,12 @@ export function applyEdit(prev: string, raw: string, length: number, anchor: num
   while (s < prev.length - p && s < raw.length - p && prev.at(-1 - s) === raw.at(-1 - s)) s += 1;
 
   const removed = prev.length - p - s;
-  const inserted = sanitize(raw.slice(p, raw.length - s), length);
+  const inserted = sanitize(raw.slice(p, raw.length - s), length, type);
 
   if (inserted.length === 0) {
     // Pure deletion (or a no-op edit) — accept the left-packed raw string and
     // drop the caret at the splice point.
-    const value = sanitize(raw, length);
+    const value = sanitize(raw, length, type);
     return { value, caret: Math.min(p, value.length) };
   }
 
@@ -54,6 +61,6 @@ export function applyEdit(prev: string, raw: string, length: number, anchor: num
   const at = removed === 0 && inserted.length === 1 ? Math.min(anchor, length) : p;
 
   // Overwrite `inserted` starting at `at`, preserving the slots it doesn't cover.
-  const value = sanitize(prev.slice(0, at) + inserted + prev.slice(at + inserted.length), length);
+  const value = sanitize(prev.slice(0, at) + inserted + prev.slice(at + inserted.length), length, type);
   return { value, caret: Math.min(at + inserted.length, length) };
 }

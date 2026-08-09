@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { View, type ViewProps } from 'react-native';
 import { cn } from '../../lib/cn';
+import type { ThemeToken } from '../../theme/use-theme-color';
 import { ThemedIcon } from '../icon/themed-icon';
 import { Text } from '../typography/Text/text';
 import type { MenuItemIcon } from './menu-item';
@@ -15,10 +16,22 @@ export type ItemRowSize = 'sm' | 'md' | 'lg';
 export type ItemRowVariant = 'default' | 'outline' | 'muted';
 
 /**
- * Left or right adornment — either a themed icon (wrapped in `ThemedIcon`) or
- * any ReactNode rendered as-is.
+ * Left or right adornment — either a themed icon object (wrapped in
+ * `ThemedIcon`) or any ReactNode rendered as-is.
+ *
+ * When an icon object is provided, `iconColor` overrides the default token
+ * and `iconBackgroundColor` places a rounded-square background behind the
+ * icon tinted to the given token.
  */
-export type ItemRowAdornment = { icon: MenuItemIcon } | ReactNode;
+export type ItemRowAdornment =
+  | {
+      icon: MenuItemIcon;
+      /** Override the default icon colour token. @example 'primary' */
+      iconColor?: ThemeToken;
+      /** When set, renders a rounded-square background behind the icon. @example 'primary' */
+      iconBackgroundColor?: ThemeToken;
+    }
+  | ReactNode;
 
 /**
  * Per-size dimensions — horizontal padding reuses the interactive-surface token
@@ -70,15 +83,29 @@ function isIconAdornment(a: unknown): a is { icon: MenuItemIcon } {
 }
 
 /** Render one adornment slot — themed icon for `{ icon }`, pass-through for a node. */
-function renderAdornment(
-  a: ItemRowAdornment | undefined,
-  token: 'foreground' | 'muted-foreground',
-  size: number,
-  containerClass?: string,
-) {
+function renderAdornment(a: ItemRowAdornment | undefined, token: ThemeToken, size: number, containerClass?: string) {
   if (a === undefined || a === null) return null;
-  const node = isIconAdornment(a) ? <ThemedIcon icon={a.icon} token={token} size={size} /> : a;
-  return containerClass ? <View className={containerClass}>{node}</View> : node;
+  if (isIconAdornment(a)) {
+    const resolvedToken = a.iconColor ?? token;
+    const icon = <ThemedIcon icon={a.icon} token={resolvedToken} size={size} />;
+    if (a.iconBackgroundColor) {
+      const bgSize = size + 14;
+      return (
+        <View
+          className={cn('items-center justify-center rounded-full', containerClass)}
+          style={{
+            width: bgSize,
+            height: bgSize,
+            backgroundColor: `var(--color-${a.iconBackgroundColor})`,
+          }}
+        >
+          {icon}
+        </View>
+      );
+    }
+    return containerClass ? <View className={containerClass}>{icon}</View> : icon;
+  }
+  return containerClass ? <View className={containerClass}>{a}</View> : a;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +119,7 @@ export type RowLayoutProps = {
   description?: ReactNode;
   /**
    * Leading adornment. When `{ icon: ... }`, the icon is wrapped in a
-   * `ThemedIcon` tinted `foreground`; any other ReactNode renders as-is.
+   * `ThemedIcon` tinted `muted-foreground`; any other ReactNode renders as-is.
    */
   leftAdornment?: ItemRowAdornment;
   /**
@@ -117,7 +144,7 @@ export function RowLayout({ title, description, leftAdornment, rightAdornment, s
   return (
     <>
       {/* Left adornment — pinned to the top so it lines up with the title's first line */}
-      {renderAdornment(leftAdornment, 'foreground', scale.iconSize, 'self-start')}
+      {renderAdornment(leftAdornment, 'muted-foreground', scale.iconSize, 'self-start')}
 
       {/* Title + description column */}
       <View className={cn('flex-1', scale.textGap, className)}>
@@ -148,7 +175,7 @@ export type ItemRowProps = {
   description?: ReactNode;
   /**
    * Leading adornment. When `{ icon: ... }`, the icon is wrapped in a
-   * `ThemedIcon` tinted `foreground`; any other ReactNode renders as-is.
+   * `ThemedIcon` tinted `muted-foreground`; any other ReactNode renders as-is.
    */
   leftAdornment?: ItemRowAdornment;
   /**

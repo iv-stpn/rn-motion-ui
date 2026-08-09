@@ -55,9 +55,9 @@ type PanelProps = { children: ReactNode; width?: number; framed?: boolean };
  * whatever they were dropped into.
  */
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
-function Panel({ children, width = 260, framed = true }: PanelProps) {
+function MenuPanel({ children, width = 260, framed = true }: PanelProps) {
   return (
-    <View className={framed ? `overflow-hidden rounded-2xl ${SURFACE_CLASSNAME[3]}` : undefined} style={{ width }}>
+    <View className={framed ? `overflow-hidden rounded-menu ${SURFACE_CLASSNAME[3]}` : undefined} style={{ width }}>
       {children}
     </View>
   );
@@ -142,7 +142,7 @@ function MenuPlayground() {
         <Toggle label="Disabled row" onChange={setWithDisabled} value={withDisabled} />
       </ControlCard>
 
-      <Panel framed={framed}>
+      <MenuPanel framed={framed}>
         <Menu
           accessibilityLabel={MENU_LABEL}
           entries={entries}
@@ -151,7 +151,7 @@ function MenuPlayground() {
           onSelect={handleSelect}
           size={size}
         />
-      </Panel>
+      </MenuPanel>
       <Note testID="story-chosen">{chosen ? `Chose: ${chosen}` : 'Nothing chosen yet'}</Note>
       <Note>{frameNote}</Note>
     </Playground>
@@ -187,9 +187,9 @@ function SizesShowcase() {
         <Variants>
           {SIZES.map((size) => (
             <Sample key={size} label={size}>
-              <Panel width={220}>
+              <MenuPanel width={220}>
                 <Menu accessibilityLabel={`${MENU_LABEL} ${size}`} entries={ANATOMY_ENTRIES} size={size} />
-              </Panel>
+              </MenuPanel>
             </Sample>
           ))}
         </Variants>

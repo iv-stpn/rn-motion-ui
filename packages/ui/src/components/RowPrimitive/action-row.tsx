@@ -17,7 +17,7 @@ export type ActionRowProps = Omit<PressableProps, 'children'> & {
   description?: ReactNode;
   /**
    * Leading adornment. When `{ icon: ... }`, the icon is wrapped in a
-   * `ThemedIcon` tinted `foreground`; any other ReactNode renders as-is.
+   * `ThemedIcon` tinted `muted-foreground`; any other ReactNode renders as-is.
    */
   leftAdornment?: ItemRowAdornment;
   /**

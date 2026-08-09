@@ -5,26 +5,31 @@ import { NotificationLine as Notification } from 'rn-motion-ui-icons/icons/notif
 import { Settings4Line as Settings } from 'rn-motion-ui-icons/icons/settings-4-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { fn } from 'storybook/test';
-import { Choice, ControlCard, Note, Playground, Sample, Section, Variants } from '../../__stories__/story-harness';
-import { Switch } from '../form/Switch/switch';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { cn } from '../../lib/cn';
+import { SURFACE_CLASSNAME } from '../../lib/elevated';
+import { ActionRowGroup, type ActionRowGroupItem } from './action-row-group';
 import type { ItemRowSize } from './item-row';
-import { ActionRowGroup, type ActionRowGroupItem, ItemRowGroup, type ItemRowGroupItem, type RowGroupVariant } from './row-group';
+import type { RowGroupVariant } from './row-group';
 
 const onPress = fn();
 const SIZES: ItemRowSize[] = ['sm', 'md', 'lg'];
-const VARIANTS: RowGroupVariant[] = ['grouped', 'spaced'];
+const VARIANTS: RowGroupVariant[] = ['grouped', 'spaced', 'sections'];
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function RowGroupPlayground() {
   const [variant, setVariant] = useState<RowGroupVariant>('grouped');
   const [size, setSize] = useState<ItemRowSize>('md');
+  const [showDescriptions, setShowDescriptions] = useState(true);
+
+  const description = showDescriptions ? 'Manage your account' : undefined;
 
   const items: ActionRowGroupItem[] = [
-    { id: 'profile', title: 'Profile', description: 'Manage your account', leftAdornment: { icon: User }, onPress },
+    { id: 'profile', title: 'Profile', description, leftAdornment: { icon: User }, onPress },
     {
       id: 'notifications',
       title: 'Notifications',
-      description: 'Choose how you hear from us',
+      description: showDescriptions ? 'Choose how you hear from us' : undefined,
       leftAdornment: { icon: Notification },
       onPress,
     },
@@ -36,51 +41,15 @@ function RowGroupPlayground() {
       <ControlCard title="Options">
         <Choice label="Variant" options={VARIANTS} value={variant} onChange={setVariant} />
         <Choice label="Size" options={SIZES} value={size} onChange={setSize} />
+        <Toggle label="Descriptions" value={showDescriptions} onChange={setShowDescriptions} />
       </ControlCard>
-      <View className="w-72">
+      <View className={cn('w-80 rounded-2xl p-6', SURFACE_CLASSNAME[2])}>
         <ActionRowGroup variant={variant} size={size} items={items} />
       </View>
       <Note>
         <code>grouped</code>: flush rows with dividers in a bordered container. <code>spaced</code>: rows separated by a
-        size-dependent gap.
+        size-dependent gap. <code>sections</code>: padded card with separator lines between rows.
       </Note>
-    </Playground>
-  );
-}
-
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
-function ItemRowGroupPlayground() {
-  const [wifiOn, setWifiOn] = useState(true);
-  const [btOn, setBtOn] = useState(false);
-
-  const items: ItemRowGroupItem[] = [
-    {
-      id: 'airplane',
-      title: 'Airplane mode',
-      leftAdornment: { icon: Settings },
-      rightAdornment: <Switch isSelected={false} onSelectedChange={fn()} />,
-    },
-    {
-      id: 'wifi',
-      title: 'Wi-Fi',
-      description: 'Connected to Home Network',
-      leftAdornment: { icon: Notification },
-      rightAdornment: <Switch isSelected={wifiOn} onSelectedChange={setWifiOn} />,
-    },
-    {
-      id: 'bluetooth',
-      title: 'Bluetooth',
-      leftAdornment: { icon: User },
-      rightAdornment: <Switch isSelected={btOn} onSelectedChange={setBtOn} />,
-    },
-  ];
-
-  return (
-    <Playground>
-      <View className="w-72">
-        <ItemRowGroup items={items} />
-      </View>
-      <Note>ItemRow items in a grouped container — trailing controls are the action, not the whole row.</Note>
     </Playground>
   );
 }
@@ -113,7 +82,7 @@ function ShowcasePlayground() {
 }
 
 const meta = {
-  title: 'RowPrimitive/RowGroup',
+  title: 'RowPrimitive/ActionRowGroup',
   component: ActionRowGroup,
   parameters: { layout: 'centered' },
   args: { items: [{ id: 'test', title: 'Test', onPress }] },
@@ -128,12 +97,7 @@ export const Interactive: Story = {
   render: () => <RowGroupPlayground />,
 };
 
-/** ItemRow items in a grouped container — trailing controls like switches. */
-export const WithItemRows: Story = {
-  render: () => <ItemRowGroupPlayground />,
-};
-
-/** Every variant at every size with ActionRow items. */
+/** Every variant at every size. */
 export const Showcase: Story = {
   name: 'Showcase: variants × sizes',
   render: () => <ShowcasePlayground />,

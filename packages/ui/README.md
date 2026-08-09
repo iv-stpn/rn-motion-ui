@@ -85,6 +85,7 @@ Subpaths are namespaced by category:
 | `/elevated-button` | `ElevatedButton` |
 | `/item-row` | `ItemRow` |
 | `/item-row-group` | `ItemRowGroup` |
+| `/sortable-list` | `SortableList` |
 | `/stateful-button` | `StatefulButton` |
 | `/glossy-button` | `GlossyButton` |
 | `/switch` | `Switch` |

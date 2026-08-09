@@ -125,7 +125,7 @@ export type TableProps<T> = {
   /** Style applied to each card container in small screen mode. */
   cardStyle?: StyleProp<ViewStyle>;
   // misc
-  /** UniWind classes merged onto the outer container (last-wins over defaults). */
+  /** UniWind classes merged onto the outer container. */
   className?: string;
   /** UniWind classes merged onto the sticky header row. */
   headerClassName?: string;
@@ -137,6 +137,14 @@ export type TableProps<T> = {
   cardClassName?: string;
   /** UniWind classes merged onto the footer (pagination / load-more / loading-more). */
   footerClassName?: string;
+  /** UniWind classes merged onto the selected row / card background. */
+  selectedClassName?: string;
+  /** UniWind classes merged onto the column-reorder drop indicator line. */
+  dropIndicatorClassName?: string;
+  /** UniWind classes merged onto skeleton pulse bars during loading. */
+  skeletonClassName?: string;
+  /** UniWind classes merged onto the empty-state wrapper. */
+  emptyClassName?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };

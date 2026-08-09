@@ -21,6 +21,8 @@ export type TableCardProps<T> = {
   cardStyle?: StyleProp<ViewStyle>;
   /** UniWind classes merged onto the card (alongside `cardStyle`). */
   cardClassName?: string;
+  /** UniWind classes merged onto the selected-card background. */
+  selectedClassName?: string;
   toggleRow: (id: string) => void;
   renderSmallScreen: (row: T, selected: boolean) => ReactNode;
   testID?: string;
@@ -33,6 +35,7 @@ export function TableCard<T>({
   selectable,
   cardStyle,
   cardClassName,
+  selectedClassName,
   toggleRow,
   renderSmallScreen,
   testID,
@@ -42,7 +45,7 @@ export function TableCard<T>({
   return (
     <Pressable
       onPress={selectable ? handlePress : undefined}
-      className={cn('border-border border-b px-4 py-3', isSelected && 'bg-surface-selected', cardClassName)}
+      className={cn('px-4 py-3', isSelected && selectedClassName, cardClassName)}
       style={cardStyle}
       testID={testID ? `${testID}-card-${id}` : undefined}
     >
@@ -112,10 +115,10 @@ export function PaginationFooter({
   const prevDisabled = page <= 1;
   const nextDisabled = page >= totalPages;
   return (
-    <View className={cn('flex-row items-center justify-center gap-3 border-border border-t px-4 py-2.5', footerClassName)}>
+    <View className={cn('flex-row items-center justify-center gap-3 px-4 py-2.5', footerClassName)}>
       <Pressable
         onPress={prevDisabled ? undefined : goToPreviousPage}
-        className={cn('h-8 w-8 items-center justify-center rounded-md border border-border', prevDisabled && 'opacity-35')}
+        className={cn('h-8 w-8 items-center justify-center rounded-md', prevDisabled && 'opacity-35')}
         accessibilityLabel="Previous page"
         accessibilityRole="button"
         disabled={prevDisabled}
@@ -123,10 +126,10 @@ export function PaginationFooter({
         {/* Rotated ChevronRight stands in for missing ChevronLeft */}
         <View className="rotate-180">{prevIcon ?? <ThemedIcon icon={ChevronRight} variant="secondary" size={16} />}</View>
       </Pressable>
-      <Text className="text-[13px] text-muted-foreground">{label}</Text>
+      <Text className="text-[13px]">{label}</Text>
       <Pressable
         onPress={nextDisabled ? undefined : goToNextPage}
-        className={cn('h-8 w-8 items-center justify-center rounded-md border border-border', nextDisabled && 'opacity-35')}
+        className={cn('h-8 w-8 items-center justify-center rounded-md', nextDisabled && 'opacity-35')}
         accessibilityLabel="Next page"
         accessibilityRole="button"
         disabled={nextDisabled}
@@ -148,7 +151,7 @@ export type LoadMoreFooterProps = {
 
 export function LoadMoreFooter({ onLoadMore, loadMoreLabel, footerClassName }: LoadMoreFooterProps) {
   return (
-    <View className={cn('items-stretch border-border border-t px-4 py-2.5', footerClassName)}>
+    <View className={cn('items-stretch px-4 py-2.5', footerClassName)}>
       <Button variant="ghost" size="sm" onPress={onLoadMore} fitWidth={true} accessibilityLabel={loadMoreLabel}>
         {loadMoreLabel}
       </Button>
@@ -164,7 +167,7 @@ export type LoadingMoreFooterProps = { footerClassName?: string };
 export function LoadingMoreFooter({ footerClassName }: LoadingMoreFooterProps) {
   const mutedForeground = useThemeColor('muted-foreground');
   return (
-    <View className={cn('items-center justify-center border-border border-t py-4', footerClassName)}>
+    <View className={cn('items-center justify-center py-4', footerClassName)}>
       <Loader variant="spinner" size={20} color={mutedForeground} label="Loading more" />
     </View>
   );

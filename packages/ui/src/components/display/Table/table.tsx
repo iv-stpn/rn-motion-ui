@@ -97,6 +97,10 @@ export function Table<T>(props: TableProps<T>) {
     cellClassName,
     cardClassName,
     footerClassName,
+    selectedClassName,
+    dropIndicatorClassName,
+    skeletonClassName,
+    emptyClassName,
   } = props;
   const { renderSmallScreen, useSmallScreen = false, cardStyle } = props;
   // Card mode: hide the table header and render each row as a card via renderSmallScreen.
@@ -128,6 +132,7 @@ export function Table<T>(props: TableProps<T>) {
             selectable={selectable}
             cardStyle={cardStyle}
             cardClassName={cardClassName}
+            selectedClassName={selectedClassName}
             toggleRow={toggleRow}
             renderSmallScreen={renderSmallScreen}
             testID={testID}
@@ -150,6 +155,7 @@ export function Table<T>(props: TableProps<T>) {
           stripedStyle={stripedStyle}
           rowClassName={rowClassName}
           cellClassName={cellClassName}
+          selectedClassName={selectedClassName}
           setPressedRowId={setPressedRowId}
           toggleRow={toggleRow}
           onCellEdit={onCellEdit}
@@ -179,6 +185,7 @@ export function Table<T>(props: TableProps<T>) {
       rowClassName,
       cellClassName,
       reduce,
+      selectedClassName,
       setPressedRowId,
       testID,
       colWidths,
@@ -190,7 +197,7 @@ export function Table<T>(props: TableProps<T>) {
       <View>
         {Array.from({ length: count }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows, fixed length, never reordered
-          <View key={i} className="relative flex-row overflow-hidden border-border border-b" style={{ height: rowHeight }}>
+          <View key={i} className="relative flex-row overflow-hidden" style={{ height: rowHeight }}>
             {selectable ? (
               <View className="justify-center overflow-hidden px-4" style={{ width: CHECKBOX_COLUMN_WIDTH }} />
             ) : null}
@@ -202,13 +209,14 @@ export function Table<T>(props: TableProps<T>) {
                 align={col.align}
                 skeletonWidth={col.skeletonWidth}
                 reduce={reduce}
+                skeletonClassName={skeletonClassName}
               />
             ))}
           </View>
         ))}
       </View>
     ),
-    [orderedColumns, selectable, rowHeight, reduce, colWidths],
+    [orderedColumns, selectable, rowHeight, reduce, colWidths, skeletonClassName],
   );
 
   const renderSkeletonCards = useCallback(
@@ -216,13 +224,13 @@ export function Table<T>(props: TableProps<T>) {
       <View>
         {Array.from({ length: count }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder cards, fixed length, never reordered
-          <View key={i} className={cn('border-border border-b px-4 py-3', cardClassName)} style={cardStyle}>
+          <View key={i} className={cn('px-4 py-3', cardClassName)} style={cardStyle}>
             <View className="flex-row items-start gap-3">
-              {selectable ? <View className="h-5 w-5 rounded bg-border pt-0.5" /> : null}
+              {selectable ? <View className="h-5 w-5 rounded pt-0.5" /> : null}
               <View className="min-w-0 flex-1 gap-2">
-                <View className="h-3.5 w-4/5 rounded-md bg-border" />
-                <View className="h-3 w-3/5 rounded-md bg-border" />
-                <View className="h-3 w-2/5 rounded-md bg-border" />
+                <View className="h-3.5 w-4/5 rounded-md" />
+                <View className="h-3 w-3/5 rounded-md" />
+                <View className="h-3 w-2/5 rounded-md" />
               </View>
             </View>
           </View>
@@ -237,19 +245,15 @@ export function Table<T>(props: TableProps<T>) {
     // Rich empty state: render icon + title + description when text props are provided.
     if (!emptyState && (emptyTitle || emptyIcon || emptyDescription))
       return (
-        <View className="items-center justify-center p-10">
+        <View className={cn('items-center justify-center p-10', emptyClassName)}>
           {emptyIcon ? <View className="mb-2.5 items-center">{emptyIcon}</View> : null}
-          {emptyTitle ? <Text className="mb-1 text-center font-semibold text-foreground text-sm">{emptyTitle}</Text> : null}
-          {emptyDescription ? <Text className="text-center text-[13px] text-muted-foreground">{emptyDescription}</Text> : null}
+          {emptyTitle ? <Text className="mb-1 text-center font-semibold text-sm">{emptyTitle}</Text> : null}
+          {emptyDescription ? <Text className="text-center text-[13px]">{emptyDescription}</Text> : null}
         </View>
       );
     return (
-      <View className="items-center justify-center p-10">
-        {typeof emptyState === 'string' ? (
-          <Text className="text-center text-muted-foreground text-sm">{emptyState}</Text>
-        ) : (
-          (emptyState ?? null)
-        )}
+      <View className={cn('items-center justify-center p-10', emptyClassName)}>
+        {typeof emptyState === 'string' ? <Text className="text-center text-sm">{emptyState}</Text> : (emptyState ?? null)}
       </View>
     );
   }, [
@@ -260,6 +264,7 @@ export function Table<T>(props: TableProps<T>) {
     emptyIcon,
     emptyTitle,
     emptyDescription,
+    emptyClassName,
     renderSkeletonRows,
     renderSkeletonCards,
   ]);
@@ -354,10 +359,7 @@ export function Table<T>(props: TableProps<T>) {
   const tableBody = (
     <>
       {/* Sticky header row */}
-      <View
-        className={cn('relative select-none flex-row border-border border-b bg-muted', headerClassName)}
-        style={{ height: rowHeight }}
-      >
+      <View className={cn('relative select-none flex-row', headerClassName)} style={{ height: rowHeight }}>
         {selectable ? (
           <View
             className="relative flex-col items-center justify-center overflow-hidden px-4"
@@ -400,7 +402,7 @@ export function Table<T>(props: TableProps<T>) {
             upstream (see `dropIndicatorX`). */}
         {dragKey && indicatorX !== null ? (
           <View
-            className="pointer-events-none absolute top-0 bottom-0 z-20 w-0.5 bg-primary"
+            className={cn('pointer-events-none absolute top-0 bottom-0 z-20 w-0.5', dropIndicatorClassName)}
             style={{ left: indicatorX }}
             testID={`${testID ?? 'table'}-drop-indicator`}
           />
@@ -429,7 +431,7 @@ export function Table<T>(props: TableProps<T>) {
   return (
     <View
       ref={containerRef}
-      className={cn('overflow-hidden border border-border bg-surface-2', className)}
+      className={cn('overflow-hidden', className)}
       style={[{ height }, style]}
       onLayout={onContainerLayout}
       testID={testID}

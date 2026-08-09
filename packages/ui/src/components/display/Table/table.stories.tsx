@@ -13,6 +13,21 @@ import { Switch } from '../../form/Switch/switch';
 import { Text } from '../../typography/Text/text';
 import { type SortState, Table, type TableColumn, type TableProps } from './table';
 
+// ─── Classic (pre-headless) styling defaults ───────────────────────────────────
+// Apply these to restore the original table appearance when using the headless
+// component. Remove or override individual entries to customise.
+
+const CLASSIC_TABLE = {
+  className: '',
+  headerClassName: 'border-border border-b',
+  rowClassName: 'border-border border-b',
+  cardClassName: 'border-border border-b',
+  footerClassName: 'border-border border-t',
+  selectedClassName: 'bg-surface-selected',
+  dropIndicatorClassName: 'bg-primary',
+  skeletonClassName: 'bg-border',
+} as const;
+
 // ─── Shared data builders ─────────────────────────────────────────────────────
 
 type Person = { id: string; name: string; email: string; role: string; status: 'active' | 'invited' | 'suspended'; mrr: number };
@@ -125,7 +140,7 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TablePerson(props: TableProps<Person>) {
-  return <Table {...props} />;
+  return <Table {...CLASSIC_TABLE} {...props} />;
 }
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
@@ -235,6 +250,7 @@ function AsyncTableStory() {
         <Text className="text-[#6b7280] text-[12px]">{statusLabel}</Text>
       </View>
       <Table
+        {...CLASSIC_TABLE}
         data={rows}
         columns={columns}
         getRowId={getRowId}
@@ -350,6 +366,7 @@ function EditableTableStory() {
         <Switch isSelected={editable} onSelectedChange={setEditable} label="Editable" />
       </View>
       <Table
+        {...CLASSIC_TABLE}
         data={rows}
         columns={columns}
         getRowId={getRowId}
@@ -481,6 +498,7 @@ function TablePlayground() {
       <Note>{FOOTER_NOTE}</Note>
 
       <Table
+        {...CLASSIC_TABLE}
         columns={DEFAULT_COLUMNS}
         data={visible}
         getRowId={getPersonId}
@@ -607,6 +625,7 @@ function SmallScreenTableStory() {
         <Switch isSelected={useSmallScreen} onSelectedChange={setUseSmallScreen} label="Card view" />
       </View>
       <Table
+        {...CLASSIC_TABLE}
         data={rows}
         columns={DEFAULT_COLUMNS}
         getRowId={getRowId}
@@ -683,6 +702,7 @@ function PaginationTableStory() {
   return (
     <View className="flex-1 p-4">
       <Table
+        {...CLASSIC_TABLE}
         data={data}
         columns={DEFAULT_COLUMNS}
         getRowId={getRowId}
@@ -749,6 +769,7 @@ function LoadMoreTableStory() {
         <Text className="text-[#6b7280] text-[12px]">{loadMoreStatus}</Text>
       </View>
       <Table
+        {...CLASSIC_TABLE}
         data={data}
         columns={DEFAULT_COLUMNS}
         getRowId={getRowId}
@@ -822,7 +843,14 @@ function DirectionalTable({ direction }: DirectionalTableProps) {
   return (
     <DirectionProvider value={direction}>
       <View style={{ ...DIRECTION_STYLES[direction], width: RTL_WIDTH }}>
-        <Table columns={RTL_COLUMNS} data={RTL_ROWS} height={200} rowHeight={44} testID={`table-${direction}`} />
+        <Table
+          {...CLASSIC_TABLE}
+          columns={RTL_COLUMNS}
+          data={RTL_ROWS}
+          height={200}
+          rowHeight={44}
+          testID={`table-${direction}`}
+        />
       </View>
     </DirectionProvider>
   );
@@ -895,6 +923,7 @@ function ReorderTable({ direction, testID }: DirectedTableProps) {
     <DirectionProvider value={direction}>
       <View style={{ ...DIRECTION_STYLES[direction], width: RTL_WIDTH }}>
         <Table
+          {...CLASSIC_TABLE}
           columns={THIRDS_COLUMNS}
           data={THIRDS_ROWS}
           height={160}
@@ -1148,6 +1177,7 @@ function OverlayTable({ direction, testID }: DirectedTableProps) {
     <DirectionProvider value={direction}>
       <View style={{ ...DIRECTION_STYLES[direction], width: RTL_WIDTH }}>
         <Table
+          {...CLASSIC_TABLE}
           columns={THIRDS_COLUMNS}
           data={THIRDS_ROWS}
           height={160}

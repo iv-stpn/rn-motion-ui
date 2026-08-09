@@ -123,16 +123,12 @@ export function HeaderCell<T>({
           <TextInput
             value={column.header}
             onChangeText={handleRename}
-            className={cn('flex-1 p-0 font-medium text-muted-foreground text-xs', textAlignClass)}
+            className={cn('flex-1 p-0 font-medium text-xs', textAlignClass)}
             accessibilityLabel={`Rename ${column.key} column`}
           />
         ) : (
           <View className={cn('flex-1 flex-row items-center gap-1', alignToJustifyClass(column.align))}>
-            <Text
-              selectable={false}
-              className={cn('flex-1 font-medium text-muted-foreground text-xs', textAlignClass, isActive && 'text-foreground')}
-              numberOfLines={1}
-            >
+            <Text selectable={false} className={cn('flex-1 font-medium text-xs', textAlignClass)} numberOfLines={1}>
               {column.header}
             </Text>
             {sortEnabled ? (
@@ -153,7 +149,7 @@ export function HeaderCell<T>({
         <View className={cn('absolute top-0.5 z-10 flex-row gap-0.5', isRTL ? 'left-0.5' : 'right-0.5')}>
           {onInsertColumn ? (
             <Pressable
-              className="h-5 w-5 items-center justify-center rounded-full bg-primary"
+              className="h-5 w-5 items-center justify-center rounded-full"
               onPress={handleInsertColumn}
               hitSlop={8}
               accessibilityLabel={`Insert column before ${column.header}`}
@@ -163,7 +159,7 @@ export function HeaderCell<T>({
           ) : null}
           {onDeleteColumn ? (
             <Pressable
-              className="h-5 w-5 items-center justify-center rounded-full bg-danger"
+              className="h-5 w-5 items-center justify-center rounded-full"
               onPress={handleDeleteColumn}
               hitSlop={8}
               accessibilityLabel={`Delete column ${column.header}`}

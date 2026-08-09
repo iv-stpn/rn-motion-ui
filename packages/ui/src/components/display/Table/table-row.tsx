@@ -32,7 +32,7 @@ function EditableCellInput({ value, onCommit, testID }: EditableCellInputProps) 
       placeholder="Empty"
       placeholderTextColor={mutedForeground}
       testID={testID}
-      className="flex-1 rounded p-1 text-[13px] text-foreground"
+      className="flex-1 rounded p-1 text-[13px]"
       autoCapitalize="none"
       blurOnSubmit={true}
     />
@@ -52,9 +52,18 @@ export type SkeletonCellPulseProps = {
   /** Override skeleton bar width. Defaults to `'60%'` (or `40` for right-aligned). */
   skeletonWidth?: DimensionValue;
   reduce: boolean;
+  /** UniWind classes merged onto the skeleton pulse bar. */
+  skeletonClassName?: string;
 };
 
-export function SkeletonCellPulse({ columnWidth, colWidth, align, skeletonWidth, reduce }: SkeletonCellPulseProps) {
+export function SkeletonCellPulse({
+  columnWidth,
+  colWidth,
+  align,
+  skeletonWidth,
+  reduce,
+  skeletonClassName,
+}: SkeletonCellPulseProps) {
   const barWidth: DimensionValue = skeletonWidth ?? (align === 'right' ? 40 : '60%');
   return (
     <View
@@ -65,7 +74,7 @@ export function SkeletonCellPulse({ columnWidth, colWidth, align, skeletonWidth,
         from={{ opacity: 0.5 }}
         animate={{ opacity: reduce ? 0.5 : 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 800, loop: !reduce, repeatReverse: true }}
-        className="h-3 rounded-md bg-border"
+        className={cn('h-3 rounded-md', skeletonClassName)}
         style={{ width: barWidth }}
       />
     </View>
@@ -106,7 +115,7 @@ export function RowCell<T>({ row, column, id, colWidth, onCellEdit, cellClassNam
     );
   else
     cellContent = (
-      <Text className={cn('text-[13px] text-foreground', textClass)} numberOfLines={1}>
+      <Text className={cn('text-[13px]', textClass)} numberOfLines={1}>
         {rawValue === null ? '' : String(rawValue)}
       </Text>
     );
@@ -143,6 +152,8 @@ export type TableRowProps<T> = {
   rowClassName?: string;
   /** UniWind classes merged onto each cell in this row. */
   cellClassName?: string;
+  /** UniWind classes merged onto the selected-row background overlay. */
+  selectedClassName?: string;
   setPressedRowId: (id: string | null) => void;
   toggleRow: (id: string) => void;
   onCellEdit?: (rowId: string, key: string, value: string) => void;
@@ -170,6 +181,7 @@ export function TableRow<T>({
   stripedStyle,
   rowClassName,
   cellClassName,
+  selectedClassName,
   setPressedRowId,
   toggleRow,
   onCellEdit,
@@ -201,7 +213,7 @@ export function TableRow<T>({
 
   return (
     <Pressable
-      className={cn('relative flex-row overflow-hidden border-border border-b', rowClassName)}
+      className={cn('relative flex-row overflow-hidden', rowClassName)}
       style={[{ height: rowHeight }, isStriped && (stripedStyle ?? STRIPED_FALLBACK)]}
       onLongPress={handleLongPress}
       onPress={handlePress}
@@ -211,7 +223,7 @@ export function TableRow<T>({
       <MotiView
         animate={{ opacity: isSelected ? 1 : 0 }}
         transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
-        className="pointer-events-none absolute inset-0 bg-surface-selected"
+        className={cn('pointer-events-none absolute inset-0', selectedClassName)}
       />
 
       {selectable ? (
@@ -239,7 +251,7 @@ export function TableRow<T>({
         <View className={cn('absolute top-0 bottom-0 flex-row items-center gap-1', isRTL ? 'left-2' : 'right-2')}>
           {onInsertRow ? (
             <Pressable
-              className="h-5 w-5 items-center justify-center rounded-full bg-primary"
+              className="h-5 w-5 items-center justify-center rounded-full"
               onPress={handleInsertRow}
               hitSlop={8}
               accessibilityLabel={`Insert row before row ${index + 1}`}
@@ -249,7 +261,7 @@ export function TableRow<T>({
           ) : null}
           {onDeleteRow ? (
             <Pressable
-              className="h-5 w-5 items-center justify-center rounded-full bg-danger"
+              className="h-5 w-5 items-center justify-center rounded-full"
               onPress={handleDeleteRow}
               hitSlop={8}
               accessibilityLabel={`Delete row ${index + 1}`}

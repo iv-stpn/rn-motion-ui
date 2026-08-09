@@ -197,6 +197,11 @@
       "types": "./src/components/gestures/ReorderableList/reorderable-list.tsx",
       "default": "./src/components/gestures/ReorderableList/reorderable-list.tsx"
     },
+    "./sortable-list": {
+      "source": "./src/components/gestures/SortableList/sortable-list.tsx",
+      "types": "./src/components/gestures/SortableList/sortable-list.tsx",
+      "default": "./src/components/gestures/SortableList/sortable-list.tsx"
+    },
     "./drag-behavior": {
       "source": "./src/components/gestures/drag-behavior.ts",
       "types": "./src/components/gestures/drag-behavior.ts",

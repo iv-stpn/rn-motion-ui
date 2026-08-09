@@ -250,7 +250,11 @@ export const MenuEscapeToDrag: Story = {
     // The menu chip's testID sits on the measured wrapper; the pointer transport
     // listens on the HoldDraggable host inside it, so dispatch on the label and
     // let the events bubble up to it.
-    const chip = await canvas.findByText('Hold for menu · Move to drag');
+    // findAllByText: Draggable renders children twice (functional + offscreen
+    // preview ghost) — pick the first (functional) copy.
+    const chips = await canvas.findAllByText('Hold for menu · Move to drag');
+    const chip = chips[0];
+    if (!chip) throw new Error('no HoldDraggable chip rendered');
 
     touchPointer(chip, 'pointerdown');
     // Hold past holdDelay (300ms) — the menu opens and the hold reports.

@@ -114,6 +114,7 @@ function FileSystemCustomFilters({ renderFilters }: FileSystemCustomFiltersProps
     setFilterOperator,
     toggleFileTypeFilterValue,
   } = useFileSystemFilterActions();
+
   return renderFilters({
     applyCustomRange: applyCustomDateRange,
     clearFilters,

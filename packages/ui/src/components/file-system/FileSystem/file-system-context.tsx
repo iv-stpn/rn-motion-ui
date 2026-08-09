@@ -539,22 +539,21 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       },
 
       ensureChildren: (folderPath) => {
-        const s = get();
-        const folder = s.entries.index.folders.get(folderPath);
+        const fileSystemStore = get();
+        const folder = fileSystemStore.entries.index.folders.get(folderPath);
+
         if (!folder?.hasChildren) return;
-        if (s.entries.index.children.get(folderPath)?.length) return;
-        if (!s.consumer.loadChildren || requestedFolders.has(folderPath)) return;
+        if (fileSystemStore.entries.index.children.get(folderPath)?.length) return;
+        if (!fileSystemStore.consumer.loadChildren || requestedFolders.has(folderPath)) return;
+
         requestedFolders.add(folderPath);
-        const newLoadingFolders = new Set(s.navigation.loadingFolders).add(folderPath);
-        set({
-          navigation: {
-            ...s.navigation,
-            loadingFolders: newLoadingFolders,
-            isLoading: newLoadingFolders.has(s.navigation.currentPath),
-          },
-        });
+        const newLoadingFolders = new Set(fileSystemStore.navigation.loadingFolders).add(folderPath);
+
+        const isLoading = newLoadingFolders.has(fileSystemStore.navigation.currentPath);
+        set({ navigation: { ...fileSystemStore.navigation, loadingFolders: newLoadingFolders, isLoading } });
+
         const drain = async () => {
-          const load = s.consumer.loadChildren;
+          const load = fileSystemStore.consumer.loadChildren;
           if (!load) return; // guarded above; this silences the non-null assertion
           let cursor: string | null = null;
           try {

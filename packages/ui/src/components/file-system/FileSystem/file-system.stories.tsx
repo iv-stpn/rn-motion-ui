@@ -1438,11 +1438,14 @@ const ENTRY_TEST_ID_PREFIX = 'file-system-entry-';
  */
 function selectedPaths(canvas: ReturnType<typeof within>): string[] {
   const nodes: HTMLElement[] = canvas.getAllByRole('button');
-  return nodes
-    .filter((node) => node.getAttribute('aria-selected') === 'true')
-    .map((node) => node.getAttribute('data-testid') ?? '')
-    .filter((id) => id.startsWith(ENTRY_TEST_ID_PREFIX))
-    .map((id) => id.slice(ENTRY_TEST_ID_PREFIX.length));
+  const paths = new Set(
+    nodes
+      .filter((node) => node.getAttribute('aria-selected') === 'true')
+      .map((node) => node.getAttribute('data-testid') ?? '')
+      .filter((id) => id.startsWith(ENTRY_TEST_ID_PREFIX))
+      .map((id) => id.slice(ENTRY_TEST_ID_PREFIX.length)),
+  );
+  return [...paths];
 }
 
 /**
@@ -1774,7 +1777,13 @@ export const WithBackgroundContextMenu: Story = {
  * Pressable above it — the element whose 30px box the zone's rect matches.
  */
 async function listRow(canvas: ReturnType<typeof within>, name: string): Promise<Element> {
-  const label = await canvas.findByText(name);
+  // findAllByText, not findByText: `HoldContextMenu` renders every child twice
+  // (functional copy + offscreen drag-preview ghost inside `<Draggable>`), so a
+  // single-match query rejects. The functional copy is rendered first in
+  // document order — pick that one.
+  const labels = await canvas.findAllByText(name);
+  const label = labels[0];
+  if (!label) throw new Error(`no row rendered for ${name}`);
   const row = label.closest('[role="button"]');
   if (!row) throw new Error(`no row rendered for ${name}`);
   return row;
@@ -1868,7 +1877,8 @@ export const WithDragAndDrop: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Roadmap.pptx');
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('Roadmap.pptx'))[0]).toBeDefined();
 
     const row = await listRow(canvas, 'Roadmap.pptx');
     const folder = await listRow(canvas, 'Documents');
@@ -1913,8 +1923,13 @@ export const GridDragAndDrop: Story = {
     const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.icons);
     // A tile's accessible name is just the entry name, so the button role is the
     // whole query — and the tile's own box is the zone's rect.
-    const tile = await canvas.findByRole('button', { name: 'Roadmap.pptx' });
-    const folderTile = await canvas.findByRole('button', { name: 'Documents' });
+    // findAllByRole: HoldContextMenu double-renders draggable rows — pick first.
+    const tiles = await canvas.findAllByRole('button', { name: 'Roadmap.pptx' });
+    const tile = tiles[0];
+    if (!tile) throw new Error('no Roadmap.pptx tile rendered');
+    const folderTiles = await canvas.findAllByRole('button', { name: 'Documents' });
+    const folderTile = folderTiles[0];
+    if (!folderTile) throw new Error('no Documents tile rendered');
     const target = centerOf(folderTile);
 
     // Hover the grid first, so the highlight is up and there is something to see
@@ -1933,7 +1948,10 @@ export const GridDragAndDrop: Story = {
     // Hold the drag over the folder and read the mark. A pending drop is the
     // folder's *name* filling in — the same fill selection uses, so the tile about
     // to receive the drop reads as its label lighting up.
-    const dropTarget = await canvas.findByTestId(FS_TILE_DROP_TARGET_TEST_ID);
+    // findAllByTestId: HoldContextMenu double-renders draggable tiles — pick first.
+    const dropTargets = await canvas.findAllByTestId(FS_TILE_DROP_TARGET_TEST_ID);
+    const dropTarget = dropTargets[0];
+    if (!dropTarget) throw new Error('no drop target rendered');
     await expect(dropTarget).toHaveTextContent('Documents');
     const tileBox = folderTile.getBoundingClientRect();
     const targetBox = dropTarget.getBoundingClientRect();
@@ -1964,7 +1982,10 @@ export const DragIntoOwnSubtree: Story = {
     const canvas = within(canvasElement);
 
     // Expand `Documents/` so its own child folder is a row beneath it.
-    await userEvent.click(await canvas.findByLabelText('Expand Documents'));
+    const expandDocsLabels = await canvas.findAllByLabelText('Expand Documents');
+    const expandDocs = expandDocsLabels[0];
+    if (!expandDocs) throw new Error('no Expand Documents button rendered');
+    await userEvent.click(expandDocs);
     const row = await listRow(canvas, 'Documents');
     const child = await listRow(canvas, 'Reports');
 
@@ -2051,13 +2072,20 @@ export const SelectionBox: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.icons);
-    await canvas.findByText('Archive');
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('Archive'))[0]).toBeDefined();
 
     // Pinned items sort first, so the first two tiles are README.md and Roadmap.pptx.
     // Start below them — empty space, where no tile can lift — and sweep up.
     const bounds = container.getBoundingClientRect();
-    const first = centreOf(await canvas.findByRole('button', { name: 'README.md' }));
-    const second = centreOf(await canvas.findByRole('button', { name: 'Roadmap.pptx' }));
+    const readmeEls = await canvas.findAllByRole('button', { name: 'README.md' });
+    const roadmapEls = await canvas.findAllByRole('button', { name: 'Roadmap.pptx' });
+    const readme = readmeEls[0];
+    const roadmap = roadmapEls[0];
+    if (!readme) throw new Error('README.md tile not rendered');
+    if (!roadmap) throw new Error('Roadmap.pptx tile not rendered');
+    const first = centreOf(readme);
+    const second = centreOf(roadmap);
     const origin = { x: bounds.left + 4, y: bounds.top + bounds.height - 4 };
 
     pointer(container, 'pointerdown', origin);
@@ -2174,7 +2202,8 @@ export const PlaygroundDrop: Story = {
   render: (args) => <FileSystemPlayground {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Roadmap.pptx');
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('Roadmap.pptx'))[0]).toBeDefined();
 
     const row = await listRow(canvas, 'Roadmap.pptx');
     const folder = await listRow(canvas, 'Documents');
@@ -2188,8 +2217,12 @@ export const PlaygroundDrop: Story = {
     await waitFor(() => expect(canvas.queryByText('Roadmap.pptx')).toBeNull());
 
     // Expanding the destination finds it under its new parent.
-    await userEvent.click(await canvas.findByLabelText('Expand Documents'));
-    await canvas.findByText('Roadmap.pptx');
+    const expandDocsLabels2 = await canvas.findAllByLabelText('Expand Documents');
+    const expandDocs2 = expandDocsLabels2[0];
+    if (!expandDocs2) throw new Error('no Expand Documents button rendered');
+    await userEvent.click(expandDocs2);
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('Roadmap.pptx'))[0]).toBeDefined();
 
     // Reset restores the manifest and clears the status line back to the hint.
     await userEvent.click(await canvas.findByText('Reset'));
@@ -2226,10 +2259,15 @@ export const PlaygroundExternalDrop: Story = {
     // The chip's payload reached the consumer, and the destination is the row it was
     // dropped on rather than the open folder.
     await canvas.findByText('Added invoice.pdf to Documents/');
-    await userEvent.click(await canvas.findByLabelText('Expand Documents'));
-    // By testID, not by text: the tray chip that was dragged says `invoice.pdf`
-    // too, so the name alone matches two nodes once the drop has landed.
-    await canvas.findByTestId(fileSystemEntryTestID(undefined, 'Documents/invoice.pdf'));
+    const expandDocsLabels3 = await canvas.findAllByLabelText('Expand Documents');
+    const expandDocs3 = expandDocsLabels3[0];
+    if (!expandDocs3) throw new Error('no Expand Documents button rendered');
+    await userEvent.click(expandDocs3);
+    // findAllByTestId, not findByTestId: HoldContextMenu double-renders every row
+    // child (functional + offscreen drag-preview ghost inside <Draggable>), and
+    // both copies carry the same testID. Pick the first (functional) copy.
+    const invoiceTestIds = await canvas.findAllByTestId(fileSystemEntryTestID(undefined, 'Documents/invoice.pdf'));
+    expect(invoiceTestIds[0]).toBeDefined();
 
     // A drop on empty space below the rows takes the folder that is open — the
     // background zone — so the same gesture always lands somewhere nameable.
@@ -2246,7 +2284,9 @@ export const PlaygroundExternalDrop: Story = {
 
 /** Open the menu on the entry named `name` and wait for `action` to be pickable. */
 async function pickMenuAction(canvas: ReturnType<typeof within>, name: string, action: string): Promise<void> {
-  const tile = await canvas.findByRole('button', { name });
+  // findAllByRole: HoldContextMenu double-renders draggable rows — pick first.
+  const tiles = await canvas.findAllByRole('button', { name });
+  const tile = tiles[0];
   await userEvent.pointer({ target: tile, keys: '[MouseRight]' });
   await userEvent.click(await screen.findByText(action));
 }
@@ -2260,18 +2300,20 @@ export const PlaygroundMenuActions: Story = {
   render: (args) => <FileSystemPlayground {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    // findAllByText/FindAllByRole: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('README.md'))[0]).toBeDefined();
 
     // A file's menu carries `Share…` disabled. A menuitem is a div, not a form
     // control, so the state it exposes is `aria-disabled` — the dimming alone
     // would leave a screen reader calling the row actionable.
-    await userEvent.pointer({ target: await canvas.findByRole('button', { name: 'README.md' }), keys: '[MouseRight]' });
+    await userEvent.pointer({ target: (await canvas.findAllByRole('button', { name: 'README.md' }))[0], keys: '[MouseRight]' });
     await expect(await screen.findByRole('menuitem', { name: 'Share…' })).toHaveAttribute('aria-disabled', 'true');
 
     // Duplicate names the copy before the extension and puts it beside the file.
     await userEvent.click(await screen.findByText('Duplicate'));
     await canvas.findByText('Duplicated README.md');
-    await canvas.findByText('README copy.md');
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('README copy.md'))[0]).toBeDefined();
 
     // Delete drops it again.
     await pickMenuAction(canvas, 'README copy.md', 'Delete');
@@ -2282,7 +2324,8 @@ export const PlaygroundMenuActions: Story = {
     // appears in the view you are already in, rather than behind a navigation.
     await pickMenuAction(canvas, 'README.md', 'New folder');
     await canvas.findByText(`Created ${NEW_FOLDER_NAME} in Files`);
-    await canvas.findByText(NEW_FOLDER_NAME);
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText(NEW_FOLDER_NAME))[0]).toBeDefined();
 
     // A folder's menu has no `Share…`, and its own actions still apply.
     await pickMenuAction(canvas, NEW_FOLDER_NAME, 'Delete');

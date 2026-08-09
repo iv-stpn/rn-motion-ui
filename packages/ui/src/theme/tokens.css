@@ -251,12 +251,29 @@
   --radius-card: 16px;
   --radius-modal: 16px;
 
-  /* Typography — font family tokens. Override in your own @theme block after
-     importing this sheet to swap the typeface globally. Geometry doesn't flip
-     with the theme, so these live only in @theme. */
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-serif: ui-serif, Georgia, serif;
-  --font-mono: ui-monospace, monospace;
+  /* Typography — per-weight font family tokens. One token per weight so that
+     uniwind resolves the correct .ttf file on native (where fontWeight alone
+     cannot select a different font file). On web the browser matches these
+     family names against @font-face declarations.
+
+     Defaults use system font stacks where all weights share the same value —
+     the OS handles weight selection for built-in fonts. Override in your own
+     @theme block to swap in a custom typeface with weight-specific names
+     (e.g. 'Geist-Regular', 'Geist-Medium', 'Geist-SemiBold', 'Geist-Bold').
+
+     Geometry doesn't flip with the theme, so these live only in @theme. */
+  --font-sans-normal: ui-sans-serif, system-ui, sans-serif;
+  --font-sans-medium: ui-sans-serif, system-ui, sans-serif;
+  --font-sans-semibold: ui-sans-serif, system-ui, sans-serif;
+  --font-sans-bold: ui-sans-serif, system-ui, sans-serif;
+  --font-serif-normal: ui-serif, Georgia, serif;
+  --font-serif-medium: ui-serif, Georgia, serif;
+  --font-serif-semibold: ui-serif, Georgia, serif;
+  --font-serif-bold: ui-serif, Georgia, serif;
+  --font-mono-normal: ui-monospace, monospace;
+  --font-mono-medium: ui-monospace, monospace;
+  --font-mono-semibold: ui-monospace, monospace;
+  --font-mono-bold: ui-monospace, monospace;
 }
 
 /* ── Neutral tint ─────────────────────────────────────────────────────────

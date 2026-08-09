@@ -9,7 +9,8 @@
  *
  * `Toggle` renders the library's own `Switch`, so the chrome tracks the real
  * component instead of re-deriving its track geometry, thumb spring and
- * reduced-motion handling by hand. `Action` and `Choice` are plain buttons.
+ * reduced-motion handling by hand. `Action` is a plain button; `Choice` renders
+ * the library's own `ToggleGroup`.
  *
  * Every control carries a `story-*` testID, and that is what a `play` function
  * should drive it by. A `Toggle` is a real switch and therefore *does* answer
@@ -25,6 +26,7 @@
 import { type ReactNode, useCallback } from 'react';
 import { type FlexAlignType, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { Switch } from '../components/form/Switch/switch';
+import { ToggleGroup, type ToggleGroupItem } from '../components/form/ToggleGroup/toggle-group';
 import { Text } from '../components/typography/Text/text';
 import { cn } from '../lib/cn';
 import { SURFACE_CLASSNAME } from '../lib/elevated';
@@ -42,7 +44,6 @@ type PlaygroundProps = { children: ReactNode; className?: string; style?: StyleP
 type ToggleProps = { label: string; value: boolean; onChange: (next: boolean) => void };
 type ActionProps = { label: string; onPress: () => void };
 type ChoiceOption<T extends string> = { value: T; label: string };
-type ChipProps<T extends string> = { option: ChoiceOption<T>; selected: boolean; testID: string; onSelect: (next: T) => void };
 type SectionProps = { title?: string; children: ReactNode };
 type ControlCardProps = { title: string; children: ReactNode };
 type VariantsProps = { children: ReactNode; direction?: 'row' | 'column'; align?: ViewStyle['alignItems'] };
@@ -69,25 +70,6 @@ const slug = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-
-// Its own component so `onPress` can be a stable per-chip callback.
-function ChoiceChip<T extends string>({ option, selected, testID, onSelect }: ChipProps<T>) {
-  const handlePress = useCallback(() => onSelect(option.value), [onSelect, option.value]);
-  return (
-    <Pressable
-      accessibilityLabel={option.label}
-      accessibilityRole="button"
-      aria-pressed={selected}
-      onPress={handlePress}
-      className={cn('px-2.5 py-[5px]', selected ? 'bg-primary' : 'bg-transparent')}
-      testID={testID}
-    >
-      <Text size="sm" className={cn('text-sm', selected ? 'text-primary-foreground' : 'text-muted-foreground')}>
-        {option.label}
-      </Text>
-    </Pressable>
-  );
-}
 
 /** Vertical frame for a playground story: controls, then sample rows. */
 export function Playground({ children, className }: PlaygroundProps) {
@@ -125,11 +107,23 @@ export function Action({ label, onPress }: ActionProps) {
   );
 }
 
-/** Enum control — a segmented row of chips, one selected at a time. */
+/** Enum control — a row of ToggleGroup items, one selected at a time. */
 export function Choice<T extends string>({ label, value, options, onChange }: ChoiceProps<T>) {
-  const items: ChoiceOption<T>[] = options.map((option) =>
-    typeof option === 'string' ? { value: option, label: option } : option,
+  const items: ToggleGroupItem[] = options.map((option) =>
+    typeof option === 'string' ? { value: option, label: option } : { value: option.value, label: option.label },
   );
+
+  // Bridge ToggleGroup's `onValueChange: (string) => void` to Choice's
+  // `onChange: (T) => void`.  Look up the original option so TypeScript
+  // narrows from `string` to `T` without a cast.
+  const handleChange = useCallback(
+    (next: string) => {
+      const match = options.find((o) => (typeof o === 'string' ? o : o.value) === next);
+      if (match) onChange(typeof match === 'string' ? match : match.value);
+    },
+    [onChange, options],
+  );
+
   return (
     <View className="w-fit items-start gap-1.5">
       {label ? (
@@ -137,17 +131,14 @@ export function Choice<T extends string>({ label, value, options, onChange }: Ch
           {label}
         </Text>
       ) : null}
-      <View className={cn('flex-row flex-wrap overflow-hidden rounded-md', SURFACE_CLASSNAME[4])}>
-        {items.map((item) => (
-          <ChoiceChip
-            key={item.value}
-            onSelect={onChange}
-            option={item}
-            selected={item.value === value}
-            testID={`story-choice-${label ? `${slug(label)}-` : ''}${slug(item.value)}`}
-          />
-        ))}
-      </View>
+      <ToggleGroup
+        items={items}
+        value={value}
+        onValueChange={handleChange}
+        variant="spaced"
+        size="sm"
+        testID={`story-choice${label ? `-${slug(label)}` : ''}`}
+      />
     </View>
   );
 }

@@ -21,7 +21,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { expect, userEvent, within } from 'storybook/test';
 import { centerOf, dragOnto, fireDrag, newDragTransfer } from '../../../__stories__/story-drag';
-import { Note } from '../../../__stories__/story-harness';
+import { Note, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
 import { Text } from '../../typography/Text/text';
 import { Dragzone } from '../Dragzone/dragzone';
@@ -150,18 +150,7 @@ function RowsDemo() {
           Drop here
         </Text>
       </Dragzone>
-      <View className="flex-row items-center gap-2">
-        <Pressable
-          className={`rounded-full px-3 py-1 ${showCustomGhost ? 'bg-primary' : 'bg-muted'}`}
-          onPress={() => setShowCustomGhost((v) => !v)}
-          testID="toggle-custom-ghost"
-        >
-          <Text size="xs" className={showCustomGhost ? 'text-primary-foreground' : ''}>
-            Custom ghost
-          </Text>
-        </Pressable>
-        <Note>Ghost: {showCustomGhost ? 'custom chip' : 'built-in default'}</Note>
-      </View>
+      <Toggle label="Custom ghost" onChange={setShowCustomGhost} value={showCustomGhost} />
       <Note testID={READOUT_TEST_ID}>{dropped}</Note>
       <Note testID={PAYLOAD_TEST_ID}>{payload}</Note>
       <Note>{HINT}</Note>

@@ -53,6 +53,17 @@ function borderedContentStyle(index: number, total: number, horizontal: boolean)
 }
 
 /**
+ * Resolves the press animation mode for a vertical bordered group. The first
+ * button nudges up, the last nudges down, and middle buttons squeeze inward
+ * horizontally — together they read as a stack compressing toward its centre.
+ */
+function verticalPressMode(isFirst: boolean, isLast: boolean) {
+  if (isFirst) return 'scaleXFirst' as const;
+  if (isLast) return 'scaleXLast' as const;
+  return 'scaleX' as const;
+}
+
+/**
  * Type guard that narrows a React node to an element whose props accept
  * `contentStyle`, `className`, and `pressMode`. Used by the bordered variant
  * to inject border, corner-radius, and press-animation overrides directly
@@ -61,7 +72,7 @@ function borderedContentStyle(index: number, total: number, horizontal: boolean)
 function isPressableElement(child: ReactNode): child is ReactElement<{
   className?: string;
   contentStyle?: StyleProp<ViewStyle>;
-  pressMode?: 'scale' | 'scaleY' | 'none';
+  pressMode?: 'scale' | 'scaleY' | 'scaleX' | 'scaleXFirst' | 'scaleXLast' | 'none';
 }> {
   return isValidElement(child);
 }
@@ -88,7 +99,8 @@ export interface ButtonGroupProps extends VariantProps<typeof container> {
  * Inner corner radii are zeroed via `contentStyle` so adjacent buttons sit
  * flush. Outer corners keep the interactive radius from the button's own
  * variant. Horizontal groups press down (`scaleY` + `translateY`); vertical
- * groups have no press animation.
+ * groups compress horizontally (`scaleX`), with the first button nudging up
+ * and the last nudging down.
  */
 export function ButtonGroup({
   variant = 'spaced',
@@ -125,15 +137,15 @@ export function ButtonGroup({
     const isFirst = index === 0;
     const isLast = index === total - 1;
 
-    // Borders go only on inner-facing sides so no perimeter border forms
-    // around the group.  Each non-last button contributes a single divider
-    // edge; adjacent buttons overlap 1 px to merge them.
+    // Borders go only on inner-facing sides: each non-last button contributes
+    // a trailing divider; non-first buttons suppress their leading border so
+    // adjacent edges never double up.
     let positionClass = 'flex-1';
     if (total > 1) {
-      if (isHorizontal && !isLast) positionClass += ' border-r border-border';
-      else if (!isLast) positionClass += ' border-b border-border';
+      if (isHorizontal && !isLast) positionClass += ' border-r border-border/50';
+      else if (!isLast) positionClass += ' border-b border-border/50';
 
-      if (!isFirst) positionClass += isHorizontal ? ' -ml-px' : ' -mt-px';
+      if (!isFirst) positionClass += isHorizontal ? ' border-l-0' : ' border-t-0';
     }
 
     if (!isPressableElement(child)) return child;
@@ -141,7 +153,7 @@ export function ButtonGroup({
     return cloneElement(child, {
       className: positionClass,
       contentStyle: borderedContentStyle(index, total, isHorizontal),
-      pressMode: isHorizontal ? 'scaleY' : 'none',
+      pressMode: isHorizontal ? 'scaleY' : verticalPressMode(isFirst, isLast),
     });
   });
 

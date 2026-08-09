@@ -26,9 +26,9 @@ const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
 
 const BUTTONS = [
-  { label: 'Left', variant: 'secondary' as const },
+  { label: 'Left', variant: 'primary' as const },
   { label: 'Center', variant: 'primary' as const },
-  { label: 'Right', variant: 'secondary' as const },
+  { label: 'Right', variant: 'primary' as const },
 ];
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper

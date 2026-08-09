@@ -11,7 +11,7 @@ import { CloseButton } from '../CloseButton/close-button';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 
 // biome-ignore lint/style/useExportsLast: placement type before INSTANT constant — collocated for readability
-export type MorphingModalPlacement = 'bottom' | 'center';
+export type MorphingModalPlacement = 'bottom' | 'center' | 'bottom-sheet';
 
 const INSTANT = { type: 'timing' as const, duration: 0 };
 
@@ -30,9 +30,17 @@ const styles = StyleSheet.create({
   positioner: { pointerEvents: 'box-none' },
 });
 
-function resolveEnterY(reduce: boolean, placement: MorphingModalProps['placement']): 0 | 20 | 40 {
+function resolveEnterY(reduce: boolean, placement: MorphingModalProps['placement']): 0 | 20 | 40 | 80 {
   if (reduce) return 0;
-  return placement === 'bottom' ? 40 : 20;
+  if (placement === 'bottom-sheet') return 80;
+  if (placement === 'bottom') return 40;
+  return 20;
+}
+
+function resolvePositionerClassName(placement: MorphingModalProps['placement']): string {
+  if (placement === 'bottom-sheet') return 'flex-1 items-stretch justify-end';
+  if (placement === 'bottom') return 'flex-1 items-center justify-end px-4 pb-8';
+  return 'flex-1 items-center justify-center px-4';
 }
 
 export type MorphingModalProps = {
@@ -68,7 +76,7 @@ export function MorphingModal({
   const open = viewId !== null;
   const reduce = useReducedMotion();
   const enterY = resolveEnterY(reduce, placement);
-  const enterScale = reduce ? 1 : 0.95;
+  const enterScale = reduce || placement === 'bottom-sheet' ? 1 : 0.95;
 
   const handleClose = useCallback(() => {
     onClose();
@@ -104,6 +112,8 @@ export function MorphingModal({
     if (contentHeight !== null && !morphing) setMorphing(true);
   }, [contentHeight, morphing]);
 
+  const positionerClassName = resolvePositionerClassName(placement);
+
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: shared-element morph requires coordinating clip, height-spring, and cross-fade branches in one render path
   const renderPanel = ({ open: isAnimOpen, onExitComplete }: OverlayShellContext) => (
     <AnimatePresence onExitComplete={onExitComplete}>
@@ -123,12 +133,7 @@ export function MorphingModal({
               testID={testID ? `${testID}-backdrop` : undefined}
             />
           </MotiView>
-          <View
-            style={styles.positioner}
-            className={
-              placement === 'bottom' ? 'flex-1 items-center justify-end px-4 pb-8' : 'flex-1 items-center justify-center px-4'
-            }
-          >
+          <View style={styles.positioner} className={positionerClassName}>
             <MotiView
               accessibilityLabel={accessibilityLabel}
               from={{ opacity: 0, translateY: enterY, scale: enterScale }}
@@ -136,7 +141,8 @@ export function MorphingModal({
               exit={{ opacity: 0, translateY: enterY, scale: reduce ? 1 : 0.98 }}
               transition={reduce ? { type: 'timing', duration: 180, easing: EASE_OUT } : SPRING_PANEL}
               className={cn(
-                'w-full max-w-sm overflow-hidden rounded-modal border border-border',
+                'w-full overflow-hidden border border-border',
+                placement === 'bottom-sheet' ? 'rounded-t-modal' : 'max-w-sm rounded-modal',
                 surfaceBackground(elevation),
                 elevatedShadow(elevation),
               )}

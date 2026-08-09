@@ -24,7 +24,7 @@ const meta = {
   parameters: { layout: 'centered' },
   args: { viewId: null, onClose: fn(), children: null, placement: 'bottom' },
   argTypes: {
-    placement: { control: 'select', options: ['bottom', 'center'] },
+    placement: { control: 'select', options: ['bottom', 'center', 'bottom-sheet'] },
   },
 } satisfies Meta<typeof MorphingModal>;
 
@@ -205,10 +205,11 @@ function renderModalView(view: WalletView, callbacks: ModalViewCallbacks): React
 const PLACEMENTS = [
   { value: 'bottom', label: 'Bottom' },
   { value: 'center', label: 'Center' },
-] as const satisfies readonly { value: 'bottom' | 'center'; label: string }[];
+  { value: 'bottom-sheet', label: 'Bottom Sheet' },
+] as const satisfies readonly { value: 'bottom' | 'center' | 'bottom-sheet'; label: string }[];
 
 type MorphingModalDemoProps = {
-  placement: 'bottom' | 'center';
+  placement: 'bottom' | 'center' | 'bottom-sheet';
   elevation?: SurfaceLevel;
   kind?: TriggerState['kind'];
   size?: TriggerState['size'];
@@ -236,7 +237,7 @@ function MorphingModalDemo({ placement, elevation = 6, kind, size, shape, testID
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function MorphingModalPlayground() {
-  const [placement, setPlacement] = useState<'bottom' | 'center'>('bottom');
+  const [placement, setPlacement] = useState<'bottom' | 'center' | 'bottom-sheet'>('bottom');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const trigger = useTriggerState();
   return (

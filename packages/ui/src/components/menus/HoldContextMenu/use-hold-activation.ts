@@ -223,6 +223,21 @@ export function useHoldActivation({
     latest.current.afterHold?.();
   }, [measure]);
 
+  /**
+   * Opens the menu from a DOM contextmenu event — right-click, Shift+F10, or the
+   * ContextMenu key on web. Unlike `openMenu`, this does NOT fire `afterHold`
+   * because a right-click is not a hold gesture; it only opens the context menu.
+   * A consumer's multi-select toggle rides the hold gesture alone, never the
+   * right-button.
+   */
+  const openMenuFromContextMenu = useCallback(() => {
+    if (!latest.current.enabled) return;
+    if (!latest.current.isControlled) setInternalOpen(true);
+    latest.current.onOpenChange?.(true);
+    fireHaptics(latest.current.haptics);
+    measure();
+  }, [measure]);
+
   const close = useCallback(() => {
     if (!latest.current.isControlled) setInternalOpen(false);
     latest.current.onOpenChange?.(false);
@@ -289,12 +304,15 @@ export function useHoldActivation({
       // Don't let an enclosing trigger (a row inside a menu-bearing list) open
       // its own menu for a right-click that landed on this one.
       event.stopPropagation();
-      openMenu();
+      // Right-click opens the menu only — the consumer's `afterHold` action
+      // (e.g. a multi-select toggle) rides the hold gesture alone, never the
+      // right button, so `openMenuFromContextMenu` skips it.
+      openMenuFromContextMenu();
     };
 
     node.addEventListener('contextmenu', handler);
     return () => node.removeEventListener('contextmenu', handler);
-  }, [openOnContextMenu, openMenu, wrapperRef]);
+  }, [openOnContextMenu, openMenuFromContextMenu, wrapperRef]);
 
   const isHold = activateOn === 'hold';
 

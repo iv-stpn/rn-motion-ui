@@ -7,7 +7,7 @@
 //
 // Internal to `ReorderableList`; not exported from the package.
 
-import { type ReactNode, useCallback, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { Draggable } from '../Draggable/draggable';
@@ -89,6 +89,17 @@ export function ReorderableItem({
     });
   }, [itemKey, onMeasure]);
 
+  // Mirror Dragzone's own useEffect: `onLayout` does not fire reliably in the test
+  // environment (JSDOM), so measure the zone on mount to populate `_rects` before a
+  // drag can land here. The `measure()` resolves on a timer — `liftDrag`'s
+  // `await settle()` drains that timer, keeping the test deterministic.
+  // biome-ignore lint/plugin: measuring a Dragzone on mount; same pattern Dragzone uses for its own registration
+  useEffect(() => {
+    zoneRef.current?.measure().then((rect) => {
+      if (rect) onMeasure(itemKey, rect);
+    });
+  }, [itemKey, onMeasure]);
+
   // Reject self-drops: the dragged item's key is in the transfer.
   // Guard `drag === null` first — an external payload has no in-library source
   // and should never land on a list item.
@@ -113,7 +124,6 @@ export function ReorderableItem({
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       onLayout={handleLayout}
-      testID={testID}
     >
       <Draggable
         className={cn(webHover && 'cursor-grab')}

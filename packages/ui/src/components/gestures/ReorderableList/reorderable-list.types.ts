@@ -38,36 +38,12 @@ export type ReorderableListProps<T> = {
    * Renders one item. Receives the item, its visual index, and whether it is
    * the one currently being dragged — the flag to dim it at its source position.
    *
-   * In `'ghost'` mode, `isDragging` is also `true` for the ghost placeholder
-   * rendered at the dragged item's position in the preview order.
-   *
    * The returned node is wrapped in the drag source and drop target, so it
    * needs no drag props of its own.
    */
   renderItem: (item: T, index: number, isDragging: boolean) => ReactNode;
   /** Stable unique key per item. Used as the drag payload and for React keys. */
   keyExtractor: (item: T, index: number) => string;
-  /**
-   * Optional custom ghost content for the dragged item. When set, the
-   * floating drag preview uses this node instead of the rendered item.
-   *
-   * Useful in `'ghost'` mode to make the flying copy visually distinct —
-   * for example, a rounded card version of a grouped row.
-   */
-  renderPreview?: (item: T, index: number) => ReactNode;
-  /**
-   * How the list communicates the landing spot during a drag.
-   *
-   * - `'indicator'` (default) — an insertion line floats at the projected
-   *   landing spot. Items stay in place until drop, then animate with FLIP.
-   * - `'ghost'` — items visually reorder in real-time during the drag. The
-   *   dragged item is dimmed at its preview position (passed to `renderItem`
-   *   as `isDragging: true`). No insertion indicator is shown. The reorder
-   *   commits on drop; cancelling reverts to the original order.
-   *
-   * @default 'indicator'
-   */
-  mode?: 'indicator' | 'ghost';
   /**
    * The MIME type written to the drag transfer for each item.
    * @default 'application/x-reorderable-item'

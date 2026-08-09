@@ -590,10 +590,7 @@ export function StatefulButton({
   // compensate for the extra width the icon slot adds. Derived from the family's
   // padding rather than tabulated, so retuning a `--spacing-interactive-pad-*` token
   // keeps the squeeze proportional (and `icon`, which has no padding, stays 0).
-  const squeezeClass =
-    state === 'success' || state === 'error'
-      ? SQUEEZE_PADDING_CLASS[size ?? 'md']
-      : undefined;
+  const squeezeClass = state === 'success' || state === 'error' ? SQUEEZE_PADDING_CLASS[size ?? 'md'] : undefined;
 
   const stateText =
     state === 'loading'

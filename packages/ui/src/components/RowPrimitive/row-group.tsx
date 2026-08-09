@@ -2,8 +2,8 @@
 import { Children, Fragment, type ReactNode } from 'react';
 import { View, type ViewProps } from 'react-native';
 import { cn } from '../../lib/cn';
-import type { ItemRowAdornment, ItemRowSize } from './item-row';
 import { elevated } from '../../lib/elevated';
+import type { ItemRowAdornment, ItemRowSize } from './item-row';
 
 // ---------------------------------------------------------------------------
 // Shared internals

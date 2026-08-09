@@ -29,7 +29,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.7",
     "@changesets/cli": "2.31.0",
-    "@iv-stpn/biome-config": "1.3.1",
+    "@iv-stpn/biome-config": "1.3.2",
     "biome-one-liner-plugin": "1.4.11",
     "biome-react-best-practices-plugin": "2.0.1",
     "biome-typescript-best-practices-plugin": "1.2.3",

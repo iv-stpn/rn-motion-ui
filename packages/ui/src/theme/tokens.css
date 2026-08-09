@@ -58,7 +58,7 @@
  * Four tokens partition corner curves by surface category, so each family can be
  * retuned independently without affecting the others:
  *
- * - `--radius-interactive` (10 px) — buttons, inputs, tabs, button groups.
+ * - `--radius-interactive` (6 px) — buttons, inputs, tabs, button groups.
  * - `--radius-card` (16 px) — card containers.
  * - `--radius-menu` (16 px) — HoverMenu, Dropdown, HoldContextMenu overlays.
  * - `--radius-modal` (16 px) — Modals, Popovers, MorphingModal, BottomSheet.

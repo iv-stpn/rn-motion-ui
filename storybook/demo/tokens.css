@@ -87,7 +87,7 @@
  *
  * Four tokens partition corner curves by surface category:
  *
- * - `--radius-interactive` (10 px) — buttons, inputs, tabs, button groups.
+ * - `--radius-interactive` (6 px) — buttons, inputs, tabs, button groups.
  * - `--radius-card` (16 px) — card containers.
  * - `--radius-menu` (16 px) — HoverMenu, Dropdown, HoldContextMenu overlays.
  * - `--radius-modal` (16 px) — Modals, Popovers, MorphingModal, BottomSheet.
@@ -261,13 +261,13 @@
      instead. See lib/radius.ts for the pixel constants used by the effect
      layers. One scheme only: geometry doesn't flip with the theme, so there
      are no dark-mode counterparts below. */
-  --spacing-interactive-sm: 28px;
-  --spacing-interactive-md: 36px;
-  --spacing-interactive-lg: 44px;
+  --spacing-interactive-sm: 24px;
+  --spacing-interactive-md: 32px;
+  --spacing-interactive-lg: 40px;
   --spacing-interactive-pad-sm: 10px;
   --spacing-interactive-pad-md: 14px;
-  --spacing-interactive-pad-lg: 18px;
-  --radius-interactive: 10px;
+  --spacing-interactive-pad-lg: 22px;
+  --radius-interactive: 6px;
   --radius-card: 16px;
   --radius-menu: 16px;
   --radius-modal: 16px;

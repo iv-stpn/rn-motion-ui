@@ -15,7 +15,7 @@
 type InteractiveSize = 'sm' | 'md' | 'lg' | 'icon';
 
 /** Corner radius in px for interactive components — buttons, inputs, tabs, button groups. */
-export const INTERACTIVE_RADIUS = 10;
+export const INTERACTIVE_RADIUS = 6;
 
 /** Corner radius in px for card containers. */
 export const CARD_RADIUS = 16;
@@ -41,7 +41,7 @@ export const ROUNDED_MODAL = 'rounded-modal' as const;
 // ── Height ────────────────────────────────────────────────────────────────────
 
 /** Height in px per interactive size. */
-export const INTERACTIVE_HEIGHT = { sm: 28, md: 36, lg: 44 } as const;
+export const INTERACTIVE_HEIGHT = { sm: 24, md: 32, lg: 40 } as const;
 
 /** Tailwind class: height per interactive size. Static literals so the
  *  uniwind/Tailwind scanner registers them. */
@@ -55,7 +55,7 @@ export const H_INTERACTIVE: Record<InteractiveSize, string> = {
 // ── Padding ──────────────────────────────────────────────────────────────────
 
 /** Horizontal padding in px per interactive size. */
-export const INTERACTIVE_PAD_X = { sm: 10, md: 14, lg: 18 } as const;
+export const INTERACTIVE_PAD_X = { sm: 10, md: 14, lg: 22 } as const;
 
 /** Tailwind class: horizontal padding per interactive size. Static literals so
  *  the uniwind/Tailwind scanner registers them. */

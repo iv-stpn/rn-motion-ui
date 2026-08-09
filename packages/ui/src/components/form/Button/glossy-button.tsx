@@ -804,12 +804,8 @@ export function GlossyButton({
             `px-0.5` inset here; dropped so the label sits at exactly the family's
             padding and a glossy key can be swapped for a flat Button in place.) */}
         <View style={{ zIndex: FX_Z.label }}>{buttonContent}</View>
-        {ripple && !reduce ? (
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: FX_Z.ripples }]}>
-            {/* White shimmer over a dark face, dark shimmer over a light one. */}
-            <ButtonRipples ripples={ripples} filled={slots.faceIsDark} />
-          </View>
-        ) : null}
+        {/* White shimmer over a dark face, dark shimmer over a light one. */}
+        <ButtonRipples ripples={ripples} filled={slots.faceIsDark} zIndex={FX_Z.ripples} />
       </Pressable>
     </MotiView>
   );

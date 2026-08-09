@@ -6,7 +6,7 @@
 // and passes the results in.
 import { Children, isValidElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { GestureResponderEvent, LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -28,7 +28,7 @@ import { BUTTON_GAP_CLASSNAME } from './button-scale';
 
 type Ripple = { id: number; x: number; y: number; size: number };
 
-type ButtonRipplesProps = { ripples: Ripple[]; filled: boolean };
+type ButtonRipplesProps = { ripples: Ripple[]; filled: boolean; zIndex?: number };
 
 type UsePressRipplesArgs = { ripple: boolean; reduce: boolean; trackDims: boolean };
 
@@ -63,7 +63,7 @@ function renderChild(child: ReactNode, className: string, labelClassName?: strin
 export type PressAnimateOpts = {
   pressed: boolean;
   blocked: boolean;
-  pressMode: 'scale' | 'scaleY' | 'none';
+  pressMode: 'scale' | 'scaleY' | 'scaleX' | 'scaleXFirst' | 'scaleXLast' | 'none';
   pressScale: number;
 };
 
@@ -73,11 +73,18 @@ export type PressAnimateOpts = {
  * it can merge additional properties (e.g. GlossyButton's opacity).
  */
 // biome-ignore lint/style/useComponentExportOnlyModules: shared press-animation helper consumed by every button component alongside the other machinery already exempted below
-export function pressAnimate(opts: PressAnimateOpts): { scale: number } | { scaleY: number; translateY: number } {
+export function pressAnimate(opts: PressAnimateOpts) {
   const { pressed, blocked, pressMode, pressScale } = opts;
   if (pressMode === 'none' || blocked) return { scale: 1 };
-  if (!pressed) return pressMode === 'scaleY' ? { scaleY: 1, translateY: 0 } : { scale: 1 };
+  if (!pressed) {
+    if (pressMode === 'scaleY') return { scaleY: 1, translateY: 0 };
+    if (pressMode === 'scaleX' || pressMode === 'scaleXFirst' || pressMode === 'scaleXLast') return { scaleX: 1 };
+    return { scale: 1 };
+  }
   if (pressMode === 'scaleY') return { scaleY: 0.96, translateY: 2 };
+  if (pressMode === 'scaleX') return { scaleX: 0.96 };
+  if (pressMode === 'scaleXFirst') return { scaleX: 0.96, translateY: -1 };
+  if (pressMode === 'scaleXLast') return { scaleX: 0.96, translateY: 1 };
   return { scale: pressScale };
 }
 
@@ -97,6 +104,11 @@ export type { ButtonShape, ButtonSize } from './button-scale';
  */
 export type BaseButtonProps = {
   children?: ReactNode;
+  /**
+   * Opaque identifier consumed by container components (e.g. ToggleGroup) to
+   * track which child is selected. Not rendered; purely a signalling prop.
+   */
+  value?: string;
   /** Node rendered to the left of the button label. */
   leftAdornment?: ReactNode;
   /** Node rendered to the right of the button label. */
@@ -111,10 +123,13 @@ export type BaseButtonProps = {
   /**
    * Shape of the press animation.
    * - `scale` (default) — uniform pressScale, the current behaviour.
-   * - `scaleY` — compresses vertically and nudges down (segmented controls).
+   * - `scaleY` — compresses vertically and nudges down (horizontal segmented controls).
+   * - `scaleX` — compresses horizontally (vertical segmented controls, middle buttons).
+   * - `scaleXFirst` — compresses horizontally and nudges up (first button in a vertical group).
+   * - `scaleXLast` — compresses horizontally and nudges down (last button in a vertical group).
    * - `none` — no press animation at all.
    */
-  pressMode?: 'scale' | 'scaleY' | 'none';
+  pressMode?: 'scale' | 'scaleY' | 'scaleX' | 'scaleXFirst' | 'scaleXLast' | 'none';
   /** When true, skip the 0.5 opacity applied to disabled buttons. */
   noDisabledOpacity?: boolean;
   /** Colour shown as an absolutely-positioned overlay behind the button content. */
@@ -137,29 +152,43 @@ export type BaseButtonProps = {
   testID?: string;
 };
 
-// Material-style press ripples. `filled` picks a white shimmer for dark filled
-// backgrounds vs a dark shimmer for light ones; both are theme-exempt overlays.
-export function ButtonRipples({ ripples, filled }: ButtonRipplesProps) {
-  return ripples.map((rp) => (
-    <MotiView
-      key={rp.id}
-      from={{ scale: 0, opacity: 0.3 }}
-      animate={{ scale: 1, opacity: 0 }}
-      transition={{ type: 'timing', duration: 600 }}
-      style={{
-        pointerEvents: 'none',
-        position: 'absolute',
-        left: rp.x - rp.size / 2,
-        top: rp.y - rp.size / 2,
-        width: rp.size,
-        height: rp.size,
-        borderRadius: rp.size / 2,
-        backgroundColor: filled
-          ? 'rgba(255,255,255,0.35)' /* theme-exempt: white shimmer on filled bg */
-          : 'rgba(0,0,0,0.12)' /* theme-exempt: dark shimmer on light bg */,
-      }}
-    />
-  ));
+/**
+ * Material-style press ripples. `filled` picks a white shimmer for dark filled
+ * backgrounds vs a dark shimmer for light ones; both are theme-exempt overlays.
+ *
+ * Renders a single absolutely-positioned container so every ripple MotiView
+ * shares the same coordinate origin (the Pressable it sits inside) and the same
+ * z-index layer — a bare array of absolutely-positioned siblings would each
+ * position relative to its own parent, and a nested wraper (GlossyButton's old
+ * approach) shifts the origin to the wrapper rather than to the Pressable whose
+ * `locationX`/`locationY` the coordinates came from.
+ */
+export function ButtonRipples({ ripples, filled, zIndex }: ButtonRipplesProps) {
+  if (ripples.length === 0) return null;
+
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, zIndex === undefined ? null : { zIndex }]}>
+      {ripples.map((rp) => (
+        <MotiView
+          key={rp.id}
+          from={{ scale: 0, opacity: 0.3 }}
+          animate={{ scale: 1, opacity: 0 }}
+          transition={{ type: 'timing', duration: 600 }}
+          style={{
+            position: 'absolute',
+            left: rp.x - rp.size / 2,
+            top: rp.y - rp.size / 2,
+            width: rp.size,
+            height: rp.size,
+            borderRadius: rp.size / 2,
+            backgroundColor: filled
+              ? 'rgba(255,255,255,0.35)' /* theme-exempt: white shimmer on filled bg */
+              : 'rgba(0,0,0,0.12)' /* theme-exempt: dark shimmer on light bg */,
+          }}
+        />
+      ))}
+    </View>
+  );
 }
 
 // Owns the tap interaction: the `pressed` flag (drives the scale spring), the live

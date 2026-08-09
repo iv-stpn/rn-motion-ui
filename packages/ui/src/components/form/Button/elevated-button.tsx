@@ -95,6 +95,9 @@ const WHITE_BG_HOVER = 'bg-muted';
 const WHITE_LABEL_REST = 'text-muted-foreground';
 const WHITE_LABEL_HOVER = 'text-foreground';
 
+/** Stacking layer for press ripples — sits above the gloss/rim SVG highlights. */
+const RIPPLE_Z = 1;
+
 // Disabled chip — flat weak plate, disabled-grey label, no gloss/shadow.
 const DISABLED_BG = 'bg-muted';
 const DISABLED_LABEL = 'text-muted-foreground';
@@ -409,7 +412,9 @@ export function ElevatedButton({
           <ElevatedHighlights id={gradientId} hovered={hovered} radiusClass={radiusClass} width={dims.w} height={dims.h} />
         ) : null}
         {buttonContent}
-        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={variant !== 'white' && variant !== 'gray'} /> : null}
+        {ripple && !reduce ? (
+          <ButtonRipples ripples={ripples} filled={variant !== 'white' && variant !== 'gray'} zIndex={RIPPLE_Z} />
+        ) : null}
       </Pressable>
     </MotiView>
   );

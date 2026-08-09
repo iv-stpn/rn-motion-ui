@@ -149,7 +149,7 @@ export type LoadMoreFooterProps = {
 export function LoadMoreFooter({ onLoadMore, loadMoreLabel, footerClassName }: LoadMoreFooterProps) {
   return (
     <View className={cn('items-stretch border-border border-t px-4 py-2.5', footerClassName)}>
-      <Button variant="outline" size="sm" onPress={onLoadMore} fitWidth={true} accessibilityLabel={loadMoreLabel}>
+      <Button variant="ghost" size="sm" onPress={onLoadMore} fitWidth={true} accessibilityLabel={loadMoreLabel}>
         {loadMoreLabel}
       </Button>
     </View>

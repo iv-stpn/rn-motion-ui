@@ -29,7 +29,7 @@ import type {
   FileSystemMoveEvent,
 } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
-import { FileSystemDropOutline, FileSystemDropzone } from './file-system-dropzone';
+import { FileSystemDropzone } from './file-system-dropzone';
 import { FileSystemHoverHighlight, FS_HOVER_TEST_ID, useFileSystemRowHover } from './file-system-hover';
 import { filePreviewUrls, folderHasChildren } from './file-system-index';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
@@ -93,7 +93,7 @@ function columnRowsInRect(rect: FileSystemMarqueeRect, entries: FileSystemEntry[
  * The tint a row in flight keeps for the length of the drag — see the list view's
  * note. Every row the drag carries takes it, across every pane it spans.
  */
-const LIFTING_ROW_CLASS = 'rounded-md bg-surface-hover';
+const LIFTING_ROW_CLASS = 'rounded-md bg-muted';
 
 /**
  * The mark over a whole pane a release would land in. Absolutely positioned, so it
@@ -112,7 +112,7 @@ function ColumnDropSurface({ external }: ColumnDropSurfaceProps) {
     <View
       className={cn(
         'pointer-events-none absolute inset-0 z-[3]',
-        external ? 'border border-foreground/20 border-dashed bg-foreground/[0.03]' : 'rounded-lg border-2 border-primary',
+        external ? 'border border-foreground/20 border-dashed bg-foreground/[0.03]' : 'rounded-lg border-2 border-info',
       )}
     />
   );
@@ -239,56 +239,56 @@ function ColumnRow({
 
   const isLifting = useIsLifting(entry.path);
 
-  const body = (
-    // No `marginBottom` here: see the comment on the outermost element below.
-    <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: COLUMN_ROW_HEIGHT }}>
-      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
-        <Pressable
-          accessibilityLabel={entry.name}
-          accessibilityRole="button"
-          accessibilityState={{ selected: isSelected }}
-          // See ListRow: native reads the state, web reads the ARIA attribute.
-          aria-selected={isSelected}
-          className={cn(
-            'flex-row items-center gap-2 rounded-md px-2',
-            isSelected && 'bg-info',
-            !isSelected && isOnTrail && 'bg-surface-selected',
-            !(isSelected || isOnTrail) && 'hover:bg-surface-hover',
-          )}
-          onPress={handlePress}
-          onPressIn={handlePressIn}
-          style={{ height: COLUMN_ROW_HEIGHT }}
-          testID={testID}
-        >
-          <ColumnRowGlyph entry={entry} isSelected={isSelected} renderEntryIcon={renderEntryIcon} />
-          {entry.pinnedAt ? <Pin color={isSelected ? colors.white : colors.primary} size={COLUMN_PIN_ICON_SIZE} /> : null}
-          <Text className={cn('flex-1', isSelected && 'text-white')} numberOfLines={1} size="sm">
-            {entry.name}
-          </Text>
-          {entry.favoritedAt ? <Heart color={isSelected ? colors.white : colors.danger} size={COLUMN_FAV_ICON_SIZE} /> : null}
-          {hasChildren ? (
-            <ChevronRight color={isSelected ? colors.white : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
-          ) : null}
-        </Pressable>
-      </HoldContextMenu>
-    </View>
-  );
+  const renderBody = (isOver: boolean) => {
+    // A selected row muted during drag; a drop target lit like a selection.
+    const isActive = (isSelected && !isLifting) || isOver;
+
+    return (
+      // No `marginBottom` here: see the comment on the outermost element below.
+      <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: COLUMN_ROW_HEIGHT }}>
+        <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+          <Pressable
+            accessibilityLabel={entry.name}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSelected }}
+            // See ListRow: native reads the state, web reads the ARIA attribute.
+            aria-selected={isSelected}
+            className={cn(
+              'flex-row items-center gap-2 rounded-md px-2',
+              isActive && 'bg-info',
+              !isActive && isOnTrail && 'bg-surface-selected',
+              !(isActive || isOnTrail) && 'hover:bg-surface-hover',
+            )}
+            onPress={handlePress}
+            onPressIn={handlePressIn}
+            style={{ height: COLUMN_ROW_HEIGHT }}
+            testID={testID}
+          >
+            <ColumnRowGlyph entry={entry} isSelected={isActive} renderEntryIcon={renderEntryIcon} />
+            {entry.pinnedAt ? <Pin color={isActive ? colors.white : colors.primary} size={COLUMN_PIN_ICON_SIZE} /> : null}
+            <Text className={cn('flex-1', isActive && 'text-white')} numberOfLines={1} size="sm">
+              {entry.name}
+            </Text>
+            {entry.favoritedAt ? <Heart color={isActive ? colors.white : colors.danger} size={COLUMN_FAV_ICON_SIZE} /> : null}
+            {hasChildren ? (
+              <ChevronRight color={isActive ? colors.white : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
+            ) : null}
+          </Pressable>
+        </HoldContextMenu>
+      </View>
+    );
+  };
 
   // The gap belongs here so the zone's box is exactly the row's: a zone that
   // included the gap would claim a pointer sitting between two rows.
   return entry.kind === 'folder' ? (
     <View style={{ marginBottom: COLUMN_ROW_GAP }}>
       <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
-        {({ isOver }: DragzoneRenderState) => (
-          <>
-            {body}
-            {isOver ? <FileSystemDropOutline /> : null}
-          </>
-        )}
+        {({ isOver }: DragzoneRenderState) => renderBody(isOver)}
       </FileSystemDropzone>
     </View>
   ) : (
-    <View style={{ marginBottom: COLUMN_ROW_GAP }}>{body}</View>
+    <View style={{ marginBottom: COLUMN_ROW_GAP }}>{renderBody(false)}</View>
   );
 }
 

@@ -10,7 +10,7 @@ import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
 import { type ThemeToken, useThemeColors } from '../../../theme/use-theme-color';
 import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
-import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadius, LABEL_TEXT_CLASS } from './button-scale';
+import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass, LABEL_TEXT_CLASS } from './button-scale';
 
 /**
  * Physically-lit key: a face stacked with absolutely-positioned effect layers
@@ -226,9 +226,9 @@ const NEUTRAL_LIGHT: GlossySlots = {
 const NEUTRAL_DARK: GlossySlots = {
   // Back-lit rather than white-painted: the edges go translucent white, and the
   // top edge is the bright one (the light is above the key, not below it).
-  edgeTop: white(0.16),
+  edgeTop: white(0.1),
   edgeBottom: white(0.04),
-  rim: white(0.16),
+  rim: white(0.1),
   // Nothing for a spotlight to add over a dark face. The slots stay so the
   // layer still exists and still fades on press — only the colour is gone.
   spotTop: 'transparent',
@@ -246,15 +246,11 @@ const NEUTRAL_DARK: GlossySlots = {
 
 // ── hand-authored recipes: inverse ──────────────────────────────────────────
 //
-// The "other scheme" key: on a light page it renders as a dark-theme key (light
-// slab, white rim, dark label), and on a dark page it renders as a light-theme
-// key (dark slab, black rim, light label). The two tables below define what an
-// inverse key looks like in each scheme; `resolveFace` and `glossyRecipe` select
-// the *opposite* one so the key always looks like it belongs to the other theme.
-//
-// The face is `surface-1` (the page colour) and the label is `foreground` — the
-// slab is the page punched through to the opposite theme's foreground, which is
-// what makes it the loudest key in the set no matter what a consumer retints.
+// The high-contrast slab, and the one variant deliberately *not* `primary`:
+// `primary` is the consumer's brand token, designed to be overridden, so a key
+// built on it can't promise contrast. `inverse` is built on `foreground` over
+// `surface` — the two colours a theme guarantees read against each other — so it
+// stays the loudest key in the set no matter what a consumer retints.
 //
 // Both edges are inherited from the neutral root in the web source rather than
 // re-declared, so they're spread in here for the same reason.
@@ -375,7 +371,7 @@ function derivedDark(lightness: number, chroma: number, hue: number): GlossySlot
     // dark page lights the key from outside, and that sheen doesn't care what
     // colour it lands on.
     edgeBottom: white(0.08),
-    rim: white(0.32),
+    rim: white(0.2),
     castNear: cast,
     castFar: cast,
     faceIsDark: lightness < CONTENT_LIGHTNESS_SWITCH,
@@ -444,17 +440,12 @@ function resolveFace(variant: GlossyVariant, color: string | undefined, colors: 
       return { paint: glass, base: compositeOver(glass, page), content: colors.foreground, kind: 'neutral' };
     }
     case 'inverse': {
-      // Inverse renders the key as it would appear in the *opposite* scheme: on a
-      // light page it shows the dark-theme key (near-white slab, dark label,
-      // white-rim lighting), and on a dark page it shows the light-theme key
-      // (near-black slab, light label, black-rim lighting).
-      //
-      // `surface-1` on the current page approximates `foreground` of the opposite
-      // scheme — near-white on a light page (≈ dark foreground), the dark surface
-      // on a dark page (≈ light foreground). Similarly `foreground` of the current
-      // page approximates `surface-1` of the opposite scheme.
-      const paint = page;
-      return { paint, base: paint, content: colors.foreground, kind: 'inverse' };
+      // `foreground` over `surface-1`, both straight from the theme, which is
+      // what makes this the one key whose contrast a retint can't break. The
+      // label is the *page* rather than `surface`, so it reads as a hole punched
+      // through the slab to the backdrop behind it.
+      const paint = colors.foreground;
+      return { paint, base: paint, content: page, kind: 'inverse' };
     }
     case 'gray':
       return { paint: GRAY_FILL, base: GRAY_FILL, content: GRAY_CONTENT, kind: 'derived' };
@@ -468,11 +459,10 @@ function resolveFace(variant: GlossyVariant, color: string | undefined, colors: 
 /** The whole slot table for a face: hand-authored pair, or derived from the colour. */
 function glossyRecipe(kind: FaceKind, base: string, pageDark: boolean): GlossySlots {
   if (kind === 'neutral') return pageDark ? NEUTRAL_DARK : NEUTRAL_LIGHT;
-  // `inverse` uses the *opposite* page's lighting — on a light page it shows the
-  // dark-theme key, on a dark page it shows the light-theme key. The derived
-  // cutoffs would misread the face and flip it straight back, so it's handled
-  // here directly with the page branch reversed.
-  if (kind === 'inverse') return pageDark ? INVERSE_LIGHT : INVERSE_DARK;
+  // `inverse` branches on the page alone — its face already flipped with it, and
+  // running it through the derived cutoffs would read a near-black light-theme
+  // face as "pinned against the page" and flip it straight back.
+  if (kind === 'inverse') return pageDark ? INVERSE_DARK : INVERSE_LIGHT;
   return derivedRecipe(base, pageDark);
 }
 
@@ -557,14 +547,18 @@ function domeStops({ domeTop, domeBottom }: GlossySlots): [DomeStop, DomeStop] {
   return [CLEAR_STOP, CLEAR_STOP];
 }
 
-type DomeProps = { id: string; radius: number; slots: GlossySlots };
+type DomeProps = { id: string; radiusClass: string; slots: GlossySlots };
 
 /** The dome gradient — SVG, since RN has no CSS gradients. Constant: it survives
  *  the press and the disabled state, exactly as the web's `::before` does. */
-function GlossyDome({ id, radius, slots }: DomeProps) {
+function GlossyDome({ id, radiusClass, slots }: DomeProps) {
   const [top, bottom] = domeStops(slots);
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden', zIndex: FX_Z.dome }]}>
+    <View
+      pointerEvents="none"
+      className={cn(radiusClass, 'overflow-hidden')}
+      style={[StyleSheet.absoluteFill, { zIndex: FX_Z.dome }]}
+    >
       <Svg width="100%" height="100%">
         <Defs>
           <LinearGradient id={`${id}-dome`} x1="0" y1="0" x2="0" y2="1">
@@ -583,7 +577,7 @@ type Fade = { type: 'timing'; duration: number };
 
 type LayersProps = {
   id: string;
-  radius: number;
+  radiusClass: string;
   slots: GlossySlots;
   /** 1 at rest, 0 while pressed or flattened — the whole lit stack but the rim. */
   lifted: 0 | 1;
@@ -601,8 +595,7 @@ type LayersProps = {
  * state and takes no decisions, and the zIndex ladder is what orders it, not
  * this nesting.
  */
-function GlossyLayers({ id, radius, slots, lifted, fade, pressed, tint, backdropColor }: LayersProps) {
-  const rounded = { borderRadius: radius };
+function GlossyLayers({ id, radiusClass, slots, lifted, fade, pressed, tint, backdropColor }: LayersProps) {
   return (
     <>
       {/* State backdrop — sits directly on the face, under every lit slot, so a
@@ -620,16 +613,22 @@ function GlossyLayers({ id, radius, slots, lifted, fade, pressed, tint, backdrop
         animate={{ opacity: lifted }}
         transition={fade}
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, rounded, { boxShadow: spotShadow(slots), zIndex: FX_Z.spots }]}
+        className={radiusClass}
+        style={[StyleSheet.absoluteFill, { boxShadow: spotShadow(slots), zIndex: FX_Z.spots }]}
       />
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, rounded, { boxShadow: rimShadow(slots), zIndex: FX_Z.rim }]} />
+      <View
+        pointerEvents="none"
+        className={radiusClass}
+        style={[StyleSheet.absoluteFill, { boxShadow: rimShadow(slots), zIndex: FX_Z.rim }]}
+      />
       <MotiView
         animate={{ opacity: lifted }}
         transition={fade}
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, rounded, { boxShadow: edgeShadow(slots), zIndex: FX_Z.edges }]}
+        className={radiusClass}
+        style={[StyleSheet.absoluteFill, { boxShadow: edgeShadow(slots), zIndex: FX_Z.edges }]}
       />
-      <GlossyDome id={id} radius={radius} slots={slots} />
+      <GlossyDome id={id} radiusClass={radiusClass} slots={slots} />
       {/* Hover/press tint. Only the opacity animates — the colour snaps from hover
           to active in `style`, since each carries its own alpha and interpolating
           between them would dip through the wrong value. */}
@@ -637,11 +636,8 @@ function GlossyLayers({ id, radius, slots, lifted, fade, pressed, tint, backdrop
         animate={{ opacity: tint }}
         transition={fade}
         pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          rounded,
-          { backgroundColor: pressed ? slots.tintActive : slots.tintHover, zIndex: FX_Z.tint },
-        ]}
+        className={radiusClass}
+        style={[StyleSheet.absoluteFill, { backgroundColor: pressed ? slots.tintActive : slots.tintHover, zIndex: FX_Z.tint }]}
       />
     </>
   );
@@ -725,7 +721,7 @@ export function GlossyButton({
   // SVG gradient ids must be unique per instance (they land in one shared
   // document on web). useId can emit ':', illegal in url(#…), so strip it.
   const gradientId = useId().replace(/:/g, '');
-  const radius = buttonRadius(shape, size);
+  const radiusClass = buttonRadiusClass(shape);
 
   const { pressed, ripples, onLayout, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -775,7 +771,8 @@ export function GlossyButton({
         animate={{ opacity: lifted }}
         transition={fade}
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { borderRadius: radius, boxShadow: castShadow(slots) }]}
+        className={radiusClass}
+        style={[StyleSheet.absoluteFill, { boxShadow: castShadow(slots) }]}
       />
       <Pressable
         accessibilityRole="button"
@@ -795,7 +792,7 @@ export function GlossyButton({
       >
         <GlossyLayers
           id={gradientId}
-          radius={radius}
+          radiusClass={radiusClass}
           slots={slots}
           lifted={lifted}
           fade={fade}

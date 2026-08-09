@@ -101,12 +101,12 @@
 
 import { Fragment, isValidElement, type ReactElement, type ReactNode, useCallback } from 'react';
 import { View } from 'react-native';
-import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { cn } from '../../../lib/cn';
-import { MotiView } from '../../../moti/components/view';
-import { MENU_ITEM_STAGGER_MS, MOTION_STANDARD, TIMING_INSTANT } from '../../../theme/motion';
-import { Text } from '../../typography/Text/text';
-import { MenuItem, type MenuItemIcon, type MenuItemMode, type MenuItemSize } from '../MenuItem/menu-item';
+import { useReducedMotion } from '../../hooks/use-reduced-motion';
+import { cn } from '../../lib/cn';
+import { MotiView } from '../../moti/components/view';
+import { MENU_ITEM_STAGGER_MS, MOTION_STANDARD, TIMING_INSTANT } from '../../theme/motion';
+import { Text } from '../typography/Text/text';
+import { MenuItem, type MenuItemIcon, type MenuItemMode, type MenuItemSize } from './menu-item';
 
 /** An action row — the default entry, so `type` may be omitted. */
 export type MenuActionEntry = {
@@ -255,17 +255,6 @@ const SIZE_SCALE: Record<MenuItemSize, { gapClass: string; labelClass: string }>
 };
 /** One text-size step below each menu size — keeps the caption subordinate to the rows. */
 const LABEL_TEXT_SIZE: Record<MenuItemSize, 'xs' | 'sm' | 'base'> = { sm: 'xs', md: 'sm', lg: 'base' };
-/**
- * The list's own vertical inset — the one piece of spacing it does not leave to
- * the panel around it, because the first and last row need clearance from a
- * rounded corner in every panel that holds this list. Not per-size: it answers to
- * the panel's radius, which the row scale knows nothing about.
- *
- * Overridable through `className` (`cn` resolves the conflict last-wins), which is
- * how `HoldContextMenu` pins its own — it has to predict its height before layout
- * and wants a number it chose.
- */
-const LIST_INSET_CLASS = 'py-2.5';
 
 /**
  * Total vertical space a `separator` entry takes at each size.
@@ -457,7 +446,7 @@ export function Menu({
     <View
       accessibilityLabel={accessibilityLabel}
       aria-label={accessibilityLabel}
-      className={cn(mode === 'sidebar' && scale.gapClass, LIST_INSET_CLASS, className)}
+      className={cn(mode === 'sidebar' && scale.gapClass, 'py-(--menu-vertical-padding)', className)}
       role={isMenu ? 'menu' : undefined}
       testID={testID}
     >

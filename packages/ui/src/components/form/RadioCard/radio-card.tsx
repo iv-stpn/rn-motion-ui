@@ -78,6 +78,10 @@ function RadioCardRing({ selected, transition, testID }: RadioCardRingProps) {
   );
 }
 
+/** Visual variant: `"radio"` shows the ring + dot; `"card"` uses only the border
+ *  and background tint to indicate selection. */
+type RadioCardVariant = 'radio' | 'card';
+
 type RadioCardCtx = {
   value: string;
   setValue: (value: string) => void;
@@ -85,6 +89,8 @@ type RadioCardCtx = {
   transition?: Partial<MotiTransitionProp>;
   /** The group's own testID, used to derive per-card ones. */
   testID?: string;
+  /** Group-level variant. A card can override it. */
+  variant?: RadioCardVariant;
 };
 
 const RadioCardContext = createContext<RadioCardCtx | null>(null);
@@ -106,6 +112,12 @@ export type RadioCardGroupProps = {
    * Default: `TIMING_FAST` (150 ms timing).
    */
   transition?: Partial<MotiTransitionProp>;
+  /**
+   * Visual variant for every card in the group. `"radio"` (default) shows the
+   * ring + dot indicator; `"card"` uses only the animated border and background
+   * tint. A card can override it with its own `variant`.
+   */
+  variant?: RadioCardVariant;
 };
 
 // Layout swaps the flex direction; cards keep flex-1 so a row shares width evenly.
@@ -133,6 +145,7 @@ export function RadioCardGroup({
   style,
   testID,
   transition,
+  variant,
 }: RadioCardGroupProps) {
   const [internal, setInternal] = useState(defaultValue);
   const controlled = value !== undefined;
@@ -147,7 +160,7 @@ export function RadioCardGroup({
   );
 
   return (
-    <RadioCardContext.Provider value={{ value: current, setValue, transition, testID }}>
+    <RadioCardContext.Provider value={{ value: current, setValue, transition, testID, variant }}>
       <View accessibilityRole="radiogroup" testID={testID} className={cn(group({ orientation }), className)} style={style}>
         {children}
       </View>
@@ -198,6 +211,12 @@ export type RadioCardProps = {
    * changed. Inherits the group's value when unset. Default: `TIMING_FAST`.
    */
   transition?: Partial<MotiTransitionProp>;
+  /**
+   * Visual variant. `"radio"` (default) shows the ring + dot indicator;
+   * `"card"` uses only the animated border and background tint. Inherits the
+   * group's value when unset.
+   */
+  variant?: RadioCardVariant;
 };
 
 /**
@@ -226,6 +245,7 @@ export function RadioCard({
   accessibilityLabel,
   testID,
   transition,
+  variant,
 }: RadioCardProps) {
   const groupCtx = useContext(RadioCardContext);
   const inGroup = groupCtx !== null && value !== undefined;
@@ -234,6 +254,7 @@ export function RadioCard({
   const borderColor = useThemeColor('border');
 
   const selected = inGroup ? groupCtx.value === value : Boolean(selectedProp);
+  const resolvedVariant = variant ?? groupCtx?.variant ?? 'radio';
   const t = mergeTransition(TIMING_FAST, transition ?? groupCtx?.transition);
   const ct = reduce ? TIMING_INSTANT : t;
   // Derive from the group so cards are addressable without threading a testID
@@ -275,7 +296,12 @@ export function RadioCard({
         style={style}
       >
         <View className="flex-row items-center justify-between">
-          <RadioCardRing selected={selected} transition={t} testID={cardTestID} />
+          {resolvedVariant === 'radio' ? (
+            <RadioCardRing selected={selected} transition={t} testID={cardTestID} />
+          ) : (
+            /* Spacer so the badge still aligns to the right when there's no ring */
+            <View />
+          )}
           {badge ? (
             <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
               <Text className="font-semibold text-primary text-xs">{badge}</Text>

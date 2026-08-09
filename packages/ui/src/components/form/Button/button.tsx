@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Pressable, StyleSheet } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { SURFACE_CLASSNAME } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -15,13 +16,11 @@ export type ButtonVariant =
   | 'primary'
   | 'secondary'
   | 'ghost'
-  | 'outline'
   | 'danger'
   | 'special'
   | 'inverse'
   | 'outlineDanger'
-  | 'ghostDanger'
-  | 'ghostPrimary';
+  | 'ghostDanger';
 
 // cva drives the STATIC styling layer (per the conversion spec). Animated/tap
 // scale stays inline on the MotiView. Class strings are static literals so the
@@ -33,20 +32,18 @@ export type ButtonVariant =
 const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
-      primary: 'bg-primary',
-      secondary: 'border border-border bg-surface-3',
+      primary: SURFACE_CLASSNAME[3],
+      secondary: 'border border-border bg-foreground',
       ghost: 'bg-transparent',
-      outline: 'border border-border bg-transparent',
-      danger: 'bg-danger',
-      special: 'bg-special',
+      danger: 'bg-danger shadow-elevated-3',
+      special: 'bg-special shadow-elevated-3',
       // `inverse` is deliberately not `primary`: `primary` is the consumer's
       // brand token, designed to be overridden, so a fill built on it can't
       // promise contrast. `foreground` over `surface-1` is the one pair a theme
       // guarantees reads, so the flip stays legible through any retint.
-      inverse: 'bg-foreground',
+      inverse: 'bg-foreground shadow-elevated-3',
       outlineDanger: 'border border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
-      ghostPrimary: 'bg-transparent',
     },
   },
   defaultVariants: { variant: 'primary' },
@@ -56,10 +53,9 @@ const container = cva('flex-row items-center justify-center', {
 export const label = cva('', {
   variants: {
     variant: {
-      primary: 'text-primary-foreground',
-      secondary: 'text-foreground',
-      ghost: 'text-muted-foreground',
-      outline: 'text-foreground',
+      primary: 'text-foreground',
+      secondary: 'text-surface-1',
+      ghost: 'text-foreground',
       danger: 'text-white',
       special: 'text-special-foreground',
       // The page colour, so the label reads as a hole punched through the slab
@@ -67,7 +63,6 @@ export const label = cva('', {
       inverse: 'text-surface-1',
       outlineDanger: 'text-danger',
       ghostDanger: 'text-danger',
-      ghostPrimary: 'text-primary',
     },
     // Weight + size come from the family ramp, shared with GlossyButton, so only
     // the colour above is Button's own.
@@ -77,23 +72,20 @@ export const label = cva('', {
 });
 
 // Variants whose background is an opaque, dark-or-vivid fill, so a ripple has to
-// shimmer white to be visible. Everything else is transparent or a light plate
-// and takes the dark ripple. (`inverse` follows `primary` here: both are the
-// monochrome flip of the page, so on a dark page their near-white fill swallows
-// the white shimmer — same trade-off `primary` has always made, not worth
-// resolving the page colour in a flat button for.)
-const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['primary', 'danger', 'special', 'inverse']);
+// shimmer white to be visible. Everything else is a light surface plate and takes
+// the dark ripple.
+const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['secondary', 'danger', 'special', 'inverse']);
 
 // Spinner stroke matches the label colour so it reads on every variant.
 function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   switch (variant) {
-    case 'primary':
+    case 'secondary':
+    case 'inverse':
+      return colors['surface-1'];
     case 'danger':
       return colors['primary-foreground'];
     case 'special':
       return colors['special-foreground'];
-    case 'inverse':
-      return colors['surface-1'];
     case 'outlineDanger':
     case 'ghostDanger':
       return colors.danger;

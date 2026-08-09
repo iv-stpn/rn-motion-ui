@@ -299,7 +299,21 @@ export type EndDragParams = {
 export function endDrag({ commit, point, sourceId, transportDropEffect }: EndDragParams): DragEndOutcome {
   if (session === null || session.drag.id !== sourceId) return { canceled: true, dropEffect: 'none', point, zoneId: null };
   const { drag } = session;
-  const target = commit ? targetAt(point) : null;
+  // The HTML5 transport's `dragend` reports bogus coordinates in two engines:
+  //  • Chrome — (0, 0): the browser tears down the session by the time dragend
+  //    fires. Fall back to the last position from `moveDrag` unconditionally.
+  //  • Safari — plausible but wrong non-zero coordinates. The zone's own
+  //    `dragover` handler keeps `session.point` accurate with `moveDrag`, so
+  //    when the release point hits nothing, consult the tracked point instead.
+  let resolved = point.x === 0 && point.y === 0 ? session.point : point;
+  let target = commit ? targetAt(resolved) : null;
+  if (target === null && commit && resolved !== session.point) {
+    const fallback = targetAt(session.point);
+    if (fallback !== null) {
+      resolved = session.point;
+      target = fallback;
+    }
+  }
 
   let dropEffect: DragDropEffect = 'none';
   if (target !== null) {
@@ -310,7 +324,7 @@ export function endDrag({ commit, point, sourceId, transportDropEffect }: EndDra
       drag,
       external: false,
       files: NO_FILES,
-      point,
+      point: resolved,
       transfer: drag.transfer,
       zoneId: target.id,
     };
@@ -323,10 +337,12 @@ export function endDrag({ commit, point, sourceId, transportDropEffect }: EndDra
 
   const canceled = dropEffect === 'none';
   const zoneId = target?.id ?? null;
-  notifyManagers(drag.source.managerPath, (config) => config.onDragEnd?.({ canceled, drag, dropEffect, point, zoneId }));
+  notifyManagers(drag.source.managerPath, (config) =>
+    config.onDragEnd?.({ canceled, drag, dropEffect, point: resolved, zoneId }),
+  );
   session = null;
   publish();
-  return { canceled, dropEffect, point, zoneId };
+  return { canceled, dropEffect, point: resolved, zoneId };
 }
 
 /**

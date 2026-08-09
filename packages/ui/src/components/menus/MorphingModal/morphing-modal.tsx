@@ -7,6 +7,7 @@ import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../l
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
+import { CloseButton } from '../CloseButton/close-button';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 
 // biome-ignore lint/style/useExportsLast: placement type before INSTANT constant — collocated for readability
@@ -45,6 +46,8 @@ export type MorphingModalProps = {
   placement?: MorphingModalPlacement;
   /** Surface elevation (1–8) — drives the drop shadow + dark-mode rim. Defaults to 6. */
   elevation?: SurfaceLevel;
+  /** When true, renders a close button in the top-right corner of the panel. */
+  showClose?: boolean;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -57,6 +60,7 @@ export function MorphingModal({
   children,
   placement = 'bottom',
   elevation = 6,
+  showClose,
   accessibilityLabel,
   style,
   testID,
@@ -138,6 +142,11 @@ export function MorphingModal({
               )}
               style={style}
             >
+              {showClose ? (
+                <View className="absolute top-2 right-2 z-10">
+                  <CloseButton onPress={handleClose} testID={testID ? `${testID}-close` : undefined} />
+                </View>
+              ) : null}
               {/*
                * Height morphs toward the measured height of the active view.
                * overflow:hidden clips the taller incoming content while the

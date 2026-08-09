@@ -61,6 +61,11 @@ describe('endDrag', () => {
     const active = lift();
     moveDrag(AT);
 
+    // A real browser fires drag events as the cursor travels from the zone to
+    // the release point; the last one updates session.point so the fallback in
+    // endDrag sees the same outside location and finds nothing.
+    moveDrag(OUTSIDE);
+
     const outcome = endDrag({ commit: true, point: OUTSIDE, sourceId: active.id });
     expect(outcome).toEqual({ canceled: true, dropEffect: 'none', point: OUTSIDE, zoneId: null });
   });

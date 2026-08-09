@@ -38,7 +38,7 @@ import type {
   FileSystemSortState,
 } from './file-system.types';
 import { useBackgroundContextMenu, useContextMenu } from './file-system-context-menu';
-import { FileSystemDropOutline, FileSystemDropzone } from './file-system-dropzone';
+import { FileSystemDropzone } from './file-system-dropzone';
 import { formatByteSize, formatTimestamp } from './file-system-format';
 import { FileSystemHoverHighlight, FS_HOVER_TEST_ID, useFileSystemRowHover } from './file-system-hover';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
@@ -74,7 +74,7 @@ const LIST_PADDING_TOP = 4;
  * has moved to the drop target by then, so without this the rows the gesture is
  * actually about are the only ones on screen with no mark at all.
  */
-const LIFTING_ROW_CLASS = 'rounded-md bg-surface-hover';
+const LIFTING_ROW_CLASS = 'rounded-md bg-muted';
 
 /** Container-local point → row index, or null for padding / past-last-row. */
 function rowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {
@@ -220,8 +220,6 @@ function ListRow({
 }: ListRowProps) {
   const { entry, isExpandable, isExpanded, level } = row;
   const handleToggle = useCallback(() => onToggleExpanded(entry.path), [entry.path, onToggleExpanded]);
-  const textClassName = isSelected ? 'text-white' : 'text-foreground';
-  const metaClassName = isSelected ? 'text-white' : 'text-muted-foreground';
   const colors = useThemeColors();
 
   const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
@@ -274,64 +272,66 @@ function ListRow({
 
   const isLifting = useIsLifting(entry.path);
 
-  const body = (
-    <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: FS_ROW_HEIGHT }}>
-      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: isSelected }}
-          // Both, deliberately: `accessibilityState` is what native reads, and
-          // react-native-web maps `aria-selected` but not `accessibilityState`, so
-          // on web the fill would otherwise be the only thing saying "picked".
-          aria-selected={isSelected}
-          // Hover is not a class here: it is one sliding node behind the rows, so it
-          // can keep tracking under the drag's pointer capture. See file-system-hover.
-          className={cn('flex-row items-center gap-1 rounded-md px-2', isSelected && 'bg-info')}
-          onPress={handlePress}
-          onPressIn={handlePressIn}
-          style={{ height: FS_ROW_HEIGHT, paddingLeft: chevronLaneLeft(level) }}
-          testID={testID}
-        >
-          {/* The chevron's lane, held open on file rows too so names stay aligned
-              across kinds. On a folder row the control below sits over this box. */}
-          <View style={{ width: CHEVRON_SIZE }} />
-          {entry.kind === 'folder'
-            ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
-            : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
-          {entry.pinnedAt ? <Pin color={isSelected ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}
-          <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
-            {entry.name}
-          </Text>
-          {entry.favoritedAt ? <Heart color={isSelected ? colors.white : colors.danger} size={FAV_ICON_SIZE} /> : null}
-          {showDate ? (
-            <Text className={cn('w-44', metaClassName)} numberOfLines={1} size="xs">
-              {formatTimestamp(entry.updatedAt ?? entry.createdAt) ?? MISSING_VALUE}
+  const renderBody = (isOver: boolean) => {
+    // A selected row muted during drag; a drop target lit like a selection.
+    const isActive = (isSelected && !isLifting) || isOver;
+    const textClassName = isActive ? 'text-white' : 'text-foreground';
+    const metaClassName = isActive ? 'text-white' : 'text-muted-foreground';
+
+    return (
+      <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: FS_ROW_HEIGHT }}>
+        <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSelected }}
+            // Both, deliberately: `accessibilityState` is what native reads, and
+            // react-native-web maps `aria-selected` but not `accessibilityState`, so
+            // on web the fill would otherwise be the only thing saying "picked".
+            aria-selected={isSelected}
+            // Hover is not a class here: it is one sliding node behind the rows, so it
+            // can keep tracking under the drag's pointer capture. See file-system-hover.
+            className={cn('flex-row items-center gap-1 rounded-md px-2', isActive && 'bg-info')}
+            onPress={handlePress}
+            onPressIn={handlePressIn}
+            style={{ height: FS_ROW_HEIGHT, paddingLeft: chevronLaneLeft(level) }}
+            testID={testID}
+          >
+            {/* The chevron's lane, held open on file rows too so names stay aligned
+                across kinds. On a folder row the control below sits over this box. */}
+            <View style={{ width: CHEVRON_SIZE }} />
+            {entry.kind === 'folder'
+              ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
+              : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
+            {entry.pinnedAt ? <Pin color={isActive ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}
+            <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
+              {entry.name}
             </Text>
+            {entry.favoritedAt ? <Heart color={isActive ? colors.white : colors.danger} size={FAV_ICON_SIZE} /> : null}
+            {showDate ? (
+              <Text className={cn('w-44', metaClassName)} numberOfLines={1} size="xs">
+                {formatTimestamp(entry.updatedAt ?? entry.createdAt) ?? MISSING_VALUE}
+              </Text>
+            ) : null}
+            <Text className={cn('w-20 text-right', metaClassName)} numberOfLines={1} numeric={true} size="xs">
+              {entry.kind === 'folder' ? itemCountLabel(childCount) : (formatByteSize(entry.size) ?? MISSING_VALUE)}
+            </Text>
+          </Pressable>
+          {isExpandable ? (
+            <RowChevron isExpanded={isExpanded} isSelected={isActive} level={level} name={entry.name} onToggle={handleToggle} />
           ) : null}
-          <Text className={cn('w-20 text-right', metaClassName)} numberOfLines={1} numeric={true} size="xs">
-            {entry.kind === 'folder' ? itemCountLabel(childCount) : (formatByteSize(entry.size) ?? MISSING_VALUE)}
-          </Text>
-        </Pressable>
-        {isExpandable ? (
-          <RowChevron isExpanded={isExpanded} isSelected={isSelected} level={level} name={entry.name} onToggle={handleToggle} />
-        ) : null}
-      </HoldContextMenu>
-    </View>
-  );
+        </HoldContextMenu>
+      </View>
+    );
+  };
 
   return entry.kind === 'folder' ? (
     <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
       {/* The outline is drawn over the row, not around it: a border in the row's
           own box would resize it and shift every row below by a pixel. */}
-      {({ isOver }: DragzoneRenderState) => (
-        <>
-          {body}
-          {isOver ? <FileSystemDropOutline /> : null}
-        </>
-      )}
+      {({ isOver }: DragzoneRenderState) => renderBody(isOver)}
     </FileSystemDropzone>
   ) : (
-    body
+    renderBody(false)
   );
 }
 

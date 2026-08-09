@@ -22,7 +22,7 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { Platform, type View } from 'react-native';
 import type { DragDropEffect } from '../drag.types';
-import { canZoneAcceptExternal, deliverExternalDrop, getActiveDrag } from '../drag-store';
+import { canZoneAcceptExternal, deliverExternalDrop, getActiveDrag, moveDrag } from '../drag-store';
 
 export type UseDragzoneWebParams = {
   acceptsExternal: boolean;
@@ -67,6 +67,12 @@ export function useDragzoneWeb({ acceptsExternal, enabled, nodeRef, zoneId }: Us
     function onDragOver(e: DragEvent) {
       const effect = claim(e);
       if (effect === null) return;
+      // Safari's `drag` events are sparse and its `dragend` reports wrong
+      // coordinates, but `dragover` is always correct. Keeping the store's
+      // tracked point in sync via the zone ensures `endDrag`'s hit test
+      // resolves the right zone on every engine.
+      const active = getActiveDrag();
+      if (active !== null) moveDrag({ x: e.clientX, y: e.clientY });
       // Both calls matter: the first allows the drop, the second is what `dragend`
       // on the source reads back to tell a drop from a cancel.
       e.preventDefault();
@@ -82,9 +88,18 @@ export function useDragzoneWeb({ acceptsExternal, enabled, nodeRef, zoneId }: Us
       depthRef.current = 0;
       setExternalOver(false);
       const transfer = e.dataTransfer;
-      // One of ours: the source's `dragend` delivers it through the store, and
-      // handling it here as well would hand the zone the same payload twice.
-      if (getActiveDrag() !== null || !transfer) return;
+      if (!transfer) return;
+      // Our own drag: the `drop` event fires before `dragend` and the DOM
+      // guarantees its coordinates are correct — Safari's `dragend` can
+      // report wrong ones. Update the store's tracked point now so the
+      // hit test in `endDrag` resolves this zone. The drop itself is still
+      // delivered through the store (the source's `dragend`), so we neither
+      // preventDefault nor handle the payload here.
+      const active = getActiveDrag();
+      if (active !== null) {
+        moveDrag({ x: e.clientX, y: e.clientY });
+        return;
+      }
       if (!acceptsExternal) return;
       const point = { x: e.clientX, y: e.clientY };
       if (!canZoneAcceptExternal({ point, transfer, zoneId })) return;

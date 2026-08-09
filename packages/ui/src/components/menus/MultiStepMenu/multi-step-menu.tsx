@@ -13,14 +13,14 @@ import {
   useState,
 } from 'react';
 import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, View } from 'react-native';
-import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { MenuItem, type MenuItemIcon } from '../../RowPrimitive/menu-item';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
-import { MenuItem, type MenuItemIcon } from '../MenuItem/menu-item';
+import { CloseButton } from '../CloseButton/close-button';
 
 const SLIDE_TRANSITION = { type: 'spring', damping: 28, stiffness: 260, mass: 0.9 } as const;
 const ARROW_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
@@ -283,9 +283,7 @@ export const MultiStepMenu = function MultiStepMenu({
               </AnimatePresence>
               <TextRolling text={title} className="flex-1 font-medium text-foreground text-lg" />
             </View>
-            <Pressable onPress={handleClose} accessibilityLabel="Close" hitSlop={8} className="py-3 pr-6 pl-3">
-              <X />
-            </Pressable>
+            <CloseButton className="absolute top-2 right-2" onPress={handleClose} />
           </View>
           {activeNode ? (
             <ScrollView className="min-h-0 flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="px-6 pb-8">
@@ -337,9 +335,7 @@ export const MultiStepMenu = function MultiStepMenu({
                 )}
               </AnimatePresence>
             </View>
-            <Pressable onPress={handleClose} accessibilityLabel="Close" hitSlop={8}>
-              <X />
-            </Pressable>
+            <CloseButton onPress={handleClose} />
           </View>
           <TextRolling text={title} className="font-bold text-2xl text-foreground" />
         </View>

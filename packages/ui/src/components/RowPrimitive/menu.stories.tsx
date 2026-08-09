@@ -9,17 +9,17 @@ import { PencilLine as Pencil } from 'rn-motion-ui-icons/icons/pencil-line';
 import { Share2Line as Share } from 'rn-motion-ui-icons/icons/share-2-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
-import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { SURFACE_CLASSNAME } from '../../../lib/elevated';
-import { Button } from '../../form/Button/button';
-import { Switch } from '../../form/Switch/switch';
-import { Text } from '../../typography/Text/text';
-import { AdaptiveDropdown, type ContentRenderProps, type TriggerRenderProps } from '../AdaptiveDropdown/adaptive-dropdown';
-import type { MenuItemMode, MenuItemSize } from '../MenuItem/menu-item';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { SURFACE_CLASSNAME } from '../../lib/elevated';
+import { Button } from '../form/Button/button';
+import { Switch } from '../form/Switch/switch';
+import { AdaptiveDropdown, type ContentRenderProps, type TriggerRenderProps } from '../menus/AdaptiveDropdown/adaptive-dropdown';
+import { Text } from '../typography/Text/text';
 import { Menu, type MenuActionEntry, type MenuEntry } from './menu';
+import type { MenuItemMode, MenuItemSize } from './menu-item';
 
 const meta = {
-  title: 'Menus/Menu',
+  title: 'RowPrimitive/Menu',
   component: Menu,
   parameters: { layout: 'centered' },
   // Every story builds its own list; a stub satisfies the type checker.
@@ -223,7 +223,7 @@ function DropdownDemo() {
 
   const renderTrigger = useCallback(
     ({ toggle }: TriggerRenderProps) => (
-      <Button onPress={toggle} variant="outline">
+      <Button onPress={toggle} variant="ghost">
         {TRIGGER_LABEL}
       </Button>
     ),

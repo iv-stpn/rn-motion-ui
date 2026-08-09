@@ -4,8 +4,8 @@ import { View } from 'react-native';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { fn } from 'storybook/test';
-import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { Text } from '../../typography/Text/text';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Text } from '../typography/Text/text';
 import { MenuItem, type MenuItemMode, type MenuItemSize } from './menu-item';
 
 const onPress = fn();
@@ -21,7 +21,7 @@ function HintChip({ hint }: HintChipProps) {
 }
 
 const meta = {
-  title: 'Menus/MenuItem',
+  title: 'RowPrimitive/MenuItem',
   component: MenuItem,
   parameters: { layout: 'centered' },
   args: { label: 'Menu item', onPress },

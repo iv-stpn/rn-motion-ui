@@ -12,8 +12,8 @@ import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/st
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
+import { Menu, type MenuEntry } from '../../RowPrimitive/menu';
 import { Text } from '../../typography/Text/text';
-import { Menu, type MenuEntry } from '../Menu/menu';
 import { AdaptiveDropdown, type TriggerRenderProps } from './adaptive-dropdown';
 
 const meta = {
@@ -62,7 +62,7 @@ function PlaygroundTrigger({ open, toggle }: TriggerRenderProps) {
   const openColor = useThemeColor('foreground');
   const closedColor = useThemeColor('muted-foreground');
   return (
-    <Button onPress={toggle} rightAdornment={<ChevronDown color={open ? openColor : closedColor} size={16} />} variant="outline">
+    <Button onPress={toggle} rightAdornment={<ChevronDown color={open ? openColor : closedColor} size={16} />} variant="ghost">
       {MENU_LABEL}
     </Button>
   );
@@ -77,7 +77,7 @@ type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 's
 function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
   return (
     <TriggerButton
-      buttonVariant="outline"
+      buttonVariant="ghost"
       kind={kind}
       size={size}
       shape={shape}

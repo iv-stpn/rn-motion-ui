@@ -89,7 +89,7 @@ function CustomBody({ onClose }: CustomBodyProps) {
         {CUSTOM_LAYOUT_TITLE}
       </Text>
       <Text className="text-muted-foreground">{BODY}</Text>
-      <Button onPress={onClose} size="sm" className="self-end" variant="outline">
+      <Button onPress={onClose} size="sm" className="self-end" variant="ghost">
         {DONE_LABEL}
       </Button>
     </View>

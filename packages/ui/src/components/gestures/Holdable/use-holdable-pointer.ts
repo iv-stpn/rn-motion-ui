@@ -127,7 +127,11 @@ function buildListeners({ cursorMode, node, timeline }: ListenerParams) {
   node.addEventListener('lostpointercapture', onPointerEnd);
   node.addEventListener('contextmenu', onContextMenu);
   node.addEventListener('touchend', onTouchEnd, { passive: false });
-  node.addEventListener('click', onClick, { capture: true });
+  // A capture-phase click listener on a `draggable` element blocks Safari from
+  // starting a native drag — the browser reads it as the element being
+  // interactive and refuses the lift. Only needed for mouse-mode hold
+  // suppression, so it is only added when cursorMode is on.
+  if (cursorMode) node.addEventListener('click', onClick, { capture: true });
 
   return () => {
     end();
@@ -138,7 +142,7 @@ function buildListeners({ cursorMode, node, timeline }: ListenerParams) {
     node.removeEventListener('lostpointercapture', onPointerEnd);
     node.removeEventListener('contextmenu', onContextMenu);
     node.removeEventListener('touchend', onTouchEnd);
-    node.removeEventListener('click', onClick, { capture: true });
+    if (cursorMode) node.removeEventListener('click', onClick, { capture: true });
   };
 }
 

@@ -155,6 +155,11 @@
   --color-white: oklch(100% 0 0);
   --color-black: oklch(0% 0 0);
 
+  /* Theme-flipping background — white in light mode, black in dark mode.
+     Unlike `white` / `black` (which are absolute and never flip), this token
+     tracks the active scheme so a page-level background automatically inverts. */
+  --color-background: oklch(100% 0 0);
+
   /* Surface elevation shadows — a crisp 1px ring at full strength plus drop
      layers whose opacity decays as blur grows (natural light fall-off).
      Pair shadow-surface-N with bg-surface-N. */
@@ -232,16 +237,26 @@
      instead. See lib/radius.ts for the pixel constants used by the effect
      layers. One scheme only: geometry doesn't flip with the theme, so there
      are no dark-mode counterparts below. */
-  --spacing-interactive-sm: 28px;
-  --spacing-interactive-md: 36px;
-  --spacing-interactive-lg: 44px;
+  --spacing-interactive-sm: 24px;
+  --spacing-interactive-md: 32px;
+  --spacing-interactive-lg: 40px;
   --spacing-interactive-pad-sm: 10px;
   --spacing-interactive-pad-md: 14px;
-  --spacing-interactive-pad-lg: 18px;
-  --radius-interactive: 10px;
+  --spacing-interactive-pad-lg: 22px;
+
+  --menu-vertical-padding: 4px;
+
+  --radius-menu: 6px;
+  --radius-interactive: 6px;
   --radius-card: 16px;
-  --radius-menu: 16px;
   --radius-modal: 16px;
+
+  /* Typography — font family tokens. Override in your own @theme block after
+     importing this sheet to swap the typeface globally. Geometry doesn't flip
+     with the theme, so these live only in @theme. */
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-serif: ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, monospace;
 }
 
 /* ── Neutral tint ─────────────────────────────────────────────────────────
@@ -364,6 +379,8 @@
   --color-white: oklch(100% 0 0);
   --color-black: oklch(0% 0 0);
 
+  --color-background: oklch(0% 0 0);
+
   --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
   --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
   --shadow-surface-3:
@@ -462,6 +479,8 @@
      declarations stay a complete mirror of one another. */
   --color-white: oklch(100% 0 0);
   --color-black: oklch(0% 0 0);
+
+  --color-background: oklch(100% 0 0);
 
   --shadow-surface-1: 0 0 0 1px oklch(0% 0 0 / 0.06);
   --shadow-surface-2: 0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06);

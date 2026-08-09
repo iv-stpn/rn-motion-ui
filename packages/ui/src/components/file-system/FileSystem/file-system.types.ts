@@ -8,7 +8,7 @@
 // prefixes are inferred by `buildFileSystemIndex`.
 
 import type { ReactNode } from 'react';
-import type { MenuItemIcon } from '../../menus/MenuItem/menu-item';
+import type { MenuItemIcon } from '../../RowPrimitive/menu-item';
 import type { FileSystemSelectionMode } from './file-system-selection';
 
 /** One entry in the list returned by `getContextMenuActions`. */

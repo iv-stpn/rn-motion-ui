@@ -25,6 +25,11 @@ const text = cva('text-foreground', {
     numeric: {
       true: "tracking-tight font-features-['ss07'] tabular-nums",
     },
+    font: {
+      sans: 'font-sans',
+      serif: 'font-serif',
+      mono: 'font-mono',
+    },
   },
   defaultVariants: { weight: 'normal' },
 });
@@ -40,13 +45,18 @@ export interface TextProps_ extends TextProps, VariantProps<typeof text> {
 
 /**
  * A themed `Text` component that defaults to `text-foreground` and exposes
- * `weight` / `size` props for the most common typography variants.
+ * `weight` / `size` / `font` props for the most common typography variants.
  *
  * Override the colour with `className`:
  * ```tsx
  * <Text weight="semibold" size="sm" className="text-muted-foreground">
  *   Subtitle
  * </Text>
+ * ```
+ *
+ * Set a custom font family:
+ * ```tsx
+ * <Text font="mono" size="base">const x = 1;</Text>
  * ```
  *
  * Pass `numeric` for tabular figures (`ss07` stylistic set + tight tracking)
@@ -57,6 +67,6 @@ export interface TextProps_ extends TextProps, VariantProps<typeof text> {
  *
  * All React Native `Text` props are forwarded (style, numberOfLines, …).
  */
-export function Text({ weight, size, numeric, className, ...props }: TextProps_) {
-  return <RNText className={cn(text({ weight, size, numeric }), className)} {...props} />;
+export function Text({ weight, size, numeric, font, className, ...props }: TextProps_) {
+  return <RNText className={cn(text({ weight, size, numeric, font }), className)} {...props} />;
 }

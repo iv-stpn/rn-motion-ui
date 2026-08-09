@@ -41,6 +41,29 @@ export const BUTTON_METRICS: Record<ButtonSize, { height: number; padX: number; 
 export const BUTTON_GAP_CLASSNAME = 'gap-2';
 
 /**
+ * Icon size (px) for success / error / idle state icons in StatefulButton, per
+ * button size. Sized so the icon reads at a glance without overpowering the label.
+ */
+export const STATE_ICON_SIZE: Record<ButtonSize, number> = {
+  sm: 16,
+  md: 20,
+  lg: 24,
+  icon: 20,
+};
+
+/**
+ * Gap class between the state icon, the label, and the idle adornment icon in
+ * StatefulButton, per button size — keeps the spacing proportional as the
+ * button scales.
+ */
+export const STATE_BUTTON_GAP_CLASSNAME: Record<ButtonSize, string> = {
+  sm: 'gap-1',
+  md: 'gap-1.5',
+  lg: 'gap-2',
+  icon: 'gap-1',
+};
+
+/**
  * Box classes per shape and size, straight from the geometry tokens. Spelled out
  * per shape rather than composed at call time so no two classes ever compete for
  * the same {@link cn} group, and so the Tailwind/uniwind scanner sees every one
@@ -63,11 +86,24 @@ export const BUTTON_BOX: Record<ButtonShape, Record<ButtonSize, string>> = {
 
 /**
  * Resolved corner radius in px, for the layers that can't read a class — the
- * glossy shadow slots and the elevated rim/ring. A pill rounds to half its
- * height; everything else takes the shared interactive radius.
+ * glossy SVG dome, the elevated SVG rim and the ring inset calculation. A pill
+ * rounds to half its height; everything else takes the shared interactive
+ * radius.
+ *
+ * Prefer {@link buttonRadiusClass} for the CSS border-radius; use this only
+ * when the number is required (SVG rx/ry, arithmetic).
  */
 export function buttonRadius(shape: ButtonShape, size: ButtonSize): number {
   return shape === 'pill' ? BUTTON_METRICS[size].height / 2 : INTERACTIVE_RADIUS;
+}
+
+/**
+ * CSS class for the interactive border-radius — the className twin of
+ * {@link buttonRadius}. Pills use `rounded-full`; everything else uses
+ * `rounded-interactive` (backed by `--radius-interactive`).
+ */
+export function buttonRadiusClass(shape: ButtonShape): 'rounded-full' | 'rounded-interactive' {
+  return shape === 'pill' ? 'rounded-full' : 'rounded-interactive';
 }
 
 /**

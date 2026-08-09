@@ -4,7 +4,9 @@ import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
-import { RadioCard, RadioCardGroup, type RadioCardGroupProps } from './radio-card';
+import { RadioCard, RadioCardGroup, type RadioCardGroupProps, type RadioCardProps } from './radio-card';
+
+type RadioCardVariant = NonNullable<RadioCardProps['variant']>;
 
 const meta = {
   title: 'Form/RadioCard',
@@ -30,6 +32,8 @@ type Orientation = NonNullable<RadioCardGroupProps['orientation']>;
 
 const ORIENTATIONS = ['horizontal', 'vertical'] as const satisfies readonly Orientation[];
 
+const VARIANTS: RadioCardVariant[] = ['radio', 'card'];
+
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the playground and the Demo stories
 function RadioCardGroupDemo() {
   const [plan, setPlan] = useState('monthly');
@@ -48,11 +52,13 @@ function RadioCardPlayground() {
   const [badges, setBadges] = useState(true);
   const [details, setDetails] = useState(false);
   const [numeric, setNumeric] = useState(true);
+  const [variant, setVariant] = useState<RadioCardVariant>('radio');
 
   return (
     <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />
         <Toggle label="Extra content" onChange={setDetails} value={details} />
         <Toggle label="Tabular figures" onChange={setNumeric} value={numeric} />
@@ -61,7 +67,7 @@ function RadioCardPlayground() {
       {/* Each card animates its own selection: the border and tint cross-fade
           and the dot fades and scales in place. Nothing travels between cards,
           so no geometry is measured. */}
-      <RadioCardGroup onValueChange={setPlan} orientation={orientation} value={plan}>
+      <RadioCardGroup onValueChange={setPlan} orientation={orientation} value={plan} variant={variant}>
         <RadioCard numeric={numeric} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} value="monthly">
           {details ? <Text className="text-muted-foreground text-xs">{SEAT_TEXT}</Text> : null}
         </RadioCard>
@@ -83,7 +89,14 @@ function RadioCardPlayground() {
           the animation is the same. */}
       <Section title="Standalone (selected / unselected)">
         <View className="flex-row gap-3">
-          <RadioCard numeric={true} onPress={handlePress} selected={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} />
+          <RadioCard
+            numeric={true}
+            onPress={handlePress}
+            selected={true}
+            subtitle={MONTHLY_SUB}
+            title={MONTHLY_TITLE}
+            variant={variant}
+          />
           <RadioCard
             badge={YEARLY_BADGE}
             numeric={true}
@@ -91,13 +104,14 @@ function RadioCardPlayground() {
             selected={false}
             subtitle={YEARLY_SUB}
             title={YEARLY_TITLE}
+            variant={variant}
           />
         </View>
       </Section>
 
       <Section title="With custom content">
         <View className="w-60">
-          <RadioCard onPress={handlePress} selected={false} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE}>
+          <RadioCard onPress={handlePress} selected={false} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} variant={variant}>
             <Text className="text-muted-foreground text-xs">{SEAT_TEXT}</Text>
           </RadioCard>
         </View>

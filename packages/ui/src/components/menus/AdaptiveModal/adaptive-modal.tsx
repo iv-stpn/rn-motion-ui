@@ -1,9 +1,8 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: three surfaces (bottomSheet / fullSheet / wide modal+drawer) share one render path — splitting scatters tightly-coupled layout state
 
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Modal, ScrollView, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
-import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
@@ -14,6 +13,7 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
+import { CloseButton } from '../CloseButton/close-button';
 import { FullSheet } from '../FullSheet/full-sheet';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 
@@ -167,11 +167,7 @@ export function AdaptiveModal({
   const isWideOpen = open && isWideScreen;
   const { rendered: isWideMounted, onExitComplete } = useModalRender(isWideOpen);
 
-  const closeButton = showClose ? (
-    <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Close">
-      <X size={20} />
-    </Pressable>
-  ) : null;
+  const closeButton = showClose ? <CloseButton onPress={handleClose} /> : null;
 
   const handleExitComplete = useCallback(() => {
     onExitComplete();

@@ -17,18 +17,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: [
-        'primary',
-        'secondary',
-        'ghost',
-        'outline',
-        'danger',
-        'special',
-        'inverse',
-        'outlineDanger',
-        'ghostDanger',
-        'ghostPrimary',
-      ],
+      options: ['primary', 'secondary', 'ghost', 'danger', 'special', 'inverse', 'outlineDanger', 'ghostDanger'],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -41,13 +30,11 @@ const VARIANTS = [
   'primary',
   'secondary',
   'ghost',
-  'outline',
   'danger',
   'special',
   'inverse',
   'outlineDanger',
   'ghostDanger',
-  'ghostPrimary',
 ] as const satisfies readonly ButtonVariant[];
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
@@ -73,7 +60,6 @@ function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
   if (variant === 'special') return colors['special-foreground'];
   if (variant === 'inverse') return colors['surface-1'];
   if (variant === 'outlineDanger' || variant === 'ghostDanger') return colors.danger;
-  if (variant === 'ghostPrimary') return colors.primary;
   return colors.foreground;
 }
 

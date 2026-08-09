@@ -1,3 +1,5 @@
+// biome-ignore-all lint/style/noCommonJs: expo-font's useFonts requires require() for asset bundling
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, Text, View } from 'react-native';
 import { GlossyButton } from 'rn-motion-ui/glossy-button';
@@ -63,6 +65,18 @@ function ThemeSwitcher() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Geist: require('geist/dist/fonts/geist-sans/Geist-Regular.ttf'),
+    'Geist-Medium': require('geist/dist/fonts/geist-sans/Geist-Medium.ttf'),
+    'Geist-SemiBold': require('geist/dist/fonts/geist-sans/Geist-SemiBold.ttf'),
+    'Geist-Bold': require('geist/dist/fonts/geist-sans/Geist-Bold.ttf'),
+    'GeistMono-Regular': require('geist/dist/fonts/geist-mono/GeistMono-Regular.ttf'),
+    'GeistMono-Medium': require('geist/dist/fonts/geist-mono/GeistMono-Medium.ttf'),
+    'GeistMono-Bold': require('geist/dist/fonts/geist-mono/GeistMono-Bold.ttf'),
+  });
+
+  if (!fontsLoaded) return null;
+
   return (
     <View className="flex-1 bg-surface-1">
       <StatusBar style="auto" />

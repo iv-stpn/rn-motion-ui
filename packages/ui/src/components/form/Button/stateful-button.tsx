@@ -13,7 +13,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
-import { BUTTON_METRICS } from './button-scale';
+import { BUTTON_METRICS, STATE_BUTTON_GAP_CLASSNAME, STATE_ICON_SIZE } from './button-scale';
 import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './elevated-button';
 import { GlossyButton, type GlossyVariant, glossyContentColor } from './glossy-button';
 
@@ -66,8 +66,6 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
   errorText?: ReactNode;
   /** Optional icon rendered on the right in the idle state. */
   icon?: ReactNode;
-  /** Size (px) of the success / error state icons. Default: 20. */
-  stateIconSize?: number;
   /** Stroke width of the success / error state icons. Default: 2.5. */
   stateIconStrokeWidth?: number;
   /** Render a chip-style key instead of the flat button.
@@ -83,7 +81,6 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
   style?: StyleProp<ViewStyle>;
 }
 
-const ICON_SLOT_WIDTH = 24; // px — icon (16 px) + surrounding whitespace
 // Roll distance before the slot height has been measured (px).
 const ROLL_FALLBACK = 18;
 // Trailing slack past the last glyph's advance box so its ink (and sub-pixel
@@ -103,9 +100,9 @@ const STATE_PAD_SQUEEZE = 4;
 // Matches Button's buildSpinnerColor: returns the icon stroke colour for each
 // variant so the icon reads correctly against every button background.
 function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>): string {
-  if (v === 'primary' || v === 'danger') return c['primary-foreground'];
+  if (v === 'danger') return c['primary-foreground'];
   if (v === 'special') return c['special-foreground'];
-  if (v === 'inverse') return c['surface-1'];
+  if (v === 'secondary' || v === 'inverse') return c['surface-1'];
   if (v === 'outlineDanger' || v === 'ghostDanger') return c.danger;
   return c.foreground;
 }
@@ -248,8 +245,8 @@ function resolveStateColors({ state, idleIconColor, elevatedVariant, glossyVaria
 // IconSlot — animated width collapse / expand for state icons
 // ---------------------------------------------------------------------------
 
-type IconSlotProps = { keyId: string; children: ReactNode; reduce: boolean; slotWidth?: number };
-function IconSlot({ keyId, children, reduce, slotWidth = ICON_SLOT_WIDTH }: IconSlotProps) {
+type IconSlotProps = { keyId: string; children: ReactNode; reduce: boolean; slotWidth: number };
+function IconSlot({ keyId, children, reduce, slotWidth }: IconSlotProps) {
   return (
     <MotiView
       key={keyId}
@@ -429,7 +426,6 @@ export function StatefulButton({
   successText = 'Done',
   errorText = 'Try again',
   icon,
-  stateIconSize = 20,
   stateIconStrokeWidth = 2.5,
   chip,
   disabled,
@@ -483,6 +479,7 @@ export function StatefulButton({
       clearTimeout(windowTimer.current);
       windowTimer.current = null;
     }
+
     runIdRef.current += 1;
     runningRef.current = false;
     setMachineState('idle');
@@ -562,6 +559,9 @@ export function StatefulButton({
   // double-fired; a reset re-enables the button when it returns to idle.
   const machineActive = !controlled && state !== 'idle';
   const v = variant ?? 'primary';
+  const s = size ?? 'md';
+  const iconSize = STATE_ICON_SIZE[s];
+  const stateGapClass = STATE_BUTTON_GAP_CLASSNAME[s];
   const colors = useThemeColors();
 
   // Chip mode swaps the flat Button for an elevated or glossy key. The machine
@@ -585,7 +585,6 @@ export function StatefulButton({
   // Slot wide enough to contain the icon with 6 px margin on each side, which
   // also acts as the gap between icon and label without needing an explicit gap
   // on the outer row (an explicit gap would show during the slot's width spring).
-  const stateIconSlotWidth = stateIconSize + 12;
   // In success/error the button shrinks its horizontal padding slightly to
   // compensate for the extra width the icon slot adds. Derived from the family's
   // padding rather than tabulated, so retuning a `--spacing-interactive-pad-*` token
@@ -622,17 +621,17 @@ export function StatefulButton({
 
   const content = (
     // accessibilityLiveRegion mirrors the web's aria-live="polite"
-    <View accessible={false} accessibilityLiveRegion="polite" className="flex-row items-center">
+    <View accessible={false} accessibilityLiveRegion="polite" className={`flex-row items-center ${stateGapClass}`}>
       <AnimatePresence>
         {state === 'success' ? (
-          <IconSlot keyId="success-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
-            <Check size={stateIconSize} color={iconColor} />
+          <IconSlot keyId="success-icon" reduce={reduce} slotWidth={iconSize}>
+            <Check size={iconSize} color={iconColor} />
           </IconSlot>
         ) : null}
 
         {state === 'error' ? (
-          <IconSlot keyId="error-icon" reduce={reduce} slotWidth={stateIconSlotWidth}>
-            <AlertCircle size={stateIconSize} color={iconColor} />
+          <IconSlot keyId="error-icon" reduce={reduce} slotWidth={iconSize}>
+            <AlertCircle size={iconSize} color={iconColor} />
           </IconSlot>
         ) : null}
       </AnimatePresence>
@@ -665,7 +664,7 @@ export function StatefulButton({
 
       <AnimatePresence>
         {state === 'idle' && icon ? (
-          <IconSlot keyId="idle-icon" reduce={reduce}>
+          <IconSlot keyId="idle-icon" reduce={reduce} slotWidth={iconSize}>
             {icon}
           </IconSlot>
         ) : null}

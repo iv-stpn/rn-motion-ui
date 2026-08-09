@@ -2,11 +2,11 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Pressable, type PressableProps, View } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
-import { cn } from '../../../lib/cn';
-import { SPRING_LAYOUT } from '../../../lib/ease';
-import { MotiView } from '../../../moti/components/view';
-import { ThemedIcon } from '../../icon/themed-icon';
-import { Text } from '../../typography/Text/text';
+import { cn } from '../../lib/cn';
+import { SPRING_LAYOUT } from '../../lib/ease';
+import { MotiView } from '../../moti/components/view';
+import { ThemedIcon } from '../icon/themed-icon';
+import { Text } from '../typography/Text/text';
 
 /** Icon renderer — compatible with this project's icon set signature. */
 export type MenuItemIcon = (props: IconProps) => ReactNode;
@@ -39,7 +39,7 @@ const DEFAULT_VARIANT: Record<
     labelClass: 'text-[12px]',
   },
   md: {
-    rowClass: 'gap-3 px-2 py-1.5',
+    rowClass: 'gap-2 px-2 py-1.5',
     iconSize: 21,
     iconPlaceholderClass: 'h-5 w-5',
     labelClass: 'text-[14px]',

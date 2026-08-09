@@ -1,7 +1,6 @@
 import { type ReactNode, useCallback } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
-import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
@@ -11,6 +10,7 @@ import { CARD_RADIUS } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
+import { CloseButton } from '../CloseButton/close-button';
 import { OverlayShell } from '../Overlay/overlay-shell';
 
 const BACK_BUTTON_HEADER_HEIGHT = 56;
@@ -112,11 +112,7 @@ function buildBody({
           ) : (
             <View className="flex-1" />
           )}
-          {showClose && dismissable ? (
-            <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Close">
-              {closeIcon ?? <X size={20} />}
-            </Pressable>
-          ) : null}
+          {showClose && dismissable ? (closeIcon ?? <CloseButton onPress={handleClose} />) : null}
         </View>
       </View>
     ) : null;
@@ -176,7 +172,7 @@ export type FullSheetProps = {
    * When omitted, the existing title/subtitle/showClose props build the header.
    */
   header?: ReactNode | ((ctx: FullSheetHeaderCtx) => ReactNode);
-  /** Replace the close (×) button icon. Default: `<X size={20} />`. */
+  /** Replace the entire close button. Default: `<CloseButton onPress={…} />`. */
   closeIcon?: ReactNode;
   /** Replace the back-button chevron icon. Default: rotated `<ChevronRight size={20} />`. */
   backIcon?: ReactNode;

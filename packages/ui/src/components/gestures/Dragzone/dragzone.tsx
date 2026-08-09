@@ -161,6 +161,9 @@ export function Dragzone({
   useEffect(() => {
     const registration = registerDragzone({ getConfig, id, managerPath, measure });
     registrationRef.current = registration;
+    // Ensure the zone's rect is measured before a drag begins — `onLayout` already
+    // queues a measure, but the microtask ordering depends on who queues first.
+    registration.remeasure().catch(() => undefined);
     return () => {
       registrationRef.current = null;
       registration.unregister();

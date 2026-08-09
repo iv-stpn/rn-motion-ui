@@ -238,7 +238,11 @@ export function useDraggablePointer({
     node.addEventListener('lostpointercapture', listeners.onLostCapture);
     node.addEventListener('touchmove', listeners.onTouchMove, { passive: false });
     node.addEventListener('touchend', listeners.onTouchEnd, { passive: false });
-    node.addEventListener('click', listeners.onClick, { capture: true });
+    // A capture-phase click listener on a `draggable` element blocks Safari from
+    // starting a native drag — the browser reads it as the element being
+    // interactive and refuses the lift. Only needed for mouse-mode hold
+    // suppression, so it is only added when cursorMode is on.
+    if (cursorMode) node.addEventListener('click', listeners.onClick, { capture: true });
 
     return () => {
       listeners.reset();
@@ -249,7 +253,7 @@ export function useDraggablePointer({
       node.removeEventListener('lostpointercapture', listeners.onLostCapture);
       node.removeEventListener('touchmove', listeners.onTouchMove);
       node.removeEventListener('touchend', listeners.onTouchEnd);
-      node.removeEventListener('click', listeners.onClick, { capture: true });
+      if (cursorMode) node.removeEventListener('click', listeners.onClick, { capture: true });
     };
     // `timeline` is stable for the life of the component, so it never rebinds here.
   }, [cursorMode, enabled, nodeRef, session, timeline]);

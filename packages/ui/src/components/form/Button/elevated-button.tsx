@@ -2,13 +2,14 @@
 import { useCallback, useId, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { useResolveClassNames } from 'uniwind';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { type ThemeToken, useThemeColors } from '../../../theme/use-theme-color';
 import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
-import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadius } from './button-scale';
+import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass } from './button-scale';
 
 /**
  * Fill colour + surface style for an ElevatedButton. Most values get the glossy
@@ -175,8 +176,9 @@ type ElevatedAppearance = {
   spinnerColor: string;
   /** Render the gloss + rim SVG highlights (coloured fills only, not disabled). */
   showHighlights: boolean;
-  /** Corner radius shared by the wrapper so the shadow ring follows the curve. */
-  radius: number;
+  /** CSS class for the wrapper border-radius so the shadow ring follows the curve.
+   *  Also resolved via {@link useResolveClassNames} to derive the SVG rim inset. */
+  radiusClass: string;
   /** Multi-layer drop shadow string, or undefined when the chip is flat. */
   boxShadow: string | undefined;
   /** Fill painted on the wrapper (gray plate only) so its inset sheen isn't
@@ -225,22 +227,38 @@ function resolveAppearance({ variant, size, shape, hovered, isDisabled, colors }
     spinnerColor: spinnerColorFor(variant, isDisabled, colors),
     // gray and white are flat plates — neither gets the SVG gloss/rim overlays.
     showHighlights: variant !== 'white' && variant !== 'gray' && !isDisabled,
-    radius: buttonRadius(shape, size),
+    radiusClass: buttonRadiusClass(shape),
     boxShadow,
     wrapperBackground,
   };
 }
 
-type ElevatedHighlightsProps = { id: string; hovered: boolean; radius: number; width: number; height: number };
+type ElevatedHighlightsProps = { id: string; hovered: boolean; radiusClass: string; width: number; height: number };
 
-function ElevatedHighlights({ id, hovered, radius, width, height }: ElevatedHighlightsProps) {
-  const rimInset = Math.max(0, radius - 0.5);
+function ElevatedHighlights({ id, hovered, radiusClass, width, height }: ElevatedHighlightsProps) {
+  // Resolve the radius class (rounded-interactive or rounded-full) through
+  // UniWind so the SVG rim follows the same curve driven by --radius-interactive
+  // rather than a hardcoded JS constant. For pills (rounded-full → borderRadius
+  // 9999) the effective radius is capped at half the measured height.
+  const resolvedStyle = useResolveClassNames(radiusClass);
+  const numericRadius: number = (() => {
+    const v = resolvedStyle.borderRadius ?? resolvedStyle.borderTopLeftRadius;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') {
+      const parsed = Number.parseFloat(v);
+      return Number.isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  })();
+  const effectiveRadius = numericRadius > height / 2 ? height / 2 : numericRadius;
+  const rimInset = Math.max(0, effectiveRadius - 0.5);
   return (
     <>
       <MotiView
         animate={{ opacity: hovered ? 0.24 : 0.16 }}
         transition={{ type: 'timing', duration: 200 }}
-        style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden', pointerEvents: 'none' }]}
+        className={cn(radiusClass, 'pointer-events-none overflow-hidden')}
+        style={StyleSheet.absoluteFill}
       >
         <Svg width="100%" height="100%">
           <Defs>
@@ -327,7 +345,7 @@ export function ElevatedButton({
   const gradientId = useId().replace(/:/g, '');
 
   const appearance = resolveAppearance({ variant, size, shape, hovered, isDisabled: flatten, colors });
-  const { containerClass, spinnerColor, showHighlights, radius, boxShadow, wrapperBackground } = appearance;
+  const { containerClass, spinnerColor, showHighlights, radiusClass, boxShadow, wrapperBackground } = appearance;
 
   const { pressed, ripples, dims, onLayout, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -354,17 +372,13 @@ export function ElevatedButton({
     <MotiView
       animate={pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale })}
       transition={pressSpring}
-      className={cn(fitWidth && 'w-full', className)}
+      className={cn(boxShadow && radiusClass, fitWidth && 'w-full', className)}
       // The drop-shadow (and its coloured ring) live here on the wrapper: the
       // Pressable clips its own overflow for the gloss/rim, which would also clip
-      // a shadow. borderRadius is shared so the ring follows the chip curve. The
+      // a shadow. The radiusClass keeps the ring aligned with the chip curve. The
       // gray plate also rides its fill here (with the inset sheen) so the inset
       // shadow paints over it instead of being hidden by the Pressable.
-      style={[
-        boxShadow ? { borderRadius: radius, boxShadow } : null,
-        wrapperBackground ? { backgroundColor: wrapperBackground } : null,
-        style,
-      ]}
+      style={[boxShadow ? { boxShadow } : null, wrapperBackground ? { backgroundColor: wrapperBackground } : null, style]}
     >
       <Pressable
         accessibilityRole="button"
@@ -392,7 +406,7 @@ export function ElevatedButton({
         {/* Gloss + rim highlights sit above the fill but below the label so the
             text stays crisp; both are pointer-transparent. */}
         {showHighlights ? (
-          <ElevatedHighlights id={gradientId} hovered={hovered} radius={radius} width={dims.w} height={dims.h} />
+          <ElevatedHighlights id={gradientId} hovered={hovered} radiusClass={radiusClass} width={dims.w} height={dims.h} />
         ) : null}
         {buttonContent}
         {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={variant !== 'white' && variant !== 'gray'} /> : null}

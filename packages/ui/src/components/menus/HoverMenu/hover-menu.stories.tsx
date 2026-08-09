@@ -10,9 +10,9 @@ import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
+import { Menu } from '../../RowPrimitive/menu';
+import type { MenuItemIcon } from '../../RowPrimitive/menu-item';
 import { Text } from '../../typography/Text/text';
-import { Menu } from '../Menu/menu';
-import type { MenuItemIcon } from '../MenuItem/menu-item';
 import { HoverMenu, type HoverMenuProps } from './hover-menu';
 
 const meta = {
@@ -92,7 +92,7 @@ type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 's
 function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
   return (
     <TriggerButton
-      buttonVariant="outline"
+      buttonVariant="ghost"
       kind={kind}
       size={size}
       shape={shape}
@@ -184,7 +184,7 @@ function ControlledPressableDemo() {
   const [open, setOpen] = useState(false);
   const renderTrigger = useCallback(
     (props: TriggerRenderProps) => (
-      <TriggerButton buttonVariant="outline" kind="button" label={TRIGGER_CLOSED} onPress={props.toggle} />
+      <TriggerButton buttonVariant="ghost" kind="button" label={TRIGGER_CLOSED} onPress={props.toggle} />
     ),
     [],
   );

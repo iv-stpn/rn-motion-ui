@@ -15,7 +15,9 @@
   "dependencies": {
     "expo": "^57",
     "expo-dev-client": "^57",
+    "expo-font": "^57.0.1",
     "expo-status-bar": "^57",
+    "geist": "^1.7.2",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-native": "0.86.0",

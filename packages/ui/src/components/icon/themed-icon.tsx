@@ -18,14 +18,12 @@ const VARIANT_TOKEN: Record<IconVariant, ThemeToken> = {
   // ── ButtonVariant ────────────────────────────────────────────────────────
   primary: 'primary-foreground',
   secondary: 'foreground',
-  ghost: 'muted-foreground',
-  outline: 'foreground',
+  ghost: 'foreground',
   danger: 'danger-foreground',
   special: 'special-foreground',
   inverse: 'surface-1',
   outlineDanger: 'danger',
   ghostDanger: 'danger',
-  ghostPrimary: 'primary',
   // ── ElevatedVariant (extras not in ButtonVariant) ────────────────────────
   neutral: 'primary-foreground',
   success: 'success-foreground',

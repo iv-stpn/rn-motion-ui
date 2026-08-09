@@ -20,8 +20,8 @@ import {
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { Button } from '../../form/Button/button';
+import { MenuItem } from '../../RowPrimitive/menu-item';
 import { Text } from '../../typography/Text/text';
-import { MenuItem } from '../MenuItem/menu-item';
 import type { MultiStepHelpers, MultiStepMenuHandle, MultiStepSection } from './multi-step-menu';
 import { MenuRow, MultiStepMenu } from './multi-step-menu';
 

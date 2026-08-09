@@ -54,7 +54,8 @@ type ThemeToken =
   | 'special'
   | 'special-foreground'
   | 'white'
-  | 'black';
+  | 'black'
+  | 'background';
 
 /**
  * OKLCH definitions mirroring the tokens.css @theme block — [L, C, H, alpha?].
@@ -100,6 +101,7 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   'special-foreground': [1, 0, 0],
   white: [1, 0, 0],
   black: [0, 0, 0],
+  background: [1, 0, 0],
 };
 
 const DARK_OKLCH: Record<ThemeToken, Oklch> = {
@@ -136,6 +138,7 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   // Absolute colors — same in both schemes, on purpose.
   white: [1, 0, 0],
   black: [0, 0, 0],
+  background: [0, 0, 0],
 };
 
 /** Resolve an OKLCH definition table to concrete sRGB strings. */

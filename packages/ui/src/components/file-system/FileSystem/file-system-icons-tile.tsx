@@ -9,25 +9,24 @@
 // it wraps, so a single-tile drag ghosts this very node, and a group drag ghosts
 // what the manager's `renderPreview` returns.
 
-import { useCallback, useMemo, useRef } from 'react';
 import { type GestureResponderEvent, Pressable, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
 import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { withMultiDragIds } from '../../gestures/DragManager/multi-drag';
-import { useIsLifting, useMultiDragScope } from '../../gestures/DragManager/multi-drag-scope';
+import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../gestures/drag.types';
-import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../menus/HoldContextMenu/hold-context-menu';
+import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph } from './FileIcon/file-icons';
 import type { FileSystemEntry, FileSystemExternalDropEvent, FileSystemMoveEvent } from './file-system.types';
-import { useContextMenu } from './file-system-context-menu';
 import { FileSystemDropzone } from './file-system-dropzone';
 import { GLYPH_BOX_HEIGHT, GLYPH_BOX_WIDTH, ROW_GAP, TILE_HEIGHT } from './file-system-icons-grid';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
+import { useFileSystemDragOptions } from './use-file-system-drag-options';
+import { useFileSystemRowInteraction } from './use-file-system-row-interaction';
 
 // Tile *geometry* lives in file-system-icons-grid.ts — the drag session resolves
 // pointer positions with those constants, and the hover highlight derives the
@@ -165,52 +164,14 @@ function IconTile({
   width,
   ...faceProps
 }: IconTileProps) {
-  const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
-
-  // Multi-drag: resolve the same payload MultiDraggable used to resolve
-  const { getGroupData, renderPreview, resolveIds } = useMultiDragScope();
-  const ids = useMemo(() => resolveIds(entry.path), [entry.path, resolveIds]);
-  const multiData = useMemo(() => withMultiDragIds(getGroupData(ids), ids), [getGroupData, ids]);
-  const dragOptions = useMemo<HoldContextMenuDragOptions | undefined>(
-    () => (draggable ? { data: multiData, effectAllowed: 'move', preview: renderPreview?.(ids) } : undefined),
-    [draggable, ids, multiData, renderPreview],
-  );
-
-  // A hold (menu-open or multi-select toggle) must not also register as a tap
-  const heldRef = useRef(false);
-  const onOpenChangeRef = useRef(menuProps.onOpenChange);
-  onOpenChangeRef.current = menuProps.onOpenChange;
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (open) heldRef.current = true;
-    onOpenChangeRef.current(open);
-  }, []);
-
-  const handlePress = useCallback(
-    (event: GestureResponderEvent) => {
-      if (heldRef.current) {
-        heldRef.current = false;
-        return;
-      }
-      onActivate(entry, event);
-    },
-    [entry, onActivate],
-  );
-
-  const handlePressIn = useCallback(() => {
-    heldRef.current = false;
-  }, []);
-
-  // In multi-select mode, hold toggles selection instead of opening the menu.
-  const onHoldAction = useMemo(
-    () =>
-      onSelectLongPress
-        ? () => {
-            heldRef.current = true;
-            onSelectLongPress(entry);
-          }
-        : undefined,
-    [entry, onSelectLongPress],
-  );
+  const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
+    entry,
+    getContextMenuActions,
+    onActivate,
+    onContextMenuAction,
+    onSelectLongPress,
+  });
+  const dragOptions = useFileSystemDragOptions(entry, draggable);
 
   // Every tile the drag carries fades, not just the one that was grabbed — which
   // is the whole point of dragging a selection.

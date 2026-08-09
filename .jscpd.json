@@ -1,0 +1,13 @@
+{
+  "minTokens": 70,
+  "reporters": ["ai"],
+  "ignore": [
+    "**/tokens.css",
+    "packages/icons/src/icons/**",
+    "**/*.stories.tsx",
+    "**/__tests__/**",
+    "**/CHANGELOG.md",
+    "storybook/**/global.css",
+    "storybook/**/metro.config.js"
+  ]
+}

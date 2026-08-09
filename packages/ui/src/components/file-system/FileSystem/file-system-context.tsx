@@ -207,11 +207,16 @@ function resolveFolderName(path: string, title: string): string {
 }
 
 /** Add/remove a MIME from the single file-type pill, retiring it when empty. */
-function nextFileTypeFilters(previous: FileSystemFilter[], id: string, mime: string, checked: boolean): FileSystemFilter[] {
+function nextFileTypeFilters(
+  previous: FileSystemFilter[],
+  mime: string,
+  checked: boolean,
+  nextId: () => string,
+): FileSystemFilter[] {
   const existing = previous.find((f) => f.type === 'fileType');
   if (!existing) {
     if (!checked) return previous;
-    return [...previous, { id, operator: 'is', type: 'fileType', value: [mime] }];
+    return [...previous, { id: nextId(), operator: 'is', type: 'fileType', value: [mime] }];
   }
   const value = checked ? [...new Set([...existing.value, mime])] : existing.value.filter((v) => v !== mime);
   if (value.length === 0) return previous.filter((f) => f !== existing);
@@ -264,21 +269,25 @@ type HistoryStep = {
 };
 
 /**
- * The full patch for a step through the history stack, shared by `goBack` and
- * `goForward`. Both directions do the same work — land on an index, drop any
- * running query, re-derive the two can-go flags from where the index now sits,
- * and recompute everything downstream of the folder that is now open — so
- * neither needs to know which way it moved.
+ * The full patch for a step through the history stack. Three navigation actions
+ * converge here — `goBack`, `goForward`, and `navigateTo` — so the work of
+ * resetting the query, re-deriving the can-go flags, and recomputing everything
+ * downstream of the folder that is now open lives in one place.
+ *
+ * `stack` is the history stack *after* the motion: `goBack`/`goForward` pass
+ * the existing stack at the new index; `navigateTo` passes a new stack and the
+ * index of the path it just appended.
  */
-function historyStep(s: FileSystemStore, historyIndex: number): HistoryStep {
-  const currentPath = s.navigation.historyStack[historyIndex] ?? '';
+function navigationPatch(s: FileSystemStore, stack: string[], historyIndex: number): HistoryStep {
+  const currentPath = stack[historyIndex] ?? '';
   const navigation: NavigationSlice = {
     ...s.navigation,
     historyIndex,
     currentPath,
+    historyStack: stack,
     currentFolderName: resolveFolderName(currentPath, s.consumer.title),
     canGoBack: historyIndex > 0,
-    canGoForward: historyIndex < s.navigation.historyStack.length - 1,
+    canGoForward: historyIndex < stack.length - 1,
     isLoading: s.navigation.loadingFolders.has(currentPath),
   };
   const search: SearchSlice = { ...s.search, searchInput: '', searchQuery: '', isSearching: false };
@@ -428,398 +437,371 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
   const initialIndex = buildFileSystemIndex(init.items);
 
   // biome-ignore lint/complexity/noExcessiveLinesPerFunction: all slices share a single closure for cross-slice access via get(); splitting would break the dependency graph
-  return createStore<FileSystemStore>((set, get) => ({
-    // ── Initial slice state ─────────────────────────────────────────────────
-    navigation: {
-      currentPath: initialPath,
-      currentFolderName: resolveFolderName(initialPath, init.title),
-      canGoBack: false,
-      canGoForward: false,
-      historyIndex: 0,
-      historyStack: [initialPath],
-      loadingFolders: new Set<string>(),
-      isLoading: false,
-      loadedItems: [],
-    },
-    entries: {
-      items: init.items,
-      index: initialIndex,
-      sortedIndex: initialIndex,
-      entries: initialIndex.children.get(initialPath) ?? [],
-      view: init.defaultView,
-      sort: DEFAULT_SORT,
-    },
-    selection: selectionSliceFrom(EMPTY_FILE_SYSTEM_SELECTION, initialIndex),
-    search: {
-      searchInput: '',
-      searchQuery: '',
-      isSearching: false,
-      // The open folder's subtree, which is what the pipeline searched before the
-      // scope existed. Widening is the deliberate act, not the default.
-      scope: 'folder',
-    },
-    filters: {
-      filters: [],
-      fileFilter: null,
-      fileTypeOptions: computeFileTypeOptions(initialIndex),
-      hasActiveFilters: false,
-    },
-    viewer: {
-      opened: null,
-      resolvedUrlCache: new Map<string, string>(),
-      pageUrlCache: new Map<string, string>(),
-    },
-    layout: { layout: 'full', isCompact: false },
-    consumer: {
-      title: init.title,
-      rootLabel: init.rootLabel,
-      loadChildren: init.loadChildren,
-      draggable: init.draggable,
-      selectionMode: init.selectionMode,
-      testID: init.testID,
-      getBackgroundContextMenuActions: init.getBackgroundContextMenuActions,
-      getContextMenuActions: init.getContextMenuActions,
-      getFileUrl: init.getFileUrl,
-      loadPreviewImageUrl: init.loadPreviewImageUrl,
-      onBackgroundContextMenuAction: init.onBackgroundContextMenuAction,
-      onContextMenuAction: init.onContextMenuAction,
-      onFileOpen: init.onFileOpen,
-      onMove: init.onMove,
-      onExternalDrop: init.onExternalDrop,
-      onSelectedItemsChange: init.onSelectedItemsChange,
-      onSelectionChange: init.onSelectionChange,
-      onViewChange: init.onViewChange,
-      renderEmptyState: init.renderEmptyState,
-      renderEntryIcon: init.renderEntryIcon,
-      renderFilePreview: init.renderFilePreview,
-      renderFileViewer: init.renderFileViewer,
-    },
-
-    // ── Navigation actions ────────────────────────────────────────────────────
-    navigateTo: (folderPath) => {
-      cancelSearchDebounce();
-      const path = normalizeFolderPath(folderPath);
+  return createStore<FileSystemStore>((set, get) => {
+    /** Recompute derived state from `overrides` applied to the current store, then flush {entries, filters, selection}. */
+    function recomputeAndSet(overrides: Partial<FileSystemStore>) {
       const s = get();
-      if (s.navigation.currentPath === path) return;
-      const { historyIndex, historyStack } = s.navigation;
-      const newStack = [...historyStack.slice(0, historyIndex + 1), path];
-      const currentFolderName = resolveFolderName(path, s.consumer.title);
-      const newSearch = { ...s.search, searchInput: '', searchQuery: '', isSearching: false };
-      const newHistoryIndex = newStack.length - 1;
-      const newNav = {
-        ...s.navigation,
-        currentPath: path,
-        currentFolderName,
-        historyIndex: newHistoryIndex,
-        historyStack: newStack,
-        canGoBack: newHistoryIndex > 0,
+      // biome-ignore lint: spreading full store + overrides is a valid store shape at runtime
+      const next = _recomputeEntries({ ...s, ...overrides } as FileSystemStore);
+      set({ entries: next.entries, filters: next.filters, selection: next.selection });
+    }
+
+    return {
+      // ── Initial slice state ─────────────────────────────────────────────────
+      navigation: {
+        currentPath: initialPath,
+        currentFolderName: resolveFolderName(initialPath, init.title),
+        canGoBack: false,
         canGoForward: false,
-      };
-      const next = _recomputeEntries({ ...s, navigation: newNav, search: newSearch });
-      set({
-        navigation: { ...newNav, isLoading: newNav.loadingFolders.has(path) },
-        entries: next.entries,
-        filters: next.filters,
-        selection: next.selection,
-        search: newSearch,
-      });
-      get().ensureChildren(path);
-    },
+        historyIndex: 0,
+        historyStack: [initialPath],
+        loadingFolders: new Set<string>(),
+        isLoading: false,
+        loadedItems: [],
+      },
+      entries: {
+        items: init.items,
+        index: initialIndex,
+        sortedIndex: initialIndex,
+        entries: initialIndex.children.get(initialPath) ?? [],
+        view: init.defaultView,
+        sort: DEFAULT_SORT,
+      },
+      selection: selectionSliceFrom(EMPTY_FILE_SYSTEM_SELECTION, initialIndex),
+      search: {
+        searchInput: '',
+        searchQuery: '',
+        isSearching: false,
+        // The open folder's subtree, which is what the pipeline searched before the
+        // scope existed. Widening is the deliberate act, not the default.
+        scope: 'folder',
+      },
+      filters: {
+        filters: [],
+        fileFilter: null,
+        fileTypeOptions: computeFileTypeOptions(initialIndex),
+        hasActiveFilters: false,
+      },
+      viewer: {
+        opened: null,
+        resolvedUrlCache: new Map<string, string>(),
+        pageUrlCache: new Map<string, string>(),
+      },
+      layout: { layout: 'full', isCompact: false },
+      consumer: {
+        title: init.title,
+        rootLabel: init.rootLabel,
+        loadChildren: init.loadChildren,
+        draggable: init.draggable,
+        selectionMode: init.selectionMode,
+        testID: init.testID,
+        getBackgroundContextMenuActions: init.getBackgroundContextMenuActions,
+        getContextMenuActions: init.getContextMenuActions,
+        getFileUrl: init.getFileUrl,
+        loadPreviewImageUrl: init.loadPreviewImageUrl,
+        onBackgroundContextMenuAction: init.onBackgroundContextMenuAction,
+        onContextMenuAction: init.onContextMenuAction,
+        onFileOpen: init.onFileOpen,
+        onMove: init.onMove,
+        onExternalDrop: init.onExternalDrop,
+        onSelectedItemsChange: init.onSelectedItemsChange,
+        onSelectionChange: init.onSelectionChange,
+        onViewChange: init.onViewChange,
+        renderEmptyState: init.renderEmptyState,
+        renderEntryIcon: init.renderEntryIcon,
+        renderFilePreview: init.renderFilePreview,
+        renderFileViewer: init.renderFileViewer,
+      },
 
-    goBack: () => {
-      cancelSearchDebounce();
-      const s = get();
-      if (s.navigation.historyIndex === 0) return;
-      set(historyStep(s, s.navigation.historyIndex - 1));
-    },
-
-    goForward: () => {
-      cancelSearchDebounce();
-      const s = get();
-      if (s.navigation.historyIndex >= s.navigation.historyStack.length - 1) return;
-      set(historyStep(s, s.navigation.historyIndex + 1));
-    },
-
-    ensureChildren: (folderPath) => {
-      const s = get();
-      const folder = s.entries.index.folders.get(folderPath);
-      if (!folder?.hasChildren) return;
-      if (s.entries.index.children.get(folderPath)?.length) return;
-      if (!s.consumer.loadChildren || requestedFolders.has(folderPath)) return;
-      requestedFolders.add(folderPath);
-      const newLoadingFolders = new Set(s.navigation.loadingFolders).add(folderPath);
-      set({
-        navigation: {
-          ...s.navigation,
-          loadingFolders: newLoadingFolders,
-          isLoading: newLoadingFolders.has(s.navigation.currentPath),
-        },
-      });
-      const drain = async () => {
-        const load = s.consumer.loadChildren;
-        if (!load) return; // guarded above; this silences the non-null assertion
-        let cursor: string | null = null;
-        try {
-          do {
-            // biome-ignore lint/performance/noAwaitInLoops: cursor paging is inherently sequential
-            const result = await load({ cursor, path: folderPath });
-            if (result.items.length) {
-              const cur = get();
-              const loadedItems = [...cur.navigation.loadedItems, ...result.items];
-              const allItems = [...cur.entries.items, ...loadedItems];
-              const index = buildFileSystemIndex(allItems);
-              const next = _recomputeEntries({
-                ...cur,
-                entries: { ...cur.entries, index },
-                navigation: { ...cur.navigation, loadedItems },
-              });
-              set({
-                navigation: { ...cur.navigation, loadedItems },
-                entries: { ...next.entries, items: cur.entries.items, index },
-                filters: next.filters,
-                selection: next.selection,
-              });
-            }
-            cursor = result.nextCursor ?? null;
-          } while (cursor);
-        } catch {
-          requestedFolders.delete(folderPath);
-        } finally {
-          const cur = get();
-          const lf = new Set(cur.navigation.loadingFolders);
-          lf.delete(folderPath);
-          set({
-            navigation: {
-              ...cur.navigation,
-              loadingFolders: lf,
-              isLoading: lf.has(cur.navigation.currentPath),
-            },
-          });
-        }
-      };
-      drain().catch(() => undefined);
-    },
-
-    // ── Entries actions ───────────────────────────────────────────────────────
-    setView: (view) => {
-      set((s) => ({ entries: { ...s.entries, view } }));
-      get().consumer.onViewChange?.(view);
-    },
-
-    applySortKey: (key) => {
-      const s = get();
-      if (s.entries.sort.key === key) return;
-      const sort = { direction: defaultSortDirection(key), key };
-      const next = _recomputeEntries({ ...s, entries: { ...s.entries, sort } });
-      set({ entries: { ...next.entries, sort }, filters: next.filters, selection: next.selection });
-    },
-
-    toggleSortColumn: (key) => {
-      const s = get();
-      const prev = s.entries.sort;
-      const sort =
-        prev.key === key
-          ? { direction: prev.direction === 'asc' ? ('desc' as const) : ('asc' as const), key }
-          : { direction: defaultSortDirection(key), key };
-      const next = _recomputeEntries({ ...s, entries: { ...s.entries, sort } });
-      set({ entries: { ...next.entries, sort }, filters: next.filters, selection: next.selection });
-    },
-
-    _setItems: (items) => {
-      const s = get();
-      const allItems = s.navigation.loadedItems.length ? [...items, ...s.navigation.loadedItems] : items;
-      const index = buildFileSystemIndex(allItems);
-      const currentFolderName = resolveFolderName(s.navigation.currentPath, s.consumer.title);
-      const next = _recomputeEntries({ ...s, entries: { ...s.entries, items, index } });
-      set({
-        entries: { ...next.entries, items, index },
-        filters: next.filters,
-        selection: next.selection,
-        navigation: { ...s.navigation, currentFolderName },
-      });
-    },
-
-    // ── Selection actions ─────────────────────────────────────────────────────
-    // The reducer decides what a press means and returns the previous state
-    // untouched when it means nothing, so the identity check below is the whole
-    // guard against redundant writes and duplicate consumer callbacks.
-    selectEntry: (entry, modifiers, orderedPaths) => {
-      const s = get();
-      const previous = selectionStateOf(s.selection);
-      const next = applyFileSystemSelection(previous, entry?.path ?? null, {
-        mode: s.consumer.selectionMode,
-        modifiers,
-        orderedPaths,
-      });
-      if (next === previous) return;
-      const { index } = s.entries;
-      set({ selection: selectionSliceFrom(next, index) });
-      notifySelectionChange(s.consumer, index, next, previous);
-    },
-
-    openEntry: (entry) => {
-      if (entry.kind === 'folder') get().navigateTo(entry.path);
-      else get().openFile(entry);
-    },
-
-    selectAndPrefetch: (entry, modifiers, orderedPaths) => {
-      get().selectEntry(entry, modifiers, orderedPaths);
-      // Only a plain press walks into a folder's children: a modified press is
-      // building a selection, not stepping through the tree.
-      if (entry?.kind === 'folder' && !(modifiers?.additive || modifiers?.range)) get().ensureChildren(entry.path);
-    },
-
-    clearSelection: () => get().selectEntry(null),
-
-    selectMarquee: (covered, base) => {
-      const s = get();
-      const previous = selectionStateOf(s.selection);
-      const next = applyFileSystemMarquee(previous, covered, base);
-      if (next === previous) return;
-      const { index } = s.entries;
-      set({ selection: selectionSliceFrom(next, index) });
-      notifySelectionChange(s.consumer, index, next, previous);
-    },
-
-    // ── Search actions ────────────────────────────────────────────────────────
-    setSearchInput: (value) => {
-      // Immediate update for UI responsiveness
-      set((s) => ({ search: { ...s.search, searchInput: value } }));
-      // Deferred recompute (200 ms debounce) for performance
-      cancelSearchDebounce();
-      searchDebounceTimer = setTimeout(() => {
-        searchDebounceTimer = null;
+      // ── Navigation actions ────────────────────────────────────────────────────
+      navigateTo: (folderPath) => {
+        cancelSearchDebounce();
+        const path = normalizeFolderPath(folderPath);
         const s = get();
-        const searchQuery = value.trim().replaceAll('\\', '/').toLowerCase();
-        const newSearch = { ...s.search, searchInput: value, searchQuery, isSearching: searchQuery.length > 0 };
-        const next = _recomputeEntries({ ...s, search: newSearch });
-        set({ search: newSearch, entries: next.entries, filters: next.filters, selection: next.selection });
-      }, 200);
-    },
+        if (s.navigation.currentPath === path) return;
+        const newStack = [...s.navigation.historyStack.slice(0, s.navigation.historyIndex + 1), path];
+        set(navigationPatch(s, newStack, newStack.length - 1));
+        get().ensureChildren(path);
+      },
 
-    // Immediate, unlike `setSearchInput`: this is a press, not typing, so there
-    // is no keystroke run to debounce. Recomputes only when a query is actually
-    // running — with an empty field the scope is just remembered for the next
-    // one, and any pending debounce reads it off the store when it fires.
-    setSearchScope: (scope) => {
-      const s = get();
-      if (s.search.scope === scope) return;
-      const newSearch = { ...s.search, scope };
-      if (!s.search.isSearching) {
-        set({ search: newSearch });
-        return;
-      }
-      const next = _recomputeEntries({ ...s, search: newSearch });
-      set({ search: newSearch, entries: next.entries, filters: next.filters, selection: next.selection });
-    },
+      goBack: () => {
+        cancelSearchDebounce();
+        const s = get();
+        if (s.navigation.historyIndex === 0) return;
+        set(navigationPatch(s, s.navigation.historyStack, s.navigation.historyIndex - 1));
+      },
 
-    // ── Filter actions ────────────────────────────────────────────────────────
-    toggleFileTypeFilterValue: (mime, checked) => {
-      const s = get();
-      const id = nextFilterId();
-      const filters = nextFileTypeFilters(s.filters.filters, id, mime, checked);
-      const next = _recomputeEntries({ ...s, filters: { ...s.filters, filters } });
-      set({ filters: next.filters, entries: next.entries, selection: next.selection });
-    },
+      goForward: () => {
+        cancelSearchDebounce();
+        const s = get();
+        if (s.navigation.historyIndex >= s.navigation.historyStack.length - 1) return;
+        set(navigationPatch(s, s.navigation.historyStack, s.navigation.historyIndex + 1));
+      },
 
-    setDatePresetFilter: (type, preset) => {
-      const s = get();
-      const id = nextFilterId();
-      const filters = [
-        ...s.filters.filters.filter((f) => f.type !== type),
-        { id, operator: 'after' as const, type, value: [preset] },
-      ];
-      const next = _recomputeEntries({ ...s, filters: { ...s.filters, filters } });
-      set({ filters: next.filters, entries: next.entries, selection: next.selection });
-    },
-
-    // Replaces any existing filter of the same facet, keeping a negated range
-    // negated — re-picking dates on a "not in range" filter re-values it rather
-    // than silently flipping what it means.
-    applyCustomDateRange: (type, from, to) => {
-      const s = get();
-      const id = nextFilterId();
-      const existing = s.filters.filters.find((f) => f.type === type);
-      const operator = existing?.operator === 'not-in-range' ? ('not-in-range' as const) : ('in-range' as const);
-      const filters = [
-        ...s.filters.filters.filter((f) => f.type !== type),
-        { id, operator, type, value: [from.toISOString(), to.toISOString()] },
-      ];
-      const next = _recomputeEntries({ ...s, filters: { ...s.filters, filters } });
-      set({ filters: next.filters, entries: next.entries, selection: next.selection });
-    },
-
-    setFilterOperator: (id, operator) => {
-      const s = get();
-      const filters = s.filters.filters.map((f) => (f.id === id ? { ...f, operator } : f));
-      const next = _recomputeEntries({ ...s, filters: { ...s.filters, filters } });
-      set({ filters: next.filters, entries: next.entries, selection: next.selection });
-    },
-
-    setFilterDatePreset: (id, preset) => {
-      const s = get();
-      const filters = s.filters.filters.map((f) => {
-        if (f.id !== id) return f;
-        const keepsOperator = f.operator === 'before' || f.operator === 'after';
-        return { ...f, operator: keepsOperator ? f.operator : ('after' as const), value: [preset] };
-      });
-      const next = _recomputeEntries({ ...s, filters: { ...s.filters, filters } });
-      set({ filters: next.filters, entries: next.entries, selection: next.selection });
-    },
-
-    removeFilter: (id) => {
-      const s = get();
-      const filters = s.filters.filters.filter((f) => f.id !== id);
-      const next = _recomputeEntries({ ...s, filters: { ...s.filters, filters } });
-      set({ filters: next.filters, entries: next.entries, selection: next.selection });
-    },
-
-    clearFilters: () => {
-      const s = get();
-      const next = _recomputeEntries({ ...s, filters: { ...s.filters, filters: [] } });
-      set({ filters: next.filters, entries: next.entries, selection: next.selection });
-    },
-
-    // ── Viewer actions ────────────────────────────────────────────────────────
-    openFile: (file) => {
-      const s = get();
-      const { getFileUrl, onFileOpen, renderFileViewer } = s.consumer;
-      const kind = viewerKindForFile(file);
-      const isViewable = kind === 'image' || (kind !== null && Boolean(renderFileViewer));
-      const show = async () => {
-        const knownUrl = file.url ?? s.viewer.resolvedUrlCache.get(file.path) ?? null;
-        let url: string | null = knownUrl;
-        if (!url && getFileUrl) {
+      ensureChildren: (folderPath) => {
+        const s = get();
+        const folder = s.entries.index.folders.get(folderPath);
+        if (!folder?.hasChildren) return;
+        if (s.entries.index.children.get(folderPath)?.length) return;
+        if (!s.consumer.loadChildren || requestedFolders.has(folderPath)) return;
+        requestedFolders.add(folderPath);
+        const newLoadingFolders = new Set(s.navigation.loadingFolders).add(folderPath);
+        set({
+          navigation: {
+            ...s.navigation,
+            loadingFolders: newLoadingFolders,
+            isLoading: newLoadingFolders.has(s.navigation.currentPath),
+          },
+        });
+        const drain = async () => {
+          const load = s.consumer.loadChildren;
+          if (!load) return; // guarded above; this silences the non-null assertion
+          let cursor: string | null = null;
           try {
-            const resolved = await getFileUrl(file);
-            if (resolved) {
-              url = resolved;
-              get().viewer.resolvedUrlCache.set(file.path, resolved);
-            }
+            do {
+              // biome-ignore lint/performance/noAwaitInLoops: cursor paging is inherently sequential
+              const result = await load({ cursor, path: folderPath });
+              if (result.items.length) {
+                const cur = get();
+                const loadedItems = [...cur.navigation.loadedItems, ...result.items];
+                const allItems = [...cur.entries.items, ...loadedItems];
+                const index = buildFileSystemIndex(allItems);
+                const next = _recomputeEntries({
+                  ...cur,
+                  entries: { ...cur.entries, index },
+                  navigation: { ...cur.navigation, loadedItems },
+                });
+                set({
+                  navigation: { ...cur.navigation, loadedItems },
+                  entries: { ...next.entries, items: cur.entries.items, index },
+                  filters: next.filters,
+                  selection: next.selection,
+                });
+              }
+              cursor = result.nextCursor ?? null;
+            } while (cursor);
           } catch {
-            /* falls back to null */
+            requestedFolders.delete(folderPath);
+          } finally {
+            const cur = get();
+            const lf = new Set(cur.navigation.loadingFolders);
+            lf.delete(folderPath);
+            set({
+              navigation: {
+                ...cur.navigation,
+                loadingFolders: lf,
+                isLoading: lf.has(cur.navigation.currentPath),
+              },
+            });
           }
+        };
+        drain().catch(() => undefined);
+      },
+
+      // ── Entries actions ───────────────────────────────────────────────────────
+      setView: (view) => {
+        set((s) => ({ entries: { ...s.entries, view } }));
+        get().consumer.onViewChange?.(view);
+      },
+
+      applySortKey: (key) => {
+        const s = get();
+        if (s.entries.sort.key === key) return;
+        recomputeAndSet({ entries: { ...s.entries, sort: { direction: defaultSortDirection(key), key } } });
+      },
+
+      toggleSortColumn: (key) => {
+        const s = get();
+        const prev = s.entries.sort;
+        const sort =
+          prev.key === key
+            ? { direction: prev.direction === 'asc' ? ('desc' as const) : ('asc' as const), key }
+            : { direction: defaultSortDirection(key), key };
+        recomputeAndSet({ entries: { ...s.entries, sort } });
+      },
+
+      _setItems: (items) => {
+        const s = get();
+        const allItems = s.navigation.loadedItems.length ? [...items, ...s.navigation.loadedItems] : items;
+        const index = buildFileSystemIndex(allItems);
+        const currentFolderName = resolveFolderName(s.navigation.currentPath, s.consumer.title);
+        recomputeAndSet({ entries: { ...s.entries, items, index } });
+        set({ navigation: { ...s.navigation, currentFolderName } });
+      },
+
+      // ── Selection actions ─────────────────────────────────────────────────────
+      // The reducer decides what a press means and returns the previous state
+      // untouched when it means nothing, so the identity check below is the whole
+      // guard against redundant writes and duplicate consumer callbacks.
+      selectEntry: (entry, modifiers, orderedPaths) => {
+        const s = get();
+        const previous = selectionStateOf(s.selection);
+        const next = applyFileSystemSelection(previous, entry?.path ?? null, {
+          mode: s.consumer.selectionMode,
+          modifiers,
+          orderedPaths,
+        });
+        if (next === previous) return;
+        const { index } = s.entries;
+        set({ selection: selectionSliceFrom(next, index) });
+        notifySelectionChange(s.consumer, index, next, previous);
+      },
+
+      openEntry: (entry) => {
+        if (entry.kind === 'folder') get().navigateTo(entry.path);
+        else get().openFile(entry);
+      },
+
+      selectAndPrefetch: (entry, modifiers, orderedPaths) => {
+        get().selectEntry(entry, modifiers, orderedPaths);
+        // Only a plain press walks into a folder's children: a modified press is
+        // building a selection, not stepping through the tree.
+        if (entry?.kind === 'folder' && !(modifiers?.additive || modifiers?.range)) get().ensureChildren(entry.path);
+      },
+
+      clearSelection: () => get().selectEntry(null),
+
+      selectMarquee: (covered, base) => {
+        const s = get();
+        const previous = selectionStateOf(s.selection);
+        const next = applyFileSystemMarquee(previous, covered, base);
+        if (next === previous) return;
+        const { index } = s.entries;
+        set({ selection: selectionSliceFrom(next, index) });
+        notifySelectionChange(s.consumer, index, next, previous);
+      },
+
+      // ── Search actions ────────────────────────────────────────────────────────
+      setSearchInput: (value) => {
+        // Immediate update for UI responsiveness
+        set((s) => ({ search: { ...s.search, searchInput: value } }));
+        // Deferred recompute (200 ms debounce) for performance
+        cancelSearchDebounce();
+        searchDebounceTimer = setTimeout(() => {
+          searchDebounceTimer = null;
+          const s = get();
+          const searchQuery = value.trim().replaceAll('\\', '/').toLowerCase();
+          const newSearch = { ...s.search, searchInput: value, searchQuery, isSearching: searchQuery.length > 0 };
+          recomputeAndSet({ search: newSearch });
+          set({ search: newSearch });
+        }, 200);
+      },
+
+      // Immediate, unlike `setSearchInput`: this is a press, not typing, so there
+      // is no keystroke run to debounce. Recomputes only when a query is actually
+      // running — with an empty field the scope is just remembered for the next
+      // one, and any pending debounce reads it off the store when it fires.
+      setSearchScope: (scope) => {
+        const s = get();
+        if (s.search.scope === scope) return;
+        const newSearch = { ...s.search, scope };
+        if (!s.search.isSearching) {
+          set({ search: newSearch });
+          return;
         }
-        if (onFileOpen) onFileOpen(file, url);
-        else if (kind && isViewable) set((cur) => ({ viewer: { ...cur.viewer, opened: { file, kind, url } } }));
-      };
-      show().catch(() => undefined);
-    },
+        recomputeAndSet({ search: newSearch });
+        set({ search: newSearch });
+      },
 
-    closeFile: () => set((s) => ({ viewer: { ...s.viewer, opened: null } })),
+      // ── Filter actions ────────────────────────────────────────────────────────
+      toggleFileTypeFilterValue: (mime, checked) => {
+        const s = get();
+        const filters = nextFileTypeFilters(s.filters.filters, mime, checked, nextFilterId);
+        recomputeAndSet({ filters: { ...s.filters, filters } });
+      },
 
-    // ── Sync actions (called from file-system.tsx, never by internal components)
-    _syncConsumer: (patch) => {
-      const s = get();
-      const changed = objectKeys(patch).some((k) => s.consumer[k] !== patch[k]);
-      if (changed) set({ consumer: { ...s.consumer, ...patch } });
-    },
+      setDatePresetFilter: (type, preset) => {
+        const s = get();
+        const id = nextFilterId();
+        const filters = [
+          ...s.filters.filters.filter((f) => f.type !== type),
+          { id, operator: 'after' as const, type, value: [preset] },
+        ];
+        recomputeAndSet({ filters: { ...s.filters, filters } });
+      },
 
-    _syncLayout: (patch) => {
-      const s = get();
-      if (s.layout.layout !== patch.layout || s.layout.isCompact !== patch.isCompact) set({ layout: patch });
-    },
-  }));
+      // Replaces any existing filter of the same facet, keeping a negated range
+      // negated — re-picking dates on a "not in range" filter re-values it rather
+      // than silently flipping what it means.
+      applyCustomDateRange: (type, from, to) => {
+        const s = get();
+        const id = nextFilterId();
+        const existing = s.filters.filters.find((f) => f.type === type);
+        const operator = existing?.operator === 'not-in-range' ? ('not-in-range' as const) : ('in-range' as const);
+        const filters = [
+          ...s.filters.filters.filter((f) => f.type !== type),
+          { id, operator, type, value: [from.toISOString(), to.toISOString()] },
+        ];
+        recomputeAndSet({ filters: { ...s.filters, filters } });
+      },
+
+      setFilterOperator: (id, operator) => {
+        const s = get();
+        const filters = s.filters.filters.map((f) => (f.id === id ? { ...f, operator } : f));
+        recomputeAndSet({ filters: { ...s.filters, filters } });
+      },
+
+      setFilterDatePreset: (id, preset) => {
+        const s = get();
+        const filters = s.filters.filters.map((f) => {
+          if (f.id !== id) return f;
+          const keepsOperator = f.operator === 'before' || f.operator === 'after';
+          return { ...f, operator: keepsOperator ? f.operator : ('after' as const), value: [preset] };
+        });
+        recomputeAndSet({ filters: { ...s.filters, filters } });
+      },
+
+      removeFilter: (id) => {
+        const s = get();
+        const filters = s.filters.filters.filter((f) => f.id !== id);
+        recomputeAndSet({ filters: { ...s.filters, filters } });
+      },
+
+      clearFilters: () => {
+        recomputeAndSet({ filters: { ...get().filters, filters: [] } });
+      },
+
+      // ── Viewer actions ────────────────────────────────────────────────────────
+      openFile: (file) => {
+        const s = get();
+        const { getFileUrl, onFileOpen, renderFileViewer } = s.consumer;
+        const kind = viewerKindForFile(file);
+        const isViewable = kind === 'image' || (kind !== null && Boolean(renderFileViewer));
+        const show = async () => {
+          const knownUrl = file.url ?? s.viewer.resolvedUrlCache.get(file.path) ?? null;
+          let url: string | null = knownUrl;
+          if (!url && getFileUrl) {
+            try {
+              const resolved = await getFileUrl(file);
+              if (resolved) {
+                url = resolved;
+                get().viewer.resolvedUrlCache.set(file.path, resolved);
+              }
+            } catch {
+              /* falls back to null */
+            }
+          }
+          if (onFileOpen) onFileOpen(file, url);
+          else if (kind && isViewable) set((cur) => ({ viewer: { ...cur.viewer, opened: { file, kind, url } } }));
+        };
+        show().catch(() => undefined);
+      },
+
+      closeFile: () => set((s) => ({ viewer: { ...s.viewer, opened: null } })),
+
+      // ── Sync actions (called from file-system.tsx, never by internal components)
+      _syncConsumer: (patch) => {
+        const s = get();
+        const changed = objectKeys(patch).some((k) => s.consumer[k] !== patch[k]);
+        if (changed) set({ consumer: { ...s.consumer, ...patch } });
+      },
+
+      _syncLayout: (patch) => {
+        const s = get();
+        if (s.layout.layout !== patch.layout || s.layout.isCompact !== patch.isCompact) set({ layout: patch });
+      },
+    };
+  });
 }
 
 // ── React context ─────────────────────────────────────────────────────────────

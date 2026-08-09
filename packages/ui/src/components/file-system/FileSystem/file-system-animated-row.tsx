@@ -12,7 +12,6 @@
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
-import { View } from 'react-native';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 

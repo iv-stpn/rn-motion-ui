@@ -23,6 +23,7 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish",
+    "jscpd:check": "jscpd",
     "prepare": "bunx husky"
   },
   "devDependencies": {
@@ -32,6 +33,7 @@
     "biome-one-liner-plugin": "1.4.11",
     "biome-react-best-practices-plugin": "2.0.1",
     "biome-typescript-best-practices-plugin": "1.2.3",
+    "jscpd": "^5.0.14",
     "typescript": "^7"
   },
   "dependencies": {

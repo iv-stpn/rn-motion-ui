@@ -31,7 +31,6 @@
  */
 
 import { useRef, useState } from 'react';
-
 import type { ISODate } from '../lib/calendar';
 import { type CalendarLocale, formatDateLabel } from '../lib/calendar-format';
 import { isDayDisabled } from '../lib/calendar-selection';
@@ -45,23 +44,7 @@ import {
   escapeHandler,
 } from '../lib/date-picker-props';
 import { useCalendar } from './use-calendar';
-
-// Declared ahead of the exports to satisfy `useExportsLast`.
-
-/** The open/closed state, controllable from outside. */
-type Disclosure = { isOpen: boolean; setOpen: (next: boolean) => void };
-
-/** Same controlled/uncontrolled seam the calendar uses, for one boolean. */
-function useDisclosure(controlled: boolean | undefined, initial: boolean, onChange?: (open: boolean) => void): Disclosure {
-  const [internal, setInternal] = useState(initial);
-  return {
-    isOpen: controlled === undefined ? internal : controlled,
-    setOpen: (next: boolean) => {
-      if (controlled === undefined) setInternal(next);
-      onChange?.(next);
-    },
-  };
-}
+import { useControlledValue } from './use-controlled';
 
 /**
  * The trigger's default name, which includes the current date.
@@ -136,7 +119,11 @@ export type UseDatePickerReturn = DateOverlayGetters & {
  */
 export function useDatePicker(options: UseDatePickerOptions = {}): UseDatePickerReturn {
   const { closeOnSelect = true, disabled = false, format = ISO_DATE_FIELD, locale, testID } = options;
-  const { isOpen, setOpen } = useDisclosure(options.open, options.defaultOpen ?? false, options.onOpenChange);
+  const { value: isOpen, setValue: setOpen } = useControlledValue<boolean>(
+    options.open,
+    options.defaultOpen ?? false,
+    options.onOpenChange,
+  );
   // `null` means "not being edited": the field then shows the formatted selection.
   const [draft, setDraft] = useState<string | null>(null);
   // Set while a field commit is in flight, so the selection it makes does not

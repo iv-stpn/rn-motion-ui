@@ -128,7 +128,7 @@ export function DnDItem({
     <Dragzone
       ref={zoneRef}
       accepts={accepts}
-      className={cn(webHover && 'transition-colors hover:bg-surface-hover')}
+      className={cn(webHover && 'transition-all duration-200 hover:bg-surface-hover')}
       disabled={disabled}
       eligibleClassName={eligibleClassName}
       groups={[listGroup]}

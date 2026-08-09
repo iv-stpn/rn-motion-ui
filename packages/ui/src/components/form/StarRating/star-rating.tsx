@@ -16,6 +16,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 import { type AccessibilityActionEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
@@ -212,7 +213,7 @@ export function StarButton({
   renderStar,
   testID,
 }: StarButtonProps) {
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState();
   const popScale = useSharedValue(1);
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: popScale.value }] }));
 
@@ -226,8 +227,6 @@ export function StarButton({
     }
   }, [isBursting, burstKey, reduce, popScale]);
 
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
   const handlePress = useCallback(() => onSelect(starValue), [onSelect, starValue]);
 
   return (
@@ -235,8 +234,7 @@ export function StarButton({
       accessibilityRole="radio"
       aria-checked={isSelected}
       accessibilityLabel={`${starValue} ${starValue === 1 ? 'star' : 'stars'}`}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      {...pressHandlers}
       onPress={handlePress}
       className={padClass}
       testID={testID}

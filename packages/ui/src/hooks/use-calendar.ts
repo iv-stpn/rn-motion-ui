@@ -42,7 +42,6 @@
  */
 
 import { useMemo, useRef, useState } from 'react';
-
 import { addMonths, clampISO, type DateRange, type ISODate, normalizeRange, startOfMonth, todayISO } from '../lib/calendar';
 import { buildGetters, type FocusableNode, type WebKeyEvent } from '../lib/calendar-props';
 import {
@@ -66,27 +65,7 @@ import {
   monthsLabel,
   visibleMonths,
 } from '../lib/calendar-view';
-
-// Declared ahead of the exports to satisfy `useExportsLast`.
-
-/** A value that is the consumer's when they pass one, and ours otherwise. */
-type Controlled<T> = { value: T; setValue: (next: T) => void };
-
-/**
- * The controlled/uncontrolled seam. `undefined` means "you are not controlling
- * this"; `null` is a controlled *empty* selection, which is why the two are not
- * collapsed into one falsy check.
- */
-function useControlled<T>(controlled: T | undefined, initial: T, onChange?: (next: T) => void): Controlled<T> {
-  const [internal, setInternal] = useState<T>(initial);
-  return {
-    value: controlled === undefined ? internal : controlled,
-    setValue: (next: T) => {
-      if (controlled === undefined) setInternal(next);
-      onChange?.(next);
-    },
-  };
-}
+import { useControlledValue } from './use-controlled';
 
 /** The day nodes on screen, and the pending request to move real focus into one. */
 type FocusCursor = {
@@ -154,8 +133,8 @@ type SelectionState = {
  */
 function useSelection(options: UseCalendarOptions, availability: DayAvailability): SelectionState {
   const { mode = 'single', deselectable = false } = options;
-  const single = useControlled(options.selectedDate, options.defaultSelectedDate ?? null, options.onSelectDate);
-  const range = useControlled(options.selectedRange, options.defaultSelectedRange ?? EMPTY_RANGE, options.onSelectRange);
+  const single = useControlledValue(options.selectedDate, options.defaultSelectedDate ?? null, options.onSelectDate);
+  const range = useControlledValue(options.selectedRange, options.defaultSelectedRange ?? EMPTY_RANGE, options.onSelectRange);
   const isRange = mode === 'range';
 
   return {
@@ -204,7 +183,7 @@ type MonthViewState = {
  * the user was just comparing.
  */
 function useMonthView(options: UseCalendarOptions, anchor: ISODate): MonthViewState {
-  const controlled = useControlled(options.month, anchor, options.onMonthChange);
+  const controlled = useControlledValue(options.month, anchor, options.onMonthChange);
   const view = visibleMonths(controlled.value, Math.max(1, options.numberOfMonths ?? 1));
   const month = view[0] ?? startOfMonth(controlled.value);
   const last = view.at(-1) ?? month;

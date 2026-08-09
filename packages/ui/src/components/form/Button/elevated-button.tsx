@@ -327,7 +327,7 @@ export function ElevatedButton({
   fitWidth,
   className,
   labelClassName,
-  contentStyle,
+  contentClassName,
   style,
   accessibilityLabel,
   testID,
@@ -396,8 +396,7 @@ export function ElevatedButton({
         onPress={onPress}
         onHoverIn={handleHoverIn}
         onHoverOut={handleHoverOut}
-        className={containerClass}
-        style={contentStyle}
+        className={cn(containerClass, contentClassName)}
       >
         {/* State backdrop — animates in/out by opacity so the fill shows through
             when idle and the state colour fills it on success/error. */}

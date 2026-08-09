@@ -2,6 +2,7 @@ import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
@@ -242,7 +243,7 @@ export function CheckboxCard({
 }: CheckboxCardProps) {
   const groupCtx = useContext(CheckboxCardContext);
   const inGroup = groupCtx !== null && value !== undefined;
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState();
 
   const checked = inGroup ? groupCtx.values.includes(value) : Boolean(selectedProp);
   const disabled = isDisabled ?? groupCtx?.isDisabled ?? false;
@@ -253,8 +254,6 @@ export function CheckboxCard({
   // Standalone there is no value to key on, so only an explicit prop applies.
   const cardTestID = testID ?? (inGroup ? `${groupCtx.testID ?? 'checkbox-card-group'}-card-${value}` : undefined);
 
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
   const handlePress = useCallback(() => {
     if (disabled) return;
     if (groupCtx && value !== undefined) groupCtx.toggle(value);
@@ -269,8 +268,7 @@ export function CheckboxCard({
       accessibilityLabel={accessibilityLabel ?? title}
       testID={cardTestID}
       disabled={disabled}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      {...pressHandlers}
       onPress={handlePress}
       style={style}
       className={cn(

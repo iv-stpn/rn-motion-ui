@@ -53,7 +53,7 @@ function ItemRowGroupPlayground() {
         <Choice label="Size" options={SIZES} value={size} onChange={setSize} />
         <Toggle label="Descriptions" value={showDescriptions} onChange={setShowDescriptions} />
       </ControlCard>
-      <View className={cn('w-80 rounded-2xl p-6', SURFACE_CLASSNAME[2])}>
+      <View className="w-80">
         <ItemRowGroup variant={variant} size={size} items={items} />
       </View>
       <Note>
@@ -90,13 +90,13 @@ function ShowcasePlayground() {
 
   return (
     <Playground>
-      {VARIANTS.map((v) => (
-        <Section key={v} title={`Variant: ${v}`}>
+      {VARIANTS.map((variant) => (
+        <Section key={variant} title={`Variant: ${variant}`}>
           <Variants direction="row" align="stretch">
-            {SIZES.map((s) => (
-              <Sample key={s} label={`${s}`}>
+            {SIZES.map((size) => (
+              <Sample key={size} label={`${size}`}>
                 <View className="w-56">
-                  <ItemRowGroup variant={v} size={s} items={items} />
+                  <ItemRowGroup variant={variant} size={size} items={items} />
                 </View>
               </Sample>
             ))}

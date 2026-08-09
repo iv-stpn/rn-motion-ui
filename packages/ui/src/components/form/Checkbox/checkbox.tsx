@@ -1,6 +1,7 @@
-import { type ReactNode, useCallback, useState } from 'react';
+import { type ReactNode, useCallback } from 'react';
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
@@ -47,7 +48,7 @@ export function Checkbox({
   checkIcon,
 }: CheckboxProps) {
   const reduce = useReducedMotion();
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState();
   // Resolve the check/indeterminate mark colour through the token bridge so it
   // adapts to consumer @theme overrides (e.g. a non-black primary).
   const checkColor = useThemeColor('primary-foreground');
@@ -55,8 +56,6 @@ export function Checkbox({
   const path = indeterminate ? INDETERMINATE_PATH : CHECK_PATH;
   const ct = mergeTransition(TIMING_FAST, checkTransition);
 
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
   const handlePress = useCallback(() => {
     if (!disabled) onCheckedChange(!checked);
   }, [disabled, onCheckedChange, checked]);
@@ -69,8 +68,7 @@ export function Checkbox({
       accessibilityLabel={accessibilityLabel ?? label}
       testID={testID ?? 'checkbox'}
       disabled={disabled}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      {...pressHandlers}
       onPress={handlePress}
       className={cn('flex-row items-center', className)}
       style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}

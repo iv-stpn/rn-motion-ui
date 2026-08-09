@@ -7,13 +7,14 @@ import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { InformationLine as AlertCircle } from 'rn-motion-ui-icons/icons/information-line';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
+import { cn } from '../../../lib/cn';
 import { EASE_IN_OUT, SPRING_SWAP } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
-import { BUTTON_METRICS, STATE_BUTTON_GAP_CLASSNAME, STATE_ICON_SIZE } from './button-scale';
+import { STATE_BUTTON_GAP_CLASSNAME, STATE_ICON_SIZE } from './button-scale';
 import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './elevated-button';
 import { GlossyButton, type GlossyVariant, glossyContentColor } from './glossy-button';
 
@@ -91,11 +92,11 @@ const TEXT_BUFFER = 2;
 // this far past the right edge so the trailing glyph is never shaved (it spills
 // harmlessly into the button's own padding) while the vertical roll stays masked.
 const CLIP_SLACK = 64;
-// success/error pull this much off the size's shared horizontal padding
-// ({@link BUTTON_METRICS}) to pay for the width the state icon slot adds. Taken
-// off the family token rather than tabulated per size, so retuning a button's
-// padding keeps the squeeze proportional; `icon` has no padding to give back.
-const STATE_PAD_SQUEEZE = 4;
+// success/error pull 4 px off the size's shared horizontal padding to pay for
+// the width the state icon slot adds. Mapped to Tailwind classes (padX - 4) so
+// retuning a button's padding keeps the squeeze proportional; `icon` has no
+// padding to give back.
+const SQUEEZE_PADDING_CLASS: Record<ButtonSize, string> = { sm: 'px-1.5', md: 'px-2.5', lg: 'px-3.5', icon: '' };
 
 // Matches Button's buildSpinnerColor: returns the icon stroke colour for each
 // variant so the icon reads correctly against every button background.
@@ -589,9 +590,9 @@ export function StatefulButton({
   // compensate for the extra width the icon slot adds. Derived from the family's
   // padding rather than tabulated, so retuning a `--spacing-interactive-pad-*` token
   // keeps the squeeze proportional (and `icon`, which has no padding, stays 0).
-  const contentStyle =
+  const squeezeClass =
     state === 'success' || state === 'error'
-      ? { paddingHorizontal: Math.max(0, BUTTON_METRICS[size ?? 'md'].padX - STATE_PAD_SQUEEZE) }
+      ? SQUEEZE_PADDING_CLASS[size ?? 'md']
       : undefined;
 
   const stateText =
@@ -607,6 +608,7 @@ export function StatefulButton({
   // Shared across both wrapper branches. `keepAppearance` maps onto the wrapper's
   // skip-the-dim `noDisabledOpacity`: the flat Button keeps full opacity, the
   // elevated chip keeps its gloss/fill while the machine holds it disabled.
+  const { contentClassName: externalContentClassName, ...otherRest } = rest;
   const sharedProps = {
     size: size ?? 'md',
     shape: shape ?? 'rounded',
@@ -614,9 +616,9 @@ export function StatefulButton({
     loading: false as const,
     noDisabledOpacity: keepAppearance,
     backdropColor,
-    contentStyle,
+    contentClassName: cn(squeezeClass, externalContentClassName),
     onPress: handlePress,
-    ...rest,
+    ...otherRest,
   };
 
   const content = (

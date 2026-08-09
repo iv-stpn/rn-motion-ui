@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useState } from 'react';
 import { type LayoutRectangle, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../../lib/ease';
@@ -117,7 +118,7 @@ export function DockItem({ children, onPress, active, accessibilityLabel, style,
   const dock = useContext(DockContext);
   const id = useId();
   const size = dock?.size ?? 44;
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState();
 
   // biome-ignore lint/plugin: reporting active state to the parent context must happen as a side effect — calling setActive during render would be setState-in-render
   useEffect(() => {
@@ -125,9 +126,6 @@ export function DockItem({ children, onPress, active, accessibilityLabel, style,
   }, [dock, id, active]);
 
   const onLayout = useCallback((e: LayoutEvent) => dock?.register(id, e.nativeEvent.layout), [dock, id]);
-
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
 
   const sharedStyle = { width: size, height: size };
 
@@ -144,8 +142,7 @@ export function DockItem({ children, onPress, active, accessibilityLabel, style,
           aria-selected={Boolean(active)}
           accessibilityLabel={accessibilityLabel}
           testID={testID}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
+          {...pressHandlers}
           onPress={onPress}
           className="flex-1 items-center justify-center rounded-full"
           style={style}

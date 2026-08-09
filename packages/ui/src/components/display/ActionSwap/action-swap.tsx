@@ -3,6 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { usePageVisible } from '../../../hooks/use-page-visible';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '../../../lib/ease';
@@ -279,7 +280,7 @@ export function ActionSwapButton({
   testID,
 }: ActionSwapButtonProps) {
   const reduce = useReducedMotion();
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState();
   const [internalValue, setInternalValue] = useState(defaultValue ?? items[0]?.id);
   const currentValue = value ?? internalValue;
   const activeIndex = Math.max(
@@ -290,8 +291,6 @@ export function ActionSwapButton({
   const hasIcon = items.some((item) => item.icon);
   const nextItem = cycle && items.length > 0 ? items[(activeIndex + 1) % items.length] : undefined;
 
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
   const handlePress = useCallback(() => {
     if (disabled || !cycle || !nextItem) return;
     if (value === undefined) setInternalValue(nextItem.id);
@@ -313,8 +312,7 @@ export function ActionSwapButton({
         accessibilityLabel={accessibleLabel}
         testID={testID ?? 'action-swap-button'}
         disabled={disabled}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        {...pressHandlers}
         onPress={handlePress}
         className={cn(container({ variant }), BUTTON_BOX[shape][size], disabled && 'opacity-50', BUTTON_GAP_CLASSNAME)}
       >

@@ -43,7 +43,7 @@ function RowGroupPlayground() {
         <Choice label="Size" options={SIZES} value={size} onChange={setSize} />
         <Toggle label="Descriptions" value={showDescriptions} onChange={setShowDescriptions} />
       </ControlCard>
-      <View className={cn('w-80 rounded-2xl p-6', SURFACE_CLASSNAME[2])}>
+      <View className="w-80">
         <ActionRowGroup variant={variant} size={size} items={items} />
       </View>
       <Note>
@@ -69,7 +69,7 @@ function ShowcasePlayground() {
           <Variants direction="row" align="stretch">
             {SIZES.map((s) => (
               <Sample key={s} label={`${s}`}>
-                <View className="w-56">
+                <View className={cn('w-56', v === 'sections' && cn('rounded-2xl p-4', SURFACE_CLASSNAME[3]))}>
                   <ActionRowGroup variant={v} size={s} items={items} />
                 </View>
               </Sample>

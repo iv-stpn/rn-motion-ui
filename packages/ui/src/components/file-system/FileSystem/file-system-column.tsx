@@ -13,11 +13,10 @@ import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { withMultiDragIds } from '../../gestures/DragManager/multi-drag';
-import { useIsLifting, useMultiDragScope } from '../../gestures/DragManager/multi-drag-scope';
+import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../gestures/drag.types';
 import { useActiveDrag } from '../../gestures/use-drag-store';
-import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../menus/HoldContextMenu/hold-context-menu';
+import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
 import type {
@@ -29,7 +28,6 @@ import type {
   FileSystemMoveEvent,
 } from './file-system.types';
 import { FileSystemAnimatedRow } from './file-system-animated-row';
-import { useContextMenu } from './file-system-context-menu';
 import { FileSystemDropzone } from './file-system-dropzone';
 import { FileSystemHoverHighlight, FS_HOVER_TEST_ID, useFileSystemRowHover } from './file-system-hover';
 import { filePreviewUrls, folderHasChildren } from './file-system-index';
@@ -37,8 +35,10 @@ import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee,
 import type { FileSystemSelectionMode } from './file-system-selection';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
 import { FileSystemEmptyState } from './file-system-view';
+import { useFileSystemDragOptions } from './use-file-system-drag-options';
 import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
 import { useFileSystemRowAnimation } from './use-file-system-row-animation';
+import { useFileSystemRowInteraction } from './use-file-system-row-interaction';
 
 const LOADING_LABEL = 'Loading…';
 
@@ -192,52 +192,14 @@ function ColumnRow({
   const colors = useThemeColors();
   const hasChildren = entry.kind === 'folder' && folderHasChildren(index, entry);
 
-  const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
-
-  // Multi-drag: resolve the same payload MultiDraggable used to resolve
-  const { getGroupData, renderPreview, resolveIds } = useMultiDragScope();
-  const ids = useMemo(() => resolveIds(entry.path), [entry.path, resolveIds]);
-  const multiData = useMemo(() => withMultiDragIds(getGroupData(ids), ids), [getGroupData, ids]);
-  const dragOptions = useMemo<HoldContextMenuDragOptions | undefined>(
-    () => (draggable ? { data: multiData, effectAllowed: 'move', preview: renderPreview?.(ids) } : undefined),
-    [draggable, ids, multiData, renderPreview],
-  );
-
-  // A hold (menu-open or multi-select toggle) must not also register as a tap
-  const heldRef = useRef(false);
-  const onOpenChangeRef = useRef(menuProps.onOpenChange);
-  onOpenChangeRef.current = menuProps.onOpenChange;
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (open) heldRef.current = true;
-    onOpenChangeRef.current(open);
-  }, []);
-
-  const handlePress = useCallback(
-    (event: GestureResponderEvent) => {
-      if (heldRef.current) {
-        heldRef.current = false;
-        return;
-      }
-      onActivate(entry, event);
-    },
-    [entry, onActivate],
-  );
-
-  const handlePressIn = useCallback(() => {
-    heldRef.current = false;
-  }, []);
-
-  // In multi-select mode, hold toggles selection instead of opening the menu.
-  const onHoldAction = useMemo(
-    () =>
-      onSelectLongPress
-        ? () => {
-            heldRef.current = true;
-            onSelectLongPress(entry);
-          }
-        : undefined,
-    [entry, onSelectLongPress],
-  );
+  const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
+    entry,
+    getContextMenuActions,
+    onActivate,
+    onContextMenuAction,
+    onSelectLongPress,
+  });
+  const dragOptions = useFileSystemDragOptions(entry, draggable);
 
   const isLifting = useIsLifting(entry.path);
 

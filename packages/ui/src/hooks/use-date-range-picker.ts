@@ -29,7 +29,6 @@
  */
 
 import { useRef, useState } from 'react';
-
 import { addMonths, type DateRange, type ISODate, isRangeComplete } from '../lib/calendar';
 import { type CalendarLocale, formatRangeLabel } from '../lib/calendar-format';
 import type { WebKeyEvent } from '../lib/calendar-props';
@@ -44,29 +43,9 @@ import {
   escapeHandler,
 } from '../lib/date-picker-props';
 import { useCalendar } from './use-calendar';
+import { useControlledValue } from './use-controlled';
 
 // Declared ahead of the exports to satisfy `useExportsLast`.
-
-/** The open/closed state, controllable from outside. */
-type Disclosure = { isOpen: boolean; setOpen: (next: boolean) => void };
-
-/**
- * The same controlled/uncontrolled seam `useDatePicker` has, for one boolean.
- *
- * Deliberately duplicated between the two pickers rather than shared: `lib/` holds
- * no React, and promoting nine lines to a fourth public hook would widen the
- * package's API for something neither picker exposes.
- */
-function useDisclosure(controlled: boolean | undefined, initial: boolean, onChange?: (open: boolean) => void): Disclosure {
-  const [internal, setInternal] = useState(initial);
-  return {
-    isOpen: controlled === undefined ? internal : controlled,
-    setOpen: (next: boolean) => {
-      if (controlled === undefined) setInternal(next);
-      onChange?.(next);
-    },
-  };
-}
 
 /** Both drafts. `null` for a field means it is not being edited right now. */
 type Drafts = Record<RangeField, string | null>;
@@ -218,7 +197,11 @@ export type UseDateRangePickerReturn = DateOverlayGetters & {
  */
 export function useDateRangePicker(options: UseDateRangePickerOptions = {}): UseDateRangePickerReturn {
   const { closeOnComplete = true, disabled = false, format = ISO_DATE_FIELD, locale, testID } = options;
-  const { isOpen, setOpen } = useDisclosure(options.open, options.defaultOpen ?? false, options.onOpenChange);
+  const { value: isOpen, setValue: setOpen } = useControlledValue<boolean>(
+    options.open,
+    options.defaultOpen ?? false,
+    options.onOpenChange,
+  );
   const [drafts, setDrafts] = useState<Drafts>(NO_DRAFTS);
   // Set while a field commit is in flight, so the range it sets does not also
   // close the panel — a blur-commit runs as focus moves *into* the panel, and

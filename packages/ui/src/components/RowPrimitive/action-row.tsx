@@ -3,12 +3,12 @@
 import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, type PressableProps } from 'react-native';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
+import { usePressState } from '../../hooks/use-press-state';
 import { cn } from '../../lib/cn';
 import { type ItemRowAdornment, type ItemRowSize, type ItemRowVariant, RowLayout, SIZE_SCALE, VARIANT_CLASSES } from './item-row';
 
 /** Pressable's own handler types, so the row can wrap them without restating the event shapes. */
 type HoverHandler = NonNullable<PressableProps['onHoverIn']>;
-type PressHandler = NonNullable<PressableProps['onPressIn']>;
 
 export type ActionRowProps = Omit<PressableProps, 'children'> & {
   /** Row title — primary text, `font-medium` foreground. */
@@ -110,10 +110,10 @@ export function ActionRow({
   ...props
 }: ActionRowProps) {
   const [hovered, setHovered] = useState(false);
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState({ onPressIn, onPressOut });
 
-  // The row owns these four to drive its own hover/press fills, so each must
-  // forward to the caller's handler rather than replace it.
+  // The row owns hover state to drive its own hover fill; press is delegated to
+  // usePressState which forwards to the caller's handler when provided.
   const handleHoverIn = useCallback<HoverHandler>(
     (event) => {
       setHovered(true);
@@ -127,20 +127,6 @@ export function ActionRow({
       onHoverOut?.(event);
     },
     [onHoverOut],
-  );
-  const handlePressIn = useCallback<PressHandler>(
-    (event) => {
-      setPressed(true);
-      onPressIn?.(event);
-    },
-    [onPressIn],
-  );
-  const handlePressOut = useCallback<PressHandler>(
-    (event) => {
-      setPressed(false);
-      onPressOut?.(event);
-    },
-    [onPressOut],
   );
 
   const scale = SIZE_SCALE[size];
@@ -158,8 +144,7 @@ export function ActionRow({
       href={href}
       onHoverIn={handleHoverIn}
       onHoverOut={handleHoverOut}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      {...pressHandlers}
       className={cn(
         'flex-row items-center',
         VARIANT_CLASSES[variant],

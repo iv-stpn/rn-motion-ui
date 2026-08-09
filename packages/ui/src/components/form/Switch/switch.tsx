@@ -1,8 +1,9 @@
 // biome-ignore-all lint/style/useComponentExportOnlyModules: switch defines local sub-components
 // biome-ignore-all lint/style/useExportsLast: switch defines local sub-components
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: switch is a large component with multiple sub-components in one file
-import { createContext, type ReactNode, type Ref, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { createContext, type ReactNode, type Ref, useCallback, useContext, useMemo, useRef } from 'react';
 import { Animated, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../../hooks/use-shake-animation';
 import { cn } from '../../../lib/cn';
@@ -285,7 +286,7 @@ function SwitchRoot({
   ref,
 }: SwitchProps & { ref?: Ref<View> }) {
   const reduce = useReducedMotion();
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState();
   const shakeX = useRef(new Animated.Value(0)).current;
   const { track, trackOff, thumb } = useSwitchColors(theme);
   const { trackClass, labelClass } = SWITCH_SIZE_CONFIG[size];
@@ -294,8 +295,6 @@ function SwitchRoot({
   // Disabled + pressed → short horizontal shake to signal "can't toggle".
   useShakeAnimation({ trigger: Boolean(isDisabled && pressed), reduce, shakeX, steps: SWITCH_SHAKE_STEPS, duration: 60 });
 
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
   const handleToggle = useCallback(() => {
     if (!isDisabled) onSelectedChange(!isSelected);
   }, [isDisabled, onSelectedChange, isSelected]);
@@ -329,8 +328,7 @@ function SwitchRoot({
           accessibilityLabel={accessibilityLabel ?? label}
           testID={resolvedTestID}
           disabled={isDisabled}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
+          {...pressHandlers}
           onPress={handleToggle}
         >
           <Animated.View

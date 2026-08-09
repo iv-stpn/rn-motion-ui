@@ -6,7 +6,6 @@ import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../../hooks/use-shake-animation';
 import { cn } from '../../../lib/cn';
-import { MotiText } from '../../../moti/components/text';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { ThemedIcon } from '../../icon/themed-icon';
@@ -140,18 +139,21 @@ function OtpSlot({ index, char, state, isActive, showSuccess, reduce, mask, disa
       <AnimatePresence>
         {char ? (
           // Absolutely centred so enter/exit overlap in place — no reflow.
-          <MotiText
+          // Flexbox centring replaces the fragile lineHeight trick so the
+          // digit stays vertically centred regardless of slot size.
+          <MotiView
             key={char}
             from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 14 }}
             animate={{ opacity: 1, translateY: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -14 }}
             transition={{ type: 'timing', duration: reduce ? 0 : 220 }}
-            className="absolute h-full w-full text-center font-semibold text-foreground text-xl"
-            style={{ lineHeight: 44 }}
+            className="absolute inset-0 items-center justify-center"
           >
-            {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
-            {mask ? '•' : char}
-          </MotiText>
+            <Text className="font-semibold text-foreground text-xl">
+              {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
+              {mask ? '•' : char}
+            </Text>
+          </MotiView>
         ) : null}
       </AnimatePresence>
     </Pressable>

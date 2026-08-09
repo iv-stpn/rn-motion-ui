@@ -2,6 +2,7 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Pressable, type PressableProps, View } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
+import { usePressState } from '../../hooks/use-press-state';
 import { cn } from '../../lib/cn';
 import { SPRING_LAYOUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
@@ -22,7 +23,6 @@ export type MenuItemMode = 'menu' | 'sidebar';
 
 /** Pressable's own handler types, so the row can wrap them without restating the event shapes. */
 type HoverHandler = NonNullable<PressableProps['onHoverIn']>;
-type PressHandler = NonNullable<PressableProps['onPressIn']>;
 
 /**
  * Scale for the default (CommandPalette-style) variant — padding, icon size,
@@ -233,11 +233,11 @@ export function MenuItem({
   ...props
 }: MenuItemProps) {
   const [hovered, setHovered] = useState(false);
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState({ onPressIn, onPressOut });
 
-  // The row owns these four to drive its own hover/press fills, so each must
-  // forward to the caller's handler rather than replace it — CommandPalette
-  // passes `onPressIn` to move its active row.
+  // The row owns hover state to drive its own hover fill; press is delegated to
+  // usePressState which forwards to the caller's handler when provided —
+  // CommandPalette passes `onPressIn` to move its active row.
   const handleHoverIn = useCallback<HoverHandler>(
     (event) => {
       setHovered(true);
@@ -252,21 +252,6 @@ export function MenuItem({
     },
     [onHoverOut],
   );
-  const handlePressIn = useCallback<PressHandler>(
-    (event) => {
-      setPressed(true);
-      onPressIn?.(event);
-    },
-    [onPressIn],
-  );
-  const handlePressOut = useCallback<PressHandler>(
-    (event) => {
-      setPressed(false);
-      onPressOut?.(event);
-    },
-    [onPressOut],
-  );
-
   const hasIconTile = Boolean(iconBackgroundColor);
   const backgroundStyle = useMemo(
     () => (iconBackgroundColor ? { backgroundColor: iconBackgroundColor } : undefined),
@@ -297,8 +282,7 @@ export function MenuItem({
       disabled={disabled}
       onHoverIn={handleHoverIn}
       onHoverOut={handleHoverOut}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      {...pressHandlers}
     >
       {/* Animated active highlight — default (non-icon-bg) variant only */}
       {!hasIconTile && active ? (

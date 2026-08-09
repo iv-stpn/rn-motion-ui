@@ -32,24 +32,24 @@ function alignmentClass(bordered: boolean, horizontal: boolean): 'items-stretch'
 }
 
 /**
- * Per-button `contentStyle` for the bordered variant. Zeros out the inner
+ * Per-button `contentClassName` for the bordered variant. Zeros out the inner
  * corner radii so adjacent buttons sit flush; outer corners keep the
  * interactive radius. A single child keeps its natural `rounded-interactive`.
  */
-function borderedContentStyle(index: number, total: number, horizontal: boolean): ViewStyle {
-  if (total === 1) return {}; // keep the button's own rounded-interactive
+function borderedContentClassName(index: number, total: number, horizontal: boolean): string {
+  if (total === 1) return '';
 
   const isFirst = index === 0;
   const isLast = index === total - 1;
 
   if (horizontal) {
-    if (isFirst) return { borderTopRightRadius: 0, borderBottomRightRadius: 0 };
-    if (isLast) return { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 };
+    if (isFirst) return 'rounded-r-none';
+    if (isLast) return 'rounded-l-none';
   } else {
-    if (isFirst) return { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 };
-    if (isLast) return { borderTopLeftRadius: 0, borderTopRightRadius: 0 };
+    if (isFirst) return 'rounded-b-none';
+    if (isLast) return 'rounded-t-none';
   }
-  return { borderRadius: 0 };
+  return 'rounded-none';
 }
 
 /**
@@ -65,13 +65,13 @@ function verticalPressMode(isFirst: boolean, isLast: boolean) {
 
 /**
  * Type guard that narrows a React node to an element whose props accept
- * `contentStyle`, `className`, and `pressMode`. Used by the bordered variant
- * to inject border, corner-radius, and press-animation overrides directly
- * into Button children without an `as` cast.
+ * `contentClassName`, `className`, and `pressMode`. Used by the bordered
+ * variant to inject border, corner-radius, and press-animation overrides
+ * directly into Button children without an `as` cast.
  */
 function isPressableElement(child: ReactNode): child is ReactElement<{
   className?: string;
-  contentStyle?: StyleProp<ViewStyle>;
+  contentClassName?: string;
   pressMode?: 'scale' | 'scaleY' | 'scaleX' | 'scaleXFirst' | 'scaleXLast' | 'none';
 }> {
   return isValidElement(child);
@@ -96,7 +96,7 @@ export interface ButtonGroupProps extends VariantProps<typeof container> {
  * `spaced` — each button keeps its own border-radius; a consistent gap separates them.
  * `bordered` — a segmented control: inner-facing edges carry a single divider
  * border (`border-r` / `border-b`); no border forms on the outer perimeter.
- * Inner corner radii are zeroed via `contentStyle` so adjacent buttons sit
+ * Inner corner radii are zeroed via `contentClassName` so adjacent buttons sit
  * flush. Outer corners keep the interactive radius from the button's own
  * variant. Horizontal groups press down (`scaleY` + `translateY`); vertical
  * groups compress horizontally (`scaleX`), with the first button nudging up
@@ -152,7 +152,7 @@ export function ButtonGroup({
 
     return cloneElement(child, {
       className: positionClass,
-      contentStyle: borderedContentStyle(index, total, isHorizontal),
+      contentClassName: borderedContentClassName(index, total, isHorizontal),
       pressMode: isHorizontal ? 'scaleY' : verticalPressMode(isFirst, isLast),
     });
   });

@@ -145,8 +145,8 @@ export type BaseButtonProps = {
   className?: string;
   /** Additional class names merged onto the label Text. */
   labelClassName?: string;
-  /** Extra inline style applied directly to the Pressable container. */
-  contentStyle?: StyleProp<ViewStyle>;
+  /** Tailwind classes merged onto the Pressable container. */
+  contentClassName?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;

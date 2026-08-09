@@ -58,7 +58,7 @@ type IconSide = (typeof ICON_SIDES)[number];
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   if (variant === 'primary' || variant === 'danger') return colors['primary-foreground'];
   if (variant === 'special') return colors['special-foreground'];
-  if (variant === 'inverse') return colors['surface-1'];
+  if (variant === 'secondary' || variant === 'inverse') return colors['surface-1'];
   if (variant === 'outlineDanger' || variant === 'ghostDanger') return colors.danger;
   return colors.foreground;
 }
@@ -126,7 +126,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
             </Button>
           ))}
           <Button {...args} accessibilityLabel="Delete" size="icon" variant="secondary">
-            <Trash2 color={colors.foreground} size={16} />
+            <Trash2 color={colors['surface-1']} size={16} />
           </Button>
         </Variants>
       </Section>
@@ -135,7 +135,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
         <Variants align="center">
           <Sample label="leading icon">
             <Button {...args} variant="secondary">
-              <Download color={colors.foreground} size={16} />
+              <Download color={colors['surface-1']} size={16} />
               {DOWNLOAD_LABEL}
             </Button>
           </Sample>

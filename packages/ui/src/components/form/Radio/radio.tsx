@@ -9,6 +9,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
@@ -156,15 +157,13 @@ const control = cva('h-5 w-5 shrink-0 rounded-full border-2', {
 
 export function RadioGroupItem({ value, label, disabled, style, accessibilityLabel, testID }: RadioGroupItemProps) {
   const { value: groupValue, setValue, reduce, register, testID: groupTestID } = useRadioGroup();
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState();
   const selected = groupValue === value;
   // Derive from the group so items are addressable without threading a testID
   // through every child; an explicit prop still wins. Falls back to the
   // component name when the group has no testID.
   const itemTestID = testID ?? `${groupTestID ?? 'radio-group'}-item-${value}`;
 
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
   const handlePress = useCallback(() => {
     if (!disabled) setValue(value);
   }, [disabled, setValue, value]);
@@ -179,8 +178,7 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
       accessibilityLabel={accessibilityLabel ?? label}
       testID={itemTestID}
       disabled={disabled}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      {...pressHandlers}
       onPress={handlePress}
       onLayout={onLayout}
       className="flex-row items-center"

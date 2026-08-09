@@ -693,7 +693,7 @@ export function GlossyButton({
   fitWidth,
   className,
   labelClassName,
-  contentStyle,
+  contentClassName,
   style,
   accessibilityLabel,
   testID,
@@ -787,8 +787,8 @@ export function GlossyButton({
         onPress={onPress}
         onHoverIn={handleHoverIn}
         onHoverOut={handleHoverOut}
-        className={cn('flex-row items-center justify-center', BUTTON_BOX[shape][size])}
-        style={[{ overflow: 'hidden', backgroundColor: face.paint }, contentStyle]}
+        className={cn('flex-row items-center justify-center', BUTTON_BOX[shape][size], contentClassName)}
+        style={{ overflow: 'hidden', backgroundColor: face.paint }}
       >
         <GlossyLayers
           id={gradientId}

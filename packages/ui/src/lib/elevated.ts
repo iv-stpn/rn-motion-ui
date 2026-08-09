@@ -49,15 +49,16 @@ const SURFACE_ELEVATED_SHADOW_CLASSNAME: Record<SurfaceLevel, string> = {
   8: 'shadow-elevated-8',
 };
 
+/** Combined background + shadow class for a level — built from the private lookups so it cannot drift from {@link surfaceBackground} / {@link elevatedShadow}. */
 export const SURFACE_CLASSNAME: Record<SurfaceLevel, string> = {
-  1: 'bg-surface-1 shadow-elevated-1',
-  2: 'bg-surface-2 shadow-elevated-2',
-  3: 'bg-surface-3 shadow-elevated-3',
-  4: 'bg-surface-4 shadow-elevated-4',
-  5: 'bg-surface-5 shadow-elevated-5',
-  6: 'bg-surface-6 shadow-elevated-6',
-  7: 'bg-surface-7 shadow-elevated-7',
-  8: 'bg-surface-8 shadow-elevated-8',
+  1: `${SURFACE_BG_CLASSNAME[1]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[1]}`,
+  2: `${SURFACE_BG_CLASSNAME[2]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[2]}`,
+  3: `${SURFACE_BG_CLASSNAME[3]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[3]}`,
+  4: `${SURFACE_BG_CLASSNAME[4]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[4]}`,
+  5: `${SURFACE_BG_CLASSNAME[5]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[5]}`,
+  6: `${SURFACE_BG_CLASSNAME[6]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[6]}`,
+  7: `${SURFACE_BG_CLASSNAME[7]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[7]}`,
+  8: `${SURFACE_BG_CLASSNAME[8]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[8]}`,
 };
 
 /** Every valid level, ascending — handy for stories, tests, and iteration. */
@@ -88,5 +89,5 @@ export function surfaceBackground(level: SurfaceLevel): string {
  * `elevation` prop.
  */
 export function elevated(level: SurfaceLevel, shadowLevel: SurfaceLevel = level): string {
-  return `${SURFACE_BG_CLASSNAME[clampSurfaceLevel(level)]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[clampSurfaceLevel(shadowLevel)]}`;
+  return `${surfaceBackground(level)} ${elevatedShadow(shadowLevel)}`;
 }

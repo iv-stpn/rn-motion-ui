@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
+import { usePressState } from '../../../hooks/use-press-state';
 import { cn } from '../../../lib/cn';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
 import { ThemedIcon } from '../../icon/themed-icon';
@@ -78,12 +79,10 @@ export function CloseButton({
   testID,
 }: CloseButtonProps) {
   const [hovered, setHovered] = useState(false);
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState();
 
   const handleHoverIn = useCallback(() => setHovered(true), []);
   const handleHoverOut = useCallback(() => setHovered(false), []);
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
 
   const scale = SIZE_SCALE[size];
 
@@ -104,8 +103,7 @@ export function CloseButton({
         onHoverIn={handleHoverIn}
         onHoverOut={handleHoverOut}
         onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        {...pressHandlers}
       >
         <ThemedIcon icon={CloseLine} token="muted-foreground" size={scale.iconSize} />
       </Pressable>

@@ -20,7 +20,7 @@
 // trail both: a folder can be the reason a row is here (its own name matched),
 // and pointing at the match is what makes a long list scannable.
 
-import { Fragment, type ReactNode, useCallback, useMemo, useRef } from 'react';
+import { Fragment, type ReactNode, useCallback, useMemo } from 'react';
 import { FlatList, type GestureResponderEvent, type ListRenderItemInfo, Pressable, View } from 'react-native';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
@@ -29,11 +29,11 @@ import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemItem } from './file-system.types';
-import { useContextMenu } from './file-system-context-menu';
 import { buildCrumbs, CRUMB_SEPARATOR, splitSearchMatches } from './file-system-search';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
+import { useFileSystemRowInteraction } from './use-file-system-row-interaction';
 
 const ICON_SIZE = 16;
 const FOLDER_GLYPH_SIZE = 18;
@@ -104,43 +104,13 @@ function SearchRow({
   searchQuery,
   testID,
 }: SearchRowProps) {
-  const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
-
-  // A hold (menu-open or multi-select toggle) must not also register as a tap.
-  const heldRef = useRef(false);
-  const onOpenChangeRef = useRef(menuProps.onOpenChange);
-  onOpenChangeRef.current = menuProps.onOpenChange;
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (open) heldRef.current = true;
-    onOpenChangeRef.current(open);
-  }, []);
-
-  const handlePress = useCallback(
-    (event: GestureResponderEvent) => {
-      if (heldRef.current) {
-        heldRef.current = false;
-        return;
-      }
-      onActivate(entry, event);
-    },
-    [entry, onActivate],
-  );
-
-  const handlePressIn = useCallback(() => {
-    heldRef.current = false;
-  }, []);
-
-  // In multi-select mode, hold toggles selection instead of opening the menu.
-  const onHoldAction = useMemo(
-    () =>
-      onSelectLongPress
-        ? () => {
-            heldRef.current = true;
-            onSelectLongPress(entry);
-          }
-        : undefined,
-    [entry, onSelectLongPress],
-  );
+  const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
+    entry,
+    getContextMenuActions,
+    onActivate,
+    onContextMenuAction,
+    onSelectLongPress,
+  });
 
   const textClass = isSelected ? 'text-white' : 'text-foreground';
   const metaClass = isSelected ? 'text-white' : 'text-muted-foreground';

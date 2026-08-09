@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { H_INTERACTIVE, INTERACTIVE_RADIUS, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
@@ -427,7 +428,7 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
   const active = current === value;
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [pressed, setPressed] = useState(false);
+  const { pressed, pressHandlers } = usePressState();
 
   const onLayout = useCallback(
     (e: NativeSyntheticEvent<{ layout: Layout }>) => register(value, e.nativeEvent.layout),
@@ -438,8 +439,6 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
   const onHoverOut = useCallback(() => setHovered(false), []);
   const onFocus = useCallback(() => setFocused(true), []);
   const onBlur = useCallback(() => setFocused(false), []);
-  const onPressIn = useCallback(() => setPressed(true), []);
-  const onPressOut = useCallback(() => setPressed(false), []);
 
   const highlighted = active || hovered || focused || pressed;
 
@@ -453,8 +452,7 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
       onHoverOut={onHoverOut}
       onFocus={onFocus}
       onBlur={onBlur}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
+      {...pressHandlers}
       className={`${H_INTERACTIVE[size]} ${PX_INTERACTIVE[size]} justify-center`}
       testID={testID}
     >

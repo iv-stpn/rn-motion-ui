@@ -32,24 +32,24 @@ function alignmentClass(bordered: boolean, horizontal: boolean): 'items-stretch'
 }
 
 /**
- * Per-button `contentStyle` for the bordered variant. Zeros out the inner
+ * Per-button `contentClassName` for the bordered variant. Zeros out the inner
  * corner radii so adjacent buttons sit flush; outer corners keep the
  * interactive radius. A single child keeps its natural `rounded-interactive`.
  */
-function borderedContentStyle(index: number, total: number, horizontal: boolean): ViewStyle {
-  if (total === 1) return {};
+function borderedContentClassName(index: number, total: number, horizontal: boolean): string {
+  if (total === 1) return '';
 
   const isFirst = index === 0;
   const isLast = index === total - 1;
 
   if (horizontal) {
-    if (isFirst) return { borderTopRightRadius: 0, borderBottomRightRadius: 0 };
-    if (isLast) return { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 };
+    if (isFirst) return 'rounded-r-none';
+    if (isLast) return 'rounded-l-none';
   } else {
-    if (isFirst) return { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 };
-    if (isLast) return { borderTopLeftRadius: 0, borderTopRightRadius: 0 };
+    if (isFirst) return 'rounded-b-none';
+    if (isLast) return 'rounded-t-none';
   }
-  return { borderRadius: 0 };
+  return 'rounded-none';
 }
 
 /**
@@ -65,7 +65,7 @@ function verticalPressMode(isFirst: boolean, isLast: boolean) {
 
 /**
  * Type guard that narrows a React node to an element whose props accept
- * `value` (for toggle identity), `contentStyle`, `className`, `variant`,
+ * `value` (for toggle identity), `contentClassName`, `className`, `variant`,
  * `onPress`, and `pressMode`. Used by the bordered variant to inject border,
  * corner-radius, press-animation, and selection overrides directly into Button
  * children without an `as` cast.
@@ -73,7 +73,7 @@ function verticalPressMode(isFirst: boolean, isLast: boolean) {
 function isToggleChild(child: ReactNode): child is ReactElement<{
   value?: string;
   className?: string;
-  contentStyle?: StyleProp<ViewStyle>;
+  contentClassName?: string;
   variant?: ButtonVariant;
   onPress?: () => void;
   pressMode?: 'scale' | 'scaleY' | 'scaleX' | 'scaleXFirst' | 'scaleXLast' | 'none';
@@ -126,7 +126,7 @@ export interface ToggleGroupProps extends VariantProps<typeof container> {
  *
  * `bordered` — a segmented control: inner-facing edges carry a single divider
  * border; no border forms on the outer perimeter. Inner corner radii are
- * zeroed via `contentStyle` so adjacent buttons sit flush. The selected
+ * zeroed via `contentClassName` so adjacent buttons sit flush. The selected
  * button renders with `selectedVariant` (default `secondary`); unselected
  * buttons use `unselectedVariant` (default `ghost`).
  *
@@ -206,7 +206,7 @@ export function ToggleGroup({
 
     return cloneElement(child, {
       className: positionClass,
-      contentStyle: borderedContentStyle(index, total, isHorizontal),
+      contentClassName: borderedContentClassName(index, total, isHorizontal),
       pressMode: isHorizontal ? 'scaleY' : verticalPressMode(isFirst, isLast),
       variant: isSelected ? selVariant : unselectedVariant,
       onPress: childValue ? () => onValueChange?.(childValue) : child.props.onPress,

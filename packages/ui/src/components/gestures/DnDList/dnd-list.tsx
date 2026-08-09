@@ -169,14 +169,14 @@ function DnDListView<T>({
         Animated.parallel([
           Animated.timing(flipMoved, {
             toValue: 1,
-            duration: 200,
-            easing: Easing.out(Easing.back(1.5)),
+            duration: 300,
+            easing: Easing.out(Easing.back(1.2)),
             useNativeDriver: false,
           }),
           Animated.timing(flipPushed, {
             toValue: 1,
-            duration: 200,
-            easing: Easing.linear,
+            duration: 300,
+            easing: Easing.bezier(0.16, 1, 0.3, 1),
             useNativeDriver: false,
           }),
         ]).start(() => {

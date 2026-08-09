@@ -82,7 +82,7 @@ function GroupedRow({ first, isDragging, item, last }: RowProps) {
   const radius = groupedRadius(first, last);
   return (
     <View
-      className={`flex-row items-center border-border border-b bg-surface-1 px-4 py-3 ${isDragging ? 'opacity-40' : ''} ${radius} ${last ? 'border-b-0' : ''}`}
+      className={`flex-row items-center border-border border-b bg-surface-1 px-4 py-3 transition-all duration-300 ease-out ${isDragging ? 'opacity-40' : ''} ${radius} ${last ? 'border-b-0' : ''}`}
     >
       <GripHandle />
       <Text>{item.title}</Text>
@@ -97,7 +97,7 @@ function GroupedRow({ first, isDragging, item, last }: RowProps) {
 function SeparatedRow({ isDragging, item }: Omit<RowProps, 'first' | 'last'>) {
   return (
     <View
-      className={`flex-row items-center rounded-lg border border-border bg-surface-1 px-4 py-3 shadow-surface-2 ${isDragging ? 'scale-[0.98] opacity-40' : ''}`}
+      className={`flex-row items-center rounded-lg border border-border bg-surface-1 px-4 py-3 shadow-surface-2 transition-all duration-300 ease-out ${isDragging ? 'scale-[0.98] opacity-40' : ''}`}
     >
       <GripHandle />
       <Text>{item.title}</Text>

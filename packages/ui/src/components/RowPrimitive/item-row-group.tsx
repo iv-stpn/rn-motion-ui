@@ -1,10 +1,9 @@
 // biome-ignore-all lint/style/useExportsLast: the entry types head the module so the implementations below read against them
 import { Fragment } from 'react';
-import { View, type ViewProps } from 'react-native';
-import { cn } from '../../lib/cn';
+import type { ViewProps } from 'react-native';
 import type { ItemRowSize } from './item-row';
 import { ItemRow } from './item-row';
-import { RowGroupContainer, type RowGroupItemBase, type RowGroupVariant } from './row-group';
+import { groupedRowClass, RowGroupContainer, type RowGroupItemBase, type RowGroupVariant } from './row-group';
 
 // ---------------------------------------------------------------------------
 // ItemRowGroup
@@ -42,9 +41,8 @@ export function ItemRowGroup({
 }: ItemRowGroupProps) {
   const lastIndex = items.length - 1;
 
-  const rows = items.map((item, index) => {
-    const isLast = index === lastIndex;
-    const row = (
+  const rows = items.map((item, index) => (
+    <Fragment key={item.id}>
       <ItemRow
         testID={`${testID}-item-${item.id}`}
         title={item.title}
@@ -54,29 +52,10 @@ export function ItemRowGroup({
         disabled={item.disabled}
         size={size}
         variant="default"
-        className={
-          variant === 'grouped'
-            ? cn(
-                index === 0 && 'rounded-b-none',
-                index === lastIndex && 'rounded-t-none',
-                index > 0 && index < lastIndex && 'rounded-none',
-                !isLast && 'border-border border-b',
-              )
-            : undefined
-        }
+        className={variant === 'grouped' ? groupedRowClass(index, lastIndex) : undefined}
       />
-    );
-
-    if (variant === 'sections' && !isLast)
-      return (
-        <Fragment key={item.id}>
-          {row}
-          <View className="h-px bg-border" />
-        </Fragment>
-      );
-
-    return <Fragment key={item.id}>{row}</Fragment>;
-  });
+    </Fragment>
+  ));
 
   return (
     <RowGroupContainer variant={variant} size={size} className={className} style={style} testID={testID}>

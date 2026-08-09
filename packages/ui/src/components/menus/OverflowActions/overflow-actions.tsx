@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { More1Line as MoreHorizontal } from 'rn-motion-ui-icons/icons/more-1-line';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
@@ -230,9 +231,7 @@ export type ActionButtonProps = {
 };
 
 function ActionButton({ item, size, reduce, onAction, testID }: ActionButtonProps) {
-  const [pressed, setPressed] = useState(false);
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
+  const { pressed, pressHandlers } = usePressState();
   const handlePress = useCallback(() => onAction(item), [onAction, item]);
 
   return (
@@ -242,8 +241,7 @@ function ActionButton({ item, size, reduce, onAction, testID }: ActionButtonProp
         accessibilityLabel={item.accessibilityLabel ?? (typeof item.label === 'string' ? item.label : undefined)}
         aria-disabled={Boolean(item.disabled)}
         disabled={item.disabled}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        {...pressHandlers}
         onPress={handlePress}
         className={action({ size })}
         style={{ opacity: item.disabled ? 0.45 : 1 }}

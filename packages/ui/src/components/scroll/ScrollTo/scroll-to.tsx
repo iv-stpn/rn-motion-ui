@@ -1,5 +1,6 @@
-import { type ReactNode, type RefObject, useCallback, useState } from 'react';
+import { type ReactNode, type RefObject, useCallback } from 'react';
 import { Pressable, type ScrollView, type StyleProp, type ViewStyle } from 'react-native';
+import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
 import { Text } from '../../typography/Text/text';
@@ -49,10 +50,7 @@ export function ScrollTo({
   testID,
 }: ScrollToProps) {
   const reduce = useReducedMotion();
-  const [pressed, setPressed] = useState(false);
-
-  const handlePressIn = useCallback(() => setPressed(true), []);
-  const handlePressOut = useCallback(() => setPressed(false), []);
+  const { pressed, pressHandlers } = usePressState();
 
   const handlePress = useCallback(() => {
     const target = to + offset;
@@ -74,8 +72,7 @@ export function ScrollTo({
         accessibilityLabel={accessibilityLabel}
         testID={testID ?? 'scroll-to'}
         disabled={disabled}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        {...pressHandlers}
         onPress={handlePress}
       >
         {typeof children === 'string' || typeof children === 'number' ? (

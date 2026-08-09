@@ -1,8 +1,9 @@
 // biome-ignore-all lint/style/useExportsLast: the shared types head the module so the component files below read against them
-import type { ReactNode } from 'react';
+import { Children, Fragment, type ReactNode } from 'react';
 import { View, type ViewProps } from 'react-native';
 import { cn } from '../../lib/cn';
 import type { ItemRowAdornment, ItemRowSize } from './item-row';
+import { elevated } from '../../lib/elevated';
 
 // ---------------------------------------------------------------------------
 // Shared internals
@@ -36,6 +37,19 @@ type RowGroupContainerProps = {
   children: ReactNode;
 };
 
+/**
+ * Returns the className for a row inside a `"grouped"` variant group so that
+ * consecutive rows share borders and only the first/last row carry outer radii.
+ */
+export function groupedRowClass(index: number, lastIndex: number): string {
+  return cn(
+    index === 0 && 'rounded-b-none',
+    index === lastIndex && 'rounded-t-none',
+    index > 0 && index < lastIndex && 'rounded-none',
+    index !== lastIndex && 'border-border border-b',
+  );
+}
+
 /** Shared container — handles spaced gap, grouped border + dividers, or sections layout. */
 export function RowGroupContainer({ variant, size, className, style, testID, children }: RowGroupContainerProps) {
   if (variant === 'spaced')
@@ -45,16 +59,20 @@ export function RowGroupContainer({ variant, size, className, style, testID, chi
       </View>
     );
 
-  if (variant === 'sections')
+  if (variant === 'sections') {
+    const childArray = Children.toArray(children);
     return (
-      <View
-        testID={testID}
-        className={cn('flex flex-col rounded-2xl bg-surface-3 p-4', GAP_CLASS[size], className)}
-        style={style}
-      >
-        {children}
+      <View testID={testID} className={cn('flex flex-col rounded-card p-4', elevated(3), className)} style={style}>
+        {childArray.map((child, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: children array is stable — derived from the parent's fixed items list — and the wrapper fragments are stateless
+          <Fragment key={index}>
+            {child}
+            {index < childArray.length - 1 && <View className="h-px bg-border my-2" />}
+          </Fragment>
+        ))}
       </View>
     );
+  }
 
   return (
     <View

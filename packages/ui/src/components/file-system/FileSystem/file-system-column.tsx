@@ -8,8 +8,8 @@
 import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { GestureResponderEvent, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { FlatList, Image, Pressable, View } from 'react-native';
-import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
-import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
+import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
+import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -28,6 +28,7 @@ import type {
   FileSystemItem,
   FileSystemMoveEvent,
 } from './file-system.types';
+import { FileSystemAnimatedRow } from './file-system-animated-row';
 import { useContextMenu } from './file-system-context-menu';
 import { FileSystemDropzone } from './file-system-dropzone';
 import { FileSystemHoverHighlight, FS_HOVER_TEST_ID, useFileSystemRowHover } from './file-system-hover';
@@ -37,6 +38,7 @@ import type { FileSystemSelectionMode } from './file-system-selection';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
 import { FileSystemEmptyState } from './file-system-view';
 import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
+import { useFileSystemRowAnimation } from './use-file-system-row-animation';
 
 const LOADING_LABEL = 'Loading…';
 
@@ -93,7 +95,7 @@ function columnRowsInRect(rect: FileSystemMarqueeRect, entries: FileSystemEntry[
  * The tint a row in flight keeps for the length of the drag — see the list view's
  * note. Every row the drag carries takes it, across every pane it spans.
  */
-const LIFTING_ROW_CLASS = 'rounded-md bg-muted';
+const LIFTING_ROW_CLASS = 'bg-muted';
 
 /**
  * The mark over a whole pane a release would land in. Absolutely positioned, so it
@@ -254,7 +256,7 @@ function ColumnRow({
             // See ListRow: native reads the state, web reads the ARIA attribute.
             aria-selected={isSelected}
             className={cn(
-              'flex-row items-center gap-2 rounded-md px-2',
+              'flex-row items-center gap-2 px-2',
               isActive && 'bg-info',
               !isActive && isOnTrail && 'bg-surface-selected',
               !(isActive || isOnTrail) && 'hover:bg-surface-hover',
@@ -347,7 +349,8 @@ function FileSystemColumnImpl({
 }: FileSystemColumnProps) {
   // Each pane is its own ordering: a Shift-range runs through the column the
   // press landed in, never across the trail into a sibling folder's contents.
-  const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
+  const { augmentedEntries, onExitComplete } = useFileSystemRowAnimation(entries, folderPath, (entry) => entry.path);
+  const orderedPaths = useMemo(() => augmentedEntries.map((entry) => entry.path), [augmentedEntries]);
   const activate = useCallback(
     (entry: FileSystemEntry, event?: GestureResponderEvent) => onActivate(entry, event, orderedPaths),
     [onActivate, orderedPaths],
@@ -357,9 +360,9 @@ function FileSystemColumnImpl({
   const flatListRef = useRef<FlatList<FileSystemEntry> | null>(null);
   const scrollOffsetRef = useRef(0);
   const rowCountRef = useRef(0);
-  rowCountRef.current = entries.length;
-  const entriesRef = useRef(entries);
-  entriesRef.current = entries;
+  rowCountRef.current = augmentedEntries.length;
+  const entriesRef = useRef(augmentedEntries);
+  entriesRef.current = augmentedEntries;
 
   // A drag near this pane's top or bottom edge scrolls it, so a folder below the
   // fold is reachable without releasing.
@@ -370,7 +373,7 @@ function FileSystemColumnImpl({
 
   const hover = useFileSystemRowHover({
     containerRef,
-    count: entries.length,
+    count: augmentedEntries.length,
     // No `getTargetIndex`: each folder row's own zone paints the pending drop, so
     // the sliding highlight has nothing to say during a drag.
     isDragging,
@@ -412,29 +415,43 @@ function FileSystemColumnImpl({
   }, [hover, marquee, selectedPaths]);
 
   const renderRow = useCallback(
-    ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
-      <ColumnRow
-        draggable={draggable}
-        entry={item}
-        getContextMenuActions={getContextMenuActions}
-        index={index}
-        isOnTrail={item.kind === 'folder' && item.path === trailChildPath}
-        isSelected={selectedPaths.has(item.path)}
-        onActivate={activate}
-        onContextMenuAction={onContextMenuAction}
-        onExternalDrop={onExternalDrop}
-        onMove={onMove}
-        onSelectLongPress={onSelectLongPress}
-        renderEntryIcon={renderEntryIcon}
-        testID={fileSystemEntryTestID(testID, item.path)}
-      />
-    ),
+    ({ item }: ListRenderItemInfo<FileSystemEntry & { _animStatus?: string }>) => {
+      const isEntering = item._animStatus === 'entering';
+      const isExiting = item._animStatus === 'exiting';
+      const exitHandler = isExiting ? () => onExitComplete(item.path) : undefined;
+
+      return (
+        <FileSystemAnimatedRow
+          height={COLUMN_ROW_HEIGHT}
+          isEntering={isEntering}
+          isExiting={isExiting}
+          onExitComplete={exitHandler ?? (() => undefined)}
+        >
+          <ColumnRow
+            draggable={draggable}
+            entry={item}
+            getContextMenuActions={getContextMenuActions}
+            index={index}
+            isOnTrail={item.kind === 'folder' && item.path === trailChildPath}
+            isSelected={selectedPaths.has(item.path)}
+            onActivate={activate}
+            onContextMenuAction={onContextMenuAction}
+            onExternalDrop={onExternalDrop}
+            onMove={onMove}
+            onSelectLongPress={onSelectLongPress}
+            renderEntryIcon={renderEntryIcon}
+            testID={fileSystemEntryTestID(testID, item.path)}
+          />
+        </FileSystemAnimatedRow>
+      );
+    },
     [
       activate,
       draggable,
       getContextMenuActions,
       index,
       onContextMenuAction,
+      onExitComplete,
       onExternalDrop,
       onMove,
       onSelectLongPress,
@@ -462,7 +479,8 @@ function FileSystemColumnImpl({
       <FlatList
         ref={flatListRef}
         contentContainerClassName="p-1.5"
-        data={entries}
+        data={augmentedEntries}
+        extraData={selectedPaths}
         getItemLayout={getItemLayout}
         keyExtractor={keyExtractor}
         onScroll={onScroll}

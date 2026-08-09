@@ -322,6 +322,7 @@ export function FileSystemIconsView({
       className="flex-1"
       contentContainerClassName="p-3"
       data={rows}
+      extraData={selectedPaths}
       getItemLayout={getItemLayout}
       keyExtractor={keyExtractor}
       onScroll={onScroll}

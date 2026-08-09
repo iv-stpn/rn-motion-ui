@@ -19,28 +19,66 @@ import { useCallback } from 'react';
 import { View } from 'react-native';
 import { MultiDragManager } from '../../gestures/DragManager/multi-drag-manager';
 import { Text } from '../../typography/Text/text';
+import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
 import { useFileSystemEntries, useFileSystemSelection } from './file-system-context';
-import { fileSystemDragData, fileSystemDragItems, fileSystemDragLabel } from './file-system-drag';
+import { type FileSystemDragItem, fileSystemDragData, fileSystemDragItems, fileSystemDragLabel } from './file-system-drag';
 
-type FileSystemGroupGhostProps = { label: string };
+type FileSystemGroupGhostProps = { items: readonly FileSystemDragItem[] };
+
+/** Sizing for the icons inside a group ghost chip. */
+const GHOST_ICON_SIZE = 14;
+const GHOST_FOLDER_GLYPH_SIZE = 14;
+/** How far each stacked icon offsets from the one beneath it (px). */
+const STACK_OFFSET = 6;
+/** How many items to show in the stack. */
+const STACK_DEPTH = 3;
 
 /**
- * The ghost for a multi-entry drag: one chip naming the count.
+ * The ghost for a multi-entry drag: a visual stack of (at most) the first three
+ * items, plus a count label.
+ *
+ * Each icon is a folder glyph or a file-type icon — no thumbnail lookup, because
+ * the drag payload carries only names and paths, not URLs. The stack reads like
+ * the physical deck of items a file manager would show under the cursor.
  *
  * A single-entry drag has no ghost of its own here — `renderPreview` returns
  * nothing for it, and a `<Draggable>` given no preview lifts a copy of its own
  * child. So dragging one row shows that row, which is both free and the better
- * picture. A group has no such picture to show, and the grabbed row alone would
- * misreport what is moving.
- *
- * `self-start` because the manager pins the ghost to the source's measured box —
- * a full-width row — and a chip stretched across it would read as a bar.
+ * picture.
  */
-function FileSystemGroupGhost({ label }: FileSystemGroupGhostProps) {
+function FileSystemGroupGhost({ items }: FileSystemGroupGhostProps) {
+  const visible = items.slice(0, STACK_DEPTH);
+
   return (
-    <View className="self-start rounded-md border border-border bg-surface-4 px-2 py-1">
+    <View className="flex-row items-center gap-1.5 self-start rounded-md border border-border bg-surface-4 px-2 py-1.5">
+      {/* Stacked icon deck: back-to-front, each offset slightly right of the last. */}
+      <View
+        className="relative"
+        style={{
+          height: GHOST_ICON_SIZE + STACK_OFFSET * (visible.length - 1),
+          width: GHOST_ICON_SIZE + STACK_OFFSET * (visible.length - 1),
+        }}
+      >
+        {visible.map((item, i) => {
+          const left = i * STACK_OFFSET;
+          const top = (visible.length - 1 - i) * STACK_OFFSET;
+          return (
+            <View
+              className="absolute rounded-sm bg-surface-2"
+              key={item.path}
+              style={{ height: GHOST_ICON_SIZE, left, top, width: GHOST_ICON_SIZE }}
+            >
+              {item.kind === 'folder' ? (
+                <FileSystemFolderGlyph size={GHOST_FOLDER_GLYPH_SIZE} />
+              ) : (
+                <FileTypeIcon fileName={item.name} size={GHOST_ICON_SIZE} />
+              )}
+            </View>
+          );
+        })}
+      </View>
       <Text className="text-foreground" numberOfLines={1} size="xs">
-        {label}
+        {fileSystemDragLabel(items)}
       </Text>
     </View>
   );
@@ -72,7 +110,7 @@ export function FileSystemDragScope({ children }: FileSystemDragScopeProps) {
   const renderPreview = useCallback(
     (paths: readonly string[]) => {
       if (paths.length < 2) return null;
-      return <FileSystemGroupGhost label={fileSystemDragLabel(fileSystemDragItems(index, paths))} />;
+      return <FileSystemGroupGhost items={fileSystemDragItems(index, paths)} />;
     },
     [index],
   );

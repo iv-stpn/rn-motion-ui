@@ -14,8 +14,8 @@ import type {
 } from 'react-native';
 import { FlatList, Pressable, View } from 'react-native';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
-import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
-import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
+import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
+import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { cn } from '../../../lib/cn';
@@ -37,6 +37,7 @@ import type {
   FileSystemSortKey,
   FileSystemSortState,
 } from './file-system.types';
+import { FileSystemAnimatedRow } from './file-system-animated-row';
 import { useBackgroundContextMenu, useContextMenu } from './file-system-context-menu';
 import { FileSystemDropzone } from './file-system-dropzone';
 import { formatByteSize, formatTimestamp } from './file-system-format';
@@ -48,6 +49,7 @@ import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
 import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
+import { type AugmentedEntry, useFileSystemRowAnimation } from './use-file-system-row-animation';
 
 const NAME_LABEL = 'Name';
 const DATE_LABEL = 'Date Modified';
@@ -74,7 +76,7 @@ const LIST_PADDING_TOP = 4;
  * has moved to the drop target by then, so without this the rows the gesture is
  * actually about are the only ones on screen with no mark at all.
  */
-const LIFTING_ROW_CLASS = 'rounded-md bg-muted';
+const LIFTING_ROW_CLASS = 'bg-muted';
 
 /** Container-local point → row index, or null for padding / past-last-row. */
 function rowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {
@@ -290,7 +292,7 @@ function ListRow({
             aria-selected={isSelected}
             // Hover is not a class here: it is one sliding node behind the rows, so it
             // can keep tracking under the drag's pointer capture. See file-system-hover.
-            className={cn('flex-row items-center gap-1 rounded-md px-2', isActive && 'bg-info')}
+            className={cn('flex-row items-center gap-1 px-2', isActive && 'bg-info')}
             onPress={handlePress}
             onPressIn={handlePressIn}
             style={{ height: FS_ROW_HEIGHT, paddingLeft: chevronLaneLeft(level) }}
@@ -367,10 +369,15 @@ export function FileSystemListView({
   const rowsRef = useRef<FileSystemRow[]>([]);
 
   const rows = useMemo(() => flattenFileSystemRows({ currentPath, expanded, index }), [currentPath, expanded, index]);
-  rowsRef.current = rows;
+  const { augmentedEntries: augmentedRows, onExitComplete } = useFileSystemRowAnimation(
+    rows,
+    currentPath,
+    (row) => row.entry.path,
+  );
+  rowsRef.current = augmentedRows;
   // A Shift-range runs through the rows as they are drawn — an expanded folder's
   // children included, since they sit between their parent and its next sibling.
-  const orderedPaths = useMemo(() => rows.map((row) => row.entry.path), [rows]);
+  const orderedPaths = useMemo(() => augmentedRows.map((row) => row.entry.path), [augmentedRows]);
   // Shown before the first measurement so the header does not visibly gain a
   // column on mount at the widths where it belongs.
   const showDate = width === null || width >= DATE_COLUMN_MIN_WIDTH;
@@ -390,15 +397,15 @@ export function FileSystemListView({
   const selectedIndexesRef = useRef<ReadonlySet<number>>(new Set());
   selectedIndexesRef.current = useMemo(() => {
     const indexes = new Set<number>();
-    rows.forEach((row, rowIndex) => {
+    augmentedRows.forEach((row, rowIndex) => {
       if (selectedPaths.has(row.entry.path)) indexes.add(rowIndex);
     });
     return indexes;
-  }, [rows, selectedPaths]);
+  }, [augmentedRows, selectedPaths]);
 
   const hover = useFileSystemRowHover({
     containerRef,
-    count: rows.length,
+    count: augmentedRows.length,
     // No `getTargetIndex`: each folder row's own zone paints the pending drop now,
     // so the sliding highlight has nothing to say during a drag and suppresses itself.
     isDragging,
@@ -451,30 +458,44 @@ export function FileSystemListView({
   );
 
   const renderRow = useCallback(
-    ({ item }: ListRenderItemInfo<FileSystemRow>) => (
-      <ListRow
-        childCount={index.children.get(item.entry.path)?.length}
-        draggable={draggable}
-        getContextMenuActions={getContextMenuActions}
-        isSelected={selectedPaths.has(item.entry.path)}
-        onActivate={activate}
-        onContextMenuAction={onContextMenuAction}
-        onExternalDrop={onExternalDrop}
-        onMove={onMove}
-        onSelectLongPress={selectLongPress}
-        onToggleExpanded={toggleExpanded}
-        renderEntryIcon={renderEntryIcon}
-        row={item}
-        showDate={showDate}
-        testID={fileSystemEntryTestID(testID, item.entry.path)}
-      />
-    ),
+    ({ item }: ListRenderItemInfo<AugmentedEntry<FileSystemRow>>) => {
+      const isEntering = item._animStatus === 'entering';
+      const isExiting = item._animStatus === 'exiting';
+      const exitHandler = isExiting ? () => onExitComplete(item.entry.path) : undefined;
+
+      return (
+        <FileSystemAnimatedRow
+          height={FS_ROW_HEIGHT}
+          isEntering={isEntering}
+          isExiting={isExiting}
+          onExitComplete={exitHandler ?? (() => undefined)}
+        >
+          <ListRow
+            childCount={index.children.get(item.entry.path)?.length}
+            draggable={draggable}
+            getContextMenuActions={getContextMenuActions}
+            isSelected={selectedPaths.has(item.entry.path)}
+            onActivate={activate}
+            onContextMenuAction={onContextMenuAction}
+            onExternalDrop={onExternalDrop}
+            onMove={onMove}
+            onSelectLongPress={selectLongPress}
+            onToggleExpanded={toggleExpanded}
+            renderEntryIcon={renderEntryIcon}
+            row={item}
+            showDate={showDate}
+            testID={fileSystemEntryTestID(testID, item.entry.path)}
+          />
+        </FileSystemAnimatedRow>
+      );
+    },
     [
       activate,
       draggable,
       getContextMenuActions,
       index,
       onContextMenuAction,
+      onExitComplete,
       onExternalDrop,
       onMove,
       renderEntryIcon,
@@ -491,7 +512,8 @@ export function FileSystemListView({
       ref={flatListRef}
       className="flex-1"
       contentContainerClassName="py-1"
-      data={rows}
+      data={augmentedRows}
+      extraData={selectedPaths}
       getItemLayout={getItemLayout}
       keyExtractor={keyExtractor}
       onScroll={onScroll}

@@ -6,11 +6,13 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { GestureResponderEvent, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { FlatList, Pressable, View } from 'react-native';
-import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
-import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
+import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
+import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
+import { withMultiDragIds } from '../../gestures/DragManager/multi-drag';
+import { useIsLifting, useMultiDragScope } from '../../gestures/DragManager/multi-drag-scope';
+import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../menus/HoldContextMenu/hold-context-menu';
 import { FileSystemFolderGlyph } from './FileIcon/file-icons';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemFileItem, FileSystemItem } from './file-system.types';
 import { useContextMenu } from './file-system-context-menu';
@@ -57,6 +59,8 @@ function stripTilesInRect(rect: FileSystemMarqueeRect, entries: FileSystemEntry[
 }
 
 type StripTileProps = {
+  /** Whether this tile drags at all — off, and the tile is neither source nor target. */
+  draggable: boolean;
   entry: FileSystemEntry;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   /** This tile is the one on the stage. Always also selected, bar the fallback to entry 0. */
@@ -73,6 +77,7 @@ type StripTileProps = {
 };
 
 function StripTile({
+  draggable,
   entry,
   getContextMenuActions,
   isActive,
@@ -86,6 +91,17 @@ function StripTile({
 }: StripTileProps) {
   const colors = useThemeColors();
   const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+
+  // Multi-drag: resolve the same payload MultiDraggable would resolve
+  const { getGroupData, renderPreview, resolveIds } = useMultiDragScope();
+  const ids = useMemo(() => resolveIds(entry.path), [entry.path, resolveIds]);
+  const multiData = useMemo(() => withMultiDragIds(getGroupData(ids), ids), [getGroupData, ids]);
+  const dragOptions = useMemo<HoldContextMenuDragOptions | undefined>(
+    () => (draggable ? { data: multiData, effectAllowed: 'move', preview: renderPreview?.(ids) } : undefined),
+    [draggable, ids, multiData, renderPreview],
+  );
+
+  const isLifting = useIsLifting(entry.path);
 
   // A hold (menu-open or multi-select toggle) must not also register as a tap.
   const heldRef = useRef(false);
@@ -124,7 +140,13 @@ function StripTile({
   );
 
   return (
-    <HoldContextMenu {...menuProps} onHold={onHoldAction} onOpenChange={handleOpenChange} style={{ marginRight: STRIP_TILE_GAP }}>
+    <HoldContextMenu
+      {...menuProps}
+      dragOptions={dragOptions}
+      onHold={onHoldAction}
+      onOpenChange={handleOpenChange}
+      style={{ marginRight: STRIP_TILE_GAP }}
+    >
       <Pressable
         accessibilityLabel={entry.name}
         accessibilityRole="button"
@@ -138,6 +160,7 @@ function StripTile({
           'relative items-center justify-center rounded-md border border-transparent p-1',
           (isActive || isSelected) && 'bg-surface-selected',
           isActive && 'border-border',
+          isLifting && 'opacity-40',
         )}
         onPress={handlePress}
         onPressIn={handlePressIn}
@@ -173,6 +196,8 @@ function StripTile({
 
 export type FileSystemGalleryStripProps = {
   activePath: string | null;
+  /** Whether tiles drag at all — off, and tiles are neither source nor target. */
+  draggable?: boolean;
   entries: FileSystemEntry[];
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
@@ -191,6 +216,7 @@ export type FileSystemGalleryStripProps = {
 
 export function FileSystemGalleryStrip({
   activePath,
+  draggable = false,
   entries,
   getContextMenuActions,
   onActivate,
@@ -249,6 +275,7 @@ export function FileSystemGalleryStrip({
   const renderTile = useCallback(
     ({ item }: ListRenderItemInfo<FileSystemEntry>) => (
       <StripTile
+        draggable={draggable}
         entry={item}
         getContextMenuActions={getContextMenuActions}
         isActive={item.path === activePath}
@@ -263,6 +290,7 @@ export function FileSystemGalleryStrip({
     ),
     [
       activePath,
+      draggable,
       getContextMenuActions,
       onActivate,
       onContextMenuAction,
@@ -293,6 +321,7 @@ export function FileSystemGalleryStrip({
       <FlatList
         contentContainerClassName="p-2"
         data={entries}
+        extraData={selectedPaths}
         getItemLayout={getItemLayout}
         horizontal={true}
         keyExtractor={keyExtractor}

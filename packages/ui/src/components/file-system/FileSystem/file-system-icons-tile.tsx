@@ -11,8 +11,8 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import { type GestureResponderEvent, Pressable, View } from 'react-native';
-import { HeartLine as Heart } from 'rn-motion-ui-icons/icons/heart-line';
-import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
+import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
+import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { withMultiDragIds } from '../../gestures/DragManager/multi-drag';

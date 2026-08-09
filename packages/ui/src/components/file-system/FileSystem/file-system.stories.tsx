@@ -471,12 +471,14 @@ function FileSystemPlayground({ options = ALL_FEATURES, ...args }: FileSystemPla
   }, []);
 
   const handleMove = useCallback(({ sources, destination }: FileSystemMoveEvent) => {
-    const source = sources[0];
-    if (source === undefined) return;
-    setState((previous) => ({
-      items: applyMove(previous.items, source, destination),
-      status: `Moved ${baseName(source)} to ${folderLabel(destination)}`,
-    }));
+    if (sources.length === 0) return;
+    setState((previous) => {
+      let items = previous.items;
+      for (const source of sources) items = applyMove(items, source, destination);
+      const firstName = sources[0];
+      const label = sources.length === 1 && firstName ? baseName(firstName) : `${sources.length} items`;
+      return { items, status: `Moved ${label} to ${folderLabel(destination)}` };
+    });
   }, []);
 
   const handleAction = useCallback((action: FileSystemContextMenuAction, item: FileSystemItem) => {
@@ -1495,6 +1497,8 @@ export const MultiSelect: Story = {
         expect.objectContaining({ name: 'Photos' }),
       ]),
     );
+    // Both entries must carry aria-selected for assistive tech and visual highlighting.
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['Documents/', 'Photos/']));
     // The lead follows the entry added last, so single-selection consumers still
     // get something coherent out of a multi-selection.
     expect(args.onSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({ name: 'Photos' }));
@@ -2090,6 +2094,67 @@ export const SelectionBox: Story = {
     // swallows the click that follows a band that actually drew.
     mouse(container, 'click');
     await waitFor(() => expect(canvas.queryByText(SELECTION_CLAUSE_PATTERN)).toBeNull());
+  },
+};
+
+/**
+ * Multi-selection visual state in the columns view.
+ *
+ * After Ctrl-clicking two entries, both must carry `aria-selected="true"` so
+ * assistive tech and CSS can mark the multi-selection.
+ */
+export const ColumnsMultiSelect: Story = {
+  name: 'Demo: Multi-select in columns view',
+  args: { defaultView: 'columns', selectionMode: 'multiple', onSelectedItemsChange: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    // Plain click to select the first entry.
+    await userEvent.click(await canvas.findByRole('button', { name: 'README.md' }));
+    await waitFor(() => expect(args.onSelectionChange).toHaveBeenCalledWith(expect.objectContaining({ name: 'README.md' })));
+
+    // Ctrl-click a second entry — both should show as selected via callbacks.
+    modifierClick(await canvas.findByRole('button', { name: 'Roadmap.pptx' }), 'ctrlKey');
+    await waitFor(() =>
+      expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({ name: 'README.md' }),
+        expect.objectContaining({ name: 'Roadmap.pptx' }),
+      ]),
+    );
+
+    // The critical assertion: both entries visibly carry aria-selected.
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
+  },
+};
+
+/**
+ * Multi-selection visual state in the gallery view.
+ *
+ * Same check as ColumnsMultiSelect but for the gallery (filmstrip + stage).
+ */
+export const GalleryMultiSelect: Story = {
+  name: 'Demo: Multi-select in gallery view',
+  args: { defaultView: 'gallery', selectionMode: 'multiple', onSelectedItemsChange: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    // Plain click to select the first entry.
+    await userEvent.click(await canvas.findByRole('button', { name: 'README.md' }));
+    await waitFor(() => expect(args.onSelectionChange).toHaveBeenCalledWith(expect.objectContaining({ name: 'README.md' })));
+
+    // Ctrl-click the next tile — both should show as selected via callbacks.
+    modifierClick(await canvas.findByRole('button', { name: 'Roadmap.pptx' }), 'ctrlKey');
+    await waitFor(() =>
+      expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({ name: 'README.md' }),
+        expect.objectContaining({ name: 'Roadmap.pptx' }),
+      ]),
+    );
+
+    // The critical assertion: both tiles visibly carry aria-selected.
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
   },
 };
 

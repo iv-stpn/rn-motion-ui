@@ -319,7 +319,7 @@ export function FileSystemHoverHighlight({ className, controller, height, testID
         }}
         testID={testID}
       >
-        <View className={cn('size-full rounded-md bg-surface-hover', className)} />
+        <View className={cn('size-full bg-surface-hover', className)} />
       </Animated.View>
     </View>
   );

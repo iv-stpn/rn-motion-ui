@@ -122,6 +122,7 @@ function GallerySidebar({ entry, index, renderFilePreview, sizeLabel }: SidebarP
 
 export function FileSystemGalleryView(props: FileSystemViewProps) {
   const {
+    draggable,
     entries,
     getContextMenuActions,
     index,
@@ -167,6 +168,7 @@ export function FileSystemGalleryView(props: FileSystemViewProps) {
       </View>
       <FileSystemGalleryStrip
         activePath={activeEntry?.path ?? null}
+        draggable={draggable}
         entries={entries}
         getContextMenuActions={getContextMenuActions}
         onActivate={activate}

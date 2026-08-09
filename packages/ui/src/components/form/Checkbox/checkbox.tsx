@@ -86,7 +86,7 @@ export function Checkbox({
           <MotiView
             animate={{ opacity: showMark ? 1 : 0 }}
             transition={reduce ? TIMING_INSTANT : ct}
-            className="absolute inset-0 bg-primary"
+            className="absolute -inset-px bg-primary"
           />
           <AnimatePresence>
             {showMark ? (

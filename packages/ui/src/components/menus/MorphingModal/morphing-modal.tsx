@@ -38,7 +38,7 @@ function resolveEnterY(reduce: boolean, placement: MorphingModalProps['placement
 }
 
 function resolvePositionerClassName(placement: MorphingModalProps['placement']): string {
-  if (placement === 'bottom-sheet') return 'flex-1 items-stretch justify-end';
+  if (placement === 'bottom-sheet') return 'flex-1 items-center justify-end';
   if (placement === 'bottom') return 'flex-1 items-center justify-end px-4 pb-8';
   return 'flex-1 items-center justify-center px-4';
 }
@@ -83,18 +83,24 @@ export function MorphingModal({
     onOpenChange?.(false);
   }, [onClose, onOpenChange]);
 
-  // Measured content height drives the panel morph. `null` means "not yet
+  // Measured content size drives the panel morph. `null` means "not yet
   // measured". `morphing` gates the snap-vs-spring choice: the first
   // measurement of an open snaps into place; later view swaps spring.
+  // Bottom-sheet placement also tracks width so the card sizes to content
+  // instead of stretching full-width.
   const [contentHeight, setContentHeight] = useState<number | null>(null);
+  const [contentWidth, setContentWidth] = useState<number | null>(null);
   const [morphing, setMorphing] = useState(false);
 
   const onContentLayout = useCallback(
     (id: string) => (e: LayoutChangeEvent) => {
       // Ignore measurements from exiting views (stale keys).
       if (id !== viewId) return;
-      const next = e.nativeEvent.layout.height;
-      if (next > 0) setContentHeight(next);
+      const { height, width } = e.nativeEvent.layout;
+      if (height > 0) {
+        setContentHeight(height);
+        setContentWidth(width);
+      }
     },
     [viewId],
   );
@@ -103,6 +109,7 @@ export function MorphingModal({
   useEffect(() => {
     if (open) {
       setContentHeight(null);
+      setContentWidth(null);
       setMorphing(false);
     }
   }, [open]);
@@ -141,8 +148,8 @@ export function MorphingModal({
               exit={{ opacity: 0, translateY: enterY, scale: reduce ? 1 : 0.98 }}
               transition={reduce ? { type: 'timing', duration: 180, easing: EASE_OUT } : SPRING_PANEL}
               className={cn(
-                'w-full overflow-hidden border border-border',
-                placement === 'bottom-sheet' ? 'rounded-t-modal' : 'max-w-sm rounded-modal',
+                'overflow-hidden border border-border',
+                placement === 'bottom-sheet' ? 'rounded-t-modal' : 'w-full max-w-sm rounded-modal',
                 surfaceBackground(elevation),
                 elevatedShadow(elevation),
               )}
@@ -159,7 +166,13 @@ export function MorphingModal({
                * card grows; the cross-fade masks the reveal.
                */}
               <MotiView
-                animate={contentHeight === null ? {} : { height: contentHeight }}
+                animate={
+                  contentHeight === null
+                    ? {}
+                    : placement === 'bottom-sheet'
+                      ? { height: contentHeight, width: contentWidth }
+                      : { height: contentHeight }
+                }
                 transition={reduce || !morphing ? INSTANT : SPRING_PANEL}
                 className="overflow-hidden"
               >
@@ -172,7 +185,7 @@ export function MorphingModal({
                     transition={{ type: 'timing', duration: reduce ? 160 : 240, easing: EASE_OUT }}
                     exitTransition={{ type: 'timing', duration: reduce ? 140 : 160, easing: EASE_OUT }}
                     onLayout={onContentLayout(viewId ?? '')}
-                    className="absolute top-0 right-0 left-0"
+                    className={placement === 'bottom-sheet' ? 'absolute top-0' : 'absolute top-0 right-0 left-0'}
                   >
                     <View className="p-5">
                       {typeof children === 'string' || typeof children === 'number' ? (

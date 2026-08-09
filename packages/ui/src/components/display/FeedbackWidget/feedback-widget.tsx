@@ -248,9 +248,11 @@ export function FeedbackWidget({
             accessibilityLabel={accessibilityLabel ?? title}
             testID="feedback-trigger"
             onPress={handleOpen}
-            className="h-12 w-12 items-center justify-center"
+            className="h-12 w-12"
           >
-            {icon ?? <ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
+            <View className="flex-1 items-center justify-center">
+              {icon ?? <ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
+            </View>
           </Pressable>
         )}
       </MotiView>

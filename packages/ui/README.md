@@ -109,6 +109,7 @@ Subpaths are namespaced by category:
 | `/scroll-to` | `ScrollTo` |
 | `/smooth-scroll` | `SmoothScroll` |
 | `/dock` | `Dock` |
+| `/dnd-list` | `DnDList` — drag-to-reorder list built on the gesture primitives |
 | `/draggable` | `Draggable` |
 | `/hold-draggable` | `HoldDraggable` — hold + drag in one gesture, with phase render-prop |
 | `/holdable` | `Holdable` — hold-only, four-phase timeline, no drag |

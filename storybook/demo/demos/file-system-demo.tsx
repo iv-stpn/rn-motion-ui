@@ -125,12 +125,14 @@ export function FileSystemDemo() {
   }, []);
 
   const handleMove = useCallback(({ sources, destination }: FileSystemMoveEvent) => {
-    const source = sources[0];
-    if (source === undefined) return;
-    setState((previous) => ({
-      items: applyMove(previous.items, source, destination),
-      status: `Moved ${baseName(source)} to ${folderLabel(destination)}`,
-    }));
+    if (sources.length === 0) return;
+    setState((previous) => {
+      let items = previous.items;
+      for (const source of sources) items = applyMove(items, source, destination);
+      const firstName = sources[0];
+      const label = sources.length === 1 && firstName ? baseName(firstName) : `${sources.length} items`;
+      return { items, status: `Moved ${label} to ${folderLabel(destination)}` };
+    });
   }, []);
 
   const handleAction = useCallback((action: FileSystemContextMenuAction, item: FileSystemItem) => {

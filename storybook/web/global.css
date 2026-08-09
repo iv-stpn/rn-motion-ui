@@ -5,78 +5,63 @@
 /* Stories live in the library workspace, so point Tailwind's class scanner there. */
 @source "../../packages/ui/src";
 
-/* Override the library's default system font stack with Geist. The .woff2 files
-   are in public/fonts/ — Vite serves the public directory at the root path. */
+/* Override the library's default system font stack with Geist. Each
+   weight is a separate font-family so the per-weight token values
+   (--font-sans-normal, --font-sans-bold, etc.) resolve correctly on
+   both web and native. Font files live in public/fonts/. */
 @theme {
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-sans-normal: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-sans-medium: "Geist-Medium", ui-sans-serif, system-ui, sans-serif;
+  --font-sans-semibold: "Geist-SemiBold", ui-sans-serif, system-ui, sans-serif;
+  --font-sans-bold: "Geist-Bold", ui-sans-serif, system-ui, sans-serif;
+  --font-mono-normal: "GeistMono-Regular", ui-monospace, monospace;
+  --font-mono-medium: "GeistMono-Medium", ui-monospace, monospace;
+  --font-mono-semibold: "GeistMono-SemiBold", ui-monospace, monospace;
+  --font-mono-bold: "GeistMono-Bold", ui-monospace, monospace;
 }
 
-/* Geist Sans — weights the Text component uses (normal, medium, semibold, bold)
-   plus light and extrabold for story variants. Font files live in public/fonts/. */
-@font-face {
-  font-family: "Geist";
-  src: url("/fonts/Geist-Light.woff2") format("woff2");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
+/* Geist Sans — one @font-face per weight, each with its own font-family
+   name so the per-weight token values (e.g. "Geist-Bold") match directly. */
 @font-face {
   font-family: "Geist";
   src: url("/fonts/Geist-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Geist";
+  font-family: "Geist-Medium";
   src: url("/fonts/Geist-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Geist";
+  font-family: "Geist-SemiBold";
   src: url("/fonts/Geist-SemiBold.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Geist";
+  font-family: "Geist-Bold";
   src: url("/fonts/Geist-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Geist";
-  src: url("/fonts/Geist-Black.woff2") format("woff2");
-  font-weight: 800;
-  font-style: normal;
   font-display: swap;
 }
 
-/* Geist Mono — regular, medium, bold. */
+/* Geist Mono — same pattern. */
 @font-face {
-  font-family: "Geist Mono";
+  font-family: "GeistMono-Regular";
   src: url("/fonts/GeistMono-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Geist Mono";
+  font-family: "GeistMono-Medium";
   src: url("/fonts/GeistMono-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Geist Mono";
+  font-family: "GeistMono-SemiBold";
+  src: url("/fonts/GeistMono-SemiBold.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "GeistMono-Bold";
   src: url("/fonts/GeistMono-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
   font-display: swap;
 }
 

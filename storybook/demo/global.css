@@ -7,12 +7,17 @@
 /* GlossyButton ships its own literal classes, so scan the library source too. */
 @source "../../packages/ui/src";
 
-/* Override the library's default system font stack with Geist. The `geist`
-   package ships the .woff2 / .ttf files; expo-font loads them on both
-   platforms (see App.tsx). This @theme block re-registers the tokens
-   Tailwind v4 already knows, so the `font-sans` / `font-mono` utilities
-   — and the Text component's `font` prop — pick up Geist everywhere. */
+/* Override the library's default system font stack with Geist. Each
+   weight is a separate font-family so the per-weight token values
+   (--font-sans-normal, --font-sans-bold, etc.) resolve correctly on
+   both web and native. expo-font loads the .ttf files (see App.tsx). */
 @theme {
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-sans-normal: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-sans-medium: "Geist-Medium", ui-sans-serif, system-ui, sans-serif;
+  --font-sans-semibold: "Geist-SemiBold", ui-sans-serif, system-ui, sans-serif;
+  --font-sans-bold: "Geist-Bold", ui-sans-serif, system-ui, sans-serif;
+  --font-mono-normal: "GeistMono-Regular", ui-monospace, monospace;
+  --font-mono-medium: "GeistMono-Medium", ui-monospace, monospace;
+  --font-mono-semibold: "GeistMono-SemiBold", ui-monospace, monospace;
+  --font-mono-bold: "GeistMono-Bold", ui-monospace, monospace;
 }

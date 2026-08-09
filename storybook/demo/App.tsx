@@ -72,6 +72,7 @@ export default function App() {
     'Geist-Bold': require('geist/dist/fonts/geist-sans/Geist-Bold.ttf'),
     'GeistMono-Regular': require('geist/dist/fonts/geist-mono/GeistMono-Regular.ttf'),
     'GeistMono-Medium': require('geist/dist/fonts/geist-mono/GeistMono-Medium.ttf'),
+    'GeistMono-SemiBold': require('geist/dist/fonts/geist-mono/GeistMono-SemiBold.ttf'),
     'GeistMono-Bold': require('geist/dist/fonts/geist-mono/GeistMono-Bold.ttf'),
   });
 

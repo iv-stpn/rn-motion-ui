@@ -192,6 +192,11 @@
       "types": "./src/components/navigation/Dock/dock.tsx",
       "default": "./src/components/navigation/Dock/dock.tsx"
     },
+    "./dnd-list": {
+      "source": "./src/components/gestures/DnDList/dnd-list.tsx",
+      "types": "./src/components/gestures/DnDList/dnd-list.tsx",
+      "default": "./src/components/gestures/DnDList/dnd-list.tsx"
+    },
     "./drag-behavior": {
       "source": "./src/components/gestures/drag-behavior.ts",
       "types": "./src/components/gestures/drag-behavior.ts",
@@ -308,9 +313,9 @@
       "default": "./src/components/RowPrimitive/action-row.tsx"
     },
     "./action-row-group": {
-      "source": "./src/components/RowPrimitive/row-group.tsx",
-      "types": "./src/components/RowPrimitive/row-group.tsx",
-      "default": "./src/components/RowPrimitive/row-group.tsx"
+      "source": "./src/components/RowPrimitive/action-row-group.tsx",
+      "types": "./src/components/RowPrimitive/action-row-group.tsx",
+      "default": "./src/components/RowPrimitive/action-row-group.tsx"
     },
     "./item-row": {
       "source": "./src/components/RowPrimitive/item-row.tsx",
@@ -318,9 +323,9 @@
       "default": "./src/components/RowPrimitive/item-row.tsx"
     },
     "./item-row-group": {
-      "source": "./src/components/RowPrimitive/row-group.tsx",
-      "types": "./src/components/RowPrimitive/row-group.tsx",
-      "default": "./src/components/RowPrimitive/row-group.tsx"
+      "source": "./src/components/RowPrimitive/item-row-group.tsx",
+      "types": "./src/components/RowPrimitive/item-row-group.tsx",
+      "default": "./src/components/RowPrimitive/item-row-group.tsx"
     },
     "./loader": {
       "source": "./src/components/display/Loader/loader.tsx",
@@ -506,6 +511,11 @@
       "source": "./src/components/typography/TextRolling/text-rolling.tsx",
       "types": "./src/components/typography/TextRolling/text-rolling.tsx",
       "default": "./src/components/typography/TextRolling/text-rolling.tsx"
+    },
+    "./toggle-group": {
+      "source": "./src/components/form/ToggleGroup/toggle-group.tsx",
+      "types": "./src/components/form/ToggleGroup/toggle-group.tsx",
+      "default": "./src/components/form/ToggleGroup/toggle-group.tsx"
     },
     "./use-column-reorder": {
       "source": "./src/components/display/Table/use-column-reorder.ts",

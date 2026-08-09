@@ -71,6 +71,8 @@ type UseTransportsParams = {
   enabled: boolean;
   timeline: PressTimeline;
   nodeRef: RefObject<View | null>;
+  /** Ref to the preview DOM element, set by the component for `setDragImage` under HTML5. */
+  previewElementRef: RefObject<View | null>;
   session: DraggableSession;
   transports: DraggableTransports;
   tuning: DragTuning;
@@ -91,6 +93,7 @@ function useTransports({
   enabled,
   timeline,
   nodeRef,
+  previewElementRef,
   session,
   transports,
   tuning,
@@ -100,7 +103,7 @@ function useTransports({
   const pan = enabled && (transports !== 'html5' || cursorMode);
   // When cursorMode is on, the pointer transport handles mouse events — disable
   // HTML5 to avoid two transports competing for the same mouse gesture.
-  useDraggableHtml5({ enabled: enabled && transports !== 'pan' && !cursorMode, nodeRef, session, timeline });
+  useDraggableHtml5({ enabled: enabled && transports !== 'pan' && !cursorMode, nodeRef, previewElementRef, session, timeline });
   useDraggablePointer({ cursorMode, effectAllowed, enabled: pan, nodeRef, session, timeline });
   return useDraggablePan({ effectAllowed, enabled: pan, session, timeline, tuning });
 }
@@ -120,6 +123,8 @@ function useDraggableHost({ enabled, live, preview }: UseDraggableHostParams) {
   const id = useId();
   const scope = useDragScope();
   const nodeRef = useRef<View | null>(null);
+  /** The DOM node the component renders the preview into — used by the HTML5 transport for `setDragImage`. */
+  const previewElementRef = useRef<View | null>(null);
   const draggingRef = useRef(false);
   const transferRef = useRef<DragTransfer | null>(null);
   const grabRef = useRef<DragPoint>({ x: 0, y: 0 });
@@ -202,7 +207,18 @@ function useDraggableHost({ enabled, live, preview }: UseDraggableHostParams) {
     [ghostPos],
   );
 
-  return { getGhostProps, getRootProps, ghostPos, handle, isDragging, nodeRef, previewRef, session, showGhost };
+  return {
+    getGhostProps,
+    getRootProps,
+    ghostPos,
+    handle,
+    isDragging,
+    nodeRef,
+    previewElementRef,
+    previewRef,
+    session,
+    showGhost,
+  };
 }
 
 /** Which transports may run. `'auto'` is the right answer unless you are working around one. */
@@ -369,6 +385,13 @@ export type UseDraggableReturn = {
    */
   phase: PressPhase;
   /**
+   * Ref for the DOM element the component renders the preview into.
+   * Used by the HTML5 transport to call `setDragImage` with a custom ghost
+   * instead of the browser's default screenshot of the dragged element.
+   * @internal
+   */
+  previewElementRef: RefObject<View | null>;
+  /**
    * Ref to the live preview node the `<DragManager>` ghost draws.
    *
    * Updated by the consumer (e.g. `<HoldDraggable>`) during render.
@@ -465,6 +488,7 @@ export function useDraggable(options: UseDraggableOptions = {}): UseDraggableRet
     effectAllowed,
     enabled,
     nodeRef: host.nodeRef,
+    previewElementRef: host.previewElementRef,
     session: host.session,
     timeline,
     transports,
@@ -480,6 +504,8 @@ export function useDraggable(options: UseDraggableOptions = {}): UseDraggableRet
     isDragging: host.isDragging,
     isHeld: phase === 'hold',
     phase,
+    /** Ref for the DOM element the component renders the preview into — used by HTML5 `setDragImage`. */
+    previewElementRef: host.previewElementRef,
     previewRef: host.previewRef,
     showGhost: host.showGhost,
     tuning,

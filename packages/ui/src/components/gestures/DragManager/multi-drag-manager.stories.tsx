@@ -105,6 +105,7 @@ function RowsDemo() {
   const [selected, setSelected] = useState<string[]>(['Alpha', 'Bravo']);
   const [dropped, setDropped] = useState('Nothing yet');
   const [payload, setPayload] = useState('No payload yet');
+  const [showCustomGhost, setShowCustomGhost] = useState(true);
 
   const toggle = useCallback((id: string) => {
     setSelected((current) => (current.includes(id) ? current.filter((member) => member !== id) : [...current, id]));
@@ -113,7 +114,10 @@ function RowsDemo() {
   // Built once per lift from the resolved group, so a payload may cost as much as
   // the group needs — this is not on the pointer path.
   const getGroupData = useCallback((ids: readonly string[]) => ({ [MIME]: ids.join(' + ') }), []);
-  const renderPreview = useCallback((ids: readonly string[]) => <GroupChip count={ids.length} />, []);
+
+  // When toggled off the manager's built-in default "N items" ghost takes over,
+  // which lets you compare the two with one click.
+  const renderPreview = showCustomGhost ? (ids: readonly string[]) => <GroupChip count={ids.length} /> : undefined;
 
   const took = useCallback(({ transfer }: DragzoneDropEvent) => {
     // Two reads of the same drop: the ids the manager always writes, and the
@@ -146,6 +150,18 @@ function RowsDemo() {
           Drop here
         </Text>
       </Dragzone>
+      <View className="flex-row items-center gap-2">
+        <Pressable
+          className={`rounded-full px-3 py-1 ${showCustomGhost ? 'bg-primary' : 'bg-muted'}`}
+          onPress={() => setShowCustomGhost((v) => !v)}
+          testID="toggle-custom-ghost"
+        >
+          <Text size="xs" className={showCustomGhost ? 'text-primary-foreground' : ''}>
+            Custom ghost
+          </Text>
+        </Pressable>
+        <Note>Ghost: {showCustomGhost ? 'custom chip' : 'built-in default'}</Note>
+      </View>
       <Note testID={READOUT_TEST_ID}>{dropped}</Note>
       <Note testID={PAYLOAD_TEST_ID}>{payload}</Note>
       <Note>{HINT}</Note>

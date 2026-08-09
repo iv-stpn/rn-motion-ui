@@ -23,12 +23,40 @@ import type { DraggableSession } from './draggable-session';
 export type UseDraggableHtml5Params = {
   enabled: boolean;
   nodeRef: RefObject<View | null>;
+  /** When set, the preview element that `setDragImage` draws instead of the browser's default screenshot. */
+  previewElementRef?: RefObject<View | null>;
   session: DraggableSession;
   /** The pan's press timeline — how a touch-initiated native drag is recognised and refused. */
   timeline: PressTimeline;
 };
 
-export function useDraggableHtml5({ enabled, nodeRef, session, timeline }: UseDraggableHtml5Params): void {
+/**
+ * HTML5 drag image set from the preview React element.
+ *
+ * The browser draws its own drag image by default (a semi-transparent snapshot of
+ * the dragged element), but when a consumer passes a custom `preview` — a chip
+ * naming the count rather than a full row — that is what should appear under the
+ * cursor. We clone the offscreen DOM node the component keeps rendered, append it
+ * to `<body>` so every engine can capture it, call `setDragImage`, and remove the
+ * clone on the next microtask.
+ */
+function setDragImageFromRef(dataTransfer: DataTransfer, previewRef: RefObject<View | null>): void {
+  // biome-ignore lint/plugin: RN View refs resolve to HTMLElement in react-native-web
+  const source = previewRef.current as unknown as HTMLElement | null;
+  if (!source?.isConnected) return;
+
+  // biome-ignore lint/plugin: cloneNode returns Node, but we only clone HTMLElements
+  const image = source.cloneNode(true) as HTMLElement;
+  image.style.opacity = '1';
+  image.style.position = 'fixed';
+  image.style.left = '-9999px';
+  image.style.top = '0';
+  document.body.appendChild(image);
+  dataTransfer.setDragImage(image, 0, 0);
+  setTimeout(() => image.remove(), 0);
+}
+
+export function useDraggableHtml5({ enabled, nodeRef, previewElementRef, session, timeline }: UseDraggableHtml5Params): void {
   // biome-ignore lint/plugin: DOM event wiring must run in an effect; no data-fetching or render-driving state
   useEffect(() => {
     if (Platform.OS !== 'web' || !enabled) return;
@@ -51,6 +79,7 @@ export function useDraggableHtml5({ enabled, nodeRef, session, timeline }: UseDr
       // whose payload nothing could read.
       if (!e.dataTransfer) return;
       session.begin({ point: { x: e.clientX, y: e.clientY }, transfer: e.dataTransfer, transport: 'html5' });
+      if (previewElementRef) setDragImageFromRef(e.dataTransfer, previewElementRef);
     }
 
     function onDrag(e: DragEvent) {
@@ -83,6 +112,7 @@ export function useDraggableHtml5({ enabled, nodeRef, session, timeline }: UseDr
       node.removeEventListener('drag', onDrag);
       node.removeEventListener('dragend', onDragEnd);
     };
-    // `timeline` is stable for the life of the component, so it never rebinds here.
-  }, [enabled, nodeRef, session, timeline]);
+    // `timeline` and `previewElementRef` are stable for the life of the component,
+    // so they never rebind here.
+  }, [enabled, nodeRef, previewElementRef, session, timeline]);
 }

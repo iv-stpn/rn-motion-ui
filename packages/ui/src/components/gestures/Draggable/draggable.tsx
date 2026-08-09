@@ -25,7 +25,7 @@
 // groups that decide which `<Dragzone>` will have it, and the handle on the ref.
 
 import { type ReactNode, type Ref, useImperativeHandle } from 'react';
-import { Animated, View, type ViewProps } from 'react-native';
+import { Animated, View, type ViewProps, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import type { DraggableHandle } from '../drag.types';
 import { type UseDraggableOptions, useDraggable } from './use-draggable';
@@ -37,6 +37,9 @@ import { type UseDraggableOptions, useDraggable } from './use-draggable';
  * ghost or a `<DragManager>` does.
  */
 const GHOST_CLASS = 'z-50 opacity-80';
+
+/** Rendered off-screen so it stays in the DOM for HTML5 `setDragImage` but the user never sees it. */
+const OFFSCREEN_STYLE: ViewStyle = { left: 0, opacity: 0, pointerEvents: 'none', position: 'absolute', top: 0 };
 
 export type DraggableProps = Omit<ViewProps, 'children'> &
   UseDraggableOptions & {
@@ -141,6 +144,9 @@ export function Draggable({
 
   useImperativeHandle(ref, () => drag.handle, [drag.handle]);
 
+  const hasCustomPreview = preview !== undefined;
+  const drawsPreview = drag.showGhost || hasCustomPreview;
+
   const root = drag.getRootProps();
   const host = (
     <View
@@ -152,8 +158,13 @@ export function Draggable({
       {...viewProps}
     >
       {children}
-      {drag.showGhost ? (
-        <Animated.View {...drag.getGhostProps()} className={GHOST_CLASS}>
+      {drawsPreview ? (
+        <Animated.View
+          ref={drag.previewElementRef}
+          {...drag.getGhostProps()}
+          className={drag.showGhost ? GHOST_CLASS : undefined}
+          style={drag.showGhost ? drag.getGhostProps().style : OFFSCREEN_STYLE}
+        >
           {previewNode}
         </Animated.View>
       ) : null}

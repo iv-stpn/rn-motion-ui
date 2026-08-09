@@ -18,7 +18,7 @@
 // For a hold with *no* drag, use `<Holdable>` instead.
 
 import { type ReactNode, type Ref, useImperativeHandle } from 'react';
-import { Animated, View, type ViewProps } from 'react-native';
+import { Animated, View, type ViewProps, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { type UseDraggableOptions, useDraggable } from '../Draggable/use-draggable';
 import type { DraggableHandle } from '../drag.types';
@@ -29,6 +29,9 @@ import type { HoldableState } from './holdable';
  * from the drag manager's point of view.
  */
 const GHOST_CLASS = 'z-50 opacity-80';
+
+/** Rendered off-screen so it stays in the DOM for HTML5 `setDragImage` but the user never sees it. */
+const OFFSCREEN_STYLE: ViewStyle = { left: 0, opacity: 0, pointerEvents: 'none', position: 'absolute', top: 0 };
 
 export type HoldDraggableProps = Omit<ViewProps, 'children' | 'ref'> &
   Omit<UseDraggableOptions, 'trackPhase'> & {
@@ -113,6 +116,11 @@ export function HoldDraggable({
   // component renders right now — both branches (render-prop and plain children).
   drag.previewRef.current = resolvedPreview;
 
+  // The preview must stay in the DOM even when `showGhost` is false: the HTML5
+  // transport reads it for `setDragImage`. When true the ghost follows the pointer;
+  // otherwise it sits offscreen.
+  const drawsPreview = drag.showGhost || preview !== undefined;
+
   const root = drag.getRootProps();
   const host = (
     <View
@@ -124,8 +132,13 @@ export function HoldDraggable({
       {...viewProps}
     >
       {resolvedChildren}
-      {drag.showGhost ? (
-        <Animated.View {...drag.getGhostProps()} className={GHOST_CLASS}>
+      {drawsPreview ? (
+        <Animated.View
+          ref={drag.previewElementRef}
+          {...drag.getGhostProps()}
+          className={drag.showGhost ? GHOST_CLASS : undefined}
+          style={drag.showGhost ? drag.getGhostProps().style : OFFSCREEN_STYLE}
+        >
           {resolvedPreview}
         </Animated.View>
       ) : null}

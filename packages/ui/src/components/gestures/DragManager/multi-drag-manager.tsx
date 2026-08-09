@@ -16,10 +16,45 @@
 // groups and the ghost overlay behave exactly the same.
 
 import { type ReactNode, useCallback, useMemo } from 'react';
+import { View } from 'react-native';
 import { useActiveDrag } from '../use-drag-store';
 import { DragManager, type DragManagerProps } from './drag-manager';
 import { defaultResolveIds, type MultiDragIdResolver, readMultiDragIds } from './multi-drag';
 import { type MultiDragScope, MultiDragScopeContext } from './multi-drag-scope';
+
+// ── Default multi-drag ghost ────────────────────────────────────────────
+
+type DefaultMultiDragGhostProps = { count: number };
+
+/**
+ * The ghost drawn when a multi-drag carries more than one item and no
+ * `renderPreview` was given — one chip naming the count, because a group
+ * has no single name.  Rendered by the `<DragManager>` overlay under pan
+ * transports; unused under HTML5, where the browser draws its own image.
+ *
+ * Kept internal; a consumer that wants different copy or styling passes
+ * `renderPreview` to `<MultiDragManager>` instead.
+ */
+function DefaultMultiDragGhost({ count }: DefaultMultiDragGhostProps) {
+  return (
+    <View className="flex-row items-center gap-1.5 self-start rounded-md border border-border bg-surface-1 px-2 py-1">
+      <View className="h-1.5 w-1.5 rounded-full bg-primary" />
+      <DefaultMultiDragGhostText count={count} />
+    </View>
+  );
+}
+
+type DefaultMultiDragGhostTextProps = { count: number };
+
+function DefaultMultiDragGhostText({ count }: DefaultMultiDragGhostTextProps) {
+  // Template literal is intentional: the count varies per drag.
+  return <View className="font-medium text-foreground text-xs">{`${count} items`}</View>;
+}
+
+const defaultRenderPreview = (ids: readonly string[]) => {
+  if (ids.length <= 1) return; // let Draggable fall back to children
+  return <DefaultMultiDragGhost count={ids.length} />;
+};
 
 export type MultiDragManagerProps = DragManagerProps & {
   /**
@@ -101,7 +136,14 @@ export function MultiDragManager({
   const resolve = useCallback((liftedId: string) => resolveIds(liftedId, selected), [resolveIds, selected]);
 
   const scope = useMemo<MultiDragScope>(
-    () => ({ getGroupData, hasManager: true, liftedIds, renderPreview, resolveIds: resolve, selectedIds: selected }),
+    () => ({
+      getGroupData,
+      hasManager: true,
+      liftedIds,
+      renderPreview: renderPreview ?? defaultRenderPreview,
+      resolveIds: resolve,
+      selectedIds: selected,
+    }),
     [getGroupData, liftedIds, renderPreview, resolve, selected],
   );
 

@@ -77,11 +77,14 @@ Subpaths are namespaced by category:
 
 | Subpath | Component / hook |
 | --- | --- |
+| `/action-row` | `ActionRow` |
+| `/action-row-group` | `ActionRowGroup` |
 | `/button` | `Button` |
 | `/button-group` | `ButtonGroup` |
 | `/close-button` | `CloseButton` |
 | `/elevated-button` | `ElevatedButton` |
 | `/item-row` | `ItemRow` |
+| `/item-row-group` | `ItemRowGroup` |
 | `/stateful-button` | `StatefulButton` |
 | `/glossy-button` | `GlossyButton` |
 | `/switch` | `Switch` |
@@ -121,6 +124,7 @@ Subpaths are namespaced by category:
 | `/multi-drag` | `readMultiDragIds`, `MULTI_DRAG_IDS_MIME` |
 | `/drag-types` | drag system type definitions |
 | `/drag-store` | the drag registry, for custom sources and targets |
+| `/toggle-group` | `ToggleGroup` |
 | `/use-drag-store` | `useActiveDrag`, `useDragSnapshot`, `useDragzoneState`, `useDragMove` |
 | `/use-draggable` | `useDraggable` — a drag with no markup attached |
 | `/drag-behavior` | `resolveDragBehavior`, `DRAG_TUNING_DEFAULTS`, the per-OS press timeline |

@@ -62,6 +62,12 @@ export type DragzoneProps = Omit<ViewProps, 'children'> & {
   acceptsExternal?: boolean;
   /** Breaks a tie between overlapping zones; higher wins. @default 0 */
   priority?: number;
+  /**
+   * When true, this zone is never measured and always passes the spatial hit test.
+   * Set on zones whose consumer handles hit testing through another mechanism
+   * (e.g. arithmetic position calculation in SortableList). @default false
+   */
+  skipRectMeasure?: boolean;
   /** Applied while a drag this zone would take is in flight, anywhere. */
   eligibleClassName?: string;
   /** Applied while the pointer is inside, so a release now lands here. */
@@ -119,6 +125,7 @@ export function Dragzone({
   overClassName,
   priority = 0,
   ref,
+  skipRectMeasure = false,
   testID,
   ...viewProps
 }: DragzoneProps) {
@@ -152,6 +159,7 @@ export function Dragzone({
       onDragOver,
       onDrop,
       priority,
+      skipRectMeasure,
       testID,
     }),
   );
@@ -161,19 +169,23 @@ export function Dragzone({
   useEffect(() => {
     const registration = registerDragzone({ getConfig, id, managerPath, measure });
     registrationRef.current = registration;
-    // Ensure the zone's rect is measured before a drag begins — `onLayout` already
-    // queues a measure, but the microtask ordering depends on who queues first.
-    registration.remeasure().catch(() => undefined);
+    // Skip measure when the consumer handles hit testing through another mechanism
+    // (e.g. arithmetic position calculation in SortableList).
+    if (!skipRectMeasure) registration.remeasure().catch(() => undefined);
     return () => {
       registrationRef.current = null;
       registration.unregister();
     };
-  }, [getConfig, id, managerPath, measure]);
+  }, [getConfig, id, managerPath, measure, skipRectMeasure]);
 
-  const remeasure = useCallback(() => registrationRef.current?.remeasure() ?? Promise.resolve(), []);
+  const remeasure = useCallback(() => {
+    if (skipRectMeasure) return Promise.resolve();
+    return registrationRef.current?.remeasure() ?? Promise.resolve();
+  }, [skipRectMeasure]);
   const handleLayout = useCallback(() => {
+    if (skipRectMeasure) return;
     remeasure().catch(() => undefined);
-  }, [remeasure]);
+  }, [skipRectMeasure, remeasure]);
 
   // The snapshot rather than `useDragzoneState`, because the render state names the
   // drag as well as this zone's standing in it — and it is the same subscription.

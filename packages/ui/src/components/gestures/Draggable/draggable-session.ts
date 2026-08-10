@@ -13,6 +13,8 @@ import type { MutableRefObject, ReactNode, RefObject } from 'react';
 import type { Animated } from 'react-native';
 import type {
   ActiveDrag,
+  CollisionAlgorithm,
+  DragAxis,
   DragDropEffect,
   DragEffectAllowed,
   DragEndEvent,
@@ -68,7 +70,9 @@ export type DraggableSession = {
  * down a drag in flight.
  */
 export type DraggableLiveProps = {
+  collisionAlgorithm?: CollisionAlgorithm;
   data?: Record<string, string>;
+  dragAxis?: DragAxis;
   effectAllowed?: DragEffectAllowed;
   groups?: DragGroups;
   onDragEnd?: (event: DragEndEvent) => void;
@@ -78,6 +82,8 @@ export type DraggableLiveProps = {
 };
 
 export type SessionRefs = {
+  /** Measured bounds view rect, when `dragBoundsRef` was given. Clamped per-frame in `move()`. */
+  boundsRef: MutableRefObject<DragRect | null>;
   draggingRef: MutableRefObject<boolean>;
   /** Pointer offset from the lift point, driving a self-drawn ghost. */
   ghostPos: Animated.ValueXY;
@@ -112,7 +118,7 @@ export type SessionRefs = {
  * everything from there on is shared.
  */
 export function buildSession(refs: SessionRefs): DraggableSession {
-  const { draggingRef, ghostPos, grabRef, id, managerId, managerPath, overlayHostId } = refs;
+  const { boundsRef, draggingRef, ghostPos, grabRef, id, managerId, managerPath, overlayHostId } = refs;
   const { previewRef, propsRef, rectRef, setDragging, setGhost, transferRef } = refs;
 
   return {
@@ -133,6 +139,7 @@ export function buildSession(refs: SessionRefs): DraggableSession {
       draggingRef.current = true;
 
       const drag: ActiveDrag = {
+        collisionAlgorithm: live?.collisionAlgorithm,
         groups: live?.groups ?? NO_GROUPS,
         id,
         origin: { grab: point, rect: rectRef.current },
@@ -171,10 +178,37 @@ export function buildSession(refs: SessionRefs): DraggableSession {
     move(point) {
       const transfer = transferRef.current;
       if (!(draggingRef.current && transfer)) return null;
-      const overZoneId = moveDrag(point);
       const grab = grabRef.current;
-      const translation = { x: point.x - grab.x, y: point.y - grab.y };
+      // ── Axis constraint ──────────────────────────────────────────────
+      let clampedX = point.x;
+      let clampedY = point.y;
+      const axis = propsRef.current?.dragAxis;
+      if (axis === 'x') clampedY = grab.y;
+      else if (axis === 'y') clampedX = grab.x;
+      // ── Bounded dragging ─────────────────────────────────────────────
+      // The clamping works in window coordinates: compute where the item's
+      // edges would land, clamp them inside the bounds view, then convert
+      // back to a grab-relative point for the ghost and the store.
+      const bounds = boundsRef.current;
+      const hostRect = rectRef.current;
+      if (bounds && hostRect) {
+        // Edges the item WOULD have at this pointer position (window coords).
+        const itemLeft = hostRect.x + (clampedX - grab.x);
+        const itemTop = hostRect.y + (clampedY - grab.y);
+        // Furthest the item can move while staying inside the bounds.
+        const minLeft = bounds.x;
+        const minTop = bounds.y;
+        const maxLeft = bounds.x + bounds.width - hostRect.width;
+        const maxTop = bounds.y + bounds.height - hostRect.height;
+        // Clamp the item's edges, then convert back to a grab-relative point.
+        clampedX = grab.x + Math.max(minLeft, Math.min(itemLeft, maxLeft)) - hostRect.x;
+        clampedY = grab.y + Math.max(minTop, Math.min(itemTop, maxTop)) - hostRect.y;
+      }
+      const clampedPoint = { x: clampedX, y: clampedY };
+      const overZoneId = moveDrag(clampedPoint);
+      const translation = { x: clampedX - grab.x, y: clampedY - grab.y };
       ghostPos.setValue(translation);
+      // Report the raw (unclamped) point so consumers still see where the finger is.
       propsRef.current?.onDragMove?.({ overZoneId, point, transfer, translation });
       return overZoneId;
     },

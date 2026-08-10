@@ -127,9 +127,14 @@ export function useDraggableHtml5({
       // still passes because `lastPoint` was already at or near the grab.
       // `grab` is set in `dragstart` before any `drag` fires and cleared only
       // in `dragend` which arrives after the last `drag` — safe to narrow.
-      if (grab !== null && e.clientX === grab.x && e.clientY === grab.y) {
-        if (lastPoint !== null && (lastPoint.x !== grab.x || lastPoint.y !== grab.y)) return;
-      }
+      if (
+        grab !== null &&
+        e.clientX === grab.x &&
+        e.clientY === grab.y &&
+        lastPoint !== null &&
+        (lastPoint.x !== grab.x || lastPoint.y !== grab.y)
+      )
+        return;
       lastPoint = { x: e.clientX, y: e.clientY };
       session.move({ x: e.clientX, y: e.clientY });
     }

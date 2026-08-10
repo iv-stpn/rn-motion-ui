@@ -26,6 +26,8 @@ import {
 } from 'react';
 import { Animated, type LayoutChangeEvent, Platform, type View, type ViewStyle } from 'react-native';
 import type {
+  CollisionAlgorithm,
+  DragAxis,
   DragEffectAllowed,
   DragEndEvent,
   DragGroups,
@@ -115,7 +117,12 @@ function useTransports({
   return useDraggablePan({ effectAllowed, enabled: pan, session, timeline, tuning });
 }
 
-type UseDraggableHostParams = { enabled: boolean; live: DraggableLiveProps; preview: ReactNode };
+type UseDraggableHostParams = {
+  dragBoundsRef?: RefObject<View>;
+  enabled: boolean;
+  live: DraggableLiveProps;
+  preview: ReactNode;
+};
 
 /**
  * The host node and the session bound to it: the refs a drag mutates, the two bits
@@ -126,7 +133,7 @@ type UseDraggableHostParams = { enabled: boolean; live: DraggableLiveProps; prev
  * here is about *this component's* node and the drag lifted from it, and none of it
  * knows which transport is driving.
  */
-function useDraggableHost({ enabled, live, preview }: UseDraggableHostParams) {
+function useDraggableHost({ dragBoundsRef, enabled, live, preview }: UseDraggableHostParams) {
   const id = useId();
   const scope = useDragScope();
   const nodeRef = useRef<View | null>(null);
@@ -136,6 +143,7 @@ function useDraggableHost({ enabled, live, preview }: UseDraggableHostParams) {
   const transferRef = useRef<DragTransfer | null>(null);
   const grabRef = useRef<DragPoint>({ x: 0, y: 0 });
   const rectRef = useRef<DragRect | null>(null);
+  const boundsRef = useRef<DragRect | null>(null);
   const ghostPos = useRef(new Animated.ValueXY()).current;
   const [showGhost, setGhost] = useState(false);
   const [isDragging, setDragging] = useState(false);
@@ -152,6 +160,7 @@ function useDraggableHost({ enabled, live, preview }: UseDraggableHostParams) {
   const session = useMemo(
     () =>
       buildSession({
+        boundsRef,
         draggingRef,
         ghostPos,
         grabRef,
@@ -179,6 +188,19 @@ function useDraggableHost({ enabled, live, preview }: UseDraggableHostParams) {
     [],
   );
 
+  // Read the bounds view rect into `boundsRef` so `session.move()` can clamp against it.
+  // Measured on host layout and at lift time; the bounds view and host typically move together.
+  const measureBounds = useCallback(() => {
+    const node = dragBoundsRef?.current;
+    if (!node) {
+      boundsRef.current = null;
+      return;
+    }
+    node.measureInWindow((x, y, width, height) => {
+      boundsRef.current = { height, width, x, y };
+    });
+  }, [dragBoundsRef]);
+
   // The rect the ghost is anchored and sized to. Kept on a ref through layout so
   // `begin` has it synchronously — a lift cannot wait a microtask for a measure.
   const handleLayout = useCallback(() => {
@@ -187,7 +209,8 @@ function useDraggableHost({ enabled, live, preview }: UseDraggableHostParams) {
         rectRef.current = rect;
       })
       .catch(() => undefined);
-  }, [measure]);
+    measureBounds();
+  }, [measure, measureBounds]);
 
   const handle = useMemo<DraggableHandle>(
     () => ({
@@ -265,6 +288,15 @@ export type UseDraggableOptions = {
    */
   behavior?: DragBehavior;
   /**
+   * Algorithm used to decide whether this draggable is over a drop zone.
+   *
+   * - Unset (default): point-based hit test — the grab point must be inside the zone
+   * - `'intersect'`: any overlap between the draggable rect and the zone rect
+   * - `'contain'`: the entire draggable must be inside the zone
+   * - `'center'`: the draggable's center point must be inside the zone
+   */
+  collisionAlgorithm?: CollisionAlgorithm;
+  /**
    * The payload, MIME key to string — `{ 'application/json': JSON.stringify(x) }`.
    * Read back with `transfer.getData(mime)` in any of the callbacks, from a
    * `<Dragzone onDrop>`, or from `event.dataTransfer` in a plain HTML5 drop listener
@@ -282,6 +314,22 @@ export type UseDraggableOptions = {
    * @default false
    */
   cursorMode?: boolean;
+  /**
+   * Constrains dragging to a single axis.
+   *
+   * - `'x'`: horizontal movement only
+   * - `'y'`: vertical movement only
+   * - `'both'` (or unset): free movement in both directions
+   */
+  dragAxis?: DragAxis;
+  /**
+   * Reference to a View that defines the dragging boundaries. The draggable
+   * item will be constrained within this view's bounds in window coordinates.
+   *
+   * Only meaningful for pan transports (touch on web, native). Not applicable
+   * to HTML5 drags where the browser controls the cursor position.
+   */
+  dragBoundsRef?: RefObject<View>;
   /** Turns the drag off. Nothing binds, and no timeline runs. @default false */
   disabled?: boolean;
   /** What a drop may do with the payload. @default 'copy' */
@@ -371,6 +419,12 @@ export type UseDraggableReturn = {
   /** The same imperative handle `<Draggable ref>` exposes. */
   handle: DraggableHandle;
   /**
+   * True when at least one `<Draggable.Handle>` child is mounted inside this source.
+   * The host's `GestureDetector` is suppressed while handles are present, so the drag
+   * only lifts from the handle area.
+   */
+  hasHandle: boolean;
+  /**
    * True while the press is active or held (`phase === 'active' || phase === 'hold'`).
    * Only live when `trackPhase` was true; idle otherwise.
    */
@@ -405,6 +459,12 @@ export type UseDraggableReturn = {
    * @internal
    */
   previewRef: MutableRefObject<ReactNode>;
+  /**
+   * Callback a `<Draggable.Handle>` child calls on mount to announce itself. The
+   * host suppresses its own `GestureDetector` when at least one handle is present.
+   * @internal
+   */
+  registerHandle: (registered: boolean) => void;
   /**
    * This component is the one that has to draw the ghost: a pan transport is running
    * and no `<DragManager>` above it took the job. False under HTML5, where the
@@ -443,7 +503,19 @@ export type UseDraggableReturn = {
  * non-pointer path to the same outcome** — a menu item, a keyboard command.
  */
 export function useDraggable(options: UseDraggableOptions = {}): UseDraggableReturn {
-  const { behavior, cursorMode = false, data, disabled = false, effectAllowed = 'copy', groups, preview, testID } = options;
+  const {
+    behavior,
+    collisionAlgorithm,
+    cursorMode = false,
+    data,
+    disabled = false,
+    dragAxis,
+    dragBoundsRef,
+    effectAllowed = 'copy',
+    groups,
+    preview,
+    testID,
+  } = options;
   const {
     onDragEnd,
     onDragMove,
@@ -479,7 +551,9 @@ export function useDraggable(options: UseDraggableOptions = {}): UseDraggableRet
   // resolves its own: the manager's groups are a default this source may override, and
   // neither side can inherit at registration time without asking React where it sits.
   const live: DraggableLiveProps = {
+    collisionAlgorithm,
     data,
+    dragAxis,
     effectAllowed,
     groups: groups ?? scope.groups,
     onDragEnd,
@@ -489,7 +563,19 @@ export function useDraggable(options: UseDraggableOptions = {}): UseDraggableRet
   };
 
   const enabled = !disabled;
-  const host = useDraggableHost({ enabled, live, preview });
+
+  // When handle children are present, the host GestureDetector is suppressed and only
+  // the Handle sub-component carries it — so the drag only starts from the handle area.
+  // A counter rather than a boolean: multiple handles may coexist, and the host should
+  // only regain its GestureDetector when the last one unmounts.
+  const handleCountRef = useRef(0);
+  const [hasHandle, setHasHandle] = useState(false);
+  const registerHandle = useCallback((registered: boolean) => {
+    handleCountRef.current += registered ? 1 : -1;
+    setHasHandle(handleCountRef.current > 0);
+  }, []);
+
+  const host = useDraggableHost({ dragBoundsRef, enabled, live, preview });
   const gesture = useTransports({
     cursorMode,
     effectAllowed,
@@ -507,6 +593,7 @@ export function useDraggable(options: UseDraggableOptions = {}): UseDraggableRet
     getRootProps: host.getRootProps,
     gesture,
     handle: host.handle,
+    hasHandle,
     isActive: phase === 'active' || phase === 'hold',
     isDragging: host.isDragging,
     isHeld: phase === 'hold',
@@ -514,6 +601,7 @@ export function useDraggable(options: UseDraggableOptions = {}): UseDraggableRet
     /** Ref for the DOM element the component renders the preview into — used by HTML5 `setDragImage`. */
     previewElementRef: host.previewElementRef,
     previewRef: host.previewRef,
+    registerHandle,
     showGhost: host.showGhost,
     tuning,
   };

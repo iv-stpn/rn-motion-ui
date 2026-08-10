@@ -24,11 +24,12 @@
 // What is identical across all three: the `data` you attach, the callbacks, the
 // groups that decide which `<Dragzone>` will have it, and the handle on the ref.
 
-import { type ReactNode, type Ref, useImperativeHandle } from 'react';
+import { createContext, type ReactNode, type Ref, useContext, useImperativeHandle } from 'react';
 import { Animated, View, type ViewProps, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import type { DraggableHandle } from '../drag.types';
-import { type UseDraggableOptions, useDraggable } from './use-draggable';
+import { useMountEffect } from '../../../hooks/use-mount-effect';
+import type { DraggableHandle, DraggableHandleProps } from '../drag.types';
+import { type UseDraggableOptions, type UseDraggableReturn, useDraggable } from './use-draggable';
 
 /**
  * The ghost's cosmetics, which the hook deliberately does not supply — it gives
@@ -40,6 +41,43 @@ const GHOST_CLASS = 'z-50 opacity-80';
 
 /** Rendered off-screen so it stays in the DOM for HTML5 `setDragImage` but the user never sees it. */
 const OFFSCREEN_STYLE: ViewStyle = { left: 0, opacity: 0, pointerEvents: 'none', position: 'absolute', top: 0 };
+
+type DraggableContextValue = { drag: UseDraggableReturn } | null;
+
+const DraggableContext = createContext<DraggableContextValue>(null);
+
+/**
+ * A sub-area inside a `<Draggable>` that initiates the drag. Only the handle responds
+ * to presses — the rest of the draggable stays inert. Multiple handles can coexist.
+ *
+ * ```tsx
+ * <Draggable>
+ *   <View>
+ *     <Draggable.Handle><GripIcon /></Draggable.Handle>
+ *     <Text>Drag me by the grip only</Text>
+ *   </View>
+ * </Draggable>
+ * ```
+ *
+ * Must be a descendant of `<Draggable>` — throws if rendered outside one.
+ */
+Draggable.Handle = ({ children, style: handleStyle }: DraggableHandleProps) => {
+  const ctx = useContext(DraggableContext);
+  if (!ctx) throw new Error('Draggable.Handle must be used inside a <Draggable>');
+
+  useMountEffect(() => {
+    ctx.drag.registerHandle(true);
+    return () => ctx.drag.registerHandle(false);
+  });
+
+  if (ctx.drag.gesture === null) return <View style={handleStyle}>{children}</View>;
+
+  return (
+    <GestureDetector gesture={ctx.drag.gesture}>
+      <View style={handleStyle}>{children}</View>
+    </GestureDetector>
+  );
+};
 
 export type DraggableProps = Omit<ViewProps, 'children'> &
   UseDraggableOptions & {
@@ -102,8 +140,12 @@ export function Draggable({
   behavior,
   children,
   className,
+  collisionAlgorithm,
+  cursorMode = false,
   data,
   disabled = false,
+  dragAxis,
+  dragBoundsRef,
   effectAllowed = 'copy',
   groups,
   onDragEnd,
@@ -126,8 +168,12 @@ export function Draggable({
 
   const drag = useDraggable({
     behavior,
+    collisionAlgorithm,
+    cursorMode,
     data,
     disabled,
+    dragAxis,
+    dragBoundsRef,
     effectAllowed,
     groups,
     onDragEnd,
@@ -171,9 +217,13 @@ export function Draggable({
     </View>
   );
 
-  return drag.gesture === null ? host : <GestureDetector gesture={drag.gesture}>{host}</GestureDetector>;
-}
+  const content = <DraggableContext.Provider value={{ drag }}>{host}</DraggableContext.Provider>;
 
+  // When handle children are present, the host's GestureDetector is suppressed — only
+  // the Handle sub-component carries the gesture, so the drag only starts from there.
+  return drag.gesture === null || drag.hasHandle ? content : <GestureDetector gesture={drag.gesture}>{content}</GestureDetector>;
+}
 // Declared with the hook now, since that is where it is read. Re-exported so this
 // subpath still carries every name it used to.
+export type { DraggableHandleProps } from '../drag.types';
 export type { DraggableTransports } from './use-draggable';

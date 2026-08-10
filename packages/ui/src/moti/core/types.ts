@@ -106,8 +106,24 @@ type OrDerivedValue<T> = T | DerivedValue<T>;
 
 type FallbackAnimateProp = StyleValueWithReplacedTransforms<ImageStyle & TextStyle & ViewStyle>;
 
+/**
+ * Animation configuration that can be set at the top level (applying to all
+ * style keys) or per-key (overriding for individual properties).
+ *
+ * ```ts
+ * // All keys use spring
+ * { type: 'spring', damping: 15 }
+ *
+ * // Opacity uses timing, everything else uses spring
+ * { type: 'spring', damping: 15, opacity: { type: 'timing', duration: 200 } }
+ * ```
+ */
 export type MotiTransition<Animate = FallbackAnimateProp> = TransitionConfig & Partial<Record<keyof Animate, TransitionConfig>>;
 
+/**
+ * A `MotiTransition` that may be wrapped in a Reanimated `DerivedValue`
+ * (enabling reactive transitions that change based on shared values).
+ */
 export type MotiTransitionProp<Animate = FallbackAnimateProp> = OrDerivedValue<MotiTransition<Animate>>;
 
 export type InlineOnDidAnimateEvent<Value> = { attemptedValue: Value };
@@ -130,6 +146,37 @@ type StyleValueWithCallbacks<Animate> = {
       };
 };
 
+/**
+ * Props accepted by every Moti component (the return value of {@link motify}).
+ *
+ * This is the main public API surface for declarative animation. Every Moti
+ * wrapper (`MotiView`, `MotiText`, etc.) accepts these props in addition to
+ * the underlying component's own props.
+ *
+ * ## Key concepts
+ *
+ * - **`animate`** — The target style. When it changes (or the component
+ *   mounts), Moti animates from the current style to this value.
+ * - **`from`** — The starting style. Applied immediately on mount (no
+ *   animation), then Moti animates to `animate`. Set to `false` to skip the
+ *   initial style entirely.
+ * - **`exit`** — The style to animate to when the component leaves an
+ *   `<AnimatePresence>`. Can be a static style, `false` (skip exit), or a
+ *   factory `(custom) => style` receiving the presence `custom` value.
+ * - **`transition`** — How each style key is animated: spring, timing, decay,
+ *   or per-key overrides. Can be a `DerivedValue` for reactive transitions.
+ * - **`exitTransition`** — Transition override used only during exit. Same
+ *   shape as `transition`, plus a `(custom) => MotiTransition` factory variant.
+ * - **`state`** — External controller from `useAnimationState` or
+ *   `useDynamicAnimation`. When provided, the component's style is driven by
+ *   `state.__state` rather than the `animate` prop.
+ * - **`stylePriority`** — `"animate"` (default) or `"state"`. Determines
+ *   which source wins when both define the same style key.
+ * - **`onDidAnimate`** — Called per-style-key when an animation finishes.
+ * - **`delay`** — Global delay (ms) applied to every animatable property.
+ * - **`animateInitialState`** — When `true`, forces the `from` → `animate`
+ *   transition even inside an `<AnimatePresence initial={false}>`.
+ */
 export type MotiProps<
   AnimateType = ImageStyle & TextStyle & ViewStyle,
   AnimateWithTransforms = StyleValueWithReplacedTransforms<AnimateType>,

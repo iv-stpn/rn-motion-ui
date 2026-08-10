@@ -116,6 +116,7 @@ export type DockItemProps = {
 
 export function DockItem({ children, onPress, active, accessibilityLabel, style, testID }: DockItemProps) {
   const dock = useContext(DockContext);
+  if (!dock) throw new Error('DockItem must be used inside <Dock>');
   const id = useId();
   const size = dock?.size ?? 44;
   const { pressed, pressHandlers } = usePressState();

@@ -11,7 +11,46 @@ import { makeAnimationCallback } from './worklets/make-animation-callback';
 import { resolveSharedOrPlain } from './worklets/resolve-shared-value';
 import { resolveTransition } from './worklets/resolve-transition';
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: useMotify orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining lines are setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
+/**
+ * The runtime hook behind every Moti component — processes `animate`, `from`,
+ * `exit`, `transition`, `state`, and presence-system values into a single
+ * Reanimated animated style.
+ *
+ * Called internally by the component returned from {@link motify}. Consumers
+ * rarely need this directly; use a `MotiView` (or another built-in wrapper)
+ * instead. It is exported for advanced composition — e.g. building a custom
+ * animated primitive that needs the full Moti prop pipeline.
+ *
+ * ## Style merge order
+ *
+ * 1. **Variant state** (`state.__state.value`) — if `stylePriority` is `"state"`,
+ *    variant values override `animate` for the same keys; otherwise `animate`
+ *    wins (the default).
+ * 2. **Initial** (`from`) — applied when `isMounted` is false and
+ *    `disableInitialAnimation` is false.
+ * 3. **Exit** — when the component is leaving an `<AnimatePresence>`, exit
+ *    styles replace everything.
+ *
+ * Each resolved style key is dispatched through {@link applyStyleKey}, which
+ * wraps scalar values in `withTiming`/`withSpring`/`withDecay`, expands
+ * sequence arrays into `withSequence`, and handles transform objects.
+ *
+ * ## Presence integration
+ *
+ * When used inside an `<AnimatePresence>`, the hook registers the component as
+ * a presence child. The `exit` prop is applied as the component leaves, and
+ * `safeToUnmount` is called once all exit-animated properties have finished —
+ * this gates the parent's unmount so the exit animation can complete.
+ *
+ * @param props - The full `MotiProps<Animate>` bag, plus two extra fields
+ *   injected by the `motify` wrapper:
+ *   - `presenceContext` — the nearest `<AnimatePresence>` context value
+ *     (custom data + initial flag).
+ *   - `usePresenceValue` — the `[isPresent, safeToUnmount]` tuple from
+ *     `usePresenceContext()`.
+ * @returns An object with a `style` property — a Reanimated animated style
+ *   to spread onto the underlying `Animated.View` (or equivalent).
+ */
 export function useMotify<Animate>({
   animate: animateProp,
   from: fromProp = false,

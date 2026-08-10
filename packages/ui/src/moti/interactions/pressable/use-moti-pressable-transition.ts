@@ -8,6 +8,23 @@ import { useFactory } from './use-validate-factory-or-id';
 type Factory = (interaction: MotiPressableInteractionState) => MotiTransition;
 type Deps = unknown[] | null | undefined;
 
+/**
+ * Derives a transition config from a `<MotiPressable>` ancestor's interaction
+ * state, so press/hover animations can change their spring/timing parameters
+ * dynamically.
+ *
+ * ```tsx
+ * const transition = useMotiPressableTransition(({ pressed }) =>
+ *   pressed ? { type: 'timing', duration: 50 } : { type: 'spring', damping: 15 }
+ * )
+ * ```
+ *
+ * @param id - Optional pressable `id` to target a specific ancestor.
+ * @param factory - Called with `{ hovered, pressed }`; must return a
+ *   `MotiTransition` config.
+ * @param deps - Optional dependency array.
+ * @returns A readonly `SharedValue<MotiTransition>`.
+ */
 export function useMotiPressableTransition(
   id: MotiPressableInteractionIds['id'],
   factory: Factory,

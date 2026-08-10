@@ -2,6 +2,45 @@ import { useEffect, useRef } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import type { InternalControllerState, UseAnimationState, UseAnimationStateConfig, Variants } from './types';
 
+/**
+ * Creates a variant-based animation state machine for driving Moti components.
+ *
+ * Define a set of named style variants and call `transitionTo(name)` to animate
+ * between them. Pass the returned controller's `__state` to a Moti component's
+ * `state` prop — the component will animate to whichever variant is active.
+ *
+ * ## Variant shape
+ *
+ * Each variant key maps to a style object with an optional per-variant
+ * `transition`:
+ *
+ * ```ts
+ * const state = useAnimationState({
+ *   from: { opacity: 0, scale: 0.9 },
+ *   to:   { opacity: 1, scale: 1 },
+ *   big:  { opacity: 1, scale: 1.2, transition: { type: 'spring', damping: 10 } },
+ * })
+ *
+ * // Drive a MotiView
+ * <MotiView state={state} />
+ *
+ * // Animate between variants
+ * state.transitionTo('big')
+ * ```
+ *
+ * ## Reserved keys
+ *
+ * - `from` — the initial variant (applied on mount when no `to` is given).
+ * - `to` — if provided, `transitionTo('to')` is called automatically on mount.
+ *
+ * @param _variants - A record of named style variants. The keys `from` and `to`
+ *   have special meaning (see above).
+ * @param config - Optional `from`/`to` key overrides (defaults to `'from'` and
+ *   `'to'`).
+ * @returns A stable controller with `current` (the active variant key), `__state`
+ *   (a Reanimated shared value to pass to a Moti component's `state` prop), and
+ *   `transitionTo(key | fn)` to switch variants.
+ */
 export default function useAnimationState<V extends Variants<V>>(
   _variants: V,
   // biome-ignore lint/plugin: 'from'/'to' string literals can't be proven to be keyof V for an arbitrary generic V; these are moti's documented default variant keys

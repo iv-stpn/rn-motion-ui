@@ -25,19 +25,6 @@ type Story = StoryObj<typeof meta>;
 
 const OPEN_LABEL = 'Show modal';
 
-// Matches a CSS `matrix(...)` / `matrix3d(...)` transform so we can pull the
-// translateY term (2D: parts[5]; 3D: parts[13]) off a Reanimated-animated dot.
-const TRANSFORM_MATRIX = /matrix(?:3d)?\(([^)]+)\)/;
-const _translateYOf = (el: Element, win: Window & typeof globalThis): number => {
-  const t = win.getComputedStyle(el).transform;
-  if (!t || t === 'none') return 0;
-  const m = t.match(TRANSFORM_MATRIX);
-  if (!m || m[1] === undefined) return 0;
-  const parts = m[1].split(',').map((n) => Number.parseFloat(n.trim()));
-  const ty = parts.length === 16 ? parts[13] : parts[5];
-  return ty ?? 0;
-};
-
 const OUTCOMES = ['success', 'error'] as const;
 const RESOLVE_MS = 1800;
 

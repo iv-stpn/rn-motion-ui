@@ -242,6 +242,8 @@ export function CheckboxCard({
   checkIcon,
 }: CheckboxCardProps) {
   const groupCtx = useContext(CheckboxCardContext);
+  if (value !== undefined && groupCtx === null)
+    throw new Error('CheckboxCardItem with a `value` prop must be used inside <CheckboxCard>');
   const inGroup = groupCtx !== null && value !== undefined;
   const { pressed, pressHandlers } = usePressState();
 

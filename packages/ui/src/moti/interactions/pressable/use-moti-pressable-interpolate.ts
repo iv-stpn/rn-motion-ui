@@ -7,6 +7,21 @@ import { useFactory } from './use-validate-factory-or-id';
 type Factory<Props> = (interaction: MotiPressableInteractionState) => Props;
 type Deps = unknown[] | null | undefined;
 
+/**
+ * Returns a Reanimated `SharedValue<Props>` that — unlike
+ * `useMotiPressable`/`useMotiPressables` — holds the factory's **raw**
+ * output rather than wrapping it as Moti `state`.
+ *
+ * Use this when you need a `SharedValue` that reacts to a
+ * `<MotiPressable>`'s interaction state for custom worklet logic, rather
+ * than driving a Moti component's `state` prop directly.
+ *
+ * @param id - Optional pressable `id` to target a specific ancestor.
+ * @param factory - Called with `{ hovered, pressed }`; must return the
+ *   derived value.
+ * @param deps - Optional dependency array.
+ * @returns A readonly `SharedValue<Props>` that updates with the interaction.
+ */
 export function useInterpolateMotiPressable<Props>(
   id: MotiPressableInteractionIds['id'],
   factory: Factory<Props>,

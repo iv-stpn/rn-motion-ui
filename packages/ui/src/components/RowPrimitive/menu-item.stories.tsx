@@ -41,6 +41,7 @@ const DESTRUCTIVE_NOTE =
 function trailingNode(key: TrailingKey) {
   if (key === 'hint') return <HintChip hint="⌘ K" />;
   if (key === 'chevron') return <ChevronRight size={14} />;
+  return null;
 }
 
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories

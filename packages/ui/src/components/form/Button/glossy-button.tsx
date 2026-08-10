@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: self-contained glossy-key component — the primitive table, the per-variant recipes, the SVG dome and the component read best in one file */
-import { useCallback, useId, useMemo, useState } from 'react';
+import { memo, useCallback, useId, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useHoverCapable } from '../../../hooks/use-hover-capable';
@@ -670,7 +670,7 @@ export interface GlossyButtonProps extends BaseButtonProps {
   shape?: ButtonShape;
 }
 
-export function GlossyButton({
+function GlossyButtonImpl({
   variant = 'neutral',
   color,
   contentColor,
@@ -810,6 +810,8 @@ export function GlossyButton({
     </MotiView>
   );
 }
+
+export const GlossyButton = memo(GlossyButtonImpl);
 
 /**
  * Rest-state label/icon colour for a glossy key, resolved exactly the way the

@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: complex component */
-import { useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import type { ListRenderItemInfo } from 'react-native';
 import { FlatList, ScrollView, View } from 'react-native';
 import { cn } from '../../../lib/cn';
@@ -27,7 +27,8 @@ const PAGINATION_FOOTER_HEIGHT = 52; // footer paddingVertical (10×2) + button 
  * describe the logical axis and are reconciled with the physical pointer.
  */
 /** biome-ignore lint/complexity/noExcessiveLinesPerFunction: the table has too many props and features to be simplified more */
-export function Table<T>(props: TableProps<T>) {
+// biome-ignore lint/style/useComponentExportOnlyModules: exported via memo() wrapper below — the impl/export split is the standard React.memo pattern
+function TableImpl<T>(props: TableProps<T>) {
   const {
     containerRef,
     containerWidth,
@@ -444,5 +445,8 @@ export function Table<T>(props: TableProps<T>) {
     </View>
   );
 }
+
+// biome-ignore lint/plugin: memo loses the generic type parameter; the cast is the type-safe way to restore it — the runtime identity is exactly TableImpl
+export const Table = memo(TableImpl) as typeof TableImpl;
 
 export type { SortDirection, SortState, TableColumn, TableMode, TableProps } from './table-types';

@@ -1,7 +1,17 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: row gesture, wheel fallback, and list orchestration are tightly coupled
 
 import { cva } from 'class-variance-authority';
-import { cloneElement, isValidElement, type ReactElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  cloneElement,
+  isValidElement,
+  memo,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Animated, PanResponder, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
@@ -550,7 +560,7 @@ function SwipeableListRow({
 
 // -- SwipeableList -----------------------------------------------------------
 
-export function SwipeableList({
+export function SwipeableListImpl({
   items,
   onAction,
   actionWidth = 56,
@@ -584,6 +594,8 @@ export function SwipeableList({
     </View>
   );
 }
+
+export const SwipeableList = memo(SwipeableListImpl);
 
 // Export tone colour helper so stories can apply icon colours matching the badge.
 // biome-ignore lint/style/useComponentExportOnlyModules: SWIPE_TONE_ICON_COLOR is a styling constant needed by consumers; extracting it to a separate file would break colocation with the badge colour map it mirrors

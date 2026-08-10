@@ -29,7 +29,6 @@ type ApplyStyleKeyOptions = {
  * useAnimatedStyle reducer.
  */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: exhaustive dispatch over all animatable style shapes — each branch is a distinct case that cannot be merged without losing correctness
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: see above — one function per shape keeps the call-site in use-motify.ts to a single applyStyleKey() call per key
 export function applyStyleKey({ final, key, value, transition, defaultDelay, callback }: ApplyStyleKeyOptions): void {
   'worklet';
 

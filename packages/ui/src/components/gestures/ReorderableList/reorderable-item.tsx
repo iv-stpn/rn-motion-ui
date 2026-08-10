@@ -84,9 +84,12 @@ export function ReorderableItem({
   }, [itemKey, onDragEnd]);
 
   const handleLayout = useCallback(() => {
-    zoneRef.current?.measure().then((rect) => {
-      if (rect) onMeasure(itemKey, rect);
-    });
+    zoneRef.current
+      ?.measure()
+      .then((rect) => {
+        if (rect) onMeasure(itemKey, rect);
+      })
+      .catch(() => undefined);
   }, [itemKey, onMeasure]);
 
   // Mirror Dragzone's own useEffect: `onLayout` does not fire reliably in the test
@@ -95,9 +98,12 @@ export function ReorderableItem({
   // `await settle()` drains that timer, keeping the test deterministic.
   // biome-ignore lint/plugin: measuring a Dragzone on mount; same pattern Dragzone uses for its own registration
   useEffect(() => {
-    zoneRef.current?.measure().then((rect) => {
-      if (rect) onMeasure(itemKey, rect);
-    });
+    zoneRef.current
+      ?.measure()
+      .then((rect) => {
+        if (rect) onMeasure(itemKey, rect);
+      })
+      .catch(() => undefined);
   }, [itemKey, onMeasure]);
 
   // Reject self-drops: the dragged item's key is in the transfer.

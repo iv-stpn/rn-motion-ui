@@ -35,15 +35,6 @@ function PresenceSpy({ id, onContext }: PresenceSpyProps) {
 
 type ContextMap = Map<string, PresenceContextValue | null>;
 
-/** Renders AnimatePresence with an initial set of children and returns helpers. */
-// biome-ignore lint/correctness/noUnusedVariables: jest setup
-function setup() {
-  const container = document.createElement('div');
-  document.body.appendChild(container);
-  const root = createRoot(container);
-  return { container, root };
-}
-
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('AnimatePresence', () => {

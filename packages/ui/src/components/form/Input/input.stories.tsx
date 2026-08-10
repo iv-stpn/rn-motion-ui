@@ -26,7 +26,6 @@ type Story = StoryObj<typeof meta>;
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SHAPES = ['rounded', 'pill'] as const;
 const STATES = ['default', 'error', 'success', 'disabled'] as const;
-const _FIELD_WIDTH = 288;
 const EMAIL_ERROR = 'Enter a valid email address.';
 
 type FieldState = (typeof STATES)[number];

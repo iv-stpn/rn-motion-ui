@@ -6,8 +6,6 @@ import { Settings4Line as Settings } from 'rn-motion-ui-icons/icons/settings-4-l
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { fn } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
-import { cn } from '../../lib/cn';
-import { SURFACE_CLASSNAME } from '../../lib/elevated';
 import { Switch } from '../form/Switch/switch';
 import type { ItemRowSize } from './item-row';
 import { ItemRowGroup, type ItemRowGroupItem } from './item-row-group';

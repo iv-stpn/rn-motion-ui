@@ -248,6 +248,8 @@ export function RadioCard({
   variant,
 }: RadioCardProps) {
   const groupCtx = useContext(RadioCardContext);
+  if (value !== undefined && groupCtx === null)
+    throw new Error('RadioCardItem with a `value` prop must be used inside <RadioCard>');
   const inGroup = groupCtx !== null && value !== undefined;
   const reduce = useReducedMotion();
   const info = useThemeColor('info');

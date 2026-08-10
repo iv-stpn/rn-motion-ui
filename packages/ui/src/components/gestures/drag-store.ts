@@ -152,10 +152,15 @@ async function measureZones(): Promise<void> {
     zoneList()
       .filter((entry) => !entry.getConfig().skipRectMeasure)
       .map(async (entry) => {
-        const rect = await entry.measure();
-        // Re-read: the zone may have unregistered while its measure was in flight.
-        const live = zones.get(entry.id);
-        if (live !== undefined) live.rect = rect;
+        try {
+          const rect = await entry.measure();
+          // Re-read: the zone may have unregistered while its measure was in flight.
+          const live = zones.get(entry.id);
+          if (live !== undefined) live.rect = rect;
+        } catch {
+          // A failed measurement is not an error: a zone that unmounts mid-measure
+          // is a normal part of drag lifecycle.
+        }
       }),
   );
 }

@@ -37,6 +37,39 @@ export type AnimatePresenceProps = {
   exitBeforeEnter?: boolean;
 };
 
+/**
+ * Orchestrates exit animations for its children before they unmount.
+ *
+ * Wrap a set of Moti components (each with an `exit` prop) inside
+ * `<AnimatePresence>`. When a child leaves the tree, it is kept alive until
+ * its exit animation completes — then unmounted. This is the Moti equivalent
+ * of Framer Motion's `AnimatePresence`.
+ *
+ * ## Key requirements
+ *
+ * - Every direct child **must** have a unique, stable `key`.
+ * - Every exiting child **must** have an `exit` prop (otherwise it unmounts
+ *   immediately).
+ * - Children that use `exit` **must** be Moti components (`MotiView`,
+ *   `MotiText`, etc.) — they register with the presence system via
+ *   `usePresenceContext()`.
+ *
+ * ```tsx
+ * <AnimatePresence>
+ *   {isVisible && (
+ *     <MotiView
+ *       key="modal"
+ *       from={{ opacity: 0, scale: 0.9 }}
+ *       animate={{ opacity: 1, scale: 1 }}
+ *       exit={{ opacity: 0, scale: 0.9 }}
+ *       transition={{ type: 'spring' }}
+ *     />
+ *   )}
+ * </AnimatePresence>
+ * ```
+ *
+ * @see {@link usePresenceContext} for the hook consumed by every Moti component.
+ */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: AnimatePresence orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining complexity is setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: AnimatePresence orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining lines are setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
 export function AnimatePresence({ children, custom, initial = true, onExitComplete, exitBeforeEnter }: AnimatePresenceProps) {

@@ -6,6 +6,40 @@ import type { DynamicStyleProp, ExcludeFunctionKeys, UseDynamicAnimationState } 
 
 const fallback = () => ({});
 
+/**
+ * Creates a freeform animation state controller — an alternative to
+ * {@link useAnimationState} that doesn't constrain you to pre-defined variant
+ * keys.
+ *
+ * Unlike `useAnimationState` (which switches between named variants), this hook
+ * lets you call `animateTo(nextStyle)` with any style object at any time. It is
+ * the right choice when the target styles are computed dynamically rather than
+ * chosen from a fixed set.
+ *
+ * ## Comparison with useAnimationState
+ *
+ * | Feature | `useAnimationState` | `useDynamicAnimation` |
+ * |---|---|---|
+ * | Style source | Pre-defined variant record | Any style object at call time |
+ * | State shape | Named keys (`from`, `to`, …) | Arbitrary `DynamicStyleProp` |
+ * | Best for | Known states (tabs, toggles, steps) | Computed styles (drag, scroll, gesture) |
+ *
+ * ```ts
+ * const dynamic = useDynamicAnimation(() => ({ opacity: 0, translateX: -100 }))
+ *
+ * // Drive a MotiView
+ * <MotiView state={dynamic} />
+ *
+ * // Animate to any style
+ * dynamic.animateTo({ opacity: 1, translateX: 0 })
+ * ```
+ *
+ * @param initialState - A factory returning the initial style (called once).
+ *   Defaults to an empty object.
+ * @returns A stable controller with `current` (the active style), `__state`
+ *   (a Reanimated shared value to pass to a Moti component's `state` prop),
+ *   and `animateTo(nextStyle | fn)`.
+ */
 export default function useDynamicAnimation<
   _Animate = ViewStyle | TextStyle | ImageStyle,
   Animate = ExcludeFunctionKeys<_Animate>,

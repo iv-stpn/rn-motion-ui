@@ -33,6 +33,14 @@ function isHoverEnabled() {
 }
 
 export type HoverableProps = { onHoverIn?: () => void; onHoverOut?: () => void; children: ReactElement; childRef?: Ref<unknown> };
+
+/**
+ * Tracks mouse hover state on web and exposes it via a shared value + context.
+ *
+ * Uses `mouseenter`/`mouseleave` DOM events and disables hover while touch is
+ * active (so a tap-and-hold on mobile doesn't leave a faux-hovered state).
+ * Internal to `MotiPressable`; exported as `MotiHover` for advanced composition.
+ */
 export function Hoverable({ onHoverIn, onHoverOut, children, childRef }: HoverableProps) {
   const isHovered = useSharedValue(false);
 

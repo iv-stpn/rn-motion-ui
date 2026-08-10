@@ -8,6 +8,55 @@ import { INTERACTION_CONTAINER_ID, MotiPressableContext, useMotiPressableContext
 import { Hoverable } from './hoverable';
 import type { MotiPressableInteractionState, MotiPressableProps } from './types';
 
+/**
+ * A `<Pressable>` whose children animate in response to hover and press state.
+ *
+ * `MotiPressable` tracks `hovered` and `pressed` as Reanimated shared values
+ * and exposes them to its `animate` prop (and the child render function) via a
+ * derived `interaction` value. This lets you declaratively define per-state
+ * animation styles without manual gesture tracking.
+ *
+ * ## How it works
+ *
+ * 1. Wraps a `MotiView` inside a RN `<Pressable>` + `<Hoverable>`.
+ * 2. The `animate` prop receives `{ hovered, pressed }` and returns the target
+ *    style. When the interaction changes, the Moti engine animates to the new
+ *    style using the `transition` config.
+ * 3. Every `MotiPressable` creates an interaction context. Descendant components
+ *    can read this context via `useMotiPressable`, `useMotiPressables`, etc.
+ *
+ * ```tsx
+ * <MotiPressable
+ *   animate={({ hovered, pressed }) => ({
+ *     opacity: pressed ? 0.6 : hovered ? 0.9 : 1,
+ *     scale: pressed ? 0.97 : 1,
+ *   })}
+ *   transition={{ type: 'spring', damping: 15 }}
+ *   onPress={() => console.log('pressed')}
+ * >
+ *   <MotiText>Press me</MotiText>
+ * </MotiPressable>
+ * ```
+ *
+ * ## Interaction context
+ *
+ * `MotiPressable` publishes its interaction shared value to a React context.
+ * Descendant Moti components can subscribe with:
+ *
+ * - `useMotiPressable(factory)` — derive one `animate` style from the nearest
+ *   pressable.
+ * - `useMotiPressables(factory)` — derive a style from **all** ancestor
+ *   pressables at once.
+ * - `useMotiPressableAnimatedProps(factory)` — derive arbitrary animated props
+ *   (not just styles).
+ * - `useMotiPressableInterpolate(factory)` — like `useDerivedValue` but with
+ *   interaction state as input.
+ * - `useMotiPressableTransition(factory)` — derive the transition config from
+ *   interaction state.
+ *
+ * Pass an `id` to make a pressable discoverable by name; hooks can target a
+ * specific ancestor by passing its `id` as the first argument.
+ */
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: MotiPressable wires hover/press shared values, accessibility, and child rendering in one component — factoring out sub-helpers would require prop-drilling the shared values
 export function MotiPressable(props: MotiPressableProps) {
   const { ref } = props;

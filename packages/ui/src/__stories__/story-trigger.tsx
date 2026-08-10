@@ -37,7 +37,6 @@ import type { GlossyVariant } from '../components/form/Button/glossy-button';
 import { GlossyButton } from '../components/form/Button/glossy-button';
 import { Text } from '../components/typography/Text/text';
 import { cn } from '../lib/cn';
-import { useThemeColors } from '../theme/use-theme-color';
 import { Choice, ControlCard } from './story-harness';
 
 // Private Tailwind class maps for the bare Pressable kind, mirroring ButtonMetrics.
@@ -126,8 +125,6 @@ export function TriggerButton({
   glossyVariant = 'neutral',
   className,
 }: TriggerButtonProps) {
-  const _colors = useThemeColors();
-
   if (kind === 'elevated')
     return (
       <ElevatedButton className="self-start" onPress={onPress} shape={shape} size={size} variant={elevatedVariant}>

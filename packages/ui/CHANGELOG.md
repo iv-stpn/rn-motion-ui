@@ -1,5 +1,266 @@
 # rn-motion-ui
 
+## 5.2.0
+
+### Minor Changes
+
+- b56144c: **Draggable: collision algorithms, axis constraint, drag bounds, and handle sub-component**
+
+  - New `collisionAlgorithm` prop (`'intersect'` | `'contain'` | `'center'`) switches zone hit testing from point-based to rect-vs-rect. The draggable's live rect (computed from its lift-time box offset by pointer delta) is tested against each zone's measured box using the chosen strategy. Falls back to the existing point-in-rect test when unset or when no `sourceRect` is available.
+  - New `dragAxis` prop (`'x'` | `'y'` | `'both'`) constrains pointer movement to a single axis during the drag. The ghost and zone targeting respect the clamped position; `onDragMove` still receives the raw (unclamped) point.
+  - New `dragBoundsRef` prop accepts a ref to a boundary `View`. The drag ghost is clamped inside that view's window-coordinate rect on every frame. Pan-transport only (touch on web, native); HTML5 drags are controlled by the browser.
+  - New `<Draggable.Handle>` sub-component restricts drag initiation to a sub-area. Multiple handles per draggable are supported; as long as at least one is mounted, the host's `GestureDetector` is suppressed.
+
+  **Dragzone: `skipRectMeasure` for programmatic hit testing**
+
+  Zones that compute hit testing through another mechanism (e.g. arithmetic position in `SortableList`) can now set `skipRectMeasure={true}`. The zone is never measured, never participates in measure sweeps, and always passes the spatial hit test — the consumer's `accepts` predicate is the sole gate.
+
+  **SortableList: Reanimated-powered UI-thread animations**
+
+  `SortableList` now drives item position animations entirely on the UI thread via `react-native-reanimated` shared values and `useAnimatedReaction`. Insertion index updates write directly to a `SharedValue` without triggering React re-renders; items read the shared values in worklets and animate `translateY` with `withTiming`. The commit (on drop) snaps items to their new canonical positions via a `dropVersion` shared value bump in a `useLayoutEffect` — the user never sees an intermediate frame. The `activeIndex` (for `renderItem`'s `isDragging` flag) stays as React state, so only the dragged item re-renders on lift/drop.
+
+- ee276b3: **New `IconButton` component — a purpose-built icon-only button superceding `Button size="icon"`**
+
+  `IconButton` is a standalone component for icon-only actions. It shares the same 8 visual variants as `Button` (`primary`, `secondary`, `ghost`, `danger`, `special`, `inverse`, `outlineDanger`, `ghostDanger`) and adds the `icon` / `iconBackgroundColor` / `iconColor` API from `MenuItem` for coloured icon tiles (iOS Settings style).
+
+  Key differences from `<Button size="icon">`:
+
+  - `icon` prop takes a `ComponentType<IconProps>` — the icon component itself, not a pre-built element
+  - `iconBackgroundColor` optionally wraps the icon in a coloured rounded-square tile
+  - `iconColor` overrides the variant-derived icon stroke colour
+  - `accessibilityLabel` is **required** — an icon-only button needs an accessible name
+  - No `children`, `leftAdornment`, or `rightAdornment` — the icon IS the content
+  - Sizes: `'sm' | 'md' | 'lg'` (24×24, 32×32, 40×40 px squares)
+
+  Existing `<Button size="icon">` continues to work. `ButtonSpinner` is now exported from `button-internals` to power the loading state.
+
+- d8bf5e6: **OtpInput: refreshed API with alpha/alphanumeric types, ref handle, and renamed props**
+
+  BREAKING prop renames (pre-release):
+
+  - `length` → `numberOfDigits`
+  - `mask` → `secureTextEntry`
+  - `onChange` → `onTextChange`
+  - `onComplete` → `onFilled`
+  - `status` / `OTPStatus` → `OtpInputStatus`
+
+  New features:
+
+  - **`type` prop** — `'numeric' | 'alpha' | 'alphanumeric'`. Controls which characters each slot accepts. The `sanitize` and `applyEdit` logic functions now accept a `type` parameter.
+  - **`ref` handle** (`OtpInputRef`) — exposes `focus()`, `blur()`, and `clear()` imperatively.
+  - **`autoComplete` prop** — forwarded to the hidden `TextInput`.
+  - **`stickBlinkMs` prop** — customise the cursor blink interval.
+
+  Internal: `applyEdit` now takes a single options object (`{ prev, raw, length, anchor, type }`) instead of positional arguments. Tests updated accordingly.
+
+- 9b9b09c: **ReorderableList: remove ghost mode (indicator-only)**
+
+  `ReorderableList` is now indicator-mode only. The `mode` prop, `renderPreview` prop, and all ghost-mode state (`previewKeys`, `ghostKey`, `flipRects`, `movedKey`) are removed.
+
+  - **Breaking:** `mode` prop removed — `'ghost'` is no longer accepted
+  - **Breaking:** `renderPreview` prop removed
+  - FLIP animation system removed (Animated.View wrappers, `measureInWindow` tracking, easing curves)
+  - Items now render in plain `View` wrappers instead of `Animated.View`
+  - `ReorderableItem` adds a mount-time measure effect so zone rects are populated before a drag can land
+  - `isPastThreshold` helper removed from `reorderable-list-reorder`; `insertionPosition` no longer accepts `ghostHeight`
+
+  For real-time visual reordering during drag, use the new `SortableList` component (`rn-motion-ui/sortable-list`).
+
+- 43fb467: **Rename `DnDList` → `ReorderableList`**
+
+  The `./dnd-list` export is replaced by `./reorderable-list`. All associated types and helpers are renamed accordingly:
+
+  - `DnDList` → `ReorderableList` — the main container component
+  - `DnDItem` → `ReorderableItem` — individual draggable rows
+  - `dndReorder` → `reorderableListReorder` — the reorder helper
+
+  Import from `rn-motion-ui/reorderable-list` instead of `rn-motion-ui/dnd-list`. The old path is removed.
+
+- d6be9ea: **New `SortableList` component**
+
+  A drag-to-reorder list where items visually reorder in real-time during the drag — the dragged item is dimmed at its preview position while other items animate to close the gap or make room.
+
+  Built on the existing gesture primitives (`Draggable`, `Dragzone`, `DragManager`), so it inherits their transport story and isolation model. Each item computes its visual position as a pure function of `(index, activeIndex, insertionIndex)` and animates `translateY` to reach it — no rect measurement, no FLIP snapshots, no tree reordering during the drag.
+
+  - New export: `rn-motion-ui/sortable-list`
+  - Requires a fixed `itemHeight` prop (every item must share the same height)
+  - Isolates itself inside a `<DragManager isolate>` — two lists on the same page are independent
+  - Supports `renderPreview` for a custom drag ghost
+  - The reorder commits on drop; cancelling reverts items to their original positions
+
+- a37019b: **Table: move border and background colours out of the component into configurable `className` props**
+
+  The Table component previously hardcoded `border-border border-b` on rows, headers, cards, and footer, as well as `bg-surface-selected` on the selected-row overlay, `bg-border` on skeleton pulses, and `bg-primary`/`bg-danger` on row insert/delete buttons. Those are now removed from the component internals and exposed as new `className` props:
+
+  - `selectedClassName` — classes merged onto the selected row/card background overlay
+  - `dropIndicatorClassName` — classes merged onto the column-reorder drop indicator
+  - `skeletonClassName` — classes merged onto the skeleton pulse bars during loading
+  - `emptyClassName` — classes merged onto the empty-state wrapper
+
+  Stories preserve the classic appearance via a `CLASSIC_TABLE` defaults object spread onto each `<Table>` instance. Remove or override individual entries to customise.
+
+- 1c8a226: **ToggleGroup: replace Button children with `items` prop; add `pill` variant; fix bordered outer border**
+
+  BREAKING: `ToggleGroup` no longer accepts Button children. Replace `children` with the new `items` prop (`{ value: string; label: ReactNode }[]`). The `selectedVariant`, `unselectedVariant`, and `pressMode` props are removed. The `size` prop is now `'sm' | 'md' | 'lg'` (drops `'icon'`).
+
+  BREAKING: `Button` and `ElevatedButton` no longer accept a `value` prop. This was only used by the old ToggleGroup pattern and is now removed from `BaseButtonProps`.
+
+  New `pill` variant: a `bg-muted rounded-full` container with a spring-animated sliding indicator (`bg-surface-3` / `dark:bg-black`) that glides behind the selected item's text. Respects `useReducedMotion()`.
+
+  Fixed `bordered` variant: now renders a visible outer border (`border border-border rounded-interactive`) in addition to the existing inner divider borders.
+
+  Items are now flat `Pressable` + `Text` surfaces (no longer Button components), with uniform `px-3` horizontal padding.
+
+### Patch Changes
+
+- c7992e0: **Button: prune `outline`, `ghostPrimary` variants; tighten label + ripple colours**
+
+  The `outline` and `ghostPrimary` variants are removed. All internal and story usages of `outline` switch to `ghost`. Label colour map simplified: `primary` now uses `text-foreground`, `secondary` uses `text-surface-1`, `ghost` uses `text-foreground`. Filled-ripple set updated (`secondary` added, `primary` removed) so the white shimmer only fires on opaque dark fills. Spinner colour resolution consolidated.
+
+  New helpers in `button-scale.ts`: `buttonRadiusClass()` (CSS twin of `buttonRadius()`), `STATE_ICON_SIZE`, and `STATE_BUTTON_GAP_CLASSNAME` for proportional state-icon spacing per size.
+
+- c7992e0: **Extract shared `CloseButton` component; add close button to MorphingModal**
+
+  A new `CloseButton` component replaces the inline `Pressable` + `CloseLine` icon pattern used across AdaptiveModal, FullSheet, and MorphingModal. The component is a simple themed close icon button with consistent hit slop and accessibility label.
+
+  `MorphingModal` gains a `showClose` prop that renders a `CloseButton` in the top-right corner of the panel. `FullSheet`'s `closeIcon` prop now accepts any ReactNode (previously just an icon override) — pass a `<CloseButton>` or any custom element.
+
+- 30569fe: **Drag overlay: ghost fade-out, HTML5 positioning, Safari fixes**
+
+  **Ghost settle animation:** When a drag ends, the ghost now fades out over 200ms instead of disappearing instantly. The overlay caches the last non-null drag and preview so the ghost renders until the fade-out completes.
+
+  **HTML5 overlay ghost positioning:** Under the HTML5 transport, the overlay ghost now anchors horizontally to the source element's left edge (matching the div the user lifted) while following the cursor vertically — instead of using the pan-transport offset calculation.
+
+  **HTML5 drag image hiding:** When a `DragManager` overlay will draw the ghost, the browser's native drag image is replaced with a 1×1 transparent GIF. This prevents a double ghost and stops Safari from snapping the native image back to the lift point when the cursor leaves the window.
+
+  **Safari teleport rejection:** Safari fires `drag` events with the grab-point coordinates when the cursor leaves the browser window. These are now detected and rejected (non-zero coordinates that are a teleport back to the lift position), preventing the ghost from snapping back to the source mid-drag.
+
+  **`DraggableSession`** now exposes a `overlayHostId` field so the HTML5 transport can decide whether to hide the browser's drag image.
+
+- 35d2f16: **Fix exports validation: 4-segment component paths and pre-commit auto-fix**
+
+  - `check-exports.mjs` `deriveExportKey` now handles 4-segment component paths (`components/<category>/<Dir>/<file>`) in addition to 3-segment, so the primary entry-point file per component is correctly auto-detected and validated.
+  - The pre-commit hook now runs `check-exports.mjs` after lint+typecheck. On failure, it auto-fixes dangling paths with `--write` and stages the result. If `--write` cannot resolve everything, the commit is blocked with a clear error.
+  - Added missing export entries for `./hooks/use-controlled` and `./hooks/use-press-state`.
+
+- 012726a: **FileSystem store rename, story fixes for double-rendered children**
+
+  **FileSystem:** Internal rename of `s` → `fileSystemStore` in `ensureChildren` for readability.
+
+  **Stories:** FileSystem and HoldDraggable stories updated to use `findAllBy*` queries (`findAllByText`, `findAllByRole`, `findAllByTestId`) instead of `findBy*` / `getBy*` singletons. Components like `HoldContextMenu` and `Draggable` render children twice (functional copy + offscreen drag-preview ghost), so single-match queries reject. Each call picks the first (functional) copy, which is rendered first in document order.
+
+- c7992e0: **FileSystem drop target, RadioCard variant, Draggable Safari fix, Geist fonts**
+
+  **FileSystem:** Drop target feedback refactored — `FileSystemDropOutline` (a separate overlay node) is removed; the row itself now lights up with `bg-info` when a drag hovers over it. Selected rows mute during drag, and lifting rows use `bg-muted` instead of `bg-surface-hover`. The column and list views share the same pattern via a `renderBody(isOver)` closure.
+
+  **RadioCard:** New `variant` prop — `"radio"` (default, shows the ring + dot indicator) and `"card"` (uses only the animated border and background tint). Settable per-card or at the group level.
+
+  **Drag & drop:** `endDrag` now handles bogus `dragend` coordinates from Chrome (0,0) and Safari (wrong non-zero) by falling back to the store's tracked point from `moveDrag`. The web dragzone keeps that point in sync via `moveDrag` calls on `dragover` and `drop`. Dragzone eagerly calls `remeasure()` on registration so its rect is ready before the first drag begins. The capture-phase click listener on `draggable`/`holdable` elements is now only added when `cursorMode` is on, fixing a Safari bug where it blocked native drag initiation.
+
+  **Geist fonts:** The storybook demo app loads Geist Sans + Geist Mono via `expo-font` (native) and `@font-face` (web). `--font-sans` and `--font-mono` tokens are overridden in both `storybook/demo/global.css` and `storybook/web/global.css`.
+
+- c7992e0: **Relocate Menu + MenuItem to `RowPrimitive/`**
+
+  `Menu` and `MenuItem` move from `menus/Menu/` and `menus/MenuItem/` to the new `RowPrimitive/` directory. All import paths updated across AdaptiveDropdown, AdaptiveModal, CommandPalette, HoldContextMenu, HoverMenu, and FileSystem. Old files deleted.
+
+  Menu vertical padding switched from a hardcoded `py-2.5` to the new `py-(--menu-vertical-padding)` CSS token so the inset stays in sync with the design system. MenuItem row gap reduced from `gap-3` to `gap-2`.
+
+- b3d3c80: **MorphingModal bottom-sheet sizes to content width; FeedbackWidget and Checkbox layout fixes**
+
+  - **MorphingModal** `bottom-sheet` placement now measures content width and animates it alongside height, so the card sizes to its content instead of stretching full-width. The positioning wrapper changed from `items-stretch` to `items-center`.
+  - **FeedbackWidget** trigger button centres the icon in a `flex-1` wrapper, fixing vertical alignment when the button is stretched by its parent.
+  - **Checkbox** uses `-inset-px` for the fill background so it doesn't peek past the border-radius on subpixel-snapped edges.
+  - **ButtonSpinner** (exported from `button-internals`) now accepts a `size` prop for proportional radius and stroke width.
+
+- 35ab5bd: **`usePressState` hook: centralise pressed-state bookkeeping; `useControlledValue`: extract controlled/uncontrolled seam**
+
+  New `usePressState` hook replaces ad-hoc `useState(false)` + `useCallback` pairs across 13 components (Checkbox, CheckboxCard, Radio, StarRating, Switch, ActionSwap, CloseButton, OverflowActions, Dock, Tabs, ScrollTo, ActionRow, MenuItem). Returns `{ pressed, pressHandlers }` — spread `pressHandlers` onto `Pressable` and use `pressed` for animations. Accepts optional `onPressIn`/`onPressOut` forwarding for callers that also need the events.
+
+  New `useControlledValue` hook replaces three duplicated controlled/uncontrolled seams: `useCalendar`'s inline `useControlled`, `useDatePicker`'s `useDisclosure`, and `useDateRangePicker`'s `useDisclosure`.
+
+  **Button: `contentStyle` → `contentClassName`**
+
+  `BaseButtonProps.contentStyle` (inline `ViewStyle`) becomes `contentClassName` (Tailwind string). All button variants (Button, ElevatedButton, GlossyButton, StatefulButton) and `ButtonGroup` updated. StatefulButton's `STATE_PAD_SQUEEZE` numeric constant becomes `SQUEEZE_PADDING_CLASS` (Tailwind classes per size). ButtonGroup's `borderedContentStyle()` returns a class string instead of a `ViewStyle` object.
+
+  **`elevated.ts`: derive `SURFACE_CLASSNAME` from private lookups**
+
+  `SURFACE_CLASSNAME` entries are now built from `SURFACE_BG_CLASSNAME` + `SURFACE_ELEVATED_SHADOW_CLASSNAME` instead of hardcoded duplicates. `elevated()` delegates to `surfaceBackground()` and `elevatedShadow()`.
+
+  **RowPrimitive: extract `groupedRowClass`; fix sections container + dividers**
+
+  `groupedRowClass()` is a shared helper used by both `ActionRowGroup` and `ItemRowGroup`. The `sections` variant divider (`h-px bg-border`) moves out of the per-group item loops and into `RowGroupContainer`, which now wraps its children with `my-2`-spaced dividers and uses `elevated(3)` + `rounded-card` instead of the old `rounded-2xl bg-surface-3 p-4`.
+
+  **FileSystem: extract `useFileSystemRowInteraction` and `useFileSystemDragOptions`**
+
+  Two new hooks replace duplicated code across all five views (column, list, gallery strip, icons tile, search): `useFileSystemRowInteraction` handles context-menu + hold-prevention bookkeeping; `useFileSystemDragOptions` resolves multi-drag payloads. Each view drops ~30 lines of identical inline logic.
+
+  **FileSystem store: `navigationPatch` convergence, `recomputeAndSet` helper**
+
+  `historyStep` renamed to `navigationPatch`, which `navigateTo` now delegates to instead of duplicating the patch. A `recomputeAndSet` helper cuts repetition across `applySortKey`, `toggleSortColumn`, and `_setItems`. `nextFileTypeFilters` takes a `nextId` factory instead of a pre-generated id.
+
+  **OtpInput: flexbox centring replaces `lineHeight` trick**
+
+  Each slot's digit animates inside a `MotiView` with `items-center justify-center` instead of a `MotiText` with a hardcoded `lineHeight: 44`, so the digit stays vertically centred regardless of slot size.
+
+  **ReorderableList: smoother reorder animations**
+
+  Reorder durations increased from 200→300ms; pushed-row easing switched from `linear` to `Easing.bezier(0.16, 1, 0.3, 1)`. Story examples gain `transition-all duration-300 ease-out`.
+
+  **Button stories: fix icon colours for `secondary` variant**
+
+  `iconColorFor` now resolves `secondary` to `surface-1`. Story examples using `secondary` variant icons switch from `colors.foreground` to `colors['surface-1']`.
+
+- 28db38b: **RowPrimitive: split row-group into per-component files, add sections variant, and enrich adornments**
+
+  - `ActionRowGroup` and `ItemRowGroup` extracted from `row-group.tsx` into their own files (`action-row-group.tsx`, `item-row-group.tsx`). `RowGroupContainer` stays in `row-group.tsx` as the shared internal shell.
+  - New `sections` variant: renders rows in a padded surface-3 container with horizontal rule dividers between items; the grouped variant now correctly adjusts corner radii per position.
+  - `ItemRowAdornment` icon objects now accept `iconColor` and `iconBackgroundColor` — the latter draws a tinted circular badge behind the icon.
+  - Left adornments now default to `muted-foreground` instead of `foreground`.
+
+  **Button system: vertical press animations and toggle-group signalling**
+
+  - New `pressMode` values — `scaleX`, `scaleXFirst`, `scaleXLast` — animate buttons in vertical groups: first nudges up, last nudges down, middle collapse horizontally.
+  - `ButtonGroup` applies the appropriate vertical press mode and softens inner-border dividers to `/50` opacity, removing the `-ml-px`/`-mt-px` overlap hack.
+  - `BaseButtonProps` gains an opaque `value` prop for container components (`ToggleGroup`) to track selection.
+
+  **Drag and drop: built-in multi-drag ghost and HTML5 custom previews**
+
+  - `MultiDragManager` now provides a default ghost ("N items" chip with a dot) when no `renderPreview` is passed.
+  - `Draggable` and `HoldDraggable` keep their preview element in the DOM at all times — on-screen for pan transports, off-screen for HTML5 — so the HTML5 transport can call `setDragImage` with the custom ghost instead of the browser's default element screenshot.
+  - `useDraggableHtml5` gains `setDragImageFromRef` — clones the preview DOM node, appends it to `<body>`, calls `setDragImage`, and removes it on the next microtask.
+
+  **FileSystem: row enter/exit animations, multi-move, and stacked ghost**
+
+  - `FileSystemAnimatedRow` and `useFileSystemRowAnimation` add smooth enter/exit transitions when entries are added or removed from a column.
+  - Drag-scope group ghost replaced with a stacked-icon deck (up to 3 items, folder glyphs or file-type icons) plus a count label.
+  - `handleMove` in the demo now processes all sources in a multi-drag instead of just the first.
+  - Column row loses `rounded-md` (the animated wrapper now handles it) and `extraData={selectedPaths}` drives FlatList re-renders for selection changes.
+
+  **MorphingModal: bottom-sheet placement**
+
+  - New `bottom-sheet` placement: full-width panel with rounded top corners only, no max-width constraint, `justify-end` alignment, and a longer enter distance (80px). Press scale is disabled.
+
+  **HoldContextMenu: right-click opens menu without firing afterHold**
+
+  - `openMenuFromContextMenu` is a separate callback for the DOM `contextmenu` event — it opens the menu but skips the consumer's `afterHold` action so a right-click does not also toggle multi-select.
+
+  **Typography: per-weight font-family tokens**
+
+  - The `Text` component now resolves each `font` × `weight` pair to a single per-weight family class (`font-sans-bold`, `font-mono-medium`, etc.) via cva compound variants. This is required on native where `fontWeight` alone cannot select between different `.ttf` files.
+  - Theme tokens expanded from 3 generic font stacks to 12 per-weight tokens (`--font-sans-normal` through `--font-mono-bold`). Geist @font-face declarations in both web and demo updated to match: each weight gets its own font-family.
+  - `--radius-menu` token added to the theme.
+
+  **New components: ToggleGroup and ReorderableList**
+
+  - `ToggleGroup` — form component for mutually-exclusive or multi-select toggle buttons.
+  - `ReorderableList` — gesture-driven reorderable list with drag handles, `ReorderableItem`, and `ReorderableList` reorder helper. Both new components are registered in the package exports map.
+
+- c7992e0: **Token refresh: tighter sizing, smaller radius, new typography + background tokens**
+
+  Interactive surface heights reduced further (sm: 24, md: 32, lg: 40) and lg horizontal padding increased to 22px. Corner radius tightened: `--radius-interactive` 10→6px, `--radius-menu` 16→6px.
+
+  New tokens: `--color-background` (theme-flipping white/black), `--font-sans`, `--font-serif`, `--font-mono` (typography family stack), and `--menu-vertical-padding` (4px). The `background` colour is also added to the `ThemeToken` union and its OKLCH lookup tables so `useThemeColor('background')` resolves correctly in both schemes. The `Text` component gains a `font` prop (`"sans" | "serif" | "mono"`) that maps to the corresponding CSS utility class.
+
 ## 5.1.0
 
 ### Minor Changes

@@ -8,8 +8,8 @@
 // One predicate answers both, so an eligible-looking zone can never turn out to
 // refuse the drop.
 
-import type { ActiveDrag, DragPoint, DragTransfer, DragzoneEntry } from './drag.types';
-import { isPointInRect, rectArea } from './drag-geometry';
+import type { ActiveDrag, CollisionAlgorithm, DragPoint, DragRect, DragTransfer, DragzoneEntry } from './drag.types';
+import { isPointInRect, rectArea, rectCenter, rectContains, rectsIntersect } from './drag-geometry';
 import { dragGroupsMatch } from './drag-transfer';
 
 /** Ordering key for one candidate, cheapest-to-compare first. */
@@ -58,6 +58,13 @@ export type ZoneEligibilityParams = {
   isIsolating: (managerId: string) => boolean;
   point: DragPoint;
   transfer: DragTransfer;
+  /**
+   * The draggable's live window rect at the current pointer position, computed from
+   * `origin.rect` offset by `(point - origin.grab)`. Only meaningful when the drag
+   * carries a `collisionAlgorithm` and had a measured `origin.rect` at lift time.
+   * When absent, the existing point-based hit test applies.
+   */
+  sourceRect?: DragRect | null;
 };
 
 /**
@@ -66,7 +73,16 @@ export type ZoneEligibilityParams = {
  * Order matters only for cost: the cheap structural checks run before the
  * consumer's `accepts`, which may do real work and is called on every move.
  */
-export function isZoneEligible({ drag, entry, external, hitTest, isIsolating, point, transfer }: ZoneEligibilityParams): boolean {
+export function isZoneEligible({
+  drag,
+  entry,
+  external,
+  hitTest,
+  isIsolating,
+  point,
+  sourceRect,
+  transfer,
+}: ZoneEligibilityParams): boolean {
   const config = entry.getConfig();
   if (config.disabled) return false;
   if (external && !config.acceptsExternal) return false;
@@ -76,10 +92,16 @@ export function isZoneEligible({ drag, entry, external, hitTest, isIsolating, po
     if (!dragGroupsMatch(drag.groups, config.groups)) return false;
     if (deepestIsolator(drag.source.managerPath, isIsolating) !== deepestIsolator(entry.managerPath, isIsolating)) return false;
   }
-  // An unmeasured zone cannot be under the pointer — there is no box to be inside
-  // of — but it stays eligible in the abstract, so the affordance does not blink
-  // off for the frame between a layout change and the measure that follows it.
-  if (hitTest && (entry.rect === null || !isPointInRect(point, entry.rect))) return false;
+  if (hitTest && !config.skipRectMeasure) {
+    // An unmeasured zone cannot be under the pointer — there is no box to be inside
+    // of — but it stays eligible in the abstract, so the affordance does not blink
+    // off for the frame between a layout change and the measure that follows it.
+    if (entry.rect === null) return false;
+    const algorithm = drag?.collisionAlgorithm;
+    if (algorithm && sourceRect) {
+      if (!rectMatch(entry.rect, sourceRect, algorithm)) return false;
+    } else if (!isPointInRect(point, entry.rect)) return false;
+  }
   return config.accepts?.({ drag, external, point, transfer, zoneId: entry.id }) ?? true;
 }
 
@@ -88,6 +110,8 @@ export type ResolveDropTargetParams = {
   external: boolean;
   isIsolating: (managerId: string) => boolean;
   point: DragPoint;
+  /** See {@link ZoneEligibilityParams.sourceRect}. */
+  sourceRect?: DragRect | null;
   transfer: DragTransfer;
   zones: readonly DragzoneEntry[];
 };
@@ -110,11 +134,12 @@ export function resolveDropTarget({
   external,
   isIsolating,
   point,
+  sourceRect,
   transfer,
   zones,
 }: ResolveDropTargetParams): DragzoneEntry | null {
   const hits = zones
-    .filter((entry) => isZoneEligible({ drag, entry, external, hitTest: true, isIsolating, point, transfer }))
+    .filter((entry) => isZoneEligible({ drag, entry, external, hitTest: true, isIsolating, point, sourceRect, transfer }))
     .map(toCandidate);
   if (hits.length === 0) return null;
   // Array#sort is stable in every engine this ships to, so equal candidates keep
@@ -133,8 +158,28 @@ export type EligibleZoneIdsParams = ResolveDropTargetParams;
  * see it; what is skipped is the box test, which is the only difference between
  * this and {@link resolveDropTarget}.
  */
-export function eligibleZoneIds({ drag, external, isIsolating, point, transfer, zones }: EligibleZoneIdsParams): string[] {
+export function eligibleZoneIds({
+  drag,
+  external,
+  isIsolating,
+  point,
+  sourceRect,
+  transfer,
+  zones,
+}: EligibleZoneIdsParams): string[] {
   return zones
-    .filter((entry) => isZoneEligible({ drag, entry, external, hitTest: false, isIsolating, point, transfer }))
+    .filter((entry) => isZoneEligible({ drag, entry, external, hitTest: false, isIsolating, point, sourceRect, transfer }))
     .map((entry) => entry.id);
+}
+
+/** Dispatch one of the three rect-vs-rect collision strategies. */
+function rectMatch(zone: DragRect, src: DragRect, algorithm: CollisionAlgorithm): boolean {
+  switch (algorithm) {
+    case 'contain':
+      return rectContains(zone, src);
+    case 'center':
+      return isPointInRect(rectCenter(src), zone);
+    default:
+      return rectsIntersect(src, zone);
+  }
 }

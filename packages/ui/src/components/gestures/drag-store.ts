@@ -22,11 +22,13 @@ import type {
   DragManagerConfig,
   DragManagerEntry,
   DragPoint,
+  DragRect,
   DragSnapshot,
   DragTransfer,
   DragzoneDropEvent,
   DragzoneEntry,
 } from './drag.types';
+import { draggableRectAt } from './drag-geometry';
 import { eligibleZoneIds, isZoneEligible, resolveDropTarget } from './drag-hit-test';
 
 const NO_IDS: readonly string[] = [];
@@ -104,14 +106,21 @@ function zoneList(): DragzoneEntry[] {
 function recomputeEligible() {
   if (session === null) return;
   const { drag, point } = session;
-  const params = { drag, external: false, isIsolating, point, transfer: drag.transfer, zones: zoneList() };
+  const sourceRect = sourceRectAt(session, point);
+  const params = { drag, external: false, isIsolating, point, sourceRect, transfer: drag.transfer, zones: zoneList() };
   session.eligible = eligibleZoneIds(params);
+}
+
+function sourceRectAt({ drag }: Session, point: DragPoint): DragRect | null {
+  if (!(drag.collisionAlgorithm && drag.origin.rect)) return null;
+  return draggableRectAt(drag.origin.rect, drag.origin.grab, point);
 }
 
 function targetAt(point: DragPoint): DragzoneEntry | null {
   if (session === null) return null;
   const { drag } = session;
-  return resolveDropTarget({ drag, external: false, isIsolating, point, transfer: drag.transfer, zones: zoneList() });
+  const sourceRect = sourceRectAt(session, point);
+  return resolveDropTarget({ drag, external: false, isIsolating, point, sourceRect, transfer: drag.transfer, zones: zoneList() });
 }
 
 type ZoneMoveParams = { drag: ActiveDrag; point: DragPoint; previousId: string | null; target: DragzoneEntry | null };
@@ -140,12 +149,14 @@ function reportZoneMove({ drag, point, previousId, target }: ZoneMoveParams) {
 /** Measure every zone, in parallel, and write the results back onto their entries. */
 async function measureZones(): Promise<void> {
   await Promise.all(
-    zoneList().map(async (entry) => {
-      const rect = await entry.measure();
-      // Re-read: the zone may have unregistered while its measure was in flight.
-      const live = zones.get(entry.id);
-      if (live !== undefined) live.rect = rect;
-    }),
+    zoneList()
+      .filter((entry) => !entry.getConfig().skipRectMeasure)
+      .map(async (entry) => {
+        const rect = await entry.measure();
+        // Re-read: the zone may have unregistered while its measure was in flight.
+        const live = zones.get(entry.id);
+        if (live !== undefined) live.rect = rect;
+      }),
   );
 }
 

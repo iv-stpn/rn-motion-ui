@@ -10,6 +10,7 @@
 
 import type {
   ActiveDrag,
+  CollisionAlgorithm,
   DragGroups,
   DragManagerConfig,
   DragPoint,
@@ -29,6 +30,7 @@ type ZoneOptions = Partial<DragzoneConfig> & {
 };
 
 type DragOptions = {
+  collisionAlgorithm?: CollisionAlgorithm;
   groups?: DragGroups;
   id?: string;
   managerPath?: readonly string[];
@@ -66,9 +68,16 @@ export function zone({ id, managerPath = [], rect: box = null, ...config }: Zone
 }
 
 /** A drag in flight, with a real transfer so `getData` round-trips in a test. */
-export function drag({ groups = NO_GROUPS, id = 'source', managerPath = [], origin }: DragOptions = {}): ActiveDrag {
+export function drag({
+  collisionAlgorithm,
+  groups = NO_GROUPS,
+  id = 'source',
+  managerPath = [],
+  origin,
+}: DragOptions = {}): ActiveDrag {
   const grab = origin?.grab ?? { x: 0, y: 0 };
   return {
+    collisionAlgorithm,
     groups,
     id,
     origin: { grab, rect: origin?.rect ?? null },

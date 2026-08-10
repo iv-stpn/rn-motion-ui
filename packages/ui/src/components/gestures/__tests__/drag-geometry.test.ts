@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ghostOffset, isPointInRect, rectArea } from '../drag-geometry';
+import {
+  draggableRectAt,
+  ghostOffset,
+  isPointInRect,
+  rectArea,
+  rectCenter,
+  rectContains,
+  rectsIntersect,
+} from '../drag-geometry';
 import { rect } from './drag-harness';
 
 describe('isPointInRect', () => {
@@ -71,5 +79,98 @@ describe('ghostOffset', () => {
     const from = ghostOffset({ grab, host: rect(5, 7, 100, 100), origin, point: grab });
     const to = ghostOffset({ grab, host: rect(5, 7, 100, 100), origin, point: { x: grab.x + 17, y: grab.y - 23 } });
     expect({ x: to.x - from.x, y: to.y - from.y }).toEqual({ x: 17, y: -23 });
+  });
+});
+
+describe('draggableRectAt', () => {
+  const origin = rect(100, 200, 60, 40);
+  const grab = { x: 130, y: 210 };
+
+  it('returns the origin rect when the pointer has not moved from the grab', () => {
+    expect(draggableRectAt(origin, grab, grab)).toEqual(origin);
+  });
+
+  it('moves the rect by the same delta the pointer travelled', () => {
+    // Finger moved 70px right, 30px down from the grab point
+    const result = draggableRectAt(origin, grab, { x: 200, y: 240 });
+    expect(result).toEqual(rect(170, 230, 60, 40));
+  });
+
+  it('preserves the rect size — only the position changes', () => {
+    const result = draggableRectAt(origin, grab, { x: 1000, y: 5 });
+    expect(result.width).toBe(origin.width);
+    expect(result.height).toBe(origin.height);
+  });
+
+  it('can move the rect into negative coordinates', () => {
+    const result = draggableRectAt(origin, grab, { x: 30, y: 10 });
+    expect(result).toEqual(rect(0, 0, 60, 40));
+  });
+});
+
+describe('rectsIntersect', () => {
+  const a = rect(0, 0, 100, 100);
+
+  it('detects overlapping rects', () => {
+    expect(rectsIntersect(a, rect(50, 50, 100, 100))).toBe(true);
+  });
+
+  it('detects one rect fully inside another', () => {
+    expect(rectsIntersect(a, rect(20, 20, 30, 30))).toBe(true);
+  });
+
+  it('detects edge-touching rects', () => {
+    expect(rectsIntersect(a, rect(100, 0, 100, 100))).toBe(true);
+    expect(rectsIntersect(a, rect(0, 100, 100, 100))).toBe(true);
+  });
+
+  it('rejects rects with no shared area', () => {
+    expect(rectsIntersect(a, rect(101, 0, 100, 100))).toBe(false);
+    expect(rectsIntersect(a, rect(0, 101, 100, 100))).toBe(false);
+  });
+
+  it('is commutative', () => {
+    const b = rect(30, 40, 50, 60);
+    expect(rectsIntersect(a, b)).toBe(rectsIntersect(b, a));
+  });
+});
+
+describe('rectContains', () => {
+  const outer = rect(0, 0, 100, 100);
+
+  it('accepts a rect fully inside', () => {
+    expect(rectContains(outer, rect(10, 10, 50, 50))).toBe(true);
+  });
+
+  it('accepts a rect sharing an edge with the outer', () => {
+    expect(rectContains(outer, rect(0, 0, 50, 50))).toBe(true);
+    expect(rectContains(outer, rect(50, 50, 50, 50))).toBe(true);
+  });
+
+  it('rejects a rect that overflows on one side', () => {
+    expect(rectContains(outer, rect(90, 0, 20, 50))).toBe(false);
+    expect(rectContains(outer, rect(0, 90, 50, 20))).toBe(false);
+  });
+
+  it('rejects a rect entirely outside', () => {
+    expect(rectContains(outer, rect(200, 200, 10, 10))).toBe(false);
+  });
+
+  it('rejects a rect larger than the outer', () => {
+    expect(rectContains(outer, rect(-10, -10, 120, 120))).toBe(false);
+  });
+});
+
+describe('rectCenter', () => {
+  it('finds the midpoint of an even-sized rect', () => {
+    expect(rectCenter(rect(0, 0, 100, 50))).toEqual({ x: 50, y: 25 });
+  });
+
+  it('finds the midpoint of an odd-sized rect', () => {
+    expect(rectCenter(rect(10, 20, 51, 33))).toEqual({ x: 35.5, y: 36.5 });
+  });
+
+  it('returns the corner for a zero-area rect', () => {
+    expect(rectCenter(rect(5, 7, 0, 0))).toEqual({ x: 5, y: 7 });
   });
 });

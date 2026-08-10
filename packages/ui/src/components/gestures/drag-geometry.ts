@@ -24,6 +24,38 @@ export function rectArea(rect: DragRect): number {
   return rect.width * rect.height;
 }
 
+/**
+ * The draggable's window rect at `point`, given its lift-time rect and grab position.
+ *
+ * The rect is shifted by the same delta the pointer has travelled from the grab
+ * point, preserving the grip offset within the item.
+ */
+export function draggableRectAt(origin: DragRect, grab: DragPoint, point: DragPoint): DragRect {
+  const dx = point.x - grab.x;
+  const dy = point.y - grab.y;
+  return { height: origin.height, width: origin.width, x: origin.x + dx, y: origin.y + dy };
+}
+
+/** Two rects share any area (edge-touching counts). */
+export function rectsIntersect(a: DragRect, b: DragRect): boolean {
+  return a.x <= b.x + b.width && a.x + a.width >= b.x && a.y <= b.y + b.height && a.y + a.height >= b.y;
+}
+
+/** `outer` fully contains `inner` (edges allowed). */
+export function rectContains(outer: DragRect, inner: DragRect): boolean {
+  return (
+    inner.x >= outer.x &&
+    inner.x + inner.width <= outer.x + outer.width &&
+    inner.y >= outer.y &&
+    inner.y + inner.height <= outer.y + outer.height
+  );
+}
+
+/** The center point of `rect`. */
+export function rectCenter(rect: DragRect): DragPoint {
+  return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+}
+
 export type GhostOffsetParams = {
   /** Where the pointer grabbed, in window coordinates. */
   grab: DragPoint;

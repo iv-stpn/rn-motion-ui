@@ -7,7 +7,7 @@
 // that imports react-native is not.
 
 import type { ReactNode } from 'react';
-import type { View } from 'react-native';
+import type { StyleProp, View, ViewStyle } from 'react-native';
 
 /** What a drop may do with the payload — the DOM `dropEffect` values. */
 export type DragDropEffect = 'copy' | 'link' | 'move' | 'none';
@@ -39,6 +39,25 @@ export type DragTransfer = {
   getData: (format: string) => string;
   setData: (format: string, data: string) => void;
 };
+
+/**
+ * Axis along which dragging is constrained.
+ *
+ * - `'x'`: horizontal movement only
+ * - `'y'`: vertical movement only
+ * - `'both'`: unconstrained (default)
+ */
+export type DragAxis = 'x' | 'y' | 'both';
+
+/**
+ * Algorithm used to decide whether a draggable is over a drop zone.
+ *
+ * - `'intersect'`: any overlap between the draggable rect and the zone rect (default
+ *    when a collision algorithm is set; otherwise point-based hit testing applies)
+ * - `'contain'`: the entire draggable rect must be inside the zone rect
+ * - `'center'`: the draggable's center point must be inside the zone rect
+ */
+export type CollisionAlgorithm = 'intersect' | 'contain' | 'center';
 
 /** A point in window coordinates — `clientX/Y` on web, `absoluteX/Y` on native. */
 export type DragPoint = { x: number; y: number };
@@ -93,6 +112,12 @@ export type ActiveDrag = {
   transport: DragTransport;
   /** The source's window rect at lift time, and where in it the grab landed. */
   origin: { grab: DragPoint; rect: DragRect | null };
+  /**
+   * Collision detection algorithm for zone hit testing. When set, the spatial test
+   * uses a rect-vs-rect comparison instead of the default point-in-rect. Unset means
+   * the existing point-based behavior.
+   */
+  collisionAlgorithm?: CollisionAlgorithm;
 };
 
 /** The lift. Write into `transfer` here to change what the drag carries. */
@@ -200,6 +225,12 @@ export type DragzoneConfig = {
   acceptsExternal: boolean;
   /** Breaks a tie between overlapping zones; higher wins. @default 0 */
   priority: number;
+  /**
+   * When true, this zone is never measured and always passes the spatial hit test.
+   * Set on zones whose consumer handles hit testing through another mechanism
+   * (e.g. arithmetic position calculation in SortableList). @default false
+   */
+  skipRectMeasure?: boolean;
   testID?: string;
   onDragEnter?: (event: DragzoneDragEvent) => void;
   onDragOver?: (event: DragzoneDragEvent) => void;
@@ -323,4 +354,17 @@ export type DragManagerEntry = {
   /** Manager ids from the root down to and including this one. */
   path: readonly string[];
   getConfig: () => DragManagerConfig;
+};
+
+/**
+ * Props for the `<Draggable.Handle>` sub-component.
+ *
+ * When a `<Draggable>` contains at least one `<Draggable.Handle>`, only the handle
+ * area can initiate a drag — the rest of the component is inert to drag gestures.
+ */
+export type DraggableHandleProps = {
+  /** The content rendered inside the handle area. */
+  children: ReactNode;
+  /** Optional style applied to the handle wrapper. */
+  style?: StyleProp<ViewStyle>;
 };

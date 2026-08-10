@@ -183,3 +183,103 @@ describe('eligibleZoneIds', () => {
     expect(ids([zone({ groups: ['files'], id: 'other' })])).toEqual([]);
   });
 });
+
+describe('rect-based collision algorithms', () => {
+  const sourceRect = rect(40, 40, 60, 40); // 60×40 at (40,40) → center at (70, 60)
+  const zoneRect = rect(0, 0, 100, 100);
+  const entry = zone({ id: 'a', rect: zoneRect });
+
+  const ask = (options: Partial<Parameters<typeof isZoneEligible>[0]> = {}) =>
+    isZoneEligible({
+      drag: drag(),
+      entry,
+      external: false,
+      hitTest: true,
+      isIsolating: () => false,
+      point: { x: 90, y: 70 },
+      transfer: createDragTransfer(),
+      ...options,
+    });
+
+  it('with intersect, accepts when the source rect overlaps the zone', () => {
+    // sourceRect (40,40,60,40) overlaps zone (0,0,100,100)
+    expect(
+      ask({
+        drag: drag({ collisionAlgorithm: 'intersect', origin: { grab: { x: 10, y: 10 }, rect: sourceRect } }),
+        sourceRect,
+      }),
+    ).toBe(true);
+  });
+
+  it('with intersect, refuses when the source rect is outside the zone', () => {
+    const outside = rect(200, 200, 60, 40);
+    expect(
+      ask({
+        drag: drag({ collisionAlgorithm: 'intersect', origin: { grab: { x: 10, y: 10 }, rect: outside } }),
+        point: { x: 210, y: 210 },
+        sourceRect: outside,
+      }),
+    ).toBe(false);
+  });
+
+  it('with contain, accepts when the source is fully inside the zone', () => {
+    // sourceRect (20,20,30,20) is entirely inside zone (0,0,100,100)
+    const inside = rect(20, 20, 30, 20);
+    expect(
+      ask({
+        drag: drag({ collisionAlgorithm: 'contain', origin: { grab: { x: 10, y: 10 }, rect: inside } }),
+        sourceRect: inside,
+      }),
+    ).toBe(true);
+  });
+
+  it('with contain, refuses when the source overflows the zone', () => {
+    // sourceRect (90,90,60,40) overflows zone (0,0,100,100) on both right and bottom
+    const overflow = rect(90, 90, 60, 40);
+    expect(
+      ask({
+        drag: drag({ collisionAlgorithm: 'contain', origin: { grab: { x: 10, y: 10 }, rect: overflow } }),
+        sourceRect: overflow,
+      }),
+    ).toBe(false);
+  });
+
+  it('with center, accepts when the source center is inside the zone', () => {
+    // sourceRect center (70,60) is inside zone (0,0,100,100)
+    expect(
+      ask({
+        drag: drag({ collisionAlgorithm: 'center', origin: { grab: { x: 10, y: 10 }, rect: sourceRect } }),
+        sourceRect,
+      }),
+    ).toBe(true);
+  });
+
+  it('with center, refuses when the source center is outside the zone', () => {
+    // sourceRect (90,90,40,40) → center at (110,110) is outside zone (0,0,100,100)
+    const offCenter = rect(90, 90, 40, 40);
+    expect(
+      ask({
+        drag: drag({ collisionAlgorithm: 'center', origin: { grab: { x: 10, y: 10 }, rect: offCenter } }),
+        point: { x: 100, y: 100 },
+        sourceRect: offCenter,
+      }),
+    ).toBe(false);
+  });
+
+  it('falls back to point-based when no algorithm is set', () => {
+    // Point at (90,70) is inside zone (0,0,100,100) → point-based accepts
+    expect(ask()).toBe(true);
+    // Point at (500,500) is outside → point-based refuses
+    expect(ask({ point: { x: 500, y: 500 } })).toBe(false);
+  });
+
+  it('with an algorithm but no sourceRect, falls back to point-based', () => {
+    // Point (90,70) is inside the zone → accepts on point
+    expect(
+      ask({
+        drag: drag({ collisionAlgorithm: 'intersect' }),
+        // No sourceRect — algorithm can't run
+      }),
+    ).toBe(true);
+  });
+});

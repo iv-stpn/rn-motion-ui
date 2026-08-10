@@ -42,7 +42,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 <summary>Hooks</summary>
 
 <!-- generated:hooks -->
-`hooks/direction-provider` · `hooks/use-arm-on-view` · `hooks/use-breakpoint` · `hooks/use-calendar` · `hooks/use-date-picker` · `hooks/use-date-range-picker` · `hooks/use-direction` · `hooks/use-focus-trap` · `hooks/use-hover-capable` · `hooks/use-in-view` · `hooks/use-interval` · `hooks/use-modal-render` · `hooks/use-mount-effect` · `hooks/use-page-visible` · `hooks/use-reduced-motion` · `hooks/use-safe-insets` · `hooks/use-scramble` · `hooks/use-shake-animation`
+`hooks/direction-provider` · `hooks/use-arm-on-view` · `hooks/use-breakpoint` · `hooks/use-calendar` · `hooks/use-controlled` · `hooks/use-date-picker` · `hooks/use-date-range-picker` · `hooks/use-direction` · `hooks/use-focus-trap` · `hooks/use-hover-capable` · `hooks/use-in-view` · `hooks/use-interval` · `hooks/use-modal-render` · `hooks/use-mount-effect` · `hooks/use-page-visible` · `hooks/use-press-state` · `hooks/use-reduced-motion` · `hooks/use-safe-insets` · `hooks/use-scramble` · `hooks/use-shake-animation`
 <!-- /generated:hooks -->
 
 `use-calendar`, `use-date-picker` and `use-date-range-picker` are **headless**: they own the date arithmetic, the keyboard, the roving tab stop and the accessibility payload, and render nothing. There is no styled `<Calendar />` in the package — you spread prop getters onto your own markup. Dates are ISO `'YYYY-MM-DD'` strings throughout, never `Date` objects. See [the package README](./packages/ui/README.md#headless-calendar-and-date-pickers) for the full surface.

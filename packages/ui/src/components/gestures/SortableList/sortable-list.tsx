@@ -19,8 +19,9 @@
 // State lives in a React context (one per list instance) so <SortableItem> can
 // read state and call actions directly instead of receiving them as props.
 
-import { createContext, type ReactNode, useCallback, useContext, useId, useMemo, useRef, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
+import { type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { DragManager } from '../DragManager/drag-manager';
 import { reorderItems } from '../ReorderableList/reorderable-list-reorder';
 import { SortableItem } from './sortable-item';
@@ -31,28 +32,27 @@ const DEFAULT_MIME = 'application/x-sortable-item';
 // ── Context ───────────────────────────────────────────────────────────────
 
 type SortableListContextValue = {
-  /** Index of the dragged item, or -1 when idle. */
+  /** Index of the dragged item, or -1 when idle. Kept as React state so `renderItem`
+   *  can derive `isDragging` from it. */
   activeIndex: number;
+  /** Index of the dragged item as a SharedValue — what worklets read on the UI thread. */
+  activeIndexSV: SharedValue<number>;
   /** The key of the dragged item, or null when idle. */
   draggedKey: string | null;
-  /** Where the dragged item would land, or null when idle. */
-  insertionIndex: number | null;
+  /** Where the dragged item would land — a SharedValue updated per frame without
+   *  triggering React re-renders. -1 when idle. */
+  insertionIndexSV: SharedValue<number>;
   /** Fixed height of every item. */
   itemHeight: number;
-  /** Each commit increments this — items use it to skip the exit animation and snap instead. */
-  dropVersion: number;
+  /** Each commit increments this — items read it in a worklet to snap instead of
+   *  animating when the canonical order changes. */
+  dropVersionSV: SharedValue<number>;
   onDragEnd: (key: string, canceled: boolean) => void;
   onDragMove: (translationY: number) => void;
   onDragStart: (index: number, key: string) => void;
 };
 
 const SortableListContext = createContext<SortableListContextValue | null>(null);
-
-export function useSortableList(): SortableListContextValue {
-  const ctx = useContext(SortableListContext);
-  if (ctx === null) throw new Error('useSortableList must be used inside a <SortableList>');
-  return ctx;
-}
 
 // ── List view ─────────────────────────────────────────────────────────────
 
@@ -70,6 +70,7 @@ type SortableListViewProps<T> = {
   testID?: string;
 };
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the view wires shared values, drag callbacks, context, and rendering in one cohesive component — splitting would require prop-drilling refs and shared values across function boundaries
 function SortableListView<T>({
   className,
   disabled,
@@ -84,18 +85,22 @@ function SortableListView<T>({
   testID,
 }: SortableListViewProps<T>) {
   // ── Drag state ──────────────────────────────────────────────────────────
+  // `activeIndex` and `draggedKey` stay as React state because the list view
+  // needs them for `isDragging` in renderItem.  `insertionIndex` and
+  // `dropVersion` are SharedValues — updated per frame without re-renders,
+  // read by items on the UI thread via useAnimatedReaction.
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
-  const [dropVersion, setDropVersion] = useState(0);
+
+  const activeIndexSV = useSharedValue(-1);
+  const insertionIndexSV = useSharedValue(-1);
+  const dropVersionSV = useSharedValue(0);
 
   // Refs let the stable callbacks read fresh values per invocation without
   // re-creating themselves — the same pattern the existing drag store uses
   // for its closure state.
   const activeIndexRef = useRef(activeIndex);
   activeIndexRef.current = activeIndex;
-  const insertionIndexRef = useRef(insertionIndex);
-  insertionIndexRef.current = insertionIndex;
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const keysRef = useRef(keys);
@@ -103,15 +108,22 @@ function SortableListView<T>({
   const onReorderRef = useRef(onReorder);
   onReorderRef.current = onReorder;
 
+  // Tracks whether a commit needs to be finalised after the React render
+  // that assigns new canonical indices.  Written by handleDragEnd, read
+  // and cleared by useLayoutEffect below.
+  const pendingCommitRef = useRef<{ dropVersion: number } | null>(null);
+
   // ── Drag callbacks — stable identity across renders ─────────────────────
-  const handleDragStart = useCallback((index: number, key: string) => {
-    console.log('[SortableList] handleDragStart', { index, key });
-    activeIndexRef.current = index;
-    insertionIndexRef.current = index;
-    setActiveIndex(index);
-    setInsertionIndex(index);
-    setDraggedKey(key);
-  }, []);
+  const handleDragStart = useCallback(
+    (index: number, key: string) => {
+      activeIndexRef.current = index;
+      activeIndexSV.value = index;
+      insertionIndexSV.value = index;
+      setActiveIndex(index);
+      setDraggedKey(key);
+    },
+    [activeIndexSV, insertionIndexSV],
+  );
 
   const handleDragMove = useCallback(
     (translationY: number) => {
@@ -124,45 +136,71 @@ function SortableListView<T>({
       const raw = translationY / itemHeight;
       const slots = raw >= 0 ? Math.floor(raw + 0.5) : Math.ceil(raw - 0.5);
       const clamped = Math.max(0, Math.min(count - 1, from + slots));
-      console.log('[SortableList] handleDragMove', { translationY, from, count, raw, slots, clamped, itemHeight });
-      insertionIndexRef.current = clamped;
-      setInsertionIndex((prev) => (prev === clamped ? prev : clamped));
+      // Write the shared value directly — no setState, no re-render.
+      // Items read this on the UI thread via useAnimatedReaction.
+      if (insertionIndexSV.value !== clamped) insertionIndexSV.value = clamped;
     },
-    [itemHeight],
+    [itemHeight, insertionIndexSV],
   );
 
-  const handleDragEnd = useCallback((_key: string, _canceled: boolean) => {
-    const from = activeIndexRef.current;
-    const to = insertionIndexRef.current;
-    console.log('[SortableList] handleDragEnd', { _key, _canceled, from, to });
-    if (from !== -1 && to !== null && from !== to) {
-      console.log('[SortableList] COMMITTING REORDER', { from, to, items: itemsRef.current });
-      const currentItems = itemsRef.current;
-      const commit = onReorderRef.current;
-      const newItems = reorderItems(currentItems, from, to);
-      console.log('[SortableList] reorderItems result', { currentItems, newItems });
-      commit(newItems, from, to);
-      setDropVersion((v) => v + 1);
+  const handleDragEnd = useCallback(
+    (_key: string, canceled: boolean) => {
+      const from = activeIndexRef.current;
+      const to = insertionIndexSV.value;
+      if (!canceled && from !== -1 && to !== -1 && from !== to) {
+        // Defer the shared-value commit until after React has assigned new
+        // canonical indices, so items snap at their post-reorder positions.
+        pendingCommitRef.current = { dropVersion: dropVersionSV.value + 1 };
+        const currentItems = itemsRef.current;
+        const commit = onReorderRef.current;
+        commit(reorderItems(currentItems, from, to), from, to);
+      }
+      activeIndexRef.current = -1;
+      setActiveIndex(-1);
+      setDraggedKey(null);
+    },
+    [dropVersionSV, insertionIndexSV],
+  );
+
+  // After React commits the reorder (new canonical indices are assigned),
+  // finalise the shared values so items snap at their correct positions.
+  // useLayoutEffect runs before the browser paints, so the user never sees
+  // an intermediate frame.
+  useLayoutEffect(() => {
+    if (activeIndex !== -1) return;
+
+    const pending = pendingCommitRef.current;
+    if (pending !== null) {
+      pendingCommitRef.current = null;
+      dropVersionSV.value = pending.dropVersion;
     }
-    activeIndexRef.current = -1;
-    insertionIndexRef.current = null;
-    setActiveIndex(-1);
-    setInsertionIndex(null);
-    setDraggedKey(null);
-  }, []);
+    activeIndexSV.value = -1;
+    insertionIndexSV.value = -1;
+  }, [activeIndex, activeIndexSV, dropVersionSV, insertionIndexSV]);
 
   const contextValue = useMemo<SortableListContextValue>(
     () => ({
       activeIndex,
+      activeIndexSV,
       draggedKey,
-      dropVersion,
-      insertionIndex,
+      dropVersionSV,
+      insertionIndexSV,
       itemHeight,
       onDragEnd: handleDragEnd,
       onDragMove: handleDragMove,
       onDragStart: handleDragStart,
     }),
-    [activeIndex, draggedKey, dropVersion, insertionIndex, itemHeight, handleDragEnd, handleDragMove, handleDragStart],
+    [
+      activeIndex,
+      activeIndexSV,
+      draggedKey,
+      dropVersionSV,
+      insertionIndexSV,
+      itemHeight,
+      handleDragEnd,
+      handleDragMove,
+      handleDragStart,
+    ],
   );
 
   return (
@@ -265,4 +303,11 @@ export function SortableList<T>({
       />
     </DragManager>
   );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: hook paired with its component
+export function useSortableList(): SortableListContextValue {
+  const ctx = useContext(SortableListContext);
+  if (ctx === null) throw new Error('useSortableList must be used inside a <SortableList>');
+  return ctx;
 }

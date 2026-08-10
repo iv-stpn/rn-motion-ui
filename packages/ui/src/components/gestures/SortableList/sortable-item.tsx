@@ -13,14 +13,14 @@
 //
 // Internal to SortableList; not exported from the package.
 
-import { type ReactNode, useCallback, useEffect, useRef } from 'react';
-import { Animated, Easing } from 'react-native';
+import { type ReactNode, useCallback, useRef } from 'react';
+import Animated, { useAnimatedReaction, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Draggable } from '../Draggable/draggable';
 import { Dragzone } from '../Dragzone/dragzone';
 import type { DragEndEvent, DragMoveEvent, DragzoneAcceptEvent, DragzoneHandle } from '../drag.types';
 import { useSortableList } from './sortable-list';
 
-export type SortableItemProps = {
+type SortableItemProps = {
   children: ReactNode;
   /** Stable unique key for this item, from the consumer's `keyExtractor`. */
   itemKey: string;
@@ -47,7 +47,8 @@ export type SortableItemProps = {
  *
  * Returns the item's visual index in the preview order.
  */
-export function computeTargetIndex(ownIndex: number, activeIndex: number, insertionIndex: number): number {
+function computeTargetIndex(ownIndex: number, activeIndex: number, insertionIndex: number): number {
+  'worklet';
   if (activeIndex === -1 || activeIndex === insertionIndex) return ownIndex;
   if (ownIndex === activeIndex) return insertionIndex;
 
@@ -79,36 +80,41 @@ export function SortableItem({
   testID,
 }: SortableItemProps) {
   const zoneRef = useRef<DragzoneHandle>(null);
-  const translateY = useRef(new Animated.Value(0)).current;
 
-  const { activeIndex, dropVersion, insertionIndex, itemHeight, onDragEnd, onDragMove, onDragStart } = useSortableList();
+  const { activeIndexSV, dropVersionSV, insertionIndexSV, itemHeight, onDragEnd, onDragMove, onDragStart } = useSortableList();
 
-  const targetIndex =
-    activeIndex !== -1 && insertionIndex !== null ? computeTargetIndex(index, activeIndex, insertionIndex) : index;
-  const targetTranslateY = (targetIndex - index) * itemHeight;
+  // ── Reanimated-driven position ──────────────────────────────────────────
+  // translateY is driven entirely on the UI thread via useAnimatedReaction,
+  // which watches the shared values for activeIndex and insertionIndex.
+  // This eliminates per-frame JS bridge hops and React re-renders during the
+  // drag — only the commit (onDrop) crosses back to JS.
+  const translateY = useSharedValue(0);
+  const lastDropVersion = useSharedValue(0);
 
-  // Track the drop version so we can snap instead of animate when the reorder
-  // commits. During the drag every item is already at its visual position — on
-  // commit the canonical order changes and transform should jump to 0 instantly
-  // rather than sliding from the drag-time offset.
-  const lastDropVersion = useRef(dropVersion);
+  useAnimatedReaction(
+    () => {
+      const ai = activeIndexSV.value;
+      const ii = insertionIndexSV.value;
+      if (ai === -1 || ii === -1) return 0;
+      const target = computeTargetIndex(index, ai, ii);
+      return (target - index) * itemHeight;
+    },
+    (targetTY, prevTY) => {
+      if (dropVersionSV.value !== lastDropVersion.value) {
+        // Commit just happened — snap to the new canonical position instantly
+        // rather than animating from the drag-time offset.
+        lastDropVersion.value = dropVersionSV.value;
+        translateY.value = targetTY;
+      } else if (prevTY !== null && targetTY !== prevTY) translateY.value = withTiming(targetTY, { duration: 200 });
+      else if (prevTY === null) translateY.value = targetTY;
+    },
+    [index, itemHeight],
+  );
 
-  // Animate translateY to the target whenever the visual position changes.
-  useEffect(() => {
-    const snap = dropVersion !== lastDropVersion.current;
-    lastDropVersion.current = dropVersion;
-
-    if (snap) {
-      translateY.setValue(targetTranslateY);
-    } else {
-      Animated.timing(translateY, {
-        toValue: targetTranslateY,
-        duration: 200,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [targetTranslateY, translateY, dropVersion]);
+  const animatedStyle = useAnimatedStyle(() => ({
+    height: itemHeight,
+    transform: [{ translateY: translateY.value }],
+  }));
 
   // ── Drag callbacks — wire itemKey into the list-level handlers ──────────
   const handleDragStart = useCallback(() => {
@@ -138,15 +144,9 @@ export function SortableItem({
     [disabled, itemKey, mimeType],
   );
 
-  // Measure the zone on mount so the store knows its rect before a drag can land
-  // here. Mirror of the pattern in ReorderableItem and Dragzone itself.
-  useEffect(() => {
-    zoneRef.current?.measure().catch(() => undefined);
-  }, []);
-
   return (
-    <Animated.View style={{ height: itemHeight, transform: [{ translateY }] }}>
-      <Dragzone ref={zoneRef} accepts={accepts} disabled={disabled} groups={[listId]}>
+    <Animated.View style={animatedStyle}>
+      <Dragzone ref={zoneRef} accepts={accepts} disabled={disabled} groups={[listId]} skipRectMeasure={true}>
         <Draggable
           data={{ [mimeType]: itemKey }}
           disabled={disabled}

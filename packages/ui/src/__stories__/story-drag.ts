@@ -28,7 +28,7 @@ const ORIGIN: StoryPoint = { x: 0, y: 0 };
  * lift kicked off — and awaiting it drains the microtasks those callbacks resolve
  * into. A `requestAnimationFrame` would not: frames and timers are separate queues.
  */
-const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+export const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 type DragOntoParams = {
   /** Where the pointer grabbed the source. */

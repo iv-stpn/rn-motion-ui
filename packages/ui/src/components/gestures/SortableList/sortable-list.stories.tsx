@@ -16,7 +16,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer } from '../../../__stories__/story-drag';
+import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer, settle } from '../../../__stories__/story-drag';
 import { Choice, ControlCard, Note, Playground, Section } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
 import { SortableList } from './sortable-list';
@@ -258,6 +258,9 @@ export const ReorderFirstToThird: Story = {
 
     await dragOnto({ source, target: targetZone, to, transfer, from });
     fireDrag(source, 'dragend', transfer, to);
+    // React batches state updates during event handlers; `settle` drains the timer
+    // the re-render lands on before we assert the readout.
+    await settle();
 
     await expect(readout).toHaveTextContent('0 → 2');
   },

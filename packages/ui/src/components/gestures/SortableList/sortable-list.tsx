@@ -105,6 +105,7 @@ function SortableListView<T>({
 
   // ── Drag callbacks — stable identity across renders ─────────────────────
   const handleDragStart = useCallback((index: number, key: string) => {
+    console.log('[SortableList] handleDragStart', { index, key });
     activeIndexRef.current = index;
     insertionIndexRef.current = index;
     setActiveIndex(index);
@@ -123,6 +124,8 @@ function SortableListView<T>({
       const raw = translationY / itemHeight;
       const slots = raw >= 0 ? Math.floor(raw + 0.5) : Math.ceil(raw - 0.5);
       const clamped = Math.max(0, Math.min(count - 1, from + slots));
+      console.log('[SortableList] handleDragMove', { translationY, from, count, raw, slots, clamped, itemHeight });
+      insertionIndexRef.current = clamped;
       setInsertionIndex((prev) => (prev === clamped ? prev : clamped));
     },
     [itemHeight],
@@ -131,10 +134,13 @@ function SortableListView<T>({
   const handleDragEnd = useCallback((_key: string, _canceled: boolean) => {
     const from = activeIndexRef.current;
     const to = insertionIndexRef.current;
+    console.log('[SortableList] handleDragEnd', { _key, _canceled, from, to });
     if (from !== -1 && to !== null && from !== to) {
+      console.log('[SortableList] COMMITTING REORDER', { from, to, items: itemsRef.current });
       const currentItems = itemsRef.current;
       const commit = onReorderRef.current;
       const newItems = reorderItems(currentItems, from, to);
+      console.log('[SortableList] reorderItems result', { currentItems, newItems });
       commit(newItems, from, to);
       setDropVersion((v) => v + 1);
     }

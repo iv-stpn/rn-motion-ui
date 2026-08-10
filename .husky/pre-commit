@@ -1,2 +1,23 @@
 bun run lint
 bun run typecheck
+
+# Validate the exports map. If the check fails, auto-fix with --write and
+# stage the result so it ships with the commit. If --write cannot fix
+# everything (e.g. genuinely missing entries the script cannot derive),
+# the commit is blocked.
+node packages/ui/scripts/check-exports.mjs
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "→ exports map out of sync — attempting auto-fix..."
+  node packages/ui/scripts/check-exports.mjs --write
+  if [ $? -eq 0 ]; then
+    git add packages/ui/package.json
+    echo "✔  exports map fixed and staged."
+  else
+    echo ""
+    echo "✖  exports map could not be auto-fixed. See errors above."
+    echo "   Add the missing entries to packages/ui/package.json by hand,"
+    echo "   or run: node packages/ui/scripts/check-exports.mjs --write"
+    exit 1
+  fi
+fi

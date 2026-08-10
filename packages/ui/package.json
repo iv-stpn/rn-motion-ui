@@ -777,6 +777,16 @@
       "source": "./src/hooks/use-date-range-picker.ts",
       "types": "./src/hooks/use-date-range-picker.ts",
       "default": "./src/hooks/use-date-range-picker.ts"
+    },
+    "./hooks/use-controlled": {
+      "source": "./src/hooks/use-controlled.ts",
+      "types": "./src/hooks/use-controlled.ts",
+      "default": "./src/hooks/use-controlled.ts"
+    },
+    "./hooks/use-press-state": {
+      "source": "./src/hooks/use-press-state.ts",
+      "types": "./src/hooks/use-press-state.ts",
+      "default": "./src/hooks/use-press-state.ts"
     }
   },
   "bin": {

@@ -83,10 +83,18 @@ function deriveExportKey(absPath) {
   if (rel.startsWith('components/')) {
     // Only the primary file per component folder is auto-required.
     // Primary = stem matches the kebab-case of the immediate parent directory.
+    // Paths come in two shapes:
+    //   3-segment: components/<Dir>/<file>        (e.g. components/icon/themed-icon.tsx)
+    //   4-segment: components/<category>/<Dir>/<file> (e.g. components/display/Card/card.tsx)
     const parts = rel.split('/');
-    // parts: ['components', 'Button', 'button.tsx'] → dir='Button', stem='button'
+    let dirName = null;
     if (parts.length === 3) {
-      const dirKebab = parts[1].replace(/([A-Z])/g, (m, c, i) => (i > 0 ? '-' : '') + c.toLowerCase());
+      dirName = parts[1];
+    } else if (parts.length === 4) {
+      dirName = parts[2];
+    }
+    if (dirName) {
+      const dirKebab = dirName.replace(/([A-Z])/g, (m, c, i) => (i > 0 ? '-' : '') + c.toLowerCase());
       if (stem === dirKebab) return `./${stem}`;
     }
     return null; // non-primary component file — validated by dangling check only

@@ -39,8 +39,8 @@ export type MorphingFABProps = {
   /** Called whenever the FAB opens or closes. */
   onOpenChange?: (open: boolean) => void;
   /** Close affordance rendered in a top-right header row while open.
-   *  Defaults to a small ×. Pass `null` to omit it — e.g. when the pane
-   *  content owns its own close control (see FeedbackFAB). */
+   *  Defaults to a small ×. Pass `null` to omit it when the pane
+   *  content owns its own close control. */
   closeIcon?: ReactNode | null;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
@@ -56,7 +56,8 @@ export type MorphingFABProps = {
  * and renders `children` inside. The pane closes via the top-right close
  * affordance, the render-prop `close()`, or the controlled `open` prop.
  *
- * The generic shell — FeedbackFAB builds the feedback form flow on top of it.
+ * Use the render-prop form to build interactive content — a feedback form,
+ * an action menu, or any custom flow — directly inside the expanded pane.
  */
 export function MorphingFAB({
   children,
@@ -161,11 +162,9 @@ export function MorphingFAB({
             accessibilityLabel={accessibilityLabel ?? 'Open'}
             testID={triggerTestID}
             onPress={handleOpen}
-            className="h-12 w-12"
+            className="h-full w-full items-center justify-center"
           >
-            <View className="flex-1 items-center justify-center">
-              {icon ?? <ThemedIcon icon={Plus} variant="secondary" size={20} />}
-            </View>
+            {icon ?? <ThemedIcon icon={Plus} variant="secondary" size={20} />}
           </Pressable>
         )}
       </MotiView>

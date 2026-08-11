@@ -199,6 +199,7 @@ function TabsSlidePanel({ children, direction, exiting, panelWidth, transition, 
       accessibilityElementsHidden={exiting}
       importantForAccessibility={exiting ? 'no-hide-descendants' : 'auto'}
       className={cn(pinned ? 'pointer-events-none absolute mt-0' : 'mt-4', exiting || (enterClip && 'overflow-hidden'))}
+      style={pinned ? { top: pinned.top, left: pinned.left, width: pinned.width, height: pinned.height } : undefined}
     >
       <MotiView
         // Only `animate` moves this panel out: the same MotiView plays both halves,

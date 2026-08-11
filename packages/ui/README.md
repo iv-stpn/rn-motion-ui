@@ -83,8 +83,10 @@ Subpaths are namespaced by category:
 | `/button-group` | `ButtonGroup` |
 | `/close-button` | `CloseButton` |
 | `/elevated-button` | `ElevatedButton` |
+| `/feedback-fab` | `FeedbackFAB` |
 | `/item-row` | `ItemRow` |
 | `/item-row-group` | `ItemRowGroup` |
+| `/morphing-fab` | `MorphingFAB` |
 | `/sortable-list` | `SortableList` |
 | `/stateful-button` | `StatefulButton` |
 | `/glossy-button` | `GlossyButton` |

@@ -5,14 +5,14 @@ import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Section, Toggle } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
-import { FeedbackWidget } from './feedback-widget';
+import { FeedbackFAB } from './feedback-fab';
 
 const meta = {
-  title: 'Display/FeedbackWidget',
-  component: FeedbackWidget,
+  title: 'Display/MorphingFAB/FeedbackFAB',
+  component: FeedbackFAB,
   parameters: { layout: 'fullscreen' },
   args: { position: 'bottom-right' },
-} satisfies Meta<typeof FeedbackWidget>;
+} satisfies Meta<typeof FeedbackFAB>;
 
 type Story = StoryObj<typeof meta>;
 
@@ -101,7 +101,7 @@ function FeedbackPlayground() {
           </View>
         </Section>
       </View>
-      <FeedbackWidget
+      <FeedbackFAB
         elevation={ELEVATIONS[elevationKey]}
         onSubmit={onSubmit}
         position={position}
@@ -129,8 +129,8 @@ export const Default: Story = {
     const failThenRecover = useFailThenRecoverSubmit();
     return (
       <AppSurface hint="Bottom-right submits successfully. Bottom-left fails once, then recovers on Try again.">
-        <FeedbackWidget position="bottom-right" onSubmit={success} testID="feedback-success" />
-        <FeedbackWidget position="bottom-left" onSubmit={failThenRecover} testID="feedback-fail" />
+        <FeedbackFAB position="bottom-right" onSubmit={success} testID="feedback-success" />
+        <FeedbackFAB position="bottom-left" onSubmit={failThenRecover} testID="feedback-fail" />
       </AppSurface>
     );
   },
@@ -160,7 +160,7 @@ export const ErrorRecovery: Story = {
     const failThenRecover = useFailThenRecoverSubmit();
     return (
       <AppSurface hint="Submit fails the first time — tap Try again to recover.">
-        <FeedbackWidget onSubmit={failThenRecover} testID="feedback-widget" />
+        <FeedbackFAB onSubmit={failThenRecover} testID="feedback-widget" />
       </AppSurface>
     );
   },

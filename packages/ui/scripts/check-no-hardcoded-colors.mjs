@@ -12,7 +12,7 @@
  *  - Very subtle stripes: rgba(0,0,0,0.02)
  *  - Standard shadow opacities: rgba(0,0,0,0.2)
  *  - NotFound neon glitch aesthetics: #ff0040, #00e5ff
- *  - FeedbackWidget confetti accent: #6366f1
+ *  - FeedbackFAB confetti accent: #6366f1
  *
  * The "/* theme-exempt *‌/" comment is the canonical way to document an
  * intentional exception in the source. Run this script again after adding it.
@@ -36,7 +36,7 @@ const EXEMPT_PATTERNS = [
   /rgba\(0,\s*0,\s*0,\s*0\.02\b/,         // stripe 0.02
   /#ff0040/i,                              // NotFound neon
   /#00e5ff/i,                              // NotFound neon
-  /#6366f1/i,                              // FeedbackWidget accent
+  /#6366f1/i,                              // FeedbackFAB accent
 ];
 
 // Regex that matches a hardcoded color token.

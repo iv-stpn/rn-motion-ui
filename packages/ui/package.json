@@ -267,10 +267,15 @@
       "types": "./src/components/form/Button/elevated-button.tsx",
       "default": "./src/components/form/Button/elevated-button.tsx"
     },
+    "./feedback-fab": {
+      "source": "./src/components/display/MorphingFAB/feedback-fab.tsx",
+      "types": "./src/components/display/MorphingFAB/feedback-fab.tsx",
+      "default": "./src/components/display/MorphingFAB/feedback-fab.tsx"
+    },
     "./feedback-widget": {
-      "source": "./src/components/display/FeedbackWidget/feedback-widget.tsx",
-      "types": "./src/components/display/FeedbackWidget/feedback-widget.tsx",
-      "default": "./src/components/display/FeedbackWidget/feedback-widget.tsx"
+      "source": "./src/components/display/MorphingFAB/feedback-widget.tsx",
+      "types": "./src/components/display/MorphingFAB/feedback-widget.tsx",
+      "default": "./src/components/display/MorphingFAB/feedback-widget.tsx"
     },
     "./file-system": {
       "source": "./src/components/file-system/FileSystem/file-system.tsx",
@@ -356,6 +361,11 @@
       "source": "./src/components/RowPrimitive/menu-item.tsx",
       "types": "./src/components/RowPrimitive/menu-item.tsx",
       "default": "./src/components/RowPrimitive/menu-item.tsx"
+    },
+    "./morphing-fab": {
+      "source": "./src/components/display/MorphingFAB/morphing-fab.tsx",
+      "types": "./src/components/display/MorphingFAB/morphing-fab.tsx",
+      "default": "./src/components/display/MorphingFAB/morphing-fab.tsx"
     },
     "./morphing-modal": {
       "source": "./src/components/menus/MorphingModal/morphing-modal.tsx",

@@ -1,5 +1,4 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: feedback flow, sent view, and star-rating sub-components collocated by design
-
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -7,9 +6,8 @@ import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { InformationLine as AlertCircle } from 'rn-motion-ui-icons/icons/information-line';
 import { Message1Line as MessageSquare } from 'rn-motion-ui-icons/icons/message-1-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { cn } from '../../../lib/cn';
 import { EASE_OUT, SPRING_SWAP } from '../../../lib/ease';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
+import type { SurfaceLevel } from '../../../lib/elevated';
 import { MotiText } from '../../../moti/components/text';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
@@ -17,6 +15,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
+import { MorphingFAB } from './morphing-fab';
 
 type Status = 'idle' | 'open' | 'sending' | 'sent' | 'error';
 
@@ -46,7 +45,7 @@ const SPRINKLES = Array.from({ length: 8 }, (_, i) => {
 export type FeedbackData = { message: string };
 
 // biome-ignore lint/style/useExportsLast: props type before internal SentViewProps — collocated for readability
-export type FeedbackWidgetProps = {
+export type FeedbackFABProps = {
   /** Called on submit. May be async; the button shows a sending state until it resolves. */
   onSubmit?: (data: FeedbackData) => void | Promise<void>;
   position?: 'bottom-right' | 'bottom-left';
@@ -115,7 +114,13 @@ function renderFeedbackContent({
   );
 }
 
-export function FeedbackWidget({
+/**
+ * Feedback form flow built on {@link MorphingFAB}: a message FAB that morphs
+ * into a form panel with idle / sending / sent / error states. Renamed from
+ * `FeedbackWidget` (the `rn-motion-ui/feedback-widget` subpath still re-exports
+ * it under the old name for backward compatibility).
+ */
+export function FeedbackFAB({
   onSubmit,
   position = 'bottom-right',
   elevation = 5,
@@ -127,7 +132,7 @@ export function FeedbackWidget({
   testID,
   closeIcon,
   errorIcon,
-}: FeedbackWidgetProps) {
+}: FeedbackFABProps) {
   const reduce = useReducedMotion();
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -136,7 +141,6 @@ export function FeedbackWidget({
 
   const open = status !== 'idle';
   const busy = status === 'sending';
-  const left = position === 'bottom-left';
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimer.current === null) return;
@@ -174,89 +178,46 @@ export function FeedbackWidget({
     }
   }, [busy, message, onSubmit, clearCloseTimer, close]);
 
-  const handleOpen = useCallback(() => {
-    clearCloseTimer();
-    setStatus('open');
-  }, [clearCloseTimer]);
-
-  // Staggered springs: width snaps open fast, height bounces — reads as unfolding.
-  const morphTransition = reduce
-    ? { type: 'timing' as const, duration: 0 }
-    : ({
-        type: 'spring' as const,
-        stiffness: 200,
-        damping: 18,
-        mass: 0.95,
-        width: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
-        borderRadius: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
-      } satisfies import('../../../moti/core/types').MotiTransition);
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (next) {
+        clearCloseTimer();
+        setStatus('open');
+      } else close();
+    },
+    [clearCloseTimer, close],
+  );
 
   return (
-    <View
+    <MorphingFAB
+      open={open}
+      onOpenChange={handleOpenChange}
+      position={position}
+      elevation={elevation}
+      icon={icon ?? <ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
+      style={style}
+      accessibilityLabel={accessibilityLabel ?? title}
       testID={testID ?? 'feedback-widget'}
-      style={[
-        { position: 'absolute', bottom: 16, zIndex: 30, pointerEvents: 'box-none', ...(left ? { left: 16 } : { right: 16 }) },
-        style,
-      ]}
+      triggerTestID="feedback-trigger"
+      closeIcon={null}
     >
-      <MotiView
-        animate={{
-          width: open ? 300 : 48,
-          height: open ? 230 : 48,
-          borderRadius: open ? 20 : 40,
-        }}
-        transition={morphTransition}
-        className={cn(
-          'overflow-hidden border border-border',
-          surfaceBackground(elevation),
-          elevatedShadow(elevation),
-          'absolute bottom-0',
-        )}
-        style={{ ...(left ? { left: 0 } : { right: 0 }) }}
-      >
-        {open ? (
-          <MotiView
-            from={reduce ? { opacity: 1 } : { opacity: 0, translateY: 6 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={
-              reduce
-                ? { type: 'timing' as const, duration: 0 }
-                : { type: 'timing' as const, duration: 200, delay: 150, easing: EASE_OUT }
-            }
-            className="w-[300px] p-2"
-          >
-            <AnimatePresence exitBeforeEnter={true}>
-              {renderFeedbackContent({
-                status,
-                reduce,
-                inputRef,
-                title,
-                placeholder,
-                message,
-                busy,
-                setMessage,
-                close,
-                submit,
-                closeIcon,
-                errorIcon,
-              })}
-            </AnimatePresence>
-          </MotiView>
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={accessibilityLabel ?? title}
-            testID="feedback-trigger"
-            onPress={handleOpen}
-            className="h-12 w-12"
-          >
-            <View className="flex-1 items-center justify-center">
-              {icon ?? <ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
-            </View>
-          </Pressable>
-        )}
-      </MotiView>
-    </View>
+      <AnimatePresence exitBeforeEnter={true}>
+        {renderFeedbackContent({
+          status,
+          reduce,
+          inputRef,
+          title,
+          placeholder,
+          message,
+          busy,
+          setMessage,
+          close,
+          submit,
+          closeIcon,
+          errorIcon,
+        })}
+      </AnimatePresence>
+    </MorphingFAB>
   );
 }
 

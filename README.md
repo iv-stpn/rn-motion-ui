@@ -35,7 +35,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 > `node packages/ui/scripts/check-readme.mjs --fix`, which CI re-runs on every push.
 
 <!-- generated:components -->
-`action-feedback-modal` · `action-row` · `action-row-group` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `button-group` · `card` · `checkbox` · `checkbox-card` · `close-button` · `command-palette` · `cylinder-carousel` · `dock` · `drag-behavior` · `drag-manager` · `drag-store` · `drag-types` · `draggable` · `dragzone` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-widget` · `file-icon` · `file-system` · `full-sheet` · `glossy-button` · `hold-context-menu` · `hold-draggable` · `holdable` · `hover-menu` · `icon` · `icon-button` · `input` · `item-row` · `item-row-group` · `loader` · `marquee` · `menu` · `menu-item` · `morphing-modal` · `multi-drag` · `multi-drag-manager` · `multi-drag-scope` · `multi-draggable` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `radio` · `radio-card` · `range-slider` · `reorderable-list` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `sortable-list` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `toggle-group` · `use-drag-behavior` · `use-drag-store` · `use-draggable` · `wheel-picker`
+`action-feedback-modal` · `action-row` · `action-row-group` · `action-swap` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bloom-menu` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `button-group` · `card` · `checkbox` · `checkbox-card` · `close-button` · `command-palette` · `cylinder-carousel` · `dock` · `drag-behavior` · `drag-manager` · `drag-store` · `drag-types` · `draggable` · `dragzone` · `drawer` · `dynamic-island` · `elevated-button` · `feedback-fab` · `feedback-widget` · `file-icon` · `file-system` · `full-sheet` · `glossy-button` · `hold-context-menu` · `hold-draggable` · `holdable` · `hover-menu` · `icon` · `icon-button` · `input` · `item-row` · `item-row-group` · `loader` · `marquee` · `menu` · `menu-item` · `morphing-fab` · `morphing-modal` · `multi-drag` · `multi-drag-manager` · `multi-drag-scope` · `multi-draggable` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `radio` · `radio-card` · `range-slider` · `reorderable-list` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `sortable-list` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `toggle-group` · `use-drag-behavior` · `use-drag-store` · `use-draggable` · `wheel-picker`
 <!-- /generated:components -->
 
 <details>
@@ -177,7 +177,7 @@ Reach for them instead of a hardcoded `#fff` / `#000`. For anything that should 
 
 ### Elevation prop
 
-Surface components (`Card`, `Popover`, `AdaptiveDropdown`, `HoverMenu`, `MorphingModal`, `ActionFeedbackModal`, `AdaptiveModal`, `FeedbackWidget`) accept an `elevation` prop (`1`–`8`). It drives the background, drop shadow, and — in dark mode — the inset rim highlight together, keeping fill and rim calibrated at the same level.
+Surface components (`Card`, `Popover`, `AdaptiveDropdown`, `HoverMenu`, `MorphingModal`, `ActionFeedbackModal`, `AdaptiveModal`, `MorphingFAB`) accept an `elevation` prop (`1`–`8`). It drives the background, drop shadow, and — in dark mode — the inset rim highlight together, keeping fill and rim calibrated at the same level.
 
 ### Runtime color access (native / Reanimated)
 
@@ -219,7 +219,7 @@ bun run test          # Vitest + Playwright interaction tests (real Chromium)
 ```
 
 <!-- generated:counts -->
-73 story files, 269 stories.
+74 story files, 270 stories.
 <!-- /generated:counts -->
 
 Every story runs as a vitest test; those with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`. `packages/ui` also carries a jsdom unit suite over the pure layers (Moti worklets, `lib/`, and the OTP edit logic).

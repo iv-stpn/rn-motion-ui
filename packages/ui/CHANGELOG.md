@@ -1,5 +1,23 @@
 # rn-motion-ui
 
+## 5.3.0
+
+### Minor Changes
+
+- 43f1e60: **Rename `FeedbackWidget` → `MorphingFAB`; feedback flow becomes `FeedbackFAB`**
+
+  `FeedbackWidget` is renamed to `MorphingFAB` — a generic floating action button that morphs into a rounded pane. It takes arbitrary pane content (plain children or a render-prop receiving `{ close }`), a configurable trigger `icon` (defaults to a plus), controlled/uncontrolled `open` state, and `expandedWidth`/`expandedHeight`. The former feedback form flow is rebuilt on top of it as `FeedbackFAB` (same API, same states, same testIDs).
+
+  - New subpaths: `rn-motion-ui/morphing-fab`, `rn-motion-ui/feedback-fab`.
+  - The `rn-motion-ui/feedback-widget` subpath is kept as a deprecated alias re-exporting `FeedbackFAB` as `FeedbackWidget` — no breaking change.
+  - New story: `+` FAB morphing into a 3-action menu (Display/MorphingFAB).
+
+- 699cb8a: **Button / IconButton: re-add `outline` variant; ThemedIcon token for it; OtpInput theme text styles typed as `TextStyle`**
+
+  - `Button` and `IconButton` gain an `outline` variant (`border border-border bg-transparent`, label `text-foreground`) — a bordered ghost, distinct from the borderless `ghost`. Previously pruned in the variant-consolidation refactor; consumers (offkeep) need it back.
+  - `ThemedIcon` maps `outline` to the `foreground` token so icons inside outline buttons resolve a legible stroke colour.
+  - `OtpInput`'s `OtpInputTheme.pinCodeTextStyle` / `placeholderTextStyle` are now `TextStyle` instead of `ViewStyle` — they are applied to `Text`, so the old typing rejected legitimate font styles (letterSpacing, fontSize, fontWeight).
+
 ## 5.2.0
 
 ### Minor Changes

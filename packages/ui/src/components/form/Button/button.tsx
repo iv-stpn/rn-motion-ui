@@ -16,6 +16,7 @@ export type ButtonVariant =
   | 'primary'
   | 'secondary'
   | 'ghost'
+  | 'outline'
   | 'danger'
   | 'special'
   | 'inverse'
@@ -35,6 +36,7 @@ const container = cva('flex-row items-center justify-center', {
       primary: SURFACE_CLASSNAME[3],
       secondary: 'border border-border bg-foreground',
       ghost: 'bg-transparent',
+      outline: 'border border-border bg-transparent',
       danger: 'bg-danger shadow-elevated-3',
       special: 'bg-special shadow-elevated-3',
       // `inverse` is deliberately not `primary`: `primary` is the consumer's
@@ -56,6 +58,7 @@ export const label = cva('', {
       primary: 'text-foreground',
       secondary: 'text-surface-1',
       ghost: 'text-foreground',
+      outline: 'text-foreground',
       danger: 'text-white',
       special: 'text-special-foreground',
       // The page colour, so the label reads as a hole punched through the slab

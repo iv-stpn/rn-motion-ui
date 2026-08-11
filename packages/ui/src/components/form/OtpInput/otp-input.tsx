@@ -8,6 +8,7 @@ import {
   TextInput,
   type TextInputProps,
   type TextProps,
+  type TextStyle,
   View,
   type ViewStyle,
 } from 'react-native';
@@ -232,9 +233,9 @@ export type OtpInputTheme = {
   filledPinCodeContainerStyle?: ViewStyle;
   focusedPinCodeContainerStyle?: ViewStyle;
   disabledPinCodeContainerStyle?: ViewStyle;
-  pinCodeTextStyle?: ViewStyle;
+  pinCodeTextStyle?: TextStyle;
   focusStickStyle?: ViewStyle;
-  placeholderTextStyle?: ViewStyle;
+  placeholderTextStyle?: TextStyle;
 };
 
 export type OtpInputRef = { clear: () => void; focus: () => void; setValue: (value: string) => void; blur: () => void };

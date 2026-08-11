@@ -19,6 +19,7 @@ const VARIANT_TOKEN: Record<IconVariant, ThemeToken> = {
   primary: 'primary-foreground',
   secondary: 'foreground',
   ghost: 'foreground',
+  outline: 'foreground',
   danger: 'danger-foreground',
   special: 'special-foreground',
   inverse: 'surface-1',

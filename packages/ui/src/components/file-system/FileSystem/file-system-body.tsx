@@ -26,6 +26,7 @@ import {
   useFileSystemEntriesActions,
   useFileSystemFilters,
   useFileSystemNavigation,
+  useFileSystemNavigationActions,
   useFileSystemSearch,
   useFileSystemSelection,
   useFileSystemSelectionActions,
@@ -126,7 +127,7 @@ function FileSystemBodyPlaceholder({ children }: PlaceholderProps) {
  * `onSortColumnClick` — so the views stay unaware of how the state is shaped.
  */
 function FileSystemBodyContent() {
-  const { currentPath, currentFolderName: folderName, loadingFolders, isLoading } = useFileSystemNavigation();
+  const { currentPath, currentFolderName: folderName, errorFolders, loadingFolders, isLoading } = useFileSystemNavigation();
   const { entries, sortedIndex, sort, view } = useFileSystemEntries();
   const { isSearching, searchInput: searchValue, searchQuery } = useFileSystemSearch();
   const { hasActiveFilters, fileFilter } = useFileSystemFilters();
@@ -151,12 +152,15 @@ function FileSystemBodyContent() {
     testID,
   } = useFileSystemConsumer();
   const { openEntry, selectAndPrefetch, selectMarquee } = useFileSystemSelectionActions();
+  const { ensureChildren } = useFileSystemNavigationActions();
   const { toggleSortColumn } = useFileSystemEntriesActions();
 
   const viewProps: FileSystemViewProps = {
     currentPath,
     draggable,
+    ensureChildren,
     entries,
+    errorFolders,
     fileFilter,
     folderName,
     getBackgroundContextMenuActions,
@@ -227,7 +231,14 @@ type BodyDropSurfaceProps = { external: boolean };
 
 function BodyDropSurface({ external }: BodyDropSurfaceProps) {
   return (
-    <View className="pointer-events-none absolute inset-0 items-center justify-center border border-foreground/20 border-dashed bg-foreground/[0.03]">
+    <View
+      className={cn(
+        'pointer-events-none absolute inset-0 z-[3]',
+        external
+          ? 'items-center justify-center border border-foreground/20 border-dashed bg-foreground/[0.03]'
+          : 'rounded-lg border-2 border-info',
+      )}
+    >
       {external ? (
         <Text className="font-medium text-foreground/50 text-sm" selectable={false}>
           {EXTERNAL_DROP_LABEL}
@@ -307,6 +318,13 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
   // The zone is this node rather than a child of it: it renders a plain `View` and
   // takes the same className, so the file area's box is unchanged and the drop
   // target is exactly the area a consumer sees.
+  //
+  // Uses `<FileSystemDropzone portal>` so the zone accepts every in‑library
+  // file‑system drag — even one where every item already lives here. That lets
+  // the origin folder "register" the drag and paint its outline, the same way
+  // an expanded subfolder's scope zone does. The drop handler still runs
+  // `movableFileSystemSources`, so a release that would move nothing is a
+  // silent no‑op.
   return (
     <FileSystemDropzone
       className={cn('relative min-h-0 flex-1 select-none', className)}
@@ -314,6 +332,7 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
       disabled={!draggable}
       onExternalDrop={onExternalDrop}
       onMove={onMove}
+      portal={true}
       priority={BODY_ZONE_PRIORITY}
       testID={bodyTestID}
     >

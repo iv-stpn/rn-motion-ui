@@ -12,7 +12,7 @@
 // context: every view already receives `onMove` and `onExternalDrop` as props, so
 // a context would be a second path to values that are already in hand.
 
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { useCallback } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { View } from 'react-native';
@@ -22,6 +22,7 @@ import type {
   DragTransfer,
   DragzoneAcceptEvent,
   DragzoneDropEvent,
+  DragzoneHandle,
   DragzoneRenderState,
 } from '../../gestures/drag.types';
 import type { FileSystemExternalDropEvent, FileSystemMoveEvent } from './file-system.types';
@@ -53,6 +54,15 @@ export type FileSystemDropzoneProps = {
   destination: string;
   /** Refuses everything — a file row, or a view with dragging turned off. */
   disabled?: boolean;
+  /**
+   * When true, accepts every in‑library file‑system drag regardless of
+   * `canDropFileSystemItem`. The drop handler still only moves items that can
+   * actually change location. Use for a background zone that should always
+   * "register" a drag — the origin folder outline, or a column pane fallback.
+   */
+  portal?: boolean;
+  /** Called after a successful move drop — the list view uses it to lazy-load children. */
+  onDropCompleted?: (destination: string) => void;
   onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
   onMove?: (event: FileSystemMoveEvent) => void;
   /**
@@ -60,6 +70,17 @@ export type FileSystemDropzoneProps = {
    * negative for a background zone that should only win where no entry is.
    */
   priority?: number;
+  /** Forwarded to the underlying `<Dragzone>` — see `DragzoneHandle`. */
+  ref?: Ref<DragzoneHandle>;
+  /** When true, the zone is never measured and always passes the spatial hit test. */
+  skipRectMeasure?: boolean;
+  /**
+   * Optional additional predicate AND-ed with the standard file-system checks.
+   * Used by the list view for arithmetic row‑index verification when
+   * `skipRectMeasure` is on — the stored `measureInWindow` rect goes stale
+   * after a folder expand shifts rows in a FlatList without firing `onLayout`.
+   */
+  additionalAccepts?: (event: DragzoneAcceptEvent) => boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -77,18 +98,23 @@ export type FileSystemDropzoneProps = {
  * the page's own drop handling.
  */
 export function FileSystemDropzone({
+  additionalAccepts,
   children,
   className,
   destination,
   disabled = false,
+  onDropCompleted,
   onExternalDrop,
   onMove,
+  portal = false,
   priority,
+  ref,
+  skipRectMeasure = false,
   style,
   testID,
 }: FileSystemDropzoneProps) {
   const accepts = useCallback(
-    ({ drag, external, transfer }: DragzoneAcceptEvent) => {
+    ({ drag, external, point, transfer, zoneId }: DragzoneAcceptEvent) => {
       if (external) return onExternalDrop !== undefined;
       // A `<Draggable>` from elsewhere on the page — a palette chip, an upload
       // tray — is an in-library drag the store knows all about, and still a
@@ -96,10 +122,23 @@ export function FileSystemDropzone({
       // move. It goes to `onExternalDrop` for the same reason an OS file does,
       // which is what `onExternalDrop`'s own docs promise ("a custom element on
       // the page that sets drag data").
-      if (isForeignPayload(drag, transfer)) return onExternalDrop !== undefined;
+      if (isForeignPayload(drag, transfer)) {
+        // An additional predicate — used by the list view for arithmetic row‑index
+        // verification.  Foreign payloads need it too: with `skipRectMeasure`
+        // every row passes the spatial hit test, so without this the last‑registered
+        // row wins the tie‑break regardless of pointer position.
+        if (additionalAccepts && !additionalAccepts({ drag, external, point, transfer, zoneId })) return false;
+        return onExternalDrop !== undefined;
+      }
+      if (additionalAccepts && !additionalAccepts({ drag, external, point, transfer, zoneId })) return false;
+      // A portal zone (body background, column pane) accepts every genuine
+      // file‑system drag so the origin folder always "registers" the drag and
+      // paints its outline. The drop handler still only moves items that can
+      // actually change location.
+      if (portal) return true;
       return acceptsFileSystemDrop(readFileSystemDragItems(transfer), destination);
     },
-    [destination, onExternalDrop],
+    [additionalAccepts, destination, onExternalDrop, portal],
   );
 
   const handleDrop = useCallback(
@@ -117,9 +156,12 @@ export function FileSystemDropzone({
       // Re-resolved at the release rather than trusted from the last move: the
       // entries are re-read off the transfer, so a folder that became a child of
       // one of them mid-drag refuses here too.
-      if (sources.length > 0) onMove?.({ destination, sources });
+      if (sources.length > 0) {
+        onMove?.({ destination, sources });
+        onDropCompleted?.(destination);
+      }
     },
-    [destination, onExternalDrop, onMove],
+    [destination, onDropCompleted, onExternalDrop, onMove],
   );
 
   return (
@@ -131,6 +173,8 @@ export function FileSystemDropzone({
       dropEffect="move"
       onDrop={handleDrop}
       priority={priority}
+      ref={ref}
+      skipRectMeasure={skipRectMeasure}
       style={style}
       testID={testID}
     >

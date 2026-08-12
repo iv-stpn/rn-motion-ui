@@ -507,9 +507,25 @@ export function canZoneAcceptExternal({ point, transfer, zoneId }: ExternalAccep
  * Re-measure every zone. A `<DragManager>` calls this on its own layout and at lift
  * time; reach for it directly after moving zones with no layout pass of their own —
  * a virtualised list recycling rows, say.
+ *
+ * Re-resolves the current target afterwards: measuring corrects stale rects, but a
+ * stationary cursor produces no `moveDrag` to pick up the change — the classic case
+ * is a folder that expanded under a held-still pointer (spring-load), shifting every
+ * zone below it. Same re-resolution `registerDragzone` runs for a zone mounting
+ * mid-drag.
  */
 export function refreshDragzones(): Promise<void> {
-  return measureZones();
+  return measureZones().then(() => {
+    if (session === null) return;
+    const resolved = targetAt(session.point);
+    if (resolved !== null && resolved.id !== session.overZoneId) {
+      reportZoneMove({ drag: session.drag, point: session.point, previousId: session.overZoneId, target: resolved });
+    }
+    // The eligible set was computed against stale rects; recompute it and publish
+    // the fresh snapshot (reportZoneMove already published if the target moved).
+    recomputeEligible();
+    publish();
+  });
 }
 
 /** Test seam: drop every registration and any drag in flight. */

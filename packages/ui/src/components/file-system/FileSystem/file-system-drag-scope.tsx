@@ -20,7 +20,7 @@ import { View } from 'react-native';
 import { MultiDragManager } from '../../gestures/DragManager/multi-drag-manager';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
-import { useFileSystemEntries, useFileSystemSelection } from './file-system-context';
+import { useFileSystemEntries, useFileSystemSelection, useFileSystemSelectionActions } from './file-system-context';
 import { type FileSystemDragItem, fileSystemDragData, fileSystemDragItems, fileSystemDragLabel } from './file-system-drag';
 
 type FileSystemGroupGhostProps = { items: readonly FileSystemDragItem[] };
@@ -101,6 +101,7 @@ export type FileSystemDragScopeProps = { children: ReactNode };
 export function FileSystemDragScope({ children }: FileSystemDragScopeProps) {
   const { index } = useFileSystemEntries();
   const { selectedPaths } = useFileSystemSelection();
+  const { clearSelection } = useFileSystemSelectionActions();
 
   // Resolved against the index at lift time rather than carried on each row: a
   // group's payload has to describe entries whose own components were never asked
@@ -115,10 +116,20 @@ export function FileSystemDragScope({ children }: FileSystemDragScopeProps) {
     [index],
   );
 
+  // When a drag starts from an unselected item, clear any prior selection so the
+  // drag doesn't carry stale selected items that the user didn't intend to move.
+  const handleDragStart = useCallback(
+    ({ drag }: import('../../gestures/drag.types').DragManagerEvent) => {
+      if (!selectedPaths.has(drag.source.id)) clearSelection();
+    },
+    [clearSelection, selectedPaths],
+  );
+
   return (
     <MultiDragManager
       className="min-h-0 flex-1"
       getGroupData={getGroupData}
+      onDragStart={handleDragStart}
       renderPreview={renderPreview}
       selectedIds={selectedPaths}
     >

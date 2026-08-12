@@ -39,6 +39,14 @@ export type FileSystemViewProps = {
   fileFilter: ((file: FileEntry) => boolean) | null;
   index: FileSystemIndex;
   loadingFolders: Set<string>;
+  /** Folders whose `loadChildren` call rejected or timed out. */
+  errorFolders: Set<string>;
+  /**
+   * Called by a view when a lazy folder is expanded, so the store can resolve
+   * its children. Separate from `onSelect` because expanding a folder should not
+   * also select it.
+   */
+  ensureChildren?: (folderPath: string) => void;
   onOpen: (entry: FileSystemEntry) => void;
   onSelect: (
     entry: FileSystemEntry | null,

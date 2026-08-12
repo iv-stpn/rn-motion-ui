@@ -21,7 +21,8 @@ import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
-import type { DragzoneRenderState } from '../../gestures/drag.types';
+import type { DragzoneAcceptEvent, DragzoneRenderState } from '../../gestures/drag.types';
+import { refreshDragzones } from '../../gestures/drag-store';
 import { useActiveDrag } from '../../gestures/use-drag-store';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
@@ -179,9 +180,72 @@ function RowChevron({ isExpanded, isSelected, level, name, onToggle }: RowChevro
   );
 }
 
+/** How long a drag must hover over a folder before it uncollapses (ms). */
+const SPRING_LOAD_DELAY_MS = 800;
+
+/**
+ * Invisible side-effect component: expands a collapsed folder when a drag
+ * hovers over its dropzone for `SPRING_LOAD_DELAY_MS`. For a lazy-loaded
+ * folder (`hasChildren`) it also triggers `ensureChildren` so the children
+ * arrive while the drag is still held.
+ *
+ * The folder stays expanded after the drag leaves — it was a deliberate
+ * action, like clicking the chevron.
+ */
+function SpringLoadEffect({
+  ensureChildren,
+  folderPath,
+  hasChildren,
+  isExpanded,
+  isOver,
+  onToggleExpanded,
+}: {
+  ensureChildren?: (folderPath: string) => void;
+  folderPath: string;
+  hasChildren: boolean;
+  isExpanded: boolean;
+  isOver: boolean;
+  onToggleExpanded: (path: string) => void;
+}) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // Only start the timer when the drag enters a collapsed folder.
+    if (isOver && !isExpanded) {
+      timerRef.current = setTimeout(() => {
+        // For a lazy-loaded folder, request children first so they arrive
+        // while the drag is still held over the target.
+        if (hasChildren) ensureChildren?.(folderPath);
+        onToggleExpanded(folderPath);
+      }, SPRING_LOAD_DELAY_MS);
+    }
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isOver, isExpanded, hasChildren, folderPath, onToggleExpanded, ensureChildren]);
+
+  // No collapse on leave — the folder stays expanded so the user can see
+  // where items landed.
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
+
+  return null;
+}
+
 type ListRowProps = {
+  /** Arithmetic row-index check — see `createRowIndexCheck` in the parent. */
+  additionalAccepts?: (event: DragzoneAcceptEvent) => boolean;
   childCount: number | undefined;
   draggable: boolean;
+  ensureChildren?: (folderPath: string) => void;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
@@ -194,6 +258,10 @@ type ListRowProps = {
   renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   row: FileSystemRow;
   showDate: boolean;
+  /** When true, the Dragzone skips `measureInWindow` — see `createRowIndexCheck`. */
+  skipRectMeasure?: boolean;
+  /** When true, the folder row renders without its own dropzone (an overlay handles it instead). */
+  suppressDropzone?: boolean;
   /** Already resolved for this entry by the view — see `fileSystemEntryTestID`. */
   testID?: string;
 };
@@ -208,6 +276,7 @@ type ListRowProps = {
 function ListRow({
   childCount,
   draggable,
+  ensureChildren,
   getContextMenuActions,
   isSelected,
   onActivate,
@@ -219,6 +288,7 @@ function ListRow({
   renderEntryIcon,
   row,
   showDate,
+  suppressDropzone,
   testID,
 }: ListRowProps) {
   const { entry, isExpandable, isExpanded, level } = row;
@@ -236,9 +306,11 @@ function ListRow({
 
   const isLifting = useIsLifting(entry.path);
 
-  const renderBody = (isOver: boolean) => {
-    // A selected row muted during drag; a drop target lit like a selection.
-    const isActive = (isSelected && !isLifting) || isOver;
+  const renderBody = () => {
+    // Only a selection lights the row; the drop target gets an info outline
+    // instead, so the parent folder row never highlights when the pointer is
+    // over a subfolder.
+    const isActive = isSelected && !isLifting;
     const textClassName = isActive ? 'text-white' : 'text-foreground';
     const metaClassName = isActive ? 'text-white' : 'text-muted-foreground';
 
@@ -288,14 +360,34 @@ function ListRow({
     );
   };
 
-  return entry.kind === 'folder' ? (
-    <FileSystemDropzone destination={entry.path} disabled={!draggable} onExternalDrop={onExternalDrop} onMove={onMove}>
-      {/* The outline is drawn over the row, not around it: a border in the row's
-          own box would resize it and shift every row below by a pixel. */}
-      {({ isOver }: DragzoneRenderState) => renderBody(isOver)}
+  // A folder row renders its own dropzone only when it is not also covered by
+  // an expanded-ancestor overlay — otherwise the overlay handles everything and
+  // a second zone here would conflict on tie-breaking.
+  if (entry.kind !== 'folder' || suppressDropzone) return <View style={{ height: FS_ROW_HEIGHT }}>{renderBody()}</View>;
+
+  return (
+    <FileSystemDropzone
+      destination={entry.path}
+      disabled={!draggable}
+      onDropCompleted={ensureChildren}
+      onExternalDrop={onExternalDrop}
+      onMove={onMove}
+    >
+      {({ isOver }: DragzoneRenderState) => (
+        <>
+          {renderBody()}
+          {isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null}
+          <SpringLoadEffect
+            ensureChildren={ensureChildren}
+            folderPath={entry.path}
+            hasChildren={entry.hasChildren === true}
+            isExpanded={isExpanded}
+            isOver={isOver}
+            onToggleExpanded={onToggleExpanded}
+          />
+        </>
+      )}
     </FileSystemDropzone>
-  ) : (
-    renderBody(false)
   );
 }
 
@@ -303,6 +395,7 @@ function ListRow({
 export function FileSystemListView({
   currentPath,
   draggable = false,
+  ensureChildren,
   getBackgroundContextMenuActions,
   getContextMenuActions,
   index,
@@ -323,20 +416,69 @@ export function FileSystemListView({
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set<string>());
   /** `null` until the first layout pass — distinct from a measured zero. */
   const [width, setWidth] = useState<number | null>(null);
+  /** Height of the list body (the pressable below the header), used to clamp
+   * overlay dropzones so a folder's outline never spills past the container. */
+  const [containerHeight, setContainerHeight] = useState<number | null>(null);
 
   const flatListRef = useRef<FlatList<FileSystemRow> | null>(null);
   const containerRef = useRef<View | null>(null);
   const scrollOffsetRef = useRef(0);
+  const [scrollOffset, setScrollOffset] = useState(0);
   /** The drawn rows, readable from callbacks that outlive the render that made them. */
   const rowsRef = useRef<FileSystemRow[]>([]);
 
   const rows = useMemo(() => flattenFileSystemRows({ currentPath, expanded, index }), [currentPath, expanded, index]);
+
+  const activeDrag = useActiveDrag();
+  const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
+
+  // During an in-library drag the enter animation is suppressed: spring-load
+  // inserts children that otherwise animate 0 → full height over ~280ms, during
+  // which the rows below have not yet shifted. `measureInWindow` then reads
+  // stale rects and a stationary cursor resolves to the wrong (pre-expansion)
+  // target. External drags never run through the store's rect hit-testing — the
+  // browser targets the DOM element directly — so they keep the animation.
   const { augmentedEntries: augmentedRows, onExitComplete } = useFileSystemRowAnimation(
     rows,
     currentPath,
     (row) => row.entry.path,
+    activeDrag === null,
   );
   rowsRef.current = augmentedRows;
+
+  // Overlay dropzones for expanded folders during an active drag. Each overlay
+  // is a sibling of the FlatList (not inside it), positioned absolutely to escape
+  // the FlatList's scroll‑container clipping. Rendered only while a drag is in
+  // flight so clicks pass through to the rows during normal use.
+  const overlayZones = useMemo(() => {
+    if (!activeDrag) return [];
+    const zones: Array<{ height: number; path: string; top: number }> = [];
+    for (let i = 0; i < augmentedRows.length; i++) {
+      const row = augmentedRows[i];
+      if (row && row.entry.kind === 'folder' && row.isExpanded) {
+        const folderLevel = row.level;
+        let end = i;
+        while (end + 1 < augmentedRows.length) {
+          const next = augmentedRows[end + 1];
+          if (!next || next.level <= folderLevel) break;
+          end += 1;
+        }
+        const childCount = end - i;
+        if (childCount > 0)
+          zones.push({
+            height: (1 + childCount) * FS_ROW_HEIGHT,
+            path: row.entry.path,
+            top: LIST_PADDING_TOP + i * FS_ROW_HEIGHT,
+          });
+      }
+    }
+    return zones;
+  }, [augmentedRows, activeDrag]);
+
+  // Paths of folders that have an overlay — their own row dropzone is suppressed
+  // so the overlay wins the tie-break by being the only zone in the area.
+  const overlayFolderPaths = useMemo(() => new Set(overlayZones.map((z) => z.path)), [overlayZones]);
+
   // A Shift-range runs through the rows as they are drawn — an expanded folder's
   // children included, since they sit between their parent and its next sibling.
   const orderedPaths = useMemo(() => augmentedRows.map((row) => row.entry.path), [augmentedRows]);
@@ -347,14 +489,15 @@ export function FileSystemListView({
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width), []);
+  const handleContainerLayout = useCallback(
+    (event: LayoutChangeEvent) => setContainerHeight(event.nativeEvent.layout.height),
+    [],
+  );
   const toggleExpanded = useCallback((path: string) => setExpanded((previous) => toggleExpandedPath(previous, path)), []);
 
   // A drag near the top or bottom edge scrolls the list, so a folder below the
   // fold is reachable without releasing. Runs for external drags too.
   useFileSystemDragScroll({ containerRef, enabled: draggable, flatListRef, scrollOffsetRef });
-
-  const activeDrag = useActiveDrag();
-  const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
 
   const selectedIndexesRef = useRef<ReadonlySet<number>>(new Set());
   selectedIndexesRef.current = useMemo(() => {
@@ -400,6 +543,23 @@ export function FileSystemListView({
     marquee.refresh();
   }, [hover, marquee, selectedPaths]);
 
+  // When the expanded set changes — e.g. a folder uncollapsed by spring-load —
+  // rows below it shift down but their dropzones' cached `measureInWindow` rects
+  // do not update, because FlatList does not fire `onLayout` on items that are
+  // merely repositioned.  A stale rect causes every collision check below the
+  // expansion to be off by `(new child count) × row height`.  Remeasuring all
+  // zones fixes the offset.
+  //
+  // Keyed on `expanded` only — not on `overlayZones`/`augmentedRows`, which change
+  // identity every render and would re-fire this effect (and its `publish()`) in a
+  // loop. Child effects run before parent effects, so the newly mounted overlay
+  // zones have already registered by the time this remeasure runs.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: expanded is the trigger, not read in the body
+  // biome-ignore lint/plugin: remeasuring after layout shift is the sole purpose
+  useEffect(() => {
+    refreshDragzones().catch(() => undefined);
+  }, [expanded]);
+
   const { onLongPress: bgLongPress, menuNode: bgMenuNode } = useBackgroundContextMenu(
     containerRef,
     getBackgroundContextMenuActions,
@@ -411,6 +571,8 @@ export function FileSystemListView({
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
       scrollOffsetRef.current = offset;
+      // Kept in React state so overlay dropzones reposition with the scroll.
+      setScrollOffset(offset);
       // The pointer has not moved but the rows under it have, so the highlight has
       // to re-resolve — including while a drag auto-scrolls the list.
       hover.refresh();
@@ -435,6 +597,7 @@ export function FileSystemListView({
           <ListRow
             childCount={index.children.get(item.entry.path)?.length}
             draggable={draggable}
+            ensureChildren={ensureChildren}
             getContextMenuActions={getContextMenuActions}
             isSelected={selectedPaths.has(item.entry.path)}
             onActivate={activate}
@@ -446,6 +609,7 @@ export function FileSystemListView({
             renderEntryIcon={renderEntryIcon}
             row={item}
             showDate={showDate}
+            suppressDropzone={overlayFolderPaths.has(item.entry.path)}
             testID={fileSystemEntryTestID(testID, item.entry.path)}
           />
         </FileSystemAnimatedRow>
@@ -454,12 +618,14 @@ export function FileSystemListView({
     [
       activate,
       draggable,
+      ensureChildren,
       getContextMenuActions,
       index,
       onContextMenuAction,
       onExitComplete,
       onExternalDrop,
       onMove,
+      overlayFolderPaths,
       renderEntryIcon,
       selectedPaths,
       selectLongPress,
@@ -501,6 +667,7 @@ export function FileSystemListView({
         ref={containerRef}
         className="relative min-h-0 flex-1 select-none"
         testID={FS_DRAG_CONTAINER_TEST_ID.list}
+        onLayout={handleContainerLayout}
         onPress={handleBackgroundPress}
         onLongPress={bgLongPress}
       >
@@ -510,6 +677,39 @@ export function FileSystemListView({
             folder that is open, and that fallback is mounted once in file-system-body
             so all four views answer an empty-space drop the same way. */}
         {list}
+        {/* Overlay dropzones for expanded folders during a drag. Rendered as FlatList
+            siblings (not inside it) so the zones escape the scroll container's clipping.
+            Positioned absolutely relative to the list container; scroll offset keeps
+            them pinned to the folder content. Clipped to the container's bounds so a
+            folder near the fold never paints or accepts a drop outside the list body. */}
+        {overlayZones.map((zone) => {
+          const rawTop = zone.top - scrollOffset;
+          const top = Math.max(rawTop, 0);
+          const bottom = Math.min(rawTop + zone.height, containerHeight ?? Number.POSITIVE_INFINITY);
+          const height = Math.max(bottom - top, 0);
+          if (height <= 0) return null;
+          return (
+            <FileSystemDropzone
+              destination={zone.path}
+              disabled={!draggable}
+              key={zone.path}
+              onDropCompleted={ensureChildren}
+              onExternalDrop={onExternalDrop}
+              onMove={onMove}
+              style={{
+                height,
+                left: 0,
+                position: 'absolute',
+                right: 0,
+                top,
+              }}
+            >
+              {({ isOver }: DragzoneRenderState) =>
+                isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null
+              }
+            </FileSystemDropzone>
+          );
+        })}
         <FileSystemMarqueeBox controller={marquee} />
         {bgMenuNode}
       </Pressable>

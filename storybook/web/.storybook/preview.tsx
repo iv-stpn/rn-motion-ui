@@ -44,7 +44,7 @@ const ThemeDecorator: Decorator = (Story) => {
         <View
           // @ts-expect-error - the dir attribute does not exist on RN View, but RNW forwards it to the DOM and to its own locale context
           dir={direction}
-          className={cn('flex-1 p-6', isDark ? 'bg-black' : 'bg-white')}
+          className={cn('flex-1 p-6', isDark ? 'bg-black' : 'bg-[#f6f6f6]')}
         >
           <Story />
         </View>

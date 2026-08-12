@@ -2,7 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { type ReactNode, useCallback } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { cn } from '../../../lib/cn';
-import { H_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
+import { H_INTERACTIVE, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
 
 // ── types ──────────────────────────────────────────────────────────────────────
 
@@ -38,7 +38,7 @@ const SHAPE_RADIUS: Record<ToggleGroupShape, string> = { rounded: 'rounded-inter
 
 /** Selection-aware text class — selected items get a subtle foreground lift above the translucent overlay. */
 function itemTextClass(size: ToggleGroupSize, selected: boolean): string {
-  return cn('font-medium', TEXT_INTERACTIVE[size], selected ? 'text-foreground' : 'text-muted-foreground');
+  return cn('font-medium', TEXT_INTERACTIVE[size], selected ? 'text-primary' : 'text-muted-foreground');
 }
 
 // ── exports ────────────────────────────────────────────────────────────────────
@@ -135,9 +135,10 @@ export function ToggleGroup({
 
           const itemClass = cn(
             H_INTERACTIVE[size],
-            'flex-1 items-center justify-center px-3',
+            'flex-1 items-center justify-center',
+            PX_INTERACTIVE[size],
             !isHorizontal && 'py-3',
-            selected && 'bg-surface-selected',
+            selected ? 'bg-primary/25' : 'bg-muted',
             total > 1 && !isLast && !suppressDivider && (isHorizontal ? 'border-r border-border' : 'border-b border-border'),
           );
 
@@ -174,11 +175,12 @@ export function ToggleGroup({
             aria-checked={selected}
             onPress={getOnValueChangeHandler(item.value)}
             className={cn(
-              H_INTERACTIVE[size],
-              'items-center justify-center border border-border px-3',
               radius,
+              H_INTERACTIVE[size],
+              PX_INTERACTIVE[size],
+              selected ? 'bg-primary/25' : 'bg-muted',
+              'items-center justify-center',
               !isHorizontal && 'py-3',
-              selected && 'bg-surface-selected',
             )}
           >
             <Text className={itemTextClass(size, selected)}>{item.label}</Text>

@@ -273,9 +273,9 @@
       "default": "./src/components/file-system/FileSystem/file-system.tsx"
     },
     "./file-icon": {
-      "source": "./src/components/file-system/FileSystem/FileIcon/file-icons.tsx",
-      "types": "./src/components/file-system/FileSystem/FileIcon/file-icons.tsx",
-      "default": "./src/components/file-system/FileSystem/FileIcon/file-icons.tsx"
+      "source": "./src/components/file-system/FileIcon/file-icons.tsx",
+      "types": "./src/components/file-system/FileIcon/file-icons.tsx",
+      "default": "./src/components/file-system/FileIcon/file-icons.tsx"
     },
     "./full-sheet": {
       "source": "./src/components/menus/FullSheet/full-sheet.tsx",

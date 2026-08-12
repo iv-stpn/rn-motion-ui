@@ -12,7 +12,7 @@ import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
-import { FileSystemFolderGlyph } from './FileIcon/file-icons';
+import { FileSystemFolderGlyph } from '../FileIcon/file-icons';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemFileItem, FileSystemItem } from './file-system.types';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
 import type { FileSystemSelectionMode } from './file-system-selection';

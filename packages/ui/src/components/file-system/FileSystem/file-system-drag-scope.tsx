@@ -20,7 +20,7 @@ import { View } from 'react-native';
 import { readMultiDragIds } from '../../gestures/DragManager/multi-drag';
 import { MultiDragManager } from '../../gestures/DragManager/multi-drag-manager';
 import { Text } from '../../typography/Text/text';
-import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
+import { FileSystemFolderGlyph, FileTypeIcon } from '../FileIcon/file-icons';
 import { useFileSystemEntries, useFileSystemSelection, useFileSystemSelectionActions } from './file-system-context';
 import { type FileSystemDragItem, fileSystemDragData, fileSystemDragItems, fileSystemDragLabel } from './file-system-drag';
 

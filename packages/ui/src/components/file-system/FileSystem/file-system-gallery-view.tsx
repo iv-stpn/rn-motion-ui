@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, ScrollView, View } from 'react-native';
 import { Loader } from '../../display/Loader/loader';
 import { Text } from '../../typography/Text/text';
-import { FileSystemFolderGlyph } from './FileIcon/file-icons';
+import { FileSystemFolderGlyph } from '../FileIcon/file-icons';
 import type { FileEntry, FileSystemEntry } from './file-system.types';
 import { formatByteSize } from './file-system-format';
 import { FileSystemGalleryStage } from './file-system-gallery-stage';

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { View } from 'react-native';
-import { ControlCard, Playground, Sample, Section, Variants } from '../../../../__stories__/story-harness';
-import { Text } from '../../../typography/Text/text';
+import { ControlCard, Playground, Sample, Section, Variants } from '../../../__stories__/story-harness';
+import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from './file-icons';
 
 const meta = {

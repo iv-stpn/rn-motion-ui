@@ -19,7 +19,7 @@ import { useIsLifting } from '../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../gestures/drag.types';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
-import { FileSystemFolderGlyph } from './FileIcon/file-icons';
+import { FileSystemFolderGlyph } from '../FileIcon/file-icons';
 import type { FileSystemEntry, FileSystemExternalDropEvent, FileSystemMoveEvent } from './file-system.types';
 import { FileSystemAnimatedTile } from './file-system-animated-tile';
 import { FileSystemDropzone } from './file-system-dropzone';

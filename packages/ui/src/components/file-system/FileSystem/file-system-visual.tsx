@@ -11,7 +11,7 @@ import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
 import { Loader } from '../../display/Loader/loader';
 import { Text } from '../../typography/Text/text';
-import { FileTypeIcon } from './FileIcon/file-icons';
+import { FileTypeIcon } from '../FileIcon/file-icons';
 import type { FileEntry, FileSystemFileItem } from './file-system.types';
 import { filePreviewUrls } from './file-system-index';
 import { fileExtension } from './file-system-paths';

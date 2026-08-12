@@ -27,7 +27,7 @@ import { useActiveDrag } from '../../gestures/use-drag-store';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
-import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
+import { FileSystemFolderGlyph, FileTypeIcon } from '../FileIcon/file-icons';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,

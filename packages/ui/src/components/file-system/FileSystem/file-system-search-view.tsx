@@ -27,7 +27,7 @@ import { cn } from '../../../lib/cn';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
-import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
+import { FileSystemFolderGlyph, FileTypeIcon } from '../FileIcon/file-icons';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemItem } from './file-system.types';
 import { buildCrumbs, CRUMB_SEPARATOR, splitSearchMatches } from './file-system-search';
 import { fileSystemEntryTestID } from './file-system-test-id';

@@ -18,7 +18,7 @@ import type { DragzoneRenderState } from '../../gestures/drag.types';
 import { useActiveDrag } from '../../gestures/use-drag-store';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
-import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
+import { FileSystemFolderGlyph, FileTypeIcon } from '../FileIcon/file-icons';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,

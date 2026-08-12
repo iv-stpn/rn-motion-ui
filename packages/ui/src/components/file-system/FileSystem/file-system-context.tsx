@@ -57,6 +57,8 @@ type NavigationSlice = {
   historyIndex: number;
   historyStack: string[];
   loadingFolders: Set<string>;
+  /** Folders whose `loadChildren` call rejected or timed out. */
+  errorFolders: Set<string>;
   isLoading: boolean;
   loadedItems: FileSystemItem[];
 };
@@ -415,6 +417,29 @@ export type FileSystemStoreInit = {
 
 export type FileSystemStoreApi = ReturnType<typeof createFileSystemStore>;
 
+/**
+ * How long `loadChildren` gets before the store considers the folder failed.
+ * After this many milliseconds the promise is abandoned and the folder is
+ * added to `errorFolders` so the view can show a retry affordance.
+ */
+const CHILDREN_LOAD_TIMEOUT_MS = 30_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Timed out')), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: store factory wires 8 slices + 20 actions; splitting would scatter state that belongs together
 export function createFileSystemStore(init: FileSystemStoreInit) {
   // Non-reactive closure state — never needs to trigger re-renders
@@ -456,6 +481,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         historyIndex: 0,
         historyStack: [initialPath],
         loadingFolders: new Set<string>(),
+        errorFolders: new Set<string>(),
         isLoading: false,
         loadedItems: [],
       },
@@ -544,7 +570,17 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
 
         if (!folder?.hasChildren) return;
         if (fileSystemStore.entries.index.children.get(folderPath)?.length) return;
-        if (!fileSystemStore.consumer.loadChildren || requestedFolders.has(folderPath)) return;
+        if (!fileSystemStore.consumer.loadChildren) return;
+        // Prevent double-loading, but allow retry of failed folders.
+        if (requestedFolders.has(folderPath) && !fileSystemStore.navigation.errorFolders.has(folderPath)) return;
+
+        // Retry: clear from errorFolders and allow re-request.
+        if (fileSystemStore.navigation.errorFolders.has(folderPath)) {
+          const newErrorFolders = new Set(fileSystemStore.navigation.errorFolders);
+          newErrorFolders.delete(folderPath);
+          requestedFolders.delete(folderPath);
+          set({ navigation: { ...fileSystemStore.navigation, errorFolders: newErrorFolders } });
+        }
 
         requestedFolders.add(folderPath);
         const newLoadingFolders = new Set(fileSystemStore.navigation.loadingFolders).add(folderPath);
@@ -559,12 +595,19 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
           try {
             do {
               // biome-ignore lint/performance/noAwaitInLoops: cursor paging is inherently sequential
-              const result = await load({ cursor, path: folderPath });
+              const result: FileSystemLoadChildrenResult = await withTimeout(
+                load({ cursor, path: folderPath }),
+                CHILDREN_LOAD_TIMEOUT_MS,
+              );
               if (result.items.length) {
                 const cur = get();
                 const loadedItems = [...cur.navigation.loadedItems, ...result.items];
                 const allItems = [...cur.entries.items, ...loadedItems];
-                const index = buildFileSystemIndex(allItems);
+                // Preserve folders from the previous index that lost all their
+                // children (e.g. every file was dragged out, or the load returned
+                // only files). Without this, an inferred folder vanishes from the
+                // tree when its last child leaves.
+                const index = buildFileSystemIndex(allItems, { preserveFolders: cur.entries.index.folders });
                 const next = _recomputeEntries({
                   ...cur,
                   entries: { ...cur.entries, index },
@@ -581,6 +624,14 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
             } while (cursor);
           } catch {
             requestedFolders.delete(folderPath);
+            const cur = get();
+            const newErrorFolders = new Set(cur.navigation.errorFolders).add(folderPath);
+            set({
+              navigation: {
+                ...cur.navigation,
+                errorFolders: newErrorFolders,
+              },
+            });
           } finally {
             const cur = get();
             const lf = new Set(cur.navigation.loadingFolders);
@@ -622,7 +673,11 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       _setItems: (items) => {
         const s = get();
         const allItems = s.navigation.loadedItems.length ? [...items, ...s.navigation.loadedItems] : items;
-        const index = buildFileSystemIndex(allItems);
+        // Preserve folders from the previous index that lost all their children
+        // (e.g. every file was dragged out). Without this an inferred folder — one
+        // the consumer never listed as `{ kind: 'folder', path: '...' }` — vanishes
+        // from the tree when its last child leaves.
+        const index = buildFileSystemIndex(allItems, { preserveFolders: s.entries.index.folders });
         const currentFolderName = resolveFolderName(s.navigation.currentPath, s.consumer.title);
         recomputeAndSet({ entries: { ...s.entries, items, index } });
         set({ navigation: { ...s.navigation, currentFolderName } });

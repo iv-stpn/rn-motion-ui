@@ -85,8 +85,24 @@ function inheritFolderTimestamps(folders: Map<string, FolderEntry>, children: Ma
 }
 
 /** Index a manifest. Children are name-sorted; views re-sort per the active sort. */
-export function buildFileSystemIndex(items: FileSystemItem[]): FileSystemIndex {
+export function buildFileSystemIndex(
+  items: FileSystemItem[],
+  options?: { preserveFolders?: Map<string, FolderEntry> },
+): FileSystemIndex {
   const { files, folders } = collectEntries(items);
+
+  // Preserve folders from the previous index that lost all their children
+  // (e.g. every file was dragged out). Without this an inferred folder — one
+  // the consumer never listed as `{ kind: 'folder', path: '...' }` — vanishes
+  // from the tree the moment its last child leaves, which is not how a file
+  // browser works: an empty folder is still a folder.
+  if (options?.preserveFolders) {
+    for (const [path, folder] of options.preserveFolders) {
+      if (!folders.has(path)) {
+        folders.set(path, { ...folder });
+      }
+    }
+  }
 
   const children = new Map<string, FileSystemEntry[]>();
   const pushChild = (entry: FileSystemEntry) => {

@@ -41,13 +41,17 @@ import { FS_DRAG_CONTAINER_TEST_ID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
 import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
+import { useFileSystemRowAnimation } from './use-file-system-row-animation';
 
 /** Stable empty data for the frame before the width is known — see below. */
 const NO_ROWS: FileSystemEntry[][] = [];
 
 // ── Grid + drag session ────────────────────────────────────────────────────────
 
-const keyExtractor = (row: FileSystemEntry[]) => row[0]?.path ?? '';
+// Index-based: an exiting entry at position 0 of a row must not change the
+// row key mid-animation, which would remount the whole row and kill its
+// siblings' animations. `getItemLayout` is already index-based.
+const keyExtractor = (_row: FileSystemEntry[], index: number) => String(index);
 const getItemLayout = (_: ArrayLike<FileSystemEntry[]> | null | undefined, index: number) => ({
   index,
   length: ROW_STRIDE,
@@ -232,8 +236,10 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
 // ── View ───────────────────────────────────────────────────────────────────────
 
 export function FileSystemIconsView({
+  currentPath,
   draggable = false,
   entries,
+  fileFilter,
   getBackgroundContextMenuActions,
   getContextMenuActions,
   loadPreviewImageUrl,
@@ -251,13 +257,26 @@ export function FileSystemIconsView({
   selectionMode,
   testID,
 }: FileSystemViewProps) {
+  // Detect entering / exiting entries so tiles can animate their width rather
+  // than popping in and out. Animation is suppressed while a filter is active —
+  // filtering is a view concern; items that drop out are not "removed" and
+  // should disappear instantly. The hook clears tracked exits on either
+  // transition (filter engaged or disengaged), so no stale state bleeds through.
+  const { augmentedEntries, onExitComplete } = useFileSystemRowAnimation(
+    entries,
+    currentPath,
+    (entry) => entry.path,
+    fileFilter === null,
+  );
+
   // The grid lays its tiles out in entry order, so the entry list *is* the
-  // ordering a Shift-range runs through.
-  const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
+  // ordering a Shift-range runs through. Use augmented entries (which include
+  // exiting tiles) so the range respects what is on screen.
+  const orderedPaths = useMemo(() => augmentedEntries.map((entry) => entry.path), [augmentedEntries]);
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
   const { containerRef, flatListRef, hover, marquee, onLayout, onScroll, rows, tileWidth } = useIconsGrid({
     draggable,
-    entries,
+    entries: augmentedEntries,
     marqueeEnabled: selectionMode === 'multiple',
     onMarquee,
     selectedPaths,
@@ -286,6 +305,7 @@ export function FileSystemIconsView({
         loadPreviewImageUrl={loadPreviewImageUrl}
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
+        onExitTile={onExitComplete}
         onExternalDrop={onExternalDrop}
         onMove={onMove}
         onSelectLongPress={selectLongPress}
@@ -304,6 +324,7 @@ export function FileSystemIconsView({
       getContextMenuActions,
       loadPreviewImageUrl,
       onContextMenuAction,
+      onExitComplete,
       onExternalDrop,
       onMove,
       pageUrlCache,

@@ -20,12 +20,14 @@ import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph } from './FileIcon/file-icons';
 import type { FileSystemEntry, FileSystemExternalDropEvent, FileSystemMoveEvent } from './file-system.types';
+import { FileSystemAnimatedTile } from './file-system-animated-tile';
 import { FileSystemDropzone } from './file-system-dropzone';
 import { GLYPH_BOX_HEIGHT, GLYPH_BOX_WIDTH, ROW_GAP, TILE_HEIGHT } from './file-system-icons-grid';
 import { fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
 import { useFileSystemDragOptions } from './use-file-system-drag-options';
+import type { AugmentedEntry } from './use-file-system-row-animation';
 import { useFileSystemRowInteraction } from './use-file-system-row-interaction';
 
 // Tile *geometry* lives in file-system-icons-grid.ts — the drag session resolves
@@ -228,21 +230,42 @@ export type IconRowProps = Omit<IconTileProps, 'entry' | 'isSelected' | 'testID'
   tileWidth: number;
   /** The browser's root `testID`; each tile derives its own from it. */
   testID?: string;
+  /** Called when a tile finishes its exit animation — see `useFileSystemRowAnimation`. */
+  onExitTile?: (key: string) => void;
 };
 
-export function IconRow({ row, selectedPaths, testID, tileWidth, ...tileProps }: IconRowProps) {
+export function IconRow({ row, selectedPaths, testID, tileWidth, onExitTile, ...tileProps }: IconRowProps) {
   return (
     <View className="flex-row gap-1" style={{ marginBottom: ROW_GAP }}>
-      {row.map((entry) => (
-        <IconTile
-          entry={entry}
-          isSelected={selectedPaths.has(entry.path)}
-          key={entry.path}
-          testID={fileSystemEntryTestID(testID, entry.path)}
-          width={tileWidth}
-          {...tileProps}
-        />
-      ))}
+      {row.map((entry) => {
+        const augmented = entry as AugmentedEntry<FileSystemEntry>;
+        const status = augmented._animStatus;
+        const tile = (
+          <IconTile
+            entry={entry}
+            isSelected={selectedPaths.has(entry.path)}
+            key={entry.path}
+            testID={fileSystemEntryTestID(testID, entry.path)}
+            width={tileWidth}
+            {...tileProps}
+          />
+        );
+
+        if (status === 'entering' || status === 'exiting')
+          return (
+            <FileSystemAnimatedTile
+              isEntering={status === 'entering'}
+              isExiting={status === 'exiting'}
+              key={entry.path}
+              onExitComplete={() => onExitTile?.(entry.path)}
+              width={tileWidth}
+            >
+              {tile}
+            </FileSystemAnimatedTile>
+          );
+
+        return tile;
+      })}
     </View>
   );
 }

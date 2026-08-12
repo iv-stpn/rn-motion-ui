@@ -10,13 +10,52 @@
  * still-exiting rows tagged with their animation state.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** The animation state a row carries into the view layer. */
 export type RowAnimStatus = 'entering' | 'exiting';
 
 /** An entry augmented with its animation status for the current render. */
 export type AugmentedEntry<T> = T & { _animStatus?: RowAnimStatus };
+
+/**
+ * How long the exit animation takes at full speed. If the animation callback
+ * never fires (e.g. Reanimated worklet runner not set up in a test), the
+ * timeout fallback drops the stale entry after this window plus some buffer.
+ */
+const EXIT_ANIM_DURATION_MS = 400;
+
+/**
+ * Timeout-managed cleanup for exiting entries. The callback-based path
+ * (`onExitComplete`) is the primary removal mechanism — a timeout is only
+ * scheduled as a safety net for environments where the animation callback
+ * never fires (e.g. a vitest browser without Reanimated's worklet runtime).
+ */
+function useExitTimeout(onExitComplete: (key: string) => void): (key: string) => void {
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const onExitRef = useRef(onExitComplete);
+  onExitRef.current = onExitComplete;
+
+  // Cleanup all pending timeouts on unmount.
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      for (const id of timers.values()) clearTimeout(id);
+      timers.clear();
+    };
+  }, []);
+
+  return useCallback((key: string) => {
+    // Clear any previous timeout for this key (entry re-entering).
+    const prev = timersRef.current.get(key);
+    if (prev) clearTimeout(prev);
+    const id = setTimeout(() => {
+      timersRef.current.delete(key);
+      onExitRef.current(key);
+    }, EXIT_ANIM_DURATION_MS);
+    timersRef.current.set(key, id);
+  }, []);
+}
 
 export type UseFileSystemRowAnimationResult<T> = {
   augmentedEntries: AugmentedEntry<T>[];
@@ -31,15 +70,22 @@ export type UseFileSystemRowAnimationResult<T> = {
  * @param currentEntries — the entries for the current folder/view
  * @param folderPath — disambiguates navigation from item moves
  * @param getKey — stable function that returns a unique key for each entry
+ * @param shouldAnimate — when false (e.g. while a filter is active), entries
+ *   that leave the list are filtered out rather than removed from data — they
+ *   should vanish instantly with no exit animation. When this flag toggles in
+ *   either direction, all tracked exits are cleared so stale state cannot bleed
+ *   into the next render.
  */
 export function useFileSystemRowAnimation<T>(
   currentEntries: T[],
   folderPath: string,
   getKey: (entry: T) => string,
+  shouldAnimate = true,
 ): UseFileSystemRowAnimationResult<T> {
   const prevKeysRef = useRef<string[]>([]);
   const prevEntriesRef = useRef<T[]>([]);
   const prevFolderRef = useRef(folderPath);
+  const prevShouldAnimateRef = useRef(shouldAnimate);
 
   // Exiting rows: key → { data, position }. Ref for synchronous access during
   // render; `exitTick` counter drives re-renders when an exit completes.
@@ -48,6 +94,7 @@ export function useFileSystemRowAnimation<T>(
   const [_exitTick, setExitTick] = useState(0);
 
   const folderChanged = prevFolderRef.current !== folderPath;
+  const animateToggled = prevShouldAnimateRef.current !== shouldAnimate;
 
   // ── Diff current vs previous ────────────────────────────────────────────────
   const currentKeys = currentEntries.map(getKey);
@@ -57,7 +104,7 @@ export function useFileSystemRowAnimation<T>(
   const enteringSet = new Set<string>();
   const exitingSet = new Set<string>();
 
-  const canDiff = !folderChanged && prevKeysRef.current.length > 0;
+  const canDiff = !folderChanged && !animateToggled && shouldAnimate && prevKeysRef.current.length > 0;
   if (canDiff) {
     for (const key of currentKeySet) {
       if (!(prevKeySet.has(key) || exitingRef.current.has(key))) enteringSet.add(key);
@@ -78,7 +125,7 @@ export function useFileSystemRowAnimation<T>(
     }
   }
 
-  if (folderChanged) exitingRef.current.clear();
+  if (folderChanged || animateToggled) exitingRef.current.clear();
 
   // ── Build augmented entries ─────────────────────────────────────────────────
   const augmentedEntries: AugmentedEntry<T>[] = [];
@@ -99,11 +146,19 @@ export function useFileSystemRowAnimation<T>(
   prevKeysRef.current = currentKeys;
   prevEntriesRef.current = currentEntries;
   prevFolderRef.current = folderPath;
+  prevShouldAnimateRef.current = shouldAnimate;
 
   // ── Exit completion callback ─────────────────────────────────────────────────
   const onExitComplete = useCallback((key: string) => {
     if (exitingRef.current.delete(key)) setExitTick((t) => t + 1);
   }, []);
+
+  // Timeout safety net for environments where the animation callback never
+  // fires (e.g. a test without the Reanimated worklet runner). Schedules a
+  // removal for every new exiting entry; the primary `onExitComplete` path
+  // still clears it first.
+  const scheduleExitTimeout = useExitTimeout(onExitComplete);
+  for (const [, { data }] of exitingList) scheduleExitTimeout(getKey(data));
 
   return { augmentedEntries, onExitComplete };
 }

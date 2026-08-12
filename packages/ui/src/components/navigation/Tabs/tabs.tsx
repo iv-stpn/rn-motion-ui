@@ -16,6 +16,7 @@ import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { SURFACE_CLASSNAME } from '../../../lib/elevated';
 import { H_INTERACTIVE, INTERACTIVE_RADIUS, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../../theme/motion';
@@ -382,10 +383,12 @@ export function TabsList({ children, testID }: TabsListProps) {
   const { variant, value, layouts, reduce, indicatorTransition } = useTabs();
   const active = layouts[value];
   const indicatorSpring = mergeTransition(TAB_INDICATOR_SPRING, indicatorTransition);
+
   // Track whether the indicator has been placed once so the first render jumps
   // directly to the selected tab instead of animating from wherever MotiView
   // initialises (avoids the "slide from tab-1" flash on mount).
   const hasPositioned = useRef(false);
+
   // biome-ignore lint/plugin: tracking first-commit of `active` requires a post-render hook; no derived-state equivalent is Strict-Mode-safe
   useEffect(() => {
     if (active) hasPositioned.current = true;
@@ -412,7 +415,7 @@ export function TabsList({ children, testID }: TabsListProps) {
           }}
           transition={!hasPositioned.current || reduce ? TIMING_INSTANT : indicatorSpring}
           className={cn(
-            variant === 'underline' ? 'bg-primary' : 'bg-surface-3 dark:bg-black',
+            variant === 'underline' ? 'bg-primary' : SURFACE_CLASSNAME[5],
             'pointer-events-none absolute top-0 left-0',
           )}
           testID={testID ? `${testID}-indicator` : undefined}

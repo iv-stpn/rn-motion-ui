@@ -105,7 +105,7 @@ function CustomRightAdornmentStory() {
 }
 
 const meta = {
-  title: 'RowPrimitive/ActionRow',
+  title: 'Rows/ActionRow',
   component: ActionRow,
   parameters: { layout: 'centered' },
   args: { title: 'Profile settings', onPress },

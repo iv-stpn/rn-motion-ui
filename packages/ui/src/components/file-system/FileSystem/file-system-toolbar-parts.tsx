@@ -11,7 +11,7 @@ import { PicLine as Images } from 'rn-motion-ui-icons/icons/pic-line';
 import { TableLine as Table } from 'rn-motion-ui-icons/icons/table-line';
 import { cn } from '../../../lib/cn';
 import { ThemedIcon } from '../../icon/themed-icon';
-import type { MenuItemIcon } from '../../RowPrimitive/menu-item';
+import type { MenuItemIcon } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import type { FileSystemView } from './file-system.types';
 import {

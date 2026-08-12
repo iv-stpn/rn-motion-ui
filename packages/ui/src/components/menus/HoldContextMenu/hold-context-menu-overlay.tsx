@@ -40,7 +40,7 @@ import {
   resolveMenuMotion,
   TIMING_FAST,
 } from '../../../theme/motion';
-import { Menu } from '../../RowPrimitive/menu';
+import { Menu } from '../../rows/menu';
 import { type HoldContextMenuItem, holdMenuEntries } from './hold-context-menu-item';
 import { HOLD_ITEM_SCALE, HOLD_MENU_LIST_CLASS, type HoldMenuLayout, type HoldMenuRect } from './hold-context-menu-layout';
 import type { HoldContextMenuMotion } from './hold-context-menu-motion';

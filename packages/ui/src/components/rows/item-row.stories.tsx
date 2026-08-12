@@ -113,7 +113,7 @@ function ShowcasePlayground() {
 }
 
 const meta = {
-  title: 'RowPrimitive/ItemRow',
+  title: 'Rows/ItemRow',
   component: ItemRow,
   parameters: { layout: 'centered' },
   args: { title: 'Profile settings' },

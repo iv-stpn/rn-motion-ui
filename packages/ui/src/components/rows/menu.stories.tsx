@@ -19,7 +19,7 @@ import { Menu, type MenuActionEntry, type MenuEntry } from './menu';
 import type { MenuItemMode, MenuItemSize } from './menu-item';
 
 const meta = {
-  title: 'RowPrimitive/Menu',
+  title: 'Rows/Menu',
   component: Menu,
   parameters: { layout: 'centered' },
   // Every story builds its own list; a stub satisfies the type checker.

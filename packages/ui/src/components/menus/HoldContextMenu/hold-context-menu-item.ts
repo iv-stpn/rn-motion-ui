@@ -16,8 +16,8 @@
  */
 
 import type { ReactNode } from 'react';
-import type { MenuActionEntry, MenuEntry } from '../../RowPrimitive/menu';
-import type { MenuItemIcon } from '../../RowPrimitive/menu-item';
+import type { MenuActionEntry, MenuEntry } from '../../rows/menu';
+import type { MenuItemIcon } from '../../rows/menu-item';
 import { HOLD_MENU_HEADING_CLASS, HOLD_MENU_ROW_CLASS } from './hold-context-menu-layout';
 
 /**

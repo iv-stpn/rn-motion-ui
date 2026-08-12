@@ -17,7 +17,7 @@ import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import { MenuItem, type MenuItemIcon } from '../../RowPrimitive/menu-item';
+import { MenuItem, type MenuItemIcon } from '../../rows/menu-item';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
 import { CloseButton } from '../CloseButton/close-button';

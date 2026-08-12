@@ -21,7 +21,7 @@ function HintChip({ hint }: HintChipProps) {
 }
 
 const meta = {
-  title: 'RowPrimitive/MenuItem',
+  title: 'Rows/MenuItem',
   component: MenuItem,
   parameters: { layout: 'centered' },
   args: { label: 'Menu item', onPress },

@@ -5,7 +5,7 @@ import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { ThemedIcon } from '../../icon/themed-icon';
-import { MenuItem } from '../../RowPrimitive/menu-item';
+import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
 

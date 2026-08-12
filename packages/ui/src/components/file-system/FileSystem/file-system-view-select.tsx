@@ -10,7 +10,7 @@ import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { AdaptiveDropdown, type TriggerRenderProps } from '../../menus/AdaptiveDropdown/adaptive-dropdown';
-import { Menu, type MenuEntry } from '../../RowPrimitive/menu';
+import { Menu, type MenuEntry } from '../../rows/menu';
 import type { FileSystemView } from './file-system.types';
 import type { ViewOption } from './file-system-toolbar-parts';
 import { VIEW_OPTIONS } from './file-system-toolbar-parts';

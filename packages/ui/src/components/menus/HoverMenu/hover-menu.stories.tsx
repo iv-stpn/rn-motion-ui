@@ -10,8 +10,8 @@ import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
-import { Menu } from '../../RowPrimitive/menu';
-import type { MenuItemIcon } from '../../RowPrimitive/menu-item';
+import { Menu } from '../../rows/menu';
+import type { MenuItemIcon } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import { HoverMenu, type HoverMenuProps } from './hover-menu';
 

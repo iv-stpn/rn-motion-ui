@@ -313,24 +313,24 @@
       "default": "./src/components/form/Input/input.tsx"
     },
     "./action-row": {
-      "source": "./src/components/RowPrimitive/action-row.tsx",
-      "types": "./src/components/RowPrimitive/action-row.tsx",
-      "default": "./src/components/RowPrimitive/action-row.tsx"
+      "source": "./src/components/rows/action-row.tsx",
+      "types": "./src/components/rows/action-row.tsx",
+      "default": "./src/components/rows/action-row.tsx"
     },
     "./action-row-group": {
-      "source": "./src/components/RowPrimitive/action-row-group.tsx",
-      "types": "./src/components/RowPrimitive/action-row-group.tsx",
-      "default": "./src/components/RowPrimitive/action-row-group.tsx"
+      "source": "./src/components/rows/action-row-group.tsx",
+      "types": "./src/components/rows/action-row-group.tsx",
+      "default": "./src/components/rows/action-row-group.tsx"
     },
     "./item-row": {
-      "source": "./src/components/RowPrimitive/item-row.tsx",
-      "types": "./src/components/RowPrimitive/item-row.tsx",
-      "default": "./src/components/RowPrimitive/item-row.tsx"
+      "source": "./src/components/rows/item-row.tsx",
+      "types": "./src/components/rows/item-row.tsx",
+      "default": "./src/components/rows/item-row.tsx"
     },
     "./item-row-group": {
-      "source": "./src/components/RowPrimitive/item-row-group.tsx",
-      "types": "./src/components/RowPrimitive/item-row-group.tsx",
-      "default": "./src/components/RowPrimitive/item-row-group.tsx"
+      "source": "./src/components/rows/item-row-group.tsx",
+      "types": "./src/components/rows/item-row-group.tsx",
+      "default": "./src/components/rows/item-row-group.tsx"
     },
     "./loader": {
       "source": "./src/components/display/Loader/loader.tsx",
@@ -343,14 +343,14 @@
       "default": "./src/components/display/Marquee/marquee.tsx"
     },
     "./menu": {
-      "source": "./src/components/RowPrimitive/menu.tsx",
-      "types": "./src/components/RowPrimitive/menu.tsx",
-      "default": "./src/components/RowPrimitive/menu.tsx"
+      "source": "./src/components/rows/menu.tsx",
+      "types": "./src/components/rows/menu.tsx",
+      "default": "./src/components/rows/menu.tsx"
     },
     "./menu-item": {
-      "source": "./src/components/RowPrimitive/menu-item.tsx",
-      "types": "./src/components/RowPrimitive/menu-item.tsx",
-      "default": "./src/components/RowPrimitive/menu-item.tsx"
+      "source": "./src/components/rows/menu-item.tsx",
+      "types": "./src/components/rows/menu-item.tsx",
+      "default": "./src/components/rows/menu-item.tsx"
     },
     "./morphing-fab": {
       "source": "./src/components/display/MorphingFAB/morphing-fab.tsx",

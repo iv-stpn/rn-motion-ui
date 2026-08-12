@@ -104,7 +104,7 @@ function ShowcasePlayground() {
 }
 
 const meta = {
-  title: 'RowPrimitive/ItemRowGroup',
+  title: 'Rows/ItemRowGroup',
   component: ItemRowGroup,
   parameters: { layout: 'centered' },
   args: { items: [{ id: 'test', title: 'Test' }] },

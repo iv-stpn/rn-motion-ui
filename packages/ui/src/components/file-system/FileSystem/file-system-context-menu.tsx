@@ -18,7 +18,7 @@ import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef
 import { type GestureResponderEvent, Platform, View } from 'react-native';
 import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import type { HoldContextMenuItem } from '../../menus/HoldContextMenu/hold-context-menu-item';
-import type { MenuItemIcon } from '../../RowPrimitive/menu-item';
+import type { MenuItemIcon } from '../../rows/menu-item';
 import type { FileSystemContextMenuAction, FileSystemItem } from './file-system.types';
 
 // ── Icon adapter ───────────────────────────────────────────────────────────────

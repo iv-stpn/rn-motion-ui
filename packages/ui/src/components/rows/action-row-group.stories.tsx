@@ -80,7 +80,7 @@ function ShowcasePlayground() {
 }
 
 const meta = {
-  title: 'RowPrimitive/ActionRowGroup',
+  title: 'Rows/ActionRowGroup',
   component: ActionRowGroup,
   parameters: { layout: 'centered' },
   args: { items: [{ id: 'test', title: 'Test', onPress }] },

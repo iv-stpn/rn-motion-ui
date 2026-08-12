@@ -13,10 +13,11 @@ import {
   getActiveDrag,
   getDragSnapshot,
   moveDrag,
+  registerDragzone,
   resetDragStore,
 } from '../drag-store';
 import { createDragTransfer } from '../drag-transfer';
-import { rect } from './drag-harness';
+import { rect, zone } from './drag-harness';
 import { addManager, addZone, lift, zoneSpies } from './drag-store-harness';
 
 const AT = { x: 50, y: 50 };
@@ -94,6 +95,21 @@ describe('endDrag', () => {
     expect(endDrag({ commit: true, point: OUTSIDE, sourceId: first.id, transportDropEffect: 'none' }).canceled).toBe(true);
     const second = lift();
     expect(endDrag({ commit: false, point: OUTSIDE, sourceId: second.id, transportDropEffect: 'copy' }).canceled).toBe(true);
+  });
+
+  it('does not commit a drop the browser cancelled, even with a zone under the release point', async () => {
+    const spies = zoneSpies();
+    await addZone({ id: 'target', dropEffect: 'move', rect: rect(0, 0, 100, 100), ...spies });
+    const active = lift();
+    moveDrag(AT);
+
+    // A drag that ends with the browser reporting 'none' — an Escape, or a
+    // dragstart-triggered re-render tearing the source out from under the lift —
+    // must not drop on a zone that merely sits under the release point. A zone of
+    // ours would have claimed the drag in its own dragover, so 'none' means none did.
+    const outcome = endDrag({ commit: true, point: AT, sourceId: active.id, transportDropEffect: 'none' });
+    expect(outcome).toEqual({ canceled: true, dropEffect: 'none', point: AT, zoneId: null });
+    expect(spies.onDrop).not.toHaveBeenCalled();
   });
 
   it('refuses to end a drag a different source started', async () => {
@@ -199,6 +215,25 @@ describe('registering during a drag', () => {
     // in different worlds.
     addManager('board', { isolate: true });
     expect(getDragSnapshot().eligibleZoneIds).toEqual([]);
+  });
+
+  it('resolves a nested set of zones mounted mid-drag to the deepest, with no transient', async () => {
+    const outer = zoneSpies();
+    const inner = zoneSpies();
+    lift();
+    moveDrag({ x: 100, y: 100 });
+
+    // Two overlapping zones mount in the same commit — an expanded folder and a
+    // deeper folder inside it, both covering the pointer. The re-resolution is
+    // coalesced into one refresh, so the outer never wins the initial resolution
+    // and flashes before the deeper zone measures and takes over.
+    registerDragzone(zone({ id: 'outer', rect: rect(0, 0, 200, 200), ...outer }));
+    registerDragzone(zone({ id: 'inner', rect: rect(50, 50, 100, 100), ...inner }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(getDragSnapshot().overZoneId).toBe('inner');
+    expect(outer.onDragEnter).not.toHaveBeenCalled();
+    expect(inner.onDragEnter).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -61,6 +61,34 @@ let snapshot: DragSnapshot = IDLE;
  */
 let _lastMoveWasFromZoneDrop = false;
 
+/**
+ * Debounced re-resolution of the drop target for zones that register mid-drag.
+ *
+ * Several zones can mount in one commit — the overlay dropzones of a file system's
+ * expanded folders mount together the tick a drag starts — and each used to
+ * re-resolve the target as its own measure landed. The first (outermost) zone won
+ * that initial resolution and painted before a deeper, overlapping zone measured
+ * and took over, so a deep file's drag flashed the top ancestor before its own
+ * parent. Coalescing the re-resolution into one all-zone refresh defers it past the
+ * whole commit, so the target is decided once against every zone's fresh rect.
+ */
+let _registrationRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Whether the drop target is being held while zones that mount in response to the
+ * drag are still measuring.
+ *
+ * When a drag reveals zones — a file system's overlay dropzones mount a tick after
+ * lift, then measure the tick after that — the pointer is already over them, and a
+ * `moveDrag` landing in that window would hit-test against a *partial* set of rects.
+ * The outermost zone that happened to measure first wins and paints before a deeper,
+ * overlapping zone measures and takes over: a deep file's drag flashes the top
+ * ancestor before its own parent. While settling, `moveDrag` keeps the pointer and
+ * the move channel live but holds the target, so `refreshDragzones` — which resolves
+ * the whole set at once — is the first thing to name a zone.
+ */
+let _settling = false;
+
 const listeners = new Set<() => void>();
 const moveListeners = new Set<(point: DragPoint) => void>();
 
@@ -228,24 +256,15 @@ export function registerDragzone(params: RegisterDragzoneParams): DragzoneRegist
       if (resolved !== null && resolved.id !== session.overZoneId)
         reportZoneMove({ drag: session.drag, point: session.point, previousId: session.overZoneId, target: resolved });
     } else {
-      // Needs a measured rect to pass the spatial test — resolve once it lands.
-      remeasure()
-        .then(() => {
-          if (session === null || zones.get(entry.id) === undefined) return;
-          const resolved = targetAt(session.point);
-          const changed = resolved !== null && resolved.id !== session.overZoneId;
-          if (changed)
-            reportZoneMove({ drag: session.drag, point: session.point, previousId: session.overZoneId, target: resolved });
-          // The eligible set was computed before measurement resolved, so this zone
-          // (and any sibling that also just measured) was not in it. Refresh now so
-          // that useDragzoneState reports isEligible correctly and the affordance
-          // paints without waiting for the next dragover. When the target changed,
-          // reportZoneMove already published once — publish again with the fresh
-          // eligible set to avoid a stale snapshot.
-          recomputeEligible();
-          publish();
-        })
-        .catch(() => undefined);
+      // Needs a measured rect to pass the spatial test. Resolve once *every* zone
+      // that just mounted has been measured rather than as each measure lands, so a
+      // nested set of zones — the overlay dropzones of an expanded folder tree — is
+      // decided by the tie-break in one step instead of flashing the outermost first.
+      // Hold the target while that resolution is pending, so a `moveDrag` landing in
+      // the window cannot hit-test against the partial set of rects and paint the
+      // outermost zone that happened to measure first.
+      _settling = true;
+      scheduleRegistrationRefresh();
     }
   }
 
@@ -315,10 +334,22 @@ export function beginDrag({ drag, preview = null, sourceCancel }: BeginDragParam
 export function moveDrag(point: DragPoint): string | null {
   if (session === null) return null;
   session.point = point;
+  const { drag } = session;
+
+  // While zones that mounted in response to this drag are still measuring, the hit
+  // test would run against a partial set of rects and name whichever outermost zone
+  // measured first. Hold the current target and keep the move channel live instead;
+  // `refreshDragzones` re-resolves the whole set at once and clears the settle.
+  if (_settling) {
+    const overZoneId = session.overZoneId;
+    notifyManagers(drag.source.managerPath, (config) => config.onDragMove?.({ drag, point, zoneId: overZoneId }));
+    for (const listener of moveListeners) listener(point);
+    return overZoneId;
+  }
+
   const target = targetAt(point);
   const nextId = target?.id ?? null;
   const previousId = session.overZoneId;
-  const { drag } = session;
 
   reportZoneMove({ drag, point, previousId, target });
   notifyManagers(drag.source.managerPath, (config) => config.onDragMove?.({ drag, point, zoneId: nextId }));
@@ -372,6 +403,14 @@ export function endDrag({ commit, point, sourceId, transportDropEffect }: EndDra
   _lastMoveWasFromZoneDrop = false;
   if (session === null || session.drag.id !== sourceId) return { canceled: true, dropEffect: 'none', point, zoneId: null };
   const { drag } = session;
+  // Only the HTML5 transport carries the browser's verdict on the drop, and it
+  // reports `'none'` when nothing accepted it — the drag was cancelled (Escape, or
+  // a source torn out from under it) or landed on unclaimed space. A zone of ours
+  // would have claimed the drag in its own `dragover`, so a `'none'` verdict means
+  // none did: no in-library drop may be credited, whatever a spatial hit test would
+  // resolve under the release point. A pan transport passes no verdict, and there
+  // the store's own resolution stands.
+  const browserCancelled = commit && transportDropEffect === 'none';
   // The HTML5 transport's `dragend` reports bogus coordinates in two engines:
   //  • Chrome — (0, 0): the browser tears down the session by the time dragend
   //    fires. Fall back to the last position from `moveDrag` unconditionally.
@@ -382,8 +421,8 @@ export function endDrag({ commit, point, sourceId, transportDropEffect }: EndDra
   //    existing `target === null` guard only catches the case where they hit
   //    nothing, not where they hit a different zone.
   let resolved = point.x === 0 && point.y === 0 ? session.point : point;
-  let target = commit ? targetAt(resolved) : null;
-  if (commit && resolved !== session.point && (wasZoneDrop || target === null)) {
+  let target = commit && !browserCancelled ? targetAt(resolved) : null;
+  if (commit && !browserCancelled && resolved !== session.point && (wasZoneDrop || target === null)) {
     const fallback = targetAt(session.point);
     if (fallback !== null) {
       resolved = session.point;
@@ -516,11 +555,11 @@ export function canZoneAcceptExternal({ point, transfer, zoneId }: ExternalAccep
  */
 export function refreshDragzones(): Promise<void> {
   return measureZones().then(() => {
+    _settling = false;
     if (session === null) return;
     const resolved = targetAt(session.point);
-    if (resolved !== null && resolved.id !== session.overZoneId) {
+    if (resolved !== null && resolved.id !== session.overZoneId)
       reportZoneMove({ drag: session.drag, point: session.point, previousId: session.overZoneId, target: resolved });
-    }
     // The eligible set was computed against stale rects; recompute it and publish
     // the fresh snapshot (reportZoneMove already published if the target moved).
     recomputeEligible();
@@ -528,13 +567,31 @@ export function refreshDragzones(): Promise<void> {
   });
 }
 
+/**
+ * Re-resolve the drop target once after the zones that just registered have all
+ * measured. Called from `registerDragzone` for a zone mounting mid-drag; deferred
+ * a tick so every zone of the same commit is in the store before the resolve runs.
+ */
+function scheduleRegistrationRefresh(): void {
+  if (_registrationRefreshTimer !== null) return;
+  _registrationRefreshTimer = setTimeout(() => {
+    _registrationRefreshTimer = null;
+    refreshDragzones().catch(() => undefined);
+  }, 0);
+}
+
 /** Test seam: drop every registration and any drag in flight. */
 export function resetDragStore(): void {
+  if (_registrationRefreshTimer !== null) {
+    clearTimeout(_registrationRefreshTimer);
+    _registrationRefreshTimer = null;
+  }
   managers.clear();
   zones.clear();
   session = null;
   snapshot = IDLE;
   _lastMoveWasFromZoneDrop = false;
+  _settling = false;
   listeners.clear();
   moveListeners.clear();
 }

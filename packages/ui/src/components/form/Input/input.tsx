@@ -31,13 +31,18 @@ function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focu
   return 'idle';
 }
 
-// Border colour swaps by state; error wins over focus, focus over idle.
-const field = cva('relative flex-row items-center overflow-hidden border', {
+// Elevation now carries state instead of a border: the soft drop swaps to a
+// 1px ring on focus (foreground) or error (danger); error wins over focus.
+const field = cva('relative flex-row items-center overflow-hidden', {
   variants: {
+    variant: {
+      surface: 'bg-surface-3',
+      filled: 'bg-muted',
+    },
     state: {
-      idle: 'border-border',
-      focused: 'border-foreground/40',
-      error: 'border-danger',
+      idle: 'shadow-input',
+      focused: 'shadow-input-focus',
+      error: 'shadow-input-error',
     },
     size: {
       sm: 'min-h-interactive-sm',
@@ -49,7 +54,7 @@ const field = cva('relative flex-row items-center overflow-hidden border', {
       pill: 'rounded-full',
     },
   },
-  defaultVariants: { state: 'idle', size: 'md', shape: 'rounded' },
+  defaultVariants: { variant: 'surface', state: 'idle', size: 'md', shape: 'rounded' },
 });
 
 // Size-aware input box: font size and padding track --spacing-interactive-* tokens.
@@ -173,6 +178,9 @@ export type InputProps = {
   inputType?: InputType;
   /** Field height variant. Default: `md`. */
   size?: 'sm' | 'md' | 'lg';
+  /** Background variant. `surface` (default) sits on the white `surface-3` card
+   *  level; `filled` uses the muted grey fill. Both carry the soft drop shadow. */
+  variant?: 'surface' | 'filled';
   /** Border-radius variant. `rounded` (default) for a standard input, `pill` for a full-circle shape. */
   shape?: 'rounded' | 'pill';
   disabled?: boolean;
@@ -210,6 +218,7 @@ export function Input({
   successIcon,
   inputType = 'text',
   size = 'md',
+  variant = 'surface',
   shape = 'rounded',
   disabled,
   secureTextEntry,
@@ -291,7 +300,7 @@ export function Input({
       {label ? <Text className={cn('px-1 font-medium text-foreground text-sm', labelClassName)}>{label}</Text> : null}
 
       <Animated.View
-        className={cn(field({ state, size, shape }), disabled ? 'opacity-60' : 'opacity-100')}
+        className={cn(field({ variant, state, size, shape }), disabled ? 'opacity-60' : 'opacity-100')}
         style={{ transform: [{ translateX: shakeX }] }}
       >
         {leftIcon ? (

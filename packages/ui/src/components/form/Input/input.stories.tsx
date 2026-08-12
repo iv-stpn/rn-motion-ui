@@ -17,6 +17,7 @@ const meta = {
   args: { label: 'Email', placeholder: 'you@example.com', onChange: fn() },
   argTypes: {
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
+    variant: { control: 'select', options: ['surface', 'filled'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
   },
 } satisfies Meta<typeof Input>;
@@ -25,6 +26,7 @@ type Story = StoryObj<typeof meta>;
 
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SHAPES = ['rounded', 'pill'] as const;
+const VARIANTS = ['surface', 'filled'] as const;
 const STATES = ['default', 'error', 'success', 'disabled'] as const;
 const EMAIL_ERROR = 'Enter a valid email address.';
 
@@ -45,6 +47,7 @@ function RevealButton({ shown, onToggle, color }: RevealButtonProps) {
 function InputPlayground(args: ComponentProps<typeof Input>) {
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');
+  const [variant, setVariant] = useState<(typeof VARIANTS)[number]>('surface');
   const [state, setState] = useState<FieldState>('default');
   const [leftIcon, setLeftIcon] = useState(true);
   const [hint, setHint] = useState(false);
@@ -57,7 +60,7 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
   const toggleShown = useCallback(() => setShown((s) => !s), []);
 
   // A typed value without an `@` reports the error regardless of the State chip,
-  // so the shake + red border can be reached by typing as well as by switching.
+  // so the shake + error ring can be reached by typing as well as by switching.
   const typedError = email.length > 0 && !email.includes('@') ? EMAIL_ERROR : undefined;
 
   return (
@@ -65,6 +68,7 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
       <ControlCard title="Options">
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Choice label="State" onChange={setState} options={STATES} value={state} />
         <Toggle label="Left icon" onChange={setLeftIcon} value={leftIcon} />
         <Toggle label="Hint" onChange={setHint} value={hint} />
@@ -82,6 +86,7 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
         shape={shape}
         size={size}
         success={state === 'success'}
+        variant={variant}
         value={email}
       />
 

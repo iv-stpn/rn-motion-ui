@@ -1,8 +1,38 @@
+/*
+ * GENERATED FILE — do not edit by hand.
+ *
+ * rn-motion-ui token sheet, retinted to hue 270 / chroma 0.004
+ * (from hue 270 / chroma 0.004, rn-motion-ui@5.3.0).
+ *
+ * Regenerate with:
+ *   npx rn-motion-ui-tokens --hue 270 --chroma 0.004 --force
+ *
+ * Import this INSTEAD OF "rn-motion-ui/tokens.css" — it is a full replacement,
+ * not an overlay:
+ *
+ *   @import "tailwindcss";
+ *   @import "uniwind";
+ *   @import "./tokens.css";
+ *
+ * Every colour is spelled out as a literal oklch() rather than composed from
+ * var(--neutral-hue) / var(--neutral-chroma): uniwind cannot fold a var() through
+ * oklch() when it compiles the sheet for native, so the tint is applied here, at
+ * generation time, instead of at runtime.
+ *
+ * Native note: className styling picks these values up on every platform, since
+ * uniwind compiles this sheet into the native stylesheet. useThemeColor() and
+ * useThemeColors() read the live custom properties on web, so they track this
+ * file too — but on native they resolve against sRGB tables baked from the
+ * library's own hue 270 / chroma 0.004. At neutral-tint chromas that difference is
+ * invisible; if you retint to a vivid chroma, pass colours explicitly where a
+ * hook value has to match a className on native.
+ */
+
 /**
- * rn-motion-ui design tokens — canonical @theme block.
+ * rn-motion-ui design tokens — generated @theme block.
  *
  * Import this in your app's global CSS:
- *   @import "rn-motion-ui/tokens.css";
+ *   @import "./tokens.css";
  *
  * Override any token in your own @theme block after the import:
  *   @theme { --color-primary: oklch(52% 0.22 250); }

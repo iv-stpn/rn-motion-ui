@@ -31,7 +31,7 @@ export type ButtonShape = 'rounded' | 'pill';
  * (the square is the padding).
  */
 export const BUTTON_METRICS: Record<ButtonSize, { height: number; padX: number; radius: number }> = {
-  sm: { height: 24, padX: 10, radius: INTERACTIVE_RADIUS },
+  sm: { height: 24, padX: 8, radius: INTERACTIVE_RADIUS },
   md: { height: 32, padX: 14, radius: INTERACTIVE_RADIUS },
   lg: { height: 40, padX: 22, radius: INTERACTIVE_RADIUS },
   icon: { height: 32, padX: 0, radius: INTERACTIVE_RADIUS },

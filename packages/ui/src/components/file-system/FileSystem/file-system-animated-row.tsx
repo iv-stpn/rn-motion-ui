@@ -56,14 +56,8 @@ export function FileSystemAnimatedRow({ children, height, isEntering, isExiting,
 
   const isMeasured = useRef(false);
 
-  const containerStyle = useAnimatedStyle(() => ({
-    height: containerHeight.value,
-    overflow: 'hidden' as const,
-  }));
-
-  const contentStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
+  const containerStyle = useAnimatedStyle(() => ({ height: containerHeight.value, overflow: 'hidden' }));
+  const contentStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: shared values are stable references; onExitComplete captured via ref
   // biome-ignore lint/plugin: exit animation must fire the moment isExiting flips true — not derivable from render state

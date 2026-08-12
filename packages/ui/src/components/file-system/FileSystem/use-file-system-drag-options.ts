@@ -12,6 +12,7 @@ import type { FileSystemEntry } from './file-system.types';
  */
 export function useFileSystemDragOptions(entry: FileSystemEntry, draggable: boolean): HoldContextMenuDragOptions | undefined {
   const { getGroupData, renderPreview, resolveIds } = useMultiDragScope();
+
   const ids = useMemo(() => resolveIds(entry.path), [entry.path, resolveIds]);
   const multiData = useMemo(() => withMultiDragIds(getGroupData(ids), ids), [getGroupData, ids]);
 

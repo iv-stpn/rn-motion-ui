@@ -148,18 +148,14 @@ function ColumnRowGlyph({
     return renderEntryIcon?.(entry, COLUMN_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={COLUMN_GLYPH_SIZE} />;
 
   const coverUrl = filePreviewUrls(entry)[0];
-  if (coverUrl)
+  if (coverUrl) {
+    const imageSize = { height: COLUMN_ICON_SIZE, width: COLUMN_ICON_SIZE };
     return (
       renderEntryIcon?.(entry, COLUMN_ICON_SIZE) ?? (
-        <Image
-          className="shrink-0 rounded-[3px] bg-white"
-          resizeMode="cover"
-          source={{ uri: coverUrl }}
-          style={{ height: COLUMN_ICON_SIZE, width: COLUMN_ICON_SIZE }}
-        />
+        <Image className="shrink-0 rounded-[3px] bg-white" resizeMode="cover" source={{ uri: coverUrl }} style={imageSize} />
       )
     );
-
+  }
   // A selected row sits on the primary surface, the inverse of the pane behind
   // it, so the icon palette flips with it.
   return <FileTypeIcon fileName={entry.name} size={COLUMN_ICON_SIZE} surface={isSelected ? 'inverted' : 'theme'} />;
@@ -380,20 +376,20 @@ function FileSystemColumnImpl({
     ({ item }: ListRenderItemInfo<FileSystemEntry & { _animStatus?: string }>) => {
       const isEntering = item._animStatus === 'entering';
       const isExiting = item._animStatus === 'exiting';
-      const exitHandler = isExiting ? () => onExitComplete(item.path) : undefined;
+      const exitHandler = isExiting ? () => onExitComplete(item.path) : () => undefined;
 
       return (
         <FileSystemAnimatedRow
           height={COLUMN_ROW_HEIGHT}
           isEntering={isEntering}
           isExiting={isExiting}
-          onExitComplete={exitHandler ?? (() => undefined)}
+          onExitComplete={exitHandler}
         >
           <ColumnRow
             draggable={draggable}
             entry={item}
-            getContextMenuActions={getContextMenuActions}
             index={index}
+            getContextMenuActions={getContextMenuActions}
             isOnTrail={item.kind === 'folder' && item.path === trailChildPath}
             isSelected={selectedPaths.has(item.path)}
             onActivate={activate}

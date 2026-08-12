@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
 import { RadioCard, RadioCardGroup, type RadioCardGroupProps, type RadioCardProps } from './radio-card';
@@ -53,12 +54,14 @@ function RadioCardPlayground() {
   const [details, setDetails] = useState(false);
   const [numeric, setNumeric] = useState(true);
   const [variant, setVariant] = useState<RadioCardVariant>('radio');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
 
   return (
     <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />
         <Toggle label="Extra content" onChange={setDetails} value={details} />
         <Toggle label="Tabular figures" onChange={setNumeric} value={numeric} />
@@ -67,7 +70,13 @@ function RadioCardPlayground() {
       {/* Each card animates its own selection: the border and tint cross-fade
           and the dot fades and scales in place. Nothing travels between cards,
           so no geometry is measured. */}
-      <RadioCardGroup onValueChange={setPlan} orientation={orientation} value={plan} variant={variant}>
+      <RadioCardGroup
+        elevation={ELEVATIONS[elevationKey]}
+        onValueChange={setPlan}
+        orientation={orientation}
+        value={plan}
+        variant={variant}
+      >
         <RadioCard numeric={numeric} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} value="monthly">
           {details ? <Text className="text-muted-foreground text-xs">{SEAT_TEXT}</Text> : null}
         </RadioCard>
@@ -90,6 +99,7 @@ function RadioCardPlayground() {
       <Section title="Standalone (selected / unselected)">
         <View className="flex-row gap-3">
           <RadioCard
+            elevation={ELEVATIONS[elevationKey]}
             numeric={true}
             onPress={handlePress}
             selected={true}
@@ -99,6 +109,7 @@ function RadioCardPlayground() {
           />
           <RadioCard
             badge={YEARLY_BADGE}
+            elevation={ELEVATIONS[elevationKey]}
             numeric={true}
             onPress={handlePress}
             selected={false}
@@ -111,7 +122,14 @@ function RadioCardPlayground() {
 
       <Section title="With custom content">
         <View className="w-60">
-          <RadioCard onPress={handlePress} selected={false} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} variant={variant}>
+          <RadioCard
+            elevation={ELEVATIONS[elevationKey]}
+            onPress={handlePress}
+            selected={false}
+            subtitle={MONTHLY_SUB}
+            title={MONTHLY_TITLE}
+            variant={variant}
+          >
             <Text className="text-muted-foreground text-xs">{SEAT_TEXT}</Text>
           </RadioCard>
         </View>

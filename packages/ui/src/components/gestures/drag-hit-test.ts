@@ -13,14 +13,15 @@ import { isPointInRect, rectArea, rectCenter, rectContains, rectsIntersect } fro
 import { dragGroupsMatch } from './drag-transfer';
 
 /** Ordering key for one candidate, cheapest-to-compare first. */
-type Candidate = { depth: number; entry: DragzoneEntry; area: number; priority: number };
+type Candidate = { depth: number; entry: DragzoneEntry; area: number; index: number; priority: number };
 
-function toCandidate(entry: DragzoneEntry): Candidate {
+function toCandidate(entry: DragzoneEntry, index: number): Candidate {
   const config = entry.getConfig();
   return {
     area: entry.rect === null ? Number.POSITIVE_INFINITY : rectArea(entry.rect),
     depth: entry.managerPath.length,
     entry,
+    index,
     priority: config.priority,
   };
 }
@@ -142,9 +143,9 @@ export function resolveDropTarget({
     .filter((entry) => isZoneEligible({ drag, entry, external, hitTest: true, isIsolating, point, sourceRect, transfer }))
     .map(toCandidate);
   if (hits.length === 0) return null;
-  // Array#sort is stable in every engine this ships to, so equal candidates keep
-  // registration order — which is mount order, the only tie-break left.
-  hits.sort((a, b) => b.priority - a.priority || b.depth - a.depth || a.area - b.area);
+  // When all else fails, the later-registered zone wins — it is more specific by
+  // virtue of having been added after (and inside, or on top of) the earlier one.
+  hits.sort((a, b) => b.priority - a.priority || b.depth - a.depth || a.area - b.area || b.index - a.index);
   return hits[0]?.entry ?? null;
 }
 

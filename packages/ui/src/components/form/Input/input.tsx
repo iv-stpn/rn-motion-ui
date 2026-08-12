@@ -40,9 +40,9 @@ const field = cva('relative flex-row items-center overflow-hidden border', {
       error: 'border-danger',
     },
     size: {
-      sm: 'h-interactive-sm',
-      md: 'h-interactive-md',
-      lg: 'h-interactive-lg',
+      sm: 'min-h-interactive-sm',
+      md: 'min-h-interactive-md',
+      lg: 'min-h-interactive-lg',
     },
     shape: {
       rounded: 'rounded-interactive',
@@ -53,23 +53,23 @@ const field = cva('relative flex-row items-center overflow-hidden border', {
 });
 
 // Size-aware input box: font size and padding track --spacing-interactive-* tokens.
-const inputBox = cva('h-full flex-1 bg-transparent text-foreground outline-none', {
+const inputBox = cva('flex-1 bg-transparent text-foreground outline-none', {
   variants: {
-    left: { true: 'pl-10', false: '' },
-    right: { true: 'pr-10', false: '' },
+    left: { true: 'pl-8', false: '' },
+    right: { true: 'pr-8', false: '' },
     size: {
-      sm: 'text-xs',
-      md: 'text-sm',
-      lg: 'text-base',
+      sm: 'py-1 text-xs',
+      md: 'py-1.5 text-sm',
+      lg: 'py-2 text-base',
     },
   },
   compoundVariants: [
-    { left: false, size: 'sm', class: 'pl-interactive-pad-sm' },
-    { left: false, size: 'md', class: 'pl-interactive-pad-md' },
-    { left: false, size: 'lg', class: 'pl-interactive-pad-lg' },
-    { right: false, size: 'sm', class: 'pr-interactive-pad-sm' },
-    { right: false, size: 'md', class: 'pr-interactive-pad-md' },
-    { right: false, size: 'lg', class: 'pr-interactive-pad-lg' },
+    { left: false, size: 'sm', class: 'pl-2' },
+    { left: false, size: 'md', class: 'pl-2.5' },
+    { left: false, size: 'lg', class: 'pl-3' },
+    { right: false, size: 'sm', class: 'pr-2' },
+    { right: false, size: 'md', class: 'pr-2.5' },
+    { right: false, size: 'lg', class: 'pr-3' },
   ],
   defaultVariants: { left: false, right: false, size: 'md' },
 });
@@ -113,7 +113,7 @@ function renderRightElement({ success, rightSlot, reduce, successIcon }: RightEl
   if (success)
     return (
       <MotiView
-        className="pointer-events-none absolute top-0 right-3.5 bottom-0 items-center justify-center"
+        className="pointer-events-none absolute top-0 right-2.5 bottom-0 items-center justify-center"
         from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'timing', duration: reduce ? 0 : 250 }}
@@ -121,7 +121,7 @@ function renderRightElement({ success, rightSlot, reduce, successIcon }: RightEl
         {successIcon ?? <ThemedIcon icon={Check} token="success-foreground" size={20} />}
       </MotiView>
     );
-  if (rightSlot) return <View className="absolute top-0 right-3 bottom-0 z-10 items-center justify-center">{rightSlot}</View>;
+  if (rightSlot) return <View className="absolute top-0 right-2.5 bottom-0 z-10 items-center justify-center">{rightSlot}</View>;
   return null;
 }
 
@@ -295,7 +295,9 @@ export function Input({
         style={{ transform: [{ translateX: shakeX }] }}
       >
         {leftIcon ? (
-          <View className="pointer-events-none absolute top-0 bottom-0 left-3 z-10 items-center justify-center">{leftIcon}</View>
+          <View className="pointer-events-none absolute top-0 bottom-0 left-2.5 z-10 items-center justify-center">
+            {leftIcon}
+          </View>
         ) : null}
 
         <TextInput

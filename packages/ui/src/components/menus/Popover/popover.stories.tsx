@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../../__stories__/story-harness';
+import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { Text } from '../../typography/Text/text';
 import { Popover, type PopoverAlign, PopoverContent, type PopoverSide, PopoverTrigger } from './popover';
 
@@ -66,6 +67,9 @@ function PopoverPlayground() {
   const [align, setAlign] = useState<PopoverAlign>('center');
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('14');
   const [radiusKey, setRadiusKey] = useState<RadiusKey>('16');
+  const trigger = useTriggerState();
+  // biome-ignore lint/suspicious/noEmptyBlockStatements: noop — PopoverTrigger handles the press
+  const noop = useCallback(() => {}, []);
 
   return (
     <Playground>
@@ -76,12 +80,23 @@ function PopoverPlayground() {
         <Choice label="Radius" onChange={setRadiusKey} options={RADII} value={radiusKey} />
       </ControlCard>
 
+      <TriggerControls state={trigger} />
+
       {/* The panel is measured against the trigger's on-screen rect, so the same
           side/align pair lands differently near a screen edge — the position is
           clamped into the viewport rather than overflowing it. */}
       <View className="items-center py-6">
         <Popover align={align} panelRadius={Number(radiusKey)} side={side} sideOffset={Number(offsetKey)}>
-          <PopoverTrigger>{EDIT_PROFILE}</PopoverTrigger>
+          {/* PopoverTrigger provides the outer Pressable that measures its frame
+              and opens the popover. The TriggerButton inside is purely visual —
+              pointerEvents="none" lets touches fall through to PopoverTrigger so
+              the real Button / ElevatedButton / GlossyButton / Pressable kind
+              renders with its full appearance (SVG layers, shadows, gloss). */}
+          <PopoverTrigger className="rounded-none border-0 bg-transparent p-0">
+            <View pointerEvents="none">
+              <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={EDIT_PROFILE} onPress={noop} />
+            </View>
+          </PopoverTrigger>
           <PopoverContent>
             <View className="max-w-[220px] gap-1">
               <Text className="font-medium text-foreground text-sm">{DIMENSIONS_TITLE}</Text>

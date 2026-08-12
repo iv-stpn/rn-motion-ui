@@ -6,6 +6,7 @@ import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
+import { elevated, type SurfaceLevel } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
@@ -93,6 +94,8 @@ type CheckboxCardCtx = {
   checkTransition?: Partial<MotiTransitionProp>;
   /** The group's own testID, used to derive per-card ones. */
   testID?: string;
+  /** Group-level elevation. A card can override it. */
+  elevation: SurfaceLevel;
 };
 
 const CheckboxCardContext = createContext<CheckboxCardCtx | null>(null);
@@ -116,6 +119,13 @@ export type CheckboxCardGroupProps = {
    * you pass are changed. Default: `TIMING_FAST` (150 ms timing).
    */
   checkTransition?: Partial<MotiTransitionProp>;
+  /**
+   * Surface elevation for every card in the group (1–8). Controls both the
+   * background tint (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`).
+   * Default: `3` (the standard card level). A card can override it with its own
+   * `elevation`.
+   */
+  elevation?: SurfaceLevel;
 };
 
 // Layout swaps the flex direction; cards keep flex-1 so a row shares width evenly.
@@ -145,6 +155,7 @@ export function CheckboxCardGroup({
   style,
   testID,
   checkTransition,
+  elevation = 3,
 }: CheckboxCardGroupProps) {
   const [internal, setInternal] = useState<string[]>(defaultValue ?? []);
   const controlled = value !== undefined;
@@ -160,7 +171,7 @@ export function CheckboxCardGroup({
   );
 
   return (
-    <CheckboxCardContext.Provider value={{ values: current, toggle, isDisabled, checkTransition, testID }}>
+    <CheckboxCardContext.Provider value={{ values: current, toggle, isDisabled, checkTransition, testID, elevation }}>
       <View role="group" testID={testID} className={cn(group({ orientation }), className)} style={style}>
         {children}
       </View>
@@ -210,6 +221,12 @@ export type CheckboxCardProps = {
   checkTransition?: Partial<MotiTransitionProp>;
   /** Replace the check-mark icon. Default: `<Svg width={12} height={12}><Path d={CHECK_PATH} .../></Svg>`. */
   checkIcon?: ReactNode;
+  /**
+   * Surface elevation (1–8). Controls both the background tint
+   * (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`). Inherits the
+   * group's value when unset. Default: `3` (the standard card level).
+   */
+  elevation?: SurfaceLevel;
 };
 
 /**
@@ -240,6 +257,7 @@ export function CheckboxCard({
   testID,
   checkTransition,
   checkIcon,
+  elevation,
 }: CheckboxCardProps) {
   const groupCtx = useContext(CheckboxCardContext);
   if (value !== undefined && groupCtx === null)
@@ -249,6 +267,7 @@ export function CheckboxCard({
 
   const checked = inGroup ? groupCtx.values.includes(value) : Boolean(selectedProp);
   const disabled = isDisabled ?? groupCtx?.isDisabled ?? false;
+  const resolvedElevation = elevation ?? groupCtx?.elevation ?? 3;
   const ct = mergeTransition(TIMING_FAST, checkTransition ?? groupCtx?.checkTransition);
   // Derive from the group so cards are addressable without threading a testID
   // through every child; an explicit prop still wins. Falls back to the
@@ -272,37 +291,49 @@ export function CheckboxCard({
       disabled={disabled}
       {...pressHandlers}
       onPress={handlePress}
-      style={style}
-      className={cn(
-        'flex-1 gap-3 rounded-2xl border p-4',
-        disabled ? 'opacity-60' : 'opacity-100',
-        checked ? 'border-info bg-info/5' : 'border-border bg-transparent',
-        className,
-      )}
+      className="flex-1"
     >
-      <View className="flex-row items-center justify-between">
-        <CheckboxCardBox
-          checked={checked}
-          disabled={disabled}
-          pressed={pressed}
-          transition={ct}
-          checkIcon={checkIcon}
-          testID={cardTestID}
-        />
-        {badge ? (
-          <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
-            <Text className="font-semibold text-primary text-xs">{badge}</Text>
+      {/* The elevated surface wrapper carries the surface background and drop
+          shadow. The shadow must render outside the Pressable's clip region, so
+          it lives on a dedicated View rather than on the surface below. Both
+          `className` and `style` land here so consumer overrides all target one
+          element. */}
+      <View className={cn('rounded-2xl', elevated(resolvedElevation), className)} style={style}>
+        {/* The visual surface carries the border + selection tint. When unchecked
+            it's transparent so the wrapper's surface background shows through;
+            when checked the `bg-info/5` tint overlays it. */}
+        <View
+          className={cn(
+            'flex-1 gap-3 rounded-2xl border p-4',
+            disabled ? 'opacity-60' : 'opacity-100',
+            checked ? 'border-info bg-info/5' : 'border-border',
+          )}
+        >
+          <View className="flex-row items-center justify-between">
+            <CheckboxCardBox
+              checked={checked}
+              disabled={disabled}
+              pressed={pressed}
+              transition={ct}
+              checkIcon={checkIcon}
+              testID={cardTestID}
+            />
+            {badge ? (
+              <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
+                <Text className="font-semibold text-primary text-xs">{badge}</Text>
+              </View>
+            ) : null}
           </View>
-        ) : null}
-      </View>
-      <View className="gap-1">
-        <Text className="font-semibold text-base text-foreground">{title}</Text>
-        {subtitle ? (
-          <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
-            {subtitle}
-          </Text>
-        ) : null}
-        {children}
+          <View className="gap-1">
+            <Text className="font-semibold text-base text-foreground">{title}</Text>
+            {subtitle ? (
+              <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
+                {subtitle}
+              </Text>
+            ) : null}
+            {children}
+          </View>
+        </View>
       </View>
     </Pressable>
   );

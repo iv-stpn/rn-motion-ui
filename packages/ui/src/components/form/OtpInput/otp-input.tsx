@@ -201,7 +201,9 @@ function OtpSlot({
           immediately obvious. Rendered as an absolutely-positioned sibling that
           extends beyond the slot bounds — overflow is only hidden on the
           animated content, not the slot itself. */}
-      {isActive ? <View className="pointer-events-none absolute -inset-px rounded-interactive ring-2 ring-foreground" /> : null}
+      {isActive ? (
+        <View className="pointer-events-none absolute -inset-px rounded-interactive border-2 border-foreground" />
+      ) : null}
 
       {/* Blinking caret — shown only in an EMPTY active slot (with stick visible).
           Flexbox wrapper centres the stick; MotiView handles the blink. */}

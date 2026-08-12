@@ -52,6 +52,15 @@ const zones = new Map<string, DragzoneEntry>();
 let session: Session | null = null;
 let snapshot: DragSnapshot = IDLE;
 
+/**
+ * Set by a zone's DOM `drop` handler before it calls `moveDrag`.  Because
+ * `dragend` fires *after* `drop`, and Safari's `dragend` reports wrong
+ * coordinates, this lets `endDrag` know that `session.point` was just
+ * refreshed with the genuine drop position and should be preferred over
+ * whatever `dragend` reports.
+ */
+let _lastMoveWasFromZoneDrop = false;
+
 const listeners = new Set<() => void>();
 const moveListeners = new Set<(point: DragPoint) => void>();
 
@@ -209,9 +218,35 @@ export function registerDragzone(params: RegisterDragzoneParams): DragzoneRegist
   if (session !== null) {
     recomputeEligible();
     publish();
-    // Measured after publishing: the affordance should appear on this frame, and
-    // the box only has to be right by the time the pointer reaches it.
-    remeasure().catch(() => undefined);
+    // Re-resolve after registration so a zone that mounts mid-drag (a scope zone
+    // after hover-to-open, or a nested folder row after its parent expands) can
+    // become the target immediately rather than waiting for the next dragover.
+    const config = entry.getConfig();
+    if (config.skipRectMeasure) {
+      // Always passes the spatial test — resolve synchronously.
+      const resolved = targetAt(session.point);
+      if (resolved !== null && resolved.id !== session.overZoneId)
+        reportZoneMove({ drag: session.drag, point: session.point, previousId: session.overZoneId, target: resolved });
+    } else {
+      // Needs a measured rect to pass the spatial test — resolve once it lands.
+      remeasure()
+        .then(() => {
+          if (session === null || zones.get(entry.id) === undefined) return;
+          const resolved = targetAt(session.point);
+          const changed = resolved !== null && resolved.id !== session.overZoneId;
+          if (changed)
+            reportZoneMove({ drag: session.drag, point: session.point, previousId: session.overZoneId, target: resolved });
+          // The eligible set was computed before measurement resolved, so this zone
+          // (and any sibling that also just measured) was not in it. Refresh now so
+          // that useDragzoneState reports isEligible correctly and the affordance
+          // paints without waiting for the next dragover. When the target changed,
+          // reportZoneMove already published once — publish again with the fresh
+          // eligible set to avoid a stale snapshot.
+          recomputeEligible();
+          publish();
+        })
+        .catch(() => undefined);
+    }
   }
 
   return {
@@ -219,8 +254,19 @@ export function registerDragzone(params: RegisterDragzoneParams): DragzoneRegist
     unregister: () => {
       zones.delete(params.id);
       if (session === null) return;
-      // A zone unmounting from under the pointer leaves the drag over nothing.
-      if (session.overZoneId === params.id) session.overZoneId = null;
+      // A zone unmounting from under the pointer should immediately resolve
+      // whatever else could be there — a scope zone that mounted in the same
+      // render, or a background fallback — rather than leaving the drag over
+      // nothing until the next pointer move.
+      if (session.overZoneId === params.id) {
+        const resolved = targetAt(session.point);
+        if (resolved !== null && resolved.id !== session.overZoneId) {
+          reportZoneMove({ drag: session.drag, point: session.point, previousId: params.id, target: resolved });
+          recomputeEligible();
+          return; // reportZoneMove already publishes
+        }
+        session.overZoneId = null;
+      }
       recomputeEligible();
       publish();
     },
@@ -305,6 +351,15 @@ export type EndDragParams = {
 };
 
 /**
+ * Signal that the next `endDrag` should prefer `session.point` over the `point`
+ * argument — called from a zone's DOM `drop` handler before `moveDrag`, because
+ * the `dragend` that follows can carry wrong coordinates (Safari).
+ */
+export function markDropZoneUpdate(): void {
+  _lastMoveWasFromZoneDrop = true;
+}
+
+/**
  * End the drag and say what became of it.
  *
  * The target is re-resolved at the release point rather than trusting `overZoneId`:
@@ -313,17 +368,22 @@ export type EndDragParams = {
  * so a zone cannot be handed the same payload twice.
  */
 export function endDrag({ commit, point, sourceId, transportDropEffect }: EndDragParams): DragEndOutcome {
+  const wasZoneDrop = _lastMoveWasFromZoneDrop;
+  _lastMoveWasFromZoneDrop = false;
   if (session === null || session.drag.id !== sourceId) return { canceled: true, dropEffect: 'none', point, zoneId: null };
   const { drag } = session;
   // The HTML5 transport's `dragend` reports bogus coordinates in two engines:
   //  • Chrome — (0, 0): the browser tears down the session by the time dragend
   //    fires. Fall back to the last position from `moveDrag` unconditionally.
   //  • Safari — plausible but wrong non-zero coordinates. The zone's own
-  //    `dragover` handler keeps `session.point` accurate with `moveDrag`, so
-  //    when the release point hits nothing, consult the tracked point instead.
+  //    `drop` handler fires before `dragend` and calls `moveDrag` with the
+  //    genuine coordinates.  When it did, prefer `session.point` over the
+  //    `dragend` coordinates — they can resolve to the wrong zone, and the
+  //    existing `target === null` guard only catches the case where they hit
+  //    nothing, not where they hit a different zone.
   let resolved = point.x === 0 && point.y === 0 ? session.point : point;
   let target = commit ? targetAt(resolved) : null;
-  if (target === null && commit && resolved !== session.point) {
+  if (commit && resolved !== session.point && (wasZoneDrop || target === null)) {
     const fallback = targetAt(session.point);
     if (fallback !== null) {
       resolved = session.point;
@@ -458,6 +518,7 @@ export function resetDragStore(): void {
   zones.clear();
   session = null;
   snapshot = IDLE;
+  _lastMoveWasFromZoneDrop = false;
   listeners.clear();
   moveListeners.clear();
 }

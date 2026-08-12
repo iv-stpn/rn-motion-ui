@@ -144,11 +144,12 @@ describe('resolveDropTarget', () => {
     expect(resolve([slot, column])).toBe('slot');
   });
 
-  it('falls back to mount order when two zones are otherwise identical', () => {
+  it('falls back to registration order when two zones are otherwise identical (later wins)', () => {
     const first = zone({ id: 'first', rect: rect(0, 0, 100, 100) });
     const second = zone({ id: 'second', rect: rect(0, 0, 100, 100) });
-    expect(resolve([first, second])).toBe('first');
-    expect(resolve([second, first])).toBe('second');
+    // Later-registered is more specific — it was added after the first, inside or on top of it.
+    expect(resolve([first, second])).toBe('second');
+    expect(resolve([second, first])).toBe('first');
   });
 
   it('never returns a zone that refused the drag', () => {

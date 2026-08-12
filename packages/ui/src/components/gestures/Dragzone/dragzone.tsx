@@ -12,7 +12,7 @@
 // a payload arrived from outside the page entirely.
 
 import { type ReactNode, type Ref, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef } from 'react';
-import { View, type ViewProps } from 'react-native';
+import { type LayoutChangeEvent, View, type ViewProps } from 'react-native';
 import { cn } from '../../../lib/cn';
 import type {
   DragGroups,
@@ -127,6 +127,7 @@ export function Dragzone({
   ref,
   skipRectMeasure = false,
   testID,
+  onLayout: consumerOnLayout,
   ...viewProps
 }: DragzoneProps) {
   const id = useId();
@@ -182,10 +183,13 @@ export function Dragzone({
     if (skipRectMeasure) return Promise.resolve();
     return registrationRef.current?.remeasure() ?? Promise.resolve();
   }, [skipRectMeasure]);
-  const handleLayout = useCallback(() => {
-    if (skipRectMeasure) return;
-    remeasure().catch(() => undefined);
-  }, [skipRectMeasure, remeasure]);
+  const handleLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      if (!skipRectMeasure) remeasure().catch(() => undefined);
+      consumerOnLayout?.(event);
+    },
+    [skipRectMeasure, remeasure, consumerOnLayout],
+  );
 
   // The snapshot rather than `useDragzoneState`, because the render state names the
   // drag as well as this zone's standing in it — and it is the same subscription.

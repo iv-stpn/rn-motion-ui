@@ -55,6 +55,7 @@ export function ReorderableItem({
   const onDrop = useReorderableListStore(listId, (s) => s.onDrop);
   const onDragEnd = useReorderableListStore(listId, (s) => s.onDragEnd);
   const onMeasure = useReorderableListStore(listId, (s) => s.onMeasure);
+  const draggedKey = useReorderableListStore(listId, (s) => s.draggedKey);
 
   // ── Callback wiring — bind itemKey to store actions ───────────────────
   const handleDragStart = useCallback(() => {
@@ -62,6 +63,13 @@ export function ReorderableItem({
   }, [itemKey, onLift]);
 
   const handleDragOver = useCallback(
+    (event: DragzoneDragEvent) => {
+      onOver(itemKey, event.point);
+    },
+    [itemKey, onOver],
+  );
+
+  const handleDragEnter = useCallback(
     (event: DragzoneDragEvent) => {
       onOver(itemKey, event.point);
     },
@@ -106,6 +114,23 @@ export function ReorderableItem({
       .catch(() => undefined);
   }, [itemKey, onMeasure]);
 
+  // The drag store's `beginDrag` calls `measureZones()` which refreshes every
+  // zone's `entry.rect` — but the list store's `_rects` is only populated at
+  // mount and layout.  When they disagree, `insertionPosition` computes the wrong
+  // `before` value and the drop lands one slot early.  Re-measuring every item
+  // when a drag starts keeps `_rects` in sync with the zones' rects for the
+  // duration of the drag.
+  // biome-ignore lint/plugin: re-measuring a Dragzone when a drag starts; same async-timer pattern as the mount measure above
+  useEffect(() => {
+    if (draggedKey === null) return;
+    zoneRef.current
+      ?.measure()
+      .then((rect) => {
+        if (rect) onMeasure(itemKey, rect);
+      })
+      .catch(() => undefined);
+  }, [draggedKey, itemKey, onMeasure]);
+
   // Reject self-drops: the dragged item's key is in the transfer.
   // Guard `drag === null` first — an external payload has no in-library source
   // and should never land on a list item.
@@ -126,6 +151,7 @@ export function ReorderableItem({
       className={cn(webHover && 'transition-all duration-200 hover:bg-surface-hover')}
       disabled={disabled}
       groups={[listId]}
+      onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}

@@ -61,10 +61,6 @@ const SHELL_SPRING = { type: 'spring', stiffness: 220, damping: 17, mass: 0.85 }
 // No flex `gap` here: the overflow clip is an always-mounted flex child, so a
 // track gap would render on both sides of it even at width 0 (phantom spacing
 // when collapsed). Inter-segment spacing is driven by explicit margins instead.
-const track = cva('relative flex-row items-center overflow-hidden rounded-full border border-border bg-surface-2', {
-  variants: { size: { sm: 'p-1', md: 'p-1.5' } },
-  defaultVariants: { size: 'md' },
-});
 const group = cva('flex-row items-center', {
   variants: { size: { sm: 'gap-1', md: 'gap-1.5' } },
   defaultVariants: { size: 'md' },
@@ -131,7 +127,7 @@ export function OverflowActions({
 
   return (
     <View testID={testID} className={cn('flex-row self-start', className)} style={style}>
-      <View className={track({ size })}>
+      <View className="relative flex-row items-center overflow-hidden rounded-full bg-muted p-1">
         <View className={group({ size })}>
           {primaryActions.map((item) => (
             <ActionButton
@@ -249,7 +245,7 @@ function ActionButton({ item, size, reduce, onAction, testID }: ActionButtonProp
       >
         {item.icon === null ? null : item.icon}
         {typeof item.label === 'string' || typeof item.label === 'number' ? (
-          <Text className="font-medium text-foreground" style={{ fontSize: size === 'sm' ? 12 : 14 }}>
+          <Text weight="medium" className="text-foreground" style={{ fontSize: size === 'sm' ? 12 : 14 }}>
             {item.label}
           </Text>
         ) : (

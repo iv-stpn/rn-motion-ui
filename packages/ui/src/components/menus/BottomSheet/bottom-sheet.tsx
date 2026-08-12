@@ -171,17 +171,19 @@ export function BottomSheet({
             // carries a real button role and label rather than being an
             // unlabelled tap target. When `closeOnOverlayClick` is off it does
             // nothing, and it leaves the a11y tree instead of lying about it.
-            <Pressable
-              onPress={handleOverlayPress}
-              className="flex-1"
-              accessibilityRole={closeOnOverlayClick ? 'button' : undefined}
-              accessibilityLabel={closeOnOverlayClick ? closeAccessibilityLabel : undefined}
-              accessibilityElementsHidden={!closeOnOverlayClick}
-              importantForAccessibility={closeOnOverlayClick ? 'yes' : 'no-hide-descendants'}
-              aria-hidden={closeOnOverlayClick ? undefined : true}
-              focusable={closeOnOverlayClick}
-              testID={testID ? `${testID}-backdrop` : undefined}
-            />
+            <View pointerEvents={open && closeOnOverlayClick ? 'auto' : 'none'} className="flex-1">
+              <Pressable
+                onPress={handleOverlayPress}
+                className="flex-1"
+                accessibilityRole={closeOnOverlayClick ? 'button' : undefined}
+                accessibilityLabel={closeOnOverlayClick ? closeAccessibilityLabel : undefined}
+                accessibilityElementsHidden={!closeOnOverlayClick}
+                importantForAccessibility={closeOnOverlayClick ? 'yes' : 'no-hide-descendants'}
+                aria-hidden={closeOnOverlayClick ? undefined : true}
+                focusable={closeOnOverlayClick}
+                testID={testID ? `${testID}-backdrop` : undefined}
+              />
+            </View>
           )}
           <GestureDetector gesture={handleGesture}>
             <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>

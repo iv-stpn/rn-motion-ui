@@ -3,7 +3,7 @@ import { useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets';
 
 const OPEN_SPRING = { damping: 32, stiffness: 300, mass: 0.75 };
-const CLOSE_SPRING = { damping: 40, stiffness: 300, mass: 0.75, overshootClamping: true };
+const CLOSE_SPRING = { damping: 36, stiffness: 400, mass: 0.4, overshootClamping: true };
 /** Reduced-motion slide duration (ms) — short enough to be imperceptible as motion. */
 const REDUCED_DURATION = 160;
 

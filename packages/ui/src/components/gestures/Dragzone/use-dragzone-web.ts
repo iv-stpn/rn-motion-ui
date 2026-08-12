@@ -22,7 +22,7 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { Platform, type View } from 'react-native';
 import type { DragDropEffect } from '../drag.types';
-import { canZoneAcceptExternal, deliverExternalDrop, getActiveDrag, moveDrag } from '../drag-store';
+import { canZoneAcceptExternal, deliverExternalDrop, getActiveDrag, markDropZoneUpdate, moveDrag } from '../drag-store';
 
 export type UseDragzoneWebParams = {
   acceptsExternal: boolean;
@@ -91,12 +91,14 @@ export function useDragzoneWeb({ acceptsExternal, enabled, nodeRef, zoneId }: Us
       if (!transfer) return;
       // Our own drag: the `drop` event fires before `dragend` and the DOM
       // guarantees its coordinates are correct — Safari's `dragend` can
-      // report wrong ones. Update the store's tracked point now so the
-      // hit test in `endDrag` resolves this zone. The drop itself is still
+      // report wrong ones. Signal to `endDrag` that `session.point` was
+      // just refreshed with the genuine drop position so it can prefer it
+      // over whatever coordinates `dragend` reports. The drop is still
       // delivered through the store (the source's `dragend`), so we neither
       // preventDefault nor handle the payload here.
       const active = getActiveDrag();
       if (active !== null) {
+        markDropZoneUpdate();
         moveDrag({ x: e.clientX, y: e.clientY });
         return;
       }

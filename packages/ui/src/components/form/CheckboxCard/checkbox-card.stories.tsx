@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
 import { CheckboxCard, CheckboxCardGroup, type CheckboxCardGroupProps } from './checkbox-card';
@@ -51,11 +52,13 @@ function CheckboxCardPlayground() {
   const [details, setDetails] = useState(false);
   const [numeric, setNumeric] = useState(true);
   const [disabled, setDisabled] = useState(false);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
 
   return (
     <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />
         <Toggle label="Extra content" onChange={setDetails} value={details} />
         <Toggle label="Tabular figures" onChange={setNumeric} value={numeric} />
@@ -64,7 +67,13 @@ function CheckboxCardPlayground() {
 
       {/* Any number of cards can be checked, so each one animates its own box
           into the `info` accent. The group just owns the selected array. */}
-      <CheckboxCardGroup isDisabled={disabled} onValueChange={setAddons} orientation={orientation} value={addons}>
+      <CheckboxCardGroup
+        elevation={ELEVATIONS[elevationKey]}
+        isDisabled={disabled}
+        onValueChange={setAddons}
+        orientation={orientation}
+        value={addons}
+      >
         <CheckboxCard numeric={numeric} subtitle={SEATS_SUB} title={SEATS_TITLE} value="seats">
           {details ? <Text className="text-muted-foreground text-xs">{SEATS_TEXT}</Text> : null}
         </CheckboxCard>
@@ -87,6 +96,7 @@ function CheckboxCardPlayground() {
       <Section title="Standalone (checked / unchecked)">
         <View className="flex-row gap-3">
           <CheckboxCard
+            elevation={ELEVATIONS[elevationKey]}
             isSelected={true}
             numeric={true}
             onSelectedChange={handleChange}
@@ -95,6 +105,7 @@ function CheckboxCardPlayground() {
           />
           <CheckboxCard
             badge={SUPPORT_BADGE}
+            elevation={ELEVATIONS[elevationKey]}
             isSelected={false}
             numeric={true}
             onSelectedChange={handleChange}
@@ -107,6 +118,7 @@ function CheckboxCardPlayground() {
       <Section title="Disabled">
         <View className="flex-row gap-3">
           <CheckboxCard
+            elevation={ELEVATIONS[elevationKey]}
             isDisabled={true}
             isSelected={true}
             numeric={true}
@@ -115,6 +127,7 @@ function CheckboxCardPlayground() {
             title={SEATS_TITLE}
           />
           <CheckboxCard
+            elevation={ELEVATIONS[elevationKey]}
             isDisabled={true}
             isSelected={false}
             numeric={true}
@@ -127,7 +140,13 @@ function CheckboxCardPlayground() {
 
       <Section title="With custom content">
         <View style={{ width: NARROW_WIDTH }}>
-          <CheckboxCard isSelected={false} onSelectedChange={handleChange} subtitle={SEATS_SUB} title={SEATS_TITLE}>
+          <CheckboxCard
+            elevation={ELEVATIONS[elevationKey]}
+            isSelected={false}
+            onSelectedChange={handleChange}
+            subtitle={SEATS_SUB}
+            title={SEATS_TITLE}
+          >
             <Text className="text-muted-foreground text-xs">{SEATS_TEXT}</Text>
           </CheckboxCard>
         </View>

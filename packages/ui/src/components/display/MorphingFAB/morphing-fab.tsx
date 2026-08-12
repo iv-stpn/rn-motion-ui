@@ -6,7 +6,7 @@ import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT } from '../../../lib/ease';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
+import { elevated, type SurfaceLevel } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
 
@@ -124,12 +124,7 @@ export function MorphingFAB({
           borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS,
         }}
         transition={morphTransition}
-        className={cn(
-          'overflow-hidden border border-border',
-          surfaceBackground(elevation),
-          elevatedShadow(elevation),
-          'absolute bottom-0',
-        )}
+        className={cn('overflow-hidden', elevated(elevation), 'absolute bottom-0')}
         style={{ ...(left ? { left: 0 } : { right: 0 }) }}
       >
         {open ? (

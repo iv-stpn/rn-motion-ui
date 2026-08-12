@@ -4,6 +4,7 @@ import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { cssColorToOklch, oklchToSrgb } from '../../../lib/color';
+import { elevated, type SurfaceLevel } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
@@ -91,6 +92,8 @@ type RadioCardCtx = {
   testID?: string;
   /** Group-level variant. A card can override it. */
   variant?: RadioCardVariant;
+  /** Group-level elevation. A card can override it. */
+  elevation: SurfaceLevel;
 };
 
 const RadioCardContext = createContext<RadioCardCtx | null>(null);
@@ -118,6 +121,13 @@ export type RadioCardGroupProps = {
    * tint. A card can override it with its own `variant`.
    */
   variant?: RadioCardVariant;
+  /**
+   * Surface elevation for every card in the group (1–8). Controls both the
+   * background tint (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`).
+   * Default: `3` (the standard card level). A card can override it with its own
+   * `elevation`.
+   */
+  elevation?: SurfaceLevel;
 };
 
 // Layout swaps the flex direction; cards keep flex-1 so a row shares width evenly.
@@ -146,6 +156,7 @@ export function RadioCardGroup({
   testID,
   transition,
   variant,
+  elevation = 3,
 }: RadioCardGroupProps) {
   const [internal, setInternal] = useState(defaultValue);
   const controlled = value !== undefined;
@@ -160,7 +171,7 @@ export function RadioCardGroup({
   );
 
   return (
-    <RadioCardContext.Provider value={{ value: current, setValue, transition, testID, variant }}>
+    <RadioCardContext.Provider value={{ value: current, setValue, transition, testID, variant, elevation }}>
       <View accessibilityRole="radiogroup" testID={testID} className={cn(group({ orientation }), className)} style={style}>
         {children}
       </View>
@@ -217,6 +228,12 @@ export type RadioCardProps = {
    * group's value when unset.
    */
   variant?: RadioCardVariant;
+  /**
+   * Surface elevation (1–8). Controls both the background tint
+   * (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`). Inherits the
+   * group's value when unset. Default: `3` (the standard card level).
+   */
+  elevation?: SurfaceLevel;
 };
 
 /**
@@ -246,6 +263,7 @@ export function RadioCard({
   testID,
   transition,
   variant,
+  elevation,
 }: RadioCardProps) {
   const groupCtx = useContext(RadioCardContext);
   if (value !== undefined && groupCtx === null)
@@ -257,6 +275,7 @@ export function RadioCard({
 
   const selected = inGroup ? groupCtx.value === value : Boolean(selectedProp);
   const resolvedVariant = variant ?? groupCtx?.variant ?? 'radio';
+  const resolvedElevation = elevation ?? groupCtx?.elevation ?? 3;
   const t = mergeTransition(TIMING_FAST, transition ?? groupCtx?.transition);
   const ct = reduce ? TIMING_INSTANT : t;
   // Derive from the group so cards are addressable without threading a testID
@@ -283,43 +302,48 @@ export function RadioCard({
       testID={cardTestID}
       className="flex-1"
     >
-      {/* The animated surface. A Pressable can't be animated directly (motify is
-          only applied to host primitives, and MotiPressable nests a MotiView the
-          same way), so the border/tint live here and the Pressable above keeps
-          the role, press handling and row layout. Both `className` and `style`
-          land on this surface so consumer overrides all target one element. */}
-      <MotiView
-        animate={{
-          borderColor: selected ? info : borderColor,
-          backgroundColor: tintAt(info, selected ? TINT_ALPHA : 0),
-        }}
-        transition={ct}
-        className={cn('flex-1 gap-3 rounded-2xl border p-4', className)}
-        style={style}
-      >
-        <View className="flex-row items-center justify-between">
-          {resolvedVariant === 'radio' ? (
-            <RadioCardRing selected={selected} transition={t} testID={cardTestID} />
-          ) : (
-            /* Spacer so the badge still aligns to the right when there's no ring */
-            <View />
-          )}
-          {badge ? (
-            <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
-              <Text className="font-semibold text-primary text-xs">{badge}</Text>
-            </View>
-          ) : null}
-        </View>
-        <View className="gap-1">
-          <Text className="font-semibold text-base text-foreground">{title}</Text>
-          {subtitle ? (
-            <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
-              {subtitle}
-            </Text>
-          ) : null}
-          {children}
-        </View>
-      </MotiView>
+      {/* The elevated surface wrapper carries the surface background and drop
+          shadow. The shadow must render outside the Pressable's clip region, so
+          it lives on a dedicated View rather than on the animated surface below.
+          Both `className` and `style` land here so consumer overrides all target
+          one element. */}
+      <View className={cn('rounded-2xl', elevated(resolvedElevation), className)} style={style}>
+        {/* The animated surface. A Pressable can't be animated directly (motify
+            is only applied to host primitives, and MotiPressable nests a MotiView
+            the same way), so the border/tint live here and the Pressable above
+            keeps the role and press handling. */}
+        <MotiView
+          animate={{
+            borderColor: selected ? info : borderColor,
+            backgroundColor: tintAt(info, selected ? TINT_ALPHA : 0),
+          }}
+          transition={ct}
+          className="flex-1 gap-3 rounded-2xl border p-4"
+        >
+          <View className="flex-row items-center justify-between">
+            {resolvedVariant === 'radio' ? (
+              <RadioCardRing selected={selected} transition={t} testID={cardTestID} />
+            ) : (
+              /* Spacer so the badge still aligns to the right when there's no ring */
+              <View />
+            )}
+            {badge ? (
+              <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
+                <Text className="font-semibold text-primary text-xs">{badge}</Text>
+              </View>
+            ) : null}
+          </View>
+          <View className="gap-1">
+            <Text className="font-semibold text-base text-foreground">{title}</Text>
+            {subtitle ? (
+              <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
+                {subtitle}
+              </Text>
+            ) : null}
+            {children}
+          </View>
+        </MotiView>
+      </View>
     </Pressable>
   );
 }

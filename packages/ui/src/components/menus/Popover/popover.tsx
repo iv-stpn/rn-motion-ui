@@ -117,11 +117,13 @@ export function Popover({
 export type PopoverTriggerProps = {
   children: ReactNode;
   accessibilityLabel?: string;
+  /** Merged onto the Pressable — overrides the default trigger look. */
+  className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
 
-export function PopoverTrigger({ children, accessibilityLabel, style, testID }: PopoverTriggerProps) {
+export function PopoverTrigger({ children, accessibilityLabel, className, style, testID }: PopoverTriggerProps) {
   const { toggle, setRect, open } = usePopover('PopoverTrigger');
   const ref = useRef<View>(null);
 
@@ -140,7 +142,10 @@ export function PopoverTrigger({ children, accessibilityLabel, style, testID }: 
       accessibilityLabel={accessibilityLabel}
       testID={testID}
       onPress={onPress}
-      className="h-10 flex-row items-center justify-center gap-2 self-start rounded-full border border-border bg-surface-3 px-5"
+      className={cn(
+        'h-10 flex-row items-center justify-center gap-2 self-start rounded-full border border-border bg-surface-3 px-5',
+        className,
+      )}
       style={style}
     >
       {typeof children === 'string' || typeof children === 'number' ? (

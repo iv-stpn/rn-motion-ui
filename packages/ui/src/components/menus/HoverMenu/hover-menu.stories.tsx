@@ -90,16 +90,7 @@ type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 's
 // own right, which is exactly why `onPress` has to be `toggle` — see TRIGGER_NOTE.
 // biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
-  return (
-    <TriggerButton
-      buttonVariant="ghost"
-      kind={kind}
-      size={size}
-      shape={shape}
-      label={open ? TRIGGER_OPEN : TRIGGER_CLOSED}
-      onPress={toggle}
-    />
-  );
+  return <TriggerButton kind={kind} size={size} shape={shape} label={open ? TRIGGER_OPEN : TRIGGER_CLOSED} onPress={toggle} />;
 }
 
 const renderPlainTrigger = (props: PlainTriggerProps) => <PlainTrigger open={props.open} />;

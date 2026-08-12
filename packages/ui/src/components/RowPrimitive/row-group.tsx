@@ -67,7 +67,7 @@ export function RowGroupContainer({ variant, size, className, style, testID, chi
           // biome-ignore lint/suspicious/noArrayIndexKey: children array is stable — derived from the parent's fixed items list — and the wrapper fragments are stateless
           <Fragment key={index}>
             {child}
-            {index < childArray.length - 1 && <View className="h-px bg-border my-2" />}
+            {index < childArray.length - 1 && <View className="my-2 h-px bg-border" />}
           </Fragment>
         ))}
       </View>

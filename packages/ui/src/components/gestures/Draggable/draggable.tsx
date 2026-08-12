@@ -223,6 +223,7 @@ export function Draggable({
   // the Handle sub-component carries the gesture, so the drag only starts from there.
   return drag.gesture === null || drag.hasHandle ? content : <GestureDetector gesture={drag.gesture}>{content}</GestureDetector>;
 }
+
 // Declared with the hook now, since that is where it is read. Re-exported so this
 // subpath still carries every name it used to.
 export type { DraggableHandleProps } from '../drag.types';

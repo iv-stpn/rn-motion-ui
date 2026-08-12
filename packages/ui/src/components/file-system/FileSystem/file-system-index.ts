@@ -98,9 +98,7 @@ export function buildFileSystemIndex(
   // browser works: an empty folder is still a folder.
   if (options?.preserveFolders) {
     for (const [path, folder] of options.preserveFolders) {
-      if (!folders.has(path)) {
-        folders.set(path, { ...folder });
-      }
+      if (!folders.has(path)) folders.set(path, { ...folder });
     }
   }
 

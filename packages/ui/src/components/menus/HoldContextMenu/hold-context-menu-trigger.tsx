@@ -343,7 +343,6 @@ export type HoldContextMenuTriggerProps = {
   testID?: string;
 };
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the five-body dispatch (passive/holdWidget/DragOnlyBody/pressable) reads best as a single function rather than split across helpers that share only props
 export function HoldContextMenuTrigger({
   children,
   wrapperRef,

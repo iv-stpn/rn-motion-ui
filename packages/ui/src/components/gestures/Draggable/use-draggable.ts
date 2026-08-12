@@ -538,14 +538,7 @@ export function useDraggable(options: UseDraggableOptions = {}): UseDraggableRet
   const tuning = useMemo(() => (hasHold ? resolved : { ...resolved, holdDelay: null }), [hasHold, resolved]);
 
   // Shared by both pans, so the hold lands at the same moment on either.
-  const { timeline, phase } = usePressTimeline({
-    canDrag: true,
-    onHold,
-    onHoldEscape,
-    onPhaseChange,
-    track: trackPhase,
-    tuning,
-  });
+  const { timeline, phase } = usePressTimeline({ canDrag: true, onHold, onHoldEscape, onPhaseChange, track: trackPhase, tuning });
 
   // `groups` is resolved here rather than in the session, and the same way `<Dragzone>`
   // resolves its own: the manager's groups are a default this source may override, and

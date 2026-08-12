@@ -6,7 +6,6 @@
   "scripts": {
     "start": "expo start --web",
     "web": "expo start --web",
-    "gen:colors": "node ../../packages/ui/scripts/gen-tokens.mjs",
     "native": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",

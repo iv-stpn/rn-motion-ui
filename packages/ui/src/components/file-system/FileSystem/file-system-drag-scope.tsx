@@ -17,6 +17,7 @@
 import type { ReactNode } from 'react';
 import { useCallback } from 'react';
 import { View } from 'react-native';
+import { readMultiDragIds } from '../../gestures/DragManager/multi-drag';
 import { MultiDragManager } from '../../gestures/DragManager/multi-drag-manager';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
@@ -117,10 +118,16 @@ export function FileSystemDragScope({ children }: FileSystemDragScopeProps) {
   );
 
   // When a drag starts from an unselected item, clear any prior selection so the
-  // drag doesn't carry stale selected items that the user didn't intend to move.
+  // stale highlight doesn't read as "this is all moving too". The lifted item's
+  // identity is not on the source — `drag.source.id` is the `<Draggable>`'s own
+  // id, never an entry path. The ids the lift actually carries are on the transfer,
+  // and `defaultResolveIds` makes those exactly the selection when the lifted item
+  // was selected, and just that item when it was not.
   const handleDragStart = useCallback(
     ({ drag }: import('../../gestures/drag.types').DragManagerEvent) => {
-      if (!selectedPaths.has(drag.source.id)) clearSelection();
+      const carried = readMultiDragIds(drag.transfer);
+      const liftsSelection = carried.length === selectedPaths.size && carried.every((id) => selectedPaths.has(id));
+      if (!liftsSelection) clearSelection();
     },
     [clearSelection, selectedPaths],
   );

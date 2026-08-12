@@ -25,7 +25,7 @@ import type { DragzoneAcceptEvent, DragzoneRenderState } from '../../gestures/dr
 import { refreshDragzones } from '../../gestures/drag-store';
 import { useActiveDrag } from '../../gestures/use-drag-store';
 import { ThemedIcon } from '../../icon/themed-icon';
-import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
+import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from './FileIcon/file-icons';
 import type {
@@ -51,7 +51,7 @@ import { useEntryActivation } from './use-entry-activation';
 import { useFileSystemDragOptions } from './use-file-system-drag-options';
 import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
 import { type AugmentedEntry, useFileSystemRowAnimation } from './use-file-system-row-animation';
-import { useFileSystemRowInteraction } from './use-file-system-row-interaction';
+import { type FileSystemRowInteractionReturn, useFileSystemRowInteraction } from './use-file-system-row-interaction';
 
 const NAME_LABEL = 'Name';
 const DATE_LABEL = 'Date Modified';
@@ -192,6 +192,15 @@ const SPRING_LOAD_DELAY_MS = 800;
  * The folder stays expanded after the drag leaves — it was a deliberate
  * action, like clicking the chevron.
  */
+type SpringLoadEffectProps = {
+  ensureChildren?: (folderPath: string) => void;
+  folderPath: string;
+  hasChildren: boolean;
+  isExpanded: boolean;
+  isOver: boolean;
+  onToggleExpanded: (path: string) => void;
+};
+
 function SpringLoadEffect({
   ensureChildren,
   folderPath,
@@ -199,16 +208,10 @@ function SpringLoadEffect({
   isExpanded,
   isOver,
   onToggleExpanded,
-}: {
-  ensureChildren?: (folderPath: string) => void;
-  folderPath: string;
-  hasChildren: boolean;
-  isExpanded: boolean;
-  isOver: boolean;
-  onToggleExpanded: (path: string) => void;
-}) {
+}: SpringLoadEffectProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // biome-ignore lint/plugin: clearing pending timers on unmount is imperative teardown
   useEffect(() => {
     // Only start the timer when the drag enters a collapsed folder.
     if (isOver && !isExpanded) {
@@ -219,6 +222,7 @@ function SpringLoadEffect({
         onToggleExpanded(folderPath);
       }, SPRING_LOAD_DELAY_MS);
     }
+
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -227,17 +231,108 @@ function SpringLoadEffect({
     };
   }, [isOver, isExpanded, hasChildren, folderPath, onToggleExpanded, ensureChildren]);
 
-  // No collapse on leave — the folder stays expanded so the user can see
-  // where items landed.
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    },
-    [],
-  );
-
   return null;
+}
+
+type ListRowBodyProps = {
+  childCount: number | undefined;
+  dragOptions: HoldContextMenuDragOptions | undefined;
+  entry: FileSystemEntry;
+  handleOpenChange: (open: boolean) => void;
+  handlePress: (event: GestureResponderEvent) => void;
+  handlePressIn: () => void;
+  isExpandable: boolean;
+  isExpanded: boolean;
+  isSelected: boolean;
+  level: number;
+  menuProps: FileSystemRowInteractionReturn['menuProps'];
+  onHoldAction: (() => void) | undefined;
+  onToggleExpanded: (path: string) => void;
+  renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
+  showDate: boolean;
+  testID?: string;
+};
+
+/**
+ * The pressable core of a list row: chevron lane, icon, name, then the metadata
+ * columns, wrapped in the hold/context menu. The lift tint and the row highlight
+ * are decided here, so a selected row that is mid-drag dims instead of lighting
+ * up. Split out of `ListRow` so both the file shell and the folder dropzone can
+ * render it as a child without a second function.
+ */
+function ListRowBody({
+  childCount,
+  dragOptions,
+  entry,
+  handleOpenChange,
+  handlePress,
+  handlePressIn,
+  isExpandable,
+  isExpanded,
+  isSelected,
+  level,
+  menuProps,
+  onHoldAction,
+  onToggleExpanded,
+  renderEntryIcon,
+  showDate,
+  testID,
+}: ListRowBodyProps) {
+  const isLifting = useIsLifting(entry.path);
+  const colors = useThemeColors();
+  const handleToggle = useCallback(() => onToggleExpanded(entry.path), [entry.path, onToggleExpanded]);
+
+  // Only a selection lights the row; the drop target gets an info outline
+  // instead, so the parent folder row never highlights when the pointer is
+  // over a subfolder.
+  const isActive = isSelected && !isLifting;
+  const textClassName = isActive ? 'text-white' : 'text-foreground';
+  const metaClassName = isActive ? 'text-white' : 'text-muted-foreground';
+
+  return (
+    <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: FS_ROW_HEIGHT }}>
+      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: isSelected }}
+          // Both, deliberately: `accessibilityState` is what native reads, and
+          // react-native-web maps `aria-selected` but not `accessibilityState`, so
+          // on web the fill would otherwise be the only thing saying "picked".
+          aria-selected={isSelected}
+          // Hover is not a class here: it is one sliding node behind the rows, so it
+          // can keep tracking under the drag's pointer capture. See file-system-hover.
+          className={cn('flex-row items-center gap-1 px-2', isActive && 'bg-info')}
+          onPress={handlePress}
+          onPressIn={handlePressIn}
+          style={{ height: FS_ROW_HEIGHT, paddingLeft: chevronLaneLeft(level) }}
+          testID={testID}
+        >
+          {/* The chevron's lane, held open on file rows too so names stay aligned
+              across kinds. On a folder row the control below sits over this box. */}
+          <View style={{ width: CHEVRON_SIZE }} />
+          {entry.kind === 'folder'
+            ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
+            : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
+          {entry.pinnedAt ? <Pin color={isActive ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}
+          <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
+            {entry.name}
+          </Text>
+          {entry.favoritedAt ? <Heart color={isActive ? colors.white : colors.danger} size={FAV_ICON_SIZE} /> : null}
+          {showDate ? (
+            <Text className={cn('w-44', metaClassName)} numberOfLines={1} size="xs">
+              {formatTimestamp(entry.updatedAt ?? entry.createdAt) ?? MISSING_VALUE}
+            </Text>
+          ) : null}
+          <Text className={cn('w-20 text-right', metaClassName)} numberOfLines={1} numeric={true} size="xs">
+            {entry.kind === 'folder' ? itemCountLabel(childCount) : (formatByteSize(entry.size) ?? MISSING_VALUE)}
+          </Text>
+        </Pressable>
+        {isExpandable ? (
+          <RowChevron isExpanded={isExpanded} isSelected={isActive} level={level} name={entry.name} onToggle={handleToggle} />
+        ) : null}
+      </HoldContextMenu>
+    </View>
+  );
 }
 
 type ListRowProps = {
@@ -292,8 +387,6 @@ function ListRow({
   testID,
 }: ListRowProps) {
   const { entry, isExpandable, isExpanded, level } = row;
-  const handleToggle = useCallback(() => onToggleExpanded(entry.path), [entry.path, onToggleExpanded]);
-  const colors = useThemeColors();
 
   const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
     entry,
@@ -304,78 +397,45 @@ function ListRow({
   });
   const dragOptions = useFileSystemDragOptions(entry, draggable);
 
-  const isLifting = useIsLifting(entry.path);
+  const body = (
+    <ListRowBody
+      childCount={childCount}
+      dragOptions={dragOptions}
+      entry={entry}
+      handleOpenChange={handleOpenChange}
+      handlePress={handlePress}
+      handlePressIn={handlePressIn}
+      isExpandable={isExpandable}
+      isExpanded={isExpanded}
+      isSelected={isSelected}
+      level={level}
+      menuProps={menuProps}
+      onHoldAction={onHoldAction}
+      onToggleExpanded={onToggleExpanded}
+      renderEntryIcon={renderEntryIcon}
+      showDate={showDate}
+      testID={testID}
+    />
+  );
 
-  const renderBody = () => {
-    // Only a selection lights the row; the drop target gets an info outline
-    // instead, so the parent folder row never highlights when the pointer is
-    // over a subfolder.
-    const isActive = isSelected && !isLifting;
-    const textClassName = isActive ? 'text-white' : 'text-foreground';
-    const metaClassName = isActive ? 'text-white' : 'text-muted-foreground';
-
-    return (
-      <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: FS_ROW_HEIGHT }}>
-        <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: isSelected }}
-            // Both, deliberately: `accessibilityState` is what native reads, and
-            // react-native-web maps `aria-selected` but not `accessibilityState`, so
-            // on web the fill would otherwise be the only thing saying "picked".
-            aria-selected={isSelected}
-            // Hover is not a class here: it is one sliding node behind the rows, so it
-            // can keep tracking under the drag's pointer capture. See file-system-hover.
-            className={cn('flex-row items-center gap-1 px-2', isActive && 'bg-info')}
-            onPress={handlePress}
-            onPressIn={handlePressIn}
-            style={{ height: FS_ROW_HEIGHT, paddingLeft: chevronLaneLeft(level) }}
-            testID={testID}
-          >
-            {/* The chevron's lane, held open on file rows too so names stay aligned
-                across kinds. On a folder row the control below sits over this box. */}
-            <View style={{ width: CHEVRON_SIZE }} />
-            {entry.kind === 'folder'
-              ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
-              : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
-            {entry.pinnedAt ? <Pin color={isActive ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}
-            <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
-              {entry.name}
-            </Text>
-            {entry.favoritedAt ? <Heart color={isActive ? colors.white : colors.danger} size={FAV_ICON_SIZE} /> : null}
-            {showDate ? (
-              <Text className={cn('w-44', metaClassName)} numberOfLines={1} size="xs">
-                {formatTimestamp(entry.updatedAt ?? entry.createdAt) ?? MISSING_VALUE}
-              </Text>
-            ) : null}
-            <Text className={cn('w-20 text-right', metaClassName)} numberOfLines={1} numeric={true} size="xs">
-              {entry.kind === 'folder' ? itemCountLabel(childCount) : (formatByteSize(entry.size) ?? MISSING_VALUE)}
-            </Text>
-          </Pressable>
-          {isExpandable ? (
-            <RowChevron isExpanded={isExpanded} isSelected={isActive} level={level} name={entry.name} onToggle={handleToggle} />
-          ) : null}
-        </HoldContextMenu>
-      </View>
-    );
-  };
-
-  // A folder row renders its own dropzone only when it is not also covered by
-  // an expanded-ancestor overlay — otherwise the overlay handles everything and
-  // a second zone here would conflict on tie-breaking.
-  if (entry.kind !== 'folder' || suppressDropzone) return <View style={{ height: FS_ROW_HEIGHT }}>{renderBody()}</View>;
+  // A file row is never a drop target. A folder row keeps its dropzone mounted
+  // whether or not an expanded-ancestor overlay covers it — the overlay suppresses
+  // it via `disabled` rather than by swapping the wrapper for a plain View, because
+  // changing the element type mid-drag is a structural DOM mutation that can tear
+  // an in-flight drag down.
+  if (entry.kind !== 'folder') return <View style={{ height: FS_ROW_HEIGHT }}>{body}</View>;
 
   return (
     <FileSystemDropzone
       destination={entry.path}
-      disabled={!draggable}
+      disabled={!draggable || suppressDropzone}
       onDropCompleted={ensureChildren}
       onExternalDrop={onExternalDrop}
       onMove={onMove}
     >
       {({ isOver }: DragzoneRenderState) => (
         <>
-          {renderBody()}
+          {body}
           {isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null}
           <SpringLoadEffect
             ensureChildren={ensureChildren}
@@ -432,6 +492,21 @@ export function FileSystemListView({
   const activeDrag = useActiveDrag();
   const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
 
+  // The overlay dropzones (and the folder-row wrapper they suppress) must not
+  // mount during the browser's own `dragstart` handler. `beginDrag` publishes the
+  // drag synchronously inside `dragstart`, and a DOM change under the lift there —
+  // mounting an overlay over a subfolder's source row is exactly that change — makes
+  // Chromium tear the drag down before it starts. Defer the overlay/suppress work one
+  // tick so the drag is established before the DOM moves.
+  const [dragActive, setDragActive] = useState(false);
+  // biome-ignore lint/plugin: deferring the overlay mount past `dragstart` is the whole point
+  useEffect(() => {
+    const next = activeDrag !== null;
+    if (next === dragActive) return;
+    const id = setTimeout(() => setDragActive(next), 0);
+    return () => clearTimeout(id);
+  }, [activeDrag, dragActive]);
+
   // During an in-library drag the enter animation is suppressed: spring-load
   // inserts children that otherwise animate 0 → full height over ~280ms, during
   // which the rows below have not yet shifted. `measureInWindow` then reads
@@ -451,9 +526,9 @@ export function FileSystemListView({
   // the FlatList's scroll‑container clipping. Rendered only while a drag is in
   // flight so clicks pass through to the rows during normal use.
   const overlayZones = useMemo(() => {
-    if (!activeDrag) return [];
+    if (!dragActive) return [];
     const zones: Array<{ height: number; path: string; top: number }> = [];
-    for (let i = 0; i < augmentedRows.length; i++) {
+    for (let i = 0; i < augmentedRows.length; i += 1) {
       const row = augmentedRows[i];
       if (row && row.entry.kind === 'folder' && row.isExpanded) {
         const folderLevel = row.level;
@@ -473,7 +548,7 @@ export function FileSystemListView({
       }
     }
     return zones;
-  }, [augmentedRows, activeDrag]);
+  }, [augmentedRows, dragActive]);
 
   // Paths of folders that have an overlay — their own row dropzone is suppressed
   // so the overlay wins the tie-break by being the only zone in the area.
@@ -696,13 +771,14 @@ export function FileSystemListView({
               onDropCompleted={ensureChildren}
               onExternalDrop={onExternalDrop}
               onMove={onMove}
-              style={{
-                height,
-                left: 0,
-                position: 'absolute',
-                right: 0,
-                top,
-              }}
+              // Portal, so the overlay registers every in-library drag even when
+              // the drop would move nothing — the origin folder a dragged file
+              // lives in is already its parent, and the plain `accepts` would
+              // refuse it, letting the ancestor overlay show through instead.
+              // The drop handler still filters via `movableFileSystemSources`,
+              // so a release here that changes nothing stays a no-op.
+              portal={true}
+              style={{ height, left: 0, position: 'absolute', right: 0, top }}
             >
               {({ isOver }: DragzoneRenderState) =>
                 isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null

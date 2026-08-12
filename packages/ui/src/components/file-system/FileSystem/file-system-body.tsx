@@ -14,7 +14,7 @@
 // background context menu opens on the empty area too — that's where a "New
 // folder" action matters most.
 
-import { type ComponentType, type ReactNode, useMemo, useRef } from 'react';
+import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import type { DragzoneRenderState } from '../../gestures/drag.types';
@@ -248,6 +248,35 @@ function BodyDropSurface({ external }: BodyDropSurfaceProps) {
   );
 }
 
+// How long an in-library hover must hold before the whole-area ring paints. The
+// body is the fallback zone, so during a drag's opening frame it owns the pointer
+// while the overlay dropzones of an expanded folder tree mount and measure — and
+// without this gate, its outline flashes under the pointer before the deepest
+// folder's overlay takes over. External drops have no overlays to wait for, so
+// their surface paints at once.
+const BODY_OUTLINE_DELAY_MS = 100;
+
+type GatedBodyDropSurfaceProps = { external: boolean; isOver: boolean };
+
+function GatedBodyDropSurface({ external, isOver }: GatedBodyDropSurfaceProps) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!isOver) {
+      setVisible(false);
+      return;
+    }
+    if (external) {
+      setVisible(true);
+      return;
+    }
+    const timer = setTimeout(() => setVisible(true), BODY_OUTLINE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [external, isOver]);
+
+  return visible ? <BodyDropSurface external={external} /> : null;
+}
+
 // `testID` is the root's, not the body's: it stays in the props handed to the
 // active view so every entry can derive its own id from it (see
 // file-system-test-id.ts). The body's own node takes the `-body` suffix.
@@ -339,7 +368,7 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
       {({ external, isOver }: DragzoneRenderState) => (
         <>
           {body}
-          {isOver ? <BodyDropSurface external={external} /> : null}
+          <GatedBodyDropSurface external={external} isOver={isOver} />
         </>
       )}
     </FileSystemDropzone>

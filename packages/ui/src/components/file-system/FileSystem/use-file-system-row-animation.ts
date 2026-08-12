@@ -104,7 +104,7 @@ export function useFileSystemRowAnimation<T>(
   const enteringSet = new Set<string>();
   const exitingSet = new Set<string>();
 
-  const canDiff = !folderChanged && !animateToggled && shouldAnimate && prevKeysRef.current.length > 0;
+  const canDiff = !(folderChanged || animateToggled) && shouldAnimate && prevKeysRef.current.length > 0;
   if (canDiff) {
     for (const key of currentKeySet) {
       if (!(prevKeySet.has(key) || exitingRef.current.has(key))) enteringSet.add(key);

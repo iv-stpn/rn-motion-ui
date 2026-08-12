@@ -16,7 +16,7 @@ import { LinkLine as Link } from 'rn-motion-ui-icons/icons/link-line';
 import { SearchLine as SearchIcon } from 'rn-motion-ui-icons/icons/search-line';
 import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
-import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer } from '../../../__stories__/story-drag';
+import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer, settle } from '../../../__stories__/story-drag';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -2049,6 +2049,104 @@ export const MultiSelectDrag: Story = {
     await dragOnto({ source: outside, target: folder, to: centerOf(folder), transfer: second });
     fireDrag(outside, 'dragend', second, centerOf(folder));
     await waitFor(() => expect(args.onMove).toHaveBeenLastCalledWith({ destination: 'Photos/', sources: ['Budget-2026.xlsx'] }));
+  },
+};
+
+/**
+ * A drag that ends before anything claimed it must not commit a move.
+ *
+ * Lifting a file from inside an expanded subfolder and ending the drag in the same
+ * tick reproduces a browser-cancelled drag: no `dragover` ever runs, so `dragend`
+ * reports `dropEffect: 'none'`. The always-accepting body zone sits under the
+ * pointer, so a cancelled lift used to resolve against it and report a move to the
+ * root — an entry that was never released anywhere moving on its own.
+ */
+export const CancelledDragFromSubfolder: Story = {
+  name: 'Demo: A cancelled drag from a subfolder stays put',
+  args: { defaultView: 'list', draggable: true, onMove: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // Expand Documents so its child file is a row beneath it.
+    const expandDocs = (await canvas.findAllByLabelText('Expand Documents'))[0];
+    if (!expandDocs) throw new Error('no Expand Documents button rendered');
+    await userEvent.click(expandDocs);
+    const row = await listRow(canvas, 'Contract.docx');
+
+    // Lift and end in the same tick: the browser never claims the drag, so the
+    // dropEffect at `dragend` is 'none'.
+    const transfer = newDragTransfer();
+    fireDrag(row, 'dragstart', transfer, centerOf(row));
+    fireDrag(row, 'dragend', transfer, centerOf(row));
+
+    await expect(args.onMove).not.toHaveBeenCalled();
+  },
+};
+
+/**
+ * A file dragged out of a deep subfolder and back onto its own folder stays put.
+ *
+ * The expanded folder's overlay dropzone has to register the drag — even though
+ * the file already lives there — so the ancestor folder's larger overlay, which
+ * would otherwise "show through" and move the file up a level, never gets the
+ * release. `portal` makes the overlay accept every in-library file-system drag;
+ * the drop handler still filters via `movableFileSystemSources`, so a release
+ * that changes nothing is a silent no-op.
+ */
+export const DropIntoOwnFolder: Story = {
+  name: 'Demo: A deep file drops into its own folder as a no-op',
+  args: { defaultView: 'list', draggable: true, onMove: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // Expand Documents/ and Reports/ so Q1-report.pdf is a row two levels down.
+    const expandDocs = (await canvas.findAllByLabelText('Expand Documents'))[0];
+    if (!expandDocs) throw new Error('no Expand Documents button rendered');
+    await userEvent.click(expandDocs);
+    const expandReports = (await canvas.findAllByLabelText('Expand Reports'))[0];
+    if (!expandReports) throw new Error('no Expand Reports button rendered');
+    await userEvent.click(expandReports);
+
+    const file = await listRow(canvas, 'Q1-report.pdf');
+    const ownFolder = await listRow(canvas, 'Reports');
+    const ancestor = await listRow(canvas, 'Documents');
+
+    // Lift, then give the overlay dropzones time to arrive before releasing. They
+    // mount one tick *after* the drag starts (`dragActive` is deferred so mounting
+    // over the source row doesn't tear the browser's drag down), measure their box
+    // the tick after that, and re-resolve one tick after that (the store coalesces
+    // the re-resolution of zones that mount together). `liftDrag`'s own settle
+    // covers none of these, so without them the release resolves against unmeasured
+    // (null) boxes and misses the overlay, dropping onto the body instead.
+    const dropOn = async (target: Element) => {
+      const transfer = newDragTransfer();
+      const to = centerOf(target);
+      await liftDrag(file, transfer, centerOf(file));
+      await settle();
+      await settle();
+      await settle();
+      await settle();
+      fireDrag(file, 'drag', transfer, to);
+      fireDrag(target, 'dragenter', transfer, to);
+      fireDrag(target, 'dragover', transfer, to);
+      fireDrag(target, 'drop', transfer, to);
+      fireDrag(file, 'dragend', transfer, to);
+    };
+
+    // Onto its own folder: the Reports/ overlay wins the tie-break over the larger
+    // Documents/ overlay, but nothing can move into the folder it already lives in.
+    await dropOn(ownFolder);
+    await expect(args.onMove).not.toHaveBeenCalled();
+
+    // The same file onto its ancestor still moves, proving the lift above really
+    // carried a movable entry and the no-op was the folder's own, not a dead drag.
+    await dropOn(ancestor);
+    await waitFor(() =>
+      expect(args.onMove).toHaveBeenCalledWith({
+        destination: 'Documents/',
+        sources: ['Documents/Reports/Q1-report.pdf'],
+      }),
+    );
   },
 };
 

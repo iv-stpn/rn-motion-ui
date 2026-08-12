@@ -2,8 +2,8 @@
 //
 // Thin on purpose: a `<Dragzone>` wrapping a `<Draggable>`, plus the callbacks
 // that wire the two into the list's state. State and actions are read from the
-// list's Zustand store (looked up by `listId`) so the item doesn't need to
-// receive callbacks as props — just `listId` and `itemKey`.
+// list's context so the item doesn't need to receive callbacks as props — just
+// `listId` and `itemKey`.
 //
 // Internal to `ReorderableList`; not exported from the package.
 
@@ -13,13 +13,13 @@ import { cn } from '../../../lib/cn';
 import { Draggable } from '../Draggable/draggable';
 import { Dragzone } from '../Dragzone/dragzone';
 import type { DragzoneAcceptEvent, DragzoneDragEvent, DragzoneDropEvent, DragzoneHandle } from '../drag.types';
-import { useReorderableListStore } from './reorderable-list.store';
+import { useReorderableList } from './reorderable-list';
 
 export type ReorderableItemProps = {
   children: ReactNode;
   /** Unique key for this item, from the consumer's `keyExtractor`. */
   itemKey: string;
-  /** The list ID — used to look up the Zustand store and as the drag group. */
+  /** The group id shared by all items in this list — matches Dragzone and Draggable. */
   listId: string;
   /** MIME type written to the drag transfer. */
   mimeType: string;
@@ -48,14 +48,8 @@ export function ReorderableItem({
 }: ReorderableItemProps) {
   const zoneRef = useRef<DragzoneHandle>(null);
 
-  // ── Read actions from the list's Zustand store ─────────────────────────
-  const onLift = useReorderableListStore(listId, (s) => s.onLift);
-  const onOver = useReorderableListStore(listId, (s) => s.onOver);
-  const onLeave = useReorderableListStore(listId, (s) => s.onLeave);
-  const onDrop = useReorderableListStore(listId, (s) => s.onDrop);
-  const onDragEnd = useReorderableListStore(listId, (s) => s.onDragEnd);
-  const onMeasure = useReorderableListStore(listId, (s) => s.onMeasure);
-  const draggedKey = useReorderableListStore(listId, (s) => s.draggedKey);
+  // ── Read state and actions from the list context ───────────────────────
+  const { draggedKey, onDragEnd, onDrop, onLeave, onLift, onMeasure, onOver } = useReorderableList();
 
   // ── Callback wiring — bind itemKey to store actions ───────────────────
   const handleDragStart = useCallback(() => {

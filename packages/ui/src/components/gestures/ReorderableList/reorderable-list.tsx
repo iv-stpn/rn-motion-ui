@@ -16,18 +16,35 @@
 // Items do not shift during the drag — the indicator is the only hint until
 // the drop commits the reorder.
 //
-// State lives in a Zustand store (one per list instance, held in a module-level
-// registry) so `<ReorderableItem>` can read state and call actions directly
-// instead of receiving them as props.
+// State lives in a React context (one per list instance) so `<ReorderableItem>`
+// can read state and call actions directly instead of receiving them as props.
 
-import { type ReactNode, useEffect, useId, useMemo } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useId, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { DragManager } from '../DragManager/drag-manager';
+import type { DragPoint, DragRect } from '../drag.types';
 import { ReorderableItem } from './reorderable-item';
-import { getOrCreateReorderableListStore, removeReorderableListStore, useReorderableListStore } from './reorderable-list.store';
 import type { ReorderableListProps } from './reorderable-list.types';
+import { computeIndicatorIndex, insertionPosition, isTopHalf, reorderItems } from './reorderable-list-reorder';
 
 const DEFAULT_MIME = 'application/x-reorderable-item';
+
+// ── Context ───────────────────────────────────────────────────────────────
+
+type ReorderableListContextValue = {
+  /** The key of the item currently being dragged, or `null`. */
+  draggedKey: string | null;
+  /** Visual insertion position, or `null` when no valid landing spot exists. */
+  indicatorIndex: number | null;
+  onLift: (key: string) => void;
+  onOver: (key: string, point: DragPoint) => void;
+  onLeave: (key: string) => void;
+  onDrop: (key: string, point: DragPoint) => void;
+  onDragEnd: (key: string) => void;
+  onMeasure: (key: string, rect: DragRect) => void;
+};
+
+const ReorderableListContext = createContext<ReorderableListContextValue | null>(null);
 
 // ── Insertion indicator ──────────────────────────────────────────────────
 
@@ -66,10 +83,12 @@ type ReorderableListViewProps<T> = {
   keys: readonly string[];
   listId: string;
   mimeType: string;
+  onReorder: (items: T[], fromIndex: number, toIndex: number) => void;
   renderItem: (item: T, index: number, isDragging: boolean) => ReactNode;
   testID?: string;
 };
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the view holds drag state, callbacks, context, and rendering in one cohesive component — splitting would require prop-drilling refs across function boundaries
 function ReorderableListView<T>({
   className,
   disabled,
@@ -77,40 +96,156 @@ function ReorderableListView<T>({
   keys,
   listId,
   mimeType,
+  onReorder,
   renderItem,
   testID,
 }: ReorderableListViewProps<T>) {
-  // ── Read from the list's Zustand store ────────────────────────────────
-  const draggedKey = useReorderableListStore(listId, (s) => s.draggedKey);
-  const indicatorIndex = useReorderableListStore(listId, (s) => s.indicatorIndex);
+  // ── Drag state ──────────────────────────────────────────────────────────
+  // `draggedKey` and `indicatorIndex` are React state because the list view
+  // needs them to render the dimmed item and the insertion indicator. The rest
+  // of the drag bookkeeping (`overKey`, `insertBefore`) is never rendered, so it
+  // lives in refs — read and written by the stable callbacks without re-renders.
+  const [draggedKey, setDraggedKey] = useState<string | null>(null);
+  const [indicatorIndex, setIndicatorIndex] = useState<number | null>(null);
 
-  // ── Render ──────────────────────────────────────────────────────────────
+  // Refs let the stable callbacks read fresh values per invocation without
+  // re-creating themselves — the same pattern the SortableList uses for its
+  // closure state.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  const keysRef = useRef(keys);
+  keysRef.current = keys;
+  const onReorderRef = useRef(onReorder);
+  onReorderRef.current = onReorder;
+
+  // Per-instance drag bookkeeping — non-reactive (like useRef values).
+  const rectsRef = useRef(new Map<string, DragRect>());
+  const draggedKeyRef = useRef<string | null>(null);
+  const overKeyRef = useRef<string | null>(null);
+  const insertBeforeRef = useRef(false);
+
+  // ── Drag callbacks — stable identity across renders ─────────────────────
+  const clearDrag = useCallback(() => {
+    draggedKeyRef.current = null;
+    overKeyRef.current = null;
+    insertBeforeRef.current = false;
+    setDraggedKey(null);
+    setIndicatorIndex(null);
+  }, []);
+
+  const onLift = useCallback(
+    (key: string) => {
+      if (disabled) return;
+      draggedKeyRef.current = key;
+      setDraggedKey(key);
+      setIndicatorIndex(null);
+    },
+    [disabled],
+  );
+
+  const onOver = useCallback((key: string, point: DragPoint) => {
+    const dragged = draggedKeyRef.current;
+    if (dragged === null) return;
+    const rect = rectsRef.current.get(key);
+    if (rect === undefined) return;
+    const before = isTopHalf(point.y, rect);
+    const indicator = computeIndicatorIndex(dragged, key, before, keysRef.current);
+
+    if (overKeyRef.current === key && insertBeforeRef.current === before) return;
+    overKeyRef.current = key;
+    insertBeforeRef.current = before;
+    setIndicatorIndex(indicator);
+  }, []);
+
+  const onLeave = useCallback((key: string) => {
+    if (overKeyRef.current !== key) return;
+    overKeyRef.current = null;
+    insertBeforeRef.current = false;
+    setIndicatorIndex(null);
+  }, []);
+
+  const onDrop = useCallback(
+    (key: string, point: DragPoint) => {
+      const dragged = draggedKeyRef.current;
+      if (dragged === null) return;
+
+      const fromIndex = keysRef.current.indexOf(dragged);
+      if (fromIndex === -1) {
+        clearDrag();
+        return;
+      }
+
+      const result = insertionPosition({
+        draggedKey: dragged,
+        keys: keysRef.current,
+        overKey: key,
+        pointY: point.y,
+        rects: rectsRef.current,
+      });
+
+      if (result === null || result.index === fromIndex) {
+        clearDrag();
+        return;
+      }
+
+      onReorderRef.current(reorderItems(itemsRef.current, fromIndex, result.index), fromIndex, result.index);
+      clearDrag();
+    },
+    [clearDrag],
+  );
+
+  const onDragEnd = useCallback(
+    (_key: string) => {
+      clearDrag();
+    },
+    [clearDrag],
+  );
+
+  const onMeasure = useCallback((key: string, rect: DragRect) => {
+    rectsRef.current.set(key, rect);
+  }, []);
+
+  const contextValue = useMemo<ReorderableListContextValue>(
+    () => ({
+      draggedKey,
+      indicatorIndex,
+      onDragEnd,
+      onDrop,
+      onLeave,
+      onLift,
+      onMeasure,
+      onOver,
+    }),
+    [draggedKey, indicatorIndex, onDragEnd, onDrop, onLeave, onLift, onMeasure, onOver],
+  );
 
   return (
-    <View className={className}>
-      {keys.map((key, renderIdx) => {
-        const item = items[renderIdx];
-        if (item === undefined) return null;
+    <ReorderableListContext.Provider value={contextValue}>
+      <View className={className}>
+        {keys.map((key, renderIdx) => {
+          const item = items[renderIdx];
+          if (item === undefined) return null;
 
-        const isDimmed = key === draggedKey;
-        const showAbove = indicatorIndex !== null && indicatorIndex === renderIdx;
-        const isLast = renderIdx === keys.length - 1;
-        const showBelow = isLast && indicatorIndex === keys.length;
+          const isDimmed = key === draggedKey;
+          const showAbove = indicatorIndex !== null && indicatorIndex === renderIdx;
+          const isLast = renderIdx === keys.length - 1;
+          const showBelow = isLast && indicatorIndex === keys.length;
 
-        const indicatorTestID = testID ? `${testID}-indicator` : undefined;
-        const itemTestID = testID ? `${testID}-item-${key}` : undefined;
+          const indicatorTestID = testID ? `${testID}-indicator` : undefined;
+          const itemTestID = testID ? `${testID}-item-${key}` : undefined;
 
-        return (
-          <View key={key} className="relative">
-            {showAbove ? <InsertionIndicator position="above" testID={indicatorTestID} /> : null}
-            <ReorderableItem disabled={disabled} itemKey={key} listId={listId} mimeType={mimeType} testID={itemTestID}>
-              {renderItem(item, renderIdx, isDimmed)}
-            </ReorderableItem>
-            {showBelow ? <InsertionIndicator position="below" testID={indicatorTestID} /> : null}
-          </View>
-        );
-      })}
-    </View>
+          return (
+            <View key={key} className="relative">
+              {showAbove ? <InsertionIndicator position="above" testID={indicatorTestID} /> : null}
+              <ReorderableItem disabled={disabled} itemKey={key} listId={listId} mimeType={mimeType} testID={itemTestID}>
+                {renderItem(item, renderIdx, isDimmed)}
+              </ReorderableItem>
+              {showBelow ? <InsertionIndicator position="below" testID={indicatorTestID} /> : null}
+            </View>
+          );
+        })}
+      </View>
+    </ReorderableListContext.Provider>
   );
 }
 
@@ -157,18 +292,6 @@ export function ReorderableList<T>({
   const listId = useId();
   const keys = useMemo(() => items.map((item, index) => keyExtractor(item, index)), [items, keyExtractor]);
 
-  // Create or sync the per-instance Zustand store.
-  const store = getOrCreateReorderableListStore(listId, { items, keys, disabled, onReorder });
-
-  // Keep closure-bound config in sync with props on every render.
-  // syncConfig is cheap — it assigns closure variables; set({ disabled }) is
-  // Object.is-guarded by Zustand and won't trigger listeners when unchanged.
-  store.getState().syncConfig({ items, keys, disabled, onReorder });
-
-  // Clean up the store from the global registry on unmount.
-  // biome-ignore lint/plugin: imperative teardown
-  useEffect(() => () => removeReorderableListStore(listId), [listId]);
-
   return (
     <DragManager ref={ref} isolate={true} testID={testID}>
       <ReorderableListView
@@ -178,9 +301,17 @@ export function ReorderableList<T>({
         keys={keys}
         listId={listId}
         mimeType={mimeType}
+        onReorder={onReorder}
         renderItem={renderItem}
         testID={testID}
       />
     </DragManager>
   );
+}
+
+// biome-ignore lint/style/useComponentExportOnlyModules: hook paired with its component
+export function useReorderableList(): ReorderableListContextValue {
+  const ctx = useContext(ReorderableListContext);
+  if (ctx === null) throw new Error('useReorderableList must be used inside a <ReorderableList>');
+  return ctx;
 }

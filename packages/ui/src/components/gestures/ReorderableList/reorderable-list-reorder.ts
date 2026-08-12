@@ -20,6 +20,33 @@ export function isTopHalf(pointY: number, rect: DragRect): boolean {
   return pointY < rect.y + rect.height / 2;
 }
 
+/**
+ * The visual index where the insertion indicator should appear, or `null` when
+ * the landing spot is a no-op (the dragged item over its own position).
+ *
+ * The indicator is shown *before* `overKey` when the pointer is in the top half
+ * (`insertBefore`), or *after* it otherwise. The result is expressed against the
+ * original key order — the same one `insertionPosition` reasons about.
+ */
+export function computeIndicatorIndex(
+  draggedKey: string | null,
+  overKey: string | null,
+  insertBefore: boolean,
+  keys: readonly string[],
+): number | null {
+  if (draggedKey === null || overKey === null) return null;
+
+  const overIdx = keys.indexOf(overKey);
+  if (overIdx === -1) return null;
+
+  const visualIdx = insertBefore ? overIdx : overIdx + 1;
+  const draggedIdx = keys.indexOf(draggedKey);
+
+  // Suppress when the visual insertion would be a no-op (same position).
+  if (visualIdx === draggedIdx || visualIdx === draggedIdx + 1) return null;
+  return visualIdx;
+}
+
 export type InsertionParams = {
   /** Every item key in display order, before the drag. */
   keys: readonly string[];

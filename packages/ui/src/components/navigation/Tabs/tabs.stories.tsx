@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
@@ -55,7 +55,6 @@ type PanelTabsProps = {
   detailed?: boolean;
 };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function PanelTabs({
   variant = 'pill',
   size,
@@ -96,7 +95,7 @@ function PanelTabs({
  * used. Each sample only animates on a tab switch, so these have to be clicked
  * to be seen — a static screenshot of them is three identical panels.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function ContentAnimationSections() {
   return (
     <>
@@ -124,7 +123,6 @@ function ContentAnimationSections() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TabsPlayground() {
   const [variant, setVariant] = useState<Variant>('pill');
   const [size, setSize] = useState<TabsProps['size']>('md');
@@ -132,14 +130,11 @@ function TabsPlayground() {
   const [withPanels, setWithPanels] = useState(true);
   const [tab, setTab] = useState('overview');
 
-  // biome-ignore lint: Choice onChange is typed as (next: string), size is the narrower union
-  const handleSizeChange = useCallback((v: string) => setSize(v as TabsProps['size']), []);
-
   return (
     <Playground>
       <ControlCard title="Options">
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
-        <Choice label="Size" onChange={handleSizeChange} options={SIZES} value={size ?? 'md'} />
+        <Choice label="Size" onChange={setSize} options={SIZES} value={size ?? 'md'} />
         <Choice label="Content animation" onChange={setAnimation} options={CONTENT_ANIMATIONS} value={animation} />
         <Toggle label="Content panels" onChange={setWithPanels} value={withPanels} />
       </ControlCard>
@@ -213,7 +208,7 @@ const DIRECTION_STYLES = { ltr: { direction: 'ltr' }, rtl: { direction: 'rtl' } 
 type DirectionalTabsProps = { direction: 'ltr' | 'rtl'; animation?: ContentAnimation };
 
 /** One Tabs tree under a stated writing direction, with everything addressable. */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function DirectionalTabs({ direction, animation }: DirectionalTabsProps) {
   return (
     <DirectionProvider value={direction}>

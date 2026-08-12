@@ -16,7 +16,6 @@ type Story = StoryObj<typeof meta>;
 
 const TERMS_LABEL = 'Accept terms and conditions';
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function CheckboxPlayground(args: ComponentProps<typeof Checkbox>) {
   const [checked, setChecked] = useState(true);
   const [disabled, setDisabled] = useState(false);

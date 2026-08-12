@@ -1,4 +1,3 @@
-// biome-ignore-all lint/style/noJsxLiterals: stories only
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -17,7 +16,6 @@ const onPress = fn();
 const SIZES: ItemRowSize[] = ['sm', 'md', 'lg'];
 const VARIANTS: RowGroupVariant[] = ['grouped', 'spaced', 'sections'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function RowGroupPlayground() {
   const [variant, setVariant] = useState<RowGroupVariant>('grouped');
   const [size, setSize] = useState<ItemRowSize>('md');
@@ -55,7 +53,6 @@ function RowGroupPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ShowcasePlayground() {
   const items: ActionRowGroupItem[] = [
     { id: 'profile', title: 'Profile', leftAdornment: { icon: User }, onPress },

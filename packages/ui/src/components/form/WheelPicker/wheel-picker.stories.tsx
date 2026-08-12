@@ -67,7 +67,6 @@ function daysIn(month: number, year: number) {
   return new Date(year, month + 1, 0).getDate();
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function BirthdayPicker() {
   const [month, setMonth] = useState('June');
   const [year, setYear] = useState('2004');
@@ -78,7 +77,7 @@ function BirthdayPicker() {
   const days = Array.from({ length: dayCount }, (_, i) => String(i + 1));
 
   // A short month can strand the day past the end — pull it back.
-  // biome-ignore lint/plugin: mount-only by design
+  // biome-ignore lint/plugin: reset day when month/year changes in case the current day is no longer valid
   useEffect(() => {
     if (Number(day) > dayCount) setDay(String(dayCount));
   }, [day, dayCount]);
@@ -128,7 +127,6 @@ function BirthdayPicker() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
   const [size, setSize] = useState('Medium');
   const [rowKey, setRowKey] = useState<RowKey>('5');

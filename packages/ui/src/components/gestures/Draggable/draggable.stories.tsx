@@ -12,18 +12,14 @@
  * transports publish to is read live by the `<Dragzone>` here, so the shared half
  * is covered from both ends.
  */
-/** biome-ignore-all lint/style/useExportsLast: this a stories file */
-/** biome-ignore-all lint/style/useComponentExportOnlyModules: stories only */
-/** biome-ignore-all lint/style/noJsxLiterals: stories only */
-/** biome-ignore-all lint/performance/noJsxPropsBind: stories only */
-
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { FileLine as FileText } from 'rn-motion-ui-icons/icons/file-line';
 import { expect, userEvent, within } from 'storybook/test';
 import { centerOf, dragNowhere, dragOnto, fireDrag, newDragTransfer } from '../../../__stories__/story-drag';
 import { Action, Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
+import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { Text } from '../../typography/Text/text';
 import { Dragzone } from '../Dragzone/dragzone';
 import type { DragEndEvent, DraggableHandle } from '../drag.types';
@@ -154,8 +150,7 @@ function BareDropZone() {
   const [status, setStatus] = useState('Nothing yet');
   const [outcome, setOutcome] = useState('Nothing yet');
 
-  // biome-ignore lint/plugin: DOM event wiring must run in an effect; no data-fetching or render-driving state
-  useEffect(() => {
+  useMountEffect(() => {
     // biome-ignore lint/plugin: RN View refs resolve to HTMLElement in react-native-web
     const node = ref.current as unknown as HTMLElement | null;
     if (!node?.addEventListener) return;
@@ -178,7 +173,7 @@ function BareDropZone() {
       node.removeEventListener('dragover', onDragOver);
       node.removeEventListener('drop', onDropped);
     };
-  }, []);
+  });
 
   return (
     <View className="w-[420px] max-w-full gap-3">

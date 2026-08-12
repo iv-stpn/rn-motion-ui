@@ -41,18 +41,18 @@ import { FS_DRAG_CONTAINER_TEST_ID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
 import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
-import { useFileSystemRowAnimation } from './use-file-system-row-animation';
+import { type AugmentedEntry, useFileSystemRowAnimation } from './use-file-system-row-animation';
 
 /** Stable empty data for the frame before the width is known — see below. */
-const NO_ROWS: FileSystemEntry[][] = [];
+const NO_ROWS: AugmentedEntry<FileSystemEntry>[][] = [];
 
 // ── Grid + drag session ────────────────────────────────────────────────────────
 
 // Index-based: an exiting entry at position 0 of a row must not change the
 // row key mid-animation, which would remount the whole row and kill its
 // siblings' animations. `getItemLayout` is already index-based.
-const keyExtractor = (_row: FileSystemEntry[], index: number) => String(index);
-const getItemLayout = (_: ArrayLike<FileSystemEntry[]> | null | undefined, index: number) => ({
+const keyExtractor = (_row: AugmentedEntry<FileSystemEntry>[], index: number) => String(index);
+const getItemLayout = (_: ArrayLike<AugmentedEntry<FileSystemEntry>[]> | null | undefined, index: number) => ({
   index,
   length: ROW_STRIDE,
   offset: ROW_STRIDE * index,
@@ -65,13 +65,13 @@ type IconsGrid = {
   marquee: FileSystemMarqueeController;
   onLayout: (event: LayoutChangeEvent) => void;
   onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
-  rows: FileSystemEntry[][];
+  rows: AugmentedEntry<FileSystemEntry>[][];
   tileWidth: number;
 };
 
 type UseIconsGridParams = {
   draggable: boolean;
-  entries: FileSystemEntry[];
+  entries: AugmentedEntry<FileSystemEntry>[];
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   selectedPaths: ReadonlySet<string>;
   /** `false` outside `selectionMode="multiple"` — see `useFileSystemMarquee`. */
@@ -298,7 +298,7 @@ export function FileSystemIconsView({
   const handleBackgroundPress = useCallback(() => onSelect(null), [onSelect]);
 
   const renderRow = useCallback(
-    ({ item }: ListRenderItemInfo<FileSystemEntry[]>) => (
+    ({ item }: ListRenderItemInfo<AugmentedEntry<FileSystemEntry>[]>) => (
       <IconRow
         draggable={draggable}
         getContextMenuActions={getContextMenuActions}

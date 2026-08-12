@@ -70,7 +70,6 @@ const ITEMS: MenuItemDef[] = [
 type TriggerRenderProps = { open: boolean; toggle: () => void };
 type PlainTriggerProps = { open: boolean };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function PlainTrigger({ open }: PlainTriggerProps) {
   const containerClass = `flex-row items-center gap-2 rounded-full border px-4 py-2 ${open ? 'border-primary bg-primary' : 'border-border bg-surface-3'}`;
   const textClass = open ? 'font-medium text-primary-foreground text-sm' : 'font-medium text-foreground text-sm';
@@ -88,14 +87,13 @@ type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 's
 // is a `TriggerButton` so the Trigger chips can swap Button / ElevatedButton /
 // GlossyButton / bare Pressable under one menu. Each of those is pressable in its
 // own right, which is exactly why `onPress` has to be `toggle` — see TRIGGER_NOTE.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
   return <TriggerButton kind={kind} size={size} shape={shape} label={open ? TRIGGER_OPEN : TRIGGER_CLOSED} onPress={toggle} />;
 }
 
 const renderPlainTrigger = (props: PlainTriggerProps) => <PlainTrigger open={props.open} />;
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function HoverMenuPlayground() {
   const [align, setAlign] = useState<Align>('start');
   const [widthKey, setWidthKey] = useState<WidthKey>('200');
@@ -170,7 +168,6 @@ const EXTERNAL_PANEL_TESTID = `${EXTERNAL_TESTID}-panel`;
 // The playground's shape reduced to what the assertions need: controlled, and a
 // trigger that is pressable in its own right (so the wrapper nests one pressable
 // inside another — the case the two demos below pin).
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ControlledPressableDemo() {
   const [open, setOpen] = useState(false);
   const renderTrigger = useCallback(
@@ -188,7 +185,7 @@ function ControlledPressableDemo() {
 
 // Controlled open driven from somewhere that is not the trigger — the Toggle in
 // the playground, a keyboard shortcut in an app.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function ExternallyOpenedDemo() {
   const [open, setOpen] = useState(false);
   return (
@@ -204,7 +201,7 @@ function ExternallyOpenedDemo() {
 // Uncontrolled, plain-node trigger — the wrapper owns both the hover and the
 // press, so the play function exercises the component's own state machine
 // rather than the playground's `open` mirror.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function HoverMenuDemo() {
   return (
     <HoverMenu testID={DEMO_TESTID} trigger={renderPlainTrigger} triggerAccessibilityLabel={PLAIN_TRIGGER_LABEL} width="trigger">

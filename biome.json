@@ -15,6 +15,25 @@
   },
   "overrides": [
     {
+      "includes": ["**/*.stories.tsx", "**/__stories__/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useUniqueElementIds": "off"
+          },
+          "style": {
+            "useComponentExportOnlyModules": "off",
+            "noExcessiveLinesPerFile": "off",
+            "useExportsLast": "off",
+            "noJsxLiterals": "off"
+          },
+          "performance": {
+            "noJsxPropsBind": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["**/__tests__/**"],
       "linter": {
         "rules": {

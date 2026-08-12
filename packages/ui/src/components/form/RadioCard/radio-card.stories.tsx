@@ -35,7 +35,6 @@ const ORIENTATIONS = ['horizontal', 'vertical'] as const satisfies readonly Orie
 
 const VARIANTS: RadioCardVariant[] = ['radio', 'card'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the playground and the Demo stories
 function RadioCardGroupDemo() {
   const [plan, setPlan] = useState('monthly');
   return (
@@ -46,7 +45,6 @@ function RadioCardGroupDemo() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function RadioCardPlayground() {
   const [plan, setPlan] = useState('yearly');
   const [orientation, setOrientation] = useState<Orientation>('horizontal');

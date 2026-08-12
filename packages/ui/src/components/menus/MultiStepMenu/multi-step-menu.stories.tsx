@@ -64,7 +64,6 @@ const PRIVACY_BODY = 'Two-factor auth, connected apps, and data.';
 
 type AppearanceSectionProps = { helpers: MultiStepHelpers };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function AppearanceSection({ helpers }: AppearanceSectionProps) {
   const navigateAdvanced = useCallback(() => helpers.navigate('appearance/advanced'), [helpers]);
   return (
@@ -155,7 +154,7 @@ type MenuEntryRowProps = { entry: MenuEntry; active?: boolean; iosStyle?: boolea
  * `MenuRow` (iOS-style coloured icon tile) or a plain `MenuItem` in `sidebar`
  * mode, whose icon and label follow the theme's muted/foreground tokens.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function MenuEntryRow({ entry, active = false, iosStyle = false, onNavigate }: MenuEntryRowProps) {
   const handlePress = useCallback(() => onNavigate?.(entry.path), [entry.path, onNavigate]);
   // Everything but the icon treatment is shared, so only that part differs per style.
@@ -165,7 +164,6 @@ function MenuEntryRow({ entry, active = false, iosStyle = false, onNavigate }: M
 
 type MenuListProps = { helpers: MultiStepHelpers; iosStyle: boolean };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function MenuList({ helpers, iosStyle }: MenuListProps) {
   const navigate = useCallback((path: string) => helpers.navigate([path]), [helpers]);
   // Only the wide sidebar keeps a visible selection; the small-screen root is a launcher.
@@ -233,7 +231,7 @@ const WIDE_PLACEHOLDER = (
  * `onAfterClose` resets the menu's navigation state so the next open starts at
  * the root. The inner panes keep their own slide enter/exit between steps.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function MenuPlayground() {
   // Only the wide/narrow answer matters here, so this subscribes to the tier
   // rather than the width — dragging the viewport re-renders at the edge only.
@@ -320,7 +318,6 @@ function MenuPlayground() {
 
 type MultiStepSheetStoryProps = { isWideScreen: boolean; defaultPath?: string[] };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function MultiStepSheetStory({ isWideScreen, defaultPath }: MultiStepSheetStoryProps) {
   const [visible, setVisible] = useState(false);
   const menuRef = useRef<MultiStepMenuHandle | null>(null);

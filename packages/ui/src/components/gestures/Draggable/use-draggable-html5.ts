@@ -20,23 +20,6 @@ import { Platform, type View } from 'react-native';
 import type { PressTimeline } from '../use-press-timeline';
 import type { DraggableSession } from './draggable-session';
 
-export type UseDraggableHtml5Params = {
-  enabled: boolean;
-  nodeRef: RefObject<View | null>;
-  /**
-   * When non-null, a `<DragManager>` above this source will draw the ghost in its
-   * overlay, so the browser's own drag image must be hidden to prevent a double ghost
-   * and to keep the ghost position under our control (Safari snaps the native image
-   * back to the lift point when the cursor leaves the window).
-   */
-  overlayHostId: string | null;
-  /** When set, the preview element that `setDragImage` draws instead of the browser's default screenshot. */
-  previewElementRef?: RefObject<View | null>;
-  session: DraggableSession;
-  /** The pan's press timeline — how a touch-initiated native drag is recognised and refused. */
-  timeline: PressTimeline;
-};
-
 /**
  * HTML5 drag image set from the preview React element.
  *
@@ -65,6 +48,23 @@ function setDragImageFromRef(dataTransfer: DataTransfer, previewRef: RefObject<V
 
 /** A 1×1 transparent GIF — used as the drag image to hide the browser's native ghost. */
 const EMPTY_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+export type UseDraggableHtml5Params = {
+  enabled: boolean;
+  nodeRef: RefObject<View | null>;
+  /**
+   * When non-null, a `<DragManager>` above this source will draw the ghost in its
+   * overlay, so the browser's own drag image must be hidden to prevent a double ghost
+   * and to keep the ghost position under our control (Safari snaps the native image
+   * back to the lift point when the cursor leaves the window).
+   */
+  overlayHostId: string | null;
+  /** When set, the preview element that `setDragImage` draws instead of the browser's default screenshot. */
+  previewElementRef?: RefObject<View | null>;
+  session: DraggableSession;
+  /** The pan's press timeline — how a touch-initiated native drag is recognised and refused. */
+  timeline: PressTimeline;
+};
 
 export function useDraggableHtml5({
   enabled,

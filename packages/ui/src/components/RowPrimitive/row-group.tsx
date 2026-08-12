@@ -41,6 +41,7 @@ type RowGroupContainerProps = {
  * Returns the className for a row inside a `"grouped"` variant group so that
  * consecutive rows share borders and only the first/last row carry outer radii.
  */
+// biome-ignore lint/style/useComponentExportOnlyModules: shared utility for the grouped variant, not a component
 export function groupedRowClass(index: number, lastIndex: number): string {
   return cn(
     index === 0 && 'rounded-b-none',

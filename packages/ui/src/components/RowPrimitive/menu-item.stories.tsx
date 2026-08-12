@@ -13,7 +13,7 @@ const onPress = fn();
 type HintChipProps = { hint: string };
 
 // Hint chip matching CommandPalette's trailing hint style
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function HintChip({ hint }: HintChipProps) {
   return (
     <Text className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">{hint}</Text>
@@ -44,7 +44,6 @@ function trailingNode(key: TrailingKey) {
   return null;
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function MenuItemPlayground() {
   const [active, setActive] = useState(false);
   const [showIcon, setShowIcon] = useState(true);
@@ -87,7 +86,6 @@ function MenuItemPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ModesShowcase() {
   return (
     <Playground>

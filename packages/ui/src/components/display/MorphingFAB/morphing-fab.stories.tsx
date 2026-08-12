@@ -1,5 +1,3 @@
-// biome-ignore-all lint/style/noExcessiveLinesPerFile: combined feedback + menu showcase with inline state machines and play functions
-
 import type { Meta, StoryObj } from '@storybook/react';
 import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useState } from 'react';
@@ -34,7 +32,6 @@ type Story = StoryObj<typeof meta>;
 
 type AppSurfaceProps = { children: ReactNode; hint: string };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
     <View className="min-h-[380px] flex-1 bg-surface-1">
@@ -54,7 +51,6 @@ function AppSurface({ children, hint }: AppSurfaceProps) {
 
 type Action = { icon: ComponentType<IconProps>; label: string; onPress: () => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function MenuAction({ icon, label, onPress }: Action) {
   return (
     <Pressable
@@ -92,7 +88,6 @@ function resolveAfter(ms: number) {
   });
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function FeedbackPane({ close }: FeedbackPaneProps) {
   const reduce = useReducedMotion();
   const colors = useThemeColors();
@@ -148,6 +143,7 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
     );
 
   const placeholderColor = colors['muted-foreground'];
+  const statusLabel = status === 'sending' ? SENDING : SUBMIT;
 
   return (
     <MotiView key="form" from={enter} animate={{ opacity: 1, scale: 1, translateY: 0 }} exit={exit} transition={trans}>
@@ -181,8 +177,7 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
             disabled={status === 'sending' || message.trim().length === 0}
             className="w-full"
           >
-            {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
-            {status === 'sending' ? SENDING : SUBMIT}
+            {statusLabel}
           </Button>
         </View>
       </View>
@@ -200,7 +195,6 @@ type Example = (typeof EXAMPLES)[number]['value'];
 
 const PLAYGROUND_HINT = 'Toggle between Feedback (form → sent/error) and Menu (3-action picker).';
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function MorphingFABPlayground() {
   const [example, setExample] = useState<Example>('feedback');
 

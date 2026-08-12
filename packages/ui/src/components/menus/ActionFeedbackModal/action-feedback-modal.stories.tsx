@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Modal, View } from 'react-native';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Action, Choice, ControlCard, Playground, Toggle, Variants } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
+import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { ActionFeedbackModal, type ActionFeedbackState } from './action-feedback-modal';
 
 const meta = {
@@ -68,15 +69,14 @@ type LoadingEscapeHatchProps = { onClose: () => void };
  * its own async work instead of stacking modals. Two simultaneous `Modal`s are
  * well-behaved on web and Android but can race iOS's presentation queue.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function LoadingEscapeHatch({ onClose }: LoadingEscapeHatchProps) {
   const [mounted, setMounted] = useState(false);
 
-  // biome-ignore lint/plugin: portal-ordering gate — this Modal's body div must be appended after the feedback Modal's to paint above it, which cannot be expressed as derived state
-  useEffect(() => {
+  useMountEffect(() => {
     const frame = requestAnimationFrame(() => setMounted(true));
     return () => cancelAnimationFrame(frame);
-  }, []);
+  });
 
   if (!mounted) return null;
 
@@ -89,7 +89,6 @@ function LoadingEscapeHatch({ onClose }: LoadingEscapeHatchProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function FeedbackPlayground() {
   const [visible, setVisible] = useState(false);
   const [state, setState] = useState<ActionFeedbackState>('loading');

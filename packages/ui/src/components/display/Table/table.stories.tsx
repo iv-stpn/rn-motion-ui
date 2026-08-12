@@ -1,6 +1,3 @@
-// biome-ignore-all lint/style/noExcessiveLinesPerFile: stories + interaction tests for a complex data-grid kept together for easy editing
-/** biome-ignore-all lint/style/useExportsLast: this a stories file */
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -70,7 +67,6 @@ function statusTextColorClass(status: Person['status']): `text-[${string}]` {
 
 type StatusBadgeProps = { status: Person['status'] };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <View className={cn('self-start rounded-full px-2 py-0.5', statusBackgroundClass(status))}>
@@ -138,7 +134,6 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
 // and TableColumn<unknown> that occurs when Meta infers T = unknown from the
 // raw generic component.
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TablePerson(props: TableProps<Person>) {
   return <Table {...CLASSIC_TABLE} {...props} />;
 }
@@ -187,7 +182,6 @@ function buildPage(page: number): Person[] {
   return out;
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function AsyncTableStory() {
   const [rows, setRows] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,7 +271,6 @@ const INITIAL_ROWS: EditRow[] = [
   { id: 'r4', name: 'Kai Reyes', role: 'Member', team: 'Platform' },
 ];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function EditableTableStory() {
   const [rows, setRows] = useState<EditRow[]>(INITIAL_ROWS);
   const [keys, setKeys] = useState<string[]>(['name', 'role', 'team']);
@@ -421,7 +414,7 @@ function getPersonId(row: Person) {
 }
 
 /** All of it on one canvas: the four footer modes, three densities, and every affordance the grid can carry. */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function TablePlayground() {
   const [rowCountKey, setRowCountKey] = useState<RowCountKey>('1000');
   const [rowHeightKey, setRowHeightKey] = useState<RowHeightKey>('default');
@@ -608,7 +601,6 @@ export const Async: Story = {
 // ─── Small screen (card view) ─────────────────────────────────────────────────
 // Toggle between the normal table layout and the card view with renderSmallScreen.
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function SmallScreenTableStory() {
   const [useSmallScreen, setUseSmallScreen] = useState(false);
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
@@ -691,7 +683,6 @@ export const SmallScreen: Story = {
 // ─── Pagination ───────────────────────────────────────────────────────────────
 // mode='pagination' with prev/next footer pinned below the FlatList.
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function PaginationTableStory() {
   const PAGE_SIZE_PAG = 10;
   const allRows = useMemo(() => buildPeople(100), []);
@@ -738,7 +729,6 @@ export const Pagination: Story = {
 // mode='loadMore' with a "Load more" button footer. Tapping fetches the next
 // batch and shows a loadingMore spinner while the request is in flight.
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function LoadMoreTableStory() {
   const BATCH = 20;
   const allRows = useMemo(() => buildPeople(100), []);
@@ -838,7 +828,6 @@ const RTL_WIDTH = 420;
 
 type DirectionalTableProps = { direction: 'ltr' | 'rtl' };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function DirectionalTable({ direction }: DirectionalTableProps) {
   return (
     <DirectionProvider value={direction}>
@@ -917,7 +906,6 @@ const orderSpies = { ltr: fn<(keys: string[]) => void>(), rtl: fn<(keys: string[
 
 type DirectedTableProps = { direction: 'ltr' | 'rtl'; testID: string };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ReorderTable({ direction, testID }: DirectedTableProps) {
   return (
     <DirectionProvider value={direction}>
@@ -1171,7 +1159,6 @@ export const ReorderIndicatorDirection: Story = {
 
 // ─── RTL: action overlays ─────────────────────────────────────────────────────
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function OverlayTable({ direction, testID }: DirectedTableProps) {
   return (
     <DirectionProvider value={direction}>

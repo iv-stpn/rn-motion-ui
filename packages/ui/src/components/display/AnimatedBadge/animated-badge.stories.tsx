@@ -1,4 +1,3 @@
-// biome-ignore-all lint/style/useExportsLast: stories demo
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
@@ -36,7 +35,6 @@ const STATUS_LABELS: Record<AnimatedBadgeStatus, string> = {
 const CYCLE: readonly AnimatedBadgeStatus[] = ['loading', 'success', 'warning', 'danger'];
 const CYCLE_MS = 1600;
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function AnimatedBadgePlayground(args: ComponentProps<typeof AnimatedBadge>) {
   const [status, setStatus] = useState<AnimatedBadgeStatus>('success');
   const [size, setSize] = useState<AnimatedBadgeSize>('md');
@@ -120,7 +118,6 @@ const ROTATE_DEG = /rotate\((-?[\d.]+)deg\)/;
 // useAnimatedStyle re-ran and re-issued withTiming(360deg) *from the current
 // angle* — so the rotation kept restarting mid-turn instead of cycling.
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ChurningParent() {
   const [, setTick] = useState(0);
   const bump = useCallback(() => setTick((value) => value + 1), []);

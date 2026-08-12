@@ -36,7 +36,6 @@ const STEPS = [
 
 type StepKey = (typeof STEPS)[number]['value'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function RangeSliderPlayground(args: ComponentProps<typeof RangeSlider>) {
   const [value, setValue] = useState(40);
   const [stepKey, setStepKey] = useState<StepKey>('5');
@@ -106,7 +105,6 @@ const RTL_TRACK_WIDTH = 300;
 
 type DirectionalSliderProps = { direction: 'ltr' | 'rtl' };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function DirectionalSlider({ direction }: DirectionalSliderProps) {
   return (
     <DirectionProvider value={direction}>

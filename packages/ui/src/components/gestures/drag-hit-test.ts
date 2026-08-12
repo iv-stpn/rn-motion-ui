@@ -26,6 +26,18 @@ function toCandidate(entry: DragzoneEntry, index: number): Candidate {
   };
 }
 
+/** Dispatch one of the three rect-vs-rect collision strategies. */
+function rectMatch(zone: DragRect, src: DragRect, algorithm: CollisionAlgorithm): boolean {
+  switch (algorithm) {
+    case 'contain':
+      return rectContains(zone, src);
+    case 'center':
+      return isPointInRect(rectCenter(src), zone);
+    default:
+      return rectsIntersect(src, zone);
+  }
+}
+
 /**
  * Innermost `isolate` manager enclosing `path`, or `null`.
  *
@@ -171,16 +183,4 @@ export function eligibleZoneIds({
   return zones
     .filter((entry) => isZoneEligible({ drag, entry, external, hitTest: false, isIsolating, point, sourceRect, transfer }))
     .map((entry) => entry.id);
-}
-
-/** Dispatch one of the three rect-vs-rect collision strategies. */
-function rectMatch(zone: DragRect, src: DragRect, algorithm: CollisionAlgorithm): boolean {
-  switch (algorithm) {
-    case 'contain':
-      return rectContains(zone, src);
-    case 'center':
-      return isPointInRect(rectCenter(src), zone);
-    default:
-      return rectsIntersect(src, zone);
-  }
 }

@@ -52,7 +52,6 @@ type ViewKey = (typeof VIEWS)[number]['value'];
 
 const BAR_DELAYS = [0, 180, 90, 270];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function EqBars() {
   const reduce = useReducedMotion();
   return (
@@ -77,7 +76,7 @@ function formatClock(totalSeconds: number) {
 }
 
 /** Compact pills — whatever the island shows while no view is active. */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function ClockPill() {
   return (
     <>
@@ -87,7 +86,6 @@ function ClockPill() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function RecordingPill() {
   return (
     <>
@@ -103,11 +101,10 @@ type IslandProps = { view: IslandView; seconds?: number; compact?: ReactNode; on
  * The three views wired to one shell. `view` picks the active slot; `null`
  * falls back to the compact pill.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function Island({ view, seconds = START_SECONDS, compact, onDismiss }: IslandProps) {
   return (
     <DynamicIsland accessibilityLabel="Dynamic island" compact={compact ?? <ClockPill />} view={view}>
-      {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView className="gap-4" id="call">
         <View className="gap-0.5">
           <Text className="text-[10px] text-white tracking-px opacity-60">{INCOMING_CALL}</Text>
@@ -123,14 +120,12 @@ function Island({ view, seconds = START_SECONDS, compact, onDismiss }: IslandPro
         </View>
       </DynamicIslandView>
 
-      {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView className="gap-3" id="timer">
         <Timer className="text-warning" size={16} />
         <Text className="text-[10px] text-white tracking-px opacity-60">{TIMER_LABEL}</Text>
         <Text className="font-semibold text-[14px] text-white tabular-nums">{formatClock(seconds)}</Text>
       </DynamicIslandView>
 
-      {/* biome-ignore lint/correctness/useUniqueElementIds: not a DOM id — `id` is a view descriptor used as the slot's React key and matched against the parent's `view` prop; never rendered as an id attribute */}
       <DynamicIslandView className="gap-3" id="music">
         <Music className="text-white" size={14} />
         <View className="gap-px">
@@ -143,7 +138,6 @@ function Island({ view, seconds = START_SECONDS, compact, onDismiss }: IslandPro
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function IslandPlayground() {
   const [viewKey, setViewKey] = useState<ViewKey>('compact');
   const [running, setRunning] = useState(true);
@@ -197,7 +191,6 @@ function IslandPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function IslandDemo() {
   const [view, setView] = useState<IslandView>(null);
   const [seconds, setSeconds] = useState(START_SECONDS);

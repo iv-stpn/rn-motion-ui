@@ -46,7 +46,6 @@ function rightAdornmentFor(
   }
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ItemRowPlayground() {
   const [disabled, setDisabled] = useState(false);
   const [showDescription, setShowDescription] = useState(true);
@@ -82,7 +81,6 @@ function ItemRowPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ShowcasePlayground() {
   return (
     <Playground>

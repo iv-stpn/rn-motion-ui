@@ -261,6 +261,7 @@ type GatedBodyDropSurfaceProps = { external: boolean; isOver: boolean };
 function GatedBodyDropSurface({ external, isOver }: GatedBodyDropSurfaceProps) {
   const [visible, setVisible] = useState(false);
 
+  // biome-ignore lint/plugin: delay showing the outline to avoid a flash under the pointer while an expanded folder's overlay mounts and measures
   useEffect(() => {
     if (!isOver) {
       setVisible(false);

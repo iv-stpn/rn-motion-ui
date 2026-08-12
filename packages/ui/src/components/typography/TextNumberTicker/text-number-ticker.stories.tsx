@@ -62,7 +62,6 @@ const FORMATTERS: Record<FormatKey, ((n: number) => string) | undefined> = {
   compact: (n) => `${(Math.round(n) / 1000).toFixed(1)}k`,
 };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TextNumberTickerPlayground(args: ComponentProps<typeof TextNumberTicker>) {
   const [mode, setMode] = useState<TextNumberTickerMode>('roll');
   const [targetKey, setTargetKey] = useState<TargetKey>('48273');

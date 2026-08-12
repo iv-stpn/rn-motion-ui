@@ -64,7 +64,6 @@ const RECOVERY_WORDS = [
 
 type CloseButtonProps = { label: string; onPress: () => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function CloseButton({ label, onPress }: CloseButtonProps) {
   const mutedForeground = useThemeColor('muted-foreground');
   return (
@@ -81,7 +80,6 @@ function CloseButton({ label, onPress }: CloseButtonProps) {
 
 type RowProps = { icon: ReactNode; label: string; danger?: boolean; onPress: () => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Row({ icon, label, danger, onPress }: RowProps) {
   return (
     <Pressable
@@ -101,7 +99,6 @@ function Row({ icon, label, danger, onPress }: RowProps) {
 
 type ChecklistItemProps = { icon: ReactNode; text: string };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ChecklistItem({ icon, text }: ChecklistItemProps) {
   return (
     <View className="flex-row items-center gap-2.5">
@@ -113,7 +110,6 @@ function ChecklistItem({ icon, text }: ChecklistItemProps) {
 
 type OptionsViewProps = { onPrivateKey: () => void; onRecovery: () => void; onClose: () => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function OptionsView({ onPrivateKey, onRecovery, onClose }: OptionsViewProps) {
   return (
     <View>
@@ -132,7 +128,6 @@ function OptionsView({ onPrivateKey, onRecovery, onClose }: OptionsViewProps) {
 
 type PrivateKeyViewProps = { onBack: () => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function PrivateKeyView({ onBack }: PrivateKeyViewProps) {
   const foreground = useThemeColor('foreground');
   const mutedForeground = useThemeColor('muted-foreground');
@@ -166,7 +161,6 @@ function PrivateKeyView({ onBack }: PrivateKeyViewProps) {
 
 type RecoveryViewProps = { onBack: () => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function RecoveryView({ onBack }: RecoveryViewProps) {
   const foreground = useThemeColor('foreground');
   return (
@@ -217,7 +211,6 @@ type MorphingModalDemoProps = {
   testID?: string;
 };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function MorphingModalDemo({ placement, elevation = 6, kind, size, shape, testID }: MorphingModalDemoProps) {
   const [view, setView] = useState<WalletView>(null);
   const showOptions = useCallback(() => setView('options'), []);
@@ -235,7 +228,6 @@ function MorphingModalDemo({ placement, elevation = 6, kind, size, shape, testID
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function MorphingModalPlayground() {
   const [placement, setPlacement] = useState<'bottom' | 'center' | 'bottom-sheet'>('bottom');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');

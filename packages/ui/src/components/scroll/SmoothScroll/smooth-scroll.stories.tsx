@@ -28,7 +28,6 @@ const onScrollTop = fn();
 // Uses the useSmoothScroll() hook to glide the container back to the top.
 type ScrollTopButtonProps = { onPress?: () => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ScrollTopButton({ onPress }: ScrollTopButtonProps) {
   const { scrollTo } = useSmoothScroll();
   const color = useThemeColor('foreground');
@@ -49,7 +48,6 @@ function ScrollTopButton({ onPress }: ScrollTopButtonProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Demo() {
   return (
     <View className="h-[280px] w-[360px] overflow-hidden rounded-2xl border border-[#e5e5e5]">

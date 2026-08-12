@@ -166,6 +166,7 @@ export function ReorderableList<T>({
   store.getState().syncConfig({ items, keys, disabled, onReorder });
 
   // Clean up the store from the global registry on unmount.
+  // biome-ignore lint/plugin: imperative teardown
   useEffect(() => () => removeReorderableListStore(listId), [listId]);
 
   return (

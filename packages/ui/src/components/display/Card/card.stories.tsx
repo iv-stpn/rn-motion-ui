@@ -28,7 +28,6 @@ const BODY = 'A container for grouping related content.';
 
 type ElevationKey = (typeof ELEVATION_KEYS)[number];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function CardPlayground(args: ComponentProps<typeof Card>) {
   const [size, setSize] = useState<CardSize>('md');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');

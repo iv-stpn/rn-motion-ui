@@ -37,7 +37,6 @@ const TINTED_BACKDROP = 'bg-primary/20';
 
 type SheetBodyProps = { long?: boolean; full?: boolean; onClose: () => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetBody({ long = false, full = false, onClose }: SheetBodyProps) {
   return (
     <View className="gap-3 px-6 pb-6" style={{ flex: full ? 1 : undefined }}>
@@ -59,7 +58,6 @@ function SheetBody({ long = false, full = false, onClose }: SheetBodyProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetPlayground() {
   const [fullSheet, setFullSheet] = useState(false);
   const [closeOnOverlay, setCloseOnOverlay] = useState(true);
@@ -112,7 +110,6 @@ function SheetPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetDemo() {
   const [open, setOpen] = useState(false);
   const handleOpen = useCallback(() => setOpen(true), []);

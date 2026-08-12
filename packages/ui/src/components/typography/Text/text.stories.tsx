@@ -33,7 +33,6 @@ const AMOUNTS = ['$1,234.50', '$42.00', '$999.99', '$12,345.67'];
 
 type ColorClass = (typeof COLORS)[number]['value'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TextPlayground(args: ComponentProps<typeof Text>) {
   const [weight, setWeight] = useState<(typeof WEIGHTS)[number]>('normal');
   const [size, setSize] = useState<(typeof SIZES)[number]>('base');

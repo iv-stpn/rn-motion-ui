@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../../__stories__/story-harness';
@@ -46,7 +46,6 @@ const RADII = [
 type OffsetKey = (typeof OFFSETS)[number]['value'];
 type RadiusKey = (typeof RADII)[number]['value'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the playground and the Demo story
 function PopoverDemo() {
   return (
     <Popover align="start" side="bottom">
@@ -61,15 +60,16 @@ function PopoverDemo() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+const noop = () => {
+  /* static sample */
+};
+
 function PopoverPlayground() {
   const [side, setSide] = useState<PopoverSide>('bottom');
   const [align, setAlign] = useState<PopoverAlign>('center');
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('14');
   const [radiusKey, setRadiusKey] = useState<RadiusKey>('16');
   const trigger = useTriggerState();
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: noop — PopoverTrigger handles the press
-  const noop = useCallback(() => {}, []);
 
   return (
     <Playground>

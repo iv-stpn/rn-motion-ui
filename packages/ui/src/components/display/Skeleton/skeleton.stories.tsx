@@ -27,7 +27,6 @@ const SPEEDS = [
 
 type SpeedKey = (typeof SPEEDS)[number]['value'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function SkeletonPlayground(args: ComponentProps<typeof Skeleton>) {
   const [shape, setShape] = useState<SkeletonShape>('rounded');
   const [speedKey, setSpeedKey] = useState<SpeedKey>('2');

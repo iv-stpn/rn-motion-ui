@@ -43,7 +43,6 @@ const FILLER_KEYS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'] as const;
 
 type SheetBodyProps = { long?: boolean; padded?: boolean; centered?: boolean; onClose: () => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetBody({ long = false, padded = false, centered = false, onClose }: SheetBodyProps) {
   return (
     <View className={cn('flex-1 gap-3', centered ? 'items-center' : 'items-stretch', padded ? 'p-6' : 'p-0')}>
@@ -67,7 +66,6 @@ function SheetBody({ long = false, padded = false, centered = false, onClose }: 
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetPlayground() {
   const [mode, setMode] = useState<FullSheetMode>('default');
   const [withSubtitle, setWithSubtitle] = useState(true);
@@ -133,7 +131,6 @@ function SheetPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SheetDemo() {
   const [open, setOpen] = useState(false);
   const handleOpen = useCallback(() => setOpen(true), []);

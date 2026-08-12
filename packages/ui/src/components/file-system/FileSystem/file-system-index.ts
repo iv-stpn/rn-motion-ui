@@ -85,10 +85,8 @@ function inheritFolderTimestamps(folders: Map<string, FolderEntry>, children: Ma
 }
 
 /** Index a manifest. Children are name-sorted; views re-sort per the active sort. */
-export function buildFileSystemIndex(
-  items: FileSystemItem[],
-  options?: { preserveFolders?: Map<string, FolderEntry> },
-): FileSystemIndex {
+type BuildFileSystemIndexOptions = { preserveFolders?: Map<string, FolderEntry> };
+export function buildFileSystemIndex(items: FileSystemItem[], options?: BuildFileSystemIndexOptions): FileSystemIndex {
   const { files, folders } = collectEntries(items);
 
   // Preserve folders from the previous index that lost all their children

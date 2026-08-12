@@ -1,6 +1,6 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: scroll physics, item layout, and accessibility all share animation values
 
-import { memo, type Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type AccessibilityActionEvent,
   type GestureResponderEvent,
@@ -304,7 +304,7 @@ export type WheelPickerProps = {
 };
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: scroll physics, snapping, and accessibility require shared animation refs
-function WheelPickerImpl({
+export function WheelPicker({
   options,
   value,
   defaultValue,
@@ -702,5 +702,3 @@ function WheelPickerImpl({
     </WheelPickerFrame>
   );
 }
-
-export const WheelPicker = memo(WheelPickerImpl);

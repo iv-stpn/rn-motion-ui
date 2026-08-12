@@ -46,7 +46,6 @@ const pressedLabel = (n: number) => `Pressed ${n} times`;
 
 type IconSide = (typeof ICON_SIDES)[number];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ElevatedButtonPlayground(args: ComponentProps<typeof ElevatedButton>) {
   const [variant, setVariant] = useState<ElevatedVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');

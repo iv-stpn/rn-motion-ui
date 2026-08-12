@@ -57,7 +57,7 @@ const LONG_ITEMS: readonly MenuEntry[] = Array.from({ length: LONG_LIST_LENGTH }
 
 // The render-prop `trigger` gets `{ open, toggle }`; the chevron tracks the theme so
 // the open state stays legible on dark surfaces (a fixed dark hex vanished there).
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function PlaygroundTrigger({ open, toggle }: TriggerRenderProps) {
   const openColor = useThemeColor('foreground');
   const closedColor = useThemeColor('muted-foreground');
@@ -73,7 +73,7 @@ type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 's
 // The playground's trigger: the same `{ open, toggle }` render prop as above, but
 // the body is a `TriggerButton` so the Trigger chips can swap Button /
 // ElevatedButton / GlossyButton / bare Pressable under one dropdown.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
   return (
     <TriggerButton
@@ -93,7 +93,6 @@ const HEADER_ACTION = (
   </Text>
 );
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function DropdownPlayground() {
   const [align, setAlign] = useState<Align>('start');
   const [widthKey, setWidthKey] = useState<WidthKey>('320');

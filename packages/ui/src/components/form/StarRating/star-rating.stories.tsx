@@ -34,7 +34,6 @@ function renderHeart({ size, color, filled }: StarRenderProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function StarRatingPlayground(args: ComponentProps<typeof StarRating>) {
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [maxKey, setMaxKey] = useState<(typeof MAX_VALUES)[number]>('5');

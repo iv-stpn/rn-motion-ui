@@ -17,11 +17,6 @@
  * transport is disabled for this source. The "Cursor" story below exercises
  * the hold path with synthetic mouse pointer events.
  */
-/** biome-ignore-all lint/style/useExportsLast: this a stories file */
-/** biome-ignore-all lint/style/useComponentExportOnlyModules: stories only */
-/** biome-ignore-all lint/style/noJsxLiterals: stories only */
-/** biome-ignore-all lint/performance/noJsxPropsBind: stories only */
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';

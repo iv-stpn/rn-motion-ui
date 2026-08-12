@@ -51,7 +51,6 @@ const PRESSABLE_SHAPE: Record<string, string> = { rounded: 'rounded-interactive'
 export type TriggerKind = 'button' | 'elevated' | 'glossy' | 'pressable';
 
 /** Ordered list ready to pass directly to `<Choice options={TRIGGER_KINDS} />`. */
-// biome-ignore lint/style/useComponentExportOnlyModules: the chip list belongs with the component it drives
 export const TRIGGER_KINDS: readonly TriggerKind[] = ['button', 'elevated', 'glossy', 'pressable'] as const;
 
 // ─── Sizes & Shapes ──────────────────────────────────────────────────────────
@@ -60,11 +59,9 @@ export const TRIGGER_KINDS: readonly TriggerKind[] = ['button', 'elevated', 'glo
 export type TriggerSize = Exclude<ButtonSize, 'icon'>;
 
 /** Sizes available in the trigger controls. */
-// biome-ignore lint/style/useComponentExportOnlyModules: the chip list belongs with the component it drives
 export const TRIGGER_SIZES: readonly TriggerSize[] = ['sm', 'md', 'lg'] as const;
 
 /** Shapes available in the trigger controls. */
-// biome-ignore lint/style/useComponentExportOnlyModules: the chip list belongs with the component it drives
 export const TRIGGER_SHAPES: readonly ButtonShape[] = ['rounded', 'pill'] as const;
 
 // ─── TriggerButton ───────────────────────────────────────────────────────────
@@ -190,8 +187,6 @@ export type TriggerState = {
  *   // trigger button:
  *   <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={…} onPress={…} />
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: hook co-located with the trigger components it drives
-// biome-ignore lint/style/useExportsLast: TriggerControlsProps is a private prop type kept next to its component
 export function useTriggerState(): TriggerState {
   const [kind, setKind] = useState<TriggerKind>('button');
   const [size, setSize] = useState<TriggerSize>('md');

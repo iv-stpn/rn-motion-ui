@@ -12,12 +12,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-/** The animation state a row carries into the view layer. */
-export type RowAnimStatus = 'entering' | 'exiting';
-
-/** An entry augmented with its animation status for the current render. */
-export type AugmentedEntry<T> = T & { _animStatus?: RowAnimStatus };
-
 /**
  * How long the exit animation takes at full speed. If the animation callback
  * never fires (e.g. Reanimated worklet runner not set up in a test), the
@@ -37,6 +31,7 @@ function useExitTimeout(onExitComplete: (key: string) => void): (key: string) =>
   onExitRef.current = onExitComplete;
 
   // Cleanup all pending timeouts on unmount.
+  // biome-ignore lint/plugin: imperative teardown, not data-fetching or render-driving state
   useEffect(() => {
     const timers = timersRef.current;
     return () => {
@@ -56,6 +51,12 @@ function useExitTimeout(onExitComplete: (key: string) => void): (key: string) =>
     timersRef.current.set(key, id);
   }, []);
 }
+
+/** The animation state a row carries into the view layer. */
+export type RowAnimStatus = 'entering' | 'exiting';
+
+/** An entry augmented with its animation status for the current render. */
+export type AugmentedEntry<T> = T & { _animStatus?: RowAnimStatus };
 
 export type UseFileSystemRowAnimationResult<T> = {
   augmentedEntries: AugmentedEntry<T>[];

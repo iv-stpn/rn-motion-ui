@@ -51,7 +51,7 @@ const CASCADE_WIDTH = 220;
 type CascadeDemoProps = { phrases: readonly string[]; interval: number | null; className?: string; index?: number };
 
 // Cycles the label so the letter-by-letter roll is visible without pressing anything.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function CascadeDemo({ phrases, interval, className, index }: CascadeDemoProps) {
   const [step, setStep] = useState(0);
   const advance = useCallback(() => setStep((p) => p + 1), []);
@@ -65,7 +65,6 @@ function CascadeDemo({ phrases, interval, className, index }: CascadeDemoProps) 
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function CascadePlayground() {
   const [setKey, setSetKey] = useState<SetKey>('actions');
   const [intervalKey, setIntervalKey] = useState<IntervalKey>('2400');

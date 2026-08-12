@@ -14,11 +14,6 @@
  * hand; see `story-drag.ts`. Inheritance and isolation are settled in the store off
  * measured boxes, so a native pan reaches the same verdicts through the same code.
  */
-/** biome-ignore-all lint/style/useExportsLast: this a stories file */
-/** biome-ignore-all lint/style/useComponentExportOnlyModules: stories only */
-/** biome-ignore-all lint/style/noJsxLiterals: stories only */
-/** biome-ignore-all lint/performance/noJsxPropsBind: stories only */
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';

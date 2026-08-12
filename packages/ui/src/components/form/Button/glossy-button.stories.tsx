@@ -72,7 +72,6 @@ const CUSTOM_COLORS = [
 
 type IconSide = (typeof ICON_SIDES)[number];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function GlossyButtonPlayground(args: ComponentProps<typeof GlossyButton>) {
   const [variant, setVariant] = useState<GlossyVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');

@@ -40,7 +40,6 @@ const HEADING = 'text-2xl font-semibold text-foreground';
 
 type PaceKey = (typeof PACES)[number]['value'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TextRevealPlayground(args: ComponentProps<typeof TextReveal>) {
   const [split, setSplit] = useState<TextRevealSplit>('word');
   const [paceKey, setPaceKey] = useState<PaceKey>('0.09');

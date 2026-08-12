@@ -38,7 +38,6 @@ const SPEEDS = [
 
 type SpeedKey = (typeof SPEEDS)[number]['value'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function LoaderPlayground(args: ComponentProps<typeof Loader>) {
   const [variant, setVariant] = useState<LoaderVariant>('spinner');
   const [sizeKey, setSizeKey] = useState<(typeof SIZES)[number]>('36');

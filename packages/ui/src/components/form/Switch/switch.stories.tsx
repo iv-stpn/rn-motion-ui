@@ -68,7 +68,6 @@ function expectSameColor(actual: readonly number[], expected: readonly number[])
   expect(Math.max(...drift)).toBeLessThanOrEqual(1);
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function SwitchPlayground(args: ComponentProps<typeof Switch>) {
   const [on, setOn] = useState(true);
   const [disabled, setDisabled] = useState(false);

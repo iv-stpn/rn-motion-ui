@@ -62,7 +62,6 @@ const FILLER_KEYS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] as const;
 
 type ModalBodyProps = { long?: boolean };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ModalBody({ long = false }: ModalBodyProps) {
   return (
     <View className="gap-3">
@@ -81,7 +80,7 @@ function ModalBody({ long = false }: ModalBodyProps) {
 type CustomBodyProps = { onClose: () => void };
 
 // `customLayout` drops the modal's own padding, so the caller owns the frame.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function CustomBody({ onClose }: CustomBodyProps) {
   return (
     <View className="gap-4 border-border border-t p-6">
@@ -96,7 +95,6 @@ function CustomBody({ onClose }: CustomBodyProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ModalPlayground() {
   const isAutoWide = useBreakpointAtLeast('sm');
   const [largeMode, setLargeMode] = useState<LargeScreenMode>('modal');
@@ -167,7 +165,6 @@ function ModalPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ModalDemo() {
   const [open, setOpen] = useState(false);
   const handleOpen = useCallback(() => setOpen(true), []);

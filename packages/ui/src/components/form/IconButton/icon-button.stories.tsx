@@ -50,7 +50,6 @@ const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: '
 // Sample colours for iconBackgroundColor demos
 const TILE_COLORS = ['#FF3B30', '#007AFF', '#34C759', '#FF9500', '#AF52DE'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function IconButtonPlayground(args: IconButtonProps) {
   const [variant, setVariant] = useState<ButtonVariant>('primary');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');

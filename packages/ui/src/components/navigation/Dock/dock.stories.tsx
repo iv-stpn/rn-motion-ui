@@ -65,7 +65,7 @@ type DockButtonProps = {
 };
 
 // Its own component so each item's `onPress` is a stable per-id callback.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function DockButton({ id, label, icon: Icon, active, iconSize, onSelect }: DockButtonProps) {
   const color = useThemeColor('foreground');
   const handlePress = useCallback(() => onSelect(id), [onSelect, id]);
@@ -78,7 +78,6 @@ function DockButton({ id, label, icon: Icon, active, iconSize, onSelect }: DockB
 
 type DockDemoProps = { size?: SizeKey; separator?: boolean; onSelect?: (id: string) => void };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function DockDemo({ size = 'lg', separator = true, onSelect }: DockDemoProps) {
   const [active, setActive] = useState('home');
   const color = useThemeColor('foreground');
@@ -119,7 +118,6 @@ function DockDemo({ size = 'lg', separator = true, onSelect }: DockDemoProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function DockPlayground() {
   const [sizeKey, setSizeKey] = useState<SizeKey>('lg');
   const [separator, setSeparator] = useState(true);

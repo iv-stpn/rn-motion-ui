@@ -34,7 +34,7 @@ type FieldState = (typeof STATES)[number];
 type RevealButtonProps = { shown: boolean; onToggle: () => void; color: string };
 
 // Reveal toggle for the password sample — its own component so `onPress` stays stable.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function RevealButton({ shown, onToggle, color }: RevealButtonProps) {
   return (
     <Pressable accessibilityLabel={shown ? 'Hide password' : 'Show password'} accessibilityRole="button" onPress={onToggle}>
@@ -43,7 +43,6 @@ function RevealButton({ shown, onToggle, color }: RevealButtonProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function InputPlayground(args: ComponentProps<typeof Input>) {
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');

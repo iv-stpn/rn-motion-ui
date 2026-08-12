@@ -1,4 +1,3 @@
-// biome-ignore-all lint/style/noJsxLiterals: stories only
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -13,7 +12,6 @@ const onPress = fn();
 const SIZES: ItemRowSize[] = ['sm', 'md', 'lg'];
 const VARIANTS: ItemRowVariant[] = ['default', 'outline', 'muted'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ActionRowPlayground() {
   const [disabled, setDisabled] = useState(false);
   const [showDescription, setShowDescription] = useState(true);
@@ -52,7 +50,6 @@ function ActionRowPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ShowcasePlayground() {
   return (
     <Playground>
@@ -80,7 +77,6 @@ function ShowcasePlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function CustomRightAdornmentStory() {
   return (
     <Playground>

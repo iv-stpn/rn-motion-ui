@@ -11,7 +11,6 @@ const LOGOS = ['Vercel', 'Linear', 'Stripe', 'Figma', 'GitHub', 'Notion', 'Loom'
 
 type ChipProps = { label: string };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: Chip is a local story helper, intentionally unexported
 function Chip({ label }: ChipProps) {
   return (
     <View className="h-12 items-center justify-center rounded-lg border border-border bg-surface-3 px-6">
@@ -68,7 +67,6 @@ function chips() {
   return LOGOS.map((label) => <Chip key={label} label={label} />);
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function MarqueePlayground(args: ComponentProps<typeof Marquee>) {
   const [direction, setDirection] = useState<MarqueeDirection>('left');
   const [speedKey, setSpeedKey] = useState<SpeedKey>('20');

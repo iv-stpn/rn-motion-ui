@@ -54,7 +54,7 @@ type PanelProps = { children: ReactNode; width?: number; framed?: boolean };
  * own: rows edge to edge, no surface of their own, nothing between them and
  * whatever they were dropped into.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function MenuPanel({ children, width = 260, framed = true }: PanelProps) {
   return (
     <View className={framed ? `overflow-hidden rounded-menu ${SURFACE_CLASSNAME[3]}` : undefined} style={{ width }}>
@@ -66,7 +66,7 @@ function MenuPanel({ children, width = 260, framed = true }: PanelProps) {
 type DensityRowProps = { label: string };
 
 /** A `node` entry: something that is not a row at all, living in the same list. */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function DensityRow({ label }: DensityRowProps) {
   const [dense, setDense] = useState(false);
   return (
@@ -101,7 +101,6 @@ function buildEntries(flags: PlaygroundFlags): MenuEntry[] {
   ];
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function MenuPlayground() {
   const [size, setSize] = useState<MenuItemSize>('md');
   const [mode, setMode] = useState<MenuItemMode>('menu');
@@ -172,14 +171,12 @@ const ANATOMY_ENTRIES: MenuEntry[] = [
 
 type KbdProps = { hint: string };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function Kbd({ hint }: KbdProps) {
   return (
     <Text className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">{hint}</Text>
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function SizesShowcase() {
   return (
     <Playground>
@@ -199,7 +196,7 @@ function SizesShowcase() {
 }
 
 /** The dropdown demo: one list, wired to the panel's own `close`. */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function DropdownDemo() {
   const [chosen, setChosen] = useState<string | null>(null);
   const [hidden, setHidden] = useState(false);

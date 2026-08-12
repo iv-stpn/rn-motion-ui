@@ -54,7 +54,6 @@ const MIN_SCALES = ['0.3', '0.55', '0.8'] as const;
 
 type BallProps = { label: string; bgClass: string };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Ball({ label, bgClass }: BallProps) {
   return (
     <View className={cn('flex-1 items-center justify-center rounded-full border border-[rgba(0,0,0,0.08)]', bgClass)}>
@@ -68,7 +67,6 @@ function balls() {
   return SLIDES.map((slide) => <Ball bgClass={slide.bgClass} key={slide.label} label={slide.label} />);
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function CarouselPlayground() {
   const [variant, setVariant] = useState<CylinderCarouselVariant>('convex');
   const [itemSizeKey, setItemSizeKey] = useState<(typeof ITEM_SIZES)[number]>('120');

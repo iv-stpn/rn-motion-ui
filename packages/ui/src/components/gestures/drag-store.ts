@@ -202,6 +202,19 @@ async function measureZones(): Promise<void> {
   );
 }
 
+/**
+ * Re-resolve the drop target once after the zones that just registered have all
+ * measured. Called from `registerDragzone` for a zone mounting mid-drag; deferred
+ * a tick so every zone of the same commit is in the store before the resolve runs.
+ */
+function scheduleRegistrationRefresh(): void {
+  if (_registrationRefreshTimer !== null) return;
+  _registrationRefreshTimer = setTimeout(() => {
+    _registrationRefreshTimer = null;
+    refreshDragzones().catch(() => undefined);
+  }, 0);
+}
+
 export type RegisterDragManagerParams = Omit<DragManagerEntry, 'getConfig'> & { getConfig: () => DragManagerConfig };
 
 /** Join a `<DragManager>` to the tree. Call the returned teardown on unmount. */
@@ -565,19 +578,6 @@ export function refreshDragzones(): Promise<void> {
     recomputeEligible();
     publish();
   });
-}
-
-/**
- * Re-resolve the drop target once after the zones that just registered have all
- * measured. Called from `registerDragzone` for a zone mounting mid-drag; deferred
- * a tick so every zone of the same commit is in the store before the resolve runs.
- */
-function scheduleRegistrationRefresh(): void {
-  if (_registrationRefreshTimer !== null) return;
-  _registrationRefreshTimer = setTimeout(() => {
-    _registrationRefreshTimer = null;
-    refreshDragzones().catch(() => undefined);
-  }, 0);
 }
 
 /** Test seam: drop every registration and any drag in flight. */

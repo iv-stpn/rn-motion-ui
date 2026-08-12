@@ -24,7 +24,7 @@ const HINT = 'Press a row to grow it, or the × to collapse it out of the list.'
 type RowProps = { item: Item; expanded: boolean; onToggle: (id: number) => void; onRemove: (id: number) => void };
 
 // Its own component so each row's handlers are stable per id.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function Row({ item, expanded, onToggle, onRemove }: RowProps) {
   const toggle = useCallback(() => onToggle(item.id), [onToggle, item.id]);
   const remove = useCallback(() => onRemove(item.id), [onRemove, item.id]);
@@ -41,7 +41,6 @@ function Row({ item, expanded, onToggle, onRemove }: RowProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function AnimatedListPlayground() {
   const idRef = useRef(0);
   const make = useCallback((label: string): Item => {

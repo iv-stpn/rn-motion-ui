@@ -1,9 +1,3 @@
-// biome-ignore-all lint/style/noExcessiveLinesPerFile: stories + interaction tests for the whole browser kept together for easy editing
-// biome-ignore-all lint/style/useExportsLast: this a stories file
-// biome-ignore-all lint/style/useComponentExportOnlyModules: stories only
-// biome-ignore-all lint/performance/noJsxPropsBind: stories only
-// biome-ignore-all lint/style/noJsxLiterals: stories only
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';

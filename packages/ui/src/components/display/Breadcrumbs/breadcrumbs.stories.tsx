@@ -45,7 +45,6 @@ type Story = StoryObj<typeof meta>;
 
 const SIZES = ['sm', 'base'] as const satisfies readonly BreadcrumbsSize[];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function BreadcrumbsPlayground() {
   const [size, setSize] = useState<BreadcrumbsSize>('sm');
   const [trail, setTrail] = useState<BreadcrumbItem[]>(DEEP_TRAIL);

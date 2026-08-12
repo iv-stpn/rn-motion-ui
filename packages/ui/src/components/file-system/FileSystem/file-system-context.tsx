@@ -385,6 +385,29 @@ function _recomputeEntries(s: FileSystemStore): RecomputedEntries {
   };
 }
 
+/**
+ * How long `loadChildren` gets before the store considers the folder failed.
+ * After this many milliseconds the promise is abandoned and the folder is
+ * added to `errorFolders` so the view can show a retry affordance.
+ */
+const CHILDREN_LOAD_TIMEOUT_MS = 30_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Timed out')), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 // ── Init type + factory ───────────────────────────────────────────────────────
 
 export type FileSystemStoreInit = {
@@ -416,29 +439,6 @@ export type FileSystemStoreInit = {
 };
 
 export type FileSystemStoreApi = ReturnType<typeof createFileSystemStore>;
-
-/**
- * How long `loadChildren` gets before the store considers the folder failed.
- * After this many milliseconds the promise is abandoned and the folder is
- * added to `errorFolders` so the view can show a retry affordance.
- */
-const CHILDREN_LOAD_TIMEOUT_MS = 30_000;
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Timed out')), ms);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: store factory wires 8 slices + 20 actions; splitting would scatter state that belongs together
 export function createFileSystemStore(init: FileSystemStoreInit) {

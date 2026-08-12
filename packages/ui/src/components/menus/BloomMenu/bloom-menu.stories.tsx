@@ -28,7 +28,6 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function BloomMenuDemo(props: ComponentProps<typeof BloomMenu>) {
   return (
     <View className="min-h-[420px] items-center justify-center">

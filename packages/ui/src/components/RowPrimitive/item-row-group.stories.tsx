@@ -14,7 +14,6 @@ import type { RowGroupVariant } from './row-group';
 const SIZES: ItemRowSize[] = ['sm', 'md', 'lg'];
 const VARIANTS: RowGroupVariant[] = ['grouped', 'spaced', 'sections'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function ItemRowGroupPlayground() {
   const [variant, setVariant] = useState<RowGroupVariant>('grouped');
   const [size, setSize] = useState<ItemRowSize>('md');
@@ -62,7 +61,6 @@ function ItemRowGroupPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ShowcasePlayground() {
   const items: ItemRowGroupItem[] = [
     {

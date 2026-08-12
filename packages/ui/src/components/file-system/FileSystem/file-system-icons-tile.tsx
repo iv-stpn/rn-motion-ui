@@ -9,6 +9,7 @@
 // it wraps, so a single-tile drag ghosts this very node, and a group drag ghosts
 // what the manager's `renderPreview` returns.
 
+import { useCallback } from 'react';
 import { type GestureResponderEvent, Pressable, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
 import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
@@ -225,7 +226,7 @@ function IconTile({
 }
 
 export type IconRowProps = Omit<IconTileProps, 'entry' | 'isSelected' | 'testID' | 'width'> & {
-  row: FileSystemEntry[];
+  row: AugmentedEntry<FileSystemEntry>[];
   selectedPaths: ReadonlySet<string>;
   tileWidth: number;
   /** The browser's root `testID`; each tile derives its own from it. */
@@ -235,11 +236,12 @@ export type IconRowProps = Omit<IconTileProps, 'entry' | 'isSelected' | 'testID'
 };
 
 export function IconRow({ row, selectedPaths, testID, tileWidth, onExitTile, ...tileProps }: IconRowProps) {
+  const getOnExitHandler = useCallback((entry: FileSystemEntry) => () => onExitTile?.(entry.path), [onExitTile]);
+
   return (
     <View className="flex-row gap-1" style={{ marginBottom: ROW_GAP }}>
       {row.map((entry) => {
-        const augmented = entry as AugmentedEntry<FileSystemEntry>;
-        const status = augmented._animStatus;
+        const status = entry._animStatus;
         const tile = (
           <IconTile
             entry={entry}
@@ -257,7 +259,7 @@ export function IconRow({ row, selectedPaths, testID, tileWidth, onExitTile, ...
               isEntering={status === 'entering'}
               isExiting={status === 'exiting'}
               key={entry.path}
-              onExitComplete={() => onExitTile?.(entry.path)}
+              onExitComplete={getOnExitHandler(entry)}
               width={tileWidth}
             >
               {tile}

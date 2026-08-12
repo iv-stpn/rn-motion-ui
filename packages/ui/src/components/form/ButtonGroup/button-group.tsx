@@ -36,7 +36,8 @@ function alignmentClass(bordered: boolean, horizontal: boolean): 'items-stretch'
  * corner radii so adjacent buttons sit flush; outer corners keep the
  * interactive radius. A single child keeps its natural `rounded-interactive`.
  */
-function borderedContentClassName(index: number, total: number, horizontal: boolean): string {
+type RoundedClassName = 'rounded-r-none' | 'rounded-l-none' | 'rounded-b-none' | 'rounded-t-none' | 'rounded-none' | '';
+function borderedContentClassName(index: number, total: number, horizontal: boolean): RoundedClassName {
   if (total === 1) return '';
 
   const isFirst = index === 0;

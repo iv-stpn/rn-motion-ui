@@ -25,7 +25,6 @@ const DRAWER_TITLE = 'Drawer';
 type DrawerSide = 'left' | 'right';
 const SIDES = ['left', 'right'] as const satisfies readonly DrawerSide[];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function DrawerPlayground() {
   const [side, setSide] = useState<DrawerSide>('left');
   const [open, setOpen] = useState(false);
@@ -54,7 +53,6 @@ function DrawerPlayground() {
 
 type DrawerDemoProps = { side: DrawerSide };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function DrawerDemo({ side }: DrawerDemoProps) {
   const [open, setOpen] = useState(false);
   const handleOpen = useCallback(() => setOpen(true), []);

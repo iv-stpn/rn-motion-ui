@@ -30,7 +30,6 @@ const LENGTHS = ['4', '6'] as const;
 const SUCCESS_MESSAGE = 'Verified.';
 const ERROR_MESSAGE = 'Wrong code, try again.';
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
   const [lengthKey, setLengthKey] = useState<(typeof LENGTHS)[number]>('6');
   const [secureTextEntry, setSecureTextEntry] = useState(false);

@@ -1,7 +1,3 @@
-// biome-ignore-all lint/style/useComponentExportOnlyModules: stories only
-// biome-ignore-all lint/style/noJsxLiterals: stories only
-// biome-ignore-all lint/performance/noJsxPropsBind: stories only
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { View } from 'react-native';
 import { ControlCard, Playground, Sample, Section, Variants } from '../../../../__stories__/story-harness';

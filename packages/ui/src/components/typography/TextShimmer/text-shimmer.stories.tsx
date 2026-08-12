@@ -45,7 +45,6 @@ const SWAP_MS = 3000;
 type DurationKey = (typeof DURATIONS)[number]['value'];
 type SizeClass = (typeof SIZES)[number]['value'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
   const [durationKey, setDurationKey] = useState<DurationKey>('2.5');
   const [sizeClass, setSizeClass] = useState<SizeClass>('text-2xl');

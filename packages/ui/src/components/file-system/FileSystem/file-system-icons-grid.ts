@@ -5,8 +5,6 @@
 // two must agree exactly — one row-stride of drift and the tile the pointer
 // looks to be over is not the one that commits.
 
-import type { FileSystemEntry } from './file-system.types';
-
 /** The grid's content-container padding (p-3), on all four sides. */
 export const GRID_PADDING = 12;
 /** Columns are packed at this width or wider — the `auto-fill` floor. */
@@ -37,8 +35,8 @@ export function gridMetrics(width: number): GridMetrics {
 }
 
 /** Split a flat entry list into fixed-width rows the FlatList can window. */
-export function chunkEntries(entries: FileSystemEntry[], columns: number): FileSystemEntry[][] {
-  const rows: FileSystemEntry[][] = [];
+export function chunkEntries<T>(entries: T[], columns: number): T[][] {
+  const rows: T[][] = [];
   for (let i = 0; i < entries.length; i += columns) rows.push(entries.slice(i, i + columns));
   return rows;
 }

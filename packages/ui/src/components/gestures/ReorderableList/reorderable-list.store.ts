@@ -26,10 +26,13 @@ function computeIndicatorIndex(
   keys: readonly string[],
 ): number | null {
   if (draggedKey === null || overKey === null) return null;
+
   const overIdx = keys.indexOf(overKey);
   if (overIdx === -1) return null;
+
   const visualIdx = insertBefore ? overIdx : overIdx + 1;
   const draggedIdx = keys.indexOf(draggedKey);
+
   // Suppress when the visual insertion would be a no-op (same position).
   if (visualIdx === draggedIdx || visualIdx === draggedIdx + 1) return null;
   return visualIdx;

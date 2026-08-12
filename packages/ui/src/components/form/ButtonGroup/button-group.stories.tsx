@@ -31,7 +31,6 @@ const BUTTONS = [
   { label: 'Right', variant: 'primary' as const },
 ];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ButtonGroupPlayground() {
   const [variant, setVariant] = useState<'spaced' | 'bordered'>('spaced');
   const [orientation, setOrientation] = useState<'horizontal' | 'vertical'>('horizontal');

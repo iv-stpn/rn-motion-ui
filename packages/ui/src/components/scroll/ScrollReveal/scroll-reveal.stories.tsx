@@ -44,7 +44,6 @@ type AmountKey = (typeof AMOUNTS)[number]['value'];
 
 type DemoProps = { once: boolean; y?: number; amount?: number };
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function Demo({ once, y, amount }: DemoProps) {
   const scrollY = useSharedValue(0);
   // Writing a shared value from the JS thread is valid on web (no worklet plugin
@@ -85,7 +84,6 @@ function Demo({ once, y, amount }: DemoProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ScrollRevealPlayground() {
   const [slideKey, setSlideKey] = useState<SlideKey>('16');
   const [amountKey, setAmountKey] = useState<AmountKey>('0.3');

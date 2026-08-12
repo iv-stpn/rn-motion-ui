@@ -31,7 +31,6 @@ type Story = StoryObj<typeof meta>;
 
 const OPEN_LABEL = 'Open command palette';
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function PalettePlayground() {
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
@@ -46,7 +45,6 @@ function PalettePlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function PaletteDemo() {
   const [open, setOpen] = useState(false);
   const openPalette = useCallback(() => setOpen(true), []);

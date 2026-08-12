@@ -33,7 +33,6 @@ const PLANS = [
   { value: 'team', label: 'Team — $29/mo' },
 ] as const;
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function RadioPlayground() {
   const [orientation, setOrientation] = useState<(typeof ORIENTATIONS)[number]>('vertical');
   const [showDisabled, setShowDisabled] = useState(true);

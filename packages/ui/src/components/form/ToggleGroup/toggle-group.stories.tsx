@@ -32,7 +32,6 @@ const OPTIONS = [
   { value: 'right', label: 'Right' },
 ];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ToggleGroupPlayground() {
   const [variant, setVariant] = useState<(typeof VARIANTS)[number]>('spaced');
   const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');

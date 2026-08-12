@@ -63,7 +63,6 @@ function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
   return colors.foreground;
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ButtonPlayground(args: ComponentProps<typeof Button>) {
   const [variant, setVariant] = useState<ButtonVariant>('primary');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');

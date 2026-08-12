@@ -8,8 +8,6 @@
  * halves of that — a long press that must do *nothing*, and a right-click that
  * must open the panel with no lifted copy behind it.
  */
-/** biome-ignore-all lint/style/useExportsLast: story helpers are co-located with the stories they serve */
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -103,7 +101,7 @@ const DEMO_ITEMS = buildItems({ disabled: true, heading: true, separator: true }
 type BubbleProps = { children: ReactNode; outgoing?: boolean };
 
 /** A chat bubble — the shape this interaction was built for. */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
+
 function Bubble({ children, outgoing = false }: BubbleProps) {
   return (
     <View
@@ -116,7 +114,6 @@ function Bubble({ children, outgoing = false }: BubbleProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function HoldContextMenuPlayground() {
   const [activateOn, setActivateOn] = useState<HoldContextMenuActivation>('hold');
   const [side, setSide] = useState<Side>('auto');
@@ -312,7 +309,6 @@ const PASSIVE_NOTE =
   'trigger="passive" — the host calls setOpen(true) on press; the contextmenu listener handles right-click without extra wiring.';
 const PASSIVE_LABEL = 'Press to open · Right-click also works';
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper co-located with its stories
 function PassiveTriggerDemo() {
   const [open, setOpen] = useState(false);
   const handlePress = useCallback(() => setOpen(true), []);

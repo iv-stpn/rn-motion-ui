@@ -44,7 +44,7 @@ type RollingDemoProps = { direction: TextRollingDirection; className?: string; i
 
 // The roll only fires when `text` changes, so every sample reads the same shared
 // index — one timer drives them all and the directions stay in step.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function RollingSample({ direction, className, index }: RollingDemoProps) {
   const current = STATUSES[index % STATUSES.length] ?? FIRST_STATUS;
   return (
@@ -54,7 +54,6 @@ function RollingSample({ direction, className, index }: RollingDemoProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function TextRollingPlayground(args: ComponentProps<typeof TextRolling>) {
   const [direction, setDirection] = useState<TextRollingDirection>('forward');
   const [auto, setAuto] = useState(true);

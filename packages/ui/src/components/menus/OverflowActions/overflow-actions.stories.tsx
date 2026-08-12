@@ -36,7 +36,7 @@ const NO_ACTION = 'no action yet';
 type DemoProps = { size?: OverflowActionsSize; label?: string; testID?: string };
 
 // The uncontrolled variant used by the size rows — each rail owns its own state.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function Demo({ size, label = 'action rail', testID }: DemoProps) {
   const iconColor = useThemeColor('foreground');
   const iconSize = size === 'sm' ? 14 : 16;
@@ -69,7 +69,6 @@ function Demo({ size, label = 'action rail', testID }: DemoProps) {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function OverflowActionsPlayground() {
   const [size, setSize] = useState<OverflowActionsSize>('md');
   const [expanded, setExpanded] = useState(false);

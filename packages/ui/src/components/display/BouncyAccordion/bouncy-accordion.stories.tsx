@@ -85,7 +85,6 @@ const COUNTS = [
 
 type CountKey = (typeof COUNTS)[number]['value'];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function BouncyAccordionPlayground() {
   const [collapsible, setCollapsible] = useState(true);
   const [icons, setIcons] = useState(true);
@@ -131,7 +130,6 @@ function BouncyAccordionPlayground() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function DefaultDemo(props: React.ComponentProps<typeof BouncyAccordion>) {
   const iconColor = useThemeColor('muted-foreground');
   const items = useMemo<BouncyAccordionItem[]>(

@@ -37,11 +37,11 @@ function resolveEnterY(reduce: boolean, placement: MorphingModalProps['placement
   return 20;
 }
 
-function resolvePositionerClassName(placement: MorphingModalProps['placement']): string {
-  if (placement === 'bottom-sheet') return 'flex-1 items-center justify-end';
-  if (placement === 'bottom') return 'flex-1 items-center justify-end px-4 pb-8';
-  return 'flex-1 items-center justify-center px-4';
-}
+const POSITIONER_CLASS: Record<MorphingModalPlacement, string> = {
+  'bottom-sheet': 'flex-1 items-center justify-end',
+  bottom: 'flex-1 items-center justify-end px-4 pb-8',
+  center: 'flex-1 items-center justify-center px-4',
+};
 
 export type MorphingModalProps = {
   /** Which view is currently shown. `null` closes the modal. */
@@ -112,7 +112,7 @@ export function MorphingModal({
     if (contentHeight !== null && !morphing) setMorphing(true);
   }, [contentHeight, morphing]);
 
-  const positionerClassName = resolvePositionerClassName(placement);
+  const positionerClassName = POSITIONER_CLASS[placement];
 
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: shared-element morph requires coordinating clip, height-spring, and cross-fade branches in one render path
   const renderPanel = ({ open: isAnimOpen, onExitComplete }: OverlayShellContext) => (

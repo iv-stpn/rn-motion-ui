@@ -47,7 +47,7 @@ const SCROLL_BOX_TESTID = 'scroll-box-scroller';
  * children — the indicator has no scroll awareness of its own, it only reads a
  * 0→1 value someone else drives.
  */
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function ScrollBox({ children, width = BOX_W, height = BOX_H }: ScrollBoxProps) {
   const progress = useSharedValue(0);
   const onScroll = useCallback(
@@ -80,7 +80,6 @@ function ScrollBox({ children, width = BOX_W, height = BOX_H }: ScrollBoxProps) 
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ScrollProgressPlayground() {
   const [circle, setCircle] = useState(false);
   const [spring, setSpring] = useState(true);

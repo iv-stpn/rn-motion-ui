@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback } from 'react';
 import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { H_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
@@ -109,6 +109,8 @@ export function ToggleGroup({
   const isHorizontal = orientation === 'horizontal';
   const radius = SHAPE_RADIUS[shape];
 
+  const getOnValueChangeHandler = useCallback((itemValue: string) => () => onValueChange?.(itemValue), [onValueChange]);
+
   // ── segmented (bordered / connected) ─────────────────────────────────────────
 
   if (isSegmented) {
@@ -144,7 +146,7 @@ export function ToggleGroup({
               key={item.value}
               accessibilityRole="radio"
               aria-checked={selected}
-              onPress={() => onValueChange?.(item.value)}
+              onPress={getOnValueChangeHandler(item.value)}
               className={itemClass}
             >
               <Text className={itemTextClass(size, selected)}>{item.label}</Text>
@@ -170,7 +172,7 @@ export function ToggleGroup({
             key={item.value}
             accessibilityRole="radio"
             aria-checked={selected}
-            onPress={() => onValueChange?.(item.value)}
+            onPress={getOnValueChangeHandler(item.value)}
             className={cn(
               H_INTERACTIVE[size],
               'items-center justify-center border border-border px-3',

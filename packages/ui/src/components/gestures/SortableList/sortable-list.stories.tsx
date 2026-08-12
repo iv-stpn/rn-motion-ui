@@ -7,11 +7,6 @@
  * same DOM nodes the component renders, which exercises the Dragzone/Draggable
  * wiring and the translation-math–based insertion-index calculation.
  */
-/** biome-ignore-all lint/style/useExportsLast: stories only */
-/** biome-ignore-all lint/style/useComponentExportOnlyModules: stories only */
-/** biome-ignore-all lint/style/noJsxLiterals: stories only */
-/** biome-ignore-all lint/performance/noJsxPropsBind: stories only */
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
@@ -73,7 +68,8 @@ function GripHandle() {
 
 type RowProps = { first: boolean; isDragging: boolean; item: Todo; last: boolean };
 
-function groupedRadius(first: boolean, last: boolean): string {
+type GroupedRadius = 'rounded-lg' | 'rounded-t-lg' | 'rounded-b-lg' | '';
+function groupedRadius(first: boolean, last: boolean): GroupedRadius {
   if (first && last) return 'rounded-lg';
   if (first) return 'rounded-t-lg';
   if (last) return 'rounded-b-lg';
@@ -109,7 +105,8 @@ type Variant = 'grouped' | 'separated';
 
 const VARIANTS = ['grouped', 'separated'] as const;
 
-function InteractiveDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS }: { disabled?: boolean; items?: Todo[] }) {
+type InteractiveDemoProps = { disabled?: boolean; items?: Todo[] };
+function InteractiveDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS }: InteractiveDemoProps) {
   const [variant, setVariant] = useState<Variant>('grouped');
   const [groupedItems, setGroupedItems] = useState(initialItems);
   const [spacedItems, setSpacedItems] = useState(initialItems);

@@ -33,7 +33,6 @@ type Orientation = NonNullable<CheckboxCardGroupProps['orientation']>;
 
 const ORIENTATIONS = ['horizontal', 'vertical'] as const satisfies readonly Orientation[];
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper shared by the playground and the Demo stories
 function CheckboxCardGroupDemo() {
   const [addons, setAddons] = useState<string[]>(['support']);
   return (
@@ -44,7 +43,6 @@ function CheckboxCardGroupDemo() {
   );
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function CheckboxCardPlayground() {
   const [addons, setAddons] = useState<string[]>(['support']);
   const [orientation, setOrientation] = useState<Orientation>('horizontal');

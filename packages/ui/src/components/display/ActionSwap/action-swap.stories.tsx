@@ -65,13 +65,12 @@ type SwapProps = {
 };
 
 // Resolves its own tinted items, so the sample rows can vary variant freely.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function Swap({ animation, variant, size = 'md', shape, kind = 'copy', iconOnly }: SwapProps) {
   const items = useItems(kind, variant);
   return <ActionSwapButton animation={animation} iconOnly={iconOnly} items={items} shape={shape} size={size} variant={variant} />;
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function ActionSwapPlayground(args: ComponentProps<typeof ActionSwapButton>) {
   const [animation, setAnimation] = useState<ActionSwapAnimation>('blur');
   const [variant, setVariant] = useState<ActionSwapButtonVariant>('secondary');

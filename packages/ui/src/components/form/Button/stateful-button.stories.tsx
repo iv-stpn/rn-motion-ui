@@ -1,4 +1,3 @@
-// biome-ignore-all lint/style/noExcessiveLinesPerFile: stories + interaction tests for the press machine kept together for easy editing
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
@@ -44,7 +43,6 @@ const CUSTOM_LABELS = {
   errorText: 'Upload failed',
 } as const;
 
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
 function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   const colors = useThemeColors();
   const [chip, setChip] = useState<(typeof CHIP_OPTIONS)[number]>('none');
@@ -141,7 +139,7 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
 // Drives `shouldReset` from outside the button, the way a real consumer would:
 // a sibling control raises the signal and drops it again on the next tick, so it
 // can be raised more than once. Used by the external-reset stories below.
-// biome-ignore lint/style/useComponentExportOnlyModules: story helper
+
 function ExternalResetHarness(args: ComponentProps<typeof StatefulButton>) {
   const [resetSignal, setResetSignal] = useState(false);
   const requestReset = useCallback(() => {

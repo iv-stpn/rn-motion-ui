@@ -113,3 +113,73 @@ export function readPressMove({ canDrag, phase, thresholds, travel }: ReadPressM
       return 'ignore';
   }
 }
+
+/*
+ * ── The machine ──────────────────────────────────────────────────────────────
+ *
+ * `readPressMove` reads a move against a phase; this is the other half — how one
+ * phase becomes the next. Pure and dependency-free for the same reason as the
+ * rest of this file: the transitions are the part worth unit-testing, and the
+ * timers that drive them live in `use-press-timeline.ts`.
+ *
+ * The state is two axes, not one. `phase` says what the gesture is doing now;
+ * `hasHeld` says whether *this* press ever reached hold. `hasHeld` is the axis
+ * that outlives its phase: it survives an `end` (a finger of several lifting, a
+ * cancelled touch) so a later `lift` can still report the escape, and it is
+ * consumed by that `lift`, so the escape cannot report twice. Only a new press
+ * forgets it — see `transition`.
+ */
+
+/**
+ * One press's machine state: what it is doing, and whether it has held.
+ */
+export type PressState = {
+  phase: PressPhase;
+  /**
+   * Whether this press produced a hold. Deliberately separate from {@link phase}:
+   * it is true long after the `'hold'` phase has passed — through `'drag'` and
+   * `'idle'` — because it is history, not a current activity.
+   */
+  hasHeld: boolean;
+};
+
+/**
+ * One thing that can happen to the machine. `'ARM'` and `'HOLD'` are the two
+ * timers firing; `'PRESS'`, `'END'`, and `'LIFT'` are the transport calling the
+ * three timeline methods of the same names.
+ */
+export type PressEvent = { type: 'PRESS' } | { type: 'ARM' } | { type: 'HOLD' } | { type: 'END' } | { type: 'LIFT' };
+
+/**
+ * The next state for an event, without the timers, callbacks, or render state the
+ * hook wraps around it.
+ *
+ * Keyed on the event rather than the phase, so a late timer that finds the press
+ * already moved on is a no-op — the same guard the hook used to write as an early
+ * return inside each timer callback, now stated once, declaratively.
+ */
+export function transition(state: PressState, event: PressEvent): PressState {
+  switch (event.type) {
+    // A new press is the only thing that forgets a hold that already fired.
+    case 'PRESS':
+      return { phase: 'pending', hasHeld: false };
+    // The arm timer only means something while the press is still waiting to commit.
+    case 'ARM':
+      return state.phase === 'pending' ? { phase: 'active', hasHeld: false } : state;
+    // The hold timer only means something while the press is committed and unheld.
+    case 'HOLD':
+      return state.phase === 'active' ? { phase: 'hold', hasHeld: true } : state;
+    // Ending goes back to idle but keeps `hasHeld` — a later `lift` still has to be
+    // able to report the escape an `end` arrived ahead of.
+    case 'END':
+      return { phase: 'idle', hasHeld: state.hasHeld };
+    // Lifting consumes the held flag: the escape is reported, then forgotten, so it
+    // cannot report twice.
+    case 'LIFT':
+      return { phase: 'drag', hasHeld: false };
+    // Reachable only if `PressEvent` gains a member; the safe reading of an unknown
+    // event is that nothing happened.
+    default:
+      return state;
+  }
+}

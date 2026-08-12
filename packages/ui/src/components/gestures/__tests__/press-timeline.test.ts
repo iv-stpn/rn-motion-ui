@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { DRAG_TUNING_DEFAULTS, type DragBehavior, HOLD_TUNING_DEFAULTS, resolveHoldBehavior } from '../drag-behavior';
-import { isPressTracking, type PressPhase, readPressMove } from '../press-timeline';
+import { isPressTracking, type PressPhase, type PressState, readPressMove, transition } from '../press-timeline';
 
 /** iOS's numbers, which are the ones every threshold assertion below is written against. */
 const THRESHOLDS = { escapeSlop: 24, slop: 10 };
 
 function move(phase: PressPhase, travel: number, canDrag = true) {
   return readPressMove({ canDrag, phase, thresholds: THRESHOLDS, travel });
+}
+
+/** A machine state in one line, so the assertions below read as the transitions they are. */
+function machine(phase: PressPhase, hasHeld = false): PressState {
+  return { phase, hasHeld };
 }
 
 describe('readPressMove', () => {
@@ -51,6 +56,55 @@ describe('readPressMove', () => {
   it('treats a zero slop as "any travel at all", which a truthiness check would drop', () => {
     expect(readPressMove({ canDrag: true, phase: 'active', thresholds: { escapeSlop: 0, slop: 0 }, travel: 1 })).toBe('lift');
     expect(readPressMove({ canDrag: true, phase: 'active', thresholds: { escapeSlop: 0, slop: 0 }, travel: 0 })).toBe('ignore');
+  });
+});
+
+describe('transition', () => {
+  it('runs the whole happy path: press, arm, hold, lift, end', () => {
+    let s = transition(machine('idle'), { type: 'PRESS' });
+    expect(s).toEqual({ phase: 'pending', hasHeld: false });
+    s = transition(s, { type: 'ARM' });
+    expect(s).toEqual({ phase: 'active', hasHeld: false });
+    s = transition(s, { type: 'HOLD' });
+    expect(s).toEqual({ phase: 'hold', hasHeld: true });
+    s = transition(s, { type: 'LIFT' });
+    expect(s).toEqual({ phase: 'drag', hasHeld: false });
+    s = transition(s, { type: 'END' });
+    expect(s).toEqual({ phase: 'idle', hasHeld: false });
+  });
+
+  it('only a new press forgets a hold that already fired', () => {
+    // The three different verbs: end keeps it, lift consumes it, press resets it.
+    const held = machine('idle', true);
+    expect(transition(held, { type: 'END' }).hasHeld).toBe(true);
+    expect(transition(held, { type: 'LIFT' }).hasHeld).toBe(false);
+    expect(transition(held, { type: 'PRESS' }).hasHeld).toBe(false);
+  });
+
+  it('treats a late arm as a no-op, whatever else has happened', () => {
+    expect(transition(machine('active'), { type: 'ARM' })).toEqual(machine('active'));
+    expect(transition(machine('hold', true), { type: 'ARM' })).toEqual(machine('hold', true));
+    expect(transition(machine('drag'), { type: 'ARM' })).toEqual(machine('drag'));
+    expect(transition(machine('idle'), { type: 'ARM' })).toEqual(machine('idle'));
+  });
+
+  it('treats a late hold as a no-op, so a hold cannot double-fire', () => {
+    expect(transition(machine('pending'), { type: 'HOLD' })).toEqual(machine('pending'));
+    expect(transition(machine('hold', true), { type: 'HOLD' })).toEqual(machine('hold', true));
+    expect(transition(machine('drag'), { type: 'HOLD' })).toEqual(machine('drag'));
+  });
+
+  it('keeps hasHeld through an end, so a later lift can still report the escape', () => {
+    // A hold fired, then a finger of several lifted (end), then a drag took it (lift):
+    // the caller reads `previous.hasHeld` on that lift, which `end` must not clear.
+    const afterHold = transition(machine('active'), { type: 'HOLD' });
+    expect(transition(afterHold, { type: 'END' })).toEqual({ phase: 'idle', hasHeld: true });
+  });
+
+  it('consumes hasHeld on lift, so the escape cannot report twice', () => {
+    const afterHold = transition(machine('active'), { type: 'HOLD' });
+    const afterLift = transition(afterHold, { type: 'LIFT' });
+    expect(afterLift).toEqual({ phase: 'drag', hasHeld: false });
   });
 });
 

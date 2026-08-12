@@ -15,7 +15,8 @@
 
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import type { DragTuning } from './drag-behavior';
-import { type PressMoveOutcome, type PressPhase, readPressMove } from './press-timeline';
+import type { PressEvent, PressMoveOutcome, PressPhase, PressState } from './press-timeline';
+import { readPressMove, transition } from './press-timeline';
 
 export type PressTimelineCallbacks = {
   /**
@@ -105,9 +106,14 @@ export type UsePressTimelineReturn = {
 export function usePressTimeline(params: UsePressTimelineParams): UsePressTimelineReturn {
   const armRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // One machine: the phase plus whether *this* press produced a hold. Kept together
+  // so the two cannot drift, and because `hasHeld` outlives the `'hold'` phase — it is
+  // a separate axis from the phase, not a dimension of it. See `transition`.
+  const stateRef = useRef<PressState>({ phase: 'idle', hasHeld: false });
+  // The live phase, projected out of `stateRef` for the transports that read it off
+  // `.current`. Written in `dispatch`, right where `stateRef` is, so the two cannot
+  // part company.
   const phaseRef = useRef<PressPhase>('idle');
-  /** Whether *this* press produced a hold. Outlives the `'hold'` phase — see `end`. */
-  const heldRef = useRef(false);
   const [phase, setPhase] = useState<PressPhase>('idle');
 
   const latest = useRef(params);
@@ -130,27 +136,36 @@ export function usePressTimeline(params: UsePressTimelineParams): UsePressTimeli
       holdRef.current = null;
     }
 
-    function goTo(next: PressPhase) {
-      if (phaseRef.current === next) return;
-      phaseRef.current = next;
-      if (latest.current.track) setPhase(next);
-      latest.current.onPhaseChange?.(next);
+    // Feed one event through the machine, then say out loud what changed. `transition`
+    // decides the next state; this turns the differences between old and new into the
+    // callbacks, so every one still fires *alongside* `onPhaseChange`, never instead.
+    function dispatch(event: PressEvent) {
+      const previous = stateRef.current;
+      const next = transition(previous, event);
+      stateRef.current = next;
+      phaseRef.current = next.phase;
+
+      if (previous.phase !== next.phase) {
+        if (latest.current.track) setPhase(next.phase);
+        latest.current.onPhaseChange?.(next.phase);
+      }
+
+      if (previous.phase !== 'active' && next.phase === 'active') latest.current.onActive?.();
+      if (!previous.hasHeld && next.hasHeld) latest.current.onHold?.();
+      if (event.type === 'LIFT' && previous.hasHeld) latest.current.onHoldEscape?.();
     }
 
     function fireHold() {
       holdRef.current = null;
-      // A gesture that moved on, or ended, between the timer and this callback.
-      if (phaseRef.current !== 'active') return;
-      heldRef.current = true;
-      goTo('hold');
-      latest.current.onHold?.();
+      dispatch({ type: 'HOLD' });
     }
 
     function becomeActive() {
       armRef.current = null;
-      if (phaseRef.current !== 'pending') return;
-      goTo('active');
-      latest.current.onActive?.();
+      dispatch({ type: 'ARM' });
+      // A late arm — the press ended or lifted while the timer was pending — changes
+      // nothing, and must not chain the hold timer off a press that is gone.
+      if (stateRef.current.phase !== 'active') return;
       const { onHold, tuning } = latest.current;
       // Nothing to report, or nowhere to report it: either way, arming a timer to
       // call nothing is how a component ends up holding an unmounted closure.
@@ -165,24 +180,20 @@ export function usePressTimeline(params: UsePressTimelineParams): UsePressTimeli
     return {
       end() {
         clearTimers();
-        goTo('idle');
+        dispatch({ type: 'END' });
       },
       lift() {
         clearTimers();
-        const wasHeld = heldRef.current;
-        heldRef.current = false;
-        goTo('drag');
-        if (wasHeld) latest.current.onHoldEscape?.();
+        dispatch({ type: 'LIFT' });
       },
       move(travel) {
         const { canDrag, tuning } = latest.current;
-        return readPressMove({ canDrag, phase: phaseRef.current, thresholds: tuning, travel });
+        return readPressMove({ canDrag, phase: stateRef.current.phase, thresholds: tuning, travel });
       },
       phase: phaseRef,
       press() {
         clearTimers();
-        heldRef.current = false;
-        goTo('pending');
+        dispatch({ type: 'PRESS' });
         const { tuning } = latest.current;
         // Synchronously when the window is off: a board that does not scroll has
         // nothing to wait for, and a zero-delay timer would still cost a frame.

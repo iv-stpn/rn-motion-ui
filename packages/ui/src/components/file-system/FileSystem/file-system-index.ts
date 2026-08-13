@@ -84,21 +84,42 @@ function inheritFolderTimestamps(folders: Map<string, FolderEntry>, children: Ma
   }
 }
 
-/** Index a manifest. Children are name-sorted; views re-sort per the active sort. */
-type BuildFileSystemIndexOptions = { preserveFolders?: Map<string, FolderEntry> };
-export function buildFileSystemIndex(items: FileSystemItem[], options?: BuildFileSystemIndexOptions): FileSystemIndex {
-  const { files, folders } = collectEntries(items);
+/**
+ * Whether a folder that lost all its children was moved wholesale rather than
+ * emptied in place. A move leaves the source name behind under its new parent —
+ * the dragged folder lands at `<destination>/<name>/` — so the husk at `path` is
+ * the one that reappears elsewhere with the same name and the same children.
+ *
+ * Comparing children, not just the name, keeps a genuinely separate folder that
+ * happens to share a name with an emptied one from being mistaken for the mover.
+ */
+function folderMovedAway(
+  path: string,
+  children: Map<string, FileSystemEntry[]>,
+  previousChildren: Map<string, FileSystemEntry[]> | undefined,
+): boolean {
+  const previous = previousChildren?.get(path);
+  if (!previous || previous.length === 0) return false;
+  const previousNames = new Set(previous.map((child) => child.name));
+  const name = pathName(path);
 
-  // Preserve folders from the previous index that lost all their children
-  // (e.g. every file was dragged out). Without this an inferred folder — one
-  // the consumer never listed as `{ kind: 'folder', path: '...' }` — vanishes
-  // from the tree the moment its last child leaves, which is not how a file
-  // browser works: an empty folder is still a folder.
-  if (options?.preserveFolders) {
-    for (const [path, folder] of options.preserveFolders) {
-      if (!folders.has(path)) folders.set(path, { ...folder });
+  for (const candidate of children.keys()) {
+    if (candidate !== path && pathName(candidate) === name) {
+      const moved = children.get(candidate) ?? [];
+      if (moved.length === previous.length && moved.every((child) => previousNames.has(child.name))) return true;
     }
   }
+  return false;
+}
+
+/** Index a manifest. Children are name-sorted; views re-sort per the active sort. */
+type BuildFileSystemIndexOptions = {
+  preserveFolders?: Map<string, FolderEntry>;
+  /** The previous index's child map, used to tell a moved folder from an emptied one. */
+  previousChildren?: Map<string, FileSystemEntry[]>;
+};
+export function buildFileSystemIndex(items: FileSystemItem[], options?: BuildFileSystemIndexOptions): FileSystemIndex {
+  const { files, folders } = collectEntries(items);
 
   const children = new Map<string, FileSystemEntry[]>();
   const pushChild = (entry: FileSystemEntry) => {
@@ -109,6 +130,25 @@ export function buildFileSystemIndex(items: FileSystemItem[], options?: BuildFil
 
   for (const folder of folders.values()) pushChild(folder);
   for (const file of files.values()) pushChild(file);
+
+  // Preserve folders from the previous index that lost all their children
+  // (e.g. every file was dragged out). Without this an inferred folder — one
+  // the consumer never listed as `{ kind: 'folder', path: '...' }` — vanishes
+  // from the tree the moment its last child leaves, which is not how a file
+  // browser works: an empty folder is still a folder.
+  //
+  // A folder whose whole subtree was *moved* is the one exception: it has no
+  // children here for the same reason, but it must not linger as an empty husk
+  // where it used to be.
+  if (options?.preserveFolders) {
+    for (const [path, folder] of options.preserveFolders) {
+      if (!(folders.has(path) || folderMovedAway(path, children, options.previousChildren))) {
+        folders.set(path, { ...folder });
+        pushChild(folder);
+      }
+    }
+  }
+
   for (const siblings of children.values())
     siblings.sort((left, right) => {
       const leftPinned = isEntryPinned(left);

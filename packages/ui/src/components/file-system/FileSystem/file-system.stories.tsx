@@ -2348,6 +2348,43 @@ export const PlaygroundDrop: Story = {
 };
 
 /**
+ * Moving a *folder* moves the whole subtree — the folder and its subfolders
+ * included, not just the files inside them. The root must not keep an empty
+ * `Documents/` husk behind after its contents relocate under `Archive/`.
+ */
+export const PlaygroundMoveFolder: Story = {
+  name: 'Demo: Playground — a folder move leaves nothing behind',
+  args: { defaultView: 'list' },
+  render: (args) => <FileSystemPlayground {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('Documents'))[0]).toBeDefined();
+
+    const source = await listRow(canvas, 'Documents');
+    const target = await listRow(canvas, 'Archive');
+    const transfer = newDragTransfer();
+    await dragOnto({ source, target, to: centerOf(target), transfer });
+    fireDrag(source, 'dragend', transfer, centerOf(target));
+
+    // The folder moved away, so it is no longer a root row — it has not lingered
+    // as an empty husk where it used to be.
+    await canvas.findByText('Moved Documents to Archive/');
+    await waitFor(() => expect(canvas.queryByText('Documents')).toBeNull());
+
+    // Expanding the destination finds the folder again under its new parent.
+    const expandArchive = (await canvas.findAllByLabelText('Expand Archive'))[0];
+    if (!expandArchive) throw new Error('no Expand Archive caret rendered');
+    await userEvent.click(expandArchive);
+    expect((await canvas.findAllByText('Documents'))[0]).toBeDefined();
+
+    // Reset restores the manifest and clears the status line back to the hint.
+    await userEvent.click(await canvas.findByText('Reset'));
+    await canvas.findByText(PLAYGROUND_HINT);
+  },
+};
+
+/**
  * The other end of a drop: something arriving from *outside* the component.
  *
  * `onExternalDrop` is the callback, and it covers two things that look different and

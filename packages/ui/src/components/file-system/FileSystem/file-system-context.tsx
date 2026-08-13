@@ -607,7 +607,10 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
                 // children (e.g. every file was dragged out, or the load returned
                 // only files). Without this, an inferred folder vanishes from the
                 // tree when its last child leaves.
-                const index = buildFileSystemIndex(allItems, { preserveFolders: cur.entries.index.folders });
+                const index = buildFileSystemIndex(allItems, {
+                  preserveFolders: cur.entries.index.folders,
+                  previousChildren: cur.entries.index.children,
+                });
                 const next = _recomputeEntries({
                   ...cur,
                   entries: { ...cur.entries, index },
@@ -677,7 +680,10 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         // (e.g. every file was dragged out). Without this an inferred folder — one
         // the consumer never listed as `{ kind: 'folder', path: '...' }` — vanishes
         // from the tree when its last child leaves.
-        const index = buildFileSystemIndex(allItems, { preserveFolders: s.entries.index.folders });
+        const index = buildFileSystemIndex(allItems, {
+          preserveFolders: s.entries.index.folders,
+          previousChildren: s.entries.index.children,
+        });
         const currentFolderName = resolveFolderName(s.navigation.currentPath, s.consumer.title);
         recomputeAndSet({ entries: { ...s.entries, items, index } });
         set({ navigation: { ...s.navigation, currentFolderName } });

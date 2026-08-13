@@ -676,11 +676,22 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       _setItems: (items) => {
         const s = get();
         const allItems = s.navigation.loadedItems.length ? [...items, ...s.navigation.loadedItems] : items;
+        // Folders the previous manifest declared explicitly. One that is absent
+        // from the new items was deleted, not emptied — the index must not
+        // resurrect it as a preserved husk.
+        const declaredFolders = new Set<string>();
+        for (const item of s.entries.items) {
+          if (item.kind === 'folder') {
+            const path = normalizeFolderPath(item.path);
+            if (path) declaredFolders.add(path);
+          }
+        }
         // Preserve folders from the previous index that lost all their children
         // (e.g. every file was dragged out). Without this an inferred folder — one
         // the consumer never listed as `{ kind: 'folder', path: '...' }` — vanishes
         // from the tree when its last child leaves.
         const index = buildFileSystemIndex(allItems, {
+          declaredFolders,
           preserveFolders: s.entries.index.folders,
           previousChildren: s.entries.index.children,
         });

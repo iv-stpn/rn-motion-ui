@@ -117,6 +117,12 @@ type BuildFileSystemIndexOptions = {
   preserveFolders?: Map<string, FolderEntry>;
   /** The previous index's child map, used to tell a moved folder from an emptied one. */
   previousChildren?: Map<string, FileSystemEntry[]>;
+  /**
+   * Folder paths the previous manifest declared with `{ kind: 'folder' }`. An
+   * absent declared folder was deleted by the consumer, not emptied by a move,
+   * so it must not be resurrected as a preserved husk.
+   */
+  declaredFolders?: ReadonlySet<string>;
 };
 export function buildFileSystemIndex(items: FileSystemItem[], options?: BuildFileSystemIndexOptions): FileSystemIndex {
   const { files, folders } = collectEntries(items);
@@ -139,10 +145,16 @@ export function buildFileSystemIndex(items: FileSystemItem[], options?: BuildFil
   //
   // A folder whose whole subtree was *moved* is the one exception: it has no
   // children here for the same reason, but it must not linger as an empty husk
-  // where it used to be.
+  // where it used to be. A folder the previous manifest declared explicitly is
+  // the other: when it is gone from the new items it was deleted, so nothing
+  // should keep it in the tree.
   if (options?.preserveFolders) {
     for (const [path, folder] of options.preserveFolders) {
-      if (!(folders.has(path) || folderMovedAway(path, children, options.previousChildren))) {
+      const dropped =
+        options.declaredFolders?.has(path) === true ||
+        folders.has(path) ||
+        folderMovedAway(path, children, options.previousChildren);
+      if (!dropped) {
         folders.set(path, { ...folder });
         pushChild(folder);
       }

@@ -11,7 +11,14 @@ import { buildFileSystemIndex } from '../file-system-index';
  */
 function rebuild(items: FileSystemItem[], previousItems: FileSystemItem[]) {
   const previous = buildFileSystemIndex(previousItems);
+  // Same source `_setItems` uses: the folder paths the previous manifest listed
+  // explicitly, so a deleted folder is not mistaken for one merely emptied out.
+  const declaredFolders = new Set<string>();
+  for (const item of previousItems) {
+    if (item.kind === 'folder') declaredFolders.add(item.path.endsWith('/') ? item.path : `${item.path}/`);
+  }
   return buildFileSystemIndex(items, {
+    declaredFolders,
     preserveFolders: previous.folders,
     previousChildren: previous.children,
   });
@@ -73,5 +80,20 @@ describe('buildFileSystemIndex folder preservation', () => {
     );
     expect(index.folders.has('Documents/')).toBe(true);
     expect(index.folders.has('Archive/Documents/')).toBe(true);
+  });
+
+  it('does not resurrect a folder the consumer explicitly deleted', () => {
+    // The playground deletes the empty `untitled folder/` by removing its row
+    // from the manifest. An empty declared folder has no children to move, so
+    // `folderMovedAway` cannot tell it from a deleted one — only the declared
+    // set can: it must vanish, not linger as an empty husk.
+    const index = rebuild(
+      [{ kind: 'file', path: 'README.md' }],
+      [
+        { kind: 'folder', path: 'untitled folder/' },
+        { kind: 'file', path: 'README.md' },
+      ],
+    );
+    expect(index.folders.has('untitled folder/')).toBe(false);
   });
 });

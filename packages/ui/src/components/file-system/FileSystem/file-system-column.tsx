@@ -324,7 +324,8 @@ function FileSystemColumnImpl({
 
   // A drag near this pane's top or bottom edge scrolls it, so a folder below the
   // fold is reachable without releasing.
-  useFileSystemDragScroll({ containerRef, enabled: draggable, flatListRef, scrollOffsetRef });
+  const scrollTo = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ animated: false, offset }), []);
+  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
 
   const activeDrag = useActiveDrag();
   const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);

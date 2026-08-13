@@ -583,7 +583,8 @@ export function FileSystemListView({
 
   // A drag near the top or bottom edge scrolls the list, so a folder below the
   // fold is reachable without releasing. Runs for external drags too.
-  useFileSystemDragScroll({ containerRef, enabled: draggable, flatListRef, scrollOffsetRef });
+  const scrollTo = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ animated: false, offset }), []);
+  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
 
   const selectedIndexesRef = useRef<ReadonlySet<number>>(new Set());
   selectedIndexesRef.current = useMemo(() => {

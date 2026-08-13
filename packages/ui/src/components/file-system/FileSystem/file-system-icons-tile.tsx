@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
 /** biome-ignore-all lint/style/useComponentExportOnlyModules: the drop-target test id belongs with the node it names */
-// Render layer for the icons view: one tile, and a row of them.
+// Render layer for the icons view: one tile.
 //
 // The tile's contents live in their own component (IconTileFace) because the
 // drag ghost has to be the same picture as the tile it was lifted from — glyph,
@@ -9,7 +9,6 @@
 // it wraps, so a single-tile drag ghosts this very node, and a group drag ghosts
 // what the manager's `renderPreview` returns.
 
-import { useCallback } from 'react';
 import { type GestureResponderEvent, Pressable, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
 import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
@@ -21,14 +20,11 @@ import { HoldContextMenu } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
 import { FileSystemFolderGlyph } from '../FileIcon/file-icons';
 import type { FileSystemEntry, FileSystemExternalDropEvent, FileSystemMoveEvent } from './file-system.types';
-import { FileSystemAnimatedTile } from './file-system-animated-tile';
 import { FileSystemDropzone } from './file-system-dropzone';
-import { GLYPH_BOX_HEIGHT, GLYPH_BOX_WIDTH, ROW_GAP, TILE_HEIGHT } from './file-system-icons-grid';
-import { fileSystemEntryTestID } from './file-system-test-id';
+import { GLYPH_BOX_HEIGHT, GLYPH_BOX_WIDTH, TILE_HEIGHT } from './file-system-icons-grid';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileVisual } from './file-system-visual';
 import { useFileSystemDragOptions } from './use-file-system-drag-options';
-import type { AugmentedEntry } from './use-file-system-row-animation';
 import { useFileSystemRowInteraction } from './use-file-system-row-interaction';
 
 // Tile *geometry* lives in file-system-icons-grid.ts — the drag session resolves
@@ -145,7 +141,7 @@ type IconTileProps = Omit<IconTileFaceProps, 'isDropTarget'> &
     onMove?: (event: FileSystemMoveEvent) => void;
     /** Long-press toggles this tile's selection; `undefined` leaves the gesture to the context menu. */
     onSelectLongPress?: (entry: FileSystemEntry) => void;
-    /** Already resolved for this entry by `IconRow` — see `fileSystemEntryTestID`. */
+    /** Already resolved for this entry by the view's mapper — see `fileSystemEntryTestID`. */
     testID?: string;
   };
 
@@ -153,7 +149,7 @@ type IconTileProps = Omit<IconTileFaceProps, 'isDropTarget'> &
  * One tile: owns the hold gesture, context menu, and drag source. Drop target
  * when it is a folder — the zone is nested inside so the box matches the tile.
  */
-function IconTile({
+export function IconTile({
   draggable,
   entry,
   getContextMenuActions,
@@ -222,52 +218,5 @@ function IconTile({
     </FileSystemDropzone>
   ) : (
     face(false)
-  );
-}
-
-export type IconRowProps = Omit<IconTileProps, 'entry' | 'isSelected' | 'testID' | 'width'> & {
-  row: AugmentedEntry<FileSystemEntry>[];
-  selectedPaths: ReadonlySet<string>;
-  tileWidth: number;
-  /** The browser's root `testID`; each tile derives its own from it. */
-  testID?: string;
-  /** Called when a tile finishes its exit animation — see `useFileSystemRowAnimation`. */
-  onExitTile?: (key: string) => void;
-};
-
-export function IconRow({ row, selectedPaths, testID, tileWidth, onExitTile, ...tileProps }: IconRowProps) {
-  const getOnExitHandler = useCallback((entry: FileSystemEntry) => () => onExitTile?.(entry.path), [onExitTile]);
-
-  return (
-    <View className="flex-row gap-1" style={{ marginBottom: ROW_GAP }}>
-      {row.map((entry) => {
-        const status = entry._animStatus;
-        const tile = (
-          <IconTile
-            entry={entry}
-            isSelected={selectedPaths.has(entry.path)}
-            key={entry.path}
-            testID={fileSystemEntryTestID(testID, entry.path)}
-            width={tileWidth}
-            {...tileProps}
-          />
-        );
-
-        if (status === 'entering' || status === 'exiting')
-          return (
-            <FileSystemAnimatedTile
-              isEntering={status === 'entering'}
-              isExiting={status === 'exiting'}
-              key={entry.path}
-              onExitComplete={getOnExitHandler(entry)}
-              width={tileWidth}
-            >
-              {tile}
-            </FileSystemAnimatedTile>
-          );
-
-        return tile;
-      })}
-    </View>
   );
 }

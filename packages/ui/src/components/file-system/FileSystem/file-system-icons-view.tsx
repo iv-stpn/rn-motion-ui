@@ -2,21 +2,23 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: the grid, its marquee and its hover controller are one render layer */
 // The icons view: a Finder-style tile grid. The web original leans on CSS
 // `auto-fill` plus a hand-rolled virtual window; here the measured viewport
-// width picks a column count and the entries are pre-chunked into rows so a
-// FlatList can window them.
+// width picks a column count and the tiles are laid out flat with flex-wrap so a
+// Reanimated layout transition can slide every tile to its new slot when a
+// sibling is added or removed.
 
 import { type MutableRefObject, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FlatList,
   type LayoutChangeEvent,
-  type ListRenderItemInfo,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
+  ScrollView,
   View,
 } from 'react-native';
+import { LayoutAnimationConfig } from 'react-native-reanimated';
 import { useActiveDrag } from '../../gestures/use-drag-store';
 import type { FileSystemEntry } from './file-system.types';
+import { FileSystemAnimatedTile } from './file-system-animated-tile';
 import { useBackgroundContextMenu } from './file-system-context-menu';
 import {
   type FileSystemHoverController,
@@ -25,53 +27,41 @@ import {
   useFileSystemHover,
 } from './file-system-hover';
 import {
-  chunkEntries,
   GLYPH_BOX_HEIGHT,
   GLYPH_BOX_WIDTH,
+  GRID_PADDING,
   glyphBoxCorner,
   gridMetrics,
-  ROW_STRIDE,
+  ROW_GAP,
+  TILE_GAP,
   tileHitAt,
   tilesInRect,
 } from './file-system-icons-grid';
-import { IconRow } from './file-system-icons-tile';
+import { IconTile } from './file-system-icons-tile';
 import type { FileSystemMarqueeController, FileSystemMarqueeRect } from './file-system-marquee';
 import { FileSystemMarqueeBox, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
-import { FS_DRAG_CONTAINER_TEST_ID } from './file-system-test-id';
+import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
 import { useFileSystemDragScroll } from './use-file-system-drag-scroll';
-import { type AugmentedEntry, useFileSystemRowAnimation } from './use-file-system-row-animation';
-
-/** Stable empty data for the frame before the width is known — see below. */
-const NO_ROWS: AugmentedEntry<FileSystemEntry>[][] = [];
 
 // ── Grid + drag session ────────────────────────────────────────────────────────
 
-// Index-based: an exiting entry at position 0 of a row must not change the
-// row key mid-animation, which would remount the whole row and kill its
-// siblings' animations. `getItemLayout` is already index-based.
-const keyExtractor = (_row: AugmentedEntry<FileSystemEntry>[], index: number) => String(index);
-const getItemLayout = (_: ArrayLike<AugmentedEntry<FileSystemEntry>[]> | null | undefined, index: number) => ({
-  index,
-  length: ROW_STRIDE,
-  offset: ROW_STRIDE * index,
-});
-
 type IconsGrid = {
   containerRef: RefObject<View | null>;
-  flatListRef: RefObject<FlatList | null>;
+  scrollRef: RefObject<ScrollView | null>;
   hover: FileSystemHoverController;
   marquee: FileSystemMarqueeController;
   onLayout: (event: LayoutChangeEvent) => void;
   onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
-  rows: AugmentedEntry<FileSystemEntry>[][];
+  /** Measured viewport width — tiles render only once this lands (see `useIconsGrid`). */
+  width: number;
   tileWidth: number;
 };
 
 type UseIconsGridParams = {
   draggable: boolean;
-  entries: AugmentedEntry<FileSystemEntry>[];
+  entries: FileSystemEntry[];
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   selectedPaths: ReadonlySet<string>;
   /** `false` outside `selectionMode="multiple"` — see `useFileSystemMarquee`. */
@@ -128,14 +118,14 @@ function useIconsHover({
 }
 
 /**
- * Measures the grid and chunks the entries into rows. The column count and tile
- * width live in refs as well as in the render output: the marquee and hover
+ * Measures the grid and resolves the column count and tile width. The column count
+ * and tile width live in refs as well as in the render output: the marquee and hover
  * resolvers read them on every pointer move, and refs keep a resize from rebuilding
  * a resolver mid-gesture.
  */
 function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedPaths }: UseIconsGridParams): IconsGrid {
   const [width, setWidth] = useState(0);
-  const flatListRef = useRef<FlatList | null>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
   const containerRef = useRef<View | null>(null);
   const scrollOffsetRef = useRef(0);
   const columnsRef = useRef(1);
@@ -154,13 +144,6 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
   const { columns, tileWidth } = gridMetrics(width);
   columnsRef.current = columns;
   tileWidthRef.current = tileWidth;
-
-  // Nothing is chunked until a width lands. Guessing a column count first would
-  // mean re-chunking on the very next frame, and since a row is keyed by its
-  // first entry every key would change — remounting all but one tile. A press
-  // in flight over one of those tiles is then lost: the node is detached before
-  // its `click` reaches React, which ignores events on unmounted fibers.
-  const rows = useMemo(() => (width > 0 ? chunkEntries(entries, columns) : NO_ROWS), [columns, entries, width]);
 
   // Where the marquee may begin: on a tile the press belongs to that tile — its
   // own `<MultiDraggable>` lifts it — and off one it is the selection box's.
@@ -181,7 +164,8 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
 
   // A drag near the top or bottom edge scrolls the grid, so a folder below the
   // fold is reachable without releasing.
-  useFileSystemDragScroll({ containerRef, enabled: draggable, flatListRef, scrollOffsetRef });
+  const scrollTo = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
+  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
 
   const activeDrag = useActiveDrag();
   const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
@@ -230,7 +214,7 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
     [hover, marquee],
   );
 
-  return { containerRef, flatListRef, hover, marquee, onLayout, onScroll, rows, tileWidth };
+  return { containerRef, hover, marquee, onLayout, onScroll, scrollRef, tileWidth, width };
 }
 
 // ── View ───────────────────────────────────────────────────────────────────────
@@ -257,26 +241,20 @@ export function FileSystemIconsView({
   selectionMode,
   testID,
 }: FileSystemViewProps) {
-  // Detect entering / exiting entries so tiles can animate their width rather
-  // than popping in and out. Animation is suppressed while a filter is active —
-  // filtering is a view concern; items that drop out are not "removed" and
-  // should disappear instantly. The hook clears tracked exits on either
-  // transition (filter engaged or disengaged), so no stale state bleeds through.
-  const { augmentedEntries, onExitComplete } = useFileSystemRowAnimation(
-    entries,
-    currentPath,
-    (entry) => entry.path,
-    fileFilter === null,
-  );
+  // A filter is a view concern: while one is active, items dropping out of the
+  // list are being *filtered*, not removed, so nothing should animate. When the
+  // filter is engaged or disengaged the whole grid swaps instantly — handled by
+  // keying the grid below rather than diffing entries.
+  const filterActive = fileFilter !== null;
+  const animated = !filterActive;
 
   // The grid lays its tiles out in entry order, so the entry list *is* the
-  // ordering a Shift-range runs through. Use augmented entries (which include
-  // exiting tiles) so the range respects what is on screen.
-  const orderedPaths = useMemo(() => augmentedEntries.map((entry) => entry.path), [augmentedEntries]);
+  // ordering a Shift-range runs through.
+  const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
   const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
-  const { containerRef, flatListRef, hover, marquee, onLayout, onScroll, rows, tileWidth } = useIconsGrid({
+  const { containerRef, hover, marquee, onLayout, onScroll, scrollRef, tileWidth, width } = useIconsGrid({
     draggable,
-    entries: augmentedEntries,
+    entries,
     marqueeEnabled: selectionMode === 'multiple',
     onMarquee,
     selectedPaths,
@@ -297,60 +275,48 @@ export function FileSystemIconsView({
   );
   const handleBackgroundPress = useCallback(() => onSelect(null), [onSelect]);
 
-  const renderRow = useCallback(
-    ({ item }: ListRenderItemInfo<AugmentedEntry<FileSystemEntry>[]>) => (
-      <IconRow
-        draggable={draggable}
-        getContextMenuActions={getContextMenuActions}
-        loadPreviewImageUrl={loadPreviewImageUrl}
-        onActivate={activate}
-        onContextMenuAction={onContextMenuAction}
-        onExitTile={onExitComplete}
-        onExternalDrop={onExternalDrop}
-        onMove={onMove}
-        onSelectLongPress={selectLongPress}
-        pageUrlCache={pageUrlCache}
-        renderEntryIcon={renderEntryIcon}
-        renderFilePreview={renderFilePreview}
-        row={item}
-        selectedPaths={selectedPaths}
-        testID={testID}
-        tileWidth={tileWidth}
-      />
-    ),
-    [
-      activate,
-      draggable,
-      getContextMenuActions,
-      loadPreviewImageUrl,
-      onContextMenuAction,
-      onExitComplete,
-      onExternalDrop,
-      onMove,
-      pageUrlCache,
-      renderEntryIcon,
-      renderFilePreview,
-      selectedPaths,
-      selectLongPress,
-      testID,
-      tileWidth,
-    ],
-  );
+  // A wholesale swap — the very first layout, a folder change, or the filter
+  // engaging/disengaging — remounts the grid (key change) so `skipEntering` and
+  // `skipExiting` drop the mass enter/exit. In-folder adds/removes/moves keep the
+  // same key, so their tiles animate normally via `FileSystemAnimatedTile`.
+  const gridKey = `${currentPath}\u0000${filterActive ? 'filtered' : 'all'}`;
 
-  const list = (
-    <FlatList
-      ref={flatListRef}
+  const grid = (
+    <ScrollView
+      ref={scrollRef}
       className="flex-1"
-      contentContainerClassName="p-3"
-      data={rows}
-      extraData={selectedPaths}
-      getItemLayout={getItemLayout}
-      keyExtractor={keyExtractor}
       onScroll={onScroll}
-      renderItem={renderRow}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
-    />
+    >
+      {width > 0 ? (
+        <LayoutAnimationConfig key={gridKey} skipEntering={true} skipExiting={true}>
+          <View className="flex-row flex-wrap" style={{ columnGap: TILE_GAP, padding: GRID_PADDING, rowGap: ROW_GAP }}>
+            {entries.map((entry) => (
+              <FileSystemAnimatedTile animated={animated} key={entry.path} width={tileWidth}>
+                <IconTile
+                  draggable={draggable}
+                  entry={entry}
+                  getContextMenuActions={getContextMenuActions}
+                  isSelected={selectedPaths.has(entry.path)}
+                  loadPreviewImageUrl={loadPreviewImageUrl}
+                  onActivate={activate}
+                  onContextMenuAction={onContextMenuAction}
+                  onExternalDrop={onExternalDrop}
+                  onMove={onMove}
+                  onSelectLongPress={selectLongPress}
+                  pageUrlCache={pageUrlCache}
+                  renderEntryIcon={renderEntryIcon}
+                  renderFilePreview={renderFilePreview}
+                  testID={fileSystemEntryTestID(testID, entry.path)}
+                  width={tileWidth}
+                />
+              </FileSystemAnimatedTile>
+            ))}
+          </View>
+        </LayoutAnimationConfig>
+      ) : null}
+    </ScrollView>
   );
   return (
     <View className="min-h-0 flex-1" onLayout={onLayout}>
@@ -375,7 +341,7 @@ export function FileSystemIconsView({
         {/* No background zone here: a drop that misses every folder tile belongs to
             the folder that is open, and that fallback is mounted once in
             file-system-body so all four views answer an empty-space drop alike. */}
-        {list}
+        {grid}
         {/* After the grid, so the band paints over the tiles it is sweeping. The
             drag ghost is drawn by the manager's overlay now, above this whole
             subtree, so nothing about it is mounted here. */}

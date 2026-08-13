@@ -11,7 +11,7 @@
 // is a layout read sixty times a second.
 
 import { type RefObject, useCallback, useEffect, useRef } from 'react';
-import type { FlatList, View } from 'react-native';
+import type { View } from 'react-native';
 import type { DragRect } from '../../gestures/drag.types';
 import { useActiveDrag, useDragMove } from '../../gestures/use-drag-store';
 
@@ -25,14 +25,15 @@ export type UseFileSystemDragScrollParams = {
   containerRef: RefObject<View | null>;
   /** `false` when the view is not draggable — nothing subscribes and no timer can start. */
   enabled: boolean;
-  flatListRef: RefObject<FlatList | null>;
-  /** Live scroll offset, so a tick moves from where the list actually is. */
+  /** Moves the view's scrollable to a content-pixel offset — `scrollTo` on a ScrollView, `scrollToOffset` on a FlatList. */
+  scrollTo: (offset: number) => void;
+  /** Live scroll offset, so a tick moves from where the scrollable actually is. */
   scrollOffsetRef: RefObject<number>;
 };
 
 /**
- * Scrolls `flatListRef` while a drag sits within {@link SCROLL_ZONE} of the top or
- * bottom edge of `containerRef`.
+ * Scrolls the view's scrollable while a drag sits within {@link SCROLL_ZONE} of the
+ * top or bottom edge of `containerRef`.
  *
  * Runs for any drag the store knows about, including one lifted from another view
  * entirely — the move channel is tree-wide, not per-source.
@@ -45,7 +46,7 @@ export type UseFileSystemDragScrollParams = {
 export function useFileSystemDragScroll({
   containerRef,
   enabled,
-  flatListRef,
+  scrollTo,
   scrollOffsetRef,
 }: UseFileSystemDragScrollParams): void {
   const rectRef = useRef<DragRect | null>(null);
@@ -67,10 +68,10 @@ export function useFileSystemDragScroll({
       if (timerRef.current !== null) return;
       timerRef.current = setInterval(() => {
         const offset = Math.max(0, scrollOffsetRef.current + deltaRef.current);
-        flatListRef.current?.scrollToOffset({ animated: false, offset });
+        scrollTo(offset);
       }, SCROLL_INTERVAL_MS);
     },
-    [flatListRef, scrollOffsetRef],
+    [scrollTo, scrollOffsetRef],
   );
 
   const drag = useActiveDrag();

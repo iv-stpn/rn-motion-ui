@@ -568,7 +568,18 @@ export function FileSystemListView({
     (event: LayoutChangeEvent) => setContainerHeight(event.nativeEvent.layout.height),
     [],
   );
-  const toggleExpanded = useCallback((path: string) => setExpanded((previous) => toggleExpandedPath(previous, path)), []);
+  // Opening a lazy folder must request its children, exactly as selecting it
+  // would. A plain chevron click only flips the disclosure bit, so without this
+  // a `hasChildren` folder would expand over nothing and look empty. Collapsing
+  // is skipped: `ensureChildren` would otherwise prefetch a folder the user just
+  // closed, and the store's own guards make the expand-side call idempotent.
+  const toggleExpanded = useCallback(
+    (path: string) => {
+      if (!expanded.has(path)) ensureChildren?.(path);
+      setExpanded((previous) => toggleExpandedPath(previous, path));
+    },
+    [ensureChildren, expanded],
+  );
 
   // A drag near the top or bottom edge scrolls the list, so a folder below the
   // fold is reachable without releasing. Runs for external drags too.

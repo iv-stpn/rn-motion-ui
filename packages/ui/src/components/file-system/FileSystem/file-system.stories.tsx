@@ -1595,6 +1595,31 @@ export const LazyChildren: Story = {
   },
 };
 
+/**
+ * The list view's disclosure caret opens a folder in place instead of navigating,
+ * so it is the caret — not a press on the row — that has to request a lazy
+ * folder's children. Clicking it must load the same way selecting (navigating
+ * into) the folder would.
+ */
+export const LazyChildrenList: Story = {
+  name: 'Demo: Expand a lazy folder in the list',
+  args: { defaultView: 'list' },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    const expand = (await canvas.findAllByLabelText('Expand Archive'))[0];
+    if (!expand) throw new Error('no Expand Archive caret rendered');
+    await userEvent.click(expand);
+
+    await waitFor(() => expect(args.loadChildren).toHaveBeenCalledWith({ cursor: null, path: 'Archive/' }));
+    await listRow(canvas, 'legacy.zip');
+
+    // Expanding didn't navigate: the root is still open around the folder.
+    await listRow(canvas, 'README.md');
+    expect(args.loadChildren).toHaveBeenCalledTimes(1);
+  },
+};
+
 // ─── Viewer ────────────────────────────────────────────────────────────────────
 
 export const ImageViewer: Story = {

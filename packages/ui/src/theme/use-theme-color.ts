@@ -80,7 +80,7 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   'surface-hover': [0, 0, 0, 0.04],
   'surface-selected': [0, 0, 0, 0.08],
   foreground: [0.18, 0.004, 270],
-  muted: [0.94, 0, 0],
+  muted: [0.95, 0, 0],
   'muted-foreground': [0.5, 0.004, 270],
   border: [0, 0, 0, 0.1],
   primary: [0.22, 0, 0],

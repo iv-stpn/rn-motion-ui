@@ -198,6 +198,7 @@ export function Draggable({
     <View
       ref={root.ref}
       className={className}
+      collapsable={false}
       onLayout={root.onLayout}
       style={[root.style, style]}
       testID={testID}
@@ -217,11 +218,18 @@ export function Draggable({
     </View>
   );
 
-  const content = <DraggableContext.Provider value={{ drag }}>{host}</DraggableContext.Provider>;
+  // The GestureDetector must wrap the native host directly: RNGH clones its child to
+  // stamp `collapsable={false}` on it, and a composite child (the context provider)
+  // drops that prop. A flattened host strands the gesture on a view the renderer
+  // removed, which is what lets an enclosing ScrollView swallow the drag — so the
+  // provider wraps the detector instead. `collapsable={false}` is explicit on the host
+  // too, so the handle path (where no detector exists to stamp it) stays unflattened.
+  const content =
+    drag.gesture === null || drag.hasHandle ? host : <GestureDetector gesture={drag.gesture}>{host}</GestureDetector>;
 
   // When handle children are present, the host's GestureDetector is suppressed — only
   // the Handle sub-component carries the gesture, so the drag only starts from there.
-  return drag.gesture === null || drag.hasHandle ? content : <GestureDetector gesture={drag.gesture}>{content}</GestureDetector>;
+  return <DraggableContext.Provider value={{ drag }}>{content}</DraggableContext.Provider>;
 }
 
 // Declared with the hook now, since that is where it is read. Re-exported so this

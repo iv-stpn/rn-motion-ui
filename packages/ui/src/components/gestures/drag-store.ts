@@ -49,6 +49,11 @@ type Session = {
 const managers = new Map<string, DragManagerEntry>();
 const zones = new Map<string, DragzoneEntry>();
 
+// The zone map as an array, cached so the per-move hit test does not rebuild it
+// (`[...zones.values()]`) once a frame. Rebuilt on every register/unregister, which
+// are the only two places the map changes.
+let zonesList: DragzoneEntry[] = [];
+
 let session: Session | null = null;
 let snapshot: DragSnapshot = IDLE;
 
@@ -137,7 +142,7 @@ function notifyManagers(path: readonly string[], visit: (config: DragManagerConf
 }
 
 function zoneList(): DragzoneEntry[] {
-  return [...zones.values()];
+  return zonesList;
 }
 
 function recomputeEligible() {
@@ -248,6 +253,7 @@ export type DragzoneRegistration = {
 export function registerDragzone(params: RegisterDragzoneParams): DragzoneRegistration {
   const entry: DragzoneEntry = { ...params, rect: null };
   zones.set(params.id, entry);
+  zonesList = [...zones.values()];
 
   const remeasure = async () => {
     const rect = await entry.measure();
@@ -285,6 +291,7 @@ export function registerDragzone(params: RegisterDragzoneParams): DragzoneRegist
     remeasure,
     unregister: () => {
       zones.delete(params.id);
+      zonesList = [...zones.values()];
       if (session === null) return;
       // A zone unmounting from under the pointer should immediately resolve
       // whatever else could be there — a scope zone that mounted in the same
@@ -588,6 +595,7 @@ export function resetDragStore(): void {
   }
   managers.clear();
   zones.clear();
+  zonesList = [];
   session = null;
   snapshot = IDLE;
   _lastMoveWasFromZoneDrop = false;

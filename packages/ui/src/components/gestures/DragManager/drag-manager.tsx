@@ -27,7 +27,7 @@ import type {
 import type { DragBehavior } from '../drag-behavior';
 import { type DragScope, DragScopeContext, useDragScope } from '../drag-scope';
 import { cancelActiveDrag, getActiveDrag, refreshDragzones, registerDragManager } from '../drag-store';
-import { useEvent } from '../use-drag-store';
+import { useLatest } from '../use-drag-store';
 import { DragManagerOverlay } from './drag-manager-overlay';
 import { useZoneRemeasure } from './use-zone-remeasure';
 
@@ -149,17 +149,19 @@ export function DragManager({
   }, [measure]);
 
   const inheritedGroups = groups ?? parent.groups;
-  const getConfig = useEvent(
-    (): DragManagerConfig => ({
-      groups: inheritedGroups,
-      hostsOverlay: overlay,
-      isolate,
-      onDragEnd,
-      onDragMove,
-      onDragStart,
-      onDrop,
-    }),
-  );
+  // Cached between renders so the store's per-move hit test reads one stable object
+  // instead of allocating a fresh config per manager per frame; rebuilt each render
+  // and held on a ref, so the value stays current while the function keeps identity.
+  const configRef = useLatest<DragManagerConfig>({
+    groups: inheritedGroups,
+    hostsOverlay: overlay,
+    isolate,
+    onDragEnd,
+    onDragMove,
+    onDragStart,
+    onDrop,
+  });
+  const getConfig = useCallback(() => configRef.current, [configRef]);
 
   const { managerPath: parentPath } = parent;
   const path = useMemo(() => [...parentPath, id], [id, parentPath]);

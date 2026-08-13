@@ -26,6 +26,24 @@ function toCandidate(entry: DragzoneEntry, index: number): Candidate {
   };
 }
 
+/**
+ * Whether `candidate` outranks `best` under the tie-break order — higher
+ * `priority`, then deeper nesting, then the smaller box, then later registration.
+ * The same ordering the previous `sort` produced, but a single pass keeps one
+ * winner instead of building and sorting the whole list.
+ */
+function beats(candidate: Candidate, best: Candidate): boolean {
+  return (
+    candidate.priority > best.priority ||
+    (candidate.priority === best.priority && candidate.depth > best.depth) ||
+    (candidate.priority === best.priority && candidate.depth === best.depth && candidate.area < best.area) ||
+    (candidate.priority === best.priority &&
+      candidate.depth === best.depth &&
+      candidate.area === best.area &&
+      candidate.index > best.index)
+  );
+}
+
 /** Dispatch one of the three rect-vs-rect collision strategies. */
 function rectMatch(zone: DragRect, src: DragRect, algorithm: CollisionAlgorithm): boolean {
   switch (algorithm) {
@@ -151,14 +169,18 @@ export function resolveDropTarget({
   transfer,
   zones,
 }: ResolveDropTargetParams): DragzoneEntry | null {
-  const hits = zones
-    .filter((entry) => isZoneEligible({ drag, entry, external, hitTest: true, isIsolating, point, sourceRect, transfer }))
-    .map(toCandidate);
-  if (hits.length === 0) return null;
-  // When all else fails, the later-registered zone wins — it is more specific by
-  // virtue of having been added after (and inside, or on top of) the earlier one.
-  hits.sort((a, b) => b.priority - a.priority || b.depth - a.depth || a.area - b.area || b.index - a.index);
-  return hits[0]?.entry ?? null;
+  let best: Candidate | null = null;
+  for (let index = 0; index < zones.length; index += 1) {
+    const entry = zones[index];
+    if (
+      entry !== undefined &&
+      isZoneEligible({ drag, entry, external, hitTest: true, isIsolating, point, sourceRect, transfer })
+    ) {
+      const candidate = toCandidate(entry, index);
+      if (best === null || beats(candidate, best)) best = candidate;
+    }
+  }
+  return best?.entry ?? null;
 }
 
 export type EligibleZoneIdsParams = ResolveDropTargetParams;

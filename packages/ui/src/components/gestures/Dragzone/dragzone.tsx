@@ -26,7 +26,7 @@ import type {
 } from '../drag.types';
 import { useDragScope } from '../drag-scope';
 import { type DragzoneRegistration, registerDragzone } from '../drag-store';
-import { useDragSnapshot, useEvent } from '../use-drag-store';
+import { useDragSnapshot, useLatest } from '../use-drag-store';
 import { useDragzoneWeb } from './use-dragzone-web';
 
 export type DragzoneProps = Omit<ViewProps, 'children'> & {
@@ -146,24 +146,25 @@ export function Dragzone({
   );
 
   // Read fresh on every hit test, so a prop change needs no re-registration — and
-  // stable in identity, so a re-render never drops the zone out of the store
-  // mid-drag.
-  const getConfig = useEvent(
-    (): DragzoneConfig => ({
-      accepts,
-      acceptsExternal,
-      disabled,
-      dropEffect,
-      groups: groups ?? scope.groups,
-      onDragEnter,
-      onDragLeave,
-      onDragOver,
-      onDrop,
-      priority,
-      skipRectMeasure,
-      testID,
-    }),
-  );
+  // cached between renders, so the store's per-move hit test reads one stable
+  // object instead of allocating a fresh config per zone per frame. Rebuilt each
+  // render and held on a ref, so the value stays current while the function — and
+  // therefore the store registration — keeps its identity.
+  const configRef = useLatest<DragzoneConfig>({
+    accepts,
+    acceptsExternal,
+    disabled,
+    dropEffect,
+    groups: groups ?? scope.groups,
+    onDragEnter,
+    onDragLeave,
+    onDragOver,
+    onDrop,
+    priority,
+    skipRectMeasure,
+    testID,
+  });
+  const getConfig = useCallback(() => configRef.current, [configRef]);
 
   const { managerPath } = scope;
   // biome-ignore lint/plugin: registering with an external store must run in an effect; no data-fetching or render-driving state

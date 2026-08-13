@@ -4,7 +4,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
-import { InformationLine as AlertCircle } from 'rn-motion-ui-icons/icons/information-line';
+import { WarningLine } from 'rn-motion-ui-icons/icons/warning-line';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
@@ -630,7 +630,7 @@ export function StatefulButton({
 
         {state === 'error' ? (
           <IconSlot keyId="error-icon" reduce={reduce} slotWidth={iconSize}>
-            <AlertCircle size={iconSize} color={iconColor} />
+            <WarningLine size={iconSize} color={iconColor} />
           </IconSlot>
         ) : null}
       </AnimatePresence>

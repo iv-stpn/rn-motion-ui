@@ -1,5 +1,101 @@
 # rn-motion-ui
 
+## 5.4.0
+
+### Minor Changes
+
+- ec3aef0: **Input: elevation-based state and a `surface`/`filled` variant**
+
+  - **State moves from border to shadow** — the idle border is gone; focus and error now prepend a 1px ring (foreground/danger) over a soft drop shadow via the new `--shadow-input*` tokens. Error still wins over focus.
+  - **New `variant` prop** — `surface` (default) sits on the white `surface-3` card level; `filled` uses the lighter muted grey. Both carry the soft drop shadow.
+  - The `muted` token steps 94% → 95% so the filled background reads distinct from the surface card.
+
+- 0dc3d51: **FileSystem: tile animations, spring-loaded folders, resilient lazy loading**
+
+  - **Icons view**: grid tiles now animate their width on enter/exit (mirroring the list view's row animation) instead of popping in and out. The shared row-animation hook gains a `shouldAnimate` flag — suppressed while a filter is active — and a timeout fallback that drops stale exiting entries when the animation callback never fires (e.g. tests without Reanimated's worklet runtime).
+  - **Spring-load**: hovering a drag over a collapsed folder expands it after a short delay and lazy-loads its children, so nested targets are reachable without releasing the pointer.
+  - **Overlay dropzones**: an expanded folder renders a full-span drop zone overlay during a drag, and the origin folder paints its outline. `refreshDragzones` re-resolves the target after a remeasure, so a stationary cursor tracks rows shifted by an expansion.
+  - **Folder load errors**: a folder whose `loadChildren` rejects or times out (30s) is tracked in `errorFolders` and can be retried, instead of being blocked forever after a single failure.
+  - **Empty folders preserved**: a folder that loses its last child (every item dragged out) no longer vanishes from the tree — inferred folders survive an index rebuild.
+  - **Stale selection cleared on lift**: starting a drag from an unselected item no longer carries previously selected entries into the group.
+
+- 125dae7: **Remove `FeedbackFAB` — consolidate into `MorphingFAB`**
+
+  - Removed the `FeedbackFAB` component and its `./feedback-fab` / `./feedback-widget` export paths. The `MorphingFAB` render-prop API covers both the feedback form and action menu use cases directly — see the updated `MorphingFAB` stories for inline examples of each.
+  - Fixed a 1px icon alignment issue in the `MorphingFAB` trigger button caused by the shell border clipping the pressable area.
+  - `MorphingFAB` stories now feature an interactive playground with a toggle between feedback and menu demos, plus standalone play-function-driven demos for each.
+
+### Patch Changes
+
+- e772652: **Drag store: honour browser-cancelled drags and settle nested dropzone mounts**
+
+  - **Cancelled drags stay put** — an HTML5 `dragend` reporting `dropEffect: 'none'` (Escape, or a re-render tearing the source out from under the lift) no longer credits a drop to a zone that merely sits under the release point. A zone of ours would have claimed the drag in its own `dragover`, so `'none'` now means "no in-library drop happened" and the store resolves it as cancelled.
+  - **Nested zone mounts resolve once** — when several overlapping zones register mid-drag (an expanded folder tree's overlay dropzones mount together), their re-resolution is coalesced into a single all-zone refresh, and `moveDrag` holds the target while that resolution settles. A deep file's drag no longer flashes the outermost zone before its own parent takes over; the tie-break decides the deepest zone in one step.
+
+- e5b17e1: **FileSystem: deleting an empty folder no longer leaves a husk**
+
+  The index rebuild preserved folders that lost all their children so an _inferred_ folder — one implied only by its files — survives when its last child is dragged out. That same rule couldn't tell a folder the consumer explicitly deleted from one that was merely emptied in place, because an empty folder has no children to compare. A deleted empty folder (e.g. the playground's `untitled folder`) came back as an empty husk.
+
+  The rebuild now carries the set of folder paths the previous manifest declared with `{ kind: 'folder' }`. A declared folder that is absent from the new items was deleted, not emptied, so it is dropped instead of preserved.
+
+- 8539a42: **FileSystem: stable folder-drag drop targets**
+
+  - **Deferred overlay mount** — the overlay dropzones (and the folder-row wrappers they suppress) now mount one tick after the drag starts, so mounting over the source row can't tear Chromium's drag down inside its own `dragstart`.
+  - **Portal overlays** — an expanded folder's overlay now registers every in-library file-system drag, even a release that would move nothing, so the ancestor's larger overlay never "shows through" and moves a file up a level on a no-op drop.
+  - **Gated body outline** — the whole-area fallback ring waits ~100ms for in-library drags, so it no longer flashes under the pointer while an expanded folder's overlay mounts and measures.
+  - **Correct selection clearing** — a lift now clears prior selection only when it doesn't carry the selected set (read from the transfer), instead of trusting `drag.source.id`, which is never an entry path.
+
+- 3e43718: **FileSystem: deterministic overlay-dropzone testID**
+
+  - The expanded-folder overlay dropzone now renders a stable `testID` (`file-system-overlay-dropzone`) the moment it has measured and won the hit test. Tests can await it as the signal that an in-flight drag's overlays are settled, instead of relying on a fixed number of timer ticks that races under load.
+
+- 1252b0f: **Gestures and FileSystem: native drags and scroll anchoring**
+
+  - **FileSystem entry animation** — rows animate entry off `isEntering` (a `useEffect`) instead of a first-layout callback, which on native could fire before Reanimated registered the starting height and land the row already-open.
+  - **FileSystem lazy list expand** — expanding a `hasChildren` folder in the list view now requests its children, so a lazy folder no longer expands over nothing.
+  - **FileSystem folder move** — moving a folder wholesale no longer leaves an empty husk at its old path: the index tells a moved folder apart from one merely emptied in place by comparing the previous child set.
+  - **WheelPicker native drag** — native drives the drum through an RNGH pan (web keeps the PanResponder), so a drag blocks an enclosing ScrollView on New Architecture instead of the scroll winning.
+  - **Draggable host** — the gesture detector wraps the native host directly and pins `collapsable={false}`, so a flattened view can't strand the gesture and let a ScrollView swallow it.
+  - **Drag ghost anchoring** — the host re-measures its window box at lift, so a scroll between the last layout and the grab no longer strands the ghost off the row.
+
+- cc9dd09: **Tabs: fix slide panel jumping above the tab bar on exit**
+
+  The `slide` content animation pins the exiting panel to its last in-flow position with `position: absolute` so it can translate away while the entering panel takes its place. The `absolute` class was applied, but the captured `top`/`left`/`width`/`height` frame values were never passed as inline styles — without them, the absolutely positioned panel defaulted to the parent's origin (top-left), which sits above the tab bar. The fix adds the missing `style` prop so the exiting panel holds its spot for the full push.
+
+- 7c43b0c: **Housekeeping: JSDoc, TypeScript strictness, React.memo, and error hardening**
+
+  - **Moti animation engine** — Added comprehensive JSDoc to all 20+ public APIs in the `moti/` module (`motify`, `useMotify`, `useAnimationState`, `useDynamicAnimation`, `AnimatePresence`, `MotiPressable`, `useMotiPressable`, `useMotiPressables`, `useMotiPressableAnimatedProps`, `useMotiPressableInterpolate`, `useMotiPressableTransition`, `MotiView`, `MotiText`, `MotiImage`, `MotiScrollView`, `MotiSafeAreaView`, `Hoverable`/`MotiHover`, `useMotiHover`, plus the `MotiProps`, `MotiTransition`, and `MotiTransitionProp` types). Each entry includes param/return docs and a usage example where appropriate.
+  - **TypeScript** — Enabled `noUnusedLocals` and `noUnusedParameters` in `tsconfig.base.json`. Removed dead imports, constants, and functions across 5 story/test files.
+  - **React.memo** — Memoized the four heaviest leaf components: `GlossyButton`, `WheelPicker`, `SwipeableList`, and `Table<T>`.
+  - **Context guards** — `RadioCardItem`, `CheckboxCardItem`, and `DockItem` now throw a descriptive error when used outside their required parent component, instead of failing silently.
+  - **Unhandled rejections** — Added `.catch()` guards to `measure()` calls in `ReorderableItem` and a `try`/`catch` around the `measureZones` `Promise.all` in the drag store.
+
+- bffb2e4: **Press timeline: make the phase state machine explicit**
+
+  The transitions between a press's phases — how it moves through `pending`, `active`, `hold`, `drag`, and `idle` — were previously spread across the timer callbacks in `usePressTimeline`, with a free-floating `heldRef` boolean jointly encoding whether the press had reached hold. That logic now lives in a pure `transition` function in `press-timeline.ts`, next to `readPressMove`, modeled as a single `{ phase, hasHeld }` state object.
+
+  No behaviour change: the hook still drives the same phases and callbacks through its stable imperative `timeline` object. The move makes the transition rules unit-testable (the one half of the timeline that previously wasn't) and states the `hasHeld` contract once — `end` keeps it, `lift` consumes it, a new `press` resets it — instead of implying it across three separate ref writes.
+
+- 6d53949: **ReorderableList: replace Zustand store with React context**
+
+  `ReorderableList` previously held its drag state in a per-instance Zustand store registered in a module-level `Map` keyed by `listId`, with `<ReorderableItem>` reading state and actions through a `useReorderableListStore(listId, selector)` lookup. That indirection is gone: state now lives in a React context provided by the list view, and items read it via a `useReorderableList()` hook — no global registry, no `syncConfig`/teardown round-trip, and no thrown lookups when a store was absent.
+
+  The drag bookkeeping is split along the same render/non-render boundary the old store used: `draggedKey` and `indicatorIndex` are React state (they drive the dimmed item and the insertion indicator), while `overKey`, `insertBefore`, and the measured rects stay in refs behind stable `useCallback` actions. `computeIndicatorIndex` moves into `reorderable-list-reorder.ts` alongside the other pure reorder math.
+
+- 28d4066: - **Elevation API**: MorphingFAB, CheckboxCard, and RadioCard adopt the consolidated `elevated()` utility (surface background + shadow). CheckboxCard and RadioCard gain a group-level `elevation` prop with per-card override.
+  - **Input**: switched from fixed `h-interactive-*` to `min-h-interactive-*` so the field grows with multiline content; replaced `interactive-pad-*` design tokens with explicit padding values.
+  - **OtpInput**: active slot ring uses `border-2` instead of `ring-2` to avoid clipping on native.
+  - **Drag system**: hit-test tie-break now prefers the later-registered (more specific) zone; `markDropZoneUpdate` fixes Safari `dragend` coordinate drift; zone registration and unregistration mid-drag re-resolve the target immediately.
+  - **ReorderableList**: wired `onDragEnter` (was only `onDragOver`); re-measures Dragzone rects when a drag starts so `insertionPosition` computes the correct slot. Added pure-math unit tests for the reorder logic.
+  - **BottomSheet**: backdrop Pressable is wrapped in a `pointerEvents`-gated View to fix overlay tap-through on web.
+  - **MorphingModal**: removed unused `contentWidth` tracking; bottom-sheet placement now sizes to `max-w-sm`; scale exit is suppressed for reduced-motion and bottom-sheet variants.
+  - **OverflowActions**: simplified track styling; Text uses `weight` prop instead of `font-medium` class.
+  - **Popover**: `PopoverTrigger` accepts a `className` override; story demos trigger-kind switching via `TriggerButton` + `TriggerControls`.
+  - **Sheet presence**: close spring re-tuned for a snappier dismiss.
+- 71e3e59: **OverflowActions & Tabs: lift to the `surface-5` tone**
+
+  - `OverflowActions` action chips and the `Tabs` pill indicator now use the shared `surface-5` tone (via `SURFACE_CLASSNAME[5]`) instead of the ad-hoc `surface-3`/`dark:bg-black` mix.
+
 ## 5.3.0
 
 ### Minor Changes

@@ -49,6 +49,33 @@ function setDragImageFromRef(dataTransfer: DataTransfer, previewRef: RefObject<V
 /** A 1×1 transparent GIF — used as the drag image to hide the browser's native ghost. */
 const EMPTY_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
+/**
+ * The image `setDragImage` draws, pre-loaded once for the whole page.
+ *
+ * The engine snapshots the drag image only *after* the `dragstart` handler returns,
+ * so the element handed to `setDragImage` must already be decoded by then. An
+ * `<img>` created inside the handler has no dimensions yet on its first use — its
+ * data-URI decode is still pending — and a drag image the engine cannot produce
+ * aborts the whole drag, which reads as "the first drag dies instantly and every
+ * later one works" once the decode is cached. Loading once, before any drag, makes
+ * the first drag behave like the rest. A single shared element is fine: the engine
+ * snapshots its bitmap, not a live DOM position.
+ */
+let emptyDragImage: HTMLImageElement | null = null;
+
+function getEmptyDragImage(): HTMLImageElement {
+  if (emptyDragImage === null) {
+    emptyDragImage = document.createElement('img');
+    emptyDragImage.src = EMPTY_IMAGE;
+  }
+  return emptyDragImage;
+}
+
+// Kick the decode off at module load rather than on the first `dragstart` — that
+// first handler is the one drag we cannot afford to lose. Guarded because this
+// module is also imported on native, where `document` does not exist.
+if (typeof document !== 'undefined') getEmptyDragImage();
+
 export type UseDraggableHtml5Params = {
   enabled: boolean;
   nodeRef: RefObject<View | null>;
@@ -108,11 +135,8 @@ export function useDraggableHtml5({
       // own drag image so Safari cannot snap it back to the lift point when the
       // cursor leaves the window.  Without an overlay host the browser's image is
       // the only ghost, so keep it.
-      if (overlayHostId !== null) {
-        const empty = document.createElement('img');
-        empty.src = EMPTY_IMAGE;
-        e.dataTransfer.setDragImage(empty, 0, 0);
-      } else if (previewElementRef) setDragImageFromRef(e.dataTransfer, previewElementRef);
+      if (overlayHostId !== null) e.dataTransfer.setDragImage(getEmptyDragImage(), 0, 0);
+      else if (previewElementRef) setDragImageFromRef(e.dataTransfer, previewElementRef);
     }
 
     function onDrag(e: DragEvent) {

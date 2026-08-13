@@ -194,7 +194,7 @@ export function Dragzone({
   // The snapshot rather than `useDragzoneState`, because the render state names the
   // drag as well as this zone's standing in it — and it is the same subscription.
   const snapshot = useDragSnapshot();
-  const isExternalOver = useDragzoneWeb({ acceptsExternal, enabled: !disabled, nodeRef, zoneId: id });
+  const isExternalOver = useDragzoneWeb({ acceptsExternal, dropEffect, enabled: !disabled, nodeRef, zoneId: id });
 
   useImperativeHandle(ref, () => ({ getId: () => id, getNode: () => nodeRef.current, measure, remeasure }), [
     id,

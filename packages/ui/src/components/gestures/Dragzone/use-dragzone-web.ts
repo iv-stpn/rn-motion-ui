@@ -26,6 +26,8 @@ import { canZoneAcceptExternal, deliverExternalDrop, getActiveDrag, markDropZone
 
 export type UseDragzoneWebParams = {
   acceptsExternal: boolean;
+  /** What a drop here does with the payload — the effect `dragover` claims with. */
+  dropEffect: DragDropEffect;
   /** Skips the wiring entirely — a disabled zone should not claim a drag at all. */
   enabled: boolean;
   nodeRef: RefObject<View | null>;
@@ -33,7 +35,7 @@ export type UseDragzoneWebParams = {
 };
 
 /** Whether a foreign drag is currently over this zone. Always `false` off the web. */
-export function useDragzoneWeb({ acceptsExternal, enabled, nodeRef, zoneId }: UseDragzoneWebParams): boolean {
+export function useDragzoneWeb({ acceptsExternal, dropEffect, enabled, nodeRef, zoneId }: UseDragzoneWebParams): boolean {
   const [externalOver, setExternalOver] = useState(false);
   // `dragenter`/`dragleave` fire for descendants too, so a zone with children would
   // otherwise read "left" the moment the pointer crossed into one of them.
@@ -52,8 +54,12 @@ export function useDragzoneWeb({ acceptsExternal, enabled, nodeRef, zoneId }: Us
       if (!transfer) return null;
       const point = { x: e.clientX, y: e.clientY };
       // Ours: the store already ran groups, isolation and `accepts` against real
-      // coordinates, so re-deciding here could only disagree with itself.
-      if (getActiveDrag() !== null) return transfer.dropEffect === 'none' ? 'copy' : transfer.dropEffect;
+      // coordinates, so re-deciding here could only disagree with itself. Claim with
+      // the zone's own configured effect — the source set `effectAllowed` to match it,
+      // and the browser silently ignores a claim outside that allowed set, so a
+      // hardcoded `'copy'` against a `'move'` source would leave `dropEffect` at
+      // `'none'` and read back at `dragend` as a browser-cancelled drop.
+      if (getActiveDrag() !== null) return dropEffect;
       if (!acceptsExternal) return null;
       return canZoneAcceptExternal({ point, transfer, zoneId }) ? 'copy' : null;
     }
@@ -123,7 +129,7 @@ export function useDragzoneWeb({ acceptsExternal, enabled, nodeRef, zoneId }: Us
       node.removeEventListener('dragleave', onDragLeave);
       node.removeEventListener('drop', onDrop);
     };
-  }, [acceptsExternal, enabled, nodeRef, zoneId]);
+  }, [acceptsExternal, dropEffect, enabled, nodeRef, zoneId]);
 
   return externalOver;
 }

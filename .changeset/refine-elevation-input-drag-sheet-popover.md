@@ -1,5 +1,5 @@
 ---
-"@rn-motion-ui/ui": patch
+"rn-motion-ui": patch
 ---
 
 - **Elevation API**: MorphingFAB, CheckboxCard, and RadioCard adopt the consolidated `elevated()` utility (surface background + shadow). CheckboxCard and RadioCard gain a group-level `elevation` prop with per-card override.

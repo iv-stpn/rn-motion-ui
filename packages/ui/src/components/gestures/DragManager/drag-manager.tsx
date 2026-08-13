@@ -196,7 +196,7 @@ export function DragManager({
     <DragScopeContext.Provider value={scope}>
       <View ref={nodeRef} onLayout={handleLayout} {...viewProps}>
         {children}
-        {overlay ? <DragManagerOverlay hostId={id} rectRef={rectRef} /> : null}
+        {overlay ? <DragManagerOverlay hostId={id} measure={measure} rectRef={rectRef} /> : null}
       </View>
     </DragScopeContext.Provider>
   );

@@ -91,6 +91,13 @@ export type SessionRefs = {
   id: string;
   managerId: string | null;
   managerPath: readonly string[];
+  /**
+   * Re-reads the host's window box now. Async on both platforms because native's
+   * `measureInWindow` is callback-based. Used at lift to re-anchor the ghost: the
+   * box `rectRef` holds is from the last layout, and a scroll since then would
+   * otherwise strand the ghost off the row by exactly the scroll distance.
+   */
+  measure: () => Promise<DragRect | null>;
   /** The `<DragManager>` that will draw the ghost, or `null` when the source must. */
   overlayHostId: string | null;
   previewRef: MutableRefObject<ReactNode>;
@@ -119,7 +126,7 @@ export type SessionRefs = {
  */
 export function buildSession(refs: SessionRefs): DraggableSession {
   const { boundsRef, draggingRef, ghostPos, grabRef, id, managerId, managerPath, overlayHostId } = refs;
-  const { previewRef, propsRef, rectRef, setDragging, setGhost, transferRef } = refs;
+  const { measure, previewRef, propsRef, rectRef, setDragging, setGhost, transferRef } = refs;
 
   return {
     overlayHostId,
@@ -159,6 +166,20 @@ export function buildSession(refs: SessionRefs): DraggableSession {
           this.finish({ commit: false, point: grabRef.current });
         },
       });
+
+      // `rectRef` is the source's window box from its last layout pass, while
+      // `point` is fresh. A scroll between the two — the page on web, the list on
+      // native — leaves the box stale by exactly the scroll distance, and the
+      // manager's ghost would start that far off the row. Re-anchor to the live
+      // box; the ghost reads `origin.rect` off this same object on every move, so
+      // its next placement lands on the row.
+      measure()
+        .then((fresh) => {
+          if (fresh === null || !draggingRef.current) return;
+          rectRef.current = fresh;
+          drag.origin.rect = fresh;
+        })
+        .catch(() => undefined);
 
       // The ghost starts exactly over the source: `move` translates by the delta
       // from the grab point, so zero is the value it would compute at the lift.

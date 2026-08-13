@@ -157,6 +157,20 @@ function useDraggableHost({ dragBoundsRef, enabled, live, preview }: UseDraggabl
   previewRef.current = preview;
 
   const { managerId, managerPath, overlayHostId } = scope;
+
+  // Defined before the session so `begin` can reach it: the session re-measures the
+  // host at lift, because the rect it stores is from the last layout and a scroll
+  // since then would strand the ghost off the row.
+  const measure = useCallback(
+    () =>
+      new Promise<DragRect | null>((resolve) => {
+        const node = nodeRef.current;
+        if (!node) return resolve(null);
+        node.measureInWindow((x, y, width, height) => resolve({ height, width, x, y }));
+      }),
+    [],
+  );
+
   const session = useMemo(
     () =>
       buildSession({
@@ -167,6 +181,7 @@ function useDraggableHost({ dragBoundsRef, enabled, live, preview }: UseDraggabl
         id,
         managerId,
         managerPath,
+        measure,
         overlayHostId,
         previewRef,
         propsRef,
@@ -175,17 +190,7 @@ function useDraggableHost({ dragBoundsRef, enabled, live, preview }: UseDraggabl
         setGhost,
         transferRef,
       }),
-    [ghostPos, id, managerId, managerPath, overlayHostId],
-  );
-
-  const measure = useCallback(
-    () =>
-      new Promise<DragRect | null>((resolve) => {
-        const node = nodeRef.current;
-        if (!node) return resolve(null);
-        node.measureInWindow((x, y, width, height) => resolve({ height, width, x, y }));
-      }),
-    [],
+    [ghostPos, id, managerId, managerPath, measure, overlayHostId],
   );
 
   // Read the bounds view rect into `boundsRef` so `session.move()` can clamp against it.

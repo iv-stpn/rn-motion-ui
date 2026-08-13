@@ -22,6 +22,12 @@ export type DragManagerOverlayProps = {
   /** This manager's own id — it draws only the previews addressed to it. */
   hostId: string;
   /**
+   * Re-reads the manager's own window box now. Called at lift: the box `rectRef`
+   * holds is from the manager's last layout, and a page scroll since then leaves
+   * it stale while the pointer is fresh.
+   */
+  measure: () => Promise<DragRect | null>;
+  /**
    * The manager's window rect, live off a ref rather than passed by value: the
    * ghost has to be placed on the frame the lift happened on, and a prop would be
    * one render behind.
@@ -36,7 +42,7 @@ export type DragManagerOverlayProps = {
  * which is the case only for a pan-driven drag — under the HTML5 transport the
  * browser makes its own drag image and a second one would double it.
  */
-export function DragManagerOverlay({ hostId, rectRef }: DragManagerOverlayProps) {
+export function DragManagerOverlay({ hostId, measure, rectRef }: DragManagerOverlayProps) {
   const { drag, preview } = useDragSnapshot();
   const pos = useRef(new Animated.ValueXY()).current;
   const opacity = useRef(new Animated.Value(1)).current;
@@ -108,8 +114,21 @@ export function DragManagerOverlay({ hostId, rectRef }: DragManagerOverlayProps)
   // first frame instead of flickering at (0,0).
   useLayoutEffect(() => {
     if (!mine) return;
-    place(getDragPoint() ?? drag?.origin.grab ?? { x: 0, y: 0 });
-  }, [drag, mine, place]);
+    const point = getDragPoint() ?? drag?.origin.grab ?? { x: 0, y: 0 };
+    place(point);
+    // Re-anchor the host's own frame, the way the source re-anchors its rect at
+    // lift: `rectRef` is from the manager's last layout, and a scroll since then
+    // leaves it stale while `point` is fresh. Re-place once it lands — the lift
+    // produces no move, so without this the ghost would hold the stale offset
+    // until the pointer next moves (or forever, if the pointer stays still).
+    measure()
+      .then((rect) => {
+        if (rect === null) return;
+        rectRef.current = rect;
+        place(getDragPoint() ?? point);
+      })
+      .catch(() => undefined);
+  }, [drag, mine, measure, place, rectRef]);
 
   if (!(mine && activePreview !== null && active !== null)) return null;
 

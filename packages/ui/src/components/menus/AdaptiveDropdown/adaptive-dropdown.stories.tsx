@@ -75,16 +75,7 @@ type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 's
 // ElevatedButton / GlossyButton / bare Pressable under one dropdown.
 
 function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
-  return (
-    <TriggerButton
-      buttonVariant="ghost"
-      kind={kind}
-      size={size}
-      shape={shape}
-      label={open ? CLOSE_MENU_LABEL : MENU_LABEL}
-      onPress={toggle}
-    />
-  );
+  return <TriggerButton kind={kind} size={size} shape={shape} label={open ? CLOSE_MENU_LABEL : MENU_LABEL} onPress={toggle} />;
 }
 
 const HEADER_ACTION = (

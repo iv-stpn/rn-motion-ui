@@ -46,7 +46,7 @@ export const BUTTON_GAP_CLASSNAME = 'gap-2';
  */
 export const STATE_ICON_SIZE: Record<ButtonSize, number> = {
   sm: 16,
-  md: 20,
+  md: 19,
   lg: 24,
   icon: 20,
 };
@@ -58,7 +58,7 @@ export const STATE_ICON_SIZE: Record<ButtonSize, number> = {
  */
 export const STATE_BUTTON_GAP_CLASSNAME: Record<ButtonSize, string> = {
   sm: 'gap-1',
-  md: 'gap-1.5',
+  md: 'gap-1.25',
   lg: 'gap-2',
   icon: 'gap-1',
 };

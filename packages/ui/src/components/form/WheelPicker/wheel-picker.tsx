@@ -17,6 +17,7 @@ import {
   type ViewProps,
   type ViewStyle,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
   type SharedValue,
@@ -51,6 +52,8 @@ const MAX_VELOCITY = 0.18; // rows/ms, caps a hard fling
 const WHEEL_SENS = 0.012; // rows per pixel of wheel delta
 const WHEEL_SETTLE = 120; // ms of wheel idle before snapping to a row
 const MIN_SCALE = 0.4; // floor so edge rows stay legible on tall windows
+// Finger travel (px) below which a touch still reads as a tap, not a drag.
+const TAP_SLOP = 3;
 // Soft spring for the settle; low stiffness so a flick coasts before it rests.
 const SETTLE_SPRING = { stiffness: 100, damping: 18, mass: 1 } as const;
 // Minimal web-only DOM types — the RN package tsconfig omits the DOM lib, so the
@@ -223,6 +226,17 @@ function WheelPickerRow({
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
+
+// Rubber-banded drum position for a finger that has travelled `dy` px from
+// `start` (a float row index): the drum follows 1:1 between the ends, and the
+// overshoot is damped to 0.3 for a rubber-band pull. Shared by the web pan and
+// the native RNGH gesture so the two transports cannot drift apart.
+function dragToScroll(start: number, dy: number, itemHeight: number, last: number): number {
+  let next = start - dy / itemHeight;
+  if (next < 0) next *= 0.3;
+  else if (next > last) next = last + (next - last) * 0.3;
+  return next;
+}
 
 function optionValue(option: WheelPickerOption) {
   return typeof option === 'string' ? option : option.value;
@@ -485,28 +499,38 @@ export function WheelPicker({
     [disabled, step],
   );
 
-  // Drag. Taps fall through (onStart returns false) so a row press still selects;
-  // only a real vertical move captures the responder and drives the drum. dy is
-  // the total travel since grant, so subtracting it from the start position never
-  // drifts. Past the ends the delta is damped to 0.3 for a rubber-band pull.
+  // Drag, on two transports.
+  //
+  // Web keeps the PanResponder: react-native-web's responder system lets a view
+  // claim the touch in the start capture phase and beat an enclosing ScrollView,
+  // and a row press still fires (react-native-web dispatches `onPress` from the
+  // DOM click, independent of the responder). Native uses an RNGH pan instead —
+  // on New Architecture iOS a JS PanResponder cannot beat a native ScrollView
+  // (the scroll view cancels the child's touch and scrolls anyway, RN #51970),
+  // but RNGH rides native gesture recognizers, so its pan activates and blocks
+  // the scroll the way a real picker would. A tap never activates the native pan,
+  // so it falls through to the row's own `onPress`; the web PanResponder keeps a
+  // small slop so a tap there doesn't nudge the drum either.
   const pan = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponderCapture: () => !(disabledRef.current || reduceRef.current),
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_e: GestureResponderEvent, g: PanResponderGestureState) =>
         !(disabledRef.current || reduceRef.current) && Math.abs(g.dy) > 3,
       onPanResponderGrant: () => {
         cancelAnimation(scroll);
-        draggingRef.current = true;
+        draggingRef.current = false;
         interactingRef.current = true;
         startScroll.current = scroll.value;
         live.value = true;
         lastEmitted.value = Math.round(clamp(scroll.value, 0, last));
       },
       onPanResponderMove: (_e: GestureResponderEvent, g: PanResponderGestureState) => {
-        let next = startScroll.current - g.dy / itemHeight;
-        if (next < 0) next *= 0.3;
-        else if (next > last) next = last + (next - last) * 0.3;
-        scroll.value = next;
+        if (!draggingRef.current && Math.abs(g.dy) < TAP_SLOP) return;
+        draggingRef.current = true;
+        // dy is the total travel since grant, so subtracting it from the start
+        // position never drifts.
+        scroll.value = dragToScroll(startScroll.current, g.dy, itemHeight, last);
       },
       onPanResponderRelease: (_e: GestureResponderEvent, g: PanResponderGestureState) => {
         draggingRef.current = false;
@@ -521,6 +545,58 @@ export function WheelPicker({
       },
     }),
   ).current;
+
+  // Native RNGH pan (see above). `.runOnJS(true)` keeps the drag on the JS thread,
+  // matching the PanResponder path and leaving `fling`/`glideTo` callable directly.
+  // `disabled`/`reduce` return `null` so no gesture is attached and the enclosing
+  // ScrollView scrolls freely.
+  //
+  // RNGH maps the four callbacks differently from a PanResponder: `onBegin` is the
+  // touch down (before the pan has proven itself a drag), `onStart` is when the pan
+  // *activates* (the finger moved past the slop), and `onUpdate` is movement after
+  // that. `draggingRef` therefore flips on `onStart`, not `onBegin`, so a tap that
+  // never activates is never mistaken for a cancelled drag.
+  const nativePan = useMemo(
+    () =>
+      Platform.OS === 'web' || disabled || reduce
+        ? null
+        : Gesture.Pan()
+            .runOnJS(true)
+            .onBegin(() => {
+              cancelAnimation(scroll);
+              draggingRef.current = false;
+              interactingRef.current = true;
+              startScroll.current = scroll.value;
+              live.value = true;
+              lastEmitted.value = Math.round(clamp(scroll.value, 0, last));
+            })
+            .onStart(() => {
+              draggingRef.current = true;
+            })
+            .onUpdate((e) => {
+              scroll.value = dragToScroll(startScroll.current, e.translationY, itemHeight, last);
+            })
+            .onEnd((e) => {
+              draggingRef.current = false;
+              interactingRef.current = false;
+              // RNGH reports velocity in points/second, the web PanResponder in
+              // px/ms — divide by 1000 to land on the same rows/ms scale the fling
+              // is tuned against, then negate (a downward drag rolls to earlier rows).
+              fling(-e.velocityY / 1000 / itemHeight);
+            })
+            .onFinalize(() => {
+              // Every path out of the gesture lands here, including a tap (which
+              // never reached `onEnd`) and a drag the system cut short (a scroll
+              // won, the view unmounted) — so always release the interaction flag.
+              // Only a drag that was cut short needs settling: `onEnd` already
+              // handled the normal release, and settling a tap would revert the
+              // row's own `glideTo`.
+              if (draggingRef.current) fling(0);
+              draggingRef.current = false;
+              interactingRef.current = false;
+            }),
+    [disabled, reduce, scroll, live, lastEmitted, last, itemHeight, fling],
+  );
 
   // Web wheel + keyboard. The RN synthetic wheel handler is passive (can't block
   // page scroll), so bind natively and non-passive on the container node.
@@ -635,7 +711,11 @@ export function WheelPicker({
       </WheelPickerFrame>
     );
 
-  return (
+  // The drum itself. `collapsable={false}` keeps the host from being flattened
+  // away, which is what strands the gesture and lets an enclosing ScrollView
+  // swallow the drag — the same reason Draggable pins it. Pan handlers attach
+  // only on web; native gets the RNGH pan wrapped around this below.
+  const drum = (
     <WheelPickerFrame
       ref={containerRef}
       variant={variant}
@@ -647,13 +727,14 @@ export function WheelPicker({
       onAccessibilityAction={handleAccessibilityAction}
       testID={testID ?? 'wheel-picker'}
       className={className}
+      collapsable={false}
       style={[
         { height, opacity: disabled ? 0.5 : 1 },
         // Web: block page scroll / text selection so the drag drives the drum.
         Platform.OS === 'web' && WEB_CONTAINER_STYLE,
         style,
       ]}
-      {...pan.panHandlers}
+      {...(Platform.OS === 'web' ? pan.panHandlers : {})}
     >
       {/* Centre band: borderless rounded selection pill, tighter inset under
           `plain` so butted-together wheels each keep a distinct pill. */}
@@ -701,4 +782,8 @@ export function WheelPicker({
       </View>
     </WheelPickerFrame>
   );
+
+  // Native wraps the drum in an RNGH GestureDetector so the pan blocks an
+  // enclosing ScrollView; web keeps the PanResponder's handlers on the drum.
+  return Platform.OS !== 'web' && nativePan ? <GestureDetector gesture={nativePan}>{drum}</GestureDetector> : drum;
 }

@@ -21,6 +21,14 @@ export const FS_DRAG_CONTAINER_TEST_ID = {
   list: 'file-system-list-drag-container',
 };
 
+/**
+ * The outline an expanded folder's overlay dropzone paints while a release would
+ * land in it. It renders only once the overlay has measured and won the hit test,
+ * so a test can wait on it as the signal that an in-flight drag's overlays are
+ * settled — the deterministic stand-in for a fixed number of timer ticks.
+ */
+export const FS_OVERLAY_DROPZONE_TEST_ID = 'file-system-overlay-dropzone';
+
 /** `testID` for the entry at `path`, from the root `testID` (or the default). */
 export function fileSystemEntryTestID(rootTestID: string | undefined, path: string): string {
   return `${rootTestID ?? DEFAULT_TEST_ID}-entry-${path}`;

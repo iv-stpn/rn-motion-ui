@@ -45,7 +45,7 @@ import { FileSystemHoverHighlight, FS_HOVER_TEST_ID, useFileSystemRowHover } fro
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
 import type { FileSystemRow } from './file-system-rows';
 import { FS_ROW_HEIGHT, flattenFileSystemRows, toggleExpandedPath } from './file-system-rows';
-import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
+import { FS_DRAG_CONTAINER_TEST_ID, FS_OVERLAY_DROPZONE_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
 import type { FileSystemViewProps } from './file-system-view';
 import { useEntryActivation } from './use-entry-activation';
 import { useFileSystemDragOptions } from './use-file-system-drag-options';
@@ -792,7 +792,12 @@ export function FileSystemListView({
               style={{ height, left: 0, position: 'absolute', right: 0, top }}
             >
               {({ isOver }: DragzoneRenderState) =>
-                isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null
+                isOver ? (
+                  <View
+                    className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info"
+                    testID={FS_OVERLAY_DROPZONE_TEST_ID}
+                  />
+                ) : null
               }
             </FileSystemDropzone>
           );

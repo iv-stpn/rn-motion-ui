@@ -10,7 +10,7 @@ import { LinkLine as Link } from 'rn-motion-ui-icons/icons/link-line';
 import { SearchLine as SearchIcon } from 'rn-motion-ui-icons/icons/search-line';
 import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
-import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer, settle } from '../../../__stories__/story-drag';
+import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer } from '../../../__stories__/story-drag';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -35,7 +35,7 @@ import { FS_HOVER_TEST_ID } from './file-system-hover';
 import { FS_TILE_DROP_TARGET_TEST_ID } from './file-system-icons-tile';
 import { FS_MARQUEE_TEST_ID } from './file-system-marquee';
 import { FS_SEARCH_MATCH_TEST_ID } from './file-system-search-view';
-import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
+import { FS_DRAG_CONTAINER_TEST_ID, FS_OVERLAY_DROPZONE_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
 
 // ─── Shared data ───────────────────────────────────────────────────────────────
 // A small, deterministic manifest. Only files are listed at the top level —
@@ -2130,22 +2130,20 @@ export const DropIntoOwnFolder: Story = {
     const ownFolder = await listRow(canvas, 'Reports');
     const ancestor = await listRow(canvas, 'Documents');
 
-    // Lift, then give the overlay dropzones time to arrive before releasing. They
-    // mount one tick *after* the drag starts (`dragActive` is deferred so mounting
-    // over the source row doesn't tear the browser's drag down), measure their box
-    // the tick after that, and re-resolve one tick after that (the store coalesces
-    // the re-resolution of zones that mount together). `liftDrag`'s own settle
-    // covers none of these, so without them the release resolves against unmeasured
-    // (null) boxes and misses the overlay, dropping onto the body instead.
+    // Lift, then drive the pointer to the release point and wait for an overlay
+    // dropzone to own it. The overlays mount one tick *after* the drag starts
+    // (`dragActive` is deferred so mounting over the source row doesn't tear the
+    // browser's drag down) and measure a tick after that; each paints its outline
+    // the moment it has measured and won the hit test. Waiting on that outline is
+    // the deterministic stand-in for a fixed settle count, which races under load —
+    // `liftDrag`'s own settle covers none of these, and releasing against unmeasured
+    // boxes makes the store resolve the wrong (ancestor) zone instead.
     const dropOn = async (target: Element) => {
       const transfer = newDragTransfer();
       const to = centerOf(target);
       await liftDrag(file, transfer, centerOf(file));
-      await settle();
-      await settle();
-      await settle();
-      await settle();
       fireDrag(file, 'drag', transfer, to);
+      await canvas.findByTestId(FS_OVERLAY_DROPZONE_TEST_ID);
       fireDrag(target, 'dragenter', transfer, to);
       fireDrag(target, 'dragover', transfer, to);
       fireDrag(target, 'drop', transfer, to);

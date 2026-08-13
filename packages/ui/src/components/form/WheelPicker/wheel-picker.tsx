@@ -50,6 +50,11 @@ const DEG = Math.PI / 180;
 const DECELERATION = 0.000_42; // rows/ms², how fast a flick bleeds off
 const MAX_VELOCITY = 0.18; // rows/ms, caps a hard fling
 const WHEEL_SENS = 0.012; // rows per pixel of wheel delta
+// Chromium/WebKit expose a legacy `wheelDelta` (a uniform −120 per mouse detent)
+// that `deltaY` in pixel mode does not match — 4px on a macOS mouse, 100px on
+// Windows for the same detent. Scale through it so a detent moves the drum the
+// same amount everywhere; browsers without it fall back to the deltaY path below.
+const WHEEL_PX_PER_NOTCH = 100; // px a Windows-Chromium detent reports, the scale WHEEL_SENS is tuned to
 const WHEEL_SETTLE = 120; // ms of wheel idle before snapping to a row
 const MIN_SCALE = 0.4; // floor so edge rows stay legible on tall windows
 // Finger travel (px) below which a touch still reads as a tap, not a drag.
@@ -58,7 +63,7 @@ const TAP_SLOP = 3;
 const SETTLE_SPRING = { stiffness: 100, damping: 18, mass: 1 } as const;
 // Minimal web-only DOM types — the RN package tsconfig omits the DOM lib, so the
 // browser wheel/keyboard globals aren't declared here.
-type WebWheelEvent = { deltaY: number; deltaMode: number; preventDefault: () => void };
+type WebWheelEvent = { deltaY: number; deltaMode: number; wheelDelta?: number; preventDefault: () => void };
 type WebKeyEvent = { key: string; preventDefault: () => void };
 type PassiveListenerOptions = { passive: boolean };
 type WebNode = {
@@ -238,6 +243,15 @@ function dragToScroll(start: number, dy: number, itemHeight: number, last: numbe
   return next;
 }
 
+// Pixel delta of a wheel event, normalised to one unit across browsers. Pixel
+// mode (`deltaMode` 0) is not directly comparable — see WHEEL_PX_PER_NOTCH — so
+// prefer the legacy `wheelDelta` when present; lines fall back to a px estimate.
+function wheelPixels(e: WebWheelEvent): number {
+  if (typeof e.wheelDelta === 'number') return (-e.wheelDelta / 120) * WHEEL_PX_PER_NOTCH;
+  if (e.deltaMode === 1) return e.deltaY * 16;
+  return e.deltaY;
+}
+
 function optionValue(option: WheelPickerOption) {
   return typeof option === 'string' ? option : option.value;
 }
@@ -376,11 +390,9 @@ export function WheelPicker({
   // The one source of truth: scroll position as a float row index. Drag/wheel
   // write it directly; the settle springs it to an integer detent.
   const scroll = useSharedValue(currentIndex);
-  // UI-thread flags read by the reaction: `live` gates whether crossing a row
-  // emits (true only while the finger/wheel drives it, not during a settle);
-  // `lastEmitted` dedupes so we fire once per row, on the UI thread.
+  // UI-thread flag read by the reaction: `live` is true only while the
+  // finger/wheel drives the drum (never during a settle), and gates the tick.
   const live = useSharedValue(false);
-  const lastEmitted = useSharedValue(currentIndex);
 
   // JS-thread mirrors. `emitted` dedupes onValueChange; `interacting` gates the
   // external-value sync effect so it never fights a gesture; `command` is the
@@ -401,7 +413,7 @@ export function WheelPicker({
   const soundRef = useRef(sound);
   soundRef.current = sound;
   const audioCtxRef = useRef<AudioCtxLike | null>(null);
-  // UI-thread dedup: only fire one tick per row crossed (mirrors `lastEmitted`).
+  // UI-thread dedup: only fire one tick per row crossed.
   const lastTicked = useSharedValue(currentIndex);
 
   const emit = useCallback(
@@ -432,20 +444,15 @@ export function WheelPicker({
     Vibration.vibrate(10);
   }, []);
 
-  // Emit the centre row as it crosses, on the UI thread, but only while a
-  // gesture is live — the settle spring below runs with `live` off and commits
-  // its own final value, so a coast never machine-guns intermediate rows.
-  // The tick also fires per row crossed, independent of the emit dedup.
+  // Tick on the UI thread as each row crosses the centre while a gesture is
+  // live. The value itself is never emitted here — it is committed once, when
+  // the gesture ends and `glideTo` locks in the landing row — so a drag or
+  // coast never machine-guns intermediate rows through onValueChange.
   useAnimatedReaction(
     () => scroll.value,
     (s) => {
       if (!live.value) return;
       const idx = Math.round(Math.max(0, Math.min(s, last)));
-      if (idx !== lastEmitted.value) {
-        lastEmitted.value = idx;
-        scheduleOnRN(emit, idx);
-      }
-      // Tick every row crossing (independent of emit dedup) if sound is enabled.
       if (idx !== lastTicked.value) {
         lastTicked.value = idx;
         scheduleOnRN(playTickOnRN);
@@ -453,19 +460,20 @@ export function WheelPicker({
     },
   );
 
-  // Spring to an integer detent and commit it. `live` is off for the duration so
-  // the reaction stays quiet; we emit the landing row synchronously (so taps and
-  // key steps report immediately) and dedupe handles the rest.
+  // Commit the value the moment a gesture ends and the landing row is locked,
+  // then spring the drum to it. The value is `Math.round`ed here, so it can no
+  // longer change with the spring's remaining motion — committing at this point
+  // (rather than on the spring's completion callback) keeps the value snappy
+  // instead of waiting out the settle's long mathematical tail.
   const glideTo = useCallback(
     (target: number) => {
       const to = clamp(Math.round(target), 0, last);
       live.value = false;
       command.current = to;
-      lastEmitted.value = to;
-      scroll.value = reduceRef.current ? withTiming(to, { duration: 0 }) : withSpring(to, SETTLE_SPRING);
       emit(to);
+      scroll.value = reduceRef.current ? withTiming(to, { duration: 0 }) : withSpring(to, SETTLE_SPRING);
     },
-    [last, emit, scroll, live, lastEmitted],
+    [last, emit, scroll, live],
   );
 
   // Project where a flick coasts to under constant deceleration, then settle.
@@ -523,7 +531,6 @@ export function WheelPicker({
         interactingRef.current = true;
         startScroll.current = scroll.value;
         live.value = true;
-        lastEmitted.value = Math.round(clamp(scroll.value, 0, last));
       },
       onPanResponderMove: (_e: GestureResponderEvent, g: PanResponderGestureState) => {
         if (!draggingRef.current && Math.abs(g.dy) < TAP_SLOP) return;
@@ -568,7 +575,6 @@ export function WheelPicker({
               interactingRef.current = true;
               startScroll.current = scroll.value;
               live.value = true;
-              lastEmitted.value = Math.round(clamp(scroll.value, 0, last));
             })
             .onStart(() => {
               draggingRef.current = true;
@@ -595,7 +601,7 @@ export function WheelPicker({
               draggingRef.current = false;
               interactingRef.current = false;
             }),
-    [disabled, reduce, scroll, live, lastEmitted, last, itemHeight, fling],
+    [disabled, reduce, scroll, live, last, itemHeight, fling],
   );
 
   // Web wheel + keyboard. The RN synthetic wheel handler is passive (can't block
@@ -615,7 +621,7 @@ export function WheelPicker({
       cancelAnimation(scroll);
       interactingRef.current = true;
       live.value = true;
-      const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      const px = wheelPixels(e);
       scroll.value = clamp(scroll.value + px * WHEEL_SENS, 0, last);
       if (wheelSettle.current) clearTimeout(wheelSettle.current);
       wheelSettle.current = setTimeout(() => {

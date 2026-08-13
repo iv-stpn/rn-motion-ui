@@ -38,7 +38,7 @@ const SHAPE_RADIUS: Record<ToggleGroupShape, string> = { rounded: 'rounded-inter
 
 /** Selection-aware text class — selected items get a subtle foreground lift above the translucent overlay. */
 function itemTextClass(size: ToggleGroupSize, selected: boolean): string {
-  return cn('font-medium', TEXT_INTERACTIVE[size], selected ? 'text-primary' : 'text-muted-foreground');
+  return cn('font-medium', TEXT_INTERACTIVE[size], selected ? 'text-white' : 'text-muted-foreground');
 }
 
 // ── exports ────────────────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ export function ToggleGroup({
             'flex-1 items-center justify-center',
             PX_INTERACTIVE[size],
             !isHorizontal && 'py-3',
-            selected ? 'bg-primary/25' : 'bg-muted',
+            selected ? 'bg-info' : 'bg-muted',
             total > 1 && !isLast && !suppressDivider && (isHorizontal ? 'border-r border-border' : 'border-b border-border'),
           );
 
@@ -178,7 +178,7 @@ export function ToggleGroup({
               radius,
               H_INTERACTIVE[size],
               PX_INTERACTIVE[size],
-              selected ? 'bg-primary/25' : 'bg-muted',
+              selected ? 'bg-info' : 'bg-muted',
               'items-center justify-center',
               !isHorizontal && 'py-3',
             )}

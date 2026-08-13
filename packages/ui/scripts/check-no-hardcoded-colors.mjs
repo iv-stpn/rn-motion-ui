@@ -60,8 +60,8 @@ function walk(dir, out = []) {
     } else if ((extname(entry) === '.tsx' || extname(entry) === '.ts') &&
                !entry.endsWith('.stories.tsx') &&
                !full.includes('__tests__') &&
-               // FileSystem icons ship a fixed palette (IDE-style colour map) — exempt wholesale
-               !full.includes('/FileSystem/')) {
+               // FileIcon ships a fixed palette (IDE-style colour map) — exempt wholesale
+               !full.includes('/FileIcon/')) {
       out.push(full);
     }
   }

@@ -126,6 +126,7 @@ export function HoldDraggable({
     <View
       ref={root.ref}
       className={className}
+      collapsable={false}
       onLayout={root.onLayout}
       style={[root.style, style]}
       testID={testID}
@@ -145,5 +146,10 @@ export function HoldDraggable({
     </View>
   );
 
+  // `collapsable={false}` on the host matches `<Draggable>`: a flattened host on
+  // Android strands the pan on a view the renderer removed, and the enclosing
+  // ScrollView swallows the drag. The detector wraps the host directly here (there
+  // is no handle/provider in the way), but pinning it keeps the gesture attached
+  // to a view that is guaranteed to stay in the native hierarchy.
   return drag.gesture === null ? host : <GestureDetector gesture={drag.gesture}>{host}</GestureDetector>;
 }

@@ -1,5 +1,73 @@
 # rn-motion-ui
 
+## 5.5.0
+
+### Minor Changes
+
+- dac9744: **FileSystem: headless views + custom views**
+
+  The view switcher left the default header, and views are now a consumer-extensible concern:
+
+  - **Custom views** — the new `views` prop maps a view id to a component handed the full `FileSystemViewProps` contract; a key that matches a built-in (`icons`/`list`/`columns`/`gallery`) replaces it, any other id becomes a first-class view.
+  - **View-switching API** — `useFileSystemView()` and `useFileSystemViewActions()` (`setView`) let a consumer's own header switch views; the `renderHeader` slot still receives `view`/`setView`.
+  - **Removed built-in switcher** — the header no longer renders the four-tab / dropdown switcher; view switching is the consumer's UI now (`view`/`setView` via `renderHeader` or the hooks).
+  - **Restructured internals** — `FileSystem/` is split into `views/`, `logic/`, `store/`, `hooks/`, `types/`, `shell/` subfolders; the public surface is unchanged.
+
+- a68e3eb: **FileSystem: mobile grid + list views with hold-drag multi-select**
+
+  - **Two new mobile views** — `mobile-grid` (a two-column thumbnail grid) and `mobile-list` (two-line rows). Each entry carries a visible kebab that opens its context menu, and once anything is selected every kebab yields to a checkbox.
+  - **Hold-drag scrub** — press-and-hold a checkbox and drag down/up to select or deselect the contiguous run under the finger. Photos-style: the entry the drag starts on fixes whether the run is added or removed. The gesture is touch-only and rides the same arm-then-drag `Pan` transport as the hold/drag primitives.
+  - **Background plates** — grid thumbnails sit on a `bg-surface-2` plate so they read as distinct tiles instead of floating on the page.
+
+### Patch Changes
+
+- 80752a3: **FileSystem: icons grid reflows in unison**
+
+  The icons grid animated only the added or removed tile — an entering tile grew its width, an exiting one collapsed — while every other tile jumped when the grid re-chunked. Moving an item into a folder, deleting one, or dropping one in from outside now reflows the whole grid as one motion:
+
+  - **Shared layout transition** — every tile carries a Reanimated `layout` transition, so the remaining tiles slide to their new slots together when a sibling is added or removed.
+  - **Fade + scale enter/exit** — added tiles fade/zoom in and removed ones fade/zoom out, replacing the horizontal width grow/shrink.
+  - **Flattened grid** — the virtualized row `FlatList` became a flat flex-wrap layout so a tile can animate across rows (the trade-off: the icons grid no longer windows).
+  - **Instant wholesale swaps** — initial mount, folder navigation, and filter toggles still swap instantly with no mass enter/exit.
+
+- 620eb56: **Draggable & Dragzone: web drags land on first load and credit the right effect**
+
+  - **Pre-loaded drag image** — the empty `<img>` that hides the browser's native ghost under a `<DragManager>` overlay is now created and decoded once at module load, not freshly inside each `dragstart`. The engine snapshots the drag image only after the handler returns, so an image that has not finished decoding yet has no dimensions and the whole drag aborts — which is why the first drag on a fresh page load died instantly and every later one, with the decode cached, worked.
+  - **Zones claim their own effect** — `dragover` now claims the zone's configured `dropEffect` rather than defaulting to `'copy'`. A `'copy'` claim against a source whose `effectAllowed` is `'move'` is silently ignored by the browser, so `dragend` read `'none'` and a legitimate drop was reported as cancelled. Claiming the matching effect keeps the drop credited.
+
+- e48b047: **HoldContextMenu: draggable works on Android**
+
+  - The `<HoldDraggable>` host now pins `collapsable={false}`, matching `<Draggable>`. On Android the renderer flattens collapsable views out of the native hierarchy, stranding the pan gesture on a view that no longer exists and letting the enclosing ScrollView swallow the drag — which is why the hold-menu drag worked on web and iOS but not Android.
+
+- a8a3f9f: **Holdable: release the pan so an enclosing scroll view still scrolls**
+
+  - The native hold gesture now calls `manager.fail()` when the finger moves before the hold fires, and again when it lifts. A pan left in BEGAN kept its claim on the finger and blocked the enclosing `ScrollView`/`FlatList` — which is why the mobile file-system views scrolled on web but not on device.
+
+- c7a5d76: **FileSystem: favourite heart sits beside the name in the mobile list**
+
+  - The mobile list row no longer stretches the name across the full width, so the heart icon renders immediately after the name instead of at the trailing edge.
+
+- 56295ad: Fix `muted` token parity: the native light table declared `0.94` while tokens.css declared `0.95`, so web and native rendered a slightly different background tone.
+- c3393fa: **ToggleGroup: wrap on overflow, scroll segmented controls**
+
+  - **`spaced` wraps** — a spaced group now flows onto additional lines when it runs out of width instead of overflowing its container.
+  - **`bordered` / `connected` scroll** — segmented controls scroll horizontally and clip at their edge rather than overflowing, so a long option list stays usable in a narrow layout.
+
+- fc5b791: **WheelPicker: commit the value at rest, and snap the wheel consistently**
+
+  - **Value commits once the drum settles** — `onValueChange` now fires only when a gesture ends and the landing row is locked (release, tap, wheel idle, key step), instead of emitting every row the drum crosses mid-drag. The settle spring still animates the drum visually, but the value is already determined at that point, so a coast never machine-guns intermediate rows.
+  - **Wheel snaps at the 50% threshold everywhere** — wheel delta is normalised through Chromium/WebKit's legacy `wheelDelta` (a uniform −120 per detent) rather than pixel-mode `deltaY`, which reports 4px on a macOS mouse versus 100px on Windows for the same notch. A macOS notch previously moved the drum 0.048 rows and always reverted; it now advances a consistent, `Math.round`-snapped amount, so passing half the next row lands on it.
+
+- 1aed3fd: **Drag hit test: fewer per-frame allocations**
+
+  The drag hit test runs once per pointer move, so anything it allocates is paid every frame. Three small changes take that cost out of the hot path without touching what it decides:
+
+  - **Single-pass drop resolution** — `resolveDropTarget` no longer builds a candidate list and sorts it; it walks the zones once keeping the best by the same tie-break order (priority → depth → area → registration). Same winner, no `hits` array, no `sort`.
+  - **Cached config objects** — `<Dragzone>` and `<DragManager>` hold their config on a ref and return the cached object from `getConfig`, instead of building a fresh config on every call. The store reads the same values; function identity is unchanged, so registrations still run once.
+  - **Cached zone list** — the store keeps the zone map as an array, rebuilt only on register/unregister instead of `[...zones.values()]` on every move.
+
+  No behaviour change: the hit test resolves the same target, and the existing drag tests confirm it.
+
 ## 5.4.0
 
 ### Minor Changes

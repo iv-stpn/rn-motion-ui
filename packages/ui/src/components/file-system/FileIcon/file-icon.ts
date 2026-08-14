@@ -6,7 +6,7 @@
 // RN-free: returns a name plus a light/dark colour pair, and the render layer
 // (file-system-icons.tsx) turns that into a react-native-svg component.
 
-import { fileExtension } from '../FileSystem/file-system-paths';
+import { fileExtension } from '../FileSystem/logic/file-system-paths';
 
 /** Icon identifiers the render layer knows how to draw. */
 export type FileIconName =

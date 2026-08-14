@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { createDragTransfer } from '../../../gestures/drag-transfer';
-import type { FileSystemItem } from '../file-system.types';
 import {
   acceptsFileSystemDrop,
   canDropFileSystemItem,
@@ -11,8 +10,9 @@ import {
   fileSystemDragLabel,
   movableFileSystemSources,
   readFileSystemDragItems,
-} from '../file-system-drag';
-import { buildFileSystemIndex } from '../file-system-index';
+} from '../logic/file-system-drag';
+import { buildFileSystemIndex } from '../logic/file-system-index';
+import type { FileSystemItem } from '../types/file-system.types';
 
 const TRAILING_SLASH = /\/$/;
 

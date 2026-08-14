@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { FileSystemItem } from '../file-system.types';
-import { buildFileSystemIndex } from '../file-system-index';
+import { buildFileSystemIndex } from '../logic/file-system-index';
+import type { FileSystemItem } from '../types/file-system.types';
 
 /**
  * Re-index a manifest against the previous snapshot the store keeps — the same

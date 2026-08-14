@@ -7,9 +7,11 @@ import type { LayoutChangeEvent } from 'react-native';
 import { useWindowDimensions, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { Breadcrumbs } from '../../display/Breadcrumbs/breadcrumbs';
-import type { FileSystemProps, ResolvedFileSystemBreakpoints } from './file-system.types';
-import { defaultFileSystemBreakpoints } from './file-system.types';
-import { FileSystemBody } from './file-system-body';
+import { buildCrumbs } from './logic/file-system-search';
+import { FileSystemDragScope } from './shell/file-system-drag-scope';
+import { FileSystemHeader } from './shell/file-system-header';
+import type { HeaderLayout } from './shell/file-system-toolbar-parts';
+import { FileSystemStatusBar } from './shell/file-system-toolbar-parts';
 import {
   createFileSystemStore,
   type FileSystemStoreApi,
@@ -27,13 +29,12 @@ import {
   useFileSystemSelection,
   useFileSystemSelectionActions,
   useFileSystemStoreContext,
-} from './file-system-context';
-import { FileSystemDragScope } from './file-system-drag-scope';
-import { FileSystemHeader } from './file-system-header';
-import { buildCrumbs } from './file-system-search';
-import type { HeaderLayout } from './file-system-toolbar-parts';
-import { FileSystemStatusBar } from './file-system-toolbar-parts';
-import { FileSystemViewerModal } from './file-system-viewer-modal';
+  useFileSystemViewActions,
+} from './store/file-system-context';
+import type { FileSystemProps, ResolvedFileSystemBreakpoints } from './types/file-system.types';
+import { defaultFileSystemBreakpoints } from './types/file-system.types';
+import { FileSystemBody } from './views/file-system-body';
+import { FileSystemViewerModal } from './views/file-system-viewer-modal';
 
 /** Default viewport height, matching the web original's `h-[480px]`. */
 const DEFAULT_HEIGHT = 480;
@@ -54,7 +55,8 @@ function FileSystemCustomHeader({ renderHeader }: FileSystemCustomHeaderProps) {
   const { layout, isCompact } = useFileSystemLayout();
   const { testID } = useFileSystemConsumer();
   const { goBack, goForward } = useFileSystemNavigationActions();
-  const { setView, applySortKey } = useFileSystemEntriesActions();
+  const { applySortKey } = useFileSystemEntriesActions();
+  const { setView } = useFileSystemViewActions();
   const { setSearchInput } = useFileSystemSearchActions();
   return renderHeader({
     canGoBack,
@@ -223,6 +225,7 @@ export function FileSystem({
   selectionMode = 'single',
   title = 'Files',
   view,
+  views,
   testID,
 }: FileSystemProps) {
   // The breadcrumb root falls back to the header title, so the trail names the
@@ -258,6 +261,7 @@ export function FileSystem({
       renderFileViewer,
       selectionMode,
       testID,
+      views,
     });
   const store = storeRef.current;
 
@@ -294,6 +298,7 @@ export function FileSystem({
       renderFileViewer,
       selectionMode,
       testID,
+      views,
     });
   });
 
@@ -343,6 +348,9 @@ export function FileSystem({
   );
 }
 
+export type { FileSystemSelectionMode, FileSystemSelectionModifiers } from './logic/file-system-selection';
+// biome-ignore lint/performance/noBarrelFile: this file is the package entry point — re-exporting the view hooks is the public API, not a lazy barrel
+export { useFileSystemView, useFileSystemViewActions } from './store/file-system-context';
 // ── Public surface ─────────────────────────────────────────────────────────
 // `file-system.tsx` is the package entry point (see package.json →
 // "./file-system"), so it re-exports every type a consumer touches: the props,
@@ -352,6 +360,7 @@ export function FileSystem({
 export type {
   FileEntry,
   FileSystemBodyState,
+  FileSystemBuiltInView,
   FileSystemContextMenuAction,
   FileSystemEmptyStateArgs,
   FileSystemEmptyStateReason,
@@ -378,8 +387,8 @@ export type {
   FileSystemView,
   FileSystemViewerArgs,
   FileSystemViewerKind,
+  FileSystemViewProps,
   FileTypeFilterGroup,
   FileTypeFilterOption,
   FolderEntry,
-} from './file-system.types';
-export type { FileSystemSelectionMode, FileSystemSelectionModifiers } from './file-system-selection';
+} from './types/file-system.types';

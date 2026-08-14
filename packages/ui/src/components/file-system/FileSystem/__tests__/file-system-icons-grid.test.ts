@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { FileSystemEntry } from '../file-system.types';
 import {
   chunkEntries,
   gridMetrics,
@@ -9,7 +8,8 @@ import {
   tileCorner,
   tileHitAt,
   tilesInRect,
-} from '../file-system-icons-grid';
+} from '../logic/file-system-icons-grid';
+import type { FileSystemEntry } from '../types/file-system.types';
 
 const lookup = { columns: 4, scrollOffset: 0, tileWidth: 100 };
 

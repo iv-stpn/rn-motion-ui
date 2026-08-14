@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { FileSystemSelectionState } from '../file-system-selection';
+import type { FileSystemSelectionState } from '../logic/file-system-selection';
 import {
   applyFileSystemMarquee,
   applyFileSystemSelection,
   EMPTY_FILE_SYSTEM_SELECTION,
   pruneFileSystemSelection,
-} from '../file-system-selection';
+} from '../logic/file-system-selection';
 
 const MULTIPLE = { mode: 'multiple' } as const;
 const MULTIPLE_ADDITIVE = { mode: 'multiple', modifiers: { additive: true } } as const;

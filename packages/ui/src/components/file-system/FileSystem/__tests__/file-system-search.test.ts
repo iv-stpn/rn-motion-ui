@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { FileSystemItem } from '../file-system.types';
-import { buildFileSystemIndex } from '../file-system-index';
-import { buildCrumbs, flatSearchResults, splitSearchMatches } from '../file-system-search';
-import { computeVisiblePaths, filterIndexToVisible } from '../file-system-visibility';
+import { buildFileSystemIndex } from '../logic/file-system-index';
+import { buildCrumbs, flatSearchResults, splitSearchMatches } from '../logic/file-system-search';
+import { computeVisiblePaths, filterIndexToVisible } from '../logic/file-system-visibility';
+import type { FileSystemItem } from '../types/file-system.types';
 
 /**
  * `Reports/` matches "report" on its own name; `Documents/` only leads to it.

@@ -18,24 +18,26 @@ import { Button } from '../../form/Button/button';
 import { Draggable } from '../../gestures/Draggable/draggable';
 import { Text } from '../../typography/Text/text';
 import { FileSystem } from './file-system';
+import { FS_DRAG_CONTAINER_TEST_ID, FS_OVERLAY_DROPZONE_TEST_ID, fileSystemEntryTestID } from './logic/file-system-test-id';
 import type {
   FileSystemContextMenuAction,
   FileSystemExternalDropEvent,
   FileSystemFilterOperator,
   FileSystemFiltersState,
+  FileSystemHeaderState,
   FileSystemItem,
   FileSystemLoadChildrenArgs,
   FileSystemMoveEvent,
   FileSystemProps,
   FileSystemView,
   FileSystemViewerArgs,
-} from './file-system.types';
-import { FS_EMPTY_STATE_TEST_ID } from './file-system-body';
-import { FS_HOVER_TEST_ID } from './file-system-hover';
-import { FS_TILE_DROP_TARGET_TEST_ID } from './file-system-icons-tile';
-import { FS_MARQUEE_TEST_ID } from './file-system-marquee';
-import { FS_SEARCH_MATCH_TEST_ID } from './file-system-search-view';
-import { FS_DRAG_CONTAINER_TEST_ID, FS_OVERLAY_DROPZONE_TEST_ID, fileSystemEntryTestID } from './file-system-test-id';
+  FileSystemViewProps,
+} from './types/file-system.types';
+import { FS_EMPTY_STATE_TEST_ID } from './views/file-system-body';
+import { FS_HOVER_TEST_ID } from './views/file-system-hover';
+import { FS_TILE_DROP_TARGET_TEST_ID } from './views/file-system-icons-tile';
+import { FS_MARQUEE_TEST_ID } from './views/file-system-marquee';
+import { FS_SEARCH_MATCH_TEST_ID } from './views/file-system-search-view';
 
 // ─── Shared data ───────────────────────────────────────────────────────────────
 // A small, deterministic manifest. Only files are listed at the top level —
@@ -232,13 +234,10 @@ function ExternalFileTray() {
 }
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
-// 880px wide, which is above the tablet breakpoint, so the four-tab view
-// switcher is shown rather than the dropdown a narrow container collapses it to
-// (see Compact) — the header reads the component's own width, not the window's.
-//
-// Search, sort and filtering are not in the header: they live in the headless
-// `renderFilters` slot, so the stories that drive them pass their own bar (see
-// `renderWithFilterBar`).
+// 880px wide, which is above the tablet breakpoint. Search, sort, filtering and
+// view switching are not in the header: they live in the headless `renderFilters`
+// and `renderHeader` slots, so the stories that drive them pass their own bars
+// (see `renderWithFilterBar` and `renderViewSwitcherHeader`).
 
 const meta = {
   title: 'File System/FileSystem',
@@ -543,6 +542,61 @@ const VIEWS = [
   { value: 'gallery', label: 'Gallery' },
 ] as const satisfies readonly { value: FileSystemView; label: string }[];
 
+// A consumer-built view switcher. The built-in switcher was removed in favour of
+// the headless `renderHeader` slot, so the stories that exercise switching hand
+// their own header back: tabs at full width, a dropdown once `isCompact` flips —
+// the same responsive hint the store still computes.
+function ViewSwitcherHeader({ isCompact, setView, view }: Pick<FileSystemHeaderState, 'isCompact' | 'setView' | 'view'>) {
+  const [open, setOpen] = useState(false);
+  return isCompact ? (
+    <View>
+      <Pressable
+        accessibilityLabel="View"
+        accessibilityRole="button"
+        onPress={() => setOpen((value) => !value)}
+        className="rounded-md px-2.5 py-1"
+      >
+        <Text size="sm">View</Text>
+      </Pressable>
+      {open ? (
+        <View className="absolute right-2 z-10 mt-1 rounded-md border border-border bg-surface-2 p-1">
+          {VIEWS.map((option) => (
+            <Pressable
+              key={option.value}
+              onPress={() => {
+                setView(option.value);
+                setOpen(false);
+              }}
+              className="rounded-sm px-3 py-1"
+            >
+              <Text size="sm">{option.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  ) : (
+    <View accessibilityRole="tablist" className="flex-row items-center gap-1">
+      {VIEWS.map((option) => (
+        <Pressable
+          accessibilityLabel={`${option.label} view`}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: option.value === view }}
+          key={option.value}
+          onPress={() => setView(option.value)}
+          className={cn('rounded-md px-2.5 py-1', option.value === view && 'bg-surface-5')}
+        >
+          <Text size="sm">{option.label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+const renderViewSwitcherHeader = (state: FileSystemHeaderState) => (
+  <ViewSwitcherHeader isCompact={state.isCompact} setView={state.setView} view={state.view} />
+);
+
 // `defaultPath` seeds the history on mount, so switching the start folder remounts
 // the browser rather than navigating it.
 const START_PATHS = { root: '', documents: 'Documents/', photos: 'Photos/' } as const;
@@ -558,7 +612,7 @@ const HEIGHTS = { '380': 380, '460': 460, '560': 560 } as const;
 type HeightKey = keyof typeof HEIGHTS;
 const HEIGHT_KEYS = ['380', '460', '560'] as const satisfies readonly HeightKey[];
 
-/** Narrow enough to fold the view tabs into a dropdown and collapse the search field. */
+/** Narrow enough to flip the `isCompact` hint the consumer's own switcher keys off. */
 const COMPACT_WIDTH = 420;
 const VIEWER_NOTE = 'Only images open in place without a viewer — everything else needs `renderFileViewer`.';
 
@@ -655,7 +709,7 @@ export const Interactive: Story = {
 
 export const SwitchViews: Story = {
   name: 'Demo: Switch views',
-  args: { testID: 'file-system-views' },
+  args: { testID: 'file-system-views', renderHeader: renderViewSwitcherHeader },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
@@ -683,6 +737,39 @@ export const SwitchViews: Story = {
     await userEvent.click(await canvas.findByLabelText('Gallery view'));
     await waitFor(() => expect(args.onViewChange).toHaveBeenLastCalledWith('gallery'));
     await canvas.findByTestId(readme);
+  },
+};
+
+/** A consumer-defined view registered through `FileSystemProps.views`. */
+function KanbanView({ entries }: FileSystemViewProps) {
+  return (
+    <View className="flex-1 gap-2 p-4">
+      <Text size="lg" weight="semibold">
+        Kanban board
+      </Text>
+      {entries.map((entry) => (
+        <View key={entry.path} className="rounded-md border border-border bg-surface-2 px-3 py-1.5">
+          <Text size="sm">{entry.name}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * A view the package never shipped: `views` maps a custom id to a component that
+ * gets the same flat {@link FileSystemViewProps} contract the four built-ins do.
+ * The controlled `view` prop selects `kanban` directly; consumers could just as
+ * well reach it through `setView` from their own header.
+ */
+export const CustomView: Story = {
+  name: 'Demo: Custom view',
+  args: { view: 'kanban', views: { kanban: KanbanView } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await canvas.findByText('Kanban board');
+    await canvas.findByText('README.md');
   },
 };
 
@@ -1660,10 +1747,11 @@ export const WithFileViewer: Story = {
 // ─── Compact ───────────────────────────────────────────────────────────────────
 
 /**
- * A narrow container. The view switcher becomes a dropdown — driven by the
- * component's measured width, so this is what a sidebar-width panel looks like
- * on a desktop too. Search and filters are the consumer's own UI now (see
- * `renderFilters`), so how they collapse is up to the bar you supply.
+ * A narrow container. The consumer's own switcher (supplied via `renderHeader`)
+ * becomes a dropdown once the component measures itself below the tablet
+ * breakpoint — `isCompact` in the header state, the same hint the removed
+ * built-in switcher keyed off. Search and filters are also the consumer's UI
+ * now (see `renderFilters`), so how they collapse is up to the bar you supply.
  */
 export const Compact: Story = {
   name: 'Demo: Compact layout',
@@ -1674,6 +1762,7 @@ export const Compact: Story = {
       </View>
     ),
   ],
+  args: { renderHeader: renderViewSwitcherHeader },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -2529,7 +2618,7 @@ const renderBodyWithRail: FileSystemProps['renderBody'] = ({ content, currentPat
 
 export const WithBodyWrapper: Story = {
   name: 'Demo: Wrap the file area',
-  args: { renderBody: renderBodyWithRail },
+  args: { renderBody: renderBodyWithRail, renderHeader: renderViewSwitcherHeader },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 

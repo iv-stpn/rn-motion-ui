@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type ReactNode, useCallback } from 'react';
-import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { H_INTERACTIVE, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
 
@@ -18,7 +18,7 @@ const container = cva('flex relative', {
       vertical: 'flex-col',
     },
     variant: {
-      spaced: '',
+      spaced: 'flex-wrap',
       bordered: 'border border-border overflow-hidden',
       connected: 'border border-border overflow-hidden',
     },
@@ -89,6 +89,9 @@ export interface ToggleGroupProps extends VariantProps<typeof container> {
  * Dividers adjacent to the selected item are suppressed so the selection reads as
  * one continuous surface with its neighbours.
  *
+ * `spaced` groups wrap onto additional lines when they run out of width, while
+ * `bordered` / `connected` groups scroll horizontally instead of overflowing.
+ *
  * Each item is identified by a `value` string. Pressing an item calls
  * `onValueChange` with that value — the consumer updates `value` to complete
  * the selection.
@@ -118,42 +121,53 @@ export function ToggleGroup({
     const selectedIdx = items.findIndex((it) => it.value === value);
     const isConnected = variant === 'connected';
 
+    const segmentedItems = items.map((item, index) => {
+      const selected = item.value === value;
+      const isLast = index === total - 1;
+
+      // suppress dividers adjacent to the selected item so it reads as
+      // one continuous surface with its neighbours. connected mode has no
+      // internal dividers at all.
+      const suppressDivider = isConnected || (selectedIdx !== -1 && (index === selectedIdx || index === selectedIdx - 1));
+
+      const itemClass = cn(
+        H_INTERACTIVE[size],
+        'items-center justify-center',
+        PX_INTERACTIVE[size],
+        !isHorizontal && 'py-3',
+        selected ? 'bg-info' : 'bg-muted',
+        total > 1 && !isLast && !suppressDivider && (isHorizontal ? 'border-r border-border' : 'border-b border-border'),
+      );
+
+      return (
+        <Pressable
+          key={item.value}
+          accessibilityRole="radio"
+          aria-checked={selected}
+          onPress={getOnValueChangeHandler(item.value)}
+          className={itemClass}
+        >
+          <Text className={itemTextClass(size, selected)}>{item.label}</Text>
+        </Pressable>
+      );
+    });
+
+    // The shell is a bordered, overflow-clipped column so a horizontal ScrollView
+    // can stretch to its width and scroll the items when they overflow; vertical
+    // segmented controls keep the items stacked directly.
     return (
       <View
         testID={testID ?? 'toggle-group'}
-        className={cn(container({ orientation, variant }), radius, className)}
+        className={cn('relative flex flex-col overflow-hidden border border-border', radius, className)}
         style={style}
       >
-        {items.map((item, index) => {
-          const selected = item.value === value;
-          const isLast = index === total - 1;
-
-          // suppress dividers adjacent to the selected item so it reads as
-          // one continuous surface with its neighbours. connected mode has no
-          // internal dividers at all.
-          const suppressDivider = isConnected || (selectedIdx !== -1 && (index === selectedIdx || index === selectedIdx - 1));
-
-          const itemClass = cn(
-            H_INTERACTIVE[size],
-            'flex-1 items-center justify-center',
-            PX_INTERACTIVE[size],
-            !isHorizontal && 'py-3',
-            selected ? 'bg-info' : 'bg-muted',
-            total > 1 && !isLast && !suppressDivider && (isHorizontal ? 'border-r border-border' : 'border-b border-border'),
-          );
-
-          return (
-            <Pressable
-              key={item.value}
-              accessibilityRole="radio"
-              aria-checked={selected}
-              onPress={getOnValueChangeHandler(item.value)}
-              className={itemClass}
-            >
-              <Text className={itemTextClass(size, selected)}>{item.label}</Text>
-            </Pressable>
-          );
-        })}
+        {isHorizontal ? (
+          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+            {segmentedItems}
+          </ScrollView>
+        ) : (
+          segmentedItems
+        )}
       </View>
     );
   }

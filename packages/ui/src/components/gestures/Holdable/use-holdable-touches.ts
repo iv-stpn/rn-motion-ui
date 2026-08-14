@@ -1,10 +1,12 @@
 // The native press observer: an RNGH pan that watches a press and never takes it.
 //
 // The whole gesture is the three touch callbacks. `manualActivation(true)` with no
-// `manager.activate()` anywhere means this handler never becomes ACTIVE — and RNGH
-// only cancels the touches under an *activating* handler, so a `ScrollView` above
-// and a `Pressable` below both keep the press they would have had. That is the
-// property the whole primitive rests on: a `<Holdable>` observes without competing.
+// `manager.activate()` anywhere means this handler never becomes ACTIVE — but a pan
+// that has merely *begun* still claims the finger from the enclosing `ScrollView`, so
+// the move and up callbacks call `manager.fail()` the moment the press is over (a
+// scroll won, or the finger lifted) to hand the touch back. A `ScrollView` above and
+// a `Pressable` below both keep the press they would have had. That is the property
+// the whole primitive rests on: a `<Holdable>` observes without competing.
 //
 // (`Gesture.Manual()` is the more literal name for "watch the touches, decide
 // nothing". `Pan` is what `use-draggable-pan.ts` already runs, so it is the one this
@@ -77,7 +79,7 @@ function buildTouchGesture({ timeline, trip, tuning }: BuildParams) {
       trip.value = { done: false, startAt: Date.now(), startX: touch.absoluteX, startY: touch.absoluteY };
       scheduleOnRN(startPress);
     })
-    .onTouchesMove((event) => {
+    .onTouchesMove((event, manager) => {
       'worklet';
       const state = trip.value;
       if (state.done || state.startAt === 0) return;
@@ -99,17 +101,23 @@ function buildTouchGesture({ timeline, trip, tuning }: BuildParams) {
       if (travel <= slop) return;
       // Before `armDelay` this is the scroll's press; after it, with nothing here to
       // drag, it is a shove off the item. Either way the press is over — which is
-      // exactly what `readPressMove` returns `'scrolled'` for.
+      // exactly what `readPressMove` returns `'scrolled'` for. Failing the pan is
+      // what returns the finger to the `ScrollView`: a pan left in BEGAN keeps its
+      // claim on the touch and the scroll never starts.
       trip.value = { ...state, done: true };
       scheduleOnRN(endPress);
+      manager.fail();
     })
-    .onTouchesUp((event) => {
+    .onTouchesUp((event, manager) => {
       'worklet';
       // `numberOfTouches` on an up event is what remains, so anything above zero
-      // means a finger is still down and the press is not over.
+      // means a finger is still down and the press is not over. Failing the pan here
+      // — rather than leaving it BEGAN until the next touch — frees the `ScrollView`
+      // for the next gesture, the same release the drag pan performs on up.
       if (event.numberOfTouches > 0) return;
       trip.value = { ...trip.value, done: true };
       scheduleOnRN(endPress);
+      manager.fail();
     })
     .onFinalize(() => {
       'worklet';

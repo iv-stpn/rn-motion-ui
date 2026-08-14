@@ -154,17 +154,6 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
     updatedAt: DATES.june,
     url: PREVIEWS.forest,
   },
-];
-
-/**
- * The mobile demos' manifest: the familiar root entries plus a longer tail of
- * files, so the two touch views have enough rows to scroll. Kept separate from
- * `SAMPLE_ITEMS` because the desktop stories assert that list's exact length and
- * order (count, sort, Shift-range, selection-box geometry) — this extra material
- * lives out of their reach.
- */
-const SCROLL_ITEMS: FileSystemItem[] = [
-  ...SAMPLE_ITEMS,
   {
     createdAt: DATES.april,
     kind: 'file',
@@ -191,7 +180,6 @@ const SCROLL_ITEMS: FileSystemItem[] = [
     size: 144_800,
     updatedAt: DATES.april,
   },
-  { createdAt: DATES.january, kind: 'file', path: 'Yoga-guide.txt', size: 9200, updatedAt: DATES.march },
   {
     createdAt: DATES.april,
     kind: 'file',
@@ -216,7 +204,6 @@ const SCROLL_ITEMS: FileSystemItem[] = [
     size: 88_500,
     updatedAt: DATES.june,
   },
-  { createdAt: DATES.march, kind: 'file', path: 'Workout-plan.txt', size: 6100, updatedAt: DATES.march },
   { createdAt: DATES.february, kind: 'file', path: 'Year-review.pptx', size: 1_860_000, updatedAt: DATES.april },
   {
     createdAt: DATES.april,
@@ -246,27 +233,6 @@ const SCROLL_ITEMS: FileSystemItem[] = [
     previewImageUrl: PREVIEWS.harbour,
     size: 2_780_000,
     updatedAt: DATES.june,
-    url: PREVIEWS.harbour,
-  },
-  {
-    createdAt: DATES.january,
-    favoritedAt: DATES.january,
-    kind: 'file',
-    path: 'Holiday-beach.jpg',
-    previewAspectRatio: PHOTO_RATIO,
-    previewImageUrl: PREVIEWS.dunes,
-    size: 1_940_000,
-    updatedAt: DATES.february,
-    url: PREVIEWS.dunes,
-  },
-  {
-    createdAt: DATES.february,
-    kind: 'file',
-    path: 'Sunrise-hike.jpg',
-    previewAspectRatio: PHOTO_RATIO,
-    previewImageUrl: PREVIEWS.harbour,
-    size: 2_260_000,
-    updatedAt: DATES.march,
     url: PREVIEWS.harbour,
   },
 ];
@@ -2389,9 +2355,22 @@ export const DropIntoOwnFolder: Story = {
  * Hold Ctrl/Cmd as you start the band to add to the selection instead of
  * replacing it.
  */
+/**
+ * The selection-box demo's own small manifest. The sweep starts in the empty
+ * space below the tiles and rises to the first row, so it needs a grid short
+ * enough to leave that space — `SAMPLE_ITEMS`' sixteen files fill the grid and
+ * would drag the band over more than the two pinned tiles.
+ */
+const SELECTION_BOX_ITEMS: FileSystemItem[] = [
+  { hasChildren: true, kind: 'folder', path: 'Archive/', updatedAt: DATES.january },
+  { createdAt: DATES.june, kind: 'file', path: 'README.md', pinnedAt: DATES.june, size: 2480, updatedAt: DATES.june },
+  { createdAt: DATES.april, kind: 'file', path: 'Roadmap.pptx', pinnedAt: DATES.april, size: 1_204_000, updatedAt: DATES.may },
+  { createdAt: DATES.march, kind: 'file', path: 'Budget-2026.xlsx', size: 96_400, updatedAt: DATES.june },
+];
+
 export const SelectionBox: Story = {
   name: 'Demo: Drag a selection box',
-  args: { selectionMode: 'multiple', draggable: true, onMove: fn(), onSelectedItemsChange: fn() },
+  args: { items: SELECTION_BOX_ITEMS, selectionMode: 'multiple', draggable: true, onMove: fn(), onSelectedItemsChange: fn() },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.icons);
@@ -2531,7 +2510,6 @@ export const MobileGrid: Story = {
   ],
   args: {
     defaultView: 'mobile-grid',
-    items: SCROLL_ITEMS,
     selectionMode: 'multiple',
     getContextMenuActions: resolveContextMenuActions,
   },
@@ -2552,7 +2530,6 @@ export const MobileList: Story = {
   ],
   args: {
     defaultView: 'mobile-list',
-    items: SCROLL_ITEMS,
     selectionMode: 'multiple',
     getContextMenuActions: resolveContextMenuActions,
   },
@@ -2844,10 +2821,10 @@ export const WithBodyWrapper: Story = {
     const canvas = within(canvasElement);
 
     // The default content still renders, and the rail reads the state it came from:
-    // seven entries at the root — Archive/, Documents/, Photos/ and four files.
+    // nineteen entries at the root — Archive/, Documents/, Photos/ and sixteen files.
     await canvas.findByText('README.md');
     await canvas.findByText(NO_SELECTION);
-    await canvas.findByText('7 in Files');
+    await canvas.findByText('19 in Files');
     await canvas.findByText('icons view');
 
     // Selecting shows the name twice over: once on the tile, once in the rail.

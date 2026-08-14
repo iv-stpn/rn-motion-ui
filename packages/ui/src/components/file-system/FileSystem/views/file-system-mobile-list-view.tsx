@@ -124,7 +124,7 @@ function MobileListRow({
           <View className="min-w-0 flex-1">
             <View className="flex-row items-center gap-1">
               {entry.pinnedAt ? <Pin color={isActive ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}
-              <Text className={cn('min-w-0 flex-1', textClassName)} numberOfLines={1} size="sm">
+              <Text className={cn('min-w-0', textClassName)} numberOfLines={1} size="sm">
                 {entry.name}
               </Text>
               {entry.favoritedAt ? <Heart color={isActive ? colors.white : colors.danger} size={FAV_ICON_SIZE} /> : null}

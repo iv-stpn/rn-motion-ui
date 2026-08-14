@@ -69,7 +69,7 @@ function sameMembers(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  * `null` when either is missing from it. Direction-agnostic: a range dragged
  * upward is the same run as one dragged down.
  */
-function runBetween(from: string, to: string, orderedPaths: readonly string[]): string[] | null {
+export function runBetween(from: string, to: string, orderedPaths: readonly string[]): string[] | null {
   const start = orderedPaths.indexOf(from);
   const end = orderedPaths.indexOf(to);
   if (start === -1 || end === -1) return null;
@@ -160,6 +160,35 @@ export function applyFileSystemMarquee(
   // marquee measures from where the box started rather than from before it.
   const anchor = covered[0] ?? current.anchor;
   return { anchor: paths.size === 0 ? null : anchor, lead: lastOf(paths), paths };
+}
+
+/**
+ * Remove a live scrub's covered run from the selection.
+ *
+ * The remove-mirror of {@link applyFileSystemMarquee}: called on every move of a
+ * scrub that started on an already-selected entry, so it carries the same identity
+ * contract — a run that removes nothing must not write to the store sixty times a
+ * second. `base` is the non-null snapshot the scrub took when it started; removing
+ * from `base` (not from `current`) is what lets the finger drag back over a run it
+ * just cleared and re-add it, instead of sticking to the first clear.
+ */
+export function applyFileSystemDeselect(
+  current: FileSystemSelectionState,
+  covered: readonly string[],
+  base: ReadonlySet<string>,
+): FileSystemSelectionState {
+  const paths = new Set(base);
+  for (const path of covered) paths.delete(path);
+  if (sameMembers(paths, current.paths)) return current;
+
+  // Removing members is `pruneFileSystemSelection`'s shape: keep the lead and anchor
+  // when they survive, and otherwise promote the most recently added survivor — a
+  // scrub that clears the lead must not leave the preview/status surfaces blank while
+  // entries remain, and one that clears everything drops the anchor too.
+  // When nothing survives, `lastOf` is already `null`, so the anchor falls back to it.
+  const lead = current.lead !== null && paths.has(current.lead) ? current.lead : lastOf(paths);
+  const anchor = current.anchor !== null && paths.has(current.anchor) ? current.anchor : lead;
+  return { anchor, lead, paths };
 }
 
 /**

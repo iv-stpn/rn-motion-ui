@@ -19,6 +19,7 @@ import type {
   FileSystemSelectionState,
 } from '../logic/file-system-selection';
 import {
+  applyFileSystemDeselect,
   applyFileSystemMarquee,
   applyFileSystemSelection,
   EMPTY_FILE_SYSTEM_SELECTION,
@@ -171,6 +172,8 @@ type FileSystemActions = {
   clearSelection: () => void;
   /** One frame of a live selection box — see {@link applyFileSystemMarquee}. */
   selectMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
+  /** One frame of a live scrub removing a run — see {@link applyFileSystemDeselect}. */
+  deselectMarquee: (covered: readonly string[], base: ReadonlySet<string>) => void;
   // Search
   setSearchInput: (value: string) => void;
   setSearchScope: (scope: FileSystemSearchScope) => void;
@@ -751,6 +754,16 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         notifySelectionChange(s.consumer, index, next, previous);
       },
 
+      deselectMarquee: (covered, base) => {
+        const s = get();
+        const previous = selectionStateOf(s.selection);
+        const next = applyFileSystemDeselect(previous, covered, base);
+        if (next === previous) return;
+        const { index } = s.entries;
+        set({ selection: selectionSliceFrom(next, index) });
+        notifySelectionChange(s.consumer, index, next, previous);
+      },
+
       // ── Search actions ────────────────────────────────────────────────────────
       setSearchInput: (value) => {
         // Immediate update for UI responsiveness
@@ -971,6 +984,7 @@ export function useFileSystemSelectionActions() {
       selectAndPrefetch: s.selectAndPrefetch,
       clearSelection: s.clearSelection,
       selectMarquee: s.selectMarquee,
+      deselectMarquee: s.deselectMarquee,
     })),
   );
 }

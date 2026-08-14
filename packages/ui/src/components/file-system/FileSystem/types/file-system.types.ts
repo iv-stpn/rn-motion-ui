@@ -25,8 +25,8 @@ export type FileSystemContextMenuAction = {
   disabled?: boolean;
 };
 
-/** The four built-in Finder-style presentations. */
-export type FileSystemBuiltInView = 'icons' | 'list' | 'columns' | 'gallery';
+/** The six built-in presentations — four Finder-style desktop views plus two touch-first mobile views. */
+export type FileSystemBuiltInView = 'icons' | 'list' | 'columns' | 'gallery' | 'mobile-grid' | 'mobile-list';
 
 /**
  * A view id. The four built-ins keep their string literals for autocomplete; the
@@ -670,6 +670,8 @@ export type FileSystemViewProps = {
   ) => void;
   /** One frame of a live selection box. Only the icons grid draws one — see `file-system-marquee.tsx`. */
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
+  /** One frame of a live scrub removing a run. Only the mobile views draw one — see `use-file-system-scrub`. */
+  onDeselectMarquee: (covered: readonly string[], base: ReadonlySet<string>) => void;
   onSortColumnClick: (key: FileSystemSortKey) => void;
   searchQuery: string;
   /** The lead entry: what the columns preview pane and the gallery stage follow. */

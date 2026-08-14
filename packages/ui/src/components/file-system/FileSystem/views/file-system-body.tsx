@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
 /** biome-ignore-all lint/style/useComponentExportOnlyModules: the placeholder test id belongs with the node it names */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: one dispatch module — the placeholder, the built-in view registry, and the drop-zone shell are one render layer */
 // The file area: whichever view is active, or the placeholder that replaces it
 // when there is nothing to show. The columns view keeps its panes even when the
 // current folder is empty — that's how Finder lets you walk back up a trail —
@@ -42,6 +43,8 @@ import { FileSystemColumnsView } from './file-system-columns-view';
 import { FileSystemGalleryView } from './file-system-gallery-view';
 import { FileSystemIconsView } from './file-system-icons-view';
 import { FileSystemListView } from './file-system-list-view';
+import { FileSystemMobileGridView } from './file-system-mobile-grid-view';
+import { FileSystemMobileListView } from './file-system-mobile-list-view';
 import { FileSystemSearchView } from './file-system-search-view';
 import { FileSystemEmptyState } from './file-system-view';
 
@@ -63,6 +66,8 @@ const BUILT_IN_VIEWS: Record<FileSystemBuiltInView, ComponentType<FileSystemView
   gallery: FileSystemGalleryView,
   icons: FileSystemIconsView,
   list: FileSystemListView,
+  'mobile-grid': FileSystemMobileGridView,
+  'mobile-list': FileSystemMobileListView,
 };
 
 type EmptyStateArgs = { hasActiveFilters: boolean; isLoading: boolean; isSearching: boolean };
@@ -156,7 +161,7 @@ function FileSystemBodyContent() {
     testID,
     views,
   } = useFileSystemConsumer();
-  const { openEntry, selectAndPrefetch, selectMarquee } = useFileSystemSelectionActions();
+  const { deselectMarquee, openEntry, selectAndPrefetch, selectMarquee } = useFileSystemSelectionActions();
   const { ensureChildren } = useFileSystemNavigationActions();
   const { toggleSortColumn } = useFileSystemEntriesActions();
 
@@ -178,6 +183,7 @@ function FileSystemBodyContent() {
     onContextMenuAction,
     onExternalDrop,
     onMarquee: selectMarquee,
+    onDeselectMarquee: deselectMarquee,
     onMove,
     onOpen: openEntry,
     onSelect: selectAndPrefetch,

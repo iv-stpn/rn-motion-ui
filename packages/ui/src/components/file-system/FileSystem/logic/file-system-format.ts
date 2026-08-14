@@ -1,10 +1,18 @@
 // Byte-size and timestamp formatting. Decimal (SI) units, matching Finder's
 // "on disk" figures rather than the binary ones.
 
+import type { FileSystemEntry } from '../types/file-system.types';
+
 const SIZE_UNITS = ['KB', 'MB', 'GB', 'TB'];
 const BYTES_PER_UNIT = 1000;
 /** Trailing zeros (and a bare decimal point) left by `toFixed`. */
 const TRAILING_ZEROS = /\.?0+$/;
+
+/** `3` → `'3 items'`; `1` → `'1 item'`; `undefined` → `null`. */
+function itemCountLabel(count: number | undefined): string | null {
+  if (count === undefined) return null;
+  return `${count} ${count === 1 ? 'item' : 'items'}`;
+}
 
 /** `1234` → `'1.23 KB'`; `undefined` → `null` (so callers can skip the row). */
 export function formatByteSize(size: number | undefined): string | null {
@@ -34,4 +42,17 @@ export function formatTimestamp(value: string | undefined): string | null {
   const day = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   return `${day} at ${time}`;
+}
+
+/**
+ * One-line stats for a mobile row/tile, parts joined with `·`.
+ *
+ * Files report size and modified time; folders report child count and modified
+ * time. Missing parts are dropped, so a file with no `size` yields just its date
+ * and a folder with no `childCount` yields just its date.
+ */
+export function formatFileSystemStats(entry: FileSystemEntry, childCount?: number): string {
+  const primary = entry.kind === 'folder' ? itemCountLabel(childCount) : formatByteSize(entry.size);
+  const date = formatTimestamp(entry.updatedAt ?? entry.createdAt);
+  return [primary, date].filter((part): part is string => part !== null).join(' · ');
 }

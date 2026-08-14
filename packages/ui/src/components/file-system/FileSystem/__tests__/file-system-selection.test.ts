@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { FileSystemSelectionState } from '../logic/file-system-selection';
 import {
+  applyFileSystemDeselect,
   applyFileSystemMarquee,
   applyFileSystemSelection,
   EMPTY_FILE_SYSTEM_SELECTION,
   pruneFileSystemSelection,
+  runBetween,
 } from '../logic/file-system-selection';
 
 const MULTIPLE = { mode: 'multiple' } as const;
@@ -179,6 +181,68 @@ describe('applyFileSystemMarquee', () => {
     expect(applyFileSystemMarquee(current, ['b', 'c'], null)).toBe(current);
     // Order is not membership: a box growing leftward reaches the same two tiles.
     expect(applyFileSystemMarquee(current, ['c', 'b'], null)).toBe(current);
+  });
+});
+
+describe('runBetween', () => {
+  it('runs down from the start to the end, inclusive', () => {
+    expect(runBetween('b', 'd', ORDER)).toEqual(['b', 'c', 'd']);
+  });
+
+  it('runs upward just the same', () => {
+    expect(runBetween('d', 'b', ORDER)).toEqual(['b', 'c', 'd']);
+  });
+
+  it('is the single entry when both ends are the same', () => {
+    expect(runBetween('c', 'c', ORDER)).toEqual(['c']);
+  });
+
+  it('returns null when either end is not in the ordering', () => {
+    expect(runBetween('z', 'c', ORDER)).toBeNull();
+    expect(runBetween('c', 'z', ORDER)).toBeNull();
+  });
+});
+
+describe('applyFileSystemDeselect', () => {
+  it('removes the covered run from the base', () => {
+    const next = applyFileSystemDeselect(selection('a', 'b', 'c'), ['b'], new Set(['a', 'b', 'c']));
+    expect(sorted(next.paths)).toEqual(['a', 'c']);
+  });
+
+  it('keeps the lead and anchor when they survive', () => {
+    const next = applyFileSystemDeselect(selection('a', 'b', 'c'), ['a'], new Set(['a', 'b', 'c']));
+    expect(next.lead).toBe('c');
+    expect(next.anchor).toBe('c');
+  });
+
+  it('promotes the last survivor when the lead is removed', () => {
+    const next = applyFileSystemDeselect(selection('a', 'b', 'c'), ['c'], new Set(['a', 'b', 'c']));
+    expect([...next.paths]).toEqual(['a', 'b']);
+    expect(next.lead).toBe('b');
+    expect(next.anchor).toBe('b');
+  });
+
+  it('empties out — anchor included — when the run covers everything', () => {
+    const next = applyFileSystemDeselect(selection('a', 'b'), ['a', 'b'], new Set(['a', 'b']));
+    expect(next.paths.size).toBe(0);
+    expect(next.lead).toBeNull();
+    expect(next.anchor).toBeNull();
+  });
+
+  it('returns the same state — not a copy — when the run removes nothing', () => {
+    const current = selection('a', 'b');
+    expect(applyFileSystemDeselect(current, ['z'], new Set(['a', 'b']))).toBe(current);
+    expect(applyFileSystemDeselect(current, [], new Set(['a', 'b']))).toBe(current);
+  });
+
+  it('re-adds a cleared run by re-measuring against the base, not the current state', () => {
+    const base = new Set(['a', 'b', 'c']);
+    const cleared = applyFileSystemDeselect(selection('a', 'b', 'c'), ['a', 'b', 'c'], base);
+    expect(cleared.paths.size).toBe(0);
+    // Dragging back so the finger leaves all but one of the cleared items brings
+    // the rest back — the reducer never treats the empty selection as its origin.
+    const reAdded = applyFileSystemDeselect(cleared, ['c'], base);
+    expect(sorted(reAdded.paths)).toEqual(['a', 'b']);
   });
 });
 

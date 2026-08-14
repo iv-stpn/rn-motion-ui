@@ -156,6 +156,121 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
   },
 ];
 
+/**
+ * The mobile demos' manifest: the familiar root entries plus a longer tail of
+ * files, so the two touch views have enough rows to scroll. Kept separate from
+ * `SAMPLE_ITEMS` because the desktop stories assert that list's exact length and
+ * order (count, sort, Shift-range, selection-box geometry) — this extra material
+ * lives out of their reach.
+ */
+const SCROLL_ITEMS: FileSystemItem[] = [
+  ...SAMPLE_ITEMS,
+  {
+    createdAt: DATES.april,
+    kind: 'file',
+    path: 'Receipt-scan.pdf',
+    previewImageUrl: PREVIEWS.page,
+    size: 182_400,
+    updatedAt: DATES.may,
+  },
+  {
+    createdAt: DATES.june,
+    kind: 'file',
+    path: 'Scan-0001.pdf',
+    previewImageUrl: PREVIEWS.page,
+    size: 96_700,
+    updatedAt: DATES.june,
+  },
+  { createdAt: DATES.may, favoritedAt: DATES.may, kind: 'file', path: 'Tax-2025.xlsx', size: 214_000, updatedAt: DATES.june },
+  { createdAt: DATES.march, kind: 'file', path: 'Trip-itinerary.docx', size: 58_300, updatedAt: DATES.may },
+  {
+    createdAt: DATES.february,
+    kind: 'file',
+    path: 'Vaccination-record.pdf',
+    previewImageUrl: PREVIEWS.page,
+    size: 144_800,
+    updatedAt: DATES.april,
+  },
+  { createdAt: DATES.january, kind: 'file', path: 'Yoga-guide.txt', size: 9200, updatedAt: DATES.march },
+  {
+    createdAt: DATES.april,
+    kind: 'file',
+    path: 'Zoo-trip-map.pdf',
+    previewImageUrl: PREVIEWS.page,
+    size: 310_000,
+    updatedAt: DATES.april,
+  },
+  {
+    createdAt: DATES.may,
+    favoritedAt: DATES.may,
+    kind: 'file',
+    path: 'Wedding-checklist.docx',
+    size: 42_100,
+    updatedAt: DATES.may,
+  },
+  {
+    createdAt: DATES.june,
+    kind: 'file',
+    path: 'Warranty-card.pdf',
+    previewImageUrl: PREVIEWS.page,
+    size: 88_500,
+    updatedAt: DATES.june,
+  },
+  { createdAt: DATES.march, kind: 'file', path: 'Workout-plan.txt', size: 6100, updatedAt: DATES.march },
+  { createdAt: DATES.february, kind: 'file', path: 'Year-review.pptx', size: 1_860_000, updatedAt: DATES.april },
+  {
+    createdAt: DATES.april,
+    kind: 'file',
+    path: 'Wallpaper-sunset.jpg',
+    previewAspectRatio: PHOTO_RATIO,
+    previewImageUrl: PREVIEWS.dunes,
+    size: 2_410_000,
+    updatedAt: DATES.april,
+    url: PREVIEWS.dunes,
+  },
+  {
+    createdAt: DATES.may,
+    kind: 'file',
+    path: 'Wallpaper-mountains.jpg',
+    previewAspectRatio: PHOTO_RATIO,
+    previewImageUrl: PREVIEWS.forest,
+    size: 3_020_000,
+    updatedAt: DATES.may,
+    url: PREVIEWS.forest,
+  },
+  {
+    createdAt: DATES.june,
+    kind: 'file',
+    path: 'Wallpaper-coast.jpg',
+    previewAspectRatio: PHOTO_RATIO,
+    previewImageUrl: PREVIEWS.harbour,
+    size: 2_780_000,
+    updatedAt: DATES.june,
+    url: PREVIEWS.harbour,
+  },
+  {
+    createdAt: DATES.january,
+    favoritedAt: DATES.january,
+    kind: 'file',
+    path: 'Holiday-beach.jpg',
+    previewAspectRatio: PHOTO_RATIO,
+    previewImageUrl: PREVIEWS.dunes,
+    size: 1_940_000,
+    updatedAt: DATES.february,
+    url: PREVIEWS.dunes,
+  },
+  {
+    createdAt: DATES.february,
+    kind: 'file',
+    path: 'Sunrise-hike.jpg',
+    previewAspectRatio: PHOTO_RATIO,
+    previewImageUrl: PREVIEWS.harbour,
+    size: 2_260_000,
+    updatedAt: DATES.march,
+    url: PREVIEWS.harbour,
+  },
+];
+
 /** What `Archive/` resolves to. Kept out of `items` so the load is observable. */
 const ARCHIVE_ITEMS: FileSystemItem[] = [
   { createdAt: DATES.january, kind: 'file', path: 'Archive/2024-summary.pdf', previewImageUrl: PREVIEWS.page, size: 210_300 },
@@ -540,6 +655,8 @@ const VIEWS = [
   { value: 'list', label: 'List' },
   { value: 'columns', label: 'Columns' },
   { value: 'gallery', label: 'Gallery' },
+  { value: 'mobile-grid', label: 'Grid (mobile)' },
+  { value: 'mobile-list', label: 'List (mobile)' },
 ] as const satisfies readonly { value: FileSystemView; label: string }[];
 
 // A consumer-built view switcher. The built-in switcher was removed in favour of
@@ -614,6 +731,8 @@ const HEIGHT_KEYS = ['380', '460', '560'] as const satisfies readonly HeightKey[
 
 /** Narrow enough to flip the `isCompact` hint the consumer's own switcher keys off. */
 const COMPACT_WIDTH = 420;
+/** A phone-width container for the two mobile views. */
+const MOBILE_WIDTH = 360;
 const VIEWER_NOTE = 'Only images open in place without a viewer — everything else needs `renderFileViewer`.';
 
 const VIEWER_PLACEHOLDER = 'Your PDF renderer goes here';
@@ -2386,6 +2505,108 @@ export const GalleryMultiSelect: Story = {
     );
 
     // The critical assertion: both tiles visibly carry aria-selected.
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
+  },
+};
+
+// ─── Mobile views ──────────────────────────────────────────────────────────────
+// The two touch views. They drop the desktop's marquee, drag and hover — a phone
+// has no right button to summon a menu — and give every entry a visible kebab
+// instead. A long-press is the way into multi-select; once anything is selected
+// every kebab becomes a checkbox, checked on the selection (see
+// `FileSystemMobileMenu`).
+
+/**
+ * The mobile grid at phone width: two thumbnail columns, the name left-aligned
+ * under each preview and free to wrap to a second line, with a kebab beside it.
+ */
+export const MobileGrid: Story = {
+  name: 'Demo: Mobile grid',
+  decorators: [
+    (Story) => (
+      <View style={{ maxWidth: '100%', width: MOBILE_WIDTH }}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: {
+    defaultView: 'mobile-grid',
+    items: SCROLL_ITEMS,
+    selectionMode: 'multiple',
+    getContextMenuActions: resolveContextMenuActions,
+  },
+};
+
+/**
+ * The mobile list at phone width: one name per row, statistics beneath it joined
+ * with a middle dot, and the same kebab/checkbox control on the right edge.
+ */
+export const MobileList: Story = {
+  name: 'Demo: Mobile list',
+  decorators: [
+    (Story) => (
+      <View style={{ maxWidth: '100%', width: MOBILE_WIDTH }}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: {
+    defaultView: 'mobile-list',
+    items: SCROLL_ITEMS,
+    selectionMode: 'multiple',
+    getContextMenuActions: resolveContextMenuActions,
+  },
+};
+
+/**
+ * Long-press is the touch views' way into multi-select: it selects the entry
+ * under the finger and turns every kebab into a checkbox, checked on the
+ * selection. Tapping another entry's checkbox adds it; tapping a checked one
+ * takes it back out.
+ */
+export const MobileMultiSelect: Story = {
+  name: 'Demo: Mobile multi-select',
+  decorators: [
+    (Story) => (
+      <View style={{ maxWidth: '100%', width: MOBILE_WIDTH }}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: {
+    defaultView: 'mobile-grid',
+    selectionMode: 'multiple',
+    getContextMenuActions: resolveContextMenuActions,
+    onSelectedItemsChange: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('README.md');
+
+    // Every entry starts with a kebab and no checkbox in sight.
+    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-kebab`);
+    expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-checkbox`)).toBeNull();
+
+    // A long press selects the entry under the finger.
+    await longPress(await canvas.findByRole('button', { name: 'README.md' }));
+    await waitFor(() =>
+      expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([expect.objectContaining({ name: 'README.md' })]),
+    );
+
+    // The kebabs yield to checkboxes, and the selected entry's is the checked one.
+    expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-kebab`)).toBeNull();
+    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-checkbox`)).toHaveAttribute('aria-checked', 'true');
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md']));
+
+    // Tapping a second entry's checkbox adds it to the selection.
+    await userEvent.click(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Roadmap.pptx-checkbox`));
+    await waitFor(() =>
+      expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({ name: 'README.md' }),
+        expect.objectContaining({ name: 'Roadmap.pptx' }),
+      ]),
+    );
+    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Roadmap.pptx-checkbox`)).toHaveAttribute('aria-checked', 'true');
     await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
   },
 };

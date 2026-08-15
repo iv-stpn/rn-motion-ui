@@ -2684,8 +2684,12 @@ export const MobileListDragAndDrop: Story = {
 
     const transfer = newDragTransfer();
     await dragOnto({ source: row, target: folder, to: centerOf(folder), transfer });
+    // Windows-style drop cue: while the drag hangs over the folder, a hint names
+    // it under the ghost — and leaves again with the drag.
+    expect(await canvas.findByText('Move into Documents')).toBeDefined();
     fireDrag(row, 'dragend', transfer, centerOf(folder));
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
+    await waitFor(() => expect(canvas.queryByText('Move into Documents')).toBeNull());
 
     // A file row is no destination, so the same drag onto one falls through to the
     // background zone — the open folder, which is where the entry already is, so
@@ -2728,8 +2732,11 @@ export const MobileGridDragAndDrop: Story = {
 
     const transfer = newDragTransfer();
     await dragOnto({ source: tile, target: folderTile, to: centerOf(folderTile), transfer });
+    // Same Windows-style drop cue as the list: named under the ghost, gone with the drag.
+    expect(await canvas.findByText('Move into Documents')).toBeDefined();
     fireDrag(tile, 'dragend', transfer, centerOf(folderTile));
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
+    await waitFor(() => expect(canvas.queryByText('Move into Documents')).toBeNull());
 
     // A file tile is no destination either.
     const fileTiles = await canvas.findAllByRole('button', { name: 'Budget-2026.xlsx' });

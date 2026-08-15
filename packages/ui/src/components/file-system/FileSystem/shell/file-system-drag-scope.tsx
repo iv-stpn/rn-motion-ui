@@ -14,15 +14,21 @@
 //    drawn inside one is clipped at its edge. The manager draws it in its own box
 //    instead, which spans the whole file area.
 
-import type { ReactNode } from 'react';
-import { useCallback } from 'react';
-import { View } from 'react-native';
+import { type ReactNode, type RefObject, useCallback, useEffect, useRef } from 'react';
+import { Animated, View } from 'react-native';
+import { ArrowRightLine } from 'rn-motion-ui-icons/icons/arrow-right-line';
+import { useThemeColors } from '../../../../theme/use-theme-color';
 import { readMultiDragIds } from '../../../gestures/DragManager/multi-drag';
 import { MultiDragManager } from '../../../gestures/DragManager/multi-drag-manager';
+import type { DragRect } from '../../../gestures/drag.types';
+import { ghostOffset } from '../../../gestures/drag-geometry';
+import { getDragSnapshot } from '../../../gestures/drag-store';
+import { useDragMove, useDragSnapshot } from '../../../gestures/use-drag-store';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { type FileSystemDragItem, fileSystemDragData, fileSystemDragItems, fileSystemDragLabel } from '../logic/file-system-drag';
 import { useFileSystemEntries, useFileSystemSelection, useFileSystemSelectionActions } from '../store/file-system-context';
+import { zoneDestinationFor } from './file-system-dropzone';
 
 type FileSystemGroupGhostProps = { items: readonly FileSystemDragItem[] };
 
@@ -85,6 +91,82 @@ function FileSystemGroupGhost({ items }: FileSystemGroupGhostProps) {
   );
 }
 
+/** How far below the ghost's bottom edge the drop-hint chip sits. */
+const DROP_HINT_OFFSET = 8;
+
+type FileSystemDropHintProps = { containerRef: RefObject<View | null> };
+
+/**
+ * The "→ Move into <folder>" chip that follows the drag ghost while a drag hangs
+ * over a folder — the Windows Explorer drop cue, on every view.
+ *
+ * Position mirrors the manager's ghost placement (see `DragManagerOverlay`):
+ * the ghost is anchored to the grab point within the source rect under a pan
+ * transport, and to the cursor with the source's left edge under HTML5. The chip
+ * rides a fixed offset below the ghost's bottom edge, on the same move channel
+ * the ghost moves on, so it tracks the pointer without a single re-render.
+ */
+function FileSystemDropHint({ containerRef }: FileSystemDropHintProps) {
+  const { drag, overZoneId } = useDragSnapshot();
+  const { index } = useFileSystemEntries();
+  const colors = useThemeColors();
+  const pos = useRef(new Animated.ValueXY()).current;
+  const frameRef = useRef<DragRect | null>(null);
+
+  // The manager re-measures its own frame at lift; the hint needs the same
+  // window→frame conversion, so re-measure the shared container once per drag.
+  // biome-ignore lint/plugin: measuring the container for an animated overlay is a layout side-effect, not derived render state
+  useEffect(() => {
+    if (drag === null) return;
+    const node = containerRef.current;
+    if (node === null) return;
+    node.measureInWindow((x, y, width, height) => {
+      frameRef.current = { height, width, x, y };
+    });
+  }, [containerRef, drag]);
+
+  useDragMove((point) => {
+    const activeDrag = getDragSnapshot().drag;
+    const frame = frameRef.current;
+    if (activeDrag === null || frame === null) return;
+    const { grab, rect } = activeDrag.origin;
+    const sourceX = rect?.x ?? grab.x;
+    let ghostX: number;
+    let ghostY: number;
+    if (activeDrag.transport === 'html5') {
+      ghostX = sourceX - frame.x + (point.x - grab.x);
+      ghostY = point.y - frame.y;
+    } else {
+      const offset = ghostOffset({ grab, host: frame, origin: rect, point });
+      ghostX = offset.x;
+      ghostY = offset.y;
+    }
+    pos.setValue({ x: ghostX, y: ghostY + (rect?.height ?? 0) + DROP_HINT_OFFSET });
+  });
+
+  if (drag === null || overZoneId === null) return null;
+  const destination = zoneDestinationFor(overZoneId);
+  // No hint over the root or an unknown zone — there is no folder name to say.
+  if (destination === undefined || destination === '') return null;
+  const folder = index.folders.get(destination);
+  if (folder === undefined) return null;
+
+  return (
+    <Animated.View
+      className="pointer-events-none absolute top-0 left-0 z-[60]"
+      pointerEvents="none"
+      style={{ transform: pos.getTranslateTransform() }}
+    >
+      <View className="flex-row items-center gap-1.5 self-start rounded-md border border-border bg-surface-4 px-2 py-1.5">
+        <ArrowRightLine color={colors['muted-foreground']} size={14} />
+        <Text className="text-foreground" numberOfLines={1} size="xs">
+          {`Move into ${folder.name}`}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
 export type FileSystemDragScopeProps = { children: ReactNode };
 
 /**
@@ -103,6 +185,7 @@ export function FileSystemDragScope({ children }: FileSystemDragScopeProps) {
   const { index } = useFileSystemEntries();
   const { selectedPaths } = useFileSystemSelection();
   const { clearSelection } = useFileSystemSelectionActions();
+  const containerRef = useRef<View | null>(null);
 
   // Resolved against the index at lift time rather than carried on each row: a
   // group's payload has to describe entries whose own components were never asked
@@ -133,14 +216,17 @@ export function FileSystemDragScope({ children }: FileSystemDragScopeProps) {
   );
 
   return (
-    <MultiDragManager
-      className="min-h-0 flex-1"
-      getGroupData={getGroupData}
-      onDragStart={handleDragStart}
-      renderPreview={renderPreview}
-      selectedIds={selectedPaths}
-    >
-      {children}
-    </MultiDragManager>
+    <View className="min-h-0 flex-1" ref={containerRef}>
+      <MultiDragManager
+        className="min-h-0 flex-1"
+        getGroupData={getGroupData}
+        onDragStart={handleDragStart}
+        renderPreview={renderPreview}
+        selectedIds={selectedPaths}
+      >
+        {children}
+      </MultiDragManager>
+      <FileSystemDropHint containerRef={containerRef} />
+    </View>
   );
 }

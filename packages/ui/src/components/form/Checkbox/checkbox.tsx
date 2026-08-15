@@ -82,11 +82,18 @@ export function Checkbox({
             showMark ? 'border-primary' : 'border-muted-foreground/50',
           )}
         >
-          {/* Fill fades in on check and out on uncheck, same timing as the mark. */}
+          {/* Fill fades in on check and out on uncheck, same timing as the mark.
+              `-inset-0.5` (=-2px) makes it cover the whole 2px border band, so
+              the checked box is one solid primary surface. Anything less — the
+              old `-inset-px` covered only half the border — leaves the border's
+              antialiased inner edge showing through as a hairline of the
+              unchecked `bg-surface-3` between the border and the fill. The
+              parent's `overflow-hidden rounded-md` clips it to the exact box
+              shape. */}
           <MotiView
             animate={{ opacity: showMark ? 1 : 0 }}
             transition={reduce ? TIMING_INSTANT : ct}
-            className="absolute -inset-px bg-primary"
+            className="absolute -inset-0.5 bg-primary"
           />
           <AnimatePresence>
             {showMark ? (

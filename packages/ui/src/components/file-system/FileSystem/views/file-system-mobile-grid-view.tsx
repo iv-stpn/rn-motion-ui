@@ -55,8 +55,9 @@ const FOLDER_GLYPH_SIZE = 56;
 /** Fallback portrait ratio, matching `FileVisual`'s default. */
 const DEFAULT_PREVIEW_RATIO = 0.72;
 
-/** How faint the tile left behind under a drag reads — same as the desktop icons tile. */
-const DRAG_SOURCE_CLASSNAME = 'opacity-40';
+/** How the tile left behind under a drag reads — and what the lifted ghost copy
+ *  carries with it: a card, so the ghost stays visible against the page. */
+const DRAG_SOURCE_CLASSNAME = 'rounded-lg bg-surface-3 shadow-lg';
 
 /** Preview width that fits a file's thumbnail inside the box without clipping. */
 function previewWidthFor(tileWidth: number, entry: FileEntry): number {
@@ -173,7 +174,7 @@ function MobileGridTile({
           testID={testID}
         >
           <View
-            className={cn('overflow-hidden rounded-lg bg-surface-2', showsSelected && 'bg-surface-selected')}
+            className={cn('overflow-hidden rounded-lg bg-surface-2', showsSelected && 'bg-info/15')}
             style={{ height: GLYPH_BOX_HEIGHT, width: '100%' }}
           >
             <View className="size-full items-center justify-center p-1">

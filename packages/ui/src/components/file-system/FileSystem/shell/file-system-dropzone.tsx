@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
+/** biome-ignore-all lint/style/useComponentExportOnlyModules: the zone→destination registry is a module-level lookup for the drop hint, not a component */
 // A folder that will take a drop, wherever it is drawn.
 //
 // One component behind all four cases — a list row, an icons tile, a columns row,
@@ -13,7 +14,7 @@
 // a context would be a second path to values that are already in hand.
 
 import type { ReactNode, Ref } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { View } from 'react-native';
 import { Dragzone } from '../../../gestures/Dragzone/dragzone';
@@ -27,6 +28,24 @@ import type {
 } from '../../../gestures/drag.types';
 import { acceptsFileSystemDrop, movableFileSystemSources, readFileSystemDragItems } from '../logic/file-system-drag';
 import type { FileSystemExternalDropEvent, FileSystemMoveEvent } from '../types/file-system.types';
+
+// The `<Dragzone>` ids are runtime `useId()`s, opaque to the views. The drop hint
+// (the "Move into …" chip that follows the drag ghost) needs to turn the store's
+// `overZoneId` back into a folder, so every dropzone publishes its mapping here.
+const zoneDestinations = new Map<string, string>();
+
+export function registerZoneDestination(zoneId: string, destination: string): void {
+  zoneDestinations.set(zoneId, destination);
+}
+
+export function unregisterZoneDestination(zoneId: string): void {
+  zoneDestinations.delete(zoneId);
+}
+
+/** The destination folder a zone id accepts drops for, or `undefined` when the zone is gone. */
+export function zoneDestinationFor(zoneId: string): string | undefined {
+  return zoneDestinations.get(zoneId);
+}
 
 /**
  * Whether a drag the library *did* see start is nonetheless foreign to this
@@ -164,6 +183,27 @@ export function FileSystemDropzone({
     [destination, onDropCompleted, onExternalDrop, onMove],
   );
 
+  // The Dragzone's id is a runtime `useId()`; the hint needs it to resolve
+  // `overZoneId` back to this folder, so publish the mapping once the zone has
+  // mounted and withdraw it on unmount.
+  const zoneRef = useRef<DragzoneHandle | null>(null);
+  const handleZoneRef = useCallback(
+    (node: DragzoneHandle | null) => {
+      zoneRef.current = node;
+      if (typeof ref === 'function') ref(node);
+      else if (ref !== null && ref !== undefined) ref.current = node;
+    },
+    [ref],
+  );
+
+  // biome-ignore lint/plugin: the zone id is only known after the Dragzone mounts, so the mapping must be published in an effect
+  useEffect(() => {
+    const zoneId = zoneRef.current?.getId();
+    if (zoneId === undefined) return;
+    registerZoneDestination(zoneId, destination);
+    return () => unregisterZoneDestination(zoneId);
+  }, [destination]);
+
   return (
     <Dragzone
       accepts={accepts}
@@ -173,7 +213,7 @@ export function FileSystemDropzone({
       dropEffect="move"
       onDrop={handleDrop}
       priority={priority}
-      ref={ref}
+      ref={handleZoneRef}
       skipRectMeasure={skipRectMeasure}
       style={style}
       testID={testID}

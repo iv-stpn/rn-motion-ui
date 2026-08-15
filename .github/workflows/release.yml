@@ -125,3 +125,46 @@ jobs:
           path: storybook/native/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 7
+
+      # Serve the raw APK (no ZIP wrapper — artifact downloads always zip) via a
+      # prerelease asset, then post the public download link to @OffkeepBot —
+      # the same distribution pattern as the offkeep staging APK job.
+      - name: Create storybook prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: storybook-${{ github.run_number }}
+          name: "Storybook build #${{ github.run_number }}"
+          files: storybook/native/android/app/build/outputs/apk/release/app-release.apk
+          prerelease: true
+
+      - name: Send download link via Telegram
+        run: |
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M UTC')"
+          PARIS_DATE="$(TZ=Europe/Paris date +'%Y-%m-%d %H:%M Paris')"
+          APK_URL="https://github.com/${{ github.repository }}/releases/download/storybook-${{ github.run_number }}/app-release.apk"
+
+          MESSAGE="📦 *rn-motion-ui storybook APK*%0ACommit: \`${SHORT_SHA}\`%0ADate: ${BUILD_DATE} / ${PARIS_DATE}%0A%0A[⬇ Download APK](${APK_URL})"
+
+          RESPONSE=$(curl -s -w '%{http_code}' -o /tmp/telegram_response.json \
+            --max-time 30 \
+            -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "text=${MESSAGE}" \
+            -d "parse_mode=Markdown" \
+            -d "disable_web_page_preview=true")
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Telegram send failed with HTTP $RESPONSE"
+            cat /tmp/telegram_response.json
+            exit 1
+          fi
+
+          OK=$(python3 -c "import json; print(json.load(open('/tmp/telegram_response.json')).get('ok', False))")
+          if [ "$OK" != "True" ]; then
+            echo "Telegram API returned ok=false"
+            cat /tmp/telegram_response.json
+            exit 1
+          fi
+
+          echo "APK download link sent to Telegram"

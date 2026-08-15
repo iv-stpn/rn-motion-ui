@@ -2,27 +2,40 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: the view and its row/overlay parts are one render layer */
 // The mobile list view: a flat two-line list for touch.
 //
-// No header, no disclosure tree, no drag and no hover — a phone has no right
-// button and no column header to click. Each row carries a visible kebab (the
-// same `FileSystemMobileMenu` the grid tiles use), and long-press is the way into
-// multi-select: once anything is selected the kebab yields to a checkbox.
+// No header and no disclosure tree — a phone has no column header to click and no
+// room for a tree. Each row carries a visible kebab (the same `FileSystemMobileMenu`
+// the grid tiles use), and long-press is the way into multi-select: once anything
+// is selected the kebab yields to a checkbox. The same hold that toggles the
+// selection keeps dragging past the escape slop, lifting the multi-selection onto
+// a folder row — the drag wiring mirrors the desktop list view (`ListRow`), with
+// no hover anywhere: a phone has no right button and no pointer to hover with.
 
 import { useCallback, useMemo, useRef } from 'react';
-import type { GestureResponderEvent } from 'react-native';
+import type { GestureResponderEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { FlatList, Pressable, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
 import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
+import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
+import type { DragzoneRenderState } from '../../../gestures/drag.types';
 import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
+import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
+import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
 import { useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { formatFileSystemStats } from '../logic/file-system-format';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
-import type { FileSystemEntry, FileSystemViewProps } from '../types/file-system.types';
+import { FileSystemDropzone } from '../shell/file-system-dropzone';
+import type {
+  FileSystemEntry,
+  FileSystemExternalDropEvent,
+  FileSystemMoveEvent,
+  FileSystemViewProps,
+} from '../types/file-system.types';
 import { FileSystemMobileMenu } from './file-system-mobile-menu';
 
 /** A two-line row, taller than the desktop list's single line. */
@@ -50,11 +63,15 @@ type MobileListRenderItem = { item: FileSystemEntry };
 
 type MobileListRowProps = {
   childCount: number | undefined;
+  draggable: boolean;
+  ensureChildren?: (folderPath: string) => void;
   entry: FileSystemEntry;
   getContextMenuActions?: FileSystemViewProps['getContextMenuActions'];
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: FileSystemViewProps['onContextMenuAction'];
+  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
+  onMove?: (event: FileSystemMoveEvent) => void;
   onSelectLongPress: ((entry: FileSystemEntry) => void) | undefined;
   onToggleSelect: (entry: FileSystemEntry) => void;
   onScrubStart: (entry: FileSystemEntry, x: number, y: number) => void;
@@ -72,11 +89,15 @@ type MobileListRowProps = {
  */
 function MobileListRow({
   childCount,
+  draggable,
+  ensureChildren,
   entry,
   getContextMenuActions,
   isSelected,
   onActivate,
   onContextMenuAction,
+  onExternalDrop,
+  onMove,
   onSelectLongPress,
   onToggleSelect,
   onScrubStart,
@@ -91,7 +112,7 @@ function MobileListRow({
   // The row has no menu of its own — the kebab is the menu. Passing no
   // `getContextMenuActions` keeps `HoldContextMenu` inert (empty items), so a
   // hold fires only `onHoldAction` (the multi-select toggle) rather than a panel.
-  const { handleOpenChange, handlePress, menuProps, onHoldAction } = useFileSystemRowInteraction({
+  const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
     entry,
     getContextMenuActions: undefined,
     onActivate,
@@ -99,14 +120,25 @@ function MobileListRow({
     onSelectLongPress,
   });
 
-  const isActive = isSelected;
+  // `dragOptions` upgrades the inert hold to a `<HoldDraggable>`: the hold still
+  // toggles the selection, then a move past the escape slop lifts the multi-drag
+  // payload. Undefined when dragging is off, which keeps the hold a plain
+  // `Holdable` with no drag at all.
+  const dragOptions = useFileSystemDragOptions(entry, draggable);
+  // Every row the drag carries fades, not just the one that was grabbed — which
+  // is the whole point of dragging a selection.
+  const isDragSource = useIsLifting(entry.path);
+
+  // Only a selection lights the row; a row mid-drag dims instead, and the drop
+  // target gets the info outline — the same split the desktop list draws.
+  const isActive = isSelected && !isDragSource;
   const textClassName = isActive ? 'text-white' : 'text-foreground';
   const metaClassName = isActive ? 'text-white' : 'text-muted-foreground';
   const stats = formatFileSystemStats(entry, childCount);
 
-  return (
-    <View className={cn('relative', isActive && 'bg-info')} style={{ height: MOBILE_ROW_HEIGHT }}>
-      <HoldContextMenu {...menuProps} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+  const row = (
+    <View className={cn('relative', isActive && 'bg-info', isDragSource && 'bg-muted')} style={{ height: MOBILE_ROW_HEIGHT }}>
+      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
         <Pressable
           accessibilityLabel={entry.name}
           accessibilityRole="button"
@@ -115,6 +147,9 @@ function MobileListRow({
           aria-selected={isSelected}
           className="flex-row items-center gap-2 px-3 pr-8"
           onPress={handlePress}
+          // Resets the hold-vs-tap latch on the way in, so a fresh press cannot
+          // inherit the previous one's hold (the desktop rows do the same).
+          onPressIn={handlePressIn}
           style={{ height: MOBILE_ROW_HEIGHT }}
           testID={testID}
         >
@@ -154,15 +189,42 @@ function MobileListRow({
       </View>
     </View>
   );
+
+  // A file row is never a drop target. A folder row keeps its dropzone mounted
+  // whether or not dragging is on — `disabled` refuses everything when it is
+  // not, because swapping the wrapper for a plain View on a prop change is a
+  // structural DOM mutation that can tear an in-flight drag down.
+  if (entry.kind !== 'folder') return row;
+
+  return (
+    <FileSystemDropzone
+      destination={entry.path}
+      disabled={!draggable}
+      onDropCompleted={ensureChildren}
+      onExternalDrop={onExternalDrop}
+      onMove={onMove}
+    >
+      {({ isOver }: DragzoneRenderState) => (
+        <>
+          {row}
+          {isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null}
+        </>
+      )}
+    </FileSystemDropzone>
+  );
 }
 
 export function FileSystemMobileListView({
+  draggable = false,
+  ensureChildren,
   entries,
   getContextMenuActions,
   index,
   onContextMenuAction,
   onDeselectMarquee,
+  onExternalDrop,
   onMarquee,
+  onMove,
   onOpen,
   onSelect,
   renderEntryIcon,
@@ -222,15 +284,32 @@ export function FileSystemMobileListView({
     [begin, orderedPaths],
   );
 
+  const containerRef = useRef<View | null>(null);
+  const flatListRef = useRef<FlatList<FileSystemEntry> | null>(null);
+  const scrollOffsetRef = useRef(0);
+
+  // A drag near the top or bottom edge scrolls the list, so a folder below the
+  // fold is reachable without releasing. Runs for external drags too.
+  const scrollTo = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ animated: false, offset }), []);
+  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
+
+  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+  }, []);
+
   const renderRow = useCallback(
     ({ item }: MobileListRenderItem) => (
       <MobileListRow
         childCount={index.children.get(item.path)?.length}
+        draggable={draggable}
+        ensureChildren={ensureChildren}
         entry={item}
         getContextMenuActions={getContextMenuActions}
         isSelected={selectedPaths.has(item.path)}
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
+        onExternalDrop={onExternalDrop}
+        onMove={onMove}
         onScrubStart={beginScrub}
         onScrubMove={moveScrub}
         onScrubEnd={endScrub}
@@ -244,11 +323,15 @@ export function FileSystemMobileListView({
     [
       activate,
       beginScrub,
+      draggable,
       endScrub,
+      ensureChildren,
       getContextMenuActions,
       index,
       moveScrub,
       onContextMenuAction,
+      onExternalDrop,
+      onMove,
       renderEntryIcon,
       selectedPaths,
       selectLongPress,
@@ -259,14 +342,17 @@ export function FileSystemMobileListView({
   );
 
   return (
-    <View className="min-h-0 flex-1">
+    <View className="min-h-0 flex-1" ref={containerRef}>
       <FlatList
+        ref={flatListRef}
         className="flex-1"
         data={entries}
         extraData={selectedPaths}
         getItemLayout={getItemLayout}
         keyExtractor={keyExtractor}
+        onScroll={onScroll}
         renderItem={renderRow}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       />
     </View>

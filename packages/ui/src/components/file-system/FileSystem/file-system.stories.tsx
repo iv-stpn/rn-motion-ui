@@ -10,7 +10,7 @@ import { LinkLine as Link } from 'rn-motion-ui-icons/icons/link-line';
 import { SearchLine as SearchIcon } from 'rn-motion-ui-icons/icons/search-line';
 import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
-import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer } from '../../../__stories__/story-drag';
+import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer, settle } from '../../../__stories__/story-drag';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -1633,6 +1633,65 @@ async function longPress(node: Element): Promise<void> {
 }
 
 /**
+ * Hold `node`, then — without lifting — drag to `to` and release there, as a
+ * touch pointer the whole way. `onHeld` runs between the hold firing and the
+ * drag lifting, for assertions on the state the hold produced (selection, kebab →
+ * checkbox) while the finger is still down.
+ *
+ * A finger never starts an HTML5 drag, so this exercises the pointer transport
+ * (`use-draggable-pointer.ts`), which accepts only `pointerType: 'touch'`: the
+ * hold fires the same multi-select toggle as `longPress`, movement past the
+ * escape slop lifts the drag, and the release resolves the drop off measured
+ * rects (`measureInWindow` → `setTimeout 0`) — hence the `settle()` before
+ * returning, and the `waitFor` callers still use before asserting the outcome.
+ */
+async function holdDrag(node: Element, to: ClientPoint, onHeld?: () => void | Promise<void>): Promise<void> {
+  const from = centreOf(node);
+  node.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      buttons: 1,
+      cancelable: true,
+      clientX: from.x,
+      clientY: from.y,
+      pointerId: 2,
+      pointerType: 'touch',
+    }),
+  );
+  // Past the resolved holdDelay (300ms), where the hold fires the toggle.
+  await new Promise((resolve) => setTimeout(resolve, LONG_PRESS_MS));
+  await onHeld?.();
+  // Interpolated touch moves, so the transport sees the travel cross the escape
+  // slop — the same stepping `sweep` uses, with `pointerType: 'touch'`.
+  const steps = 6;
+  for (let step = 1; step <= steps; step += 1) {
+    const ratio = step / steps;
+    node.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        buttons: 1,
+        cancelable: true,
+        clientX: from.x + (to.x - from.x) * ratio,
+        clientY: from.y + (to.y - from.y) * ratio,
+        pointerId: 2,
+        pointerType: 'touch',
+      }),
+    );
+  }
+  node.dispatchEvent(
+    new PointerEvent('pointerup', {
+      bubbles: true,
+      cancelable: true,
+      clientX: to.x,
+      clientY: to.y,
+      pointerId: 2,
+      pointerType: 'touch',
+    }),
+  );
+  await settle();
+}
+
+/**
  * `selectionMode="multiple"` adds the two gestures a file browser is expected to
  * have: Ctrl-click (Cmd-click on macOS) on web, and a long-press on touch. Both
  * toggle the entry under the pointer in or out of the selection; a plain press
@@ -2489,11 +2548,13 @@ export const GalleryMultiSelect: Story = {
 };
 
 // ─── Mobile views ──────────────────────────────────────────────────────────────
-// The two touch views. They drop the desktop's marquee, drag and hover — a phone
-// has no right button to summon a menu — and give every entry a visible kebab
-// instead. A long-press is the way into multi-select; once anything is selected
-// every kebab becomes a checkbox, checked on the selection (see
-// `FileSystemMobileMenu`).
+// The two touch views. They drop the desktop's marquee and hover — a phone has no
+// right button to summon a menu and no pointer to hover with — and give every
+// entry a visible kebab instead. A long-press is the way into multi-select; once
+// anything is selected every kebab becomes a checkbox, checked on the selection
+// (see `FileSystemMobileMenu`). The same hold keeps dragging past the escape slop,
+// so a held selection lifts onto a folder row or tile — see the three
+// `Mobile*DragAndDrop` stories below.
 
 /**
  * The mobile grid at phone width: two thumbnail columns, the name left-aligned
@@ -2558,14 +2619,17 @@ export const MobileMultiSelect: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('README.md'))[0]).toBeDefined();
 
     // Every entry starts with a kebab and no checkbox in sight.
     await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-kebab`);
     expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-checkbox`)).toBeNull();
 
     // A long press selects the entry under the finger.
-    await longPress(await canvas.findByRole('button', { name: 'README.md' }));
+    const readmeRow = (await canvas.findAllByRole('button', { name: 'README.md' }))[0];
+    if (!readmeRow) throw new Error('no README.md row rendered');
+    await longPress(readmeRow);
     await waitFor(() =>
       expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([expect.objectContaining({ name: 'README.md' })]),
     );
@@ -2585,6 +2649,162 @@ export const MobileMultiSelect: Story = {
     );
     expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Roadmap.pptx-checkbox`)).toHaveAttribute('aria-checked', 'true');
     await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
+  },
+};
+
+/**
+ * The mobile list's drag-and-drop, driven by the browser's own HTML5 drag exactly
+ * like the desktop views: `draggable` makes every row a drag source and every
+ * folder row a drop target. A FILE row is no destination, so the same drag onto
+ * one falls through to the background zone — the open folder, which is where the
+ * entry already is, so it is not a move either.
+ */
+export const MobileListDragAndDrop: Story = {
+  name: 'Demo: Mobile list drag and drop',
+  decorators: [
+    (Story) => (
+      <View style={{ maxWidth: '100%', width: MOBILE_WIDTH }}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: { defaultView: 'mobile-list', draggable: true, onMove: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('Roadmap.pptx'))[0]).toBeDefined();
+
+    const row = await listRow(canvas, 'Roadmap.pptx');
+    const folder = await listRow(canvas, 'Documents');
+
+    // The one part of a drag no play function can perform: the browser lifting a
+    // node at all. What the component owes it is the attribute, set on the host
+    // `<HoldDraggable>` above the row.
+    await expect(dragHost(row)).toHaveAttribute('draggable', 'true');
+
+    const transfer = newDragTransfer();
+    await dragOnto({ source: row, target: folder, to: centerOf(folder), transfer });
+    fireDrag(row, 'dragend', transfer, centerOf(folder));
+    await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
+
+    // A file row is no destination, so the same drag onto one falls through to the
+    // background zone — the open folder, which is where the entry already is, so
+    // it is not a move either. Without this the assertion above would also pass on
+    // a component that reported every release as a drop.
+    const file = await listRow(canvas, 'Budget-2026.xlsx');
+    const second = newDragTransfer();
+    await dragOnto({ source: row, target: file, to: centerOf(file), transfer: second });
+    fireDrag(row, 'dragend', second, centerOf(file));
+    await expect(args.onMove).toHaveBeenCalledTimes(1);
+  },
+};
+
+/**
+ * The same HTML5 gesture in the mobile grid: the tile buttons are the sources and
+ * folder tiles take the drop, mirroring the desktop icons view.
+ */
+export const MobileGridDragAndDrop: Story = {
+  name: 'Demo: Mobile grid drag and drop',
+  decorators: [
+    (Story) => (
+      <View style={{ maxWidth: '100%', width: MOBILE_WIDTH }}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: { defaultView: 'mobile-grid', draggable: true, onMove: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // findAllByRole: HoldContextMenu double-renders draggable tiles — pick first.
+    const tiles = await canvas.findAllByRole('button', { name: 'Roadmap.pptx' });
+    const tile = tiles[0];
+    if (!tile) throw new Error('no Roadmap.pptx tile rendered');
+    const folderTiles = await canvas.findAllByRole('button', { name: 'Documents' });
+    const folderTile = folderTiles[0];
+    if (!folderTile) throw new Error('no Documents tile rendered');
+
+    await expect(dragHost(tile)).toHaveAttribute('draggable', 'true');
+
+    const transfer = newDragTransfer();
+    await dragOnto({ source: tile, target: folderTile, to: centerOf(folderTile), transfer });
+    fireDrag(tile, 'dragend', transfer, centerOf(folderTile));
+    await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
+
+    // A file tile is no destination either.
+    const fileTiles = await canvas.findAllByRole('button', { name: 'Budget-2026.xlsx' });
+    const fileTile = fileTiles[0];
+    if (!fileTile) throw new Error('no Budget-2026.xlsx tile rendered');
+    const second = newDragTransfer();
+    await dragOnto({ source: tile, target: fileTile, to: centerOf(fileTile), transfer: second });
+    fireDrag(tile, 'dragend', second, centerOf(fileTile));
+    await expect(args.onMove).toHaveBeenCalledTimes(1);
+  },
+};
+
+/**
+ * The flagship mobile flow: hold selects, keep dragging, release on a folder —
+ * all through the TOUCH pointer path, since a finger never starts an HTML5 drag.
+ *
+ * The hold fires the multi-select toggle first (the kebab yields to a checked
+ * checkbox while the finger is still down), then movement past the escape slop
+ * lifts the drag, and the release resolves the drop off measured rects — which is
+ * why `holdDrag` settles before returning and the assertions below waitFor.
+ *
+ * A drag lifted from a selected entry carries the whole multi-selection. The
+ * hold is an additive *toggle* — it joins the held entry to whatever is already
+ * selected — so the multi-drag is built the mobile way: toggle the first entry
+ * back out, long-press a second one, then hold-drag the first again; the hold
+ * re-joins it and the lift carries both paths.
+ */
+export const MobileHoldDragAndDrop: Story = {
+  name: 'Demo: Mobile hold-drag onto a folder',
+  decorators: [
+    (Story) => (
+      <View style={{ maxWidth: '100%', width: MOBILE_WIDTH }}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: { defaultView: 'mobile-list', draggable: true, selectionMode: 'multiple', onMove: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    // findAllByText: HoldContextMenu double-renders draggable rows — pick first.
+    expect((await canvas.findAllByText('Roadmap.pptx'))[0]).toBeDefined();
+
+    const row = await listRow(canvas, 'Roadmap.pptx');
+    const folder = await listRow(canvas, 'Documents');
+
+    // Hold fires the multi-select toggle before any drag lifts: the kebab yields
+    // to a checked checkbox while the finger is still down.
+    await holdDrag(row, centreOf(folder), async () => {
+      await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Roadmap.pptx-checkbox`);
+      await waitFor(() => expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}Roadmap.pptx-kebab`)).toBeNull());
+      await waitFor(() => expect(selectedPaths(canvas)).toEqual(['Roadmap.pptx']));
+    });
+    await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
+
+    // Build a multi-selection the mobile way. The hold is a toggle, so the entry
+    // being dragged has to be *outside* the selection when the hold fires — the
+    // hold joins it, and the lift then carries the whole selection.
+    const readme = (await canvas.findAllByRole('button', { name: 'README.md' }))[0];
+    if (!readme) throw new Error('no README.md row rendered');
+    await longPress(row); // toggles Roadmap back out of the first drag's selection
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual([]));
+    await longPress(readme);
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md']));
+
+    const photos = await listRow(canvas, 'Photos');
+    await holdDrag(row, centreOf(photos), async () => {
+      // The hold just joined Roadmap to the existing README selection.
+      await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
+    });
+    await waitFor(() =>
+      expect(args.onMove).toHaveBeenLastCalledWith({
+        destination: 'Photos/',
+        sources: expect.arrayContaining(['README.md', 'Roadmap.pptx']),
+      }),
+    );
   },
 };
 

@@ -2,27 +2,40 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: the tile, its glyph box and its name row are one render layer */
 // The mobile grid view: a two-column thumbnail grid for touch.
 //
-// Unlike the desktop `icons` view this one carries no drag, marquee or hover —
-// a phone has no right button to summon a menu, so each tile shows a visible
-// kebab instead, and long-press is the way into multi-select. Once anything is
-// selected every kebab becomes a checkbox (see `FileSystemMobileMenu`), which is
-// the classic mobile file-manager idiom.
+// Unlike the desktop `icons` view this one carries no marquee or hover — a phone
+// has no right button to summon a menu and no pointer to hover with — so each tile
+// shows a visible kebab instead, and long-press is the way into multi-select. Once
+// anything is selected every kebab becomes a checkbox (see `FileSystemMobileMenu`),
+// which is the classic mobile file-manager idiom. The same hold that toggles the
+// selection keeps dragging past the escape slop, lifting the multi-selection onto
+// a folder tile — the drag wiring mirrors the desktop `IconTile`.
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { GestureResponderEvent, LayoutChangeEvent } from 'react-native';
+import type { GestureResponderEvent, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Pressable, ScrollView, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
 import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
+import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
+import type { DragzoneRenderState } from '../../../gestures/drag.types';
 import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
+import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
+import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
 import { useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
-import type { FileEntry, FileSystemEntry, FileSystemViewProps } from '../types/file-system.types';
+import { FileSystemDropzone } from '../shell/file-system-dropzone';
+import type {
+  FileEntry,
+  FileSystemEntry,
+  FileSystemExternalDropEvent,
+  FileSystemMoveEvent,
+  FileSystemViewProps,
+} from '../types/file-system.types';
 import { FileSystemMobileMenu } from './file-system-mobile-menu';
 import { FileVisual } from './file-system-visual';
 
@@ -42,6 +55,9 @@ const FOLDER_GLYPH_SIZE = 56;
 /** Fallback portrait ratio, matching `FileVisual`'s default. */
 const DEFAULT_PREVIEW_RATIO = 0.72;
 
+/** How faint the tile left behind under a drag reads — same as the desktop icons tile. */
+const DRAG_SOURCE_CLASSNAME = 'opacity-40';
+
 /** Preview width that fits a file's thumbnail inside the box without clipping. */
 function previewWidthFor(tileWidth: number, entry: FileEntry): number {
   const ratio = entry.previewAspectRatio ?? DEFAULT_PREVIEW_RATIO;
@@ -55,11 +71,15 @@ type MobileGridTileProps = Pick<
   FileSystemViewProps,
   'loadPreviewImageUrl' | 'pageUrlCache' | 'renderEntryIcon' | 'renderFilePreview'
 > & {
+  draggable: boolean;
+  ensureChildren?: (folderPath: string) => void;
   entry: FileSystemEntry;
   isSelected: boolean;
   selecting: boolean;
   tileWidth: number;
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
+  onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
+  onMove?: (event: FileSystemMoveEvent) => void;
   onSelectLongPress: ((entry: FileSystemEntry) => void) | undefined;
   onScrubStart: (entry: FileSystemEntry, x: number, y: number) => void;
   onScrubMove: (x: number, y: number) => void;
@@ -73,12 +93,16 @@ type MobileGridTileProps = Pick<
 
 /** One tile: a tappable glyph + two-line name, with the kebab/checkbox overlaid to the right of the name. */
 function MobileGridTile({
+  draggable,
+  ensureChildren,
   entry,
   getContextMenuActions,
   isSelected,
   loadPreviewImageUrl,
   onActivate,
   onContextMenuAction,
+  onExternalDrop,
+  onMove,
   onScrubStart,
   onScrubMove,
   onScrubEnd,
@@ -98,13 +122,25 @@ function MobileGridTile({
   // The body has no menu of its own — the kebab is the menu. Passing no
   // `getContextMenuActions` keeps `HoldContextMenu` inert (empty items), so a
   // hold fires only `onHoldAction` (the multi-select toggle) rather than a panel.
-  const { handleOpenChange, handlePress, menuProps, onHoldAction } = useFileSystemRowInteraction({
+  const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
     entry,
     getContextMenuActions: undefined,
     onActivate,
     onContextMenuAction: undefined,
     onSelectLongPress,
   });
+
+  // `dragOptions` upgrades the inert hold to a `<HoldDraggable>`: the hold still
+  // toggles the selection, then a move past the escape slop lifts the multi-drag
+  // payload. Undefined when dragging is off, which keeps the hold a plain
+  // `Holdable` with no drag at all.
+  const dragOptions = useFileSystemDragOptions(entry, draggable);
+  // Every tile the drag carries fades, not just the one that was grabbed — which
+  // is the whole point of dragging a selection.
+  const isDragSource = useIsLifting(entry.path);
+  // The source wears the selected face for the length of the drag, so the tiles
+  // the drag came from are not the only cells on screen with no mark at all.
+  const showsSelected = isSelected || isDragSource;
 
   // The scrub's hit-test reads each tile's content rect, so report it on layout. The
   // rect is relative to the flex-wrap content view — the same space `resolveItemAt`
@@ -114,23 +150,30 @@ function MobileGridTile({
     [entry, onTileLayout],
   );
 
-  return (
+  const tile = (
     <View onLayout={handleTileLayout} style={{ width: tileWidth }}>
       {/* The tappable body: the glyph box then the name. The name row reserves the
           right edge (`pr-7`) for the control overlaid below, so the two never overlap
           and the control is a sibling rather than a button inside a button. */}
-      <HoldContextMenu {...menuProps} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
         <Pressable
           accessibilityLabel={entry.name}
           accessibilityRole="button"
           accessibilityState={{ selected: isSelected }}
           // Both, deliberately: native reads `accessibilityState`, RNW maps `aria-selected`.
           aria-selected={isSelected}
+          // The tile keeps its slot while dragged and just fades — the same "left
+          // behind" cue a desktop file manager gives, and it keeps the grid from
+          // reflowing under a drag that may still be cancelled.
+          className={cn(isDragSource && DRAG_SOURCE_CLASSNAME)}
           onPress={handlePress}
+          // Resets the hold-vs-tap latch on the way in, so a fresh press cannot
+          // inherit the previous one's hold (the desktop tiles do the same).
+          onPressIn={handlePressIn}
           testID={testID}
         >
           <View
-            className={cn('overflow-hidden rounded-lg bg-surface-2', isSelected && 'bg-surface-selected')}
+            className={cn('overflow-hidden rounded-lg bg-surface-2', showsSelected && 'bg-surface-selected')}
             style={{ height: GLYPH_BOX_HEIGHT, width: '100%' }}
           >
             <View className="size-full items-center justify-center p-1">
@@ -187,15 +230,42 @@ function MobileGridTile({
       </View>
     </View>
   );
+
+  // A file tile is never a drop target. A folder tile keeps its dropzone mounted
+  // whether or not dragging is on — `disabled` refuses everything when it is
+  // not, because swapping the wrapper for a plain View on a prop change is a
+  // structural DOM mutation that can tear an in-flight drag down.
+  if (entry.kind !== 'folder') return tile;
+
+  return (
+    <FileSystemDropzone
+      destination={entry.path}
+      disabled={!draggable}
+      onDropCompleted={ensureChildren}
+      onExternalDrop={onExternalDrop}
+      onMove={onMove}
+    >
+      {({ isOver }: DragzoneRenderState) => (
+        <>
+          {tile}
+          {isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null}
+        </>
+      )}
+    </FileSystemDropzone>
+  );
 }
 
 export function FileSystemMobileGridView({
+  draggable = false,
+  ensureChildren,
   entries,
   getContextMenuActions,
   loadPreviewImageUrl,
   onContextMenuAction,
   onDeselectMarquee,
+  onExternalDrop,
   onMarquee,
+  onMove,
   onOpen,
   onSelect,
   pageUrlCache,
@@ -279,13 +349,34 @@ export function FileSystemMobileGridView({
   const tileWidth =
     width > 0 ? Math.max(0, Math.floor((width - GRID_PADDING * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS)) : 0;
 
+  const containerRef = useRef<View | null>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollOffsetRef = useRef(0);
+
+  // A drag near the top or bottom edge scrolls the grid, so a folder below the
+  // fold is reachable without releasing. Runs for external drags too.
+  const scrollTo = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
+  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
+
+  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+  }, []);
+
   return (
-    <View className="min-h-0 flex-1" onLayout={handleLayout}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+    <View className="min-h-0 flex-1" onLayout={handleLayout} ref={containerRef}>
+      <ScrollView
+        className="flex-1"
+        onScroll={onScroll}
+        ref={scrollRef}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
         {tileWidth > 0 ? (
           <View className="flex-row flex-wrap" style={{ columnGap: GRID_GAP, padding: GRID_PADDING, rowGap: 12 }}>
             {entries.map((entry) => (
               <MobileGridTile
+                draggable={draggable}
+                ensureChildren={ensureChildren}
                 entry={entry}
                 getContextMenuActions={getContextMenuActions}
                 isSelected={selectedPaths.has(entry.path)}
@@ -293,6 +384,8 @@ export function FileSystemMobileGridView({
                 loadPreviewImageUrl={loadPreviewImageUrl}
                 onActivate={activate}
                 onContextMenuAction={onContextMenuAction}
+                onExternalDrop={onExternalDrop}
+                onMove={onMove}
                 onScrubStart={beginScrub}
                 onScrubMove={moveScrub}
                 onScrubEnd={endScrub}

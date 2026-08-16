@@ -446,6 +446,12 @@ function FileSystemColumnImpl({
         renderItem={renderRow}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        // Nested inside the consumer's own ScrollView — Android only scrolls a
+        // child of a scroll container when it opts into nested scrolling.
+        nestedScrollEnabled={true}
+        // Off: Android's default true wrongly detaches visible cells when the
+        // list is nested inside a ScrollView.
+        removeClippedSubviews={false}
       />
       <FileSystemMarqueeBox controller={marquee} />
     </View>

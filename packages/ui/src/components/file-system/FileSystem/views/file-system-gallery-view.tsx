@@ -94,6 +94,9 @@ function GallerySidebar({ entry, index, renderFilePreview, sizeLabel }: SidebarP
       contentContainerClassName="gap-3 p-4"
       showsVerticalScrollIndicator={false}
       style={{ width: SIDEBAR_WIDTH }}
+      // Nested inside the consumer's own ScrollView — Android only scrolls a
+      // child of a scroll container when it opts into nested scrolling.
+      nestedScrollEnabled={true}
     >
       <View className="flex-row items-center gap-3">
         {entry.kind === 'folder' ? (

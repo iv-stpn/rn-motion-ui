@@ -288,6 +288,9 @@ export function FileSystemIconsView({
       onScroll={onScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
+      // Nested inside the consumer's own ScrollView — Android only scrolls a
+      // child of a scroll container when it opts into nested scrolling.
+      nestedScrollEnabled={true}
     >
       {width > 0 ? (
         <LayoutAnimationConfig key={gridKey} skipEntering={true} skipExiting={true}>

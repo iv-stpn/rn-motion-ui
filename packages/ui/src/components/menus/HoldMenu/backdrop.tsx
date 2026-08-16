@@ -4,7 +4,6 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   runOnJS,
-  useAnimatedProps,
   useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
@@ -89,15 +88,6 @@ const BackdropComponent = () => {
     };
   }, [windowSize, reducedMotion]);
 
-  const animatedContainerProps = useAnimatedProps(
-    () => ({
-      intensity: withTiming(state.value === CONTEXT_MENU_STATE.ACTIVE ? 100 : 0, {
-        duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION,
-      }),
-    }),
-    [reducedMotion],
-  );
-
   const animatedInnerContainerStyle = useAnimatedStyle(() => {
     const backgroundColor = theme.value === 'light' ? BACKDROP_LIGHT_BACKGROUND_COLOR : BACKDROP_DARK_BACKGROUND_COLOR;
 
@@ -113,7 +103,7 @@ const BackdropComponent = () => {
   );
 
   const backdrop = (
-    <HoldMenuBlur animatedProps={animatedContainerProps} style={[styles.container, animatedContainerStyle]}>
+    <HoldMenuBlur style={[styles.container, animatedContainerStyle]}>
       <Animated.View
         style={[StyleSheet.absoluteFill, animatedInnerContainerStyle]}
         testID={activeTestID ? `${activeTestID}-backdrop` : undefined}

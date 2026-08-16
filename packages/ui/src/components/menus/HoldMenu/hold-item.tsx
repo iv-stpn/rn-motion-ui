@@ -7,11 +7,10 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { HoldItemTwin } from './hold-item-twin';
-import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, HOLD_MENU_LIFTS, SPRING_CONFIGURATION } from './hold-menu-constants';
+import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, HOLD_MENU_LIFTS } from './hold-menu-constants';
 import { useHoldMenuInternal } from './hold-menu-context';
 import type { HoldItemProps } from './hold-menu-types';
 import { useHoldItemActivation } from './use-hold-item-activation';
@@ -54,7 +53,7 @@ const HoldItemComponent = ({
   testID,
   children,
 }: HoldItemProps) => {
-  const { state, menuProps, windowSize, safeAreaInsets, reducedMotion } = useHoldMenuInternal();
+  const { state, menuProps, windowSize, safeAreaInsets, reducedMotion, rootRef } = useHoldMenuInternal();
 
   const isActive = useSharedValue(false);
   /** Stable key for the portal twin — generated once per item, never changes. */
@@ -81,6 +80,7 @@ const HoldItemComponent = ({
     activateFromContextMenu,
   } = useHoldItemActivation({
     containerRef,
+    rootRef,
     items,
     actionParams,
     disableMove,
@@ -115,26 +115,14 @@ const HoldItemComponent = ({
     const animateOpacity = () =>
       withDelay(reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 }));
 
-    // The item travels with the panel while the menu is active, using the
-    // same stored tY the Menu wrapper springs to — so both move as one. tY is
-    // nonzero only on overflow, so a menu that fits leaves the item exactly
-    // where it is. On native the original is hidden under the portal twin and
-    // only the twin carries the visible spring; on web this IS the visible
-    // item, which is what makes the web lift glide.
-    const tY = menuProps.value.transformValue;
-    const travelAnimation = () => {
-      if (disableMove) return 0;
-      if (isActive.value) {
-        if (reducedMotion.value === 1) return withTiming(tY, { duration: 0 });
-        return withSpring(tY, SPRING_CONFIGURATION);
-      }
-      return withTiming(0, { duration: HOLD_ITEM_TRANSFORM_DURATION });
-    };
-
+    // The in-place item never travels. Only the portal twin (native) carries
+    // the travel that keeps the pair on screen when the menu overflows — and
+    // on web there is no twin, so the item stays put and only squeezes/scales.
+    // This mirrors upstream, whose in-place item animates scale + opacity
+    // alone.
     return {
       opacity: isActive.value && HOLD_MENU_LIFTS ? 0 : animateOpacity(),
       transform: [
-        { translateY: travelAnimation() },
         {
           scale: isActive.value
             ? withTiming(1, {
@@ -145,7 +133,7 @@ const HoldItemComponent = ({
         },
       ],
     };
-  }, [reducedMotion, isActive, itemScale, menuProps, disableMove]);
+  }, [reducedMotion, isActive, itemScale]);
 
   const containerStyle = useMemo(() => [containerStyles, animatedContainerStyle], [containerStyles, animatedContainerStyle]);
 

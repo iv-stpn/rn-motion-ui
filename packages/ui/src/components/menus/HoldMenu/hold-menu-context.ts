@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
-import type { SharedValue } from 'react-native-reanimated';
+import type Animated from 'react-native-reanimated';
+import type { AnimatedRef, SharedValue } from 'react-native-reanimated';
 import type { CONTEXT_MENU_STATE } from './hold-menu-constants';
 import type { HoldMenuIconComponent, MenuInternalProps } from './hold-menu-types';
 
@@ -28,6 +29,14 @@ export type HoldMenuInternalContextType = {
   reducedMotion: SharedValue<0 | 1>;
   /** The provider's `iconComponent`, animated — or `null` when none was given. */
   AnimatedIcon: HoldMenuIconComponent | null;
+  /**
+   * Ref to the provider's root `Animated.View` — the containing block the
+   * `Menu`'s absolute positioning is relative to. `measure(rootRef)` yields its
+   * page offset, which activation subtracts from the held item's page coords so
+   * the menu anchors correctly even when the root is offset from the viewport
+   * origin (e.g. storybook's padding decorator on web).
+   */
+  rootRef: AnimatedRef<Animated.View>;
 };
 
 export const HoldMenuInternalContext = createContext<HoldMenuInternalContextType | null>(null);

@@ -13,9 +13,11 @@ export type HoldMenuBlurProps = {
   children?: ReactNode;
   /** The same style union an animated view accepts — plain styles or animated style handles. */
   style?: AnimatedProps<ViewProps>['style'];
+  /** Static blur strength — ignored here; web frosts via CSS `backdrop-filter`. */
+  intensity?: number;
   /**
-   * Animated blur props (`intensity`, `tint`) for the iOS `BlurView`. Ignored
-   * here — web renders a plain view, and `expo-blur` never enters the bundle.
+   * Animated blur props (`tint`) for the native `BlurView`. Ignored here — web
+   * renders a plain view, and `expo-blur` never enters the bundle.
    */
   animatedProps?: unknown;
   /** Web-only click handler (RNW forwards it on View) — the backdrop's close. */

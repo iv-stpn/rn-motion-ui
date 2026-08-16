@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedReaction, useSharedValue } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedReaction, useAnimatedRef, useSharedValue } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { PortalProvider } from '../../portal/Portal/portal';
@@ -113,6 +113,12 @@ const ProviderComponent = ({
 
   const AnimatedIcon = useMemo(() => (iconComponent ? Animated.createAnimatedComponent(iconComponent) : null), [iconComponent]);
 
+  // The containing block the `Menu`'s absolute positioning is relative to. The
+  // activation worklet measures it and subtracts its page offset from the held
+  // item's page coords, so the menu anchors correctly even when the root is
+  // offset from the viewport origin (storybook's padding decorator on web).
+  const rootRef = useAnimatedRef<Animated.View>();
+
   const internalContextVariables = useMemo<HoldMenuInternalContextType>(
     () => ({
       state,
@@ -122,18 +128,21 @@ const ProviderComponent = ({
       windowSize,
       reducedMotion,
       AnimatedIcon,
+      rootRef,
     }),
-    [state, theme, menuProps, safeAreaInsets, windowSize, reducedMotion, AnimatedIcon],
+    [state, theme, menuProps, safeAreaInsets, windowSize, reducedMotion, AnimatedIcon, rootRef],
   );
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HoldMenuInternalContext.Provider value={internalContextVariables}>
-        <PortalProvider>
-          {children}
-          <Backdrop />
-          <Menu />
-        </PortalProvider>
+        <Animated.View ref={rootRef} style={{ flex: 1 }}>
+          <PortalProvider>
+            {children}
+            <Backdrop />
+            <Menu />
+          </PortalProvider>
+        </Animated.View>
       </HoldMenuInternalContext.Provider>
     </GestureHandlerRootView>
   );

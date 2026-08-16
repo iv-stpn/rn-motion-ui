@@ -43,6 +43,8 @@
       "dependencies": {
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "expo-blur": "~57.0.2",
+        "expo-haptics": "~57.0.1",
         "rn-motion-ui-icons": "^0.0.2",
         "tailwind-merge": "^3.6.0",
         "zustand": "5.0.3",
@@ -66,8 +68,6 @@
         "vitest": "4.1.10",
       },
       "peerDependencies": {
-        "expo-blur": ">=14.0.0",
-        "expo-haptics": ">=14.0.0",
         "react": ">=18.0.0",
         "react-native": ">=0.76.0",
         "react-native-gesture-handler": ">=2.0.0",
@@ -76,8 +76,6 @@
         "react-native-svg": ">=15.0.0",
       },
       "optionalPeers": [
-        "expo-blur",
-        "expo-haptics",
         "react-native-safe-area-context",
       ],
     },
@@ -1255,6 +1253,8 @@
     "expo-file-system": ["expo-file-system@57.0.2", "", { "peerDependencies": { "expo": "*", "react-native": "*" } }, "sha512-bPgzpaOJ3NWHZxV++Osj/1QoFzFe/QOo1jBF4EODJdiZgrrxyi2dv+7PLhKuut5QqPBuihUOITRh3s5jhRtA5A=="],
 
     "expo-font": ["expo-font@57.0.1", "", { "dependencies": { "fontfaceobserver": "^2.1.0" }, "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-QyS9L1Kh9sKJg4gfU6rdbpxpmH+DyzBX8z6jVvXMUDoqLr1GqmkO/Wu379KCXjL///kWbhpNlbi7AgBuj4VdIQ=="],
+
+    "expo-haptics": ["expo-haptics@57.0.1", "", { "peerDependencies": { "expo": "*" } }, "sha512-8VhbnxlIrfXjP0syZr1JT197nafYicQu9119adOJnX62osU9Cw+PdDnAx/6LxuKJRzQdwxOMq7b7eWjhNL5zAQ=="],
 
     "expo-json-utils": ["expo-json-utils@57.0.1", "", {}, "sha512-cgTe1NqzQdYs/WN+3nIY5IZg8s0pb0xaTUbhYvxQDn137GbwRfHoGM2se3m3Vsl4Qu+B9G4RPEK5WJDEU2Do7g=="],
 

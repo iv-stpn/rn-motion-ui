@@ -13,6 +13,8 @@ import type { HoldItemProps, MenuInternalProps, MenuItemProps } from './hold-men
 
 type UseHoldItemActivationOptions = {
   containerRef: AnimatedRef<Animated.View>;
+  /** The provider's root view — the containing block the menu anchors against. */
+  rootRef: AnimatedRef<Animated.View>;
   items: MenuItemProps[];
   actionParams: HoldItemProps['actionParams'];
   disableMove: HoldItemProps['disableMove'];
@@ -52,6 +54,7 @@ type UseHoldItemActivationResult = {
  */
 export function useHoldItemActivation({
   containerRef,
+  rootRef,
   items,
   actionParams,
   disableMove,
@@ -119,8 +122,15 @@ export function useHoldItemActivation({
       const measured = measure(containerRef);
       if (!measured) return;
 
-      itemRectY.value = measured.pageY;
-      itemRectX.value = measured.pageX;
+      // `measure` returns viewport coords, but the menu is absolutely positioned
+      // inside the provider's root view. Subtract the root's page offset so the
+      // item rect is in the menu's own space. Native roots sit at (0,0): a no-op.
+      const root = measure(rootRef);
+      const rootX = root?.pageX ?? 0;
+      const rootY = root?.pageY ?? 0;
+
+      itemRectY.value = measured.pageY - rootY;
+      itemRectX.value = measured.pageX - rootX;
       itemRectHeight.value = measured.height;
       itemRectWidth.value = measured.width;
 
@@ -147,6 +157,7 @@ export function useHoldItemActivation({
   }, [
     didMeasureLayout,
     containerRef,
+    rootRef,
     itemRectY,
     itemRectX,
     itemRectHeight,

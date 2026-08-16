@@ -75,11 +75,12 @@ export function useHoldItemSqueeze({
   );
 
   const scaleHold = useCallback(
-    (duration: number = HOLD_ITEM_SCALE_DOWN_DURATION) => {
+    (duration?: number) => {
       'worklet';
+      const effectiveDuration = duration === undefined ? HOLD_ITEM_SCALE_DOWN_DURATION : duration;
       itemScale.value = withTiming(
         HOLD_ITEM_SCALE_DOWN_VALUE,
-        { duration: reducedMotion.value === 1 ? 0 : duration },
+        { duration: reducedMotion.value === 1 ? 0 : effectiveDuration },
         onCompletion,
       );
     },

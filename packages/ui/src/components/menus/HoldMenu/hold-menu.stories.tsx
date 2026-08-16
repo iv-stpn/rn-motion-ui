@@ -13,7 +13,10 @@
  * right-click and the keyboard `contextmenu` path open the panel, a press on a
  * row runs its `actionParams` and closes it, and a click on the dimmed
  * backdrop closes it too. `'tap'` and `'double-tap'` keep the press on web, so
- * those stories open with ordinary clicks.
+ * those stories open with ordinary clicks. An `Interactive` playground reuses
+ * the same demo with the story-harness controls — activation, theme,
+ * long-press delay and the travel toggles — so every combination can be tuned
+ * by hand.
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/react';
 import { type ReactElement, useCallback, useState } from 'react';
@@ -24,7 +27,7 @@ import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
 import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
-import { Note } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
 import { Text } from '../../typography/Text/text';
 import { HoldItem } from './hold-item';
@@ -163,6 +166,50 @@ function HoldMenuDemo({
         <Note testID={PICKED_TEST_ID}>{`Picked: ${picked}`}</Note>
       </View>
     </HoldMenuProvider>
+  );
+}
+
+const ACTIVATE_OPTIONS = ['hold', 'tap', 'double-tap'] as const;
+const THEME_OPTIONS = ['light', 'dark'] as const;
+const LONG_PRESS_OPTIONS = ['150', '300', '500'] as const;
+
+type ActivateOnKey = (typeof ACTIVATE_OPTIONS)[number];
+type ThemeKey = (typeof THEME_OPTIONS)[number];
+type LongPressKey = (typeof LONG_PRESS_OPTIONS)[number];
+
+/** The story-harness playground: every knob from the demos in one canvas. */
+function HoldMenuPlayground() {
+  const [activateOn, setActivateOn] = useState<ActivateOnKey>('hold');
+  const [theme, setTheme] = useState<ThemeKey>('light');
+  const [longPressMs, setLongPressMs] = useState<LongPressKey>('150');
+  const [bottom, setBottom] = useState(false);
+  const [closeOnTap, setCloseOnTap] = useState(true);
+  const [disableMove, setDisableMove] = useState(false);
+
+  return (
+    <Playground className="min-w-[340px]">
+      <ControlCard title="Menu">
+        <Choice label="Activate on" onChange={setActivateOn} options={ACTIVATE_OPTIONS} value={activateOn} />
+        <Choice label="Theme" onChange={setTheme} options={THEME_OPTIONS} value={theme} />
+        <Choice label="Long-press (ms)" onChange={setLongPressMs} options={LONG_PRESS_OPTIONS} value={longPressMs} />
+      </ControlCard>
+
+      <ControlCard title="Behaviour">
+        <Toggle label="Open above the item" onChange={setBottom} value={bottom} />
+        <Toggle label="Close on tap" onChange={setCloseOnTap} value={closeOnTap} />
+        <Toggle label="Pin the item in place" onChange={setDisableMove} value={disableMove} />
+      </ControlCard>
+
+      <HoldMenuDemo
+        activateOn={activateOn}
+        bottom={bottom}
+        closeOnTap={closeOnTap}
+        disableMove={disableMove}
+        longPressMinDurationMs={Number(longPressMs)}
+        theme={theme}
+      />
+      <Note>Right-click a bubble (or hold on a phone) to open its menu — the controls change how it behaves.</Note>
+    </Playground>
   );
 }
 
@@ -309,4 +356,10 @@ export const Bottom: Story = {
     const panel = await screen.findByTestId(`${DEMO_TEST_ID}-${FIRST_MESSAGE_ID}-panel`);
     await waitFor(() => expect(panel).toBeVisible());
   },
+};
+
+/** Every knob in one canvas: activation, theme, long-press delay, travel toggles. */
+export const Interactive: Story = {
+  name: 'Interactive: Tune the menu',
+  render: () => <HoldMenuPlayground />,
 };

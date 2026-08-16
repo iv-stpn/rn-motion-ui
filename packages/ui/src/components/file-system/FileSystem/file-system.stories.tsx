@@ -2653,6 +2653,109 @@ export const MobileMultiSelect: Story = {
 };
 
 /**
+ * The mobile tap contract: a single tap OPENS the entry — a phone has no
+ * double-click, so the first tap must not select. Only a hold (long press)
+ * enters selection mode; once anything is selected a tap toggles that entry's
+ * selection, mirroring the checkboxes.
+ */
+export const MobileTapOpens: Story = {
+  name: 'Demo: Mobile tap opens, hold selects',
+  decorators: [
+    (Story) => (
+      <View style={{ maxWidth: '100%', width: MOBILE_WIDTH }}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: {
+    defaultView: 'mobile-list',
+    getContextMenuActions: resolveContextMenuActions,
+    onFileOpen: fn(),
+    selectionMode: 'multiple',
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    // No selection yet: kebabs everywhere, no checkbox in sight.
+    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-kebab`);
+    expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-checkbox`)).toBeNull();
+
+    // A single tap opens the file — it does not select, and no checkbox appears.
+    const readme = (await canvas.findAllByRole('button', { name: 'README.md' }))[0];
+    if (!readme) throw new Error('no README.md row rendered');
+    await userEvent.click(readme);
+    await waitFor(() => expect(args.onFileOpen).toHaveBeenCalledWith(expect.objectContaining({ name: 'README.md' }), null));
+    expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-checkbox`)).toBeNull();
+    expect(selectedPaths(canvas)).toEqual([]);
+
+    // Tapping a folder opens it: the navigation happens, not a selection.
+    const documents = (await canvas.findAllByRole('button', { name: 'Documents' }))[0];
+    if (!documents) throw new Error('no Documents row rendered');
+    await userEvent.click(documents);
+    await canvas.findByText('Contract.docx');
+    expect(args.onFileOpen).toHaveBeenCalledTimes(1);
+    expect(selectedPaths(canvas)).toEqual([]);
+
+    // Back at the root, a hold still enters selection mode.
+    await userEvent.click(await canvas.findByLabelText('Back'));
+    await canvas.findByText('README.md');
+    const row = (await canvas.findAllByRole('button', { name: 'README.md' }))[0];
+    if (!row) throw new Error('no README.md row rendered');
+    await longPress(row);
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md']));
+    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-checkbox`)).toHaveAttribute('aria-checked', 'true');
+
+    // In selection mode a tap toggles that entry's selection.
+    const roadmap = (await canvas.findAllByRole('button', { name: 'Roadmap.pptx' }))[0];
+    if (!roadmap) throw new Error('no Roadmap.pptx row rendered');
+    await userEvent.click(roadmap);
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
+  },
+};
+
+/**
+ * The mobile kebab contract: tapping the three-dot menu opens the entry's
+ * context menu AND selects the entry in the same gesture — the row highlights
+ * and the selection mode comes on, so the menu opens onto a selected item.
+ */
+export const MobileKebabSelects: Story = {
+  name: 'Demo: Mobile kebab opens and selects',
+  decorators: [
+    (Story) => (
+      <View style={{ maxWidth: '100%', width: MOBILE_WIDTH }}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: {
+    defaultView: 'mobile-list',
+    getContextMenuActions: resolveContextMenuActions,
+    onSelectedItemsChange: fn(),
+    selectionMode: 'multiple',
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const kebab = await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-kebab`);
+    expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-checkbox`)).toBeNull();
+
+    // One tap: the menu opens and the entry joins the selection. The menu's
+    // actions appear (the same ones a right-click would show) while the row is
+    // painted selected — the kebab stays in the slot until the menu closes.
+    await userEvent.click(within(kebab).getByRole('button'));
+    await screen.findByText('Open');
+    await waitFor(() =>
+      expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([expect.objectContaining({ name: 'README.md' })]),
+    );
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md']));
+
+    // Closing the menu releases the slot: the kebab gives way to the checked
+    // checkbox, the selection-mode surface.
+    await userEvent.click(await screen.findByText('Open'));
+    await waitFor(() => expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-kebab`)).toBeNull());
+    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-checkbox`)).toHaveAttribute('aria-checked', 'true');
+  },
+};
+
+/**
  * The mobile list's drag-and-drop, driven by the browser's own HTML5 drag exactly
  * like the desktop views: `draggable` makes every row a drag source and every
  * folder row a drop target. A FILE row is no destination, so the same drag onto

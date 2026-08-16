@@ -1,4 +1,4 @@
-import { IS_IOS } from './hold-menu-constants';
+import { BACKDROP_BLURS } from './hold-menu-constants';
 
 /**
  * The `HoldMenu` palette — upstream react-native-hold-menu's colors, gathered
@@ -11,23 +11,23 @@ import { IS_IOS } from './hold-menu-constants';
  * tokens — so every export here is annotated.
  */
 
-/** Backdrop dim behind the menu in the light theme — iOS is a film, Android a near-opaque scrim. */
-export const BACKDROP_LIGHT_BACKGROUND_COLOR = IS_IOS
+/** Backdrop dim behind the menu in the light theme — blur-capable platforms (iOS/web) get a film, Android a near-opaque scrim. */
+export const BACKDROP_LIGHT_BACKGROUND_COLOR = BACKDROP_BLURS
   ? 'rgba(0,0,0,0.2)' // theme-exempt: upstream hold-menu backdrop palette
   : 'rgba(19, 19, 19, 0.95)'; // theme-exempt: upstream hold-menu backdrop palette
 
-/** Backdrop dim behind the menu in the dark theme — iOS a heavy film, Android fully opaque. */
-export const BACKDROP_DARK_BACKGROUND_COLOR = IS_IOS
+/** Backdrop dim behind the menu in the dark theme — blur-capable platforms a heavy film, Android fully opaque. */
+export const BACKDROP_DARK_BACKGROUND_COLOR = BACKDROP_BLURS
   ? 'rgba(0,0,0,0.75)' // theme-exempt: upstream hold-menu backdrop palette
   : 'rgba(0,0,0,0.95)'; // theme-exempt: upstream hold-menu backdrop palette
 
 /** Panel fill over the blur, light theme — translucent so the blur reads through. */
-export const MENU_PANEL_LIGHT_COLOR = IS_IOS
+export const MENU_PANEL_LIGHT_COLOR = BACKDROP_BLURS
   ? 'rgba(255, 255, 255, .75)' // theme-exempt: upstream hold-menu panel palette
   : 'rgba(255, 255, 255, .95)'; // theme-exempt: upstream hold-menu panel palette
 
 /** Panel fill over the blur, dark theme — translucent so the blur reads through. */
-export const MENU_PANEL_DARK_COLOR = IS_IOS
+export const MENU_PANEL_DARK_COLOR = BACKDROP_BLURS
   ? 'rgba(0,0,0,0.5)' // theme-exempt: upstream hold-menu panel palette
   : 'rgba(39, 39, 39, .8)'; // theme-exempt: upstream hold-menu panel palette
 

@@ -67,6 +67,14 @@ export const HOLD_MENU_VIEWPORT_PADDING = 8;
 export const IS_IOS = Platform.OS === 'ios';
 
 /**
+ * Whether this platform can blur what sits behind the backdrop — iOS via
+ * expo-blur, web via CSS `backdrop-filter`. These get the translucent backdrop
+ * colors; platforms without blur (Android) get the near-opaque plain dim,
+ * exactly as upstream.
+ */
+export const BACKDROP_BLURS = Platform.OS === 'ios' || Platform.OS === 'web';
+
+/**
  * Whether this platform performs the lift — hold the item, it rises off a
  * dimmed page and the panel pops out beside it.
  *

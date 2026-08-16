@@ -4,17 +4,18 @@
  *
  * These run under react-native-web, which is the platform where the component
  * deliberately does something else: `activateOn="hold"` is a right-click that
- * opens a plain dropdown anchored to the item — no lift, no dim over the page,
- * children rendered exactly once (the portal twin is skipped on web). The
- * `play` functions pin that contract: a right-click and the keyboard
- * `contextmenu` path open the panel, a press on a row runs its `actionParams`
- * and closes it, and a click on the dimmed backdrop closes it too.
- * `'tap'` and `'double-tap'` keep the press on web, so those stories open with
- * ordinary clicks.
+ * opens a plain dropdown anchored to the item — no lift, children rendered
+ * exactly once (the portal twin is skipped on web). The backdrop still dims
+ * the page behind the panel — a blurred translucent scrim, since web joins the
+ * blur-capable tier (see `hold-menu-blur.tsx`) — and the `play` functions pin
+ * that contract: a right-click and the keyboard `contextmenu` path open the
+ * panel, a press on a row runs its `actionParams` and closes it, and a click
+ * on the dimmed backdrop closes it too. `'tap'` and `'double-tap'` keep the
+ * press on web, so those stories open with ordinary clicks.
  */
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Decorator, Meta, StoryObj } from '@storybook/react';
 import { type ReactElement, useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 import { Chat1Line as MessageCircle } from 'rn-motion-ui-icons/icons/chat-1-line';
 import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
 import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
@@ -149,13 +150,13 @@ function HoldMenuDemo({
 
   return (
     <HoldMenuProvider iconComponent={IconByName} theme={theme}>
-      <View className="w-full gap-3">
+      <View className="w-full flex-1 gap-3">
         <HoldMenuFlatList
           contentContainerStyle={{ gap: 12, padding: 16 }}
           data={MESSAGES}
           keyExtractor={(item: Message) => item.id}
           renderItem={renderItem}
-          style={{ flexGrow: 0 }}
+          style={{ flexGrow: 1 }}
         />
         <Note testID={PICKED_TEST_ID}>{`Picked: ${picked}`}</Note>
       </View>
@@ -163,10 +164,32 @@ function HoldMenuDemo({
   );
 }
 
+// RN's `DimensionValue` has no room for a `calc()` length, so the web-only
+// min-height is cast — same pattern as HoverMenu's `WEB_PANEL_POSITION`.
+// biome-ignore lint/plugin: calc() is honoured by react-native-web but absent from RN's DimensionValue union, so the web-only style is cast
+const STORY_MIN_HEIGHT = { minHeight: 'calc(100vh - 3rem)' } as unknown as ViewStyle;
+
+/**
+ * The storybook canvas root (`#storybook-root`) is a plain block with no
+ * definite height, so the global `ThemeDecorator`'s `flex-1` (preview.tsx)
+ * cannot stretch and the provider's own `flex: 1` collapses to content height
+ * — the stories used to render as a small box at the top-left with the
+ * full-bleed backdrop dimming only that box. This story-level wrapper gives
+ * the canvas a definite height filling the visible page (the global decorator
+ * pads 1.5rem per side, hence 100vh minus 3rem) so the demo and its backdrop
+ * cover the whole page without creating a scrollbar.
+ */
+const storyDecorator: Decorator = (Story) => (
+  <View className="w-full flex-1" style={STORY_MIN_HEIGHT}>
+    <Story />
+  </View>
+);
+
 const meta = {
   title: 'Menus/HoldMenu',
   component: HoldMenuProvider,
   parameters: { layout: 'fullscreen' },
+  decorators: [storyDecorator],
   // children is supplied per story; a stub satisfies the type checker.
   args: { children: null },
 } satisfies Meta<typeof HoldMenuProvider>;
@@ -234,9 +257,15 @@ export const DarkTheme: Story = {
     await userEvent.pointer({ target: trigger, keys: '[MouseRight]' });
     const panel = await screen.findByTestId(`${DEMO_TEST_ID}-${FIRST_MESSAGE_ID}-panel`);
     await waitFor(() => expect(panel).toBeVisible());
-    // Android/web dark scrim — upstream's BACKDROP_DARK_BACKGROUND_COLOR.
+    // Web dark scrim — the blur tier's BACKDROP_DARK_BACKGROUND_COLOR (Android
+    // keeps the near-opaque plain dim, since it has no blur).
     const backdrop = await screen.findByTestId(`${DEMO_TEST_ID}-${FIRST_MESSAGE_ID}-backdrop`);
-    await expect(getComputedStyle(backdrop).backgroundColor).toBe('rgba(0, 0, 0, 0.95)');
+    await expect(getComputedStyle(backdrop).backgroundColor).toBe('rgba(0, 0, 0, 0.75)');
+    // The backdrop testID sits on the inner tint view; its parent is the blur
+    // layer, which frosts the page behind the tint via CSS backdrop-filter.
+    const blurLayer = backdrop.parentElement;
+    if (!blurLayer) throw new Error('backdrop blur layer not found');
+    await expect(getComputedStyle(blurLayer).backdropFilter).toContain('blur');
   },
 };
 

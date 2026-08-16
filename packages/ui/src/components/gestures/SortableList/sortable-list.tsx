@@ -19,7 +19,7 @@
 // State lives in a React context (one per list instance) so <SortableItem> can
 // read state and call actions directly instead of receiving them as props.
 
-import { createContext, type ReactNode, useCallback, useContext, useId, useMemo, useRef, useState } from 'react';
+import { createContext, memo, type ReactNode, useCallback, useContext, useId, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { DragManager } from '../DragManager/drag-manager';
@@ -53,6 +53,57 @@ type SortableListContextValue = {
 };
 
 const SortableListContext = createContext<SortableListContextValue | null>(null);
+
+// ── Item slot — memoized per item ────────────────────────────────────────
+
+type SortableItemSlotProps = {
+  children: ReactNode;
+  disabled: boolean;
+  index: number;
+  isDragging: boolean;
+  /** The raw item — compared by reference in the memo comparator, not rendered. */
+  item: unknown;
+  itemKey: string;
+  listId: string;
+  mimeType: string;
+  preview?: ReactNode;
+  testID?: string;
+};
+
+/**
+ * One row of the list, memoized so a reorder commit re-renders only the items
+ * whose canonical index actually changed (the moved items) instead of every
+ * row's Dragzone/Draggable subtree. The comparator deliberately ignores
+ * `children` and `preview`: for an unmoved item those are a pure function of
+ * (item, index, isDragging), so skipping their re-render is exactly the win.
+ */
+function SortableItemSlot({ children, disabled, index, itemKey, listId, mimeType, preview, testID }: SortableItemSlotProps) {
+  return (
+    <SortableItem
+      disabled={disabled}
+      index={index}
+      itemKey={itemKey}
+      listId={listId}
+      mimeType={mimeType}
+      preview={preview}
+      testID={testID}
+    >
+      {children}
+    </SortableItem>
+  );
+}
+
+function sortableItemSlotPropsEqual(prev: SortableItemSlotProps, next: SortableItemSlotProps): boolean {
+  return (
+    prev.item === next.item &&
+    prev.index === next.index &&
+    prev.isDragging === next.isDragging &&
+    prev.disabled === next.disabled &&
+    prev.testID === next.testID
+  );
+}
+
+const MemoizedSortableItemSlot = memo(SortableItemSlot, sortableItemSlotPropsEqual);
 
 // ── List view ─────────────────────────────────────────────────────────────
 
@@ -206,10 +257,12 @@ function SortableListView<T>({
           const itemTestID = testID ? `${testID}-item-${key}` : undefined;
 
           return (
-            <SortableItem
+            <MemoizedSortableItemSlot
               key={key}
               disabled={disabled}
               index={i}
+              isDragging={isDragging}
+              item={item}
               itemKey={key}
               listId={listId}
               mimeType={mimeType}
@@ -217,7 +270,7 @@ function SortableListView<T>({
               testID={itemTestID}
             >
               {renderItem(item, i, isDragging)}
-            </SortableItem>
+            </MemoizedSortableItemSlot>
           );
         })}
       </View>

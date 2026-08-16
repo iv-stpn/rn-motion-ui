@@ -260,7 +260,7 @@ export const DarkTheme: Story = {
     const panel = await screen.findByTestId(`${DEMO_TEST_ID}-${FIRST_MESSAGE_ID}-panel`);
     await waitFor(() => expect(panel).toBeVisible());
     // Web dark scrim — the blur tier's BACKDROP_DARK_BACKGROUND_COLOR (Android
-    // keeps the near-opaque plain dim, since it has no blur).
+    // blurs too; only the no-expo-blur fallback keeps the near-opaque dim).
     const backdrop = await screen.findByTestId(`${DEMO_TEST_ID}-${FIRST_MESSAGE_ID}-backdrop`);
     await expect(getComputedStyle(backdrop).backgroundColor).toBe('rgba(0, 0, 0, 0.5)');
     // The backdrop testID sits on the inner tint view; its parent is the blur

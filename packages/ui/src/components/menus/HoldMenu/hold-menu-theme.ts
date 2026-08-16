@@ -11,7 +11,7 @@ import { BACKDROP_BLURS } from './hold-menu-constants';
  * tokens — so every export here is annotated.
  */
 
-/** Backdrop dim behind the menu in the light theme — blur-capable platforms (iOS/Android/web) get a film, Android a near-opaque scrim. */
+/** Backdrop dim behind the menu in the light theme — blur-capable platforms (iOS/Android/web) get a film, platforms without blur the near-opaque scrim. */
 export const BACKDROP_LIGHT_BACKGROUND_COLOR = BACKDROP_BLURS
   ? 'rgba(0,0,0,0.2)' // theme-exempt: upstream hold-menu backdrop palette
   : 'rgba(19, 19, 19, 0.95)'; // theme-exempt: upstream hold-menu backdrop palette

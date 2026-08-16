@@ -264,6 +264,61 @@ export const ReorderFirstToThird: Story = {
 };
 
 /**
+ * Regression test for the atomic drop commit: after a reorder commits, the
+ * shared drag state (activeIndex/insertionIndex) must be fully reset before
+ * the reorder render, so a follow-up drag starts from the NEW canonical order
+ * with fresh indices. A stale active index leaking into the next drag (the
+ * deferred-commit design that caused the drop jitter) would make the second
+ * drag resolve against the pre-reorder positions.
+ */
+export const CommitThenFollowUpReorder: Story = {
+  render: () => <StaticDemo />,
+  play: async ({ canvasElement }) => {
+    const frame = within(canvasElement);
+    const readout = frame.getByTestId(REORDER_READOUT);
+    await expect(readout).toHaveTextContent('None');
+
+    // First drag: first item ("a", index 0) onto the third ("c", index 2).
+    // Commits `0 → 2`; the new order is [b, c, a, d].
+    const sourceA = frame.getByTestId(`${ITEM_PREFIX}-a`);
+    const targetC = frame.getByTestId(`${ITEM_PREFIX}-c`);
+    const targetCZone = targetC.parentElement;
+    if (!targetCZone) throw new Error('no parent Dragzone');
+    const firstTransfer = newDragTransfer();
+    await dragOnto({
+      source: sourceA,
+      target: targetCZone,
+      to: centerOf(targetC),
+      transfer: firstTransfer,
+      from: centerOf(sourceA),
+    });
+    fireDrag(sourceA, 'dragend', firstTransfer, centerOf(targetC));
+    await settle();
+    await expect(readout).toHaveTextContent('0 → 2');
+
+    // Second drag: from the NEW order — "c" now sits at index 1; drag it onto
+    // "d" at index 3. The commit must resolve against the post-reorder
+    // canonical indices: `1 → 3`.
+    const sourceC = frame.getByTestId(`${ITEM_PREFIX}-c`);
+    const targetD = frame.getByTestId(`${ITEM_PREFIX}-d`);
+    const targetDZone = targetD.parentElement;
+    if (!targetDZone) throw new Error('no parent Dragzone');
+    const secondTransfer = newDragTransfer();
+    await dragOnto({
+      source: sourceC,
+      target: targetDZone,
+      to: centerOf(targetD),
+      transfer: secondTransfer,
+      from: centerOf(sourceC),
+    });
+    fireDrag(sourceC, 'dragend', secondTransfer, centerOf(targetD));
+    await settle();
+
+    await expect(readout).toHaveTextContent('1 → 3');
+  },
+};
+
+/**
  * A drag that starts but is cancelled (Escape). The order should not change.
  */
 export const CancelledDrag: Story = {

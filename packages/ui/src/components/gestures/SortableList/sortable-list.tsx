@@ -19,7 +19,7 @@
 // State lives in a React context (one per list instance) so <SortableItem> can
 // read state and call actions directly instead of receiving them as props.
 
-import { createContext, type ReactNode, useCallback, useContext, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useId, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { DragManager } from '../DragManager/drag-manager';
@@ -108,11 +108,6 @@ function SortableListView<T>({
   const onReorderRef = useRef(onReorder);
   onReorderRef.current = onReorder;
 
-  // Tracks whether a commit needs to be finalised after the React render
-  // that assigns new canonical indices.  Written by handleDragEnd, read
-  // and cleared by useLayoutEffect below.
-  const pendingCommitRef = useRef<{ dropVersion: number } | null>(null);
-
   // ── Drag callbacks — stable identity across renders ─────────────────────
   const handleDragStart = useCallback(
     (index: number, key: string) => {
@@ -148,35 +143,33 @@ function SortableListView<T>({
       const from = activeIndexRef.current;
       const to = insertionIndexSV.value;
       if (!canceled && from !== -1 && to !== -1 && from !== to) {
-        // Defer the shared-value commit until after React has assigned new
-        // canonical indices, so items snap at their post-reorder positions.
-        pendingCommitRef.current = { dropVersion: dropVersionSV.value + 1 };
+        // Commit atomically, in this same JS tick: bump the drop version so
+        // items snap to their post-reorder positions (no withTiming), hand the
+        // reordered array to the consumer, and only then reset the shared
+        // values — all BEFORE React re-renders with the new canonical order.
+        // A reaction re-init (its `index` dep changed) can therefore never
+        // evaluate against stale active/insertion indices: it sees ai === -1
+        // and computes a target of 0 at its new index. Previously the shared
+        // values were reset in a useLayoutEffect AFTER the reorder render, so
+        // re-inits read the drag-time values and wrote multi-slot wrong
+        // transforms — the drop jitter.
+        dropVersionSV.value = dropVersionSV.value + 1;
         const currentItems = itemsRef.current;
         const commit = onReorderRef.current;
         commit(reorderItems(currentItems, from, to), from, to);
       }
+      // Reset all drag state — shared values first so the re-render (commit
+      // and cancel alike) evaluates every item at its rest position. The
+      // cancel path relies on this: with ai === -1 the reaction animates items
+      // back to 0 with withTiming(200) instead of snapping.
+      activeIndexSV.value = -1;
+      insertionIndexSV.value = -1;
       activeIndexRef.current = -1;
       setActiveIndex(-1);
       setDraggedKey(null);
     },
-    [dropVersionSV, insertionIndexSV],
+    [activeIndexSV, dropVersionSV, insertionIndexSV],
   );
-
-  // After React commits the reorder (new canonical indices are assigned),
-  // finalise the shared values so items snap at their correct positions.
-  // useLayoutEffect runs before the browser paints, so the user never sees
-  // an intermediate frame.
-  useLayoutEffect(() => {
-    if (activeIndex !== -1) return;
-
-    const pending = pendingCommitRef.current;
-    if (pending !== null) {
-      pendingCommitRef.current = null;
-      dropVersionSV.value = pending.dropVersion;
-    }
-    activeIndexSV.value = -1;
-    insertionIndexSV.value = -1;
-  }, [activeIndex, activeIndexSV, dropVersionSV, insertionIndexSV]);
 
   const contextValue = useMemo<SortableListContextValue>(
     () => ({

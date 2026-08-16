@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
@@ -89,14 +89,25 @@ export function MorphingModal({
   const [contentHeight, setContentHeight] = useState<number | null>(null);
   const [morphing, setMorphing] = useState(false);
 
+  // Live viewId so layout events from EXITING views (which keep their
+  // last-rendered onLayout props — stale id AND stale closure) are compared
+  // against the current view. Mirror every render so the ref always holds the
+  // viewId of the render currently on screen.
+  const viewIdRef = useRef(viewId);
+  viewIdRef.current = viewId;
+
   const onContentLayout = useCallback(
     (id: string) => (e: LayoutChangeEvent) => {
-      // Ignore measurements from exiting views (stale keys).
-      if (id !== viewId) return;
+      // Ignore measurements from exiting views (stale keys). Read the LIVE
+      // viewId via a ref: the callback an exiting view still holds captured
+      // the viewId from when it was current, so a closure-captured comparison
+      // always matches and lets a stale height retarget the morph spring
+      // mid-flight — the card visibly collapses then re-expands on native.
+      if (id !== viewIdRef.current) return;
       const { height } = e.nativeEvent.layout;
       if (height > 0) setContentHeight(height);
     },
-    [viewId],
+    [],
   );
 
   // biome-ignore lint/plugin: morph state must reset on each open so the first height measurement snaps in rather than springing from a stale value

@@ -115,11 +115,16 @@ type MobileKebabProps = Pick<FileSystemMobileMenuProps, 'entry' | 'onToggleSelec
  * cannot unmount the menu underneath it (see `FileSystemMobileMenu`).
  */
 function MobileKebab({ entry, menuProps, onToggleSelect, testID }: MobileKebabProps) {
+  // Stable handle for `HoldContextMenu onHold`, which rides `afterHold` — a
+  // fresh arrow per render would rebuild the hook's `latest` ref on every
+  // render of the slot.
+  const handleHold = useCallback(() => onToggleSelect(entry), [entry, onToggleSelect]);
+
   return (
     <HoldContextMenu
       accessibilityLabel={`More actions for ${entry.name}`}
       activateOn="tap"
-      onHold={() => onToggleSelect(entry)}
+      onHold={handleHold}
       trigger="pressable"
       testID={testID ? `${testID}${MOBILE_KEBAB_SUFFIX}` : undefined}
       {...menuProps}

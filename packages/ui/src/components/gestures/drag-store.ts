@@ -142,11 +142,7 @@ function publish() {
   const eligible = new Set(session?.eligible ?? NO_IDS);
   const overZoneId = session?.overZoneId ?? null;
   for (const entry of zonesList) {
-    const next: DragzoneStanding = {
-      drag,
-      isEligible: eligible.has(entry.id),
-      isOver: overZoneId === entry.id,
-    };
+    const next: DragzoneStanding = { drag, isEligible: eligible.has(entry.id), isOver: overZoneId === entry.id };
     const previous = entry.standing;
     if (
       previous === undefined ||

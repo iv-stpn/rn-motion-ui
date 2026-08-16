@@ -370,7 +370,11 @@ function notifySelectionChange(
  * their checkboxes across the move (nothing checked until the user taps).
  */
 type RecomputedEntries = { entries: EntriesSlice; filters: FiltersSlice; selection: SelectionSlice };
-function _recomputeEntries(s: FileSystemStore, options?: { pruneSelection?: boolean }): RecomputedEntries {
+
+/** The one switch on a recompute: whether the selection is pruned to the visible set. */
+type RecomputeEntriesOptions = { pruneSelection?: boolean };
+
+function _recomputeEntries(s: FileSystemStore, options?: RecomputeEntriesOptions): RecomputedEntries {
   const { currentPath } = s.navigation;
   const { index, sort } = s.entries;
   const { filters } = s.filters;

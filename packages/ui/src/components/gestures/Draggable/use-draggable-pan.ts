@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: the pan's three-phase decision is one worklet state machine — splitting buildPanGesture would scatter the arm logic it is the only reader of */
 // The native transport: an RNGH pan armed by a hold and lifted by the move after it.
 //
 // Its own module rather than part of `draggable.tsx` because it is the one transport

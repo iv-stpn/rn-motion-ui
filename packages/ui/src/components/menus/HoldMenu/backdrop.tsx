@@ -1,17 +1,9 @@
 import { memo } from 'react';
-import { StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, IS_WEB } from './constants';
 import { useHoldMenuInternal } from './context';
 import { BACKDROP_DARK_BACKGROUND_COLOR, BACKDROP_LIGHT_BACKGROUND_COLOR } from './hold-menu-theme';
-
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 0,
-  },
-});
 
 /**
  * The scrim behind the open menu — upstream's `Backdrop`. Always mounted in
@@ -79,10 +71,10 @@ const BackdropComponent = () => {
   const webProps = { onClick: closeIfActive } as Record<string, unknown>;
 
   return IS_WEB ? (
-    <Animated.View {...webProps} style={[styles.container, animatedContainerStyle, animatedBackgroundStyle]} />
+    <Animated.View {...webProps} className="absolute inset-0 z-0" style={[animatedContainerStyle, animatedBackgroundStyle]} />
   ) : (
     <GestureDetector gesture={tapGesture}>
-      <Animated.View style={[styles.container, animatedContainerStyle, animatedBackgroundStyle]} />
+      <Animated.View className="absolute inset-0 z-0" style={[animatedContainerStyle, animatedBackgroundStyle]} />
     </GestureDetector>
   );
 };

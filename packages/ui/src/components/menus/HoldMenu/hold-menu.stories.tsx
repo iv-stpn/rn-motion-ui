@@ -18,6 +18,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react';
 import { type ReactElement, useCallback, useState } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { AddLine } from 'rn-motion-ui-icons/icons/add-line';
 import { ArrowLeftLine } from 'rn-motion-ui-icons/icons/arrow-left-line';
 import { ArrowRightLine } from 'rn-motion-ui-icons/icons/arrow-right-line';
@@ -35,7 +36,6 @@ import { SunLine } from 'rn-motion-ui-icons/icons/sun-line';
 import { User3Line } from 'rn-motion-ui-icons/icons/user-3-line';
 import { Note } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
-import { HoldMenuFlatList } from './flat-list';
 import { HoldItem } from './hold-item';
 import type { HoldMenuIconComponentProps, MenuItemProps } from './hold-menu-types';
 import { HoldMenuProvider } from './provider';
@@ -314,11 +314,12 @@ function WhatsAppScene() {
   return (
     <HoldMenuProvider iconComponent={IconByName} theme="light">
       <View style={{ flex: 1, backgroundColor: 'rgb(230, 211, 214)' }}>
-        <HoldMenuFlatList
+        <Animated.FlatList
           contentContainerStyle={{ paddingHorizontal: 8, paddingVertical: 8 }}
           data={WHATSAPP_MESSAGES}
           keyExtractor={(item: ChatMessage) => item.id}
           renderItem={({ item }: MessageRenderItem) => <WhatsAppBubble message={item} onAction={onAction} />}
+          scrollEventThrottle={16}
           style={{ flex: 1 }}
         />
         <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: 'rgba(0, 0, 0, 0.1)', backgroundColor: '#FFFFFF' }}>

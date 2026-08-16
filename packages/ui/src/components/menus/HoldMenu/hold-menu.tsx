@@ -44,7 +44,6 @@
  * ```
  */
 
-export { HoldMenuFlatList, type HoldMenuFlatListProps } from './flat-list';
 export { HoldItem } from './hold-item';
 export type {
   HoldItemProps,

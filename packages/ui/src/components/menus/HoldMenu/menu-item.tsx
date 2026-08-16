@@ -1,5 +1,5 @@
 import { memo, type ReactNode, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { CONTEXT_MENU_STATE } from './constants';
 import { useHoldMenuInternal } from './context';
@@ -10,31 +10,10 @@ import { Separator } from './separator';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-const styles = StyleSheet.create({
-  menuItem: {
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  menuItemText: {
-    fontSize: 16,
-    lineHeight: 20,
-    textAlign: 'left',
-    width: '100%',
-    flex: 1,
-  },
-  menuItemTitleText: {
-    fontSize: 14,
-    lineHeight: 18,
-    textAlign: 'center',
-    width: '100%',
-    flex: 1,
-  },
-});
+/** Static row/text classes — the animated border and text colour ride in `style`. */
+const MENU_ITEM_CLASS = 'w-full flex-row items-center justify-between px-4 py-2.5';
+const MENU_ITEM_TEXT_CLASS = 'w-full flex-1 text-left text-base leading-5';
+const MENU_ITEM_TITLE_TEXT_CLASS = 'w-full flex-1 text-center text-sm leading-[18px]';
 
 type MenuItemComponentProps = { item: MenuItemProps; isLast?: boolean };
 
@@ -77,8 +56,13 @@ const MenuItemComponent = ({ item, isLast }: MenuItemComponentProps) => {
 
   return (
     <>
-      <AnimatedTouchable onPress={handleOnPress} activeOpacity={item.isTitle ? 1 : 0.4} style={[styles.menuItem, borderStyles]}>
-        <Animated.Text style={[item.isTitle ? styles.menuItemTitleText : styles.menuItemText, textColor]}>
+      <AnimatedTouchable
+        onPress={handleOnPress}
+        activeOpacity={item.isTitle ? 1 : 0.4}
+        className={MENU_ITEM_CLASS}
+        style={borderStyles}
+      >
+        <Animated.Text className={item.isTitle ? MENU_ITEM_TITLE_TEXT_CLASS : MENU_ITEM_TEXT_CLASS} style={textColor}>
           {item.text}
         </Animated.Text>
         {iconElement}

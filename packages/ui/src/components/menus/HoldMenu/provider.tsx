@@ -118,7 +118,7 @@ const ProviderComponent = ({
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HoldMenuInternalContext.Provider value={internalContextVariables}>
-        <Animated.View ref={rootRef} style={{ flex: 1 }}>
+        <Animated.View ref={rootRef} className="flex-1">
           <PortalProvider>
             {children}
             <Backdrop />

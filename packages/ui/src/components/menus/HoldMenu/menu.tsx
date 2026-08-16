@@ -1,18 +1,9 @@
 import { memo } from 'react';
-import { StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './constants';
 import { useHoldMenuInternal } from './context';
 import { MenuList } from './menu-list';
 import { SPACING } from './style-guide';
-
-const styles = StyleSheet.create({
-  menuWrapper: {
-    position: 'absolute',
-    left: 0,
-    zIndex: 10,
-  },
-});
 
 /**
  * The menu's positioning wrapper — upstream's `Menu`. It anchors the panel
@@ -55,7 +46,7 @@ const MenuComponent = () => {
   }, [menuProps]);
 
   return (
-    <Animated.View style={[styles.menuWrapper, wrapperStyles]}>
+    <Animated.View className="absolute left-0 z-10" style={wrapperStyles}>
       <MenuList />
     </Animated.View>
   );

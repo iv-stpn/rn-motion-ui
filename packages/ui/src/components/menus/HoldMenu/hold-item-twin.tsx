@@ -1,5 +1,5 @@
 import { memo, type ReactNode, useMemo } from 'react';
-import { StyleSheet, type ViewProps } from 'react-native';
+import type { ViewProps } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   type SharedValue,
@@ -14,14 +14,6 @@ import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION 
 import { useHoldMenuInternal } from './context';
 import type { HoldItemProps, MenuItemProps, TransformOriginAnchorPosition } from './hold-menu-types';
 import { calculateMenuHeight, calculateTransformValue } from './layout';
-
-const styles = StyleSheet.create({
-  holdItem: { zIndex: 10, position: 'absolute' },
-  portalOverlay: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 15,
-  },
-});
 
 type HoldItemTwinProps = {
   /** Stable portal name/key — the twin never remounts. */
@@ -100,16 +92,13 @@ const HoldItemTwinComponent = ({
 
     // The pair travels while active (spring there) and settles back off-screen
     // on close — upstream's `transformAnimation`.
-    const transformAnimation = () =>
-      disableMove
-        ? 0
-        : isActive.value
-          ? withSpring(tY, SPRING_CONFIGURATION)
-          : withTiming(-0.1, { duration: HOLD_ITEM_TRANSFORM_DURATION });
+    const transformAnimation = () => {
+      if (disableMove) return 0;
+      if (isActive.value) return withSpring(tY, SPRING_CONFIGURATION);
+      return withTiming(-0.1, { duration: HOLD_ITEM_TRANSFORM_DURATION });
+    };
 
     return {
-      zIndex: 10,
-      position: 'absolute',
       top: itemRectY.value,
       left: itemRectX.value,
       width: itemRectWidth.value,
@@ -136,17 +125,15 @@ const HoldItemTwinComponent = ({
     windowSize,
   ]);
 
-  const portalContainerStyle = useMemo(() => [styles.holdItem, animatedPortalStyle], [animatedPortalStyle]);
-
   const animatedPortalProps = useAnimatedProps<ViewProps>(() => ({
     pointerEvents: isActive.value ? 'auto' : 'none',
   }));
 
   return (
     <Portal name={name}>
-      <Animated.View key={name} style={portalContainerStyle} animatedProps={animatedPortalProps}>
+      <Animated.View key={name} className="absolute z-10" style={animatedPortalStyle} animatedProps={animatedPortalProps}>
         <GestureDetector gesture={overlayTap}>
-          <Animated.View style={styles.portalOverlay} />
+          <Animated.View className="absolute inset-0 z-[15]" />
         </GestureDetector>
         {children}
       </Animated.View>

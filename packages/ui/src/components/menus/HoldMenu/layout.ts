@@ -60,6 +60,32 @@ function fieldAreSame(obj1: MenuItemProps, obj2: MenuItemProps): boolean {
 }
 
 /**
+ * Horizontal travel for one phase of the panel's pop-in — upstream's nested
+ * ternary flattened to a function. `right` mirrors the left travel (the panel
+ * grows out of the opposite side), `left` takes it straight, and the centre
+ * (or any other half) falls back to the `center` value.
+ */
+function horizontalTravel(half: string | undefined, leftTravel: number, centerTravel: number): number {
+  'worklet';
+  if (half === 'right') return -leftTravel;
+  if (half === 'left') return leftTravel;
+  return centerTravel;
+}
+
+/**
+ * Vertical travel for one phase of the panel's pop-in. `top` / `bottom` take
+ * their travel straight; the centre falls back. Upstream's quirk (the
+ * `bottom-*` beginning reuses the top value) is preserved by the caller passing
+ * the same value for both.
+ */
+function verticalTravel(half: string | undefined, topTravel: number, bottomTravel: number, centerTravel: number): number {
+  'worklet';
+  if (half === 'top') return topTravel;
+  if (half === 'bottom') return bottomTravel;
+  return centerTravel;
+}
+
+/**
  * Worklet-safe deep equality for the item lists that cross the shared-value
  * boundary — upstream's `deepEqual` from `utils/validations.ts`, verbatim.
  */
@@ -100,10 +126,11 @@ export const calculateMenuHeight = (itemLength: number, separatorCount: number, 
 
 /**
  * Beginning/ending transforms of the panel's pop-in animation, per anchor —
- * upstream's `menuAnimationAnchor`, verbatim (including the quirk where the
- * `bottom-*` beginning `translateY` reuses `TyTop1`). `menuHeight` and
- * `menuWidth` are parameterised so the panel's rotation-safe size drives the
- * animation.
+ * upstream's `menuAnimationAnchor`, with its nested ternaries flattened into
+ * {@link horizontalTravel} / {@link verticalTravel} (behaviour unchanged,
+ * including the quirk where the `bottom-*` beginning `translateY` reuses
+ * `TyTop1`). `menuHeight` and `menuWidth` are parameterised so the panel's
+ * rotation-safe size drives the animation.
  */
 export const menuAnimationAnchor = (
   anchorPoint: TransformOriginAnchorPosition,
@@ -113,7 +140,9 @@ export const menuAnimationAnchor = (
 ) => {
   'worklet';
 
-  const splittetAnchorName: string[] = anchorPoint.split('-');
+  const anchorParts = anchorPoint.split('-');
+  const verticalHalf = anchorParts[0];
+  const horizontalHalf = anchorParts[1];
 
   const Center1 = itemWidth;
   const Center2 = 0;
@@ -126,12 +155,12 @@ export const menuAnimationAnchor = (
 
   return {
     beginningTransformations: {
-      translateX: splittetAnchorName[1] === 'right' ? -TxLeft1 : splittetAnchorName[1] === 'left' ? TxLeft1 : Center1,
-      translateY: splittetAnchorName[0] === 'top' ? TyTop1 : splittetAnchorName[0] === 'bottom' ? TyTop1 : Center2,
+      translateX: horizontalTravel(horizontalHalf, TxLeft1, Center1),
+      translateY: verticalTravel(verticalHalf, TyTop1, TyTop1, Center2),
     },
     endingTransformations: {
-      translateX: splittetAnchorName[1] === 'right' ? -TxLeft2 : splittetAnchorName[1] === 'left' ? TxLeft2 : Center2,
-      translateY: splittetAnchorName[0] === 'top' ? TyTop2 : splittetAnchorName[0] === 'bottom' ? -TyTop2 : Center2,
+      translateX: horizontalTravel(horizontalHalf, TxLeft2, Center2),
+      translateY: verticalTravel(verticalHalf, TyTop2, -TyTop2, Center2),
     },
   };
 };

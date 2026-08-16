@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView } from 'react-native';
 import Animated, {
   runOnJS,
   useAnimatedReaction,
@@ -14,26 +14,6 @@ import { MENU_PANEL_DARK_COLOR, MENU_PANEL_LIGHT_COLOR } from './hold-menu-theme
 import type { MenuItemProps } from './hold-menu-types';
 import { clampMenuLeft, deepEqual, leftOrRight, menuAnimationAnchor } from './layout';
 import { MenuItems } from './menu-items';
-
-const styles = StyleSheet.create({
-  menuContainer: {
-    position: 'absolute',
-    top: 0,
-    borderRadius: 12,
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    overflow: 'hidden',
-    zIndex: 15,
-  },
-  menuInnerContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-  },
-});
 
 /**
  * The panel — upstream's `MenuList`: the translucent surface that
@@ -116,9 +96,12 @@ const MenuListComponent = () => {
   );
 
   return (
-    <Animated.View style={[styles.menuContainer, messageStyles]}>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.menuInnerContainer, animatedInnerContainerStyle]}>
-        <ScrollView bounces={false} showsVerticalScrollIndicator={false} style={StyleSheet.absoluteFill}>
+    <Animated.View
+      className="absolute top-0 z-[15] flex-row items-start justify-start overflow-hidden rounded-xl"
+      style={messageStyles}
+    >
+      <Animated.View className="absolute inset-0 flex-col items-center justify-start" style={animatedInnerContainerStyle}>
+        <ScrollView bounces={false} showsVerticalScrollIndicator={false} className="absolute inset-0">
           <MenuItems items={itemList} />
         </ScrollView>
       </Animated.View>

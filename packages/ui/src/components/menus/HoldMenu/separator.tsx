@@ -1,15 +1,7 @@
 import { memo } from 'react';
-import { StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useHoldMenuInternal } from './context';
 import { BORDER_DARK_COLOR, BORDER_LIGHT_COLOR } from './hold-menu-theme';
-
-const styles = StyleSheet.create({
-  separator: {
-    width: '100%',
-    height: 8,
-  },
-});
 
 /**
  * The 8 px band between menu groups — upstream's `Separator`, colored by theme.
@@ -24,7 +16,7 @@ const SeparatorComponent = () => {
     [theme],
   );
 
-  return <Animated.View style={[styles.separator, separatorStyles]} />;
+  return <Animated.View className="h-2 w-full" style={separatorStyles} />;
 };
 
 export const Separator = memo(SeparatorComponent);

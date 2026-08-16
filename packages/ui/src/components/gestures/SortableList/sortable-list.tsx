@@ -20,7 +20,18 @@
 // State lives in a React context (one per list instance) so <SortableItem> can
 // read state and call actions directly instead of receiving them as props.
 
-import { createContext, memo, type ReactNode, useCallback, useContext, useId, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  memo,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { View } from 'react-native';
 import Animated, {
   type SharedValue,
@@ -126,6 +137,9 @@ function SortableItem({ children, itemKey, index, listId, mimeType, disabled = f
   // drag — only the commit (onDrop) crosses back to JS.
   const translateY = useSharedValue(0);
   const lastDropVersion = useSharedValue(0);
+  // Previous canonical index — lets the drop-commit layout effect run only when
+  // a reorder actually changed this item's slot, not on every render.
+  const prevIndexRef = useRef(index);
 
   useAnimatedReaction(
     () => {
@@ -146,6 +160,22 @@ function SortableItem({ children, itemKey, index, listId, mimeType, disabled = f
     },
     [index, itemHeight],
   );
+
+  // ── Drop-commit snap ────────────────────────────────────────────────────
+  // The reaction above animates translateY while a drag is in flight, but it is
+  // a `useEffect`-driven hook — its reset lands *after* paint. On a committed
+  // reorder the item's `index` changes in the very render that re-inserts its
+  // DOM node at the new slot, so resetting translateY in a layout effect makes
+  // the snap and the reorder land in the same frame. Without this, the re-inserted
+  // node briefly renders at its new slot while still carrying the drag-time
+  // offset — the drop flicker. Syncing `lastDropVersion` here also makes the
+  // reaction's post-paint re-init settle to a no-op instead of re-animating.
+  useLayoutEffect(() => {
+    if (prevIndexRef.current === index) return;
+    prevIndexRef.current = index;
+    translateY.value = 0;
+    lastDropVersion.value = dropVersionSV.value;
+  }, [index, translateY, lastDropVersion, dropVersionSV]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     height: itemHeight,

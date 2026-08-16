@@ -269,10 +269,7 @@ export function FileSystemMobileListView({
   // file-manager behaviour (the checkboxes are the toggle surface, and the row
   // tap mirrors them).
   const activate = useCallback(
-    (entry: FileSystemEntry) => {
-      if (selecting) toggleSelect(entry);
-      else onOpen(entry);
-    },
+    (entry: FileSystemEntry) => (selecting ? toggleSelect(entry) : onOpen(entry)),
     [onOpen, selecting, toggleSelect],
   );
 
@@ -296,17 +293,8 @@ export function FileSystemMobileListView({
     [orderedPaths],
   );
 
-  const {
-    begin,
-    move: moveScrub,
-    end: endScrub,
-  } = useFileSystemScrubSession({
-    orderedPaths,
-    selectedPaths,
-    onMarquee,
-    onDeselectMarquee,
-    resolveItemAt,
-  });
+  const scrubSession = { orderedPaths, selectedPaths, onMarquee, onDeselectMarquee, resolveItemAt };
+  const { begin, move: moveScrub, end: endScrub } = useFileSystemScrubSession(scrubSession);
 
   const beginScrub = useCallback(
     (entry: FileSystemEntry, _x: number, y: number) => {
@@ -331,48 +319,29 @@ export function FileSystemMobileListView({
     scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
   }, []);
 
+  const rowProps = useMemo(
+    () => ({ draggable, ensureChildren, getContextMenuActions, onMove, renderEntryIcon, onContextMenuAction, onExternalDrop }),
+    [draggable, ensureChildren, getContextMenuActions, onMove, renderEntryIcon, onContextMenuAction, onExternalDrop],
+  );
+
   const renderRow = useCallback(
     ({ item }: MobileListRenderItem) => (
       <MobileListRow
         childCount={index.children.get(item.path)?.length}
-        draggable={draggable}
-        ensureChildren={ensureChildren}
         entry={item}
-        getContextMenuActions={getContextMenuActions}
         isSelected={selectedPaths.has(item.path)}
         onActivate={activate}
-        onContextMenuAction={onContextMenuAction}
-        onExternalDrop={onExternalDrop}
-        onMove={onMove}
         onScrubStart={beginScrub}
         onScrubMove={moveScrub}
         onScrubEnd={endScrub}
         onSelectLongPress={selectLongPress}
         onToggleSelect={toggleSelect}
-        renderEntryIcon={renderEntryIcon}
         selecting={selecting}
         testID={fileSystemEntryTestID(testID, item.path)}
+        {...rowProps}
       />
     ),
-    [
-      activate,
-      beginScrub,
-      draggable,
-      endScrub,
-      ensureChildren,
-      getContextMenuActions,
-      index,
-      moveScrub,
-      onContextMenuAction,
-      onExternalDrop,
-      onMove,
-      renderEntryIcon,
-      selectedPaths,
-      selectLongPress,
-      selecting,
-      testID,
-      toggleSelect,
-    ],
+    [activate, beginScrub, endScrub, index, moveScrub, selectedPaths, selectLongPress, selecting, testID, toggleSelect, rowProps],
   );
 
   // The vertical gap between rows — see `MobileRowSeparator`.
@@ -390,17 +359,7 @@ export function FileSystemMobileListView({
         renderItem={renderRow}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        // This list is nested inside the consumer's own ScrollView (the native
-        // storybook decorator wraps every story in one). Android only scrolls a
-        // child of a scroll container when the child opts into nested scrolling —
-        // iOS and web handle the nesting natively — so without this the list
-        // would not scroll at all in the APK.
         nestedScrollEnabled={true}
-        // `removeClippedSubviews` is deliberately OFF. Android defaults it to
-        // true, and this FlatList is nested inside a ScrollView — the same
-        // failure mode the Table fixed in 348ad09c: native view clipping there
-        // wrongly detaches visible cells, rendering the list blank and stalling
-        // it trying to keep every row mounted.
         removeClippedSubviews={false}
       />
     </View>

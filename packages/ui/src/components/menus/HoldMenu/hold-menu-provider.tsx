@@ -1,10 +1,10 @@
-import { PortalProvider } from '@gorhom/portal';
 import { memo, useEffect, useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedReaction, useSharedValue } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
+import { PortalProvider } from '../../portal/Portal/portal';
 import { Backdrop } from './backdrop';
 import { CONTEXT_MENU_STATE } from './hold-menu-constants';
 import { HoldMenuInternalContext, type HoldMenuInternalContextType } from './hold-menu-context';
@@ -14,9 +14,9 @@ import { Menu } from './menu';
 /**
  * `HoldMenuProvider` — upstream's provider: a `GestureHandlerRootView` (flex
  * 1), the `InternalContext` carrying the menu's shared values, a
- * `PortalProvider` from `@gorhom/portal`, then the children, then the always
- * mounted `Backdrop` and `Menu` inside the portal host. One menu at a time,
- * driven entirely by the `state` shared value.
+ * `PortalProvider` (the package's portal primitive), then the children, then
+ * the always mounted `Backdrop` and `Menu` inside the portal host. One menu at
+ * a time, driven entirely by the `state` shared value.
  *
  * Rotation safety is the departure from upstream: window dimensions come from
  * `useWindowDimensions` and are mirrored into a shared value, so the menu and

@@ -1,4 +1,3 @@
-import { Portal } from '@gorhom/portal';
 import { memo, type ReactNode, useMemo } from 'react';
 import type { ViewProps } from 'react-native';
 import { StyleSheet } from 'react-native';
@@ -12,6 +11,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { Portal } from '../../portal/Portal/portal';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './hold-menu-constants';
 import { useHoldMenuInternal } from './hold-menu-context';
 import { calculateMenuHeight, calculateTransformValue, type TransformOriginAnchorPosition } from './hold-menu-layout';

@@ -41,7 +41,6 @@
         "rn-motion-ui-tokens": "./scripts/gen-tokens.mjs",
       },
       "dependencies": {
-        "@gorhom/portal": "^1.0.14",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "rn-motion-ui-icons": "^0.0.2",

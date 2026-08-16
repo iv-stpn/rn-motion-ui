@@ -11,7 +11,7 @@
  *
  * | Upstream | Here |
  * | --- | --- |
- * | `<HoldMenuProvider>` at app root, `@gorhom/portal` host, shared `SharedValue`s | nothing — each menu owns a `Modal` through `OverlayShell` |
+ * | `<HoldMenuProvider>` at app root, `Portal` host, shared `SharedValue`s | nothing — each menu owns a `Modal` through `OverlayShell` |
  * | `expo-blur` scrim | `backdrop-blur-xs` on web; iOS blurs via expo-blur (optional peer), Android gets the dim alone |
  * | `expo-haptics` style names | `haptics` hook — `Vibration` on Android, or your own function |
  * | `items[].text`, `isTitle`, `isDestructive` | `items[].label`, `heading`, `destructive` (+ `id`, `disabled`) |

@@ -5,7 +5,7 @@
  *
  * Ported from react-native-hold-menu's `HoldItem` portal, `menu/Menu.tsx`,
  * `menu/MenuList.tsx` and `backdrop/Backdrop.tsx`, which upstream are four
- * components wired through a provider and a `@gorhom/portal` host. Here they are
+ * components wired through a provider and a `Portal` host. Here they are
  * one subtree inside the `Modal` that `OverlayShell` already opens, so no
  * provider is needed and no shared `SharedValue` has to be threaded between the
  * item and the panel.

@@ -407,6 +407,11 @@
       "types": "./src/components/menus/Popover/popover.tsx",
       "default": "./src/components/menus/Popover/popover.tsx"
     },
+    "./portal": {
+      "source": "./src/components/portal/Portal/portal.tsx",
+      "types": "./src/components/portal/Portal/portal.tsx",
+      "default": "./src/components/portal/Portal/portal.tsx"
+    },
     "./radio": {
       "source": "./src/components/form/Radio/radio.tsx",
       "types": "./src/components/form/Radio/radio.tsx",
@@ -815,7 +820,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@gorhom/portal": "^1.0.14",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "rn-motion-ui-icons": "^0.0.2",

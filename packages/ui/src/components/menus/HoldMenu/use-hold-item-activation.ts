@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import Animated, { type AnimatedRef, measure, type SharedValue, useSharedValue } from 'react-native-reanimated';
-import { CONTEXT_MENU_STATE } from './hold-menu-constants';
+import type { CONTEXT_MENU_STATE } from './hold-menu-constants';
 import type { HoldMenuSafeAreaInsets, HoldMenuWindowSize } from './hold-menu-context';
 import {
   calculateMenuHeight,
@@ -23,6 +23,7 @@ type UseHoldItemActivationOptions = {
   windowSize: SharedValue<HoldMenuWindowSize>;
   safeAreaInsets: SharedValue<HoldMenuSafeAreaInsets>;
   state: SharedValue<CONTEXT_MENU_STATE>;
+  scaleHold: (duration?: number) => void;
 };
 
 type UseHoldItemActivationResult = {
@@ -60,7 +61,7 @@ export function useHoldItemActivation({
   menuProps,
   windowSize,
   safeAreaInsets,
-  state,
+  scaleHold,
 }: UseHoldItemActivationOptions): UseHoldItemActivationResult {
   const itemRectY = useSharedValue<number>(0);
   const itemRectX = useSharedValue<number>(0);
@@ -161,13 +162,16 @@ export function useHoldItemActivation({
     setMenuProps,
   ]);
 
-  /** Web `'hold'`: measure and open directly — no squeeze, nothing lifts. */
+  /** Web: measure and open, running the lift choreography instead of an instant pop. */
   const activateFromContextMenu = useCallback(() => {
     'worklet';
     if (!items || items.length === 0) return;
     activateAnimation();
-    state.value = CONTEXT_MENU_STATE.ACTIVE;
-  }, [items, activateAnimation, state]);
+    // Web: an instant trigger (right-click, click) still runs the library's
+    // lift choreography — a quick squeeze, then onCompletion flips the menu
+    // active and the item scales back up while the panel pops out of it.
+    scaleHold(120);
+  }, [items, activateAnimation, scaleHold]);
 
   return {
     itemRectY,

@@ -1,11 +1,12 @@
 /**
  * Native half of the HoldMenu blur layer.
  *
- * iOS renders expo-blur's `BlurView` — wrapped in `createAnimatedComponent` so
- * the panel and backdrop can animate its `intensity` through `animatedProps`,
- * exactly as upstream does — with the colored overlay painted above it.
- * Android renders a plain `Animated.View` (upstream gives Android the plain
- * dim; this package keeps that).
+ * iOS and Android render expo-blur's `BlurView` — wrapped in
+ * `createAnimatedComponent` so the panel and backdrop can animate its
+ * `intensity` through `animatedProps`, exactly as upstream does — with the
+ * colored overlay painted above it. expo-blur supports Android; upstream's
+ * iOS-only gate is a platform restriction this port lifts. Android falls back
+ * to the plain `Animated.View` only when expo-blur is absent.
  *
  * `expo-blur` is an optional peer dependency, loaded with a guarded dynamic
  * `require` exactly like `hold-menu-haptics.native.ts` treats `expo-haptics`.
@@ -70,7 +71,7 @@ export type HoldMenuBlurProps = {
  * Internal to `HoldMenu` — not exported from the package.
  */
 export function HoldMenuBlur({ children, style, animatedProps, testID }: HoldMenuBlurProps) {
-  if (Platform.OS === 'ios' && AnimatedBlurView)
+  if ((Platform.OS === 'ios' || Platform.OS === 'android') && AnimatedBlurView)
     return (
       <AnimatedBlurView animatedProps={animatedProps} style={style} testID={testID}>
         {children}

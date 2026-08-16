@@ -1,6 +1,7 @@
 import { memo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Animated, {
+  Easing,
   runOnJS,
   useAnimatedProps,
   useAnimatedReaction,
@@ -93,6 +94,7 @@ const MenuListComponent = () => {
     const opacityAnimation = () =>
       withTiming(state.value === CONTEXT_MENU_STATE.ACTIVE ? 1 : 0, {
         duration,
+        easing: Easing.out(Easing.cubic),
       });
 
     return {

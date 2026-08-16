@@ -63,16 +63,16 @@ export const MENU_WIDTH_RATIO = 0.6;
 /** Margin kept between the panel and the safe-area edges. */
 export const HOLD_MENU_VIEWPORT_PADDING = 8;
 
-/** True on iOS — the only platform upstream blurs with expo-blur. */
+/** True on iOS — upstream blurs iOS only; this port also blurs Android (expo-blur) and web (CSS backdrop-filter). */
 export const IS_IOS = Platform.OS === 'ios';
 
 /**
- * Whether this platform can blur what sits behind the backdrop — iOS via
- * expo-blur, web via CSS `backdrop-filter`. These get the translucent backdrop
- * colors; platforms without blur (Android) get the near-opaque plain dim,
- * exactly as upstream.
+ * Whether this platform can blur what sits behind the backdrop — iOS and
+ * Android via expo-blur, web via CSS `backdrop-filter`. These get the
+ * translucent backdrop colors; platforms without blur keep the near-opaque
+ * plain dim.
  */
-export const BACKDROP_BLURS = Platform.OS === 'ios' || Platform.OS === 'web';
+export const BACKDROP_BLURS = Platform.OS === 'ios' || Platform.OS === 'android' || Platform.OS === 'web';
 
 /**
  * Whether this platform performs the lift — hold the item, it rises off a

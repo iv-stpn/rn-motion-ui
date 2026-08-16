@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { runOnJS, type SharedValue, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { Easing, runOnJS, type SharedValue, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import {
   CONTEXT_MENU_STATE,
   HOLD_ITEM_SCALE_DOWN_DURATION,
@@ -54,6 +54,7 @@ export function useHoldItemSqueeze({
     'worklet';
     itemScale.value = withTiming(1, {
       duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION / 2,
+      easing: Easing.out(Easing.cubic),
     });
   }, [itemScale, reducedMotion]);
 
@@ -73,14 +74,17 @@ export function useHoldItemSqueeze({
     [items, state, isActive, scaleBack, hapticFeedback, hapticResponse, isAnimationStarted],
   );
 
-  const scaleHold = useCallback(() => {
-    'worklet';
-    itemScale.value = withTiming(
-      HOLD_ITEM_SCALE_DOWN_VALUE,
-      { duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_SCALE_DOWN_DURATION },
-      onCompletion,
-    );
-  }, [itemScale, reducedMotion, onCompletion]);
+  const scaleHold = useCallback(
+    (duration: number = HOLD_ITEM_SCALE_DOWN_DURATION) => {
+      'worklet';
+      itemScale.value = withTiming(
+        HOLD_ITEM_SCALE_DOWN_VALUE,
+        { duration: reducedMotion.value === 1 ? 0 : duration },
+        onCompletion,
+      );
+    },
+    [itemScale, reducedMotion, onCompletion],
+  );
 
   const scaleTap = useCallback(() => {
     'worklet';
@@ -94,6 +98,7 @@ export function useHoldItemSqueeze({
         1,
         {
           duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION / 2,
+          easing: Easing.out(Easing.cubic),
         },
         onCompletion,
       ),

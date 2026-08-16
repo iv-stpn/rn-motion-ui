@@ -1,15 +1,17 @@
 import { memo, useId, useMemo } from 'react';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   useAnimatedReaction,
   useAnimatedRef,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { HoldItemTwin } from './hold-item-twin';
-import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, HOLD_MENU_LIFTS } from './hold-menu-constants';
+import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, HOLD_MENU_LIFTS, SPRING_CONFIGURATION } from './hold-menu-constants';
 import { useHoldMenuInternal } from './hold-menu-context';
 import type { HoldItemProps } from './hold-menu-types';
 import { useHoldItemActivation } from './use-hold-item-activation';
@@ -89,6 +91,7 @@ const HoldItemComponent = ({
     windowSize,
     safeAreaInsets,
     state,
+    scaleHold,
   });
 
   const webHold = !HOLD_MENU_LIFTS && isHold;
@@ -112,28 +115,47 @@ const HoldItemComponent = ({
     const animateOpacity = () =>
       withDelay(reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 }));
 
+    // The item travels with the panel while the menu is active, using the
+    // same stored tY the Menu wrapper springs to — so both move as one. tY is
+    // nonzero only on overflow, so a menu that fits leaves the item exactly
+    // where it is. On native the original is hidden under the portal twin and
+    // only the twin carries the visible spring; on web this IS the visible
+    // item, which is what makes the web lift glide.
+    const tY = menuProps.value.transformValue;
+    const travelAnimation = () => {
+      if (disableMove) return 0;
+      if (isActive.value) {
+        if (reducedMotion.value === 1) return withTiming(tY, { duration: 0 });
+        return withSpring(tY, SPRING_CONFIGURATION);
+      }
+      return withTiming(0, { duration: HOLD_ITEM_TRANSFORM_DURATION });
+    };
+
     return {
-      // Web never lifts, so the in-place children stay put — the twin never
-      // mounts there, and hiding the original would leave a hole.
       opacity: isActive.value && HOLD_MENU_LIFTS ? 0 : animateOpacity(),
       transform: [
+        { translateY: travelAnimation() },
         {
           scale: isActive.value
             ? withTiming(1, {
                 duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION,
+                easing: reducedMotion.value === 1 ? undefined : Easing.out(Easing.cubic),
               })
             : itemScale.value,
         },
       ],
     };
-  }, [reducedMotion, isActive, itemScale]);
+  }, [reducedMotion, isActive, itemScale, menuProps, disableMove]);
 
   const containerStyle = useMemo(() => [containerStyles, animatedContainerStyle], [containerStyles, animatedContainerStyle]);
 
   useAnimatedReaction(
     () => state.value,
     (_state) => {
-      if (_state === CONTEXT_MENU_STATE.END) isActive.value = false;
+      if (_state === CONTEXT_MENU_STATE.END) {
+        isActive.value = false;
+        didMeasureLayout.value = false;
+      }
     },
   );
 

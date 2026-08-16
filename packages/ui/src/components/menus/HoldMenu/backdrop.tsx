@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   runOnJS,
   useAnimatedProps,
   useAnimatedReaction,
@@ -79,6 +80,7 @@ const BackdropComponent = () => {
     const opacityValueAnimation = () =>
       withTiming(state.value === CONTEXT_MENU_STATE.ACTIVE ? 1 : 0, {
         duration,
+        easing: Easing.out(Easing.cubic),
       });
 
     return {

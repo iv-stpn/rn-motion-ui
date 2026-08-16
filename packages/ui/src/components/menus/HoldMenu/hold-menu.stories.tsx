@@ -4,14 +4,16 @@
  *
  * These run under react-native-web, which is the platform where the component
  * deliberately does something else: `activateOn="hold"` is a right-click that
- * opens a plain dropdown anchored to the item — no lift, children rendered
- * exactly once (the portal twin is skipped on web). The backdrop still dims
- * the page behind the panel — a blurred translucent scrim, since web joins the
- * blur-capable tier (see `hold-menu-blur.tsx`) — and the `play` functions pin
- * that contract: a right-click and the keyboard `contextmenu` path open the
- * panel, a press on a row runs its `actionParams` and closes it, and a click
- * on the dimmed backdrop closes it too. `'tap'` and `'double-tap'` keep the
- * press on web, so those stories open with ordinary clicks.
+ * opens a dropdown anchored to the item — children still render exactly once
+ * (the portal twin stays native-only), but the item performs the lift in
+ * place: a quick squeeze, then it scales back up and glides with the panel as
+ * the menu pops out of it. The backdrop still dims the page behind the panel —
+ * a blurred translucent scrim, since web joins the blur-capable tier (see
+ * `hold-menu-blur.tsx`) — and the `play` functions pin that contract: a
+ * right-click and the keyboard `contextmenu` path open the panel, a press on a
+ * row runs its `actionParams` and closes it, and a click on the dimmed
+ * backdrop closes it too. `'tap'` and `'double-tap'` keep the press on web, so
+ * those stories open with ordinary clicks.
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/react';
 import { type ReactElement, useCallback, useState } from 'react';
@@ -260,7 +262,7 @@ export const DarkTheme: Story = {
     // Web dark scrim — the blur tier's BACKDROP_DARK_BACKGROUND_COLOR (Android
     // keeps the near-opaque plain dim, since it has no blur).
     const backdrop = await screen.findByTestId(`${DEMO_TEST_ID}-${FIRST_MESSAGE_ID}-backdrop`);
-    await expect(getComputedStyle(backdrop).backgroundColor).toBe('rgba(0, 0, 0, 0.75)');
+    await expect(getComputedStyle(backdrop).backgroundColor).toBe('rgba(0, 0, 0, 0.5)');
     // The backdrop testID sits on the inner tint view; its parent is the blur
     // layer, which frosts the page behind the tint via CSS backdrop-filter.
     const blurLayer = backdrop.parentElement;

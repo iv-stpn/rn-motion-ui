@@ -4,6 +4,7 @@ import type { ViewProps } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   type SharedValue,
   useAnimatedProps,
   useAnimatedStyle,
@@ -127,6 +128,7 @@ const HoldItemTwinComponent = ({
           scale: isActive.value
             ? withTiming(1, {
                 duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION,
+                easing: reducedMotion.value === 1 ? undefined : Easing.out(Easing.cubic),
               })
             : itemScale.value,
         },

@@ -7,7 +7,7 @@ import Animated, { type AnimatedProps } from 'react-native-reanimated';
 // is cast, same pattern as HoverMenu's `WEB_PANEL_POSITION`. A static blur is
 // enough: the container opacity animation already fades the whole layer.
 // biome-ignore lint/plugin: RNW passes backdropFilter through prefixStyles, but RN's ViewStyle lacks it, so the web-only style is cast
-const WEB_BLUR_STYLE = { backdropFilter: 'blur(20px)' } as unknown as ViewStyle;
+const WEB_BLUR_STYLE = { backdropFilter: 'blur(30px)' } as unknown as ViewStyle;
 
 export type HoldMenuBlurProps = {
   children?: ReactNode;

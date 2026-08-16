@@ -72,14 +72,21 @@ export type TransformOriginAnchorPosition =
   | 'bottom-center';
 
 /** Height of one action row at the given font scale — upstream's `MenuItemHeight()`. */
-export const menuItemHeight = (fontScale: number): number => TYPOGRAPHY.callout.lineHeight * fontScale + SPACING * 2.5;
+// biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
+export const menuItemHeight = (fontScale: number): number => {
+  'worklet';
+  return TYPOGRAPHY.callout.lineHeight * fontScale + SPACING * 2.5;
+};
 
 /**
  * Estimated panel height for N rows and separator bands — upstream's
  * `calculateMenuHeight`, plus the inter-row 1 px seams it counts.
  */
-export const calculateMenuHeight = (itemLength: number, separatorCount: number, fontScale = 1): number =>
-  menuItemHeight(fontScale) * itemLength + (itemLength - 1) + separatorCount * SPACING;
+// biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
+export const calculateMenuHeight = (itemLength: number, separatorCount: number, fontScale = 1): number => {
+  'worklet';
+  return menuItemHeight(fontScale) * itemLength + (itemLength - 1) + separatorCount * SPACING;
+};
 
 /** One side of the panel's pop-in animation, for a given anchor. */
 export type MenuAnimationAnchorTransformations = { translateX: number; translateY: number };
@@ -252,10 +259,18 @@ export const resolveHoldMenuTravel = (input: HoldMenuTravelInput): HoldMenuTrave
 };
 
 /** The vertical travel — upstream's `calculateTransformValue`, clamped. */
-export const calculateTransformValue = (input: HoldMenuTravelInput): number => resolveHoldMenuTravel(input).tY;
+// biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
+export const calculateTransformValue = (input: HoldMenuTravelInput): number => {
+  'worklet';
+  return resolveHoldMenuTravel(input).tY;
+};
 
 /** The panel's scroll cap once travel has been applied. */
-export const menuMaxHeight = (input: HoldMenuTravelInput): number => resolveHoldMenuTravel(input).maxHeight;
+// biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
+export const menuMaxHeight = (input: HoldMenuTravelInput): number => {
+  'worklet';
+  return resolveHoldMenuTravel(input).maxHeight;
+};
 
 /**
  * Smallest the panel is ever capped to: one row. A panel clamped below this
@@ -268,8 +283,11 @@ export const MIN_PANEL_HEIGHT = TYPOGRAPHY.callout.lineHeight + SPACING * 2.5;
  * The height the panel actually renders at: the estimate, capped to what fits
  * after travel — never below one row.
  */
-export const menuPanelHeight = (menuHeight: number, maxHeight: number): number =>
-  Math.min(menuHeight, Math.max(maxHeight, MIN_PANEL_HEIGHT));
+// biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
+export const menuPanelHeight = (menuHeight: number, maxHeight: number): number => {
+  'worklet';
+  return Math.min(menuHeight, Math.max(maxHeight, MIN_PANEL_HEIGHT));
+};
 
 /** Inputs for the horizontal viewport clamp. */
 export type HoldMenuLeftClampInput = {

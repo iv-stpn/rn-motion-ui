@@ -11,7 +11,17 @@
 // `preventDefault` the browser refuses the drop and shows a "no" cursor), and that
 // a payload arrived from outside the page entirely.
 
-import { type ReactNode, type Ref, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef } from 'react';
+import {
+  type ReactNode,
+  type Ref,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 import { type LayoutChangeEvent, View, type ViewProps } from 'react-native';
 import { cn } from '../../../lib/cn';
 import type {
@@ -25,8 +35,8 @@ import type {
   DragzoneRenderState,
 } from '../drag.types';
 import { useDragScope } from '../drag-scope';
-import { type DragzoneRegistration, registerDragzone } from '../drag-store';
-import { useDragSnapshot, useLatest } from '../use-drag-store';
+import { type DragzoneRegistration, getZoneStanding, registerDragzone, subscribeDragStore } from '../drag-store';
+import { useLatest } from '../use-drag-store';
 import { useDragzoneWeb } from './use-dragzone-web';
 
 export type DragzoneProps = Omit<ViewProps, 'children'> & {
@@ -192,9 +202,18 @@ export function Dragzone({
     [skipRectMeasure, remeasure, consumerOnLayout],
   );
 
-  // The snapshot rather than `useDragzoneState`, because the render state names the
-  // drag as well as this zone's standing in it — and it is the same subscription.
-  const snapshot = useDragSnapshot();
+  // This zone's standing in the drag, subscribed per zone rather than to the whole
+  // snapshot: the store caches one object per entry and replaces it only when that
+  // zone's own fields changed, so `Object.is` in `useSyncExternalStore` lets React
+  // skip this render on every crossing that happens somewhere else in the tree. A
+  // file system's every folder row is a `<Dragzone>`, so a full-snapshot
+  // subscription here re-rendered the entire row list on each folder boundary the
+  // pointer crossed — the drag lag the per-zone subscription exists for.
+  const standing = useSyncExternalStore(
+    subscribeDragStore,
+    () => getZoneStanding(id),
+    () => getZoneStanding(id),
+  );
   const isExternalOver = useDragzoneWeb({ acceptsExternal, dropEffect, enabled: !disabled, nodeRef, zoneId: id });
 
   useImperativeHandle(ref, () => ({ getId: () => id, getNode: () => nodeRef.current, measure, remeasure }), [
@@ -206,16 +225,15 @@ export function Dragzone({
   // An external payload is only ever known to be here while it is over the zone —
   // the browser reports a foreign drag at this node and nowhere earlier — so for
   // that case eligibility and hover are one fact, not two.
-  const state: DragzoneRenderState = useMemo(() => {
-    const isOver = snapshot.overZoneId === id;
-    const isEligible = snapshot.drag !== null && snapshot.eligibleZoneIds.includes(id);
-    return {
-      drag: snapshot.drag,
+  const state: DragzoneRenderState = useMemo(
+    () => ({
+      drag: standing.drag,
       external: isExternalOver,
-      isEligible: isEligible || isExternalOver,
-      isOver: isOver || isExternalOver,
-    };
-  }, [id, isExternalOver, snapshot]);
+      isEligible: standing.isEligible || isExternalOver,
+      isOver: standing.isOver || isExternalOver,
+    }),
+    [isExternalOver, standing],
+  );
 
   const content = typeof children === 'function' ? children(state) : children;
 

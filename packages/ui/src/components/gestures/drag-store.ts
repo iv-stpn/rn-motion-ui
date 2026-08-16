@@ -27,6 +27,7 @@ import type {
   DragTransfer,
   DragzoneDropEvent,
   DragzoneEntry,
+  DragzoneStanding,
 } from './drag.types';
 import { draggableRectAt } from './drag-geometry';
 import { eligibleZoneIds, isZoneEligible, resolveDropTarget } from './drag-hit-test';
@@ -34,6 +35,16 @@ import { eligibleZoneIds, isZoneEligible, resolveDropTarget } from './drag-hit-t
 const NO_IDS: readonly string[] = [];
 const NO_FILES: readonly File[] = [];
 const IDLE: DragSnapshot = { drag: null, eligibleZoneIds: NO_IDS, overZoneId: null, preview: null };
+
+/**
+ * How a zone stands when there is no drag, or when it is not registered.
+ *
+ * One shared object: every zone whose standing is genuinely idle can point at it,
+ * and a subscriber bails out of re-rendering when its zone's standing reference
+ * did not change — the whole point of the per-zone cache. Never mutated; a zone
+ * whose standing changes gets a fresh object instead.
+ */
+const IDLE_ZONE: DragzoneStanding = { drag: null, isEligible: false, isOver: false };
 
 type Session = {
   drag: ActiveDrag;
@@ -107,6 +118,13 @@ function isIsolating(managerId: string): boolean {
  * Called only when something render-visible changed — a drag starting or ending,
  * the pointer crossing a zone edge, a zone registering mid-drag. Pointer movement
  * inside one zone does not come through here; that is what `moveListeners` is for.
+ *
+ * The same pass refreshes every zone's cached standing. A zone's standing is the
+ * object *its* subscriber compares by identity, so each entry keeps its previous
+ * object unless a field of its own changed — a crossing re-renders the zone left
+ * and the zone entered, and nothing else. `eligible` is built as a Set first so
+ * each per-zone lookup is O(1) rather than an `includes` over the whole array per
+ * zone (O(n²) per publish on a tree of rows).
  */
 function publish() {
   snapshot =
@@ -118,6 +136,26 @@ function publish() {
           overZoneId: session.overZoneId,
           preview: session.preview,
         };
+  const drag = session?.drag ?? null;
+  // An empty set when idle — the same shape either way, so each zone lookup is
+  // one `Set#has` with no null branch.
+  const eligible = new Set(session?.eligible ?? NO_IDS);
+  const overZoneId = session?.overZoneId ?? null;
+  for (const entry of zonesList) {
+    const next: DragzoneStanding = {
+      drag,
+      isEligible: eligible.has(entry.id),
+      isOver: overZoneId === entry.id,
+    };
+    const previous = entry.standing;
+    if (
+      previous === undefined ||
+      previous.drag !== next.drag ||
+      previous.isEligible !== next.isEligible ||
+      previous.isOver !== next.isOver
+    )
+      entry.standing = next;
+  }
   for (const listener of listeners) listener();
 }
 
@@ -235,7 +273,9 @@ export function registerDragManager(params: RegisterDragManagerParams): () => vo
   };
 }
 
-export type RegisterDragzoneParams = Omit<DragzoneEntry, 'rect'>;
+// `standing` is the store's own cache, seeded at registration — a caller has no
+// business passing one in.
+export type RegisterDragzoneParams = Omit<DragzoneEntry, 'rect' | 'standing'>;
 
 export type DragzoneRegistration = {
   unregister: () => void;
@@ -251,7 +291,7 @@ export type DragzoneRegistration = {
  * the drag having to end and restart.
  */
 export function registerDragzone(params: RegisterDragzoneParams): DragzoneRegistration {
-  const entry: DragzoneEntry = { ...params, rect: null };
+  const entry: DragzoneEntry = { ...params, rect: null, standing: IDLE_ZONE };
   zones.set(params.id, entry);
   zonesList = [...zones.values()];
 
@@ -501,6 +541,21 @@ export function getDragPoint(): DragPoint | null {
 
 export function getDragSnapshot(): DragSnapshot {
   return snapshot;
+}
+
+/**
+ * How one zone stands with respect to the drag in flight, without subscribing to
+ * the whole snapshot.
+ *
+ * The returned object is reference-stable between publishes that leave this zone's
+ * own standing unchanged, which is what lets a `<Dragzone>` feed it to
+ * `useSyncExternalStore` and have React skip the re-render on every unrelated
+ * crossing. `IDLE_ZONE` is returned for a zone that is not registered (or with no
+ * drag in flight), so an unknown id is a stable, all-false reading rather than a
+ * fresh object per call.
+ */
+export function getZoneStanding(zoneId: string): DragzoneStanding {
+  return zones.get(zoneId)?.standing ?? IDLE_ZONE;
 }
 
 /**

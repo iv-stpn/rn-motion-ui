@@ -5,6 +5,7 @@ import {
   getActiveDrag,
   getDragPoint,
   getDragSnapshot,
+  getZoneStanding,
   moveDrag,
   resetDragStore,
   subscribeDragMove,
@@ -116,6 +117,60 @@ describe('moveDrag', () => {
     // crossing, not once a frame.
     expect(listener).not.toHaveBeenCalled();
     expect(getDragSnapshot()).toBe(before);
+  });
+
+  it('keeps a zone\u2019s standing object while its own standing is unchanged', async () => {
+    await addZone({ id: 'from', groups: ['files'], rect: rect(0, 0, 100, 100) });
+    await addZone({ id: 'to', groups: ['files'], rect: rect(200, 0, 100, 100) });
+    await addZone({ id: 'unrelated', groups: ['cards'], rect: rect(0, 400, 100, 100) });
+    lift({ groups: ['files'] });
+
+    // Lift publishes once: eligible zones get a standing, the ineligible one
+    // stays on the shared idle object.
+    const fromStanding = getZoneStanding('from');
+    expect(fromStanding).toEqual({ drag: expect.anything(), isEligible: true, isOver: false });
+    const unrelatedStanding = getZoneStanding('unrelated');
+    expect(unrelatedStanding).toEqual({ drag: expect.anything(), isEligible: false, isOver: false });
+
+    // Entering `from` flips its own isOver — a fresh object, so that zone alone
+    // re-renders. `unrelated` keeps its object identity through the publish.
+    moveDrag({ x: 50, y: 50 });
+    expect(getZoneStanding('from')).not.toBe(fromStanding);
+    expect(getZoneStanding('from').isOver).toBe(true);
+    expect(getZoneStanding('unrelated')).toBe(unrelatedStanding);
+
+    // Movement inside `from` publishes nothing, so no standing moves at all.
+    const fromInside = getZoneStanding('from');
+    moveDrag({ x: 55, y: 55 });
+    expect(getZoneStanding('from')).toBe(fromInside);
+    expect(getZoneStanding('unrelated')).toBe(unrelatedStanding);
+
+    // Crossing into `to` flips both zones\u2019 isOver — fresh objects for the two
+    // parties — and still leaves the untouched zone on the same reference. This
+    // is the contract that keeps a file system\u2019s folder rows from all re-rendering
+    // on every boundary the drag crosses.
+    moveDrag({ x: 250, y: 50 });
+    expect(getZoneStanding('from').isOver).toBe(false);
+    expect(getZoneStanding('to').isOver).toBe(true);
+    expect(getZoneStanding('from')).not.toBe(fromInside);
+    expect(getZoneStanding('unrelated')).toBe(unrelatedStanding);
+  });
+
+  it('returns a stable idle standing for an unregistered or drag-free zone', async () => {
+    await addZone({ id: 'target', rect: rect(0, 0, 100, 100) });
+    // No drag: the standing is the shared all-false object, stable per read.
+    expect(getZoneStanding('target')).toEqual({ drag: null, isEligible: false, isOver: false });
+    expect(getZoneStanding('target')).toBe(getZoneStanding('target'));
+    expect(getZoneStanding('never-registered')).toBe(getZoneStanding('never-registered'));
+
+    lift();
+    // Under a drag the registered zone leaves the idle object; the unknown id
+    // still reads the shared one.
+    expect(getZoneStanding('target')).not.toEqual({ drag: null, isEligible: false, isOver: false });
+    expect(getZoneStanding('never-registered')).toEqual({ drag: null, isEligible: false, isOver: false });
+
+    endDrag({ commit: false, point: { x: 0, y: 0 }, sourceId: 'source' });
+    expect(getZoneStanding('target')).toEqual({ drag: null, isEligible: false, isOver: false });
   });
 
   it('fires leave on the zone left behind, before enter on the one arrived at', async () => {

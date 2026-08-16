@@ -247,6 +247,25 @@ export type DragzoneState = {
 };
 
 /**
+ * How one zone stands with respect to the drag in flight, cached on its entry.
+ *
+ * The object a `<Dragzone>` subscribes to, one per zone instead of one snapshot
+ * per drag. Identity is stable across publishes that leave this zone's own
+ * standing unchanged — the contract `useSyncExternalStore` needs to bail out of
+ * re-rendering every zone when the pointer crosses a *different* zone's edge.
+ * The `drag` reference is stable for the whole drag, so a zone re-renders once
+ * at lift, once at release, and only on crossings it is a party to.
+ */
+export type DragzoneStanding = {
+  /** The drag in flight, or `null`. Identity stable for the whole drag. */
+  drag: ActiveDrag | null;
+  /** A drag is in flight and this zone would take it. */
+  isEligible: boolean;
+  /** …and the pointer is inside it, so a release now lands here. */
+  isOver: boolean;
+};
+
+/**
  * What a zone hands its render-prop children, and paints its own affordance from.
  *
  * `isEligible`/`isOver` mean the same for a foreign payload as for one of ours, so
@@ -342,6 +361,12 @@ export type DragzoneEntry = {
   managerPath: readonly string[];
   /** Last measured window rect; `null` until the first measure resolves. */
   rect: DragRect | null;
+  /**
+   * The zone's cached standing in the drag in flight. Replaced in `publish()`
+   * only when one of its fields changed; read by the zone through
+   * `getZoneStanding` so a crossing elsewhere in the tree re-renders nothing.
+   */
+  standing: DragzoneStanding;
   /** Read fresh per hit test, so a config change needs no re-registration. */
   getConfig: () => DragzoneConfig;
   measure: () => Promise<DragRect | null>;

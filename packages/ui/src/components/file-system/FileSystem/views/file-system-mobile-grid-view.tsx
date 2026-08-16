@@ -371,6 +371,12 @@ export function FileSystemMobileGridView({
         ref={scrollRef}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        // This grid is nested inside the consumer's own ScrollView (the native
+        // storybook decorator wraps every story in one). Android only scrolls a
+        // child of a scroll container when the child opts into nested scrolling —
+        // iOS and web handle the nesting natively — so without this the grid
+        // would not scroll at all in the APK.
+        nestedScrollEnabled={true}
       >
         {tileWidth > 0 ? (
           <View className="flex-row flex-wrap" style={{ columnGap: GRID_GAP, padding: GRID_PADDING, rowGap: 12 }}>

@@ -375,6 +375,18 @@ export function FileSystemMobileListView({
         renderItem={renderRow}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        // This list is nested inside the consumer's own ScrollView (the native
+        // storybook decorator wraps every story in one). Android only scrolls a
+        // child of a scroll container when the child opts into nested scrolling —
+        // iOS and web handle the nesting natively — so without this the list
+        // would not scroll at all in the APK.
+        nestedScrollEnabled={true}
+        // `removeClippedSubviews` is deliberately OFF. Android defaults it to
+        // true, and this FlatList is nested inside a ScrollView — the same
+        // failure mode the Table fixed in 348ad09c: native view clipping there
+        // wrongly detaches visible cells, rendering the list blank and stalling
+        // it trying to keep every row mounted.
+        removeClippedSubviews={false}
       />
     </View>
   );

@@ -323,6 +323,13 @@ export default meta;
  * for Shift+F10 and the ContextMenu key on the focused trigger — the play
  * dispatches that event directly to pin it.
  */
+
+/** Every knob in one canvas: activation, theme, long-press delay, travel toggles. */
+export const Interactive: Story = {
+  name: 'Interactive',
+  render: () => <HoldMenuPlayground />,
+};
+
 export const Default: Story = {
   name: 'Demo: Right-click to open the menu',
   render: (args) => <HoldMenuDemo {...args} />,
@@ -420,10 +427,4 @@ export const Bottom: Story = {
     const panel = await screen.findByTestId(`${DEMO_TEST_ID}-${FIRST_MESSAGE_ID}-panel`);
     await waitFor(() => expect(panel).toBeVisible());
   },
-};
-
-/** Every knob in one canvas: activation, theme, long-press delay, travel toggles. */
-export const Interactive: Story = {
-  name: 'Interactive: Tune the menu',
-  render: () => <HoldMenuPlayground />,
 };

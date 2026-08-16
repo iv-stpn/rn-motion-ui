@@ -21,12 +21,18 @@
  * page. `children` therefore renders twice — the same constraint upstream has,
  * since it clones its children into the portal.
  *
+ * The scrim is upstream's `Backdrop` in two layers: on iOS an expo-blur
+ * `BlurView` (via {@link HoldScrimBlur}) under the translucent dark
+ * `Pressable` — the same blur-under-dim stack upstream animates; on Android
+ * the dim layer alone; and on web neither, since a dropdown does not dim the
+ * page behind it. See {@link HOLD_MENU_LIFTS}.
+ *
  * On web there is no lift (see {@link HOLD_MENU_LIFTS}), which leaves this a
  * dropdown: an invisible click-outside scrim and the panel, anchored to the item
  * where it already sits. `children` renders once there.
  */
 
-import { type ReactNode, useCallback, useMemo } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
@@ -44,6 +50,7 @@ import { Menu } from '../../rows/menu';
 import { type HoldContextMenuItem, holdMenuEntries } from './hold-context-menu-item';
 import { HOLD_ITEM_SCALE, HOLD_MENU_LIST_CLASS, type HoldMenuLayout, type HoldMenuRect } from './hold-context-menu-layout';
 import type { HoldContextMenuMotion } from './hold-context-menu-motion';
+import { HoldScrimBlur } from './hold-scrim-blur.native';
 import { HOLD_MENU_LIFTS } from './use-hold-activation';
 
 type PanelProps = {
@@ -135,6 +142,27 @@ function HoldContextMenuPanel({
   );
 }
 
+type LiftReadyProps = { onReady?: () => void };
+
+/**
+ * Announces that the lifted copy has actually mounted.
+ *
+ * Rendered inside the `HOLD_MENU_LIFTS` branch of the overlay, so its effect
+ * runs only when the copy subtree is in the tree. This is the trigger's
+ * permission to hide: the copy lives inside the `Modal` and renders only once
+ * the measured rect lands, which on Android can be a frame or two after the
+ * menu opens — gating the hide on `open` alone leaves a hole where the item
+ * was until the copy mounts (the remount flicker). Rendering nothing keeps
+ * the tree free of an extra node.
+ */
+function LiftReady({ onReady }: LiftReadyProps) {
+  // biome-ignore lint/plugin: the handover signal is a post-commit fact — the copy being in the tree — not something derivable during render
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
+  return null;
+}
+
 export type HoldContextMenuOverlayProps = {
   items: readonly HoldContextMenuItem[];
   /** A second copy of the trigger's children, painted at `rect`. Unused on web. */
@@ -151,6 +179,11 @@ export type HoldContextMenuOverlayProps = {
   onMenuHeight: (height: number) => void;
   /** Drives the enter/exit animations — `OverlayShell`'s `open`. */
   open: boolean;
+  /**
+   * Fired once the lifted copy has actually mounted, so the trigger can hide
+   * behind it without a gap. Never fired on web, where nothing lifts.
+   */
+  onLiftReady?: () => void;
   /** `OverlayShell`'s `onExitComplete`, fired once everything has left. */
   onExitComplete: () => void;
   onSelect: (item: HoldContextMenuItem) => void;
@@ -185,6 +218,7 @@ export function HoldContextMenuOverlay({
   onMenuHeight,
   open,
   onExitComplete,
+  onLiftReady,
   onSelect,
   onClose,
   closeOnTap,
@@ -218,9 +252,13 @@ export function HoldContextMenuOverlay({
            * Scrim. Also the only dismiss control reachable without a pointer —
            * the hold gesture has no keyboard or screen-reader equivalent — so it
            * carries a real button role and name rather than being a bare tap
-           * target. `backdrop-blur-xs` is the web half of upstream's BlurView;
-           * native gets the scrim alone, since this package has no blur
-           * dependency.
+           * target. On iOS the blur sits inside the fading MotiView, under the
+           * dim layer: upstream's `AnimatedBlurView` stack, with the `MotiView`
+           * opacity fade standing in for its intensity animation (the blur and
+           * the dim come up together either way). Android keeps the dim layer
+           * alone — upstream gives Android the plain translucent scrim — and
+           * `backdrop-blur-xs` is the web half of the blur, so web's scrim
+           * paints the dim over a CSS blur.
            *
            * Web gets neither: it is a dropdown there, and a dropdown does not
            * dim the page behind it. The scrim stays — invisible, full-bleed, and
@@ -234,6 +272,7 @@ export function HoldContextMenuOverlay({
             style={StyleSheet.absoluteFill}
             transition={scrimTransition}
           >
+            {HOLD_MENU_LIFTS ? <HoldScrimBlur /> : null}
             <Pressable
               accessibilityLabel={closeAccessibilityLabel}
               accessibilityRole="button"
@@ -252,27 +291,35 @@ export function HoldContextMenuOverlay({
            * there, and a trigger wrapping something expensive pays for it once.
            */}
           {HOLD_MENU_LIFTS ? (
-            <MotiView
-              accessibilityElementsHidden={true}
-              animate={{ scale: 1, translateY: layout.shift }}
-              aria-hidden={true}
-              exit={{ scale: 1, translateY: 0 }}
-              exitTransition={liftExitTransition}
-              from={{ scale: reduce || !squeezes ? 1 : HOLD_ITEM_SCALE, translateY: reduce ? layout.shift : 0 }}
-              importantForAccessibility="no-hide-descendants"
-              style={{ height: rect.height, left: rect.x, position: 'absolute', top: rect.y, width: rect.width }}
-              testID={testID ? `${testID}-lifted` : undefined}
-              transition={liftTransition}
-            >
-              {children}
+            <>
               {/*
-               * Swallows presses on the copy so they never reach whatever the
-               * children render, which is live but no longer where the user
-               * thinks it is. With `closeOnTap` it dismisses; without, it
-               * absorbs.
+               * Mount signal for the handover: fires once this subtree is in
+               * the tree, telling the trigger it may hide (after its own
+               * HANDOVER_DELAY) without leaving a hole.
                */}
-              <Pressable onPress={closeOnTap ? onClose : undefined} style={StyleSheet.absoluteFill} />
-            </MotiView>
+              <LiftReady onReady={onLiftReady} />
+              <MotiView
+                accessibilityElementsHidden={true}
+                animate={{ scale: 1, translateY: layout.shift }}
+                aria-hidden={true}
+                exit={{ scale: 1, translateY: 0 }}
+                exitTransition={liftExitTransition}
+                from={{ scale: reduce || !squeezes ? 1 : HOLD_ITEM_SCALE, translateY: reduce ? layout.shift : 0 }}
+                importantForAccessibility="no-hide-descendants"
+                style={{ height: rect.height, left: rect.x, position: 'absolute', top: rect.y, width: rect.width }}
+                testID={testID ? `${testID}-lifted` : undefined}
+                transition={liftTransition}
+              >
+                {children}
+                {/*
+                 * Swallows presses on the copy so they never reach whatever the
+                 * children render, which is live but no longer where the user
+                 * thinks it is. With `closeOnTap` it dismisses; without, it
+                 * absorbs.
+                 */}
+                <Pressable onPress={closeOnTap ? onClose : undefined} style={StyleSheet.absoluteFill} />
+              </MotiView>
+            </>
           ) : null}
 
           <HoldContextMenuPanel

@@ -140,8 +140,9 @@ export type HoldMenuViewport = { width: number; height: number };
 export type HoldMenuInsets = { top: number; bottom: number; left: number; right: number };
 
 /**
- * Which side of the held item the panel opens on. `'auto'` prefers `'bottom'`
- * and flips when there is more room above.
+ * Which side of the held item the panel opens on. `'bottom'` — the component's
+ * default — always opens below; `'auto'` prefers `'bottom'` and flips when
+ * there is more room above.
  *
  * Replaces react-native-hold-menu's `bottom` boolean and the vertical half of
  * its `menuAnchorPosition`: `bottom={false}` is `side="bottom"` (panel *below*

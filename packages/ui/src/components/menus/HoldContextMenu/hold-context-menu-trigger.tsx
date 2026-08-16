@@ -57,9 +57,11 @@ const NO_POINTER_STYLE = { cursor: 'auto' } as const satisfies ViewStyle;
 /**
  * How long the in-place item stays visible after its copy appears.
  *
- * On native the `Modal`'s first frame lands after the commit that opens it, so
- * hiding the original in that commit leaves a hole where the item was. Both
- * visible for a beat is invisible — same pixels, same place, same scale.
+ * The hide is gated on the copy having actually mounted (the overlay's
+ * `onLiftReady`), so by the time this delay starts the copy is already
+ * painted. Both visible for a beat is invisible — same pixels, same place,
+ * same scale — and the 80 ms covers the frame where the `Modal`'s first paint
+ * might still be settling.
  */
 const HANDOVER_DELAY = 80;
 

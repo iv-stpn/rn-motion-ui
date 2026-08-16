@@ -102,6 +102,30 @@ describe('resolveHoldMenuLayout — side', () => {
   });
 });
 
+describe('resolveHoldMenuLayout — side "bottom" (the component default)', () => {
+  it('travels the pair up when the menu is taller than the space below, and the panel top stays below the item', () => {
+    // Item low on screen: 84px of room below it, 200px of menu.
+    const result = layout({ item: { x: 40, y: 650, width: 200, height: 50 }, menuHeight: 200, side: 'bottom' });
+    expect(result.side).toBe('bottom');
+    // The 116px of overflow is a negative shift: the item travels up by it.
+    expect(result.shift).toBe(-116);
+    // The panel may use the room plus everything the travel gained — nothing scrolls.
+    expect(result.maxHeight).toBe(84 + 116);
+    // The pair moved together, so the panel's top still sits at the item's
+    // bottom plus the gap — travel never re-anchors the panel.
+    expect(result.top).toBe(650 + 50 + HOLD_MENU_GAP);
+    expect(result.top + result.shift + result.maxHeight).toBe(SAFE_BOTTOM);
+  });
+
+  it('does not travel when the menu fits below', () => {
+    const result = layout({ item: { x: 40, y: 100, width: 200, height: 60 }, side: 'bottom' });
+    expect(result.side).toBe('bottom');
+    expect(result.shift).toBe(0);
+    // Untravelled, the panel is capped to the room below it — 624px here.
+    expect(result.maxHeight).toBe(SAFE_BOTTOM - (100 + 60 + HOLD_MENU_GAP));
+  });
+});
+
 describe('resolveHoldMenuLayout — align', () => {
   it('aligns to the start for an item in the left half', () => {
     const result = layout({ item: { x: 20, y: 100, width: 80, height: 40 } });

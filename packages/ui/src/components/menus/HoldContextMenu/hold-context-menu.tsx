@@ -12,7 +12,7 @@
  * | Upstream | Here |
  * | --- | --- |
  * | `<HoldMenuProvider>` at app root, `@gorhom/portal` host, shared `SharedValue`s | nothing — each menu owns a `Modal` through `OverlayShell` |
- * | `expo-blur` scrim | `backdrop-blur-xs` on web, scrim alone on native (no blur dependency) |
+ * | `expo-blur` scrim | `backdrop-blur-xs` on web; iOS blurs via expo-blur (optional peer), Android gets the dim alone |
  * | `expo-haptics` style names | `haptics` hook — `Vibration` on Android, or your own function |
  * | `items[].text`, `isTitle`, `isDestructive` | `items[].label`, `heading`, `destructive` (+ `id`, `disabled`) |
  * | `actionParams` map keyed by label | close over what you need in `onPress` |
@@ -25,6 +25,14 @@
  * `MENU_WIDTH`/`WINDOW_*` upstream are module constants read from `Dimensions`
  * at import time, which is wrong after a rotation; every measurement here is
  * taken per-open and every dimension comes from `useWindowDimensions`.
+ *
+ * With the default `side="bottom"` the menu always opens below the held item,
+ * and when it would overflow the bottom of the screen the item and the menu
+ * travel up together until the menu fits — upstream's default behaviour, whose
+ * `calculateTransformValue` applies the same negative `translateY` to both the
+ * item portal copy and the menu. `side="auto"` is the opt-in flip: it prefers
+ * below, and flips above when below cannot fit the menu and there is more room
+ * above.
  *
  * ## Two interactions, one component
  *
@@ -59,7 +67,7 @@
  * ```
  */
 
-import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useCallback, useMemo, useRef, useState } from 'react';
 import type { StyleProp, View, ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import type { SurfaceLevel } from '../../../lib/elevated';
@@ -136,9 +144,13 @@ export type HoldContextMenuProps = {
    */
   dragOptions?: HoldContextMenuDragOptions;
   /**
-   * Which side of the item the panel opens on. `'auto'` prefers below and flips
-   * when there is more room above.
-   * @default 'auto'
+   * Which side of the item the panel opens on. `'bottom'` — the default —
+   * always opens below the item, and when the menu would overflow the bottom
+   * of the screen the item and the panel travel up together so the menu fits:
+   * upstream react-native-hold-menu's default behaviour. `'auto'` is the
+   * opt-in flip: it prefers below, and flips above when below cannot fit the
+   * menu and there is more room above.
+   * @default 'bottom'
    */
   side?: HoldMenuSide;
   /**
@@ -303,16 +315,21 @@ export type HoldContextMenuProps = {
  * Tracks whether the in-place item is currently hidden behind its lifted copy,
  * and resets layout state when the exit animation finishes.
  *
- * Extracted so its `useState`/`useEffect` lines do not count toward
+ * `lifted` is set by {@link HoldContextMenuOverlayProps.onLiftReady} rather
+ * than derived from `open`: the trigger must not hide until its copy has
+ * actually mounted. The copy lives inside the `Modal` and only renders once
+ * the measured rect lands, which on Android can be a frame or two after open —
+ * hiding the original before then leaves a hole where the item was, which is
+ * the remount flicker this handover replaces. Web never fires `onLiftReady`
+ * (nothing lifts there), so the trigger never hides on web.
+ *
+ * Extracted so its `useState`/`useCallback` lines do not count toward
  * `HoldContextMenu`'s line limit.
  */
-function useLiftedState(open: boolean, clearRect: () => void, resetMenuHeight: () => void) {
+function useLiftedState(clearRect: () => void, resetMenuHeight: () => void) {
   const [lifted, setLifted] = useState(false);
 
-  // biome-ignore lint/plugin: the handover has to land in a later commit than the one that opens the Modal — a value derived during render is by definition the same commit
-  useEffect(() => {
-    if (open && HOLD_MENU_LIFTS) setLifted(true);
-  }, [open]);
+  const handleLiftReady = useCallback(() => setLifted(true), []);
 
   const handleAfterClose = useCallback(() => {
     setLifted(false);
@@ -320,7 +337,7 @@ function useLiftedState(open: boolean, clearRect: () => void, resetMenuHeight: (
     clearRect();
   }, [clearRect, resetMenuHeight]);
 
-  return { lifted, handleAfterClose };
+  return { handleLiftReady, handleAfterClose, lifted };
 }
 
 export function HoldContextMenu({
@@ -330,7 +347,7 @@ export function HoldContextMenu({
   holdDuration = DEFAULT_HOLD_DURATION,
   behavior,
   dragOptions,
-  side = 'auto',
+  side = 'bottom',
   align = 'auto',
   menuWidth = HOLD_MENU_DEFAULT_WIDTH,
   disableMove = false,
@@ -395,7 +412,7 @@ export function HoldContextMenu({
     side,
   });
 
-  const { lifted, handleAfterClose } = useLiftedState(open, clearRect, resetMenuHeight);
+  const { handleLiftReady, handleAfterClose, lifted } = useLiftedState(clearRect, resetMenuHeight);
 
   const handleSelect = useCallback(
     (item: HoldContextMenuItem) => {
@@ -454,6 +471,7 @@ export function HoldContextMenu({
               onClose={close}
               onExitComplete={onExitComplete}
               onMenuHeight={onMenuHeight}
+              onLiftReady={handleLiftReady}
               onSelect={handleSelect}
               open={animating}
               rect={rect}

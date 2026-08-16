@@ -1,37 +1,33 @@
+import { ImpactFeedbackStyle, impactAsync, NotificationFeedbackType, notificationAsync, selectionAsync } from 'expo-haptics';
+import type { HoldMenuHapticFeedback } from './hold-menu-types';
+
 /**
  * Native half of the HoldMenu haptics module, backed by `expo-haptics`.
  *
  * `expo-haptics` is a hard dependency of the package, so it is a static import
- * here and never enters a web bundle: the web twin (`hold-menu-haptics.ts`) is
- * a no-op, and the modules are imported extensionless (`./hold-menu-haptics`),
- * so Metro resolves this `.native` file on iOS/Android and the no-op twin on
- * web.
- */
-
-import { ImpactFeedbackStyle, impactAsync, NotificationFeedbackType, notificationAsync, selectionAsync } from 'expo-haptics';
-import type { HoldMenuHapticFeedback } from './hold-menu-haptics';
-
-/**
- * Fires the given haptic feedback on activation, mapping the upstream style
- * names onto expo-haptics' API (`selectionAsync`, `impactAsync`,
- * `notificationAsync`).
+ * here and never enters a web bundle: the web twin (`haptics.ts`) is a no-op,
+ * and the modules are imported extensionless (`./haptics`), so Metro resolves
+ * this `.native` file on iOS/Android and the no-op twin on web.
+ *
+ * An omitted `feedback` falls back to `'Medium'`, exactly as upstream's
+ * `hapticResponse` (`!hapticFeedback ? 'Medium' : hapticFeedback`).
  */
 export function fireHapticFeedback(feedback?: HoldMenuHapticFeedback): void {
-  if (!feedback || feedback === 'None') return;
+  const style: HoldMenuHapticFeedback = feedback ? feedback : 'Medium';
 
-  switch (feedback) {
+  switch (style) {
     case 'Selection':
       selectionAsync();
       break;
     case 'Light':
     case 'Medium':
     case 'Heavy':
-      impactAsync(ImpactFeedbackStyle[feedback]);
+      impactAsync(ImpactFeedbackStyle[style]);
       break;
     case 'Success':
     case 'Warning':
     case 'Error':
-      notificationAsync(NotificationFeedbackType[feedback]);
+      notificationAsync(NotificationFeedbackType[style]);
       break;
     default:
       break;

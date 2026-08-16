@@ -1,7 +1,6 @@
 import { memo, useId, useMemo } from 'react';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  Easing,
   useAnimatedReaction,
   useAnimatedRef,
   useAnimatedStyle,
@@ -9,35 +8,35 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
+import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, IS_WEB } from './constants';
+import { useHoldMenuInternal } from './context';
 import { HoldItemTwin } from './hold-item-twin';
-import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, HOLD_MENU_LIFTS } from './hold-menu-constants';
-import { useHoldMenuInternal } from './hold-menu-context';
 import type { HoldItemProps } from './hold-menu-types';
 import { useHoldItemActivation } from './use-hold-item-activation';
 import { useHoldItemGesture } from './use-hold-item-gesture';
 import { useHoldItemSqueeze } from './use-hold-item-squeeze';
 
 /**
- * The gesture + portal wrapper — upstream's `HoldItem`, modernized to the
- * react-native-gesture-handler v2 `Gesture` API.
+ * The gesture + portal wrapper — upstream's `HoldItem`, ported to the RNGH v2
+ * `Gesture` API and Reanimated 4, with the sibling's portal primitive in place
+ * of `@gorhom/portal`.
  *
- * Activation is measured on the UI thread (`measure()` inside the gesture's
- * `onStart` worklet) — no `measureInWindow` round-trip, no layout-state race —
- * and drives the menu through the provider's `menuProps` shared value. The
- * squeeze/lift animation, the measurement worklets and the gesture layer live
- * in `use-hold-item-squeeze.ts` / `use-hold-item-activation.ts` /
- * `use-hold-item-gesture.ts`; the permanent portal twin lives in
- * `HoldItemTwin` (see its doc for why the twin never remounts).
+ * The in-place wrapper holds the gesture and hides (opacity → 0) while active;
+ * the permanent portal twin (`HoldItemTwin`) is the lifted copy that travels
+ * with the panel. Activation is measured on the UI thread (`measure()` inside
+ * the gesture's `onStart` worklet) and drives the menu through the provider's
+ * `menuProps` shared value. The squeeze, measurement and gesture layers live in
+ * `use-hold-item-squeeze.ts` / `use-hold-item-activation.ts` /
+ * `use-hold-item-gesture.ts`.
  *
  * ## Web
  *
- * On web (`HOLD_MENU_LIFTS` is false) the interaction is a right-click for
- * `'hold'` — the wrapper's `contextmenu` handler, which browsers also raise
- * for Shift+F10 and the ContextMenu key on a focused element, so the keyboard
- * path comes for free. The children render ONCE: the twin is skipped entirely,
- * so the DOM is never duplicated, and the in-place copy never hides.
- * `'tap'` / `'double-tap'` keep the press on web through the same `Gesture.Tap`
- * the native build uses.
+ * On web (`IS_WEB`) the interaction is a right-click for `'hold'` — the
+ * wrapper's `contextmenu` handler, which browsers also raise for Shift+F10 and
+ * the ContextMenu key on a focused element, so the keyboard path comes for free
+ * — and a plain `onClick` for `'tap'` / `'double-tap'`. The lift is not
+ * native-only: the twin renders on every platform, so on web the held item
+ * still lifts and travels with the panel exactly as on native.
  */
 const HoldItemComponent = ({
   items,
@@ -50,10 +49,9 @@ const HoldItemComponent = ({
   actionParams,
   closeOnTap,
   longPressMinDurationMs = 150,
-  testID,
   children,
 }: HoldItemProps) => {
-  const { state, menuProps, windowSize, safeAreaInsets, reducedMotion, rootRef } = useHoldMenuInternal();
+  const { state, menuProps, windowSize, safeAreaInsets, rootRef } = useHoldMenuInternal();
 
   const isActive = useSharedValue(false);
   /** Stable key for the portal twin — generated once per item, never changes. */
@@ -66,7 +64,6 @@ const HoldItemComponent = ({
     items,
     state,
     isActive,
-    reducedMotion,
   });
 
   const {
@@ -86,15 +83,13 @@ const HoldItemComponent = ({
     disableMove,
     bottom,
     menuAnchorPosition,
-    testID,
     menuProps,
     windowSize,
     safeAreaInsets,
-    state,
     scaleHold,
   });
 
-  const webHold = !HOLD_MENU_LIFTS && isHold;
+  const webHold = IS_WEB && isHold;
 
   const { gesture, handleContextMenu, handleWebTap } = useHoldItemGesture({
     webHold,
@@ -112,28 +107,20 @@ const HoldItemComponent = ({
   });
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    const animateOpacity = () =>
-      withDelay(reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 }));
+    const animateOpacity = () => withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 }));
 
-    // The in-place item never travels. Only the portal twin (native) carries
-    // the travel that keeps the pair on screen when the menu overflows — and
-    // on web there is no twin, so the item stays put and only squeezes/scales.
-    // This mirrors upstream, whose in-place item animates scale + opacity
-    // alone.
+    // The in-place item never travels. Only the portal twin carries the travel
+    // that keeps the pair on screen when the menu overflows; this copy hides
+    // under it while active and only squeezes/scales before that.
     return {
-      opacity: isActive.value && HOLD_MENU_LIFTS ? 0 : animateOpacity(),
+      opacity: isActive.value ? 0 : animateOpacity(),
       transform: [
         {
-          scale: isActive.value
-            ? withTiming(1, {
-                duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION,
-                easing: reducedMotion.value === 1 ? undefined : Easing.out(Easing.cubic),
-              })
-            : itemScale.value,
+          scale: isActive.value ? withTiming(1, { duration: HOLD_ITEM_TRANSFORM_DURATION }) : itemScale.value,
         },
       ],
     };
-  }, [reducedMotion, isActive, itemScale]);
+  }, [isActive, itemScale]);
 
   const containerStyle = useMemo(() => [containerStyles, animatedContainerStyle], [containerStyles, animatedContainerStyle]);
 
@@ -151,10 +138,10 @@ const HoldItemComponent = ({
   // do not declare them — the cast keeps the web-only props off the native type.
   let webOnlyProps: Record<string, unknown> = {};
   if (webHold) webOnlyProps = { onContextMenu: handleContextMenu, tabIndex: 0 };
-  else if (!HOLD_MENU_LIFTS) webOnlyProps = { onClick: handleWebTap, tabIndex: 0 };
+  else if (IS_WEB) webOnlyProps = { onClick: handleWebTap, tabIndex: 0 };
 
   const wrapper = (
-    <Animated.View ref={containerRef} style={containerStyle} testID={testID} {...webOnlyProps}>
+    <Animated.View ref={containerRef} style={containerStyle} {...webOnlyProps}>
       {children}
     </Animated.View>
   );
@@ -164,27 +151,23 @@ const HoldItemComponent = ({
   return (
     <>
       {gestureWrapper}
-      {HOLD_MENU_LIFTS ? (
-        <HoldItemTwin
-          closeOnTap={closeOnTap}
-          disableMove={disableMove}
-          isActive={isActive}
-          itemRectHeight={itemRectHeight}
-          itemRectWidth={itemRectWidth}
-          itemRectX={itemRectX}
-          itemRectY={itemRectY}
-          itemScale={itemScale}
-          items={items}
-          name={name}
-          transformOrigin={transformOrigin}
-        >
-          {children}
-        </HoldItemTwin>
-      ) : null}
+      <HoldItemTwin
+        closeOnTap={closeOnTap}
+        disableMove={disableMove}
+        isActive={isActive}
+        itemRectHeight={itemRectHeight}
+        itemRectWidth={itemRectWidth}
+        itemRectX={itemRectX}
+        itemRectY={itemRectY}
+        itemScale={itemScale}
+        items={items}
+        name={name}
+        transformOrigin={transformOrigin}
+      >
+        {children}
+      </HoldItemTwin>
     </>
   );
 };
 
-const HoldItem = memo(HoldItemComponent);
-
-export { HoldItem };
+export const HoldItem = memo(HoldItemComponent);

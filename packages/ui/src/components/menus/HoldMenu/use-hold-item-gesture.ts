@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { Gesture, type GestureType } from 'react-native-gesture-handler';
 import { runOnUI, type SharedValue } from 'react-native-reanimated';
-import { HOLD_MENU_LIFTS } from './hold-menu-constants';
+import { IS_WEB } from './constants';
 import type { HoldItemProps } from './hold-menu-types';
 
 /** The DOM `contextmenu` surface the web handler needs (RNW forwards it on View). */
@@ -40,8 +40,9 @@ type UseHoldItemGestureResult = {
 };
 
 /**
- * The gesture layer of a `HoldItem` — upstream's `gestureEvent` split into the
- * RNGH v2 `Gesture` API.
+ * The gesture layer of a `HoldItem` — upstream's `gestureEvent` (a legacy
+ * `useAnimatedGestureHandler` over `LongPressGestureHandler` /
+ * `TapGestureHandler`) ported to the RNGH v2 `Gesture` API.
  *
  * Activation (measure + publish + squeeze) runs in the gesture's `onStart`
  * worklet, gated by upstream's re-tap guard; `onFinalize` resets the
@@ -94,8 +95,8 @@ export function useHoldItemGesture({
    * Web tap / double-tap activation. RNGH web gestures cannot fire on
    * synthetic pointer events (its event manager calls `setPointerCapture`,
    * which browsers reject for untrusted pointers), so on web the press is a
-   * plain `onClick` with a manual double-tap window — the same split the old
-   * HoldContextMenu port uses. Native keeps the `Gesture` API.
+   * plain `onClick` with a manual double-tap window. Native keeps the `Gesture`
+   * API.
    */
   const lastTapRef = useRef(0);
   const handleWebTap = useCallback(() => {
@@ -117,7 +118,7 @@ export function useHoldItemGesture({
   const gesture = useMemo(() => {
     // Web activation is DOM events (`contextmenu` for hold, `onClick` for
     // tap/double-tap) — never an RNGH gesture, see `handleWebTap`.
-    if (webHold || (HOLD_MENU_LIFTS === false && !isHold)) return null;
+    if (webHold || (IS_WEB && !isHold)) return null;
     if (isHold) return Gesture.LongPress().minDuration(longPressMinDurationMs).onStart(onActivate).onFinalize(onFinish);
     return Gesture.Tap()
       .numberOfTaps(activateOn === 'double-tap' ? 2 : 1)

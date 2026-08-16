@@ -1,11 +1,8 @@
 import { createContext, useContext } from 'react';
 import type Animated from 'react-native-reanimated';
 import type { AnimatedRef, SharedValue } from 'react-native-reanimated';
-import type { CONTEXT_MENU_STATE } from './hold-menu-constants';
-import type { HoldMenuIconComponent, MenuInternalProps } from './hold-menu-types';
-
-/** Safe-area insets the menu keeps clear of. */
-export type HoldMenuSafeAreaInsets = { top: number; right: number; bottom: number; left: number };
+import type { CONTEXT_MENU_STATE } from './constants';
+import type { HoldMenuIconComponent, HoldMenuSafeAreaInsets, MenuInternalProps } from './hold-menu-types';
 
 /** Rotation-safe window metrics, fed from `useWindowDimensions`. */
 export type HoldMenuWindowSize = { width: number; height: number; fontScale: number };
@@ -14,19 +11,20 @@ export type HoldMenuWindowSize = { width: number; height: number; fontScale: num
  * What `HoldMenuProvider` shares with every `HoldItem`, the `Menu` and the
  * `Backdrop` — the shared values upstream carries in its `InternalContext`.
  *
- * Unlike upstream, the animated icon component also lives here (upstream keeps
- * a module-level exported `let AnimatedIcon` in its provider file, which this
- * port deliberately does not replicate — a module-level mutable is a smell, and
- * the context is the natural home for a value the menu items all need).
+ * `safeAreaInsets` is a shared value here, exactly as the sibling `HoldMenu`
+ * keeps it: the insets are read inside UI-thread worklets (`measure`-based
+ * activation, the panel's viewport clamp, the twin's travel), and a plain
+ * object captured in those worklets is a frozen snapshot that never sees a
+ * later inset change. The animated `iconComponent` lives in the context rather
+ * than upstream's module-level `let AnimatedIcon`.
  */
 export type HoldMenuInternalContextType = {
   state: SharedValue<CONTEXT_MENU_STATE>;
   theme: SharedValue<'light' | 'dark'>;
   menuProps: SharedValue<MenuInternalProps>;
   safeAreaInsets: SharedValue<HoldMenuSafeAreaInsets>;
+  /** Rotation-safe window metrics, mirrored from `useWindowDimensions`. */
   windowSize: SharedValue<HoldMenuWindowSize>;
-  /** 1 when the user prefers reduced motion — durations collapse to 0. */
-  reducedMotion: SharedValue<0 | 1>;
   /** The provider's `iconComponent`, animated — or `null` when none was given. */
   AnimatedIcon: HoldMenuIconComponent | null;
   /**
@@ -41,11 +39,7 @@ export type HoldMenuInternalContextType = {
 
 export const HoldMenuInternalContext = createContext<HoldMenuInternalContextType | null>(null);
 
-/**
- * Reads the HoldMenu internal context — `state`, `theme`, `menuProps`, the
- * rotation-safe `windowSize` / `safeAreaInsets` shared values, `reducedMotion`
- * and the animated `iconComponent`. Must be called under a `HoldMenuProvider`.
- */
+/** Reads the HoldMenu internal context. Must be called under a `HoldMenuProvider`. */
 export const useHoldMenuInternal = (): HoldMenuInternalContextType => {
   const context = useContext(HoldMenuInternalContext);
   if (!context) throw new Error('HoldMenu components must be used within a <HoldMenuProvider>.');

@@ -1,34 +1,31 @@
 // biome-ignore-all lint/performance/noBarrelFile: this file is the package entry point — the `./hold-menu` export is the public API, not a lazy barrel
 /**
- * HoldMenu — a faithful, improved reimplementation of
+ * HoldMenu — a faithful port of
  * [react-native-hold-menu](https://github.com/enesozturk/react-native-hold-menu)
- * (MIT, Enes Öztürk).
+ * (MIT, Enes Öztürk, v0.1.6).
  *
  * Hold an item; it lifts off the page, the screen dims behind it, and an
  * iOS-style action panel grows out of the corner nearest it. The item model,
- * the provider/context architecture, the portal twin and the animation
- * constants are upstream's, field for field — with the modernizations and
- * fixes documented on each member:
+ * the provider/context architecture, the portal twin and the styling are
+ * upstream's, field for field — with these deliberate departures:
  *
- * - **Reanimated 4 + RNGH v2 `Gesture` API** — no legacy
- *   `useAnimatedGestureHandler`, no old handler components.
- * - **Rotation-safe measurement** — window dimensions come from
- *   `useWindowDimensions` and are mirrored into shared values, never read from
- *   `Dimensions` at module scope.
- * - **Viewport/safe-area clamping** — the item+panel pair never leaves the
- *   safe area (residual overflow caps the panel, which scrolls), and the panel
- *   never runs off the screen horizontally.
- * - **Web support** — `'hold'` is a right-click (Shift+F10 / ContextMenu key
- *   included), tap activations keep the press, the children render once (no
- *   twin), and the dimmed backdrop closes the menu on click-outside.
- * - **Optional native deps that never break web bundles** — `expo-blur` and
- *   `expo-haptics` are optional peers, reached only through platform-split
- *   modules imported extensionless.
- * - **Accessibility** — rows carry labels and a button role, the backdrop is
- *   reachable, and reduced motion collapses every animation to a cross-fade.
+ * - **RNGH v2 `Gesture` API** — no legacy `useAnimatedGestureHandler`, no old
+ *   `TapGestureHandler` / `LongPressGestureHandler` components.
+ * - **Reanimated 4** — `useSharedValue` / `useAnimatedStyle` /
+ *   `useAnimatedProps` / `useAnimatedReaction` / `useAnimatedRef` + `measure`
+ *   throughout.
+ * - **The package's internal `Portal`** in place of `@gorhom/portal`.
+ * - **Rotation-safe window metrics** — a `useWindowDimensions`-fed shared value
+ *   replaces upstream's module-level `Dimensions` reads.
+ * - **Clamped placement** — travel and the panel's left are clamped into the
+ *   safe viewport and a too-tall panel scrolls (upstream lets both overflow).
+ * - **DOM-event activation on web** — web opens the menu through a right-click
+ *   (`contextmenu`) or a plain click rather than RNGH gestures, but the lift —
+ *   the portal twin, the squeeze, and the travel — still happens there.
+ * - **No blur** — the backdrop is a plain opacity-faded scrim (a full-screen
+ *   expo-blur `BlurView` blocks the UI thread on first reveal, so it is dropped).
  *
- * The successor to `HoldContextMenu` (which stays in the package, untouched —
- * this family is a parallel, faithful port of the upstream API).
+ * The successor to `HoldMenu` (which stays in the package, untouched).
  *
  * @example
  * ```tsx
@@ -37,7 +34,7 @@
  *     items={[
  *       { text: 'Reply', icon: 'chat', onPress: (id) => reply(id) },
  *       { text: 'Copy', icon: 'copy', onPress: (body) => copy(body), withSeparator: true },
- *      { text: 'Delete', icon: 'trash', isDestructive: true, onPress: (id) => remove(id) },
+ *       { text: 'Delete', icon: 'trash', isDestructive: true, onPress: (id) => remove(id) },
  *     ]}
  *     actionParams={{ Reply: [message.id], Copy: [message.body], Delete: [message.id] }}
  *   >
@@ -47,15 +44,16 @@
  * ```
  */
 
+export { HoldMenuFlatList, type HoldMenuFlatListProps } from './flat-list';
 export { HoldItem } from './hold-item';
-export { HoldMenuFlatList, type HoldMenuFlatListProps } from './hold-menu-flat-list';
-export { HoldMenuIcon } from './hold-menu-icon';
-export type { TransformOriginAnchorPosition } from './hold-menu-layout';
-export { HoldMenuProvider } from './hold-menu-provider';
 export type {
   HoldItemProps,
   HoldMenuIconComponent,
   HoldMenuIconComponentProps,
   HoldMenuProviderProps,
+  HoldMenuSafeAreaInsets,
   MenuItemProps,
+  TransformOriginAnchorPosition,
 } from './hold-menu-types';
+export { HoldMenuIcon } from './icon';
+export { HoldMenuProvider } from './provider';

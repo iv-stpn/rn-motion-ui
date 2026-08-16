@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
-import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './hold-menu-constants';
-import { useHoldMenuInternal } from './hold-menu-context';
-import { SPACING } from './hold-menu-style-guide';
+import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './constants';
+import { useHoldMenuInternal } from './context';
 import { MenuList } from './menu-list';
+import { SPACING } from './style-guide';
 
 const styles = StyleSheet.create({
   menuWrapper: {
@@ -15,15 +15,18 @@ const styles = StyleSheet.create({
 });
 
 /**
- * The menu's positioning wrapper — upstream's `Menu`. Anchored at the held
- * item's rect from `menuProps` (below the item for `top-*` anchors, above for
- * `bottom-*`), it carries the vertical travel: when the item and panel move up
- * or down together to fit on screen, the wrapper's `translateY` springs to the
- * stored `transformValue` while the menu is active and times back to 0 on
- * close. The panel itself lives inside ({@link MenuList}).
+ * The menu's positioning wrapper — upstream's `Menu`. It anchors the panel
+ * vertically (below the item for `top-*` anchors, above for `bottom-*`) and
+ * carries the vertical travel: when the item and panel move up or down
+ * together to fit on screen, the wrapper's `translateY` springs to the stored
+ * `transformValue` while the menu is active and times back to 0 on close.
+ *
+ * Horizontal placement is NOT this wrapper's job — the panel inside
+ * ({@link MenuList}) positions itself with an absolute `left` derived from the
+ * item rect, so this wrapper stays at `left: 0` (the stylesheet default).
  */
 const MenuComponent = () => {
-  const { state, menuProps, reducedMotion } = useHoldMenuInternal();
+  const { state, menuProps } = useHoldMenuInternal();
 
   const wrapperStyles = useAnimatedStyle(() => {
     const anchorPositionVertical = menuProps.value.anchorPosition.split('-')[0];
@@ -32,24 +35,22 @@ const MenuComponent = () => {
       anchorPositionVertical === 'top'
         ? menuProps.value.itemHeight + menuProps.value.itemY + SPACING
         : menuProps.value.itemY - SPACING;
-    const left = menuProps.value.itemX;
-    const width = menuProps.value.itemWidth;
     const tY = menuProps.value.transformValue;
-    const duration = reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION;
 
-    // The pair travels while active — spring there (or snap, reduced motion) —
-    // and times back to rest on close.
-    const travelAnimation = () => {
-      if (state.value !== CONTEXT_MENU_STATE.ACTIVE) return withTiming(0, { duration });
-      if (reducedMotion.value === 1) return withTiming(tY, { duration: 0 });
-      return withSpring(tY, SPRING_CONFIGURATION);
-    };
-
+    // The panel's `left` is absolute in the root's space (item-relative offset
+    // applied in `MenuList`), so the wrapper must not also offset by `itemX` —
+    // doing so would double-count the item's x and push a right-anchored panel
+    // (e.g. a `fromMe` chat bubble) past the right edge by the item's own x.
     return {
       top,
-      left,
-      width,
-      transform: [{ translateY: travelAnimation() }],
+      transform: [
+        {
+          translateY:
+            state.value === CONTEXT_MENU_STATE.ACTIVE
+              ? withSpring(tY, SPRING_CONFIGURATION)
+              : withTiming(0, { duration: HOLD_ITEM_TRANSFORM_DURATION }),
+        },
+      ],
     };
   }, [menuProps]);
 

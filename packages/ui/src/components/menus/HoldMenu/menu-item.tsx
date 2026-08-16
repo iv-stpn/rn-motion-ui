@@ -1,14 +1,14 @@
 import { memo, type ReactNode, useCallback } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { CONTEXT_MENU_STATE } from './hold-menu-constants';
-import { useHoldMenuInternal } from './hold-menu-context';
-import { getColor, isMenuItemEqual } from './hold-menu-layout';
+import { CONTEXT_MENU_STATE } from './constants';
+import { useHoldMenuInternal } from './context';
 import { BORDER_DARK_COLOR, BORDER_LIGHT_COLOR } from './hold-menu-theme';
 import type { MenuItemProps } from './hold-menu-types';
+import { getColor } from './layout';
 import { Separator } from './separator';
 
-const AnimatedTouchable = Animated.createAnimatedComponent(Pressable);
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const styles = StyleSheet.create({
   menuItem: {
@@ -36,22 +36,17 @@ const styles = StyleSheet.create({
   },
 });
 
-type MenuItemComponentProps = {
-  item: MenuItemProps;
-  isLast?: boolean;
-  /** Base testID of the item that opened the menu — rows derive `${testID}-menu-item-<text>`. */
-  testID?: string;
-};
+type MenuItemComponentProps = { item: MenuItemProps; isLast?: boolean };
 
 /**
- * One row of the menu — upstream's `MenuItem`: a themed pressable with a
- * border below it (none on the last row), text colored by
- * `isTitle` / `isDestructive` / theme, an icon rendered through the provider's
- * `AnimatedIcon` (string) or the item's own render function, and an `onPress`
- * that receives the item's `actionParams` entry spread as arguments and then
- * closes the menu. Title rows are inert captions.
+ * One row of the menu — upstream's `MenuItem`: a themed pressable with a border
+ * below it (none on the last row), text colored by `isTitle` / `isDestructive`
+ * / theme, an icon rendered through the provider's `AnimatedIcon` (string) or
+ * the item's own render function, and an `onPress` that receives the item's
+ * `actionParams` entry spread as arguments and then closes the menu. Title rows
+ * are inert captions.
  */
-const MenuItemComponent = ({ item, isLast, testID }: MenuItemComponentProps) => {
+const MenuItemComponent = ({ item, isLast }: MenuItemComponentProps) => {
   const { state, theme, menuProps, AnimatedIcon } = useHoldMenuInternal();
 
   const borderStyles = useAnimatedStyle(() => {
@@ -71,11 +66,8 @@ const MenuItemComponent = ({ item, isLast, testID }: MenuItemComponentProps) => 
       if (item.onPress) item.onPress(...params);
       state.value = CONTEXT_MENU_STATE.END;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, item, menuProps]);
 
-  // Resolved to a variable before the return (noLeakedRender): a string icon
-  // renders through the provider's AnimatedIcon, a function icon calls itself.
   let iconElement: ReactNode = null;
   if (!item.isTitle && item.icon) {
     if (typeof item.icon === 'string' && AnimatedIcon)
@@ -85,13 +77,7 @@ const MenuItemComponent = ({ item, isLast, testID }: MenuItemComponentProps) => 
 
   return (
     <>
-      <AnimatedTouchable
-        accessibilityLabel={item.text}
-        accessibilityRole="button"
-        onPress={handleOnPress}
-        style={[styles.menuItem, borderStyles]}
-        testID={testID ? `${testID}-menu-item-${item.text}` : undefined}
-      >
+      <AnimatedTouchable onPress={handleOnPress} activeOpacity={item.isTitle ? 1 : 0.4} style={[styles.menuItem, borderStyles]}>
         <Animated.Text style={[item.isTitle ? styles.menuItemTitleText : styles.menuItemText, textColor]}>
           {item.text}
         </Animated.Text>
@@ -102,7 +88,4 @@ const MenuItemComponent = ({ item, isLast, testID }: MenuItemComponentProps) => 
   );
 };
 
-export const MenuItem = memo(
-  MenuItemComponent,
-  (prev, next) => prev.isLast === next.isLast && prev.testID === next.testID && isMenuItemEqual(prev.item, next.item),
-);
+export const MenuItem = memo(MenuItemComponent);

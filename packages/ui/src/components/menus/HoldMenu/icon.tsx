@@ -1,13 +1,13 @@
 import { type ComponentType, memo } from 'react';
 import Animated, { useAnimatedProps } from 'react-native-reanimated';
-import { useHoldMenuInternal } from './hold-menu-context';
-import type { HoldMenuIconComponent as HoldMenuIconComponentType } from './hold-menu-types';
+import { useHoldMenuInternal } from './context';
+import type { HoldMenuIconComponent } from './hold-menu-types';
 
 type IconComponentProps = { name: string; size: number; animatedProps: Partial<{ color: string }> };
 
 type HoldMenuIconProps = {
   /** Vector-icon-like component mapping a `name` to an element. */
-  iconComponent: HoldMenuIconComponentType;
+  iconComponent: HoldMenuIconComponent;
   /** Icon name to render. */
   name: string;
 };

@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
-import { Easing, runOnJS, type SharedValue, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { runOnJS, type SharedValue, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import {
   CONTEXT_MENU_STATE,
   HOLD_ITEM_SCALE_DOWN_DURATION,
   HOLD_ITEM_SCALE_DOWN_VALUE,
   HOLD_ITEM_TRANSFORM_DURATION,
-} from './hold-menu-constants';
+} from './constants';
 import { fireHapticFeedback } from './hold-menu-haptics';
 import type { HoldItemProps, MenuItemProps } from './hold-menu-types';
 
@@ -15,14 +15,13 @@ type UseHoldItemSqueezeOptions = {
   items: MenuItemProps[];
   state: SharedValue<CONTEXT_MENU_STATE>;
   isActive: SharedValue<boolean>;
-  reducedMotion: SharedValue<0 | 1>;
 };
 
 type UseHoldItemSqueezeResult = {
   itemScale: SharedValue<number>;
   isHold: boolean;
   canCallActivateFunctions: () => boolean;
-  scaleHold: () => void;
+  scaleHold: (duration?: number) => void;
   scaleTap: () => void;
   scaleBack: () => void;
 };
@@ -31,7 +30,10 @@ type UseHoldItemSqueezeResult = {
  * The squeeze/lift animation of a `HoldItem` — upstream's `scaleHold`,
  * `scaleTap`, `scaleBack`, `onCompletion` and `canCallActivateFunctions`
  * worklets, extracted from the component so it stays under the per-function
- * line limit. Reduced motion collapses every duration to 0.
+ * line limit. Verbatim: the squeeze-down and the tap bounce use plain
+ * `withTiming` (no easing), the completion callback flips the menu active and
+ * fires haptics only when the list is non-empty, and the re-tap guard stops
+ * the tap animation from restarting mid-flight.
  */
 export function useHoldItemSqueeze({
   activateOn,
@@ -39,7 +41,6 @@ export function useHoldItemSqueeze({
   items,
   state,
   isActive,
-  reducedMotion,
 }: UseHoldItemSqueezeOptions): UseHoldItemSqueezeResult {
   const isAnimationStarted = useSharedValue(false);
   const itemScale = useSharedValue(1);
@@ -52,11 +53,8 @@ export function useHoldItemSqueeze({
 
   const scaleBack = useCallback(() => {
     'worklet';
-    itemScale.value = withTiming(1, {
-      duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION / 2,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [itemScale, reducedMotion]);
+    itemScale.value = withTiming(1, { duration: HOLD_ITEM_TRANSFORM_DURATION / 2 });
+  }, [itemScale]);
 
   const onCompletion = useCallback(
     (isFinised?: boolean) => {
@@ -78,13 +76,9 @@ export function useHoldItemSqueeze({
     (duration?: number) => {
       'worklet';
       const effectiveDuration = duration === undefined ? HOLD_ITEM_SCALE_DOWN_DURATION : duration;
-      itemScale.value = withTiming(
-        HOLD_ITEM_SCALE_DOWN_VALUE,
-        { duration: reducedMotion.value === 1 ? 0 : effectiveDuration },
-        onCompletion,
-      );
+      itemScale.value = withTiming(HOLD_ITEM_SCALE_DOWN_VALUE, { duration: effectiveDuration }, onCompletion);
     },
-    [itemScale, reducedMotion, onCompletion],
+    [itemScale, onCompletion],
   );
 
   const scaleTap = useCallback(() => {
@@ -92,19 +86,10 @@ export function useHoldItemSqueeze({
     isAnimationStarted.value = true;
 
     itemScale.value = withSequence(
-      withTiming(HOLD_ITEM_SCALE_DOWN_VALUE, {
-        duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_SCALE_DOWN_DURATION,
-      }),
-      withTiming(
-        1,
-        {
-          duration: reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION / 2,
-          easing: Easing.out(Easing.cubic),
-        },
-        onCompletion,
-      ),
+      withTiming(HOLD_ITEM_SCALE_DOWN_VALUE, { duration: HOLD_ITEM_SCALE_DOWN_DURATION }),
+      withTiming(1, { duration: HOLD_ITEM_TRANSFORM_DURATION / 2 }, onCompletion),
     );
-  }, [itemScale, reducedMotion, onCompletion, isAnimationStarted]);
+  }, [itemScale, onCompletion, isAnimationStarted]);
 
   /**
    * Upstream's re-tap guard: when activating by tap and the user taps again

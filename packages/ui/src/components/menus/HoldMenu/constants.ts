@@ -6,11 +6,11 @@ import { Platform } from 'react-native';
  *
  * Upstream also read `WINDOW_HEIGHT` / `WINDOW_WIDTH` / `MENU_WIDTH` /
  * `FONT_SCALE` from `Dimensions` at module scope there. Those are deliberately
- * absent here: module-level dimensions go stale on rotation, so every layout
- * value in this component family comes from a rotation-safe
- * `useWindowDimensions`-fed shared value instead. The constants that ARE here
- * are the ones that are truly constant — the durations, springs and enum that
- * are the library's character.
+ * absent here: module-level dimensions go stale on rotation and read wrong on
+ * web, so every layout value in this component family comes from a
+ * rotation-safe `useWindowDimensions`-fed shared value instead. The constants
+ * that ARE here are the ones that are truly constant — the durations, springs
+ * and enum that are the library's character.
  */
 
 /** Duration of the menu/backdrop cross-fade and the lift handover, in ms. */
@@ -63,29 +63,19 @@ export const MENU_WIDTH_RATIO = 0.6;
 /** Margin kept between the panel and the safe-area edges. */
 export const HOLD_MENU_VIEWPORT_PADDING = 8;
 
-/** True on iOS — upstream blurs iOS only; this port also blurs Android (expo-blur) and web (CSS backdrop-filter). */
-export const IS_IOS = Platform.OS === 'ios';
-
 /**
- * Whether this platform can blur what sits behind the backdrop — iOS and
- * Android via expo-blur, web via CSS `backdrop-filter`. These get the
- * translucent backdrop colors; platforms without blur keep the near-opaque
- * plain dim.
- */
-export const BACKDROP_BLURS = Platform.OS === 'ios' || Platform.OS === 'android' || Platform.OS === 'web';
-
-/**
- * Whether this platform performs the lift — hold the item, it rises off a
- * dimmed page and the panel pops out beside it.
+ * Whether activation is transported through the DOM event system rather than
+ * react-native-gesture-handler.
  *
- * False on web, where the interaction is a right-click that opens a plain
- * dropdown anchored to the item. A mouse already has a button for exactly this,
- * so asking someone to hold one down is a touch idiom imported where it does
- * not belong. `activateOn` of `'tap'` / `'double-tap'` still uses the press on
- * web — those read the same with a mouse — so this switches off only the
- * lift-shaped parts: the portal twin of the children, the squeeze that hides
- * the original, and the travel that moves the pair on screen.
+ * True on web, where `'hold'` is a right-click (the wrapper's `contextmenu`
+ * handler — browsers also raise it for Shift+F10 and the ContextMenu key on a
+ * focused element) and `'tap'` / `'double-tap'` are plain `onClick`s. RNGH web
+ * gestures need trusted pointer events, which synthetic clicks (tests,
+ * automation) cannot produce, so web uses DOM events for activation and for
+ * backdrop dismissal instead. The lift itself — the portal twin of the
+ * children, the squeeze that hides the original, and the travel that moves the
+ * pair — happens on every platform.
  *
  * This is the single platform check in the component family.
  */
-export const HOLD_MENU_LIFTS = Platform.OS !== 'web';
+export const IS_WEB = Platform.OS === 'web';

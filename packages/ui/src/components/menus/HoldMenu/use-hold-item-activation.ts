@@ -1,15 +1,21 @@
 import { useCallback } from 'react';
 import Animated, { type AnimatedRef, measure, type SharedValue, useSharedValue } from 'react-native-reanimated';
-import type { CONTEXT_MENU_STATE } from './hold-menu-constants';
-import type { HoldMenuSafeAreaInsets, HoldMenuWindowSize } from './hold-menu-context';
+import { MENU_WIDTH_RATIO } from './constants';
+import type { HoldMenuWindowSize } from './context';
+import type {
+  HoldItemProps,
+  HoldMenuSafeAreaInsets,
+  MenuInternalProps,
+  MenuItemProps,
+  TransformOriginAnchorPosition,
+} from './hold-menu-types';
 import {
   calculateMenuHeight,
   getTransformOrigin,
   menuPanelHeight,
   resolveHoldMenuTravel,
-  type TransformOriginAnchorPosition,
-} from './hold-menu-layout';
-import type { HoldItemProps, MenuInternalProps, MenuItemProps } from './hold-menu-types';
+  resolveMenuAnchorPosition,
+} from './layout';
 
 type UseHoldItemActivationOptions = {
   containerRef: AnimatedRef<Animated.View>;
@@ -20,11 +26,9 @@ type UseHoldItemActivationOptions = {
   disableMove: HoldItemProps['disableMove'];
   bottom: boolean | undefined;
   menuAnchorPosition: TransformOriginAnchorPosition | undefined;
-  testID: string | undefined;
   menuProps: SharedValue<MenuInternalProps>;
   windowSize: SharedValue<HoldMenuWindowSize>;
   safeAreaInsets: SharedValue<HoldMenuSafeAreaInsets>;
-  state: SharedValue<CONTEXT_MENU_STATE>;
   scaleHold: (duration?: number) => void;
 };
 
@@ -42,15 +46,21 @@ type UseHoldItemActivationResult = {
 
 /**
  * The measurement + publishing half of a `HoldItem` — upstream's
- * `activateAnimation` / `setMenuProps` worklets, extracted from the component
- * so it stays under the per-function line limit.
+ * `activateAnimation` / `calculateTransformValue` / `setMenuProps` worklets
+ * from `HoldItem.tsx`, extracted so the component stays under the per-function
+ * line limit.
  *
- * The wrapper is measured once per activation on the UI thread
- * (`measure()` inside a worklet — no `measureInWindow` round-trip, no
- * layout-state race), the anchor is computed (or taken from
+ * The wrapper is measured once per activation on the UI thread (`measure()`
+ * inside a worklet), the anchor is computed (or taken from
  * `menuAnchorPosition`), and the travel + panel-height cap are resolved with
  * the rotation-safe window size and safe-area insets before everything is
  * published into `menuProps`.
+ *
+ * Two departures from upstream, both carried over from the sibling `HoldMenu`
+ * port: the item rect is left in the menu's own space (the root's page offset
+ * is subtracted, so the menu anchors correctly even when the root is offset
+ * from the viewport origin), and the travel is clamped (see
+ * {@link resolveHoldMenuTravel}).
  */
 export function useHoldItemActivation({
   containerRef,
@@ -60,7 +70,6 @@ export function useHoldItemActivation({
   disableMove,
   bottom,
   menuAnchorPosition,
-  testID,
   menuProps,
   windowSize,
   safeAreaInsets,
@@ -75,10 +84,7 @@ export function useHoldItemActivation({
 
   const transformOrigin = useSharedValue<TransformOriginAnchorPosition>(menuAnchorPosition || 'top-right');
 
-  /**
-   * Estimated panel height for this item's rows — upstream's `useMemo`
-   * `calculateMenuHeight`, computed with the rotation-safe font scale.
-   */
+  /** Estimated panel height for this item's rows, at the rotation-safe font scale. */
   const getMenuHeight = useCallback(() => {
     'worklet';
     const itemsWithSeparator = items.filter((item) => item.withSeparator);
@@ -99,21 +105,9 @@ export function useHoldItemActivation({
         items,
         transformValue: transformValue.value,
         actionParams: actionParams || {},
-        testID,
       };
     },
-    [
-      menuProps,
-      itemRectHeight,
-      itemRectWidth,
-      itemRectY,
-      itemRectX,
-      transformOrigin,
-      transformValue,
-      items,
-      actionParams,
-      testID,
-    ],
+    [menuProps, itemRectHeight, itemRectWidth, itemRectY, itemRectX, transformOrigin, transformValue, items, actionParams],
   );
 
   const activateAnimation = useCallback(() => {
@@ -132,12 +126,26 @@ export function useHoldItemActivation({
       itemRectY.value = measured.pageY - rootY;
       itemRectX.value = measured.pageX - rootX;
       itemRectHeight.value = measured.height;
-      itemRectWidth.value = measured.width;
+      // A fractional measured width rounded down leaves the portal twin a hair
+      // narrower than the real item, so its text wraps to an extra line and grows
+      // taller than the measured rect the menu anchors below. Round up so the twin
+      // is never narrower than the item it copies.
+      itemRectWidth.value = measured.width + 1;
 
-      if (!menuAnchorPosition) {
-        const position = getTransformOrigin(measured.pageX, itemRectWidth.value, windowSize.value.width, bottom);
-        transformOrigin.value = position;
-      }
+      // The hinted (or auto-picked) anchor is overflow-checked against the panel
+      // width, so a hint that would push the panel off-screen flips to the other side.
+      const menuWidth = Math.round(windowSize.value.width * MENU_WIDTH_RATIO);
+      const position =
+        menuAnchorPosition ?? getTransformOrigin(measured.pageX, itemRectWidth.value, windowSize.value.width, bottom);
+      transformOrigin.value = resolveMenuAnchorPosition({
+        anchor: position,
+        itemX: itemRectX.value,
+        itemWidth: itemRectWidth.value,
+        menuWidth,
+        windowWidth: windowSize.value.width,
+        safeLeft: safeAreaInsets.value.left,
+        safeRight: safeAreaInsets.value.right,
+      });
 
       const height = getMenuHeight();
       const travel = resolveHoldMenuTravel({

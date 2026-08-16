@@ -1,6 +1,6 @@
 /**
- * Placement math for `HoldMenu` — the pure, React-free geometry the panel and
- * the held item's portal copy animate with.
+ * Placement math for `HoldMenu` — the pure, React-free geometry the panel
+ * and the held item's portal copy animate with.
  *
  * Every function here is upstream react-native-hold-menu's
  * (`utils/calculations.ts`, `components/menu/calculations.ts` and the
@@ -11,8 +11,8 @@
  * passed in from a `useWindowDimensions`-fed shared value, never read from
  * `Dimensions` at import time.
  *
- * Two deliberate departures from upstream, both carried over from the old
- * `HoldContextMenu` port (they were proven there):
+ * Two deliberate departures from upstream, both carried over from the sibling
+ * `HoldMenu` port (they were proven there):
  *
  * - **Travel clamping** — upstream shifts the item+panel pair by the full
  *   overflow unconditionally, which can push the held item clean off the
@@ -28,8 +28,7 @@
  * can run them on the UI thread.
  */
 
-import { HOLD_MENU_VIEWPORT_PADDING, MENU_TRANSFORM_ORIGIN_TOLERENCE } from './hold-menu-constants';
-import { SPACING, TYPOGRAPHY } from './hold-menu-style-guide';
+import { HOLD_MENU_VIEWPORT_PADDING, MENU_TRANSFORM_ORIGIN_TOLERENCE } from './constants';
 import {
   MENU_TEXT_DARK_COLOR,
   MENU_TEXT_DESTRUCTIVE_COLOR_DARK,
@@ -37,7 +36,8 @@ import {
   MENU_TEXT_LIGHT_COLOR,
   MENU_TITLE_COLOR,
 } from './hold-menu-theme';
-import type { MenuItemProps } from './hold-menu-types';
+import type { MenuItemProps, TransformOriginAnchorPosition } from './hold-menu-types';
+import { SPACING, TYPOGRAPHY } from './style-guide';
 
 function fieldAreSame(obj1: MenuItemProps, obj2: MenuItemProps): boolean {
   'worklet';
@@ -60,16 +60,26 @@ function fieldAreSame(obj1: MenuItemProps, obj2: MenuItemProps): boolean {
 }
 
 /**
- * Which corner the menu grows out of and which edge it opens on.
- * `top-*` anchors below the item, `bottom-*` above it.
+ * Worklet-safe deep equality for the item lists that cross the shared-value
+ * boundary — upstream's `deepEqual` from `utils/validations.ts`, verbatim.
  */
-export type TransformOriginAnchorPosition =
-  | 'top-right'
-  | 'top-left'
-  | 'top-center'
-  | 'bottom-right'
-  | 'bottom-left'
-  | 'bottom-center';
+export const deepEqual = (array1: MenuItemProps[], array2: MenuItemProps[]): boolean => {
+  'worklet';
+
+  const areArrays = Array.isArray(array1) && Array.isArray(array2);
+  const areSameLength = areArrays && array2 && array1.length === array2.length;
+
+  if (areArrays && areSameLength && array2)
+    return array1.every((menuItem: MenuItemProps, index) => {
+      const obj1 = menuItem;
+      const obj2 = array2[index];
+      if (!obj2) return false;
+
+      return fieldAreSame(obj1, obj2);
+    });
+
+  return false;
+};
 
 /** Height of one action row at the given font scale — upstream's `MenuItemHeight()`. */
 // biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
@@ -80,7 +90,7 @@ export const menuItemHeight = (fontScale: number): number => {
 
 /**
  * Estimated panel height for N rows and separator bands — upstream's
- * `calculateMenuHeight`, plus the inter-row 1 px seams it counts.
+ * `calculateMenuHeight`, counting the inter-row 1 px seams it counts.
  */
 // biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
 export const calculateMenuHeight = (itemLength: number, separatorCount: number, fontScale = 1): number => {
@@ -88,29 +98,22 @@ export const calculateMenuHeight = (itemLength: number, separatorCount: number, 
   return menuItemHeight(fontScale) * itemLength + (itemLength - 1) + separatorCount * SPACING;
 };
 
-/** One side of the panel's pop-in animation, for a given anchor. */
-export type MenuAnimationAnchorTransformations = { translateX: number; translateY: number };
-
-/** The full pop-in animation of the panel — beginning and ending transforms. */
-export type MenuAnimationAnchorResult = {
-  beginningTransformations: MenuAnimationAnchorTransformations;
-  endingTransformations: MenuAnimationAnchorTransformations;
-};
-
 /**
  * Beginning/ending transforms of the panel's pop-in animation, per anchor —
- * upstream's `menuAnimationAnchor`, with `MenuHeight` and `MENU_WIDTH`
- * parameterised (the effective panel height and the rotation-safe menu width)
- * instead of recomputed from module constants.
+ * upstream's `menuAnimationAnchor`, verbatim (including the quirk where the
+ * `bottom-*` beginning `translateY` reuses `TyTop1`). `menuHeight` and
+ * `menuWidth` are parameterised so the panel's rotation-safe size drives the
+ * animation.
  */
 export const menuAnimationAnchor = (
   anchorPoint: TransformOriginAnchorPosition,
   itemWidth: number,
   menuHeight: number,
   menuWidth: number,
-): MenuAnimationAnchorResult => {
+) => {
   'worklet';
-  const splittetAnchorName = anchorPoint.split('-');
+
+  const splittetAnchorName: string[] = anchorPoint.split('-');
 
   const Center1 = itemWidth;
   const Center2 = 0;
@@ -121,25 +124,14 @@ export const menuAnimationAnchor = (
   const TxLeft1 = (menuWidth / 2) * -1;
   const TxLeft2 = (menuWidth / 2) * 1;
 
-  const horizontal = (positive: number, negative: number, center: number): number => {
-    if (splittetAnchorName[1] === 'right') return positive;
-    if (splittetAnchorName[1] === 'left') return negative;
-    return center;
-  };
-  const vertical = (topValue: number, bottomValue: number): number => {
-    if (splittetAnchorName[0] === 'top') return topValue;
-    if (splittetAnchorName[0] === 'bottom') return bottomValue;
-    return Center2;
-  };
-
   return {
     beginningTransformations: {
-      translateX: horizontal(-TxLeft1, TxLeft1, Center1),
-      translateY: vertical(TyTop1, TyTop1),
+      translateX: splittetAnchorName[1] === 'right' ? -TxLeft1 : splittetAnchorName[1] === 'left' ? TxLeft1 : Center1,
+      translateY: splittetAnchorName[0] === 'top' ? TyTop1 : splittetAnchorName[0] === 'bottom' ? TyTop1 : Center2,
     },
     endingTransformations: {
-      translateX: horizontal(-TxLeft2, TxLeft2, Center2),
-      translateY: vertical(TyTop2, -TyTop2),
+      translateX: splittetAnchorName[1] === 'right' ? -TxLeft2 : splittetAnchorName[1] === 'left' ? TxLeft2 : Center2,
+      translateY: splittetAnchorName[0] === 'top' ? TyTop2 : splittetAnchorName[0] === 'bottom' ? -TyTop2 : Center2,
     },
   };
 };
@@ -169,28 +161,9 @@ export const getTransformOrigin = (
   return position;
 };
 
-/**
- * Panel's left offset relative to the item wrapper — upstream's `leftOrRight`,
- * made pure. The panel is `menuWidth` wide inside a wrapper that is `itemWidth`
- * wide; `left`/`right` align the matching edges, `center` uses upstream's
- * verbatim formula (the viewport clamp elsewhere keeps the result on screen).
- */
-export const leftOrRight = (anchorPosition: TransformOriginAnchorPosition, itemWidth: number, menuWidth: number): number => {
-  'worklet';
-  const anchorPositionHorizontal = anchorPosition.split('-')[1];
-
-  if (anchorPositionHorizontal === 'right') return -menuWidth + itemWidth;
-  if (anchorPositionHorizontal === 'left') return 0;
-  // Centre — upstream's verbatim formula; the viewport clamp keeps it on screen.
-  return -itemWidth - menuWidth / 2 + itemWidth / 2;
-};
-
-/** Window-space rect of the held item, as returned by `measure()`. */
-export type HoldMenuRect = { x: number; y: number; width: number; height: number };
-
-/** Inputs for the travel / panel-cap resolution. */
+/** Inputs for the vertical travel resolution — upstream's `calculateTransformValue`, parameterised. */
 export type HoldMenuTravelInput = {
-  /** Window-space top of the held item (`measure().pageY`). */
+  /** Window-space top of the held item (`measure().pageY`, root-offset-adjusted). */
   itemY: number;
   /** Measured height of the held item. */
   itemHeight: number;
@@ -222,9 +195,9 @@ export type HoldMenuTravel = {
  *
  * This is upstream's `calculateTransformValue` (tY nonzero only on overflow:
  * negative up when the menu runs off the bottom, positive down when it runs
- * off the top) with the safe-area clamp from the old `HoldContextMenu` port:
- * the travel stops as soon as the item's trailing edge would leave the safe
- * area, and the residual overflow comes off `maxHeight`, which the panel
+ * off the top) with the safe-area clamp carried over from the sibling `HoldMenu`
+ * port: the travel stops as soon as the item's trailing edge would leave the
+ * safe area, and the residual overflow comes off `maxHeight`, which the panel
  * scrolls instead of the pair leaving the screen.
  */
 export const resolveHoldMenuTravel = (input: HoldMenuTravelInput): HoldMenuTravel => {
@@ -304,9 +277,8 @@ export type HoldMenuLeftClampInput = {
 };
 
 /**
- * Clamps the panel's absolute left into the safe viewport — a `HoldMenu`
- * improvement over upstream, which lets a narrow item near an edge push the
- * panel off-screen.
+ * Clamps the panel's absolute left into the safe viewport — a departure from
+ * upstream, which lets a narrow item near an edge push the panel off-screen.
  */
 export const clampMenuLeft = ({ left, menuWidth, windowWidth, safeLeft, safeRight }: HoldMenuLeftClampInput): number => {
   'worklet';
@@ -316,59 +288,91 @@ export const clampMenuLeft = ({ left, menuWidth, windowWidth, safeLeft, safeRigh
   return Math.min(Math.max(left, min), max);
 };
 
-/** Whether two menu item props carry the same fields — memo helper. */
-export function isMenuItemEqual(prev: MenuItemProps, next: MenuItemProps): boolean {
-  if (prev === next) return true;
-  return (
-    prev.text === next.text &&
-    prev.isTitle === next.isTitle &&
-    prev.isDestructive === next.isDestructive &&
-    prev.withSeparator === next.withSeparator &&
-    prev.icon === next.icon &&
-    prev.onPress === next.onPress
-  );
-}
-
 /**
- * Memo comparator for the item list — deep enough to skip re-renders when a
- * new `items` array has the same rows (the list syncs through a shared value,
- * so identity changes every open).
+ * Panel's left offset relative to the item wrapper — upstream's `leftOrRight`,
+ * made pure (note the centre case's odd `-itemWidth - menuWidth/2 + itemWidth/2`).
  */
-export function menuItemsEqual(prev: MenuItemProps[], next: MenuItemProps[]): boolean {
-  if (prev === next) return true;
-  if (!(prev && next) || prev.length !== next.length) return false;
-  return prev.every((item, index) => {
-    const nextItem = next[index];
-    if (!nextItem) return false;
-    return isMenuItemEqual(item, nextItem);
-  });
-}
-
-/**
- * Worklet-safe deep equality for the item lists that cross shared values —
- * upstream's `deepEqual` from `utils/validations.ts`, verbatim.
- */
-export const deepEqual = (array1: MenuItemProps[], array2: MenuItemProps[]): boolean => {
+export const leftOrRight = (anchorPosition: TransformOriginAnchorPosition, itemWidth: number, menuWidth: number): number => {
   'worklet';
+  const anchorPositionHorizontal = anchorPosition.split('-')[1];
 
-  const areArrays = Array.isArray(array1) && Array.isArray(array2);
-  const areSameLength = areArrays && array2 && array1.length === array2.length;
+  if (anchorPositionHorizontal === 'right') return -menuWidth + itemWidth;
+  if (anchorPositionHorizontal === 'left') return 0;
+  // Centre — upstream's verbatim formula; the viewport clamp keeps it on screen.
+  return -itemWidth - menuWidth / 2 + itemWidth / 2;
+};
 
-  if (areArrays && areSameLength && array2)
-    return array1.every((menuItem: MenuItemProps, index) => {
-      const obj1 = menuItem;
-      const obj2 = array2[index];
-      if (!obj2) return false;
-
-      return fieldAreSame(obj1, obj2);
-    });
-
-  return false;
+/** Inputs for resolving the anchor's horizontal half with an overflow fallback. */
+export type HoldMenuAnchorResolveInput = {
+  /** The hinted (or auto-picked) anchor to try first. */
+  anchor: TransformOriginAnchorPosition;
+  /** Window-space left of the held item (`itemX`). */
+  itemX: number;
+  /** Measured width of the held item. */
+  itemWidth: number;
+  /** Panel width (rotation-safe). */
+  menuWidth: number;
+  /** Current window width (rotation-safe). */
+  windowWidth: number;
+  /** Left safe-area inset. */
+  safeLeft: number;
+  /** Right safe-area inset. */
+  safeRight: number;
 };
 
 /**
- * Row text colour from the item flags and theme — upstream's `getColor`.
+ * The horizontal half of an anchor, with an overflow fallback.
+ *
+ * The automatic anchor (`getTransformOrigin`) already points the panel toward
+ * the screen centre, but an explicit `menuAnchorPosition` hint can point the
+ * wrong way — e.g. a `top-right` hint on an item hugging the left edge would
+ * push the panel off-screen left. When the hinted side would overflow the safe
+ * viewport, the opposite side (which by construction fits) is used instead; the
+ * hint is left alone only when the opposite side would overflow too, so the
+ * viewport clamp in {@link clampMenuLeft} becomes the last resort.
  */
+export const resolveMenuAnchorPosition = ({
+  anchor,
+  itemX,
+  itemWidth,
+  menuWidth,
+  windowWidth,
+  safeLeft,
+  safeRight,
+}: HoldMenuAnchorResolveInput): TransformOriginAnchorPosition => {
+  'worklet';
+  const vertical = anchor.split('-')[0];
+  const horizontal = anchor.split('-')[1];
+  const padding = HOLD_MENU_VIEWPORT_PADDING;
+  const min = safeLeft + padding;
+  const max = windowWidth - safeRight - padding - menuWidth;
+
+  // Full anchor for a horizontal half, so the flip never needs an `as` cast on
+  // a template literal.
+  const anchorFor = (h: 'left' | 'right' | 'center'): TransformOriginAnchorPosition => {
+    if (vertical === 'bottom') {
+      if (h === 'left') return 'bottom-left';
+      if (h === 'right') return 'bottom-right';
+      return 'bottom-center';
+    }
+    if (h === 'left') return 'top-left';
+    if (h === 'right') return 'top-right';
+    return 'top-center';
+  };
+
+  const panelLeft = (h: 'left' | 'right' | 'center'): number => itemX + leftOrRight(anchorFor(h), itemWidth, menuWidth);
+
+  const overflows = (h: 'left' | 'right' | 'center'): boolean => {
+    const left = panelLeft(h);
+    return left < min || left > max;
+  };
+
+  if (horizontal === 'right' && overflows('right') && !overflows('left')) return anchorFor('left');
+  if (horizontal === 'left' && overflows('left') && !overflows('right')) return anchorFor('right');
+  return anchor;
+};
+
+/** Row text colour from the item flags and theme — upstream's `getColor`. */
 export const getColor = (isTitle: boolean | undefined, isDestructive: boolean | undefined, themeValue: 'light' | 'dark') => {
   'worklet';
   if (isTitle) return MENU_TITLE_COLOR;

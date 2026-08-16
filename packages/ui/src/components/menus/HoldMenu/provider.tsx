@@ -2,38 +2,37 @@ import { memo, useEffect, useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedReaction, useAnimatedRef, useSharedValue } from 'react-native-reanimated';
-import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { PortalProvider } from '../../portal/Portal/portal';
 import { Backdrop } from './backdrop';
-import { CONTEXT_MENU_STATE } from './hold-menu-constants';
-import { HoldMenuInternalContext, type HoldMenuInternalContextType } from './hold-menu-context';
-import type { HoldMenuProviderProps, MenuInternalProps } from './hold-menu-types';
+import { CONTEXT_MENU_STATE } from './constants';
+import { HoldMenuInternalContext, type HoldMenuInternalContextType } from './context';
+import type { HoldMenuProviderProps, HoldMenuSafeAreaInsets, MenuInternalProps } from './hold-menu-types';
 import { Menu } from './menu';
 
 /**
  * `HoldMenuProvider` — upstream's provider: a `GestureHandlerRootView` (flex
- * 1), the `InternalContext` carrying the menu's shared values, a
- * `PortalProvider` (the package's portal primitive), then the children, then
- * the always mounted `Backdrop` and `Menu` inside the portal host. One menu at
- * a time, driven entirely by the `state` shared value.
+ * 1), the internal context carrying the menu's shared values, a `PortalProvider`
+ * (the package's portal primitive), then the children, then the always-mounted
+ * `Backdrop` and `Menu` inside the portal host. One menu at a time, driven
+ * entirely by the `state` shared value.
  *
  * Rotation safety is the departure from upstream: window dimensions come from
  * `useWindowDimensions` and are mirrored into a shared value, so the menu and
  * backdrop re-place themselves after a rotation instead of reading stale
- * module-level `Dimensions`.
+ * module-level `Dimensions`. The provider's root view is exposed through
+ * `rootRef` so activation can subtract its page offset and anchor the menu
+ * correctly even when the root is offset from the viewport origin.
  *
- * `safeAreaInsets` is optional here (upstream requires it): when omitted, the
- * provider uses `use-safe-insets.ts`, which resolves
- * `react-native-safe-area-context` when it is installed and falls back to
- * zeros. The animated `iconComponent` lives in the context value — upstream
- * keeps a module-level `let`, which this port deliberately does not.
+ * `safeAreaInsets` is a shared value in the context, exactly as the sibling
+ * `HoldMenu` keeps it: the insets are read inside UI-thread worklets and must
+ * not be a frozen plain-object snapshot; the animated `iconComponent` lives in
+ * the context value rather than upstream's module-level `let`.
  */
 const ProviderComponent = ({
   children,
   theme: selectedTheme,
   iconComponent,
-  safeAreaInsets: safeAreaInsetsProp,
+  safeAreaInsets,
   onOpen,
   onClose,
 }: HoldMenuProviderProps) => {
@@ -51,40 +50,24 @@ const ProviderComponent = ({
     actionParams: {},
   });
 
-  const resolvedInsets = useSafeInsets();
-  const resolvedInsetsValue = useMemo(() => ({ ...resolvedInsets }), [resolvedInsets]);
-  const safeAreaInsets = useSharedValue(resolvedInsetsValue);
-
-  const reduced = useReducedMotion();
-  const reducedMotion = useSharedValue<0 | 1>(reduced ? 1 : 0);
-
   const { width, height, fontScale } = useWindowDimensions();
   const windowSize = useSharedValue({ width, height, fontScale });
 
-  // The four effects below sync React state / props into shared values. That
-  // must happen after a render commit, not during it, so each carries a
-  // suppression comment for the no-use-effect plugin; the shared values are
-  // stable references, so only the source values belong in the dependency
-  // lists.
+  // Insets live in a shared value so UI-thread worklets read a live value, not a
+  // frozen plain-object capture (the sibling `HoldMenu` does the same).
+  const safeAreaInsetsValue = useSharedValue<HoldMenuSafeAreaInsets>(safeAreaInsets || { top: 0, right: 0, bottom: 0, left: 0 });
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: the shared value is a stable reference — only the prop retriggers
   // biome-ignore lint/plugin: prop → shared value sync must run after render, not during it
   useEffect(() => {
     theme.value = selectedTheme || 'light';
   }, [selectedTheme]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the shared value is a stable reference — only the sources retrigger
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the shared value is a stable reference — only the prop retriggers
   // biome-ignore lint/plugin: prop → shared value sync must run after render, not during it
   useEffect(() => {
-    // The prop wins when given; otherwise the hook's resolution (safe-area
-    // context when installed, zeros otherwise).
-    safeAreaInsets.value = safeAreaInsetsProp ?? resolvedInsetsValue;
-  }, [safeAreaInsetsProp, resolvedInsetsValue]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the shared value is a stable reference — only the source retriggers
-  // biome-ignore lint/plugin: state → shared value sync must run after render, not during it
-  useEffect(() => {
-    reducedMotion.value = reduced ? 1 : 0;
-  }, [reduced]);
+    safeAreaInsetsValue.value = safeAreaInsets || { top: 0, right: 0, bottom: 0, left: 0 };
+  }, [safeAreaInsets]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: the shared value is a stable reference — only the source retriggers
   // biome-ignore lint/plugin: window dimensions → shared value sync must run after render, not during it
@@ -124,13 +107,12 @@ const ProviderComponent = ({
       state,
       theme,
       menuProps,
-      safeAreaInsets,
+      safeAreaInsets: safeAreaInsetsValue,
       windowSize,
-      reducedMotion,
       AnimatedIcon,
       rootRef,
     }),
-    [state, theme, menuProps, safeAreaInsets, windowSize, reducedMotion, AnimatedIcon, rootRef],
+    [state, theme, menuProps, safeAreaInsetsValue, windowSize, AnimatedIcon, rootRef],
   );
 
   return (
@@ -148,6 +130,4 @@ const ProviderComponent = ({
   );
 };
 
-const Provider = memo(ProviderComponent);
-
-export { Provider as HoldMenuProvider };
+export const HoldMenuProvider = memo(ProviderComponent);

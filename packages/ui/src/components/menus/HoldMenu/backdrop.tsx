@@ -1,18 +1,9 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedReaction,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming,
-} from 'react-native-reanimated';
-import { HoldMenuBlur } from './hold-menu-blur';
-import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, HOLD_MENU_LIFTS } from './hold-menu-constants';
-import { useHoldMenuInternal } from './hold-menu-context';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, IS_WEB } from './constants';
+import { useHoldMenuInternal } from './context';
 import { BACKDROP_DARK_BACKGROUND_COLOR, BACKDROP_LIGHT_BACKGROUND_COLOR } from './hold-menu-theme';
 
 const styles = StyleSheet.create({
@@ -28,15 +19,14 @@ const styles = StyleSheet.create({
  * bottom of the window after exit (`withDelay` + `withTiming(windowHeight)`).
  * A tap with less than 10 px of movement closes the menu.
  *
- * On iOS the blur layer is an expo-blur `BlurView` with the intensity animated
- * 0↔100 (via the platform-split `HoldMenuBlur`); the colored overlay renders
- * ABOVE the blur, exactly as upstream lays it out. Android and web get the
- * plain dim — and on web this is what makes clicking outside close the menu.
+ * A plain opacity-faded dim, not a blur: the near-opaque scrim color sits on
+ * the same view whose `opacity` animates, so the layer fades in and out
+ * without a full-screen expo-blur `BlurView` — whose first reveal blocks the
+ * UI thread on device and delays the open.
  */
 const BackdropComponent = () => {
-  const { state, theme, windowSize, reducedMotion, menuProps } = useHoldMenuInternal();
+  const { state, theme, windowSize } = useHoldMenuInternal();
 
-  const [activeTestID, setActiveTestID] = useState<string | undefined>(undefined);
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
 
@@ -64,64 +54,36 @@ const BackdropComponent = () => {
     });
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    const duration = reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION;
-
     const topValueAnimation = () =>
       state.value === CONTEXT_MENU_STATE.ACTIVE
         ? 0
-        : withDelay(
-            duration,
-            withTiming(windowSize.value.height, {
-              duration: 0,
-            }),
-          );
+        : withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(windowSize.value.height, { duration: 0 }));
 
     const opacityValueAnimation = () =>
-      withTiming(state.value === CONTEXT_MENU_STATE.ACTIVE ? 1 : 0, {
-        duration,
-        easing: Easing.out(Easing.cubic),
-      });
+      withTiming(state.value === CONTEXT_MENU_STATE.ACTIVE ? 1 : 0, { duration: HOLD_ITEM_TRANSFORM_DURATION });
 
     return {
       top: topValueAnimation(),
       opacity: opacityValueAnimation(),
     };
-  }, [windowSize, reducedMotion]);
+  }, [windowSize]);
 
-  const animatedInnerContainerStyle = useAnimatedStyle(() => {
+  const animatedBackgroundStyle = useAnimatedStyle(() => {
     const backgroundColor = theme.value === 'light' ? BACKDROP_LIGHT_BACKGROUND_COLOR : BACKDROP_DARK_BACKGROUND_COLOR;
-
     return { backgroundColor };
   }, [theme]);
 
-  useAnimatedReaction(
-    () => menuProps.value.testID,
-    (testID) => {
-      runOnJS(setActiveTestID)(testID);
-    },
-    [menuProps],
-  );
+  // RNW forwards onClick on View, but RN's core types do not declare it — the
+  // cast keeps the web-only prop off the native type (same pattern as HoldItem).
+  // biome-ignore lint/plugin: RNW View accepts onClick at runtime
+  const webProps = { onClick: closeIfActive } as Record<string, unknown>;
 
-  const backdrop = (
-    <HoldMenuBlur style={[styles.container, animatedContainerStyle]}>
-      <Animated.View
-        style={[StyleSheet.absoluteFill, animatedInnerContainerStyle]}
-        testID={activeTestID ? `${activeTestID}-backdrop` : undefined}
-      />
-    </HoldMenuBlur>
-  );
-
-  // Native wraps the backdrop in the movement-threshold tap gesture; web uses
-  // a plain click — see `closeIfActive`.
-  return HOLD_MENU_LIFTS ? (
-    <GestureDetector gesture={tapGesture}>{backdrop}</GestureDetector>
+  return IS_WEB ? (
+    <Animated.View {...webProps} style={[styles.container, animatedContainerStyle, animatedBackgroundStyle]} />
   ) : (
-    <HoldMenuBlur onClick={closeIfActive} style={[styles.container, animatedContainerStyle]}>
-      <Animated.View
-        style={[StyleSheet.absoluteFill, animatedInnerContainerStyle]}
-        testID={activeTestID ? `${activeTestID}-backdrop` : undefined}
-      />
-    </HoldMenuBlur>
+    <GestureDetector gesture={tapGesture}>
+      <Animated.View style={[styles.container, animatedContainerStyle, animatedBackgroundStyle]} />
+    </GestureDetector>
   );
 };
 

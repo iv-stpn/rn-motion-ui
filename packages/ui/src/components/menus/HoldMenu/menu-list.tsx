@@ -1,26 +1,18 @@
 import { memo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Animated, {
-  Easing,
   runOnJS,
-  useAnimatedProps,
   useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { HoldMenuBlur } from './hold-menu-blur';
-import {
-  CONTEXT_MENU_STATE,
-  HOLD_ITEM_TRANSFORM_DURATION,
-  MENU_WIDTH_RATIO,
-  SPRING_CONFIGURATION_MENU,
-} from './hold-menu-constants';
-import { useHoldMenuInternal } from './hold-menu-context';
-import { clampMenuLeft, deepEqual, leftOrRight, menuAnimationAnchor } from './hold-menu-layout';
+import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, MENU_WIDTH_RATIO, SPRING_CONFIGURATION_MENU } from './constants';
+import { useHoldMenuInternal } from './context';
 import { MENU_PANEL_DARK_COLOR, MENU_PANEL_LIGHT_COLOR } from './hold-menu-theme';
 import type { MenuItemProps } from './hold-menu-types';
+import { clampMenuLeft, deepEqual, leftOrRight, menuAnimationAnchor } from './layout';
 import { MenuItems } from './menu-items';
 
 const styles = StyleSheet.create({
@@ -44,7 +36,7 @@ const styles = StyleSheet.create({
 });
 
 /**
- * The panel — upstream's `MenuList`: the blurred, translucent surface that
+ * The panel — upstream's `MenuList`: the translucent surface that
  * pops out of the corner nearest the held item.
  *
  * The panel's width is upstream's 60% of the window, computed rotation-safely
@@ -57,10 +49,9 @@ const styles = StyleSheet.create({
  * `useAnimatedReaction` + `deepEqual` sync upstream uses.
  */
 const MenuListComponent = () => {
-  const { state, theme, menuProps, windowSize, safeAreaInsets, reducedMotion } = useHoldMenuInternal();
+  const { state, theme, menuProps, windowSize, safeAreaInsets } = useHoldMenuInternal();
 
   const [itemList, setItemList] = useState<MenuItemProps[]>([]);
-  const [activeTestID, setActiveTestID] = useState<string | undefined>(undefined);
   const prevList = useSharedValue<MenuItemProps[]>([]);
 
   const messageStyles = useAnimatedStyle(() => {
@@ -81,21 +72,13 @@ const MenuListComponent = () => {
       safeRight: safeAreaInsets.value.right,
     });
 
-    const duration = reducedMotion.value === 1 ? 0 : HOLD_ITEM_TRANSFORM_DURATION;
-
-    // The panel pops in while active — spring there (or snap, reduced motion) —
-    // and times back to zero on close.
-    const scaleAnimation = () => {
-      if (state.value !== CONTEXT_MENU_STATE.ACTIVE) return withTiming(0, { duration });
-      if (reducedMotion.value === 1) return withTiming(1, { duration: 0 });
-      return withSpring(1, SPRING_CONFIGURATION_MENU);
-    };
+    const menuScaleAnimation = () =>
+      state.value === CONTEXT_MENU_STATE.ACTIVE
+        ? withSpring(1, SPRING_CONFIGURATION_MENU)
+        : withTiming(0, { duration: HOLD_ITEM_TRANSFORM_DURATION });
 
     const opacityAnimation = () =>
-      withTiming(state.value === CONTEXT_MENU_STATE.ACTIVE ? 1 : 0, {
-        duration,
-        easing: Easing.out(Easing.cubic),
-      });
+      withTiming(state.value === CONTEXT_MENU_STATE.ACTIVE ? 1 : 0, { duration: HOLD_ITEM_TRANSFORM_DURATION });
 
     return {
       left,
@@ -105,12 +88,12 @@ const MenuListComponent = () => {
       transform: [
         { translateX: translate.beginningTransformations.translateX },
         { translateY: translate.beginningTransformations.translateY },
-        { scale: scaleAnimation() },
+        { scale: menuScaleAnimation() },
         { translateX: translate.endingTransformations.translateX },
         { translateY: translate.endingTransformations.translateY },
       ],
     };
-  }, [menuProps, windowSize, safeAreaInsets, reducedMotion]);
+  }, [menuProps, windowSize, safeAreaInsets]);
 
   const animatedInnerContainerStyle = useAnimatedStyle(
     () => ({
@@ -119,13 +102,8 @@ const MenuListComponent = () => {
     [theme],
   );
 
-  const animatedProps = useAnimatedProps(() => ({ tint: theme.value }), [theme]);
-
   const setter = (items: MenuItemProps[]) => {
     setItemList(items);
-    // `testID` lands in the same `menuProps` write that carried the items, so
-    // reading it here keeps the panel testIDs in step with the row list.
-    setActiveTestID(menuProps.value.testID);
     prevList.value = items;
   };
 
@@ -138,17 +116,13 @@ const MenuListComponent = () => {
   );
 
   return (
-    <HoldMenuBlur
-      animatedProps={animatedProps}
-      style={[styles.menuContainer, messageStyles]}
-      testID={activeTestID ? `${activeTestID}-panel` : undefined}
-    >
+    <Animated.View style={[styles.menuContainer, messageStyles]}>
       <Animated.View style={[StyleSheet.absoluteFill, styles.menuInnerContainer, animatedInnerContainerStyle]}>
         <ScrollView bounces={false} showsVerticalScrollIndicator={false} style={StyleSheet.absoluteFill}>
-          <MenuItems items={itemList} testID={activeTestID} />
+          <MenuItems items={itemList} />
         </ScrollView>
       </Animated.View>
-    </HoldMenuBlur>
+    </Animated.View>
   );
 };
 

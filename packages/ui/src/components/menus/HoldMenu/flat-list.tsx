@@ -9,9 +9,10 @@ const AnimatedFlatList = Animated.createAnimatedComponent(RNFlatList) as unknown
 export type HoldMenuFlatListProps<T> = Omit<RNFlatListProps<T>, 'scrollEventThrottle'>;
 
 /**
- * `HoldMenuFlatList` — a `FlatList` wrapped in `createAnimatedComponent` with
- * `scrollEventThrottle` pinned to 16, upstream's pattern. Items of a scrollable
- * menu list are `HoldItem`s, which measure themselves on activation.
+ * `HoldMenuFlatList` — a `FlatList` wrapped in `createAnimatedComponent`
+ * with `scrollEventThrottle` pinned to 16, upstream's pattern. Items of a
+ * scrollable menu list are `HoldItem`s, which measure themselves on
+ * activation.
  */
 export function HoldMenuFlatList<T>(props: HoldMenuFlatListProps<T>) {
   return <AnimatedFlatList {...props} scrollEventThrottle={16} />;

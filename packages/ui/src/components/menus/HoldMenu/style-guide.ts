@@ -1,7 +1,8 @@
 /**
  * Local style guide for `HoldMenu` — upstream react-native-hold-menu's
- * `styleGuide.ts` minus the module-level `dimensionWidth` / `dimensionHeight`
- * (layout here reads rotation-safe window dimensions instead).
+ * `styleGuide.ts`, minus the module-level `dimensionWidth` / `dimensionHeight`
+ * and `palette` (none of those are read by the library itself; only `spacing`
+ * and `typography` drive the menu's geometry and text).
  */
 
 /** Base spacing unit, in px — every gap and inset is a multiple of it. */

@@ -20,12 +20,14 @@
  * Android renders `null` by design: upstream gives Android the plain scrim,
  * and this package keeps that (Android's `bg-black/35` is the whole scrim).
  *
- * The module is native-only by construction — it ships as
- * `hold-scrim-blur.native.tsx` and is imported by that exact specifier, so the
- * package has no platform-neutral twin for web to pick up. `expo-blur` is
- * never a static import anywhere: the only reference is the guarded `require`
- * below, so no bundler needs the package to be installed, and web consumers
- * (whose scrim uses the CSS `backdrop-blur-xs` instead) never resolve it.
+ * The module is a platform split, imported extensionless (`./hold-scrim-blur`):
+ * Metro resolves the `.native` file on iOS/Android and the no-op web twin
+ * (`hold-scrim-blur.tsx`) on web, so `expo-blur` never enters a web bundle.
+ * `expo-blur` itself is never a static import anywhere — the only reference is
+ * the guarded `require` below. Native consumers need `expo-blur` installed for
+ * the bundle to resolve (like upstream, which depends on it outright); the
+ * guard is belt-and-braces, matching how `use-safe-insets.ts` treats its
+ * optional peer.
  */
 
 import type { ReactNode } from 'react';

@@ -50,7 +50,7 @@ import { Menu } from '../../rows/menu';
 import { type HoldContextMenuItem, holdMenuEntries } from './hold-context-menu-item';
 import { HOLD_ITEM_SCALE, HOLD_MENU_LIST_CLASS, type HoldMenuLayout, type HoldMenuRect } from './hold-context-menu-layout';
 import type { HoldContextMenuMotion } from './hold-context-menu-motion';
-import { HoldScrimBlur } from './hold-scrim-blur.native';
+import { HoldScrimBlur } from './hold-scrim-blur';
 import { HOLD_MENU_LIFTS } from './use-hold-activation';
 
 type PanelProps = {

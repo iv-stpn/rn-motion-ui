@@ -431,10 +431,16 @@ function TableImpl<T>(props: TableProps<T>) {
         contentContainerClassName="min-w-full"
         testID={`${testID ?? 'table'}-scroll`}
       >
-        {tableBody}
+        {/* A horizontal ScrollView lays its children out in a row, so the header
+            row and the body FlatList must be wrapped in a single column — left
+            as direct siblings the FlatList sits to the right of the header and
+            the body reads as empty. The explicit width keeps the header cells
+            and body cells on the same column edges and gives the ScrollView a
+            definite content width to scroll. */}
+        <View style={{ width: totalContentWidth }}>{tableBody}</View>
       </ScrollView>
     );
-  }, [needsHorizontalScroll, tableBody, testID]);
+  }, [needsHorizontalScroll, tableBody, totalContentWidth, testID]);
 
   return (
     <View

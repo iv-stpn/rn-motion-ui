@@ -680,6 +680,50 @@ export const SmallScreen: Story = {
   },
 };
 
+// ─── Narrow container (horizontal overflow) ──────────────────────────────────
+// Columns that overflow a phone-width container wrap the header + body in a
+// horizontal ScrollView, whose content is laid out in a row. The header and body
+// must therefore sit inside a single column, or the rows land beside the header
+// (off-screen) and the body reads as empty — the mobile bug this pins down.
+
+const NARROW_WIDTH = 320;
+const NARROW_ROW_HEIGHT = 48;
+// Fixed pixel widths so the overflow is deterministic (no fr columns resolving
+// to zero width in a too-narrow container).
+const NARROW_COLUMNS: TableColumn<Person>[] = [
+  { key: 'name', header: 'Name', width: '180px' },
+  { key: 'email', header: 'Email', width: '200px' },
+  { key: 'role', header: 'Role', width: '140px' },
+];
+
+export const NarrowOverflow: Story = {
+  name: 'Demo: rows stay under the header on a narrow screen',
+  render: () => (
+    <View style={{ width: NARROW_WIDTH }}>
+      <Table
+        {...CLASSIC_TABLE}
+        data={buildPeople(5)}
+        columns={NARROW_COLUMNS}
+        getRowId={getPersonId}
+        height={280}
+        rowHeight={NARROW_ROW_HEIGHT}
+        testID="table-narrow"
+      />
+    </View>
+  ),
+  args: { columns: [], data: [] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const table = (await canvas.findByTestId('table-narrow')).getBoundingClientRect();
+    const row = (await canvas.findByTestId('table-narrow-row-0')).getBoundingClientRect();
+    // The body row sits under the header (aligned to the table's left edge), not
+    // beside it — a horizontal ScrollView would otherwise push it off-screen and
+    // the body reads as empty on a narrow screen.
+    expect(row.left).toBeLessThan(table.left + 2);
+    expect(row.top).toBeGreaterThanOrEqual(table.top + NARROW_ROW_HEIGHT - 1);
+  },
+};
+
 // ─── Pagination ───────────────────────────────────────────────────────────────
 // mode='pagination' with prev/next footer pinned below the FlatList.
 

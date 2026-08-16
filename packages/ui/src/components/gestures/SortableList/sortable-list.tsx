@@ -204,7 +204,7 @@ function SortableListView<T>({
         // values were reset in a useLayoutEffect AFTER the reorder render, so
         // re-inits read the drag-time values and wrote multi-slot wrong
         // transforms — the drop jitter.
-        dropVersionSV.value = dropVersionSV.value + 1;
+        dropVersionSV.value += 1;
         const currentItems = itemsRef.current;
         const commit = onReorderRef.current;
         commit(reorderItems(currentItems, from, to), from, to);

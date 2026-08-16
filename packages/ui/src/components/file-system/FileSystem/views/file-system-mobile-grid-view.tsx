@@ -256,6 +256,7 @@ function MobileGridTile({
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the tile is a single render layer, so its body is one function
 export function FileSystemMobileGridView({
   draggable = false,
   ensureChildren,

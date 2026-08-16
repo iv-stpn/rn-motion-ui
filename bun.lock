@@ -41,6 +41,7 @@
         "rn-motion-ui-tokens": "./scripts/gen-tokens.mjs",
       },
       "dependencies": {
+        "@gorhom/portal": "^1.0.14",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "rn-motion-ui-icons": "^0.0.2",
@@ -67,6 +68,7 @@
       },
       "peerDependencies": {
         "expo-blur": ">=14.0.0",
+        "expo-haptics": ">=14.0.0",
         "react": ">=18.0.0",
         "react-native": ">=0.76.0",
         "react-native-gesture-handler": ">=2.0.0",
@@ -76,6 +78,7 @@
       },
       "optionalPeers": [
         "expo-blur",
+        "expo-haptics",
         "react-native-safe-area-context",
       ],
     },

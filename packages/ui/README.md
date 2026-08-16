@@ -84,6 +84,7 @@ Subpaths are namespaced by category:
 | `/close-button` | `CloseButton` |
 | `/elevated-button` | `ElevatedButton` |
 | `/feedback-fab` | `FeedbackFAB` |
+| `/hold-menu` | <!-- TODO: fill in symbols --> |
 | `/item-row` | `ItemRow` |
 | `/item-row-group` | `ItemRowGroup` |
 | `/morphing-fab` | `MorphingFAB` |

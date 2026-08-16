@@ -8,9 +8,7 @@
 
 import { type RefObject, useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import type { ActiveDrag, DragPoint, DragSnapshot, DragzoneState } from './drag.types';
-import { getDragSnapshot, subscribeDragMove, subscribeDragStore } from './drag-store';
-
-const IDLE_ZONE: DragzoneState = { isEligible: false, isOver: false };
+import { getDragSnapshot, getZoneStanding, subscribeDragMove, subscribeDragStore } from './drag-store';
 
 /**
  * The whole render-visible drag state. Prefer the narrower hooks below — this one
@@ -34,11 +32,20 @@ export function useActiveDrag(): ActiveDrag | null {
 /**
  * How one zone stands with respect to the drag in flight: whether it would take it,
  * and whether the pointer is inside it. What paints a zone's own affordance.
+ *
+ * Subscribed per zone through the store's standing cache, not to the whole
+ * snapshot — the object is reference-stable while this zone's own standing is
+ * unchanged, so a crossing elsewhere in the tree re-renders nothing here. This
+ * is the hook `<Dragzone>` itself uses, through the standing object; reach for
+ * it directly only when you want the two booleans without the drag.
  */
 export function useDragzoneState(zoneId: string): DragzoneState {
-  const snapshot = useDragSnapshot();
-  if (snapshot.drag === null) return IDLE_ZONE;
-  return { isEligible: snapshot.eligibleZoneIds.includes(zoneId), isOver: snapshot.overZoneId === zoneId };
+  const standing = useSyncExternalStore(
+    subscribeDragStore,
+    () => getZoneStanding(zoneId),
+    () => getZoneStanding(zoneId),
+  );
+  return { isEligible: standing.isEligible, isOver: standing.isOver };
 }
 
 /**

@@ -17,10 +17,14 @@ import type {
   DragRect,
   DragzoneConfig,
   DragzoneEntry,
+  DragzoneStanding,
 } from '../drag.types';
 import { createDragTransfer } from '../drag-transfer';
 
 const NO_GROUPS: DragGroups = [];
+
+/** The standing a zone has before any publish — the store's own idle object shape. */
+const IDLE_ZONE_STANDING: DragzoneStanding = { drag: null, isEligible: false, isOver: false };
 
 type ZoneOptions = Partial<DragzoneConfig> & {
   id: string;
@@ -42,12 +46,14 @@ export function rect(x: number, y: number, width: number, height: number): DragR
   return { height, width, x, y };
 }
 
-/**
- * A registered zone.
+/** A registered zone.
  *
  * `getConfig` closes over the options rather than copying them, matching the real
  * component: config is read fresh on every hit test, so a test can mutate what it
  * returns mid-drag exactly as a re-rendering component would.
+ *
+ * `standing` starts on the shared idle object the store uses for a zone with no
+ * drag in flight — the same initial value `registerDragzone` writes.
  */
 export function zone({ id, managerPath = [], rect: box = null, ...config }: ZoneOptions): DragzoneEntry {
   const entry: DragzoneEntry = {
@@ -63,6 +69,7 @@ export function zone({ id, managerPath = [], rect: box = null, ...config }: Zone
     managerPath,
     measure: () => Promise.resolve(box),
     rect: box,
+    standing: IDLE_ZONE_STANDING,
   };
   return entry;
 }

@@ -289,6 +289,13 @@ type HistoryStep = {
  * `stack` is the history stack *after* the motion: `goBack`/`goForward` pass
  * the existing stack at the new index; `navigateTo` passes a new stack and the
  * index of the path it just appended.
+ *
+ * The selection deliberately survives the move. Navigation is the one recompute
+ * that must not prune the selection to the visible set: the mobile views derive
+ * their checkbox mode from `selectedPaths.size`, so pruning on a folder change
+ * would drop the mode the user just entered. The paths/lead/anchor ride along
+ * and resolve to `null` until they are visible again; a press in the new folder
+ * replaces or extends them as usual.
  */
 function navigationPatch(s: FileSystemStore, stack: string[], historyIndex: number): HistoryStep {
   const currentPath = stack[historyIndex] ?? '';
@@ -303,7 +310,7 @@ function navigationPatch(s: FileSystemStore, stack: string[], historyIndex: numb
     isLoading: s.navigation.loadingFolders.has(currentPath),
   };
   const search: SearchSlice = { ...s.search, searchInput: '', searchQuery: '', isSearching: false };
-  const next = _recomputeEntries({ ...s, navigation, search });
+  const next = _recomputeEntries({ ...s, navigation, search }, { pruneSelection: false });
   return { navigation, search, entries: next.entries, filters: next.filters, selection: next.selection };
 }
 
@@ -354,9 +361,20 @@ function notifySelectionChange(
  * Recomputes every derived field that depends on `index`, `filters`,
  * `searchQuery`, `sort`, or `currentPath`. Called from any mutating action.
  * Also drops any selected path that falls outside the visible set.
+ *
+ * `pruneSelection` is the one switch that decides whether the selection is
+ * pruned to the visible set. Pruning (the default) is right for view/filter/
+ * search/sort changes — a selection that is not visible in the new view must
+ * not keep the selection mode on. Navigation and the children-load drain pass
+ * `false`: changing folder must persist the mode, so the mobile views keep
+ * their checkboxes across the move (nothing checked until the user taps).
  */
 type RecomputedEntries = { entries: EntriesSlice; filters: FiltersSlice; selection: SelectionSlice };
-function _recomputeEntries(s: FileSystemStore): RecomputedEntries {
+
+/** The one switch on a recompute: whether the selection is pruned to the visible set. */
+type RecomputeEntriesOptions = { pruneSelection?: boolean };
+
+function _recomputeEntries(s: FileSystemStore, options?: RecomputeEntriesOptions): RecomputedEntries {
   const { currentPath } = s.navigation;
   const { index, sort } = s.entries;
   const { filters } = s.filters;
@@ -383,7 +401,8 @@ function _recomputeEntries(s: FileSystemStore): RecomputedEntries {
   const entries = isSearching ? flatSearchResults(sortedIndex, searchQuery) : (sortedIndex.children.get(currentPath) ?? []);
 
   const previousSelection = selectionStateOf(s.selection);
-  const nextSelection = pruneFileSystemSelection(previousSelection, visiblePaths);
+  const nextSelection =
+    options?.pruneSelection === false ? previousSelection : pruneFileSystemSelection(previousSelection, visiblePaths);
   notifySelectionChange(s.consumer, index, nextSelection, previousSelection);
 
   return {
@@ -623,11 +642,17 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
                   preserveFolders: cur.entries.index.folders,
                   previousChildren: cur.entries.index.children,
                 });
-                const next = _recomputeEntries({
-                  ...cur,
-                  entries: { ...cur.entries, index },
-                  navigation: { ...cur.navigation, loadedItems },
-                });
+                const next = _recomputeEntries(
+                  {
+                    ...cur,
+                    entries: { ...cur.entries, index },
+                    navigation: { ...cur.navigation, loadedItems },
+                  },
+                  // Child loading is navigation's continuation: the folder just
+                  // opened is filling in its children, and the selection must
+                  // survive it exactly as it survived the navigation itself.
+                  { pruneSelection: false },
+                );
                 set({
                   navigation: { ...cur.navigation, loadedItems },
                   entries: { ...next.entries, items: cur.entries.items, index },
@@ -665,8 +690,16 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
 
       // ── Entries actions ───────────────────────────────────────────────────────
       setView: (view) => {
-        set((s) => ({ entries: { ...s.entries, view } }));
-        get().consumer.onViewChange?.(view);
+        // Through the recompute path, so switching views prunes the selection to
+        // what the new view actually shows: files selected in the current folder
+        // survive (they are still visible), a selection that is not visible in
+        // the new view is dropped, and the mobile checkbox mode turns off when
+        // nothing is left. The old path only swapped `view`, so a stale selection
+        // — one picked from search results, say — stayed in the store and kept
+        // the mode on.
+        const s = get();
+        recomputeAndSet({ entries: { ...s.entries, view } });
+        s.consumer.onViewChange?.(view);
       },
 
       applySortKey: (key) => {

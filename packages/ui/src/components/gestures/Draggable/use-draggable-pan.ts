@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: the pan's three-phase decision is one worklet state machine — splitting buildPanGesture would scatter the arm logic it is the only reader of */
 // The native transport: an RNGH pan armed by a hold and lifted by the move after it.
 //
 // Its own module rather than part of `draggable.tsx` because it is the one transport
@@ -49,9 +50,18 @@ type PanArm = {
   startAt: number;
   startX: number;
   startY: number;
+  /**
+   * How many fingers are down behind this arm. `startAt` alone cannot say whether
+   * the stream that set it is still alive: an Android `Modal` (the hold menu's
+   * overlay) can take the window's touch stream away without the pan ever seeing
+   * an up or a finalize, leaving `startAt` non-zero with no finger behind it. A
+   * zero count while `startAt` is non-zero is that stale arm, and the next
+   * touch-down reads it as a new press rather than as a second finger.
+   */
+  touches: number;
 };
 
-const PAN_ARM_IDLE: PanArm = { active: false, failed: false, startAt: 0, startX: 0, startY: 0 };
+const PAN_ARM_IDLE: PanArm = { active: false, failed: false, startAt: 0, startX: 0, startY: 0, touches: 0 };
 
 type PanGestureParams = {
   arm: SharedValue<PanArm>;
@@ -123,11 +133,27 @@ function buildPanGesture({ arm, effectAllowed, session, timeline, tuning }: PanG
         // Fires again for every extra finger. Only the first one starts the clock:
         // a second finger landing at 400ms must not restart a deadline the first one
         // already passed, nor re-arm a hold that has fired. `startAt` is the marker —
-        // `onFinalize` puts it back to 0, so a non-zero value means still tracking.
-        if (arm.value.startAt !== 0) return;
+        // `onFinalize` puts it back to 0 — and `touches` says how many fingers are
+        // behind it. A non-zero `startAt` with fingers down is the live stream, and
+        // gets counted, not re-armed. A non-zero `startAt` with *zero* fingers is a
+        // stale arm: the previous stream vanished without an up, a cancel or a
+        // finalize (an Android Modal can take the window's touches away from under
+        // the held row), so this touch is a new press and falls through to arm fresh
+        // — overwriting the stale arm is the reset.
+        if (arm.value.startAt !== 0 && arm.value.touches > 0) {
+          arm.value = { ...arm.value, touches: event.allTouches.length };
+          return;
+        }
         const touch = event.allTouches[0];
         if (!touch) return;
-        arm.value = { active: false, failed: false, startAt: Date.now(), startX: touch.absoluteX, startY: touch.absoluteY };
+        arm.value = {
+          active: false,
+          failed: false,
+          startAt: Date.now(),
+          startX: touch.absoluteX,
+          startY: touch.absoluteY,
+          touches: event.allTouches.length,
+        };
         scheduleOnRN(startPress);
       })
       .onTouchesMove((event, manager) => {
@@ -159,7 +185,10 @@ function buildPanGesture({ arm, effectAllowed, session, timeline, tuning }: PanG
       .onTouchesUp((event, manager) => {
         'worklet';
         // `numberOfTouches` on an up event is the count that remains, so anything
-        // above zero means a finger is still down and the press is not over.
+        // above zero means a finger is still down and the press is not over. The
+        // count is mirrored onto the arm so a stream that later vanishes without a
+        // finalize is recognised as gone by the next touch-down.
+        arm.value = { ...arm.value, touches: event.numberOfTouches };
         if (arm.value.active || event.numberOfTouches > 0) return;
         // A press that never lifted a drag: nothing to pan. Ending it releases the
         // recognizer instead of leaving it BEGAN until the next touch. The timeline is
@@ -167,6 +196,22 @@ function buildPanGesture({ arm, effectAllowed, session, timeline, tuning }: PanG
         // whatever the hold opened stays open.
         scheduleOnRN(endPress);
         manager.fail();
+      })
+      .onTouchesCancelled((_event, manager) => {
+        'worklet';
+        // A cancelled stream is gone — the touches that armed this pan are not coming
+        // back, and on an Android Modal the finalize that should have cleaned up never
+        // fires either. Zeroing the count is what lets the next touch-down see the
+        // stale arm (`startAt` non-zero, no fingers) and re-arm instead of treating
+        // itself as a second finger of a dead press. Ending the press drops any
+        // pending timeline timer, so a hold cannot fire behind a stream that no longer
+        // exists. Skipped while a drag is active: the pan owns the move there, and its
+        // own finalize is what should end it.
+        if (arm.value.startAt !== 0 && !arm.value.active) {
+          arm.value = { ...arm.value, touches: 0 };
+          scheduleOnRN(endPress);
+          manager.fail();
+        }
       })
       // Activation only — the pan is never active without one, so this is the lift.
       .onStart(({ absoluteX, absoluteY }: PanEvent) => {

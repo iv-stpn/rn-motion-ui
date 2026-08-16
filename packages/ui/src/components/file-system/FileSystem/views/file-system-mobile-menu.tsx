@@ -4,10 +4,11 @@
 //
 // Two shapes, one slot. When nothing is selected it is a kebab — tapping it opens
 // the entry's context menu through the same `HoldContextMenu`/`useContextMenu`
-// plumbing the desktop views use, but summoned on a tap rather than a hold. Once
-// anything is selected it becomes a checkbox, checked for the selected entry and
-// empty otherwise, so the mobile views reveal a multi-select surface the moment a
-// long-press picks the first item.
+// plumbing the desktop views use, but summoned on a tap rather than a hold, and
+// the same tap selects the entry (the menu's `onHold` rides any activation, a tap
+// included). Once anything is selected it becomes a checkbox, checked for the
+// selected entry and empty otherwise, so the mobile views reveal a multi-select
+// surface the moment a long-press picks the first item.
 
 import { useCallback } from 'react';
 import { Pressable, View } from 'react-native';
@@ -18,7 +19,7 @@ import { RoundLine } from 'rn-motion-ui-icons/icons/round-line';
 import { ThemedIcon } from '../../../icon/themed-icon';
 import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
 import { useFileSystemScrubGesture } from '../hooks/use-file-system-scrub';
-import { useContextMenu } from '../shell/file-system-context-menu';
+import { type ContextMenuHookReturn, useContextMenu } from '../shell/file-system-context-menu';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemItem } from '../types/file-system.types';
 
 /** Suffix the kebab's `testID` appends to the entry's — `<root>-entry-<path>-kebab`. */
@@ -94,16 +95,36 @@ function MobileCheckbox({
   );
 }
 
-type MobileKebabProps = Pick<FileSystemMobileMenuProps, 'entry' | 'getContextMenuActions' | 'onContextMenuAction' | 'testID'>;
+type MobileKebabProps = Pick<FileSystemMobileMenuProps, 'entry' | 'onToggleSelect' | 'testID'> & {
+  /**
+   * The entry's menu state, resolved by the slot so the slot and the kebab read
+   * the same `open` — the slot's shape decision depends on it.
+   */
+  menuProps: ContextMenuHookReturn['menuProps'];
+};
 
-/** The default shape: a kebab whose tap opens the entry's context menu. */
-function MobileKebab({ entry, getContextMenuActions, onContextMenuAction, testID }: MobileKebabProps) {
-  const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
+/**
+ * The default shape: a kebab whose tap opens the entry's context menu — and,
+ * through the same gesture, selects the entry.
+ *
+ * `HoldContextMenu` wires its `onHold` prop through `afterHold`, which
+ * `openMenu` fires on *any* activation, a tap included — so passing the
+ * additive toggle here makes a kebab tap select the entry (row highlighted,
+ * selection mode on) at the same moment the menu opens. The slot keeps the
+ * kebab mounted while this menu is open, so the selection the tap just produced
+ * cannot unmount the menu underneath it (see `FileSystemMobileMenu`).
+ */
+function MobileKebab({ entry, menuProps, onToggleSelect, testID }: MobileKebabProps) {
+  // Stable handle for `HoldContextMenu onHold`, which rides `afterHold` — a
+  // fresh arrow per render would rebuild the hook's `latest` ref on every
+  // render of the slot.
+  const handleHold = useCallback(() => onToggleSelect(entry), [entry, onToggleSelect]);
 
   return (
     <HoldContextMenu
       accessibilityLabel={`More actions for ${entry.name}`}
       activateOn="tap"
+      onHold={handleHold}
       trigger="pressable"
       testID={testID ? `${testID}${MOBILE_KEBAB_SUFFIX}` : undefined}
       {...menuProps}
@@ -119,9 +140,19 @@ function MobileKebab({ entry, getContextMenuActions, onContextMenuAction, testID
  * The kebab-or-checkbox trailing control. `selecting` picks the shape; a `null`
  * return hides it entirely when there is no context menu to offer and no
  * selection to toggle into.
+ *
+ * One wrinkle: while the kebab's *own* menu is open the kebab stays in the slot
+ * even though `selecting` is true. The kebab tap both opens the menu and selects
+ * the entry (see `MobileKebab`), and the overlay lives in a Modal rendered by the
+ * kebab's `HoldContextMenu` — flipping the slot to the checkbox under the open
+ * menu would unmount that menu in the same commit that produced it. The flip
+ * waits for the menu to close; `selecting` alone decides the shape from then on.
  */
 export function FileSystemMobileMenu(props: FileSystemMobileMenuProps) {
-  if (props.selecting) return <MobileCheckbox {...props} />;
-  if (!props.getContextMenuActions) return null;
-  return <MobileKebab {...props} />;
+  // Resolved here, not inside `MobileKebab`, so the slot's shape decision and
+  // the kebab's menu read the same `open` state.
+  const { menuProps } = useContextMenu(props.entry, props.getContextMenuActions, props.onContextMenuAction);
+  if (!props.getContextMenuActions) return props.selecting ? <MobileCheckbox {...props} /> : null;
+  if (props.selecting && !menuProps.open) return <MobileCheckbox {...props} />;
+  return <MobileKebab entry={props.entry} menuProps={menuProps} onToggleSelect={props.onToggleSelect} testID={props.testID} />;
 }

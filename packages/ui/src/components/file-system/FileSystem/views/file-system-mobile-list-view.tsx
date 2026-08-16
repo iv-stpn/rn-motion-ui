@@ -253,12 +253,27 @@ export function FileSystemMobileListView({
 }: FileSystemViewProps) {
   // Rows render in entry order, so the entry list *is* the Shift-range ordering.
   const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
-  const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
+  // Only the hold is borrowed from the shared activation hook: a long press is
+  // the touch way into multi-select. The tap is this view's own — see below.
+  const { onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
 
   const selecting = selectedPaths.size > 0;
   const toggleSelect = useCallback(
     (entry: FileSystemEntry) => onSelect(entry, { additive: true }, orderedPaths),
     [onSelect, orderedPaths],
+  );
+
+  // A single tap opens the entry outright — a phone has no double-click, so the
+  // tap must not first select. Only a hold enters selection mode; once anything
+  // is selected a tap toggles that entry's selection, the standard mobile
+  // file-manager behaviour (the checkboxes are the toggle surface, and the row
+  // tap mirrors them).
+  const activate = useCallback(
+    (entry: FileSystemEntry) => {
+      if (selecting) toggleSelect(entry);
+      else onOpen(entry);
+    },
+    [onOpen, selecting, toggleSelect],
   );
 
   // Scrub geometry. The finger→row mapping is calibrated at drag start against the
@@ -375,6 +390,18 @@ export function FileSystemMobileListView({
         renderItem={renderRow}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        // This list is nested inside the consumer's own ScrollView (the native
+        // storybook decorator wraps every story in one). Android only scrolls a
+        // child of a scroll container when the child opts into nested scrolling —
+        // iOS and web handle the nesting natively — so without this the list
+        // would not scroll at all in the APK.
+        nestedScrollEnabled={true}
+        // `removeClippedSubviews` is deliberately OFF. Android defaults it to
+        // true, and this FlatList is nested inside a ScrollView — the same
+        // failure mode the Table fixed in 348ad09c: native view clipping there
+        // wrongly detaches visible cells, rendering the list blank and stalling
+        // it trying to keep every row mounted.
+        removeClippedSubviews={false}
       />
     </View>
   );

@@ -8,6 +8,8 @@ import {
   pruneFileSystemSelection,
   runBetween,
 } from '../logic/file-system-selection';
+import { createFileSystemStore } from '../store/file-system-context';
+import type { FileSystemItem } from '../types/file-system.types';
 
 const MULTIPLE = { mode: 'multiple' } as const;
 const MULTIPLE_ADDITIVE = { mode: 'multiple', modifiers: { additive: true } } as const;
@@ -272,5 +274,85 @@ describe('pruneFileSystemSelection', () => {
     const next = pruneFileSystemSelection(selection('a', 'b'), new Set(['z']));
     expect(next.lead).toBeNull();
     expect(next.paths.size).toBe(0);
+  });
+});
+
+// The prune decision itself is pure, but *when* it runs is the store's: a view
+// switch recomputes with pruning, navigation recomputes without it. These tests
+// pin that split at the store boundary, since that is where the reported bug
+// lived — changing folder pruned the selection and dropped the mobile views'
+// checkbox mode, and switching views kept a stale selection alive.
+//
+// A filter/search is what produces a *non-null* visible set; with nothing
+// active `computeVisiblePaths` returns `null` (every path visible) and pruning
+// is a no-op by contract. So these tests drive the split with a file-type
+// filter, which is also the case where the old code actually mis-pruned.
+describe('selection persistence in the store', () => {
+  const ITEMS: FileSystemItem[] = [
+    { kind: 'file', path: 'a.txt' },
+    { kind: 'folder', path: 'Folder/' },
+    { kind: 'file', path: 'Folder/c.pdf' },
+    { kind: 'folder', path: 'Other/' },
+    { kind: 'file', path: 'Other/d.pdf' },
+  ];
+
+  function makeStore() {
+    return createFileSystemStore({
+      defaultPath: '',
+      defaultView: 'list',
+      items: ITEMS,
+      rootLabel: 'Files',
+      selectionMode: 'multiple',
+      title: 'Files',
+    });
+  }
+
+  /** Select one file by path, resolved through the store's own index. */
+  function selectFile(store: ReturnType<typeof makeStore>, path: string) {
+    const entry = store.getState().entries.index.files.get(path);
+    if (!entry) throw new Error(`no file entry for ${path}`);
+    store.getState().selectEntry(entry);
+  }
+
+  function selectedPaths(store: ReturnType<typeof makeStore>): string[] {
+    return [...store.getState().selection.selectedPaths];
+  }
+
+  it('keeps a selection the current view still shows when switching views', () => {
+    const store = makeStore();
+    // Under the PDF filter only `Folder/c.pdf` is visible; it is selected, so a
+    // view switch recomputes and the selection stands.
+    store.getState().toggleFileTypeFilterValue('application/pdf', true);
+    selectFile(store, 'Folder/c.pdf');
+    store.getState().setView('mobile-grid');
+    expect(selectedPaths(store)).toEqual(['Folder/c.pdf']);
+  });
+
+  it('drops a selection the current view does not show on a view switch', () => {
+    const store = makeStore();
+    // `a.txt` is in the index but hidden by the PDF filter — a stale selection,
+    // the shape a search-hit pick leaves behind. setView now recomputes with
+    // pruning, so it is dropped and the mobile checkbox mode turns off.
+    store.getState().toggleFileTypeFilterValue('application/pdf', true);
+    selectFile(store, 'a.txt');
+    expect(selectedPaths(store)).toEqual(['a.txt']);
+    store.getState().setView('icons');
+    expect(selectedPaths(store)).toEqual([]);
+  });
+
+  it('keeps the selection across navigation even when a filter hides it', () => {
+    const store = makeStore();
+    // The PDF filter shows `Folder/c.pdf` at the root, where it is selected. It
+    // is not a child of `Other/`, so navigating there would prune it under the
+    // old rule — yet navigation must not prune: the mobile views keep their
+    // checkbox mode in the new folder. (Applying the filter itself is a
+    // filter change and *does* prune, which is why the selection is made after.)
+    store.getState().toggleFileTypeFilterValue('application/pdf', true);
+    selectFile(store, 'Folder/c.pdf');
+    store.getState().navigateTo('Other/');
+    expect(selectedPaths(store)).toEqual(['Folder/c.pdf']);
+    // And back out again: navigation never prunes, whichever direction it runs.
+    store.getState().goBack();
+    expect(selectedPaths(store)).toEqual(['Folder/c.pdf']);
   });
 });

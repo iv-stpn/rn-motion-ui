@@ -172,8 +172,16 @@ function HoldContent({ activateOn, children, holdDuration, isHeld, isPressed, li
   // Reset the latch once the gesture fully ends, so the next press squeezes normally.
   if (!isPressed) spent.current = false;
 
-  const squeezed = isPressed && !lifted && !spent.current;
-  const scale = squeezed ? HOLD_ITEM_SCALE : 1;
+  // The original must stay at HOLD_ITEM_SCALE for as long as the lifted copy is
+  // on screen AND the finger is still down: the original is still visible for
+  // HANDOVER_DELAY, and the copy enters from exactly that scale — springing the
+  // original back to 1 mid-handover pops it under the user's finger (two items
+  // with different spring constants visibly separating), which is the mobile
+  // trigger-reset flicker. Once the finger lifts the scale is invisible anyway
+  // (opacity is already 0), and the `spent` latch still stops a re-squeeze when
+  // the menu closes mid-hold.
+  const squeezed = isPressed && !spent.current;
+  const scale = squeezed || (lifted && isPressed) ? HOLD_ITEM_SCALE : 1;
 
   // Scale animates so the squeeze reads as the gesture's own progress; opacity
   // rides on `style` so it applies synchronously — an instant 0↔1 through the

@@ -52,8 +52,13 @@ function CheckboxCardBox({ checked, disabled, pressed, transition, checkIcon, te
           checked ? 'border-info' : 'border-muted-foreground/50',
         )}
       >
-        {/* Fill fades in on check and out on uncheck, same timing as the mark. */}
-        <MotiView animate={{ opacity: checked ? 1 : 0 }} transition={ct} className="absolute inset-0 bg-info" />
+        {/* Fill fades in on check and out on uncheck, same timing as the mark.
+            `-inset-0.5` (=-2px) covers the whole 2px border band so the checked
+            box is one solid `info` surface — the old `inset-0` left the border's
+            antialiased inner edge visible as a hairline between the border and
+            the fill. Clipped to the exact box shape by the parent's
+            `overflow-hidden rounded-md`. */}
+        <MotiView animate={{ opacity: checked ? 1 : 0 }} transition={ct} className="absolute -inset-0.5 bg-info" />
         <AnimatePresence>
           {checked ? (
             <MotiView

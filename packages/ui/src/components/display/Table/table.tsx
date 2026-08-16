@@ -339,7 +339,14 @@ function TableImpl<T>(props: TableProps<T>) {
       onEndReachedThreshold={onEndReachedThreshold}
       ListEmptyComponent={ListEmptyComponent}
       ListFooterComponent={ListFooterComponent}
-      removeClippedSubviews={true}
+      // `removeClippedSubviews` is deliberately OFF. Android defaults it to
+      // true, and this FlatList is nested inside a ScrollView in table mode
+      // (the horizontal overflow wrapper — which a phone screen always
+      // triggers — or a consumer's vertical one). Native view clipping there
+      // wrongly detaches visible cells: the table renders blank and stalls
+      // trying to keep every row mounted. The JS windowing below is what
+      // virtualizes; the native clip hack only breaks it in this nesting.
+      removeClippedSubviews={false}
       // Mobile performance: limit the render window and batch updates so large
       // tables stay responsive.
       windowSize={5}

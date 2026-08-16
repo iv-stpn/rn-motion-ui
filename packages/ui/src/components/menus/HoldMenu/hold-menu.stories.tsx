@@ -13,10 +13,17 @@
  * right-click and the keyboard `contextmenu` path open the panel, a press on a
  * row runs its `actionParams` and closes it, and a click on the dimmed
  * backdrop closes it too. `'tap'` and `'double-tap'` keep the press on web, so
- * those stories open with ordinary clicks. An `Interactive` playground reuses
- * the same demo with the story-harness controls — activation, theme,
- * long-press delay and the travel toggles — so every combination can be tuned
- * by hand.
+ * those stories open with ordinary clicks.
+ *
+ * The demo is a full chat thread: a header, fifteen `HoldItem` bubbles in a
+ * `HoldMenuFlatList` that fills the story page and scrolls internally, and a
+ * pinned footer readout. Because the list is a real scroll view, every
+ * placement behaviour is exercisable by hand — hold a bubble near the bottom
+ * edge and the panel travels up with the item, hold one near the top and it
+ * drops down, scroll mid-thread and the menu clamps to the viewport. An
+ * `Interactive` playground reuses the same chat with the story-harness
+ * controls — activation, theme, long-press delay and the travel toggles — so
+ * every combination can be tuned by hand.
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/react';
 import { type ReactElement, useCallback, useState } from 'react';
@@ -70,9 +77,27 @@ type Message = { id: string; text: string; outgoing: boolean };
 /** FlatList row — a message and its HoldItem. */
 type MessageRow = { item: Message };
 
+/**
+ * A full chat thread — fifteen unique bubbles so the list actually scrolls and
+ * every placement behaviour can be tried by hand (top drop-down, mid-thread
+ * clamping, bottom up-travel).
+ */
 const MESSAGES: Message[] = [
   { id: FIRST_MESSAGE_ID, text: INCOMING, outgoing: false },
   { id: 'm2', text: OUTGOING, outgoing: true },
+  { id: 'm3', text: 'The backdrop blurs the page behind the panel now — iOS, Android and web.', outgoing: false },
+  { id: 'm4', text: 'Nice. And when the menu does not fit below, the item glides up with it.', outgoing: true },
+  { id: 'm5', text: 'Right — clamped to the safe area, so it never runs off screen.', outgoing: false },
+  { id: 'm6', text: 'Does the long-press delay behave on Android?', outgoing: true },
+  { id: 'm7', text: 'Yes — haptics fire once at the threshold, then the panel lifts.', outgoing: false },
+  { id: 'm8', text: 'The destructive row is tinted red with a separator above it.', outgoing: true },
+  { id: 'm9', text: 'And each bubble can open on tap, double-tap or hold — per item.', outgoing: false },
+  { id: 'm10', text: 'Try the Interactive story: every knob maps to a real prop.', outgoing: true },
+  { id: 'm11', text: 'Scroll to the bottom and hold the last message.', outgoing: false },
+  { id: 'm12', text: 'It flips above the bubble when it would overflow the viewport.', outgoing: true },
+  { id: 'm13', text: 'Pinning the item in place keeps the bubble still while the panel opens.', outgoing: false },
+  { id: 'm14', text: 'Close on tap? One tap anywhere dismisses the whole menu.', outgoing: true },
+  { id: 'm15', text: 'Shipped — hold any of the fifteen bubbles to try it.', outgoing: false },
 ];
 
 type BubbleProps = { text: string; outgoing?: boolean };
@@ -90,6 +115,27 @@ function Bubble({ text, outgoing = false }: BubbleProps) {
   );
 }
 
+/** Chat header — makes the demo read as a real thread, not loose bubbles. */
+function ChatHeader() {
+  return (
+    <View className="flex-row items-center gap-3 border-border border-b bg-surface-1 px-4 py-2.5">
+      <View className="h-9 w-9 items-center justify-center rounded-full bg-info">
+        <Text className="text-info-foreground" size="sm" weight="semibold">
+          HM
+        </Text>
+      </View>
+      <View className="gap-0.5">
+        <Text className="text-foreground" size="sm" weight="semibold">
+          Hold Menu
+        </Text>
+        <Text className="text-muted-foreground" size="xs">
+          Hold or right-click any bubble — 15 messages, scroll to test travel
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 type DemoProps = {
   activateOn?: 'tap' | 'double-tap' | 'hold';
   bottom?: boolean;
@@ -101,10 +147,12 @@ type DemoProps = {
 };
 
 /**
- * The chat demo: a `HoldMenuFlatList` of two `HoldItem` bubbles with the full
- * row menu — a title caption, icon rows, a destructive row, separators,
- * `actionParams` spread into `onPress`, chat-bubble `containerStyles` and a
- * `longPressMinDurationMs` override.
+ * The chat demo: a header, a full-height scrollable `HoldMenuFlatList` of
+ * fifteen `HoldItem` bubbles with the full row menu — a title caption, icon
+ * rows, a destructive row, separators, `actionParams` spread into `onPress`,
+ * chat-bubble `containerStyles` and a `longPressMinDurationMs` override — and
+ * a pinned footer readout. `flex: 1` on the list bounds it to the remaining
+ * height so it scrolls internally instead of growing the page.
  */
 function HoldMenuDemo({
   activateOn = 'hold',
@@ -155,15 +203,18 @@ function HoldMenuDemo({
 
   return (
     <HoldMenuProvider iconComponent={IconByName} theme={theme}>
-      <View className="w-full flex-1 gap-3">
+      <View className="w-full flex-1">
+        <ChatHeader />
         <HoldMenuFlatList
           contentContainerStyle={{ gap: 12, padding: 16 }}
           data={MESSAGES}
           keyExtractor={(item: Message) => item.id}
           renderItem={renderItem}
-          style={{ flexGrow: 1 }}
+          style={{ flex: 1 }}
         />
-        <Note testID={PICKED_TEST_ID}>{`Picked: ${picked}`}</Note>
+        <View className="border-border border-t px-4 py-2">
+          <Note testID={PICKED_TEST_ID}>{`Picked: ${picked}`}</Note>
+        </View>
       </View>
     </HoldMenuProvider>
   );
@@ -187,7 +238,7 @@ function HoldMenuPlayground() {
   const [disableMove, setDisableMove] = useState(false);
 
   return (
-    <Playground className="min-w-[340px]">
+    <Playground className="min-w-[340px] flex-1">
       <ControlCard title="Menu">
         <Choice label="Activate on" onChange={setActivateOn} options={ACTIVATE_OPTIONS} value={activateOn} />
         <Choice label="Theme" onChange={setTheme} options={THEME_OPTIONS} value={theme} />
@@ -214,9 +265,9 @@ function HoldMenuPlayground() {
 }
 
 // RN's `DimensionValue` has no room for a `calc()` length, so the web-only
-// min-height is cast — same pattern as HoverMenu's `WEB_PANEL_POSITION`.
+// height is cast — same pattern as HoverMenu's `WEB_PANEL_POSITION`.
 // biome-ignore lint/plugin: calc() is honoured by react-native-web but absent from RN's DimensionValue union, so the web-only style is cast
-const STORY_MIN_HEIGHT = { minHeight: 'calc(100vh - 3rem)' } as unknown as ViewStyle;
+const STORY_HEIGHT = { height: 'calc(100vh - 3rem)' } as unknown as ViewStyle;
 
 /**
  * The storybook canvas root (`#storybook-root`) is a plain block with no
@@ -224,12 +275,25 @@ const STORY_MIN_HEIGHT = { minHeight: 'calc(100vh - 3rem)' } as unknown as ViewS
  * cannot stretch and the provider's own `flex: 1` collapses to content height
  * — the stories used to render as a small box at the top-left with the
  * full-bleed backdrop dimming only that box. This story-level wrapper gives
- * the canvas a definite height filling the visible page (the global decorator
+ * the canvas a DEFINITE height filling the visible page (the global decorator
  * pads 1.5rem per side, hence 100vh minus 3rem) so the demo and its backdrop
  * cover the whole page without creating a scrollbar.
+ *
+ * The height must be a definite `height`, not a `min-height`: the chat demo
+ * is a full 15-message thread taller than most viewports, and `min-height`
+ * only sets a floor — content taller than it grows the wrapper and the page
+ * scrolls instead of the list. A definite height lets the `flex: 1` chain
+ * (provider root → demo → FlatList, all with RNW's base `min-height: 0`)
+ * bound the list so it scrolls internally.
+ *
+ * The wrapper must NOT carry `flex-1`: a definite `flex-basis: 0%` overrides
+ * the `height` property for a flex item (CSS flexbox — the height is ignored
+ * and the wrapper sizes to content again). `min-height` was immune to that
+ * override, which is why the old recipe used it — but a floor is not enough
+ * once the content is taller than the viewport.
  */
 const storyDecorator: Decorator = (Story) => (
-  <View className="w-full flex-1" style={STORY_MIN_HEIGHT}>
+  <View className="w-full" style={STORY_HEIGHT}>
     <Story />
   </View>
 );

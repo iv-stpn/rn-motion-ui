@@ -14,6 +14,22 @@ import { Text } from '../../typography/Text/text';
 const CHECK_PATH = 'M5 13l4 4L19 7';
 const INDETERMINATE_PATH = 'M6 12h12';
 
+/**
+ * Fill overlap over the box border. An explicit negative 0.5px inset (not the
+ * `-inset-0.5` class) so the fill provably draws over the border on every
+ * platform: the inline style cannot be dropped by the class resolver, which
+ * leaves the border's antialiased inner edge showing as a hairline between
+ * the border and the selected background when the fill sits exactly at the
+ * border's inner edge. `overflow-hidden` on the box clips the overlap.
+ */
+const CHECKED_FILL_STYLE: ViewStyle = {
+  position: 'absolute',
+  top: -0.5,
+  right: -0.5,
+  bottom: -0.5,
+  left: -0.5,
+};
+
 export type CheckboxProps = {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
@@ -83,17 +99,17 @@ export function Checkbox({
           )}
         >
           {/* Fill fades in on check and out on uncheck, same timing as the mark.
-              `-inset-0.5` (=-2px) makes it cover the whole 2px border band, so
-              the checked box is one solid primary surface. Anything less — the
-              old `-inset-px` covered only half the border — leaves the border's
-              antialiased inner edge showing through as a hairline of the
-              unchecked `bg-surface-3` between the border and the fill. The
-              parent's `overflow-hidden rounded-md` clips it to the exact box
-              shape. */}
+              `CHECKED_FILL_STYLE` pushes the fill 0.5px over the border as an
+              explicit inline style (not the `-inset-0.5` class) so it provably
+              draws over the border on every platform — a class that fails to
+              resolve leaves the border's antialiased inner edge visible as a
+              hairline between the border and the fill. The parent's
+              `overflow-hidden rounded-md` clips it to the exact box shape. */}
           <MotiView
             animate={{ opacity: showMark ? 1 : 0 }}
             transition={reduce ? TIMING_INSTANT : ct}
-            className="absolute -inset-0.5 bg-primary"
+            className="bg-primary"
+            style={CHECKED_FILL_STYLE}
           />
           <AnimatePresence>
             {showMark ? (

@@ -15,6 +15,22 @@ import { Text } from '../../typography/Text/text';
 
 const CHECK_PATH = 'M5 13l4 4L19 7';
 
+/**
+ * Fill overlap over the box border. An explicit negative 0.5px inset (not the
+ * `-inset-0.5` class) so the fill provably draws over the border on every
+ * platform: the inline style cannot be dropped by the class resolver, which
+ * leaves the border's antialiased inner edge showing as a hairline between
+ * the border and the selected background when the fill sits exactly at the
+ * border's inner edge. `overflow-hidden` on the box clips the overlap.
+ */
+const CHECKED_FILL_STYLE: ViewStyle = {
+  position: 'absolute',
+  top: -0.5,
+  right: -0.5,
+  bottom: -0.5,
+  left: -0.5,
+};
+
 type CheckboxCardBoxProps = {
   checked: boolean;
   disabled: boolean;
@@ -53,12 +69,13 @@ function CheckboxCardBox({ checked, disabled, pressed, transition, checkIcon, te
         )}
       >
         {/* Fill fades in on check and out on uncheck, same timing as the mark.
-            `-inset-0.5` (=-2px) covers the whole 2px border band so the checked
-            box is one solid `info` surface — the old `inset-0` left the border's
-            antialiased inner edge visible as a hairline between the border and
-            the fill. Clipped to the exact box shape by the parent's
-            `overflow-hidden rounded-md`. */}
-        <MotiView animate={{ opacity: checked ? 1 : 0 }} transition={ct} className="absolute -inset-0.5 bg-info" />
+            `CHECKED_FILL_STYLE` pushes the fill 0.5px over the border as an
+            explicit inline style (not the `-inset-0.5` class) so it provably
+            draws over the border on every platform — a class that fails to
+            resolve leaves the border's antialiased inner edge visible as a
+            hairline between the border and the fill. Clipped to the exact box
+            shape by the parent's `overflow-hidden rounded-md`. */}
+        <MotiView animate={{ opacity: checked ? 1 : 0 }} transition={ct} className="bg-info" style={CHECKED_FILL_STYLE} />
         <AnimatePresence>
           {checked ? (
             <MotiView

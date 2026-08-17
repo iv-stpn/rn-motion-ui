@@ -6,7 +6,7 @@
 // has no right button to summon a menu and no pointer to hover with — so each tile
 // shows a visible kebab instead, and long-press is the way into multi-select. Once
 // anything is selected every kebab becomes a checkbox (see `FileSystemMobileMenu`),
-// which is the classic mobile file-manager idiom. The same hold that toggles the
+// which is the classic mobile file-manager idiom. The same hold that joins the
 // selection keeps dragging past the escape slop, lifting the multi-selection onto
 // a folder tile — the drag wiring mirrors the desktop `IconTile`.
 
@@ -122,7 +122,7 @@ function MobileGridTile({
 
   // The body has no menu of its own — the kebab is the menu. Passing no
   // `getContextMenuActions` keeps `HoldItem` inert (empty items), so a
-  // hold fires only `onHoldAction` (the multi-select toggle) rather than a panel.
+  // hold fires only `onHoldAction` (the multi-select join) rather than a panel.
   const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
     entry,
     getContextMenuActions: undefined,

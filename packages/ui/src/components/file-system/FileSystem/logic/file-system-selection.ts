@@ -20,6 +20,13 @@ export type FileSystemSelectionModifiers = {
    */
   additive?: boolean;
   /**
+   * Long-press: the additive gesture, minus the removal half. Joins the entry
+   * to the selection and never takes one out — a re-hold of an already
+   * selected entry keeps it, so the drag that follows can carry the whole
+   * group again. Only meaningful alongside `additive: true`.
+   */
+  addOnly?: boolean;
+  /**
    * Shift-click: take the contiguous run from the anchor to this entry, in the
    * order the pressed view lays its entries out. Ignored in `single` mode, and
    * when the caller passes no `orderedPaths` to measure it against.
@@ -89,6 +96,20 @@ export type ApplySelectionArgs = {
 };
 
 /**
+ * The long-press join: additive minus the removal half.
+ *
+ * Returns `current` by identity when the entry is already selected — no state
+ * write, no callbacks — so a re-hold of a selected entry keeps the selection
+ * intact and a drag lifted off it can still carry the whole group.
+ */
+function joinFileSystemSelection(current: FileSystemSelectionState, path: string): FileSystemSelectionState {
+  if (current.paths.has(path)) return current;
+  const paths = new Set(current.paths);
+  paths.add(path);
+  return { anchor: path, lead: path, paths };
+}
+
+/**
  * Apply one press to the selection.
  *
  * Returns `current` itself when the press changes nothing — a re-press of the
@@ -129,6 +150,12 @@ export function applyFileSystemSelection(
     if (current.lead === path && current.anchor === path && current.paths.size === 1) return current;
     return { anchor: path, lead: path, paths: new Set([path]) };
   }
+
+  // Long-press (addOnly): join, never remove. A re-hold of an already selected
+  // entry is a no-op by identity — no state write, no callbacks — so the
+  // selection survives the hold and a drag lifted off it still carries the
+  // whole group.
+  if (modifiers?.addOnly) return joinFileSystemSelection(current, path);
 
   const paths = new Set(current.paths);
   if (!paths.delete(path)) {

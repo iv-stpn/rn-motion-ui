@@ -1629,7 +1629,7 @@ async function longPress(node: Element): Promise<void> {
   node.dispatchEvent(
     new PointerEvent('pointerdown', { bubbles: true, buttons: 1, cancelable: true, pointerId: 1, pointerType: 'touch' }),
   );
-  // Past the resolved holdDelay (300ms), where the hold fires the toggle.
+  // Past the resolved holdDelay (300ms), where the hold fires the join.
   await new Promise((resolve) => setTimeout(resolve, LONG_PRESS_MS));
   node.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'touch' }));
 }
@@ -1642,7 +1642,7 @@ async function longPress(node: Element): Promise<void> {
  *
  * A finger never starts an HTML5 drag, so this exercises the pointer transport
  * (`use-draggable-pointer.ts`), which accepts only `pointerType: 'touch'`: the
- * hold fires the same multi-select toggle as `longPress`, movement past the
+ * hold fires the same multi-select join as `longPress`, movement past the
  * escape slop lifts the drag, and the release resolves the drop off measured
  * rects (`measureInWindow` → `setTimeout 0`) — hence the `settle()` before
  * returning, and the `waitFor` callers still use before asserting the outcome.
@@ -1660,7 +1660,7 @@ async function holdDrag(node: Element, to: ClientPoint, onHeld?: () => void | Pr
       pointerType: 'touch',
     }),
   );
-  // Past the resolved holdDelay (300ms), where the hold fires the toggle.
+  // Past the resolved holdDelay (300ms), where the hold fires the join.
   await new Promise((resolve) => setTimeout(resolve, LONG_PRESS_MS));
   await onHeld?.();
   // Interpolated touch moves, so the transport sees the travel cross the escape
@@ -1737,12 +1737,16 @@ export const MultiSelect: Story = {
     modifierClick(await canvas.findByRole('button', { name: 'Budget-2026.xlsx' }), 'metaKey');
     await canvas.findByText('· 3 selected');
 
-    // A long press is the same toggle without a keyboard — the touch gesture.
+    // A long press is the same join without a keyboard — the touch gesture. It
+    // never removes: re-holding a selected entry keeps it, so a drag lifted off
+    // it can carry the whole group again.
     await longPress(await canvas.findByRole('button', { name: 'README.md' }));
     await canvas.findByText('· 4 selected');
 
-    // And it takes back out again.
-    await longPress(await canvas.findByRole('button', { name: 'README.md' }));
+    // Ctrl/Cmd-click is the removal toggle. Toggle a member that was picked by
+    // click, not the row just held — a synthetic click carries no pressIn, so
+    // the held row's hold-vs-tap latch would swallow it.
+    modifierClick(await canvas.findByRole('button', { name: 'Documents' }), 'ctrlKey');
     await canvas.findByText('· 3 selected');
 
     // Clear is the way out where there is no background left to tap.
@@ -2858,16 +2862,16 @@ export const MobileGridDragAndDrop: Story = {
  * The flagship mobile flow: hold selects, keep dragging, release on a folder —
  * all through the TOUCH pointer path, since a finger never starts an HTML5 drag.
  *
- * The hold fires the multi-select toggle first (the kebab yields to a checked
+ * The hold fires the multi-select join first (the kebab yields to a checked
  * checkbox while the finger is still down), then movement past the escape slop
- * lifts the drag, and the release resolves the drop off measured rects — which is
- * why `holdDrag` settles before returning and the assertions below waitFor.
+ * lifts the drag, and the release resolves the drop off measured rects — which
+ * is why `holdDrag` settles before returning and the assertions below waitFor.
  *
  * A drag lifted from a selected entry carries the whole multi-selection. The
- * hold is an additive *toggle* — it joins the held entry to whatever is already
- * selected — so the multi-drag is built the mobile way: toggle the first entry
- * back out, long-press a second one, then hold-drag the first again; the hold
- * re-joins it and the lift carries both paths.
+ * hold is additive and never removes — a re-hold of an already selected entry
+ * keeps it selected, so the same row can be held again and the lift carries
+ * the whole group: join a second entry with a long press, then re-hold-drag
+ * the first; both paths travel.
  */
 export const MobileHoldDragAndDrop: Story = {
   name: 'Demo: Mobile hold-drag onto a folder',
@@ -2887,7 +2891,7 @@ export const MobileHoldDragAndDrop: Story = {
     const row = await listRow(canvas, 'Roadmap.pptx');
     const folder = await listRow(canvas, 'Documents');
 
-    // Hold fires the multi-select toggle before any drag lifts: the kebab yields
+    // Hold fires the multi-select join before any drag lifts: the kebab yields
     // to a checked checkbox while the finger is still down.
     await holdDrag(row, centreOf(folder), async () => {
       await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Roadmap.pptx-checkbox`);
@@ -2896,19 +2900,18 @@ export const MobileHoldDragAndDrop: Story = {
     });
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
 
-    // Build a multi-selection the mobile way. The hold is a toggle, so the entry
-    // being dragged has to be *outside* the selection when the hold fires — the
-    // hold joins it, and the lift then carries the whole selection.
+    // Build a multi-selection the mobile way. The hold only ever joins — a long
+    // press on README adds it, and the selection survives the first drag.
     const readme = (await canvas.findAllByRole('button', { name: 'README.md' }))[0];
     if (!readme) throw new Error('no README.md row rendered');
-    await longPress(row); // toggles Roadmap back out of the first drag's selection
-    await waitFor(() => expect(selectedPaths(canvas)).toEqual([]));
     await longPress(readme);
-    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md']));
+    // selectedPaths reads in view order — README sits above Roadmap in the list.
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
 
+    // Re-hold the ALREADY-SELECTED Roadmap: the hold must keep it selected
+    // (no toggle-off), so the drag that follows lifts the whole group again.
     const photos = await listRow(canvas, 'Photos');
     await holdDrag(row, centreOf(photos), async () => {
-      // The hold just joined Roadmap to the existing README selection.
       await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
     });
     await waitFor(() =>
@@ -2917,6 +2920,8 @@ export const MobileHoldDragAndDrop: Story = {
         sources: expect.arrayContaining(['README.md', 'Roadmap.pptx']),
       }),
     );
+    // And the selection survives the re-drag — the same rows can be dragged again.
+    await waitFor(() => expect(selectedPaths(canvas)).toEqual(['README.md', 'Roadmap.pptx']));
   },
 };
 

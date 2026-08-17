@@ -5,7 +5,7 @@
 // No header and no disclosure tree — a phone has no column header to click and no
 // room for a tree. Each row carries a visible kebab (the same `FileSystemMobileMenu`
 // the grid tiles use), and long-press is the way into multi-select: once anything
-// is selected the kebab yields to a checkbox. The same hold that toggles the
+// is selected the kebab yields to a checkbox. The same hold that joins the
 // selection keeps dragging past the escape slop, lifting the multi-selection onto
 // a folder row — the drag wiring mirrors the desktop list view (`ListRow`), with
 // no hover anywhere: a phone has no right button and no pointer to hover with.
@@ -122,7 +122,7 @@ function MobileListRow({
 
   // The row has no menu of its own — the kebab is the menu. Passing no
   // `getContextMenuActions` keeps `HoldItem` inert (empty items), so a
-  // hold fires only `onHoldAction` (the multi-select toggle) rather than a panel.
+  // hold fires only `onHoldAction` (the multi-select join) rather than a panel.
   const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
     entry,
     getContextMenuActions: undefined,

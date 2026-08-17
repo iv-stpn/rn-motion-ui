@@ -386,8 +386,10 @@ export type FileSystemProps = {
    *
    * `'multiple'` turns on the gestures a file browser is expected to have:
    *
-   * - **Ctrl-click** (Cmd-click on macOS), or a **long-press** on touch: toggle
-   *   the entry under the pointer in or out of the selection.
+   * - **Ctrl-click** (Cmd-click on macOS): toggle the entry under the pointer in
+   *   or out of the selection. A **long-press** on touch only ever JOINS: it
+   *   adds the held entry and never removes one, so re-holding a selected entry
+   *   keeps it and a drag lifted off it carries the whole selection again.
    * - **Shift-click**: take the contiguous run from the anchor — the last entry
    *   picked without Shift — to the entry pressed, in the order the surface you
    *   pressed lays its entries out. Shift-clicking around grows and shrinks one

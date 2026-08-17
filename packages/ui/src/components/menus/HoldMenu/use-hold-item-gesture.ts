@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { Gesture, type GestureType } from 'react-native-gesture-handler';
-import { runOnUI, type SharedValue } from 'react-native-reanimated';
+import { runOnJS, runOnUI, type SharedValue } from 'react-native-reanimated';
 import { IS_WEB } from './constants';
 import type { HoldItemProps } from './hold-menu-types';
 
@@ -16,6 +16,8 @@ type UseHoldItemGestureOptions = {
   isHold: boolean;
   longPressMinDurationMs: number;
   activateOn: HoldItemProps['activateOn'];
+  /** Inert trigger — no activation, no menu. */
+  disabled: boolean;
   canCallActivateFunctions: () => boolean;
   didMeasureLayout: SharedValue<boolean>;
   activateAnimation: () => void;
@@ -24,19 +26,27 @@ type UseHoldItemGestureOptions = {
   scaleTap: () => void;
   scaleBack: () => void;
   activateFromContextMenu: () => void;
+  /** Fires consumer `onHold` + `onOpenChange(true)` — hold / tap / double-tap. */
+  onActivateJS: () => void;
+  /** Fires consumer `onOpenChange(true)` — the context-menu (right-click / keyboard) path. */
+  onOpenJS: () => void;
 };
 
 type UseHoldItemGestureResult = {
   /**
    * The composed gesture, or `null` on web where activation is DOM events
-   * (`contextmenu` for hold, `onClick` for tap/double-tap) — RNGH web
+   * (`contextmenu` for hold, `onClick` for tap/double-tap`) — RNGH web
    * gestures need trusted pointer events, which synthetic clicks (tests,
-   * automation) cannot produce.
+   * automation) cannot produce — and on a disabled trigger.
    */
   gesture: GestureType | null;
   handleContextMenu: (event: ContextMenuEvent) => void;
   /** Web tap/double-tap — a click handler with a manual double-tap window. */
   handleWebTap: () => void;
+  /** Web touch hold — a touch long-press meaning "hold" where there is no drag and no gesture. */
+  handleWebHold: () => void;
+  /** The activation worklet — exposed for the drag path, which fires it from `onHold`. */
+  onActivate: () => void;
 };
 
 /**
@@ -56,6 +66,7 @@ export function useHoldItemGesture({
   isHold,
   longPressMinDurationMs,
   activateOn,
+  disabled,
   canCallActivateFunctions,
   didMeasureLayout,
   activateAnimation,
@@ -64,6 +75,8 @@ export function useHoldItemGesture({
   scaleTap,
   scaleBack,
   activateFromContextMenu,
+  onActivateJS,
+  onOpenJS,
 }: UseHoldItemGestureOptions): UseHoldItemGestureResult {
   const onActivate = useCallback(() => {
     'worklet';
@@ -76,6 +89,13 @@ export function useHoldItemGesture({
     }
   }, [canCallActivateFunctions, didMeasureLayout, activateAnimation, isActive, isHold, scaleHold, scaleTap]);
 
+  /** Gesture `onStart`: the activation worklet plus the JS consumer firing (`onHold` + open). */
+  const onStart = useCallback(() => {
+    'worklet';
+    onActivate();
+    runOnJS(onActivateJS)();
+  }, [onActivate, onActivateJS]);
+
   const onFinish = useCallback(() => {
     'worklet';
     didMeasureLayout.value = false;
@@ -86,10 +106,23 @@ export function useHoldItemGesture({
     (event: ContextMenuEvent) => {
       event.preventDefault();
       event.stopPropagation();
+      onOpenJS();
       runOnUI(activateFromContextMenu)();
     },
-    [activateFromContextMenu],
+    [activateFromContextMenu, onOpenJS],
   );
+
+  /**
+   * Web touch hold — the same firing as a tap, but from a touch long-press rather
+   * than a click. Used where `webHold` is true and there is no drag to carry the
+   * hold (a `'hold'` item without `dragOptions`): a phone's browser has no right
+   * button, so the only gesture that means "hold" is a long press. The consumer
+   * `onHold` fires (via `onActivateJS`), and the lift choreography runs.
+   */
+  const handleWebHold = useCallback(() => {
+    onActivateJS();
+    runOnUI(activateFromContextMenu)();
+  }, [activateFromContextMenu, onActivateJS]);
 
   /**
    * Web tap / double-tap activation. RNGH web gestures cannot fire on
@@ -101,6 +134,7 @@ export function useHoldItemGesture({
   const lastTapRef = useRef(0);
   const handleWebTap = useCallback(() => {
     if (activateOn === 'tap') {
+      onActivateJS();
       runOnUI(activateFromContextMenu)();
       return;
     }
@@ -109,22 +143,24 @@ export function useHoldItemGesture({
     // new pair instead of re-opening on every tap after the first two.
     if (now - lastTapRef.current <= DOUBLE_TAP_WINDOW) {
       lastTapRef.current = 0;
+      onActivateJS();
       runOnUI(activateFromContextMenu)();
       return;
     }
     lastTapRef.current = now;
-  }, [activateOn, activateFromContextMenu]);
+  }, [activateOn, activateFromContextMenu, onActivateJS]);
 
   const gesture = useMemo(() => {
     // Web activation is DOM events (`contextmenu` for hold, `onClick` for
-    // tap/double-tap) — never an RNGH gesture, see `handleWebTap`.
-    if (webHold || (IS_WEB && !isHold)) return null;
-    if (isHold) return Gesture.LongPress().minDuration(longPressMinDurationMs).onStart(onActivate).onFinalize(onFinish);
+    // tap/double-tap) — never an RNGH gesture, see `handleWebTap`. A disabled
+    // trigger has no gesture at all.
+    if (disabled || webHold || (IS_WEB && !isHold)) return null;
+    if (isHold) return Gesture.LongPress().minDuration(longPressMinDurationMs).onStart(onStart).onFinalize(onFinish);
     return Gesture.Tap()
       .numberOfTaps(activateOn === 'double-tap' ? 2 : 1)
-      .onStart(onActivate)
+      .onStart(onStart)
       .onFinalize(onFinish);
-  }, [webHold, isHold, longPressMinDurationMs, activateOn, onActivate, onFinish]);
+  }, [disabled, webHold, isHold, longPressMinDurationMs, activateOn, onStart, onFinish]);
 
-  return { gesture, handleContextMenu, handleWebTap };
+  return { gesture, handleContextMenu, handleWebTap, handleWebHold, onActivate };
 }

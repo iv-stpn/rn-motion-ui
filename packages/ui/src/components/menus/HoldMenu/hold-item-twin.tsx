@@ -131,7 +131,18 @@ const HoldItemTwinComponent = ({
 
   return (
     <Portal name={name}>
-      <Animated.View key={name} className="absolute z-10" style={animatedPortalStyle} animatedProps={animatedPortalProps}>
+      <Animated.View
+        key={name}
+        className="absolute z-10"
+        style={animatedPortalStyle}
+        animatedProps={animatedPortalProps}
+        // A decorative duplicate of the in-place item: never announce it (a screen
+        // reader would read every entry twice), and keep it out of role/text queries
+        // while the real item stays the accessible one. `aria-hidden` is the web
+        // spelling RNW reads; `importantForAccessibility` covers native.
+        aria-hidden={true}
+        importantForAccessibility="no-hide-descendants"
+      >
         <GestureDetector gesture={overlayTap}>
           <Animated.View className="absolute inset-0 z-[15]" />
         </GestureDetector>

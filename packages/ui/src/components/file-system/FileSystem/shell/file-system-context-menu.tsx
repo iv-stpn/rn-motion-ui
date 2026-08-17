@@ -2,29 +2,58 @@
 /** biome-ignore-all lint/style/useComponentExportOnlyModules: hooks co-located with their return types */
 // Context-menu support for file entries and the view background.
 //
-// Each entry wraps its content in a HoldContextMenu (trigger="pressable" default),
-// which owns the hold gesture, the contextmenu DOM listener on web, and the drag when
-// dragOptions are provided. The background uses a 1×1 anchor View absolutely
-// positioned at the click/press point so the panel anchors there.
+// Each entry wraps its content in a `HoldItem` (the `HoldMenu` trigger), which owns
+// the hold gesture, the contextmenu DOM listener on web, and the drag when
+// dragOptions are provided. The background keeps a 1×1 `HoldContextMenu` anchor
+// absolutely positioned at the click/press point, because `HoldItem` has no
+// imperative open — it can only anchor to its own measured wrapper, never to an
+// arbitrary point a background click names.
 //
 // How the menu is opened, by pointer rather than by platform:
-//  - Right-click:  a `contextmenu` DOM listener — on each entry's HoldContextMenu
+//  - Right-click:  a `contextmenu` DOM listener — on each entry's `HoldItem`
 //                  wrapper for entries, on the scroll container for the background.
-//  - Hold:         HoldContextMenu's own hold gesture (Holdable / HoldDraggable).
-//                  In multi-select mode, `onHold` is overridden to toggle selection
-//                  instead; the menu remains reachable via right-click on web.
+//  - Hold:         `HoldItem`'s own hold gesture. In multi-select mode, `onHold` is
+//                  overridden to toggle selection instead; the menu remains
+//                  reachable via right-click on web.
 
-import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactElement, type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type GestureResponderEvent, Platform, View } from 'react-native';
 import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
 import type { HoldContextMenuItem } from '../../../menus/HoldContextMenu/hold-context-menu-item';
+import type { MenuItemProps } from '../../../menus/HoldMenu/hold-menu';
 import type { MenuItemIcon } from '../../../rows/menu-item';
 import type { FileSystemContextMenuAction, FileSystemItem } from '../types/file-system.types';
 
-// ── Icon adapter ───────────────────────────────────────────────────────────────
+// ── Icon adapters ─────────────────────────────────────────────────────────────
 
 /**
- * Normalises a consumer's `icon` field to a `MenuItemIcon` component.
+ * Normalises a consumer's `icon` field to a `HoldMenu` `MenuItemProps.icon` —
+ * a render function producing the row's leading element.
+ *
+ * Consumers may pass a sized/coloured `ReactNode` (`<Trash2 size={16} />`) or a
+ * component matching `MenuItemIcon` (`(props) => ReactNode`). `HoldMenu` calls
+ * its icon function with no arguments, so a `MenuItemIcon` is wrapped with the
+ * row's own 18 px size baked in (HoldMenu threads no colour into function icons);
+ * a plain `ReactNode` is wrapped unchanged — the caller already baked size and
+ * colour into it.
+ */
+function toMenuItemIcon(icon: ReactNode | MenuItemIcon | undefined): (() => ReactElement) | undefined {
+  if (!icon) return;
+  if (typeof icon === 'function') {
+    // biome-ignore lint/plugin: MenuItemIcon is a function type; typeof check narrows correctly at runtime
+    const Icon = icon as MenuItemIcon;
+    return () => <Icon size={18} />;
+  }
+  // Consumer passed a ReactNode — wrap it; IconProps are ignored because the
+  // caller already baked size and colour in.
+  const node = icon;
+  // biome-ignore lint/plugin: node is ReactNode here (functions were handled above); TS does not narrow the union this precisely
+  return () => <>{node as ReactNode}</>;
+}
+
+/**
+ * Normalises a consumer's `icon` field to a `MenuItemIcon` component for the
+ * background `HoldContextMenu`.
  *
  * Consumers may pass a sized/coloured `ReactNode` (`<Trash2 size={16} />`).
  * `HoldContextMenuItem.icon` expects a component (`(props) => ReactNode`). When
@@ -44,12 +73,30 @@ function toMenuIcon(icon: ReactNode | MenuItemIcon | undefined): MenuItemIcon | 
   return () => node as ReactNode;
 }
 
-// ── Items builder ──────────────────────────────────────────────────────────────
+// ── Items builders ────────────────────────────────────────────────────────────
 
 const EMPTY_ITEMS: readonly HoldContextMenuItem[] = [];
+const EMPTY_MENU_ITEMS: MenuItemProps[] = [];
 
 const NO_ACTIONS_ITEM: HoldContextMenuItem = { disabled: true, id: '__no-actions', label: 'No actions available.' };
+const NO_ACTIONS_MENU_ITEM: MenuItemProps = { disabled: true, text: 'No actions available.' };
 
+/** Entry menu rows — `HoldMenu`'s `MenuItemProps`, one per consumer action. */
+function menuItems(
+  actions: FileSystemContextMenuAction[],
+  onAction: (action: FileSystemContextMenuAction) => void,
+): MenuItemProps[] {
+  if (actions.length === 0) return [NO_ACTIONS_MENU_ITEM];
+  return actions.map((action) => ({
+    isDestructive: action.destructive,
+    disabled: action.disabled,
+    icon: toMenuItemIcon(action.icon),
+    onPress: action.disabled ? undefined : () => onAction(action),
+    text: action.label,
+  }));
+}
+
+/** Background menu rows — `HoldContextMenu`'s item shape, one per consumer action. */
 function holdMenuItems(
   actions: FileSystemContextMenuAction[],
   onAction: (action: FileSystemContextMenuAction) => void,
@@ -68,16 +115,8 @@ function holdMenuItems(
 // ── Entry context menu ─────────────────────────────────────────────────────────
 
 export type ContextMenuHookReturn = {
-  /**
-   * Take the menu down — idempotent.
-   *
-   * `HoldContextMenu` also closes itself via `onHoldEscape` when a drag escapes
-   * after a hold; this is the escape hatch for callers that need to close
-   * programmatically from outside the component.
-   */
-  closeMenu: () => void;
   menuProps: {
-    items: readonly HoldContextMenuItem[];
+    items: MenuItemProps[];
     /** Whether this entry's menu is open. */
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -87,9 +126,10 @@ export type ContextMenuHookReturn = {
 /**
  * Wires up a right-click / hold context menu for one file-system entry.
  *
- * Returns `menuProps` to spread onto `<HoldContextMenu>` (trigger defaults to
- * `'pressable'`, which owns the hold gesture). When `getActions` is omitted the
- * menu is disabled — `items` is empty, so the trigger is inert.
+ * Returns `menuProps` for a `HoldItem`: `items` to hand it, plus `open` /
+ * `onOpenChange` for callers that need to watch the menu's state (the mobile
+ * kebab flips to a checkbox only once the menu closes). When `getActions` is
+ * omitted the menu is disabled — `items` is empty, so the trigger is inert.
  *
  * Items are resolved eagerly on every path/resolver change (cheap, synchronous)
  * so they are always current when the menu opens — no async gap between a
@@ -112,15 +152,16 @@ export function useContextMenu(
   // actions are not re-resolved even when the full `item` object is recreated.
   // biome-ignore lint/correctness/useExhaustiveDependencies: item.path is the stable key; re-running on the full item object would re-resolve on every render
   const items = useMemo(
-    () => (getActions ? holdMenuItems(getActions(item), (action) => onActionRef.current?.(action, item)) : EMPTY_ITEMS),
+    () => (getActions ? menuItems(getActions(item), (action) => onActionRef.current?.(action, item)) : EMPTY_MENU_ITEMS),
     [getActions, item.path],
   );
 
-  const closeMenu = useCallback(() => setOpen(false), []);
+  // `HoldItem` owns its own open state; this mirror exists so callers (the mobile
+  // kebab's slot) can react to it. Driven by `onOpenChange`, which `HoldItem`
+  // fires on both open and close.
   const handleOpenChange = useCallback((next: boolean) => setOpen(next), []);
 
   return {
-    closeMenu,
     menuProps: { items, onOpenChange: handleOpenChange, open: getActions ? open : false },
   };
 }
@@ -149,9 +190,13 @@ export type BackgroundContextMenuHookReturn = {
  * wrapper is absolutely positioned at the press / click point so the panel can
  * anchor there via the normal `measureInWindow` path.
  *
+ * This is the one menu that cannot migrate to `HoldMenu`: `HoldItem` has no
+ * imperative open and anchors to its own measured wrapper, so it cannot open at
+ * an arbitrary background point. The 1×1 `HoldContextMenu` anchor keeps that.
+ *
  * Entry context menus call `stopPropagation` on their own `contextmenu` events
- * (via `useHoldActivation`), so only genuine background right-clicks reach this
- * listener.
+ * (via `HoldItem`'s `handleContextMenu`), so only genuine background
+ * right-clicks reach this listener.
  */
 export function useBackgroundContextMenu(
   containerRef: RefObject<View | null>,

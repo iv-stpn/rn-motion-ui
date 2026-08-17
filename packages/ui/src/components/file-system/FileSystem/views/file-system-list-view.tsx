@@ -25,7 +25,7 @@ import type { DragzoneAcceptEvent, DragzoneRenderState } from '../../../gestures
 import { refreshDragzones } from '../../../gestures/drag-store';
 import { useActiveDrag } from '../../../gestures/use-drag-store';
 import { ThemedIcon } from '../../../icon/themed-icon';
-import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem, type HoldItemDragOptions } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
@@ -236,7 +236,7 @@ function SpringLoadEffect({
 
 type ListRowBodyProps = {
   childCount: number | undefined;
-  dragOptions: HoldContextMenuDragOptions | undefined;
+  dragOptions: HoldItemDragOptions | undefined;
   entry: FileSystemEntry;
   handleOpenChange: (open: boolean) => void;
   handlePress: (event: GestureResponderEvent) => void;
@@ -291,7 +291,7 @@ function ListRowBody({
 
   return (
     <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: FS_ROW_HEIGHT }}>
-      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+      <HoldItem items={menuProps.items} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ selected: isSelected }}
@@ -330,7 +330,7 @@ function ListRowBody({
         {isExpandable ? (
           <RowChevron isExpanded={isExpanded} isSelected={isActive} level={level} name={entry.name} onToggle={handleToggle} />
         ) : null}
-      </HoldContextMenu>
+      </HoldItem>
     </View>
   );
 }
@@ -364,9 +364,9 @@ type ListRowProps = {
 /**
  * Disclosure chevron, icon, name, then the metadata columns.
  *
- * Owns the hold gesture (via `HoldContextMenu`), the context menu, and the drag
+ * Owns the hold gesture (via `HoldItem`), the context menu, and the drag
  * source. No separate shell component — the drop target wraps the row directly
- * for folder entries, and the drag is handled by `HoldContextMenu dragOptions`.
+ * for folder entries, and the drag is handled by `HoldItem dragOptions`.
  */
 function ListRow({
   childCount,

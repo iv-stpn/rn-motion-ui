@@ -1,5 +1,13 @@
 import { useCallback } from 'react';
-import { runOnJS, type SharedValue, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import {
+  runOnJS,
+  type SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import {
   CONTEXT_MENU_STATE,
   HOLD_ITEM_SCALE_DOWN_DURATION,
@@ -24,6 +32,8 @@ type UseHoldItemSqueezeResult = {
   scaleHold: (duration?: number) => void;
   scaleTap: () => void;
   scaleBack: () => void;
+  /** The in-place item's opacity/scale while it squeezes and hides under the twin. */
+  animatedContainerStyle: ReturnType<typeof useAnimatedStyle>;
 };
 
 /**
@@ -103,5 +113,21 @@ export function useHoldItemSqueeze({
     return (willActivateWithTap && !isAnimationStarted.value) || !willActivateWithTap;
   }, [activateOn, isAnimationStarted]);
 
-  return { itemScale, isHold, canCallActivateFunctions, scaleHold, scaleTap, scaleBack };
+  const animatedContainerStyle = useAnimatedStyle(() => {
+    const animateOpacity = () => withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 }));
+
+    // The in-place item never travels. Only the portal twin carries the travel
+    // that keeps the pair on screen when the menu overflows; this copy hides
+    // under it while active and only squeezes/scales before that.
+    return {
+      opacity: isActive.value ? 0 : animateOpacity(),
+      transform: [
+        {
+          scale: isActive.value ? withTiming(1, { duration: HOLD_ITEM_TRANSFORM_DURATION }) : itemScale.value,
+        },
+      ],
+    };
+  }, [isActive, itemScale]);
+
+  return { animatedContainerStyle, itemScale, isHold, canCallActivateFunctions, scaleHold, scaleTap, scaleBack };
 }

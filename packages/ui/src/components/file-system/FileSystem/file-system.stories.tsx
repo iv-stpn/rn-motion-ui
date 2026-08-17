@@ -803,25 +803,25 @@ export const SwitchViews: Story = {
     const readme = 'file-system-views-entry-README.md';
 
     // Grid is the default: tiles, no column headers.
-    await canvas.findByText('README.md');
-    await canvas.findByTestId(readme);
+    await canvas.findAllByText('README.md');
+    await canvas.findAllByTestId(readme);
     expect(canvas.queryByText('Date Modified')).toBeNull();
 
     // List brings the sortable Name / Date Modified / Size header row.
     await userEvent.click(await canvas.findByLabelText('List view'));
     await canvas.findByText('Date Modified');
-    await canvas.findByTestId(readme);
+    await canvas.findAllByTestId(readme);
     await waitFor(() => expect(args.onViewChange).toHaveBeenCalledWith('list'));
 
     // Columns and Gallery keep the same entries, each in its own frame.
     await userEvent.click(await canvas.findByLabelText('Columns view'));
     await waitFor(() => expect(canvas.queryByText('Date Modified')).toBeNull());
-    await canvas.findByText('README.md');
-    await canvas.findByTestId(readme);
+    await canvas.findAllByText('README.md');
+    await canvas.findAllByTestId(readme);
 
     await userEvent.click(await canvas.findByLabelText('Gallery view'));
     await waitFor(() => expect(args.onViewChange).toHaveBeenLastCalledWith('gallery'));
-    await canvas.findByTestId(readme);
+    await canvas.findAllByTestId(readme);
   },
 };
 
@@ -854,7 +854,7 @@ export const CustomView: Story = {
     const canvas = within(canvasElement);
 
     await canvas.findByText('Kanban board');
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
   },
 };
 
@@ -885,20 +885,20 @@ export const Navigate: Story = {
   name: 'Demo: Open a folder',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
 
     // Second press within the double-tap window opens instead of re-selecting.
     await openTile(canvas, 'Documents');
 
     // Inside `Documents/`: its own children, and nothing from the root.
-    await canvas.findByText('Reports');
+    await canvas.findAllByText('Reports');
     await waitFor(() => expect(canvas.queryByText('Photos')).toBeNull());
 
     // The folder name lands in the header — and in the breadcrumb trail too, so
     // the trail's root link is what identifies the row rather than the name.
     await canvas.findByLabelText('Go to Files');
     await userEvent.click(await canvas.findByLabelText('Back'));
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
   },
 };
 
@@ -912,7 +912,7 @@ export const Breadcrumbs: Story = {
   name: 'Demo: Breadcrumb trail',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
 
     // At the root there is no trail — the folder name is in the header alone.
     expect(canvas.queryByLabelText('Go to Files')).toBeNull();
@@ -922,12 +922,12 @@ export const Breadcrumbs: Story = {
 
     // Two levels down, the trail holds the folder in between as its own link.
     await openTile(canvas, 'Reports');
-    await canvas.findByText('Q1-report.pdf');
+    await canvas.findAllByText('Q1-report.pdf');
     await canvas.findByLabelText('Go to Documents');
 
     // A segment jumps straight there rather than stepping back one folder.
     await userEvent.click(await canvas.findByLabelText('Go to Files'));
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
     await waitFor(() => expect(canvas.queryByLabelText('Go to Files')).toBeNull());
   },
 };
@@ -944,7 +944,7 @@ export const RootLabel: Story = {
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
 
     // The header still calls the root by its `title`.
     await canvas.findByText('Files');
@@ -957,7 +957,7 @@ export const RootLabel: Story = {
     // Back to the root: a search runs over the open folder's subtree, and the hit
     // below sits at the top level.
     await userEvent.click(await canvas.findByLabelText('Go to My Drive'));
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
 
     // The same label leads the trail under a search result — here a hit at the
     // root, whose trail is that label on its own. An entry keeps one test id in
@@ -965,7 +965,7 @@ export const RootLabel: Story = {
     // row below the search row rather than the grid tile it was a moment ago.
     await userEvent.type(await canvas.findByLabelText('Search files'), 'invoice');
     await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
-    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`)).toHaveTextContent('My Drive');
+    expect((await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`))[0]).toHaveTextContent('My Drive');
   },
 };
 
@@ -977,7 +977,7 @@ export const Search: Story = {
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // Search spans the whole subtree, not just the open folder. A query swaps the
     // folder view for the flat results view, so every match at every depth shows
@@ -992,15 +992,15 @@ export const Search: Story = {
     //
     // Both reports, plus `Reports/` on its own name — but not `Documents/`, which
     // is visible only as their ancestor and so is not a match itself.
-    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`);
-    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q2-report.pdf`);
-    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/`);
+    await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`);
+    await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q2-report.pdf`);
+    await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/`);
     expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/`)).toBeNull();
 
     // Each row names where it lives as a caret-separated trail under its name,
     // asserted through the row's whole text because both the trail separators and
     // the highlighted runs are nested nodes.
-    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`)).toHaveTextContent(
+    expect((await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`))[0]).toHaveTextContent(
       'Files › Documents › Reports',
     );
 
@@ -1012,13 +1012,13 @@ export const Search: Story = {
     await userEvent.clear(await canvas.findByLabelText('Search files'));
     await userEvent.type(await canvas.findByLabelText('Search files'), 'invoice');
     await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
-    const rootHit = await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`);
+    const rootHit = (await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`))[0];
     expect(rootHit).toHaveTextContent('Invoice-0042.pdf');
     expect(rootHit).toHaveTextContent('Files');
 
     // Clearing restores the folder.
     await userEvent.click(await canvas.findByLabelText('Clear search'));
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
   },
 };
 
@@ -1033,7 +1033,7 @@ export const SearchHighlight: Story = {
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // A partial hit marks only the matched run, leaving the rest of the name plain.
     await userEvent.type(await canvas.findByLabelText('Search files'), 'repo');
@@ -1043,7 +1043,8 @@ export const SearchHighlight: Story = {
 
     // `Reports/` is here on its own name, and is also the folder the two reports
     // live in — so the query is marked in that row's trail as well as in its name.
-    const q1 = await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`);
+    const q1 = (await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`))[0];
+    if (!q1) throw new Error('no Q1-report.pdf row rendered');
     expect(within(q1).getAllByTestId(FS_SEARCH_MATCH_TEST_ID)).toHaveLength(2);
 
     // A query that is the whole name is one single matched run: the mark covers
@@ -1051,7 +1052,8 @@ export const SearchHighlight: Story = {
     await userEvent.clear(await canvas.findByLabelText('Search files'));
     await userEvent.type(await canvas.findByLabelText('Search files'), 'notes.txt');
     await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
-    const fullHit = await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/notes.txt`);
+    const fullHit = (await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/notes.txt`))[0];
+    if (!fullHit) throw new Error('no notes.txt row rendered');
     const marks = within(fullHit).getAllByTestId(FS_SEARCH_MATCH_TEST_ID);
     expect(marks).toHaveLength(1);
     expect(marks[0]).toHaveTextContent('notes.txt');
@@ -1075,7 +1077,7 @@ export const SearchScope: Story = {
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
 
     // At the root the two scopes are the same tree, so only the root chip shows.
     await canvas.findByLabelText('Search all of Files');
@@ -1083,7 +1085,7 @@ export const SearchScope: Story = {
 
     // Inside a folder both are offered, and the folder one is active by default.
     await openTile(canvas, 'Documents');
-    await canvas.findByText('Contract.docx');
+    await canvas.findAllByText('Contract.docx');
     const folderChip = await canvas.findByLabelText('Search only Documents');
     const rootChip = await canvas.findByLabelText('Search all of Files');
     expect(folderChip).toHaveAttribute('aria-checked', 'true');
@@ -1098,7 +1100,7 @@ export const SearchScope: Story = {
     // under the hit says it came from the root, and the breadcrumb bar still
     // has `Documents` open behind the results.
     await userEvent.click(rootChip);
-    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`)).toHaveTextContent('Files');
+    expect((await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`))[0]).toHaveTextContent('Files');
     await canvas.findByLabelText('Go to Files');
     expect(rootChip).toHaveAttribute('aria-checked', 'true');
 
@@ -1112,11 +1114,11 @@ export const SearchScope: Story = {
     // Scope outlives the query: widening, then clearing the field, leaves the
     // folder view behind with the root scope still armed for the next query.
     await userEvent.click(rootChip);
-    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`);
+    await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Invoice-0042.pdf`);
     await userEvent.click(await canvas.findByLabelText('Clear search'));
-    await canvas.findByText('Contract.docx');
+    await canvas.findAllByText('Contract.docx');
     await userEvent.type(await canvas.findByLabelText('Search files'), 'roadmap');
-    await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Roadmap.pptx`);
+    await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Roadmap.pptx`);
   },
 };
 
@@ -1134,7 +1136,7 @@ export const Filter: Story = {
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
 
     // Chip options come from the loaded manifest, labeled by MIME type.
     await userEvent.click(await canvas.findByLabelText('Filter by PDF'));
@@ -1142,7 +1144,7 @@ export const Filter: Story = {
     // Only PDFs pass, so `Photos/` drops out while `Documents/` stays for its
     // reports. Folders are never filtered directly — they live through matches.
     await waitFor(() => expect(canvas.queryByText('Photos')).toBeNull());
-    await canvas.findByText('Invoice-0042.pdf');
+    await canvas.findAllByText('Invoice-0042.pdf');
 
     // The chip reports itself checked, and the slot reads the filter back.
     expect(await canvas.findByLabelText('Filter by PDF')).toHaveAttribute('aria-checked', 'true');
@@ -1161,7 +1163,7 @@ export const DatePresetRevalue: Story = {
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     await userEvent.click(await canvas.findByLabelText('Modified after 1 month ago'));
     await canvas.findByText('dateModified after 1 month ago');
@@ -1184,7 +1186,7 @@ export const CustomDateRange: Story = {
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // A preset first, so the range has something to replace.
     await userEvent.click(await canvas.findByLabelText('Modified after 1 month ago'));
@@ -1212,7 +1214,7 @@ export const FilterRowActions: Story = {
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
 
     await userEvent.click(await canvas.findByLabelText('Filter by PDF'));
     await canvas.findByText('fileType is application/pdf');
@@ -1223,12 +1225,12 @@ export const FilterRowActions: Story = {
     await userEvent.click(await canvas.findByLabelText('Negate fileType filter'));
     await canvas.findByText('fileType is-not application/pdf');
     await waitFor(() => expect(canvas.queryByText('Invoice-0042.pdf')).toBeNull());
-    await canvas.findByText('Photos');
+    await canvas.findAllByText('Photos');
 
     // `removeFilter` drops that row alone, leaving no filters active.
     await userEvent.click(await canvas.findByLabelText('Remove fileType filter'));
     await waitFor(() => expect(canvas.queryByText(FILE_TYPE_READBACK_PATTERN)).toBeNull());
-    await canvas.findByText('Invoice-0042.pdf');
+    await canvas.findAllByText('Invoice-0042.pdf');
   },
 };
 
@@ -1507,7 +1509,7 @@ export const WithFiltersAndSearch: Story = {
   render: renderWithFilterBar,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // Search is debounced 200 ms — wait for the results to update.
     await userEvent.type(await canvas.findByLabelText('Search files'), 'report');
@@ -1516,22 +1518,22 @@ export const WithFiltersAndSearch: Story = {
     // appears in the matched rows' trails. Asserted through the row's whole text:
     // the trail's separators and its highlighted runs are both nested nodes, and
     // `getByText` reads a single node's own text.
-    expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`)).toHaveTextContent(
+    expect((await canvas.findAllByTestId(`${ENTRY_TEST_ID_PREFIX}Documents/Reports/Q1-report.pdf`))[0]).toHaveTextContent(
       'Files › Documents › Reports',
     );
 
     // Clearing the search field restores the full list.
     await userEvent.click(await canvas.findByLabelText('Clear search'));
-    await waitFor(() => canvas.findByText('README.md'));
+    await canvas.findAllByText('README.md');
 
     // A file-type chip filters immediately.
     await userEvent.click(await canvas.findByLabelText('Filter by PDF'));
     await waitFor(() => expect(canvas.queryByText('README.md')).toBeNull());
-    await canvas.findByText('Invoice-0042.pdf');
+    await canvas.findAllByText('Invoice-0042.pdf');
 
     // Clear all removes both search and filters.
     await userEvent.click(await canvas.findByText('Clear'));
-    await waitFor(() => canvas.findByText('README.md'));
+    await canvas.findAllByText('README.md');
   },
 };
 
@@ -1549,7 +1551,7 @@ export const Sort: Story = {
   args: { defaultView: 'list' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // Pinned items sort first; name ascending within each group.
     // README.md and Roadmap.pptx are pinned, so README.md leads.
@@ -1770,7 +1772,7 @@ export const ShiftRange: Story = {
   args: { defaultView: 'list', selectionMode: 'multiple', onSelectedItemsChange: fn() },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // Pinned items sort first (README.md, Roadmap.pptx), then the rest by name:
     // README.md, Roadmap.pptx, Archive/, Budget-2026.xlsx, Documents/, Invoice-0042.pdf, Photos/.
@@ -1815,13 +1817,13 @@ export const LazyChildren: Story = {
     await openTile(canvas, 'Archive');
     await waitFor(() => expect(args.loadChildren).toHaveBeenCalledWith({ cursor: null, path: 'Archive/' }));
 
-    await canvas.findByText('legacy.zip');
-    await canvas.findByText('2024');
+    await canvas.findAllByText('legacy.zip');
+    await canvas.findAllByText('2024');
 
     // Loaded children are kept, so a second visit costs nothing.
     await userEvent.click(await canvas.findByLabelText('Back'));
     await openTile(canvas, 'Archive');
-    await canvas.findByText('legacy.zip');
+    await canvas.findAllByText('legacy.zip');
     expect(args.loadChildren).toHaveBeenCalledTimes(1);
   },
 };
@@ -1859,7 +1861,7 @@ export const ImageViewer: Story = {
     const canvas = within(canvasElement);
 
     await openTile(canvas, 'Photos');
-    await canvas.findByText('dunes.jpg');
+    await canvas.findAllByText('dunes.jpg');
 
     // Images are the one kind the component views itself; everything else needs
     // `renderFileViewer` (see WithFileViewer) or falls through to `onFileOpen`.
@@ -1952,7 +1954,7 @@ export const WithContextMenu: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // Right-click a file to open its context menu.
     const readmeTile = await canvas.findByRole('button', { name: 'README.md' });
@@ -1992,7 +1994,7 @@ export const WithBackgroundContextMenu: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // Right-click an empty tile area — any part of the container that is not a
     // button. The drag container is the registered listener target.
@@ -2497,7 +2499,7 @@ export const ColumnsMultiSelect: Story = {
   args: { defaultView: 'columns', selectionMode: 'multiple', onSelectedItemsChange: fn() },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // Plain click to select the first entry.
     await userEvent.click(await canvas.findByRole('button', { name: 'README.md' }));
@@ -2527,7 +2529,7 @@ export const GalleryMultiSelect: Story = {
   args: { defaultView: 'gallery', selectionMode: 'multiple', onSelectedItemsChange: fn() },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
 
     // Plain click to select the first entry.
     await userEvent.click(await canvas.findByRole('button', { name: 'README.md' }));
@@ -2691,13 +2693,13 @@ export const MobileTapOpens: Story = {
     const documents = (await canvas.findAllByRole('button', { name: 'Documents' }))[0];
     if (!documents) throw new Error('no Documents row rendered');
     await userEvent.click(documents);
-    await canvas.findByText('Contract.docx');
+    await canvas.findAllByText('Contract.docx');
     expect(args.onFileOpen).toHaveBeenCalledTimes(1);
     expect(selectedPaths(canvas)).toEqual([]);
 
     // Back at the root, a hold still enters selection mode.
     await userEvent.click(await canvas.findByLabelText('Back'));
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
     const row = (await canvas.findAllByRole('button', { name: 'README.md' }))[0];
     if (!row) throw new Error('no README.md row rendered');
     await longPress(row);
@@ -3152,14 +3154,15 @@ export const WithBodyWrapper: Story = {
 
     // The default content still renders, and the rail reads the state it came from:
     // nineteen entries at the root — Archive/, Documents/, Photos/ and sixteen files.
-    await canvas.findByText('README.md');
+    await canvas.findAllByText('README.md');
     await canvas.findByText(NO_SELECTION);
     await canvas.findByText('19 in Files');
     await canvas.findByText('icons view');
 
-    // Selecting shows the name twice over: once on the tile, once in the rail.
+    // Selecting shows the name three times over: the tile, the rail, and the
+    // twin `HoldItem` keeps mounted (its portal copy of the held tile).
     await userEvent.click(await canvas.findByRole('button', { name: 'README.md' }));
-    await waitFor(async () => expect(await canvas.findAllByText('README.md')).toHaveLength(2));
+    await waitFor(async () => expect(await canvas.findAllByText('README.md')).toHaveLength(3));
     await waitFor(() => expect(canvas.queryByText(NO_SELECTION)).toBeNull());
 
     // Navigating rewires both halves at once.

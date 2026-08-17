@@ -50,10 +50,13 @@ function fieldAreSame(obj1: MenuItemProps, obj2: MenuItemProps): boolean {
     // biome-ignore lint/plugin: Object.keys yields the item's own keys — the cast is safe by construction
     const val2 = obj2[key as keyof MenuItemProps];
 
-    if (val1 !== val2) {
-      if (typeof val1 === 'function' && typeof val2 === 'function') return val1.toString() === val2.toString();
-      return false;
-    }
+    // Functions are compared by reference, not `toString()`. Two `onPress`
+    // closures can share source (`() => onAction(action)`) yet capture a
+    // different entry — a `toString()` comparison reads them as equal and the
+    // menu never re-syncs to the newly activated entry's actions, so its rows
+    // stay bound to the previous entry. Reference identity is the only sound
+    // signal here.
+    if (val1 !== val2) return false;
 
     return true;
   });
@@ -402,9 +405,16 @@ export const resolveMenuAnchorPosition = ({
 };
 
 /** Row text colour from the item flags and theme — upstream's `getColor`. */
-export const getColor = (isTitle: boolean | undefined, isDestructive: boolean | undefined, themeValue: 'light' | 'dark') => {
+export const getColor = (
+  isTitle: boolean | undefined,
+  isDestructive: boolean | undefined,
+  isDisabled: boolean | undefined,
+  themeValue: 'light' | 'dark',
+) => {
   'worklet';
-  if (isTitle) return MENU_TITLE_COLOR;
+  // Disabled reads like a title — grey, inert — and wins over a destructive
+  // flag: a disabled "Delete" is not red, it is unavailable.
+  if (isTitle || isDisabled) return MENU_TITLE_COLOR;
   if (isDestructive) return themeValue === 'dark' ? MENU_TEXT_DESTRUCTIVE_COLOR_DARK : MENU_TEXT_DESTRUCTIVE_COLOR_LIGHT;
   return themeValue === 'dark' ? MENU_TEXT_DARK_COLOR : MENU_TEXT_LIGHT_COLOR;
 };

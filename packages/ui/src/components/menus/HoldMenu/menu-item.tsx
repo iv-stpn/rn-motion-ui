@@ -37,10 +37,13 @@ const MenuItemComponent = ({ item, isLast }: MenuItemComponentProps) => {
     };
   }, [theme, isLast, item]);
 
-  const textColor = useAnimatedStyle(() => ({ color: getColor(item.isTitle, item.isDestructive, theme.value) }), [theme, item]);
+  const textColor = useAnimatedStyle(
+    () => ({ color: getColor(item.isTitle, item.isDestructive, item.disabled, theme.value) }),
+    [theme, item],
+  );
 
   const handleOnPress = useCallback(() => {
-    if (!item.isTitle) {
+    if (!(item.isTitle || item.disabled)) {
       const params = menuProps.value.actionParams[item.text] || [];
       if (item.onPress) item.onPress(...params);
       state.value = CONTEXT_MENU_STATE.END;
@@ -58,8 +61,12 @@ const MenuItemComponent = ({ item, isLast }: MenuItemComponentProps) => {
     <>
       <AnimatedTouchable
         onPress={handleOnPress}
-        activeOpacity={item.isTitle ? 1 : 0.4}
+        activeOpacity={item.isTitle || item.disabled ? 1 : 0.4}
+        accessibilityRole="menuitem"
+        accessibilityState={{ disabled: item.disabled }}
+        aria-disabled={item.disabled}
         className={MENU_ITEM_CLASS}
+        disabled={item.disabled}
         style={borderStyles}
       >
         <Animated.Text className={item.isTitle ? MENU_ITEM_TITLE_TEXT_CLASS : MENU_ITEM_TEXT_CLASS} style={textColor}>

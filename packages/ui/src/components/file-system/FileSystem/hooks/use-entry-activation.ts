@@ -44,8 +44,8 @@ export type EntryActivation = {
    */
   onPress: (entry: FileSystemEntry, event?: GestureResponderEvent, orderedPaths?: readonly string[]) => void;
   /**
-   * The multi-selection toggle. Pass to `<HoldContextMenu onHold>` when in
-   * `multiple` mode — `HoldContextMenu` calls it instead of opening the panel.
+   * The multi-selection toggle. Pass to `<HoldItem onHold>` when in
+   * `multiple` mode — `HoldItem` calls it instead of opening the panel.
    * `undefined` outside `multiple` mode, so the menu keeps the gesture.
    */
   onLongPress: ((entry: FileSystemEntry) => void) | undefined;

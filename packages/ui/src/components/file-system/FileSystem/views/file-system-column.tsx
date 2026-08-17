@@ -16,7 +16,7 @@ import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../../gestures/drag.types';
 import { useActiveDrag } from '../../../gestures/use-drag-store';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
@@ -164,7 +164,7 @@ function ColumnRowGlyph({
 /**
  * Renders its own drag source and drop target rather than delegating to a shell:
  * the hold gesture, context menu, and multi-drag payload are resolved here and
- * forwarded to `HoldContextMenu dragOptions`.
+ * forwarded to `HoldItem dragOptions`.
  *
  * The row gap (`marginBottom`) lives on the outermost element so the drop zone's
  * box matches the row exactly — a zone that included the gap would claim a pointer
@@ -206,7 +206,7 @@ function ColumnRow({
     return (
       // No `marginBottom` here: see the comment on the outermost element below.
       <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: COLUMN_ROW_HEIGHT }}>
-        <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+        <HoldItem items={menuProps.items} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
           <Pressable
             accessibilityLabel={entry.name}
             accessibilityRole="button"
@@ -234,7 +234,7 @@ function ColumnRow({
               <ChevronRight color={isActive ? colors.white : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
             ) : null}
           </Pressable>
-        </HoldContextMenu>
+        </HoldItem>
       </View>
     );
   };

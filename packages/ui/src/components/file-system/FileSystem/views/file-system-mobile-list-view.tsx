@@ -19,7 +19,7 @@ import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../../gestures/drag.types';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
@@ -121,7 +121,7 @@ function MobileListRow({
   const colors = useThemeColors();
 
   // The row has no menu of its own — the kebab is the menu. Passing no
-  // `getContextMenuActions` keeps `HoldContextMenu` inert (empty items), so a
+  // `getContextMenuActions` keeps `HoldItem` inert (empty items), so a
   // hold fires only `onHoldAction` (the multi-select toggle) rather than a panel.
   const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
     entry,
@@ -157,7 +157,7 @@ function MobileListRow({
 
   const row = (
     <View className="relative" style={{ height: MOBILE_ROW_HEIGHT }}>
-      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+      <HoldItem items={menuProps.items} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
         <Pressable
           accessibilityLabel={entry.name}
           accessibilityRole="button"
@@ -190,7 +190,7 @@ function MobileListRow({
             ) : null}
           </View>
         </Pressable>
-      </HoldContextMenu>
+      </HoldItem>
       {/* The kebab/checkbox, laid over the row's reserved right edge. */}
       <View className="absolute right-0 items-center justify-center" style={{ height: MOBILE_ROW_HEIGHT }}>
         <FileSystemMobileMenu

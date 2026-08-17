@@ -25,7 +25,7 @@ import { FlatList, type GestureResponderEvent, type ListRenderItemInfo, Pressabl
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../../lib/cn';
 import { ThemedIcon } from '../../../icon/themed-icon';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
@@ -122,7 +122,7 @@ function SearchRow({
   const crumbs = buildCrumbs(entry.parentPath, rootLabel);
 
   return (
-    <HoldContextMenu {...menuProps} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+    <HoldItem items={menuProps.items} onHold={onHoldAction} onOpenChange={handleOpenChange}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
@@ -157,7 +157,7 @@ function SearchRow({
           <ThemedIcon icon={ChevronRight} token={isSelected ? 'white' : 'muted-foreground'} size={14} />
         ) : null}
       </Pressable>
-    </HoldContextMenu>
+    </HoldItem>
   );
 }
 

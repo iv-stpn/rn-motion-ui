@@ -4,9 +4,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
-import { useWindowDimensions, View } from 'react-native';
+import { useColorScheme, useWindowDimensions, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { Breadcrumbs } from '../../display/Breadcrumbs/breadcrumbs';
+import { HoldMenuProvider } from '../../menus/HoldMenu/hold-menu';
 import { buildCrumbs } from './logic/file-system-search';
 import { FileSystemDragScope } from './shell/file-system-drag-scope';
 import { FileSystemHeader } from './shell/file-system-header';
@@ -311,6 +312,7 @@ export function FileSystem({
   const tiers: ResolvedFileSystemBreakpoints = { ...defaultFileSystemBreakpoints, ...breakpoints };
   const layout = headerLayoutForWidth(measuredWidth, tiers);
   const isCompact = measuredWidth < tiers.tablet;
+  const colorScheme = useColorScheme();
 
   // biome-ignore lint/plugin: syncing layout into store
   useEffect(() => {
@@ -332,9 +334,13 @@ export function FileSystem({
         {/* Around the body alone: everything that drags or receives a drop is in
             there, and the manager's box is the frame its ghost is drawn in — a
             frame that included the header would let a ghost float over the
-            toolbar, which is not a place anything can be dropped. */}
+            toolbar, which is not a place anything can be dropped. The hold menu's
+            provider wraps the same region so its portal host (backdrop, twin,
+            panel) anchors to the file area rather than the whole component. */}
         <FileSystemDragScope>
-          <FileSystemBody className={bodyClassName} renderBody={renderBody} />
+          <HoldMenuProvider theme={colorScheme === 'dark' ? 'dark' : 'light'}>
+            <FileSystemBody className={bodyClassName} renderBody={renderBody} />
+          </HoldMenuProvider>
         </FileSystemDragScope>
         {renderFooter ? (
           <FileSystemCustomFooter renderFooter={renderFooter} />

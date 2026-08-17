@@ -46,6 +46,7 @@
 
 export { HoldItem } from './hold-item';
 export type {
+  HoldItemDragOptions,
   HoldItemProps,
   HoldMenuIconComponent,
   HoldMenuIconComponentProps,

@@ -16,7 +16,7 @@ import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../../gestures/drag.types';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
@@ -177,12 +177,12 @@ export function IconTile({
   const isDragSource = useIsLifting(entry.path);
 
   const face = (isDropTarget: boolean) => (
-    <HoldContextMenu
-      {...menuProps}
+    <HoldItem
+      items={menuProps.items}
       dragOptions={dragOptions}
       onHold={onHoldAction}
       onOpenChange={handleOpenChange}
-      style={{ width }}
+      containerStyles={{ width }}
     >
       <Pressable
         accessibilityLabel={entry.name}
@@ -209,7 +209,7 @@ export function IconTile({
           {...faceProps}
         />
       </Pressable>
-    </HoldContextMenu>
+    </HoldItem>
   );
 
   return entry.kind === 'folder' ? (

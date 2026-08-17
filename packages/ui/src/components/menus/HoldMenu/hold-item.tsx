@@ -1,20 +1,26 @@
-import { memo, useId, useMemo } from 'react';
+import { memo, type Ref, type RefObject, useEffect, useId } from 'react';
+import { Animated as NativeAnimated, type View, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedReaction,
-  useAnimatedRef,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming,
-} from 'react-native-reanimated';
-import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, IS_WEB } from './constants';
+import Animated, { useAnimatedRef, useSharedValue } from 'react-native-reanimated';
+import { mergeRefs } from '../../../moti/interactions/pressable/merge-refs';
+import { useHoldablePointer } from '../../gestures/Holdable/use-holdable-pointer';
+import { useHoldBehavior } from '../../gestures/use-drag-behavior';
+import { usePressTimeline } from '../../gestures/use-press-timeline';
+import { IS_WEB } from './constants';
 import { useHoldMenuInternal } from './context';
 import { HoldItemTwin } from './hold-item-twin';
 import type { HoldItemProps } from './hold-menu-types';
 import { useHoldItemActivation } from './use-hold-item-activation';
+import { useHoldItemDrag } from './use-hold-item-drag';
 import { useHoldItemGesture } from './use-hold-item-gesture';
+import { useHoldItemMenu } from './use-hold-item-menu';
 import { useHoldItemSqueeze } from './use-hold-item-squeeze';
+
+/** The ghost's cosmetics when this item draws its own ghost (no `<DragManager>` above it). */
+const GHOST_CLASS = 'z-50 opacity-80';
+
+/** Rendered off-screen so it stays in the DOM for HTML5 `setDragImage` but is never seen. */
+const OFFSCREEN_STYLE: ViewStyle = { left: 0, opacity: 0, pointerEvents: 'none', position: 'absolute', top: 0 };
 
 /**
  * The gesture + portal wrapper — upstream's `HoldItem`, ported to the RNGH v2
@@ -38,6 +44,7 @@ import { useHoldItemSqueeze } from './use-hold-item-squeeze';
  * native-only: the twin renders on every platform, so on web the held item
  * still lifts and travels with the panel exactly as on native.
  */
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the item's hook wiring (squeeze, activation, menu, gesture, drag) is one orchestration layer — splitting it would scatter the shared-value plumbing
 const HoldItemComponent = ({
   items,
   bottom,
@@ -49,6 +56,11 @@ const HoldItemComponent = ({
   actionParams,
   closeOnTap,
   longPressMinDurationMs = 150,
+  dragOptions,
+  onHold: onHoldProp,
+  onOpenChange: onOpenChangeProp,
+  disabled = false,
+  testID,
   children,
 }: HoldItemProps) => {
   const { state, menuProps, windowSize, safeAreaInsets, rootRef } = useHoldMenuInternal();
@@ -58,13 +70,14 @@ const HoldItemComponent = ({
   const name = `hold-item-${useId()}`;
   const containerRef = useAnimatedRef<Animated.View>();
 
-  const { itemScale, isHold, canCallActivateFunctions, scaleHold, scaleTap, scaleBack } = useHoldItemSqueeze({
-    activateOn,
-    hapticFeedback,
-    items,
-    state,
-    isActive,
-  });
+  const { animatedContainerStyle, itemScale, isHold, canCallActivateFunctions, scaleHold, scaleTap, scaleBack } =
+    useHoldItemSqueeze({
+      activateOn,
+      hapticFeedback,
+      items,
+      state,
+      isActive,
+    });
 
   const {
     itemRectY,
@@ -91,11 +104,23 @@ const HoldItemComponent = ({
 
   const webHold = IS_WEB && isHold;
 
-  const { gesture, handleContextMenu, handleWebTap } = useHoldItemGesture({
+  const { handleActivate, handleOpen, closeMenu } = useHoldItemMenu({
+    items,
+    disabled,
+    onHold: onHoldProp,
+    onOpenChange: onOpenChangeProp,
+    state,
+    isActive,
+    didMeasureLayout,
+    scaleBack,
+  });
+
+  const { gesture, handleContextMenu, handleWebTap, handleWebHold, onActivate } = useHoldItemGesture({
     webHold,
     isHold,
     longPressMinDurationMs,
     activateOn,
+    disabled,
     canCallActivateFunctions,
     didMeasureLayout,
     activateAnimation,
@@ -104,49 +129,103 @@ const HoldItemComponent = ({
     scaleTap,
     scaleBack,
     activateFromContextMenu,
+    onActivateJS: handleActivate,
+    onOpenJS: handleOpen,
   });
 
-  const animatedContainerStyle = useAnimatedStyle(() => {
-    const animateOpacity = () => withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 }));
+  const drag = useHoldItemDrag({
+    dragOptions,
+    disabled,
+    testID,
+    longPressMinDurationMs,
+    activate: onActivate,
+    onActivate: handleActivate,
+    closeMenu,
+  });
 
-    // The in-place item never travels. Only the portal twin carries the travel
-    // that keeps the pair on screen when the menu overflows; this copy hides
-    // under it while active and only squeezes/scales before that.
-    return {
-      opacity: isActive.value ? 0 : animateOpacity(),
-      transform: [
-        {
-          scale: isActive.value ? withTiming(1, { duration: HOLD_ITEM_TRANSFORM_DURATION }) : itemScale.value,
-        },
-      ],
-    };
-  }, [isActive, itemScale]);
+  // A web `'hold'` without a drag has no gesture and no `contextmenu` on a touch
+  // screen — so give it the same touch long-press a `<Holdable>` has, gated to
+  // exactly that shape. The drag path above already carries the hold when
+  // `dragOptions` is set; this is the plain-hold half. Touch only (`cursorMode`
+  // off): a mouse still uses the right-click `contextmenu` handler.
+  const { timeline: webHoldTimeline } = usePressTimeline({
+    canDrag: false,
+    onHold: handleWebHold,
+    track: false,
+    tuning: useHoldBehavior({ holdDelay: longPressMinDurationMs }),
+  });
+  useHoldablePointer({
+    cursorMode: false,
+    enabled: webHold && !disabled && dragOptions === undefined,
+    // biome-ignore lint/plugin: the AnimatedRef resolves to the same DOM node; the cast only reconciles its type with `RefObject`
+    nodeRef: containerRef as unknown as RefObject<View | null>,
+    timeline: webHoldTimeline,
+  });
 
-  const containerStyle = useMemo(() => [containerStyles, animatedContainerStyle], [containerStyles, animatedContainerStyle]);
+  // The drag's host ref and the menu's measurement ref must point at the same node.
+  const rootProps = drag.getRootProps();
+  // biome-ignore lint/plugin: ts/no-as-cast — an `AnimatedRef` is callable, so it works as a React ref at runtime; the cast only reconciles its type with `Ref`
+  const mergedRef = mergeRefs<View>([containerRef as unknown as Ref<View>, rootProps.ref]);
 
-  useAnimatedReaction(
-    () => state.value,
-    (_state) => {
-      if (_state === CONTEXT_MENU_STATE.END) {
-        isActive.value = false;
-        didMeasureLayout.value = false;
-      }
-    },
-  );
+  const previewNode = dragOptions?.preview ?? children;
+  // `useDraggable` seeded `previewRef` from `dragOptions?.preview` alone, which is
+  // `null` for a single-item drag (the scope returns nothing for fewer than two
+  // paths) — the `<DragManager>` ghost would then draw nothing. Point the ref at
+  // the same fallback the offscreen node uses, exactly as `HoldDraggable` does, so
+  // a single-item drag still lifts a copy of the item.
+  drag.previewRef.current = previewNode;
+  // `preview` is `null` for a single-item drag, so test it for *presence*, not
+  // `!== undefined` — a `null` preview must not leave an always-mounted offscreen
+  // ghost behind.
+  const drawsPreview = drag.showGhost || dragOptions?.preview !== null;
 
-  // RNW forwards onContextMenu/onClick/tabIndex on View, but RN's core types
-  // do not declare them — the cast keeps the web-only props off the native type.
+  // Web `'hold'` right-click: a NATIVE `contextmenu` listener, not React's
+  // synthetic `onContextMenu`. React 18 delegates synthetic events to the root,
+  // so an `onContextMenu` fires only after the event has already bubbled past an
+  // ancestor's native listener — the background's scroll-container `contextmenu`
+  // handler — too late to stop it opening its own menu. A native listener on this
+  // wrapper runs in the bubble phase before every ancestor's, like `HoldContextMenu`.
+  // biome-ignore lint/plugin: react/no-use-effect — a native DOM listener has no React/RN prop equivalent; it must be wired imperatively on the resolved node
+  useEffect(() => {
+    if (!webHold || disabled) return;
+    // biome-ignore lint/plugin: ts/no-as-cast — the AnimatedRef resolves to the DOM node on web; the cast only reconciles its type with `HTMLElement`
+    const node = containerRef.current as unknown as HTMLElement | null;
+    if (!node?.addEventListener) return;
+    node.addEventListener('contextmenu', handleContextMenu);
+    return () => node.removeEventListener('contextmenu', handleContextMenu);
+  }, [webHold, disabled, containerRef, handleContextMenu]);
+
+  // RNW forwards onClick/tabIndex on View, but RN's core types do not declare
+  // them — the cast keeps the web-only props off the native type.
   let webOnlyProps: Record<string, unknown> = {};
-  if (webHold) webOnlyProps = { onContextMenu: handleContextMenu, tabIndex: 0 };
-  else if (IS_WEB) webOnlyProps = { onClick: handleWebTap, tabIndex: 0 };
+  if (!disabled && webHold) webOnlyProps = { tabIndex: 0 };
+  else if (!disabled && IS_WEB) webOnlyProps = { onClick: handleWebTap, tabIndex: 0 };
 
   const wrapper = (
-    <Animated.View ref={containerRef} style={containerStyle} {...webOnlyProps}>
+    <Animated.View
+      ref={mergedRef}
+      collapsable={false}
+      onLayout={dragOptions !== undefined && !disabled ? rootProps.onLayout : undefined}
+      style={[containerStyles, animatedContainerStyle, rootProps.style]}
+      testID={testID}
+      {...webOnlyProps}
+    >
       {children}
+      {drawsPreview ? (
+        <NativeAnimated.View
+          ref={drag.previewElementRef}
+          {...drag.getGhostProps()}
+          className={drag.showGhost ? GHOST_CLASS : undefined}
+          style={drag.showGhost ? drag.getGhostProps().style : OFFSCREEN_STYLE}
+        >
+          {previewNode}
+        </NativeAnimated.View>
+      ) : null}
     </Animated.View>
   );
 
-  const gestureWrapper = gesture ? <GestureDetector gesture={gesture}>{wrapper}</GestureDetector> : wrapper;
+  const activeGesture = drag.gesture ?? gesture;
+  const gestureWrapper = activeGesture ? <GestureDetector gesture={activeGesture}>{wrapper}</GestureDetector> : wrapper;
 
   return (
     <>

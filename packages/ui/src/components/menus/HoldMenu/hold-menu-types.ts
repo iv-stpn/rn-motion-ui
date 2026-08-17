@@ -1,5 +1,6 @@
 import type { ComponentType, ReactElement, ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
+import type { DragEffectAllowed, DragEndEvent, DragGroups, DragStartEvent } from '../../gestures/drag.types';
 
 /** Which corner the menu grows out of and which edge it opens on. `top-*` below the item, `bottom-*` above. */
 export type TransformOriginAnchorPosition =
@@ -25,6 +26,8 @@ export type MenuItemProps = {
   isDestructive?: boolean;
   /** Draws a separator band below this row. */
   withSeparator?: boolean;
+  /** Greys the row out and blocks the press. */
+  disabled?: boolean;
 };
 
 /** The values that drive the menu — upstream's `MenuInternalProps`. */
@@ -52,13 +55,32 @@ export type HoldMenuHapticFeedback = 'None' | 'Selection' | 'Light' | 'Medium' |
 /** Safe-area insets the menu keeps clear of. */
 export type HoldMenuSafeAreaInsets = { top: number; right: number; bottom: number; left: number };
 
-/** `HoldItem` props — upstream's `HoldItemProps`, field for field. */
+/**
+ * The drag options that wire a drag gesture into a `HoldItem`'s hold.
+ *
+ * When provided, a move past `escapeSlop` after the hold fires lifts a drag:
+ * the hold still opens the menu, and an escape closes the menu (and its overlay)
+ * before the drag takes over. Native-only — on web the menu is a right-click and
+ * there is no hold gesture to upgrade.
+ */
+export type HoldItemDragOptions = {
+  data: Record<string, string>;
+  effectAllowed?: DragEffectAllowed;
+  groups?: DragGroups;
+  /** Override the drag ghost. Forwarded to the drag source's `preview`. */
+  preview?: ReactNode;
+  onDragEnd?: (event: DragEndEvent) => void;
+  onDragStart?: (event: DragStartEvent) => void;
+};
+
+/** `HoldItem` props — upstream's `HoldItemProps`, plus the drag/hold callbacks the file-system needs. */
 export type HoldItemProps = {
   /** The menu rows. An empty list makes the item inert. */
   items: MenuItemProps[];
   /** Object keyed by item `text`, spread as arguments onto that item's `onPress`. */
   actionParams?: { [name: string]: unknown[] };
-  children: ReactElement | ReactElement[];
+  /** The item's content, lifted into the portal twin while the menu is open. */
+  children: ReactNode;
   /** Overrides the automatic anchor. Otherwise picked from which half of the screen the item sits on. */
   menuAnchorPosition?: TransformOriginAnchorPosition;
   /** Pins the item where it is — the panel takes the whole overflow instead of travelling. */
@@ -75,6 +97,25 @@ export type HoldItemProps = {
   closeOnTap?: boolean;
   /** Minimum hold before the menu opens, in ms. @default 150 */
   longPressMinDurationMs?: number;
+  /**
+   * Drag options that upgrade the hold to a drag source. Native-only — the hold
+   * still opens the menu, and a move past `escapeSlop` closes it before the drag
+   * takes over.
+   */
+  dragOptions?: HoldItemDragOptions;
+  /**
+   * Fires when a hold lands, right after the menu opens — one gesture, both
+   * outcomes. Use it for an action that should ride the same hold (e.g. a
+   * multi-select toggle). Fires even when `items` is empty, so the hold keeps
+   * meaning something to the consumer when the menu is inert.
+   */
+  onHold?: () => void;
+  /** Called when the menu opens and when it closes. */
+  onOpenChange?: (open: boolean) => void;
+  /** Inert trigger — no activation, no menu, no drag. */
+  disabled?: boolean;
+  /** Base testID for the trigger wrapper. */
+  testID?: string;
 };
 
 /** `HoldMenuProvider` props — upstream's `HoldMenuProviderProps`, with `safeAreaInsets` optional. */

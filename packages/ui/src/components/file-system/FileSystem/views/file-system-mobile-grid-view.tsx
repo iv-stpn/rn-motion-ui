@@ -19,7 +19,7 @@ import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneRenderState } from '../../../gestures/drag.types';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
@@ -121,7 +121,7 @@ function MobileGridTile({
   const isFile = entry.kind === 'file';
 
   // The body has no menu of its own — the kebab is the menu. Passing no
-  // `getContextMenuActions` keeps `HoldContextMenu` inert (empty items), so a
+  // `getContextMenuActions` keeps `HoldItem` inert (empty items), so a
   // hold fires only `onHoldAction` (the multi-select toggle) rather than a panel.
   const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
     entry,
@@ -156,7 +156,7 @@ function MobileGridTile({
       {/* The tappable body: the glyph box then the name. The name row reserves the
           right edge (`pr-7`) for the control overlaid below, so the two never overlap
           and the control is a sibling rather than a button inside a button. */}
-      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+      <HoldItem items={menuProps.items} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
         <Pressable
           accessibilityLabel={entry.name}
           accessibilityRole="button"
@@ -212,7 +212,7 @@ function MobileGridTile({
             </Text>
           </View>
         </Pressable>
-      </HoldContextMenu>
+      </HoldItem>
       {/* The kebab/checkbox, laid over the reserved name-row slot like the list view's
           disclosure chevron — a sibling, never a child of the row button. */}
       <View className="absolute right-0" style={{ top: GLYPH_BOX_HEIGHT + 2 }}>

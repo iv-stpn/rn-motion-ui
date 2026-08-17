@@ -1,5 +1,5 @@
 import { memo, type ReactNode, useMemo } from 'react';
-import type { ViewProps } from 'react-native';
+import { View, type ViewProps } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   type SharedValue,
@@ -131,22 +131,20 @@ const HoldItemTwinComponent = ({
 
   return (
     <Portal name={name}>
-      <Animated.View
-        key={name}
-        className="absolute z-10"
-        style={animatedPortalStyle}
-        animatedProps={animatedPortalProps}
-        // A decorative duplicate of the in-place item: never announce it (a screen
-        // reader would read every entry twice), and keep it out of role/text queries
-        // while the real item stays the accessible one. `aria-hidden` is the web
-        // spelling RNW reads; `importantForAccessibility` covers native.
-        aria-hidden={true}
-        importantForAccessibility="no-hide-descendants"
-      >
-        <GestureDetector gesture={overlayTap}>
-          <Animated.View className="absolute inset-0 z-[15]" />
-        </GestureDetector>
-        {children}
+      <Animated.View key={name} className="absolute z-10" style={animatedPortalStyle} animatedProps={animatedPortalProps}>
+        {/* A decorative duplicate of the in-place item: never announce it (a screen
+            reader would read every entry twice), and keep it out of role/text queries
+            while the real item stays the accessible one. `aria-hidden` is the web
+            spelling RNW reads; the two RN props cover native. They sit on a plain
+            `View`, not the `Animated.View` above, because reanimated drops `aria-*`
+            props on the way to the DOM — the twin would otherwise match role queries
+            alongside the real entry. */}
+        <View aria-hidden={true} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
+          <GestureDetector gesture={overlayTap}>
+            <Animated.View className="absolute inset-0 z-[15]" />
+          </GestureDetector>
+          {children}
+        </View>
       </Animated.View>
     </Portal>
   );

@@ -174,10 +174,12 @@ const HoldItemComponent = ({
   // the same fallback the offscreen node uses, exactly as `HoldDraggable` does, so
   // a single-item drag still lifts a copy of the item.
   drag.previewRef.current = previewNode;
-  // `preview` is `null` for a single-item drag, so test it for *presence*, not
-  // `!== undefined` — a `null` preview must not leave an always-mounted offscreen
-  // ghost behind.
-  const drawsPreview = drag.showGhost || dragOptions?.preview !== null;
+  // `preview` is `undefined` when there is no drag at all, and `null` for a
+  // single-item drag (the scope returns nothing for fewer than two paths) — so
+  // test it for *presence* (neither null nor undefined). A missing preview must
+  // not leave an always-mounted offscreen ghost behind: it would render a second
+  // copy of `children` that role/name queries match alongside the real entry.
+  const drawsPreview = drag.showGhost || (dragOptions?.preview !== null && dragOptions?.preview !== undefined);
 
   // Web `'hold'` right-click: a NATIVE `contextmenu` listener, not React's
   // synthetic `onContextMenu`. React 18 delegates synthetic events to the root,

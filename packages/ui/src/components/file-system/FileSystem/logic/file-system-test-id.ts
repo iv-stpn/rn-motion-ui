@@ -28,6 +28,8 @@ export const FS_DRAG_CONTAINER_TEST_ID = {
  * settled — the deterministic stand-in for a fixed number of timer ticks.
  */
 export const FS_OVERLAY_DROPZONE_TEST_ID = 'file-system-overlay-dropzone';
+/** The shared info outline the drag scope draws at the over zone's rect — the indicator itself, for non-overlay zones. */
+export const FS_DROP_INDICATOR_TEST_ID = 'file-system-drop-indicator';
 
 /** `testID` for the entry at `path`, from the root `testID` (or the default). */
 export function fileSystemEntryTestID(rootTestID: string | undefined, path: string): string {

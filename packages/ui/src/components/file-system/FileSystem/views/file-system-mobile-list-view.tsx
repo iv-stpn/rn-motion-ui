@@ -18,7 +18,6 @@ import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
-import type { DragzoneRenderState } from '../../../gestures/drag.types';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
@@ -215,6 +214,9 @@ function MobileListRow({
   // structural DOM mutation that can tear an in-flight drag down.
   if (entry.kind !== 'folder') return row;
 
+  // No outline of its own: the drag scope's shared leaf paints the drop
+  // indicator once, at the over zone's rect, so a crossing never re-renders the
+  // row body (plain children bail on the stable element reference).
   return (
     <FileSystemDropzone
       destination={entry.path}
@@ -223,12 +225,7 @@ function MobileListRow({
       onExternalDrop={onExternalDrop}
       onMove={onMove}
     >
-      {({ isOver }: DragzoneRenderState) => (
-        <>
-          {row}
-          {isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null}
-        </>
-      )}
+      {row}
     </FileSystemDropzone>
   );
 }

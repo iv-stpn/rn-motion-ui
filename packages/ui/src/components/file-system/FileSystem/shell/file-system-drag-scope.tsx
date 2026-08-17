@@ -28,6 +28,7 @@ import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { type FileSystemDragItem, fileSystemDragData, fileSystemDragItems, fileSystemDragLabel } from '../logic/file-system-drag';
 import { useFileSystemEntries, useFileSystemSelection, useFileSystemSelectionActions } from '../store/file-system-context';
+import { FileSystemDropIndicator } from './file-system-drop-indicator';
 import { zoneDestinationFor } from './file-system-dropzone';
 
 type FileSystemGroupGhostProps = { items: readonly FileSystemDragItem[] };
@@ -225,6 +226,11 @@ export function FileSystemDragScope({ children }: FileSystemDragScopeProps) {
         selectedIds={selectedPaths}
       >
         {children}
+        {/* The shared drop outline, one leaf over the whole file area. Inside the
+            manager so it shares the manager's scope — that is how it tells this
+            instance's zones from a second FileSystem's on the same page. Rows no
+            longer paint their own — see file-system-drop-indicator. */}
+        <FileSystemDropIndicator containerRef={containerRef} />
       </MultiDragManager>
       <FileSystemDropHint containerRef={containerRef} />
     </View>

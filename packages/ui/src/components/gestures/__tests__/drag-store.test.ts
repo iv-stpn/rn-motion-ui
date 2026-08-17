@@ -1,17 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { DragRect } from '../drag.types';
 import {
   beginDrag,
   endDrag,
   getActiveDrag,
   getDragPoint,
   getDragSnapshot,
+  getZoneManagerPath,
+  getZoneRect,
   getZoneStanding,
   moveDrag,
+  registerDragzone,
   resetDragStore,
   subscribeDragMove,
   subscribeDragStore,
 } from '../drag-store';
-import { drag, rect } from './drag-harness';
+import { drag, rect, zone } from './drag-harness';
 import { addManager, addZone, lift, zoneSpies } from './drag-store-harness';
 
 afterEach(() => {
@@ -224,5 +228,44 @@ describe('moveDrag', () => {
 
     moveDrag({ x: 50, y: 50 });
     expect(onDragMove).toHaveBeenCalledWith(expect.objectContaining({ point: { x: 50, y: 50 }, zoneId: 'target' }));
+  });
+});
+
+describe('getZoneRect', () => {
+  it('returns the measured box of a registered zone', async () => {
+    await addZone({ id: 'target', rect: rect(10, 20, 300, 40) });
+    expect(getZoneRect('target')).toEqual(rect(10, 20, 300, 40));
+  });
+
+  it('returns null for a zone that has not registered, and for one that has not measured', () => {
+    expect(getZoneRect('nobody')).toBeNull();
+    registerDragzone({
+      getConfig: () => zone({ id: 'unmeasured' }).getConfig(),
+      id: 'unmeasured',
+      managerPath: [],
+      measure: () => Promise.resolve(null),
+    });
+    expect(getZoneRect('unmeasured')).toBeNull();
+  });
+
+  it('tracks a re-measure', async () => {
+    let box: DragRect | null = rect(0, 0, 100, 100);
+    const registration = registerDragzone({
+      getConfig: () => zone({ id: 'moved', rect: box }).getConfig(),
+      id: 'moved',
+      managerPath: [],
+      measure: () => Promise.resolve(box),
+    });
+    expect(getZoneRect('moved')).toBeNull();
+    box = rect(50, 50, 200, 200);
+    await registration.remeasure();
+    expect(getZoneRect('moved')).toEqual(rect(50, 50, 200, 200));
+  });
+
+  it('reports the manager path a zone registered under, or null for a stranger', async () => {
+    addManager('pane');
+    await addZone({ id: 'row', managerPath: ['pane'], rect: rect(0, 0, 10, 10) });
+    expect(getZoneManagerPath('row')).toEqual(['pane']);
+    expect(getZoneManagerPath('nobody')).toBeNull();
   });
 });

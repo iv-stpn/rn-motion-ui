@@ -374,6 +374,7 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
   // silent no‑op.
   return (
     <FileSystemDropzone
+      background={true}
       className={cn('relative min-h-0 flex-1 select-none', className)}
       destination={currentPath}
       disabled={!draggable}

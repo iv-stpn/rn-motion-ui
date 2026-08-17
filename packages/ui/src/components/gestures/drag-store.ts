@@ -142,15 +142,16 @@ function publish() {
   const eligible = new Set(session?.eligible ?? NO_IDS);
   const overZoneId = session?.overZoneId ?? null;
   for (const entry of zonesList) {
-    const next: DragzoneStanding = { drag, isEligible: eligible.has(entry.id), isOver: overZoneId === entry.id };
+    const isEligible = eligible.has(entry.id);
+    const isOver = overZoneId === entry.id;
     const previous = entry.standing;
-    if (
-      previous === undefined ||
-      previous.drag !== next.drag ||
-      previous.isEligible !== next.isEligible ||
-      previous.isOver !== next.isOver
-    )
-      entry.standing = next;
+    // Only a zone whose own fields changed gets a fresh object: identity is
+    // what its subscriber compares, so an unchanged zone must keep pointing at
+    // the object it has. Building the object inside the guard also skips the
+    // allocation for every untouched zone — a crossing publishes to the whole
+    // tree, and on a large row list that is most of them.
+    if (previous === undefined || previous.drag !== drag || previous.isEligible !== isEligible || previous.isOver !== isOver)
+      entry.standing = { drag, isEligible, isOver };
   }
   for (const listener of listeners) listener();
 }
@@ -552,6 +553,31 @@ export function getDragSnapshot(): DragSnapshot {
  */
 export function getZoneStanding(zoneId: string): DragzoneStanding {
   return zones.get(zoneId)?.standing ?? IDLE_ZONE;
+}
+
+/**
+ * A zone's last measured window rect, or `null` when it has not registered or
+ * not measured yet.
+ *
+ * This is the same rect the store's own hit test resolves against, so an
+ * overlay reading it (the file system's drop indicator) paints exactly where a
+ * release would land — it can never disagree with the store about which box the
+ * pointer is in.
+ */
+export function getZoneRect(zoneId: string): DragRect | null {
+  return zones.get(zoneId)?.rect ?? null;
+}
+
+/**
+ * The manager path a zone registered under, or `null` when it has not registered.
+ *
+ * The drop indicator uses it to tell its own instance's zones from another
+ * `FileSystem`'s on the same page: the store is tree-wide, so `overZoneId` can
+ * name a zone this component does not own, and painting an outline for it at its
+ * rect would ghost a drop target into a frame where nothing can drop.
+ */
+export function getZoneManagerPath(zoneId: string): readonly string[] | null {
+  return zones.get(zoneId)?.managerPath ?? null;
 }
 
 /**

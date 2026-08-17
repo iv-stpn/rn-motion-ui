@@ -475,6 +475,7 @@ function FileSystemColumnImpl({
           level — the columns view has no single "current folder", so the body-level
           zone the other views fall back to would name the wrong one here. */}
       <FileSystemDropzone
+        background={true}
         className="min-h-0 flex-1"
         destination={folderPath}
         disabled={!draggable}

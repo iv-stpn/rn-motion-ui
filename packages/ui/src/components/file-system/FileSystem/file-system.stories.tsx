@@ -873,12 +873,23 @@ export const CustomView: Story = {
  * again in between is also the more faithful simulation — the component counts
  * two independent presses, not one double-click event.
  *
+ * The first press's synthetic click can itself retarget onto the re-chunked
+ * node and count as the second press, opening the folder in one gesture. That
+ * is an outcome, not a failure: the tile is gone from the tree, and pressing
+ * again is impossible — so the second press is skipped when the tile no longer
+ * exists, and the trail's Back button (or the viewer's Close) says the entry
+ * opened.
+ *
  * A file with a thumbnail labels its preview image with the file name too, so
  * the button role is what makes the tile itself unique.
  */
 async function openTile(canvas: ReturnType<typeof within>, name: string): Promise<void> {
   await userEvent.click(await canvas.findByRole('button', { name }));
-  await userEvent.click(await canvas.findByRole('button', { name }));
+  const tile = await canvas.findByRole('button', { name }).catch(() => null);
+  // A file's tile survives its open (the viewer overlays it), so a file always
+  // gets its second press; a folder's tile is replaced by the folder's own
+  // contents, so a vanished tile means the first press already opened it.
+  if (tile !== null) await userEvent.click(tile);
 }
 
 export const Navigate: Story = {

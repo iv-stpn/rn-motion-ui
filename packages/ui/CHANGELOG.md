@@ -1,5 +1,36 @@
 # rn-motion-ui
 
+## 5.6.2
+
+### Patch Changes
+
+- 52c3b17: fix(Checkbox): draw the checked fill over the border via an explicit -0.5px inset
+
+  The fill on Checkbox and CheckboxCard sat at the border's inner edge, leaving
+  the border's antialiased inner edge visible as a hairline seam between the
+  border and the selected background. The previous class-based `-inset-0.5`
+  overlap could be dropped by the class resolver on some platforms; the overlap
+  is now an explicit inline style (`position: absolute` + `top/right/bottom/left:
+-0.5`) so it provably draws over the border everywhere. The parent's
+  `overflow-hidden rounded-md` still clips it to the exact box shape.
+
+- 624ac12: fix(FileSystem): re-holding a selected entry keeps it selected, so a hold-drag can carry the whole selection again
+
+  The long-press hold was an additive toggle: re-holding an already selected row
+  removed it from the selection, so the drag that followed lifted just that one
+  row instead of the group. The hold is now additive and add-only — it joins the
+  held entry to the selection and never removes one — matching the platform file
+  manager convention (hold = grab/add, tap or Ctrl/Cmd-click = toggle). A
+  selection therefore survives a re-hold and the same selected rows can be
+  dragged repeatedly.
+
+- 99157ff: fix(MorphingModal): bottom-sheet width matches bottom placement
+
+  The bottom-sheet positioner lacked the `px-4` horizontal inset the
+  `bottom` placement applies, so on phones the sheet rendered up to 32px
+  wider than the bottom card (both cap at `max-w-sm`). Adding `px-4` makes
+  the two placements share the exact same width at every viewport size.
+
 ## 5.6.1
 
 ### Patch Changes

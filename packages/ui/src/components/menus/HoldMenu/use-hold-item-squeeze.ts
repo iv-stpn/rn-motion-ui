@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import type { ViewStyle } from 'react-native';
 import {
   runOnJS,
   type SharedValue,
@@ -33,7 +34,7 @@ type UseHoldItemSqueezeResult = {
   scaleTap: () => void;
   scaleBack: () => void;
   /** The in-place item's opacity/scale while it squeezes and hides under the twin. */
-  animatedContainerStyle: ReturnType<typeof useAnimatedStyle>;
+  animatedContainerStyle: ReturnType<typeof useAnimatedStyle<ViewStyle>>;
 };
 
 /**

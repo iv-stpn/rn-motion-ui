@@ -38,7 +38,7 @@ function resolveEnterY(reduce: boolean, placement: MorphingModalProps['placement
 }
 
 const POSITIONER_CLASS: Record<MorphingModalPlacement, string> = {
-  'bottom-sheet': 'flex-1 items-center justify-end',
+  'bottom-sheet': 'flex-1 items-center justify-end px-4',
   bottom: 'flex-1 items-center justify-end px-4 pb-8',
   center: 'flex-1 items-center justify-center px-4',
 };

@@ -164,6 +164,7 @@ Subpaths are namespaced by category:
 | `/bloom-menu`                  | `BloomMenu`                                                              |
 | `/hover-menu`                  | `HoverMenu`                                                              |
 | `/hold-context-menu`           | `HoldContextMenu`                                                        |
+| `/hold-menu`                   | `HoldMenuProvider`, `HoldItem`, `HoldMenuIcon`                           |
 | `/overflow-actions`            | `OverflowActions`                                                        |
 | `/bouncy-accordion`            | `BouncyAccordion`                                                        |
 | `/dynamic-island`              | `DynamicIsland`                                                          |

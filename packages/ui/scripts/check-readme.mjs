@@ -219,8 +219,9 @@ if (missingFromPkgReadme.length > 0 && FIX) {
   }
 
   // Find the table bracketed by the header row and the first non-row line after it.
-  const tableHeader = '| Subpath | Component / hook |';
-  const headerIdx = pkgReadme.indexOf(tableHeader);
+  // The formatter pads the columns, so `| Subpath | Component / hook |` no longer
+  // matches the aligned header — match the labels instead of a fixed-width string.
+  const headerIdx = pkgReadme.search(/^[ \t]*\|[ \t]*Subpath[ \t]*\|[ \t]*Component \/ hook[ \t]*\|/m);
   if (headerIdx === -1) {
     for (const { name } of newRows) {
       errors.push(`UNPUBLISHED    ./${name} is exported but missing from the UI components table in packages/ui/README.md (table header not found)`);

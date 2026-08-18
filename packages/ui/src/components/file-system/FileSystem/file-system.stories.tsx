@@ -20,6 +20,7 @@ import { Text } from '../../typography/Text/text';
 import { FileSystem } from './file-system';
 import {
   FS_DRAG_CONTAINER_TEST_ID,
+  FS_DROP_HINT_TEST_ID,
   FS_DROP_INDICATOR_TEST_ID,
   FS_OVERLAY_DROPZONE_TEST_ID,
   fileSystemEntryTestID,
@@ -2902,10 +2903,10 @@ export const MobileListDragAndDrop: Story = {
     await dragOnto({ source: row, target: folder, to: centerOf(folder), transfer });
     // Windows-style drop cue: while the drag hangs over the folder, a hint names
     // it under the ghost — and leaves again with the drag.
-    expect(await canvas.findByText('Move into Documents')).toBeDefined();
+    expect(await canvas.findByTestId(FS_DROP_HINT_TEST_ID)).toHaveTextContent('Move into Documents');
     fireDrag(row, 'dragend', transfer, centerOf(folder));
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
-    await waitFor(() => expect(canvas.queryByText('Move into Documents')).toBeNull());
+    await waitFor(() => expect(canvas.queryByTestId(FS_DROP_HINT_TEST_ID)).toBeNull());
 
     // A file row is no destination, so the same drag onto one falls through to the
     // background zone — the open folder, which is where the entry already is, so
@@ -2949,10 +2950,10 @@ export const MobileGridDragAndDrop: Story = {
     const transfer = newDragTransfer();
     await dragOnto({ source: tile, target: folderTile, to: centerOf(folderTile), transfer });
     // Same Windows-style drop cue as the list: named under the ghost, gone with the drag.
-    expect(await canvas.findByText('Move into Documents')).toBeDefined();
+    expect(await canvas.findByTestId(FS_DROP_HINT_TEST_ID)).toHaveTextContent('Move into Documents');
     fireDrag(tile, 'dragend', transfer, centerOf(folderTile));
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Documents/', sources: ['Roadmap.pptx'] }));
-    await waitFor(() => expect(canvas.queryByText('Move into Documents')).toBeNull());
+    await waitFor(() => expect(canvas.queryByTestId(FS_DROP_HINT_TEST_ID)).toBeNull());
 
     // A file tile is no destination either.
     const fileTiles = await canvas.findAllByRole('button', { name: 'Budget-2026.xlsx' });

@@ -27,6 +27,7 @@ import { useDragMove, useDragSnapshot } from '../../../gestures/use-drag-store';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { type FileSystemDragItem, fileSystemDragData, fileSystemDragItems, fileSystemDragLabel } from '../logic/file-system-drag';
+import { FS_DROP_HINT_TEST_ID } from '../logic/file-system-test-id';
 import { useFileSystemEntries, useFileSystemSelection, useFileSystemSelectionActions } from '../store/file-system-context';
 import { FileSystemDropIndicator } from './file-system-drop-indicator';
 import { zoneDestinationFor } from './file-system-dropzone';
@@ -93,7 +94,9 @@ function FileSystemGroupGhost({ items }: FileSystemGroupGhostProps) {
 }
 
 /** How far below the ghost's bottom edge the drop-hint chip sits. */
-const DROP_HINT_OFFSET = 8;
+const DROP_HINT_OFFSET = 0;
+/** Static prefix of the drop-hint label; the folder name renders after it in the info color. */
+const DROP_HINT_PREFIX = 'Move into ';
 
 type FileSystemDropHintProps = { containerRef: RefObject<View | null> };
 
@@ -157,11 +160,13 @@ function FileSystemDropHint({ containerRef }: FileSystemDropHintProps) {
       className="pointer-events-none absolute top-0 left-0 z-[60]"
       pointerEvents="none"
       style={{ transform: pos.getTranslateTransform() }}
+      testID={FS_DROP_HINT_TEST_ID}
     >
-      <View className="flex-row items-center gap-1.5 self-start rounded-md border border-border bg-surface-4 px-2 py-1.5">
-        <ArrowRightLine color={colors['muted-foreground']} size={14} />
+      <View className="flex-row items-center gap-1.5 self-start rounded-md border border-border bg-surface-4 px-1.5 py-0.5">
+        <ArrowRightLine color={colors.info} size={14} />
         <Text className="text-foreground" numberOfLines={1} size="xs">
-          {`Move into ${folder.name}`}
+          {DROP_HINT_PREFIX}
+          <Text className="text-info">{folder.name}</Text>
         </Text>
       </View>
     </Animated.View>

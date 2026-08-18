@@ -50,16 +50,11 @@ const OPEN_SETTINGS_LABEL = 'Open settings';
 
 // ── Shared fixture data ────────────────────────────────────────────────────
 
-const ACCOUNT_TITLE = 'Account Settings';
 const ACCOUNT_BODY = 'Manage your profile, email, and password.';
-const NOTIFICATIONS_TITLE = 'Notifications';
 const NOTIFICATIONS_BODY = 'Choose which alerts you receive and how.';
-const APPEARANCE_TITLE = 'Appearance';
 const APPEARANCE_BODY = 'Light, dark, or system theme.';
 const ADVANCED_APPEARANCE_LABEL = 'Advanced options →';
-const ADVANCED_TITLE = 'Advanced Appearance';
 const ADVANCED_BODY = 'Font size, contrast, motion settings.';
-const PRIVACY_TITLE = 'Privacy & Security';
 const PRIVACY_BODY = 'Two-factor auth, connected apps, and data.';
 
 type AppearanceSectionProps = { helpers: MultiStepHelpers };
@@ -68,9 +63,6 @@ function AppearanceSection({ helpers }: AppearanceSectionProps) {
   const navigateAdvanced = useCallback(() => helpers.navigate('appearance/advanced'), [helpers]);
   return (
     <View className="gap-3">
-      <Text size="lg" weight="semibold">
-        {APPEARANCE_TITLE}
-      </Text>
       <Text className="text-muted-foreground">{APPEARANCE_BODY}</Text>
       <Button variant="secondary" size="sm" onPress={navigateAdvanced}>
         {ADVANCED_APPEARANCE_LABEL}
@@ -83,26 +75,12 @@ const sections: MultiStepSection[] = [
   {
     path: 'account',
     title: 'Account',
-    render: () => (
-      <View className="gap-3">
-        <Text size="lg" weight="semibold">
-          {ACCOUNT_TITLE}
-        </Text>
-        <Text className="text-muted-foreground">{ACCOUNT_BODY}</Text>
-      </View>
-    ),
+    render: () => <Text className="text-muted-foreground">{ACCOUNT_BODY}</Text>,
   },
   {
     path: 'notifications',
     title: 'Notifications',
-    render: () => (
-      <View className="gap-3">
-        <Text size="lg" weight="semibold">
-          {NOTIFICATIONS_TITLE}
-        </Text>
-        <Text className="text-muted-foreground">{NOTIFICATIONS_BODY}</Text>
-      </View>
-    ),
+    render: () => <Text className="text-muted-foreground">{NOTIFICATIONS_BODY}</Text>,
   },
   {
     path: 'appearance',
@@ -112,28 +90,14 @@ const sections: MultiStepSection[] = [
       {
         path: 'advanced',
         title: 'Advanced Appearance',
-        render: () => (
-          <View className="gap-2">
-            <Text size="lg" weight="semibold">
-              {ADVANCED_TITLE}
-            </Text>
-            <Text className="text-muted-foreground">{ADVANCED_BODY}</Text>
-          </View>
-        ),
+        render: () => <Text className="text-muted-foreground">{ADVANCED_BODY}</Text>,
       },
     ],
   },
   {
     path: 'privacy',
     title: 'Privacy & Security',
-    render: () => (
-      <View className="gap-2">
-        <Text size="lg" weight="semibold">
-          {PRIVACY_TITLE}
-        </Text>
-        <Text className="text-muted-foreground">{PRIVACY_BODY}</Text>
-      </View>
-    ),
+    render: () => <Text className="text-muted-foreground">{PRIVACY_BODY}</Text>,
   },
 ];
 

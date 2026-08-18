@@ -1,109 +1,12 @@
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { usePressState } from '../../../hooks/use-press-state';
-import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { SPRING_PRESS } from '../../../lib/ease';
 import { elevated, type SurfaceLevel } from '../../../lib/elevated';
-import { MotiView } from '../../../moti/components/view';
-import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
-import { useThemeColor } from '../../../theme/use-theme-color';
+import { type MotiTransitionProp, mergeTransition, TIMING_FAST } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
-
-const CHECK_PATH = 'M5 13l4 4L19 7';
-
-/**
- * Fill overlap over the box border. An explicit negative 0.5px inset (not the
- * `-inset-0.5` class) so the fill provably draws over the border on every
- * platform: the inline style cannot be dropped by the class resolver, which
- * leaves the border's antialiased inner edge showing as a hairline between
- * the border and the selected background when the fill sits exactly at the
- * border's inner edge. `overflow-hidden` on the box clips the overlap.
- */
-const CHECKED_FILL_STYLE: ViewStyle = {
-  position: 'absolute',
-  top: -0.5,
-  right: -0.5,
-  bottom: -0.5,
-  left: -0.5,
-};
-
-type CheckboxCardBoxProps = {
-  checked: boolean;
-  disabled: boolean;
-  pressed: boolean;
-  /** Resolved check animation, already merged with the group/card overrides. */
-  transition: MotiTransitionProp;
-  checkIcon?: ReactNode;
-  /** The card's resolved testID; the box and mark derive from it. */
-  testID?: string;
-};
-
-/**
- * The animated checkbox box. Same visual and timing as `Checkbox` — kept private
- * to this file because only `CheckboxCard` renders it, and split out of the card
- * body so the card stays readable.
- */
-function CheckboxCardBox({ checked, disabled, pressed, transition, checkIcon, testID }: CheckboxCardBoxProps) {
-  const reduce = useReducedMotion();
-  // Resolve the check-mark colour through the token bridge so it adapts to
-  // consumer @theme overrides. Paired with the `info` fill below, not `primary`.
-  const checkColor = useThemeColor('info-foreground');
-  const ct = reduce ? TIMING_INSTANT : transition;
-
-  return (
-    // Springs down while pressed (Button's idiom, shared with Checkbox).
-    <MotiView
-      animate={{ scale: pressed && !reduce && !disabled ? 0.92 : 1 }}
-      transition={SPRING_PRESS}
-      testID={testID ? `${testID}-control` : undefined}
-    >
-      {/* Base box is always in the unchecked state; the `info` fill animates in/out. */}
-      <View
-        className={cn(
-          'h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-surface-3',
-          checked ? 'border-info' : 'border-muted-foreground/50',
-        )}
-      >
-        {/* Fill fades in on check and out on uncheck, same timing as the mark.
-            `CHECKED_FILL_STYLE` pushes the fill 0.5px over the border as an
-            explicit inline style (not the `-inset-0.5` class) so it provably
-            draws over the border on every platform — a class that fails to
-            resolve leaves the border's antialiased inner edge visible as a
-            hairline between the border and the fill. Clipped to the exact box
-            shape by the parent's `overflow-hidden rounded-md`. */}
-        <MotiView animate={{ opacity: checked ? 1 : 0 }} transition={ct} className="bg-info" style={CHECKED_FILL_STYLE} />
-        <AnimatePresence>
-          {checked ? (
-            <MotiView
-              from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
-              transition={ct}
-              testID={testID ? `${testID}-check` : undefined}
-            >
-              {checkIcon ?? (
-                <Svg width={12} height={12} viewBox="0 0 24 24">
-                  <Path
-                    d={CHECK_PATH}
-                    fill="none"
-                    stroke={checkColor}
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              )}
-            </MotiView>
-          ) : null}
-        </AnimatePresence>
-      </View>
-    </MotiView>
-  );
-}
+import { CheckboxBox } from '../Checkbox/checkbox';
 
 type CheckboxCardCtx = {
   /** Every currently-checked card value. */
@@ -332,10 +235,11 @@ export function CheckboxCard({
           )}
         >
           <View className="flex-row items-center justify-between">
-            <CheckboxCardBox
+            <CheckboxBox
               checked={checked}
               disabled={disabled}
               pressed={pressed}
+              tone="info"
               transition={ct}
               checkIcon={checkIcon}
               testID={cardTestID}

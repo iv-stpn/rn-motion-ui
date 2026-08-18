@@ -18,7 +18,12 @@ import { Button } from '../../form/Button/button';
 import { Draggable } from '../../gestures/Draggable/draggable';
 import { Text } from '../../typography/Text/text';
 import { FileSystem } from './file-system';
-import { FS_DRAG_CONTAINER_TEST_ID, FS_OVERLAY_DROPZONE_TEST_ID, fileSystemEntryTestID } from './logic/file-system-test-id';
+import {
+  FS_DRAG_CONTAINER_TEST_ID,
+  FS_DROP_INDICATOR_TEST_ID,
+  FS_OVERLAY_DROPZONE_TEST_ID,
+  fileSystemEntryTestID,
+} from './logic/file-system-test-id';
 import type {
   FileSystemContextMenuAction,
   FileSystemExternalDropEvent,
@@ -235,6 +240,19 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
     updatedAt: DATES.june,
     url: PREVIEWS.harbour,
   },
+];
+
+/**
+ * `SAMPLE_ITEMS` plus enough padding rows to make the list view scroll in the
+ * story canvas — the mid-drag scroll test needs content beyond the fold.
+ */
+const SCROLLABLE_ITEMS: FileSystemItem[] = [
+  ...SAMPLE_ITEMS,
+  ...Array.from({ length: 24 }, (_, index) => ({
+    kind: 'file' as const,
+    path: `Padding-${String(index).padStart(2, '0')}.txt`,
+    size: 100,
+  })),
 ];
 
 /** What `Archive/` resolves to. Kept out of `items` so the load is observable. */
@@ -2175,6 +2193,84 @@ export const WithDragAndDrop: Story = {
     await dragOnto({ source: row, target: file, to: centerOf(file), transfer: second });
     fireDrag(row, 'dragend', second, centerOf(file));
     await expect(args.onMove).toHaveBeenCalledTimes(1);
+  },
+};
+
+/**
+ * The shared drop indicator must stay pinned to the folder it marks while the
+ * list scrolls under a stationary pointer mid-drag — the auto-scroll that runs
+ * when a drag rides the list's edge, or a wheel.
+ *
+ * Zone rects are window boxes measured at drag start (or the last layout pass);
+ * a scroll moves the rows without any layout event, so the store's cached boxes
+ * and everything painted from them would resolve against the pre-scroll
+ * positions — the outline drifts a row away from the folder under the pointer.
+ * This story parks the pointer just inside a folder row's top edge, scrolls the
+ * list one row under it (winner unchanged), and asserts the outline moved with
+ * the folder.
+ */
+export const DragIndicatorTracksScroll: Story = {
+  name: 'Demo: Drag indicator follows a mid-drag scroll',
+  args: {
+    defaultView: 'list',
+    draggable: true,
+    items: SCROLLABLE_ITEMS,
+    onMove: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const container = await canvas.findByTestId(FS_DRAG_CONTAINER_TEST_ID.list);
+
+    const source = await listRow(canvas, 'Roadmap.pptx');
+    const folder = await listRow(canvas, 'Documents');
+
+    const transfer = newDragTransfer();
+    await liftDrag(source, transfer, centerOf(source));
+    // Just inside the folder's TOP edge: a one-row scroll keeps the pointer in
+    // the same row, so the winner cannot change and the test is purely about
+    // the outline following the content it marks.
+    const folderBox = folder.getBoundingClientRect();
+    const to = { x: folderBox.left + 20, y: folderBox.top + 4 };
+    fireDrag(source, 'drag', transfer, to);
+    fireDrag(folder, 'dragover', transfer, to);
+
+    const indicator = await canvas.findByTestId(FS_DROP_INDICATOR_TEST_ID);
+    await waitFor(() => {
+      const i = indicator.getBoundingClientRect();
+      const f = folder.getBoundingClientRect();
+      expect(Math.abs(i.top - f.top)).toBeLessThanOrEqual(2);
+      expect(Math.abs(i.left - f.left)).toBeLessThanOrEqual(2);
+    });
+
+    // Scroll the list a small step under the stationary pointer, like auto-scroll
+    // does. Small on purpose: a step this size mounts no new FlatList cells, so
+    // no zone re-registers and re-measures behind the scenes — the only thing
+    // that can move the outline is the scroll correction itself. The row must
+    // actually move, or the assertions below would prove nothing.
+    const scroller = [...container.querySelectorAll('div')].find((d) => d.scrollHeight > d.clientHeight + 1);
+    if (!scroller) throw new Error('the list is not scrollable in this viewport');
+    const beforeTop = folder.getBoundingClientRect().top;
+    scroller.scrollTop += 6;
+    await waitFor(() => expect(folder.getBoundingClientRect().top).toBeLessThan(beforeTop - 2));
+
+    // The outline must have moved with it — pinned to the folder, not left at
+    // the pre-scroll position.
+    await waitFor(() => {
+      const i = indicator.getBoundingClientRect();
+      const f = folder.getBoundingClientRect();
+      expect(Math.abs(i.top - f.top)).toBeLessThanOrEqual(2);
+      expect(Math.abs(i.left - f.left)).toBeLessThanOrEqual(2);
+    });
+
+    // Release where the pointer (and the folder) now are: the drop resolves
+    // against the shifted box and lands on Documents.
+    fireDrag(source, 'dragend', transfer, to);
+    await waitFor(() =>
+      expect(args.onMove).toHaveBeenCalledWith({
+        destination: 'Documents/',
+        sources: ['Roadmap.pptx'],
+      }),
+    );
   },
 };
 

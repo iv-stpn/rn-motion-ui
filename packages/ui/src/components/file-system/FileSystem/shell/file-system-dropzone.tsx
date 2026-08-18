@@ -23,6 +23,7 @@ import type {
   DragTransfer,
   DragzoneAcceptEvent,
   DragzoneDropEvent,
+  DragzoneEntry,
   DragzoneHandle,
   DragzoneRenderState,
 } from '../../../gestures/drag.types';
@@ -71,6 +72,17 @@ export function isPortalZone(zoneId: string): boolean {
  */
 export function isBackgroundZone(zoneId: string): boolean {
   return zoneDestinations.get(zoneId)?.background ?? false;
+}
+
+/**
+ * The predicate the views hand `shiftZoneRects` so a scroll shifts the zones
+ * that moved with the content (rows, tiles, overlays) and leaves the ones that
+ * did not — the body and pane fallbacks wrap the scrollable instead of living
+ * inside it, so their cached window rects are already correct and must not be
+ * re-based onto a scroll delta.
+ */
+export function isZoneInScrollableContent(entry: DragzoneEntry): boolean {
+  return !isBackgroundZone(entry.id);
 }
 
 /**

@@ -25,7 +25,7 @@ import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import { Animated, type View } from 'react-native';
 import type { DragRect } from '../../../gestures/drag.types';
 import { useDragScope } from '../../../gestures/drag-scope';
-import { getZoneManagerPath, getZoneRect } from '../../../gestures/drag-store';
+import { getZoneManagerPath, getZoneRect, subscribeDragShift } from '../../../gestures/drag-store';
 import { useDragSnapshot } from '../../../gestures/use-drag-store';
 import { FS_DROP_INDICATOR_TEST_ID, FS_OVERLAY_DROPZONE_TEST_ID } from '../logic/file-system-test-id';
 import { isBackgroundZone, isPortalZone } from './file-system-dropzone';
@@ -72,21 +72,49 @@ export function FileSystemDropIndicator({ containerRef }: FileSystemDropIndicato
 
   /** The container's window frame for this drag. */
   const frameRef = useRef<DragRect | null>(null);
-  /** The over zone's window rect — re-read on each crossing, applied by {@link settle}. */
+  /** The over zone's window rect — re-read on each crossing, applied by {@link apply}. */
   const rectRef = useRef<DragRect | null>(null);
+  /** The latest `overZoneId`, readable from the shift subscription (which must not re-subscribe per crossing). */
+  const zoneIdRef = useRef<string | null>(null);
+  zoneIdRef.current = overZoneId;
 
-  const settle = useCallback(() => {
-    const frame = frameRef.current;
-    const rect = rectRef.current;
-    if (frame === null || rect === null) return;
-    Animated.parallel([
-      Animated.spring(pos.x, { ...SPRING_CONFIG, toValue: rect.x - frame.x, useNativeDriver: false }),
-      Animated.spring(pos.y, { ...SPRING_CONFIG, toValue: rect.y - frame.y, useNativeDriver: false }),
-      Animated.spring(pos.width, { ...SPRING_CONFIG, toValue: rect.width, useNativeDriver: false }),
-      Animated.spring(pos.height, { ...SPRING_CONFIG, toValue: rect.height, useNativeDriver: false }),
-      Animated.timing(pos.opacity, { duration: APPEAR_DURATION_MS, toValue: 1, useNativeDriver: false }),
-    ]).start();
-  }, [pos]);
+  /**
+   * Paint the outline at the rect on file.
+   *
+   * Two paces for two causes. A pointer crossing lands the outline on a *new*
+   * target — spring, so the jump reads as a glide. A scroll shifts the content
+   * under a stationary pointer — the rect moves every frame while the drag
+   * rides the edge, and a spring with its settle time would trail the moving
+   * row by a full row's worth of pixels, which is exactly the "off" a shared
+   * outline must not have. So a shift snaps: the outline is pinned to the
+   * content, like the per-row outline it replaced.
+   */
+  const apply = useCallback(
+    (animate: boolean) => {
+      const frame = frameRef.current;
+      const rect = rectRef.current;
+      if (frame === null || rect === null) return;
+      if (animate)
+        Animated.parallel([
+          Animated.spring(pos.x, { ...SPRING_CONFIG, toValue: rect.x - frame.x, useNativeDriver: false }),
+          Animated.spring(pos.y, { ...SPRING_CONFIG, toValue: rect.y - frame.y, useNativeDriver: false }),
+          Animated.spring(pos.width, { ...SPRING_CONFIG, toValue: rect.width, useNativeDriver: false }),
+          Animated.spring(pos.height, { ...SPRING_CONFIG, toValue: rect.height, useNativeDriver: false }),
+          Animated.timing(pos.opacity, { duration: APPEAR_DURATION_MS, toValue: 1, useNativeDriver: false }),
+        ]).start();
+      else {
+        pos.x.setValue(rect.x - frame.x);
+        pos.y.setValue(rect.y - frame.y);
+        pos.width.setValue(rect.width);
+        pos.height.setValue(rect.height);
+        pos.opacity.setValue(1);
+      }
+    },
+    [pos],
+  );
+
+  const settle = useCallback(() => apply(true), [apply]);
+  const snap = useCallback(() => apply(false), [apply]);
 
   const hide = useCallback(() => {
     rectRef.current = null;
@@ -137,6 +165,26 @@ export function FileSystemDropIndicator({ containerRef }: FileSystemDropIndicato
     rectRef.current = rect;
     settle();
   }, [drag, hide, managerPath, overZoneId, settle]);
+
+  // On a scroll shift the content — and the rects on file — moved without the
+  // winner changing, so no crossing effect fires. Re-read the over zone's box
+  // and snap to it, so the outline stays pinned to the row it is marking while
+  // the list auto-scrolls under a stationary pointer.
+  // biome-ignore lint/plugin: re-painting an animated overlay on a scroll is a layout side-effect, not derived render state
+  useEffect(
+    () =>
+      subscribeDragShift(() => {
+        const zoneId = zoneIdRef.current;
+        if (zoneId === null || drag === null) return;
+        const zonePath = getZoneManagerPath(zoneId);
+        if (zonePath === null || !pathIsUnder(zonePath, managerPath)) return;
+        const rect = getZoneRect(zoneId);
+        if (rect === null) return;
+        rectRef.current = rect;
+        snap();
+      }),
+    [drag, managerPath, snap],
+  );
 
   if (drag === null || overZoneId === null || isBackgroundZone(overZoneId)) return null;
 

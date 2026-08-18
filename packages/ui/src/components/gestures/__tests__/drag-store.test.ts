@@ -12,7 +12,9 @@ import {
   moveDrag,
   registerDragzone,
   resetDragStore,
+  shiftZoneRects,
   subscribeDragMove,
+  subscribeDragShift,
   subscribeDragStore,
 } from '../drag-store';
 import { drag, rect, zone } from './drag-harness';
@@ -267,5 +269,82 @@ describe('getZoneRect', () => {
     await addZone({ id: 'row', managerPath: ['pane'], rect: rect(0, 0, 10, 10) });
     expect(getZoneManagerPath('row')).toEqual(['pane']);
     expect(getZoneManagerPath('nobody')).toBeNull();
+  });
+});
+
+describe('shiftZoneRects', () => {
+  it('moves the cached rects of zones under the prefix by the scroll delta', async () => {
+    await addZone({ id: 'row', managerPath: ['pane'], rect: rect(0, 100, 100, 36) });
+    lift();
+
+    // Scrolling down moves the content up in the window: y shrinks, x untouched.
+    shiftZoneRects(0, 40, ['pane']);
+    expect(getZoneRect('row')).toEqual(rect(0, 60, 100, 36));
+    // Scrolling right/up moves the content left/down: x shrinks, y grows.
+    shiftZoneRects(10, -20, ['pane']);
+    expect(getZoneRect('row')).toEqual(rect(-10, 80, 100, 36));
+  });
+
+  it('leaves the zones of another manager on the same page untouched', async () => {
+    addManager('pane');
+    addManager('other');
+    await addZone({ id: 'mine', managerPath: ['pane'], rect: rect(0, 100, 100, 36) });
+    await addZone({ id: 'theirs', managerPath: ['other'], rect: rect(0, 100, 100, 36) });
+    lift();
+
+    shiftZoneRects(0, 40, ['pane']);
+    expect(getZoneRect('mine')).toEqual(rect(0, 60, 100, 36));
+    expect(getZoneRect('theirs')).toEqual(rect(0, 100, 100, 36));
+  });
+
+  it('skips zones the predicate refuses — the static fallbacks that wrap the scrollable', async () => {
+    addManager('pane');
+    await addZone({ id: 'row', managerPath: ['pane'], rect: rect(0, 100, 100, 36) });
+    await addZone({ id: 'fallback', managerPath: ['pane'], rect: rect(0, 0, 100, 300) });
+    lift();
+
+    shiftZoneRects(0, 40, ['pane'], (entry) => entry.id !== 'fallback');
+    expect(getZoneRect('row')).toEqual(rect(0, 60, 100, 36));
+    expect(getZoneRect('fallback')).toEqual(rect(0, 0, 100, 300));
+  });
+
+  it('re-resolves the target at the stationary pointer — a scroll under it is a crossing', async () => {
+    const spies = zoneSpies();
+    await addZone({ id: 'a', rect: rect(0, 0, 100, 100) });
+    await addZone({ id: 'b', rect: rect(0, 100, 100, 100), ...spies });
+    lift();
+    moveDrag({ x: 50, y: 80 });
+    expect(getDragSnapshot().overZoneId).toBe('a');
+
+    // Scroll down 60px with the pointer still: 'a' leaves the pointer and 'b'
+    // moves under it, so the winner changes without a single moveDrag.
+    shiftZoneRects(0, 60, []);
+    expect(getDragSnapshot().overZoneId).toBe('b');
+    expect(spies.onDragEnter).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires the shift subscribers once per shift, before the re-resolve', async () => {
+    const listener = vi.fn();
+    subscribeDragShift(listener);
+    await addZone({ id: 'a', rect: rect(0, 0, 100, 100) });
+    lift();
+
+    shiftZoneRects(0, 10, []);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('is a no-op without a drag, or with a zero delta', async () => {
+    await addZone({ id: 'a', rect: rect(0, 0, 100, 100) });
+    const listener = vi.fn();
+    subscribeDragShift(listener);
+
+    shiftZoneRects(0, 10, []);
+    expect(listener).not.toHaveBeenCalled();
+    expect(getZoneRect('a')).toEqual(rect(0, 0, 100, 100));
+
+    lift();
+    shiftZoneRects(0, 0, []);
+    expect(listener).not.toHaveBeenCalled();
+    expect(getZoneRect('a')).toEqual(rect(0, 0, 100, 100));
   });
 });

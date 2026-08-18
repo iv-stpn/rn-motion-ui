@@ -18,6 +18,8 @@ import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
+import { useDragScope } from '../../../gestures/drag-scope';
+import { shiftZoneRects } from '../../../gestures/drag-store';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
@@ -28,7 +30,7 @@ import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-intera
 import { useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { formatFileSystemStats } from '../logic/file-system-format';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
-import { FileSystemDropzone } from '../shell/file-system-dropzone';
+import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
   FileSystemEntry,
   FileSystemExternalDropEvent,
@@ -306,15 +308,28 @@ export function FileSystemMobileListView({
   const containerRef = useRef<View | null>(null);
   const flatListRef = useRef<FlatList<FileSystemEntry> | null>(null);
   const scrollOffsetRef = useRef(0);
+  // The manager this view's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
 
   // A drag near the top or bottom edge scrolls the list, so a folder below the
   // fold is reachable without releasing. Runs for external drags too.
   const scrollTo = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ animated: false, offset }), []);
   useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
 
-  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
-  }, []);
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offset = event.nativeEvent.contentOffset.y;
+      // Same correction as the desktop list view: the store's cached zone rects
+      // are window boxes from the last measure, and a scroll moves the rows
+      // without any layout event, so the drop targeting and the shared drop
+      // indicator would resolve against pre-scroll positions mid-drag.
+      const delta = offset - scrollOffsetRef.current;
+      scrollOffsetRef.current = offset;
+      if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
+    },
+    [managerPath],
+  );
 
   const rowProps = useMemo(
     () => ({ draggable, ensureChildren, getContextMenuActions, onMove, renderEntryIcon, onContextMenuAction, onExternalDrop }),

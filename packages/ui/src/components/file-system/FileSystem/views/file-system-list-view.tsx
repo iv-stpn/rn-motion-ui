@@ -22,7 +22,8 @@ import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneAcceptEvent, DragzoneHandle } from '../../../gestures/drag.types';
-import { refreshDragzones } from '../../../gestures/drag-store';
+import { useDragScope } from '../../../gestures/drag-scope';
+import { refreshDragzones, shiftZoneRects } from '../../../gestures/drag-store';
 import { useActiveDrag, useDragzoneState } from '../../../gestures/use-drag-store';
 import { ThemedIcon } from '../../../icon/themed-icon';
 import { HoldItem, type HoldItemDragOptions } from '../../../menus/HoldMenu/hold-menu';
@@ -38,7 +39,7 @@ import type { FileSystemRow } from '../logic/file-system-rows';
 import { FS_ROW_HEIGHT, flattenFileSystemRows, toggleExpandedPath } from '../logic/file-system-rows';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { useBackgroundContextMenu } from '../shell/file-system-context-menu';
-import { FileSystemDropzone } from '../shell/file-system-dropzone';
+import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,
@@ -511,6 +512,9 @@ export function FileSystemListView({
 
   const activeDrag = useActiveDrag();
   const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
+  // The manager this view's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
 
   // The overlay dropzones (and the folder-row wrapper they suppress) must not
   // mount during the browser's own `dragstart` handler. `beginDrag` publishes the
@@ -677,7 +681,16 @@ export function FileSystemListView({
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
+      // The store's zone rects are window boxes from the last measure (drag
+      // start or last layout pass). A scroll moves the rows without any layout
+      // event, so without this the hit test and the shared drop indicator
+      // would keep resolving against the pre-scroll positions — the outline
+      // drifts off the folder under the pointer the moment the list moves
+      // mid-drag (auto-scroll or a wheel). Shift the cached boxes by the delta
+      // so both follow the content that actually moved.
+      const delta = offset - scrollOffsetRef.current;
       scrollOffsetRef.current = offset;
+      if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
       // Kept in React state so overlay dropzones reposition with the scroll.
       setScrollOffset(offset);
       // The pointer has not moved but the rows under it have, so the highlight has
@@ -685,7 +698,7 @@ export function FileSystemListView({
       hover.refresh();
       marquee.refresh();
     },
-    [hover, marquee],
+    [hover, managerPath, marquee],
   );
 
   const renderRow = useCallback(

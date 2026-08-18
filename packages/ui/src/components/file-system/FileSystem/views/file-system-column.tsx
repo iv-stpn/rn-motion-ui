@@ -14,7 +14,10 @@ import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
-import type { DragzoneRenderState } from '../../../gestures/drag.types';
+import type { DragRect, DragzoneEntry, DragzoneRenderState } from '../../../gestures/drag.types';
+import { rectsIntersect } from '../../../gestures/drag-geometry';
+import { useDragScope } from '../../../gestures/drag-scope';
+import { shiftZoneRects } from '../../../gestures/drag-store';
 import { useActiveDrag } from '../../../gestures/use-drag-store';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
@@ -26,7 +29,7 @@ import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-intera
 import { filePreviewUrls, folderHasChildren } from '../logic/file-system-index';
 import type { FileSystemSelectionMode } from '../logic/file-system-selection';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from '../logic/file-system-test-id';
-import { FileSystemDropzone } from '../shell/file-system-dropzone';
+import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,
@@ -329,6 +332,28 @@ function FileSystemColumnImpl({
 
   const activeDrag = useActiveDrag();
   const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
+  // The manager this pane's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
+  // This pane's own box, measured once per drag. The scroll correction below
+  // applies only to zones INSIDE this pane — a sibling column's rows move with
+  // that column's scroll, not this one's, and the pane/body fallbacks do not
+  // move at all — so the predicate needs the pane's frame to test against.
+  const viewportRef = useRef<DragRect | null>(null);
+  // biome-ignore lint/plugin: measuring the pane once per drag for a scroll correction is a layout side-effect, not derived render state
+  useEffect(() => {
+    if (activeDrag === null) {
+      viewportRef.current = null;
+      return;
+    }
+    containerRef.current?.measureInWindow((x, y, width, height) => {
+      viewportRef.current = { height, width, x, y };
+    });
+  }, [activeDrag]);
+  const isInThisPane = useCallback((entry: DragzoneEntry) => {
+    const viewport = viewportRef.current;
+    return isZoneInScrollableContent(entry) && viewport !== null && entry.rect !== null && rectsIntersect(entry.rect, viewport);
+  }, []);
 
   const hover = useFileSystemRowHover({
     containerRef,
@@ -359,11 +384,20 @@ function FileSystemColumnImpl({
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+      const offset = event.nativeEvent.contentOffset.y;
+      // Same correction as the desktop list view: the store's cached zone rects
+      // are window boxes from the last measure, and a scroll moves this pane's
+      // rows without any layout event — the hit test and the shared drop
+      // indicator would resolve against pre-scroll positions mid-drag. Scoped to
+      // the zones inside THIS pane's box so a sibling column's rows (and the
+      // static fallbacks) keep their own correct boxes.
+      const delta = offset - scrollOffsetRef.current;
+      scrollOffsetRef.current = offset;
+      if (delta !== 0) shiftZoneRects(0, delta, managerPath, isInThisPane);
       hover.refresh();
       marquee.refresh();
     },
-    [hover, marquee],
+    [hover, isInThisPane, managerPath, marquee],
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPaths is the trigger; not read in the body but must be in the deps to re-fire on selection change

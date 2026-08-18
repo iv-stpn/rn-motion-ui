@@ -24,6 +24,7 @@
 import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import { Animated, type View } from 'react-native';
 import type { DragRect } from '../../../gestures/drag.types';
+import { rectsAdjacent } from '../../../gestures/drag-geometry';
 import { useDragScope } from '../../../gestures/drag-scope';
 import { getZoneManagerPath, getZoneRect, subscribeDragShift } from '../../../gestures/drag-store';
 import { useDragSnapshot } from '../../../gestures/use-drag-store';
@@ -55,6 +56,7 @@ export type FileSystemDropIndicatorProps = { containerRef: RefObject<View | null
  * frame, so the container's window rect is measured once per drag (the same
  * conversion the drop hint uses) and the difference is what the values hold.
  */
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the leaf's refs, effects and node are one render layer — the adjacency rule belongs with the crossing effect it feeds
 export function FileSystemDropIndicator({ containerRef }: FileSystemDropIndicatorProps) {
   const { drag, overZoneId } = useDragSnapshot();
   // This component's place in the manager tree: only zones under the same
@@ -81,13 +83,15 @@ export function FileSystemDropIndicator({ containerRef }: FileSystemDropIndicato
   /**
    * Paint the outline at the rect on file.
    *
-   * Two paces for two causes. A pointer crossing lands the outline on a *new*
-   * target — spring, so the jump reads as a glide. A scroll shifts the content
-   * under a stationary pointer — the rect moves every frame while the drag
-   * rides the edge, and a spring with its settle time would trail the moving
-   * row by a full row's worth of pixels, which is exactly the "off" a shared
-   * outline must not have. So a shift snaps: the outline is pinned to the
-   * content, like the per-row outline it replaced.
+   * Two paces for two causes. A pointer crossing between *adjacent* targets
+   * glides, so a sweep down a list reads as one continuous motion; a crossing
+   * to a distant folder snaps, because a spring would fling the outline across
+   * the whole file area. A scroll shifts the content under a stationary pointer
+   * — the rect moves every frame while the drag rides the edge, and a spring
+   * with its settle time would trail the moving row by a full row's worth of
+   * pixels, which is exactly the "off" a shared outline must not have. So a
+   * shift snaps too: the outline is pinned to the content, like the per-row
+   * outline it replaced.
    */
   const apply = useCallback(
     (animate: boolean) => {
@@ -139,7 +143,8 @@ export function FileSystemDropIndicator({ containerRef }: FileSystemDropIndicato
     });
   }, [containerRef, drag, hide, settle]);
 
-  // On a crossing, re-read the winner's rect and glide the outline onto it.
+  // On a crossing, re-read the winner's rect and move the outline onto it — a
+  // glide onto a neighbour, a snap onto anything further (see `apply`).
   // Background fallbacks (the file area's own zone, a column pane) paint their own
   // surface — delay and external-drop handling a shared outline cannot express —
   // and a zone from another FileSystem on the page is not this instance's to mark.
@@ -162,9 +167,12 @@ export function FileSystemDropIndicator({ containerRef }: FileSystemDropIndicato
       hide();
       return;
     }
+    const previous = rectRef.current;
     rectRef.current = rect;
-    settle();
-  }, [drag, hide, managerPath, overZoneId, settle]);
+    // The first appearance (no previous target) keeps the spring + fade-in.
+    if (previous !== null && !rectsAdjacent(previous, rect)) snap();
+    else settle();
+  }, [drag, hide, managerPath, overZoneId, settle, snap]);
 
   // On a scroll shift the content — and the rects on file — moved without the
   // winner changing, so no crossing effect fires. Re-read the over zone's box

@@ -19,11 +19,11 @@
  */
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Chat1Line as MessageCircle } from 'rn-motion-ui-icons/icons/chat-1-line';
 import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
 import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
-import { expect, within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 import { ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { HoldContextMenu, type HoldContextMenuItem } from '../../menus/HoldContextMenu/hold-context-menu';
 import { Text } from '../../typography/Text/text';
@@ -318,5 +318,95 @@ export const Disabled: Story = {
     await new Promise((r) => setTimeout(r, 0));
 
     await expect(await canvas.findByTestId(READOUT_TEST_ID)).toHaveTextContent('Waiting');
+  },
+};
+
+// ─── 100 draggables in a ScrollView ──────────────────────────────────────────
+// A ScrollView full of hold-draggables. Holding one arms it for a drag (the
+// 300ms hold upgrades the press), while a quick swipe on the gaps — or a mouse
+// wheel — scrolls the list. The two coexist because the hold timer is what turns
+// a press into a drag; anything shorter stays the ScrollView's.
+
+const SCROLL_ITEM_COUNT = 100;
+const SCROLL_ITEM_TEST_ID = 'story-hold-scroll-item';
+const SCROLL_ITEM_TESTID_PATTERN = /^story-hold-scroll-item-/;
+const SCROLL_VIEW_TEST_ID = 'story-hold-scroll-view';
+const SCROLL_READOUT_TEST_ID = 'story-hold-scroll-readout';
+
+const SCROLL_ITEMS = Array.from({ length: SCROLL_ITEM_COUNT }, (_, i) => ({ id: String(i), label: `Item ${i + 1}` }));
+
+function ScrollViewDemo() {
+  const [last, setLast] = useState('Waiting');
+
+  const handleHold = useCallback((label: string) => setLast(`Held ${label}`), []);
+  const handleEscape = useCallback((label: string) => setLast(`Drag ${label}`), []);
+
+  return (
+    <View className="flex-1">
+      <View className="mb-2 flex-row items-center justify-between">
+        <Text className="text-[#6b7280] text-[12px]">{`${SCROLL_ITEM_COUNT} draggables in a ScrollView`}</Text>
+        <Text className="text-[#6b7280] text-[12px]" testID={SCROLL_READOUT_TEST_ID}>
+          {last}
+        </Text>
+      </View>
+      <ScrollView style={{ height: 420 }} contentContainerClassName="gap-2 p-4" testID={SCROLL_VIEW_TEST_ID}>
+        {SCROLL_ITEMS.map((item) => (
+          <HoldDraggable
+            key={item.id}
+            behavior={{ holdDelay: 300 }}
+            data={{ [MIME]: item.id }}
+            onHold={() => handleHold(item.label)}
+            onHoldEscape={() => handleEscape(item.label)}
+            testID={`${SCROLL_ITEM_TEST_ID}-${item.id}`}
+          >
+            {({ isHeld, isPressed }) => (
+              <View className={chipClass(isHeld, isPressed)}>
+                <Text size="sm" weight="medium">
+                  {item.label}
+                </Text>
+              </View>
+            )}
+          </HoldDraggable>
+        ))}
+      </ScrollView>
+      <Note>Hold a chip to arm it, move to drag. A quick swipe on the gaps scrolls instead.</Note>
+    </View>
+  );
+}
+
+export const InScrollView: Story = {
+  name: 'Demo: 100 draggables in a ScrollView',
+  render: () => <ScrollViewDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Every draggable mounts (a plain ScrollView renders all of them; only the
+    // hold upgrades a press into a drag, so short swipes still scroll).
+    const items = await canvas.findAllByTestId(SCROLL_ITEM_TESTID_PATTERN);
+    expect(items.length).toBe(SCROLL_ITEM_COUNT);
+
+    // The list actually scrolls — its content is taller than its viewport.
+    const scroller = await canvas.findByTestId(SCROLL_VIEW_TEST_ID);
+    expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight);
+
+    // Hold the first chip: the hold path fires even though it lives in a scroll.
+    const first = await canvas.findByTestId(`${SCROLL_ITEM_TEST_ID}-0`);
+    touchPointer(first, 'pointerdown');
+    await new Promise((r) => setTimeout(r, 350));
+    await expect(await canvas.findByTestId(SCROLL_READOUT_TEST_ID)).toHaveTextContent('Held Item 1');
+    touchPointer(first, 'pointerup');
+    await new Promise((r) => setTimeout(r, 0));
+
+    // The tail of the list starts below the viewport and comes into view on scroll.
+    const last = items[SCROLL_ITEM_COUNT - 1];
+    if (!last) throw new Error('last draggable not rendered');
+    const viewportBottom = scroller.getBoundingClientRect().bottom;
+    expect(last.getBoundingClientRect().top).toBeGreaterThanOrEqual(viewportBottom);
+
+    scroller.scrollTop = scroller.scrollHeight;
+    scroller.dispatchEvent(new Event('scroll', { bubbles: true }));
+    await waitFor(() => {
+      expect(last.getBoundingClientRect().top).toBeLessThan(viewportBottom);
+    });
   },
 };

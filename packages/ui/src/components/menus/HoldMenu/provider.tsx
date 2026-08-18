@@ -53,6 +53,13 @@ const ProviderComponent = ({
   const { width, height, fontScale } = useWindowDimensions();
   const windowSize = useSharedValue({ width, height, fontScale });
 
+  // The provider root's measured height — filled in by each activation's
+  // `measure(rootRef)` and read by the travel math (and the always-mounted twin)
+  // so the panel clamps against the root's real bottom, not the window's. A
+  // shared value so both the activating item and its twin read the same number,
+  // and so the clamp re-syncs on rotation/resize at the next activation.
+  const rootHeight = useSharedValue(0);
+
   // Insets live in a shared value so UI-thread worklets read a live value, not a
   // frozen plain-object capture (the sibling `HoldMenu` does the same).
   const safeAreaInsetsValue = useSharedValue<HoldMenuSafeAreaInsets>(safeAreaInsets || { top: 0, right: 0, bottom: 0, left: 0 });
@@ -109,10 +116,11 @@ const ProviderComponent = ({
       menuProps,
       safeAreaInsets: safeAreaInsetsValue,
       windowSize,
+      rootHeight,
       AnimatedIcon,
       rootRef,
     }),
-    [state, theme, menuProps, safeAreaInsetsValue, windowSize, AnimatedIcon, rootRef],
+    [state, theme, menuProps, safeAreaInsetsValue, windowSize, rootHeight, AnimatedIcon, rootRef],
   );
 
   return (

@@ -28,6 +28,8 @@ type UseHoldItemActivationOptions = {
   menuAnchorPosition: TransformOriginAnchorPosition | undefined;
   menuProps: SharedValue<MenuInternalProps>;
   windowSize: SharedValue<HoldMenuWindowSize>;
+  /** The provider root's measured height — the clamp's viewport, updated each activation. */
+  rootHeight: SharedValue<number>;
   safeAreaInsets: SharedValue<HoldMenuSafeAreaInsets>;
   scaleHold: (duration?: number) => void;
 };
@@ -72,6 +74,7 @@ export function useHoldItemActivation({
   menuAnchorPosition,
   menuProps,
   windowSize,
+  rootHeight,
   safeAreaInsets,
   scaleHold,
 }: UseHoldItemActivationOptions): UseHoldItemActivationResult {
@@ -122,7 +125,7 @@ export function useHoldItemActivation({
       const root = measure(rootRef);
       const rootX = root?.pageX ?? 0;
       const rootY = root?.pageY ?? 0;
-
+      rootHeight.value = root?.height ?? 0; // the clamp viewport — the root's real bottom, not the window's
       itemRectY.value = measured.pageY - rootY;
       itemRectX.value = measured.pageX - rootX;
       itemRectHeight.value = measured.height;
@@ -154,7 +157,7 @@ export function useHoldItemActivation({
         menuHeight: height,
         disableMove: disableMove === true,
         opensBelow: transformOrigin.value.includes('top'),
-        windowHeight: windowSize.value.height,
+        windowHeight: rootHeight.value || windowSize.value.height,
         safeTop: safeAreaInsets.value.top,
         safeBottom: safeAreaInsets.value.bottom,
       });
@@ -174,6 +177,7 @@ export function useHoldItemActivation({
     transformOrigin,
     transformValue,
     windowSize,
+    rootHeight,
     bottom,
     getMenuHeight,
     disableMove,

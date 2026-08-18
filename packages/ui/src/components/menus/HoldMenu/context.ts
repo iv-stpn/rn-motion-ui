@@ -25,6 +25,16 @@ export type HoldMenuInternalContextType = {
   safeAreaInsets: SharedValue<HoldMenuSafeAreaInsets>;
   /** Rotation-safe window metrics, mirrored from `useWindowDimensions`. */
   windowSize: SharedValue<HoldMenuWindowSize>;
+  /**
+   * The provider root's measured height — the containing block the menu clamps
+   * within. Activation `measure(rootRef)`-s the root and stores it here so the
+   * travel math clamps against the root's real bottom rather than the window's
+   * (the two differ whenever the root is inset from the window — storybook's
+   * padding decorator, a menu nested inside a scroll view — or when the root
+   * does not fill the screen). Falls back to `windowSize.height` until the first
+   * activation measures it.
+   */
+  rootHeight: SharedValue<number>;
   /** The provider's `iconComponent`, animated — or `null` when none was given. */
   AnimatedIcon: HoldMenuIconComponent | null;
   /**

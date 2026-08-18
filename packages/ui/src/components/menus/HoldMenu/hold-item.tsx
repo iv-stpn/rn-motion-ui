@@ -63,7 +63,7 @@ const HoldItemComponent = ({
   testID,
   children,
 }: HoldItemProps) => {
-  const { state, menuProps, windowSize, safeAreaInsets, rootRef } = useHoldMenuInternal();
+  const { state, menuProps, windowSize, rootHeight, safeAreaInsets, rootRef } = useHoldMenuInternal();
 
   const isActive = useSharedValue(false);
   /** Stable key for the portal twin — generated once per item, never changes. */
@@ -98,6 +98,7 @@ const HoldItemComponent = ({
     menuAnchorPosition,
     menuProps,
     windowSize,
+    rootHeight,
     safeAreaInsets,
     scaleHold,
   });

@@ -207,6 +207,7 @@ function TableImpl<T>(props: TableProps<T>) {
                 key={col.key}
                 columnWidth={col.width}
                 colWidth={colWidths[col.key]}
+                minWidth={col.minWidth}
                 align={col.align}
                 skeletonWidth={col.skeletonWidth}
                 reduce={reduce}

@@ -381,7 +381,7 @@ export default meta;
 
 // ─── Interactive ──────────────────────────────────────────────────────────────
 
-const ROW_COUNTS = { '0': 0, '8': 8, '50': 50, '1000': 1000 } as const;
+const ROW_COUNTS = { '0': 0, '8': 8, '50': 50, '1000': 1000, '100000': 100_000 } as const;
 type RowCountKey = keyof typeof ROW_COUNTS;
 
 const ROW_COUNT_OPTIONS = [
@@ -389,6 +389,7 @@ const ROW_COUNT_OPTIONS = [
   { value: '8', label: '8 rows' },
   { value: '50', label: '50 rows' },
   { value: '1000', label: '1000 rows' },
+  { value: '100000', label: '100K rows' },
 ] as const satisfies readonly { value: RowCountKey; label: string }[];
 
 const ROW_HEIGHTS = { compact: 40, default: 52, relaxed: 68 } as const;
@@ -721,6 +722,49 @@ export const NarrowOverflow: Story = {
     // the body reads as empty on a narrow screen.
     expect(row.left).toBeLessThan(table.left + 2);
     expect(row.top).toBeGreaterThanOrEqual(table.top + NARROW_ROW_HEIGHT - 1);
+  },
+};
+
+// ─── Minimum column width ─────────────────────────────────────────────────────
+// A column's `minWidth` is a floor, not a share: on a narrow container the
+// column refuses to shrink below it, pushing the total past the container width
+// so the table scrolls horizontally instead of squeezing the column unreadable.
+
+const MIN_WIDTH_COLUMNS: TableColumn<Person>[] = [
+  { key: 'name', header: 'Name', width: '1fr' },
+  { key: 'email', header: 'Email', width: '1fr', minWidth: 240 },
+  { key: 'role', header: 'Role', width: '1fr' },
+];
+
+export const MinWidth: Story = {
+  name: 'Demo: min column width forces horizontal scroll',
+  render: () => (
+    <View style={{ width: NARROW_WIDTH }}>
+      <Table
+        {...CLASSIC_TABLE}
+        data={buildPeople(5)}
+        columns={MIN_WIDTH_COLUMNS}
+        getRowId={getPersonId}
+        height={280}
+        rowHeight={NARROW_ROW_HEIGHT}
+        testID="table-min-width"
+      />
+    </View>
+  ),
+  args: { columns: [], data: [] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The email column keeps its 240px floor even though the container is only
+    // 320px wide, so the table overflows and scrolls rather than squeezing it.
+    // `waitFor` gates on the post-layout render: `computeColumnWidths` only
+    // resolves once `onLayout` reports the container width, so the first frame
+    // still lays the cell out with its pre-layout flex fallback.
+    await waitFor(() => {
+      const emailHeader = canvas.getByTestId('table-min-width-header-email').getBoundingClientRect();
+      expect(emailHeader.width).toBeGreaterThanOrEqual(240);
+    });
+    // The horizontal wrapper is only mounted once the total actually overflows.
+    await canvas.findByTestId('table-min-width-scroll');
   },
 };
 

@@ -91,7 +91,7 @@ export function HeaderCell<T>({
     <Pressable
       key={column.key}
       className="relative flex-col justify-center overflow-hidden px-4"
-      style={columnLayoutStyle(column.width, colWidth)}
+      style={columnLayoutStyle(column.width, colWidth, column.minWidth)}
       onLongPress={handleLongPress}
       onPress={sortEnabled ? handleSort : undefined}
       accessibilityRole={sortEnabled ? 'button' : undefined}

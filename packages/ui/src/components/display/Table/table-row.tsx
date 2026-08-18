@@ -48,6 +48,8 @@ export type SkeletonCellPulseProps = {
   columnWidth: number | string | undefined;
   /** Resolved pixel width for this column (from `computeColumnWidths`). */
   colWidth?: number;
+  /** Floor for the column's width during the pre-layout render (see `TableColumn.minWidth`). */
+  minWidth?: number;
   align: TableColumn<unknown>['align'];
   /** Override skeleton bar width. Defaults to `'60%'` (or `40` for right-aligned). */
   skeletonWidth?: DimensionValue;
@@ -59,6 +61,7 @@ export type SkeletonCellPulseProps = {
 export function SkeletonCellPulse({
   columnWidth,
   colWidth,
+  minWidth,
   align,
   skeletonWidth,
   reduce,
@@ -68,7 +71,7 @@ export function SkeletonCellPulse({
   return (
     <View
       className={cn('justify-center overflow-hidden px-4', alignToItemsClass(align))}
-      style={columnLayoutStyle(columnWidth, colWidth)}
+      style={columnLayoutStyle(columnWidth, colWidth, minWidth)}
     >
       <MotiView
         from={{ opacity: 0.5 }}
@@ -121,7 +124,10 @@ export function RowCell<T>({ row, column, id, colWidth, onCellEdit, cellClassNam
     );
 
   return (
-    <View className={cn('justify-center overflow-hidden px-4', cellClassName)} style={columnLayoutStyle(column.width, colWidth)}>
+    <View
+      className={cn('justify-center overflow-hidden px-4', cellClassName)}
+      style={columnLayoutStyle(column.width, colWidth, column.minWidth)}
+    >
       {cellContent}
     </View>
   );

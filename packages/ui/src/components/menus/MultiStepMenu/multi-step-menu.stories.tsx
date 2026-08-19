@@ -60,7 +60,7 @@ const PRIVACY_BODY = 'Two-factor auth, connected apps, and data.';
 type AppearanceSectionProps = { helpers: MultiStepHelpers };
 
 function AppearanceSection({ helpers }: AppearanceSectionProps) {
-  const navigateAdvanced = useCallback(() => helpers.navigate('appearance/advanced'), [helpers]);
+  const navigateAdvanced = useCallback(() => helpers.navigate('advanced'), [helpers]);
   return (
     <View className="gap-3">
       <Text className="text-muted-foreground">{APPEARANCE_BODY}</Text>
@@ -213,8 +213,16 @@ function MenuPlayground() {
   const handleOpen = useCallback(() => setVisible(true), []);
   const handleClose = useCallback(() => setVisible(false), []);
   const handleAfterClose = useCallback(() => menuRef.current?.reset(), []);
-  const handleReset = useCallback(() => menuRef.current?.reset(), []);
-  const handleJump = useCallback(() => menuRef.current?.navigate(['appearance', 'advanced']), []);
+  // Open first: on small screens the full sheet covers the playground chrome, so
+  // navigating/resetting a closed menu would have no visible effect.
+  const handleReset = useCallback(() => {
+    setVisible(true);
+    menuRef.current?.reset();
+  }, []);
+  const handleJump = useCallback(() => {
+    setVisible(true);
+    menuRef.current?.navigate(['appearance', 'advanced']);
+  }, []);
 
   const pathNote = path.length > 0 ? path.join(' → ') : SETTINGS_ROOT_TITLE;
   const stateNote = visible ? `Open — ${pathNote}` : CLOSED_NOTE;

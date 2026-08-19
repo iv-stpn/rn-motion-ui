@@ -1,12 +1,12 @@
 import { memo, type Ref, type RefObject, useEffect, useId } from 'react';
 import { Animated as NativeAnimated, type View, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedRef, useSharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedReaction, useAnimatedRef, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { mergeRefs } from '../../../moti/interactions/pressable/merge-refs';
 import { useHoldablePointer } from '../../gestures/Holdable/use-holdable-pointer';
 import { useHoldBehavior } from '../../gestures/use-drag-behavior';
 import { usePressTimeline } from '../../gestures/use-press-timeline';
-import { IS_WEB } from './constants';
+import { HOLD_ITEM_TRANSFORM_DURATION, IS_WEB } from './constants';
 import { useHoldMenuInternal } from './context';
 import { HoldItemTwin } from './hold-item-twin';
 import type { HoldItemProps } from './hold-menu-types';
@@ -66,6 +66,31 @@ const HoldItemComponent = ({
   const { state, menuProps, windowSize, rootHeight, safeAreaInsets, rootRef } = useHoldMenuInternal();
 
   const isActive = useSharedValue(false);
+  /**
+   * The release handover, 0 = active (the twin is the visible copy), 1 =
+   * released (the in-place item is back). A single shared value drives BOTH
+   * copies, so they switch on the same frame — two independent `withDelay` +
+   * `withTiming` animations could drift a frame apart on web and leave a
+   * one-frame hole (the release flicker).
+   *
+   * The step is an instant snap, not a cross-fade: two stacked semi-transparent
+   * layers do not sum to full opacity — opacity compositing makes a 50/50 blend
+   * dip to 75% — so cross-fading the twin over the original reads as a brief dim
+   * pulse. A synchronized snap has no overlap window to dim and no gap to blink.
+   */
+  const releaseProgress = useSharedValue(1);
+
+  useAnimatedReaction(
+    () => isActive.value,
+    (active) => {
+      // Activation flips instantly (the twin takes over on the same frame the
+      // item finishes squeezing); release waits for the twin to travel back,
+      // then snaps both copies on the same frame — no cross-fade, so the two
+      // semi-transparent layers never overlap and dim the item.
+      releaseProgress.value = active ? 0 : withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 }));
+    },
+  );
+
   /** Stable key for the portal twin — generated once per item, never changes. */
   const name = `hold-item-${useId()}`;
   const containerRef = useAnimatedRef<Animated.View>();
@@ -77,6 +102,7 @@ const HoldItemComponent = ({
       items,
       state,
       isActive,
+      releaseProgress,
     });
 
   const {
@@ -237,6 +263,7 @@ const HoldItemComponent = ({
         closeOnTap={closeOnTap}
         disableMove={disableMove}
         isActive={isActive}
+        releaseProgress={releaseProgress}
         itemRectHeight={itemRectHeight}
         itemRectWidth={itemRectWidth}
         itemRectX={itemRectX}

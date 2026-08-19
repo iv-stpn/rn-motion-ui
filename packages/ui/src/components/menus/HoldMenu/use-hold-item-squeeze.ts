@@ -1,14 +1,6 @@
 import { useCallback } from 'react';
 import type { ViewStyle } from 'react-native';
-import {
-  runOnJS,
-  type SharedValue,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+import { runOnJS, type SharedValue, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import {
   CONTEXT_MENU_STATE,
   HOLD_ITEM_SCALE_DOWN_DURATION,
@@ -24,6 +16,8 @@ type UseHoldItemSqueezeOptions = {
   items: MenuItemProps[];
   state: SharedValue<CONTEXT_MENU_STATE>;
   isActive: SharedValue<boolean>;
+  /** Release handover, 0 = active (twin showing), 1 = released (this item showing). */
+  releaseProgress: SharedValue<number>;
 };
 
 type UseHoldItemSqueezeResult = {
@@ -52,6 +46,7 @@ export function useHoldItemSqueeze({
   items,
   state,
   isActive,
+  releaseProgress,
 }: UseHoldItemSqueezeOptions): UseHoldItemSqueezeResult {
   const isAnimationStarted = useSharedValue(false);
   const itemScale = useSharedValue(1);
@@ -115,23 +110,21 @@ export function useHoldItemSqueeze({
   }, [activateOn, isAnimationStarted]);
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    // Mirror the twin's cross-fade back in so the handover never leaves a hole:
-    // a zero-duration snap can land a frame before the twin has faded out.
-    const animateOpacity = () =>
-      withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: HOLD_ITEM_TRANSFORM_DURATION / 2 }));
-
     // The in-place item never travels. Only the portal twin carries the travel
     // that keeps the pair on screen when the menu overflows; this copy hides
-    // under it while active and only squeezes/scales before that.
+    // under it while active and only squeezes/scales before that. Opacity comes
+    // from `releaseProgress` — the same shared value that drives the twin's
+    // opacity — so both copies flip on the same frame: no overlap window to
+    // cross-fade (and dim), no gap to blink.
     return {
-      opacity: isActive.value ? 0 : animateOpacity(),
+      opacity: releaseProgress.value,
       transform: [
         {
           scale: isActive.value ? withTiming(1, { duration: HOLD_ITEM_TRANSFORM_DURATION }) : itemScale.value,
         },
       ],
     };
-  }, [isActive, itemScale]);
+  }, [isActive, itemScale, releaseProgress]);
 
   return { animatedContainerStyle, itemScale, isHold, canCallActivateFunctions, scaleHold, scaleTap, scaleBack };
 }

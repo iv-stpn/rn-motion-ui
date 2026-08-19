@@ -1,14 +1,7 @@
 import { memo, type ReactNode, useMemo } from 'react';
 import { View, type ViewProps } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  type SharedValue,
-  useAnimatedProps,
-  useAnimatedStyle,
-  withDelay,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { type SharedValue, useAnimatedProps, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { Portal } from '../../portal/Portal/portal';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './constants';
 import { useHoldMenuInternal } from './context';
@@ -23,6 +16,8 @@ type HoldItemTwinProps = {
   disableMove: HoldItemProps['disableMove'];
   closeOnTap: boolean | undefined;
   isActive: SharedValue<boolean>;
+  /** Release handover, 0 = active (this twin shows), 1 = released (it is hidden). */
+  releaseProgress: SharedValue<number>;
   itemRectY: SharedValue<number>;
   itemRectX: SharedValue<number>;
   itemRectWidth: SharedValue<number>;
@@ -53,6 +48,7 @@ const HoldItemTwinComponent = ({
   disableMove = false,
   closeOnTap,
   isActive,
+  releaseProgress,
   itemRectY,
   itemRectX,
   itemRectWidth,
@@ -71,12 +67,6 @@ const HoldItemTwinComponent = ({
   );
 
   const animatedPortalStyle = useAnimatedStyle(() => {
-    // Cross-fade over the tail of the return rather than snapping to 0: a
-    // zero-duration timing can land a frame apart from the in-place item's
-    // fade-in on web, leaving a one-frame hole — the release flicker.
-    const animateOpacity = () =>
-      withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(0, { duration: HOLD_ITEM_TRANSFORM_DURATION / 2 }));
-
     const itemsWithSeparator = items.filter((item) => item.withSeparator);
     const menuHeight = calculateMenuHeight(items.length, itemsWithSeparator.length, windowSize.value.fontScale);
     // Clamp against the root's real bottom, not the window's — the two differ
@@ -110,7 +100,13 @@ const HoldItemTwinComponent = ({
       left: itemRectX.value,
       width: itemRectWidth.value,
       height: itemRectHeight.value,
-      opacity: isActive.value ? 1 : animateOpacity(),
+      // `releaseProgress` drives both this opacity and the in-place item's from
+      // one shared value, so the two flip on the same frame — no overlap window
+      // (a cross-fade would dim, since stacked semi-transparent layers don't sum
+      // to full opacity) and no one-frame hole (two independent delay+timing
+      // animations could drift a frame apart on web). 0 = active (this twin
+      // shows), 1 = released (the in-place item is back).
+      opacity: 1 - releaseProgress.value,
       transform: [
         { translateY: transformAnimation() },
         {
@@ -122,6 +118,7 @@ const HoldItemTwinComponent = ({
     items,
     disableMove,
     isActive,
+    releaseProgress,
     itemRectY,
     itemRectX,
     itemRectWidth,

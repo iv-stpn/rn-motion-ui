@@ -17,7 +17,7 @@
  *   // Trigger button:
  *   <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
  *
- *   // In a Demo story, use the default (Button, md, rounded) or pick a specific kind:
+ *   // In a Demo story, use the default (Button, md, pill) or pick a specific kind:
  *   <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
  *   <TriggerButton kind="elevated" label={OPEN_LABEL} onPress={handleOpen} />
  *
@@ -62,7 +62,7 @@ export type TriggerSize = Exclude<ButtonSize, 'icon'>;
 export const TRIGGER_SIZES: readonly TriggerSize[] = ['sm', 'md', 'lg'] as const;
 
 /** Shapes available in the trigger controls. */
-export const TRIGGER_SHAPES: readonly ButtonShape[] = ['rounded', 'pill'] as const;
+export const TRIGGER_SHAPES: readonly ButtonShape[] = ['pill', 'rounded'] as const;
 
 // ─── TriggerButton ───────────────────────────────────────────────────────────
 
@@ -74,7 +74,7 @@ export type TriggerButtonProps = {
   onPress: () => void;
   /** Visual size of the trigger button. Defaults to `'md'`. */
   size?: TriggerSize;
-  /** Corner shape of the trigger button. Defaults to `'rounded'`. */
+  /** Corner shape of the trigger button. Defaults to `'pill'`. */
   shape?: ButtonShape;
   /**
    * `kind === 'button'` only. Variant forwarded to `Button`.
@@ -116,7 +116,7 @@ export function TriggerButton({
   label,
   onPress,
   size = 'md',
-  shape = 'rounded',
+  shape = 'pill',
   buttonVariant = 'primary',
   elevatedVariant = 'neutral',
   glossyVariant = 'neutral',
@@ -190,7 +190,7 @@ export type TriggerState = {
 export function useTriggerState(): TriggerState {
   const [kind, setKind] = useState<TriggerKind>('button');
   const [size, setSize] = useState<TriggerSize>('md');
-  const [shape, setShape] = useState<ButtonShape>('rounded');
+  const [shape, setShape] = useState<ButtonShape>('pill');
   return { kind, setKind, size, setSize, shape, setShape };
 }
 

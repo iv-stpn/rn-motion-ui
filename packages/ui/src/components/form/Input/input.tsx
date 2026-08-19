@@ -61,7 +61,10 @@ const field = cva('relative flex-row items-center overflow-hidden web:border', {
 });
 
 // Size-aware input box: font size and padding track --spacing-interactive-* tokens.
-const inputBox = cva('flex-1 bg-transparent text-foreground outline-none', {
+// `font-sans-normal` is the same per-weight-family token the `Text` component
+// resolves by default, so the typed value and the placeholder both use the app's
+// custom typeface (e.g. Geist) instead of the platform's default font.
+const inputBox = cva('flex-1 bg-transparent font-sans-normal text-foreground outline-none', {
   variants: {
     left: { true: 'pl-8', false: '' },
     right: { true: 'pr-8', false: '' },

@@ -214,7 +214,7 @@ export function CommandPalette({
             placeholder={placeholder}
             placeholderTextColor={placeholderColor}
             accessibilityLabel={placeholder}
-            className="h-12 flex-1 text-foreground text-sm"
+            className="h-12 flex-1 font-sans-normal text-foreground text-sm"
           />
           <Pressable
             accessibilityRole="button"

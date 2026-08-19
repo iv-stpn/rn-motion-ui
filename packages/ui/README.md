@@ -163,7 +163,6 @@ Subpaths are namespaced by category:
 | `/multi-step-menu`             | `MultiStepMenu`                                                          |
 | `/bloom-menu`                  | `BloomMenu`                                                              |
 | `/hover-menu`                  | `HoverMenu`                                                              |
-| `/hold-context-menu`           | `HoldContextMenu`                                                        |
 | `/hold-menu`                   | `HoldMenuProvider`, `HoldItem`, `HoldMenuIcon`                           |
 | `/overflow-actions`            | `OverflowActions`                                                        |
 | `/bouncy-accordion`            | `BouncyAccordion`                                                        |
@@ -561,7 +560,7 @@ const { primary, danger, success } = useThemeColors();
 ## Menu motion
 
 Every panel a trigger summons — `AdaptiveDropdown` (on wide screens),
-`HoverMenu`, `Popover`, `HoldContextMenu` — opens on one shared animation: a
+`HoverMenu`, `Popover` — opens on one shared animation: a
 fade up from `0.96` scale, sliding 8px toward its trigger, out of the corner
 nearest it. They close the reverse way on a 200ms ease-in. Sheets are
 deliberately not in this group; `BottomSheet`, `FullSheet`, `Drawer` and
@@ -590,10 +589,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "rn-motion-ui/popover";
 | `exit`   | 200ms `Easing.in(Easing.cubic)`                                   | same merge                                                      |
 | `scale`  | `0.96`                                                            | `1` opens with no scale                                         |
 | `offset` | `8`                                                               | px traveled toward the trigger; `0` opens with no slide         |
-
-`HoldContextMenu` adds `scrim` and `lift` for the two surfaces only it has — the
-dim behind the lifted item, and the item's own rise off the page. `lift` falls
-back to `enter`, so retuning the panel moves the item with it by default.
 
 `useReducedMotion` wins over all of it: whatever `motion` says, an OS
 reduced-motion preference collapses these to a 150ms opacity fade with no scale

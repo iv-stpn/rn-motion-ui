@@ -58,7 +58,7 @@ export type PopoverProps = {
   panelRadius?: number;
   /**
    * Overrides the shared open/close animation — the same `motion` prop
-   * `AdaptiveDropdown`, `HoverMenu` and `HoldContextMenu` take. Reduced motion
+   * `AdaptiveDropdown` and `HoverMenu` take. Reduced motion
    * overrides all of it: the panel cross-fades in place.
    *
    * @example
@@ -199,7 +199,7 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
     top = Math.max(8, Math.min(top, screen.height - panel.h - 8));
   }
 
-  // Shared with AdaptiveDropdown, HoverMenu and HoldContextMenu, so every panel
+  // Shared with AdaptiveDropdown and HoverMenu, so every panel
   // this package anchors to a trigger opens and closes the same way.
   const panelMotion = resolveMenuMotion({ motion, reduce, side });
   const transformOrigin = menuTransformOrigin({ align, side });

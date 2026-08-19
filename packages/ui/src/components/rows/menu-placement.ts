@@ -1,6 +1,7 @@
 /**
- * Placement math for `HoldContextMenu` — where the panel lands relative to the
- * item that was held, and how far the two travel together to stay on screen.
+ * Placement math for the package's anchored hold menus — where a panel lands
+ * relative to the item (or point) it anchors to, and how far the pair travel
+ * together to stay on screen.
  *
  * Pure and React-free, so the geometry is unit-testable without mounting a modal
  * or faking a `measureInWindow`. The component owns measurement, gestures and
@@ -16,7 +17,7 @@
  * bodies, which only run after module initialisation.
  */
 
-import { type MenuTransformOrigin, menuTransformOrigin } from '../../../theme/motion';
+import { type MenuTransformOrigin, menuTransformOrigin } from '../../theme/motion';
 
 // ── Internals ────────────────────────────────────────────────────────────────
 

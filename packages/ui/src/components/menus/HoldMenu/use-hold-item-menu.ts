@@ -31,7 +31,7 @@ type UseHoldItemMenuResult = {
  * shared value and the consumer's `onHold` / `onOpenChange` callbacks.
  *
  * `handleOpen` / `handleHold` mirror the activation firing semantics the
- * file-system relied on from `HoldContextMenu`: a hold opens the menu and fires
+ * file-system relies on: a hold opens the menu and fires
  * the hold side-effect, a context menu only opens it, and an empty (inert) row
  * fires the side-effect without opening anything. `handleClose` fires the close
  * side symmetrically, latched so a close that never opened doesn't fire.

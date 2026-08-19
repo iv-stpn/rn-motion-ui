@@ -12,7 +12,7 @@ import {
   HOLD_MENU_VIEWPORT_PADDING,
   type HoldMenuLayoutInput,
   resolveHoldMenuLayout,
-} from '../hold-context-menu-layout';
+} from '../menu-placement';
 
 /** Square viewport, no insets — every expectation below is arithmetic on round numbers. */
 const VIEWPORT = { width: 400, height: 800 };

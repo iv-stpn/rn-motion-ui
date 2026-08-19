@@ -148,8 +148,7 @@ export type UseHoldableReturn = {
  * **Accessibility.** Carries none: no role, no name, no announcement. A hold is
  * pointer-only and touch-only, and no screen reader has a gesture for one — so
  * whatever this enables **needs a second path to the same outcome**. An
- * `accessibilityActions` entry on the host is the usual one; `HoldContextMenu`'s
- * `longpress` action is the worked example.
+ * `accessibilityActions` entry on the host is the usual one.
  */
 export function useHoldable(options: UseHoldableOptions = {}): UseHoldableReturn {
   const { behavior, cursorMode = false, disabled = false, onActive, onHold, onHoldEscape, onPhaseChange } = options;

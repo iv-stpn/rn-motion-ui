@@ -208,7 +208,7 @@ export function AdaptiveDropdown({
     <View className={cn('overflow-hidden', contentClassName)}>{resolvedContent}</View>
   );
 
-  // Shared with Popover, HoverMenu and HoldContextMenu, so every panel this
+  // Shared with Popover and HoverMenu, so every panel this
   // package anchors to a trigger opens and closes the same way.
   const panelMotion = resolveMenuMotion({ motion, reduce: reduced, side: openAbove ? 'top' : 'bottom' });
   const transformOrigin = menuTransformOrigin({ align, side: openAbove ? 'top' : 'bottom' });

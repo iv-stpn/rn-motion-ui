@@ -87,7 +87,7 @@ function buildListeners({ cursorMode, node, timeline }: ListenerParams) {
   /**
    * A hold that fired must not also click. The browser synthesizes
    * `mousedown`/`click` at the release point after `touchend`, and whatever the
-   * hold put on screen — `HoldContextMenu`'s scrim sits exactly there — takes
+   * hold put on screen — `HoldMenu`'s backdrop sits exactly there — takes
    * that phantom click as a dismissal the instant the finger lifts. Cancelling
    * the `touchend` is the one documented way to suppress the compat events.
    */
@@ -114,7 +114,7 @@ function buildListeners({ cursorMode, node, timeline }: ListenerParams) {
    * would put the browser's own menu on top of whatever the hold just opened. Only
    * cancelled while a touch press is in flight: a right-click never reaches `trip`
    * (the pointer filter above drops it), so a consumer's own context menu — and
-   * `HoldContextMenu`'s web activation, which is a right-click — still works.
+   * `HoldItem`'s web activation, which is a right-click — still works.
    */
   function onContextMenu(e: Event) {
     if (trip !== null) e.preventDefault();

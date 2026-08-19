@@ -187,7 +187,7 @@ const HoldItemComponent = ({
   // so an `onContextMenu` fires only after the event has already bubbled past an
   // ancestor's native listener — the background's scroll-container `contextmenu`
   // handler — too late to stop it opening its own menu. A native listener on this
-  // wrapper runs in the bubble phase before every ancestor's, like `HoldContextMenu`.
+  // wrapper runs in the bubble phase before every ancestor's.
   // biome-ignore lint/plugin: react/no-use-effect — a native DOM listener has no React/RN prop equivalent; it must be wired imperatively on the resolved node
   useEffect(() => {
     if (!webHold || disabled) return;

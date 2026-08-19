@@ -18,14 +18,16 @@
  * the hold path with synthetic mouse pointer events.
  */
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Chat1Line as MessageCircle } from 'rn-motion-ui-icons/icons/chat-1-line';
 import { CopyLine as Copy } from 'rn-motion-ui-icons/icons/copy-line';
 import { ShareForwardLine as Share2 } from 'rn-motion-ui-icons/icons/share-forward-line';
 import { expect, waitFor, within } from 'storybook/test';
 import { ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
-import { HoldContextMenu, type HoldContextMenuItem } from '../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem } from '../../menus/HoldMenu/hold-item';
+import type { MenuItemProps } from '../../menus/HoldMenu/hold-menu-types';
+import { HoldMenuProvider } from '../../menus/HoldMenu/provider';
 import { Text } from '../../typography/Text/text';
 import { HoldDraggable } from './hold-draggable';
 
@@ -82,21 +84,14 @@ function chipLabel(isHeld: boolean, isPressed: boolean) {
   return 'Hold or drag me';
 }
 
-/** A few actions for the hold context menu. */
-const MENU_ITEMS: HoldContextMenuItem[] = [
-  { icon: MessageCircle, id: 'reply', label: 'Reply' },
-  { icon: Copy, id: 'copy', label: 'Copy' },
-  { icon: Share2, id: 'share', label: 'Share' },
-];
-
 /**
  * A chip that logs each significant phase event to a readout.
  *
  * `behavior={{ holdDelay: 300 }}` is set explicitly so `onHold` fires on web —
  * the drag pointer transport defaults to `holdDelay: null` there.
  *
- * When `showMenu` is on the chip is wrapped in a `<HoldContextMenu>` with
- * `dragOptions` — hold opens the action panel, and a move past `escapeSlop`
+ * When `showMenu` is on the chip is a `HoldItem` (inside a `HoldMenuProvider`)
+ * with `dragOptions` — hold opens the action panel, and a move past `escapeSlop`
  * after arming lifts a drag. On web the menu opens on right-click.
  */
 function HoldDragDemo({ cursorMode = false, disabled = false, showMenu = false }: HoldDragDemoProps) {
@@ -107,10 +102,21 @@ function HoldDragDemo({ cursorMode = false, disabled = false, showMenu = false }
   const handleEscape = useCallback(() => setStatus('Escaped (drag started)'), []);
   const handleDragStart = useCallback(() => setStatus('Dragging'), []);
   const handleDragEnd = useCallback(() => setStatus('Done'), []);
-  const handleSelect = useCallback((item: HoldContextMenuItem) => {
-    setPicked(String(item.label));
-    setStatus(`Menu: ${String(item.label)}`);
+  const handleSelect = useCallback((label: string) => {
+    setPicked(label);
+    setStatus(`Menu: ${label}`);
   }, []);
+
+  // The menu rows — `HoldMenu`'s `MenuItemProps`, whose function icon renders
+  // itself (size baked in, as `HoldItem` calls it with no arguments).
+  const menuItems: MenuItemProps[] = useMemo(
+    () => [
+      { text: 'Reply', icon: () => <MessageCircle size={18} />, onPress: () => handleSelect('Reply') },
+      { text: 'Copy', icon: () => <Copy size={18} />, onPress: () => handleSelect('Copy') },
+      { text: 'Share', icon: () => <Share2 size={18} />, onPress: () => handleSelect('Share') },
+    ],
+    [handleSelect],
+  );
 
   const chipBody = (
     <View className="rounded-xl border border-border bg-surface-2 px-6 py-4">
@@ -123,21 +129,22 @@ function HoldDragDemo({ cursorMode = false, disabled = false, showMenu = false }
   return (
     <View className="items-start gap-3">
       {showMenu ? (
-        <HoldContextMenu
-          activateOn="hold"
-          behavior={{ holdDelay: 300 }}
-          dragOptions={{
-            data: { [MIME]: 'item' },
-            onDragEnd: handleDragEnd,
-            onDragStart: handleDragStart,
-          }}
-          items={MENU_ITEMS}
-          onHold={handleHold}
-          onSelect={handleSelect}
-          testID="story-hold-menu-chip"
-        >
-          {chipBody}
-        </HoldContextMenu>
+        <HoldMenuProvider>
+          <HoldItem
+            activateOn="hold"
+            dragOptions={{
+              data: { [MIME]: 'item' },
+              onDragEnd: handleDragEnd,
+              onDragStart: handleDragStart,
+            }}
+            items={menuItems}
+            longPressMinDurationMs={300}
+            onHold={handleHold}
+            testID="story-hold-menu-chip"
+          >
+            {chipBody}
+          </HoldItem>
+        </HoldMenuProvider>
       ) : (
         <HoldDraggable
           // Enable hold on web: the drag transport defaults to holdDelay: null there.
@@ -181,7 +188,7 @@ function HoldDragPlayground() {
       <ControlCard title="Options">
         <Toggle label="Cursor mode" onChange={setCursorMode} value={cursorMode} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
-        <Toggle label="Hold context menu" onChange={setShowMenu} value={showMenu} />
+        <Toggle label="Hold menu" onChange={setShowMenu} value={showMenu} />
       </ControlCard>
       <HoldDragDemo cursorMode={cursorMode} disabled={disabled} showMenu={showMenu} />
     </Playground>
@@ -228,14 +235,13 @@ export const Default: Story = {
 };
 
 /**
- * The drag path out of an open hold context menu — and the close it forces.
+ * The drag path out of an open hold menu — and the close it forces.
  *
  * Hold 300ms and the menu opens (`onHold` reports 'Held'). A move past
- * `escapeSlop` after that lifts a drag: `onHoldEscape` closes the menu and
- * `onDragStart` fires in the same gesture. The trigger stays motionless through
- * that handover — its squeeze released when the menu opened, not now (the
- * `HoldContent` latch in hold-context-menu-trigger.tsx), so nothing pops back
- * to full size under the exiting panel.
+ * `escapeSlop` after that lifts a drag: the menu closes and `onDragStart` fires
+ * in the same gesture. The trigger stays motionless through that handover — its
+ * squeeze released when the menu opened, not now, so nothing pops back to full
+ * size under the exiting panel.
  */
 export const MenuEscapeToDrag: Story = {
   name: 'Behaviour: Move after the menu opens escapes into a drag',
@@ -243,13 +249,13 @@ export const MenuEscapeToDrag: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // The menu chip's testID sits on the measured wrapper; the pointer transport
-    // listens on the HoldDraggable host inside it, so dispatch on the label and
-    // let the events bubble up to it.
-    // findAllByText: Draggable renders children twice (functional + offscreen
-    // preview ghost) — pick the first (functional) copy.
+    // listens on the drag host inside it, so dispatch on the label and let the
+    // events bubble up to it.
+    // findAllByText: `HoldItem` renders children in the in-place wrapper and in
+    // the always-mounted portal twin — pick the first (functional) copy.
     const chips = await canvas.findAllByText('Hold for menu · Move to drag');
     const chip = chips[0];
-    if (!chip) throw new Error('no HoldDraggable chip rendered');
+    if (!chip) throw new Error('no HoldItem chip rendered');
 
     touchPointer(chip, 'pointerdown');
     // Hold past holdDelay (300ms) — the menu opens and the hold reports.
@@ -266,8 +272,10 @@ export const MenuEscapeToDrag: Story = {
     // paints the first frame offset by the within-source grab position — 60px
     // here — and snaps back on the next move. The tolerance only absorbs the
     // few px the chip's own un-squeeze spring is still moving it.
+    // Three copies now: the in-place wrapper, its drag ghost, and the
+    // always-mounted portal twin — the first two are the chip and the ghost.
     const copies = canvas.getAllByText('Hold for menu · Move to drag');
-    await expect(copies).toHaveLength(2);
+    await expect(copies).toHaveLength(3);
     const [chipRect, ghostRect] = copies.map((el) => el.getBoundingClientRect());
     await expect(Math.abs((chipRect?.x ?? 0) - (ghostRect?.x ?? 0))).toBeLessThan(10);
     await expect(Math.abs((chipRect?.y ?? 0) - (ghostRect?.y ?? 0))).toBeLessThan(10);

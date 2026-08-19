@@ -77,10 +77,14 @@ function groupedRadius(first: boolean, last: boolean): GroupedRadius {
 }
 
 function GroupedRow({ first, isDragging, item, last }: RowProps) {
-  const radius = groupedRadius(first, last);
+  // The divider (`border-b`) and the corner radius describe where this row sits
+  // in the stack, not the row itself. While dragging, the row travels to the
+  // insertion slot, so it must shed both — otherwise a divider line and rounded
+  // corners ride along and show up in the middle of the list.
+  const radius = isDragging ? '' : groupedRadius(first, last);
   return (
     <View
-      className={`flex-row items-center border-border border-b bg-surface-1 px-4 py-3 transition-all duration-300 ease-out ${isDragging ? 'opacity-40' : ''} ${radius} ${last ? 'border-b-0' : ''}`}
+      className={`flex-row items-center border-border bg-surface-1 px-4 py-3 transition-all duration-300 ease-out ${isDragging ? 'opacity-40' : ''} ${radius} ${last || isDragging ? 'border-b-0' : 'border-b'}`}
     >
       <GripHandle />
       <Text>{item.title}</Text>

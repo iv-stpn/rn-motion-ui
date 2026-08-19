@@ -1,8 +1,9 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type ReactNode, useCallback } from 'react';
-import { Pressable, ScrollView, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, type StyleProp, View, type ViewStyle } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { H_INTERACTIVE, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
+import { Text } from '../../typography/Text/text';
 
 // ── types ──────────────────────────────────────────────────────────────────────
 

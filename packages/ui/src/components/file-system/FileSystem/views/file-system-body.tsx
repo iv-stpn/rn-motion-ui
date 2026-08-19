@@ -16,9 +16,10 @@
 // folder" action matters most.
 
 import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { cn } from '../../../../lib/cn';
 import type { DragzoneRenderState } from '../../../gestures/drag.types';
+import { Text } from '../../../typography/Text/text';
 import { useBackgroundContextMenu } from '../shell/file-system-context-menu';
 import { FileSystemDropzone } from '../shell/file-system-dropzone';
 import {

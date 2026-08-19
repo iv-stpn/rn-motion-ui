@@ -1,9 +1,10 @@
 // biome-ignore-all lint/style/noCommonJs: expo-font's useFonts requires require() for asset bundling
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { GlossyButton } from 'rn-motion-ui/glossy-button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'rn-motion-ui/tabs';
+import { Text } from 'rn-motion-ui/text';
 import { type ThemeName, Uniwind, useUniwind } from 'uniwind';
 import { Row } from './demos/demo-chrome';
 import { FileSystemDemo } from './demos/file-system-demo';

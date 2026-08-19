@@ -2,7 +2,8 @@
 // composes the same stack and the tabs line up across a switch.
 
 import type { ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from 'rn-motion-ui/text';
 
 type PanelProps = { children: ReactNode };
 type RowProps = { label: string; children: ReactNode };

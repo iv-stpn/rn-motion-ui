@@ -131,7 +131,7 @@ export type IconButtonProps = {
   /** Button size — controls the outer square and the icon or tile inside it. @default 'md' */
   size?: IconButtonSize;
 
-  /** Corner shape. @default 'rounded' */
+  /** Corner shape. @default 'pill' */
   shape?: IconButtonShape;
 
   // ── Interaction ────────────────────────────────────────────────────────────
@@ -207,7 +207,7 @@ export function IconButton({
   icon: IconComponent,
   variant = 'primary',
   size = 'md',
-  shape = 'rounded',
+  shape = 'pill',
   onPress,
   disabled,
   loading,

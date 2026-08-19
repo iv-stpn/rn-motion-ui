@@ -675,7 +675,7 @@ function GlossyButtonImpl({
   color,
   contentColor,
   size = 'md',
-  shape = 'rounded',
+  shape = 'pill',
   children,
   leftAdornment,
   rightAdornment,

@@ -608,7 +608,7 @@ export function StatefulButton({
   const { contentClassName: externalContentClassName, ...otherRest } = rest;
   const sharedProps = {
     size: size ?? 'md',
-    shape: shape ?? 'rounded',
+    shape: shape ?? 'pill',
     disabled: disabled || isBusy || machineActive,
     loading: false as const,
     noDisabledOpacity: keepAppearance,

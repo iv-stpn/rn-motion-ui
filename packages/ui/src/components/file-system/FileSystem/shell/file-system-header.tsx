@@ -50,7 +50,7 @@ export function FileSystemHeader({ className }: FileSystemHeaderProps) {
   const { testID } = useFileSystemConsumer();
   const headerTestID = testID ? `${testID}-header` : undefined;
   return (
-    <View className={cn('h-12 shrink-0 flex-row items-center gap-2 bg-surface-2 px-2', className)} testID={headerTestID}>
+    <View className={cn('h-12 shrink-0 flex-row items-center gap-2 px-2', className)} testID={headerTestID}>
       <HeaderNav />
     </View>
   );

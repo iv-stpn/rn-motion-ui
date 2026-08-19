@@ -32,7 +32,7 @@ import {
   useFileSystemStoreContext,
   useFileSystemViewActions,
 } from './store/file-system-context';
-import type { FileSystemProps, ResolvedFileSystemBreakpoints } from './types/file-system.types';
+import type { FileSystemBreadcrumb, FileSystemProps, ResolvedFileSystemBreakpoints } from './types/file-system.types';
 import { defaultFileSystemBreakpoints } from './types/file-system.types';
 import { FileSystemBody } from './views/file-system-body';
 import { FileSystemViewerModal } from './views/file-system-viewer-modal';
@@ -144,26 +144,46 @@ function FileSystemCustomFilters({ renderFilters }: FileSystemCustomFiltersProps
   });
 }
 
+// `buildCrumbs` keys each crumb by its folder path, which is exactly what
+// `navigateTo` takes — it normalizes the trailing slash itself. Re-keyed to
+// `id` so a consumer can hand `crumbs` straight to its own breadcrumb UI.
+function crumbsForPath(currentPath: string, rootLabel: string): FileSystemBreadcrumb[] {
+  return buildCrumbs(currentPath, rootLabel).map((crumb) => ({ id: crumb.key, label: crumb.label }));
+}
+
+type FileSystemCustomBreadcrumbsProps = { renderBreadcrumbs: NonNullable<FileSystemProps['renderBreadcrumbs']> };
+
+// Renders the consumer's renderBreadcrumbs render prop from slice state.
+function FileSystemCustomBreadcrumbs({ renderBreadcrumbs }: FileSystemCustomBreadcrumbsProps) {
+  const { currentPath } = useFileSystemNavigation();
+  const { rootLabel, testID } = useFileSystemConsumer();
+  const { navigateTo } = useFileSystemNavigationActions();
+  const crumbs = useMemo(() => crumbsForPath(currentPath, rootLabel), [currentPath, rootLabel]);
+  return renderBreadcrumbs({
+    crumbs,
+    currentPath,
+    navigateTo,
+    testID: testID ? `${testID}-breadcrumbs` : undefined,
+  });
+}
+
+type FileSystemBreadcrumbsProps = { className?: string };
+
 // Binds the generic <Breadcrumbs> to the store: folder paths in, navigation out.
 // Hidden at the root — the header already names it, and there is no trail back.
 // The search view builds its own per-row trails from the same `buildCrumbs`.
-function FileSystemBreadcrumbs() {
+function FileSystemBreadcrumbs({ className }: FileSystemBreadcrumbsProps) {
   const { currentPath } = useFileSystemNavigation();
   const { rootLabel, testID } = useFileSystemConsumer();
   const { navigateTo } = useFileSystemNavigationActions();
 
-  // `buildCrumbs` keys each crumb by its folder path, which is exactly what
-  // `navigateTo` takes — it normalizes the trailing slash itself.
-  const items = useMemo(
-    () => buildCrumbs(currentPath, rootLabel).map((crumb) => ({ id: crumb.key, label: crumb.label })),
-    [currentPath, rootLabel],
-  );
+  const items = useMemo(() => crumbsForPath(currentPath, rootLabel), [currentPath, rootLabel]);
 
   if (!currentPath) return null;
 
   return (
     <Breadcrumbs
-      className="border-border border-b bg-surface-2"
+      className={className}
       items={items}
       onNavigate={navigateTo}
       testID={testID ? `${testID}-breadcrumbs` : undefined}
@@ -192,6 +212,7 @@ function FileSystemSideEffects() {
 
 export function FileSystem({
   bodyClassName,
+  breadcrumbsClassName,
   breakpoints,
   className,
   defaultPath = '',
@@ -215,6 +236,7 @@ export function FileSystem({
   onSelectionChange,
   onViewChange,
   renderBody,
+  renderBreadcrumbs,
   renderEmptyState,
   renderEntryIcon,
   renderFilePreview,
@@ -329,7 +351,11 @@ export function FileSystem({
     <FileSystemStoreContext.Provider value={store}>
       <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
         {renderHeader ? <FileSystemCustomHeader renderHeader={renderHeader} /> : <FileSystemHeader className={headerClassName} />}
-        <FileSystemBreadcrumbs />
+        {renderBreadcrumbs ? (
+          <FileSystemCustomBreadcrumbs renderBreadcrumbs={renderBreadcrumbs} />
+        ) : (
+          <FileSystemBreadcrumbs className={breadcrumbsClassName} />
+        )}
         {renderFilters ? <FileSystemCustomFilters renderFilters={renderFilters} /> : null}
         {/* Around the body alone: everything that drags or receives a drop is in
             there, and the manager's box is the frame its ghost is drawn in — a
@@ -366,6 +392,8 @@ export { useFileSystemView, useFileSystemViewActions } from './store/file-system
 export type {
   FileEntry,
   FileSystemBodyState,
+  FileSystemBreadcrumb,
+  FileSystemBreadcrumbsState,
   FileSystemBuiltInView,
   FileSystemContextMenuAction,
   FileSystemEmptyStateArgs,

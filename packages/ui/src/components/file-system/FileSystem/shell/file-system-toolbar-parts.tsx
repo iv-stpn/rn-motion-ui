@@ -94,10 +94,7 @@ export function FileSystemStatusBar({ className }: FileSystemStatusBarProps) {
   return (
     <View
       accessibilityLiveRegion="polite"
-      className={cn(
-        'h-7 shrink-0 flex-row items-center justify-center gap-1 border-border border-t bg-surface-2 px-3',
-        className,
-      )}
+      className={cn('h-7 shrink-0 flex-row items-center justify-center gap-1 px-3', className)}
       testID={footerTestID}
     >
       <Text size="xs" className="text-muted-foreground">

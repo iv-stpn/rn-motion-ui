@@ -37,18 +37,18 @@ import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass, LABEL
  * rather than swapping two lists this port splits the slots across layers and
  * animates their *opacity* instead — same destination, different vehicle.
  *
- * ## Three recipe families
+ * ## Two recipe families
  *
- * - `neutral` and `inverse` are hand-authored light/dark pairs, transcribed
- *   from the web source. Both faces flip with the page on their own (glass, and
- *   `foreground`), so they branch on the page and nothing else.
- * - every other face — the status tokens, the `gray` plate, and any `color` a
- *   consumer passes — runs the *derived* recipe: the rim is the face taken 0.17
- *   darker at 65% chroma, the cast the face at absolute lightness 0.25 and 40%
- *   chroma. Those ratios are reverse-engineered from the web source's
- *   hand-authored per-hue table (`--rim-*` / `--cast-*`), so a token retint or
- *   an arbitrary `color` lands where a designer would have put it, with no
- *   table to extend.
+ * - `neutral` is a hand-authored light/dark pair, transcribed from the web
+ *   source. It's the only translucent face, so it flips with the page on its own
+ *   (glass) and branches on the page and nothing else.
+ * - every other face — `inverse` (the `primary`/`primary-foreground` pair
+ *   flipped), the status tokens, the `gray` plate, and any `color` a consumer
+ *   passes — runs the *derived* recipe: the rim is the face taken 0.17 darker at
+ *   65% chroma, the cast the face at absolute lightness 0.25 and 40% chroma.
+ *   Those ratios are reverse-engineered from the web source's hand-authored
+ *   per-hue table (`--rim-*` / `--cast-*`), so a token retint or an arbitrary
+ *   `color` lands where a designer would have put it, with no table to extend.
  *
  * ## The page lights the key; extreme faces opt out
  *
@@ -86,8 +86,9 @@ import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass, LABEL
  *
  * `neutral` is the signature translucent face (the page, seen through glass);
  * the five status values fill with their vivid theme tokens; `inverse` is the
- * high-contrast slab; `gray` is a fixed plate pinned in both schemes. Pass
- * `color` instead for any colour outside this set.
+ * `primary`/`primary-foreground` pair flipped — `neutral` on the opposite theme;
+ * `gray` is a fixed plate pinned in both schemes. Pass `color` instead for any
+ * colour outside this set.
  */
 // biome-ignore lint/style/useExportsLast: declared up top so the recipe tables below can key off it; kept with its doc comment for readability
 export type GlossyVariant = 'neutral' | 'inverse' | 'danger' | 'success' | 'warning' | 'info' | 'special' | 'gray';
@@ -244,52 +245,11 @@ const NEUTRAL_DARK: GlossySlots = {
   faceIsDark: true,
 };
 
-// ── hand-authored recipes: inverse ──────────────────────────────────────────
-//
-// The high-contrast slab, and the one variant deliberately *not* `primary`:
-// `primary` is the consumer's brand token, designed to be overridden, so a key
-// built on it can't promise contrast. `inverse` is built on `foreground` over
-// `surface` — the two colours a theme guarantees read against each other — so it
-// stays the loudest key in the set no matter what a consumer retints.
-//
-// Both edges are inherited from the neutral root in the web source rather than
-// re-declared, so they're spread in here for the same reason.
-
-const INVERSE_LIGHT: GlossySlots = {
-  ...NEUTRAL_LIGHT,
-  // Fully opaque, top and bottom: the slab reads as a machined edge, not a lit
-  // one. This is the only rim in the set that isn't translucent.
-  rim: black(1),
-  spotTop: white(0.24),
-  spotBottom: white(0.16),
-  castNear: black(0.12),
-  castFar: black(0.12),
-  // A near-black face has room for a real gradient, and this is the steepest
-  // dome in the set — 88% black at the bottom, so the key curves hard.
-  domeTop: 'transparent',
-  domeBottom: black(0.88),
-  tintHover: white(0.12),
-  tintActive: white(0.2),
-  faceIsDark: true,
-};
-
-const INVERSE_DARK: GlossySlots = {
-  ...NEUTRAL_DARK,
-  rim: white(1),
-  // The face is near-white, so the tint has to darken rather than lighten, and
-  // the dome only needs a hint of weight instead of the light branch's 88%.
-  domeTop: 'transparent',
-  domeBottom: black(0.08),
-  tintHover: black(0.08),
-  tintActive: black(0.14),
-  faceIsDark: false,
-};
-
 // ── the derived recipe ──────────────────────────────────────────────────────
 //
-// Everything that isn't `neutral` or `inverse` is an opaque face, and every
-// opaque face is lit the same way — so the web source's six hand-authored solid
-// variants collapse into one function of the face colour.
+// Everything that isn't `neutral` is an opaque face, and every opaque face is
+// lit the same way — so the web source's six hand-authored solid variants
+// collapse into one function of the face colour.
 //
 // The two derived slots are the rim and the cast, and both ratios come from
 // measuring that hand-authored table (six hues × light/dark) rather than from
@@ -387,7 +347,7 @@ function derivedRecipe(base: string, pageDark: boolean): GlossySlots {
 // ── face resolution ────────────────────────────────────────────────────────
 
 /** Which recipe family a face belongs to. */
-type FaceKind = 'neutral' | 'inverse' | 'derived';
+type FaceKind = 'neutral' | 'derived';
 
 /** The face colours, plus the family whose recipe lights them. */
 type GlossyFace = {
@@ -440,12 +400,12 @@ function resolveFace(variant: GlossyVariant, color: string | undefined, colors: 
       return { paint: glass, base: compositeOver(glass, page), content: colors.foreground, kind: 'neutral' };
     }
     case 'inverse': {
-      // `foreground` over `surface-1`, both straight from the theme, which is
-      // what makes this the one key whose contrast a retint can't break. The
-      // label is the *page* rather than `surface`, so it reads as a hole punched
-      // through the slab to the backdrop behind it.
-      const paint = colors.foreground;
-      return { paint, base: paint, content: page, kind: 'inverse' };
+      // `primary-foreground` over `primary`, the theme's own opposite-theme
+      // twins, so the face flips with the page exactly like `neutral` — but
+      // opaque, not glass. The label is the face's twin, which is what keeps the
+      // pair reading against each other no matter what a consumer retints.
+      const paint = colors['primary-foreground'];
+      return { paint, base: paint, content: colors.primary, kind: 'derived' };
     }
     case 'gray':
       return { paint: GRAY_FILL, base: GRAY_FILL, content: GRAY_CONTENT, kind: 'derived' };
@@ -459,10 +419,6 @@ function resolveFace(variant: GlossyVariant, color: string | undefined, colors: 
 /** The whole slot table for a face: hand-authored pair, or derived from the colour. */
 function glossyRecipe(kind: FaceKind, base: string, pageDark: boolean): GlossySlots {
   if (kind === 'neutral') return pageDark ? NEUTRAL_DARK : NEUTRAL_LIGHT;
-  // `inverse` branches on the page alone — its face already flipped with it, and
-  // running it through the derived cutoffs would read a near-black light-theme
-  // face as "pinned against the page" and flip it straight back.
-  if (kind === 'inverse') return pageDark ? INVERSE_DARK : INVERSE_LIGHT;
   return derivedRecipe(base, pageDark);
 }
 
@@ -646,8 +602,9 @@ function GlossyLayers({ id, radiusClass, slots, lifted, fade, pressed, tint, bac
 export interface GlossyButtonProps extends BaseButtonProps {
   /** Face colour from the built-in set: `neutral` (default) is the translucent
    *  glass key, the status values fill with their vivid theme tokens, `inverse`
-   *  is the high-contrast slab, and `gray` is a fixed plate pinned in both
-   *  schemes. Ignored when `color` is set. */
+   *  is the `primary`/`primary-foreground` pair flipped (the `neutral` of the
+   *  opposite theme), and `gray` is a fixed plate pinned in both schemes.
+   *  Ignored when `color` is set. */
   variant?: GlossyVariant;
   /**
    * Paint the key any colour. The whole slot table — cast, rim, sheen, dome,

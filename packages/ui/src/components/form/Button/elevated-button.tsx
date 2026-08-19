@@ -21,8 +21,9 @@ import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass } from
  *
  * `special` is the non-semantic accent — a promotion or an upgrade path, where
  * `info`/`success`/`warning`/`danger` each carry a meaning. `inverse` is the
- * high-contrast flip of the page, the one fill whose contrast a consumer retint
- * can't break. Both mirror the GlossyButton variants of the same name.
+ * `neutral` of the *opposite* theme — the `primary`/`primary-foreground` pair
+ * swapped — so it stays the exact inverse of the primary action through any
+ * consumer retint. Both mirror the GlossyButton variants of the same name.
  */
 // biome-ignore lint/style/useExportsLast: declared up top so the colour tables below can key off it; kept with its doc comment for readability
 export type ElevatedVariant = 'neutral' | 'inverse' | 'danger' | 'success' | 'warning' | 'info' | 'special' | 'white' | 'gray';
@@ -36,12 +37,11 @@ export type ElevatedVariant = 'neutral' | 'inverse' | 'danger' | 'success' | 'wa
 // uniwind/Tailwind scanner registers each class.
 const ELEVATED_BG: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = {
   neutral: 'bg-primary',
-  // `inverse` is deliberately not `primary`: `primary` is the consumer's brand
-  // token, designed to be overridden, so a fill built on it can't promise
-  // contrast. `foreground` over `surface-1` is the one pair a theme guarantees
-  // reads against each other, so the flip survives any retint. Untinted the two
-  // land in the same place; they diverge the moment a consumer sets a brand hue.
-  inverse: 'bg-foreground',
+  // `inverse` is the `neutral` fill rendered in the opposite theme: `primary`
+  // and `primary-foreground` are each other's opposite-theme twin (a near-black
+  // `primary` pairs with a near-white `primary-foreground`, and the dark theme
+  // swaps them), so the flip stays legible through any retint.
+  inverse: 'bg-primary-foreground',
   danger: 'bg-danger',
   success: 'bg-success',
   warning: 'bg-warning',
@@ -53,9 +53,9 @@ const ELEVATED_BG: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = 
 // `*-foreground` (white) partner reads on top; neutral uses `primary-foreground`.
 const ELEVATED_LABEL: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = {
   neutral: 'text-primary-foreground',
-  // The page colour, so the label reads as a hole punched through the slab to the
-  // backdrop behind it (the pairing GlossyButton's `inverse` uses).
-  inverse: 'text-surface-1',
+  // The `primary` ink on the `primary-foreground` slab — the opposite-theme twin
+  // of `neutral`'s `primary-foreground` on `primary`.
+  inverse: 'text-primary',
   danger: 'text-danger-foreground',
   success: 'text-success-foreground',
   warning: 'text-warning-foreground',
@@ -67,7 +67,7 @@ const ELEVATED_LABEL: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string>
 // the label on the filled chip.
 const ELEVATED_FOREGROUND_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, ThemeToken> = {
   neutral: 'primary-foreground',
-  inverse: 'surface-1',
+  inverse: 'primary',
   danger: 'danger-foreground',
   success: 'success-foreground',
   warning: 'warning-foreground',
@@ -79,7 +79,7 @@ const ELEVATED_FOREGROUND_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray
 // the fill itself and the shadow tint is the fill darkened toward black.
 const ELEVATED_FILL_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, ThemeToken> = {
   neutral: 'primary',
-  inverse: 'foreground',
+  inverse: 'primary-foreground',
   danger: 'danger',
   success: 'success',
   warning: 'warning',
@@ -164,8 +164,9 @@ function elevatedShadow(variant: ElevatedVariant, fill: string, borderColor: str
 
   const [red, green, blue] = parseRgb(fill);
   // The two monochrome fills cast the fixed dark-neutral drop rather than a tint
-  // of themselves: both flip with the page, and darkening their near-white dark-
-  // mode fill would put a pale grey haze under the chip instead of a shadow.
+  // of themselves: `primary` and `primary-foreground` flip with the page, and
+  // darkening the one that lands near-white in dark mode would put a pale grey
+  // haze under the chip instead of a shadow.
   if (variant === 'neutral' || variant === 'inverse')
     return `0px 1px 2px 0px rgba(27,28,29,0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`; /* theme-exempt: fixed dark-neutral shadow for monochrome fills */
 
@@ -302,7 +303,7 @@ export interface ElevatedButtonProps extends BaseButtonProps {
   /** Fill colour. Most colours get the glossy treatment (top-down sheen + 1px rim
    *  highlight + coloured drop-shadow ring); `white` is a stroke plate and `gray`
    *  a fixed Geist-style secondary plate. `special` is the non-semantic accent and
-   *  `inverse` the high-contrast flip of the page. Defaults to `neutral`. */
+   *  `inverse` the `neutral` fill of the opposite theme. Defaults to `neutral`. */
   variant?: ElevatedVariant;
   size?: ButtonSize;
   shape?: ButtonShape;

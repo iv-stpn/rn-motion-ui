@@ -212,13 +212,13 @@ function IslandDemo() {
       </View>
 
       <View className="flex-row flex-wrap items-center justify-center gap-2">
-        <Button onPress={showCall} size="sm" variant="secondary">
+        <Button onPress={showCall} size="sm" variant="inverse">
           {CALL_ACTION}
         </Button>
-        <Button onPress={showTimer} size="sm" variant="secondary">
+        <Button onPress={showTimer} size="sm" variant="inverse">
           {TIMER_ACTION}
         </Button>
-        <Button onPress={showMusic} size="sm" variant="secondary">
+        <Button onPress={showMusic} size="sm" variant="inverse">
           {MUSIC_ACTION}
         </Button>
         <Button onPress={dismiss} size="sm" variant="ghost">

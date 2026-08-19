@@ -59,7 +59,7 @@ function MenuAction({ icon, label, onPress }: Action) {
       onPress={onPress}
       className="h-11 flex-row items-center gap-2.5 rounded-xl px-3 active:bg-surface-selected"
     >
-      <ThemedIcon icon={icon} variant="secondary" size={18} />
+      <ThemedIcon icon={icon} variant="ghost" size={18} />
       <Text className="text-foreground text-sm">{label}</Text>
     </Pressable>
   );
@@ -134,7 +134,7 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
           <Text className="mt-3 font-semibold text-foreground text-sm">{ERROR_TITLE}</Text>
           <Text className="mt-1 text-center text-muted-foreground text-xs">{ERROR_BODY}</Text>
           <View className="mt-4">
-            <Button variant="primary" size="sm" onPress={retry}>
+            <Button variant="neutral" size="sm" onPress={retry}>
               {RETRY}
             </Button>
           </View>
@@ -164,13 +164,13 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
       </View>
       <View className="flex-row items-center gap-2 px-1 pt-2 pb-1">
         <View className="flex-1">
-          <Button variant="secondary" size="md" onPress={close} disabled={status === 'sending'} className="w-full">
+          <Button variant="inverse" size="md" onPress={close} disabled={status === 'sending'} className="w-full">
             {CANCEL}
           </Button>
         </View>
         <View className="flex-1">
           <Button
-            variant="primary"
+            variant="neutral"
             size="md"
             onPress={submit}
             loading={status === 'sending'}
@@ -209,7 +209,7 @@ function MorphingFABPlayground() {
         <MorphingFAB
           expandedWidth={300}
           expandedHeight={230}
-          icon={<ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
+          icon={<ThemedIcon icon={MessageSquare} variant="ghost" size={20} />}
           accessibilityLabel="Send feedback"
           triggerTestID="fab-trigger"
           closeIcon={null}
@@ -279,7 +279,7 @@ export const FeedbackForm: Story = {
       <MorphingFAB
         expandedWidth={300}
         expandedHeight={230}
-        icon={<ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
+        icon={<ThemedIcon icon={MessageSquare} variant="ghost" size={20} />}
         accessibilityLabel="Send feedback"
         triggerTestID="fab-trigger"
         closeIcon={null}

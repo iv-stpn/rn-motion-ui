@@ -103,7 +103,7 @@ const SQUEEZE_PADDING_CLASS: Record<ButtonSize, string> = { sm: 'px-1.5', md: 'p
 function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>): string {
   if (v === 'danger') return c['primary-foreground'];
   if (v === 'special') return c['special-foreground'];
-  if (v === 'secondary' || v === 'inverse') return c['surface-1'];
+  if (v === 'inverse') return c['surface-1'];
   if (v === 'outlineDanger' || v === 'ghostDanger') return c.danger;
   return c.foreground;
 }
@@ -276,7 +276,7 @@ type TextSlotProps = {
   textColor?: string;
 };
 
-function TextSlot({ value, children, variant = 'primary', size = 'md', reduce, textColor }: TextSlotProps) {
+function TextSlot({ value, children, variant = 'neutral', size = 'md', reduce, textColor }: TextSlotProps) {
   // Roll distance = one line-box height, so the label travels exactly one line
   // as it rolls in/out. Width is left to the in-flow sizer (no tween — see below).
   const [roll, setRoll] = useState(ROLL_FALLBACK);
@@ -430,7 +430,7 @@ export function StatefulButton({
   stateIconStrokeWidth = 2.5,
   chip,
   disabled,
-  variant = 'primary',
+  variant = 'neutral',
   size = 'md',
   shape,
   ...rest
@@ -559,7 +559,7 @@ export function StatefulButton({
   // the success/error window, and the terminal hold — so the action can't be
   // double-fired; a reset re-enables the button when it returns to idle.
   const machineActive = !controlled && state !== 'idle';
-  const v = variant ?? 'primary';
+  const v = variant ?? 'neutral';
   const s = size ?? 'md';
   const iconSize = STATE_ICON_SIZE[s];
   const stateGapClass = STATE_BUTTON_GAP_CLASSNAME[s];

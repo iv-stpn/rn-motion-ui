@@ -78,7 +78,7 @@ export type TriggerButtonProps = {
   shape?: ButtonShape;
   /**
    * `kind === 'button'` only. Variant forwarded to `Button`.
-   * Defaults to `'primary'`.
+   * Defaults to `'neutral'`.
    */
   buttonVariant?: ButtonVariant;
   /**
@@ -117,7 +117,7 @@ export function TriggerButton({
   onPress,
   size = 'md',
   shape = 'pill',
-  buttonVariant = 'primary',
+  buttonVariant = 'neutral',
   elevatedVariant = 'neutral',
   glossyVariant = 'neutral',
   className,

@@ -239,7 +239,7 @@ export function BloomMenu({
               testID={testID ? `${testID}-trigger` : undefined}
             >
               <Text className="font-medium text-foreground text-sm">{triggerLabel}</Text>
-              <ThemedIcon icon={Plus} variant="secondary" size={16} />
+              <ThemedIcon icon={Plus} variant="ghost" size={16} />
             </Pressable>
           </MotiView>
         </MotiView>

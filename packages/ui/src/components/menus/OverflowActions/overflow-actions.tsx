@@ -202,8 +202,8 @@ export function OverflowActions({
                 transition={{ type: 'timing', duration: reduce ? 100 : 180 }}
               >
                 {isExpanded
-                  ? (closeIcon ?? <ThemedIcon icon={X} variant="primary" size={size === 'sm' ? 14 : 16} />)
-                  : (triggerIcon ?? <ThemedIcon icon={MoreHorizontal} variant="primary" size={size === 'sm' ? 14 : 16} />)}
+                  ? (closeIcon ?? <ThemedIcon icon={X} variant="neutral" size={size === 'sm' ? 14 : 16} />)
+                  : (triggerIcon ?? <ThemedIcon icon={MoreHorizontal} variant="neutral" size={size === 'sm' ? 14 : 16} />)}
               </MotiView>
             </AnimatePresence>
           </Pressable>

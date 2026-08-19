@@ -221,7 +221,7 @@ export type ItemRowProps = {
  *   title="Storage"
  *   description="512 GB of 1 TB used"
  *   leftAdornment={{ icon: HardDrive }}
- *   rightAdornment={<Button size="sm" variant="secondary">Manage</Button>}
+ *   rightAdornment={<Button size="sm" variant="inverse">Manage</Button>}
  * />
  *
  * @example

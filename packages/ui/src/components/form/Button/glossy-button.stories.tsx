@@ -18,7 +18,7 @@ const meta = {
       control: 'select',
       options: ['neutral', 'inverse', 'danger', 'success', 'warning', 'info', 'special', 'gray'],
       description:
-        'Face colour from the built-in set. Every value keeps the glossy treatment; neutral is the translucent key, inverse fills with `foreground` so it flips with the page, status values fill with theme tokens, and gray is a fixed plate pinned in both themes.',
+        'Face colour from the built-in set. Every value keeps the glossy treatment; neutral is the translucent key, inverse flips the `primary`/`primary-foreground` pair (the opposite-theme neutral), status values fill with theme tokens, and gray is a fixed plate pinned in both themes.',
     },
     color: {
       control: 'color',
@@ -117,12 +117,12 @@ function GlossyButtonPlayground(args: ComponentProps<typeof GlossyButton>) {
           rim hairline, with an inset bevel and a cast shadow that snap to 0 while
           pressed so the key sinks. Hover tints the face on fine pointers; touch
           presses dim the whole key instead. The variant only picks the face the
-          treatment derives from: neutral is the translucent key, inverse flips to
-          the foreground colour, status values fill with theme tokens, and gray is
-          a fixed plate. Because a plate that light opts out of the page's dark
-          branch, gray looks identical in both themes — flip the Storybook theme
-          and it keeps its plate and its mid-grey label, while neutral and inverse
-          swap. */}
+          treatment derives from: neutral is the translucent key, inverse flips the
+          `primary`/`primary-foreground` pair — neutral on the opposite theme —
+          status values fill with theme tokens, and gray is a fixed plate. Because
+          a plate that light opts out of the page's dark branch, gray looks
+          identical in both themes — flip the Storybook theme and it keeps its
+          plate and its mid-grey label, while neutral and inverse swap. */}
       <Section title="Variants">
         <Variants>
           {VARIANTS.map((name) => (

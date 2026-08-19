@@ -147,7 +147,7 @@ function PrivateKeyView({ onBack }: PrivateKeyViewProps) {
         <ChecklistItem icon={<Ban size={16} color={mutedForeground} />} text="If you lose it, we can't recover it" />
       </View>
       <View className="mt-5 flex-row gap-2">
-        <Button variant="secondary" onPress={onBack} className="flex-1">
+        <Button variant="inverse" onPress={onBack} className="flex-1">
           {CANCEL_LABEL}
         </Button>
         <Button onPress={onBack} className="flex-1">

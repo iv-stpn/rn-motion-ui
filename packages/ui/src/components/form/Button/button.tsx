@@ -12,16 +12,7 @@ import { BUTTON_BOX, type ButtonShape, type ButtonSize, LABEL_TEXT_CLASS } from 
 export type { ButtonShape, ButtonSize } from './button-scale';
 
 // biome-ignore lint/style/useExportsLast: ButtonVariant is a public type declared beside the cva tables it enumerates; hoisting it to the file end would separate it from the container/label variants it must stay in sync with
-export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'ghost'
-  | 'outline'
-  | 'danger'
-  | 'special'
-  | 'inverse'
-  | 'outlineDanger'
-  | 'ghostDanger';
+export type ButtonVariant = 'neutral' | 'inverse' | 'ghost' | 'outline' | 'danger' | 'special' | 'outlineDanger' | 'ghostDanger';
 
 // cva drives the STATIC styling layer (per the conversion spec). Animated/tap
 // scale stays inline on the MotiView. Class strings are static literals so the
@@ -33,37 +24,29 @@ export type ButtonVariant =
 const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
-      primary: SURFACE_CLASSNAME[3],
-      secondary: 'border border-border bg-foreground',
+      neutral: SURFACE_CLASSNAME[3],
+      inverse: 'border border-border bg-foreground',
       ghost: 'bg-transparent',
       outline: 'border border-border bg-transparent',
       danger: 'bg-danger shadow-elevated-3',
       special: 'bg-special shadow-elevated-3',
-      // `inverse` is deliberately not `primary`: `primary` is the consumer's
-      // brand token, designed to be overridden, so a fill built on it can't
-      // promise contrast. `foreground` over `surface-1` is the one pair a theme
-      // guarantees reads, so the flip stays legible through any retint.
-      inverse: 'bg-foreground shadow-elevated-3',
       outlineDanger: 'border border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
     },
   },
-  defaultVariants: { variant: 'primary' },
+  defaultVariants: { variant: 'neutral' },
 });
 
 // biome-ignore lint/style/useComponentExportOnlyModules: label cva is a styling utility consumed by StatefulButton in the same component family; splitting to a separate file would fragment tightly-coupled button styles
 export const label = cva('', {
   variants: {
     variant: {
-      primary: 'text-foreground',
-      secondary: 'text-surface-1',
+      neutral: 'text-foreground',
+      inverse: 'text-surface-1',
       ghost: 'text-foreground',
       outline: 'text-foreground',
       danger: 'text-white',
       special: 'text-special-foreground',
-      // The page colour, so the label reads as a hole punched through the slab
-      // to the backdrop behind it (same pairing GlossyButton's `inverse` uses).
-      inverse: 'text-surface-1',
       outlineDanger: 'text-danger',
       ghostDanger: 'text-danger',
     },
@@ -71,18 +54,17 @@ export const label = cva('', {
     // the colour above is Button's own.
     size: LABEL_TEXT_CLASS,
   },
-  defaultVariants: { variant: 'primary', size: 'md' },
+  defaultVariants: { variant: 'neutral', size: 'md' },
 });
 
 // Variants whose background is an opaque, dark-or-vivid fill, so a ripple has to
 // shimmer white to be visible. Everything else is a light surface plate and takes
 // the dark ripple.
-const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['secondary', 'danger', 'special', 'inverse']);
+const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['inverse', 'danger', 'special']);
 
 // Spinner stroke matches the label colour so it reads on every variant.
 function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   switch (variant) {
-    case 'secondary':
     case 'inverse':
       return colors['surface-1'];
     case 'danger':
@@ -103,7 +85,7 @@ export interface ButtonProps extends VariantProps<typeof container>, BaseButtonP
 }
 
 export function Button({
-  variant = 'primary',
+  variant = 'neutral',
   size = 'md',
   shape = 'pill',
   children,
@@ -130,7 +112,7 @@ export function Button({
   const colors = useThemeColors();
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
-  const v = variant ?? 'primary';
+  const v = variant ?? 'neutral';
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,

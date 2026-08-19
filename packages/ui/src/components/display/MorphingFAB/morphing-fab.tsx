@@ -159,7 +159,7 @@ export function MorphingFAB({
             onPress={handleOpen}
             className="h-full w-full items-center justify-center"
           >
-            {icon ?? <ThemedIcon icon={Plus} variant="secondary" size={20} />}
+            {icon ?? <ThemedIcon icon={Plus} variant="ghost" size={20} />}
           </Pressable>
         )}
       </MotiView>

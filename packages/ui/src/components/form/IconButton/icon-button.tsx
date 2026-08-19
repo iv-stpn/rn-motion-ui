@@ -57,18 +57,17 @@ const SPINNER_SIZE: Record<IconButtonSize, number> = { sm: 12, md: 16, lg: 20 };
 const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
-      primary: SURFACE_CLASSNAME[3],
-      secondary: 'border border-border bg-foreground',
+      neutral: SURFACE_CLASSNAME[3],
+      inverse: 'border border-border bg-foreground',
       ghost: 'bg-transparent',
       outline: 'border border-border bg-transparent',
       danger: 'bg-danger shadow-elevated-3',
       special: 'bg-special shadow-elevated-3',
-      inverse: 'bg-foreground shadow-elevated-3',
       outlineDanger: 'border border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
     },
   },
-  defaultVariants: { variant: 'primary' },
+  defaultVariants: { variant: 'neutral' },
 });
 
 // ── Colour helpers ───────────────────────────────────────────────────────────
@@ -80,10 +79,9 @@ const container = cva('flex-row items-center justify-center', {
  */
 function resolveIconColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   switch (variant) {
-    case 'primary':
+    case 'neutral':
     case 'danger':
       return colors['primary-foreground'];
-    case 'secondary':
     case 'inverse':
       return colors['surface-1'];
     case 'special':
@@ -105,7 +103,7 @@ function spinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
  * Variants whose fill is opaque and dark-or-vivid, so a ripple must shimmer
  * white to be visible. Same set as Button's FILLED_RIPPLE_VARIANTS.
  */
-const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['secondary', 'danger', 'special', 'inverse']);
+const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['inverse', 'danger', 'special']);
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -125,7 +123,7 @@ export type IconButtonProps = {
    */
   iconColor?: string;
 
-  /** Visual variant — controls the button's fill, border, and shadow. @default 'primary' */
+  /** Visual variant — controls the button's fill, border, and shadow. @default 'neutral' */
   variant?: ButtonVariant;
 
   /** Button size — controls the outer square and the icon or tile inside it. @default 'md' */
@@ -201,11 +199,11 @@ export type IconButtonProps = {
  *
  * @example
  * // Loading state — spinner replaces the icon
- * <IconButton icon={Download} variant="primary" loading accessibilityLabel="Downloading" />
+ * <IconButton icon={Download} variant="neutral" loading accessibilityLabel="Downloading" />
  */
 export function IconButton({
   icon: IconComponent,
-  variant = 'primary',
+  variant = 'neutral',
   size = 'md',
   shape = 'pill',
   onPress,
@@ -229,7 +227,7 @@ export function IconButton({
   const colors = useThemeColors();
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
-  const v = variant ?? 'primary';
+  const v = variant ?? 'neutral';
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,

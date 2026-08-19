@@ -16,7 +16,7 @@ const meta = {
   parameters: { layout: 'centered' },
   args: {
     icon: Trash2,
-    variant: 'primary',
+    variant: 'neutral',
     size: 'md',
     shape: 'rounded',
     accessibilityLabel: 'Delete',
@@ -25,7 +25,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'ghost', 'danger', 'special', 'inverse', 'outlineDanger', 'ghostDanger'],
+      options: ['neutral', 'inverse', 'ghost', 'danger', 'special', 'outlineDanger', 'ghostDanger'],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -35,12 +35,11 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const VARIANTS = [
-  'primary',
-  'secondary',
+  'neutral',
+  'inverse',
   'ghost',
   'danger',
   'special',
-  'inverse',
   'outlineDanger',
   'ghostDanger',
 ] as const satisfies readonly ButtonVariant[];
@@ -51,7 +50,7 @@ const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: '
 const TILE_COLORS = ['#FF3B30', '#007AFF', '#34C759', '#FF9500', '#AF52DE'];
 
 function IconButtonPlayground(args: IconButtonProps) {
-  const [variant, setVariant] = useState<ButtonVariant>('primary');
+  const [variant, setVariant] = useState<ButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [pill, setPill] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -141,14 +140,14 @@ function IconButtonPlayground(args: IconButtonProps) {
 
       <Section title="States">
         <Variants align="center">
-          <Sample label="loading (primary)">
-            <IconButton {...args} icon={Download} loading={true} variant="primary" />
+          <Sample label="loading (neutral)">
+            <IconButton {...args} icon={Download} loading={true} variant="neutral" />
           </Sample>
           <Sample label="loading (ghost)">
             <IconButton {...args} icon={Download} loading={true} variant="ghost" />
           </Sample>
           <Sample label="disabled">
-            <IconButton {...args} disabled={true} variant="primary" />
+            <IconButton {...args} disabled={true} variant="neutral" />
           </Sample>
           <Sample label="disabled ghost">
             <IconButton {...args} disabled={true} variant="ghost" />
@@ -191,13 +190,13 @@ export const AllVariants: Story = {
   ),
 };
 
-/** The three sizes side by side for the primary variant. */
+/** The three sizes side by side for the neutral variant. */
 export const AllSizes: Story = {
   render: (args) => (
     <Variants align="center">
       {SIZES.map((name) => (
         <Sample key={name} label={SIZE_LABELS[name]}>
-          <IconButton {...args} size={name} variant="primary" accessibilityLabel={SIZE_LABELS[name]} />
+          <IconButton {...args} size={name} variant="neutral" accessibilityLabel={SIZE_LABELS[name]} />
         </Sample>
       ))}
     </Variants>

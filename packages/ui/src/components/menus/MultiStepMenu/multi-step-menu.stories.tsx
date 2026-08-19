@@ -64,7 +64,7 @@ function AppearanceSection({ helpers }: AppearanceSectionProps) {
   return (
     <View className="gap-3">
       <Text className="text-muted-foreground">{APPEARANCE_BODY}</Text>
-      <Button variant="secondary" size="sm" onPress={navigateAdvanced}>
+      <Button variant="inverse" size="sm" onPress={navigateAdvanced}>
         {ADVANCED_APPEARANCE_LABEL}
       </Button>
     </View>

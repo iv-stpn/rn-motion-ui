@@ -136,7 +136,7 @@ function ColumnHeader({ className, label, onPress, sort, sortKey }: ColumnHeader
       <Text className={cn(isActive ? 'text-foreground' : 'text-muted-foreground')} numberOfLines={1} size="xs" weight="medium">
         {label}
       </Text>
-      {isActive ? <ThemedIcon icon={DirectionIcon} variant="secondary" size={12} /> : null}
+      {isActive ? <ThemedIcon icon={DirectionIcon} variant="ghost" size={12} /> : null}
     </Pressable>
   );
 }

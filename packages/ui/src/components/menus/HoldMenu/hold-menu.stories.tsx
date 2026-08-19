@@ -6,8 +6,9 @@
  * special-casing like the sibling `HoldMenu`. So on web the interaction is a
  * real press-and-hold (or tap / double-tap, per `activateOn`), which works for
  * a human pointer but not for the synthetic events `play` functions dispatch.
- * The stories are therefore render-only: no `play` assertions, just the four
- * screens from upstream's example app, so each one can be held open by hand.
+ * The story is therefore render-only: no `play` assertions, just the four
+ * screens from upstream's example app behind a single `Interactive` toggle,
+ * so each one can be held open by hand.
  *
  * The scenes mirror `example/src/screens`: Clubhouse (a hold menu on the back
  * chevron), Home (the examples index — rows are holdable, and a theme toggle
@@ -34,7 +35,7 @@ import { MoonLine } from 'rn-motion-ui-icons/icons/moon-line';
 import { Settings3Line } from 'rn-motion-ui-icons/icons/settings-3-line';
 import { SunLine } from 'rn-motion-ui-icons/icons/sun-line';
 import { User3Line } from 'rn-motion-ui-icons/icons/user-3-line';
-import { Note } from '../../../__stories__/story-harness';
+import { Choice, Note } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
 import { HoldItem } from './hold-item';
 import type { HoldMenuIconComponentProps, MenuItemProps } from './hold-menu-types';
@@ -88,7 +89,7 @@ function ClubhouseScene() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16 }}>
           <HoldItem
             items={[
-              { text: '@enesozt', onPress: noop },
+              { text: '@you', onPress: noop },
               { text: 'All Rooms', onPress: noop },
             ]}
             containerStyles={{ marginLeft: 16 }}
@@ -209,7 +210,7 @@ function TelegramScene() {
   const chatMenu: MenuItemProps[] = [{ text: 'Add Folder', icon: 'plus', onPress: noop }];
   const profileMenu: MenuItemProps[] = [
     { text: 'Add Account', icon: 'plus', onPress: noop },
-    { text: 'Enes Ozturk', icon: 'user', onPress: noop },
+    { text: 'My Account', icon: 'user', onPress: noop },
   ];
 
   return (
@@ -335,6 +336,41 @@ function WhatsAppScene() {
 
 //#endregion
 
+/** The four upstream example screens, keyed by their toggle label. */
+const EXAMPLES = ['Clubhouse', 'Home', 'Telegram', 'WhatsApp'] as const;
+type Example = (typeof EXAMPLES)[number];
+
+/**
+ * The single `Interactive` story: a `Choice` toggle swaps the full-screen scene
+ * in place, so the four upstream examples live behind one sidebar entry instead
+ * of four. The toggle bar sits above the scene, outside each scene's own
+ * `HoldMenuProvider`, so it stays reachable while a menu is held open.
+ */
+function InteractiveScene() {
+  const [example, setExample] = useState<Example>('WhatsApp');
+
+  return (
+    <View style={{ flex: 1 }}>
+      <View
+        style={{
+          padding: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+          backgroundColor: '#FFFFFF',
+        }}
+      >
+        <Choice label="Example" value={example} options={EXAMPLES} onChange={setExample} />
+      </View>
+      <View style={{ flex: 1 }}>
+        {example === 'Clubhouse' ? <ClubhouseScene /> : null}
+        {example === 'Home' ? <HomeScene /> : null}
+        {example === 'Telegram' ? <TelegramScene /> : null}
+        {example === 'WhatsApp' ? <WhatsAppScene /> : null}
+      </View>
+    </View>
+  );
+}
+
 // RN's `DimensionValue` has no room for a `calc()` length, so the web-only
 // height is cast — same pattern as the sibling HoldMenu stories.
 // biome-ignore lint/plugin: calc() is honoured by react-native-web but absent from RN's DimensionValue union, so the web-only style is cast
@@ -367,22 +403,7 @@ type Story = StoryObj<typeof meta>;
 
 export default meta;
 
-export const Clubhouse: Story = {
-  name: 'Clubhouse',
-  render: () => <ClubhouseScene />,
-};
-
-export const Home: Story = {
-  name: 'Home',
-  render: () => <HomeScene />,
-};
-
-export const Telegram: Story = {
-  name: 'Telegram',
-  render: () => <TelegramScene />,
-};
-
-export const WhatsApp: Story = {
-  name: 'WhatsApp',
-  render: () => <WhatsAppScene />,
+/** Flip between the four upstream example screens, then press-and-hold to open each menu by hand. */
+export const Interactive: Story = {
+  render: () => <InteractiveScene />,
 };

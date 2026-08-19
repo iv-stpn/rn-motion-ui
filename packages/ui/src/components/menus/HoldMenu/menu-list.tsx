@@ -19,7 +19,7 @@ import { MenuItems } from './menu-items';
  * The panel — upstream's `MenuList`: the translucent surface that
  * pops out of the corner nearest the held item.
  *
- * The panel's width is upstream's 60% of the window, computed rotation-safely
+ * The panel's width is 40% of the window (upstream used 60%), computed rotation-safely
  * from the provider's `windowSize` shared value (upstream reads `MENU_WIDTH`
  * from `Dimensions` at import time, which goes stale on rotation). Its height
  * is the effective `menuHeight` the activating `HoldItem` stored — already

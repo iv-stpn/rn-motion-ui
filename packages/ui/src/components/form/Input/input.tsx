@@ -31,18 +31,21 @@ function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focu
   return 'idle';
 }
 
-// Elevation now carries state instead of a border: the soft drop swaps to a
-// 1px ring on focus (foreground) or error (danger); error wins over focus.
-const field = cva('relative flex-row items-center overflow-hidden', {
+// State drives the border colour, not a shadow: the field always carries a 1px
+// border on web, tinted by state (border on idle, foreground on focus, danger
+// on error); error wins over focus. Only `floating` adds a shadow — a large
+// diffuse drop — while `base` / `elevated` are flat fills.
+const field = cva('relative flex-row items-center overflow-hidden web:border', {
   variants: {
     variant: {
-      surface: 'bg-surface-3',
-      filled: 'bg-muted',
+      base: 'bg-input-base',
+      elevated: 'bg-input-elevated',
+      floating: 'bg-surface-3 shadow-input-floating',
     },
     state: {
-      idle: 'shadow-input',
-      focused: 'shadow-input-focus',
-      error: 'shadow-input-error',
+      idle: 'web:border-border',
+      focused: 'web:border-foreground/40',
+      error: 'web:border-danger',
     },
     size: {
       sm: 'min-h-interactive-sm',
@@ -54,7 +57,7 @@ const field = cva('relative flex-row items-center overflow-hidden', {
       pill: 'rounded-full',
     },
   },
-  defaultVariants: { variant: 'surface', state: 'idle', size: 'md', shape: 'rounded' },
+  defaultVariants: { variant: 'base', state: 'idle', size: 'md', shape: 'pill' },
 });
 
 // Size-aware input box: font size and padding track --spacing-interactive-* tokens.
@@ -178,10 +181,11 @@ export type InputProps = {
   inputType?: InputType;
   /** Field height variant. Default: `md`. */
   size?: 'sm' | 'md' | 'lg';
-  /** Background variant. `surface` (default) sits on the white `surface-3` card
-   *  level; `filled` uses the muted grey fill. Both carry the soft drop shadow. */
-  variant?: 'surface' | 'filled';
-  /** Border-radius variant. `rounded` (default) for a standard input, `pill` for a full-circle shape. */
+  /** Background variant. `base` (default) is a flat white/neutral fill,
+   *  `elevated` a slightly muted raised fill, `floating` a `surface-3` fill
+   *  with a large diffuse shadow. All three keep a 1px border on web. */
+  variant?: 'base' | 'elevated' | 'floating';
+  /** Border-radius variant. `pill` (default) for a full-circle shape, `rounded` for a standard input. */
   shape?: 'rounded' | 'pill';
   disabled?: boolean;
   secureTextEntry?: boolean;
@@ -218,8 +222,8 @@ export function Input({
   successIcon,
   inputType = 'text',
   size = 'md',
-  variant = 'surface',
-  shape = 'rounded',
+  variant = 'base',
+  shape = 'pill',
   disabled,
   secureTextEntry,
   keyboardType,

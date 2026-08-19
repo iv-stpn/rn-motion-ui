@@ -15,6 +15,7 @@ import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
 import { CloseButton } from '../CloseButton/close-button';
 import { FullSheet } from '../FullSheet/full-sheet';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 /** Narrow vs. wide layout cutoff — matches FullSheet's default. */
@@ -268,6 +269,7 @@ export function AdaptiveModal({
               exit={{ opacity: 0 }}
               transition={overlayTransition}
             >
+              <OverlayBlur />
               {isRightDrawer ? (
                 <TouchableOpacity className="flex-1" activeOpacity={1} onPress={closeOnOverlayClick ? handleClose : undefined}>
                   <View className="flex-1 items-end">

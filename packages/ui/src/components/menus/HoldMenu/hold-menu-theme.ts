@@ -9,11 +9,8 @@
  * tokens — so every colored export here is annotated.
  */
 
-/** Backdrop dim behind the menu in the light theme — a near-opaque scrim, faded in by the backdrop's opacity. */
-export const BACKDROP_LIGHT_BACKGROUND_COLOR = 'rgba(19, 19, 19, 0.95)'; // theme-exempt: upstream hold-menu backdrop palette
-
-/** Backdrop dim behind the menu in the dark theme — a near-opaque scrim, faded in by the backdrop's opacity. */
-export const BACKDROP_DARK_BACKGROUND_COLOR = 'rgba(0,0,0,0.95)'; // theme-exempt: upstream hold-menu backdrop palette
+/** Backdrop dim layered over the blur — a light translucent scrim so the frosted page behind reads through on both native and web. */
+export const BACKDROP_BLUR_BACKGROUND_COLOR = 'rgba(0, 0, 0, 0.25)'; // theme-exempt: upstream hold-menu backdrop palette
 
 /** Panel fill, light theme — near-opaque so the rows read without a blur behind them. */
 export const MENU_PANEL_LIGHT_COLOR = 'rgba(255, 255, 255, .95)'; // theme-exempt: upstream hold-menu panel palette

@@ -8,6 +8,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
 import { SURFACE_CLASSNAME } from '../../../lib/elevated';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 import { useSheetPresence } from '../Overlay/use-sheet-presence';
 
@@ -158,12 +159,11 @@ export function BottomSheet({
         <Animated.View
           renderToHardwareTextureAndroid={IS_ANDROID}
           className={backdropClassName}
-          style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: 'rgba(0, 0, 0, 0.45)' /* scrim — theme-independent */, pointerEvents: 'none' },
-            backdropStyle,
-          ]}
-        />
+          style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }, backdropStyle]}
+        >
+          <OverlayBlur />
+          <View className="absolute inset-0" style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' /* scrim — theme-independent */ }} />
+        </Animated.View>
         <View className="flex-1 justify-end">
           {fullSheet ? null : (
             // The backdrop is also the only dismiss control a screen-reader or

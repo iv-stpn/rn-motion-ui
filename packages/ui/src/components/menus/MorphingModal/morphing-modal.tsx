@@ -8,6 +8,7 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
 import { CloseButton } from '../CloseButton/close-button';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 
 // biome-ignore lint/style/useExportsLast: placement type before INSTANT constant — collocated for readability
@@ -137,6 +138,7 @@ export function MorphingModal({
             transition={{ type: 'timing', duration: 200, easing: EASE_OUT }}
             className="absolute top-0 right-0 bottom-0 left-0"
           >
+            <OverlayBlur />
             <Pressable
               accessibilityLabel="Close"
               onPress={handleClose}

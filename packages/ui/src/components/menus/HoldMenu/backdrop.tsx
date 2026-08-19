@@ -1,9 +1,10 @@
 import { memo } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, IS_WEB } from './constants';
 import { useHoldMenuInternal } from './context';
-import { BACKDROP_DARK_BACKGROUND_COLOR, BACKDROP_LIGHT_BACKGROUND_COLOR } from './hold-menu-theme';
+import { BACKDROP_BLUR_BACKGROUND_COLOR } from './hold-menu-theme';
 
 /**
  * The scrim behind the open menu — upstream's `Backdrop`. Always mounted in
@@ -11,13 +12,15 @@ import { BACKDROP_DARK_BACKGROUND_COLOR, BACKDROP_LIGHT_BACKGROUND_COLOR } from 
  * bottom of the window after exit (`withDelay` + `withTiming(windowHeight)`).
  * A tap with less than 10 px of movement closes the menu.
  *
- * A plain opacity-faded dim, not a blur: the near-opaque scrim color sits on
- * the same view whose `opacity` animates, so the layer fades in and out
- * without a full-screen expo-blur `BlurView` — whose first reveal blocks the
- * UI thread on device and delays the open.
+ * The scrim is a `BlurView` under a translucent dim (`OverlayBlur` +
+ * `BACKDROP_BLUR_BACKGROUND_COLOR`), so the page behind reads as frosted glass
+ * instead of a flat wash. `OverlayBlur` resolves to `react-native-blur`'s
+ * native `BlurView` on iOS/Android and its CSS-`backdrop-filter` twin in the
+ * browser, so the frosted look is consistent everywhere. The container's
+ * `opacity` still drives the fade, so blur and dim come up together.
  */
 const BackdropComponent = () => {
-  const { state, theme, windowSize } = useHoldMenuInternal();
+  const { state, windowSize } = useHoldMenuInternal();
 
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
@@ -61,20 +64,35 @@ const BackdropComponent = () => {
   }, [windowSize]);
 
   const animatedBackgroundStyle = useAnimatedStyle(() => {
-    const backgroundColor = theme.value === 'light' ? BACKDROP_LIGHT_BACKGROUND_COLOR : BACKDROP_DARK_BACKGROUND_COLOR;
-    return { backgroundColor };
-  }, [theme]);
+    // A light translucent dim over the `OverlayBlur` — a near-opaque scrim
+    // would hide the blur entirely.
+    return { backgroundColor: BACKDROP_BLUR_BACKGROUND_COLOR };
+  }, []);
 
   // RNW forwards onClick on View, but RN's core types do not declare it — the
   // cast keeps the web-only prop off the native type (same pattern as HoldItem).
   // biome-ignore lint/plugin: RNW View accepts onClick at runtime
   const webProps = { onClick: closeIfActive } as Record<string, unknown>;
 
+  // The blur under the dim. The dim lives on its own layer so the `OverlayBlur`
+  // can sit beneath it — painting the dim as the container's own
+  // `backgroundColor` would put it *behind* the blur, not over it.
+  const backdropFill = (
+    <>
+      <OverlayBlur />
+      <Animated.View className="absolute inset-0" style={animatedBackgroundStyle} />
+    </>
+  );
+
   return IS_WEB ? (
-    <Animated.View {...webProps} className="absolute inset-0 z-0" style={[animatedContainerStyle, animatedBackgroundStyle]} />
+    <Animated.View {...webProps} className="absolute inset-0 z-0" style={animatedContainerStyle}>
+      {backdropFill}
+    </Animated.View>
   ) : (
     <GestureDetector gesture={tapGesture}>
-      <Animated.View className="absolute inset-0 z-0" style={[animatedContainerStyle, animatedBackgroundStyle]} />
+      <Animated.View className="absolute inset-0 z-0" style={animatedContainerStyle}>
+        {backdropFill}
+      </Animated.View>
     </GestureDetector>
   );
 };

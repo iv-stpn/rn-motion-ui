@@ -829,6 +829,7 @@
     "zustand": "5.0.3"
   },
   "peerDependencies": {
+    "@sbaiahmed1/react-native-blur": ">=6.0.0",
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
     "react-native-gesture-handler": ">=2.0.0",
@@ -837,6 +838,9 @@
     "react-native-svg": ">=15.0.0"
   },
   "peerDependenciesMeta": {
+    "@sbaiahmed1/react-native-blur": {
+      "optional": true
+    },
     "react-native-safe-area-context": {
       "optional": true
     }

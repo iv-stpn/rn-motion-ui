@@ -100,12 +100,11 @@ const HoldItemTwinComponent = ({
       left: itemRectX.value,
       width: itemRectWidth.value,
       height: itemRectHeight.value,
-      // `releaseProgress` drives both this opacity and the in-place item's from
-      // one shared value, so the two flip on the same frame — no overlap window
-      // (a cross-fade would dim, since stacked semi-transparent layers don't sum
-      // to full opacity) and no one-frame hole (two independent delay+timing
-      // animations could drift a frame apart on web). 0 = active (this twin
-      // shows), 1 = released (the in-place item is back).
+      // `releaseProgress` drives this opacity (0 = active → this twin shows, 1 =
+      // released → hidden). On activation it fades in over the in-place item,
+      // which holds its full opacity until this reaches 1, so the twin never pops
+      // in and the two never overlap semi-transparently (that would dim); on
+      // release it snaps out in lockstep with the in-place item snapping in.
       opacity: 1 - releaseProgress.value,
       transform: [
         { translateY: transformAnimation() },

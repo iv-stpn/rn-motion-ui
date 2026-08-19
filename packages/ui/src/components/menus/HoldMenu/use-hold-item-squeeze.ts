@@ -112,12 +112,13 @@ export function useHoldItemSqueeze({
   const animatedContainerStyle = useAnimatedStyle(() => {
     // The in-place item never travels. Only the portal twin carries the travel
     // that keeps the pair on screen when the menu overflows; this copy hides
-    // under it while active and only squeezes/scales before that. Opacity comes
-    // from `releaseProgress` — the same shared value that drives the twin's
-    // opacity — so both copies flip on the same frame: no overlap window to
-    // cross-fade (and dim), no gap to blink.
+    // under it while active and only squeezes/scales before that. Opacity stays
+    // fully on while the twin fades in over it (0 < `releaseProgress` ≤ 1) and
+    // snaps off the instant the twin is fully opaque (`releaseProgress` === 0),
+    // so the pair never overlaps semi-transparently (a cross-fade would dim) and
+    // never leaves a gap.
     return {
-      opacity: releaseProgress.value,
+      opacity: releaseProgress.value > 0 ? 1 : 0,
       transform: [
         {
           scale: isActive.value ? withTiming(1, { duration: HOLD_ITEM_TRANSFORM_DURATION }) : itemScale.value,

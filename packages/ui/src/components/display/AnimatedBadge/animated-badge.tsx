@@ -48,7 +48,7 @@ const container = cva('flex-row shrink-0 items-center overflow-hidden rounded-fu
   variants: {
     size: {
       sm: 'h-6 gap-1 px-2',
-      md: 'h-8 gap-1.5 px-3',
+      md: 'h-7 gap-1 px-3',
     },
   },
   defaultVariants: { size: 'md' },

@@ -5,7 +5,7 @@ import { NotificationLine as Notification } from 'rn-motion-ui-icons/icons/notif
 import { Settings4Line as Settings } from 'rn-motion-ui-icons/icons/settings-4-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { fn } from 'storybook/test';
-import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, Code, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Switch } from '../form/Switch/switch';
 import type { ItemRowSize } from './item-row';
 import { ItemRowGroup, type ItemRowGroupItem } from './item-row-group';
@@ -54,8 +54,8 @@ function ItemRowGroupPlayground() {
         <ItemRowGroup variant={variant} size={size} items={items} />
       </View>
       <Note>
-        <code>grouped</code>: flush rows with dividers in a bordered container. <code>spaced</code>: rows separated by a
-        size-dependent gap. <code>sections</code>: padded card with separator lines between rows.
+        <Code>grouped</Code>: flush rows with dividers in a bordered container. <Code>spaced</Code>: rows separated by a
+        size-dependent gap. <Code>sections</Code>: padded card with separator lines between rows.
       </Note>
     </Playground>
   );

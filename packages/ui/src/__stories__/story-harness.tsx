@@ -55,6 +55,7 @@ type SampleProps = {
   style?: StyleProp<ViewStyle>;
 };
 type NoteProps = { children: ReactNode; testID?: string };
+type CodeProps = { children: ReactNode };
 
 type ChoiceProps<T extends string> = {
   /** Caption above the chips; also namespaces the chip testIDs. */
@@ -206,6 +207,19 @@ export function Sample({ label, children, className, align = 'flex-start', style
 export function Note({ children, testID }: NoteProps) {
   return (
     <Text className="text-muted-foreground" size="sm" testID={testID}>
+      {children}
+    </Text>
+  );
+}
+
+/**
+ * Inline monospace fragment for prose. Rendered as the library's own `Text`
+ * (`font="mono"`) because a raw `<code>` element has no native view config and
+ * crashes the mobile storybook with "Something went wrong rendering your story".
+ */
+export function Code({ children }: CodeProps) {
+  return (
+    <Text font="mono" className="text-muted-foreground">
       {children}
     </Text>
   );

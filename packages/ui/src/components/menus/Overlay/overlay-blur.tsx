@@ -6,9 +6,10 @@
  * dim over a blur so the page behind them reads as frosted glass rather than a
  * flat wash. The blur comes from the package's `BlurView`, which resolves per
  * platform through the package's own `exports`: the native module (iOS
- * `UIVisualEffectView` / Android `QmBlurView`) on device, and a CSS
- * `backdrop-filter` implementation in the browser. A single call site therefore
- * covers both — no platform split here.
+ * `UIVisualEffectView`) on device, and a CSS `backdrop-filter` implementation
+ * in the browser. Android is excluded — its `QmBlurView` is not performant
+ * enough to run under a full-bleed scrim — and degrades to the plain
+ * translucent color, the same fallback as a missing peer.
  *
  * `@sbaiahmed1/react-native-blur` is an optional peer dependency, loaded with a
  * guarded dynamic `require` exactly like `use-safe-insets.ts` resolves
@@ -18,7 +19,13 @@
  */
 
 import type { ComponentType } from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+
+/**
+ * Android's native blur is disabled (see {@link resolveBlurView}); the scrim
+ * there degrades to the plain translucent color, the same as a missing peer.
+ */
+const IS_ANDROID = Platform.OS === 'android';
 
 /**
  * The minimal `@sbaiahmed1/react-native-blur` surface this module touches. Cast
@@ -35,6 +42,10 @@ type BlurViewComponent = ComponentType<BlurViewProps>;
  * import.
  */
 function resolveBlurView(): BlurViewComponent | null {
+  // Android's `QmBlurView` is not performant enough to run under a full-bleed
+  // overlay scrim, so it is disabled there — the scrim falls back to the plain
+  // translucent color, exactly as it does when the peer is absent.
+  if (IS_ANDROID) return null;
   try {
     // Optional peer dep — scrim blur; consumers without it get the plain translucent scrim.
     // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep
@@ -60,7 +71,8 @@ const BlurView = resolveBlurView();
 /**
  * The blur layer under an overlay scrim. Absolute-fills its parent, never
  * intercepts touches (it is purely decorative — the scrim above it is the tap
- * target), and renders `null` when the optional peer is absent.
+ * target), and renders `null` when the optional peer is absent or on Android,
+ * where the native blur is disabled.
  *
  * Internal to the package — not exported.
  */

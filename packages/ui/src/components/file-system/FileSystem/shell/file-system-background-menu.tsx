@@ -67,9 +67,10 @@ type ScrimProps = { onClose: () => void; testID?: string };
 
 /**
  * The click-outside scrim. Native paints a dim over a `BlurView` (`OverlayBlur`
- * + `bg-black/35`); web keeps the scrim invisible — a dropdown does not dim the
- * page behind it — but still full-bleed, because it is the only dismiss control
- * reachable without a pointer.
+ * + `bg-black/35`), except Android, where `OverlayBlur` no-ops for performance
+ * and the dim stands alone; web keeps the scrim invisible — a dropdown does not
+ * dim the page behind it — but still full-bleed, because it is the only dismiss
+ * control reachable without a pointer.
  */
 function BackgroundScrim({ onClose, testID }: ScrimProps) {
   const dims = Platform.OS !== 'web';

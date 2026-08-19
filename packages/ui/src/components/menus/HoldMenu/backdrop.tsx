@@ -15,9 +15,10 @@ import { BACKDROP_BLUR_BACKGROUND_COLOR } from './hold-menu-theme';
  * The scrim is a `BlurView` under a translucent dim (`OverlayBlur` +
  * `BACKDROP_BLUR_BACKGROUND_COLOR`), so the page behind reads as frosted glass
  * instead of a flat wash. `OverlayBlur` resolves to `react-native-blur`'s
- * native `BlurView` on iOS/Android and its CSS-`backdrop-filter` twin in the
- * browser, so the frosted look is consistent everywhere. The container's
- * `opacity` still drives the fade, so blur and dim come up together.
+ * native `BlurView` on iOS and its CSS-`backdrop-filter` twin in the browser —
+ * Android skips the blur for performance and keeps just the dim. The
+ * container's `opacity` still drives the fade, so blur and dim come up
+ * together.
  */
 const BackdropComponent = () => {
   const { state, windowSize } = useHoldMenuInternal();

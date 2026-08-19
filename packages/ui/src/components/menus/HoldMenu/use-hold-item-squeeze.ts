@@ -115,7 +115,10 @@ export function useHoldItemSqueeze({
   }, [activateOn, isAnimationStarted]);
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    const animateOpacity = () => withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 }));
+    // Mirror the twin's cross-fade back in so the handover never leaves a hole:
+    // a zero-duration snap can land a frame before the twin has faded out.
+    const animateOpacity = () =>
+      withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: HOLD_ITEM_TRANSFORM_DURATION / 2 }));
 
     // The in-place item never travels. Only the portal twin carries the travel
     // that keeps the pair on screen when the menu overflows; this copy hides

@@ -71,7 +71,11 @@ const HoldItemTwinComponent = ({
   );
 
   const animatedPortalStyle = useAnimatedStyle(() => {
-    const animateOpacity = () => withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(0, { duration: 0 }));
+    // Cross-fade over the tail of the return rather than snapping to 0: a
+    // zero-duration timing can land a frame apart from the in-place item's
+    // fade-in on web, leaving a one-frame hole — the release flicker.
+    const animateOpacity = () =>
+      withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(0, { duration: HOLD_ITEM_TRANSFORM_DURATION / 2 }));
 
     const itemsWithSeparator = items.filter((item) => item.withSeparator);
     const menuHeight = calculateMenuHeight(items.length, itemsWithSeparator.length, windowSize.value.fontScale);

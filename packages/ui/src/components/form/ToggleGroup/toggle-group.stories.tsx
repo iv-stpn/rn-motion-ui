@@ -9,7 +9,7 @@ const meta = {
   title: 'Form/ToggleGroup',
   component: ToggleGroup,
   parameters: { layout: 'centered' },
-  args: { variant: 'spaced', shape: 'rounded', orientation: 'horizontal', size: 'md' },
+  args: { variant: 'spaced', shape: 'pill', orientation: 'horizontal', size: 'md' },
   argTypes: {
     variant: { control: 'select', options: ['spaced', 'bordered', 'connected'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -34,7 +34,7 @@ const OPTIONS = [
 
 function ToggleGroupPlayground() {
   const [variant, setVariant] = useState<(typeof VARIANTS)[number]>('spaced');
-  const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');
+  const [shape, setShape] = useState<(typeof SHAPES)[number]>('pill');
   const [orientation, setOrientation] = useState<(typeof ORIENTATIONS)[number]>('horizontal');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [selected, setSelected] = useState<string>('center');

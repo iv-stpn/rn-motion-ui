@@ -64,10 +64,11 @@ export interface ToggleGroupProps extends VariantProps<typeof container> {
    * Corner shape — `rounded` uses the interactive radius, `pill` uses fully-rounded.
    * In `bordered` / `connected` variants it shapes the outer edges; in `spaced` it
    * shapes each individual item.
-   * @default 'rounded'
+   * @default 'pill'
    */
   shape?: ToggleGroupShape;
   children?: undefined;
+
   className?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -100,7 +101,7 @@ export interface ToggleGroupProps extends VariantProps<typeof container> {
 export function ToggleGroup({
   variant = 'spaced',
   orientation = 'horizontal',
-  shape = 'rounded',
+  shape = 'pill',
   size = 'md',
   value,
   onValueChange,

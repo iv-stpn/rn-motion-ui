@@ -420,7 +420,12 @@ function ScrollingCard({ title, files, onAction }: ScrollingCardProps) {
   );
 }
 
-/** Nested scrolls — an outer dashboard scroll of cards, each with its own inner scroll of holdable rows. */
+/**
+ * Nested scrolls — a global scroll container with a definite, limited height,
+ * whose cards each hold their own inner scroll of holdable rows. The outer
+ * height is fixed (not `flex: 1`) so the global scroll is always a real,
+ * bounded region regardless of viewport height — two genuine scroll levels.
+ */
 function NestedScrollScene() {
   const [picked, setPicked] = useState('—');
   const onAction = useCallback((label: string) => setPicked(label), []);
@@ -431,7 +436,9 @@ function NestedScrollScene() {
         <ScrollView
           nestedScrollEnabled={true}
           showsVerticalScrollIndicator={false}
-          style={{ flex: 1 }}
+          // Limited height, not flex:1 — the global container bounds its own
+          // scroll, and the cards inside add a second, inner scroll level.
+          style={{ height: 480 }}
           contentContainerStyle={{ padding: 16, gap: 16 }}
         >
           <Text size="2xl" weight="semibold" style={{ color: '#1C1C1E' }}>
@@ -441,6 +448,7 @@ function NestedScrollScene() {
             <ScrollingCard key={section.id} title={section.title} files={section.files} onAction={onAction} />
           ))}
         </ScrollView>
+        <View style={{ flex: 1 }} />
         <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: 'rgba(0, 0, 0, 0.1)', backgroundColor: '#FFFFFF' }}>
           <Text size="sm" style={{ color: '#474747' }}>
             {`Last action: ${picked}`}

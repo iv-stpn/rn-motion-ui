@@ -454,11 +454,8 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
       testID={testID}
     >
       <Text
-        className={
-          highlighted
-            ? `font-medium text-foreground ${TEXT_INTERACTIVE.md}`
-            : `font-medium text-muted-foreground ${TEXT_INTERACTIVE.md}`
-        }
+        weight="medium"
+        className={highlighted ? `text-foreground ${TEXT_INTERACTIVE.md}` : `text-muted-foreground ${TEXT_INTERACTIVE.md}`}
       >
         {children}
       </Text>

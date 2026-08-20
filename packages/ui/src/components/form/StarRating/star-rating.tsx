@@ -94,21 +94,21 @@ const SIZES = {
     pad: 'p-1',
     valueGap: 'ml-1.5',
     lineH: 16,
-    valueLabel: 'text-xs font-medium tabular-nums text-muted-foreground',
+    valueLabel: 'text-xs tabular-nums text-muted-foreground',
   },
   md: {
     icon: 22,
     pad: 'p-0.5',
     valueGap: 'ml-2',
     lineH: 20,
-    valueLabel: 'text-sm font-medium tabular-nums text-muted-foreground',
+    valueLabel: 'text-sm tabular-nums text-muted-foreground',
   },
   lg: {
     icon: 28,
     pad: 'p-0.5',
     valueGap: 'ml-2.5',
     lineH: 20,
-    valueLabel: 'text-sm font-medium tabular-nums text-muted-foreground',
+    valueLabel: 'text-sm tabular-nums text-muted-foreground',
   },
 } as const;
 
@@ -398,7 +398,7 @@ export function StarRating({
             entering and exiting digits overlap instead of sitting side-by-side
             and shoving the /max label sideways on every change. Mirrors TextRolling. */}
           <View className="overflow-hidden" style={{ height: lineH }}>
-            <Text className={cn(valueLabel, 'opacity-0')} importantForAccessibility="no">
+            <Text weight="medium" className={cn(valueLabel, 'opacity-0')} importantForAccessibility="no">
               {formatValue(value)}
             </Text>
             <AnimatePresence initial={false}>
@@ -410,11 +410,13 @@ export function StarRating({
                 transition={reduce ? { type: 'timing', duration: 0 } : VALUE_SPRING}
                 className="absolute top-0 left-0"
               >
-                <Text className={valueLabel}>{formatValue(value)}</Text>
+                <Text weight="medium" className={valueLabel}>
+                  {formatValue(value)}
+                </Text>
               </MotiView>
             </AnimatePresence>
           </View>
-          <Text className={valueLabel}>{`/${max}`}</Text>
+          <Text weight="medium" className={valueLabel}>{`/${max}`}</Text>
         </View>
       ) : null}
     </View>

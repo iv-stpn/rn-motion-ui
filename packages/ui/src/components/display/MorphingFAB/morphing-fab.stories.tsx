@@ -118,7 +118,9 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
           <View className="mb-1 h-10 w-10 items-center justify-center rounded-full bg-success">
             <ThemedIcon icon={MessageSquare} token="success-foreground" size={18} />
           </View>
-          <Text className="font-semibold text-foreground text-sm">{SENT_TITLE}</Text>
+          <Text weight="semibold" className="text-foreground text-sm">
+            {SENT_TITLE}
+          </Text>
           <Text className="text-center text-muted-foreground text-xs">{SENT_BODY}</Text>
         </View>
       </MotiView>
@@ -131,7 +133,9 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
           <View className="h-10 w-10 items-center justify-center rounded-full bg-danger">
             <ThemedIcon icon={MessageSquare} token="danger-foreground" size={18} />
           </View>
-          <Text className="mt-3 font-semibold text-foreground text-sm">{ERROR_TITLE}</Text>
+          <Text weight="semibold" className="mt-3 text-foreground text-sm">
+            {ERROR_TITLE}
+          </Text>
           <Text className="mt-1 text-center text-muted-foreground text-xs">{ERROR_BODY}</Text>
           <View className="mt-4">
             <Button variant="neutral" size="sm" onPress={retry}>
@@ -148,7 +152,9 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
   return (
     <MotiView key="form" from={enter} animate={{ opacity: 1, scale: 1, translateY: 0 }} exit={exit} transition={trans}>
       <View className="min-h-[150px] rounded-[16px] bg-surface-contrast px-4 py-3.5">
-        <Text className="font-semibold text-foreground text-sm">{FEEDBACK_TITLE}</Text>
+        <Text weight="semibold" className="text-foreground text-sm">
+          {FEEDBACK_TITLE}
+        </Text>
         <TextInput
           value={message}
           editable={status !== 'sending'}

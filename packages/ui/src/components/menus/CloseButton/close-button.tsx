@@ -62,7 +62,7 @@ export type CloseButtonProps = {
  * @example
  * // Floating over a sheet header:
  * <View className="flex-row items-center justify-between">
- *   <Text className="font-semibold text-xl">Title</Text>
+ *   <Text weight="semibold" className="text-xl">Title</Text>
  *   <CloseButton onPress={handleClose} />
  * </View>
  *

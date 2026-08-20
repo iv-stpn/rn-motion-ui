@@ -11,7 +11,7 @@ import { type ItemRowAdornment, type ItemRowSize, type ItemRowVariant, RowLayout
 type HoverHandler = NonNullable<PressableProps['onHoverIn']>;
 
 export type ActionRowProps = Omit<PressableProps, 'children'> & {
-  /** Row title — primary text, `font-medium` foreground. */
+  /** Row title — primary text, `weight="medium"` foreground. */
   title: ReactNode;
   /** Optional secondary text, rendered below the title in a muted colour. */
   description?: ReactNode;

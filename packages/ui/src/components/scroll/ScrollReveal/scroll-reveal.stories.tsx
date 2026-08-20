@@ -74,7 +74,9 @@ function Demo({ once, y, amount }: DemoProps) {
             y={y}
           >
             <View className="rounded-xl border border-border bg-surface-3 px-4 py-12">
-              <Text className="text-center font-medium text-[16px]">{label}</Text>
+              <Text weight="medium" className="text-center text-[16px]">
+                {label}
+              </Text>
             </View>
           </ScrollReveal>
         ))}

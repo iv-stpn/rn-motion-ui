@@ -304,7 +304,11 @@ export function Input({
 
   return (
     <View className={cn('gap-1.5', className)} style={style}>
-      {label ? <Text className={cn('px-1 font-medium text-foreground text-sm', labelClassName)}>{label}</Text> : null}
+      {label ? (
+        <Text weight="medium" className={cn('px-1 text-foreground text-sm', labelClassName)}>
+          {label}
+        </Text>
+      ) : null}
 
       <Animated.View
         className={cn(field({ variant, state, size, shape }), disabled ? 'opacity-60' : 'opacity-100')}

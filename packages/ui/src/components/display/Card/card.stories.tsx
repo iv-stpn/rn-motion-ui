@@ -43,7 +43,9 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
       </ControlCard>
 
       <Card {...args} elevation={elevation} size={size} className="w-[280px]">
-        <Text className="font-semibold text-base text-foreground">{TITLE}</Text>
+        <Text weight="semibold" className="text-base text-foreground">
+          {TITLE}
+        </Text>
         <Text className="text-muted-foreground text-sm">{BODY}</Text>
       </Card>
 
@@ -54,7 +56,7 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
         <View className="gap-3">
           {SURFACE_LEVELS.map((level) => (
             <Card {...args} elevation={level} key={level} size={size} className="w-[280px]">
-              <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>
+              <Text weight="semibold" className="text-foreground text-sm">{`Elevation ${level}`}</Text>
             </Card>
           ))}
         </View>
@@ -65,7 +67,9 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
           {SIZES.map((name) => (
             <Sample key={name} label={name}>
               <Card {...args} elevation={elevation} size={name}>
-                <Text className="font-semibold text-foreground text-sm">{SIZE_LABELS[name]}</Text>
+                <Text weight="semibold" className="text-foreground text-sm">
+                  {SIZE_LABELS[name]}
+                </Text>
               </Card>
             </Sample>
           ))}
@@ -102,7 +106,7 @@ export const ElevationPairsSurfaceAndShadow: Story = {
     <View className="gap-3">
       {SURFACE_LEVELS.map((level) => (
         <Card elevation={level} key={level} className="w-[280px]" testID={ladderTestID(level)}>
-          <Text className="font-semibold text-foreground text-sm">{`Elevation ${level}`}</Text>
+          <Text weight="semibold" className="text-foreground text-sm">{`Elevation ${level}`}</Text>
         </Card>
       ))}
     </View>

@@ -72,11 +72,13 @@ type PlainTriggerProps = { open: boolean };
 
 function PlainTrigger({ open }: PlainTriggerProps) {
   const containerClass = `flex-row items-center gap-2 rounded-full border px-4 py-2 ${open ? 'border-primary bg-primary' : 'border-border bg-surface-3'}`;
-  const textClass = open ? 'font-medium text-primary-foreground text-sm' : 'font-medium text-foreground text-sm';
+  const textClass = open ? 'text-primary-foreground text-sm' : 'text-foreground text-sm';
   const label = open ? TRIGGER_OPEN : TRIGGER_CLOSED;
   return (
     <View className={containerClass}>
-      <Text className={textClass}>{label}</Text>
+      <Text weight="medium" className={textClass}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -85,8 +87,8 @@ type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 's
 
 // The playground's trigger: still the `{ open, toggle }` render prop, but the body
 // is a `TriggerButton` so the Trigger chips can swap Button / ElevatedButton /
-// GlossyButton / bare Pressable under one menu. Each of those is pressable in its
-// own right, which is exactly why `onPress` has to be `toggle` — see TRIGGER_NOTE.
+// bare Pressable under one menu. Each of those is pressable in its own right,
+// which is exactly why `onPress` has to be `toggle` — see TRIGGER_NOTE.
 
 function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
   return <TriggerButton kind={kind} size={size} shape={shape} label={open ? TRIGGER_OPEN : TRIGGER_CLOSED} onPress={toggle} />;

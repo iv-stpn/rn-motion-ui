@@ -113,7 +113,7 @@ function renderAdornment(a: ItemRowAdornment | undefined, token: ThemeToken, siz
 // ---------------------------------------------------------------------------
 
 export type RowLayoutProps = {
-  /** Row title — primary text, `font-medium` foreground. */
+  /** Row title — primary text, `weight="medium"` foreground. */
   title: ReactNode;
   /** Optional secondary text, rendered below the title in a muted colour. */
   description?: ReactNode;
@@ -169,7 +169,7 @@ export function RowLayout({ title, description, leftAdornment, rightAdornment, s
 // ---------------------------------------------------------------------------
 
 export type ItemRowProps = {
-  /** Row title — primary text, `font-medium` foreground. */
+  /** Row title — primary text, `weight="medium"` foreground. */
   title: ReactNode;
   /** Optional secondary text, rendered below the title in a muted colour. */
   description?: ReactNode;

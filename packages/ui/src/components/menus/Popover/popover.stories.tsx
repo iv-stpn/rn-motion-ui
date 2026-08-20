@@ -52,7 +52,9 @@ function PopoverDemo() {
       <PopoverTrigger>{EDIT_PROFILE}</PopoverTrigger>
       <PopoverContent>
         <View className="gap-1">
-          <Text className="font-medium text-foreground text-sm">{DIMENSIONS_TITLE}</Text>
+          <Text weight="medium" className="text-foreground text-sm">
+            {DIMENSIONS_TITLE}
+          </Text>
           <Text className="text-muted-foreground text-xs">{DIMENSIONS_DESC}</Text>
         </View>
       </PopoverContent>
@@ -90,8 +92,8 @@ function PopoverPlayground() {
           {/* PopoverTrigger provides the outer Pressable that measures its frame
               and opens the popover. The TriggerButton inside is purely visual —
               pointerEvents="none" lets touches fall through to PopoverTrigger so
-              the real Button / ElevatedButton / GlossyButton / Pressable kind
-              renders with its full appearance (SVG layers, shadows, gloss). */}
+              the real Button / ElevatedButton / Pressable kind renders with its
+              full appearance (SVG layers, shadows, gloss). */}
           <PopoverTrigger className="rounded-none border-0 bg-transparent p-0">
             <View pointerEvents="none">
               <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={EDIT_PROFILE} onPress={noop} />
@@ -99,7 +101,9 @@ function PopoverPlayground() {
           </PopoverTrigger>
           <PopoverContent>
             <View className="max-w-[220px] gap-1">
-              <Text className="font-medium text-foreground text-sm">{DIMENSIONS_TITLE}</Text>
+              <Text weight="medium" className="text-foreground text-sm">
+                {DIMENSIONS_TITLE}
+              </Text>
               <Text className="text-muted-foreground text-xs">{DIMENSIONS_DESC}</Text>
             </View>
           </PopoverContent>

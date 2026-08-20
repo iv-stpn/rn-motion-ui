@@ -123,12 +123,12 @@ export function HeaderCell<T>({
           <TextInput
             value={column.header}
             onChangeText={handleRename}
-            className={cn('flex-1 p-0 font-medium text-xs', textAlignClass)}
+            className={cn('flex-1 p-0 font-sans-medium text-xs', textAlignClass)}
             accessibilityLabel={`Rename ${column.key} column`}
           />
         ) : (
           <View className={cn('flex-1 flex-row items-center gap-1', alignToJustifyClass(column.align))}>
-            <Text selectable={false} className={cn('flex-1 font-medium text-xs', textAlignClass)} numberOfLines={1}>
+            <Text weight="medium" selectable={false} className={cn('flex-1 text-xs', textAlignClass)} numberOfLines={1}>
               {column.header}
             </Text>
             {sortEnabled ? (

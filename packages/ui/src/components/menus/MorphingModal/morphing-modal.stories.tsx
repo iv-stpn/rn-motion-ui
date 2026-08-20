@@ -92,7 +92,9 @@ function Row({ icon, label, danger, onPress }: RowProps) {
       }
     >
       {icon}
-      <Text className={danger ? 'font-medium text-danger text-sm' : 'font-medium text-foreground text-sm'}>{label}</Text>
+      <Text weight="medium" className={danger ? 'text-danger text-sm' : 'text-foreground text-sm'}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -114,7 +116,9 @@ function OptionsView({ onPrivateKey, onRecovery, onClose }: OptionsViewProps) {
   return (
     <View>
       <View className="mb-4 flex-row items-center justify-between">
-        <Text className="font-semibold text-base text-foreground">{OPTIONS_TITLE}</Text>
+        <Text weight="semibold" className="text-base text-foreground">
+          {OPTIONS_TITLE}
+        </Text>
         <CloseButton label={CLOSE_LABEL} onPress={onClose} />
       </View>
       <View className="gap-2">
@@ -138,7 +142,9 @@ function PrivateKeyView({ onBack }: PrivateKeyViewProps) {
         <Lock size={20} color={foreground} />
         <CloseButton label={BACK_LABEL} onPress={onBack} />
       </View>
-      <Text className="font-semibold text-foreground text-xl">{PRIVATE_KEY_TITLE}</Text>
+      <Text weight="semibold" className="text-foreground text-xl">
+        {PRIVATE_KEY_TITLE}
+      </Text>
       <Text className="mt-2 text-muted-foreground text-sm">{PRIVATE_KEY_DESC}</Text>
       <View className="my-4 h-px bg-border" />
       <View className="gap-2.5">
@@ -169,7 +175,9 @@ function RecoveryView({ onBack }: RecoveryViewProps) {
         <ScrollText size={20} color={foreground} />
         <CloseButton label={BACK_LABEL} onPress={onBack} />
       </View>
-      <Text className="font-semibold text-foreground text-xl">{RECOVERY_TITLE}</Text>
+      <Text weight="semibold" className="text-foreground text-xl">
+        {RECOVERY_TITLE}
+      </Text>
       <Text className="mt-2 text-muted-foreground text-sm">{RECOVERY_DESC}</Text>
       <View className="mt-4 flex-row flex-wrap gap-2">
         {RECOVERY_WORDS.map((word, index) => (

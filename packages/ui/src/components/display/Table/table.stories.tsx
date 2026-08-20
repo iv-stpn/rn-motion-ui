@@ -70,7 +70,9 @@ type StatusBadgeProps = { status: Person['status'] };
 function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <View className={cn('self-start rounded-full px-2 py-0.5', statusBackgroundClass(status))}>
-      <Text className={cn('font-medium text-[11px] capitalize', statusTextColorClass(status))}>{status}</Text>
+      <Text weight="medium" className={cn('text-[11px] capitalize', statusTextColorClass(status))}>
+        {status}
+      </Text>
     </View>
   );
 }
@@ -109,7 +111,11 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
     header: 'Name',
     sortable: true,
     width: '1.4fr',
-    cell: (row) => <Text className="font-medium text-[13px]">{row.name}</Text>,
+    cell: (row) => (
+      <Text weight="medium" className="text-[13px]">
+        {row.name}
+      </Text>
+    ),
   },
   { key: 'email', header: 'Email', width: '1.8fr' },
   { key: 'role', header: 'Role', sortable: true, width: '120px' },
@@ -209,7 +215,11 @@ function AsyncTableStory() {
       {
         key: 'name',
         header: 'Name',
-        cell: (r) => <Text className="font-medium text-[13px]">{r.name}</Text>,
+        cell: (r) => (
+          <Text weight="medium" className="text-[13px]">
+            {r.name}
+          </Text>
+        ),
       },
       { key: 'email', header: 'Email', width: '180px' },
       { key: 'role', header: 'Role', width: '110px' },

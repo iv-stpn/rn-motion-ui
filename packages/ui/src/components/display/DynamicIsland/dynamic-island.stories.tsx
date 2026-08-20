@@ -81,7 +81,9 @@ function ClockPill() {
   return (
     <>
       <View className="h-1.5 w-[6px] rounded-[3px] bg-success" />
-      <Text className="font-medium text-[12px] text-white">{CLOCK}</Text>
+      <Text weight="medium" className="text-[12px] text-white">
+        {CLOCK}
+      </Text>
     </>
   );
 }
@@ -108,7 +110,9 @@ function Island({ view, seconds = START_SECONDS, compact, onDismiss }: IslandPro
       <DynamicIslandView className="gap-4" id="call">
         <View className="gap-0.5">
           <Text className="text-[10px] text-white tracking-px opacity-60">{INCOMING_CALL}</Text>
-          <Text className="font-semibold text-[14px] text-white">{CALLER}</Text>
+          <Text weight="semibold" className="text-[14px] text-white">
+            {CALLER}
+          </Text>
         </View>
         <View className="flex-row items-center gap-2">
           <Button accessibilityLabel="Decline" onPress={onDismiss} size="icon" variant="ghost">
@@ -123,13 +127,17 @@ function Island({ view, seconds = START_SECONDS, compact, onDismiss }: IslandPro
       <DynamicIslandView className="gap-3" id="timer">
         <Timer className="text-warning" size={16} />
         <Text className="text-[10px] text-white tracking-px opacity-60">{TIMER_LABEL}</Text>
-        <Text className="font-semibold text-[14px] text-white tabular-nums">{formatClock(seconds)}</Text>
+        <Text weight="semibold" className="text-[14px] text-white tabular-nums">
+          {formatClock(seconds)}
+        </Text>
       </DynamicIslandView>
 
       <DynamicIslandView className="gap-3" id="music">
         <Music className="text-white" size={14} />
         <View className="gap-px">
-          <Text className="font-semibold text-[12px] text-white">{TRACK_TITLE}</Text>
+          <Text weight="semibold" className="text-[12px] text-white">
+            {TRACK_TITLE}
+          </Text>
           <Text className="text-[10px] text-white opacity-60">{TRACK_ARTIST}</Text>
         </View>
         <EqBars />

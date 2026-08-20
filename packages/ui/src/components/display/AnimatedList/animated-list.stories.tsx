@@ -31,7 +31,9 @@ function Row({ item, expanded, onToggle, onRemove }: RowProps) {
   return (
     <View className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-surface-3 px-4 py-3 shadow-surface-3">
       <Pressable className="flex-1" onPress={toggle}>
-        <Text className="font-medium text-base text-foreground">{item.label}</Text>
+        <Text weight="medium" className="text-base text-foreground">
+          {item.label}
+        </Text>
         {expanded ? <Text className="mt-2 text-muted-foreground text-sm leading-relaxed">{EXPAND_BODY}</Text> : null}
       </Pressable>
       <Pressable accessibilityLabel={`Remove ${item.label}`} hitSlop={8} onPress={remove}>

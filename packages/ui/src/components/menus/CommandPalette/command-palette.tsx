@@ -21,7 +21,7 @@ import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
 const ESC_LABEL = 'ESC';
 
 /** The group caption above each run of rows. */
-const GROUP_LABEL_CLASS = 'px-2 py-1.5 font-semibold text-[10px] text-muted-foreground uppercase tracking-wider';
+const GROUP_LABEL_CLASS = 'px-2 py-1.5 text-[10px] text-muted-foreground uppercase tracking-wider';
 
 /** Props passed to a command palette icon renderer. */
 export type CommandIconProps = IconProps;
@@ -233,7 +233,7 @@ export function CommandPalette({
           ) : (
             grouped.map(([group, list]) => (
               <View key={group} className="mb-1">
-                <Text className={GROUP_LABEL_CLASS} testID={testID ? `${testID}-group-${group}` : undefined}>
+                <Text weight="semibold" className={GROUP_LABEL_CLASS} testID={testID ? `${testID}-group-${group}` : undefined}>
                   {group}
                 </Text>
                 {list.map((it) => {

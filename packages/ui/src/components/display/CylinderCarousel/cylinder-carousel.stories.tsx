@@ -57,7 +57,9 @@ type BallProps = { label: string; bgClass: string };
 function Ball({ label, bgClass }: BallProps) {
   return (
     <View className={cn('flex-1 items-center justify-center rounded-full border border-[rgba(0,0,0,0.08)]', bgClass)}>
-      <Text className="font-semibold text-[15px] text-white">{label}</Text>
+      <Text weight="semibold" className="text-[15px] text-white">
+        {label}
+      </Text>
     </View>
   );
 }

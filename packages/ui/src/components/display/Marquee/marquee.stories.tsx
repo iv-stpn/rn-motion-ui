@@ -14,7 +14,9 @@ type ChipProps = { label: string };
 function Chip({ label }: ChipProps) {
   return (
     <View className="h-12 items-center justify-center rounded-lg border border-border bg-surface-3 px-6">
-      <Text className="font-medium text-foreground text-sm">{label}</Text>
+      <Text weight="medium" className="text-foreground text-sm">
+        {label}
+      </Text>
     </View>
   );
 }

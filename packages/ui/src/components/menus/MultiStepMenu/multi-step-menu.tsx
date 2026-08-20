@@ -362,7 +362,7 @@ export const MultiStepMenu = function MultiStepMenu({
                 exitTransition={arrowExitTransition}
                 className="mt-2"
               >
-                <TextRolling text={title} className="font-bold text-2xl text-foreground" />
+                <TextRolling text={title} weight="bold" className="text-2xl text-foreground" />
               </MotiView>
             )}
           </AnimatePresence>

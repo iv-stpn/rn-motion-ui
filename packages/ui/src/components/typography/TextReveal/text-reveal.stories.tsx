@@ -16,7 +16,8 @@ const meta = {
     yOffset: 24,
     once: true,
     whileInView: false,
-    className: 'text-2xl font-semibold text-foreground',
+    className: 'text-2xl text-foreground',
+    weight: 'semibold',
   },
   argTypes: {
     split: { control: 'select', options: ['word', 'char'] satisfies TextRevealSplit[] },
@@ -36,7 +37,7 @@ const PACES = [
 const OFFSETS = ['0', '24', '60'] as const;
 const ONE_LINE = 'Motion that feels considered.';
 const TWO_LINES = ['Motion that feels', 'considered.'];
-const HEADING = 'text-2xl font-semibold text-foreground';
+const HEADING = 'text-2xl text-foreground';
 
 type PaceKey = (typeof PACES)[number]['value'];
 
@@ -92,7 +93,7 @@ function TextRevealPlayground(args: ComponentProps<typeof TextReveal>) {
         <Variants direction="column">
           {OFFSETS.map((key) => (
             <Sample key={key} label={`${key}px travel`}>
-              <TextReveal {...args} className="font-medium text-base text-foreground" text={ONE_LINE} yOffset={Number(key)} />
+              <TextReveal {...args} weight="medium" className="text-base text-foreground" text={ONE_LINE} yOffset={Number(key)} />
             </Sample>
           ))}
         </Variants>

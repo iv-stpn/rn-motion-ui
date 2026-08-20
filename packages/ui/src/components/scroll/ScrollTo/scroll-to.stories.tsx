@@ -53,7 +53,9 @@ function Demo({ onPress }: DemoProps) {
       <ScrollView ref={scrollRef} scrollEventThrottle={16}>
         {SECTIONS.map((s) => (
           <View key={s.id} onLayout={measure(s.id)} className="h-[240px] items-center justify-center">
-            <Text className="font-medium text-[18px]">{s.label}</Text>
+            <Text weight="medium" className="text-[18px]">
+              {s.label}
+            </Text>
           </View>
         ))}
       </ScrollView>

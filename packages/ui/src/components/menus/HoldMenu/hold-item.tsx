@@ -132,7 +132,14 @@ const HoldItemComponent = ({
 
   useAnimatedReaction(
     () => isActive.value,
-    (active) => {
+    (active, previous) => {
+      // Skip the mapper's on-mount fire: `useAnimatedReaction` runs its reaction
+      // once on mount with `previous === null` (the mapper starts dirty). Without
+      // this guard that phantom "release" drives `releaseProgress` 1 → 0 → 1 over
+      // `HOLD_ITEM_TRANSFORM_DURATION`, flashing every twin opaque at (0,0) while
+      // the in-place item hides — the "all files stacked in one spot" bug on first
+      // render. A real activation/deactivation always has a defined `previous`.
+      if (previous === null) return;
       if (!active) {
         // Release pins the twin opaque while it travels back, then snaps both
         // copies on the same frame — no overlap window to dim, no gap to blink.

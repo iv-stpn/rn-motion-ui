@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { Button } from 'rn-motion-ui/button';
 import type {
   FileSystemContextMenuAction,
   FileSystemItem,
@@ -8,7 +9,6 @@ import type {
   FileSystemViewerArgs,
 } from 'rn-motion-ui/file-system';
 import { FileSystem } from 'rn-motion-ui/file-system';
-import { GlossyButton } from 'rn-motion-ui/glossy-button';
 import { Text } from 'rn-motion-ui/text';
 import { useThemeColors } from 'rn-motion-ui/theme/use-theme-color';
 import { Copy2Line } from 'rn-motion-ui-icons/icons/copy-2-line';
@@ -175,9 +175,9 @@ export function FileSystemDemo() {
         <Text className={state.status ? 'flex-1 text-foreground' : 'flex-1 text-muted-foreground'} size="xs">
           {state.status ?? IDLE_STATUS}
         </Text>
-        <GlossyButton onPress={reset} size="sm" variant="neutral">
+        <Button onPress={reset} size="sm" variant="neutral">
           {RESET_LABEL}
-        </GlossyButton>
+        </Button>
       </View>
     </Panel>
   );

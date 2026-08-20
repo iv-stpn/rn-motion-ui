@@ -2,13 +2,12 @@
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, View } from 'react-native';
-import { GlossyButton } from 'rn-motion-ui/glossy-button';
+import { Button } from 'rn-motion-ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'rn-motion-ui/tabs';
 import { Text } from 'rn-motion-ui/text';
 import { type ThemeName, Uniwind, useUniwind } from 'uniwind';
 import { Row } from './demos/demo-chrome';
 import { FileSystemDemo } from './demos/file-system-demo';
-import { GlossyButtonDemo } from './demos/glossy-button-demo';
 import './global.css';
 
 const THEMES = ['light', 'dark'] as const satisfies readonly ThemeName[];
@@ -27,10 +26,7 @@ const THEME_LABEL = 'Theme';
 const THEME_LABELS = { light: 'Light', dark: 'Dark' } as const;
 
 /** One tab per component. `value` also names the panel it shows. */
-const TABS = [
-  { value: 'button', label: 'GlossyButton' },
-  { value: 'file-system', label: 'FileSystem' },
-] as const;
+const TABS = [{ value: 'file-system', label: 'FileSystem' }] as const;
 
 /**
  * Light/dark switcher.
@@ -51,7 +47,7 @@ function ThemeSwitcher() {
   return (
     <Row label={THEME_LABEL}>
       {THEMES.map((name) => (
-        <GlossyButton
+        <Button
           key={name}
           size="sm"
           variant={theme === name ? 'inverse' : 'neutral'}
@@ -59,7 +55,7 @@ function ThemeSwitcher() {
           onPress={SET_THEME[name]}
         >
           {THEME_LABELS[name]}
-        </GlossyButton>
+        </Button>
       ))}
     </Row>
   );
@@ -95,7 +91,7 @@ export default function App() {
         {/* The tab panels are unmounted while hidden, so each component starts
             fresh on a switch — a FileSystem manifest rewritten by a drop resets
             when you come back to it. */}
-        <Tabs defaultValue="button" variant="segment">
+        <Tabs defaultValue="file-system" variant="segment">
           <TabsList>
             {TABS.map((tab) => (
               <TabsTrigger key={tab.value} value={tab.value}>
@@ -103,9 +99,6 @@ export default function App() {
               </TabsTrigger>
             ))}
           </TabsList>
-          <TabsContent value="button">
-            <GlossyButtonDemo />
-          </TabsContent>
           <TabsContent value="file-system">
             <FileSystemDemo />
           </TabsContent>

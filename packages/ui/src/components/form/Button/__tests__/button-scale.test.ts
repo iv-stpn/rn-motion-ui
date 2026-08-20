@@ -8,8 +8,8 @@ import { BUTTON_BOX, BUTTON_METRICS, type ButtonSize, buttonRadius } from '../bu
 // The button family's geometry is declared twice: as `@theme` tokens in
 // tokens.css (which is what the classes in BUTTON_BOX compile to) and as pixel
 // numbers in BUTTON_METRICS (which is what the effect layers that can't read a
-// class use — GlossyButton's shadow slots, ElevatedButton's SVG rim). Nothing at
-// runtime reconciles the two, so a token edited in the stylesheet and missed in
+// class use — ElevatedButton's SVG rim). Nothing at runtime reconciles the two,
+// so a token edited in the stylesheet and missed in
 // the table silently draws a rim on a different curve than the box it sits in.
 // Same contract as scripts/check-token-parity.mjs, for the non-colour tokens.
 

@@ -30,7 +30,7 @@ export type ButtonVariant =
 //
 // Colour is the only axis here: the box (height, padding, radius) is the family's,
 // resolved through {@link BUTTON_BOX} so a flat `md` occupies exactly the same
-// rectangle as an elevated chip, a glossy key or an ActionSwap at `md`.
+// rectangle as an elevated chip or an ActionSwap at `md`.
 const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
@@ -66,8 +66,8 @@ export const label = cva('', {
       outlineDanger: 'text-danger',
       ghostDanger: 'text-danger',
     },
-    // Weight + size come from the family ramp, shared with GlossyButton, so only
-    // the colour above is Button's own.
+    // Weight + size come from the family ramp, so only the colour above is
+    // Button's own.
     size: LABEL_TEXT_CLASS,
   },
   defaultVariants: { variant: 'neutral', size: 'md' },

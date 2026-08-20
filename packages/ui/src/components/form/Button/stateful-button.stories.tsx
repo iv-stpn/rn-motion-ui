@@ -15,7 +15,6 @@ import {
   Variants,
 } from '../../../__stories__/story-harness';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { glossyContentColor } from './glossy-button';
 import { StatefulButton } from './stateful-button';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -32,7 +31,7 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const CHIP_OPTIONS = ['none', 'elevated', 'glossy'] as const;
+const CHIP_OPTIONS = ['none', 'elevated'] as const;
 const STATES = ['idle', 'loading', 'success', 'error'] as const;
 const OUTCOMES = ['success', 'error'] as const;
 const SIZES = ['sm', 'md', 'lg'] as const;
@@ -72,9 +71,9 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   // "Reset now" signal — appending to whatever the run last reported.
   const handleAfterReset = useCallback(() => setLastRun((prev) => `${prev} Re-armed.`), []);
 
-  // Icon colour adapts to the active button style: glossy neutral keys use
-  // `foreground`, flat/elevated primary buttons use `primary-foreground`.
-  const iconColor = chip === 'glossy' ? glossyContentColor('neutral', colors) : colors['primary-foreground'];
+  // Icon colour follows the active button style: flat/elevated primary buttons
+  // use `primary-foreground`.
+  const iconColor = colors['primary-foreground'];
 
   const shared = {
     ...args,
@@ -157,9 +156,9 @@ function ExternalResetHarness(args: ComponentProps<typeof StatefulButton>) {
 export default meta;
 
 /** Live machine on top (press it), every controlled state below. The toggles
- *  swap the glossy key or the elevated chip in, add the trailing idle icon,
- *  re-arm the button after its terminal window, and rename each state's label;
- *  `Outcome` picks whether the run resolves or rejects. */
+ *  swap the elevated chip in, add the trailing idle icon, re-arm the button
+ *  after its terminal window, and rename each state's label; `Outcome` picks
+ *  whether the run resolves or rejects. */
 export const Interactive: Story = {
   render: (args) => <StatefulButtonPlayground {...args} />,
 };
@@ -356,28 +355,5 @@ export const HeldResetSignal: Story = {
     await waitFor(() => expect(args.afterSuccess).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(args.afterReset).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(button).not.toHaveAttribute('aria-disabled', 'true'));
-  },
-};
-
-/** Glossy key through the full success machine: the key switches from the
- *  translucent neutral glass to the vivid green `success` chip on resolve,
- *  holding its dome, rim and coloured cast rather than overlaying a flat plate. */
-export const GlossyMachineSuccess: Story = {
-  name: 'Demo: Glossy success machine',
-  args: {
-    chip: 'glossy' as const,
-    onPress: fn(() => Promise.resolve()),
-    afterSuccess: fn(),
-    minLoadingMs: 50,
-    successDurationMs: 100,
-  },
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
-    await userEvent.click(button);
-    await expect(args.onPress).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(args.afterSuccess).toHaveBeenCalledTimes(1));
-    await expect(button).toHaveAttribute('aria-disabled', 'true');
-    await expect(args.onPress).toHaveBeenCalledTimes(1);
   },
 };

@@ -106,7 +106,6 @@ Subpaths are namespaced by category:
 | `/morphing-fab`                | `MorphingFAB`                                                            |
 | `/sortable-list`               | `SortableList`                                                           |
 | `/stateful-button`             | `StatefulButton`                                                         |
-| `/glossy-button`               | `GlossyButton`                                                           |
 | `/switch`                      | `Switch`                                                                 |
 | `/checkbox`                    | `Checkbox`                                                               |
 | `/checkbox-card`               | `CheckboxCardGroup`, `CheckboxCard`                                      |

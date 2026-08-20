@@ -1,5 +1,287 @@
 # rn-motion-ui
 
+## 5.7.0
+
+### Minor Changes
+
+- 4b03b32: feat(Button): rename `primary`/`secondary` to `neutral`/`inverse`; fix `inverse` fill
+
+  `Button`, `IconButton` and `StatefulButton` rename `primary` → `neutral` and
+  `secondary` → `inverse` (colours unchanged; the old `inverse` is removed).
+  `ElevatedButton` and `GlossyButton` `inverse` now render the
+  `primary`/`primary-foreground` pair swapped — the `neutral` of the opposite
+  theme — and `ThemedIcon` drops its `primary`/`secondary` keys to match.
+
+### Patch Changes
+
+- 24613c3: fix(AnimatedBadge): tighten the `md` badge gap and height
+
+  The medium badge drops its icon–label gap from `gap-1.5` to `gap-1` and its
+  height from `h-8` to `h-7`, trimming the vertical padding for a more compact
+  plate without changing the `sm` size.
+
+- 03d2522: fix(BottomSheet): make the close animation visible
+
+  The close spring was overdamped (natural frequency ≈31.6), so the sheet
+  snapped off-screen almost instantly and the exit read as a jump rather than
+  a slide. Retuned to a critically damped spring (≈15.6, roughly half the
+  speed) so the slide-out is a deliberate, perceptible motion. The open spring
+  is unchanged.
+
+- 523e402: fix(theme): deepen the `info` token
+
+  `--color-info` shifts from `oklch(65% 0.17 247)` to `oklch(58% 0.18 255)` —
+  a deeper, more saturated blue — across the light, dark, and native OKLCH
+  sources so every platform stays in parity.
+
+- 5426ddc: feat(Button): default to the pill shape
+
+  `Button`, `ElevatedButton`, `GlossyButton`, `StatefulButton`, and `IconButton`
+  now default `shape` to `pill` instead of `rounded`.
+
+- 67df4e9: feat(Checkbox): shared animated box with a `tone` prop, reused by CheckboxCard
+
+  The animated box + check/dash mark that `Checkbox` and `CheckboxCard` each
+  carried a private copy of is now one exported `CheckboxBox`, so the two
+  controls stay visually in lockstep. `Checkbox` gains a `tone` prop (the
+  accent for the fill, border and mark, defaulting to `primary`);
+  `CheckboxCard` renders the shared box with `tone="info"` instead of its
+  hand-rolled info fill. The box now animates its own background between the
+  surface and accent fills instead of cross-fading an overlapping -0.5px
+  overlay, and the check/dash glyphs are re-centered on the stroke.
+
+- c817dc4: fix(menus): disable the overlay scrim blur on Android
+
+  Android's native `QmBlurView` is not performant enough to run under a
+  full-bleed overlay scrim, so `OverlayBlur` now no-ops on Android. HoldMenu's
+  backdrop and the modal overlays (AdaptiveModal, MorphingModal,
+  ActionFeedbackModal, BottomSheet, Drawer) degrade to the plain translucent dim
+  there, while iOS keeps `UIVisualEffectView` and web keeps the CSS
+  `backdrop-filter`.
+
+- 0d2cffb: fix(DragManager): clear the stale preview ghost on a preview-less drag
+
+  The overlay cached the preview separately from the drag, so an HTML5 chip lifted
+  outside this manager (no preview) kept the previous drag's preview alive and
+  briefly re-showed its ghost during the fade-out. The preview is now cached only
+  while a drag is live, so a drag without a preview clears it.
+
+- 4fe8cd4: feat(FileSystem): info-toned drop hint chip with a stable testID
+
+  The "Move into <folder>" chip that follows the drag ghost now renders the
+  folder name (and its arrow) in the `info` accent so the destination reads as
+  one accent-coloured unit, tightens its padding, and sits flush under the
+  ghost. It also gains a `FS_DROP_HINT_TEST_ID` so stories assert on the chip
+  directly rather than matching its rendered text.
+
+- 56353e2: feat(FileSystem): drop indicator glides between adjacent targets, snaps to distant ones
+
+  The shared drop indicator used to spring onto every new target, which reads
+  as a glide down a list but flings the outline across the whole file area on
+  a long hop. It now distinguishes neighbours from distant targets via a new
+  `rectsAdjacent` geometry helper: crossing between adjacent rows/tiles glides
+  (one continuous sweep), while crossing to anything further — a folder on the
+  other side of the pane, a skipped tile, a full row between — snaps the
+  outline straight to the target instead of springing it across.
+
+  Regression coverage: `rectsAdjacent` unit tests (edge-to-edge, gapped,
+  overlapping and diagonal neighbours, commutativity).
+
+- e8b198e: fix(FileSystem): drop indicator (and drop targeting) track the list while it scrolls mid-drag
+
+  Zone rects are window coordinates measured at drag start (or the last layout
+  pass), and a scroll moves the rows without any layout event — so the store's
+  cached boxes, and the shared drop indicator painted from them, kept resolving
+  against the pre-scroll positions the moment the list moved under a drag
+  (auto-scroll at the edge, or a wheel). The views now report each scroll delta
+  to the store (`shiftZoneRects`), which re-bases the cached rects of the zones
+  that move with the content (rows, tiles, overlays — never the static body and
+  pane fallbacks) and re-resolves the drop target, so the hit test and the
+  outline both follow the content. The indicator snaps to the shifted rect on a
+  scroll (a spring would trail a moving row) and still glides between targets on
+  a pointer crossing.
+
+- 6e1107b: feat(FileSystem): headless header, footer and breadcrumbs
+
+  The built-in header, footer and breadcrumb trail no longer impose a surface
+  background or border — they now carry layout only, so consumers style them via
+  `headerClassName`, `footerClassName` and the new `breadcrumbsClassName`.
+
+  Adds a `renderBreadcrumbs` render prop (alongside `renderHeader`/`renderFooter`)
+  that receives the trail as `{ id, label }` crumbs plus `navigateTo` and
+  `currentPath`, so a consumer can render its own trail without duplicating the
+  path logic.
+
+- b2ac786: fix(FileSystem): use predefined FadeIn/FadeOut for tile enter/exit
+
+  The grid tile's enter/exit used a custom `Keyframe`, which on web triggers
+  Reanimated's keyframe cleanup that re-homes the entering node with
+  `position: absolute` — pulling it out of flex-wrap flow so the grid stops
+  reflowing and later adds look like they never arrive. Predefined
+  `FadeIn`/`FadeOut` are keyframes Reanimated already knows, so that cleanup path
+  never runs.
+
+- 1199bd9: fix(HoldMenu): fade the twin in on activation to kill the appear flicker
+
+  The portal twin snapped to full opacity the instant the menu opened. When the
+  menu had room and the item did not travel, the in-place original and the twin
+  swapped in a single frame, exposing their sub-pixel differences as a flicker.
+  The twin now fades in over the still-opaque original, and the original only
+  drops out once the twin is fully opaque — so the two never overlap
+  semi-transparently (no dim) and never leave a gap (no blink).
+
+- 0114272: feat(menus): blur the overlay scrims and lighten the backdrop dim
+
+  HoldMenu's backdrop and the modal overlays (AdaptiveModal, MorphingModal,
+  ActionFeedbackModal, BottomSheet, Drawer) now paint a `BlurView` under their
+  dim so the page behind reads as frosted glass instead of a flat wash — native
+  `UIVisualEffectView`/`QmBlurView` on device, CSS `backdrop-filter` on web. The
+  blur comes from the optional peer `@sbaiahmed1/react-native-blur` (New
+  Architecture, RN 0.80+); when it is not installed the scrims degrade to their
+  previous plain-translucent rendering. HoldMenu's backdrop dim is also much
+  lighter, so the blur reads through on both platforms instead of the near-opaque
+  black web scrim.
+
+- 7c0cedb: fix(HoldMenu): snap the twin handover on release to kill the flicker
+
+  On close the portal twin and the in-place original switched visibility with
+  two independent zero-duration timings. On web those could resolve on
+  different frames, leaving a one-frame hole where neither copy is visible — a
+  release flicker — and a cross-fade fix dimmed instead, since two stacked
+  semi-transparent layers don't sum to full opacity. Both copies now read a
+  single shared value, so the switch is atomic: no overlap window to dim, no
+  gap to blink.
+
+- c907d9f: fix(HoldMenu): clamp menu travel to the provider root's height, not the window's
+
+  The menu's travel math clamped against `windowSize.height`, so when the
+  provider root is inset from the window — Storybook's padding decorator, a
+  menu nested inside a scroll view, a root that doesn't fill the screen — the
+  panel was placed against the wrong bottom and could render off-root. Each
+  activation now `measure`s the provider root and stores its height in a
+  shared value; the travel math and the always-mounted twin clamp against that
+  real bottom, falling back to the window height until the first activation
+  measures it.
+
+- b4b1004: feat(HoldMenu): tighten the panel to 40% of the window width
+
+  The menu panel followed upstream's 60% window-width sizing. It now uses a
+  tighter 40%, so the surface sits closer to the held item and leaves more of
+  the underlying screen visible. The four upstream example screens in
+  Storybook are consolidated behind a single `Interactive` toggle.
+
+- 03d2522: fix(HoldMenu): keep the held item visible when the twin lifts away
+
+  The in-place item hid under the portal twin on every activation, so when the
+  twin travelled to a different y (the menu overflowing and lifting the pair)
+  the original still faded out underneath — needlessly, since the two no longer
+  overlap. The cross-fade now runs only when the twin stays put; when it
+  travels the original holds its full opacity while the twin lifts away. Also
+  adds a nested card-scroll story that holds items inside two levels of scroll
+  view, so the twin's scroll-aware placement is demonstrable.
+
+- 2ae567c: feat(Input): border-driven state and base/elevated/floating variants
+
+  Input state now drives a 1px web border (idle border, foreground on focus,
+  danger on error) instead of a shadow, and the `surface`/`filled` variants are
+  replaced by `base` (flat white), `elevated` (muted raised), and `floating`
+  (surface-3 with a large diffuse shadow). The default shape is now `pill`.
+
+- 759f69a: fix(Input): render the value and placeholder in the custom font
+
+  Input (and CommandPalette's search field) now apply the `font-sans-normal`
+  family token to the `TextInput`, so the typed text and its placeholder use the
+  app's custom typeface (e.g. Geist) instead of the platform's default font,
+  matching the rest of the UI.
+
+- 03d2522: fix(MultiStepMenu): top-align the small-screen title and push it down with the back button
+
+  On small screens the rolling title sat a spacer row below the close button
+  when there was no back button, and stayed inline once one appeared. The title
+  now renders inline with the close button at the root, and moves below the
+  back-button row — animated down with the pane — once a section is pushed, so
+  the header reads consistently at every depth.
+
+- 5d3860b: perf(FileSystem): one shared drop indicator leaf instead of a per-row outline, and a parsed-once drag payload
+
+  Dragging across a large folder used to re-render rows on every zone crossing:
+
+  - Every folder row, tile and drag-only overlay painted its own `border-info`
+    outline from a render-prop `isOver`, so each crossing mounted one indicator
+    and unmounted another inside the row it had just left — and the views that
+    built their row body inside that function re-rendered the whole row subtree
+    with it.
+  - Every zone's `accepts` re-`JSON.parse`d the drag payload on every pointer
+    move, once per zone, so a drag over a hundred rows parsed the same string a
+    hundred times a frame.
+
+  The drop indicator is now one absolutely-positioned Animated leaf in the drag
+  scope, painted at the over zone's measured rect (the same rect the store's hit
+  test resolves the winner from). It re-renders only on drag start/end and zone
+  crossings, and its geometry is driven by Animated values, so gliding between
+  targets costs no render at all. Rows and tiles keep their dropzones (accepts,
+  drop, hover-to-expand) but no longer paint an indicator, and their children are
+  plain elements, so a crossing never re-renders the row body. The payload reader
+  is cached per transfer, so each drag parses exactly once.
+
+  Background fallbacks (the file area's own zone, column panes) keep their own
+  drop surfaces — they carry external-drop and delay handling a shared outline
+  cannot express. The icons and columns views keep their label-chip / row-fill
+  drop language; the shared outline is what replaces the per-row `border-info`
+  outlines in the list, mobile list, mobile grid and the expanded-folder overlays.
+
+- f546971: fix(FileSystem): smooth, velocity-driven auto-scroll while a drag rides the list edge
+
+  The auto-scroll that runs while a drag hovers near a scrollable's top or bottom
+  edge used to step the offset by a fixed 6px every 16ms and re-read the LIVE
+  scroll offset on every tick. Scroll events land a frame late on native (and
+  asynchronously on web), so the read was frequently stale: the same offset got
+  commanded two frames in a row — the list moved on every OTHER frame, which
+  reads as staggered steps — and could even command a smaller value than the
+  previous one, a visible backward hop. `useFileSystemDragScroll` now owns a
+  monotonic offset cursor, seeded once per run from the live offset and never
+  re-read while running, and commands it every animation frame. Speed is a
+  velocity integrated toward a target set by how deep the pointer sits in the
+  edge zone (0 at the zone boundary → full speed at the edge), with acceleration
+  ramping in and deceleration easing out — including through zero when the
+  pointer crosses from the top zone to the bottom one, so direction flips glide
+  instead of snapping.
+
+- 80c7e03: feat(Table): `minWidth` column floor forces horizontal scroll instead of squeezing
+
+  A column whose `width` would resolve narrower than its `minWidth` — an `fr`
+  column squeezed by a narrow container, or a fixed `width` smaller than the
+  floor — now clamps up to `minWidth` in `computeColumnWidths`, pushing the
+  total past the container width and turning on horizontal scroll rather than
+  rendering the column unreadably narrow. `minWidth` is a floor, not a share:
+  fr columns still divide the remaining space, but each is then raised to its
+  own floor. The pre-layout render (before `onLayout` reports a width) honors
+  the same floor via `columnLayoutStyle` / `columnLayoutClass`.
+
+  Regression coverage: `computeColumnWidths` unit tests for the fr and px
+  floors, plus a `MinWidth` story that asserts the email column keeps its
+  240px floor inside a 320px container and that the horizontal-scroll wrapper
+  mounts.
+
+- 03d2522: fix(Tabs): match the segment inset to pill mode
+
+  Segment mode used a 2px inset (`p-0.5`) while pill mode used 4px (`p-1`), so
+  the active segment indicator hugged the outer edge tighter than the pill's
+  thumb. Segment mode now uses the same 4px inset, so the two shapes share one
+  gutter.
+
+- cba83ad: feat(Text): forward refs and adopt the themed Text across components
+
+  `Text` now wraps the host in `forwardRef` so it can hand a ref to Reanimated,
+  and `MotiText` (the animated `Text`) renders the themed `Text` instead of the
+  raw `react-native` one. The form, navigation, and file-system components that
+  imported RN's `Text` directly now render the themed `Text`, so their labels pick
+  up the typography scale and weight tokens.
+
+- c18f60f: feat(ToggleGroup): default to the pill shape
+
+  `ToggleGroup` now defaults `shape` to `pill` instead of `rounded`.
+
 ## 5.6.2
 
 ### Patch Changes

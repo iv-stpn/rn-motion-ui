@@ -38,7 +38,9 @@ type UseHoldItemSqueezeResult = {
  * line limit. Verbatim: the squeeze-down and the tap bounce use plain
  * `withTiming` (no easing), the completion callback flips the menu active and
  * fires haptics only when the list is non-empty, and the re-tap guard stops
- * the tap animation from restarting mid-flight.
+ * the tap animation from restarting mid-flight. One departure: an inert hold
+ * (empty items — the mobile views' multi-select join) also scales back on
+ * completion, so the press pulse returns to full size instead of staying stuck.
  */
 export function useHoldItemSqueeze({
   activateOn,
@@ -71,6 +73,10 @@ export function useHoldItemSqueeze({
         isActive.value = true;
         scaleBack();
         if (hapticFeedback !== 'None') runOnJS(hapticResponse)();
+      } else if (isFinised) {
+        // No menu to pop into — an inert hold (empty items) is the multi-select join,
+        // so the squeeze is just a press pulse: return to full size once it lands.
+        scaleBack();
       }
 
       isAnimationStarted.value = false;

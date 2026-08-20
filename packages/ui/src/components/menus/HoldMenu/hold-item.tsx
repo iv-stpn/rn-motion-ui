@@ -80,12 +80,13 @@ const HoldItemComponent = ({
    * `withTiming` animations could resolve on different web frames and leave a
    * one-frame hole.
    *
-   * Activation fades this 1 → 0 (the twin fades in) while the in-place item
+   * Activation drives this 1 → 0 (the twin takes over) while the in-place item
    * holds its full opacity underneath — see `useHoldItemSqueeze`, which only
-   * drops out once this hits 0. Because the in-place item never turns
-   * semi-transparent while the twin fades over it, the pair never dims (stacked
-   * semi-transparent layers don't sum to full opacity) and the twin never pops
-   * in. Release pins this back to 0, then snaps it 0 → 1 after the twin travels
+   * drops out once this hits 0. When the twin stays put it fades in over the
+   * original (a timed cross-fade, so the pair never dims — stacked
+   * semi-transparent layers don't sum to full opacity — and the twin never pops
+   * in); when it travels it shows fully at once, so this snaps to 0 instantly.
+   * Release pins this back to 0, then snaps it 0 → 1 after the twin travels
    * back, in lockstep with the in-place item.
    */
   const releaseProgress = useSharedValue(1);
@@ -142,13 +143,16 @@ const HoldItemComponent = ({
         return;
       }
 
-      // When the twin travels (the menu overflows and lifts the pair, `tY !== 0`)
-      // it lands at a different y than the in-place item, so the two never
-      // overlap and the original need not hide — holding `releaseProgress` at 1
-      // keeps it visible while the twin lifts away. Only when the twin stays put
-      // (`tY === 0`) does it overlap the original, so that is the one case that
-      // needs the timed cross-fade to hide the original without dimming the pair.
-      releaseProgress.value = transformValue.value === 0 ? withTiming(0, { duration: HOLD_ITEM_TRANSFORM_DURATION }) : 1;
+      // The twin takes over the instant the menu activates. When it travels
+      // (`tY !== 0`) it is drawn fully opaque from the first frame, so the
+      // in-place item must drop out on that same frame — no lingering copy left
+      // under the lifted one. When it stays put (`tY === 0`) the twin overlaps
+      // the original, so a timed cross-fade carries the handover: the original
+      // hides only once the twin is fully opaque, so the pair never dims and the
+      // twin never pops in.
+      releaseProgress.value = withTiming(0, {
+        duration: transformValue.value === 0 ? HOLD_ITEM_TRANSFORM_DURATION : 0,
+      });
     },
   );
 

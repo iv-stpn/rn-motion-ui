@@ -91,7 +91,7 @@ const ELEVATED_FILL_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, Th
 // darkens to the weak surface and the label goes strong (mirrors the web
 // `hover:bg-bg-weak-50 hover:text-text-strong-950`).
 const WHITE_BG_REST = 'bg-surface-3';
-const WHITE_BG_HOVER = 'bg-muted';
+const WHITE_BG_HOVER = 'bg-surface-contrast';
 const WHITE_LABEL_REST = 'text-muted-foreground';
 const WHITE_LABEL_HOVER = 'text-foreground';
 
@@ -99,7 +99,7 @@ const WHITE_LABEL_HOVER = 'text-foreground';
 const RIPPLE_Z = 1;
 
 // Disabled chip — flat weak plate, disabled-grey label, no gloss/shadow.
-const DISABLED_BG = 'bg-muted';
+const DISABLED_BG = 'bg-surface-contrast';
 const DISABLED_LABEL = 'text-muted-foreground';
 
 // The gray plate mirrors Geist's secondary button: a fixed light fill, a muted

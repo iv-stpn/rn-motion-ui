@@ -38,9 +38,9 @@ function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focu
 const field = cva('relative flex-row items-center overflow-hidden web:border', {
   variants: {
     variant: {
-      base: 'bg-input-base',
-      elevated: 'bg-input-elevated',
-      floating: 'bg-surface-3 shadow-input-floating',
+      base: 'bg-input',
+      elevated: 'bg-surface-contrast',
+      floating: 'bg-surface-3 shadow-floating',
     },
     state: {
       idle: 'web:border-border',

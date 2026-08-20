@@ -130,7 +130,7 @@ export function MorphingFAB({
           borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS,
         }}
         transition={morphTransition}
-        className="absolute bottom-0 overflow-hidden bg-surface-3 shadow-input-floating"
+        className="absolute bottom-0 overflow-hidden bg-surface-3 shadow-floating"
         style={{ ...(left ? { left: 0 } : { right: 0 }) }}
       >
         {open ? (

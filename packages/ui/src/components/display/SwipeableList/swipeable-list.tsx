@@ -122,7 +122,7 @@ const OVERSCROLL_DAMPING = 0.04;
 const BADGE_BACKGROUND = cva('items-center justify-center rounded-full', {
   variants: {
     tone: {
-      neutral: 'bg-muted',
+      neutral: 'bg-surface-contrast',
       primary: 'bg-primary',
       success: 'bg-success',
       warning: 'bg-warning',
@@ -162,7 +162,7 @@ function SwipeActionButton({ action, actionWidth, side, onAction, testID }: Swip
   const tone = action.tone ?? 'neutral';
   const colors = useThemeColors();
   // Reactive per-tone icon colour. neutral/primary track the theme — their badge
-  // backgrounds (`bg-muted`/`bg-primary`) invert, so the icon must invert too.
+  // backgrounds (`bg-surface-contrast`/`bg-primary`) invert, so the icon must invert too.
   // Status tones pair their soft plate background with the matching
   // `*-foreground` token, which is tuned for legibility on the plate in both
   // light and dark mode.
@@ -499,7 +499,7 @@ function SwipeableListRow({
   return (
     <View
       ref={rowRef}
-      className="relative overflow-hidden rounded-2xl bg-muted"
+      className="relative overflow-hidden rounded-2xl bg-surface-contrast"
       style={[
         { opacity: item.disabled ? 0.6 : 1 },
         // Web: keep vertical page scroll but let the wheel handler claim

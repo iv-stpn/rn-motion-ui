@@ -37,8 +37,8 @@ type ThemeToken =
   | 'muted'
   | 'muted-foreground'
   | 'border'
-  | 'input-base'
-  | 'input-elevated'
+  | 'input'
+  | 'surface-contrast'
   | 'primary'
   | 'primary-foreground'
   | 'secondary'
@@ -85,8 +85,8 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   muted: [0.95, 0, 0],
   'muted-foreground': [0.5, 0.004, 270],
   border: [0, 0, 0, 0.1],
-  'input-base': [1, 0, 0],
-  'input-elevated': [0.95, 0, 0],
+  input: [1, 0, 0],
+  'surface-contrast': [0.95, 0, 0],
   primary: [0.22, 0, 0],
   'primary-foreground': [0.98, 0.002, 270],
   secondary: [0.92, 0, 0],
@@ -123,8 +123,8 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   muted: [0.24, 0.004, 270],
   'muted-foreground': [0.73, 0.004, 270],
   border: [1, 0, 0, 0.1],
-  'input-base': [0.22, 0, 0],
-  'input-elevated': [0.21, 0, 0],
+  input: [0.22, 0, 0],
+  'surface-contrast': [0.21, 0, 0],
   primary: [0.95, 0.004, 270],
   'primary-foreground': [0.13, 0.004, 270],
   secondary: [0.35, 0.004, 270],

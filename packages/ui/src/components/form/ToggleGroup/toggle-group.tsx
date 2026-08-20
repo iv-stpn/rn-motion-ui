@@ -137,7 +137,7 @@ export function ToggleGroup({
         'items-center justify-center',
         PX_INTERACTIVE[size],
         !isHorizontal && 'py-3',
-        selected ? 'bg-info' : 'bg-muted',
+        selected ? 'bg-info -my-px' : 'bg-surface-contrast',
         total > 1 && !isLast && !suppressDivider && (isHorizontal ? 'border-r border-border' : 'border-b border-border'),
       );
 
@@ -194,7 +194,7 @@ export function ToggleGroup({
               radius,
               H_INTERACTIVE[size],
               PX_INTERACTIVE[size],
-              selected ? 'bg-info' : 'bg-muted',
+              selected ? 'bg-info' : 'bg-surface-contrast',
               'items-center justify-center',
               !isHorizontal && 'py-3',
             )}

@@ -42,16 +42,16 @@ function GripHandle() {
   return (
     <View className="mr-2 gap-0.5 py-1">
       <View className="flex-row gap-0.5">
-        <View className="h-1 w-1 rounded-full bg-muted-foreground/40" />
-        <View className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+        <View className="h-1 w-1 rounded-full bg-surface-contrast-foreground/40" />
+        <View className="h-1 w-1 rounded-full bg-surface-contrast-foreground/40" />
       </View>
       <View className="flex-row gap-0.5">
-        <View className="h-1 w-1 rounded-full bg-muted-foreground/40" />
-        <View className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+        <View className="h-1 w-1 rounded-full bg-surface-contrast-foreground/40" />
+        <View className="h-1 w-1 rounded-full bg-surface-contrast-foreground/40" />
       </View>
       <View className="flex-row gap-0.5">
-        <View className="h-1 w-1 rounded-full bg-muted-foreground/40" />
-        <View className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+        <View className="h-1 w-1 rounded-full bg-surface-contrast-foreground/40" />
+        <View className="h-1 w-1 rounded-full bg-surface-contrast-foreground/40" />
       </View>
     </View>
   );

@@ -67,7 +67,7 @@ const container = cva('flex-row items-center justify-center', {
       neutral: SURFACE_CLASSNAME[3],
       // Surface-3 fill + the input's large diffuse drop — the floating-input
       // recipe, so an icon-only control reads as a raised card without a rim.
-      elevated: 'bg-surface-3 shadow-input-floating',
+      elevated: 'bg-surface-3 shadow-floating',
     },
   },
   defaultVariants: { variant: 'neutral' },

@@ -36,12 +36,12 @@ function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
     <View className="min-h-[380px] flex-1 bg-surface-1">
       <View className="border-border border-b px-5 py-3">
-        <View className="h-2.5 w-24 rounded-full bg-muted-foreground/20" />
+        <View className="h-2.5 w-24 rounded-full bg-surface-contrast-foreground/20" />
       </View>
       <View className="gap-3 p-5">
-        <View className="h-2.5 w-3/4 rounded-full bg-muted-foreground/15" />
-        <View className="h-2.5 w-1/2 rounded-full bg-muted-foreground/15" />
-        <View className="h-20 w-full rounded-2xl bg-muted-foreground/[0.06]" />
+        <View className="h-2.5 w-3/4 rounded-full bg-surface-contrast-foreground/15" />
+        <View className="h-2.5 w-1/2 rounded-full bg-surface-contrast-foreground/15" />
+        <View className="h-20 w-full rounded-2xl bg-surface-contrast-foreground/[0.06]" />
         <Text className="text-muted-foreground text-sm">{hint}</Text>
       </View>
       {children}
@@ -114,7 +114,7 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
   if (status === 'sent')
     return (
       <MotiView key="sent" from={enter} animate={{ opacity: 1, scale: 1, translateY: 0 }} exit={exit} transition={trans}>
-        <View className="items-center justify-center gap-1.5 rounded-[16px] bg-muted px-4 py-6">
+        <View className="items-center justify-center gap-1.5 rounded-[16px] bg-surface-contrast px-4 py-6">
           <View className="mb-1 h-10 w-10 items-center justify-center rounded-full bg-success">
             <ThemedIcon icon={MessageSquare} token="success-foreground" size={18} />
           </View>
@@ -127,7 +127,7 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
   if (status === 'error')
     return (
       <MotiView key="error" from={enter} animate={{ opacity: 1, scale: 1, translateY: 0 }} exit={exit} transition={trans}>
-        <View className="items-center rounded-[16px] bg-muted px-4 py-5">
+        <View className="items-center rounded-[16px] bg-surface-contrast px-4 py-5">
           <View className="h-10 w-10 items-center justify-center rounded-full bg-danger">
             <ThemedIcon icon={MessageSquare} token="danger-foreground" size={18} />
           </View>
@@ -147,7 +147,7 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
 
   return (
     <MotiView key="form" from={enter} animate={{ opacity: 1, scale: 1, translateY: 0 }} exit={exit} transition={trans}>
-      <View className="min-h-[150px] rounded-[16px] bg-muted px-4 py-3.5">
+      <View className="min-h-[150px] rounded-[16px] bg-surface-contrast px-4 py-3.5">
         <Text className="font-semibold text-foreground text-sm">{FEEDBACK_TITLE}</Text>
         <TextInput
           value={message}

@@ -18,9 +18,8 @@
 //
 // Built on pointer events rather than RNGH deliberately: react-native-gesture-handler
 // needs a `GestureHandlerRootView` in the consumer's tree to work under
-// react-native-web, and the rest of this package refuses to require one (see the
-// note in `use-hold-activation.ts`). `FileSystem`'s own web drag is built the same
-// way, for the same reason.
+// react-native-web, and the rest of this package refuses to require one.
+// `FileSystem`'s own web drag is built the same way, for the same reason.
 //
 // One honest limitation: a pan carries the library's own `DragTransfer`, not a real
 // `DataTransfer`. A touch drag therefore reaches `<Dragzone>`s and nothing else —

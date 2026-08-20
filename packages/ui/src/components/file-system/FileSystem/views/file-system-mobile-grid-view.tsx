@@ -6,7 +6,7 @@
 // has no right button to summon a menu and no pointer to hover with — so each tile
 // shows a visible kebab instead, and long-press is the way into multi-select. Once
 // anything is selected every kebab becomes a checkbox (see `FileSystemMobileMenu`),
-// which is the classic mobile file-manager idiom. The same hold that toggles the
+// which is the classic mobile file-manager idiom. The same hold that joins the
 // selection keeps dragging past the escape slop, lifting the multi-selection onto
 // a folder tile — the drag wiring mirrors the desktop `IconTile`.
 
@@ -18,17 +18,19 @@ import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
-import type { DragzoneRenderState } from '../../../gestures/drag.types';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { useDragScope } from '../../../gestures/drag-scope';
+import { shiftZoneRects } from '../../../gestures/drag-store';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
+import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
-import { useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
+import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
-import { FileSystemDropzone } from '../shell/file-system-dropzone';
+import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
   FileEntry,
   FileSystemEntry,
@@ -90,6 +92,8 @@ type MobileGridTileProps = Pick<
   getContextMenuActions?: FileSystemViewProps['getContextMenuActions'];
   onContextMenuAction?: FileSystemViewProps['onContextMenuAction'];
   testID?: string;
+  /** This tile is under the finger right now during a scrub — its checkbox bounces. */
+  isScrubTarget: boolean;
 };
 
 /** One tile: a tappable glyph + two-line name, with the kebab/checkbox overlaid to the right of the name. */
@@ -116,13 +120,14 @@ function MobileGridTile({
   selecting,
   tileWidth,
   testID,
+  isScrubTarget,
 }: MobileGridTileProps) {
   const colors = useThemeColors();
   const isFile = entry.kind === 'file';
 
   // The body has no menu of its own — the kebab is the menu. Passing no
-  // `getContextMenuActions` keeps `HoldContextMenu` inert (empty items), so a
-  // hold fires only `onHoldAction` (the multi-select toggle) rather than a panel.
+  // `getContextMenuActions` keeps `HoldItem` inert (empty items), so a
+  // hold fires only `onHoldAction` (the multi-select join) rather than a panel.
   const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
     entry,
     getContextMenuActions: undefined,
@@ -156,7 +161,13 @@ function MobileGridTile({
       {/* The tappable body: the glyph box then the name. The name row reserves the
           right edge (`pr-7`) for the control overlaid below, so the two never overlap
           and the control is a sibling rather than a button inside a button. */}
-      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+      <HoldItem
+        hapticFeedback="Medium"
+        items={menuProps.items}
+        dragOptions={dragOptions}
+        onHold={onHoldAction}
+        onOpenChange={handleOpenChange}
+      >
         <Pressable
           accessibilityLabel={entry.name}
           accessibilityRole="button"
@@ -212,13 +223,14 @@ function MobileGridTile({
             </Text>
           </View>
         </Pressable>
-      </HoldContextMenu>
+      </HoldItem>
       {/* The kebab/checkbox, laid over the reserved name-row slot like the list view's
           disclosure chevron — a sibling, never a child of the row button. */}
       <View className="absolute right-0" style={{ top: GLYPH_BOX_HEIGHT + 2 }}>
         <FileSystemMobileMenu
           entry={entry}
           getContextMenuActions={getContextMenuActions}
+          isScrubTarget={isScrubTarget}
           isSelected={isSelected}
           onContextMenuAction={onContextMenuAction}
           onScrubStart={onScrubStart}
@@ -238,6 +250,9 @@ function MobileGridTile({
   // structural DOM mutation that can tear an in-flight drag down.
   if (entry.kind !== 'folder') return tile;
 
+  // No outline of its own: the drag scope's shared leaf paints the drop
+  // indicator once, at the over zone's rect, so a crossing never re-renders the
+  // tile body (plain children bail on the stable element reference).
   return (
     <FileSystemDropzone
       destination={entry.path}
@@ -246,16 +261,12 @@ function MobileGridTile({
       onExternalDrop={onExternalDrop}
       onMove={onMove}
     >
-      {({ isOver }: DragzoneRenderState) => (
-        <>
-          {tile}
-          {isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null}
-        </>
-      )}
+      {tile}
     </FileSystemDropzone>
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the tile is a single render layer, so its body is one function
 export function FileSystemMobileGridView({
   draggable = false,
   ensureChildren,
@@ -303,14 +314,42 @@ export function FileSystemMobileGridView({
     [onOpen, selecting, toggleSelect],
   );
 
+  const containerRef = useRef<View | null>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollOffsetRef = useRef(0);
+  // The manager this view's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
+
+  // A drag near the top or bottom edge scrolls the grid, so a folder below the
+  // fold is reachable without releasing. Runs for external drags too.
+  const scrollTo = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
+  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
+
+  // The same edge-scroll engine the drag above uses, driven by the scrub's pointer
+  // stream instead — dragging to multi-select scrolls the grid when the finger goes
+  // above the visible tiles (or below them).
+  const {
+    begin: beginAutoScroll,
+    move: moveAutoScroll,
+    end: endAutoScroll,
+  } = useFileSystemAutoScroll({
+    containerRef,
+    scrollTo,
+    scrollOffsetRef,
+  });
+
   // Scrub geometry. Tiles vary in height (one- or two-line names), so each reports
   // its own content rect for the hit-test. The finger→content mapping is calibrated
   // at drag start against the start entry's checkbox — whose content position is
   // `rect` plus the trailing-control inset below the glyph box, and whose window
   // position the gesture reports at `onStart`. The offset turns every later
-  // `absoluteX`/`absoluteY` straight into content space, with no `measureInWindow`
-  // and no scroll bookkeeping to drift.
+  // `absoluteX`/`absoluteY` straight into content space. The one thing that *can*
+  // drift is the grid auto-scrolling mid-scrub, which moves the content under a
+  // fixed finger position — so the mapping adds the scroll delta since calibration
+  // (see `resolveItemAt`).
   const scrubOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const scrubStartOffsetRef = useRef(0);
   const tileRectsRef = useRef<Map<string, TileRect>>(new Map());
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
@@ -321,16 +360,25 @@ export function FileSystemMobileGridView({
     tileRectsRef.current.set(entry.path, rect);
   }, []);
 
-  const resolveItemAt = useCallback((x: number, y: number) => {
+  const resolveItemAt = useCallback((x: number, y: number): FileSystemScrubHit => {
     const origin = scrubOriginRef.current;
     if (origin === null) return null;
     const contentX = x - origin.x;
-    const contentY = y - origin.y;
+    const contentY = y - origin.y + (scrollOffsetRef.current - scrubStartOffsetRef.current);
+    let minTop = Number.POSITIVE_INFINITY;
+    let maxBottom = Number.NEGATIVE_INFINITY;
     for (const [path, rect] of tileRectsRef.current) {
+      if (rect.y < minTop) minTop = rect.y;
+      if (rect.y + rect.height > maxBottom) maxBottom = rect.y + rect.height;
       const insideX = contentX >= rect.x && contentX < rect.x + rect.width;
       const insideY = contentY >= rect.y && contentY < rect.y + rect.height;
-      if (insideX && insideY) return path;
+      if (insideX && insideY) return { kind: 'item', path };
     }
+    // No tile has laid out yet, or the finger sits in the grid's own content bounds
+    // but between tiles (a gap) — neither is an over-drag.
+    if (tileRectsRef.current.size === 0) return null;
+    if (contentY < minTop) return { kind: 'beyond', side: 'above' };
+    if (contentY > maxBottom) return { kind: 'beyond', side: 'below' };
     return null;
   }, []);
 
@@ -338,6 +386,7 @@ export function FileSystemMobileGridView({
     begin,
     move: moveScrub,
     end: endScrub,
+    scrubTarget,
   } = useFileSystemScrubSession({
     orderedPaths,
     selectedPaths,
@@ -357,26 +406,42 @@ export function FileSystemMobileGridView({
       const centerX = rect.x + rect.width - TRAILING_CONTROL_SIZE / 2;
       const centerY = rect.y + GLYPH_BOX_HEIGHT + 2 + TRAILING_CONTROL_SIZE / 2;
       scrubOriginRef.current = { x: x - centerX, y: y - centerY };
+      scrubStartOffsetRef.current = scrollOffsetRef.current;
       begin(entry);
+      beginAutoScroll();
     },
-    [begin],
+    [begin, beginAutoScroll],
   );
+
+  const handleScrubMove = useCallback(
+    (x: number, y: number) => {
+      moveScrub(x, y);
+      moveAutoScroll(x, y);
+    },
+    [moveScrub, moveAutoScroll],
+  );
+
+  const handleScrubEnd = useCallback(() => {
+    endScrub();
+    endAutoScroll();
+  }, [endScrub, endAutoScroll]);
 
   const tileWidth =
     width > 0 ? Math.max(0, Math.floor((width - GRID_PADDING * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS)) : 0;
 
-  const containerRef = useRef<View | null>(null);
-  const scrollRef = useRef<ScrollView | null>(null);
-  const scrollOffsetRef = useRef(0);
-
-  // A drag near the top or bottom edge scrolls the grid, so a folder below the
-  // fold is reachable without releasing. Runs for external drags too.
-  const scrollTo = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
-  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
-
-  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
-  }, []);
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offset = event.nativeEvent.contentOffset.y;
+      // Same correction as the desktop list view: the store's cached zone rects
+      // are window boxes from the last measure, and a scroll moves the tiles
+      // without any layout event, so the drop targeting and the shared drop
+      // indicator would resolve against pre-scroll positions mid-drag.
+      const delta = offset - scrollOffsetRef.current;
+      scrollOffsetRef.current = offset;
+      if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
+    },
+    [managerPath],
+  );
 
   return (
     <View className="min-h-0 flex-1" onLayout={handleLayout} ref={containerRef}>
@@ -401,6 +466,7 @@ export function FileSystemMobileGridView({
                 ensureChildren={ensureChildren}
                 entry={entry}
                 getContextMenuActions={getContextMenuActions}
+                isScrubTarget={scrubTarget === entry.path}
                 isSelected={selectedPaths.has(entry.path)}
                 key={entry.path}
                 loadPreviewImageUrl={loadPreviewImageUrl}
@@ -409,8 +475,8 @@ export function FileSystemMobileGridView({
                 onExternalDrop={onExternalDrop}
                 onMove={onMove}
                 onScrubStart={beginScrub}
-                onScrubMove={moveScrub}
-                onScrubEnd={endScrub}
+                onScrubMove={handleScrubMove}
+                onScrubEnd={handleScrubEnd}
                 onSelectLongPress={selectLongPress}
                 onTileLayout={handleTileLayout}
                 onToggleSelect={toggleSelect}

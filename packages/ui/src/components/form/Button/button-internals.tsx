@@ -38,11 +38,6 @@ type BuildContentArgs = {
   /** Resolved label class (colour + size), computed by the caller so each button
    *  can fold its own variant/colour/hover override in before it reaches here. */
   labelClass: string;
-  /** Resolved label colour, applied inline. For callers whose colour isn't a
-   *  static class — GlossyButton derives its label from the face colour, so
-   *  there is no `text-*` utility for the scanner to find. Wins over any colour
-   *  in `labelClass`/`labelClassName`, since inline style beats className. */
-  labelColor?: string;
   children: ReactNode;
   leftAdornment: ReactNode;
   rightAdornment: ReactNode;
@@ -50,10 +45,10 @@ type BuildContentArgs = {
   labelClassName: string | undefined;
 };
 
-function renderChild(child: ReactNode, className: string, labelClassName?: string, color?: string): ReactNode {
+function renderChild(child: ReactNode, className: string, labelClassName?: string): ReactNode {
   if (typeof child === 'string' || typeof child === 'number')
     return (
-      <Text className={cn(className, labelClassName)} style={color === undefined ? undefined : { color }}>
+      <Text className={cn(className, labelClassName)} weight="medium">
         {child}
       </Text>
     );
@@ -68,9 +63,8 @@ export type PressAnimateOpts = {
 };
 
 /**
- * Resolves the MotiView `animate` value for the press animation.  Each button
- * component calls this and spreads the result into its own animate object so
- * it can merge additional properties (e.g. GlossyButton's opacity).
+ * Resolves the MotiView `animate` value for the press animation. Each button
+ * component calls this and spreads the result into its `animate` object.
  */
 // biome-ignore lint/style/useComponentExportOnlyModules: shared press-animation helper consumed by every button component alongside the other machinery already exempted below
 export function pressAnimate(opts: PressAnimateOpts) {
@@ -154,8 +148,8 @@ export type BaseButtonProps = {
  * Renders a single absolutely-positioned container so every ripple MotiView
  * shares the same coordinate origin (the Pressable it sits inside) and the same
  * z-index layer — a bare array of absolutely-positioned siblings would each
- * position relative to its own parent, and a nested wraper (GlossyButton's old
- * approach) shifts the origin to the wrapper rather than to the Pressable whose
+ * position relative to its own parent, and a nested wraper (an earlier approach)
+ * shifts the origin to the wrapper rather than to the Pressable whose
  * `locationX`/`locationY` the coordinates came from.
  */
 export function ButtonRipples({ ripples, filled, zIndex }: ButtonRipplesProps) {
@@ -281,7 +275,6 @@ export function buildButtonContent({
   loading,
   reduce,
   labelClass,
-  labelColor,
   children,
   leftAdornment,
   rightAdornment,
@@ -293,11 +286,10 @@ export function buildButtonContent({
   const hasAdornments = leftAdornment !== undefined || rightAdornment !== undefined;
   const isLeaf = typeof children === 'string' || typeof children === 'number';
   const mergedLabelClass = cn(labelClass, labelClassName);
-  const labelStyle = labelColor === undefined ? undefined : { color: labelColor };
 
   if (isLeaf && !hasAdornments)
     return (
-      <Text className={mergedLabelClass} style={labelStyle}>
+      <Text className={mergedLabelClass} weight="medium">
         {children}
       </Text>
     );
@@ -306,11 +298,11 @@ export function buildButtonContent({
     <View className={cn('flex-row items-center justify-center', BUTTON_GAP_CLASSNAME)}>
       {leftAdornment}
       {isLeaf ? (
-        <Text className={mergedLabelClass} style={labelStyle}>
+        <Text className={mergedLabelClass} weight="medium">
           {children}
         </Text>
       ) : (
-        Children.map(children, (child) => renderChild(child, labelClass, labelClassName, labelColor))
+        Children.map(children, (child) => renderChild(child, labelClass, labelClassName))
       )}
       {rightAdornment}
     </View>

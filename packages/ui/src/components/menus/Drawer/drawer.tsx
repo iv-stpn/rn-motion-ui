@@ -7,6 +7,7 @@ import { SPRING_PANEL } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 export type DrawerSide = 'left' | 'right';
@@ -69,6 +70,7 @@ export function Drawer({
               transition={{ type: 'timing', duration: 250 }}
               className="absolute top-0 right-0 bottom-0 left-0"
             >
+              <OverlayBlur />
               <Pressable
                 accessibilityLabel="Close"
                 disabled={!dismissable}

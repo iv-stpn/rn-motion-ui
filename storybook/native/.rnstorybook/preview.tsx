@@ -1,6 +1,7 @@
 import type { Preview } from '@storybook/react';
-import { useEffect } from 'react';
-import { ScrollView } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ScrollView, View } from 'react-native';
+import { Switch } from 'rn-motion-ui/switch';
 import { Uniwind } from 'uniwind';
 import '../global.css';
 
@@ -10,10 +11,17 @@ import '../global.css';
 // dark preference from overriding the story's own toggle.
 Uniwind.setTheme('light');
 
+// Hoisted like App.tsx's labels so the string never lands as a JSX text literal.
+const DARK_MODE_LABEL = 'Dark mode';
+
 const preview: Preview = {
   decorators: [
-    (Story, context) => {
-      const isDark = Boolean(context.args.darkMode);
+    (Story) => {
+      // Local state rather than an `args` control: the on-device Controls panel
+      // is the wrong home for theme, so a dark-mode switch sits at the top of
+      // every story's harness instead. It resets to light on each story mount,
+      // matching the module-scope seed above.
+      const [isDark, setIsDark] = useState(false);
 
       // In an effect, not in render: setTheme() calls UniwindListener.notify(),
       // which setStates every mounted className consumer. Doing that during
@@ -21,28 +29,21 @@ const preview: Preview = {
       // not prepared" / "canvasElement is unset" rejections). setTheme is a
       // no-op when the theme already matches, so this only fires on a real
       // toggle.
-      // biome-ignore lint/plugin: syncing an external non-React store (Uniwind's theme singleton, which notifies its own subscribers) to an arg is a genuine side effect — it must not run during render
+      // biome-ignore lint/plugin: syncing an external non-React store (Uniwind's theme singleton, which notifies its own subscribers) to state is a genuine side effect — it must not run during render
       useEffect(() => {
         Uniwind.setTheme(isDark ? 'dark' : 'light');
       }, [isDark]);
 
       return (
         <ScrollView className="flex-1" contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
+          <View className="mb-4 self-start">
+            <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
+          </View>
           <Story />
         </ScrollView>
       );
     },
   ],
-  // Adds a "Dark Mode" boolean toggle to the Controls panel of every story.
-  args: {
-    darkMode: false,
-  },
-  argTypes: {
-    darkMode: {
-      name: 'Dark Mode',
-      control: { type: 'boolean' },
-    },
-  },
   parameters: {
     backgrounds: {
       default: 'plain',

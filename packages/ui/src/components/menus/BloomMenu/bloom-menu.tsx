@@ -92,7 +92,9 @@ function BloomCell({ item, className, reduce, open, dist, onSelect, testID }: Bl
       >
         {/* Icons default to the `foreground` token — no explicit color needed. */}
         <Icon size={20} />
-        <Text className="font-medium text-foreground text-sm">{item.label}</Text>
+        <Text weight="medium" className="text-foreground text-sm">
+          {item.label}
+        </Text>
       </MotiView>
     </Pressable>
   );
@@ -181,7 +183,9 @@ export function BloomMenu({
               transition={open ? { type: 'timing', duration: 200, delay: reduce ? 0 : 120 } : { type: 'timing', duration: 120 }}
               className="flex-row items-center justify-between border-border border-b px-4 py-3"
             >
-              <Text className="font-medium text-muted-foreground text-sm">{title}</Text>
+              <Text weight="medium" className="text-muted-foreground text-sm">
+                {title}
+              </Text>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Close menu"
@@ -238,8 +242,10 @@ export function BloomMenu({
               className="flex-1 flex-row items-center justify-center gap-2"
               testID={testID ? `${testID}-trigger` : undefined}
             >
-              <Text className="font-medium text-foreground text-sm">{triggerLabel}</Text>
-              <ThemedIcon icon={Plus} variant="secondary" size={16} />
+              <Text weight="medium" className="text-foreground text-sm">
+                {triggerLabel}
+              </Text>
+              <ThemedIcon icon={Plus} variant="ghost" size={16} />
             </Pressable>
           </MotiView>
         </MotiView>

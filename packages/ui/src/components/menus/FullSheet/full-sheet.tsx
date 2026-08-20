@@ -73,7 +73,7 @@ function buildBody({
           ) : (
             <View className="ml-2 h-10 w-10" />
           )}
-          <Text className="flex-1 pr-4 pl-2 font-semibold text-foreground text-xl" numberOfLines={1}>
+          <Text weight="semibold" className="flex-1 pr-4 pl-2 text-foreground text-xl" numberOfLines={1}>
             {title}
           </Text>
         </View>
@@ -106,7 +106,11 @@ function buildBody({
         <View className="flex-row items-start justify-between gap-4">
           {title || subtitle ? (
             <View className="min-w-0 flex-1 gap-2">
-              {title ? <Text className="mr-4 pt-1 font-semibold text-foreground text-xl">{title}</Text> : null}
+              {title ? (
+                <Text weight="semibold" className="mr-4 pt-1 text-foreground text-xl">
+                  {title}
+                </Text>
+              ) : null}
               {subtitle ? <Text className="text-base text-muted-foreground leading-relaxed">{subtitle}</Text> : null}
             </View>
           ) : (

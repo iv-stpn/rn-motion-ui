@@ -6,7 +6,7 @@ import { cn } from '../../../lib/cn';
 import { EASE_IN_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import { Text } from '../Text/text';
+import { Text, type TextWeight } from '../Text/text';
 
 // Spring enter mirrors the reference (soft, slightly heavy feel).
 const ENTER_TRANSITION = { type: 'spring', damping: 32, stiffness: 160, mass: 0.75 } as const;
@@ -29,8 +29,10 @@ export type TextRollingProps = {
    * `'backward'` — new text enters from above.
    */
   direction?: TextRollingDirection;
-  /** Text styling (size/weight/colour). */
+  /** Text styling (size/colour). */
   className?: string;
+  /** Font weight (resolves a per-weight font token). */
+  weight?: TextWeight;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -48,7 +50,7 @@ export type TextRollingProps = {
  * label cycling through states). For a character-by-character cascade see
  * `TextCascade`; for digit-by-digit rolling numbers see `TextNumberTicker`.
  */
-export function TextRolling({ text, direction = 'forward', className, accessibilityLabel, ...props }: TextRollingProps) {
+export function TextRolling({ text, direction = 'forward', className, weight, accessibilityLabel, ...props }: TextRollingProps) {
   const reduce = useReducedMotion();
   const pageVisible = usePageVisible();
   const [rollHeight, setRollHeight] = useState(0);
@@ -66,7 +68,9 @@ export function TextRolling({ text, direction = 'forward', className, accessibil
   if (reduce || !pageVisible)
     return (
       <View accessibilityRole="text" accessibilityLabel={accessibilityLabel ?? text} {...props}>
-        <Text className={className}>{text}</Text>
+        <Text className={className} weight={weight}>
+          {text}
+        </Text>
       </View>
     );
 
@@ -80,7 +84,7 @@ export function TextRolling({ text, direction = 'forward', className, accessibil
     <View accessibilityRole="text" accessibilityLabel={accessibilityLabel ?? text} className="overflow-hidden" {...props}>
       {/* Hidden sizer keeps the slot at the correct line height. Always renders
           the current text so the clip region tracks text size changes. */}
-      <Text className={cn(className, 'opacity-0')} onLayout={onLayout} importantForAccessibility="no">
+      <Text className={cn(className, 'opacity-0')} weight={weight} onLayout={onLayout} importantForAccessibility="no">
         {text}
       </Text>
       {/* initial={false}: skip enter animation on first mount — text appears
@@ -95,7 +99,7 @@ export function TextRolling({ text, direction = 'forward', className, accessibil
           exitTransition={EXIT_TRANSITION}
           className="absolute top-0 right-0 left-0"
         >
-          <Text numberOfLines={1} className={className}>
+          <Text numberOfLines={1} className={className} weight={weight}>
             {text}
           </Text>
         </MotiView>

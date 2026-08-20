@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
@@ -8,6 +8,7 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
 import { CloseButton } from '../CloseButton/close-button';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 
 // biome-ignore lint/style/useExportsLast: placement type before INSTANT constant — collocated for readability
@@ -38,7 +39,7 @@ function resolveEnterY(reduce: boolean, placement: MorphingModalProps['placement
 }
 
 const POSITIONER_CLASS: Record<MorphingModalPlacement, string> = {
-  'bottom-sheet': 'flex-1 items-center justify-end',
+  'bottom-sheet': 'flex-1 items-center justify-end px-4',
   bottom: 'flex-1 items-center justify-end px-4 pb-8',
   center: 'flex-1 items-center justify-center px-4',
 };
@@ -89,14 +90,25 @@ export function MorphingModal({
   const [contentHeight, setContentHeight] = useState<number | null>(null);
   const [morphing, setMorphing] = useState(false);
 
+  // Live viewId so layout events from EXITING views (which keep their
+  // last-rendered onLayout props — stale id AND stale closure) are compared
+  // against the current view. Mirror every render so the ref always holds the
+  // viewId of the render currently on screen.
+  const viewIdRef = useRef(viewId);
+  viewIdRef.current = viewId;
+
   const onContentLayout = useCallback(
     (id: string) => (e: LayoutChangeEvent) => {
-      // Ignore measurements from exiting views (stale keys).
-      if (id !== viewId) return;
+      // Ignore measurements from exiting views (stale keys). Read the LIVE
+      // viewId via a ref: the callback an exiting view still holds captured
+      // the viewId from when it was current, so a closure-captured comparison
+      // always matches and lets a stale height retarget the morph spring
+      // mid-flight — the card visibly collapses then re-expands on native.
+      if (id !== viewIdRef.current) return;
       const { height } = e.nativeEvent.layout;
       if (height > 0) setContentHeight(height);
     },
-    [viewId],
+    [],
   );
 
   // biome-ignore lint/plugin: morph state must reset on each open so the first height measurement snaps in rather than springing from a stale value
@@ -126,6 +138,7 @@ export function MorphingModal({
             transition={{ type: 'timing', duration: 200, easing: EASE_OUT }}
             className="absolute top-0 right-0 bottom-0 left-0"
           >
+            <OverlayBlur />
             <Pressable
               accessibilityLabel="Close"
               onPress={handleClose}

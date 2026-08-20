@@ -10,7 +10,6 @@ import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
 import { MOTION_SNAPPY, mergeTransition } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import type { ButtonVariant } from '../Button/button';
 import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../Button/button-internals';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -18,22 +17,32 @@ import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../
 type IconButtonSize = 'sm' | 'md' | 'lg';
 type IconButtonShape = 'rounded' | 'pill';
 
+/** IconButton's variant union — `neutral` (a surface-3 plate) or `elevated`
+ *  (surface-3 plus the input's diffuse floating shadow). */
+// biome-ignore lint/style/useExportsLast: the IconButtonVariant type heads the module next to the size/shape unions and the variant table it enumerates, keeping them readable together
+export type IconButtonVariant = 'neutral' | 'elevated';
+
 // ── Box geometry ─────────────────────────────────────────────────────────────
 // Static literals so the uniwind/Tailwind scanner registers every class.
 // Tracks the BUTTON_BOX.icon pattern: square at each interactive height.
+// `lg` steps OFF the interactive ramp (24/32/40px) to 48px — the MorphingFAB
+// trigger size — so the FAB can render as an IconButton.
 
 const ICON_BUTTON_BOX: Record<IconButtonShape, Record<IconButtonSize, string>> = {
   rounded: {
     sm: 'h-interactive-sm w-interactive-sm rounded-interactive',
     md: 'h-interactive-md w-interactive-md rounded-interactive',
-    lg: 'h-interactive-lg w-interactive-lg rounded-interactive',
+    lg: 'h-12 w-12 rounded-interactive',
   },
   pill: {
     sm: 'h-interactive-sm w-interactive-sm rounded-full',
     md: 'h-interactive-md w-interactive-md rounded-full',
-    lg: 'h-interactive-lg w-interactive-lg rounded-full',
+    lg: 'h-12 w-12 rounded-full',
   },
 };
+
+// biome-ignore lint/style/useComponentExportOnlyModules: the `lg` box's pixel twin — the MorphingFAB reads it so its trigger shell stays exactly the size of an `lg` IconButton
+export const ICON_BUTTON_LG_SIZE = 48;
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
 
@@ -44,68 +53,28 @@ const ICON_SIZE: Record<IconButtonSize, number> = { sm: 14, md: 16, lg: 20 };
 const ICON_TILE: Record<IconButtonSize, { tileClass: string; iconSize: number }> = {
   sm: { tileClass: 'h-4 w-4 rounded-sm', iconSize: 10 },
   md: { tileClass: 'h-5 w-5 rounded-[5px]', iconSize: 12 },
-  lg: { tileClass: 'h-6 w-6 rounded-md', iconSize: 14 },
+  lg: { tileClass: 'h-7 w-7 rounded-lg', iconSize: 16 },
 };
 
 /** Spinner diameter per button size. */
 const SPINNER_SIZE: Record<IconButtonSize, number> = { sm: 12, md: 16, lg: 20 };
 
 // ── Variant styling ──────────────────────────────────────────────────────────
-// Same 8-variant table as Button, driving the fill / border / shadow of the
-// outer Pressable.
+// Two surface-3 fills: `neutral` is the plain plate, `elevated` adds the input's
+// large diffuse drop so an icon-only control reads as a raised card without a
+// rim.
 
 const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
-      primary: SURFACE_CLASSNAME[3],
-      secondary: 'border border-border bg-foreground',
-      ghost: 'bg-transparent',
-      outline: 'border border-border bg-transparent',
-      danger: 'bg-danger shadow-elevated-3',
-      special: 'bg-special shadow-elevated-3',
-      inverse: 'bg-foreground shadow-elevated-3',
-      outlineDanger: 'border border-danger bg-transparent',
-      ghostDanger: 'bg-transparent',
+      neutral: SURFACE_CLASSNAME[3],
+      // Surface-3 fill + the input's large diffuse drop — the floating-input
+      // recipe, so an icon-only control reads as a raised card without a rim.
+      elevated: 'bg-surface-3 shadow-floating',
     },
   },
-  defaultVariants: { variant: 'primary' },
+  defaultVariants: { variant: 'neutral' },
 });
-
-// ── Colour helpers ───────────────────────────────────────────────────────────
-
-/**
- * Resolved icon stroke colour from the variant's foreground token.
- * Mirrors the variant→foreground mapping from Button's label cva and
- * ThemedIcon's VARIANT_TOKEN table.
- */
-function resolveIconColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
-  switch (variant) {
-    case 'primary':
-    case 'danger':
-      return colors['primary-foreground'];
-    case 'secondary':
-    case 'inverse':
-      return colors['surface-1'];
-    case 'special':
-      return colors['special-foreground'];
-    case 'outlineDanger':
-    case 'ghostDanger':
-      return colors.danger;
-    default:
-      return colors.foreground;
-  }
-}
-
-/** Loading-spinner stroke colour, matching the variant's foreground. */
-function spinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
-  return resolveIconColor(variant, colors);
-}
-
-/**
- * Variants whose fill is opaque and dark-or-vivid, so a ripple must shimmer
- * white to be visible. Same set as Button's FILLED_RIPPLE_VARIANTS.
- */
-const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['secondary', 'danger', 'special', 'inverse']);
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -121,17 +90,17 @@ export type IconButtonProps = {
 
   /**
    * Icon stroke colour. When `iconBackgroundColor` is set this defaults to
-   * `'white'`; otherwise it is derived from the `variant`'s foreground token.
+   * `'white'`; otherwise it uses the plain foreground token.
    */
   iconColor?: string;
 
-  /** Visual variant — controls the button's fill, border, and shadow. @default 'primary' */
-  variant?: ButtonVariant;
+  /** Visual variant — `neutral` (surface-3 plate) or `elevated` (surface-3 fill with the input's diffuse floating shadow). @default 'neutral' */
+  variant?: IconButtonVariant;
 
   /** Button size — controls the outer square and the icon or tile inside it. @default 'md' */
   size?: IconButtonSize;
 
-  /** Corner shape. @default 'rounded' */
+  /** Corner shape. @default 'pill' */
   shape?: IconButtonShape;
 
   // ── Interaction ────────────────────────────────────────────────────────────
@@ -178,7 +147,7 @@ export type IconButtonProps = {
 
 /**
  * A purpose-built icon-only button — a square pressable that displays an icon,
- * with the same 8 variants as {@link Button} and the same
+ * with two surface-3 variants (`neutral` / `elevated`) and the same
  * `icon`/`iconBackgroundColor`/`iconColor` API as {@link MenuItem}.
  *
  * Supersedes `<Button size="icon">`: every prop is meaningful for an icon-only
@@ -186,14 +155,14 @@ export type IconButtonProps = {
  * accessible name.
  *
  * @example
- * // A ghost delete button — icon colour auto-derived from the variant
- * <IconButton icon={Trash2} variant="ghostDanger" accessibilityLabel="Delete" onPress={handleDelete} />
+ * // A raised delete button — surface-3 fill + floating-input shadow
+ * <IconButton icon={Trash2} variant="elevated" accessibilityLabel="Delete" onPress={handleDelete} />
  *
  * @example
  * // iOS Settings-style icon tile
  * <IconButton
  *   icon={Bell}
- *   variant="ghost"
+ *   variant="neutral"
  *   iconBackgroundColor="#FF3B30"
  *   accessibilityLabel="Notifications"
  *   onPress={handleNotifications}
@@ -201,13 +170,13 @@ export type IconButtonProps = {
  *
  * @example
  * // Loading state — spinner replaces the icon
- * <IconButton icon={Download} variant="primary" loading accessibilityLabel="Downloading" />
+ * <IconButton icon={Download} variant="neutral" loading accessibilityLabel="Downloading" />
  */
 export function IconButton({
   icon: IconComponent,
-  variant = 'primary',
+  variant = 'neutral',
   size = 'md',
-  shape = 'rounded',
+  shape = 'pill',
   onPress,
   disabled,
   loading,
@@ -229,7 +198,7 @@ export function IconButton({
   const colors = useThemeColors();
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
-  const v = variant ?? 'primary';
+  const v = variant ?? 'neutral';
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -240,12 +209,12 @@ export function IconButton({
   const boxClass = ICON_BUTTON_BOX[shape][size];
   const hasTile = Boolean(iconBackgroundColor);
 
-  // Icon colour: explicit prop wins; tile mode defaults to white; otherwise
-  // derive from the variant so it stays legible on the fill.
-  const resolvedIconColor = iconColor ?? (hasTile ? 'white' : resolveIconColor(v, colors));
+  // Icon colour: explicit prop wins; tile mode defaults to white; otherwise the
+  // plain foreground stroke (both variants are light surface-3 fills).
+  const resolvedIconColor = iconColor ?? (hasTile ? 'white' : colors.foreground);
 
   let iconElement: React.ReactNode;
-  if (loading) iconElement = <ButtonSpinner color={spinnerColor(v, colors)} reduce={reduce} size={SPINNER_SIZE[size]} />;
+  if (loading) iconElement = <ButtonSpinner color={colors.foreground} reduce={reduce} size={SPINNER_SIZE[size]} />;
   else if (hasTile) {
     const { tileClass, iconSize } = ICON_TILE[size];
     iconElement = (
@@ -282,7 +251,7 @@ export function IconButton({
         )}
       >
         {iconElement}
-        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}
+        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={false} /> : null}
       </Pressable>
     </MotiView>
   );

@@ -72,7 +72,7 @@ type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 's
 
 // The playground's trigger: the same `{ open, toggle }` render prop as above, but
 // the body is a `TriggerButton` so the Trigger chips can swap Button /
-// ElevatedButton / GlossyButton / bare Pressable under one dropdown.
+// ElevatedButton / bare Pressable under one dropdown.
 
 function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
   return <TriggerButton kind={kind} size={size} shape={shape} label={open ? CLOSE_MENU_LABEL : MENU_LABEL} onPress={toggle} />;

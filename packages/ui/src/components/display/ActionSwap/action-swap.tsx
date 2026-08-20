@@ -17,7 +17,7 @@ import {
   type ButtonSize,
   LABEL_TEXT_CLASS,
 } from '../../form/Button/button-scale';
-import { Text } from '../../typography/Text/text';
+import { Text, type TextWeight } from '../../typography/Text/text';
 
 export type ActionSwapItem = { id: string; label: ReactNode; icon?: ReactNode; ariaLabel?: string };
 
@@ -84,8 +84,10 @@ export type ActionSwapTextProps = {
   animation?: ActionSwapAnimation;
   /** Applied to the outer measured slot. */
   style?: StyleProp<ViewStyle>;
-  /** Applied to the rendered text (colour/size/weight). */
+  /** Applied to the rendered text (colour/size). */
   textClassName?: string;
+  /** Font weight (resolves a per-weight font token). */
+  weight?: TextWeight;
   testID?: string;
 };
 
@@ -128,6 +130,7 @@ export function ActionSwapText({
   children,
   animation = 'blur',
   textClassName = 'text-foreground',
+  weight,
   ...props
 }: ActionSwapTextProps) {
   const reduce = useReducedMotion();
@@ -158,7 +161,17 @@ export function ActionSwapText({
   // the settled label instead lands background swaps instantly, and the swap
   // picks up from the current value once the page is visible again.
   if (reduce || !pageVisible)
-    return <View {...props}>{label === null ? children : <Text className={textClassName}>{label}</Text>}</View>;
+    return (
+      <View {...props}>
+        {label === null ? (
+          children
+        ) : (
+          <Text className={textClassName} weight={weight}>
+            {label}
+          </Text>
+        )}
+      </View>
+    );
 
   return (
     <View className="overflow-hidden" {...props}>
@@ -169,7 +182,7 @@ export function ActionSwapText({
           {children}
         </View>
       ) : (
-        <Text className={cn(textClassName, 'opacity-0')} onLayout={onLayout} importantForAccessibility="no">
+        <Text className={cn(textClassName, 'opacity-0')} weight={weight} onLayout={onLayout} importantForAccessibility="no">
           {label}
         </Text>
       )}
@@ -189,6 +202,7 @@ export function ActionSwapText({
                 // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity — the letter at a position is what rolls.
                 key={i}
                 className={textClassName}
+                weight={weight}
                 from={{ opacity: 0, translateY: cascadeRoll }}
                 animate={{ opacity: 1, translateY: 0 }}
                 exit={{ opacity: 0, translateY: -cascadeRoll }}
@@ -222,7 +236,13 @@ export function ActionSwapText({
             exitTransition={core === 'blur' ? BLUR_EXIT : ROLL_EXIT}
             className="absolute top-0 left-0"
           >
-            {label === null ? children : <Text className={textClassName}>{label}</Text>}
+            {label === null ? (
+              children
+            ) : (
+              <Text className={textClassName} weight={weight}>
+                {label}
+              </Text>
+            )}
           </MotiView>
         </AnimatePresence>
       )}
@@ -322,7 +342,12 @@ export function ActionSwapButton({
           </ActionSwapIcon>
         ) : null}
         {iconOnly ? null : (
-          <ActionSwapText value={activeItem.id} animation={animation} textClassName={labelClass({ variant, size })}>
+          <ActionSwapText
+            value={activeItem.id}
+            animation={animation}
+            textClassName={labelClass({ variant, size })}
+            weight="medium"
+          >
             {activeItem.label}
           </ActionSwapText>
         )}

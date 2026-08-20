@@ -189,7 +189,7 @@ export function RangeSlider({
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={onAccessibilityAction}
       testID={testID ?? 'range-slider'}
-      className={cn('relative h-10 w-full flex-row items-center overflow-hidden rounded-lg bg-muted', className)}
+      className={cn('relative h-10 w-full flex-row items-center overflow-hidden rounded-lg bg-surface-contrast', className)}
       style={[{ opacity: disabled ? 0.5 : 1 }, style]}
     >
       {/* fill — from the minimum end of the track to the thumb. The box is

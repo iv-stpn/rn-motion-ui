@@ -2,8 +2,14 @@
 // click + double-click pair — plus the two gestures that mean "add this one to
 // what I already have": Ctrl/Cmd-click on web, long-press on touch.
 //
-// Both funnel into the same `additive` modifier, so `file-system-selection.ts`
-// owns the decision and neither the views nor this hook branch on platform.
+// The two funnel into the same `additive` modifier, with one deliberate
+// difference: a Ctrl/Cmd-click TOGGLES the entry (press it again and it leaves
+// the selection), while a long-press only ever JOINS. A hold is how a drag
+// grabs the group, so re-holding a selected entry must keep it — the lift
+// that follows carries the whole selection, not just the re-held row. Taps
+// remain the toggle surface in selection mode (the checkbox rows) and
+// Ctrl/Cmd-click the toggle on web; `file-system-selection.ts` owns the
+// decision and neither the views nor this hook branch on platform.
 
 import { useCallback, useRef } from 'react';
 import type { GestureResponderEvent } from 'react-native';
@@ -44,9 +50,14 @@ export type EntryActivation = {
    */
   onPress: (entry: FileSystemEntry, event?: GestureResponderEvent, orderedPaths?: readonly string[]) => void;
   /**
-   * The multi-selection toggle. Pass to `<HoldContextMenu onHold>` when in
-   * `multiple` mode — `HoldContextMenu` calls it instead of opening the panel.
+   * The multi-selection join. Pass to `<HoldItem onHold>` when in
+   * `multiple` mode — `HoldItem` calls it instead of opening the panel.
    * `undefined` outside `multiple` mode, so the menu keeps the gesture.
+   *
+   * Additive but add-ONLY: joins the entry to the selection and never removes
+   * one, so a re-hold of an already selected entry keeps it selected and a
+   * drag lifted off it still carries the whole group. Taps (the checkboxes)
+   * and Ctrl/Cmd-click are the removal surfaces.
    */
   onLongPress: ((entry: FileSystemEntry) => void) | undefined;
 };
@@ -81,7 +92,10 @@ export function useEntryActivation(
   const selectAdditive = useCallback(
     (entry: FileSystemEntry) => {
       lastRef.current = { at: 0, path: '' };
-      onSelect(entry, { additive: true }, orderedRef.current);
+      // addOnly: a hold JOINS the entry to the selection and never removes one —
+      // re-holding a selected entry keeps it, so the drag that follows can carry
+      // the whole group again. Deselection stays with taps and Ctrl/Cmd-click.
+      onSelect(entry, { additive: true, addOnly: true }, orderedRef.current);
     },
     [onSelect],
   );

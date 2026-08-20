@@ -1,5 +1,839 @@
 # rn-motion-ui
 
+## 6.0.0
+
+### Major Changes
+
+- 076ebf9: Remove `GlossyButton`
+
+  - The `GlossyButton` component is removed, along with its `rn-motion-ui/glossy-button` export and the `glossyContentColor` helper.
+  - `StatefulButton`'s `chip` prop no longer accepts `'glossy'` — it is `'elevated'` or omitted for the flat button.
+
+### Minor Changes
+
+- d7cedaa: feat(Button): add `success`, `warning` and `info` status-tone variants
+
+  - `Button` and `StatefulButton` gain `success`, `warning` and `info` variants,
+    each a vivid status fill (`bg-success`/`bg-warning`/`bg-info` with the
+    elevated shadow) paired with its `*-foreground` label, icon and spinner. The
+    status fills carry through the elevated and glossy palette mapping, so a
+    loading or success state keeps its tone.
+  - The `inverse` label now reads from the `background` token (not `surface-1`),
+    so it pairs exactly with the `bg-foreground` face.
+
+- 88b3571: feat(ChoiceGroup): extract ToggleGroup's `spaced` variant into its own component
+
+  - New `ChoiceGroup` component — a row (or column) of flat, independent choice
+    chips where one is selected at a time. It is exactly the old `spaced` ToggleGroup
+    (gapped items that each carry their own `rounded`/`pill` shape, wrapping instead
+    of scrolling), exported as `rn-motion-ui/choice-group`.
+  - BREAKING: `ToggleGroup` drops the `spaced` variant. Its `variant` prop is now
+    `'bordered' | 'connected'` and defaults to `'bordered'`; migrate `variant="spaced"`
+    usages to `<ChoiceGroup>`.
+
+- f260ae8: feat(IconButton): add the `elevated` variant and a 48px `lg` size; MorphingFAB
+  now renders its trigger as an IconButton
+
+  - IconButton gains an `elevated` variant: a `surface-3` fill with the input's
+    large diffuse floating shadow (`shadow-floating`) — the floating-input recipe,
+    so an icon-only control reads as a raised card without a rim.
+  - IconButton `lg` grows from the 40px interactive ramp to 48px — the MorphingFAB
+    trigger size (icon stays 20px, tile scales to 28px) — so the FAB can render as
+    an IconButton.
+  - MorphingFAB: the shell no longer paints its surface while collapsed. The
+    trigger is now an IconButton (`elevated`, `lg`, pill) that carries its own
+    background and shadow; the shell's `bg-surface-N` + rim + drop shadow now
+    apply only to the expanded pane (still driven by the `elevation` prop).
+  - BREAKING (type-only): `MorphingFAB`'s `icon` prop is now
+    `ComponentType<IconProps>` (rendered through the trigger IconButton's size and
+    stroke-colour pipeline) instead of `ReactNode`. Pass the icon component (e.g.
+    `icon={MessageSquare}`), not a JSX element.
+
+- a0f0293: feat(Text): add a `weight` prop that resolves a per-weight font token
+
+  - `Text` now accepts a `weight` prop (a `TextWeight` union derived from the
+    component's variants) that maps to a per-weight font-family token, instead of
+    relying on Tailwind `font-*` utility classes. `TextWeight` is exported
+    alongside `Text`.
+  - The prop threads through every typography derivative — `ActionSwapText`,
+    `TextCascade`, `TextNumberTicker`, `TextReveal`, `TextRolling` and
+    `TextShimmer` — so each exposes the same `weight` prop. `TextShimmer` renders
+    its shimmered characters through an animatable wrapper of `Text` (reanimated's
+    `Animated.Text` can't resolve the per-weight font token), so `weight` applies
+    there too.
+  - The Button family's label ramp (`LABEL_TEXT_CLASS`) drops `font-medium`;
+    buttons now set `weight="medium"` at each render site, and every consumer of
+    the old `font-*` classes migrates to `weight`.
+
+- a903eb0: refactor(theme): consolidate the input fill/shadow tokens into `surface-contrast` and `floating`
+
+  - `--color-input-base` becomes `--color-input`, `--color-input-elevated` becomes
+    the general `--color-surface-contrast`, and `--shadow-input-floating` becomes
+    `--shadow-floating`. The tokens are no longer input-specific: IconButton,
+    MorphingFAB, cards and other raised surfaces now share them.
+  - Raised `bg-muted` fills migrate to `bg-surface-contrast` (the dedicated
+    contrast-surface token) across cards, tabs, sliders, skeletons, list rows and
+    menus, so the muted text token is no longer overloaded as a fill.
+  - BREAKING (type-only): `ThemeToken` drops `input-base` / `input-elevated` in
+    favour of `input` / `surface-contrast`.
+
+### Patch Changes
+
+- f891eed: feat(ChoiceGroup): add a `variant` prop and rename `ToggleGroup`'s variant to `containerVariant`
+
+  - `ChoiceGroup` gains a `variant` prop (`'neutral' | 'info' | 'outline' | 'outline-info'`, default `'outline'`) controlling how the selected item is highlighted — `neutral`/`info` fill the accent as the background, `outline`/`outline-info` draw a coloured border.
+  - `ToggleGroup`'s `variant` prop is renamed to `containerVariant` to keep the container-level `'bordered' | 'connected'` axis distinct from the element-level `variant`.
+
+- 11af292: feat(FileSystem): the mobile multi-select scrub auto-scrolls and selects past the fold
+
+  The scrub used to hit-test only the entries already laid out on screen, so a
+  finger dragged below the visible tiles (or rows) selected nothing and the list
+  sat still. The edge-scroll engine that drives drag reordering is now shared
+  (`useFileSystemAutoScroll`) and fed the scrub's pointer stream, so dragging to
+  multi-select scrolls the grid/list when the finger goes above or below the
+  visible content.
+
+  A scrub past either edge now also resolves to a `beyond` hit — everything on the
+  far side of the anchor (the start entry excluded) — instead of `null`, so the
+  selection extends all the way to the end of the list as the finger rides the
+  edge. The finger→content mapping compensates for the auto-scroll's offset delta
+  since calibration, so a finger held still keeps selecting the same entry as the
+  content moves under it.
+
+- cdb3864: fix(Button): retune the label size ramp so the larger sizes share `text-sm`
+
+  - The label size ramp (`LABEL_TEXT_CLASS`) is spelled out as static literals
+    instead of taking them from `TEXT_INTERACTIVE`: `sm` stays `text-xs`, and
+    `md`, `lg`, and `icon` now share `text-sm` rather than stepping `lg` up. Past
+    the `md` box the extra height and padding already carry the size difference,
+    and a 16px label reads oversized inside a button.
+
+- a2fdd4a: fix(HoldMenu): skip the `useAnimatedReaction` on-mount fire so the first render doesn't flash the twin at the origin
+
+  - `useAnimatedReaction` runs its reaction once on mount with `previous === null`, which
+    drove `releaseProgress` 1 → 0 → 1 over `HOLD_ITEM_TRANSFORM_DURATION` and flashed every
+    twin opaque at (0,0) while the in-place item hid — the "all files stacked in one spot"
+    first-render bug. The guard returns early on that mount call; a real activation or
+    deactivation always has a defined `previous`.
+
+- 9dd9c02: fix(HoldMenu): no lingering copy when the twin travels, and inert holds release to full size
+
+  When the menu overflows and lifts the pair, the travelling twin is drawn fully
+  opaque from its first frame, so the in-place item now drops out on that same
+  frame (duration 0) instead of holding its full opacity underneath — previously a
+  copy was left behind at the item's old spot. The cross-fade is now reserved for
+  the one case where the twin stays put and overlaps the original, keeping the
+  pair from dimming.
+
+  An inert hold — empty items, i.e. the mobile views' multi-select join — now
+  scales back to full size on completion, so the press pulse returns to rest
+  instead of staying stuck at the squeezed size.
+
+- 1c86091: fix(HoldMenu): keep the panel on screen in nested scrolls and lift it above the screen bottom
+
+  The centre-anchored panel's pop-in transform composes to a net +itemWidth
+  offset that the viewport clamp ignored — a full-width row (the nested-scroll
+  cards, the Home example rows) shoved the panel a whole row-width past the right
+  edge. The clamp now runs on the panel's visual position (left + net offset) and
+  the offset is backed back out of the style, so a centre-anchored panel stays
+  inside the viewport.
+
+  The travel clamp also now uses the provider root's VISIBLE extent (its measured
+  height capped to the window's bottom edge relative to the root's top) instead
+  of its full layout height — when the provider sits inside a scrollable
+  container (native storybook wraps every story in a ScrollView; a scrolling app
+  screen), the root's height is the whole content height and the menu never
+  lifted, running off the bottom of the screen. A row held near the lower edge
+  now lifts the menu above the screen bottom as the NestedScroll story showcases.
+  The story gained a `play` fn (web `'hold'` = DOM `contextmenu`, so it works
+  synthetically) pinning both behaviours, and the panel/backdrop got testIDs.
+
+- 9f645fa: feat(Holdable, FileSystem): haptic feedback on holds, and a scrub tick with a checkbox pulse
+
+  `Holdable` and `HoldDraggable` gain an opt-in `hapticFeedback` prop, backed by a
+  new `lib/haptics` twin (`expo-haptics` on native, a no-op on web) so the native
+  module never enters a web bundle. `HoldMenu` now routes through the same module.
+
+  The file-system mobile views pass `hapticFeedback="Medium"` to their inert holds,
+  so the long-press that joins multi-select cues in the hand. Dragging to
+  multi-select fires a distinct `Selection` tick each time the finger crosses into
+  a new entry, and the checkbox under the finger squeezes then springs back — a
+  pulse that reduced-motion preferences skip.
+
+- 41728be: refactor(IconButton): narrow the variant surface to `neutral` | `elevated`; MorphingFAB takes a `variant` instead of `elevation`
+
+  - IconButton drops the Button variants (`inverse`, `ghost`, `outline`, `danger`,
+    `special`, `outlineDanger`, `ghostDanger`) in favour of a two-variant
+    surface-3 plate: `neutral` (plain) and `elevated` (surface-3 + the input's
+    diffuse floating shadow). Icon stroke and spinner colour now always use the
+    plain foreground token, and the ripple is never `filled`.
+  - MorphingFAB: the `elevation` prop is replaced by `variant`
+    (`IconButtonVariant`, defaulting to `elevated`), which drives the collapsed
+    trigger; the expanded pane now always paints `surface-3` with the
+    floating-input shadow.
+
+- 7027b6f: Make `MorphingFAB`'s collapsed trigger size follow the IconButton `lg` size
+
+  - The trigger shell now derives its size from `ICON_BUTTON_LG_SIZE` (48 px)
+    instead of a hardcoded `TRIGGER_SIZE`, so the FAB stays the same size as an
+    `lg` IconButton.
+
+- 1c86091: fix(Overlay): web scrim blur no longer requires the optional native peer
+
+  The overlay backdrop blur moved its guarded `@sbaiahmed1/react-native-blur`
+  require into a `.native.tsx` twin; web resolves a CSS `backdrop-filter` twin
+  (`blur(30px)`) and never imports the optional peer, so the web bundle builds
+  without it. Previously the static `require` hard-failed web bundling whenever
+  the optional peer wasn't hoisted into the resolving workspace's node_modules
+  (e.g. a pruned install where storybook/web is the bundling workspace).
+
+## 5.7.0
+
+### Minor Changes
+
+- 4b03b32: feat(Button): rename `primary`/`secondary` to `neutral`/`inverse`; fix `inverse` fill
+
+  `Button`, `IconButton` and `StatefulButton` rename `primary` → `neutral` and
+  `secondary` → `inverse` (colours unchanged; the old `inverse` is removed).
+  `ElevatedButton` and `GlossyButton` `inverse` now render the
+  `primary`/`primary-foreground` pair swapped — the `neutral` of the opposite
+  theme — and `ThemedIcon` drops its `primary`/`secondary` keys to match.
+
+### Patch Changes
+
+- 24613c3: fix(AnimatedBadge): tighten the `md` badge gap and height
+
+  The medium badge drops its icon–label gap from `gap-1.5` to `gap-1` and its
+  height from `h-8` to `h-7`, trimming the vertical padding for a more compact
+  plate without changing the `sm` size.
+
+- 03d2522: fix(BottomSheet): make the close animation visible
+
+  The close spring was overdamped (natural frequency ≈31.6), so the sheet
+  snapped off-screen almost instantly and the exit read as a jump rather than
+  a slide. Retuned to a critically damped spring (≈15.6, roughly half the
+  speed) so the slide-out is a deliberate, perceptible motion. The open spring
+  is unchanged.
+
+- 523e402: fix(theme): deepen the `info` token
+
+  `--color-info` shifts from `oklch(65% 0.17 247)` to `oklch(58% 0.18 255)` —
+  a deeper, more saturated blue — across the light, dark, and native OKLCH
+  sources so every platform stays in parity.
+
+- 5426ddc: feat(Button): default to the pill shape
+
+  `Button`, `ElevatedButton`, `GlossyButton`, `StatefulButton`, and `IconButton`
+  now default `shape` to `pill` instead of `rounded`.
+
+- 67df4e9: feat(Checkbox): shared animated box with a `tone` prop, reused by CheckboxCard
+
+  The animated box + check/dash mark that `Checkbox` and `CheckboxCard` each
+  carried a private copy of is now one exported `CheckboxBox`, so the two
+  controls stay visually in lockstep. `Checkbox` gains a `tone` prop (the
+  accent for the fill, border and mark, defaulting to `primary`);
+  `CheckboxCard` renders the shared box with `tone="info"` instead of its
+  hand-rolled info fill. The box now animates its own background between the
+  surface and accent fills instead of cross-fading an overlapping -0.5px
+  overlay, and the check/dash glyphs are re-centered on the stroke.
+
+- c817dc4: fix(menus): disable the overlay scrim blur on Android
+
+  Android's native `QmBlurView` is not performant enough to run under a
+  full-bleed overlay scrim, so `OverlayBlur` now no-ops on Android. HoldMenu's
+  backdrop and the modal overlays (AdaptiveModal, MorphingModal,
+  ActionFeedbackModal, BottomSheet, Drawer) degrade to the plain translucent dim
+  there, while iOS keeps `UIVisualEffectView` and web keeps the CSS
+  `backdrop-filter`.
+
+- 0d2cffb: fix(DragManager): clear the stale preview ghost on a preview-less drag
+
+  The overlay cached the preview separately from the drag, so an HTML5 chip lifted
+  outside this manager (no preview) kept the previous drag's preview alive and
+  briefly re-showed its ghost during the fade-out. The preview is now cached only
+  while a drag is live, so a drag without a preview clears it.
+
+- 4fe8cd4: feat(FileSystem): info-toned drop hint chip with a stable testID
+
+  The "Move into <folder>" chip that follows the drag ghost now renders the
+  folder name (and its arrow) in the `info` accent so the destination reads as
+  one accent-coloured unit, tightens its padding, and sits flush under the
+  ghost. It also gains a `FS_DROP_HINT_TEST_ID` so stories assert on the chip
+  directly rather than matching its rendered text.
+
+- 56353e2: feat(FileSystem): drop indicator glides between adjacent targets, snaps to distant ones
+
+  The shared drop indicator used to spring onto every new target, which reads
+  as a glide down a list but flings the outline across the whole file area on
+  a long hop. It now distinguishes neighbours from distant targets via a new
+  `rectsAdjacent` geometry helper: crossing between adjacent rows/tiles glides
+  (one continuous sweep), while crossing to anything further — a folder on the
+  other side of the pane, a skipped tile, a full row between — snaps the
+  outline straight to the target instead of springing it across.
+
+  Regression coverage: `rectsAdjacent` unit tests (edge-to-edge, gapped,
+  overlapping and diagonal neighbours, commutativity).
+
+- e8b198e: fix(FileSystem): drop indicator (and drop targeting) track the list while it scrolls mid-drag
+
+  Zone rects are window coordinates measured at drag start (or the last layout
+  pass), and a scroll moves the rows without any layout event — so the store's
+  cached boxes, and the shared drop indicator painted from them, kept resolving
+  against the pre-scroll positions the moment the list moved under a drag
+  (auto-scroll at the edge, or a wheel). The views now report each scroll delta
+  to the store (`shiftZoneRects`), which re-bases the cached rects of the zones
+  that move with the content (rows, tiles, overlays — never the static body and
+  pane fallbacks) and re-resolves the drop target, so the hit test and the
+  outline both follow the content. The indicator snaps to the shifted rect on a
+  scroll (a spring would trail a moving row) and still glides between targets on
+  a pointer crossing.
+
+- 6e1107b: feat(FileSystem): headless header, footer and breadcrumbs
+
+  The built-in header, footer and breadcrumb trail no longer impose a surface
+  background or border — they now carry layout only, so consumers style them via
+  `headerClassName`, `footerClassName` and the new `breadcrumbsClassName`.
+
+  Adds a `renderBreadcrumbs` render prop (alongside `renderHeader`/`renderFooter`)
+  that receives the trail as `{ id, label }` crumbs plus `navigateTo` and
+  `currentPath`, so a consumer can render its own trail without duplicating the
+  path logic.
+
+- b2ac786: fix(FileSystem): use predefined FadeIn/FadeOut for tile enter/exit
+
+  The grid tile's enter/exit used a custom `Keyframe`, which on web triggers
+  Reanimated's keyframe cleanup that re-homes the entering node with
+  `position: absolute` — pulling it out of flex-wrap flow so the grid stops
+  reflowing and later adds look like they never arrive. Predefined
+  `FadeIn`/`FadeOut` are keyframes Reanimated already knows, so that cleanup path
+  never runs.
+
+- 1199bd9: fix(HoldMenu): fade the twin in on activation to kill the appear flicker
+
+  The portal twin snapped to full opacity the instant the menu opened. When the
+  menu had room and the item did not travel, the in-place original and the twin
+  swapped in a single frame, exposing their sub-pixel differences as a flicker.
+  The twin now fades in over the still-opaque original, and the original only
+  drops out once the twin is fully opaque — so the two never overlap
+  semi-transparently (no dim) and never leave a gap (no blink).
+
+- 0114272: feat(menus): blur the overlay scrims and lighten the backdrop dim
+
+  HoldMenu's backdrop and the modal overlays (AdaptiveModal, MorphingModal,
+  ActionFeedbackModal, BottomSheet, Drawer) now paint a `BlurView` under their
+  dim so the page behind reads as frosted glass instead of a flat wash — native
+  `UIVisualEffectView`/`QmBlurView` on device, CSS `backdrop-filter` on web. The
+  blur comes from the optional peer `@sbaiahmed1/react-native-blur` (New
+  Architecture, RN 0.80+); when it is not installed the scrims degrade to their
+  previous plain-translucent rendering. HoldMenu's backdrop dim is also much
+  lighter, so the blur reads through on both platforms instead of the near-opaque
+  black web scrim.
+
+- 7c0cedb: fix(HoldMenu): snap the twin handover on release to kill the flicker
+
+  On close the portal twin and the in-place original switched visibility with
+  two independent zero-duration timings. On web those could resolve on
+  different frames, leaving a one-frame hole where neither copy is visible — a
+  release flicker — and a cross-fade fix dimmed instead, since two stacked
+  semi-transparent layers don't sum to full opacity. Both copies now read a
+  single shared value, so the switch is atomic: no overlap window to dim, no
+  gap to blink.
+
+- c907d9f: fix(HoldMenu): clamp menu travel to the provider root's height, not the window's
+
+  The menu's travel math clamped against `windowSize.height`, so when the
+  provider root is inset from the window — Storybook's padding decorator, a
+  menu nested inside a scroll view, a root that doesn't fill the screen — the
+  panel was placed against the wrong bottom and could render off-root. Each
+  activation now `measure`s the provider root and stores its height in a
+  shared value; the travel math and the always-mounted twin clamp against that
+  real bottom, falling back to the window height until the first activation
+  measures it.
+
+- b4b1004: feat(HoldMenu): tighten the panel to 40% of the window width
+
+  The menu panel followed upstream's 60% window-width sizing. It now uses a
+  tighter 40%, so the surface sits closer to the held item and leaves more of
+  the underlying screen visible. The four upstream example screens in
+  Storybook are consolidated behind a single `Interactive` toggle.
+
+- 03d2522: fix(HoldMenu): keep the held item visible when the twin lifts away
+
+  The in-place item hid under the portal twin on every activation, so when the
+  twin travelled to a different y (the menu overflowing and lifting the pair)
+  the original still faded out underneath — needlessly, since the two no longer
+  overlap. The cross-fade now runs only when the twin stays put; when it
+  travels the original holds its full opacity while the twin lifts away. Also
+  adds a nested card-scroll story that holds items inside two levels of scroll
+  view, so the twin's scroll-aware placement is demonstrable.
+
+- 2ae567c: feat(Input): border-driven state and base/elevated/floating variants
+
+  Input state now drives a 1px web border (idle border, foreground on focus,
+  danger on error) instead of a shadow, and the `surface`/`filled` variants are
+  replaced by `base` (flat white), `elevated` (muted raised), and `floating`
+  (surface-3 with a large diffuse shadow). The default shape is now `pill`.
+
+- 759f69a: fix(Input): render the value and placeholder in the custom font
+
+  Input (and CommandPalette's search field) now apply the `font-sans-normal`
+  family token to the `TextInput`, so the typed text and its placeholder use the
+  app's custom typeface (e.g. Geist) instead of the platform's default font,
+  matching the rest of the UI.
+
+- 03d2522: fix(MultiStepMenu): top-align the small-screen title and push it down with the back button
+
+  On small screens the rolling title sat a spacer row below the close button
+  when there was no back button, and stayed inline once one appeared. The title
+  now renders inline with the close button at the root, and moves below the
+  back-button row — animated down with the pane — once a section is pushed, so
+  the header reads consistently at every depth.
+
+- 5d3860b: perf(FileSystem): one shared drop indicator leaf instead of a per-row outline, and a parsed-once drag payload
+
+  Dragging across a large folder used to re-render rows on every zone crossing:
+
+  - Every folder row, tile and drag-only overlay painted its own `border-info`
+    outline from a render-prop `isOver`, so each crossing mounted one indicator
+    and unmounted another inside the row it had just left — and the views that
+    built their row body inside that function re-rendered the whole row subtree
+    with it.
+  - Every zone's `accepts` re-`JSON.parse`d the drag payload on every pointer
+    move, once per zone, so a drag over a hundred rows parsed the same string a
+    hundred times a frame.
+
+  The drop indicator is now one absolutely-positioned Animated leaf in the drag
+  scope, painted at the over zone's measured rect (the same rect the store's hit
+  test resolves the winner from). It re-renders only on drag start/end and zone
+  crossings, and its geometry is driven by Animated values, so gliding between
+  targets costs no render at all. Rows and tiles keep their dropzones (accepts,
+  drop, hover-to-expand) but no longer paint an indicator, and their children are
+  plain elements, so a crossing never re-renders the row body. The payload reader
+  is cached per transfer, so each drag parses exactly once.
+
+  Background fallbacks (the file area's own zone, column panes) keep their own
+  drop surfaces — they carry external-drop and delay handling a shared outline
+  cannot express. The icons and columns views keep their label-chip / row-fill
+  drop language; the shared outline is what replaces the per-row `border-info`
+  outlines in the list, mobile list, mobile grid and the expanded-folder overlays.
+
+- f546971: fix(FileSystem): smooth, velocity-driven auto-scroll while a drag rides the list edge
+
+  The auto-scroll that runs while a drag hovers near a scrollable's top or bottom
+  edge used to step the offset by a fixed 6px every 16ms and re-read the LIVE
+  scroll offset on every tick. Scroll events land a frame late on native (and
+  asynchronously on web), so the read was frequently stale: the same offset got
+  commanded two frames in a row — the list moved on every OTHER frame, which
+  reads as staggered steps — and could even command a smaller value than the
+  previous one, a visible backward hop. `useFileSystemDragScroll` now owns a
+  monotonic offset cursor, seeded once per run from the live offset and never
+  re-read while running, and commands it every animation frame. Speed is a
+  velocity integrated toward a target set by how deep the pointer sits in the
+  edge zone (0 at the zone boundary → full speed at the edge), with acceleration
+  ramping in and deceleration easing out — including through zero when the
+  pointer crosses from the top zone to the bottom one, so direction flips glide
+  instead of snapping.
+
+- 80c7e03: feat(Table): `minWidth` column floor forces horizontal scroll instead of squeezing
+
+  A column whose `width` would resolve narrower than its `minWidth` — an `fr`
+  column squeezed by a narrow container, or a fixed `width` smaller than the
+  floor — now clamps up to `minWidth` in `computeColumnWidths`, pushing the
+  total past the container width and turning on horizontal scroll rather than
+  rendering the column unreadably narrow. `minWidth` is a floor, not a share:
+  fr columns still divide the remaining space, but each is then raised to its
+  own floor. The pre-layout render (before `onLayout` reports a width) honors
+  the same floor via `columnLayoutStyle` / `columnLayoutClass`.
+
+  Regression coverage: `computeColumnWidths` unit tests for the fr and px
+  floors, plus a `MinWidth` story that asserts the email column keeps its
+  240px floor inside a 320px container and that the horizontal-scroll wrapper
+  mounts.
+
+- 03d2522: fix(Tabs): match the segment inset to pill mode
+
+  Segment mode used a 2px inset (`p-0.5`) while pill mode used 4px (`p-1`), so
+  the active segment indicator hugged the outer edge tighter than the pill's
+  thumb. Segment mode now uses the same 4px inset, so the two shapes share one
+  gutter.
+
+- cba83ad: feat(Text): forward refs and adopt the themed Text across components
+
+  `Text` now wraps the host in `forwardRef` so it can hand a ref to Reanimated,
+  and `MotiText` (the animated `Text`) renders the themed `Text` instead of the
+  raw `react-native` one. The form, navigation, and file-system components that
+  imported RN's `Text` directly now render the themed `Text`, so their labels pick
+  up the typography scale and weight tokens.
+
+- c18f60f: feat(ToggleGroup): default to the pill shape
+
+  `ToggleGroup` now defaults `shape` to `pill` instead of `rounded`.
+
+## 5.6.2
+
+### Patch Changes
+
+- 52c3b17: fix(Checkbox): draw the checked fill over the border via an explicit -0.5px inset
+
+  The fill on Checkbox and CheckboxCard sat at the border's inner edge, leaving
+  the border's antialiased inner edge visible as a hairline seam between the
+  border and the selected background. The previous class-based `-inset-0.5`
+  overlap could be dropped by the class resolver on some platforms; the overlap
+  is now an explicit inline style (`position: absolute` + `top/right/bottom/left:
+-0.5`) so it provably draws over the border everywhere. The parent's
+  `overflow-hidden rounded-md` still clips it to the exact box shape.
+
+- 624ac12: fix(FileSystem): re-holding a selected entry keeps it selected, so a hold-drag can carry the whole selection again
+
+  The long-press hold was an additive toggle: re-holding an already selected row
+  removed it from the selection, so the drag that followed lifted just that one
+  row instead of the group. The hold is now additive and add-only — it joins the
+  held entry to the selection and never removes one — matching the platform file
+  manager convention (hold = grab/add, tap or Ctrl/Cmd-click = toggle). A
+  selection therefore survives a re-hold and the same selected rows can be
+  dragged repeatedly.
+
+- 99157ff: fix(MorphingModal): bottom-sheet width matches bottom placement
+
+  The bottom-sheet positioner lacked the `px-4` horizontal inset the
+  `bottom` placement applies, so on phones the sheet rendered up to 32px
+  wider than the bottom card (both cap at `max-w-sm`). Adding `px-4` makes
+  the two placements share the exact same width at every viewport size.
+
+## 5.6.1
+
+### Patch Changes
+
+- c0bc1ad: fix(HoldMenu): type `animatedContainerStyle` as `useAnimatedStyle<ViewStyle>`
+
+  The squeeze hook's result type was `ReturnType<typeof useAnimatedStyle>` —
+  an unparameterized `AnimatedStyle`, which the typechecker resolves to a
+  plain object without the view-style keys the `HoldItem` wrapper spreads into
+  an `Animated.View` `style` array. Parameterizing with `ViewStyle` gives the
+  style the actual shape the consumers rely on.
+
+## 5.6.0
+
+### Minor Changes
+
+- a8c06da: feat(ui): hold-menu — `HoldItem` gains drag, activation callbacks, and disabled rows; file-system migrates onto it
+
+  - **Drag**: `HoldItem` accepts `dragOptions`, upgrading its hold into a drag
+    source through the same `useDraggable` plumbing the file-system rows and
+    tiles already resolve. A hold still opens the menu, and a move past
+    `escapeSlop` closes the menu (and its overlay) before the ghost lifts.
+    Native-only — on web the menu is a right-click with no hold gesture to
+    upgrade, and a `hold` item with no drag now falls back to a touch long-press.
+  - **Activation callbacks**: `HoldItem` fires `onHold` on any activation (hold,
+    tap, double-tap) and `onOpenChange` on open and close. A side-effect such as
+    a multi-select toggle can ride the same gesture that opens the menu — and
+    still fires when `items` is empty. `disabled` makes the trigger fully inert.
+  - **Disabled rows**: `MenuItemProps.disabled` greys a row out and blocks its
+    press, mirroring the `HoldContextMenu` states the file-system's
+    "No actions available" and disabled-action rows need.
+  - **File-system migration**: every entry view wraps rows and tiles in
+    `HoldItem` inside a `HoldMenuProvider` anchored to the file area, replacing
+    `HoldContextMenu`. The lifted twin is now hidden from the accessibility tree
+    (`aria-hidden` / `importantForAccessibility`), so entries no longer read
+    twice to screen readers; story assertions were updated to tolerate the
+    duplicate copy.
+
+- c25ee10: feat(ui): add HoldMenu — a faithful, modernized reimplementation of react-native-hold-menu
+
+  New `./hold-menu` entry exporting `HoldMenuProvider`, `HoldItem`,
+  `HoldMenuFlatList` and `HoldMenuIcon`, reimplementing the upstream library's
+  API and interaction model field for field (`items` with `text` / `icon` /
+  `isTitle` / `isDestructive` / `withSeparator`, `actionParams` spread into
+  `onPress`, `menuAnchorPosition`, `bottom`, `activateOn`, `hapticFeedback`,
+  `closeOnTap`, `longPressMinDurationMs`), modernized and improved:
+
+  - **Reanimated 4 + RNGH v2 Gesture API** — no legacy
+    `useAnimatedGestureHandler`; the squeeze/lift runs on the UI thread with
+    synchronous `measure()`, and the lifted copy is a **permanently mounted
+    portal twin** (`@gorhom/portal`), so the item never remounts — the
+    flicker/handover bug class the old `HoldContextMenu` fought with
+    `onLiftReady` timing is gone by construction.
+  - **Rotation-safe** — window dimensions and font scale come from
+    `useWindowDimensions` mirrored into shared values, never stale
+    `Dimensions` at module scope.
+  - **Viewport/safe-area clamping** — the item+panel pair travels up together
+    on overflow but stops before the item leaves the safe area, the residual
+    overflow caps the panel (which scrolls), and the panel is clamped into the
+    safe viewport horizontally.
+  - **Web support** (upstream is native-only) — `'hold'` is a right-click
+    (Shift+F10 / ContextMenu key included), tap/double-tap stay on the press,
+    children render once (no twin), and the dimmed backdrop closes on
+    click-outside. Web activation is DOM events, not RNGH gestures — RNGH web
+    cannot fire on synthetic pointer events (`setPointerCapture` rejects
+    untrusted pointers), the same split the old port uses.
+  - **Optional native deps that never break web bundles** — `expo-blur` (iOS
+    panel + backdrop blur) and `expo-haptics` are optional peers loaded only
+    through guarded platform-split modules imported extensionless; consumers
+    without them degrade to the translucent/dim surfaces, and web never sees
+    the imports.
+  - **Accessibility + reduced motion** — rows carry labels and a button role,
+    the backdrop is reachable, and reduced motion collapses every animation to
+    a cross-fade.
+
+  `HoldContextMenu` and its consumers are untouched — this is a parallel
+  component family.
+
+- 52ec0f9: feat(ui): drag and drop into folders on the mobile list and grid views
+- bbb862f: feat(ui): mobile FileSystem view polish — selected-state tint, row spacing, drag-ghost cards and a "Move into" drop hint
+
+  - Mobile list rows get vertical spacing (8px item separator), rounded corners, and the selected state is now a translucent `info/15` tint with foreground text instead of a solid `info` fill with white text.
+  - Mobile grid tiles match: the selected glyph box is `info/15` instead of `surface-selected`.
+  - Single-item drag ghosts in the mobile list and grid views now carry a surface card background, so a lifted row/tile stays visible against the page.
+  - While a drag hovers over a folder, a "→ Move into <folder>" chip follows the drag ghost (all views, Windows Explorer style), resolving the hovered folder from the drag store's `overZoneId`.
+
+- 42adf31: feat(ui): add `Portal` — replace `@gorhom/portal` with an internal portal primitive
+
+  New `./portal` entry exporting `Portal`, `PortalHost` and `PortalProvider`, a
+  faithful, dependency-free reimplementation of
+  [@gorhom/portal](https://github.com/gorhom/react-native-portal) (same
+  provider/context/reducer around named host slots). `HoldMenu` now uses it for
+  its lifted twin, and `@gorhom/portal` is removed from the dependencies.
+
+  - **No remount** — a `Portal` with a stable `name` keeps its host slot, and
+    children updates replace the slot's node in place, so a teleported subtree
+    never remounts.
+  - **Paint above overlays** — `PortalProvider` renders its root host after its
+    children, so teleported content stacks on top of whatever it wraps.
+  - **Minimal surface** — the `handleOnMount`/`handleOnUnmount`/`handleOnUpdate`
+    override callbacks and the public `usePortal` from gorhom are dropped; add
+    them back if a consumer needs imperative control.
+
+### Patch Changes
+
+- 4abdf8d: fix(ui): FileSystem mobile gestures — drag-store zone isolation, Android nested scroll, stale-pan recovery, selection persistence, tap-to-open, kebab select-on-open
+
+  - **Dragzone**: each zone now subscribes to its own cached standing (`{drag,
+isEligible, isOver}`) instead of the whole drag snapshot, so a crossing
+    re-renders only the zone entered and the zone left. Every mobile folder row is
+    a dropzone, so this removes the drag lag when the pointer crosses folder
+    boundaries. Whole-snapshot consumers (drop hint, drag manager overlay) are
+    unchanged.
+  - **Mobile list / grid scrollables**: `nestedScrollEnabled` is set on both, and
+    the list's `FlatList` sets `removeClippedSubviews={false}` — Android only
+    scrolls a scrollable nested inside a consumer `ScrollView` when it opts into
+    nested scrolling, and the clipping default is the same failure mode the Table
+    fix (348ad09c) addressed.
+  - **Native drag pan**: the arm now counts the touches behind it, so a touch-down
+    on a stale arm — one whose stream an Android `Modal` took away without an
+    up/cancel/finalize, which previously left the row undraggable until remount —
+    re-arms instead of counting itself as a second finger.
+  - **Selection persistence**: navigation (and the lazy children-load drain that
+    follows it) no longer prunes the selection, so the mobile checkbox mode
+    survives a folder change; switching views now recomputes with pruning, so a
+    selection that is not visible in the current view is dropped and the mode
+    turns off.
+  - **Mobile tap contract**: a single tap opens the entry; only a hold enters
+    selection mode. Once anything is selected, a tap toggles that entry's
+    selection. Desktop views keep click-select / double-click-open.
+  - **Mobile kebab**: tapping the three-dot menu now also selects the entry (row
+    highlighted, mode on) in the same gesture that opens the menu. The slot keeps
+    the kebab mounted while its own menu is open, so the selection the tap just
+    produced cannot unmount the menu underneath it — the kebab gives way to the
+    checkbox once the menu closes.
+
+- 9b60a67: fix(ui): FileSystem — nested vertical scroll on the desktop list, icons, columns, gallery and search views
+
+  The mobile list/grid scroll fix (4abdf8d4) only touched the two mobile views;
+  the remaining vertically-scrolling surfaces were still inert on Android when
+  mounted inside a consumer `ScrollView`.
+
+  - Every vertical `ScrollView`/`FlatList` now sets `nestedScrollEnabled={true}` —
+    the desktop list, the icons grid, the columns pane, the gallery sidebar and
+    the search results. Android only scrolls a scrollable nested inside a scroll
+    container when it opts into nested scrolling.
+  - The `FlatList`s (desktop list, columns pane, search) also set
+    `removeClippedSubviews={false}`: Android defaults it to `true`, which wrongly
+    detaches visible cells when the list is nested in a `ScrollView` — the same
+    failure mode the `Table` fix (348ad09c) addressed.
+
+- a6805b6: fix(ui): HoldMenu — the demo chat is a full 15-message thread, fills the story page and scrolls internally
+
+  The demo previously showed two bubbles in a small box; there was no way to
+  exercise the menu against a real scroll view. The chat is now a full thread
+  (header, fifteen HoldItem bubbles, pinned action readout) that occupies the
+  whole story page, with the list bounded by a definite `height: calc(100vh - 3rem)`
+  so it scrolls internally — hold a bubble near the bottom edge and the panel
+  travels up with it, scroll mid-thread and the menu clamps to the viewport.
+
+  The story wrapper switched from `min-height` (a floor — content taller than it
+  grew the page) to a definite `height`, and dropped `flex-1` (whose
+  `flex-basis: 0%` overrides the `height` property for flex items). The
+  Interactive playground now stretches the same chat below its controls.
+
+- e6a6c28: fix(ui): hold-menu — expo deps become hard dependencies, blur no longer janks, item stays put, web anchors correctly
+
+  - **Dependencies**: `expo-blur` and `expo-haptics` moved from optional
+    peer-dependencies to hard dependencies, so the native blur and haptics
+    modules are static imports (the platform-split `.native`/`.ts` twins still
+    keep them out of web bundles). The guarded dynamic `require` + fallbacks are
+    gone.
+  - **Blur lag**: the backdrop/panel blur `intensity` is now a static prop
+    instead of a per-frame `animatedProps` animation — animating it made
+    expo-blur recompute the blur every frame and jank on device. The layers still
+    fade in through their container opacity, and only the theme `tint` stays
+    animated.
+  - **Item stays put**: the held item no longer travels with the menu. It holds
+    its position with the existing scale squeeze while the portal twin carries
+    the travel when the menu overflows — matching upstream, so a menu that fits
+    in the anchor slot leaves the item in place instead of lifting it.
+  - **Web positioning**: the held item is measured relative to the provider's
+    root view (its `pageX`/`pageY` offset is subtracted), so the menu anchors to
+    the item even when the root is offset from the viewport origin — fixing the
+    menu appearing in the wrong place and the item sliding off screen on web.
+
+- fca0c92: fix(ui): hold-menu parity — always-open-below placement with up-travel, flicker-free lift handover, iOS expo-blur scrim
+
+  - **Placement**: `HoldContextMenu` now defaults `side` to `'bottom'`, matching
+    react-native-hold-menu: the menu always opens below the held item, and when
+    it would overflow the bottom of the screen the item and the menu travel up
+    together (a negative `shift`) until the menu fits — the panel may still
+    scroll if the item's travel is exhausted. The previous default `'auto'`
+    (flip above when there is more room there) remains available and unchanged
+    for consumers who pass it explicitly.
+  - **Lift handover**: the trigger no longer hides on `open`. It hides only once
+    the lifted copy has actually mounted — the overlay fires `onLiftReady` from
+    the copy's subtree, and the trigger keeps the `HANDOVER_DELAY` beat so both
+    are visible at the same pixels before the original fades. This closes the
+    frame gap between the trigger hiding and the copy mounting (the copy renders
+    only after `measureInWindow` lands, a frame or two after open on Android),
+    which read as the item vanishing and remounting. Web never fires the signal
+    and never hides the trigger.
+  - **Scrim blur**: on iOS the scrim now renders an expo-blur `BlurView` at full
+    intensity under the translucent dark `Pressable` (upstream's
+    blur-under-dim backdrop), via a new internal `hold-scrim-blur.native`
+    module that loads `expo-blur` with a guarded dynamic require — an optional
+    peer, so consumers without it get the plain translucent scrim, and web keeps
+    its CSS `backdrop-blur-xs`. Android keeps the dim alone.
+
+- bb8071e: fix(ui): hold-menu — web stories fill the page, web backdrop blurs like upstream
+
+  - **Story container**: the HoldMenu stories now render inside a story-level
+    decorator whose wrapper view carries `minHeight: calc(100vh - 3rem)` (the
+    global theme decorator pads 1.5rem per side), giving the provider's flex-1
+    gesture root a definite height. The demo fills the visible page instead of
+    a small box at the top-left, the list grows to fill the remaining height
+    and scrolls, and the picked-note stays pinned at the bottom — so the
+    full-bleed backdrop dims the whole page, not just the story box.
+  - **Web backdrop**: web now joins the blur-capable tier. The backdrop and
+    panel switch from the near-opaque Android dim to the translucent values
+    (`rgba(0,0,0,0.2)` light / `rgba(0,0,0,0.75)` dark), and the web blur twin
+    (`hold-menu-blur.tsx`) frosts the layer with CSS `backdrop-filter:
+blur(20px)` — the equivalent of upstream's expo-blur `BlurView` behind the
+    tint. Android keeps the plain near-opaque dim, exactly as upstream.
+
+- 3ad40d4: fix(ui): HoldMenu — blurred lighter backdrop (Android too), web lift and glide, eased motion
+
+  - Backdrop: the dark dim on blur-capable platforms drops from rgba(0,0,0,0.75)
+    to rgba(0,0,0,0.5), and Android joins the blur tier (expo-blur supports it;
+    the guarded fallback keeps the plain dim when the optional peer is absent)
+    instead of the near-opaque black scrim. The web frost is stronger
+    (backdrop-filter blur(30px)).
+  - Web lift: right-clicking (or clicking, for tap activation) a hold item now
+    runs the library's lift choreography in place — a quick 120ms squeeze, then
+    the item scales back up (eased) and glides with the panel as the menu pops
+    out of it. The portal twin stays native-only; children still render exactly
+    once on web.
+  - No travel when it fits: the item glides only when the menu would overflow —
+    the same tY the panel travels, which is zero when everything fits, so the
+    item stays put in the common case.
+  - Motion: scale-ups and the backdrop/panel fades now use Easing.out(Easing.cubic).
+    Web activation re-measures the item on every open instead of caching the
+    first rect.
+
+- ca63995: fix(ui): HoldMenu — squeeze duration resolved in the worklet body, not a default parameter
+
+  The scaleHold worklet referenced HOLD_ITEM_SCALE_DOWN_DURATION in a default
+  parameter expression. Default-parameter expressions live outside the worklet
+  body, so the native UI runtime's closure injection cannot see them — starting
+  a hold on device threw a ReferenceError for the constant. The duration is now
+  an optional parameter resolved inside the body (the same pattern scaleTap
+  already used), so the squeeze runs on device again.
+
+  (Story-only addition: an Interactive playground story for HoldMenu.)
+
+- 348ad09: fix(ui): mobile Table virtualization, checkbox fill seam, and hold-menu trigger flicker
+
+  - **Table**: `removeClippedSubviews` is now explicitly `false`. Android defaults it
+    to `true`, and the FlatList is nested inside a ScrollView (the horizontal
+    overflow wrapper a phone screen always triggers, or a consumer's vertical one)
+    — native view clipping there detaches visible cells, so the table renders
+    blank or stalls trying to keep every row mounted. The JS windowing props
+    (`windowSize`, `maxToRenderPerBatch`, `initialNumToRender`) are what virtualize.
+  - **Checkbox / CheckboxCard**: the checked fill now covers the whole 2px border
+    band (`-inset-0.5` instead of `-inset-px` / `inset-0`), so the border's
+    antialiased inner edge no longer shows as a hairline of the unchecked
+    background between the border and the fill.
+  - **HoldContextMenu**: the trigger stays at `HOLD_ITEM_SCALE` while the lifted
+    copy takes over, instead of springing back to 1 mid-handover — the in-place
+    item no longer visibly pops/resets under the finger when the menu opens.
+
+- d70249a: fix(ui): MorphingModal — reject stale height measurements from exiting views during view swaps (mobile jitter)
+- 07cd758: refactor(ui): co-locate ReorderableItem and SortableItem into their list modules
+
+  - **Removes two require cycles.** `reorderable-list.tsx` ↔ `reorderable-item.tsx`
+    and `sortable-list.tsx` ↔ `sortable-item.tsx` each formed a circular import —
+    the item component reads its list's `useReorderableList`/`useSortableList` hook
+    while the list renders the item, so the bundler warned about potentially
+    uninitialized values at module-init. Both item components (never part of the
+    public API) are now co-located in their list file, eliminating the cycle. No
+    public API or behaviour change.
+
+- f3baecc: fix(ui): SortableList — atomic drop commit kills reorder jitter; memoize item slots
+
+  - **Atomic drop commit (fixes reorder jitter).** The drop commit used to be
+    split in two: `handleDragEnd` handed the reordered array to the consumer but
+    deferred writing the shared `activeIndex`/`insertionIndex` values to a
+    `useLayoutEffect` that ran only AFTER React re-rendered with the new
+    canonical order. In that window every item whose `index` dependency changed
+    re-initialized its animated reaction against the STALE drag-time indices —
+    the item that now occupies the old active slot was misread as the active
+    item and snapped to a multi-slot offset, and the dragged item computed a
+    wrong shift target too — a large visible jitter on drop (native and web).
+    The commit now writes ALL shared values to their final values synchronously
+    in `handleDragEnd`, in the same JS tick as the `onReorder` call and before
+    the re-render: `dropVersion` bumps (items snap, no `withTiming`), then
+    `activeIndex`/`insertionIndex` reset to `-1` so every reaction re-init
+    evaluates at its rest position (`translateY: 0`) at its new canonical
+    index. The cancel and self-drop paths are unchanged: no version bump, and
+    the reaction animates items back smoothly with `withTiming(200)`.
+  - **Memoized item slots (perf).** The list now renders each row through a
+    module-scope `React.memo` wrapper whose comparator compares only
+    (item identity, index, isDragging, disabled, testID) — deliberately not
+    `children`/`preview`, which are pure functions of those inputs for an
+    unmoved item. A reorder commit therefore re-renders only the moved items'
+    `Dragzone`/`Draggable` subtrees instead of every row. `SortableItem`'s
+    props/API are unchanged; `SortableList`'s public API is unchanged.
+
+- 156cc2a: fix(ui): SortableList — snap the transform in the same frame as the drop reorder
+
+  - **Drop flicker fixed.** On a committed reorder the moved items' DOM nodes are
+    re-inserted at their new slots in the React render, but their `translateY`
+    reset to `0` was driven by the item's `useAnimatedReaction`, a `useEffect`-based
+    hook whose effect runs _after_ paint. That left a one-frame window where a
+    re-inserted node still carried its drag-time offset, so it flashed at the wrong
+    slot before settling — the flicker on drop (web and native). Each item now
+    resets its `translateY` (and syncs its drop-version bookmark) in a
+    `useLayoutEffect` keyed on its canonical `index`, which runs synchronously with
+    the DOM reorder before paint, so the snap and the reorder land in the same
+    frame. The reaction is unchanged and still drives the in-flight drag animation
+    and the smooth cancel/self-drop revert.
+
+- 74f7125: fix(ui): Table body no longer renders empty on narrow screens
+
+  - **Table**: when columns overflow a phone-width container the table wraps its
+    header row and body `FlatList` in a horizontal `ScrollView`. That ScrollView
+    lays its content container out in `flex-direction: row`, and the header and
+    body were siblings of a fragment — so they landed side by side and the body
+    `FlatList` sat off-screen to the right of the header, reading as an empty
+    table. The header and body are now wrapped in a single column `View` with an
+    explicit `width` (the summed column widths), so they stack vertically, keep
+    their column edges aligned, and still scroll horizontally together.
+
 ## 5.5.0
 
 ### Minor Changes

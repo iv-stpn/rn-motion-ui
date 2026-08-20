@@ -70,7 +70,9 @@ type StatusBadgeProps = { status: Person['status'] };
 function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <View className={cn('self-start rounded-full px-2 py-0.5', statusBackgroundClass(status))}>
-      <Text className={cn('font-medium text-[11px] capitalize', statusTextColorClass(status))}>{status}</Text>
+      <Text weight="medium" className={cn('text-[11px] capitalize', statusTextColorClass(status))}>
+        {status}
+      </Text>
     </View>
   );
 }
@@ -109,7 +111,11 @@ const DEFAULT_COLUMNS: TableColumn<Person>[] = [
     header: 'Name',
     sortable: true,
     width: '1.4fr',
-    cell: (row) => <Text className="font-medium text-[13px]">{row.name}</Text>,
+    cell: (row) => (
+      <Text weight="medium" className="text-[13px]">
+        {row.name}
+      </Text>
+    ),
   },
   { key: 'email', header: 'Email', width: '1.8fr' },
   { key: 'role', header: 'Role', sortable: true, width: '120px' },
@@ -209,7 +215,11 @@ function AsyncTableStory() {
       {
         key: 'name',
         header: 'Name',
-        cell: (r) => <Text className="font-medium text-[13px]">{r.name}</Text>,
+        cell: (r) => (
+          <Text weight="medium" className="text-[13px]">
+            {r.name}
+          </Text>
+        ),
       },
       { key: 'email', header: 'Email', width: '180px' },
       { key: 'role', header: 'Role', width: '110px' },
@@ -381,7 +391,7 @@ export default meta;
 
 // ─── Interactive ──────────────────────────────────────────────────────────────
 
-const ROW_COUNTS = { '0': 0, '8': 8, '50': 50, '1000': 1000 } as const;
+const ROW_COUNTS = { '0': 0, '8': 8, '50': 50, '1000': 1000, '100000': 100_000 } as const;
 type RowCountKey = keyof typeof ROW_COUNTS;
 
 const ROW_COUNT_OPTIONS = [
@@ -389,6 +399,7 @@ const ROW_COUNT_OPTIONS = [
   { value: '8', label: '8 rows' },
   { value: '50', label: '50 rows' },
   { value: '1000', label: '1000 rows' },
+  { value: '100000', label: '100K rows' },
 ] as const satisfies readonly { value: RowCountKey; label: string }[];
 
 const ROW_HEIGHTS = { compact: 40, default: 52, relaxed: 68 } as const;
@@ -677,6 +688,93 @@ export const SmallScreen: Story = {
     // Headers are gone; card content from renderSmallScreen is visible
     expect(canvas.queryByText('Email')).toBeNull();
     expect((await canvas.findAllByText('Ava Cole')).length).toBeGreaterThan(0);
+  },
+};
+
+// ─── Narrow container (horizontal overflow) ──────────────────────────────────
+// Columns that overflow a phone-width container wrap the header + body in a
+// horizontal ScrollView, whose content is laid out in a row. The header and body
+// must therefore sit inside a single column, or the rows land beside the header
+// (off-screen) and the body reads as empty — the mobile bug this pins down.
+
+const NARROW_WIDTH = 320;
+const NARROW_ROW_HEIGHT = 48;
+// Fixed pixel widths so the overflow is deterministic (no fr columns resolving
+// to zero width in a too-narrow container).
+const NARROW_COLUMNS: TableColumn<Person>[] = [
+  { key: 'name', header: 'Name', width: '180px' },
+  { key: 'email', header: 'Email', width: '200px' },
+  { key: 'role', header: 'Role', width: '140px' },
+];
+
+export const NarrowOverflow: Story = {
+  name: 'Demo: rows stay under the header on a narrow screen',
+  render: () => (
+    <View style={{ width: NARROW_WIDTH }}>
+      <Table
+        {...CLASSIC_TABLE}
+        data={buildPeople(5)}
+        columns={NARROW_COLUMNS}
+        getRowId={getPersonId}
+        height={280}
+        rowHeight={NARROW_ROW_HEIGHT}
+        testID="table-narrow"
+      />
+    </View>
+  ),
+  args: { columns: [], data: [] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const table = (await canvas.findByTestId('table-narrow')).getBoundingClientRect();
+    const row = (await canvas.findByTestId('table-narrow-row-0')).getBoundingClientRect();
+    // The body row sits under the header (aligned to the table's left edge), not
+    // beside it — a horizontal ScrollView would otherwise push it off-screen and
+    // the body reads as empty on a narrow screen.
+    expect(row.left).toBeLessThan(table.left + 2);
+    expect(row.top).toBeGreaterThanOrEqual(table.top + NARROW_ROW_HEIGHT - 1);
+  },
+};
+
+// ─── Minimum column width ─────────────────────────────────────────────────────
+// A column's `minWidth` is a floor, not a share: on a narrow container the
+// column refuses to shrink below it, pushing the total past the container width
+// so the table scrolls horizontally instead of squeezing the column unreadable.
+
+const MIN_WIDTH_COLUMNS: TableColumn<Person>[] = [
+  { key: 'name', header: 'Name', width: '1fr' },
+  { key: 'email', header: 'Email', width: '1fr', minWidth: 240 },
+  { key: 'role', header: 'Role', width: '1fr' },
+];
+
+export const MinWidth: Story = {
+  name: 'Demo: min column width forces horizontal scroll',
+  render: () => (
+    <View style={{ width: NARROW_WIDTH }}>
+      <Table
+        {...CLASSIC_TABLE}
+        data={buildPeople(5)}
+        columns={MIN_WIDTH_COLUMNS}
+        getRowId={getPersonId}
+        height={280}
+        rowHeight={NARROW_ROW_HEIGHT}
+        testID="table-min-width"
+      />
+    </View>
+  ),
+  args: { columns: [], data: [] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The email column keeps its 240px floor even though the container is only
+    // 320px wide, so the table overflows and scrolls rather than squeezing it.
+    // `waitFor` gates on the post-layout render: `computeColumnWidths` only
+    // resolves once `onLayout` reports the container width, so the first frame
+    // still lays the cell out with its pre-layout flex fallback.
+    await waitFor(() => {
+      const emailHeader = canvas.getByTestId('table-min-width-header-email').getBoundingClientRect();
+      expect(emailHeader.width).toBeGreaterThanOrEqual(240);
+    });
+    // The horizontal wrapper is only mounted once the total actually overflows.
+    await canvas.findByTestId('table-min-width-scroll');
   },
 };
 

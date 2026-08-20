@@ -69,7 +69,7 @@ export const SIZE_SCALE: Record<
 export const VARIANT_CLASSES: Record<ItemRowVariant, string> = {
   default: 'bg-transparent rounded-interactive',
   outline: 'border border-border rounded-interactive',
-  muted: 'bg-muted/50 rounded-interactive',
+  muted: 'bg-surface-contrast rounded-interactive',
 };
 
 /**
@@ -113,7 +113,7 @@ function renderAdornment(a: ItemRowAdornment | undefined, token: ThemeToken, siz
 // ---------------------------------------------------------------------------
 
 export type RowLayoutProps = {
-  /** Row title — primary text, `font-medium` foreground. */
+  /** Row title — primary text, `weight="medium"` foreground. */
   title: ReactNode;
   /** Optional secondary text, rendered below the title in a muted colour. */
   description?: ReactNode;
@@ -169,7 +169,7 @@ export function RowLayout({ title, description, leftAdornment, rightAdornment, s
 // ---------------------------------------------------------------------------
 
 export type ItemRowProps = {
-  /** Row title — primary text, `font-medium` foreground. */
+  /** Row title — primary text, `weight="medium"` foreground. */
   title: ReactNode;
   /** Optional secondary text, rendered below the title in a muted colour. */
   description?: ReactNode;
@@ -221,7 +221,7 @@ export type ItemRowProps = {
  *   title="Storage"
  *   description="512 GB of 1 TB used"
  *   leftAdornment={{ icon: HardDrive }}
- *   rightAdornment={<Button size="sm" variant="secondary">Manage</Button>}
+ *   rightAdornment={<Button size="sm" variant="inverse">Manage</Button>}
  * />
  *
  * @example

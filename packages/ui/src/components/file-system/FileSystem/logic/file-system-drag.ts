@@ -93,9 +93,26 @@ function isDragItem(value: unknown): value is FileSystemDragItem {
  * Total rather than throwing: a zone's `accepts` runs against every drag in the
  * tree, including OS file drags and payloads from other components, and "not ours"
  * has to be an ordinary answer on that path.
+ *
+ * Cached per transfer object: the payload is written once at lift and never
+ * changes for the life of the drag, while this reader runs on the hot path — a
+ * zone's `accepts` asks it on *every* pointer move, and a file system with a
+ * hundred rows would otherwise re-`JSON.parse` the same string a hundred times
+ * a frame. The WeakMap keys on the transfer, so each drag parses exactly once.
  */
 export function readFileSystemDragItems(transfer: DragTransfer | null | undefined): FileSystemDragItem[] {
   if (!transfer) return [];
+  const cached = parsedFileSystemDragItems.get(transfer);
+  if (cached !== undefined) return cached;
+  const parsed = parseFileSystemDragItems(transfer);
+  parsedFileSystemDragItems.set(transfer, parsed);
+  return parsed;
+}
+
+/** One parse per drag, shared by every zone that asks. See {@link readFileSystemDragItems}. */
+const parsedFileSystemDragItems = new WeakMap<DragTransfer, FileSystemDragItem[]>();
+
+function parseFileSystemDragItems(transfer: DragTransfer): FileSystemDragItem[] {
   const raw = transfer.getData(FS_DRAG_ITEMS_MIME);
   if (raw === '') return [];
   try {

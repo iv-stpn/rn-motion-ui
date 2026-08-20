@@ -5,7 +5,7 @@
 // No header and no disclosure tree — a phone has no column header to click and no
 // room for a tree. Each row carries a visible kebab (the same `FileSystemMobileMenu`
 // the grid tiles use), and long-press is the way into multi-select: once anything
-// is selected the kebab yields to a checkbox. The same hold that toggles the
+// is selected the kebab yields to a checkbox. The same hold that joins the
 // selection keeps dragging past the escape slop, lifting the multi-selection onto
 // a folder row — the drag wiring mirrors the desktop list view (`ListRow`), with
 // no hover anywhere: a phone has no right button and no pointer to hover with.
@@ -18,18 +18,20 @@ import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
-import type { DragzoneRenderState } from '../../../gestures/drag.types';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { useDragScope } from '../../../gestures/drag-scope';
+import { shiftZoneRects } from '../../../gestures/drag-store';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
+import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
-import { useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
+import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { formatFileSystemStats } from '../logic/file-system-format';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
-import { FileSystemDropzone } from '../shell/file-system-dropzone';
+import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
   FileSystemEntry,
   FileSystemExternalDropEvent,
@@ -91,6 +93,8 @@ type MobileListRowProps = {
   renderEntryIcon?: FileSystemViewProps['renderEntryIcon'];
   selecting: boolean;
   testID?: string;
+  /** This row is under the finger right now during a scrub — its checkbox bounces. */
+  isScrubTarget: boolean;
 };
 
 /**
@@ -117,12 +121,13 @@ function MobileListRow({
   renderEntryIcon,
   selecting,
   testID,
+  isScrubTarget,
 }: MobileListRowProps) {
   const colors = useThemeColors();
 
   // The row has no menu of its own — the kebab is the menu. Passing no
-  // `getContextMenuActions` keeps `HoldContextMenu` inert (empty items), so a
-  // hold fires only `onHoldAction` (the multi-select toggle) rather than a panel.
+  // `getContextMenuActions` keeps `HoldItem` inert (empty items), so a
+  // hold fires only `onHoldAction` (the multi-select join) rather than a panel.
   const { handleOpenChange, handlePress, handlePressIn, menuProps, onHoldAction } = useFileSystemRowInteraction({
     entry,
     getContextMenuActions: undefined,
@@ -157,7 +162,13 @@ function MobileListRow({
 
   const row = (
     <View className="relative" style={{ height: MOBILE_ROW_HEIGHT }}>
-      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+      <HoldItem
+        hapticFeedback="Medium"
+        items={menuProps.items}
+        dragOptions={dragOptions}
+        onHold={onHoldAction}
+        onOpenChange={handleOpenChange}
+      >
         <Pressable
           accessibilityLabel={entry.name}
           accessibilityRole="button"
@@ -190,12 +201,13 @@ function MobileListRow({
             ) : null}
           </View>
         </Pressable>
-      </HoldContextMenu>
+      </HoldItem>
       {/* The kebab/checkbox, laid over the row's reserved right edge. */}
       <View className="absolute right-0 items-center justify-center" style={{ height: MOBILE_ROW_HEIGHT }}>
         <FileSystemMobileMenu
           entry={entry}
           getContextMenuActions={getContextMenuActions}
+          isScrubTarget={isScrubTarget}
           isSelected={isSelected}
           onContextMenuAction={onContextMenuAction}
           onScrubStart={onScrubStart}
@@ -215,6 +227,9 @@ function MobileListRow({
   // structural DOM mutation that can tear an in-flight drag down.
   if (entry.kind !== 'folder') return row;
 
+  // No outline of its own: the drag scope's shared leaf paints the drop
+  // indicator once, at the over zone's rect, so a crossing never re-renders the
+  // row body (plain children bail on the stable element reference).
   return (
     <FileSystemDropzone
       destination={entry.path}
@@ -223,12 +238,7 @@ function MobileListRow({
       onExternalDrop={onExternalDrop}
       onMove={onMove}
     >
-      {({ isOver }: DragzoneRenderState) => (
-        <>
-          {row}
-          {isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null}
-        </>
-      )}
+      {row}
     </FileSystemDropzone>
   );
 }
@@ -269,120 +279,153 @@ export function FileSystemMobileListView({
   // file-manager behaviour (the checkboxes are the toggle surface, and the row
   // tap mirrors them).
   const activate = useCallback(
-    (entry: FileSystemEntry) => {
-      if (selecting) toggleSelect(entry);
-      else onOpen(entry);
-    },
+    (entry: FileSystemEntry) => (selecting ? toggleSelect(entry) : onOpen(entry)),
     [onOpen, selecting, toggleSelect],
-  );
-
-  // Scrub geometry. The finger→row mapping is calibrated at drag start against the
-  // one point both sides already agree on: the start entry's checkbox, whose content
-  // position is `rowIndex * ROW_STRIDE + MOBILE_ROW_HEIGHT / 2` and whose
-  // window position the gesture reports at `onStart`. That offset turns every later
-  // `absoluteY` straight into a row — no `measureInWindow`, no scroll bookkeeping,
-  // nothing that can drift between the finger's frame and the view's.
-  const scrubOriginRef = useRef<{ x: number; y: number } | null>(null);
-
-  const resolveItemAt = useCallback(
-    (_x: number, y: number) => {
-      const origin = scrubOriginRef.current;
-      if (origin === null) return null;
-      const contentY = y - origin.y;
-      if (contentY < 0) return null;
-      const rowIndex = Math.floor(contentY / ROW_STRIDE);
-      return rowIndex >= 0 && rowIndex < orderedPaths.length ? (orderedPaths[rowIndex] ?? null) : null;
-    },
-    [orderedPaths],
-  );
-
-  const {
-    begin,
-    move: moveScrub,
-    end: endScrub,
-  } = useFileSystemScrubSession({
-    orderedPaths,
-    selectedPaths,
-    onMarquee,
-    onDeselectMarquee,
-    resolveItemAt,
-  });
-
-  const beginScrub = useCallback(
-    (entry: FileSystemEntry, _x: number, y: number) => {
-      const rowIndex = orderedPaths.indexOf(entry.path);
-      const checkboxCenterY = rowIndex * ROW_STRIDE + MOBILE_ROW_HEIGHT / 2;
-      scrubOriginRef.current = { x: 0, y: y - checkboxCenterY };
-      begin(entry);
-    },
-    [begin, orderedPaths],
   );
 
   const containerRef = useRef<View | null>(null);
   const flatListRef = useRef<FlatList<FileSystemEntry> | null>(null);
   const scrollOffsetRef = useRef(0);
+  // The manager this view's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
 
   // A drag near the top or bottom edge scrolls the list, so a folder below the
   // fold is reachable without releasing. Runs for external drags too.
   const scrollTo = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ animated: false, offset }), []);
   useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
 
-  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
-  }, []);
+  // The same edge-scroll engine the drag above uses, driven by the scrub's pointer
+  // stream instead — dragging to multi-select scrolls the list when the finger goes
+  // above the visible rows (or below them).
+  const {
+    begin: beginAutoScroll,
+    move: moveAutoScroll,
+    end: endAutoScroll,
+  } = useFileSystemAutoScroll({
+    containerRef,
+    scrollTo,
+    scrollOffsetRef,
+  });
+
+  // Scrub geometry. The finger→row mapping is calibrated at drag start against the
+  // one point both sides already agree on: the start entry's checkbox, whose content
+  // position is `rowIndex * ROW_STRIDE + MOBILE_ROW_HEIGHT / 2` and whose window
+  // position the gesture reports at `onStart`. That offset turns every later
+  // `absoluteY` straight into a row. The one thing that *can* drift is the list
+  // auto-scrolling mid-scrub, which moves the content under a fixed finger position —
+  // so the mapping adds the scroll delta since calibration (see `resolveItemAt`).
+  const scrubOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const scrubStartOffsetRef = useRef(0);
+
+  const resolveItemAt = useCallback(
+    (_x: number, y: number): FileSystemScrubHit => {
+      const origin = scrubOriginRef.current;
+      if (origin === null) return null;
+      const contentY = y - origin.y + (scrollOffsetRef.current - scrubStartOffsetRef.current);
+      if (contentY < 0) return { kind: 'beyond', side: 'above' };
+      const rowIndex = Math.floor(contentY / ROW_STRIDE);
+      const path = orderedPaths[rowIndex];
+      if (path === undefined) return { kind: 'beyond', side: 'below' };
+      return { kind: 'item', path };
+    },
+    [orderedPaths],
+  );
+
+  const scrubSession = { orderedPaths, selectedPaths, onMarquee, onDeselectMarquee, resolveItemAt };
+  const { begin, move: moveScrub, end: endScrub, scrubTarget } = useFileSystemScrubSession(scrubSession);
+
+  const beginScrub = useCallback(
+    (entry: FileSystemEntry, _x: number, y: number) => {
+      const rowIndex = orderedPaths.indexOf(entry.path);
+      const checkboxCenterY = rowIndex * ROW_STRIDE + MOBILE_ROW_HEIGHT / 2;
+      scrubOriginRef.current = { x: 0, y: y - checkboxCenterY };
+      scrubStartOffsetRef.current = scrollOffsetRef.current;
+      begin(entry);
+      beginAutoScroll();
+    },
+    [begin, beginAutoScroll, orderedPaths],
+  );
+
+  const handleScrubMove = useCallback(
+    (x: number, y: number) => {
+      moveScrub(x, y);
+      moveAutoScroll(x, y);
+    },
+    [moveScrub, moveAutoScroll],
+  );
+
+  const handleScrubEnd = useCallback(() => {
+    endScrub();
+    endAutoScroll();
+  }, [endScrub, endAutoScroll]);
+
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offset = event.nativeEvent.contentOffset.y;
+      // Same correction as the desktop list view: the store's cached zone rects
+      // are window boxes from the last measure, and a scroll moves the rows
+      // without any layout event, so the drop targeting and the shared drop
+      // indicator would resolve against pre-scroll positions mid-drag.
+      const delta = offset - scrollOffsetRef.current;
+      scrollOffsetRef.current = offset;
+      if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
+    },
+    [managerPath],
+  );
+
+  const rowProps = useMemo(
+    () => ({ draggable, ensureChildren, getContextMenuActions, onMove, renderEntryIcon, onContextMenuAction, onExternalDrop }),
+    [draggable, ensureChildren, getContextMenuActions, onMove, renderEntryIcon, onContextMenuAction, onExternalDrop],
+  );
 
   const renderRow = useCallback(
     ({ item }: MobileListRenderItem) => (
       <MobileListRow
         childCount={index.children.get(item.path)?.length}
-        draggable={draggable}
-        ensureChildren={ensureChildren}
         entry={item}
-        getContextMenuActions={getContextMenuActions}
+        isScrubTarget={scrubTarget === item.path}
         isSelected={selectedPaths.has(item.path)}
         onActivate={activate}
-        onContextMenuAction={onContextMenuAction}
-        onExternalDrop={onExternalDrop}
-        onMove={onMove}
         onScrubStart={beginScrub}
-        onScrubMove={moveScrub}
-        onScrubEnd={endScrub}
+        onScrubMove={handleScrubMove}
+        onScrubEnd={handleScrubEnd}
         onSelectLongPress={selectLongPress}
         onToggleSelect={toggleSelect}
-        renderEntryIcon={renderEntryIcon}
         selecting={selecting}
         testID={fileSystemEntryTestID(testID, item.path)}
+        {...rowProps}
       />
     ),
     [
       activate,
       beginScrub,
-      draggable,
-      endScrub,
-      ensureChildren,
-      getContextMenuActions,
+      handleScrubEnd,
+      handleScrubMove,
       index,
-      moveScrub,
-      onContextMenuAction,
-      onExternalDrop,
-      onMove,
-      renderEntryIcon,
+      scrubTarget,
       selectedPaths,
       selectLongPress,
       selecting,
       testID,
       toggleSelect,
+      rowProps,
     ],
   );
 
   // The vertical gap between rows — see `MobileRowSeparator`.
+  // `extraData` must change on both selection *and* the scrub's finger position:
+  // the start entry's checkbox bounce fires from `scrubTarget` alone, before any
+  // selection change, so `selectedPaths` on its own would not re-render the rows.
+  const extraData = useMemo(() => ({ selectedPaths, scrubTarget }), [selectedPaths, scrubTarget]);
+
   return (
     <View className="min-h-0 flex-1" ref={containerRef}>
       <FlatList
         ref={flatListRef}
         className="flex-1"
         data={entries}
-        extraData={selectedPaths}
+        extraData={extraData}
         getItemLayout={getItemLayout}
         ItemSeparatorComponent={MobileRowSeparator}
         keyExtractor={keyExtractor}
@@ -390,17 +433,7 @@ export function FileSystemMobileListView({
         renderItem={renderRow}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        // This list is nested inside the consumer's own ScrollView (the native
-        // storybook decorator wraps every story in one). Android only scrolls a
-        // child of a scroll container when the child opts into nested scrolling —
-        // iOS and web handle the nesting natively — so without this the list
-        // would not scroll at all in the APK.
         nestedScrollEnabled={true}
-        // `removeClippedSubviews` is deliberately OFF. Android defaults it to
-        // true, and this FlatList is nested inside a ScrollView — the same
-        // failure mode the Table fixed in 348ad09c: native view clipping there
-        // wrongly detaches visible cells, rendering the list blank and stalling
-        // it trying to keep every row mounted.
         removeClippedSubviews={false}
       />
     </View>

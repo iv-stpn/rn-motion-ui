@@ -122,7 +122,7 @@ const OVERSCROLL_DAMPING = 0.04;
 const BADGE_BACKGROUND = cva('items-center justify-center rounded-full', {
   variants: {
     tone: {
-      neutral: 'bg-muted',
+      neutral: 'bg-surface-contrast',
       primary: 'bg-primary',
       success: 'bg-success',
       warning: 'bg-warning',
@@ -162,7 +162,7 @@ function SwipeActionButton({ action, actionWidth, side, onAction, testID }: Swip
   const tone = action.tone ?? 'neutral';
   const colors = useThemeColors();
   // Reactive per-tone icon colour. neutral/primary track the theme — their badge
-  // backgrounds (`bg-muted`/`bg-primary`) invert, so the icon must invert too.
+  // backgrounds (`bg-surface-contrast`/`bg-primary`) invert, so the icon must invert too.
   // Status tones pair their soft plate background with the matching
   // `*-foreground` token, which is tuned for legibility on the plate in both
   // light and dark mode.
@@ -478,7 +478,7 @@ function SwipeableListRow({
       {item.leading ? <View className="shrink-0">{item.leading}</View> : null}
       <View className="min-w-0 flex-1">
         {item.title ? (
-          <Text className="font-medium text-foreground text-sm" numberOfLines={1}>
+          <Text weight="medium" className="text-foreground text-sm" numberOfLines={1}>
             {item.title}
           </Text>
         ) : null}
@@ -488,14 +488,18 @@ function SwipeableListRow({
           </Text>
         ) : null}
       </View>
-      {item.meta ? <Text className="shrink-0 font-medium text-muted-foreground text-xs">{item.meta}</Text> : null}
+      {item.meta ? (
+        <Text weight="medium" className="shrink-0 text-muted-foreground text-xs">
+          {item.meta}
+        </Text>
+      ) : null}
     </View>
   );
 
   return (
     <View
       ref={rowRef}
-      className="relative overflow-hidden rounded-2xl bg-muted"
+      className="relative overflow-hidden rounded-2xl bg-surface-contrast"
       style={[
         { opacity: item.disabled ? 0.6 : 1 },
         // Web: keep vertical page scroll but let the wheel handler claim

@@ -1,6 +1,6 @@
 {
   "name": "rn-motion-ui",
-  "version": "5.5.0",
+  "version": "6.0.0",
   "description": "Animated React Native + React Native Web UI components, styled with Tailwind via uniwind and powered by Moti/Reanimated.",
   "keywords": [
     "react-native",
@@ -157,6 +157,11 @@
       "types": "./src/components/form/CheckboxCard/checkbox-card.tsx",
       "default": "./src/components/form/CheckboxCard/checkbox-card.tsx"
     },
+    "./choice-group": {
+      "source": "./src/components/form/ChoiceGroup/choice-group.tsx",
+      "types": "./src/components/form/ChoiceGroup/choice-group.tsx",
+      "default": "./src/components/form/ChoiceGroup/choice-group.tsx"
+    },
     "./close-button": {
       "source": "./src/components/menus/CloseButton/close-button.tsx",
       "types": "./src/components/menus/CloseButton/close-button.tsx",
@@ -282,15 +287,10 @@
       "types": "./src/components/menus/FullSheet/full-sheet.tsx",
       "default": "./src/components/menus/FullSheet/full-sheet.tsx"
     },
-    "./glossy-button": {
-      "source": "./src/components/form/Button/glossy-button.tsx",
-      "types": "./src/components/form/Button/glossy-button.tsx",
-      "default": "./src/components/form/Button/glossy-button.tsx"
-    },
-    "./hold-context-menu": {
-      "source": "./src/components/menus/HoldContextMenu/hold-context-menu.tsx",
-      "types": "./src/components/menus/HoldContextMenu/hold-context-menu.tsx",
-      "default": "./src/components/menus/HoldContextMenu/hold-context-menu.tsx"
+    "./hold-menu": {
+      "source": "./src/components/menus/HoldMenu/hold-menu.tsx",
+      "types": "./src/components/menus/HoldMenu/hold-menu.tsx",
+      "default": "./src/components/menus/HoldMenu/hold-menu.tsx"
     },
     "./hover-menu": {
       "source": "./src/components/menus/HoverMenu/hover-menu.tsx",
@@ -401,6 +401,11 @@
       "source": "./src/components/menus/Popover/popover.tsx",
       "types": "./src/components/menus/Popover/popover.tsx",
       "default": "./src/components/menus/Popover/popover.tsx"
+    },
+    "./portal": {
+      "source": "./src/components/portal/Portal/portal.tsx",
+      "types": "./src/components/portal/Portal/portal.tsx",
+      "default": "./src/components/portal/Portal/portal.tsx"
     },
     "./radio": {
       "source": "./src/components/form/Radio/radio.tsx",
@@ -812,11 +817,14 @@
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "expo-blur": "~57.0.2",
+    "expo-haptics": "~57.0.1",
     "rn-motion-ui-icons": "^0.0.2",
     "tailwind-merge": "^3.6.0",
     "zustand": "5.0.3"
   },
   "peerDependencies": {
+    "@sbaiahmed1/react-native-blur": ">=6.0.0",
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
     "react-native-gesture-handler": ">=2.0.0",
@@ -825,6 +833,9 @@
     "react-native-svg": ">=15.0.0"
   },
   "peerDependenciesMeta": {
+    "@sbaiahmed1/react-native-blur": {
+      "optional": true
+    },
     "react-native-safe-area-context": {
       "optional": true
     }

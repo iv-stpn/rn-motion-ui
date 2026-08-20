@@ -16,17 +16,15 @@ import type { ElevatedVariant } from '../form/Button/elevated-button';
  */
 const VARIANT_TOKEN: Record<IconVariant, ThemeToken> = {
   // ── ButtonVariant ────────────────────────────────────────────────────────
-  primary: 'primary-foreground',
-  secondary: 'foreground',
+  neutral: 'primary-foreground',
+  inverse: 'primary',
   ghost: 'foreground',
   outline: 'foreground',
   danger: 'danger-foreground',
   special: 'special-foreground',
-  inverse: 'surface-1',
   outlineDanger: 'danger',
   ghostDanger: 'danger',
   // ── ElevatedVariant (extras not in ButtonVariant) ────────────────────────
-  neutral: 'primary-foreground',
   success: 'success-foreground',
   warning: 'warning-foreground',
   info: 'info-foreground',
@@ -46,14 +44,14 @@ export type ThemedIconProps = Omit<IconProps, 'color'> & {
   /**
    * Color variant. Maps to the foreground token for that fill so the icon
    * stays legible on any button background without manually threading a color
-   * prop. Defaults to `'secondary'` (plain `foreground` token).
+   * prop. Defaults to `'ghost'` (plain `foreground` token).
    *
-   * Pass `'ghost'` for a muted/subtle context, or any `ButtonVariant` /
-   * `ElevatedVariant` name to match a specific button family.
+   * Pass any `ButtonVariant` / `ElevatedVariant` name to match a specific
+   * button family.
    *
-   * @example variant="primary"   → primary-foreground (white on primary fill)
-   * @example variant="ghost"     → muted-foreground
-   * @example variant="success"   → success-foreground (white on green fill)
+   * @example variant="neutral"  → primary-foreground (white on primary fill)
+   * @example variant="ghost"    → foreground
+   * @example variant="success"  → success-foreground (white on green fill)
    * @example variant="outlineDanger" → danger (the danger hue itself)
    */
   variant?: IconVariant;
@@ -76,22 +74,22 @@ export type ThemedIconProps = Omit<IconProps, 'color'> & {
  * the wrapped icon unchanged.
  *
  * @example
- * // Adornment in a primary button — picks up primary-foreground automatically
- * <ThemedIcon icon={ArrowRight} variant="primary" size={16} />
+ * // Adornment in a neutral (primary-fill) button — picks up primary-foreground
+ * <ThemedIcon icon={ArrowRight} variant="neutral" size={16} />
  *
  * @example
  * // Standalone status icon — success-foreground (white) on the green fill
  * <ThemedIcon icon={Check} variant="success" size={20} />
  *
  * @example
- * // Ghost-button context — muted foreground, no explicit color prop needed
+ * // Ghost context — foreground token, no explicit color prop needed
  * <ThemedIcon icon={Settings} variant="ghost" size={20} />
  *
  * @example
  * // Bypass variant lookup and specify a token directly
  * <ThemedIcon icon={Info} token="muted-foreground" size={20} />
  */
-export function ThemedIcon({ icon: Icon, variant = 'secondary', token, ...iconProps }: ThemedIconProps) {
+export function ThemedIcon({ icon: Icon, variant = 'ghost', token, ...iconProps }: ThemedIconProps) {
   const colors = useThemeColors();
   const resolvedToken = token ?? VARIANT_TOKEN[variant];
   return <Icon color={colors[resolvedToken]} {...iconProps} />;

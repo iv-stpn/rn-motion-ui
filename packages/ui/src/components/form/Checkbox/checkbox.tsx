@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback } from 'react';
-import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
@@ -11,8 +11,109 @@ import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT }
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 
-const CHECK_PATH = 'M5 13l4 4L19 7';
-const INDETERMINATE_PATH = 'M6 12h12';
+const CHECK_PATH = 'm4.514 12.83l5.657 5.656L21.485 7.172';
+const INDETERMINATE_PATH = 'M4 12.83h18';
+
+/**
+ * Checked border class per tone. A static map (not a `border-${tone}` template
+ * literal) so UniWind can statically resolve every member at build time.
+ */
+const BOX_TONE_BORDER: Record<CheckboxTone, string> = {
+  primary: 'border-primary',
+  secondary: 'border-secondary',
+  accent: 'border-accent',
+  success: 'border-success',
+  warning: 'border-warning',
+  info: 'border-info',
+  danger: 'border-danger',
+  special: 'border-special',
+};
+
+/** Filled accent tokens — each has a matching `-foreground` for the mark. */
+export type CheckboxTone = 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'info' | 'danger' | 'special';
+
+export type CheckboxBoxProps = {
+  checked: boolean;
+  indeterminate?: boolean;
+  disabled?: boolean;
+  /** Whether the surrounding control is pressed — drives the box squish. */
+  pressed?: boolean;
+  /** Accent token for the fill, border and mark. Defaults to `primary`. */
+  tone?: CheckboxTone;
+  /** Resolved check animation (already merged with any override). */
+  transition?: MotiTransitionProp;
+  checkIcon?: ReactNode;
+  /** The box and mark derive `-control` / `-check` from this. */
+  testID?: string;
+};
+
+/**
+ * The animated box + check/dash mark. Split out so `Checkbox` and `CheckboxCard`
+ * share one implementation: `Checkbox` wraps it in a Pressable, while
+ * `CheckboxCard` renders it directly because the whole card is the checkbox.
+ */
+export function CheckboxBox({
+  checked,
+  indeterminate,
+  disabled,
+  pressed = false,
+  tone = 'primary',
+  transition,
+  checkIcon,
+  testID,
+}: CheckboxBoxProps) {
+  const reduce = useReducedMotion();
+  // Resolve the accent and its mark colour through the token bridge so they
+  // adapt to consumer @theme overrides.
+  const accent = useThemeColor(tone);
+  const checkColor = useThemeColor(`${tone}-foreground`);
+  const surfaceColor = useThemeColor('surface-3');
+  const showMark = checked || Boolean(indeterminate);
+  const path = indeterminate ? INDETERMINATE_PATH : CHECK_PATH;
+  const ct = reduce ? TIMING_INSTANT : (transition ?? TIMING_FAST);
+
+  return (
+    // The box is the surface: it springs down while pressed and cross-fades its
+    // own background between the surface and accent fills. Animating the box
+    // (rather than an absolutely-positioned fill overlay) keeps the selected
+    // background inside the border, so it never needs to overlap the border.
+    <MotiView
+      animate={{
+        scale: pressed && !reduce && !disabled ? 0.92 : 1,
+        backgroundColor: showMark ? accent : surfaceColor,
+      }}
+      transition={{ scale: SPRING_PRESS, backgroundColor: ct }}
+      testID={testID ? `${testID}-control` : undefined}
+      className={cn(
+        'h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2',
+        showMark ? BOX_TONE_BORDER[tone] : 'border-muted-foreground/50',
+      )}
+    >
+      {/* The check/dash cross-fade in place: the mark is absolutely positioned
+          so the outgoing and incoming icons overlap during the swap instead of
+          stacking as flex siblings. */}
+      <AnimatePresence>
+        {showMark ? (
+          <MotiView
+            key={indeterminate ? 'indeterminate' : 'checked'}
+            from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
+            transition={ct}
+            testID={testID ? `${testID}-check` : undefined}
+            className="absolute inset-0 items-center justify-center"
+          >
+            {checkIcon ?? (
+              <Svg width={12} height={12} viewBox="0 0 24 24">
+                <Path d={path} fill="none" stroke={checkColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            )}
+          </MotiView>
+        ) : null}
+      </AnimatePresence>
+    </MotiView>
+  );
+}
 
 export type CheckboxProps = {
   checked: boolean;
@@ -20,6 +121,8 @@ export type CheckboxProps = {
   disabled?: boolean;
   indeterminate?: boolean;
   label?: string;
+  /** Accent token for the box fill, border and mark. Defaults to `primary`. */
+  tone?: CheckboxTone;
   /** Additional UniWind class names merged onto the outer row. */
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -40,6 +143,7 @@ export function Checkbox({
   disabled,
   indeterminate,
   label,
+  tone = 'primary',
   className,
   style,
   accessibilityLabel,
@@ -47,13 +151,7 @@ export function Checkbox({
   checkTransition,
   checkIcon,
 }: CheckboxProps) {
-  const reduce = useReducedMotion();
   const { pressed, pressHandlers } = usePressState();
-  // Resolve the check/indeterminate mark colour through the token bridge so it
-  // adapts to consumer @theme overrides (e.g. a non-black primary).
-  const checkColor = useThemeColor('primary-foreground');
-  const showMark = checked || Boolean(indeterminate);
-  const path = indeterminate ? INDETERMINATE_PATH : CHECK_PATH;
   const ct = mergeTransition(TIMING_FAST, checkTransition);
 
   const handlePress = useCallback(() => {
@@ -73,47 +171,16 @@ export function Checkbox({
       className={cn('flex-row items-center', className)}
       style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}
     >
-      {/* Tap feedback: the box springs down while pressed (Button's idiom). */}
-      <MotiView animate={{ scale: pressed && !reduce && !disabled ? 0.92 : 1 }} transition={SPRING_PRESS}>
-        {/* Base box is always in the unchecked state; the primary fill animates in/out. */}
-        <View
-          className={cn(
-            'h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-surface-3',
-            showMark ? 'border-primary' : 'border-muted-foreground/50',
-          )}
-        >
-          {/* Fill fades in on check and out on uncheck, same timing as the mark.
-              `-inset-0.5` (=-2px) makes it cover the whole 2px border band, so
-              the checked box is one solid primary surface. Anything less — the
-              old `-inset-px` covered only half the border — leaves the border's
-              antialiased inner edge showing through as a hairline of the
-              unchecked `bg-surface-3` between the border and the fill. The
-              parent's `overflow-hidden rounded-md` clips it to the exact box
-              shape. */}
-          <MotiView
-            animate={{ opacity: showMark ? 1 : 0 }}
-            transition={reduce ? TIMING_INSTANT : ct}
-            className="absolute -inset-0.5 bg-primary"
-          />
-          <AnimatePresence>
-            {showMark ? (
-              <MotiView
-                key={indeterminate ? 'indeterminate' : 'checked'}
-                from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
-                transition={reduce ? TIMING_INSTANT : ct}
-              >
-                {checkIcon ?? (
-                  <Svg width={12} height={12} viewBox="0 0 24 24">
-                    <Path d={path} fill="none" stroke={checkColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-                  </Svg>
-                )}
-              </MotiView>
-            ) : null}
-          </AnimatePresence>
-        </View>
-      </MotiView>
+      <CheckboxBox
+        checked={checked}
+        indeterminate={indeterminate}
+        disabled={disabled}
+        pressed={pressed}
+        tone={tone}
+        transition={ct}
+        checkIcon={checkIcon}
+        testID={testID}
+      />
       {label ? <Text className="select-none text-foreground text-sm">{label}</Text> : null}
     </Pressable>
   );

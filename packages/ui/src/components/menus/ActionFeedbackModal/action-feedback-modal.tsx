@@ -8,6 +8,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 import { MORPH_CONTENT_TRANSITION, RM_TRANSITION } from './action-feedback-motion';
 import { MorphIcon } from './morph-icon';
@@ -70,7 +71,11 @@ function StateContent(props: StateContentProps) {
           transition={transition}
           className="w-full items-center gap-1.5"
         >
-          {successLabel ? <Text className="text-center font-semibold text-base text-foreground">{successLabel}</Text> : null}
+          {successLabel ? (
+            <Text weight="semibold" className="text-center text-base text-foreground">
+              {successLabel}
+            </Text>
+          ) : null}
           {successMessage ? <Text className="text-center text-muted-foreground text-sm">{successMessage}</Text> : null}
           {taglineText}
         </MotiView>
@@ -84,13 +89,15 @@ function StateContent(props: StateContentProps) {
           transition={transition}
           className="w-full items-center gap-1.5"
         >
-          <Text className="text-center font-semibold text-base text-foreground">{errorTitle}</Text>
+          <Text weight="semibold" className="text-center text-base text-foreground">
+            {errorTitle}
+          </Text>
           {errorMessage ? (
             <Text className="text-center text-muted-foreground text-sm leading-relaxed">{errorMessage}</Text>
           ) : null}
           {taglineText}
           <Button
-            variant="secondary"
+            variant="inverse"
             size="sm"
             onPress={onDismiss}
             className="mt-2"
@@ -193,13 +200,15 @@ export function ActionFeedbackModal({
       {isAnimOpen ? (
         <MotiView
           key="action-feedback-backdrop"
-          className="flex-1 items-center justify-center bg-black/40 px-6"
+          className="flex-1 items-center justify-center px-6"
           from={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={reduced ? RM_TRANSITION : TIMING_BASE}
           exitTransition={{ type: 'timing', duration: reduced ? 100 : 180 }}
         >
+          <OverlayBlur />
+          <View className="absolute inset-0 bg-black/40" />
           <TouchableOpacity
             className="absolute inset-0"
             activeOpacity={1}

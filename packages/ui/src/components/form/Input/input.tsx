@@ -31,18 +31,21 @@ function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focu
   return 'idle';
 }
 
-// Elevation now carries state instead of a border: the soft drop swaps to a
-// 1px ring on focus (foreground) or error (danger); error wins over focus.
-const field = cva('relative flex-row items-center overflow-hidden', {
+// State drives the border colour, not a shadow: the field always carries a 1px
+// border on web, tinted by state (border on idle, foreground on focus, danger
+// on error); error wins over focus. Only `floating` adds a shadow — a large
+// diffuse drop — while `base` / `elevated` are flat fills.
+const field = cva('relative flex-row items-center overflow-hidden web:border', {
   variants: {
     variant: {
-      surface: 'bg-surface-3',
-      filled: 'bg-muted',
+      base: 'bg-input',
+      elevated: 'bg-surface-contrast',
+      floating: 'bg-surface-3 shadow-floating',
     },
     state: {
-      idle: 'shadow-input',
-      focused: 'shadow-input-focus',
-      error: 'shadow-input-error',
+      idle: 'web:border-border',
+      focused: 'web:border-foreground/40',
+      error: 'web:border-danger',
     },
     size: {
       sm: 'min-h-interactive-sm',
@@ -54,11 +57,14 @@ const field = cva('relative flex-row items-center overflow-hidden', {
       pill: 'rounded-full',
     },
   },
-  defaultVariants: { variant: 'surface', state: 'idle', size: 'md', shape: 'rounded' },
+  defaultVariants: { variant: 'base', state: 'idle', size: 'md', shape: 'pill' },
 });
 
 // Size-aware input box: font size and padding track --spacing-interactive-* tokens.
-const inputBox = cva('flex-1 bg-transparent text-foreground outline-none', {
+// `font-sans-normal` is the same per-weight-family token the `Text` component
+// resolves by default, so the typed value and the placeholder both use the app's
+// custom typeface (e.g. Geist) instead of the platform's default font.
+const inputBox = cva('flex-1 bg-transparent font-sans-normal text-foreground outline-none', {
   variants: {
     left: { true: 'pl-8', false: '' },
     right: { true: 'pr-8', false: '' },
@@ -178,10 +184,11 @@ export type InputProps = {
   inputType?: InputType;
   /** Field height variant. Default: `md`. */
   size?: 'sm' | 'md' | 'lg';
-  /** Background variant. `surface` (default) sits on the white `surface-3` card
-   *  level; `filled` uses the muted grey fill. Both carry the soft drop shadow. */
-  variant?: 'surface' | 'filled';
-  /** Border-radius variant. `rounded` (default) for a standard input, `pill` for a full-circle shape. */
+  /** Background variant. `base` (default) is a flat white/neutral fill,
+   *  `elevated` a slightly muted raised fill, `floating` a `surface-3` fill
+   *  with a large diffuse shadow. All three keep a 1px border on web. */
+  variant?: 'base' | 'elevated' | 'floating';
+  /** Border-radius variant. `pill` (default) for a full-circle shape, `rounded` for a standard input. */
   shape?: 'rounded' | 'pill';
   disabled?: boolean;
   secureTextEntry?: boolean;
@@ -218,8 +225,8 @@ export function Input({
   successIcon,
   inputType = 'text',
   size = 'md',
-  variant = 'surface',
-  shape = 'rounded',
+  variant = 'base',
+  shape = 'pill',
   disabled,
   secureTextEntry,
   keyboardType,
@@ -297,7 +304,11 @@ export function Input({
 
   return (
     <View className={cn('gap-1.5', className)} style={style}>
-      {label ? <Text className={cn('px-1 font-medium text-foreground text-sm', labelClassName)}>{label}</Text> : null}
+      {label ? (
+        <Text weight="medium" className={cn('px-1 text-foreground text-sm', labelClassName)}>
+          {label}
+        </Text>
+      ) : null}
 
       <Animated.View
         className={cn(field({ variant, state, size, shape }), disabled ? 'opacity-60' : 'opacity-100')}

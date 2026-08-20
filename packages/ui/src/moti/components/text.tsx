@@ -1,4 +1,4 @@
-import { Text as RText } from 'react-native';
+import { Text as ThemedText } from '../../components/typography/Text/text';
 import motify from '../core/motify';
 
 /**
@@ -8,5 +8,5 @@ import motify from '../core/motify';
  * Accepts all `Text` props plus `animate`, `from`, `exit`, `transition`,
  * and the rest of the {@link motify} prop surface.
  */
-export const Text = motify(RText)();
+export const Text = motify(ThemedText)();
 export { Text as MotiText };

@@ -16,7 +16,8 @@ const meta = {
     stagger: 0.04,
     startOnView: true,
     locale: true,
-    className: 'text-4xl font-semibold text-foreground',
+    className: 'text-4xl text-foreground',
+    weight: 'semibold',
   },
   argTypes: {
     mode: { control: 'inline-radio', options: ['roll', 'count'] },
@@ -29,7 +30,7 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const NUMERAL = 'font-semibold text-3xl text-foreground';
+const NUMERAL = 'text-3xl text-foreground';
 const LIVE_MS = 2500;
 
 const MODES = [

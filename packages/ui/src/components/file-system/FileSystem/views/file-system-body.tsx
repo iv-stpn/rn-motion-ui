@@ -16,9 +16,10 @@
 // folder" action matters most.
 
 import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { cn } from '../../../../lib/cn';
 import type { DragzoneRenderState } from '../../../gestures/drag.types';
+import { Text } from '../../../typography/Text/text';
 import { useBackgroundContextMenu } from '../shell/file-system-context-menu';
 import { FileSystemDropzone } from '../shell/file-system-dropzone';
 import {
@@ -257,7 +258,7 @@ function BodyDropSurface({ external }: BodyDropSurfaceProps) {
       )}
     >
       {external ? (
-        <Text className="font-medium text-foreground/50 text-sm" selectable={false}>
+        <Text weight="medium" className="text-foreground/50 text-sm" selectable={false}>
           {EXTERNAL_DROP_LABEL}
         </Text>
       ) : null}
@@ -374,6 +375,7 @@ export function FileSystemBody({ className, renderBody }: FileSystemBodyProps) {
   // silent no‑op.
   return (
     <FileSystemDropzone
+      background={true}
       className={cn('relative min-h-0 flex-1 select-none', className)}
       destination={currentPath}
       disabled={!draggable}

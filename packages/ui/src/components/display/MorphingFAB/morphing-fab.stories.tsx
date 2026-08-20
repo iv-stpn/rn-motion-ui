@@ -36,12 +36,12 @@ function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
     <View className="min-h-[380px] flex-1 bg-surface-1">
       <View className="border-border border-b px-5 py-3">
-        <View className="h-2.5 w-24 rounded-full bg-muted-foreground/20" />
+        <View className="h-2.5 w-24 rounded-full bg-surface-contrast-foreground/20" />
       </View>
       <View className="gap-3 p-5">
-        <View className="h-2.5 w-3/4 rounded-full bg-muted-foreground/15" />
-        <View className="h-2.5 w-1/2 rounded-full bg-muted-foreground/15" />
-        <View className="h-20 w-full rounded-2xl bg-muted-foreground/[0.06]" />
+        <View className="h-2.5 w-3/4 rounded-full bg-surface-contrast-foreground/15" />
+        <View className="h-2.5 w-1/2 rounded-full bg-surface-contrast-foreground/15" />
+        <View className="h-20 w-full rounded-2xl bg-surface-contrast-foreground/[0.06]" />
         <Text className="text-muted-foreground text-sm">{hint}</Text>
       </View>
       {children}
@@ -59,7 +59,7 @@ function MenuAction({ icon, label, onPress }: Action) {
       onPress={onPress}
       className="h-11 flex-row items-center gap-2.5 rounded-xl px-3 active:bg-surface-selected"
     >
-      <ThemedIcon icon={icon} variant="secondary" size={18} />
+      <ThemedIcon icon={icon} variant="ghost" size={18} />
       <Text className="text-foreground text-sm">{label}</Text>
     </Pressable>
   );
@@ -114,11 +114,13 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
   if (status === 'sent')
     return (
       <MotiView key="sent" from={enter} animate={{ opacity: 1, scale: 1, translateY: 0 }} exit={exit} transition={trans}>
-        <View className="items-center justify-center gap-1.5 rounded-[16px] bg-muted px-4 py-6">
+        <View className="items-center justify-center gap-1.5 rounded-[16px] bg-surface-contrast px-4 py-6">
           <View className="mb-1 h-10 w-10 items-center justify-center rounded-full bg-success">
             <ThemedIcon icon={MessageSquare} token="success-foreground" size={18} />
           </View>
-          <Text className="font-semibold text-foreground text-sm">{SENT_TITLE}</Text>
+          <Text weight="semibold" className="text-foreground text-sm">
+            {SENT_TITLE}
+          </Text>
           <Text className="text-center text-muted-foreground text-xs">{SENT_BODY}</Text>
         </View>
       </MotiView>
@@ -127,14 +129,16 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
   if (status === 'error')
     return (
       <MotiView key="error" from={enter} animate={{ opacity: 1, scale: 1, translateY: 0 }} exit={exit} transition={trans}>
-        <View className="items-center rounded-[16px] bg-muted px-4 py-5">
+        <View className="items-center rounded-[16px] bg-surface-contrast px-4 py-5">
           <View className="h-10 w-10 items-center justify-center rounded-full bg-danger">
             <ThemedIcon icon={MessageSquare} token="danger-foreground" size={18} />
           </View>
-          <Text className="mt-3 font-semibold text-foreground text-sm">{ERROR_TITLE}</Text>
+          <Text weight="semibold" className="mt-3 text-foreground text-sm">
+            {ERROR_TITLE}
+          </Text>
           <Text className="mt-1 text-center text-muted-foreground text-xs">{ERROR_BODY}</Text>
           <View className="mt-4">
-            <Button variant="primary" size="sm" onPress={retry}>
+            <Button variant="neutral" size="sm" onPress={retry}>
               {RETRY}
             </Button>
           </View>
@@ -147,8 +151,10 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
 
   return (
     <MotiView key="form" from={enter} animate={{ opacity: 1, scale: 1, translateY: 0 }} exit={exit} transition={trans}>
-      <View className="min-h-[150px] rounded-[16px] bg-muted px-4 py-3.5">
-        <Text className="font-semibold text-foreground text-sm">{FEEDBACK_TITLE}</Text>
+      <View className="min-h-[150px] rounded-[16px] bg-surface-contrast px-4 py-3.5">
+        <Text weight="semibold" className="text-foreground text-sm">
+          {FEEDBACK_TITLE}
+        </Text>
         <TextInput
           value={message}
           editable={status !== 'sending'}
@@ -164,13 +170,13 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
       </View>
       <View className="flex-row items-center gap-2 px-1 pt-2 pb-1">
         <View className="flex-1">
-          <Button variant="secondary" size="md" onPress={close} disabled={status === 'sending'} className="w-full">
+          <Button variant="inverse" size="md" onPress={close} disabled={status === 'sending'} className="w-full">
             {CANCEL}
           </Button>
         </View>
         <View className="flex-1">
           <Button
-            variant="primary"
+            variant="neutral"
             size="md"
             onPress={submit}
             loading={status === 'sending'}
@@ -209,7 +215,7 @@ function MorphingFABPlayground() {
         <MorphingFAB
           expandedWidth={300}
           expandedHeight={230}
-          icon={<ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
+          icon={MessageSquare}
           accessibilityLabel="Send feedback"
           triggerTestID="fab-trigger"
           closeIcon={null}
@@ -279,7 +285,7 @@ export const FeedbackForm: Story = {
       <MorphingFAB
         expandedWidth={300}
         expandedHeight={230}
-        icon={<ThemedIcon icon={MessageSquare} variant="secondary" size={20} />}
+        icon={MessageSquare}
         accessibilityLabel="Send feedback"
         triggerTestID="fab-trigger"
         closeIcon={null}

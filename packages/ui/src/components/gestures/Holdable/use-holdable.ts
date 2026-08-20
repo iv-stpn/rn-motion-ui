@@ -12,6 +12,8 @@
 
 import { type RefObject, useCallback, useMemo, useRef } from 'react';
 import { Platform, type View, type ViewStyle } from 'react-native';
+import { fireHapticFeedback } from '../../../lib/haptics';
+import type { HapticFeedbackVariant } from '../../../lib/haptics-types';
 import type { DragBehavior, DragTuning } from '../drag-behavior';
 import type { PressPhase } from '../press-timeline';
 import { useHoldBehavior } from '../use-drag-behavior';
@@ -71,6 +73,11 @@ export type UseHoldableOptions = {
   cursorMode?: boolean;
   /** Nothing binds and no timeline runs. @default false */
   disabled?: boolean;
+  /**
+   * Haptic feedback fired when the hold lands. `'None'` or omitted disables it; a
+   * hold with no `onHold` still fires this, so the cue can stand alone.
+   */
+  hapticFeedback?: HapticFeedbackVariant;
   /**
    * The press committed — it has been down `armDelay` without travelling, so whatever
    * is scrolling underneath has no further claim on it.
@@ -148,16 +155,34 @@ export type UseHoldableReturn = {
  * **Accessibility.** Carries none: no role, no name, no announcement. A hold is
  * pointer-only and touch-only, and no screen reader has a gesture for one — so
  * whatever this enables **needs a second path to the same outcome**. An
- * `accessibilityActions` entry on the host is the usual one; `HoldContextMenu`'s
- * `longpress` action is the worked example.
+ * `accessibilityActions` entry on the host is the usual one.
  */
 export function useHoldable(options: UseHoldableOptions = {}): UseHoldableReturn {
-  const { behavior, cursorMode = false, disabled = false, onActive, onHold, onHoldEscape, onPhaseChange } = options;
+  const {
+    behavior,
+    cursorMode = false,
+    disabled = false,
+    hapticFeedback,
+    onActive,
+    onHold,
+    onHoldEscape,
+    onPhaseChange,
+  } = options;
 
   const nodeRef = useRef<View | null>(null);
   // Resolved against the hold table rather than the drag one: a component named for
   // the hold holds everywhere, including the browsers where a `<Draggable>` does not.
   const tuning = useHoldBehavior(behavior);
+
+  // The hold lands once — fire the haptic there, ahead of whatever the consumer's
+  // `onHold` puts on screen, so the cue reads as the press, not as its result.
+  const handleHold = useCallback(() => {
+    if (hapticFeedback !== undefined && hapticFeedback !== 'None') fireHapticFeedback(hapticFeedback);
+    onHold?.();
+  }, [hapticFeedback, onHold]);
+
+  // A hold exists only when something fires on it — the callback, or a haptic.
+  const hasHold = onHold !== undefined || (hapticFeedback !== undefined && hapticFeedback !== 'None');
 
   // `track: true` unconditionally — observing the phase is the whole point here, where
   // on a `<Draggable>` it is opt-in because a list of them would re-render on a scroll
@@ -167,7 +192,7 @@ export function useHoldable(options: UseHoldableOptions = {}): UseHoldableReturn
     // one flag that makes the shared machine mean something different here.
     canDrag: false,
     onActive,
-    onHold,
+    onHold: hasHold ? handleHold : undefined,
     onHoldEscape,
     onPhaseChange,
     track: true,

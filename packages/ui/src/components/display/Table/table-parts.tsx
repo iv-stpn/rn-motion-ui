@@ -124,7 +124,7 @@ export function PaginationFooter({
         disabled={prevDisabled}
       >
         {/* Rotated ChevronRight stands in for missing ChevronLeft */}
-        <View className="rotate-180">{prevIcon ?? <ThemedIcon icon={ChevronRight} variant="secondary" size={16} />}</View>
+        <View className="rotate-180">{prevIcon ?? <ThemedIcon icon={ChevronRight} variant="ghost" size={16} />}</View>
       </Pressable>
       <Text className="text-[13px]">{label}</Text>
       <Pressable
@@ -134,7 +134,7 @@ export function PaginationFooter({
         accessibilityRole="button"
         disabled={nextDisabled}
       >
-        {nextIcon ?? <ThemedIcon icon={ChevronRight} variant="secondary" size={16} />}
+        {nextIcon ?? <ThemedIcon icon={ChevronRight} variant="ghost" size={16} />}
       </Pressable>
     </View>
   );

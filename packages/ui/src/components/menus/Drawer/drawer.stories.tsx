@@ -43,7 +43,9 @@ function DrawerPlayground() {
 
       <Drawer open={open} onOpenChange={setOpen} side={side} accessibilityLabel="Demo drawer">
         <View className="gap-2 p-6">
-          <Text className="font-semibold text-foreground text-sm">{DRAWER_TITLE}</Text>
+          <Text weight="semibold" className="text-foreground text-sm">
+            {DRAWER_TITLE}
+          </Text>
           <Text className="text-muted-foreground text-sm">{`Slides in from the ${side}. Tap outside to close.`}</Text>
         </View>
       </Drawer>
@@ -61,7 +63,9 @@ function DrawerDemo({ side }: DrawerDemoProps) {
       <TriggerButton label={OPEN_LABEL} onPress={handleOpen} />
       <Drawer open={open} onOpenChange={setOpen} side={side} accessibilityLabel="Demo drawer">
         <View className="gap-2 p-6">
-          <Text className="font-semibold text-foreground text-sm">{DRAWER_TITLE}</Text>
+          <Text weight="semibold" className="text-foreground text-sm">
+            {DRAWER_TITLE}
+          </Text>
           <Text className="text-muted-foreground text-sm">{`Slides in from the ${side}. Tap outside to close.`}</Text>
         </View>
       </Drawer>

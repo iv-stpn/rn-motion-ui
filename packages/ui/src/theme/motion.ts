@@ -19,8 +19,8 @@
  *
  * The anchored-menu section at the bottom goes one step further: `resolveMenuMotion`
  * returns the whole `from` / `animate` / `exit` / `transition` set that every panel
- * summoned by a trigger shares, so `AdaptiveDropdown`, `HoverMenu`, `Popover` and
- * `HoldContextMenu` open and close identically and take the same `motion` prop.
+ * summoned by a trigger shares, so `AdaptiveDropdown`, `HoverMenu` and `Popover`
+ * open and close identically and take the same `motion` prop.
  */
 
 import { Easing } from 'react-native-reanimated';

@@ -1,4 +1,6 @@
+// biome-ignore-all lint/style/useExportsLast: Text.displayName must follow the forwardRef it names
 import { cva, type VariantProps } from 'class-variance-authority';
+import { type ElementRef, forwardRef } from 'react';
 import { Text as RNText, type TextProps } from 'react-native';
 import { cn } from '../../../lib/cn';
 
@@ -53,6 +55,9 @@ const text = cva('text-foreground', {
   defaultVariants: { weight: 'normal', font: 'sans' },
 });
 
+/** The weight axis of {@link Text} — one value per per-weight font-family token. */
+export type TextWeight = NonNullable<VariantProps<typeof text>['weight']>;
+
 export interface TextProps_ extends TextProps, VariantProps<typeof text> {
   /**
    * Merged onto the base classes via `cn()` — last-wins for any conflicting
@@ -93,6 +98,11 @@ export interface TextProps_ extends TextProps, VariantProps<typeof text> {
  *
  * All React Native `Text` props are forwarded (style, numberOfLines, …).
  */
-export function Text({ weight, size, numeric, font, className, ...props }: TextProps_) {
-  return <RNText className={cn(text({ weight, size, numeric, font }), className)} {...props} />;
-}
+// biome-ignore lint/suspicious/noReactForwardRef: the animated MotiText base needs a ref to the host Text; React 18 requires forwardRef for that
+export const Text = forwardRef<ElementRef<typeof RNText>, TextProps_>(
+  ({ weight, size, numeric, font, className, ...props }, ref) => (
+    <RNText ref={ref} className={cn(text({ weight, size, numeric, font }), className)} {...props} />
+  ),
+);
+
+Text.displayName = 'Text';

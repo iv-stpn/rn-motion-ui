@@ -11,7 +11,7 @@ import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
@@ -108,12 +108,12 @@ function StripTile({
   const isLifting = useIsLifting(entry.path);
 
   return (
-    <HoldContextMenu
-      {...menuProps}
+    <HoldItem
+      items={menuProps.items}
       dragOptions={dragOptions}
       onHold={onHoldAction}
       onOpenChange={handleOpenChange}
-      style={{ marginRight: STRIP_TILE_GAP }}
+      containerStyles={{ marginRight: STRIP_TILE_GAP }}
     >
       <Pressable
         accessibilityLabel={entry.name}
@@ -158,7 +158,7 @@ function StripTile({
           </View>
         ) : null}
       </Pressable>
-    </HoldContextMenu>
+    </HoldItem>
   );
 }
 

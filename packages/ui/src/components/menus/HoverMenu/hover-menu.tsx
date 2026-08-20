@@ -66,7 +66,7 @@ export type HoverMenuProps = {
   elevation?: SurfaceLevel;
   /**
    * Overrides the shared open/close animation — the same `motion` prop
-   * `AdaptiveDropdown`, `Popover` and `HoldContextMenu` take, so a consumer can
+   * `AdaptiveDropdown` and `Popover` take, so a consumer can
    * retune every menu in an app from one object. Partial: name one field and the
    * rest of the preset stands.
    *
@@ -406,7 +406,7 @@ export function HoverMenu({
     width,
   });
 
-  // Shared with AdaptiveDropdown, Popover and HoldContextMenu, so every panel
+  // Shared with AdaptiveDropdown and Popover, so every panel
   // this package anchors to a trigger opens and closes the same way.
   const side = openAbove ? 'top' : 'bottom';
   const panelMotion = resolveMenuMotion({ motion, reduce, side });

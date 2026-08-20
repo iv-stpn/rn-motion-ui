@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: one decision table per press modifier — the addOnly cases sit with the additive ones they fork from */
 import { describe, expect, it } from 'vitest';
 import type { FileSystemSelectionState } from '../logic/file-system-selection';
 import {
@@ -13,6 +14,7 @@ import type { FileSystemItem } from '../types/file-system.types';
 
 const MULTIPLE = { mode: 'multiple' } as const;
 const MULTIPLE_ADDITIVE = { mode: 'multiple', modifiers: { additive: true } } as const;
+const MULTIPLE_ADD_ONLY = { mode: 'multiple', modifiers: { additive: true, addOnly: true } } as const;
 const SINGLE_ADDITIVE = { mode: 'single', modifiers: { additive: true } } as const;
 
 /** The grid the ranges below run through. */
@@ -66,6 +68,30 @@ describe('applyFileSystemSelection', () => {
     const next = applyFileSystemSelection(selection('a'), 'a', MULTIPLE_ADDITIVE);
     expect(next.lead).toBeNull();
     expect(next.paths.size).toBe(0);
+  });
+
+  it('joins an unselected entry on an add-only press and leads with it', () => {
+    const next = applyFileSystemSelection(selection('a'), 'b', MULTIPLE_ADD_ONLY);
+    expect([...next.paths]).toEqual(['a', 'b']);
+    expect(next.lead).toBe('b');
+  });
+
+  it('keeps an already selected entry on an add-only press — the re-hold', () => {
+    const current = selection('a', 'b');
+    const next = applyFileSystemSelection(current, 'b', MULTIPLE_ADD_ONLY);
+    expect(next).toBe(current);
+  });
+
+  it('add-only never removes, even when the press is the lead', () => {
+    const current = selection('a', 'b', 'c');
+    const next = applyFileSystemSelection(current, 'c', MULTIPLE_ADD_ONLY);
+    expect(next).toBe(current);
+    expect([...next.paths]).toEqual(['a', 'b', 'c']);
+  });
+
+  it('add-only grows an empty selection into one entry', () => {
+    const next = applyFileSystemSelection(EMPTY_FILE_SYSTEM_SELECTION, 'a', MULTIPLE_ADD_ONLY);
+    expect(next).toEqual(selection('a'));
   });
 
   it('ignores the additive modifier in single mode, so a Ctrl-click still selects', () => {

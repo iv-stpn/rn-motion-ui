@@ -17,7 +17,7 @@ const meta = {
   args: { label: 'Email', placeholder: 'you@example.com', onChange: fn() },
   argTypes: {
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
-    variant: { control: 'select', options: ['surface', 'filled'] },
+    variant: { control: 'select', options: ['base', 'elevated', 'floating'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
   },
 } satisfies Meta<typeof Input>;
@@ -26,7 +26,7 @@ type Story = StoryObj<typeof meta>;
 
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SHAPES = ['rounded', 'pill'] as const;
-const VARIANTS = ['surface', 'filled'] as const;
+const VARIANTS = ['base', 'elevated', 'floating'] as const;
 const STATES = ['default', 'error', 'success', 'disabled'] as const;
 const EMAIL_ERROR = 'Enter a valid email address.';
 
@@ -46,7 +46,7 @@ function RevealButton({ shown, onToggle, color }: RevealButtonProps) {
 function InputPlayground(args: ComponentProps<typeof Input>) {
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');
-  const [variant, setVariant] = useState<(typeof VARIANTS)[number]>('surface');
+  const [variant, setVariant] = useState<(typeof VARIANTS)[number]>('base');
   const [state, setState] = useState<FieldState>('default');
   const [leftIcon, setLeftIcon] = useState(true);
   const [hint, setHint] = useState(false);

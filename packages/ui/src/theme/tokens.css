@@ -120,6 +120,12 @@
   --color-muted-foreground: oklch(50% 0.004 270);
   --color-border: oklch(0% 0 0 / 0.1);
 
+  /* Input field fills — the resting backgrounds for the input variants.
+     `base` is page-white, `elevated` the muted raised fill, `floating`
+     reuses `surface-3` (no dedicated token needed). */
+  --color-input: oklch(100% 0 0);
+  --color-surface-contrast: oklch(95% 0 0);
+
   /* Brand — monochrome primary (near-black on light, near-white on dark). */
   --color-primary: oklch(22% 0 0);
   --color-primary-foreground: oklch(98% 0.002 270);
@@ -138,7 +144,7 @@
   --color-success-foreground: oklch(100% 0 0);
   --color-warning: oklch(58% 0.18 40);
   --color-warning-foreground: oklch(100% 0 0);
-  --color-info: oklch(52% 0.24 264);
+  --color-info: oklch(58% 0.18 255);
   --color-info-foreground: oklch(100% 0 0);
   --color-danger: oklch(62% 0.22 25);
   --color-danger-foreground: oklch(100% 0 0);
@@ -185,14 +191,12 @@
     0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04),
     0 48px 48px -24px oklch(0% 0 0 / 0.03), 0 96px 96px -48px oklch(0% 0 0 / 0.03);
 
-  /* Input field shadow — a borderless soft drop with no ring. The two state
-     tokens prepend a 1px ring in foreground/danger for focus/error. The base
-     drop is black at a fixed alpha, so it reads identically in both themes and
-     lives only in @theme; the ring colours flip, so only the state tokens are
-     restated in the @variant blocks below. */
-  --shadow-input: 0 2px 4px 0 oklch(0% 0 0 / 0.04), 0 1px 2px 0 oklch(0% 0 0 / 0.06);
-  --shadow-input-focus: 0 0 0 1px oklch(18% 0.004 270 / 0.4), 0 2px 4px 0 oklch(0% 0 0 / 0.04), 0 1px 2px 0 oklch(0% 0 0 / 0.06);
-  --shadow-input-error: 0 0 0 1px oklch(62% 0.22 25), 0 2px 4px 0 oklch(0% 0 0 / 0.04), 0 1px 2px 0 oklch(0% 0 0 / 0.06);
+  /* Input field shadow — the large, diffuse drop for the `floating` variant.
+     Zero offset on both axes, so it spreads uniformly on every side (the
+     shadow-xl recipe made symmetric). Black at a fixed alpha, so it reads
+     identically in both themes and lives only in @theme. `base` / `elevated`
+     carry no shadow — their boundary is the always-on web border instead. */
+  --shadow-floating: 0 0 24px 0 oklch(0% 0 0 / 0.1);
 
   /* Elevated shadow ingredients — the inset rim recipe (highlight + ring) that
      composites in front of the drop layers. Declared here in @theme so Tailwind
@@ -383,6 +387,8 @@
   --color-muted: oklch(24% 0.004 270);
   --color-muted-foreground: oklch(73% 0.004 270);
   --color-border: oklch(100% 0 0 / 0.1);
+  --color-input: oklch(22% 0 0);
+  --color-surface-contrast: oklch(21% 0 0);
   --color-primary: oklch(95% 0.004 270);
   --color-primary-foreground: oklch(13% 0.004 270);
   --color-secondary: oklch(35% 0.004 270);
@@ -393,7 +399,7 @@
   --color-success-foreground: oklch(100% 0 0);
   --color-warning: oklch(58% 0.18 40);
   --color-warning-foreground: oklch(100% 0 0);
-  --color-info: oklch(52% 0.24 264);
+  --color-info: oklch(58% 0.18 255);
   --color-info-foreground: oklch(100% 0 0);
   --color-danger: oklch(66% 0.22 25);
   --color-danger-foreground: oklch(100% 0 0);
@@ -428,11 +434,6 @@
     0 0 0 1px oklch(0% 0 0 / 0.22), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
     0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14),
     0 48px 48px -24px oklch(0% 0 0 / 0.12), 0 96px 96px -48px oklch(0% 0 0 / 0.12);
-
-  /* Input field state rings — prepend the foreground/danger ring to the
-     theme-independent --shadow-input drop declared in @theme. */
-  --shadow-input-focus: 0 0 0 1px oklch(94% 0.004 270 / 0.4), 0 2px 4px 0 oklch(0% 0 0 / 0.04), 0 1px 2px 0 oklch(0% 0 0 / 0.06);
-  --shadow-input-error: 0 0 0 1px oklch(66% 0.22 25), 0 2px 4px 0 oklch(0% 0 0 / 0.04), 0 1px 2px 0 oklch(0% 0 0 / 0.06);
 
   /* Rim highlight (top edge) and ring (full perimeter). Both step up with
      elevation and feed the inset --surface-rim-N recipe below. */
@@ -489,6 +490,8 @@
   --color-muted: oklch(95% 0 0);
   --color-muted-foreground: oklch(50% 0.004 270);
   --color-border: oklch(0% 0 0 / 0.1);
+  --color-input: oklch(100% 0 0);
+  --color-surface-contrast: oklch(95% 0 0);
   --color-primary: oklch(22% 0 0);
   --color-primary-foreground: oklch(98% 0.002 270);
   --color-secondary: oklch(92% 0 0);
@@ -499,7 +502,7 @@
   --color-success-foreground: oklch(100% 0 0);
   --color-warning: oklch(58% 0.18 40);
   --color-warning-foreground: oklch(100% 0 0);
-  --color-info: oklch(52% 0.24 264);
+  --color-info: oklch(58% 0.18 255);
   --color-info-foreground: oklch(100% 0 0);
   --color-danger: oklch(62% 0.22 25);
   --color-danger-foreground: oklch(100% 0 0);
@@ -534,11 +537,6 @@
     0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
     0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04),
     0 48px 48px -24px oklch(0% 0 0 / 0.03), 0 96px 96px -48px oklch(0% 0 0 / 0.03);
-
-  /* Input field state rings — mirror of the dark block, restating the light
-     ring colours (the shared --shadow-input drop lives only in @theme). */
-  --shadow-input-focus: 0 0 0 1px oklch(18% 0.004 270 / 0.4), 0 2px 4px 0 oklch(0% 0 0 / 0.04), 0 1px 2px 0 oklch(0% 0 0 / 0.06);
-  --shadow-input-error: 0 0 0 1px oklch(62% 0.22 25), 0 2px 4px 0 oklch(0% 0 0 / 0.04), 0 1px 2px 0 oklch(0% 0 0 / 0.06);
 
   /* Light mode has no rim — the outer rings alone carry elevation. Declared as
      fully transparent (rather than omitted) because every theme must define the

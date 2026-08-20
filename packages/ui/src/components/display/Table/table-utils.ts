@@ -51,14 +51,20 @@ export function computeColumnWidths<T>(
     const p = parseColumnWidth(col.width);
     if (p.type === 'px') totalFixed += p.value;
     else totalFr += p.value;
-    return { key: col.key, p };
+    return { key: col.key, p, minWidth: col.minWidth ?? 0 };
   });
 
   const remaining = Math.max(0, containerWidth - totalFixed);
   const result: Record<string, number> = {};
-  for (const { key, p } of parsed) {
-    if (p.type === 'px') result[key] = p.value;
-    else result[key] = totalFr > 0 ? (remaining * p.value) / totalFr : 0;
+  for (const { key, p, minWidth } of parsed) {
+    let computed: number;
+    if (p.type === 'px') computed = p.value;
+    else computed = totalFr > 0 ? (remaining * p.value) / totalFr : 0;
+    // `minWidth` is a floor, not a share: clamp the column up even when that
+    // pushes the total past the container. The overflow is what makes the table
+    // scroll horizontally (see `needsHorizontalScroll`) instead of squeezing the
+    // column below a readable width.
+    result[key] = Math.max(computed, minWidth);
   }
   return result;
 }
@@ -238,13 +244,16 @@ export function nextSort(activeSort: SortState | null, key: string): SortState |
 export type ColumnLayoutStyle = { width: number } | { flex: number; minWidth: number };
 
 /** Known pixel width from `computeColumnWidths`. When available, all columns use explicit `width`. */
-export function columnLayoutStyle(columnWidth?: number | string, resolvedWidth?: number): ColumnLayoutStyle {
+export function columnLayoutStyle(columnWidth?: number | string, resolvedWidth?: number, minWidth?: number): ColumnLayoutStyle {
+  // `resolvedWidth` is already floored by `computeColumnWidths`, so `minWidth`
+  // only affects the pre-layout render below, where that width is still unknown.
   if (resolvedWidth) return { width: resolvedWidth };
   const parsed = parseColumnWidth(columnWidth);
 
   // Proportional floor: a 2fr column stays at least twice as wide as a 1fr one.
-  if (parsed.type === 'fr') return { flex: parsed.value, minWidth: Math.round(parsed.value * 80) };
-  return { width: parsed.value };
+  // An explicit `minWidth` on the column wins over that heuristic.
+  if (parsed.type === 'fr') return { flex: parsed.value, minWidth: minWidth ?? Math.round(parsed.value * 80) };
+  return { width: Math.max(parsed.value, minWidth ?? 0) };
 }
 
 /**
@@ -255,14 +264,16 @@ export function columnLayoutClass(
   columnWidth: number | string | undefined,
   /** Known pixel width from `computeColumnWidths`. */
   resolvedWidth?: number,
+  minWidth?: number,
 ): string {
   if (resolvedWidth !== undefined && resolvedWidth > 0) return `w-[${resolvedWidth}px]`;
   const parsed = parseColumnWidth(columnWidth);
   if (parsed.type === 'fr') {
     const grow = parsed.value === 1 ? 'flex-1' : `flex-[${parsed.value}]`;
-    return `${grow} min-w-[${Math.round(parsed.value * 80)}px]`;
+    const floor = minWidth ?? Math.round(parsed.value * 80);
+    return `${grow} min-w-[${floor}px]`;
   }
-  return `w-[${parsed.value}px]`;
+  return `w-[${Math.max(parsed.value, minWidth ?? 0)}px]`;
 }
 
 export { CHECKBOX_COLUMN_WIDTH };

@@ -37,8 +37,8 @@ describe('resolveMenuMotion', () => {
   });
 
   it('applies the slide on top of a resting offset rather than replacing it', () => {
-    // HoldContextMenu's panel rests at `layout.shift` — the travel that keeps the
-    // held item and the panel on screen together. The slide is added to it.
+    // An anchored panel rests at `layout.shift` — the travel that keeps the held
+    // item and the panel on screen together. The slide is added to it.
     const motion = resolveMenuMotion({ reduce: false, restingTranslateY: -120, side: 'bottom' });
 
     expect(motion.from.translateY).toBe(-120 - MENU_ENTER_OFFSET);

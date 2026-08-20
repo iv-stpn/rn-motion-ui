@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { Action, Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { useInterval } from '../../../hooks/use-interval';
+import type { TextWeight } from '../Text/text';
 import { TextCascade } from './text-cascade';
 
 const meta = {
@@ -12,7 +13,8 @@ const meta = {
   parameters: { layout: 'centered' },
   args: {
     text: 'Install skills',
-    className: 'text-lg font-medium text-foreground',
+    className: 'text-lg text-foreground',
+    weight: 'medium',
   },
 } satisfies Meta<typeof TextCascade>;
 
@@ -37,9 +39,9 @@ const INTERVALS = [
 ] as const;
 
 const STYLES = [
-  { value: 'text-lg font-medium text-foreground', label: 'md' },
-  { value: 'font-semibold text-2xl text-foreground', label: 'lg' },
-  { value: 'font-bold text-4xl text-primary', label: 'display' },
+  { value: 'text-lg text-foreground', weight: 'medium', label: 'md' },
+  { value: 'text-2xl text-foreground', weight: 'semibold', label: 'lg' },
+  { value: 'text-4xl text-primary', weight: 'bold', label: 'display' },
 ] as const;
 
 type SetKey = (typeof SETS)[number]['value'];
@@ -48,11 +50,21 @@ type StyleKey = (typeof STYLES)[number]['value'];
 
 const CASCADE_WIDTH = 220;
 
-type CascadeDemoProps = { phrases: readonly string[]; interval: number | null; className?: string; index?: number };
+function weightFor(key: StyleKey): TextWeight {
+  return STYLES.find((s) => s.value === key)?.weight ?? 'medium';
+}
+
+type CascadeDemoProps = {
+  phrases: readonly string[];
+  interval: number | null;
+  className?: string;
+  weight?: TextWeight;
+  index?: number;
+};
 
 // Cycles the label so the letter-by-letter roll is visible without pressing anything.
 
-function CascadeDemo({ phrases, interval, className, index }: CascadeDemoProps) {
+function CascadeDemo({ phrases, interval, className, weight, index }: CascadeDemoProps) {
   const [step, setStep] = useState(0);
   const advance = useCallback(() => setStep((p) => p + 1), []);
   useInterval(advance, interval);
@@ -60,7 +72,7 @@ function CascadeDemo({ phrases, interval, className, index }: CascadeDemoProps) 
   const current = phrases[at % phrases.length] ?? phrases[0] ?? '';
   return (
     <View className="items-center" style={{ minWidth: CASCADE_WIDTH }}>
-      <TextCascade className={className} text={current} />
+      <TextCascade className={className} weight={weight} text={current} />
     </View>
   );
 }
@@ -68,7 +80,7 @@ function CascadeDemo({ phrases, interval, className, index }: CascadeDemoProps) 
 function CascadePlayground() {
   const [setKey, setSetKey] = useState<SetKey>('actions');
   const [intervalKey, setIntervalKey] = useState<IntervalKey>('2400');
-  const [styleKey, setStyleKey] = useState<StyleKey>('text-lg font-medium text-foreground');
+  const [styleKey, setStyleKey] = useState<StyleKey>('text-lg text-foreground');
   const [cycling, setCycling] = useState(true);
   const [step, setStep] = useState(0);
 
@@ -89,7 +101,7 @@ function CascadePlayground() {
       </ControlCard>
 
       <View className="items-center" style={{ minWidth: CASCADE_WIDTH }}>
-        <TextCascade className={styleKey} text={current} />
+        <TextCascade className={styleKey} weight={weightFor(styleKey)} text={current} />
       </View>
 
       {/* Letters land left to right, so a longer word takes longer to settle —
@@ -98,7 +110,7 @@ function CascadePlayground() {
         <Variants align="center" direction="column">
           {STYLES.map((style) => (
             <Sample align="center" key={style.value} label={style.label}>
-              <CascadeDemo className={style.value} interval={2400} phrases={phrases} />
+              <CascadeDemo className={style.value} weight={style.weight} interval={2400} phrases={phrases} />
             </Sample>
           ))}
         </Variants>
@@ -107,7 +119,14 @@ function CascadePlayground() {
       <Section title="Static labels (no cycle)">
         <Variants align="center" direction="column">
           {phrases.map((phrase, index) => (
-            <CascadeDemo className={styleKey} index={index} interval={null} key={phrase} phrases={phrases} />
+            <CascadeDemo
+              className={styleKey}
+              weight={weightFor(styleKey)}
+              index={index}
+              interval={null}
+              key={phrase}
+              phrases={phrases}
+            />
           ))}
         </Variants>
       </Section>
@@ -124,7 +143,7 @@ export const Interactive: Story = { render: () => <CascadePlayground /> };
 /** Cycles the label every few seconds so the letter-by-letter roll is visible. */
 export const Cycling: Story = {
   name: 'Demo: Cycles its label',
-  render: (args) => <CascadeDemo className={args.className} interval={2400} phrases={PHRASE_SETS.actions} />,
+  render: (args) => <CascadeDemo className={args.className} weight={args.weight} interval={2400} phrases={PHRASE_SETS.actions} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // The current phrase is exposed as the accessible label.

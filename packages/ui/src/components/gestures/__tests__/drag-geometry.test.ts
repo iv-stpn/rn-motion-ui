@@ -6,6 +6,7 @@ import {
   rectArea,
   rectCenter,
   rectContains,
+  rectsAdjacent,
   rectsIntersect,
 } from '../drag-geometry';
 import { rect } from './drag-harness';
@@ -132,6 +133,39 @@ describe('rectsIntersect', () => {
   it('is commutative', () => {
     const b = rect(30, 40, 50, 60);
     expect(rectsIntersect(a, b)).toBe(rectsIntersect(b, a));
+  });
+});
+
+describe('rectsAdjacent', () => {
+  it('detects rows stacked directly on top of each other, edge to edge', () => {
+    expect(rectsAdjacent(rect(0, 0, 100, 30), rect(0, 30, 100, 30))).toBe(true);
+    expect(rectsAdjacent(rect(0, 30, 100, 30), rect(0, 0, 100, 30))).toBe(true);
+  });
+
+  it('detects neighbours separated by a grid gap smaller than one item', () => {
+    // A vertical grid gap of 12 against a 102-tall tile, a horizontal gap of 4
+    // against a 104-wide tile.
+    expect(rectsAdjacent(rect(0, 0, 104, 102), rect(0, 114, 104, 102))).toBe(true);
+    expect(rectsAdjacent(rect(0, 0, 104, 102), rect(108, 0, 104, 102))).toBe(true);
+  });
+
+  it('rejects a full item between them — a file row, a skipped tile', () => {
+    expect(rectsAdjacent(rect(0, 0, 100, 30), rect(0, 60, 100, 30))).toBe(false);
+    expect(rectsAdjacent(rect(0, 0, 104, 102), rect(216, 0, 104, 102))).toBe(false);
+  });
+
+  it('rejects rects that overlap rather than sit beside each other', () => {
+    expect(rectsAdjacent(rect(0, 0, 100, 100), rect(50, 50, 100, 100))).toBe(false);
+  });
+
+  it('rejects rects separated on both axes (diagonal neighbours)', () => {
+    expect(rectsAdjacent(rect(0, 0, 104, 102), rect(108, 114, 104, 102))).toBe(false);
+  });
+
+  it('is commutative', () => {
+    const a = rect(0, 0, 104, 102);
+    const b = rect(0, 114, 104, 102);
+    expect(rectsAdjacent(a, b)).toBe(rectsAdjacent(b, a));
   });
 });
 

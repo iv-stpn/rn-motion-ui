@@ -17,9 +17,11 @@
 //
 // For a hold with *no* drag, use `<Holdable>` instead.
 
-import { type ReactNode, type Ref, useImperativeHandle } from 'react';
+import { type ReactNode, type Ref, useCallback, useImperativeHandle } from 'react';
 import { Animated, View, type ViewProps, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
+import { fireHapticFeedback } from '../../../lib/haptics';
+import type { HapticFeedbackVariant } from '../../../lib/haptics-types';
 import { type UseDraggableOptions, useDraggable } from '../Draggable/use-draggable';
 import type { DraggableHandle } from '../drag.types';
 import type { HoldableState } from './holdable';
@@ -37,6 +39,8 @@ export type HoldDraggableProps = Omit<ViewProps, 'children' | 'ref'> &
   Omit<UseDraggableOptions, 'trackPhase'> & {
     children?: ReactNode | ((state: HoldableState) => ReactNode);
     ref?: Ref<DraggableHandle>;
+    /** Haptic feedback fired when the hold lands. `'None'` or omitted disables it. */
+    hapticFeedback?: HapticFeedbackVariant;
   };
 
 /**
@@ -72,6 +76,7 @@ export function HoldDraggable({
   disabled = false,
   effectAllowed = 'copy',
   groups,
+  hapticFeedback,
   onDragEnd,
   onDragMove,
   onDragStart,
@@ -87,6 +92,19 @@ export function HoldDraggable({
 }: HoldDraggableProps) {
   const previewNode = typeof children === 'function' ? undefined : (preview ?? children);
 
+  // The hold lands once — fire the haptic there, ahead of whatever the consumer's
+  // `onHold` puts on screen, so the cue reads as the press, not as its result.
+  const handleHold = useCallback(() => {
+    if (hapticFeedback !== undefined && hapticFeedback !== 'None') fireHapticFeedback(hapticFeedback);
+    onHold?.();
+  }, [hapticFeedback, onHold]);
+
+  // A hold exists only when something fires on it — the callback, or a haptic. Passing
+  // `undefined` keeps `useDraggable`'s `hasHold` check honest (it nulls the hold
+  // deadline otherwise).
+  const holdCallback =
+    onHold !== undefined || (hapticFeedback !== undefined && hapticFeedback !== 'None') ? handleHold : undefined;
+
   const drag = useDraggable({
     behavior,
     cursorMode,
@@ -97,7 +115,7 @@ export function HoldDraggable({
     onDragEnd,
     onDragMove,
     onDragStart,
-    onHold,
+    onHold: holdCallback,
     onHoldEscape,
     onPhaseChange,
     preview: previewNode,

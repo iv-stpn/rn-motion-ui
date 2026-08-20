@@ -4,7 +4,7 @@
  * Menu — the list that goes *inside* a dropdown, a popover or a context menu.
  *
  * The anchored surfaces in this package (`AdaptiveDropdown`, `HoverMenu`,
- * `Popover`, `HoldContextMenu`) each own a panel: where it sits, how it opens,
+ * `Popover`) each own a panel: where it sits, how it opens,
  * when it closes. None of them own what is in it, so every consumer ends up
  * hand-rolling the same `View` of `MenuItem`s, the same hairline between groups,
  * and the same icon-gutter bookkeeping. This is that list, once.
@@ -30,7 +30,7 @@
  *
  * Pass `className="py-*"` to retune that inset, or `py-0` to drop it — a panel
  * that has to predict its own height before layout wants a number it pinned
- * itself, which is what `HoldContextMenu` does.
+ * itself, which is what the file-system background menu does.
  *
  * The list renders a single `View` to hang `role="menu"`, the accessible name and
  * that inset on — a `Fragment` would be marginally leaner and would leave the
@@ -85,8 +85,8 @@
  *
  * **No frame.** No background, no border, no radius, no horizontal padding, no
  * width, no scrolling. The rows go edge to edge and the surface around them
- * belongs to whatever is holding it — `AdaptiveDropdown`'s panel,
- * `HoldContextMenu`'s, a `Card`, a sidebar column. A menu that painted its own
+ * belongs to whatever is holding it — `AdaptiveDropdown`'s panel, a `Card`, a
+ * sidebar column. A menu that painted its own
  * surface would sit as a second visible box inside the first one.
  *
  * The vertical inset is the exception, and the reason is that it is not really
@@ -265,11 +265,11 @@ const LABEL_TEXT_SIZE: Record<MenuItemSize, 'xs' | 'sm' | 'base'> = { sm: 'xs', 
  * as tall as its text line box, which is a font measurement no caller can do
  * ahead of layout.
  *
- * `HoldContextMenu` is the one panel here that needs that, and it mirrors the `md`
- * value rather than importing it: its layout module is deliberately free of
- * component imports so it stays a pure unit under test. This constant is what
- * that mirror points at — retune the scale above and the two numbers to check are
- * here and in `HOLD_MENU_SEPARATOR_HEIGHT`.
+ * The panel's height estimate (`HOLD_MENU_SEPARATOR_HEIGHT` in `menu-placement`)
+ * mirrors the `md` value rather than importing it: that layout module is
+ * deliberately free of component imports so it stays a pure unit under test. This
+ * constant is what that mirror points at — retune the scale above and the two
+ * numbers to check are here and in `HOLD_MENU_SEPARATOR_HEIGHT`.
  */
 export const MENU_SEPARATOR_HEIGHT: Record<MenuItemSize, number> = {
   sm: 5, // h-px (1px) + my-0.5 (2px ×2)

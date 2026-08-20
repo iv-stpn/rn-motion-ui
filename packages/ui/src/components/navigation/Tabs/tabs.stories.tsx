@@ -320,8 +320,8 @@ export const RightToLeft: Story = {
     const rtlList = await box('rtl-list');
     const ltrFirst = await box('ltr-trigger-overview');
     const rtlFirst = await box('rtl-trigger-overview');
-    expect(ltrFirst.left - ltrList.left).toBeLessThan(4); // LTR: first tab at the left edge
-    expect(rtlList.right - rtlFirst.right).toBeLessThan(4); // RTL: first tab at the right edge
+    expect(ltrFirst.left - ltrList.left).toBeLessThan(5); // LTR: first tab at the left edge (inside the 4px segment gutter)
+    expect(rtlList.right - rtlFirst.right).toBeLessThan(5); // RTL: first tab at the right edge (inside the 4px segment gutter)
 
     // The indicator sits on the selected trigger in both directions.
     await waitFor(async () => expect(coincide(await box('ltr-list-indicator'), await box('ltr-trigger-overview'))).toBe(true));

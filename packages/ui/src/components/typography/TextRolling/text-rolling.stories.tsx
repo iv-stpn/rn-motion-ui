@@ -14,6 +14,7 @@ import {
   Variants,
 } from '../../../__stories__/story-harness';
 import { useInterval } from '../../../hooks/use-interval';
+import type { TextWeight } from '../Text/text';
 import { TextRolling, type TextRollingDirection } from './text-rolling';
 
 const meta = {
@@ -23,7 +24,8 @@ const meta = {
   args: {
     text: 'Uploading',
     direction: 'forward',
-    className: 'text-lg font-medium text-foreground',
+    className: 'text-lg text-foreground',
+    weight: 'medium',
   },
   argTypes: {
     direction: { control: 'radio', options: ['forward', 'backward'] satisfies TextRollingDirection[] },
@@ -40,16 +42,16 @@ const DIRECTIONS = [
 const CYCLE_MS = 2000;
 const FIRST_STATUS = 'Uploading';
 
-type RollingDemoProps = { direction: TextRollingDirection; className?: string; index: number };
+type RollingDemoProps = { direction: TextRollingDirection; className?: string; weight?: TextWeight; index: number };
 
 // The roll only fires when `text` changes, so every sample reads the same shared
 // index — one timer drives them all and the directions stay in step.
 
-function RollingSample({ direction, className, index }: RollingDemoProps) {
+function RollingSample({ direction, className, weight, index }: RollingDemoProps) {
   const current = STATUSES[index % STATUSES.length] ?? FIRST_STATUS;
   return (
     <View className="min-w-[160px] items-center">
-      <TextRolling className={className} direction={direction} text={current} />
+      <TextRolling className={className} weight={weight} direction={direction} text={current} />
     </View>
   );
 }
@@ -71,7 +73,7 @@ function TextRollingPlayground(args: ComponentProps<typeof TextRolling>) {
       </ControlCard>
 
       <View className="items-center gap-1.5">
-        <RollingSample className={args.className} direction={direction} index={index} />
+        <RollingSample className={args.className} weight={args.weight} direction={direction} index={index} />
         <Note>{`${index + 1} / ${STATUSES.length}`}</Note>
       </View>
 
@@ -80,7 +82,7 @@ function TextRollingPlayground(args: ComponentProps<typeof TextRolling>) {
         <Variants align="center">
           {DIRECTIONS.map((option) => (
             <Sample align="center" key={option.value} label={option.label}>
-              <RollingSample className={args.className} direction={option.value} index={index} />
+              <RollingSample className={args.className} weight={args.weight} direction={option.value} index={index} />
             </Sample>
           ))}
         </Variants>

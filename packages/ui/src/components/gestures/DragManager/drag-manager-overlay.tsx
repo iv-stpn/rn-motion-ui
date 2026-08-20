@@ -48,12 +48,17 @@ export function DragManagerOverlay({ hostId, measure, rectRef }: DragManagerOver
   const opacity = useRef(new Animated.Value(1)).current;
   const [settling, setSettling] = useState(false);
 
-  // Cache the last non-null drag & preview so the ghost can fade out after the
-  // store has already cleared them.
+  // Cache the last drag & its preview so the ghost can fade out after the store
+  // has already cleared them. Both are cached together, and only while a drag is
+  // live: a drag that carries no preview for this host — an HTML5 chip lifted
+  // outside this manager — must clear the stale preview, or its drop would briefly
+  // re-show the ghost of the previous drag during the fade-out.
   const lastDragRef = useRef(drag);
   const lastPreviewRef = useRef(preview);
-  if (drag !== null) lastDragRef.current = drag;
-  if (preview !== null) lastPreviewRef.current = preview;
+  if (drag !== null) {
+    lastDragRef.current = drag;
+    lastPreviewRef.current = preview;
+  }
 
   const prevDragRef = useRef<typeof drag>(null);
 

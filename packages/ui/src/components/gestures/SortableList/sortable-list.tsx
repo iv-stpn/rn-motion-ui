@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: SortableItem reads the list context while the list renders SortableItem — co-located to break the list↔item require cycle
 // A list whose items visually reorder in real-time as you drag.
 //
 // Built on the existing gesture primitives — <Draggable>, <Dragzone> and
@@ -19,12 +20,31 @@
 // State lives in a React context (one per list instance) so <SortableItem> can
 // read state and call actions directly instead of receiving them as props.
 
-import { createContext, type ReactNode, useCallback, useContext, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  memo,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { View } from 'react-native';
-import { type SharedValue, useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  type SharedValue,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { Draggable } from '../Draggable/draggable';
 import { DragManager } from '../DragManager/drag-manager';
+import { Dragzone } from '../Dragzone/dragzone';
+import type { DragEndEvent, DragMoveEvent, DragzoneAcceptEvent, DragzoneHandle } from '../drag.types';
 import { reorderItems } from '../ReorderableList/reorderable-list-reorder';
-import { SortableItem } from './sortable-item';
 import type { SortableListProps } from './sortable-list.types';
 
 const DEFAULT_MIME = 'application/x-sortable-item';
@@ -53,6 +73,213 @@ type SortableListContextValue = {
 };
 
 const SortableListContext = createContext<SortableListContextValue | null>(null);
+
+// ── Item ─────────────────────────────────────────────────────────────────
+
+type SortableItemProps = {
+  children: ReactNode;
+  /** Stable unique key for this item, from the consumer's `keyExtractor`. */
+  itemKey: string;
+  /** Canonical index in the items array. */
+  index: number;
+  /** The group id shared by all items in this list — matches Dragzone and Draggable. */
+  listId: string;
+  /** MIME type written to the drag transfer. */
+  mimeType: string;
+  /** When true, this item is neither draggable nor a drop target. */
+  disabled?: boolean;
+  /** Optional custom ghost content for the drag preview. */
+  preview?: ReactNode;
+  testID?: string;
+};
+
+/**
+ * Compute where an item at `ownIndex` should visually appear, given the active
+ * (dragged) item at `activeIndex` and the insertion point at `insertionIndex`.
+ *
+ * - The active item itself moves to `insertionIndex`.
+ * - Items between the old and new positions shift by one slot to close the gap.
+ * - Items outside the affected range stay put.
+ *
+ * Returns the item's visual index in the preview order.
+ */
+function computeTargetIndex(ownIndex: number, activeIndex: number, insertionIndex: number): number {
+  'worklet';
+  if (activeIndex === -1 || activeIndex === insertionIndex) return ownIndex;
+  if (ownIndex === activeIndex) return insertionIndex;
+
+  if (activeIndex < insertionIndex) {
+    // Dragging downward: items between active+1 and insertion shift up by 1.
+    if (ownIndex > activeIndex && ownIndex <= insertionIndex) return ownIndex - 1;
+  } else if (ownIndex >= insertionIndex && ownIndex < activeIndex) {
+    // Dragging upward: items between insertion and active-1 shift down by 1.
+    return ownIndex + 1;
+  }
+
+  return ownIndex;
+}
+
+/**
+ * One row in a sortable list — a drop target that can also be picked up.
+ *
+ * Reads drag state from the SortableList context so it needs no callback props
+ * of its own beyond the structural ones (itemKey, index, listId, mimeType).
+ */
+function SortableItem({ children, itemKey, index, listId, mimeType, disabled = false, preview, testID }: SortableItemProps) {
+  const zoneRef = useRef<DragzoneHandle>(null);
+
+  const { activeIndexSV, dropVersionSV, insertionIndexSV, itemHeight, onDragEnd, onDragMove, onDragStart } = useSortableList();
+
+  // ── Reanimated-driven position ──────────────────────────────────────────
+  // translateY is driven entirely on the UI thread via useAnimatedReaction,
+  // which watches the shared values for activeIndex and insertionIndex.
+  // This eliminates per-frame JS bridge hops and React re-renders during the
+  // drag — only the commit (onDrop) crosses back to JS.
+  const translateY = useSharedValue(0);
+  const lastDropVersion = useSharedValue(0);
+  // Previous canonical index — lets the drop-commit layout effect run only when
+  // a reorder actually changed this item's slot, not on every render.
+  const prevIndexRef = useRef(index);
+
+  useAnimatedReaction(
+    () => {
+      const ai = activeIndexSV.value;
+      const ii = insertionIndexSV.value;
+      if (ai === -1 || ii === -1) return 0;
+      const target = computeTargetIndex(index, ai, ii);
+      return (target - index) * itemHeight;
+    },
+    (targetTY, prevTY) => {
+      if (dropVersionSV.value !== lastDropVersion.value) {
+        // Commit just happened — snap to the new canonical position instantly
+        // rather than animating from the drag-time offset.
+        lastDropVersion.value = dropVersionSV.value;
+        translateY.value = targetTY;
+      } else if (prevTY !== null && targetTY !== prevTY) translateY.value = withTiming(targetTY, { duration: 200 });
+      else if (prevTY === null) translateY.value = targetTY;
+    },
+    [index, itemHeight],
+  );
+
+  // ── Drop-commit snap ────────────────────────────────────────────────────
+  // The reaction above animates translateY while a drag is in flight, but it is
+  // a `useEffect`-driven hook — its reset lands *after* paint. On a committed
+  // reorder the item's `index` changes in the very render that re-inserts its
+  // DOM node at the new slot, so resetting translateY in a layout effect makes
+  // the snap and the reorder land in the same frame. Without this, the re-inserted
+  // node briefly renders at its new slot while still carrying the drag-time
+  // offset — the drop flicker. Syncing `lastDropVersion` here also makes the
+  // reaction's post-paint re-init settle to a no-op instead of re-animating.
+  useLayoutEffect(() => {
+    if (prevIndexRef.current === index) return;
+    prevIndexRef.current = index;
+    translateY.value = 0;
+    lastDropVersion.value = dropVersionSV.value;
+  }, [index, translateY, lastDropVersion, dropVersionSV]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    height: itemHeight,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  // ── Drag callbacks — wire itemKey into the list-level handlers ──────────
+  const handleDragStart = useCallback(() => {
+    onDragStart(index, itemKey);
+  }, [index, itemKey, onDragStart]);
+
+  const handleDragMove = useCallback(
+    (event: DragMoveEvent) => {
+      onDragMove(event.translation.y);
+    },
+    [onDragMove],
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      onDragEnd(itemKey, event.canceled);
+    },
+    [itemKey, onDragEnd],
+  );
+
+  // Reject self-drops: the dragged item's key is in the transfer.
+  const accepts = useCallback(
+    (event: DragzoneAcceptEvent) => {
+      if (disabled || event.drag === null) return false;
+      return event.transfer.getData(mimeType) !== itemKey;
+    },
+    [disabled, itemKey, mimeType],
+  );
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Dragzone ref={zoneRef} accepts={accepts} disabled={disabled} groups={[listId]} skipRectMeasure={true}>
+        <Draggable
+          data={{ [mimeType]: itemKey }}
+          disabled={disabled}
+          groups={[listId]}
+          onDragEnd={handleDragEnd}
+          onDragMove={handleDragMove}
+          onDragStart={handleDragStart}
+          preview={preview}
+          testID={testID}
+        >
+          {children}
+        </Draggable>
+      </Dragzone>
+    </Animated.View>
+  );
+}
+
+// ── Item slot — memoized per item ────────────────────────────────────────
+
+type SortableItemSlotProps = {
+  children: ReactNode;
+  disabled: boolean;
+  index: number;
+  isDragging: boolean;
+  /** The raw item — compared by reference in the memo comparator, not rendered. */
+  item: unknown;
+  itemKey: string;
+  listId: string;
+  mimeType: string;
+  preview?: ReactNode;
+  testID?: string;
+};
+
+/**
+ * One row of the list, memoized so a reorder commit re-renders only the items
+ * whose canonical index actually changed (the moved items) instead of every
+ * row's Dragzone/Draggable subtree. The comparator deliberately ignores
+ * `children` and `preview`: for an unmoved item those are a pure function of
+ * (item, index, isDragging), so skipping their re-render is exactly the win.
+ */
+function SortableItemSlot({ children, disabled, index, itemKey, listId, mimeType, preview, testID }: SortableItemSlotProps) {
+  return (
+    <SortableItem
+      disabled={disabled}
+      index={index}
+      itemKey={itemKey}
+      listId={listId}
+      mimeType={mimeType}
+      preview={preview}
+      testID={testID}
+    >
+      {children}
+    </SortableItem>
+  );
+}
+
+function sortableItemSlotPropsEqual(prev: SortableItemSlotProps, next: SortableItemSlotProps): boolean {
+  return (
+    prev.item === next.item &&
+    prev.index === next.index &&
+    prev.isDragging === next.isDragging &&
+    prev.disabled === next.disabled &&
+    prev.testID === next.testID
+  );
+}
+
+const MemoizedSortableItemSlot = memo(SortableItemSlot, sortableItemSlotPropsEqual);
 
 // ── List view ─────────────────────────────────────────────────────────────
 
@@ -108,11 +335,6 @@ function SortableListView<T>({
   const onReorderRef = useRef(onReorder);
   onReorderRef.current = onReorder;
 
-  // Tracks whether a commit needs to be finalised after the React render
-  // that assigns new canonical indices.  Written by handleDragEnd, read
-  // and cleared by useLayoutEffect below.
-  const pendingCommitRef = useRef<{ dropVersion: number } | null>(null);
-
   // ── Drag callbacks — stable identity across renders ─────────────────────
   const handleDragStart = useCallback(
     (index: number, key: string) => {
@@ -148,35 +370,33 @@ function SortableListView<T>({
       const from = activeIndexRef.current;
       const to = insertionIndexSV.value;
       if (!canceled && from !== -1 && to !== -1 && from !== to) {
-        // Defer the shared-value commit until after React has assigned new
-        // canonical indices, so items snap at their post-reorder positions.
-        pendingCommitRef.current = { dropVersion: dropVersionSV.value + 1 };
+        // Commit atomically, in this same JS tick: bump the drop version so
+        // items snap to their post-reorder positions (no withTiming), hand the
+        // reordered array to the consumer, and only then reset the shared
+        // values — all BEFORE React re-renders with the new canonical order.
+        // A reaction re-init (its `index` dep changed) can therefore never
+        // evaluate against stale active/insertion indices: it sees ai === -1
+        // and computes a target of 0 at its new index. Previously the shared
+        // values were reset in a useLayoutEffect AFTER the reorder render, so
+        // re-inits read the drag-time values and wrote multi-slot wrong
+        // transforms — the drop jitter.
+        dropVersionSV.value += 1;
         const currentItems = itemsRef.current;
         const commit = onReorderRef.current;
         commit(reorderItems(currentItems, from, to), from, to);
       }
+      // Reset all drag state — shared values first so the re-render (commit
+      // and cancel alike) evaluates every item at its rest position. The
+      // cancel path relies on this: with ai === -1 the reaction animates items
+      // back to 0 with withTiming(200) instead of snapping.
+      activeIndexSV.value = -1;
+      insertionIndexSV.value = -1;
       activeIndexRef.current = -1;
       setActiveIndex(-1);
       setDraggedKey(null);
     },
-    [dropVersionSV, insertionIndexSV],
+    [activeIndexSV, dropVersionSV, insertionIndexSV],
   );
-
-  // After React commits the reorder (new canonical indices are assigned),
-  // finalise the shared values so items snap at their correct positions.
-  // useLayoutEffect runs before the browser paints, so the user never sees
-  // an intermediate frame.
-  useLayoutEffect(() => {
-    if (activeIndex !== -1) return;
-
-    const pending = pendingCommitRef.current;
-    if (pending !== null) {
-      pendingCommitRef.current = null;
-      dropVersionSV.value = pending.dropVersion;
-    }
-    activeIndexSV.value = -1;
-    insertionIndexSV.value = -1;
-  }, [activeIndex, activeIndexSV, dropVersionSV, insertionIndexSV]);
 
   const contextValue = useMemo<SortableListContextValue>(
     () => ({
@@ -213,10 +433,12 @@ function SortableListView<T>({
           const itemTestID = testID ? `${testID}-item-${key}` : undefined;
 
           return (
-            <SortableItem
+            <MemoizedSortableItemSlot
               key={key}
               disabled={disabled}
               index={i}
+              isDragging={isDragging}
+              item={item}
               itemKey={key}
               listId={listId}
               mimeType={mimeType}
@@ -224,7 +446,7 @@ function SortableListView<T>({
               testID={itemTestID}
             >
               {renderItem(item, i, isDragging)}
-            </SortableItem>
+            </MemoizedSortableItemSlot>
           );
         })}
       </View>

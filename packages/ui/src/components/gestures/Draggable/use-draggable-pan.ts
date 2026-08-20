@@ -253,8 +253,7 @@ export type UseDraggablePanParams = Omit<PanGestureParams, 'arm'> & {
  * The gesture to wrap the host in, or `null` when this platform has no pan.
  *
  * `null` on web, where a finger is the pointer transport's business and RNGH would
- * additionally demand a `GestureHandlerRootView` this package refuses to require —
- * see the note in `use-hold-activation.ts`.
+ * additionally demand a `GestureHandlerRootView` this package refuses to require.
  */
 export function useDraggablePan({ effectAllowed, enabled, session, timeline, tuning }: UseDraggablePanParams) {
   const arm = useSharedValue<PanArm>(PAN_ARM_IDLE);

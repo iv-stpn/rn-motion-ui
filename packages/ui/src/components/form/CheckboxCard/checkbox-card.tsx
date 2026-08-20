@@ -1,92 +1,12 @@
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { usePressState } from '../../../hooks/use-press-state';
-import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { SPRING_PRESS } from '../../../lib/ease';
 import { elevated, type SurfaceLevel } from '../../../lib/elevated';
-import { MotiView } from '../../../moti/components/view';
-import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
-import { useThemeColor } from '../../../theme/use-theme-color';
+import { type MotiTransitionProp, mergeTransition, TIMING_FAST } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
-
-const CHECK_PATH = 'M5 13l4 4L19 7';
-
-type CheckboxCardBoxProps = {
-  checked: boolean;
-  disabled: boolean;
-  pressed: boolean;
-  /** Resolved check animation, already merged with the group/card overrides. */
-  transition: MotiTransitionProp;
-  checkIcon?: ReactNode;
-  /** The card's resolved testID; the box and mark derive from it. */
-  testID?: string;
-};
-
-/**
- * The animated checkbox box. Same visual and timing as `Checkbox` — kept private
- * to this file because only `CheckboxCard` renders it, and split out of the card
- * body so the card stays readable.
- */
-function CheckboxCardBox({ checked, disabled, pressed, transition, checkIcon, testID }: CheckboxCardBoxProps) {
-  const reduce = useReducedMotion();
-  // Resolve the check-mark colour through the token bridge so it adapts to
-  // consumer @theme overrides. Paired with the `info` fill below, not `primary`.
-  const checkColor = useThemeColor('info-foreground');
-  const ct = reduce ? TIMING_INSTANT : transition;
-
-  return (
-    // Springs down while pressed (Button's idiom, shared with Checkbox).
-    <MotiView
-      animate={{ scale: pressed && !reduce && !disabled ? 0.92 : 1 }}
-      transition={SPRING_PRESS}
-      testID={testID ? `${testID}-control` : undefined}
-    >
-      {/* Base box is always in the unchecked state; the `info` fill animates in/out. */}
-      <View
-        className={cn(
-          'h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-surface-3',
-          checked ? 'border-info' : 'border-muted-foreground/50',
-        )}
-      >
-        {/* Fill fades in on check and out on uncheck, same timing as the mark.
-            `-inset-0.5` (=-2px) covers the whole 2px border band so the checked
-            box is one solid `info` surface — the old `inset-0` left the border's
-            antialiased inner edge visible as a hairline between the border and
-            the fill. Clipped to the exact box shape by the parent's
-            `overflow-hidden rounded-md`. */}
-        <MotiView animate={{ opacity: checked ? 1 : 0 }} transition={ct} className="absolute -inset-0.5 bg-info" />
-        <AnimatePresence>
-          {checked ? (
-            <MotiView
-              from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
-              transition={ct}
-              testID={testID ? `${testID}-check` : undefined}
-            >
-              {checkIcon ?? (
-                <Svg width={12} height={12} viewBox="0 0 24 24">
-                  <Path
-                    d={CHECK_PATH}
-                    fill="none"
-                    stroke={checkColor}
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              )}
-            </MotiView>
-          ) : null}
-        </AnimatePresence>
-      </View>
-    </MotiView>
-  );
-}
+import { CheckboxBox } from '../Checkbox/checkbox';
 
 type CheckboxCardCtx = {
   /** Every currently-checked card value. */
@@ -315,22 +235,27 @@ export function CheckboxCard({
           )}
         >
           <View className="flex-row items-center justify-between">
-            <CheckboxCardBox
+            <CheckboxBox
               checked={checked}
               disabled={disabled}
               pressed={pressed}
+              tone="info"
               transition={ct}
               checkIcon={checkIcon}
               testID={cardTestID}
             />
             {badge ? (
               <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
-                <Text className="font-semibold text-primary text-xs">{badge}</Text>
+                <Text weight="semibold" className="text-primary text-xs">
+                  {badge}
+                </Text>
               </View>
             ) : null}
           </View>
           <View className="gap-1">
-            <Text className="font-semibold text-base text-foreground">{title}</Text>
+            <Text weight="semibold" className="text-base text-foreground">
+              {title}
+            </Text>
             {subtitle ? (
               <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
                 {subtitle}

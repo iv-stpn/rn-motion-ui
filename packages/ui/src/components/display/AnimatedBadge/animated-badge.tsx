@@ -48,13 +48,13 @@ const container = cva('flex-row shrink-0 items-center overflow-hidden rounded-fu
   variants: {
     size: {
       sm: 'h-6 gap-1 px-2',
-      md: 'h-8 gap-1.5 px-3',
+      md: 'h-7 gap-1 px-3',
     },
   },
   defaultVariants: { size: 'md' },
 });
 
-const labelClass = cva('font-medium', {
+const labelClass = cva('', {
   variants: {
     status: {
       neutral: 'text-muted-foreground',
@@ -257,7 +257,9 @@ export function AnimatedBadge({
               transition={{ type: 'spring', stiffness: 210, damping: 24, mass: 0.85 }}
               exitTransition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 160 }}
             >
-              <Text className={labelClass({ status, size })}>{children}</Text>
+              <Text weight="medium" className={labelClass({ status, size })}>
+                {children}
+              </Text>
             </MotiView>
           </AnimatePresence>
         </View>

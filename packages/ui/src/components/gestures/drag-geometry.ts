@@ -41,6 +41,29 @@ export function rectsIntersect(a: DragRect, b: DragRect): boolean {
   return a.x <= b.x + b.width && a.x + a.width >= b.x && a.y <= b.y + b.height && a.y + a.height >= b.y;
 }
 
+/**
+ * Whether two rects are immediate neighbours in a row or column — the case where
+ * an outline moving between them should glide rather than jump.
+ *
+ * Neighbours overlap in one axis (they share a row or a column) and their facing
+ * edges in the other axis are separated by less than one item's own extent. A full
+ * item between them — a file row between two folder rows, a skipped grid tile, a
+ * whole column's width — reads as a jump, not a neighbour, so it snaps.
+ */
+export function rectsAdjacent(a: DragRect, b: DragRect): boolean {
+  const overlapX = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+  const overlapY = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+  if (overlapX > 0) {
+    const gapY = Math.max(a.y, b.y) - Math.min(a.y + a.height, b.y + b.height);
+    return gapY >= 0 && gapY < Math.min(a.height, b.height);
+  }
+  if (overlapY > 0) {
+    const gapX = Math.max(a.x, b.x) - Math.min(a.x + a.width, b.x + b.width);
+    return gapX >= 0 && gapX < Math.min(a.width, b.width);
+  }
+  return false;
+}
+
 /** `outer` fully contains `inner` (edges allowed). */
 export function rectContains(outer: DragRect, inner: DragRect): boolean {
   return (

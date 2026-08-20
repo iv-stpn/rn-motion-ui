@@ -127,7 +127,7 @@ export function OverflowActions({
 
   return (
     <View testID={testID} className={cn('flex-row self-start', className)} style={style}>
-      <View className="relative flex-row items-center overflow-hidden rounded-full bg-muted p-1">
+      <View className="relative flex-row items-center overflow-hidden rounded-full bg-surface-contrast p-1">
         <View className={group({ size })}>
           {primaryActions.map((item) => (
             <ActionButton
@@ -202,8 +202,8 @@ export function OverflowActions({
                 transition={{ type: 'timing', duration: reduce ? 100 : 180 }}
               >
                 {isExpanded
-                  ? (closeIcon ?? <ThemedIcon icon={X} variant="primary" size={size === 'sm' ? 14 : 16} />)
-                  : (triggerIcon ?? <ThemedIcon icon={MoreHorizontal} variant="primary" size={size === 'sm' ? 14 : 16} />)}
+                  ? (closeIcon ?? <ThemedIcon icon={X} variant="neutral" size={size === 'sm' ? 14 : 16} />)
+                  : (triggerIcon ?? <ThemedIcon icon={MoreHorizontal} variant="neutral" size={size === 'sm' ? 14 : 16} />)}
               </MotiView>
             </AnimatePresence>
           </Pressable>

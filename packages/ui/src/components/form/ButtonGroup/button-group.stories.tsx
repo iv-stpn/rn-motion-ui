@@ -26,9 +26,9 @@ const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
 
 const BUTTONS = [
-  { label: 'Left', variant: 'primary' as const },
-  { label: 'Center', variant: 'primary' as const },
-  { label: 'Right', variant: 'primary' as const },
+  { label: 'Left', variant: 'neutral' as const },
+  { label: 'Center', variant: 'neutral' as const },
+  { label: 'Right', variant: 'neutral' as const },
 ];
 
 function ButtonGroupPlayground() {

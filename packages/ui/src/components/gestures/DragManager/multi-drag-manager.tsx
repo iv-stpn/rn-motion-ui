@@ -17,6 +17,7 @@
 
 import { type ReactNode, useCallback, useMemo } from 'react';
 import { View } from 'react-native';
+import { Text } from '../../typography/Text/text';
 import { useActiveDrag } from '../use-drag-store';
 import { DragManager, type DragManagerProps } from './drag-manager';
 import { defaultResolveIds, type MultiDragIdResolver, readMultiDragIds } from './multi-drag';
@@ -48,7 +49,7 @@ type DefaultMultiDragGhostTextProps = { count: number };
 
 function DefaultMultiDragGhostText({ count }: DefaultMultiDragGhostTextProps) {
   // Template literal is intentional: the count varies per drag.
-  return <View className="font-medium text-foreground text-xs">{`${count} items`}</View>;
+  return <Text weight="medium" className="text-foreground text-xs">{`${count} items`}</Text>;
 }
 
 const defaultRenderPreview = (ids: readonly string[]) => {

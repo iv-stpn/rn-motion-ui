@@ -13,11 +13,11 @@ const meta = {
   title: 'Form/Button',
   component: Button,
   parameters: { layout: 'centered' },
-  args: { children: 'Continue', variant: 'primary', size: 'md', onPress: fn() },
+  args: { children: 'Continue', variant: 'neutral', size: 'md', onPress: fn() },
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'ghost', 'danger', 'special', 'inverse', 'outlineDanger', 'ghostDanger'],
+      options: ['neutral', 'inverse', 'ghost', 'danger', 'special', 'outlineDanger', 'ghostDanger'],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -27,12 +27,14 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const VARIANTS = [
-  'primary',
-  'secondary',
+  'neutral',
+  'inverse',
   'ghost',
   'danger',
+  'success',
+  'warning',
+  'info',
   'special',
-  'inverse',
   'outlineDanger',
   'ghostDanger',
 ] as const satisfies readonly ButtonVariant[];
@@ -56,15 +58,18 @@ type IconSide = (typeof ICON_SIDES)[number];
 // partner (`inverse` the page, so it punches through the slab), the danger
 // outlines carry the danger hue, everything else the plain foreground.
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
-  if (variant === 'primary' || variant === 'danger') return colors['primary-foreground'];
+  if (variant === 'neutral' || variant === 'danger') return colors['primary-foreground'];
+  if (variant === 'success') return colors['success-foreground'];
+  if (variant === 'warning') return colors['warning-foreground'];
+  if (variant === 'info') return colors['info-foreground'];
   if (variant === 'special') return colors['special-foreground'];
-  if (variant === 'secondary' || variant === 'inverse') return colors['surface-1'];
+  if (variant === 'inverse') return colors['surface-1'];
   if (variant === 'outlineDanger' || variant === 'ghostDanger') return colors.danger;
   return colors.foreground;
 }
 
 function ButtonPlayground(args: ComponentProps<typeof Button>) {
-  const [variant, setVariant] = useState<ButtonVariant>('primary');
+  const [variant, setVariant] = useState<ButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [pill, setPill] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -124,7 +129,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
               {SIZE_LABELS[name]}
             </Button>
           ))}
-          <Button {...args} accessibilityLabel="Delete" size="icon" variant="secondary">
+          <Button {...args} accessibilityLabel="Delete" size="icon" variant="inverse">
             <Trash2 color={colors['surface-1']} size={16} />
           </Button>
         </Variants>
@@ -133,23 +138,23 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
       <Section title="States">
         <Variants align="center">
           <Sample label="leading icon">
-            <Button {...args} variant="secondary">
+            <Button {...args} variant="inverse">
               <Download color={colors['surface-1']} size={16} />
               {DOWNLOAD_LABEL}
             </Button>
           </Sample>
           <Sample label="loading">
-            <Button {...args} loading={true} variant="primary">
+            <Button {...args} loading={true} variant="neutral">
               {CONTINUE_LABEL}
             </Button>
           </Sample>
           <Sample label="disabled">
-            <Button {...args} disabled={true} variant="primary">
+            <Button {...args} disabled={true} variant="neutral">
               {CONTINUE_LABEL}
             </Button>
           </Sample>
           <Sample label="pill">
-            <Button {...args} shape="pill" variant="primary">
+            <Button {...args} shape="pill" variant="neutral">
               {CONTINUE_LABEL}
             </Button>
           </Sample>
@@ -178,7 +183,7 @@ export const Primary: Story = {
 };
 
 /** `special` and `inverse` are the only variants whose fill/label utilities
- *  (`bg-special`, `text-special-foreground`, `bg-foreground`, `text-surface-1`)
+ *  (`bg-special`, `text-special-foreground`, `bg-foreground`, `text-background`)
  *  aren't used anywhere else in the library, so a scanner miss would fail open:
  *  the class would simply not exist and the chip would render transparent with
  *  inherited text. This pins each one to the custom property it must resolve to. */
@@ -218,7 +223,7 @@ export const TokenFillsResolve: Story = {
       expect(getComputedStyle(specialKey).backgroundColor).toBe(resolveToken('--color-special'));
       expect(getComputedStyle(labelOf(specialKey)).color).toBe(resolveToken('--color-special-foreground'));
       expect(getComputedStyle(inverseKey).backgroundColor).toBe(resolveToken('--color-foreground'));
-      expect(getComputedStyle(labelOf(inverseKey)).color).toBe(resolveToken('--color-surface-1'));
+      expect(getComputedStyle(labelOf(inverseKey)).color).toBe(resolveToken('--color-background'));
     } finally {
       probe.remove();
     }

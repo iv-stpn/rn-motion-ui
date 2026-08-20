@@ -3,21 +3,23 @@
 // The per-entry trailing control shared by the two mobile views.
 //
 // Two shapes, one slot. When nothing is selected it is a kebab — tapping it opens
-// the entry's context menu through the same `HoldContextMenu`/`useContextMenu`
+// the entry's context menu through the same `HoldItem`/`useContextMenu`
 // plumbing the desktop views use, but summoned on a tap rather than a hold, and
 // the same tap selects the entry (the menu's `onHold` rides any activation, a tap
 // included). Once anything is selected it becomes a checkbox, checked for the
 // selected entry and empty otherwise, so the mobile views reveal a multi-select
 // surface the moment a long-press picks the first item.
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { CheckCircleFill } from 'rn-motion-ui-icons/icons/check-circle-fill';
 import { More2Line as More } from 'rn-motion-ui-icons/icons/more-2-line';
 import { RoundLine } from 'rn-motion-ui-icons/icons/round-line';
+import { useReducedMotion } from '../../../../hooks/use-reduced-motion';
 import { ThemedIcon } from '../../../icon/themed-icon';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { useFileSystemScrubGesture } from '../hooks/use-file-system-scrub';
 import { type ContextMenuHookReturn, useContextMenu } from '../shell/file-system-context-menu';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemItem } from '../types/file-system.types';
@@ -43,17 +45,20 @@ type FileSystemMobileMenuProps = {
   onScrubEnd: () => void;
   /** The entry's resolved `testID` (`<root>-entry-<path>`), which the control derives its own from. */
   testID?: string;
+  /** This entry is under the finger right now during a scrub — the checkbox it owns bounces. */
+  isScrubTarget: boolean;
 };
 
 type MobileCheckboxProps = Pick<
   FileSystemMobileMenuProps,
-  'entry' | 'isSelected' | 'onToggleSelect' | 'onScrubStart' | 'onScrubMove' | 'onScrubEnd' | 'testID'
+  'entry' | 'isSelected' | 'onToggleSelect' | 'onScrubStart' | 'onScrubMove' | 'onScrubEnd' | 'testID' | 'isScrubTarget'
 >;
 
 /** The selection-mode shape: a checkbox whose tap toggles the entry in or out of the selection, and whose hold-drag scrubs a run. */
 function MobileCheckbox({
   entry,
   isSelected,
+  isScrubTarget,
   onToggleSelect,
   onScrubStart,
   onScrubMove,
@@ -68,19 +73,43 @@ function MobileCheckbox({
 
   const gesture = useFileSystemScrubGesture({ onStart: handleScrubStart, onMove: onScrubMove, onEnd: onScrubEnd });
 
+  // The drag-select cue: as the scrub crosses onto this checkbox, give it a quick
+  // squeeze then a spring back — the same "you are on me" pulse the tick haptic
+  // signals in the hand. Only the entry under the finger animates; a reduced-motion
+  // preference pins the scale at full size.
+  const reduce = useReducedMotion();
+  const scale = useSharedValue(1);
+
+  // biome-ignore lint/plugin: triggering a Reanimated withSequence on a shared value in response to a prop change requires a side effect
+  useEffect(() => {
+    if (!isScrubTarget || reduce) {
+      scale.value = 1;
+      return;
+    }
+    scale.value = withSequence(withTiming(0.82, { duration: 90 }), withSpring(1, { damping: 14, stiffness: 220, mass: 0.6 }));
+  }, [isScrubTarget, reduce, scale]);
+
+  const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
   const checkbox = (
-    <Pressable
-      accessibilityLabel={isSelected ? `Deselect ${entry.name}` : `Select ${entry.name}`}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: isSelected }}
-      // Both, deliberately: native reads `accessibilityState`, RNW maps `aria-checked` — see Checkbox.
-      aria-checked={isSelected}
-      className="size-7 items-center justify-center"
-      onPress={handleToggle}
-      testID={testID ? `${testID}${MOBILE_CHECKBOX_SUFFIX}` : undefined}
-    >
-      <ThemedIcon icon={isSelected ? CheckCircleFill : RoundLine} size={20} token={isSelected ? 'primary' : 'muted-foreground'} />
-    </Pressable>
+    <Animated.View style={scaleStyle}>
+      <Pressable
+        accessibilityLabel={isSelected ? `Deselect ${entry.name}` : `Select ${entry.name}`}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isSelected }}
+        // Both, deliberately: native reads `accessibilityState`, RNW maps `aria-checked` — see Checkbox.
+        aria-checked={isSelected}
+        className="size-7 items-center justify-center"
+        onPress={handleToggle}
+        testID={testID ? `${testID}${MOBILE_CHECKBOX_SUFFIX}` : undefined}
+      >
+        <ThemedIcon
+          icon={isSelected ? CheckCircleFill : RoundLine}
+          size={20}
+          token={isSelected ? 'primary' : 'muted-foreground'}
+        />
+      </Pressable>
+    </Animated.View>
   );
 
   // The scrub is native-only (`null` on web). `collapsable={false}` keeps the gesture
@@ -107,32 +136,39 @@ type MobileKebabProps = Pick<FileSystemMobileMenuProps, 'entry' | 'onToggleSelec
  * The default shape: a kebab whose tap opens the entry's context menu — and,
  * through the same gesture, selects the entry.
  *
- * `HoldContextMenu` wires its `onHold` prop through `afterHold`, which
- * `openMenu` fires on *any* activation, a tap included — so passing the
- * additive toggle here makes a kebab tap select the entry (row highlighted,
- * selection mode on) at the same moment the menu opens. The slot keeps the
- * kebab mounted while this menu is open, so the selection the tap just produced
- * cannot unmount the menu underneath it (see `FileSystemMobileMenu`).
+ * `HoldItem` fires its `onHold` prop on *any* activation, a tap included — so
+ * passing the additive toggle here makes a kebab tap select the entry (row
+ * highlighted, selection mode on) at the same moment the menu opens. The slot
+ * keeps the kebab mounted while this menu is open, so the selection the tap just
+ * produced cannot unmount the menu underneath it (see `FileSystemMobileMenu`).
  */
 function MobileKebab({ entry, menuProps, onToggleSelect, testID }: MobileKebabProps) {
-  // Stable handle for `HoldContextMenu onHold`, which rides `afterHold` — a
-  // fresh arrow per render would rebuild the hook's `latest` ref on every
-  // render of the slot.
+  // Stable handle for `HoldItem onHold` — a fresh arrow per render would
+  // rebuild the hook's `latest` ref on every render of the slot.
   const handleHold = useCallback(() => onToggleSelect(entry), [entry, onToggleSelect]);
 
   return (
-    <HoldContextMenu
-      accessibilityLabel={`More actions for ${entry.name}`}
+    <HoldItem
       activateOn="tap"
+      items={menuProps.items}
       onHold={handleHold}
-      trigger="pressable"
+      onOpenChange={menuProps.onOpenChange}
       testID={testID ? `${testID}${MOBILE_KEBAB_SUFFIX}` : undefined}
-      {...menuProps}
     >
-      <View className="size-7 items-center justify-center">
+      {/* The button role the kebab exposes: `HoldItem`'s wrapper carries the tap
+          (and its twin), while this element is the accessible name — the same
+          `role="button"` the old `trigger="pressable"` rendered. A `View`, not a
+          `Pressable`: a Pressable's responder swallows the click (its `onClick`
+          calls `stopPropagation` even with no `onPress`), which would starve the
+          wrapper's tap, so the press must not double-fire. */}
+      <View
+        accessibilityLabel={`More actions for ${entry.name}`}
+        accessibilityRole="button"
+        className="size-7 items-center justify-center"
+      >
         <ThemedIcon icon={More} size={16} token="muted-foreground" />
       </View>
-    </HoldContextMenu>
+    </HoldItem>
   );
 }
 
@@ -143,10 +179,11 @@ function MobileKebab({ entry, menuProps, onToggleSelect, testID }: MobileKebabPr
  *
  * One wrinkle: while the kebab's *own* menu is open the kebab stays in the slot
  * even though `selecting` is true. The kebab tap both opens the menu and selects
- * the entry (see `MobileKebab`), and the overlay lives in a Modal rendered by the
- * kebab's `HoldContextMenu` — flipping the slot to the checkbox under the open
- * menu would unmount that menu in the same commit that produced it. The flip
- * waits for the menu to close; `selecting` alone decides the shape from then on.
+ * the entry (see `MobileKebab`), and the overlay is rendered through the
+ * provider's portal by the kebab's `HoldItem` — flipping the slot to the checkbox
+ * under the open menu would unmount that menu in the same commit that produced
+ * it. The flip waits for the menu to close; `selecting` alone decides the shape
+ * from then on.
  */
 export function FileSystemMobileMenu(props: FileSystemMobileMenuProps) {
   // Resolved here, not inside `MobileKebab`, so the slot's shape decision and

@@ -2,7 +2,6 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Pressable, StyleSheet } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { SURFACE_CLASSNAME } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -13,13 +12,15 @@ export type { ButtonShape, ButtonSize } from './button-scale';
 
 // biome-ignore lint/style/useExportsLast: ButtonVariant is a public type declared beside the cva tables it enumerates; hoisting it to the file end would separate it from the container/label variants it must stay in sync with
 export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
+  | 'neutral'
+  | 'inverse'
   | 'ghost'
   | 'outline'
   | 'danger'
+  | 'success'
+  | 'warning'
+  | 'info'
   | 'special'
-  | 'inverse'
   | 'outlineDanger'
   | 'ghostDanger';
 
@@ -29,64 +30,67 @@ export type ButtonVariant =
 //
 // Colour is the only axis here: the box (height, padding, radius) is the family's,
 // resolved through {@link BUTTON_BOX} so a flat `md` occupies exactly the same
-// rectangle as an elevated chip, a glossy key or an ActionSwap at `md`.
+// rectangle as an elevated chip or an ActionSwap at `md`.
 const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
-      primary: SURFACE_CLASSNAME[3],
-      secondary: 'border border-border bg-foreground',
+      neutral: 'bg-surface-3',
+      inverse: 'border border-border bg-foreground',
       ghost: 'bg-transparent',
       outline: 'border border-border bg-transparent',
       danger: 'bg-danger shadow-elevated-3',
+      success: 'bg-success shadow-elevated-3',
+      warning: 'bg-warning shadow-elevated-3',
+      info: 'bg-info shadow-elevated-3',
       special: 'bg-special shadow-elevated-3',
-      // `inverse` is deliberately not `primary`: `primary` is the consumer's
-      // brand token, designed to be overridden, so a fill built on it can't
-      // promise contrast. `foreground` over `surface-1` is the one pair a theme
-      // guarantees reads, so the flip stays legible through any retint.
-      inverse: 'bg-foreground shadow-elevated-3',
       outlineDanger: 'border border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
     },
   },
-  defaultVariants: { variant: 'primary' },
+  defaultVariants: { variant: 'neutral' },
 });
 
 // biome-ignore lint/style/useComponentExportOnlyModules: label cva is a styling utility consumed by StatefulButton in the same component family; splitting to a separate file would fragment tightly-coupled button styles
 export const label = cva('', {
   variants: {
     variant: {
-      primary: 'text-foreground',
-      secondary: 'text-surface-1',
+      neutral: 'text-foreground',
+      inverse: 'text-background',
       ghost: 'text-foreground',
       outline: 'text-foreground',
       danger: 'text-white',
+      success: 'text-success-foreground',
+      warning: 'text-warning-foreground',
+      info: 'text-info-foreground',
       special: 'text-special-foreground',
-      // The page colour, so the label reads as a hole punched through the slab
-      // to the backdrop behind it (same pairing GlossyButton's `inverse` uses).
-      inverse: 'text-surface-1',
       outlineDanger: 'text-danger',
       ghostDanger: 'text-danger',
     },
-    // Weight + size come from the family ramp, shared with GlossyButton, so only
-    // the colour above is Button's own.
+    // Weight + size come from the family ramp, so only the colour above is
+    // Button's own.
     size: LABEL_TEXT_CLASS,
   },
-  defaultVariants: { variant: 'primary', size: 'md' },
+  defaultVariants: { variant: 'neutral', size: 'md' },
 });
 
 // Variants whose background is an opaque, dark-or-vivid fill, so a ripple has to
 // shimmer white to be visible. Everything else is a light surface plate and takes
 // the dark ripple.
-const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['secondary', 'danger', 'special', 'inverse']);
+const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['inverse', 'danger', 'success', 'warning', 'info', 'special']);
 
 // Spinner stroke matches the label colour so it reads on every variant.
 function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   switch (variant) {
-    case 'secondary':
     case 'inverse':
       return colors['surface-1'];
     case 'danger':
       return colors['primary-foreground'];
+    case 'success':
+      return colors['success-foreground'];
+    case 'warning':
+      return colors['warning-foreground'];
+    case 'info':
+      return colors['info-foreground'];
     case 'special':
       return colors['special-foreground'];
     case 'outlineDanger':
@@ -103,9 +107,9 @@ export interface ButtonProps extends VariantProps<typeof container>, BaseButtonP
 }
 
 export function Button({
-  variant = 'primary',
+  variant = 'neutral',
   size = 'md',
-  shape = 'rounded',
+  shape = 'pill',
   children,
   leftAdornment,
   rightAdornment,
@@ -130,7 +134,7 @@ export function Button({
   const colors = useThemeColors();
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
-  const v = variant ?? 'primary';
+  const v = variant ?? 'neutral';
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,

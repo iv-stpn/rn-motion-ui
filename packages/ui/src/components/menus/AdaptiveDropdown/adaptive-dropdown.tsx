@@ -185,7 +185,7 @@ export function AdaptiveDropdown({
     title || headerSuffix ? (
       <View className="flex-row items-center justify-between gap-3 px-3">
         {title ? (
-          <Text className="flex-1 pt-3 font-medium text-foreground/75 text-sm" numberOfLines={1}>
+          <Text weight="medium" className="flex-1 pt-3 text-foreground/75 text-sm" numberOfLines={1}>
             {title}
           </Text>
         ) : (
@@ -208,7 +208,7 @@ export function AdaptiveDropdown({
     <View className={cn('overflow-hidden', contentClassName)}>{resolvedContent}</View>
   );
 
-  // Shared with Popover, HoverMenu and HoldContextMenu, so every panel this
+  // Shared with Popover and HoverMenu, so every panel this
   // package anchors to a trigger opens and closes the same way.
   const panelMotion = resolveMenuMotion({ motion, reduce: reduced, side: openAbove ? 'top' : 'bottom' });
   const transformOrigin = menuTransformOrigin({ align, side: openAbove ? 'top' : 'bottom' });

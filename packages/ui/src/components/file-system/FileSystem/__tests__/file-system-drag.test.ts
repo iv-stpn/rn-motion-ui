@@ -154,6 +154,31 @@ describe('fileSystemDragData / readFileSystemDragItems', () => {
     );
     expect(readFileSystemDragItems(transfer)).toEqual([good]);
   });
+
+  it('serves the cached array for the life of a drag, so a zone-per-move parse never repeats', () => {
+    const transfer = createDragTransfer();
+    transfer.setData(FS_DRAG_ITEMS_MIME, JSON.stringify([file('photo.jpg'), folder('Docs/')]));
+    const first = readFileSystemDragItems(transfer);
+    // Every read of the same transfer — every zone's `accepts`, on every move —
+    // answers with the exact same array, no re-`JSON.parse` and no re-filter.
+    expect(readFileSystemDragItems(transfer)).toBe(first);
+    expect(readFileSystemDragItems(transfer)).toBe(first);
+  });
+
+  it('re-parses for a fresh transfer carrying the same payload', () => {
+    const first = createDragTransfer();
+    const second = createDragTransfer();
+    first.setData(FS_DRAG_ITEMS_MIME, JSON.stringify([file('photo.jpg')]));
+    second.setData(FS_DRAG_ITEMS_MIME, JSON.stringify([file('photo.jpg')]));
+    // Same payload, different drag — the arrays must not be shared.
+    expect(readFileSystemDragItems(first)).not.toBe(readFileSystemDragItems(second));
+  });
+
+  it('answers an empty array without touching the cache', () => {
+    expect(readFileSystemDragItems(null)).toEqual([]);
+    expect(readFileSystemDragItems(undefined)).toEqual([]);
+    expect(readFileSystemDragItems(createDragTransfer())).toEqual([]);
+  });
 });
 
 describe('fileSystemDragLabel', () => {

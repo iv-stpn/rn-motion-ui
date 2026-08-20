@@ -16,6 +16,8 @@ import {
   View,
 } from 'react-native';
 import { LayoutAnimationConfig } from 'react-native-reanimated';
+import { useDragScope } from '../../../gestures/drag-scope';
+import { shiftZoneRects } from '../../../gestures/drag-store';
 import { useActiveDrag } from '../../../gestures/use-drag-store';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
@@ -32,6 +34,7 @@ import {
 } from '../logic/file-system-icons-grid';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { useBackgroundContextMenu } from '../shell/file-system-context-menu';
+import { isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type { FileSystemEntry } from '../types/file-system.types';
 import { FileSystemAnimatedTile } from './file-system-animated-tile';
 import {
@@ -169,6 +172,9 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
 
   const activeDrag = useActiveDrag();
   const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
+  // The manager this view's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
 
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
@@ -203,7 +209,14 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+      const offset = event.nativeEvent.contentOffset.y;
+      // Same correction as the desktop list view: the store's cached zone rects
+      // are window boxes from the last measure, and a scroll moves the tiles
+      // without any layout event, so the drop targeting and the shared drop
+      // indicator would resolve against pre-scroll positions mid-drag.
+      const delta = offset - scrollOffsetRef.current;
+      scrollOffsetRef.current = offset;
+      if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
       // The pointer sits still while the tiles move under it, so the highlight has
       // to re-resolve — including while a drag auto-scrolls the grid. The band is
       // anchored in the content frame, so it has to be re-placed for the same
@@ -211,7 +224,7 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
       hover.refresh();
       marquee.refresh();
     },
-    [hover, marquee],
+    [hover, managerPath, marquee],
   );
 
   return { containerRef, hover, marquee, onLayout, onScroll, scrollRef, tileWidth, width };
@@ -288,6 +301,9 @@ export function FileSystemIconsView({
       onScroll={onScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
+      // Nested inside the consumer's own ScrollView — Android only scrolls a
+      // child of a scroll container when it opts into nested scrolling.
+      nestedScrollEnabled={true}
     >
       {width > 0 ? (
         <LayoutAnimationConfig key={gridKey} skipEntering={true} skipExiting={true}>

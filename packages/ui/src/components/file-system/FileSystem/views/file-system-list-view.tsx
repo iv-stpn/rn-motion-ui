@@ -21,11 +21,12 @@ import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
-import type { DragzoneAcceptEvent, DragzoneRenderState } from '../../../gestures/drag.types';
-import { refreshDragzones } from '../../../gestures/drag-store';
-import { useActiveDrag } from '../../../gestures/use-drag-store';
+import type { DragzoneAcceptEvent, DragzoneHandle } from '../../../gestures/drag.types';
+import { useDragScope } from '../../../gestures/drag-scope';
+import { refreshDragzones, shiftZoneRects } from '../../../gestures/drag-store';
+import { useActiveDrag, useDragzoneState } from '../../../gestures/use-drag-store';
 import { ThemedIcon } from '../../../icon/themed-icon';
-import { HoldContextMenu, type HoldContextMenuDragOptions } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem, type HoldItemDragOptions } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
@@ -36,9 +37,9 @@ import { type FileSystemRowInteractionReturn, useFileSystemRowInteraction } from
 import { formatByteSize, formatTimestamp } from '../logic/file-system-format';
 import type { FileSystemRow } from '../logic/file-system-rows';
 import { FS_ROW_HEIGHT, flattenFileSystemRows, toggleExpandedPath } from '../logic/file-system-rows';
-import { FS_DRAG_CONTAINER_TEST_ID, FS_OVERLAY_DROPZONE_TEST_ID, fileSystemEntryTestID } from '../logic/file-system-test-id';
+import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { useBackgroundContextMenu } from '../shell/file-system-context-menu';
-import { FileSystemDropzone } from '../shell/file-system-dropzone';
+import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,
@@ -78,7 +79,7 @@ const LIST_PADDING_TOP = 4;
  * has moved to the drop target by then, so without this the rows the gesture is
  * actually about are the only ones on screen with no mark at all.
  */
-const LIFTING_ROW_CLASS = 'bg-muted';
+const LIFTING_ROW_CLASS = 'bg-surface-contrast';
 
 /** Container-local point → row index, or null for padding / past-last-row. */
 function rowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {
@@ -135,7 +136,7 @@ function ColumnHeader({ className, label, onPress, sort, sortKey }: ColumnHeader
       <Text className={cn(isActive ? 'text-foreground' : 'text-muted-foreground')} numberOfLines={1} size="xs" weight="medium">
         {label}
       </Text>
-      {isActive ? <ThemedIcon icon={DirectionIcon} variant="secondary" size={12} /> : null}
+      {isActive ? <ThemedIcon icon={DirectionIcon} variant="ghost" size={12} /> : null}
     </Pressable>
   );
 }
@@ -197,8 +198,14 @@ type SpringLoadEffectProps = {
   folderPath: string;
   hasChildren: boolean;
   isExpanded: boolean;
-  isOver: boolean;
   onToggleExpanded: (path: string) => void;
+  /**
+   * The folder row's dragzone id, from its ref — null until the zone has mounted.
+   * The id is what lets this leaf subscribe to *its* zone's standing (via the
+   * store's per-zone cache) instead of the row reading `isOver` from a render
+   * prop, which would re-render the row body on every crossing.
+   */
+  zoneId: string | null;
 };
 
 function SpringLoadEffect({
@@ -206,9 +213,13 @@ function SpringLoadEffect({
   folderPath,
   hasChildren,
   isExpanded,
-  isOver,
   onToggleExpanded,
+  zoneId,
 }: SpringLoadEffectProps) {
+  // Per-zone standing: an unknown id reads the shared all-false object, so a row
+  // whose zone has not mounted yet simply never arms. The hook re-renders only
+  // this leaf on a crossing of this zone — never the row body.
+  const { isOver } = useDragzoneState(zoneId ?? '');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // biome-ignore lint/plugin: clearing pending timers on unmount is imperative teardown
@@ -236,7 +247,7 @@ function SpringLoadEffect({
 
 type ListRowBodyProps = {
   childCount: number | undefined;
-  dragOptions: HoldContextMenuDragOptions | undefined;
+  dragOptions: HoldItemDragOptions | undefined;
   entry: FileSystemEntry;
   handleOpenChange: (open: boolean) => void;
   handlePress: (event: GestureResponderEvent) => void;
@@ -291,7 +302,7 @@ function ListRowBody({
 
   return (
     <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: FS_ROW_HEIGHT }}>
-      <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+      <HoldItem items={menuProps.items} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ selected: isSelected }}
@@ -330,7 +341,7 @@ function ListRowBody({
         {isExpandable ? (
           <RowChevron isExpanded={isExpanded} isSelected={isActive} level={level} name={entry.name} onToggle={handleToggle} />
         ) : null}
-      </HoldContextMenu>
+      </HoldItem>
     </View>
   );
 }
@@ -364,9 +375,9 @@ type ListRowProps = {
 /**
  * Disclosure chevron, icon, name, then the metadata columns.
  *
- * Owns the hold gesture (via `HoldContextMenu`), the context menu, and the drag
+ * Owns the hold gesture (via `HoldItem`), the context menu, and the drag
  * source. No separate shell component — the drop target wraps the row directly
- * for folder entries, and the drag is handled by `HoldContextMenu dragOptions`.
+ * for folder entries, and the drag is handled by `HoldItem dragOptions`.
  */
 function ListRow({
   childCount,
@@ -397,6 +408,16 @@ function ListRow({
   });
   const dragOptions = useFileSystemDragOptions(entry, draggable);
 
+  // The dropzone's id is a runtime `useId()`, only reachable once the zone has
+  // mounted — held here so the spring-load leaf can subscribe to this row's own
+  // standing without the row body re-rendering on a crossing.
+  const zoneRef = useRef<DragzoneHandle | null>(null);
+  const [zoneId, setZoneId] = useState<string | null>(null);
+  const handleZoneRef = useCallback((node: DragzoneHandle | null) => {
+    zoneRef.current = node;
+    setZoneId(node?.getId() ?? null);
+  }, []);
+
   const body = (
     <ListRowBody
       childCount={childCount}
@@ -425,6 +446,10 @@ function ListRow({
   // an in-flight drag down.
   if (entry.kind !== 'folder') return <View style={{ height: FS_ROW_HEIGHT }}>{body}</View>;
 
+  // The row carries no indicator of its own: the drop outline is drawn once, by
+  // the drag scope's shared leaf, at the over zone's rect. Children are plain
+  // elements (not a function of the zone state), so a crossing re-renders only the
+  // zone wrapper — the row body bails on the stable element reference.
   return (
     <FileSystemDropzone
       destination={entry.path}
@@ -432,21 +457,17 @@ function ListRow({
       onDropCompleted={ensureChildren}
       onExternalDrop={onExternalDrop}
       onMove={onMove}
+      ref={handleZoneRef}
     >
-      {({ isOver }: DragzoneRenderState) => (
-        <>
-          {body}
-          {isOver ? <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info" /> : null}
-          <SpringLoadEffect
-            ensureChildren={ensureChildren}
-            folderPath={entry.path}
-            hasChildren={entry.hasChildren === true}
-            isExpanded={isExpanded}
-            isOver={isOver}
-            onToggleExpanded={onToggleExpanded}
-          />
-        </>
-      )}
+      {body}
+      <SpringLoadEffect
+        ensureChildren={ensureChildren}
+        folderPath={entry.path}
+        hasChildren={entry.hasChildren === true}
+        isExpanded={isExpanded}
+        onToggleExpanded={onToggleExpanded}
+        zoneId={zoneId}
+      />
     </FileSystemDropzone>
   );
 }
@@ -491,6 +512,9 @@ export function FileSystemListView({
 
   const activeDrag = useActiveDrag();
   const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
+  // The manager this view's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
 
   // The overlay dropzones (and the folder-row wrapper they suppress) must not
   // mount during the browser's own `dragstart` handler. `beginDrag` publishes the
@@ -657,7 +681,16 @@ export function FileSystemListView({
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
+      // The store's zone rects are window boxes from the last measure (drag
+      // start or last layout pass). A scroll moves the rows without any layout
+      // event, so without this the hit test and the shared drop indicator
+      // would keep resolving against the pre-scroll positions — the outline
+      // drifts off the folder under the pointer the moment the list moves
+      // mid-drag (auto-scroll or a wheel). Shift the cached boxes by the delta
+      // so both follow the content that actually moved.
+      const delta = offset - scrollOffsetRef.current;
       scrollOffsetRef.current = offset;
+      if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
       // Kept in React state so overlay dropzones reposition with the scroll.
       setScrollOffset(offset);
       // The pointer has not moved but the rows under it have, so the highlight has
@@ -665,7 +698,7 @@ export function FileSystemListView({
       hover.refresh();
       marquee.refresh();
     },
-    [hover, marquee],
+    [hover, managerPath, marquee],
   );
 
   const renderRow = useCallback(
@@ -735,6 +768,12 @@ export function FileSystemListView({
       renderItem={renderRow}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
+      // Nested inside the consumer's own ScrollView — Android only scrolls a
+      // child of a scroll container when it opts into nested scrolling.
+      nestedScrollEnabled={true}
+      // Off: Android's default true wrongly detaches visible cells when the
+      // list is nested inside a ScrollView.
+      removeClippedSubviews={false}
     />
   );
 
@@ -792,14 +831,10 @@ export function FileSystemListView({
               portal={true}
               style={{ height, left: 0, position: 'absolute', right: 0, top }}
             >
-              {({ isOver }: DragzoneRenderState) =>
-                isOver ? (
-                  <View
-                    className="pointer-events-none absolute inset-0 z-[3] rounded-md border-2 border-info"
-                    testID={FS_OVERLAY_DROPZONE_TEST_ID}
-                  />
-                ) : null
-              }
+              {/* No outline here either: the drag scope's shared leaf paints it
+                  at this zone's rect, and carries the overlay test id when the
+                  pointer is over a portal zone — the same handle the previous
+                  per-overlay outline exposed to the drag stories. */}
             </FileSystemDropzone>
           );
         })}

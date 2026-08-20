@@ -1,8 +1,28 @@
 # Contributing to rn-motion-ui
 
-> This file currently covers **accessibility conventions** and **releases**. The
-> full new-component checklist (stories, testIDs, tokens, exports) is tracked
-> separately in `.agent/IMPROVEMENT_PLAN.md` §3.1 and will land here.
+> This file currently covers **developer tooling** (repowise), **accessibility
+> conventions**, and **releases**. The full new-component checklist (stories,
+> testIDs, tokens, exports) is tracked separately in
+> `.agent/IMPROVEMENT_PLAN.md` §3.1 and will land here.
+
+## Repowise (optional codebase index)
+
+Repowise builds a local index of the repo — dependency graph, code health, git
+hotspots, dead code — that agents and editors query instead of re-reading source.
+It is optional, local, and keyless: no API key, no LLM calls, no network.
+
+```bash
+pip install repowise            # requires Python 3.11+
+repowise init --yes --no-prose  # build the index, zero LLM spend
+```
+
+`--no-prose` guarantees no model is called; the structural index (graph, health,
+git, dead code) is deterministic. After edits, `repowise update` re-syncs
+incrementally.
+
+The index and its machine-specific editor wiring — `.repowise/`, `.mcp.json`,
+`.vscode/mcp.json` — are gitignored and regenerated per machine by
+`repowise init`, so a contributor never commits another machine's absolute path.
 
 ## Releases
 

@@ -251,6 +251,24 @@ export type FileSystemStatusState = {
   clearSelection: () => void;
 };
 
+/** One level of the breadcrumb trail passed to {@link FileSystemProps.renderBreadcrumbs}. */
+export type FileSystemBreadcrumb = {
+  /** Folder path — what `navigateTo` takes (`''` for the root). */
+  id: string;
+  /** Display name for this level. */
+  label: string;
+};
+
+/** State snapshot passed to {@link FileSystemProps.renderBreadcrumbs}. */
+export type FileSystemBreadcrumbsState = {
+  /** Folder prefix currently open (`''` at the root). */
+  currentPath: string;
+  /** The trail, outermost level first — `id` is what `navigateTo` takes. */
+  crumbs: FileSystemBreadcrumb[];
+  /** Navigate to a folder path (a crumb's `id`, or `''` for the root). */
+  navigateTo: (folderPath: string) => void;
+};
+
 /**
  * State snapshot passed to {@link FileSystemProps.renderBody}. Unlike the header
  * and footer slots this one wraps rather than replaces: `content` is the file
@@ -386,8 +404,10 @@ export type FileSystemProps = {
    *
    * `'multiple'` turns on the gestures a file browser is expected to have:
    *
-   * - **Ctrl-click** (Cmd-click on macOS), or a **long-press** on touch: toggle
-   *   the entry under the pointer in or out of the selection.
+   * - **Ctrl-click** (Cmd-click on macOS): toggle the entry under the pointer in
+   *   or out of the selection. A **long-press** on touch only ever JOINS: it
+   *   adds the held entry and never removes one, so re-holding a selected entry
+   *   keeps it and a drag lifted off it carries the whole selection again.
    * - **Shift-click**: take the contiguous run from the anchor — the last entry
    *   picked without Shift — to the entry pressed, in the order the surface you
    *   pressed lays its entries out. Shift-clicking around grows and shrinks one
@@ -518,6 +538,16 @@ export type FileSystemProps = {
    */
   renderHeader?: (state: FileSystemHeaderState & { testID?: string }) => ReactNode;
   /**
+   * Replace the built-in breadcrumb trail with your own. Receives the trail
+   * (`crumbs`, outermost level first) and `navigateTo`, so each level wires to
+   * the same path logic the default trail uses. The built-in trail hides itself
+   * at the root — check `state.currentPath` to match that, or render always to
+   * keep the root named.
+   *
+   * When provided, `breadcrumbsClassName` is ignored.
+   */
+  renderBreadcrumbs?: (state: FileSystemBreadcrumbsState & { testID?: string }) => ReactNode;
+  /**
    * Render a custom filter / search / sort bar between the breadcrumbs and the
    * file area. Receives every search, sort and filter action so your bar drives
    * the same built-in filtering logic without re-implementing it.
@@ -591,6 +621,8 @@ export type FileSystemProps = {
   className?: string;
   /** Extra UniWind classes merged onto the built-in header's root view. Ignored when `renderHeader` is provided. */
   headerClassName?: string;
+  /** Extra UniWind classes merged onto the built-in breadcrumbs row's root view. Ignored when `renderBreadcrumbs` is provided. */
+  breadcrumbsClassName?: string;
   /** Extra UniWind classes merged onto the file-area root view. */
   bodyClassName?: string;
   /** Extra UniWind classes merged onto the built-in footer's root view. Ignored when `renderFooter` is provided. */

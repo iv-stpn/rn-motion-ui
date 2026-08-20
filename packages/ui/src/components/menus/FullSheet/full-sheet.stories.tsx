@@ -59,7 +59,7 @@ function SheetBody({ long = false, padded = false, centered = false, onClose }: 
             </Text>
           ))
         : null}
-      <Button onPress={onClose} size="sm" style={{ alignSelf: centered ? 'center' : 'flex-start' }} variant="secondary">
+      <Button onPress={onClose} size="sm" style={{ alignSelf: centered ? 'center' : 'flex-start' }} variant="inverse">
         {CLOSE_LABEL}
       </Button>
     </View>

@@ -11,7 +11,6 @@ import {
   Platform,
   ScrollView,
   type StyleProp,
-  Text,
   Vibration,
   View,
   type ViewProps,
@@ -32,6 +31,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import type { SurfaceLevel } from '../../../lib/elevated';
 import { Card } from '../../display/Card/card';
+import { Text } from '../../typography/Text/text';
 
 // RN vs web: the reference wheel is a CSS 3D drum — rows seated on a cylinder via
 // `translateZ`, the whole list spun with `rotateX` — driven by a hand-rolled
@@ -220,7 +220,8 @@ function WheelPickerRow({
       <Text
         accessibilityRole="button"
         onPress={onPress}
-        className="text-center font-medium text-foreground"
+        weight="medium"
+        className="text-center text-foreground"
         style={{ height: itemHeight, lineHeight: itemHeight }}
         testID={testID}
       >
@@ -703,9 +704,8 @@ export function WheelPicker({
                 key={v}
                 accessibilityRole="button"
                 onPress={disabled ? undefined : () => emit(options.indexOf(option))}
-                className={
-                  v === currentValue ? 'text-center font-medium text-foreground' : 'text-center font-medium text-muted-foreground'
-                }
+                weight="medium"
+                className={v === currentValue ? 'text-center text-foreground' : 'text-center text-muted-foreground'}
                 style={{ height: itemHeight, lineHeight: itemHeight }}
                 testID={`${testID ?? 'wheel-picker'}-option-${v}`}
               >

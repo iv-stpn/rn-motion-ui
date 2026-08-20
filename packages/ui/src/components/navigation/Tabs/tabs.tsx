@@ -2,15 +2,7 @@
 
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import {
-  type LayoutRectangle,
-  type NativeSyntheticEvent,
-  Pressable,
-  type StyleProp,
-  Text,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { usePressState } from '../../../hooks/use-press-state';
@@ -20,6 +12,7 @@ import { SURFACE_CLASSNAME } from '../../../lib/elevated';
 import { H_INTERACTIVE, INTERACTIVE_RADIUS, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../../theme/motion';
+import { Text } from '../../typography/Text/text';
 
 const TAB_INDICATOR_SPRING = { type: 'spring' as const, stiffness: 170, damping: 24, mass: 1.2 };
 
@@ -93,9 +86,9 @@ function useTabs() {
 const list = cva('flex-row items-center', {
   variants: {
     variant: {
-      pill: 'gap-1 rounded-full bg-muted p-1',
+      pill: 'gap-1 rounded-full bg-surface-contrast p-1',
       underline: 'gap-1 border-b border-border',
-      segment: 'gap-0 rounded-interactive bg-muted p-0.5',
+      segment: 'gap-0 rounded-interactive bg-surface-contrast p-1',
     },
   },
   defaultVariants: { variant: 'pill' },
@@ -461,11 +454,8 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
       testID={testID}
     >
       <Text
-        className={
-          highlighted
-            ? `font-medium text-foreground ${TEXT_INTERACTIVE.md}`
-            : `font-medium text-muted-foreground ${TEXT_INTERACTIVE.md}`
-        }
+        weight="medium"
+        className={highlighted ? `text-foreground ${TEXT_INTERACTIVE.md}` : `text-muted-foreground ${TEXT_INTERACTIVE.md}`}
       >
         {children}
       </Text>

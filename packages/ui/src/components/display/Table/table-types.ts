@@ -22,6 +22,13 @@ export type TableColumn<T> = {
    * (left in LTR, right in RTL).
    */
   align?: 'left' | 'center' | 'right';
+  /**
+   * Floor for this column's resolved width, in pixels. When the column would
+   * otherwise resolve narrower than this — a `fr` column squeezed by a narrow
+   * container, or a fixed `width` smaller than the floor — it is clamped up to
+   * `minWidth`. That can push the total past the container width, which turns on
+   * horizontal scroll instead of squeezing the column.
+   */
   minWidth?: number;
   /** Width of the skeleton bar shown for this cell during initial load. Defaults to `'60%'`. */
   skeletonWidth?: DimensionValue;

@@ -42,7 +42,7 @@ export function useFileSystemRowInteraction({
 }: FileSystemRowInteractionOptions): FileSystemRowInteractionReturn {
   const { menuProps } = useContextMenu(entry, getContextMenuActions, onContextMenuAction);
 
-  // A hold (menu-open or multi-select toggle) must not also register as a tap.
+  // A hold (menu-open or multi-select join) must not also register as a tap.
   const heldRef = useRef(false);
   const onOpenChangeRef = useRef(menuProps.onOpenChange);
   onOpenChangeRef.current = menuProps.onOpenChange;
@@ -66,7 +66,7 @@ export function useFileSystemRowInteraction({
     heldRef.current = false;
   }, []);
 
-  // In multi-select mode, hold toggles selection instead of opening the menu.
+  // In multi-select mode, hold JOINS the selection instead of opening the menu.
   const onHoldAction = useMemo(
     () =>
       onSelectLongPress

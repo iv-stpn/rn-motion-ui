@@ -207,8 +207,8 @@ describe('cssColorToOklch', () => {
 
 describe('compositeOver', () => {
   it('flattens a translucent layer onto its backdrop', () => {
-    // The 6% white lift the glossy key paints over the dark page — the flattened
-    // colour its derived recipe measures, rather than the translucent paint.
+    // A 6% white lift over a dark page — the flattened colour a translucent
+    // overlay measures, rather than the translucent paint itself.
     expect(compositeOver('rgba(255, 255, 255, 0.06)', 'rgb(22, 23, 25)')).toBe('rgb(36, 37, 39)');
     expect(compositeOver('rgba(255, 255, 255, 0.72)', 'rgb(245, 245, 245)')).toBe('rgb(252, 252, 252)');
   });

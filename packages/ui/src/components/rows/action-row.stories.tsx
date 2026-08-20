@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { NotificationLine as Notification } from 'rn-motion-ui-icons/icons/notification-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { fn } from 'storybook/test';
-import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { Choice, Code, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { ActionRow, type ItemRowSize, type ItemRowVariant } from './action-row';
 
 const onPress = fn();
@@ -43,7 +43,7 @@ function ActionRowPlayground() {
         />
       </View>
       <Note>
-        The chevron is shown by default when <code>rightAdornment</code> is omitted. Toggle Chevron off to pass <code>null</code>,
+        The chevron is shown by default when <Code>rightAdornment</Code> is omitted. Toggle Chevron off to pass <Code>null</Code>,
         hiding the trailing slot. Hover or press the row to see the surface overlays.
       </Note>
     </Playground>
@@ -97,7 +97,7 @@ function CustomRightAdornmentStory() {
         />
       </View>
       <Note>
-        The first row uses the default chevron. The second passes <code>rightAdornment={'{null}'}</code> to hide it. The third
+        The first row uses the default chevron. The second passes <Code>rightAdornment={'{null}'}</Code> to hide it. The third
         shows a disabled row — it dims and press is suppressed.
       </Note>
     </Playground>

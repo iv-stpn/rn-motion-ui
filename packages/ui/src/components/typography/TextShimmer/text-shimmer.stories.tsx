@@ -4,7 +4,6 @@ import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { Action, Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { useInterval } from '../../../hooks/use-interval';
-import { cn } from '../../../lib/cn';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../Text/text';
 import { TextShimmer } from './text-shimmer';
@@ -18,7 +17,8 @@ const meta = {
     duration: 2.5,
     // No `text-*` colour here: the sweep writes colour as an animated style, so
     // `color` / `highlightColor` own it and a class would be overridden anyway.
-    className: 'text-2xl font-semibold',
+    className: 'text-2xl',
+    weight: 'semibold',
   },
   argTypes: {
     duration: { control: { type: 'range', min: 0.5, max: 5, step: 0.25 } },
@@ -68,7 +68,7 @@ function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
       </ControlCard>
 
       <View className="min-h-[44px] justify-center">
-        <TextShimmer {...args} className={cn('font-semibold', sizeClass)} duration={duration}>
+        <TextShimmer {...args} className={sizeClass} duration={duration}>
           {text}
         </TextShimmer>
       </View>
@@ -77,7 +77,7 @@ function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
         <Variants direction="column">
           {DURATIONS.map((option) => (
             <Sample key={option.value} label={option.label}>
-              <TextShimmer {...args} className="font-medium text-lg" duration={Number(option.value)}>
+              <TextShimmer {...args} weight="medium" className="text-lg" duration={Number(option.value)}>
                 {DEFAULT_TEXT}
               </TextShimmer>
             </Sample>
@@ -90,14 +90,15 @@ function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
       <Section title="Sweep colours">
         <Variants direction="column">
           <Sample label="default (muted → foreground)">
-            <TextShimmer {...args} className="font-medium text-lg" duration={duration}>
+            <TextShimmer {...args} weight="medium" className="text-lg" duration={duration}>
               {DEFAULT_TEXT}
             </TextShimmer>
           </Sample>
           <Sample label="tinted (muted → info)">
             <TextShimmer
               {...args}
-              className="font-medium text-lg"
+              weight="medium"
+              className="text-lg"
               color={mutedForeground}
               duration={duration}
               highlightColor={info}
@@ -111,8 +112,10 @@ function TextShimmerPlayground(args: ComponentProps<typeof TextShimmer>) {
       {/* Non-string children can't be split per character, so they render static —
           the documented fallback rather than a broken shimmer. */}
       <Section title="Non-string child (renders static)">
-        <TextShimmer {...args} className="font-medium text-lg" duration={duration}>
-          <Text className="font-medium text-foreground text-lg">{DEFAULT_TEXT}</Text>
+        <TextShimmer {...args} weight="medium" className="text-lg" duration={duration}>
+          <Text weight="medium" className="text-foreground text-lg">
+            {DEFAULT_TEXT}
+          </Text>
         </TextShimmer>
       </Section>
     </Playground>

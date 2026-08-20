@@ -23,19 +23,28 @@ import type {
   DragTransfer,
   DragzoneAcceptEvent,
   DragzoneDropEvent,
+  DragzoneEntry,
   DragzoneHandle,
   DragzoneRenderState,
 } from '../../../gestures/drag.types';
 import { acceptsFileSystemDrop, movableFileSystemSources, readFileSystemDragItems } from '../logic/file-system-drag';
 import type { FileSystemExternalDropEvent, FileSystemMoveEvent } from '../types/file-system.types';
 
-// The `<Dragzone>` ids are runtime `useId()`s, opaque to the views. The drop hint
-// (the "Move into …" chip that follows the drag ghost) needs to turn the store's
-// `overZoneId` back into a folder, so every dropzone publishes its mapping here.
-const zoneDestinations = new Map<string, string>();
+// The `<Dragzone>` ids are runtime `useId()`s, opaque to the views. Two overlays
+// need to turn the store's `overZoneId` back into something meaningful:
+//   • the drop hint (the "Move into …" chip that follows the drag ghost) needs the
+//     destination folder;
+//   • the drop indicator (the info outline painted at the over zone's rect) needs
+//     to know *what kind* of zone it is — a portal overlay is a drag-only surface
+//     and carries the overlay test id, a background fallback paints its own ring.
+// So every dropzone publishes its mapping here: the destination, and the two flags
+// that classify it.
+type ZoneRegistration = { background: boolean; destination: string; portal: boolean };
 
-export function registerZoneDestination(zoneId: string, destination: string): void {
-  zoneDestinations.set(zoneId, destination);
+const zoneDestinations = new Map<string, ZoneRegistration>();
+
+export function registerZoneDestination(zoneId: string, destination: string, portal: boolean, background: boolean): void {
+  zoneDestinations.set(zoneId, { background, destination, portal });
 }
 
 export function unregisterZoneDestination(zoneId: string): void {
@@ -44,7 +53,36 @@ export function unregisterZoneDestination(zoneId: string): void {
 
 /** The destination folder a zone id accepts drops for, or `undefined` when the zone is gone. */
 export function zoneDestinationFor(zoneId: string): string | undefined {
-  return zoneDestinations.get(zoneId);
+  return zoneDestinations.get(zoneId)?.destination;
+}
+
+/**
+ * Whether the zone is a portal (drag-only) surface — the expanded-folder overlays
+ * of the list view. The drop indicator draws these with the overlay test id, the
+ * same handle the previous per-overlay outlines exposed.
+ */
+export function isPortalZone(zoneId: string): boolean {
+  return zoneDestinations.get(zoneId)?.portal ?? false;
+}
+
+/**
+ * Whether the zone is a background fallback (the file area's own zone, a column
+ * pane). These paint their own drop surface — they have delay and external-drop
+ * handling a single shared indicator cannot express — so the indicator skips them.
+ */
+export function isBackgroundZone(zoneId: string): boolean {
+  return zoneDestinations.get(zoneId)?.background ?? false;
+}
+
+/**
+ * The predicate the views hand `shiftZoneRects` so a scroll shifts the zones
+ * that moved with the content (rows, tiles, overlays) and leaves the ones that
+ * did not — the body and pane fallbacks wrap the scrollable instead of living
+ * inside it, so their cached window rects are already correct and must not be
+ * re-based onto a scroll delta.
+ */
+export function isZoneInScrollableContent(entry: DragzoneEntry): boolean {
+  return !isBackgroundZone(entry.id);
 }
 
 /**
@@ -67,6 +105,13 @@ function isForeignPayload(drag: ActiveDrag | null, transfer: DragTransfer): bool
 }
 
 export type FileSystemDropzoneProps = {
+  /**
+   * When true, this zone is a background fallback — the whole file area, a column
+   * pane. Such a zone paints its own drop surface (it has delay and external-drop
+   * handling a shared indicator cannot express), so the container-level drop
+   * indicator skips it.
+   */
+  background?: boolean;
   children?: ReactNode | ((state: DragzoneRenderState) => ReactNode);
   className?: string;
   /** Folder the drop lands in. `''` is the implicit root. */
@@ -118,6 +163,7 @@ export type FileSystemDropzoneProps = {
  */
 export function FileSystemDropzone({
   additionalAccepts,
+  background = false,
   children,
   className,
   destination,
@@ -200,9 +246,9 @@ export function FileSystemDropzone({
   useEffect(() => {
     const zoneId = zoneRef.current?.getId();
     if (zoneId === undefined) return;
-    registerZoneDestination(zoneId, destination);
+    registerZoneDestination(zoneId, destination, portal, background);
     return () => unregisterZoneDestination(zoneId);
-  }, [destination]);
+  }, [background, destination, portal]);
 
   return (
     <Dragzone

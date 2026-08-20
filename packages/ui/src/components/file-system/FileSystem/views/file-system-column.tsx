@@ -14,9 +14,12 @@ import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../../lib/cn';
 import { useThemeColors } from '../../../../theme/use-theme-color';
 import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
-import type { DragzoneRenderState } from '../../../gestures/drag.types';
+import type { DragRect, DragzoneEntry, DragzoneRenderState } from '../../../gestures/drag.types';
+import { rectsIntersect } from '../../../gestures/drag-geometry';
+import { useDragScope } from '../../../gestures/drag-scope';
+import { shiftZoneRects } from '../../../gestures/drag-store';
 import { useActiveDrag } from '../../../gestures/use-drag-store';
-import { HoldContextMenu } from '../../../menus/HoldContextMenu/hold-context-menu';
+import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
@@ -26,7 +29,7 @@ import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-intera
 import { filePreviewUrls, folderHasChildren } from '../logic/file-system-index';
 import type { FileSystemSelectionMode } from '../logic/file-system-selection';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from '../logic/file-system-test-id';
-import { FileSystemDropzone } from '../shell/file-system-dropzone';
+import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,
@@ -95,7 +98,7 @@ function columnRowsInRect(rect: FileSystemMarqueeRect, entries: FileSystemEntry[
  * The tint a row in flight keeps for the length of the drag — see the list view's
  * note. Every row the drag carries takes it, across every pane it spans.
  */
-const LIFTING_ROW_CLASS = 'bg-muted';
+const LIFTING_ROW_CLASS = 'bg-surface-contrast';
 
 /**
  * The mark over a whole pane a release would land in. Absolutely positioned, so it
@@ -164,7 +167,7 @@ function ColumnRowGlyph({
 /**
  * Renders its own drag source and drop target rather than delegating to a shell:
  * the hold gesture, context menu, and multi-drag payload are resolved here and
- * forwarded to `HoldContextMenu dragOptions`.
+ * forwarded to `HoldItem dragOptions`.
  *
  * The row gap (`marginBottom`) lives on the outermost element so the drop zone's
  * box matches the row exactly — a zone that included the gap would claim a pointer
@@ -206,7 +209,7 @@ function ColumnRow({
     return (
       // No `marginBottom` here: see the comment on the outermost element below.
       <View className={cn(isLifting && LIFTING_ROW_CLASS)} style={{ height: COLUMN_ROW_HEIGHT }}>
-        <HoldContextMenu {...menuProps} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+        <HoldItem items={menuProps.items} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
           <Pressable
             accessibilityLabel={entry.name}
             accessibilityRole="button"
@@ -234,7 +237,7 @@ function ColumnRow({
               <ChevronRight color={isActive ? colors.white : colors['muted-foreground']} size={COLUMN_CHEVRON_SIZE} />
             ) : null}
           </Pressable>
-        </HoldContextMenu>
+        </HoldItem>
       </View>
     );
   };
@@ -329,6 +332,28 @@ function FileSystemColumnImpl({
 
   const activeDrag = useActiveDrag();
   const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
+  // The manager this pane's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
+  // This pane's own box, measured once per drag. The scroll correction below
+  // applies only to zones INSIDE this pane — a sibling column's rows move with
+  // that column's scroll, not this one's, and the pane/body fallbacks do not
+  // move at all — so the predicate needs the pane's frame to test against.
+  const viewportRef = useRef<DragRect | null>(null);
+  // biome-ignore lint/plugin: measuring the pane once per drag for a scroll correction is a layout side-effect, not derived render state
+  useEffect(() => {
+    if (activeDrag === null) {
+      viewportRef.current = null;
+      return;
+    }
+    containerRef.current?.measureInWindow((x, y, width, height) => {
+      viewportRef.current = { height, width, x, y };
+    });
+  }, [activeDrag]);
+  const isInThisPane = useCallback((entry: DragzoneEntry) => {
+    const viewport = viewportRef.current;
+    return isZoneInScrollableContent(entry) && viewport !== null && entry.rect !== null && rectsIntersect(entry.rect, viewport);
+  }, []);
 
   const hover = useFileSystemRowHover({
     containerRef,
@@ -359,11 +384,20 @@ function FileSystemColumnImpl({
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+      const offset = event.nativeEvent.contentOffset.y;
+      // Same correction as the desktop list view: the store's cached zone rects
+      // are window boxes from the last measure, and a scroll moves this pane's
+      // rows without any layout event — the hit test and the shared drop
+      // indicator would resolve against pre-scroll positions mid-drag. Scoped to
+      // the zones inside THIS pane's box so a sibling column's rows (and the
+      // static fallbacks) keep their own correct boxes.
+      const delta = offset - scrollOffsetRef.current;
+      scrollOffsetRef.current = offset;
+      if (delta !== 0) shiftZoneRects(0, delta, managerPath, isInThisPane);
       hover.refresh();
       marquee.refresh();
     },
-    [hover, marquee],
+    [hover, isInThisPane, managerPath, marquee],
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedPaths is the trigger; not read in the body but must be in the deps to re-fire on selection change
@@ -446,6 +480,12 @@ function FileSystemColumnImpl({
         renderItem={renderRow}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        // Nested inside the consumer's own ScrollView — Android only scrolls a
+        // child of a scroll container when it opts into nested scrolling.
+        nestedScrollEnabled={true}
+        // Off: Android's default true wrongly detaches visible cells when the
+        // list is nested inside a ScrollView.
+        removeClippedSubviews={false}
       />
       <FileSystemMarqueeBox controller={marquee} />
     </View>
@@ -469,6 +509,7 @@ function FileSystemColumnImpl({
           level — the columns view has no single "current folder", so the body-level
           zone the other views fall back to would name the wrong one here. */}
       <FileSystemDropzone
+        background={true}
         className="min-h-0 flex-1"
         destination={folderPath}
         disabled={!draggable}

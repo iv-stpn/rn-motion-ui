@@ -51,7 +51,7 @@ function SheetBody({ long = false, full = false, onClose }: SheetBodyProps) {
             </Text>
           ))
         : null}
-      <Button onPress={onClose} variant="secondary">
+      <Button onPress={onClose} variant="inverse">
         {DISMISS_LABEL}
       </Button>
     </View>

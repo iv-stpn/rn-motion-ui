@@ -1,20 +1,13 @@
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
-import {
-  type LayoutChangeEvent,
-  type LayoutRectangle,
-  Pressable,
-  type StyleProp,
-  Text,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { type LayoutChangeEvent, type LayoutRectangle, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../../theme/motion';
+import { Text } from '../../typography/Text/text';
 
 type RadioCtx = {
   value: string;

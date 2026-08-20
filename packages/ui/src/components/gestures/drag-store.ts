@@ -107,6 +107,17 @@ let _settling = false;
 
 const listeners = new Set<() => void>();
 const moveListeners = new Set<(point: DragPoint) => void>();
+/** Woken when a scroll shifted every zone's cached rect under a live drag — the signal that an overlay painting from `getZoneRect` must re-paint. */
+const shiftListeners = new Set<() => void>();
+
+/** Whether `path` sits under `prefix` in the manager tree — the zone-owns check. */
+function pathIsUnder(path: readonly string[], prefix: readonly string[]): boolean {
+  if (path.length < prefix.length) return false;
+  for (let index = 0; index < prefix.length; index += 1) {
+    if (path[index] !== prefix[index]) return false;
+  }
+  return true;
+}
 
 function isIsolating(managerId: string): boolean {
   return managers.get(managerId)?.getConfig().isolate ?? false;
@@ -142,15 +153,16 @@ function publish() {
   const eligible = new Set(session?.eligible ?? NO_IDS);
   const overZoneId = session?.overZoneId ?? null;
   for (const entry of zonesList) {
-    const next: DragzoneStanding = { drag, isEligible: eligible.has(entry.id), isOver: overZoneId === entry.id };
+    const isEligible = eligible.has(entry.id);
+    const isOver = overZoneId === entry.id;
     const previous = entry.standing;
-    if (
-      previous === undefined ||
-      previous.drag !== next.drag ||
-      previous.isEligible !== next.isEligible ||
-      previous.isOver !== next.isOver
-    )
-      entry.standing = next;
+    // Only a zone whose own fields changed gets a fresh object: identity is
+    // what its subscriber compares, so an unchanged zone must keep pointing at
+    // the object it has. Building the object inside the guard also skips the
+    // allocation for every untouched zone — a crossing publishes to the whole
+    // tree, and on a large row list that is most of them.
+    if (previous === undefined || previous.drag !== drag || previous.isEligible !== isEligible || previous.isOver !== isOver)
+      entry.standing = { drag, isEligible, isOver };
   }
   for (const listener of listeners) listener();
 }
@@ -555,6 +567,74 @@ export function getZoneStanding(zoneId: string): DragzoneStanding {
 }
 
 /**
+ * A zone's last measured window rect, or `null` when it has not registered or
+ * not measured yet.
+ *
+ * This is the same rect the store's own hit test resolves against, so an
+ * overlay reading it (the file system's drop indicator) paints exactly where a
+ * release would land — it can never disagree with the store about which box the
+ * pointer is in.
+ */
+export function getZoneRect(zoneId: string): DragRect | null {
+  return zones.get(zoneId)?.rect ?? null;
+}
+
+/**
+ * The manager path a zone registered under, or `null` when it has not registered.
+ *
+ * The drop indicator uses it to tell its own instance's zones from another
+ * `FileSystem`'s on the same page: the store is tree-wide, so `overZoneId` can
+ * name a zone this component does not own, and painting an outline for it at its
+ * rect would ghost a drop target into a frame where nothing can drop.
+ */
+export function getZoneManagerPath(zoneId: string): readonly string[] | null {
+  return zones.get(zoneId)?.managerPath ?? null;
+}
+
+/**
+ * Shift the cached rects of zones under `prefix` by a scroll delta, and
+ * re-resolve the drop target afterwards.
+ *
+ * A zone measures its box in window coordinates, and a scrollable moving its
+ * content changes those coordinates without firing any layout event — the
+ * rects on file would go stale the moment a list scrolled during a drag, and
+ * both the store's hit test and anything painting from `getZoneRect` (the
+ * shared drop indicator) would compute against pre-scroll positions. The views
+ * call this from their own `onScroll` with the *delta* between consecutive
+ * offsets, so the boxes follow the content that actually moved.
+ *
+ * Pure arithmetic on cached boxes — no DOM reads, no measure round-trips — and
+ * only zones under `prefix` shift, so a second FileSystem's zones on the same
+ * page are untouched. `shouldShift` narrows it further where one manager hosts
+ * several scrollables (a columns view's panes): a caller whose zones live in
+ * the scrolling content passes the background-exclusion predicate, and a
+ * multi-pane caller adds a box test so a sibling pane's zones do not move with
+ * this one's scroll.
+ *
+ * Re-resolves the current target the same way `refreshDragzones` does: a
+ * stationary pointer with moved content is a crossing no `moveDrag` will ever
+ * report, and it is the shift that must name the new winner.
+ */
+export function shiftZoneRects(
+  dx: number,
+  dy: number,
+  prefix: readonly string[],
+  shouldShift?: (entry: DragzoneEntry) => boolean,
+): void {
+  if (session === null || (dx === 0 && dy === 0)) return;
+  for (const entry of zonesList) {
+    if (entry.rect !== null && pathIsUnder(entry.managerPath, prefix) && (shouldShift === undefined || shouldShift(entry)))
+      entry.rect = { ...entry.rect, x: entry.rect.x - dx, y: entry.rect.y - dy };
+  }
+  for (const listener of shiftListeners) listener();
+  const resolved = targetAt(session.point);
+  if (resolved !== null && resolved.id !== session.overZoneId)
+    reportZoneMove({ drag: session.drag, point: session.point, previousId: session.overZoneId, target: resolved });
+  recomputeEligible();
+  publish();
+}
+
+/**
  * Subscribe to render-visible drag state: a drag starting or ending, the pointer
  * crossing a zone edge, the eligible set changing. Pair with `getDragSnapshot` in
  * `useSyncExternalStore`.
@@ -576,6 +656,19 @@ export function subscribeDragMove(listener: (point: DragPoint) => void): () => v
   moveListeners.add(listener);
   return () => {
     moveListeners.delete(listener);
+  };
+}
+
+/**
+ * Subscribe to zone-rect shifts — a scrollable moving its content under a live
+ * drag. Fired once per `shiftZoneRects` call, before the re-resolve and
+ * publish, so a subscriber (the shared drop indicator) can re-read the shifted
+ * rect and re-paint at the position the content actually moved to.
+ */
+export function subscribeDragShift(listener: () => void): () => void {
+  shiftListeners.add(listener);
+  return () => {
+    shiftListeners.delete(listener);
   };
 }
 
@@ -653,4 +746,5 @@ export function resetDragStore(): void {
   _settling = false;
   listeners.clear();
   moveListeners.clear();
+  shiftListeners.clear();
 }

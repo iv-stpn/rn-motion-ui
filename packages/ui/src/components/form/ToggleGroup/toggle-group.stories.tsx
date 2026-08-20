@@ -9,9 +9,9 @@ const meta = {
   title: 'Form/ToggleGroup',
   component: ToggleGroup,
   parameters: { layout: 'centered' },
-  args: { variant: 'bordered', shape: 'pill', orientation: 'horizontal', size: 'md' },
+  args: { containerVariant: 'bordered', shape: 'pill', orientation: 'horizontal', size: 'md' },
   argTypes: {
-    variant: { control: 'select', options: ['bordered', 'connected'] },
+    containerVariant: { control: 'select', options: ['bordered', 'connected'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
     orientation: { control: 'select', options: ['horizontal', 'vertical'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
@@ -20,7 +20,7 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const VARIANTS = ['bordered', 'connected'] as const;
+const CONTAINER_VARIANTS = ['bordered', 'connected'] as const;
 const SHAPES = ['rounded', 'pill'] as const;
 const ORIENTATIONS = ['horizontal', 'vertical'] as const;
 const SIZES = ['sm', 'md', 'lg'] as const;
@@ -33,7 +33,7 @@ const OPTIONS = [
 ];
 
 function ToggleGroupPlayground() {
-  const [variant, setVariant] = useState<(typeof VARIANTS)[number]>('bordered');
+  const [containerVariant, setContainerVariant] = useState<(typeof CONTAINER_VARIANTS)[number]>('bordered');
   const [shape, setShape] = useState<(typeof SHAPES)[number]>('pill');
   const [orientation, setOrientation] = useState<(typeof ORIENTATIONS)[number]>('horizontal');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
@@ -42,7 +42,7 @@ function ToggleGroupPlayground() {
   return (
     <Playground>
       <ControlCard title="Options">
-        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Choice label="Container variant" onChange={setContainerVariant} options={CONTAINER_VARIANTS} value={containerVariant} />
         <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
@@ -50,7 +50,7 @@ function ToggleGroupPlayground() {
 
       <View className="flex-row items-center gap-4">
         <ToggleGroup
-          variant={variant}
+          containerVariant={containerVariant}
           shape={shape}
           orientation={orientation}
           size={size}
@@ -61,12 +61,12 @@ function ToggleGroupPlayground() {
       </View>
 
       <View className="h-3" />
-      <Section title="Variant & Shape">
+      <Section title="Container variant & Shape">
         <Variants>
-          {VARIANTS.map((v) =>
+          {CONTAINER_VARIANTS.map((v) =>
             SHAPES.map((s) => (
               <Sample key={`${v}-${s}`} label={`${v} / ${s}`}>
-                <ToggleGroup variant={v} shape={s} orientation="horizontal" size="md" value="center" items={OPTIONS} />
+                <ToggleGroup containerVariant={v} shape={s} orientation="horizontal" size="md" value="center" items={OPTIONS} />
               </Sample>
             )),
           )}
@@ -77,7 +77,14 @@ function ToggleGroupPlayground() {
         <Variants align="center">
           {SIZES.map((name) => (
             <Sample key={name} label={SIZE_LABELS[name]}>
-              <ToggleGroup variant={variant} shape={shape} orientation="horizontal" size={name} value="center" items={OPTIONS} />
+              <ToggleGroup
+                containerVariant={containerVariant}
+                shape={shape}
+                orientation="horizontal"
+                size={name}
+                value="center"
+                items={OPTIONS}
+              />
             </Sample>
           ))}
         </Variants>
@@ -88,7 +95,7 @@ function ToggleGroupPlayground() {
 
 export default meta;
 
-/** Drive the variant, shape, orientation, size, and selected value with the controls, or browse the rows below. */
+/** Drive the container variant, shape, orientation, size, and selected value with the controls, or browse the rows below. */
 export const Interactive: Story = {
   args: { items: OPTIONS },
   render: () => <ToggleGroupPlayground />,
@@ -99,7 +106,7 @@ export const BorderedRounded: Story = {
   args: { items: OPTIONS },
   render: () => (
     <ToggleGroup
-      variant="bordered"
+      containerVariant="bordered"
       shape="rounded"
       orientation="horizontal"
       size="md"
@@ -127,7 +134,7 @@ export const BorderedPill: Story = {
   args: { items: OPTIONS },
   render: () => (
     <ToggleGroup
-      variant="bordered"
+      containerVariant="bordered"
       shape="pill"
       orientation="horizontal"
       size="md"
@@ -153,7 +160,7 @@ export const ConnectedRounded: Story = {
   args: { items: OPTIONS },
   render: () => (
     <ToggleGroup
-      variant="connected"
+      containerVariant="connected"
       shape="rounded"
       orientation="horizontal"
       size="md"
@@ -182,7 +189,7 @@ export const ConnectedPill: Story = {
   args: { items: OPTIONS },
   render: () => (
     <ToggleGroup
-      variant="connected"
+      containerVariant="connected"
       shape="pill"
       orientation="horizontal"
       size="md"
@@ -212,7 +219,7 @@ export const Vertical: Story = {
   render: () => (
     <View className="w-50">
       <ToggleGroup
-        variant="bordered"
+        containerVariant="bordered"
         shape="rounded"
         orientation="vertical"
         size="md"

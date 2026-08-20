@@ -8,7 +8,7 @@ import { Text } from '../../typography/Text/text';
 
 type ToggleGroupSize = 'sm' | 'md' | 'lg';
 type ToggleGroupShape = 'rounded' | 'pill';
-type ToggleGroupVariant = 'bordered' | 'connected';
+type ToggleGroupContainerVariant = 'bordered' | 'connected';
 
 // ── shape → radius ─────────────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ export type ToggleGroupProps = {
    * continuous strip.
    * @default 'bordered'
    */
-  variant?: ToggleGroupVariant;
+  containerVariant?: ToggleGroupContainerVariant;
   /** Layout direction — items sit side by side or stacked. @default 'horizontal' */
   orientation?: 'horizontal' | 'vertical';
   children?: undefined;
@@ -67,8 +67,9 @@ export type ToggleGroupProps = {
  * A segmented control — a row (or column) of flat items where one choice is
  * selected at a time, built from Pressable + Text.
  *
- * `variant` — `bordered` (an outer border with inner dividers between items) or
- * `connected` (no inner dividers — items sit flush as one continuous strip).
+ * `containerVariant` — `bordered` (an outer border with inner dividers between
+ * items) or `connected` (no inner dividers — items sit flush as one continuous
+ * strip).
  *
  * `shape` — `rounded` (interactive corner radius) or `pill` (fully-rounded) —
  * controls the outer edges of the control.
@@ -84,7 +85,7 @@ export type ToggleGroupProps = {
  * the selection.
  */
 export function ToggleGroup({
-  variant = 'bordered',
+  containerVariant = 'bordered',
   orientation = 'horizontal',
   shape = 'pill',
   size = 'md',
@@ -97,7 +98,7 @@ export function ToggleGroup({
 }: ToggleGroupProps) {
   const isHorizontal = orientation === 'horizontal';
   const radius = SHAPE_RADIUS[shape];
-  const isConnected = variant === 'connected';
+  const isConnected = containerVariant === 'connected';
 
   const getOnValueChangeHandler = useCallback((itemValue: string) => () => onValueChange?.(itemValue), [onValueChange]);
 

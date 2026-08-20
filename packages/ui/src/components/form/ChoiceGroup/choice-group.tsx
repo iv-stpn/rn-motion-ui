@@ -8,6 +8,7 @@ import { Text } from '../../typography/Text/text';
 
 type ChoiceGroupSize = 'sm' | 'md' | 'lg';
 type ChoiceGroupShape = 'rounded' | 'pill';
+type ChoiceGroupVariant = 'neutral' | 'info' | 'outline' | 'outline-info';
 
 // ── gap map ────────────────────────────────────────────────────────────────────
 
@@ -17,11 +18,42 @@ const GAP_CLASS: Record<ChoiceGroupSize, string> = { sm: 'gap-2', md: 'gap-3', l
 
 const SHAPE_RADIUS: Record<ChoiceGroupShape, string> = { rounded: 'rounded-interactive', pill: 'rounded-full' };
 
+// ── variant → item classes ─────────────────────────────────────────────────────
+
+/**
+ * Selected-item class per variant. Filled variants (`neutral` / `info`) paint the
+ * accent as the background; outline variants (`outline` / `outline-info`) keep the
+ * fill transparent and signal selection with a coloured border. Spelled as
+ * literals so UniWind statically resolves every member.
+ */
+const VARIANT_SELECTED: Record<ChoiceGroupVariant, string> = {
+  neutral: 'bg-primary',
+  info: 'bg-info',
+  outline: 'border border-primary',
+  'outline-info': 'border border-info',
+};
+
+/** Unselected-item class per variant — filled items keep the surface, outline items keep a hairline border. */
+const VARIANT_UNSELECTED: Record<ChoiceGroupVariant, string> = {
+  neutral: 'bg-surface-contrast',
+  info: 'bg-surface-contrast',
+  outline: 'border border-border',
+  'outline-info': 'border border-border',
+};
+
+/** Selected label colour per variant — the accent's `-foreground` on filled items, the accent ink on outline items. */
+const VARIANT_SELECTED_TEXT: Record<ChoiceGroupVariant, string> = {
+  neutral: 'text-primary-foreground',
+  info: 'text-info-foreground',
+  outline: 'text-primary',
+  'outline-info': 'text-info',
+};
+
 // ── shared text ────────────────────────────────────────────────────────────────
 
-/** Selection-aware text class — selected items get a subtle foreground lift above the translucent overlay. */
-function itemTextClass(size: ChoiceGroupSize, selected: boolean): string {
-  return cn(TEXT_INTERACTIVE[size], selected ? 'text-white' : 'text-muted-foreground');
+/** Selection-aware text class — the label reads on the accent (filled) or as the accent (outline) when selected, muted otherwise. */
+function itemTextClass(size: ChoiceGroupSize, variant: ChoiceGroupVariant, selected: boolean): string {
+  return cn(TEXT_INTERACTIVE[size], selected ? VARIANT_SELECTED_TEXT[variant] : 'text-muted-foreground');
 }
 
 // ── exports ────────────────────────────────────────────────────────────────────
@@ -48,6 +80,12 @@ export type ChoiceGroupProps = {
    * @default 'pill'
    */
   shape?: ChoiceGroupShape;
+  /**
+   * How the selected item is highlighted — `neutral` / `info` fill the accent as
+   * the background, `outline` / `outline-info` draw a coloured border around it.
+   * @default 'outline'
+   */
+  variant?: ChoiceGroupVariant;
   /** Layout direction — items sit side by side or stacked. @default 'horizontal' */
   orientation?: 'horizontal' | 'vertical';
   children?: undefined;
@@ -63,13 +101,16 @@ export type ChoiceGroupProps = {
  * A row (or column) of flat, independent choice chips where one is selected at a
  * time — a radio-group-style control built from Pressable + Text.
  *
- * Unlike `ToggleGroup`'s segmented (`bordered` / `connected`) variants, items sit
- * apart with a gap and each carries its own `shape` (rounded or pill) border, and
- * the group wraps onto additional lines when it runs out of width instead of
- * scrolling.
+ * Unlike `ToggleGroup`'s segmented (`bordered` / `connected`) container variants,
+ * items sit apart with a gap and each carries its own `shape` (rounded or pill)
+ * border, and the group wraps onto additional lines when it runs out of width
+ * instead of scrolling.
  *
  * `shape` — `rounded` (interactive corner radius) or `pill` (fully-rounded) — is
  * applied to each individual item.
+ *
+ * `variant` — `neutral` / `info` (filled) or `outline` / `outline-info`
+ * (bordered) — controls how the selected item is highlighted.
  *
  * Each item is identified by a `value` string. Pressing an item calls
  * `onValueChange` with that value — the consumer updates `value` to complete
@@ -78,6 +119,7 @@ export type ChoiceGroupProps = {
 export function ChoiceGroup({
   orientation = 'horizontal',
   shape = 'pill',
+  variant = 'outline',
   size = 'md',
   value,
   onValueChange,
@@ -109,12 +151,12 @@ export function ChoiceGroup({
               radius,
               H_INTERACTIVE[size],
               PX_INTERACTIVE[size],
-              selected ? 'bg-info' : 'bg-surface-contrast',
+              selected ? VARIANT_SELECTED[variant] : VARIANT_UNSELECTED[variant],
               'items-center justify-center',
               !isHorizontal && 'py-3',
             )}
           >
-            <Text weight="medium" className={itemTextClass(size, selected)}>
+            <Text weight="medium" className={itemTextClass(size, variant, selected)}>
               {item.label}
             </Text>
           </Pressable>

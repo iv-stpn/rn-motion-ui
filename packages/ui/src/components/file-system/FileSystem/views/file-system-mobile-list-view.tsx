@@ -93,6 +93,8 @@ type MobileListRowProps = {
   renderEntryIcon?: FileSystemViewProps['renderEntryIcon'];
   selecting: boolean;
   testID?: string;
+  /** This row is under the finger right now during a scrub — its checkbox bounces. */
+  isScrubTarget: boolean;
 };
 
 /**
@@ -119,6 +121,7 @@ function MobileListRow({
   renderEntryIcon,
   selecting,
   testID,
+  isScrubTarget,
 }: MobileListRowProps) {
   const colors = useThemeColors();
 
@@ -159,7 +162,13 @@ function MobileListRow({
 
   const row = (
     <View className="relative" style={{ height: MOBILE_ROW_HEIGHT }}>
-      <HoldItem items={menuProps.items} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+      <HoldItem
+        hapticFeedback="Medium"
+        items={menuProps.items}
+        dragOptions={dragOptions}
+        onHold={onHoldAction}
+        onOpenChange={handleOpenChange}
+      >
         <Pressable
           accessibilityLabel={entry.name}
           accessibilityRole="button"
@@ -198,6 +207,7 @@ function MobileListRow({
         <FileSystemMobileMenu
           entry={entry}
           getContextMenuActions={getContextMenuActions}
+          isScrubTarget={isScrubTarget}
           isSelected={isSelected}
           onContextMenuAction={onContextMenuAction}
           onScrubStart={onScrubStart}
@@ -323,7 +333,7 @@ export function FileSystemMobileListView({
   );
 
   const scrubSession = { orderedPaths, selectedPaths, onMarquee, onDeselectMarquee, resolveItemAt };
-  const { begin, move: moveScrub, end: endScrub } = useFileSystemScrubSession(scrubSession);
+  const { begin, move: moveScrub, end: endScrub, scrubTarget } = useFileSystemScrubSession(scrubSession);
 
   const beginScrub = useCallback(
     (entry: FileSystemEntry, _x: number, y: number) => {
@@ -374,6 +384,7 @@ export function FileSystemMobileListView({
       <MobileListRow
         childCount={index.children.get(item.path)?.length}
         entry={item}
+        isScrubTarget={scrubTarget === item.path}
         isSelected={selectedPaths.has(item.path)}
         onActivate={activate}
         onScrubStart={beginScrub}
@@ -392,6 +403,7 @@ export function FileSystemMobileListView({
       handleScrubEnd,
       handleScrubMove,
       index,
+      scrubTarget,
       selectedPaths,
       selectLongPress,
       selecting,
@@ -402,13 +414,18 @@ export function FileSystemMobileListView({
   );
 
   // The vertical gap between rows — see `MobileRowSeparator`.
+  // `extraData` must change on both selection *and* the scrub's finger position:
+  // the start entry's checkbox bounce fires from `scrubTarget` alone, before any
+  // selection change, so `selectedPaths` on its own would not re-render the rows.
+  const extraData = useMemo(() => ({ selectedPaths, scrubTarget }), [selectedPaths, scrubTarget]);
+
   return (
     <View className="min-h-0 flex-1" ref={containerRef}>
       <FlatList
         ref={flatListRef}
         className="flex-1"
         data={entries}
-        extraData={selectedPaths}
+        extraData={extraData}
         getItemLayout={getItemLayout}
         ItemSeparatorComponent={MobileRowSeparator}
         keyExtractor={keyExtractor}

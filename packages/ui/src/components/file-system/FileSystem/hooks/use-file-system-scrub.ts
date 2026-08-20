@@ -17,11 +17,13 @@
 //   web — RNGH would demand a `GestureHandlerRootView` under react-native-web, which
 //   this package refuses to require, and the mobile views are native-first anyway.
 
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { fireHapticFeedback } from '../../../../lib/haptics';
+import type { HapticFeedbackVariant } from '../../../../lib/haptics-types';
 import { type DragTuning, resolveDragBehavior } from '../../../gestures/drag-behavior';
 import { runBetween } from '../logic/file-system-selection';
 import type { FileSystemEntry } from '../types/file-system.types';
@@ -39,6 +41,10 @@ type ScrubArm = {
 };
 
 const SCRUB_ARM_IDLE: ScrubArm = { active: false, failed: false, startAt: 0, startX: 0, startY: 0 };
+
+/** The haptic fired each time the scrub crosses into a new entry — the selection tick,
+ *  distinct from the hold's `Medium` cue. `'Selection'` is the system's own tap-click. */
+const SCRUB_TICK_HAPTIC: HapticFeedbackVariant = 'Selection';
 
 /** The scrub session a view holds between the checkbox press and the release. */
 type ScrubState = {
@@ -67,6 +73,9 @@ export type FileSystemScrubSession = {
   begin: (entry: FileSystemEntry) => void;
   move: (x: number, y: number) => void;
   end: () => void;
+  /** The entry the finger last resolved to, or `null` between scrubs — the view reads
+   *  it to drive the checkbox's pressed scale and keep it on the right checkbox. */
+  scrubTarget: string | null;
 };
 
 /**
@@ -102,6 +111,11 @@ export function useFileSystemScrubSession(params: FileSystemScrubSessionParams):
   paramsRef.current = params;
 
   const scrubRef = useRef<ScrubState | null>(null);
+  // The entry the finger last resolved to, so the tick haptic and the pressed scale
+  // fire exactly once per crossing instead of once per move frame (a scrub streams
+  // moves far faster than entries are crossed).
+  const lastPathRef = useRef<string | null>(null);
+  const [scrubTarget, setScrubTarget] = useState<string | null>(null);
 
   const begin = useCallback((entry: FileSystemEntry) => {
     const base = new Set(paramsRef.current.selectedPaths);
@@ -110,6 +124,8 @@ export function useFileSystemScrubSession(params: FileSystemScrubSessionParams):
     // start adds the run; a selected start removes it — so dragging over an
     // already-selected entry is how you clear a run without tapping each one.
     scrubRef.current = { base, startPath, mode: base.has(startPath) ? 'remove' : 'add' };
+    lastPathRef.current = startPath;
+    setScrubTarget(startPath);
   }, []);
 
   const move = useCallback((x: number, y: number) => {
@@ -124,13 +140,22 @@ export function useFileSystemScrubSession(params: FileSystemScrubSessionParams):
     // it just cleared and re-add it, instead of sticking to the first clear.
     if (scrub.mode === 'add') onMarquee(run, scrub.base);
     else onDeselectMarquee(run, scrub.base);
+    // A new entry under the finger: tick, and move the pressed scale to it. An over-drag
+    // past an edge (the auto-scroll case) leaves the last entry hot instead of jumping.
+    if (hit.kind === 'item' && hit.path !== lastPathRef.current) {
+      lastPathRef.current = hit.path;
+      setScrubTarget(hit.path);
+      fireHapticFeedback(SCRUB_TICK_HAPTIC);
+    }
   }, []);
 
   const end = useCallback(() => {
     scrubRef.current = null;
+    lastPathRef.current = null;
+    setScrubTarget(null);
   }, []);
 
-  return { begin, move, end };
+  return { begin, move, end, scrubTarget };
 }
 
 function buildScrubGesture(arm: SharedValue<ScrubArm>, tuning: DragTuning, { onStart, onMove, onEnd }: ScrubGestureParams) {

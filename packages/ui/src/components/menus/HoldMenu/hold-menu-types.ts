@@ -1,5 +1,6 @@
 import type { ComponentType, ReactElement, ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
+import type { HapticFeedbackVariant } from '../../../lib/haptics-types';
 import type { DragEffectAllowed, DragEndEvent, DragGroups, DragStartEvent } from '../../gestures/drag.types';
 
 /** Which corner the menu grows out of and which edge it opens on. `top-*` below the item, `bottom-*` above. */
@@ -50,7 +51,7 @@ export type HoldMenuIconComponentProps = { name: string; size?: number; color?: 
 export type HoldMenuIconComponent = ComponentType<HoldMenuIconComponentProps>;
 
 /** Upstream's haptic feedback style names, verbatim. */
-export type HoldMenuHapticFeedback = 'None' | 'Selection' | 'Light' | 'Medium' | 'Heavy' | 'Success' | 'Warning' | 'Error';
+export type HoldMenuHapticFeedback = HapticFeedbackVariant;
 
 /** Safe-area insets the menu keeps clear of. */
 export type HoldMenuSafeAreaInsets = { top: number; right: number; bottom: number; left: number };

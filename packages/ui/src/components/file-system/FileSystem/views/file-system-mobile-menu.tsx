@@ -10,12 +10,14 @@
 // selected entry and empty otherwise, so the mobile views reveal a multi-select
 // surface the moment a long-press picks the first item.
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { CheckCircleFill } from 'rn-motion-ui-icons/icons/check-circle-fill';
 import { More2Line as More } from 'rn-motion-ui-icons/icons/more-2-line';
 import { RoundLine } from 'rn-motion-ui-icons/icons/round-line';
+import { useReducedMotion } from '../../../../hooks/use-reduced-motion';
 import { ThemedIcon } from '../../../icon/themed-icon';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { useFileSystemScrubGesture } from '../hooks/use-file-system-scrub';
@@ -43,17 +45,20 @@ type FileSystemMobileMenuProps = {
   onScrubEnd: () => void;
   /** The entry's resolved `testID` (`<root>-entry-<path>`), which the control derives its own from. */
   testID?: string;
+  /** This entry is under the finger right now during a scrub — the checkbox it owns bounces. */
+  isScrubTarget: boolean;
 };
 
 type MobileCheckboxProps = Pick<
   FileSystemMobileMenuProps,
-  'entry' | 'isSelected' | 'onToggleSelect' | 'onScrubStart' | 'onScrubMove' | 'onScrubEnd' | 'testID'
+  'entry' | 'isSelected' | 'onToggleSelect' | 'onScrubStart' | 'onScrubMove' | 'onScrubEnd' | 'testID' | 'isScrubTarget'
 >;
 
 /** The selection-mode shape: a checkbox whose tap toggles the entry in or out of the selection, and whose hold-drag scrubs a run. */
 function MobileCheckbox({
   entry,
   isSelected,
+  isScrubTarget,
   onToggleSelect,
   onScrubStart,
   onScrubMove,
@@ -68,19 +73,43 @@ function MobileCheckbox({
 
   const gesture = useFileSystemScrubGesture({ onStart: handleScrubStart, onMove: onScrubMove, onEnd: onScrubEnd });
 
+  // The drag-select cue: as the scrub crosses onto this checkbox, give it a quick
+  // squeeze then a spring back — the same "you are on me" pulse the tick haptic
+  // signals in the hand. Only the entry under the finger animates; a reduced-motion
+  // preference pins the scale at full size.
+  const reduce = useReducedMotion();
+  const scale = useSharedValue(1);
+
+  // biome-ignore lint/plugin: triggering a Reanimated withSequence on a shared value in response to a prop change requires a side effect
+  useEffect(() => {
+    if (!isScrubTarget || reduce) {
+      scale.value = 1;
+      return;
+    }
+    scale.value = withSequence(withTiming(0.82, { duration: 90 }), withSpring(1, { damping: 14, stiffness: 220, mass: 0.6 }));
+  }, [isScrubTarget, reduce, scale]);
+
+  const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
   const checkbox = (
-    <Pressable
-      accessibilityLabel={isSelected ? `Deselect ${entry.name}` : `Select ${entry.name}`}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: isSelected }}
-      // Both, deliberately: native reads `accessibilityState`, RNW maps `aria-checked` — see Checkbox.
-      aria-checked={isSelected}
-      className="size-7 items-center justify-center"
-      onPress={handleToggle}
-      testID={testID ? `${testID}${MOBILE_CHECKBOX_SUFFIX}` : undefined}
-    >
-      <ThemedIcon icon={isSelected ? CheckCircleFill : RoundLine} size={20} token={isSelected ? 'primary' : 'muted-foreground'} />
-    </Pressable>
+    <Animated.View style={scaleStyle}>
+      <Pressable
+        accessibilityLabel={isSelected ? `Deselect ${entry.name}` : `Select ${entry.name}`}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isSelected }}
+        // Both, deliberately: native reads `accessibilityState`, RNW maps `aria-checked` — see Checkbox.
+        aria-checked={isSelected}
+        className="size-7 items-center justify-center"
+        onPress={handleToggle}
+        testID={testID ? `${testID}${MOBILE_CHECKBOX_SUFFIX}` : undefined}
+      >
+        <ThemedIcon
+          icon={isSelected ? CheckCircleFill : RoundLine}
+          size={20}
+          token={isSelected ? 'primary' : 'muted-foreground'}
+        />
+      </Pressable>
+    </Animated.View>
   );
 
   // The scrub is native-only (`null` on web). `collapsable={false}` keeps the gesture

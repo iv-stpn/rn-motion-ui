@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 import type { ViewStyle } from 'react-native';
 import { runOnJS, type SharedValue, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { fireHapticFeedback } from '../../../lib/haptics';
 import {
   CONTEXT_MENU_STATE,
   HOLD_ITEM_SCALE_DOWN_DURATION,
   HOLD_ITEM_SCALE_DOWN_VALUE,
   HOLD_ITEM_TRANSFORM_DURATION,
 } from './constants';
-import { fireHapticFeedback } from './hold-menu-haptics';
 import type { HoldItemProps, MenuItemProps } from './hold-menu-types';
 
 type UseHoldItemSqueezeOptions = {
@@ -37,10 +37,12 @@ type UseHoldItemSqueezeResult = {
  * worklets, extracted from the component so it stays under the per-function
  * line limit. Verbatim: the squeeze-down and the tap bounce use plain
  * `withTiming` (no easing), the completion callback flips the menu active and
- * fires haptics only when the list is non-empty, and the re-tap guard stops
+ * fires haptics when the list is non-empty, and the re-tap guard stops
  * the tap animation from restarting mid-flight. One departure: an inert hold
  * (empty items — the mobile views' multi-select join) also scales back on
- * completion, so the press pulse returns to full size instead of staying stuck.
+ * completion, so the press pulse returns to full size instead of staying stuck,
+ * and it fires its haptic when one was passed — the touch cue the file-system's
+ * mobile views enable for the long-press-into-selection.
  */
 export function useHoldItemSqueeze({
   activateOn,
@@ -75,8 +77,11 @@ export function useHoldItemSqueeze({
         if (hapticFeedback !== 'None') runOnJS(hapticResponse)();
       } else if (isFinised) {
         // No menu to pop into — an inert hold (empty items) is the multi-select join,
-        // so the squeeze is just a press pulse: return to full size once it lands.
+        // so the squeeze is just a press pulse: return to full size once it lands. It
+        // still fires its haptic when one was explicitly passed — opt-in, unlike the
+        // menu path, because there is no panel opening to signal by default.
         scaleBack();
+        if (hapticFeedback !== undefined && hapticFeedback !== 'None') runOnJS(hapticResponse)();
       }
 
       isAnimationStarted.value = false;

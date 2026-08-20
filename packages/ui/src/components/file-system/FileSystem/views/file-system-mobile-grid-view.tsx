@@ -92,6 +92,8 @@ type MobileGridTileProps = Pick<
   getContextMenuActions?: FileSystemViewProps['getContextMenuActions'];
   onContextMenuAction?: FileSystemViewProps['onContextMenuAction'];
   testID?: string;
+  /** This tile is under the finger right now during a scrub — its checkbox bounces. */
+  isScrubTarget: boolean;
 };
 
 /** One tile: a tappable glyph + two-line name, with the kebab/checkbox overlaid to the right of the name. */
@@ -118,6 +120,7 @@ function MobileGridTile({
   selecting,
   tileWidth,
   testID,
+  isScrubTarget,
 }: MobileGridTileProps) {
   const colors = useThemeColors();
   const isFile = entry.kind === 'file';
@@ -158,7 +161,13 @@ function MobileGridTile({
       {/* The tappable body: the glyph box then the name. The name row reserves the
           right edge (`pr-7`) for the control overlaid below, so the two never overlap
           and the control is a sibling rather than a button inside a button. */}
-      <HoldItem items={menuProps.items} dragOptions={dragOptions} onHold={onHoldAction} onOpenChange={handleOpenChange}>
+      <HoldItem
+        hapticFeedback="Medium"
+        items={menuProps.items}
+        dragOptions={dragOptions}
+        onHold={onHoldAction}
+        onOpenChange={handleOpenChange}
+      >
         <Pressable
           accessibilityLabel={entry.name}
           accessibilityRole="button"
@@ -221,6 +230,7 @@ function MobileGridTile({
         <FileSystemMobileMenu
           entry={entry}
           getContextMenuActions={getContextMenuActions}
+          isScrubTarget={isScrubTarget}
           isSelected={isSelected}
           onContextMenuAction={onContextMenuAction}
           onScrubStart={onScrubStart}
@@ -376,6 +386,7 @@ export function FileSystemMobileGridView({
     begin,
     move: moveScrub,
     end: endScrub,
+    scrubTarget,
   } = useFileSystemScrubSession({
     orderedPaths,
     selectedPaths,
@@ -455,6 +466,7 @@ export function FileSystemMobileGridView({
                 ensureChildren={ensureChildren}
                 entry={entry}
                 getContextMenuActions={getContextMenuActions}
+                isScrubTarget={scrubTarget === entry.path}
                 isSelected={selectedPaths.has(entry.path)}
                 key={entry.path}
                 loadPreviewImageUrl={loadPreviewImageUrl}

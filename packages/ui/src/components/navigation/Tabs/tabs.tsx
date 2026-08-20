@@ -88,7 +88,7 @@ const list = cva('flex-row items-center', {
     variant: {
       pill: 'gap-1 rounded-full bg-muted p-1',
       underline: 'gap-1 border-b border-border',
-      segment: 'gap-0 rounded-interactive bg-muted p-0.5',
+      segment: 'gap-0 rounded-interactive bg-muted p-1',
     },
   },
   defaultVariants: { variant: 'pill' },

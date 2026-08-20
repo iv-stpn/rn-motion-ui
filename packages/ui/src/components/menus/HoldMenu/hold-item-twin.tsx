@@ -104,8 +104,10 @@ const HoldItemTwinComponent = ({
       // released → hidden). On activation it fades in over the in-place item,
       // which holds its full opacity until this reaches 1, so the twin never pops
       // in and the two never overlap semi-transparently (that would dim); on
-      // release it snaps out in lockstep with the in-place item snapping in.
-      opacity: 1 - releaseProgress.value,
+      // release it snaps out in lockstep with the in-place item snapping in. When
+      // the twin travels (`tY !== 0`) it lands away from the original, so it can
+      // show fully at once — the original stays visible underneath its own spot.
+      opacity: isActive.value && tY !== 0 ? 1 : 1 - releaseProgress.value,
       transform: [
         { translateY: transformAnimation() },
         {

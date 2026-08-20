@@ -18,7 +18,7 @@
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/react';
 import { type ReactElement, useCallback, useState } from 'react';
-import { Pressable, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { AddLine } from 'rn-motion-ui-icons/icons/add-line';
 import { ArrowLeftLine } from 'rn-motion-ui-icons/icons/arrow-left-line';
@@ -36,6 +36,7 @@ import { Settings3Line } from 'rn-motion-ui-icons/icons/settings-3-line';
 import { SunLine } from 'rn-motion-ui-icons/icons/sun-line';
 import { User3Line } from 'rn-motion-ui-icons/icons/user-3-line';
 import { Choice, Note } from '../../../__stories__/story-harness';
+import { Card } from '../../display/Card/card';
 import { Text } from '../../typography/Text/text';
 import { HoldItem } from './hold-item';
 import type { HoldMenuIconComponentProps, MenuItemProps } from './hold-menu-types';
@@ -336,6 +337,121 @@ function WhatsAppScene() {
 
 //#endregion
 
+//#region NestedScroll
+
+type NestedFile = { id: string; name: string; size: string };
+type NestedSection = { id: string; title: string; files: NestedFile[] };
+type NestedFileRowProps = { name: string; size: string; onAction: (label: string) => void };
+type ScrollingCardProps = { title: string; files: NestedFile[]; onAction: (label: string) => void };
+
+const NESTED_FILE_NAMES = [
+  'quarterly-report',
+  'onboarding-notes',
+  'design-tokens',
+  'sprint-board',
+  'roadmap',
+  'meeting-notes',
+  'figma-exports',
+  'release-notes',
+  'api-spec',
+  'migration-plan',
+  'style-guide',
+  'analytics-dashboard',
+];
+
+/** Four sections whose inner lists overflow their cards, so both scroll levels are real. */
+const NESTED_SECTIONS: NestedSection[] = ['Recent files', 'Starred', 'Shared with me', 'Archive'].map((title, s) => ({
+  id: title.toLowerCase().replaceAll(' ', '-'),
+  title,
+  files: NESTED_FILE_NAMES.map((name, i) => ({
+    id: `${s}-${i}`,
+    name: `${name}.md`,
+    size: `${(i % 6) + 1}.${i % 9} MB`,
+  })),
+}));
+
+/** A holdable file row inside a card's inner scroll view. */
+function NestedFileRow({ name, size, onAction }: NestedFileRowProps) {
+  const items: MenuItemProps[] = [
+    { text: 'Open', onPress: () => onAction(`Open ${name}`) },
+    { text: 'Rename', onPress: () => onAction(`Rename ${name}`), withSeparator: true },
+    { text: 'Delete', isDestructive: true, onPress: () => onAction(`Delete ${name}`) },
+  ];
+
+  return (
+    <HoldItem items={items} containerStyles={{ width: '100%' }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingVertical: 10,
+          paddingHorizontal: 4,
+          borderBottomWidth: 1,
+          borderBottomColor: 'rgba(0, 0, 0, 0.06)',
+        }}
+      >
+        <Text size="base" style={{ color: '#1C1C1E' }}>
+          {name}
+        </Text>
+        <Text size="sm" style={{ color: '#8E8E93' }}>
+          {size}
+        </Text>
+      </View>
+    </HoldItem>
+  );
+}
+
+/** A card whose own scroll view holds the holdable rows — the inner scroll level. */
+function ScrollingCard({ title, files, onAction }: ScrollingCardProps) {
+  return (
+    <Card size="md" elevation={2} className="overflow-hidden">
+      <Text size="lg" weight="semibold" style={{ color: '#1C1C1E' }}>
+        {title}
+      </Text>
+      <ScrollView nestedScrollEnabled={true} showsVerticalScrollIndicator={false} style={{ height: 200 }}>
+        {files.map((file) => (
+          <NestedFileRow key={file.id} name={file.name} size={file.size} onAction={onAction} />
+        ))}
+      </ScrollView>
+    </Card>
+  );
+}
+
+/** Nested scrolls — an outer dashboard scroll of cards, each with its own inner scroll of holdable rows. */
+function NestedScrollScene() {
+  const [picked, setPicked] = useState('—');
+  const onAction = useCallback((label: string) => setPicked(label), []);
+
+  return (
+    <HoldMenuProvider iconComponent={IconByName} theme="light">
+      <View style={{ flex: 1, backgroundColor: 'rgb(242, 242, 247)' }}>
+        <ScrollView
+          nestedScrollEnabled={true}
+          showsVerticalScrollIndicator={false}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 16, gap: 16 }}
+        >
+          <Text size="2xl" weight="semibold" style={{ color: '#1C1C1E' }}>
+            Nested card scrolls
+          </Text>
+          {NESTED_SECTIONS.map((section) => (
+            <ScrollingCard key={section.id} title={section.title} files={section.files} onAction={onAction} />
+          ))}
+        </ScrollView>
+        <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: 'rgba(0, 0, 0, 0.1)', backgroundColor: '#FFFFFF' }}>
+          <Text size="sm" style={{ color: '#474747' }}>
+            {`Last action: ${picked}`}
+          </Text>
+        </View>
+        <Note>Scroll the outer list, scroll a card, then press-and-hold a row — the twin tracks it.</Note>
+      </View>
+    </HoldMenuProvider>
+  );
+}
+
+//#endregion
+
 /** The four upstream example screens, keyed by their toggle label. */
 const EXAMPLES = ['Clubhouse', 'Home', 'Telegram', 'WhatsApp'] as const;
 type Example = (typeof EXAMPLES)[number];
@@ -406,4 +522,9 @@ export default meta;
 /** Flip between the four upstream example screens, then press-and-hold to open each menu by hand. */
 export const Interactive: Story = {
   render: () => <InteractiveScene />,
+};
+
+/** Nested card scroll views — scroll the outer dashboard and an inner card, then hold a row. */
+export const NestedScroll: Story = {
+  render: () => <NestedScrollScene />,
 };

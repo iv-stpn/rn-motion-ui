@@ -314,8 +314,8 @@ export const MultiStepMenu = function MultiStepMenu({
     content = (
       <View className="flex-1" onLayout={handlePaneLayout}>
         <View className="px-5 pt-6 pb-5">
-          <View className="mb-2 flex-row items-center justify-between">
-            <View className="w-9 items-start justify-center">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center">
               <AnimatePresence>
                 {!isRoot && (
                   <MotiView
@@ -334,10 +334,38 @@ export const MultiStepMenu = function MultiStepMenu({
                   </MotiView>
                 )}
               </AnimatePresence>
+              <AnimatePresence>
+                {isRoot && (
+                  <MotiView
+                    key="mobile-title-top"
+                    from={{ opacity: 0, translateY: 12 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    exit={{ opacity: 0, translateY: 12 }}
+                    transition={arrowTransition}
+                    exitTransition={arrowExitTransition}
+                  >
+                    <TextRolling text={title} className="font-bold text-2xl text-foreground" />
+                  </MotiView>
+                )}
+              </AnimatePresence>
             </View>
             <CloseButton onPress={handleClose} />
           </View>
-          <TextRolling text={title} className="font-bold text-2xl text-foreground" />
+          <AnimatePresence>
+            {!isRoot && (
+              <MotiView
+                key="mobile-title-below"
+                from={{ opacity: 0, translateY: -12 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                exit={{ opacity: 0, translateY: -12 }}
+                transition={arrowTransition}
+                exitTransition={arrowExitTransition}
+                className="mt-2"
+              >
+                <TextRolling text={title} className="font-bold text-2xl text-foreground" />
+              </MotiView>
+            )}
+          </AnimatePresence>
         </View>
         <View className="flex-1 overflow-hidden">
           <AnimatePresence>

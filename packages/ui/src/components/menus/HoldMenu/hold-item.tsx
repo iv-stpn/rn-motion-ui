@@ -90,19 +90,6 @@ const HoldItemComponent = ({
    */
   const releaseProgress = useSharedValue(1);
 
-  useAnimatedReaction(
-    () => isActive.value,
-    (active) => {
-      // Activation fades the twin in over the still-opaque in-place item, so the
-      // twin never pops in; release pins the twin opaque while it travels back,
-      // then snaps both copies on the same frame — no overlap window to dim, no
-      // gap to blink.
-      releaseProgress.value = active
-        ? withTiming(0, { duration: HOLD_ITEM_TRANSFORM_DURATION })
-        : withSequence(withTiming(0, { duration: 0 }), withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 })));
-    },
-  );
-
   /** Stable key for the portal twin — generated once per item, never changes. */
   const name = `hold-item-${useId()}`;
   const containerRef = useAnimatedRef<Animated.View>();
@@ -123,6 +110,7 @@ const HoldItemComponent = ({
     itemRectWidth,
     itemRectHeight,
     transformOrigin,
+    transformValue,
     didMeasureLayout,
     activateAnimation,
     activateFromContextMenu,
@@ -140,6 +128,29 @@ const HoldItemComponent = ({
     safeAreaInsets,
     scaleHold,
   });
+
+  useAnimatedReaction(
+    () => isActive.value,
+    (active) => {
+      if (!active) {
+        // Release pins the twin opaque while it travels back, then snaps both
+        // copies on the same frame — no overlap window to dim, no gap to blink.
+        releaseProgress.value = withSequence(
+          withTiming(0, { duration: 0 }),
+          withDelay(HOLD_ITEM_TRANSFORM_DURATION, withTiming(1, { duration: 0 })),
+        );
+        return;
+      }
+
+      // When the twin travels (the menu overflows and lifts the pair, `tY !== 0`)
+      // it lands at a different y than the in-place item, so the two never
+      // overlap and the original need not hide — holding `releaseProgress` at 1
+      // keeps it visible while the twin lifts away. Only when the twin stays put
+      // (`tY === 0`) does it overlap the original, so that is the one case that
+      // needs the timed cross-fade to hide the original without dimming the pair.
+      releaseProgress.value = transformValue.value === 0 ? withTiming(0, { duration: HOLD_ITEM_TRANSFORM_DURATION }) : 1;
+    },
+  );
 
   const webHold = IS_WEB && isHold;
 

@@ -58,8 +58,9 @@ export type FileSystemScrubSessionParams = {
   selectedPaths: ReadonlySet<string>;
   onMarquee: (covered: readonly string[], base: ReadonlySet<string> | null) => void;
   onDeselectMarquee: (covered: readonly string[], base: ReadonlySet<string>) => void;
-  /** Maps the finger's window position to the entry under it, or `null` on empty space. */
-  resolveItemAt: (x: number, y: number) => string | null;
+  /** Maps the finger's window position to the entry under it, an over-drag past the
+   *  top/bottom edge, or `null` on empty space between entries. */
+  resolveItemAt: (x: number, y: number) => FileSystemScrubHit;
 };
 
 export type FileSystemScrubSession = {
@@ -67,6 +68,29 @@ export type FileSystemScrubSession = {
   move: (x: number, y: number) => void;
   end: () => void;
 };
+
+/**
+ * What the finger resolved to for one scrub move: an entry, an over-drag past
+ * either edge of the list/grid, or nothing (empty space between entries).
+ */
+export type FileSystemScrubHit = { kind: 'item'; path: string } | { kind: 'beyond'; side: 'above' | 'below' } | null;
+
+/**
+ * The run one scrub move commits. Over an entry it is the contiguous span from the
+ * anchor to it; past an edge it is everything on the far side of the anchor, with
+ * the anchor itself cancelled — the entry the drag began on is left out. `below`
+ * spans the anchor to the end; `above` spans the start to the anchor.
+ */
+function resolveScrubRun(
+  scrub: ScrubState,
+  hit: NonNullable<FileSystemScrubHit>,
+  orderedPaths: readonly string[],
+): string[] | null {
+  if (hit.kind === 'item') return runBetween(scrub.startPath, hit.path, orderedPaths);
+  const startIndex = orderedPaths.indexOf(scrub.startPath);
+  if (startIndex === -1) return null;
+  return hit.side === 'below' ? orderedPaths.slice(startIndex + 1) : orderedPaths.slice(0, startIndex);
+}
 
 /**
  * The JS side of the scrub. The three callbacks are stable for the component's life —
@@ -92,9 +116,9 @@ export function useFileSystemScrubSession(params: FileSystemScrubSessionParams):
     const scrub = scrubRef.current;
     if (!scrub) return;
     const { orderedPaths, onMarquee, onDeselectMarquee, resolveItemAt } = paramsRef.current;
-    const currentPath = resolveItemAt(x, y);
-    if (!currentPath) return;
-    const run = runBetween(scrub.startPath, currentPath, orderedPaths);
+    const hit = resolveItemAt(x, y);
+    if (!hit) return;
+    const run = resolveScrubRun(scrub, hit, orderedPaths);
     if (!run) return;
     // Re-evaluating from `base` each move is what lets the finger drag back over a run
     // it just cleared and re-add it, instead of sticking to the first clear.

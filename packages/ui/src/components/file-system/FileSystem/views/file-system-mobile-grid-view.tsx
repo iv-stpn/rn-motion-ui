@@ -24,10 +24,11 @@ import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
+import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
-import { useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
+import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
@@ -303,14 +304,42 @@ export function FileSystemMobileGridView({
     [onOpen, selecting, toggleSelect],
   );
 
+  const containerRef = useRef<View | null>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollOffsetRef = useRef(0);
+  // The manager this view's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
+
+  // A drag near the top or bottom edge scrolls the grid, so a folder below the
+  // fold is reachable without releasing. Runs for external drags too.
+  const scrollTo = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
+  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
+
+  // The same edge-scroll engine the drag above uses, driven by the scrub's pointer
+  // stream instead — dragging to multi-select scrolls the grid when the finger goes
+  // above the visible tiles (or below them).
+  const {
+    begin: beginAutoScroll,
+    move: moveAutoScroll,
+    end: endAutoScroll,
+  } = useFileSystemAutoScroll({
+    containerRef,
+    scrollTo,
+    scrollOffsetRef,
+  });
+
   // Scrub geometry. Tiles vary in height (one- or two-line names), so each reports
   // its own content rect for the hit-test. The finger→content mapping is calibrated
   // at drag start against the start entry's checkbox — whose content position is
   // `rect` plus the trailing-control inset below the glyph box, and whose window
   // position the gesture reports at `onStart`. The offset turns every later
-  // `absoluteX`/`absoluteY` straight into content space, with no `measureInWindow`
-  // and no scroll bookkeeping to drift.
+  // `absoluteX`/`absoluteY` straight into content space. The one thing that *can*
+  // drift is the grid auto-scrolling mid-scrub, which moves the content under a
+  // fixed finger position — so the mapping adds the scroll delta since calibration
+  // (see `resolveItemAt`).
   const scrubOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const scrubStartOffsetRef = useRef(0);
   const tileRectsRef = useRef<Map<string, TileRect>>(new Map());
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
@@ -321,16 +350,25 @@ export function FileSystemMobileGridView({
     tileRectsRef.current.set(entry.path, rect);
   }, []);
 
-  const resolveItemAt = useCallback((x: number, y: number) => {
+  const resolveItemAt = useCallback((x: number, y: number): FileSystemScrubHit => {
     const origin = scrubOriginRef.current;
     if (origin === null) return null;
     const contentX = x - origin.x;
-    const contentY = y - origin.y;
+    const contentY = y - origin.y + (scrollOffsetRef.current - scrubStartOffsetRef.current);
+    let minTop = Number.POSITIVE_INFINITY;
+    let maxBottom = Number.NEGATIVE_INFINITY;
     for (const [path, rect] of tileRectsRef.current) {
+      if (rect.y < minTop) minTop = rect.y;
+      if (rect.y + rect.height > maxBottom) maxBottom = rect.y + rect.height;
       const insideX = contentX >= rect.x && contentX < rect.x + rect.width;
       const insideY = contentY >= rect.y && contentY < rect.y + rect.height;
-      if (insideX && insideY) return path;
+      if (insideX && insideY) return { kind: 'item', path };
     }
+    // No tile has laid out yet, or the finger sits in the grid's own content bounds
+    // but between tiles (a gap) — neither is an over-drag.
+    if (tileRectsRef.current.size === 0) return null;
+    if (contentY < minTop) return { kind: 'beyond', side: 'above' };
+    if (contentY > maxBottom) return { kind: 'beyond', side: 'below' };
     return null;
   }, []);
 
@@ -357,25 +395,28 @@ export function FileSystemMobileGridView({
       const centerX = rect.x + rect.width - TRAILING_CONTROL_SIZE / 2;
       const centerY = rect.y + GLYPH_BOX_HEIGHT + 2 + TRAILING_CONTROL_SIZE / 2;
       scrubOriginRef.current = { x: x - centerX, y: y - centerY };
+      scrubStartOffsetRef.current = scrollOffsetRef.current;
       begin(entry);
+      beginAutoScroll();
     },
-    [begin],
+    [begin, beginAutoScroll],
   );
+
+  const handleScrubMove = useCallback(
+    (x: number, y: number) => {
+      moveScrub(x, y);
+      moveAutoScroll(x, y);
+    },
+    [moveScrub, moveAutoScroll],
+  );
+
+  const handleScrubEnd = useCallback(() => {
+    endScrub();
+    endAutoScroll();
+  }, [endScrub, endAutoScroll]);
 
   const tileWidth =
     width > 0 ? Math.max(0, Math.floor((width - GRID_PADDING * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS)) : 0;
-
-  const containerRef = useRef<View | null>(null);
-  const scrollRef = useRef<ScrollView | null>(null);
-  const scrollOffsetRef = useRef(0);
-  // The manager this view's zones registered under — the scope the scroll
-  // correction applies to, so a second FileSystem on the page keeps its own boxes.
-  const { managerPath } = useDragScope();
-
-  // A drag near the top or bottom edge scrolls the grid, so a folder below the
-  // fold is reachable without releasing. Runs for external drags too.
-  const scrollTo = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
-  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -422,8 +463,8 @@ export function FileSystemMobileGridView({
                 onExternalDrop={onExternalDrop}
                 onMove={onMove}
                 onScrubStart={beginScrub}
-                onScrubMove={moveScrub}
-                onScrubEnd={endScrub}
+                onScrubMove={handleScrubMove}
+                onScrubEnd={handleScrubEnd}
                 onSelectLongPress={selectLongPress}
                 onTileLayout={handleTileLayout}
                 onToggleSelect={toggleSelect}

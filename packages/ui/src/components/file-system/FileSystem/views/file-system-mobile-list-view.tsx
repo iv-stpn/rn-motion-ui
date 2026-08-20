@@ -24,10 +24,11 @@ import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
+import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
-import { useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
+import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { formatFileSystemStats } from '../logic/file-system-format';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
@@ -272,22 +273,51 @@ export function FileSystemMobileListView({
     [onOpen, selecting, toggleSelect],
   );
 
+  const containerRef = useRef<View | null>(null);
+  const flatListRef = useRef<FlatList<FileSystemEntry> | null>(null);
+  const scrollOffsetRef = useRef(0);
+  // The manager this view's zones registered under — the scope the scroll
+  // correction applies to, so a second FileSystem on the page keeps its own boxes.
+  const { managerPath } = useDragScope();
+
+  // A drag near the top or bottom edge scrolls the list, so a folder below the
+  // fold is reachable without releasing. Runs for external drags too.
+  const scrollTo = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ animated: false, offset }), []);
+  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
+
+  // The same edge-scroll engine the drag above uses, driven by the scrub's pointer
+  // stream instead — dragging to multi-select scrolls the list when the finger goes
+  // above the visible rows (or below them).
+  const {
+    begin: beginAutoScroll,
+    move: moveAutoScroll,
+    end: endAutoScroll,
+  } = useFileSystemAutoScroll({
+    containerRef,
+    scrollTo,
+    scrollOffsetRef,
+  });
+
   // Scrub geometry. The finger→row mapping is calibrated at drag start against the
   // one point both sides already agree on: the start entry's checkbox, whose content
-  // position is `rowIndex * ROW_STRIDE + MOBILE_ROW_HEIGHT / 2` and whose
-  // window position the gesture reports at `onStart`. That offset turns every later
-  // `absoluteY` straight into a row — no `measureInWindow`, no scroll bookkeeping,
-  // nothing that can drift between the finger's frame and the view's.
+  // position is `rowIndex * ROW_STRIDE + MOBILE_ROW_HEIGHT / 2` and whose window
+  // position the gesture reports at `onStart`. That offset turns every later
+  // `absoluteY` straight into a row. The one thing that *can* drift is the list
+  // auto-scrolling mid-scrub, which moves the content under a fixed finger position —
+  // so the mapping adds the scroll delta since calibration (see `resolveItemAt`).
   const scrubOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const scrubStartOffsetRef = useRef(0);
 
   const resolveItemAt = useCallback(
-    (_x: number, y: number) => {
+    (_x: number, y: number): FileSystemScrubHit => {
       const origin = scrubOriginRef.current;
       if (origin === null) return null;
-      const contentY = y - origin.y;
-      if (contentY < 0) return null;
+      const contentY = y - origin.y + (scrollOffsetRef.current - scrubStartOffsetRef.current);
+      if (contentY < 0) return { kind: 'beyond', side: 'above' };
       const rowIndex = Math.floor(contentY / ROW_STRIDE);
-      return rowIndex >= 0 && rowIndex < orderedPaths.length ? (orderedPaths[rowIndex] ?? null) : null;
+      const path = orderedPaths[rowIndex];
+      if (path === undefined) return { kind: 'beyond', side: 'below' };
+      return { kind: 'item', path };
     },
     [orderedPaths],
   );
@@ -300,22 +330,25 @@ export function FileSystemMobileListView({
       const rowIndex = orderedPaths.indexOf(entry.path);
       const checkboxCenterY = rowIndex * ROW_STRIDE + MOBILE_ROW_HEIGHT / 2;
       scrubOriginRef.current = { x: 0, y: y - checkboxCenterY };
+      scrubStartOffsetRef.current = scrollOffsetRef.current;
       begin(entry);
+      beginAutoScroll();
     },
-    [begin, orderedPaths],
+    [begin, beginAutoScroll, orderedPaths],
   );
 
-  const containerRef = useRef<View | null>(null);
-  const flatListRef = useRef<FlatList<FileSystemEntry> | null>(null);
-  const scrollOffsetRef = useRef(0);
-  // The manager this view's zones registered under — the scope the scroll
-  // correction applies to, so a second FileSystem on the page keeps its own boxes.
-  const { managerPath } = useDragScope();
+  const handleScrubMove = useCallback(
+    (x: number, y: number) => {
+      moveScrub(x, y);
+      moveAutoScroll(x, y);
+    },
+    [moveScrub, moveAutoScroll],
+  );
 
-  // A drag near the top or bottom edge scrolls the list, so a folder below the
-  // fold is reachable without releasing. Runs for external drags too.
-  const scrollTo = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ animated: false, offset }), []);
-  useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
+  const handleScrubEnd = useCallback(() => {
+    endScrub();
+    endAutoScroll();
+  }, [endScrub, endAutoScroll]);
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -344,8 +377,8 @@ export function FileSystemMobileListView({
         isSelected={selectedPaths.has(item.path)}
         onActivate={activate}
         onScrubStart={beginScrub}
-        onScrubMove={moveScrub}
-        onScrubEnd={endScrub}
+        onScrubMove={handleScrubMove}
+        onScrubEnd={handleScrubEnd}
         onSelectLongPress={selectLongPress}
         onToggleSelect={toggleSelect}
         selecting={selecting}
@@ -353,7 +386,19 @@ export function FileSystemMobileListView({
         {...rowProps}
       />
     ),
-    [activate, beginScrub, endScrub, index, moveScrub, selectedPaths, selectLongPress, selecting, testID, toggleSelect, rowProps],
+    [
+      activate,
+      beginScrub,
+      handleScrubEnd,
+      handleScrubMove,
+      index,
+      selectedPaths,
+      selectLongPress,
+      selecting,
+      testID,
+      toggleSelect,
+      rowProps,
+    ],
   );
 
   // The vertical gap between rows — see `MobileRowSeparator`.

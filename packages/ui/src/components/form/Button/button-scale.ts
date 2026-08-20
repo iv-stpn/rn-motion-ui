@@ -17,7 +17,7 @@
 // press/ripple machinery (button-internals.tsx, which re-exports the two types
 // below so existing import sites keep working).
 
-import { INTERACTIVE_RADIUS, TEXT_INTERACTIVE } from '../../../lib/radius';
+import { INTERACTIVE_RADIUS } from '../../../lib/radius';
 
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 export type ButtonShape = 'rounded' | 'pill';
@@ -113,13 +113,19 @@ export function buttonRadiusClass(shape: ButtonShape): 'rounded-full' | 'rounded
  * through a per-variant class, GlossyButton inline from the face colour), and a
  * shared colour class here would fight those.
  *
- * ElevatedButton is the one opt-out.
+ * `lg` deliberately shares `md`'s size rather than stepping up: past the `md` box
+ * the extra height and padding already carry the size difference, and a 16px label
+ * reads oversized inside a button. That one divergence is why the ramp is spelled
+ * out here instead of taken from `TEXT_INTERACTIVE` (which Tabs and ToggleGroup
+ * still use verbatim) — retune here, not at the call site.
+ *
+ * ElevatedButton is the one opt-out: a single size for every box, level with `md`.
  *
  * Static literals so the Tailwind/uniwind scanner picks them up.
  */
 export const LABEL_TEXT_CLASS: Record<ButtonSize, string> = {
-  sm: `font-medium ${TEXT_INTERACTIVE.sm}`,
-  md: `font-medium ${TEXT_INTERACTIVE.md}`,
-  lg: `font-medium ${TEXT_INTERACTIVE.lg}`,
-  icon: `font-medium ${TEXT_INTERACTIVE.icon}`,
+  sm: 'font-medium text-xs',
+  md: 'font-medium text-sm',
+  lg: 'font-medium text-sm',
+  icon: 'font-medium text-sm',
 };

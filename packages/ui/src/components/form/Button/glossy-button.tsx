@@ -42,13 +42,16 @@ import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass, LABEL
  * - `neutral` is a hand-authored light/dark pair, transcribed from the web
  *   source. It's the only translucent face, so it flips with the page on its own
  *   (glass) and branches on the page and nothing else.
- * - every other face — `inverse` (the `primary`/`primary-foreground` pair
- *   flipped), the status tokens, the `gray` plate, and any `color` a consumer
- *   passes — runs the *derived* recipe: the rim is the face taken 0.17 darker at
- *   65% chroma, the cast the face at absolute lightness 0.25 and 40% chroma.
- *   Those ratios are reverse-engineered from the web source's hand-authored
- *   per-hue table (`--rim-*` / `--cast-*`), so a token retint or an arbitrary
- *   `color` lands where a designer would have put it, with no table to extend.
+ * - `inverse` is that same pair pointed at the *opposite* page — `neutral`
+ *   rendered in the other theme. It's opaque (the `primary` fill, not glass), but
+ *   the lighting stays the hand-authored neutral pair rather than a derived one.
+ * - every other face — the status tokens, the `gray` plate, and any `color` a
+ *   consumer passes — runs the *derived* recipe: the rim is the face taken 0.17
+ *   darker at 65% chroma, the cast the face at absolute lightness 0.25 and 40%
+ *   chroma. Those ratios are reverse-engineered from the web source's
+ *   hand-authored per-hue table (`--rim-*` / `--cast-*`), so a token retint or an
+ *   arbitrary `color` lands where a designer would have put it, with no table to
+ *   extend.
  *
  * ## The page lights the key; extreme faces opt out
  *
@@ -346,8 +349,10 @@ function derivedRecipe(base: string, pageDark: boolean): GlossySlots {
 
 // ── face resolution ────────────────────────────────────────────────────────
 
-/** Which recipe family a face belongs to. */
-type FaceKind = 'neutral' | 'derived';
+/** Which recipe family a face belongs to. `inverse` is `neutral`'s hand-authored
+ *  pair pointed at the *opposite* page, so it's its own family value rather than
+ *  a derived colour. */
+type FaceKind = 'neutral' | 'inverse' | 'derived';
 
 /** The face colours, plus the family whose recipe lights them. */
 type GlossyFace = {
@@ -400,12 +405,13 @@ function resolveFace(variant: GlossyVariant, color: string | undefined, colors: 
       return { paint: glass, base: compositeOver(glass, page), content: colors.foreground, kind: 'neutral' };
     }
     case 'inverse': {
-      // `primary-foreground` over `primary`, the theme's own opposite-theme
-      // twins, so the face flips with the page exactly like `neutral` — but
-      // opaque, not glass. The label is the face's twin, which is what keeps the
-      // pair reading against each other no matter what a consumer retints.
-      const paint = colors['primary-foreground'];
-      return { paint, base: paint, content: colors.primary, kind: 'derived' };
+      // `neutral` rendered in the opposite theme. The `primary` fill is the
+      // opaque twin of the other theme's glass face — near-black on a light page,
+      // near-white on a dark one — and `primary-foreground` is its label partner.
+      // The lighting is the hand-authored neutral pair flipped (not a derived
+      // recipe), so the key reads exactly as `neutral` does across the page swap.
+      const paint = colors.primary;
+      return { paint, base: paint, content: colors['primary-foreground'], kind: 'inverse' };
     }
     case 'gray':
       return { paint: GRAY_FILL, base: GRAY_FILL, content: GRAY_CONTENT, kind: 'derived' };
@@ -416,9 +422,11 @@ function resolveFace(variant: GlossyVariant, color: string | undefined, colors: 
   }
 }
 
-/** The whole slot table for a face: hand-authored pair, or derived from the colour. */
+/** The whole slot table for a face: hand-authored pair (neutral or its flipped
+ *  inverse), or derived from the colour. */
 function glossyRecipe(kind: FaceKind, base: string, pageDark: boolean): GlossySlots {
   if (kind === 'neutral') return pageDark ? NEUTRAL_DARK : NEUTRAL_LIGHT;
+  if (kind === 'inverse') return pageDark ? NEUTRAL_LIGHT : NEUTRAL_DARK;
   return derivedRecipe(base, pageDark);
 }
 

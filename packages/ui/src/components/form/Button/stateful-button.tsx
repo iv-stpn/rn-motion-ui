@@ -102,6 +102,9 @@ const SQUEEZE_PADDING_CLASS: Record<ButtonSize, string> = { sm: 'px-1.5', md: 'p
 // variant so the icon reads correctly against every button background.
 function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>): string {
   if (v === 'danger') return c['primary-foreground'];
+  if (v === 'success') return c['success-foreground'];
+  if (v === 'warning') return c['warning-foreground'];
+  if (v === 'info') return c['info-foreground'];
   if (v === 'special') return c['special-foreground'];
   if (v === 'inverse') return c['surface-1'];
   if (v === 'outlineDanger' || v === 'ghostDanger') return c.danger;
@@ -109,21 +112,23 @@ function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>
 }
 
 // Flat variant → elevated palette for the idle/loading chip. The danger family
-// collapses onto the `danger` fill and `special`/`inverse` carry over as
-// themselves (both exist on the elevated union); every remaining variant is
-// monochrome or transparent, so it takes the `neutral` fill.
+// collapses onto the `danger` fill; `special`/`inverse` and the status fills
+// (`success`/`warning`/`info`) carry over as themselves (all exist on the
+// elevated union); every remaining variant is monochrome or transparent, so it
+// takes the `neutral` fill.
 function elevatedPaletteFor(v: ButtonVariant): ElevatedVariant {
   if (v === 'danger' || v === 'outlineDanger' || v === 'ghostDanger') return 'danger';
-  if (v === 'special' || v === 'inverse') return v;
+  if (v === 'special' || v === 'inverse' || v === 'success' || v === 'warning' || v === 'info') return v;
   return 'neutral';
 }
 
 // Flat variant → glossy palette for the idle/loading key. Same family
 // collapse as the elevated palette: danger family → `danger`, special/inverse
-// carry over, everything else → the translucent `neutral` glass key.
+// and the status fills carry over, everything else → the translucent `neutral`
+// glass key.
 function glossyPaletteFor(v: ButtonVariant): GlossyVariant {
   if (v === 'danger' || v === 'outlineDanger' || v === 'ghostDanger') return 'danger';
-  if (v === 'special' || v === 'inverse') return v;
+  if (v === 'special' || v === 'inverse' || v === 'success' || v === 'warning' || v === 'info') return v;
   return 'neutral';
 }
 

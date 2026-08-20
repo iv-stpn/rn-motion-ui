@@ -31,6 +31,9 @@ const VARIANTS = [
   'inverse',
   'ghost',
   'danger',
+  'success',
+  'warning',
+  'info',
   'special',
   'outlineDanger',
   'ghostDanger',
@@ -56,6 +59,9 @@ type IconSide = (typeof ICON_SIDES)[number];
 // outlines carry the danger hue, everything else the plain foreground.
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   if (variant === 'neutral' || variant === 'danger') return colors['primary-foreground'];
+  if (variant === 'success') return colors['success-foreground'];
+  if (variant === 'warning') return colors['warning-foreground'];
+  if (variant === 'info') return colors['info-foreground'];
   if (variant === 'special') return colors['special-foreground'];
   if (variant === 'inverse') return colors['surface-1'];
   if (variant === 'outlineDanger' || variant === 'ghostDanger') return colors.danger;

@@ -17,14 +17,14 @@ const meta = {
     icon: Trash2,
     variant: 'neutral',
     size: 'md',
-    shape: 'rounded',
+    shape: 'pill',
     accessibilityLabel: 'Delete',
     onPress: fn(),
   },
   argTypes: {
     variant: {
       control: 'select',
-      options: ['neutral', 'inverse', 'ghost', 'danger', 'special', 'outlineDanger', 'ghostDanger', 'elevated'],
+      options: ['neutral', 'elevated'],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -33,16 +33,7 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const VARIANTS = [
-  'neutral',
-  'inverse',
-  'ghost',
-  'danger',
-  'special',
-  'outlineDanger',
-  'ghostDanger',
-  'elevated',
-] as const satisfies readonly IconButtonVariant[];
+const VARIANTS = ['neutral', 'elevated'] as const satisfies readonly IconButtonVariant[];
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
 
@@ -52,7 +43,7 @@ const TILE_COLORS = ['#FF3B30', '#007AFF', '#34C759', '#FF9500', '#AF52DE'];
 function IconButtonPlayground(args: IconButtonProps) {
   const [variant, setVariant] = useState<IconButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
-  const [pill, setPill] = useState(false);
+  const [pill, setPill] = useState(true);
   const [loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [ripple, setRipple] = useState(false);
@@ -132,7 +123,7 @@ function IconButtonPlayground(args: IconButtonProps) {
         <Variants align="center">
           {TILE_COLORS.map((color) => (
             <Sample key={color} label={color}>
-              <IconButton {...args} icon={Settings} variant="ghost" iconBackgroundColor={color} />
+              <IconButton {...args} icon={Settings} variant="neutral" iconBackgroundColor={color} />
             </Sample>
           ))}
         </Variants>
@@ -143,14 +134,14 @@ function IconButtonPlayground(args: IconButtonProps) {
           <Sample label="loading (neutral)">
             <IconButton {...args} icon={Download} loading={true} variant="neutral" />
           </Sample>
-          <Sample label="loading (ghost)">
-            <IconButton {...args} icon={Download} loading={true} variant="ghost" />
+          <Sample label="loading (elevated)">
+            <IconButton {...args} icon={Download} loading={true} variant="elevated" />
           </Sample>
           <Sample label="disabled">
             <IconButton {...args} disabled={true} variant="neutral" />
           </Sample>
-          <Sample label="disabled ghost">
-            <IconButton {...args} disabled={true} variant="ghost" />
+          <Sample label="disabled (elevated)">
+            <IconButton {...args} disabled={true} variant="elevated" />
           </Sample>
         </Variants>
       </Section>
@@ -176,7 +167,7 @@ export const Primary: Story = {
   },
 };
 
-/** All nine variants at the default md size, with a secondary icon for visual
+/** Both variants at the default md size, with a secondary icon for visual
  *  variety. */
 export const AllVariants: Story = {
   render: (args) => (

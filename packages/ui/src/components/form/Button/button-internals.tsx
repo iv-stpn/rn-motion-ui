@@ -53,7 +53,7 @@ type BuildContentArgs = {
 function renderChild(child: ReactNode, className: string, labelClassName?: string, color?: string): ReactNode {
   if (typeof child === 'string' || typeof child === 'number')
     return (
-      <Text className={cn(className, labelClassName)} style={color === undefined ? undefined : { color }}>
+      <Text className={cn(className, labelClassName)} weight="medium" style={color === undefined ? undefined : { color }}>
         {child}
       </Text>
     );
@@ -297,7 +297,7 @@ export function buildButtonContent({
 
   if (isLeaf && !hasAdornments)
     return (
-      <Text className={mergedLabelClass} style={labelStyle}>
+      <Text className={mergedLabelClass} weight="medium" style={labelStyle}>
         {children}
       </Text>
     );
@@ -306,7 +306,7 @@ export function buildButtonContent({
     <View className={cn('flex-row items-center justify-center', BUTTON_GAP_CLASSNAME)}>
       {leftAdornment}
       {isLeaf ? (
-        <Text className={mergedLabelClass} style={labelStyle}>
+        <Text className={mergedLabelClass} weight="medium" style={labelStyle}>
           {children}
         </Text>
       ) : (

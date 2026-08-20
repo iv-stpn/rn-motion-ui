@@ -6,7 +6,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, EASE_OUT_FN } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
-import { Text } from '../Text/text';
+import { Text, type TextWeight } from '../Text/text';
 import { formatNumber, isDigit } from './text-number-ticker.logic';
 
 const DIGITS = Array.from({ length: 10 }, (_, n) => n);
@@ -46,8 +46,10 @@ export type TextNumberTickerProps = {
   suffix?: string;
   /** Only animate once the element has entered the viewport. */
   startOnView?: boolean;
-  /** Text styling for glyphs (size/weight/colour). */
+  /** Text styling for glyphs (size/colour). */
   className?: string;
+  /** Font weight for glyphs (resolves a per-weight font token). */
+  weight?: TextWeight;
   /** Extra styling for each digit column. `'roll'` only. */
   digitClassName?: string;
   style?: StyleProp<ViewStyle>;
@@ -80,6 +82,7 @@ export function TextNumberTicker({
   suffix,
   startOnView = true,
   className,
+  weight,
   digitClassName,
   style,
   accessibilityLabel,
@@ -111,6 +114,7 @@ export function TextNumberTicker({
         <RollingDigits
           armed={armed}
           className={className}
+          weight={weight}
           digitClassName={digitClassName}
           duration={duration}
           prefix={prefix}
@@ -122,6 +126,7 @@ export function TextNumberTicker({
         <CountingLabel
           armed={armed}
           className={className}
+          weight={weight}
           duration={duration}
           format={formatValue}
           prefix={prefix}
@@ -141,10 +146,21 @@ type RollingDigitsProps = {
   prefix?: string;
   suffix?: string;
   className?: string;
+  weight?: TextWeight;
   digitClassName?: string;
 };
 
-function RollingDigits({ text, armed, duration, stagger, prefix, suffix, className, digitClassName }: RollingDigitsProps) {
+function RollingDigits({
+  text,
+  armed,
+  duration,
+  stagger,
+  prefix,
+  suffix,
+  className,
+  weight,
+  digitClassName,
+}: RollingDigitsProps) {
   // Measured "0" glyph box — the roll needs concrete px, not the web's `1ch`/`em`.
   const [box, setBox] = useState({ w: 0, h: 0 });
 
@@ -178,15 +194,19 @@ function RollingDigits({ text, armed, duration, stagger, prefix, suffix, classNa
   return (
     <>
       {/* Hidden measurer sets the per-digit box before columns render. */}
-      <Text onLayout={onMeasure} importantForAccessibility="no" className={cn('absolute opacity-0', className)}>
+      <Text onLayout={onMeasure} importantForAccessibility="no" className={cn('absolute opacity-0', className)} weight={weight}>
         {MEASURE_GLYPH}
       </Text>
-      {prefix ? <Text className={className}>{prefix}</Text> : null}
+      {prefix ? (
+        <Text className={className} weight={weight}>
+          {prefix}
+        </Text>
+      ) : null}
       {measured
         ? glyphs.map(({ char, id }, i) => {
             if (!isDigit(char))
               return (
-                <Text key={id} className={className}>
+                <Text key={id} className={className} weight={weight}>
                   {char}
                 </Text>
               );
@@ -198,12 +218,17 @@ function RollingDigits({ text, armed, duration, stagger, prefix, suffix, classNa
                 duration={duration}
                 box={box}
                 className={className}
+                weight={weight}
                 digitClassName={digitClassName}
               />
             );
           })
         : null}
-      {suffix ? <Text className={className}>{suffix}</Text> : null}
+      {suffix ? (
+        <Text className={className} weight={weight}>
+          {suffix}
+        </Text>
+      ) : null}
     </>
   );
 }
@@ -214,10 +239,11 @@ type DigitProps = {
   duration: number;
   box: { w: number; h: number };
   className?: string;
+  weight?: TextWeight;
   digitClassName?: string;
 };
 
-function Digit({ digit, delay, duration, box, className, digitClassName }: DigitProps) {
+function Digit({ digit, delay, duration, box, className, weight, digitClassName }: DigitProps) {
   const reduce = useReducedMotion();
   return (
     <View className={digitClassName} style={{ width: box.w, height: box.h, overflow: 'hidden' }} importantForAccessibility="no">
@@ -232,7 +258,9 @@ function Digit({ digit, delay, duration, box, className, digitClassName }: Digit
       >
         {DIGITS.map((number) => (
           <View key={number} className="items-center justify-center" style={{ height: box.h }}>
-            <Text className={cn('tabular-nums', className)}>{number}</Text>
+            <Text className={cn('tabular-nums', className)} weight={weight}>
+              {number}
+            </Text>
           </View>
         ))}
       </MotiView>
@@ -248,9 +276,10 @@ type CountingLabelProps = {
   prefix?: string;
   suffix?: string;
   className?: string;
+  weight?: TextWeight;
 };
 
-function CountingLabel({ value, armed, duration, format, prefix, suffix, className }: CountingLabelProps) {
+function CountingLabel({ value, armed, duration, format, prefix, suffix, className, weight }: CountingLabelProps) {
   const reduce = useReducedMotion();
   const [display, setDisplay] = useState(0);
   const fromRef = useRef(0);
@@ -283,5 +312,7 @@ function CountingLabel({ value, armed, duration, format, prefix, suffix, classNa
     return () => cancelAnimationFrame(raf);
   }, [value, duration, armed, reduce]);
 
-  return <Text className={cn('tabular-nums', className)}>{`${prefix ?? ''}${format(display)}${suffix ?? ''}`}</Text>;
+  return (
+    <Text className={cn('tabular-nums', className)} weight={weight}>{`${prefix ?? ''}${format(display)}${suffix ?? ''}`}</Text>
+  );
 }

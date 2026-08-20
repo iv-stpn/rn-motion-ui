@@ -158,7 +158,8 @@ function OtpSlot({
           <Text
             {...textProps}
             testID={textProps?.testID ? `${textProps.testID}-${index}` : undefined}
-            className="font-semibold text-foreground text-xl"
+            weight="semibold"
+            className="text-foreground text-xl"
             style={theme.pinCodeTextStyle}
           >
             {displayChar}
@@ -408,7 +409,11 @@ export function OTPInput({
 
   return (
     <View className={cn('gap-2', className)} style={[theme.containerStyle, style]}>
-      {label ? <Text className="font-medium text-foreground text-sm">{label}</Text> : null}
+      {label ? (
+        <Text weight="medium" className="text-foreground text-sm">
+          {label}
+        </Text>
+      ) : null}
 
       <View className="flex-row items-center self-start" style={{ opacity: disabled ? 0.5 : 1 }}>
         {/* Hidden input owns focus + keyboard. No maxLength: a keystroke on a full

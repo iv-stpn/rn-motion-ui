@@ -11,9 +11,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useThemeColor } from '../../../theme/use-theme-color';
-import { Text } from '../Text/text';
+import { Text, type TextWeight } from '../Text/text';
 
 const HEADER_REGEX = /^h[1-6]$/;
+
+// Themed Text made animatable so a shimmered character still resolves its
+// per-weight font-family token through the `weight` prop (reanimated's own
+// `Animated.Text` can't).
+const AnimatedText = Animated.createAnimatedComponent(Text);
 
 /**
  * Half-width of the bright band, in phase units (the string spans 0→1). The web
@@ -25,6 +30,7 @@ const BAND = 0.22;
 type ShimmerCharProps = {
   char: string;
   className: string | undefined;
+  weight: TextWeight | undefined;
   /** Resting colour, away from the band. */
   color: string;
   /** Colour at the centre of the band. */
@@ -34,7 +40,7 @@ type ShimmerCharProps = {
   progress: SharedValue<number>;
 };
 
-function ShimmerChar({ char, className, color, highlightColor, phase, progress }: ShimmerCharProps) {
+function ShimmerChar({ char, className, weight, color, highlightColor, phase, progress }: ShimmerCharProps) {
   const animatedStyle = useAnimatedStyle(() => {
     // The band centre starts one half-width off the left edge and ends one off
     // the right, so it enters and leaves cleanly and the sawtooth's wrap back to
@@ -48,12 +54,12 @@ function ShimmerChar({ char, className, color, highlightColor, phase, progress }
   });
 
   return (
-    <Animated.Text className={className} style={animatedStyle}>
+    <AnimatedText className={className} weight={weight} style={animatedStyle}>
       {/* Each character is its own element, so a plain space would be a
           collapsible whitespace node between flex items; NBSP holds its width. */}
       {/* biome-ignore lint/suspicious/noLeakedRender: both branches are string literals — no numeric leak */}
       {char === ' ' ? ' ' : char}
-    </Animated.Text>
+    </AnimatedText>
   );
 }
 
@@ -77,11 +83,13 @@ export type TextShimmerProps = {
    */
   highlightColor?: string;
   /**
-   * Text styling — size, weight, tracking. Colour is driven by `color` /
+   * Text styling — size, tracking. Colour is driven by `color` /
    * `highlightColor`, not by a `text-*` class here: the shimmer writes colour
    * as an animated style, which wins over the class on both platforms.
    */
   className?: string;
+  /** Font weight (resolves a per-weight font token). */
+  weight?: TextWeight;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -102,6 +110,7 @@ export function TextShimmer({
   color,
   highlightColor,
   className,
+  weight,
   style,
   accessibilityLabel,
   testID,
@@ -136,7 +145,7 @@ export function TextShimmer({
   if (typeof children !== 'string' || reduce)
     return (
       <View testID={testID} accessibilityRole={role} accessibilityLabel={accessibilityLabel} style={style}>
-        <Text className={className} style={{ color: bright }}>
+        <Text className={className} weight={weight} style={{ color: bright }}>
           {children}
         </Text>
       </View>
@@ -152,6 +161,7 @@ export function TextShimmer({
         <ShimmerChar
           char={char}
           className={className}
+          weight={weight}
           color={dim}
           highlightColor={bright}
           // biome-ignore lint/suspicious/noArrayIndexKey: position is the shimmer slot — each index lights up at its own point in the sweep.

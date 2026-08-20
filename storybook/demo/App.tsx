@@ -84,7 +84,9 @@ export default function App() {
       <StatusBar style="auto" />
       <ScrollView contentContainerClassName="gap-8 px-6 pb-16 pt-24" nestedScrollEnabled={true}>
         <View className="gap-1">
-          <Text className="font-semibold text-2xl text-foreground">{TITLE}</Text>
+          <Text weight="semibold" className="text-2xl text-foreground">
+            {TITLE}
+          </Text>
           <Text className="text-muted-foreground text-sm">{SUBTITLE}</Text>
         </View>
 

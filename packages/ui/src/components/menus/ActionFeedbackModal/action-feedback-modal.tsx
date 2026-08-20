@@ -71,7 +71,11 @@ function StateContent(props: StateContentProps) {
           transition={transition}
           className="w-full items-center gap-1.5"
         >
-          {successLabel ? <Text className="text-center font-semibold text-base text-foreground">{successLabel}</Text> : null}
+          {successLabel ? (
+            <Text weight="semibold" className="text-center text-base text-foreground">
+              {successLabel}
+            </Text>
+          ) : null}
           {successMessage ? <Text className="text-center text-muted-foreground text-sm">{successMessage}</Text> : null}
           {taglineText}
         </MotiView>
@@ -85,7 +89,9 @@ function StateContent(props: StateContentProps) {
           transition={transition}
           className="w-full items-center gap-1.5"
         >
-          <Text className="text-center font-semibold text-base text-foreground">{errorTitle}</Text>
+          <Text weight="semibold" className="text-center text-base text-foreground">
+            {errorTitle}
+          </Text>
           {errorMessage ? (
             <Text className="text-center text-muted-foreground text-sm leading-relaxed">{errorMessage}</Text>
           ) : null}

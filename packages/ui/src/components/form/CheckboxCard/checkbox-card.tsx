@@ -246,12 +246,16 @@ export function CheckboxCard({
             />
             {badge ? (
               <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
-                <Text className="font-semibold text-primary text-xs">{badge}</Text>
+                <Text weight="semibold" className="text-primary text-xs">
+                  {badge}
+                </Text>
               </View>
             ) : null}
           </View>
           <View className="gap-1">
-            <Text className="font-semibold text-base text-foreground">{title}</Text>
+            <Text weight="semibold" className="text-base text-foreground">
+              {title}
+            </Text>
             {subtitle ? (
               <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
                 {subtitle}

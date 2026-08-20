@@ -190,7 +190,11 @@ export function AdaptiveModal({
       <View className="flex-row items-start justify-between gap-4">
         {renderedTitle || renderedSubtitle ? (
           <View className="min-w-0 flex-1 gap-2">
-            {renderedTitle ? <Text className="mr-4 pt-1 font-semibold text-foreground text-xl">{renderedTitle}</Text> : null}
+            {renderedTitle ? (
+              <Text weight="semibold" className="mr-4 pt-1 text-foreground text-xl">
+                {renderedTitle}
+              </Text>
+            ) : null}
             {renderedSubtitle ? (
               <Text className="text-base text-muted-foreground leading-relaxed">{renderedSubtitle}</Text>
             ) : null}

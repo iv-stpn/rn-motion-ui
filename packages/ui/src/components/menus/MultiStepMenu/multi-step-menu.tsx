@@ -281,7 +281,7 @@ export const MultiStepMenu = function MultiStepMenu({
                   </MotiView>
                 )}
               </AnimatePresence>
-              <TextRolling text={title} className="flex-1 font-medium text-foreground text-lg" />
+              <TextRolling text={title} weight="medium" className="flex-1 text-foreground text-lg" />
             </View>
             <CloseButton className="absolute top-2 right-2" onPress={handleClose} />
           </View>
@@ -344,7 +344,7 @@ export const MultiStepMenu = function MultiStepMenu({
                     transition={arrowTransition}
                     exitTransition={arrowExitTransition}
                   >
-                    <TextRolling text={title} className="font-bold text-2xl text-foreground" />
+                    <TextRolling text={title} weight="bold" className="text-2xl text-foreground" />
                   </MotiView>
                 )}
               </AnimatePresence>

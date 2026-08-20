@@ -127,7 +127,7 @@ function BouncyAccordionRow({
           className="min-h-[54px] w-full flex-row items-center gap-4 px-5"
         >
           {item.icon ? <View className="h-7 w-7 shrink-0 items-center justify-center">{item.icon}</View> : null}
-          <Text numberOfLines={1} className="min-w-0 flex-1 font-medium text-[15px] text-foreground">
+          <Text numberOfLines={1} weight="medium" className="min-w-0 flex-1 text-[15px] text-foreground">
             {item.title}
           </Text>
           <MotiView

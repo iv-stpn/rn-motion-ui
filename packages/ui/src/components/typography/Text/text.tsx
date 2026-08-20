@@ -55,6 +55,9 @@ const text = cva('text-foreground', {
   defaultVariants: { weight: 'normal', font: 'sans' },
 });
 
+/** The weight axis of {@link Text} — one value per per-weight font-family token. */
+export type TextWeight = NonNullable<VariantProps<typeof text>['weight']>;
+
 export interface TextProps_ extends TextProps, VariantProps<typeof text> {
   /**
    * Merged onto the base classes via `cn()` — last-wins for any conflicting

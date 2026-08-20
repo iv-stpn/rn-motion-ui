@@ -220,7 +220,8 @@ function WheelPickerRow({
       <Text
         accessibilityRole="button"
         onPress={onPress}
-        className="text-center font-medium text-foreground"
+        weight="medium"
+        className="text-center text-foreground"
         style={{ height: itemHeight, lineHeight: itemHeight }}
         testID={testID}
       >
@@ -703,9 +704,8 @@ export function WheelPicker({
                 key={v}
                 accessibilityRole="button"
                 onPress={disabled ? undefined : () => emit(options.indexOf(option))}
-                className={
-                  v === currentValue ? 'text-center font-medium text-foreground' : 'text-center font-medium text-muted-foreground'
-                }
+                weight="medium"
+                className={v === currentValue ? 'text-center text-foreground' : 'text-center text-muted-foreground'}
                 style={{ height: itemHeight, lineHeight: itemHeight }}
                 testID={`${testID ?? 'wheel-picker'}-option-${v}`}
               >

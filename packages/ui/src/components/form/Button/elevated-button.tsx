@@ -227,7 +227,7 @@ function resolveAppearance({ variant, size, shape, hovered, isDisabled, colors }
       BUTTON_BOX[shape][size],
       backgroundClass(variant, hovered, isDisabled),
     ),
-    labelClass: cn('text-sm font-medium', labelColorClass(variant, hovered, isDisabled)),
+    labelClass: cn('text-sm', labelColorClass(variant, hovered, isDisabled)),
     spinnerColor: spinnerColorFor(variant, isDisabled, colors),
     // gray and white are flat plates — neither gets the SVG gloss/rim overlays.
     showHighlights: variant !== 'white' && variant !== 'gray' && !isDisabled,

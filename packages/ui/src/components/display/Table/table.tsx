@@ -249,7 +249,11 @@ function TableImpl<T>(props: TableProps<T>) {
       return (
         <View className={cn('items-center justify-center p-10', emptyClassName)}>
           {emptyIcon ? <View className="mb-2.5 items-center">{emptyIcon}</View> : null}
-          {emptyTitle ? <Text className="mb-1 text-center font-semibold text-sm">{emptyTitle}</Text> : null}
+          {emptyTitle ? (
+            <Text weight="semibold" className="mb-1 text-center text-sm">
+              {emptyTitle}
+            </Text>
+          ) : null}
           {emptyDescription ? <Text className="text-center text-[13px]">{emptyDescription}</Text> : null}
         </View>
       );

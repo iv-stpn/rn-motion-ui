@@ -149,7 +149,9 @@ export function PopoverTrigger({ children, accessibilityLabel, className, style,
       style={style}
     >
       {typeof children === 'string' || typeof children === 'number' ? (
-        <Text className="font-medium text-foreground text-sm">{children}</Text>
+        <Text weight="medium" className="text-foreground text-sm">
+          {children}
+        </Text>
       ) : (
         children
       )}

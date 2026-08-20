@@ -107,9 +107,10 @@ export function buttonRadiusClass(shape: ButtonShape): 'rounded-full' | 'rounded
 }
 
 /**
- * The family's label type ramp — the one place a button label's weight and size
- * are decided, so an `md` label is the same text in a flat Button and in a glossy
- * key. Colour is deliberately absent: each sibling resolves its own (Button
+ * The family's label type ramp — the one place a button label's size is decided,
+ * so an `md` label is the same text in a flat Button and in a glossy key. Weight
+ * is uniform across the family (`weight="medium"`, applied at each render site)
+ * and colour is deliberately absent: each sibling resolves its own (Button
  * through a per-variant class, GlossyButton inline from the face colour), and a
  * shared colour class here would fight those.
  *
@@ -124,8 +125,8 @@ export function buttonRadiusClass(shape: ButtonShape): 'rounded-full' | 'rounded
  * Static literals so the Tailwind/uniwind scanner picks them up.
  */
 export const LABEL_TEXT_CLASS: Record<ButtonSize, string> = {
-  sm: 'font-medium text-xs',
-  md: 'font-medium text-sm',
-  lg: 'font-medium text-sm',
-  icon: 'font-medium text-sm',
+  sm: 'text-xs',
+  md: 'text-[13px]',
+  lg: 'text-sm',
+  icon: 'text-sm',
 };

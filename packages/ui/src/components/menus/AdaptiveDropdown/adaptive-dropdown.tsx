@@ -185,7 +185,7 @@ export function AdaptiveDropdown({
     title || headerSuffix ? (
       <View className="flex-row items-center justify-between gap-3 px-3">
         {title ? (
-          <Text className="flex-1 pt-3 font-medium text-foreground/75 text-sm" numberOfLines={1}>
+          <Text weight="medium" className="flex-1 pt-3 text-foreground/75 text-sm" numberOfLines={1}>
             {title}
           </Text>
         ) : (

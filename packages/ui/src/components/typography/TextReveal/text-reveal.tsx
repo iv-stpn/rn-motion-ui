@@ -3,7 +3,7 @@ import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { useInView } from '../../../hooks/use-in-view';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
-import { Text } from '../Text/text';
+import { Text, type TextWeight } from '../Text/text';
 
 const HEADER_REGEX = /^h[1-6]$/;
 
@@ -18,8 +18,10 @@ export type TextRevealProps = {
    * element; passing an `h1`–`h6` string maps to an accessibility header role.
    */
   as?: string;
-  /** Text styling for each revealed unit (size/color/weight). */
+  /** Text styling for each revealed unit (size/color). */
   className?: string;
+  /** Font weight for each revealed unit (resolves a per-weight font token). */
+  weight?: TextWeight;
   /** Reveal per word or per character. */
   split?: TextRevealSplit;
   /** Seconds between successive units. */
@@ -53,6 +55,7 @@ export function TextReveal({
   text,
   as,
   className,
+  weight,
   split = 'word',
   stagger = 0.09,
   delay = 0,
@@ -100,7 +103,9 @@ export function TextReveal({
                       : { type: 'spring', stiffness: s.stiffness, damping: s.damping, mass: s.mass, delay: d }
                   }
                 >
-                  <Text className={className}>{withSpace}</Text>
+                  <Text className={className} weight={weight}>
+                    {withSpace}
+                  </Text>
                 </MotiView>
               );
             })}

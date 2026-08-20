@@ -478,7 +478,7 @@ function SwipeableListRow({
       {item.leading ? <View className="shrink-0">{item.leading}</View> : null}
       <View className="min-w-0 flex-1">
         {item.title ? (
-          <Text className="font-medium text-foreground text-sm" numberOfLines={1}>
+          <Text weight="medium" className="text-foreground text-sm" numberOfLines={1}>
             {item.title}
           </Text>
         ) : null}
@@ -488,7 +488,11 @@ function SwipeableListRow({
           </Text>
         ) : null}
       </View>
-      {item.meta ? <Text className="shrink-0 font-medium text-muted-foreground text-xs">{item.meta}</Text> : null}
+      {item.meta ? (
+        <Text weight="medium" className="shrink-0 text-muted-foreground text-xs">
+          {item.meta}
+        </Text>
+      ) : null}
     </View>
   );
 

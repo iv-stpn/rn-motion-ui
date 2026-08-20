@@ -258,7 +258,7 @@ function BodyDropSurface({ external }: BodyDropSurfaceProps) {
       )}
     >
       {external ? (
-        <Text className="font-medium text-foreground/50 text-sm" selectable={false}>
+        <Text weight="medium" className="text-foreground/50 text-sm" selectable={false}>
           {EXTERNAL_DROP_LABEL}
         </Text>
       ) : null}

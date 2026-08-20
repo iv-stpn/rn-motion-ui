@@ -1,11 +1,14 @@
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { ActionSwapText } from '../../display/ActionSwap/action-swap';
+import type { TextWeight } from '../Text/text';
 
 export type TextCascadeProps = {
   /** Current text. Changing it cascades the letters to the new value. */
   text: string;
-  /** Text styling (size/weight/colour) applied to every letter + the sizer. */
+  /** Text styling (size/colour) applied to every letter + the sizer. */
   className?: string;
+  /** Font weight for every letter (resolves a per-weight font token). */
+  weight?: TextWeight;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -20,7 +23,7 @@ export type TextCascadeProps = {
  * in lockstep with the action-swap button. The wrapper only adds the
  * `text`/`className` API and an accessible label.
  */
-export function TextCascade({ text, className, style, accessibilityLabel, testID }: TextCascadeProps) {
+export function TextCascade({ text, className, weight, style, accessibilityLabel, testID }: TextCascadeProps) {
   return (
     <View
       testID={testID}
@@ -28,7 +31,7 @@ export function TextCascade({ text, className, style, accessibilityLabel, testID
       accessibilityLabel={accessibilityLabel ?? text}
       style={[{ overflow: 'hidden' }, style]}
     >
-      <ActionSwapText value={text} animation="cascade" textClassName={className}>
+      <ActionSwapText value={text} animation="cascade" textClassName={className} weight={weight}>
         {text}
       </ActionSwapText>
     </View>

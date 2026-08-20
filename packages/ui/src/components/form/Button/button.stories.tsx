@@ -183,7 +183,7 @@ export const Primary: Story = {
 };
 
 /** `special` and `inverse` are the only variants whose fill/label utilities
- *  (`bg-special`, `text-special-foreground`, `bg-foreground`, `text-surface-1`)
+ *  (`bg-special`, `text-special-foreground`, `bg-foreground`, `text-background`)
  *  aren't used anywhere else in the library, so a scanner miss would fail open:
  *  the class would simply not exist and the chip would render transparent with
  *  inherited text. This pins each one to the custom property it must resolve to. */
@@ -223,7 +223,7 @@ export const TokenFillsResolve: Story = {
       expect(getComputedStyle(specialKey).backgroundColor).toBe(resolveToken('--color-special'));
       expect(getComputedStyle(labelOf(specialKey)).color).toBe(resolveToken('--color-special-foreground'));
       expect(getComputedStyle(inverseKey).backgroundColor).toBe(resolveToken('--color-foreground'));
-      expect(getComputedStyle(labelOf(inverseKey)).color).toBe(resolveToken('--color-surface-1'));
+      expect(getComputedStyle(labelOf(inverseKey)).color).toBe(resolveToken('--color-background'));
     } finally {
       probe.remove();
     }

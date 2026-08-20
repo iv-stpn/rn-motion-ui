@@ -197,16 +197,22 @@ export const Loading: Story = {
     // Each dot paints `muted-foreground`; if that token stays oklch,
     // react-native-web drops the inline backgroundColor and the dots vanish
     // against the card — so assert a dot actually paints a colour.
-    await new Promise((r) => setTimeout(r, 400));
     const doc = canvasElement.ownerDocument;
     const win = doc.defaultView;
     if (!win) throw new Error('window unavailable');
-    const vessel = Array.from(doc.querySelectorAll('div')).find((d) => (d.getAttribute('class') ?? '').includes('rounded-full'));
-    if (!vessel) throw new Error('morph vessel not found');
-    const dotIsColoured = Array.from(vessel.querySelectorAll('div')).some(
-      (d) => win.getComputedStyle(d).backgroundColor !== 'rgba(0, 0, 0, 0)',
-    );
-    await expect(dotIsColoured).toBe(true);
+    // The dots paint in after the modal portals; poll until one is actually
+    // coloured instead of assuming a fixed settle delay is enough — under
+    // parallel test load the render races the clock, so a 400 ms nap flakes.
+    await waitFor(() => {
+      const vessel = Array.from(doc.querySelectorAll('div')).find((d) =>
+        (d.getAttribute('class') ?? '').includes('rounded-full'),
+      );
+      if (!vessel) throw new Error('morph vessel not found');
+      const dotIsColoured = Array.from(vessel.querySelectorAll('div')).some(
+        (d) => win.getComputedStyle(d).backgroundColor !== 'rgba(0, 0, 0, 0)',
+      );
+      expect(dotIsColoured).toBe(true);
+    });
     // The escape hatch must actually reach the user. Its layering is DOM order,
     // not z-index — both Modal roots are `position: fixed` siblings on
     // document.body — and `userEvent` dispatches straight at the node without

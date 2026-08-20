@@ -10,7 +10,7 @@
  * `Toggle` renders the library's own `Switch`, so the chrome tracks the real
  * component instead of re-deriving its track geometry, thumb spring and
  * reduced-motion handling by hand. `Action` is a plain button; `Choice` renders
- * the library's own `ToggleGroup`.
+ * the library's own `ChoiceGroup`.
  *
  * Every control carries a `story-*` testID, and that is what a `play` function
  * should drive it by. A `Toggle` is a real switch and therefore *does* answer
@@ -25,8 +25,8 @@
 
 import { type ReactNode, useCallback } from 'react';
 import { type FlexAlignType, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { ChoiceGroup, type ChoiceGroupItem } from '../components/form/ChoiceGroup/choice-group';
 import { Switch } from '../components/form/Switch/switch';
-import { ToggleGroup, type ToggleGroupItem } from '../components/form/ToggleGroup/toggle-group';
 import { Text } from '../components/typography/Text/text';
 import { cn } from '../lib/cn';
 import { SURFACE_CLASSNAME } from '../lib/elevated';
@@ -108,13 +108,13 @@ export function Action({ label, onPress }: ActionProps) {
   );
 }
 
-/** Enum control — a row of ToggleGroup items, one selected at a time. */
+/** Enum control — a row of ChoiceGroup items, one selected at a time. */
 export function Choice<T extends string>({ label, value, options, onChange }: ChoiceProps<T>) {
-  const items: ToggleGroupItem[] = options.map((option) =>
+  const items: ChoiceGroupItem[] = options.map((option) =>
     typeof option === 'string' ? { value: option, label: option } : { value: option.value, label: option.label },
   );
 
-  // Bridge ToggleGroup's `onValueChange: (string) => void` to Choice's
+  // Bridge ChoiceGroup's `onValueChange: (string) => void` to Choice's
   // `onChange: (T) => void`.  Look up the original option so TypeScript
   // narrows from `string` to `T` without a cast.
   const handleChange = useCallback(
@@ -132,11 +132,10 @@ export function Choice<T extends string>({ label, value, options, onChange }: Ch
           {label}
         </Text>
       ) : null}
-      <ToggleGroup
+      <ChoiceGroup
         items={items}
         value={value}
         onValueChange={handleChange}
-        variant="spaced"
         size="sm"
         testID={`story-choice${label ? `-${slug(label)}` : ''}`}
       />

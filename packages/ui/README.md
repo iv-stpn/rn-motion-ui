@@ -144,6 +144,7 @@ Subpaths are namespaced by category:
 | `/multi-drag`                  | `readMultiDragIds`, `MULTI_DRAG_IDS_MIME`                                |
 | `/drag-types`                  | drag system type definitions                                             |
 | `/drag-store`                  | the drag registry, for custom sources and targets                        |
+| `/choice-group`                | `ChoiceGroup`                                                            |
 | `/toggle-group`                | `ToggleGroup`                                                            |
 | `/use-drag-store`              | `useActiveDrag`, `useDragSnapshot`, `useDragzoneState`, `useDragMove`    |
 | `/use-draggable`               | `useDraggable` — a drag with no markup attached                          |

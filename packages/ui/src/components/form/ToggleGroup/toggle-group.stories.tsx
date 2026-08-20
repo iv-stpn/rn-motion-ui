@@ -9,9 +9,9 @@ const meta = {
   title: 'Form/ToggleGroup',
   component: ToggleGroup,
   parameters: { layout: 'centered' },
-  args: { variant: 'spaced', shape: 'pill', orientation: 'horizontal', size: 'md' },
+  args: { variant: 'bordered', shape: 'pill', orientation: 'horizontal', size: 'md' },
   argTypes: {
-    variant: { control: 'select', options: ['spaced', 'bordered', 'connected'] },
+    variant: { control: 'select', options: ['bordered', 'connected'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
     orientation: { control: 'select', options: ['horizontal', 'vertical'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
@@ -20,7 +20,7 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const VARIANTS = ['spaced', 'bordered', 'connected'] as const;
+const VARIANTS = ['bordered', 'connected'] as const;
 const SHAPES = ['rounded', 'pill'] as const;
 const ORIENTATIONS = ['horizontal', 'vertical'] as const;
 const SIZES = ['sm', 'md', 'lg'] as const;
@@ -33,7 +33,7 @@ const OPTIONS = [
 ];
 
 function ToggleGroupPlayground() {
-  const [variant, setVariant] = useState<(typeof VARIANTS)[number]>('spaced');
+  const [variant, setVariant] = useState<(typeof VARIANTS)[number]>('bordered');
   const [shape, setShape] = useState<(typeof SHAPES)[number]>('pill');
   const [orientation, setOrientation] = useState<(typeof ORIENTATIONS)[number]>('horizontal');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
@@ -92,57 +92,6 @@ export default meta;
 export const Interactive: Story = {
   args: { items: OPTIONS },
   render: () => <ToggleGroupPlayground />,
-};
-
-/** Spaced / rounded: items sit apart with a gap, each with an interactive-radius border. */
-export const SpacedRounded: Story = {
-  args: { items: OPTIONS },
-  render: () => (
-    <ToggleGroup
-      variant="spaced"
-      shape="rounded"
-      orientation="horizontal"
-      size="md"
-      value="center"
-      testID="spaced-rounded"
-      items={OPTIONS}
-    />
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const group = await canvas.findByTestId('spaced-rounded');
-    const radios = within(group).findAllByRole('radio');
-    expect(await radios).toHaveLength(3);
-    const left = await canvas.findByRole('radio', { name: 'Left' });
-    await userEvent.click(left);
-  },
-};
-
-/** Spaced / pill: items sit apart with a gap, each fully-rounded (pill-shaped items). */
-export const SpacedPill: Story = {
-  args: { items: OPTIONS },
-  render: () => (
-    <ToggleGroup
-      variant="spaced"
-      shape="pill"
-      orientation="horizontal"
-      size="md"
-      value="center"
-      testID="spaced-pill"
-      items={OPTIONS}
-    />
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const group = await canvas.findByTestId('spaced-pill');
-    const radios = within(group).findAllByRole('radio');
-    expect(await radios).toHaveLength(3);
-    // Items are pill-shaped — each has rounded-full
-    const firstItem = group.querySelector('[class*="rounded-full"]');
-    expect(firstItem).toBeTruthy();
-    const left = await canvas.findByRole('radio', { name: 'Left' });
-    await userEvent.click(left);
-  },
 };
 
 /** Bordered / rounded: segmented control with an outer border. Dividers adjacent to the selected item are suppressed. */

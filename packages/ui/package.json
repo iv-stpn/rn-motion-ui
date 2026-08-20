@@ -157,6 +157,11 @@
       "types": "./src/components/form/CheckboxCard/checkbox-card.tsx",
       "default": "./src/components/form/CheckboxCard/checkbox-card.tsx"
     },
+    "./choice-group": {
+      "source": "./src/components/form/ChoiceGroup/choice-group.tsx",
+      "types": "./src/components/form/ChoiceGroup/choice-group.tsx",
+      "default": "./src/components/form/ChoiceGroup/choice-group.tsx"
+    },
     "./close-button": {
       "source": "./src/components/menus/CloseButton/close-button.tsx",
       "types": "./src/components/menus/CloseButton/close-button.tsx",

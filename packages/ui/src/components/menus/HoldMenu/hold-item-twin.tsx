@@ -56,7 +56,7 @@ const HoldItemTwinComponent = ({
   itemScale,
   transformOrigin,
 }: HoldItemTwinProps) => {
-  const { state, safeAreaInsets, windowSize, rootHeight } = useHoldMenuInternal();
+  const { state, safeAreaInsets, windowSize, rootViewportHeight } = useHoldMenuInternal();
 
   const overlayTap = useMemo(
     () =>
@@ -69,10 +69,11 @@ const HoldItemTwinComponent = ({
   const animatedPortalStyle = useAnimatedStyle(() => {
     const itemsWithSeparator = items.filter((item) => item.withSeparator);
     const menuHeight = calculateMenuHeight(items.length, itemsWithSeparator.length, windowSize.value.fontScale);
-    // Clamp against the root's real bottom, not the window's — the two differ
-    // whenever the provider root is inset from the window (storybook's padding,
-    // a menu nested inside a scroll view).
-    const windowHeight = rootHeight.value || windowSize.value.height;
+    // Clamp against the root's VISIBLE extent, not the window's — the two
+    // differ whenever the provider root is inset from the window (storybook's
+    // padding) or taller than it because it sits inside a scroll view (its
+    // measured height is then the full content height).
+    const windowHeight = rootViewportHeight.value || windowSize.value.height;
 
     // The same travel the activating item computed and published — upstream
     // recomputes it here rather than reading the stored `transformValue`.
@@ -128,7 +129,7 @@ const HoldItemTwinComponent = ({
     transformOrigin,
     safeAreaInsets,
     windowSize,
-    rootHeight,
+    rootViewportHeight,
   ]);
 
   const animatedPortalProps = useAnimatedProps<ViewProps>(() => ({

@@ -6,9 +6,10 @@
  * special-casing like the sibling `HoldMenu`. So on web the interaction is a
  * real press-and-hold (or tap / double-tap, per `activateOn`), which works for
  * a human pointer but not for the synthetic events `play` functions dispatch.
- * The story is therefore render-only: no `play` assertions, just the four
- * screens from upstream's example app behind a single `Interactive` toggle,
- * so each one can be held open by hand.
+ * The four upstream screens are therefore render-only behind a single
+ * `Interactive` toggle, so each one can be held open by hand — the `NestedScroll`
+ * story is the exception: it drives the DOM `contextmenu` path (web `'hold'`)
+ * to pin the panel's on-screen placement.
  *
  * The scenes mirror `example/src/screens`: Clubhouse (a hold menu on the back
  * chevron), Home (the examples index — rows are holdable, and a theme toggle
@@ -35,6 +36,7 @@ import { MoonLine } from 'rn-motion-ui-icons/icons/moon-line';
 import { Settings3Line } from 'rn-motion-ui-icons/icons/settings-3-line';
 import { SunLine } from 'rn-motion-ui-icons/icons/sun-line';
 import { User3Line } from 'rn-motion-ui-icons/icons/user-3-line';
+import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { Choice, Note } from '../../../__stories__/story-harness';
 import { Card } from '../../display/Card/card';
 import { Text } from '../../typography/Text/text';
@@ -524,7 +526,56 @@ export const Interactive: Story = {
   render: () => <InteractiveScene />,
 };
 
+/** The last card's final row — the bottom-most holdable entry after scrolling (NestedScroll play). */
+const BOTTOM_ROW_NAME = /^analytics-dashboard\.md/;
+
 /** Nested card scroll views — scroll the outer dashboard and an inner card, then hold a row. */
 export const NestedScroll: Story = {
   render: () => <NestedScrollScene />,
+  // Pins the two showcase behaviours of this story: a full-width row's
+  // centre-anchored panel stays inside the viewport (the pop-in transform's
+  // net offset used to shove it off-screen right), and a row held near the
+  // bottom of the screen lifts the menu above the lower screen limit.
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 1. Hold the first row — the panel must be clamped into the viewport.
+    const firstRows = await canvas.findAllByText('quarterly-report.md');
+    firstRows.sort((a, b) => a.getBoundingClientRect().y - b.getBoundingClientRect().y);
+    const firstRow = firstRows[0];
+    if (!firstRow) throw new Error('no quarterly-report row rendered');
+    fireEvent.contextMenu(firstRow, { clientX: 60, clientY: 150 });
+    const panel = await canvas.findByTestId('hold-menu-panel');
+    await waitFor(() => {
+      const rect = panel.getBoundingClientRect();
+      expect(rect.left).toBeGreaterThanOrEqual(-1);
+      expect(rect.right).toBeLessThanOrEqual(window.innerWidth + 1);
+    });
+
+    // 2. Close, then scroll the dashboard and the last card to the bottom and
+    // hold a row near the lower edge — the menu must lift, not run off the
+    // bottom of the screen.
+    fireEvent.click(await canvas.findByTestId('hold-menu-backdrop'));
+    for (const el of [...canvasElement.querySelectorAll('div')]) {
+      if (el.scrollHeight > el.clientHeight + 100) el.scrollTop = el.scrollHeight;
+    }
+    const bottomRow = await waitFor(() => {
+      const rows = [...canvasElement.querySelectorAll('div')].filter(
+        (el) => BOTTOM_ROW_NAME.test(el.innerText.trim().split('\n')[0] ?? '') && el.getBoundingClientRect().height === 45,
+      );
+      const visible = rows
+        .map((el) => ({ el, y: el.getBoundingClientRect().y }))
+        .filter((v) => v.y > 0 && v.y < window.innerHeight - 60);
+      visible.sort((a, b) => b.y - a.y);
+      const bottom = visible[0];
+      if (!bottom) throw new Error('no analytics-dashboard row visible after scrolling');
+      return bottom.el;
+    });
+    fireEvent.contextMenu(bottomRow, { clientX: 60, clientY: 400 });
+    await waitFor(() => {
+      const rect = panel.getBoundingClientRect();
+      expect(rect.bottom).toBeLessThanOrEqual(window.innerHeight + 1);
+      expect(rect.right).toBeLessThanOrEqual(window.innerWidth + 1);
+    });
+  },
 };

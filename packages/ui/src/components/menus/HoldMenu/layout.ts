@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noExcessiveLinesPerFile: the port's pure geometry — every upstream calculation is one small documented function; splitting the file would scatter the worklet module
 /**
  * Placement math for `HoldMenu` — the pure, React-free geometry the panel
  * and the held item's portal copy animate with.
@@ -332,6 +333,93 @@ export const leftOrRight = (anchorPosition: TransformOriginAnchorPosition, itemW
   if (anchorPositionHorizontal === 'left') return 0;
   // Centre — upstream's verbatim formula; the viewport clamp keeps it on screen.
   return -itemWidth - menuWidth / 2 + itemWidth / 2;
+};
+
+/**
+ * The net horizontal offset the panel's pop-in transform contributes at rest —
+ * the sum of the beginning and ending `translateX`s of
+ * {@link menuAnimationAnchor}. Left/right anchors compose to 0 (the panel
+ * rests exactly where its `left` style puts it); the centre anchor composes to
+ * `itemWidth` (its resting `left` is deliberately offset so the two translates
+ * together centre the panel on the item). A caller that clamps the panel's
+ * `left` into the viewport must clamp the VISUAL left — `left + net` — or a
+ * centre-anchored panel runs off-screen by its own item's width (a full-width
+ * row in a nested scroll pushes it a whole row-width past the right edge).
+ *
+ * The `menuHeight` argument is only there to satisfy
+ * {@link menuAnimationAnchor} — the X travel never reads it.
+ */
+export const menuNetTransformX = (
+  anchorPoint: TransformOriginAnchorPosition,
+  itemWidth: number,
+  menuWidth: number,
+  menuHeight = 0,
+): number => {
+  'worklet';
+  const translate = menuAnimationAnchor(anchorPoint, itemWidth, menuHeight, menuWidth);
+  return translate.beginningTransformations.translateX + translate.endingTransformations.translateX;
+};
+
+/** Inputs for resolving the panel's resting left, pop-in offset included. */
+export type HoldMenuPanelLeftInput = {
+  /** Window-space left of the held item (`itemX`). */
+  itemX: number;
+  /** Measured width of the held item. */
+  itemWidth: number;
+  /** Panel width (rotation-safe). */
+  menuWidth: number;
+  /** Current window width (rotation-safe). */
+  windowWidth: number;
+  /** Left safe-area inset. */
+  safeLeft: number;
+  /** Right safe-area inset. */
+  safeRight: number;
+  /** The resolved anchor — its horizontal half picks the `leftOrRight` offset. */
+  anchorPosition: TransformOriginAnchorPosition;
+};
+
+/**
+ * The panel's resting `left` style, viewport-clamped against the panel's
+ * VISUAL position.
+ *
+ * The pop-in transform composes to a net resting offset
+ * ({@link menuNetTransformX}) — 0 for left/right anchors, `itemWidth` for the
+ * centre anchor. Clamping the raw `left` alone would leave a centre-anchored
+ * panel a whole item-width past its clamped spot (a full-width row in a
+ * nested scroll pushes the menu off-screen right), so the clamp runs on
+ * `left + net` and the offset is subtracted back out of the style.
+ */
+export const resolveMenuPanelLeft = ({
+  itemX,
+  itemWidth,
+  menuWidth,
+  windowWidth,
+  safeLeft,
+  safeRight,
+  anchorPosition,
+}: HoldMenuPanelLeftInput): number => {
+  'worklet';
+  const rawLeft = itemX + leftOrRight(anchorPosition, itemWidth, menuWidth);
+  const netTransformX = menuNetTransformX(anchorPosition, itemWidth, menuWidth);
+  return clampMenuLeft({ left: rawLeft + netTransformX, menuWidth, windowWidth, safeLeft, safeRight }) - netTransformX;
+};
+
+/**
+ * The visible extent of the provider root's coordinate space — the travel
+ * clamp's `windowHeight`.
+ *
+ * The root's `measure()` height is its full layout height, which exceeds the
+ * window whenever the provider sits inside a scrollable container (the native
+ * storybook wraps every story in a ScrollView; an app screen may scroll too).
+ * The menu can only use the part of the root the user can see, so the clamp
+ * viewport is the root's measured height capped to the window's bottom edge
+ * relative to the root's top (`windowHeight - rootPageY`; negative `pageY`
+ * when the root is scrolled up under the fold).
+ */
+// biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
+export const resolveRootViewportHeight = (rootHeight: number, rootPageY: number, windowHeight: number): number => {
+  'worklet';
+  return Math.min(rootHeight, windowHeight - rootPageY);
 };
 
 /** Inputs for resolving the anchor's horizontal half with an overflow fallback. */

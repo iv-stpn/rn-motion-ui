@@ -86,12 +86,12 @@ const BackdropComponent = () => {
   );
 
   return IS_WEB ? (
-    <Animated.View {...webProps} className="absolute inset-0 z-0" style={animatedContainerStyle}>
+    <Animated.View {...webProps} testID="hold-menu-backdrop" className="absolute inset-0 z-0" style={animatedContainerStyle}>
       {backdropFill}
     </Animated.View>
   ) : (
     <GestureDetector gesture={tapGesture}>
-      <Animated.View className="absolute inset-0 z-0" style={animatedContainerStyle}>
+      <Animated.View testID="hold-menu-backdrop" className="absolute inset-0 z-0" style={animatedContainerStyle}>
         {backdropFill}
       </Animated.View>
     </GestureDetector>

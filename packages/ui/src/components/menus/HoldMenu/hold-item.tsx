@@ -70,7 +70,7 @@ const HoldItemComponent = ({
   testID,
   children,
 }: HoldItemProps) => {
-  const { state, menuProps, windowSize, rootHeight, safeAreaInsets, rootRef } = useHoldMenuInternal();
+  const { state, menuProps, windowSize, rootViewportHeight, safeAreaInsets, rootRef } = useHoldMenuInternal();
 
   const isActive = useSharedValue(false);
   /**
@@ -124,7 +124,7 @@ const HoldItemComponent = ({
     menuAnchorPosition,
     menuProps,
     windowSize,
-    rootHeight,
+    rootViewportHeight,
     safeAreaInsets,
     scaleHold,
   });

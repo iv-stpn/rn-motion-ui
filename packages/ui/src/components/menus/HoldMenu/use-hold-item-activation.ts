@@ -15,6 +15,7 @@ import {
   menuPanelHeight,
   resolveHoldMenuTravel,
   resolveMenuAnchorPosition,
+  resolveRootViewportHeight,
 } from './layout';
 
 type UseHoldItemActivationOptions = {
@@ -28,8 +29,8 @@ type UseHoldItemActivationOptions = {
   menuAnchorPosition: TransformOriginAnchorPosition | undefined;
   menuProps: SharedValue<MenuInternalProps>;
   windowSize: SharedValue<HoldMenuWindowSize>;
-  /** The provider root's measured height — the clamp's viewport, updated each activation. */
-  rootHeight: SharedValue<number>;
+  /** The provider root's visible extent — the travel clamp's viewport, updated each activation. */
+  rootViewportHeight: SharedValue<number>;
   safeAreaInsets: SharedValue<HoldMenuSafeAreaInsets>;
   scaleHold: (duration?: number) => void;
 };
@@ -64,6 +65,7 @@ type UseHoldItemActivationResult = {
  * from the viewport origin), and the travel is clamped (see
  * {@link resolveHoldMenuTravel}).
  */
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the measurement + publish worklets (activateAnimation, activateFromContextMenu) share the item/root rect plumbing — splitting them would scatter the once-per-activation sequence
 export function useHoldItemActivation({
   containerRef,
   rootRef,
@@ -74,7 +76,7 @@ export function useHoldItemActivation({
   menuAnchorPosition,
   menuProps,
   windowSize,
-  rootHeight,
+  rootViewportHeight,
   safeAreaInsets,
   scaleHold,
 }: UseHoldItemActivationOptions): UseHoldItemActivationResult {
@@ -125,7 +127,15 @@ export function useHoldItemActivation({
       const root = measure(rootRef);
       const rootX = root?.pageX ?? 0;
       const rootY = root?.pageY ?? 0;
-      rootHeight.value = root?.height ?? 0; // the clamp viewport — the root's real bottom, not the window's
+      // The travel clamp's viewport: the root's measured height capped to the
+      // window's bottom edge relative to the root's top — the part of the root
+      // the user can actually see. When the provider sits inside a scrollable
+      // container (native storybook, a scrolling app screen) the root's height
+      // is the full content height; clamping against it would let the menu run
+      // off the visible screen instead of lifting.
+      rootViewportHeight.value = root
+        ? resolveRootViewportHeight(root.height, root.pageY, windowSize.value.height)
+        : windowSize.value.height;
       itemRectY.value = measured.pageY - rootY;
       itemRectX.value = measured.pageX - rootX;
       itemRectHeight.value = measured.height;
@@ -157,7 +167,7 @@ export function useHoldItemActivation({
         menuHeight: height,
         disableMove: disableMove === true,
         opensBelow: transformOrigin.value.includes('top'),
-        windowHeight: rootHeight.value || windowSize.value.height,
+        windowHeight: rootViewportHeight.value || windowSize.value.height,
         safeTop: safeAreaInsets.value.top,
         safeBottom: safeAreaInsets.value.bottom,
       });
@@ -177,7 +187,7 @@ export function useHoldItemActivation({
     transformOrigin,
     transformValue,
     windowSize,
-    rootHeight,
+    rootViewportHeight,
     bottom,
     getMenuHeight,
     disableMove,

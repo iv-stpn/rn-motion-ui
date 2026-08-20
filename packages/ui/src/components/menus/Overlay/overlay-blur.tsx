@@ -1,82 +1,31 @@
 // biome-ignore-all lint/style/useExportsLast: the component closes the module
 /**
- * Backdrop blur for overlay scrims, backed by `@sbaiahmed1/react-native-blur`.
+ * Web backdrop blur for overlay scrims — a CSS `backdrop-filter` view.
  *
  * The scrims (HoldMenu's backdrop and the modal overlays) paint a translucent
  * dim over a blur so the page behind them reads as frosted glass rather than a
- * flat wash. The blur comes from the package's `BlurView`, which resolves per
- * platform through the package's own `exports`: the native module (iOS
- * `UIVisualEffectView`) on device, and a CSS `backdrop-filter` implementation
- * in the browser. Android is excluded — its `QmBlurView` is not performant
- * enough to run under a full-bleed scrim — and degrades to the plain
- * translucent color, the same fallback as a missing peer.
- *
- * `@sbaiahmed1/react-native-blur` is an optional peer dependency, loaded with a
- * guarded dynamic `require` exactly like `use-safe-insets.ts` resolves
- * `react-native-safe-area-context`. When the package is missing (or the
- * `require` cannot run) this renders `null` and the scrim degrades to the plain
- * translucent color — the pre-blur rendering.
+ * flat wash. This is the WEB twin of `./overlay-blur` (the `.native.tsx` file
+ * carries the guarded `@sbaiahmed1/react-native-blur` require): web never
+ * touches the optional peer, so the web bundle builds even when the package is
+ * not installed. RNW 0.21 passes `backdropFilter` through (prefixing
+ * `WebkitBackdropFilter`), so the frost is the same 30 px the native `BlurView`
+ * applies.
  */
-
-import type { ComponentType } from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet, View, type ViewStyle } from 'react-native';
 
 /**
- * Android's native blur is disabled (see {@link resolveBlurView}); the scrim
- * there degrades to the plain translucent color, the same as a missing peer.
- */
-const IS_ANDROID = Platform.OS === 'android';
-
-/**
- * The minimal `@sbaiahmed1/react-native-blur` surface this module touches. Cast
- * against the dynamic `require` below so no import of the optional package
- * reaches the type system — the module resolves to whatever the package ships,
- * with only these props read off it.
- */
-type BlurViewProps = { blurType?: string; blurAmount?: number; pointerEvents?: string; style?: unknown };
-type BlurViewComponent = ComponentType<BlurViewProps>;
-
-/**
- * Resolves the package's `BlurView` when the optional peer is installed, `null`
- * otherwise — see the module doc for why it is a guarded require rather than an
- * import.
- */
-function resolveBlurView(): BlurViewComponent | null {
-  // Android's `QmBlurView` is not performant enough to run under a full-bleed
-  // overlay scrim, so it is disabled there — the scrim falls back to the plain
-  // translucent color, exactly as it does when the peer is absent.
-  if (IS_ANDROID) return null;
-  try {
-    // Optional peer dep — scrim blur; consumers without it get the plain translucent scrim.
-    // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep
-    // biome-ignore lint/plugin: ts/no-as-cast — dynamic require has no static type
-    const mod = require('@sbaiahmed1/react-native-blur') as {
-      BlurView?: BlurViewComponent;
-      default?: BlurViewComponent;
-    } & BlurViewComponent;
-    // The package re-exports `BlurView` as both a named and a default export.
-    // Metro's `require` returns the namespace (`mod.BlurView`); Vite's CJS
-    // interop collapses `require` of an ESM module to its `default` export — the
-    // component itself, which `React.memo` returns as an object rather than a
-    // function (so a `typeof mod === 'function'` check would miss it). Accept all
-    // three shapes: the named export, the default, or the module itself.
-    return mod.BlurView ?? mod.default ?? mod;
-  } catch {
-    return null;
-  }
-}
-
-const BlurView = resolveBlurView();
-
-/**
- * The blur layer under an overlay scrim. Absolute-fills its parent, never
- * intercepts touches (it is purely decorative — the scrim above it is the tap
- * target), and renders `null` when the optional peer is absent or on Android,
- * where the native blur is disabled.
+ * The web blur layer under an overlay scrim. Absolute-fills its parent and
+ * never intercepts touches (it is purely decorative — the scrim above it is
+ * the tap target).
  *
  * Internal to the package — not exported.
  */
 export function OverlayBlur() {
-  if (!BlurView) return null;
-  return <BlurView blurAmount={30} blurType="light" pointerEvents="none" style={StyleSheet.absoluteFill} />;
+  return (
+    <View
+      pointerEvents="none"
+      // biome-ignore lint/plugin: RN's ViewStyle has no backdropFilter — RNW forwards the CSS property at runtime
+      style={[StyleSheet.absoluteFill, { backdropFilter: 'blur(30px)' } as unknown as ViewStyle]}
+    />
+  );
 }

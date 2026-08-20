@@ -5,7 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('react-native', () => ({ Platform: { OS: 'web' } }));
 
 import type { TransformOriginAnchorPosition } from '../hold-menu-types';
-import { resolveMenuAnchorPosition } from '../layout';
+import type { HoldMenuPanelLeftInput } from '../layout';
+import { resolveMenuAnchorPosition, resolveMenuPanelLeft, resolveRootViewportHeight } from '../layout';
 
 /** Square viewport, no insets — a 240 px panel leaves an 8..152 px range. */
 const WINDOW_WIDTH = 400;
@@ -53,5 +54,65 @@ describe('resolveMenuAnchorPosition', () => {
   it('keeps the hint when both sides would overflow — the viewport clamp is the fallback', () => {
     // itemX = 200: right anchor left = 0 (off-screen left), left anchor left = 200 (off-screen right).
     expect(resolve('top-right', 200, 40)).toBe('top-right');
+  });
+});
+
+/** Panel-left resolution — the nested-scroll row shape (full-width row, centre anchor). */
+const panelLeft = (input: Omit<HoldMenuPanelLeftInput, 'safeLeft' | 'safeRight'>): number =>
+  resolveMenuPanelLeft({ safeLeft: 0, safeRight: 0, ...input });
+
+describe('resolveMenuPanelLeft', () => {
+  it('keeps a centre-anchored panel on screen for a full-width row (the nested-scroll case)', () => {
+    // Row spans nearly the whole 980 px window: itemX 32, itemWidth 869, menu 386.
+    // The pop-in transform's net offset is +itemWidth (869), so the raw left
+    // (-595.5) must NOT be clamped on its own — the VISUAL left (273.5) fits.
+    const left = panelLeft({ anchorPosition: 'top-center', itemX: 32, itemWidth: 869, menuWidth: 386, windowWidth: 980 });
+    expect(left).toBeCloseTo(-595.5, 1);
+    expect(left + 869).toBeCloseTo(273.5, 1); // visual left inside 8..586
+  });
+
+  it('clamps a centre-anchored panel into the left edge', () => {
+    // Visual left -127 → clamped to 8; the style left backs out the net offset.
+    expect(panelLeft({ anchorPosition: 'top-center', itemX: 16, itemWidth: 100, menuWidth: 386, windowWidth: 980 })).toBeCloseTo(
+      -92,
+      1,
+    );
+  });
+
+  it('clamps a centre-anchored panel into the right edge', () => {
+    // Visual left 737 → clamped to 586 (980 - 8 - 386); style left backs out 100.
+    expect(panelLeft({ anchorPosition: 'top-center', itemX: 880, itemWidth: 100, menuWidth: 386, windowWidth: 980 })).toBeCloseTo(
+      486,
+      1,
+    );
+  });
+
+  it('leaves right anchors untouched (net transform offset is 0)', () => {
+    // Panel left = 180 + (-240 + 200) = 140, inside 8..152 — same as the raw clamp.
+    expect(panelLeft({ anchorPosition: 'top-right', itemX: 180, itemWidth: 200, menuWidth: 240, windowWidth: 400 })).toBe(140);
+  });
+
+  it('leaves left anchors untouched (net transform offset is 0)', () => {
+    expect(panelLeft({ anchorPosition: 'top-left', itemX: 16, itemWidth: 40, menuWidth: 240, windowWidth: 400 })).toBe(16);
+  });
+});
+
+describe('resolveRootViewportHeight', () => {
+  it('caps the root to the visible window when the root is taller (provider inside a scroll view)', () => {
+    // Native storybook shape: the root's height is the full scrollable content.
+    expect(resolveRootViewportHeight(1300, 0, 800)).toBe(800);
+  });
+
+  it('keeps a root shorter than the window (storybook web padding decorator)', () => {
+    expect(resolveRootViewportHeight(189, 24, 237)).toBe(189);
+  });
+
+  it('grows the visible extent when the root is scrolled up under the fold', () => {
+    // Root top at viewport -500: the visible part spans 500..1300 in root space.
+    expect(resolveRootViewportHeight(1300, -500, 800)).toBe(1300);
+  });
+
+  it('is the window height for a full-screen root', () => {
+    expect(resolveRootViewportHeight(800, 0, 800)).toBe(800);
   });
 });

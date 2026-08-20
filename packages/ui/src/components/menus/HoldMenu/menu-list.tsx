@@ -12,7 +12,7 @@ import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, MENU_WIDTH_RATIO, SPR
 import { useHoldMenuInternal } from './context';
 import { MENU_PANEL_DARK_COLOR, MENU_PANEL_LIGHT_COLOR } from './hold-menu-theme';
 import type { MenuItemProps } from './hold-menu-types';
-import { clampMenuLeft, deepEqual, leftOrRight, menuAnimationAnchor } from './layout';
+import { deepEqual, menuAnimationAnchor, resolveMenuPanelLeft } from './layout';
 import { MenuItems } from './menu-items';
 
 /**
@@ -44,12 +44,14 @@ const MenuListComponent = () => {
       menuWidth,
     );
 
-    const left = clampMenuLeft({
-      left: menuProps.value.itemX + leftOrRight(menuProps.value.anchorPosition, menuProps.value.itemWidth, menuWidth),
+    const left = resolveMenuPanelLeft({
+      itemX: menuProps.value.itemX,
+      itemWidth: menuProps.value.itemWidth,
       menuWidth,
       windowWidth: windowSize.value.width,
       safeLeft: safeAreaInsets.value.left,
       safeRight: safeAreaInsets.value.right,
+      anchorPosition: menuProps.value.anchorPosition,
     });
 
     const menuScaleAnimation = () =>
@@ -97,6 +99,7 @@ const MenuListComponent = () => {
 
   return (
     <Animated.View
+      testID="hold-menu-panel"
       className="absolute top-0 z-[15] flex-row items-start justify-start overflow-hidden rounded-xl"
       style={messageStyles}
     >

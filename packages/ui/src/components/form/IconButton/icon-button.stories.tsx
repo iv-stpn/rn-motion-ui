@@ -7,8 +7,7 @@ import { DownloadLine as Download } from 'rn-motion-ui-icons/icons/download-line
 import { Settings3Line as Settings } from 'rn-motion-ui-icons/icons/settings-3-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import type { ButtonVariant } from '../Button/button';
-import { IconButton, type IconButtonProps } from './icon-button';
+import { IconButton, type IconButtonProps, type IconButtonVariant } from './icon-button';
 
 const meta = {
   title: 'Form/IconButton',
@@ -25,7 +24,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['neutral', 'inverse', 'ghost', 'danger', 'special', 'outlineDanger', 'ghostDanger'],
+      options: ['neutral', 'inverse', 'ghost', 'danger', 'special', 'outlineDanger', 'ghostDanger', 'elevated'],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -42,7 +41,8 @@ const VARIANTS = [
   'special',
   'outlineDanger',
   'ghostDanger',
-] as const satisfies readonly ButtonVariant[];
+  'elevated',
+] as const satisfies readonly IconButtonVariant[];
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
 
@@ -50,7 +50,7 @@ const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: '
 const TILE_COLORS = ['#FF3B30', '#007AFF', '#34C759', '#FF9500', '#AF52DE'];
 
 function IconButtonPlayground(args: IconButtonProps) {
-  const [variant, setVariant] = useState<ButtonVariant>('neutral');
+  const [variant, setVariant] = useState<IconButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [pill, setPill] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -176,7 +176,7 @@ export const Primary: Story = {
   },
 };
 
-/** All eight variants at the default md size, with a secondary icon for visual
+/** All nine variants at the default md size, with a secondary icon for visual
  *  variety. */
 export const AllVariants: Story = {
   render: (args) => (

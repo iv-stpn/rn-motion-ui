@@ -18,20 +18,27 @@ import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../
 type IconButtonSize = 'sm' | 'md' | 'lg';
 type IconButtonShape = 'rounded' | 'pill';
 
+/** IconButton's variant union — Button's 8 variants plus `elevated` (a
+ *  surface-3 fill with the input's diffuse floating shadow). */
+// biome-ignore lint/style/useExportsLast: the IconButtonVariant type heads the module next to the size/shape unions it extends, keeping the variant table readable
+export type IconButtonVariant = ButtonVariant | 'elevated';
+
 // ── Box geometry ─────────────────────────────────────────────────────────────
 // Static literals so the uniwind/Tailwind scanner registers every class.
 // Tracks the BUTTON_BOX.icon pattern: square at each interactive height.
+// `lg` steps OFF the interactive ramp (24/32/40px) to 48px — the MorphingFAB
+// trigger size — so the FAB can render as an IconButton.
 
 const ICON_BUTTON_BOX: Record<IconButtonShape, Record<IconButtonSize, string>> = {
   rounded: {
     sm: 'h-interactive-sm w-interactive-sm rounded-interactive',
     md: 'h-interactive-md w-interactive-md rounded-interactive',
-    lg: 'h-interactive-lg w-interactive-lg rounded-interactive',
+    lg: 'h-12 w-12 rounded-interactive',
   },
   pill: {
     sm: 'h-interactive-sm w-interactive-sm rounded-full',
     md: 'h-interactive-md w-interactive-md rounded-full',
-    lg: 'h-interactive-lg w-interactive-lg rounded-full',
+    lg: 'h-12 w-12 rounded-full',
   },
 };
 
@@ -44,7 +51,7 @@ const ICON_SIZE: Record<IconButtonSize, number> = { sm: 14, md: 16, lg: 20 };
 const ICON_TILE: Record<IconButtonSize, { tileClass: string; iconSize: number }> = {
   sm: { tileClass: 'h-4 w-4 rounded-sm', iconSize: 10 },
   md: { tileClass: 'h-5 w-5 rounded-[5px]', iconSize: 12 },
-  lg: { tileClass: 'h-6 w-6 rounded-md', iconSize: 14 },
+  lg: { tileClass: 'h-7 w-7 rounded-lg', iconSize: 16 },
 };
 
 /** Spinner diameter per button size. */
@@ -65,6 +72,9 @@ const container = cva('flex-row items-center justify-center', {
       special: 'bg-special shadow-elevated-3',
       outlineDanger: 'border border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
+      // Surface-3 fill + the input's large diffuse drop — the floating-input
+      // recipe, so an icon-only control reads as a raised card without a rim.
+      elevated: 'bg-surface-3 shadow-input-floating',
     },
   },
   defaultVariants: { variant: 'neutral' },
@@ -77,7 +87,7 @@ const container = cva('flex-row items-center justify-center', {
  * Mirrors the variant→foreground mapping from Button's label cva and
  * ThemedIcon's VARIANT_TOKEN table.
  */
-function resolveIconColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
+function resolveIconColor(variant: IconButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   switch (variant) {
     case 'neutral':
     case 'danger':
@@ -90,12 +100,14 @@ function resolveIconColor(variant: ButtonVariant, colors: ReturnType<typeof useT
     case 'ghostDanger':
       return colors.danger;
     default:
+      // ghost / outline / elevated — light or transparent fills take the
+      // foreground stroke.
       return colors.foreground;
   }
 }
 
 /** Loading-spinner stroke colour, matching the variant's foreground. */
-function spinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
+function spinnerColor(variant: IconButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   return resolveIconColor(variant, colors);
 }
 
@@ -103,7 +115,7 @@ function spinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
  * Variants whose fill is opaque and dark-or-vivid, so a ripple must shimmer
  * white to be visible. Same set as Button's FILLED_RIPPLE_VARIANTS.
  */
-const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['inverse', 'danger', 'special']);
+const FILLED_RIPPLE_VARIANTS = new Set<IconButtonVariant>(['inverse', 'danger', 'special']);
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -123,8 +135,8 @@ export type IconButtonProps = {
    */
   iconColor?: string;
 
-  /** Visual variant — controls the button's fill, border, and shadow. @default 'neutral' */
-  variant?: ButtonVariant;
+  /** Visual variant — controls the button's fill, border, and shadow. `elevated` paints a surface-3 fill with the input's diffuse floating shadow. @default 'neutral' */
+  variant?: IconButtonVariant;
 
   /** Button size — controls the outer square and the icon or tile inside it. @default 'md' */
   size?: IconButtonSize;
@@ -176,7 +188,7 @@ export type IconButtonProps = {
 
 /**
  * A purpose-built icon-only button — a square pressable that displays an icon,
- * with the same 8 variants as {@link Button} and the same
+ * with the same variants as {@link Button} plus `elevated`, and the same
  * `icon`/`iconBackgroundColor`/`iconColor` API as {@link MenuItem}.
  *
  * Supersedes `<Button size="icon">`: every prop is meaningful for an icon-only

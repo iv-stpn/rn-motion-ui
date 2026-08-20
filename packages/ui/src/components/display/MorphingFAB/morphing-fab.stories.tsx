@@ -209,7 +209,7 @@ function MorphingFABPlayground() {
         <MorphingFAB
           expandedWidth={300}
           expandedHeight={230}
-          icon={<ThemedIcon icon={MessageSquare} variant="ghost" size={20} />}
+          icon={MessageSquare}
           accessibilityLabel="Send feedback"
           triggerTestID="fab-trigger"
           closeIcon={null}
@@ -279,7 +279,7 @@ export const FeedbackForm: Story = {
       <MorphingFAB
         expandedWidth={300}
         expandedHeight={230}
-        icon={<ThemedIcon icon={MessageSquare} variant="ghost" size={20} />}
+        icon={MessageSquare}
         accessibilityLabel="Send feedback"
         triggerTestID="fab-trigger"
         closeIcon={null}

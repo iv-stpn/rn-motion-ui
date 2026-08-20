@@ -1,6 +1,7 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: FAB shell, morph transition, and trigger/pane layouts collocated by design
-import { type ReactNode, useCallback, useState } from 'react';
+import { type ComponentType, type ReactNode, useCallback, useState } from 'react';
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
@@ -8,6 +9,7 @@ import { cn } from '../../../lib/cn';
 import { EASE_OUT } from '../../../lib/ease';
 import { elevated, type SurfaceLevel } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
+import { IconButton } from '../../form/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 
 const TRIGGER_SIZE = 48;
@@ -23,10 +25,13 @@ export type MorphingFABApi = {
 export type MorphingFABProps = {
   /** Expanded pane content, or a render-prop receiving `{ close }`. */
   children: ReactNode | ((api: MorphingFABApi) => ReactNode);
-  /** Collapsed trigger icon. Defaults to a plus (`AddLine`). */
-  icon?: ReactNode;
+  /** Collapsed trigger icon component. Defaults to a plus (`AddLine`). Rendered
+   *  through the trigger's IconButton at 20px with the variant's stroke colour. */
+  icon?: ComponentType<IconProps>;
   position?: 'bottom-right' | 'bottom-left';
-  /** Surface elevation (1–8) for the shell — drives the drop shadow + dark-mode rim. Defaults to 5. */
+  /** Surface elevation (1–8) for the EXPANDED pane — drives the drop shadow +
+   *  dark-mode rim. The collapsed trigger is an IconButton (`elevated`, `lg`)
+   *  and ignores this. Defaults to 5. */
   elevation?: SurfaceLevel;
   /** Expanded pane width in px. Defaults to 300. */
   expandedWidth?: number;
@@ -51,10 +56,14 @@ export type MorphingFABProps = {
 
 /**
  * A floating action button that morphs into a rounded pane. Collapsed it is a
- * circular FAB (48 px, plus icon by default); tapping it springs the shell
- * open into a bordered, elevated surface of `expandedWidth`×`expandedHeight`
- * and renders `children` inside. The pane closes via the top-right close
- * affordance, the render-prop `close()`, or the controlled `open` prop.
+ * circular IconButton (48 px, `elevated` variant, plus icon by default);
+ * tapping it springs the shell open into an elevated surface of
+ * `expandedWidth`×`expandedHeight` and renders `children` inside. The pane
+ * closes via the top-right close affordance, the render-prop `close()`, or the
+ * controlled `open` prop.
+ *
+ * The collapsed trigger is styled entirely by the IconButton — the shell only
+ * paints its surface (background, rim, shadow) once expanded.
  *
  * Use the render-prop form to build interactive content — a feedback form,
  * an action menu, or any custom flow — directly inside the expanded pane.
@@ -124,7 +133,10 @@ export function MorphingFAB({
           borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS,
         }}
         transition={morphTransition}
-        className={cn('overflow-hidden', elevated(elevation), 'absolute bottom-0')}
+        // The shell's surface (bg + rim + shadow) only paints while expanded —
+        // the collapsed trigger is the IconButton, which carries its own
+        // elevated styling.
+        className={cn('overflow-hidden', open && elevated(elevation), 'absolute bottom-0')}
         style={{ ...(left ? { left: 0 } : { right: 0 }) }}
       >
         {open ? (
@@ -152,15 +164,15 @@ export function MorphingFAB({
             </MotiView>
           </View>
         ) : (
-          <Pressable
-            accessibilityRole="button"
+          <IconButton
+            icon={icon ?? Plus}
+            variant="elevated"
+            size="lg"
+            shape="pill"
+            onPress={handleOpen}
             accessibilityLabel={accessibilityLabel ?? 'Open'}
             testID={triggerTestID}
-            onPress={handleOpen}
-            className="h-full w-full items-center justify-center"
-          >
-            {icon ?? <ThemedIcon icon={Plus} variant="ghost" size={20} />}
-          </Pressable>
+          />
         )}
       </MotiView>
     </View>

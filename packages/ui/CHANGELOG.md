@@ -1,5 +1,192 @@
 # rn-motion-ui
 
+## 6.0.0
+
+### Major Changes
+
+- 076ebf9: Remove `GlossyButton`
+
+  - The `GlossyButton` component is removed, along with its `rn-motion-ui/glossy-button` export and the `glossyContentColor` helper.
+  - `StatefulButton`'s `chip` prop no longer accepts `'glossy'` — it is `'elevated'` or omitted for the flat button.
+
+### Minor Changes
+
+- d7cedaa: feat(Button): add `success`, `warning` and `info` status-tone variants
+
+  - `Button` and `StatefulButton` gain `success`, `warning` and `info` variants,
+    each a vivid status fill (`bg-success`/`bg-warning`/`bg-info` with the
+    elevated shadow) paired with its `*-foreground` label, icon and spinner. The
+    status fills carry through the elevated and glossy palette mapping, so a
+    loading or success state keeps its tone.
+  - The `inverse` label now reads from the `background` token (not `surface-1`),
+    so it pairs exactly with the `bg-foreground` face.
+
+- 88b3571: feat(ChoiceGroup): extract ToggleGroup's `spaced` variant into its own component
+
+  - New `ChoiceGroup` component — a row (or column) of flat, independent choice
+    chips where one is selected at a time. It is exactly the old `spaced` ToggleGroup
+    (gapped items that each carry their own `rounded`/`pill` shape, wrapping instead
+    of scrolling), exported as `rn-motion-ui/choice-group`.
+  - BREAKING: `ToggleGroup` drops the `spaced` variant. Its `variant` prop is now
+    `'bordered' | 'connected'` and defaults to `'bordered'`; migrate `variant="spaced"`
+    usages to `<ChoiceGroup>`.
+
+- f260ae8: feat(IconButton): add the `elevated` variant and a 48px `lg` size; MorphingFAB
+  now renders its trigger as an IconButton
+
+  - IconButton gains an `elevated` variant: a `surface-3` fill with the input's
+    large diffuse floating shadow (`shadow-floating`) — the floating-input recipe,
+    so an icon-only control reads as a raised card without a rim.
+  - IconButton `lg` grows from the 40px interactive ramp to 48px — the MorphingFAB
+    trigger size (icon stays 20px, tile scales to 28px) — so the FAB can render as
+    an IconButton.
+  - MorphingFAB: the shell no longer paints its surface while collapsed. The
+    trigger is now an IconButton (`elevated`, `lg`, pill) that carries its own
+    background and shadow; the shell's `bg-surface-N` + rim + drop shadow now
+    apply only to the expanded pane (still driven by the `elevation` prop).
+  - BREAKING (type-only): `MorphingFAB`'s `icon` prop is now
+    `ComponentType<IconProps>` (rendered through the trigger IconButton's size and
+    stroke-colour pipeline) instead of `ReactNode`. Pass the icon component (e.g.
+    `icon={MessageSquare}`), not a JSX element.
+
+- a0f0293: feat(Text): add a `weight` prop that resolves a per-weight font token
+
+  - `Text` now accepts a `weight` prop (a `TextWeight` union derived from the
+    component's variants) that maps to a per-weight font-family token, instead of
+    relying on Tailwind `font-*` utility classes. `TextWeight` is exported
+    alongside `Text`.
+  - The prop threads through every typography derivative — `ActionSwapText`,
+    `TextCascade`, `TextNumberTicker`, `TextReveal`, `TextRolling` and
+    `TextShimmer` — so each exposes the same `weight` prop. `TextShimmer` renders
+    its shimmered characters through an animatable wrapper of `Text` (reanimated's
+    `Animated.Text` can't resolve the per-weight font token), so `weight` applies
+    there too.
+  - The Button family's label ramp (`LABEL_TEXT_CLASS`) drops `font-medium`;
+    buttons now set `weight="medium"` at each render site, and every consumer of
+    the old `font-*` classes migrates to `weight`.
+
+- a903eb0: refactor(theme): consolidate the input fill/shadow tokens into `surface-contrast` and `floating`
+
+  - `--color-input-base` becomes `--color-input`, `--color-input-elevated` becomes
+    the general `--color-surface-contrast`, and `--shadow-input-floating` becomes
+    `--shadow-floating`. The tokens are no longer input-specific: IconButton,
+    MorphingFAB, cards and other raised surfaces now share them.
+  - Raised `bg-muted` fills migrate to `bg-surface-contrast` (the dedicated
+    contrast-surface token) across cards, tabs, sliders, skeletons, list rows and
+    menus, so the muted text token is no longer overloaded as a fill.
+  - BREAKING (type-only): `ThemeToken` drops `input-base` / `input-elevated` in
+    favour of `input` / `surface-contrast`.
+
+### Patch Changes
+
+- f891eed: feat(ChoiceGroup): add a `variant` prop and rename `ToggleGroup`'s variant to `containerVariant`
+
+  - `ChoiceGroup` gains a `variant` prop (`'neutral' | 'info' | 'outline' | 'outline-info'`, default `'outline'`) controlling how the selected item is highlighted — `neutral`/`info` fill the accent as the background, `outline`/`outline-info` draw a coloured border.
+  - `ToggleGroup`'s `variant` prop is renamed to `containerVariant` to keep the container-level `'bordered' | 'connected'` axis distinct from the element-level `variant`.
+
+- 11af292: feat(FileSystem): the mobile multi-select scrub auto-scrolls and selects past the fold
+
+  The scrub used to hit-test only the entries already laid out on screen, so a
+  finger dragged below the visible tiles (or rows) selected nothing and the list
+  sat still. The edge-scroll engine that drives drag reordering is now shared
+  (`useFileSystemAutoScroll`) and fed the scrub's pointer stream, so dragging to
+  multi-select scrolls the grid/list when the finger goes above or below the
+  visible content.
+
+  A scrub past either edge now also resolves to a `beyond` hit — everything on the
+  far side of the anchor (the start entry excluded) — instead of `null`, so the
+  selection extends all the way to the end of the list as the finger rides the
+  edge. The finger→content mapping compensates for the auto-scroll's offset delta
+  since calibration, so a finger held still keeps selecting the same entry as the
+  content moves under it.
+
+- cdb3864: fix(Button): retune the label size ramp so the larger sizes share `text-sm`
+
+  - The label size ramp (`LABEL_TEXT_CLASS`) is spelled out as static literals
+    instead of taking them from `TEXT_INTERACTIVE`: `sm` stays `text-xs`, and
+    `md`, `lg`, and `icon` now share `text-sm` rather than stepping `lg` up. Past
+    the `md` box the extra height and padding already carry the size difference,
+    and a 16px label reads oversized inside a button.
+
+- a2fdd4a: fix(HoldMenu): skip the `useAnimatedReaction` on-mount fire so the first render doesn't flash the twin at the origin
+
+  - `useAnimatedReaction` runs its reaction once on mount with `previous === null`, which
+    drove `releaseProgress` 1 → 0 → 1 over `HOLD_ITEM_TRANSFORM_DURATION` and flashed every
+    twin opaque at (0,0) while the in-place item hid — the "all files stacked in one spot"
+    first-render bug. The guard returns early on that mount call; a real activation or
+    deactivation always has a defined `previous`.
+
+- 9dd9c02: fix(HoldMenu): no lingering copy when the twin travels, and inert holds release to full size
+
+  When the menu overflows and lifts the pair, the travelling twin is drawn fully
+  opaque from its first frame, so the in-place item now drops out on that same
+  frame (duration 0) instead of holding its full opacity underneath — previously a
+  copy was left behind at the item's old spot. The cross-fade is now reserved for
+  the one case where the twin stays put and overlaps the original, keeping the
+  pair from dimming.
+
+  An inert hold — empty items, i.e. the mobile views' multi-select join — now
+  scales back to full size on completion, so the press pulse returns to rest
+  instead of staying stuck at the squeezed size.
+
+- 1c86091: fix(HoldMenu): keep the panel on screen in nested scrolls and lift it above the screen bottom
+
+  The centre-anchored panel's pop-in transform composes to a net +itemWidth
+  offset that the viewport clamp ignored — a full-width row (the nested-scroll
+  cards, the Home example rows) shoved the panel a whole row-width past the right
+  edge. The clamp now runs on the panel's visual position (left + net offset) and
+  the offset is backed back out of the style, so a centre-anchored panel stays
+  inside the viewport.
+
+  The travel clamp also now uses the provider root's VISIBLE extent (its measured
+  height capped to the window's bottom edge relative to the root's top) instead
+  of its full layout height — when the provider sits inside a scrollable
+  container (native storybook wraps every story in a ScrollView; a scrolling app
+  screen), the root's height is the whole content height and the menu never
+  lifted, running off the bottom of the screen. A row held near the lower edge
+  now lifts the menu above the screen bottom as the NestedScroll story showcases.
+  The story gained a `play` fn (web `'hold'` = DOM `contextmenu`, so it works
+  synthetically) pinning both behaviours, and the panel/backdrop got testIDs.
+
+- 9f645fa: feat(Holdable, FileSystem): haptic feedback on holds, and a scrub tick with a checkbox pulse
+
+  `Holdable` and `HoldDraggable` gain an opt-in `hapticFeedback` prop, backed by a
+  new `lib/haptics` twin (`expo-haptics` on native, a no-op on web) so the native
+  module never enters a web bundle. `HoldMenu` now routes through the same module.
+
+  The file-system mobile views pass `hapticFeedback="Medium"` to their inert holds,
+  so the long-press that joins multi-select cues in the hand. Dragging to
+  multi-select fires a distinct `Selection` tick each time the finger crosses into
+  a new entry, and the checkbox under the finger squeezes then springs back — a
+  pulse that reduced-motion preferences skip.
+
+- 41728be: refactor(IconButton): narrow the variant surface to `neutral` | `elevated`; MorphingFAB takes a `variant` instead of `elevation`
+
+  - IconButton drops the Button variants (`inverse`, `ghost`, `outline`, `danger`,
+    `special`, `outlineDanger`, `ghostDanger`) in favour of a two-variant
+    surface-3 plate: `neutral` (plain) and `elevated` (surface-3 + the input's
+    diffuse floating shadow). Icon stroke and spinner colour now always use the
+    plain foreground token, and the ripple is never `filled`.
+  - MorphingFAB: the `elevation` prop is replaced by `variant`
+    (`IconButtonVariant`, defaulting to `elevated`), which drives the collapsed
+    trigger; the expanded pane now always paints `surface-3` with the
+    floating-input shadow.
+
+- 7027b6f: Make `MorphingFAB`'s collapsed trigger size follow the IconButton `lg` size
+
+  - The trigger shell now derives its size from `ICON_BUTTON_LG_SIZE` (48 px)
+    instead of a hardcoded `TRIGGER_SIZE`, so the FAB stays the same size as an
+    `lg` IconButton.
+
+- 1c86091: fix(Overlay): web scrim blur no longer requires the optional native peer
+
+  The overlay backdrop blur moved its guarded `@sbaiahmed1/react-native-blur`
+  require into a `.native.tsx` twin; web resolves a CSS `backdrop-filter` twin
+  (`blur(30px)`) and never imports the optional peer, so the web bundle builds
+  without it. Previously the static `require` hard-failed web bundling whenever
+  the optional peer wasn't hoisted into the resolving workspace's node_modules
+  (e.g. a pruned install where storybook/web is the bundling workspace).
+
 ## 5.7.0
 
 ### Minor Changes

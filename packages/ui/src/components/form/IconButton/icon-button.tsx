@@ -41,6 +41,9 @@ const ICON_BUTTON_BOX: Record<IconButtonShape, Record<IconButtonSize, string>> =
   },
 };
 
+// biome-ignore lint/style/useComponentExportOnlyModules: the `lg` box's pixel twin — the MorphingFAB reads it so its trigger shell stays exactly the size of an `lg` IconButton
+export const ICON_BUTTON_LG_SIZE = 48;
+
 // ── Per-size metrics ─────────────────────────────────────────────────────────
 
 /** Icon size in px when rendered without a background tile. */

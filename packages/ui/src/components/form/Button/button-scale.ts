@@ -1,17 +1,16 @@
 // The button family's shared scale: the one place a button's box (height,
 // horizontal padding, corner radius), its adornment gap and its label type ramp
-// are decided. A flat Button, an elevated chip, a glossy key and an
-// ActionSwapButton at the same `size` are therefore the same box with the same
-// text inside it, and a row of mixed types lines up.
+// are decided. A flat Button, an elevated chip and an ActionSwapButton at the
+// same `size` are therefore the same box with the same text inside it, and a row
+// of mixed types lines up.
 //
 // The geometry itself lives in theme/tokens.css (`--spacing-interactive-*`,
 // `--spacing-interactive-pad-*`) and lib/radius.ts (`INTERACTIVE_RADIUS`) — the
 // classes below only name those tokens, so a consumer retunes the whole family
 // by overriding one custom property rather than by passing a class to every
 // button. BUTTON_METRICS mirrors the same number for the effect layers that need
-// a number instead of a class: GlossyButton's seven shadow slots and
-// ElevatedButton's SVG rim both have to follow the same curve as the Pressable,
-// and neither can read a class.
+// a number instead of a class: ElevatedButton's SVG rim has to follow the same
+// curve as the Pressable, and it can't read a class.
 //
 // Data only, no React — ActionSwap imports this without pulling in the family's
 // press/ripple machinery (button-internals.tsx, which re-exports the two types
@@ -86,9 +85,8 @@ export const BUTTON_BOX: Record<ButtonShape, Record<ButtonSize, string>> = {
 
 /**
  * Resolved corner radius in px, for the layers that can't read a class — the
- * glossy SVG dome, the elevated SVG rim and the ring inset calculation. A pill
- * rounds to half its height; everything else takes the shared interactive
- * radius.
+ * elevated SVG rim and the ring inset calculation. A pill rounds to half its
+ * height; everything else takes the shared interactive radius.
  *
  * Prefer {@link buttonRadiusClass} for the CSS border-radius; use this only
  * when the number is required (SVG rx/ry, arithmetic).
@@ -108,11 +106,10 @@ export function buttonRadiusClass(shape: ButtonShape): 'rounded-full' | 'rounded
 
 /**
  * The family's label type ramp — the one place a button label's size is decided,
- * so an `md` label is the same text in a flat Button and in a glossy key. Weight
- * is uniform across the family (`weight="medium"`, applied at each render site)
- * and colour is deliberately absent: each sibling resolves its own (Button
- * through a per-variant class, GlossyButton inline from the face colour), and a
- * shared colour class here would fight those.
+ * so an `md` label is the same text in a flat Button and in an elevated chip.
+ * Weight is uniform across the family (`weight="medium"`, applied at each render
+ * site) and colour is deliberately absent: each sibling resolves its own (Button
+ * through a per-variant class), and a shared colour class here would fight those.
  *
  * `lg` deliberately shares `md`'s size rather than stepping up: past the `md` box
  * the extra height and padding already carry the size difference, and a 16px label

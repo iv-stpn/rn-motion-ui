@@ -23,7 +23,7 @@ import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass } from
  * `info`/`success`/`warning`/`danger` each carry a meaning. `inverse` is the
  * `neutral` of the *opposite* theme — the `primary`/`primary-foreground` pair
  * swapped — so it stays the exact inverse of the primary action through any
- * consumer retint. Both mirror the GlossyButton variants of the same name.
+ * consumer retint.
  */
 // biome-ignore lint/style/useExportsLast: declared up top so the colour tables below can key off it; kept with its doc comment for readability
 export type ElevatedVariant = 'neutral' | 'inverse' | 'danger' | 'success' | 'warning' | 'info' | 'special' | 'white' | 'gray';

@@ -7,10 +7,10 @@ import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
-import { IconButton, type IconButtonVariant } from '../../form/IconButton/icon-button';
+import { ICON_BUTTON_LG_SIZE, IconButton, type IconButtonVariant } from '../../form/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 
-const TRIGGER_SIZE = 48;
+const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
 const TRIGGER_RADIUS = 40;
 const PANE_RADIUS = 20;
 
@@ -53,8 +53,8 @@ export type MorphingFABProps = {
 
 /**
  * A floating action button that morphs into a rounded pane. Collapsed it is a
- * circular IconButton (48 px, plus icon by default) whose `variant` drives its
- * styling (defaults to `elevated`). Tapping it springs the shell open into a
+ * circular IconButton (the `lg` size, plus icon by default) whose `variant`
+ * drives its styling (defaults to `elevated`). Tapping it springs the shell open into a
  * floating surface of `expandedWidth`×`expandedHeight` and renders `children`
  * inside. The pane closes via the top-right close affordance, the render-prop
  * `close()`, or the controlled `open` prop.

@@ -315,11 +315,16 @@ export const MultiStepMenu = function MultiStepMenu({
       <View className="flex-1" onLayout={handlePaneLayout}>
         <View className="px-5 pt-6 pb-5">
           <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center">
+            {/* The back button is ABSOLUTE inside the relative slot: it overlays
+                the title's top-left spot instead of taking layout space, so the
+                root title is never pushed right when it appears — the title only
+                rolls DOWN (its exit translateY) into the below-the-header slot. */}
+            <View className="relative flex-1 flex-row items-center">
               <AnimatePresence>
                 {!isRoot && (
                   <MotiView
                     key="mobile-back"
+                    className="absolute left-0"
                     from={{ opacity: 0, translateX: -8 }}
                     animate={{ opacity: 1, translateX: 0 }}
                     exit={{ opacity: 0, translateX: -8 }}

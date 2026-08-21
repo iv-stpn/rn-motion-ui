@@ -140,11 +140,16 @@ export function ToggleGroup({
 
   // The shell is a bordered, overflow-clipped column so a horizontal ScrollView
   // can stretch to its width and scroll the items when they overflow; vertical
-  // segmented controls keep the items stacked directly.
+  // segmented controls keep the items stacked directly. `self-start` stops the
+  // shell from stretching to its parent's cross size (default alignItems:
+  // stretch in a column) — the control hugs its items like ChoiceGroup/Tabs —
+  // while `max-w-full` caps it at the parent width so an overflowing row still
+  // scrolls instead of spilling. Consumers wanting a full-width control can
+  // pass `className="w-full"`.
   return (
     <View
       testID={testID ?? 'toggle-group'}
-      className={cn('relative flex flex-col overflow-hidden border border-border', radius, className)}
+      className={cn('relative flex max-w-full flex-col self-start overflow-hidden border border-border', radius, className)}
       style={style}
     >
       {isHorizontal ? (

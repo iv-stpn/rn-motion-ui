@@ -2,12 +2,14 @@
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Button } from 'rn-motion-ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'rn-motion-ui/tabs';
 import { Text } from 'rn-motion-ui/text';
 import { type ThemeName, Uniwind, useUniwind } from 'uniwind';
 import { Row } from './demos/demo-chrome';
 import { FileSystemDemo } from './demos/file-system-demo';
+import { TintControl } from './tint-control';
 import './global.css';
 
 const THEMES = ['light', 'dark'] as const satisfies readonly ThemeName[];
@@ -76,34 +78,38 @@ export default function App() {
   if (!fontsLoaded) return null;
 
   return (
-    <View className="flex-1 bg-surface-1">
-      <StatusBar style="auto" />
-      <ScrollView contentContainerClassName="gap-8 px-6 pb-16 pt-24" nestedScrollEnabled={true}>
-        <View className="gap-1">
-          <Text weight="semibold" className="text-2xl text-foreground">
-            {TITLE}
-          </Text>
-          <Text className="text-muted-foreground text-sm">{SUBTITLE}</Text>
-        </View>
+    <SafeAreaProvider>
+      <View className="flex-1 bg-surface-1">
+        <StatusBar style="auto" />
+        <ScrollView contentContainerClassName="gap-8 px-6 pb-16 pt-24" nestedScrollEnabled={true}>
+          <View className="gap-1">
+            <Text weight="semibold" className="text-2xl text-foreground">
+              {TITLE}
+            </Text>
+            <Text className="text-muted-foreground text-sm">{SUBTITLE}</Text>
+          </View>
 
-        <ThemeSwitcher />
+          <ThemeSwitcher />
 
-        {/* The tab panels are unmounted while hidden, so each component starts
+          <TintControl />
+
+          {/* The tab panels are unmounted while hidden, so each component starts
             fresh on a switch — a FileSystem manifest rewritten by a drop resets
             when you come back to it. */}
-        <Tabs defaultValue="file-system" variant="segment">
-          <TabsList>
-            {TABS.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value}>
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <TabsContent value="file-system">
-            <FileSystemDemo />
-          </TabsContent>
-        </Tabs>
-      </ScrollView>
-    </View>
+          <Tabs defaultValue="file-system" variant="segment">
+            <TabsList>
+              {TABS.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <TabsContent value="file-system">
+              <FileSystemDemo />
+            </TabsContent>
+          </Tabs>
+        </ScrollView>
+      </View>
+    </SafeAreaProvider>
   );
 }

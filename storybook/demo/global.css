@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @import "uniwind";
-/* Retinted token sheet (hue 106.5 / chroma 0.002), generated with
-   `npx rn-motion-ui-tokens`. Full replacement for "rn-motion-ui/tokens.css". */
+/* Generated token sheet — derived from tokens.config.json ({ hue, chroma }) by
+   the rn-motion-ui-tokens generator, run from metro.config.js on start and on
+   every config change. Full replacement for "rn-motion-ui/tokens.css". The file
+   is gitignored; edit tokens.config.json (or the in-app tint control) to retint. */
 @import "./tokens.css";
 
 /* GlossyButton ships its own literal classes, so scan the library source too. */

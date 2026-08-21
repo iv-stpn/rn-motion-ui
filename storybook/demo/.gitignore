@@ -9,6 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
+# generated token sheet — regenerated from tokens.config.json on save/start
+tokens.css
+
 # Native
 .kotlin/
 *.orig.*

@@ -13,6 +13,7 @@ import {
   useState,
 } from 'react';
 import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, View } from 'react-native';
+import { Easing } from 'react-native-reanimated';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
@@ -22,7 +23,11 @@ import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
 import { CloseButton } from '../CloseButton/close-button';
 
-const SLIDE_TRANSITION = { type: 'spring', damping: 28, stiffness: 260, mass: 0.9 } as const;
+// Linear, not a spring or eased tween: the pane swap is two layers held a full
+// width apart, so a constant rate reads as one strip of pages sliding past a
+// window. A spring (or any ease) reads as a hand that speeds up and slows down —
+// the "staggers, then moves at the end" feel. Mirrors Tabs' slide push.
+const SLIDE_TRANSITION = { type: 'timing' as const, duration: 280, easing: Easing.linear };
 const ARROW_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
 const ARROW_EXIT_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
 

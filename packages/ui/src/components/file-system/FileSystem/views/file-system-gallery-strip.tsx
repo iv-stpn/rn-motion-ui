@@ -3,7 +3,7 @@
 // under the stage. The active tile is kept in view as the selection moves,
 // including when it arrives from another view.
 
-import { type ReactNode, useCallback, useEffect, useRef } from 'react';
+import { memo, type ReactNode, useCallback, useEffect, useRef } from 'react';
 import type { GestureResponderEvent, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { FlatList, Pressable, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
@@ -29,6 +29,8 @@ import { FileVisual } from './file-system-visual';
 /** Filmstrip geometry (px). Uniform tiles keep `getItemLayout` exact. */
 const STRIP_TILE_SIZE = 56;
 const STRIP_TILE_GAP = 6;
+/** `HoldItem` is memoized; a fresh object here would defeat that memo every render. */
+const STRIP_TILE_CONTAINER_STYLE = { marginRight: STRIP_TILE_GAP };
 const STRIP_TILE_STRIDE = STRIP_TILE_SIZE + STRIP_TILE_GAP;
 const STRIP_FOLDER_GLYPH_SIZE = 36;
 const STRIP_THUMBNAIL_WIDTH = 34;
@@ -81,7 +83,7 @@ type StripTileProps = {
   testID?: string;
 };
 
-function StripTile({
+function StripTileComponent({
   draggable,
   entry,
   getContextMenuActions,
@@ -113,7 +115,7 @@ function StripTile({
       dragOptions={dragOptions}
       onHold={onHoldAction}
       onOpenChange={handleOpenChange}
-      containerStyles={{ marginRight: STRIP_TILE_GAP }}
+      containerStyles={STRIP_TILE_CONTAINER_STYLE}
     >
       <Pressable
         accessibilityLabel={entry.name}
@@ -161,6 +163,8 @@ function StripTile({
     </HoldItem>
   );
 }
+
+const StripTile = memo(StripTileComponent);
 
 export type FileSystemGalleryStripProps = {
   activePath: string | null;

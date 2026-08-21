@@ -9,6 +9,7 @@
 // it wraps, so a single-tile drag ghosts this very node, and a group drag ghosts
 // what the manager's `renderPreview` returns.
 
+import { memo, useMemo } from 'react';
 import { type GestureResponderEvent, Pressable, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
 import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
@@ -149,7 +150,7 @@ type IconTileProps = Omit<IconTileFaceProps, 'isDropTarget'> &
  * One tile: owns the hold gesture, context menu, and drag source. Drop target
  * when it is a folder — the zone is nested inside so the box matches the tile.
  */
-export function IconTile({
+function IconTileComponent({
   draggable,
   entry,
   getContextMenuActions,
@@ -176,13 +177,17 @@ export function IconTile({
   // is the whole point of dragging a selection.
   const isDragSource = useIsLifting(entry.path);
 
+  // `HoldItem` is memoized; a fresh object here would defeat that memo and re-run
+  // its hold/gesture/drag stack for this tile on every re-render.
+  const containerStyles = useMemo(() => ({ width }), [width]);
+
   const face = (isDropTarget: boolean) => (
     <HoldItem
       items={menuProps.items}
       dragOptions={dragOptions}
       onHold={onHoldAction}
       onOpenChange={handleOpenChange}
-      containerStyles={{ width }}
+      containerStyles={containerStyles}
     >
       <Pressable
         accessibilityLabel={entry.name}
@@ -220,3 +225,5 @@ export function IconTile({
     face(false)
   );
 }
+
+export const IconTile = memo(IconTileComponent);

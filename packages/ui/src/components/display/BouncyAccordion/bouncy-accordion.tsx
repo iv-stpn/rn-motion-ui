@@ -3,6 +3,7 @@ import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
@@ -114,7 +115,7 @@ function BouncyAccordionRow({
           borderBottomRightRadius: bottomRadius,
         }}
         transition={reduce ? { type: 'timing', duration: 0 } : ROW_TRANSITION}
-        className={cn('overflow-hidden bg-surface-3', item.disabled ? 'opacity-50' : 'opacity-100')}
+        className={cn('overflow-hidden', surface(0), item.disabled ? 'opacity-50' : 'opacity-100')}
       >
         <Pressable
           accessibilityRole="button"

@@ -3,7 +3,8 @@ import { Dimensions, type LayoutChangeEvent, Modal, Pressable, type StyleProp, V
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
@@ -142,10 +143,7 @@ export function PopoverTrigger({ children, accessibilityLabel, className, style,
       accessibilityLabel={accessibilityLabel}
       testID={testID}
       onPress={onPress}
-      className={cn(
-        'h-10 flex-row items-center justify-center gap-2 self-start rounded-full border border-border bg-surface-3 px-5',
-        className,
-      )}
+      className={cn('h-10 flex-row items-center justify-center gap-2 self-start rounded-full bg-surface-3 px-5', className)}
       style={style}
     >
       {typeof children === 'string' || typeof children === 'number' ? (
@@ -224,9 +222,8 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
               animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0, scale: measured ? 1 : panelMotion.from.scale }}
               className={cn(
                 'max-w-xs p-4',
-                elevation !== 0 && 'border border-border',
-                surfaceBackground(elevation),
-                elevatedShadow(elevation),
+
+                surface(elevation),
               )}
               // `transformOrigin` is static, so it composes with the animated
               // scale rather than competing with it: the panel grows out of the

@@ -7,7 +7,8 @@ import { useModalRender } from '../../../hooks/use-modal-render';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
@@ -452,10 +453,9 @@ export function HoverMenu({
           animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0, scale: measured ? 1 : panelMotion.from.scale }}
           onDidAnimate={handleDidAnimate}
           className={cn(
-            'z-50 overflow-hidden rounded-menu',
-            elevation !== 0 && 'border border-border',
-            surfaceBackground(elevation),
-            elevatedShadow(elevation),
+            'z-50 overflow-hidden',
+
+            surface(elevation, 'menu'),
             contentClassName,
           )}
           // Static, so it composes with the animated scale rather than competing

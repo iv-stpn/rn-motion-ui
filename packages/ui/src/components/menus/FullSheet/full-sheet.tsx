@@ -7,6 +7,7 @@ import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
 import { CARD_RADIUS } from '../../../lib/radius';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
@@ -266,7 +267,7 @@ export function FullSheet({
             {isAnimOpen ? (
               <MotiView
                 key="fullsheet"
-                className="flex-1 bg-surface-3"
+                className={cn('flex-1', surface(0))}
                 from={{ translateY: height, borderRadius: CARD_RADIUS }}
                 animate={{ translateY: 0, borderRadius: 0 }}
                 exit={{ translateY: height, borderRadius: CARD_RADIUS }}

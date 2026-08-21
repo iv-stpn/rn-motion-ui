@@ -2,11 +2,11 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import type { Ref } from 'react';
 import { Pressable, type PressableProps, View, type ViewProps } from 'react-native';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 
-// cva drives the static styling layer — class strings are static literals so
-// the Tailwind/uniwind scanner picks them up. Mirrors the Button pattern.
-const card = cva('rounded-card', {
+// cva drives the padding layer by size; the radius + elevation come from `surface`.
+const card = cva('', {
   variants: {
     size: { compact: 'gap-2 p-3', md: 'gap-3 p-4', lg: 'gap-4 p-6' },
   },
@@ -32,7 +32,7 @@ export type CardProps = ViewProps & {
 export function Card({ size = 'md', elevation = 3, className, onPress, ...props }: CardProps) {
   // The surface derives both its background and shadow from `elevation` so the
   // fill and the dark-mode rim highlight sit at the same ladder level.
-  const cn_ = cn(card({ size }), surfaceBackground(elevation), elevatedShadow(elevation), className);
-  if (onPress !== undefined) return <Pressable className={cn_} onPress={onPress} {...props} />;
-  return <View className={cn_} {...props} />;
+  const cardClassname = cn(card({ size }), surface(elevation, 'card'), className);
+  if (onPress !== undefined) return <Pressable className={cardClassname} onPress={onPress} {...props} />;
+  return <View className={cardClassname} {...props} />;
 }

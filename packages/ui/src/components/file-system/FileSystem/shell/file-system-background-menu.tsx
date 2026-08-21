@@ -17,7 +17,7 @@ import { type LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, us
 import { useReducedMotion } from '../../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../../hooks/use-safe-insets';
 import { cn } from '../../../../lib/cn';
-import { elevatedShadow, surfaceBackground } from '../../../../lib/elevated';
+import { surface } from '../../../../lib/surface';
 import { MotiView } from '../../../../moti/components/view';
 import { AnimatePresence } from '../../../../moti/presence/animate-presence';
 import { MENU_SCRIM_TRANSITION, resolveMenuMotion } from '../../../../theme/motion';
@@ -127,11 +127,7 @@ function BackgroundPanel({ items, layout, menuHeight, onClose, onMenuHeight, red
   return (
     <MotiView
       {...panelMotion}
-      className={cn(
-        'absolute overflow-hidden rounded-menu border border-border',
-        surfaceBackground(PANEL_ELEVATION),
-        elevatedShadow(PANEL_ELEVATION),
-      )}
+      className={cn('absolute overflow-hidden border border-border', surface(PANEL_ELEVATION, 'menu'))}
       onLayout={onMenuHeight}
       style={{
         left: layout.left,

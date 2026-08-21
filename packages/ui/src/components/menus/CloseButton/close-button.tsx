@@ -5,7 +5,8 @@ import { Pressable, View } from 'react-native';
 import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { usePressState } from '../../../hooks/use-press-state';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 import { ThemedIcon } from '../../icon/themed-icon';
 
 export type CloseButtonSize = 'sm' | 'md' | 'lg';
@@ -88,10 +89,7 @@ export function CloseButton({
   const scale = SIZE_SCALE[size];
 
   return (
-    <View
-      className={cn('overflow-hidden', scale.shellClass, surfaceBackground(elevation), elevatedShadow(elevation), className)}
-      testID={testID}
-    >
+    <View className={cn('overflow-hidden', scale.shellClass, surface(elevation), className)} testID={testID}>
       <Pressable
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"

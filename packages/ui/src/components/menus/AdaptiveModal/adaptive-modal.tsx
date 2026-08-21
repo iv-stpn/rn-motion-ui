@@ -8,7 +8,8 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
+import { type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
@@ -322,10 +323,8 @@ export function AdaptiveModal({
                     >
                       <View
                         className={cn(
-                          'rounded-modal',
-                          elevation !== 0 && 'border border-border',
-                          surfaceBackground(elevation),
-                          elevatedShadow(elevation),
+                          surface(elevation, 'modal'),
+
                           wideHeight !== undefined && 'flex-1',
                           containerPaddingClass,
                         )}

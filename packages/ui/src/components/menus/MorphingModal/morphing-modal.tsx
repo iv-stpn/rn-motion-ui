@@ -3,7 +3,8 @@ import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, ty
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, SPRING_PANEL } from '../../../lib/ease';
-import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
@@ -155,10 +156,9 @@ export function MorphingModal({
               transition={reduce ? { type: 'timing', duration: 180, easing: EASE_OUT } : SPRING_PANEL}
               className={cn(
                 'overflow-hidden',
-                elevation !== 0 && 'border border-border',
-                placement === 'bottom-sheet' ? 'w-full max-w-sm rounded-t-modal' : 'w-full max-w-sm rounded-modal',
-                surfaceBackground(elevation),
-                elevatedShadow(elevation),
+
+                placement === 'bottom-sheet' ? 'w-full max-w-sm rounded-t-modal' : 'w-full max-w-sm',
+                surface(elevation, placement === 'bottom-sheet' ? undefined : 'modal'),
               )}
               style={style}
             >

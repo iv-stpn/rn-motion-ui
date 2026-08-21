@@ -3,7 +3,8 @@ import { createContext, type ReactNode, useCallback, useContext, useState } from
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { usePressState } from '../../../hooks/use-press-state';
 import { cn } from '../../../lib/cn';
-import { elevated, type SurfaceElevation } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
 import { CheckboxBox } from '../Checkbox/checkbox';
@@ -225,7 +226,7 @@ export function CheckboxCard({
           it lives on a dedicated View rather than on the surface below. Both
           `className` and `style` land here so consumer overrides all target one
           element. */}
-      <View className={cn('rounded-2xl', elevated(resolvedElevation), className)} style={style}>
+      <View className={cn('rounded-2xl', surface(resolvedElevation), className)} style={style}>
         {/* The visual surface carries the border + selection tint. When unchecked
             it's transparent so the wrapper's surface background shows through;
             when checked the `bg-info/5` tint overlays it. */}

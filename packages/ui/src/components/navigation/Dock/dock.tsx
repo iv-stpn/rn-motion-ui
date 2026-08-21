@@ -5,6 +5,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../../lib/ease';
 import { H_INTERACTIVE, INTERACTIVE_HEIGHT, PX_INTERACTIVE } from '../../../lib/radius';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { Text } from '../../typography/Text/text';
 
@@ -75,7 +76,8 @@ export function Dock({ children, size = 'lg', className, style, testID }: DockPr
         className={cn(
           H_INTERACTIVE[size],
           PX_INTERACTIVE[size],
-          'relative flex-row items-center gap-1.5 self-start rounded-2xl border border-border bg-surface-3',
+          'relative flex-row items-center gap-1.5 self-start rounded-2xl border border-border',
+          surface(0),
           className,
         )}
         style={style}

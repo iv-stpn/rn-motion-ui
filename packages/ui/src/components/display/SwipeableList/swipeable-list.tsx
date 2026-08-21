@@ -15,6 +15,7 @@ import {
 import { Animated, PanResponder, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { surface } from '../../../lib/surface';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 
@@ -543,7 +544,7 @@ function SwipeableListRow({
 
       {/* Draggable surface */}
       <Animated.View
-        className="rounded-2xl border border-border bg-surface-3 px-4 py-3 shadow-sm"
+        className={cn('rounded-2xl border border-border px-4 py-3', surface(3))}
         style={[
           {
             minHeight: 72,

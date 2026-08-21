@@ -13,6 +13,7 @@ import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer, settle } from '../../../__stories__/story-drag';
 import { Choice, ControlCard, Note, Playground, Section } from '../../../__stories__/story-harness';
+import { surface } from '../../../lib/surface';
 import { Text } from '../../typography/Text/text';
 import { SortableList } from './sortable-list';
 import type { SortableListProps } from './sortable-list.types';
@@ -95,7 +96,7 @@ function GroupedRow({ first, isDragging, item, last }: RowProps) {
 function SeparatedRow({ isDragging, item }: Omit<RowProps, 'first' | 'last'>) {
   return (
     <View
-      className={`flex-row items-center rounded-lg border border-border bg-surface-1 px-4 py-3 shadow-surface-2 transition-all duration-300 ease-out ${isDragging ? 'scale-[0.98] opacity-40' : ''}`}
+      className={`flex-row items-center rounded-lg border border-border ${surface(2)} px-4 py-3 transition-all duration-300 ease-out ${isDragging ? 'scale-[0.98] opacity-40' : ''}`}
     >
       <GripHandle />
       <Text>{item.title}</Text>

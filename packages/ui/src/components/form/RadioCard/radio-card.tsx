@@ -4,7 +4,8 @@ import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { cssColorToOklch, oklchToSrgb } from '../../../lib/color';
-import { elevated, type SurfaceElevation } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
@@ -309,7 +310,7 @@ export function RadioCard({
           it lives on a dedicated View rather than on the animated surface below.
           Both `className` and `style` land here so consumer overrides all target
           one element. */}
-      <View className={cn('rounded-2xl', elevated(resolvedElevation), className)} style={style}>
+      <View className={cn('rounded-2xl', surface(resolvedElevation), className)} style={style}>
         {/* The animated surface. A Pressable can't be animated directly (motify
             is only applied to host primitives, and MotiPressable nests a MotiView
             the same way), so the border/tint live here and the Pressable above

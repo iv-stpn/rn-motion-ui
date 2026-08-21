@@ -4,6 +4,7 @@ import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
@@ -165,7 +166,7 @@ export function BloomMenu({
         <MotiView
           animate={{ width: open ? PANEL_W : TRIGGER_W, height: open ? (panelH ?? BOX_H) : TRIGGER_H }}
           transition={morph}
-          className="items-center justify-center overflow-hidden rounded-menu border border-border bg-surface-3"
+          className={cn('items-center justify-center overflow-hidden border border-border', surface(0, 'menu'))}
         >
           {/* Panel content, fixed at its open-state size and centred in the
               card, so the growing clip reveals it centre-out (iris). The grid

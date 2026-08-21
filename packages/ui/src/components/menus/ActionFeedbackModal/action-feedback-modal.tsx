@@ -2,7 +2,8 @@ import { useCallback, useEffect } from 'react';
 import { AccessibilityInfo, Platform, TouchableOpacity, View } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
@@ -222,11 +223,10 @@ export function ActionFeedbackModal({
             transition={reduced ? RM_TRANSITION : { type: 'spring', damping: 24, stiffness: 280, mass: 0.9 }}
             exitTransition={{ type: 'timing', duration: reduced ? 100 : 150 }}
             className={cn(
-              'w-full max-w-sm rounded-modal',
-              elevation !== 0 && 'border border-border',
-              surfaceBackground(elevation),
+              'w-full max-w-sm',
+
+              surface(elevation, 'modal'),
               'p-6',
-              elevatedShadow(elevation),
             )}
             testID={testID}
           >

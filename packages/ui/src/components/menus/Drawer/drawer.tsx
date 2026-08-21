@@ -3,7 +3,9 @@ import { type LayoutChangeEvent, Modal, Pressable, type StyleProp, View, type Vi
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
+import { cn } from '../../../lib/cn';
 import { SPRING_PANEL } from '../../../lib/ease';
+import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
@@ -85,11 +87,12 @@ export function Drawer({
               animate={reduce ? { opacity: 1, translateX: 0 } : { translateX: 0 }}
               exit={reduce ? { opacity: 0, translateX: 0 } : { translateX: offscreen }}
               transition={reduce ? { type: 'timing', duration: 200 } : SPRING_PANEL}
-              className={
+              className={cn(
                 side === 'right'
-                  ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l bg-surface-3'
-                  : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r bg-surface-3'
-              }
+                  ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l'
+                  : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r',
+                surface(0),
+              )}
               style={safeArea ? [{ paddingTop: insets.top, paddingBottom: insets.bottom }, style] : style}
             >
               {typeof children === 'string' || typeof children === 'number' ? (

@@ -4,7 +4,6 @@ import { View } from 'react-native';
 import { ArrowRightLine as ArrowRight } from 'rn-motion-ui-icons/icons/arrow-right-line';
 import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { DownloadLine as Download } from 'rn-motion-ui-icons/icons/download-line';
-import { Settings3Line as Settings } from 'rn-motion-ui-icons/icons/settings-3-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { IconButton, type IconButtonProps, type IconButtonVariant } from './icon-button';
@@ -37,9 +36,6 @@ const VARIANTS = ['neutral', 'elevated'] as const satisfies readonly IconButtonV
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
 
-// Sample colours for iconBackgroundColor demos
-const TILE_COLORS = ['#FF3B30', '#007AFF', '#34C759', '#FF9500', '#AF52DE'];
-
 function IconButtonPlayground(args: IconButtonProps) {
   const [variant, setVariant] = useState<IconButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
@@ -47,8 +43,6 @@ function IconButtonPlayground(args: IconButtonProps) {
   const [loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [ripple, setRipple] = useState(false);
-  const [tileColor, setTileColor] = useState<string | undefined>(undefined);
-  const [customIconColor, setCustomIconColor] = useState(false);
   const [count, setCount] = useState(0);
 
   const handlePress = useCallback(() => {
@@ -56,19 +50,7 @@ function IconButtonPlayground(args: IconButtonProps) {
     args.onPress?.();
   }, [args.onPress]);
 
-  const handleTileToggle = useCallback((v: boolean) => setTileColor(v ? '#007AFF' : undefined), []);
-
-  const live: IconButtonProps = {
-    ...args,
-    variant,
-    size,
-    shape: pill ? 'pill' : 'rounded',
-    loading,
-    disabled,
-    ripple,
-    iconBackgroundColor: tileColor,
-    iconColor: customIconColor ? '#FFFFFF' : undefined,
-  };
+  const live: IconButtonProps = { ...args, variant, size, shape: pill ? 'pill' : 'rounded', loading, disabled, ripple };
 
   return (
     <Playground>
@@ -79,9 +61,6 @@ function IconButtonPlayground(args: IconButtonProps) {
         <Toggle label="Loading" onChange={setLoading} value={loading} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Toggle label="Ripple" onChange={setRipple} value={ripple} />
-        <Toggle label="Icon tile (iOS style)" onChange={handleTileToggle} value={Boolean(tileColor)} />
-        {tileColor ? <Choice label="Tile color" onChange={setTileColor} options={TILE_COLORS} value={tileColor} /> : null}
-        <Toggle label="Custom icon colour" onChange={setCustomIconColor} value={customIconColor} />
       </ControlCard>
 
       <View className="flex-row items-center gap-4">
@@ -116,16 +95,6 @@ function IconButtonPlayground(args: IconButtonProps) {
           <Sample label="pill">
             <IconButton {...args} shape="pill" variant={variant} />
           </Sample>
-        </Variants>
-      </Section>
-
-      <Section title="Icon tile (iconBackgroundColor)">
-        <Variants align="center">
-          {TILE_COLORS.map((color) => (
-            <Sample key={color} label={color}>
-              <IconButton {...args} icon={Settings} variant="neutral" iconBackgroundColor={color} />
-            </Sample>
-          ))}
         </Variants>
       </Section>
 

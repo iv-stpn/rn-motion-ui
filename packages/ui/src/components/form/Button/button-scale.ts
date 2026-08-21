@@ -123,7 +123,7 @@ export function buttonRadiusClass(shape: ButtonShape): 'rounded-full' | 'rounded
  */
 export const LABEL_TEXT_CLASS: Record<ButtonSize, string> = {
   sm: 'text-xs',
-  md: 'text-[13px]',
-  lg: 'text-sm',
+  md: 'text-sm',
+  lg: 'text-[15px]',
   icon: 'text-sm',
 };

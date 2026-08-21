@@ -35,7 +35,7 @@ const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
       neutral: 'bg-surface-3',
-      inverse: 'border border-border bg-foreground',
+      inverse: 'bg-foreground',
       ghost: 'bg-transparent',
       outline: 'border border-border bg-transparent',
       danger: 'bg-danger shadow-elevated-3',

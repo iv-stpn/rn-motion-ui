@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import type { ComponentType, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
-import { Pressable, TextInput, View } from 'react-native';
-import type { IconProps } from 'rn-motion-ui-icons/icon-props';
+import { TextInput, View } from 'react-native';
 import { CameraLine } from 'rn-motion-ui-icons/icons/camera-line';
 import { Document2Line } from 'rn-motion-ui-icons/icons/document-2-line';
 import { LinkLine } from 'rn-motion-ui-icons/icons/link-line';
@@ -16,6 +15,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { ThemedIcon } from '../../icon/themed-icon';
+import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import { MorphingFAB } from './morphing-fab';
 
@@ -46,22 +46,6 @@ function AppSurface({ children, hint }: AppSurfaceProps) {
       </View>
       {children}
     </View>
-  );
-}
-
-type Action = { icon: ComponentType<IconProps>; label: string; onPress: () => void };
-
-function MenuAction({ icon, label, onPress }: Action) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      className="h-11 flex-row items-center gap-2.5 rounded-xl px-3 active:bg-surface-selected"
-    >
-      <ThemedIcon icon={icon} variant="ghost" size={18} />
-      <Text className="text-foreground text-sm">{label}</Text>
-    </Pressable>
   );
 }
 
@@ -230,9 +214,9 @@ function MorphingFABPlayground() {
         <MorphingFAB expandedWidth={232} expandedHeight={192} accessibilityLabel="Open actions" triggerTestID="fab-trigger">
           {({ close }) => (
             <View className="gap-1 pt-1">
-              <MenuAction icon={CameraLine} label="Take photo" onPress={close} />
-              <MenuAction icon={Document2Line} label="Attach file" onPress={close} />
-              <MenuAction icon={LinkLine} label="Copy link" onPress={close} />
+              <MenuItem icon={CameraLine} label="Take photo" onPress={close} />
+              <MenuItem icon={Document2Line} label="Attach file" onPress={close} />
+              <MenuItem icon={LinkLine} label="Copy link" onPress={close} />
             </View>
           )}
         </MorphingFAB>
@@ -254,9 +238,9 @@ export const ThreeActionMenu: Story = {
       <MorphingFAB expandedWidth={232} expandedHeight={192} accessibilityLabel="Open actions" triggerTestID="fab-trigger">
         {({ close }) => (
           <View className="gap-1 pt-1">
-            <MenuAction icon={CameraLine} label="Take photo" onPress={close} />
-            <MenuAction icon={Document2Line} label="Attach file" onPress={close} />
-            <MenuAction icon={LinkLine} label="Copy link" onPress={close} />
+            <MenuItem icon={CameraLine} label="Take photo" onPress={close} />
+            <MenuItem icon={Document2Line} label="Attach file" onPress={close} />
+            <MenuItem icon={LinkLine} label="Copy link" onPress={close} />
           </View>
         )}
       </MorphingFAB>

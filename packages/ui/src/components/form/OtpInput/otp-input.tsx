@@ -50,7 +50,7 @@ const slot = cva('relative h-interactive-lg w-interactive-lg items-center justif
 const message = cva('text-sm', {
   variants: {
     status: {
-      success: 'text-success-foreground',
+      success: 'text-success',
       error: 'text-danger',
       idle: 'text-muted-foreground',
     },
@@ -478,7 +478,7 @@ export function OTPInput({
               className="pointer-events-none absolute top-[14px]"
               style={{ right: -28 }}
             >
-              <ThemedIcon icon={Check} token="success-foreground" size={20} />
+              <ThemedIcon icon={Check} token="success" size={20} />
             </MotiView>
           ) : null}
         </AnimatePresence>

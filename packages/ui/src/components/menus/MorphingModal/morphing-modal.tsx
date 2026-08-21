@@ -3,7 +3,7 @@ import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, ty
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, SPRING_PANEL } from '../../../lib/ease';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
+import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
@@ -53,8 +53,8 @@ export type MorphingModalProps = {
   children: ReactNode;
   /** "bottom" anchors near the bottom (mobile-like). "center" centers vertically. */
   placement?: MorphingModalPlacement;
-  /** Surface elevation (1–8) — drives the drop shadow + dark-mode rim. Defaults to 6. */
-  elevation?: SurfaceLevel;
+  /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
+  elevation?: SurfaceElevation;
   /** When true, renders a close button in the top-right corner of the panel. */
   showClose?: boolean;
   accessibilityLabel?: string;
@@ -154,7 +154,8 @@ export function MorphingModal({
               exit={{ opacity: 0, translateY: enterY, scale: reduce || placement === 'bottom-sheet' ? 1 : 0.98 }}
               transition={reduce ? { type: 'timing', duration: 180, easing: EASE_OUT } : SPRING_PANEL}
               className={cn(
-                'overflow-hidden border border-border',
+                'overflow-hidden',
+                elevation !== 0 && 'border border-border',
                 placement === 'bottom-sheet' ? 'w-full max-w-sm rounded-t-modal' : 'w-full max-w-sm rounded-modal',
                 surfaceBackground(elevation),
                 elevatedShadow(elevation),

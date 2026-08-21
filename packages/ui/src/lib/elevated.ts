@@ -23,8 +23,16 @@
  */
 
 /** Surface elevation level: 1 (page) … 8 (highest float). */
-// biome-ignore lint/style/useExportsLast: the SurfaceLevel type heads the module for readability — its lookup maps and functions follow
 export type SurfaceLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+/**
+ * The `elevation` prop's domain: `0` is the flat resting surface (a `surface-3`
+ * fill with no shadow, rim or border), `1–8` are the ladder rungs. `0` is not a
+ * surface *level* — there is no `bg-surface-0` — so it sits on its own type
+ * rather than widening {@link SurfaceLevel}.
+ */
+// biome-ignore lint/style/useExportsLast: grouped with SurfaceLevel — both surface types head the module for readability
+export type SurfaceElevation = SurfaceLevel | 0;
 
 // Static literal maps — the scanner reads the class names from these keys.
 const SURFACE_BG_CLASSNAME: Record<SurfaceLevel, string> = {
@@ -49,8 +57,12 @@ const SURFACE_ELEVATED_SHADOW_CLASSNAME: Record<SurfaceLevel, string> = {
   8: 'shadow-elevated-8',
 };
 
-/** Combined background + shadow class for a level — built from the private lookups so it cannot drift from {@link surfaceBackground} / {@link elevatedShadow}. */
-export const SURFACE_CLASSNAME: Record<SurfaceLevel, string> = {
+/** Flat (elevation-0) surface — the resting `surface-3` fill, no shadow or border. */
+const FLAT_SURFACE_CLASSNAME = 'bg-surface-3';
+
+/** Combined background + shadow class for an elevation — built from the private lookups so it cannot drift from {@link surfaceBackground} / {@link elevatedShadow}. */
+export const SURFACE_CLASSNAME: Record<SurfaceElevation, string> = {
+  0: FLAT_SURFACE_CLASSNAME,
   1: `${SURFACE_BG_CLASSNAME[1]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[1]}`,
   2: `${SURFACE_BG_CLASSNAME[2]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[2]}`,
   3: `${SURFACE_BG_CLASSNAME[3]} ${SURFACE_ELEVATED_SHADOW_CLASSNAME[3]}`,
@@ -72,22 +84,25 @@ export function clampSurfaceLevel(level: number): SurfaceLevel {
   return Math.round(level) as SurfaceLevel;
 }
 
-/** Elevation shadow class (rim + drop) for a level. */
-export function elevatedShadow(level: SurfaceLevel): string {
+/** Elevation shadow class (rim + drop) for an elevation — empty string at `0`, where the flat surface carries no shadow or border. */
+export function elevatedShadow(level: SurfaceElevation): string {
+  if (level === 0) return '';
   return SURFACE_ELEVATED_SHADOW_CLASSNAME[clampSurfaceLevel(level)];
 }
 
-/** Background class for a surface level. */
-export function surfaceBackground(level: SurfaceLevel): string {
+/** Background class for an elevation — `bg-surface-3` at `0` (the flat resting surface), `bg-surface-N` otherwise. */
+export function surfaceBackground(level: SurfaceElevation): string {
+  if (level === 0) return FLAT_SURFACE_CLASSNAME;
   return SURFACE_BG_CLASSNAME[clampSurfaceLevel(level)];
 }
 
 /**
- * Surface classes for a level: `bg-surface-N shadow-elevated-N`. Pass a
+ * Surface classes for an elevation: `bg-surface-N shadow-elevated-N`. At `0`
+ * the surface is flat — `bg-surface-3` alone, no shadow or border. Pass a
  * separate `shadowLevel` to float a surface higher (or lower) than its
  * background tint — the pattern the surface components use for their
  * `elevation` prop.
  */
-export function elevated(level: SurfaceLevel, shadowLevel: SurfaceLevel = level): string {
-  return `${surfaceBackground(level)} ${elevatedShadow(shadowLevel)}`;
+export function elevated(level: SurfaceElevation, shadowLevel: SurfaceElevation = level): string {
+  return [surfaceBackground(level), elevatedShadow(shadowLevel)].filter(Boolean).join(' ');
 }

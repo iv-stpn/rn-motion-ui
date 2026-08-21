@@ -8,7 +8,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
+import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
@@ -65,8 +65,8 @@ type AdaptiveModalProps = {
   onAfterClose?: () => void;
   /** When false, clicking the overlay will not close the modal. Defaults to true. */
   closeOnOverlayClick?: boolean;
-  /** Surface elevation (1–8) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. Defaults to 6. */
-  elevation?: SurfaceLevel;
+  /** Surface elevation (0–8) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
+  elevation?: SurfaceElevation;
   /**
    * Wrap content in device safe-area insets. Passed through to BottomSheet /
    * FullSheet on narrow screens; applied directly to the right-drawer panel on
@@ -322,7 +322,8 @@ export function AdaptiveModal({
                     >
                       <View
                         className={cn(
-                          'rounded-modal border border-border',
+                          'rounded-modal',
+                          elevation !== 0 && 'border border-border',
                           surfaceBackground(elevation),
                           elevatedShadow(elevation),
                           wideHeight !== undefined && 'flex-1',

@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { usePressState } from '../../../hooks/use-press-state';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
+import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
 import { ThemedIcon } from '../../icon/themed-icon';
 
 export type CloseButtonSize = 'sm' | 'md' | 'lg';
@@ -31,12 +31,13 @@ export type CloseButtonProps = {
    */
   size?: CloseButtonSize;
   /**
-   * Surface elevation level (1–8) — drives the background colour and the
-   * drop-shadow + dark-mode rim. Defaults to 3, the resting level for cards
-   * and popovers, so the button floats just above the page.
+   * Surface elevation level (0–8) — drives the background colour and the
+   * drop-shadow + dark-mode rim. `0` is the flat resting surface (no shadow or
+   * border). Defaults to 3, the resting level for cards and popovers, so the
+   * button floats just above the page.
    * @default 3
    */
-  elevation?: SurfaceLevel;
+  elevation?: SurfaceElevation;
   /** Called when the button is pressed. Wire it to the panel's close handler. */
   onPress?: () => void;
   /**

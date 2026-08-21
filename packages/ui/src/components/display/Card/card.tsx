@@ -2,7 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import type { Ref } from 'react';
 import { Pressable, type PressableProps, View, type ViewProps } from 'react-native';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
+import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
 
 // cva drives the static styling layer — class strings are static literals so
 // the Tailwind/uniwind scanner picks them up. Mirrors the Button pattern.
@@ -19,10 +19,11 @@ export type CardProps = ViewProps & {
   /**
    * Ladder level for the surface — drives both the surface fill (`bg-surface-N`)
    * and the `shadow-elevated-N` recipe (drop + dark-mode rim), so fill and rim
-   * highlight sit at the same level.
+   * highlight sit at the same level. `0` is the flat resting surface: a
+   * `surface-3` fill with no shadow or border.
    * @default 3
    */
-  elevation?: SurfaceLevel;
+  elevation?: SurfaceElevation;
   /** When provided the card renders as a `Pressable` instead of a plain `View`. */
   onPress?: PressableProps['onPress'];
   ref?: Ref<View>;

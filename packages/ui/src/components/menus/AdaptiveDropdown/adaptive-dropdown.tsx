@@ -3,7 +3,7 @@ import { type LayoutChangeEvent, Modal, Pressable, ScrollView, useWindowDimensio
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
-import { SURFACE_CLASSNAME, type SurfaceLevel } from '../../../lib/elevated';
+import { SURFACE_CLASSNAME, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
@@ -61,8 +61,8 @@ export type AdaptiveDropdownProps = {
   triggerClassName?: string;
   /** When true, the bottom sheet on small screens stretches to full height. @default false */
   fullSheet?: boolean;
-  /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 5 */
-  elevation?: SurfaceLevel;
+  /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 5 */
+  elevation?: SurfaceElevation;
   /**
    * Minimum window width for the floating-panel layout; below it the content
    * opens as a bottom sheet. A breakpoint name from the default scale or a raw

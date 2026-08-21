@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { AccessibilityInfo, Platform, TouchableOpacity, View } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
+import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
@@ -142,8 +142,8 @@ export type ActionFeedbackModalProps = {
   errorTitle?: string;
   dismissLabel?: string;
   tagline?: string;
-  /** Surface elevation (1–8) — drives the drop shadow + dark-mode rim. Defaults to 6. */
-  elevation?: SurfaceLevel;
+  /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
+  elevation?: SurfaceElevation;
   testID?: string;
 };
 
@@ -222,7 +222,8 @@ export function ActionFeedbackModal({
             transition={reduced ? RM_TRANSITION : { type: 'spring', damping: 24, stiffness: 280, mass: 0.9 }}
             exitTransition={{ type: 'timing', duration: reduced ? 100 : 150 }}
             className={cn(
-              'w-full max-w-sm rounded-modal border border-border',
+              'w-full max-w-sm rounded-modal',
+              elevation !== 0 && 'border border-border',
               surfaceBackground(elevation),
               'p-6',
               elevatedShadow(elevation),

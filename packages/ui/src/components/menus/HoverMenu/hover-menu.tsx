@@ -7,7 +7,7 @@ import { useModalRender } from '../../../hooks/use-modal-render';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
+import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
@@ -62,8 +62,8 @@ export type HoverMenuProps = {
   /** Hover-close delay in ms (web only). @default 150 */
   closeDelay?: number;
   contentClassName?: string;
-  /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 5 */
-  elevation?: SurfaceLevel;
+  /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 5 */
+  elevation?: SurfaceElevation;
   /**
    * Overrides the shared open/close animation — the same `motion` prop
    * `AdaptiveDropdown` and `Popover` take, so a consumer can
@@ -452,7 +452,8 @@ export function HoverMenu({
           animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0, scale: measured ? 1 : panelMotion.from.scale }}
           onDidAnimate={handleDidAnimate}
           className={cn(
-            'z-50 overflow-hidden rounded-menu border border-border',
+            'z-50 overflow-hidden rounded-menu',
+            elevation !== 0 && 'border border-border',
             surfaceBackground(elevation),
             elevatedShadow(elevation),
             contentClassName,

@@ -29,7 +29,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import type { SurfaceLevel } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { Card } from '../../display/Card/card';
 import { Text } from '../../typography/Text/text';
 
@@ -276,7 +276,7 @@ const REDUCED_BAND_CLASS: Record<WheelPickerVariant, string> = {
   plain: 'absolute inset-x-1 z-10 rounded-xl bg-surface-selected',
 };
 
-type WheelPickerFrameProps = ViewProps & { variant: WheelPickerVariant; elevation: SurfaceLevel; ref?: Ref<View> };
+type WheelPickerFrameProps = ViewProps & { variant: WheelPickerVariant; elevation: SurfaceElevation; ref?: Ref<View> };
 
 // The outer shell. `card` is an elevated Card surface; `plain` is a bare
 // transparent View — no fill, no shadow, no radius — so a parent can frame
@@ -313,8 +313,8 @@ export type WheelPickerProps = {
   sound?: boolean;
   /** Container treatment. Default `card`. See {@link WheelPickerVariant}. */
   variant?: WheelPickerVariant;
-  /** Surface elevation of the outer Card container (1–8). Default 3. Ignored when `variant="plain"`. */
-  elevation?: SurfaceLevel;
+  /** Surface elevation of the outer Card container (0–8). `0` is the flat resting surface (no shadow or border). Default 3. Ignored when `variant="plain"`. */
+  elevation?: SurfaceElevation;
   /** Additional UniWind class names forwarded to the container. */
   className?: string;
   style?: StyleProp<ViewStyle>;

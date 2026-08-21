@@ -12,7 +12,7 @@ import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
-import type { SurfaceLevel } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
@@ -212,7 +212,7 @@ const PLACEMENTS = [
 
 type MorphingModalDemoProps = {
   placement: 'bottom' | 'center' | 'bottom-sheet';
-  elevation?: SurfaceLevel;
+  elevation?: SurfaceElevation;
   kind?: TriggerState['kind'];
   size?: TriggerState['size'];
   shape?: TriggerState['shape'];

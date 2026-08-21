@@ -3,7 +3,7 @@ import { Dimensions, type LayoutChangeEvent, Modal, Pressable, type StyleProp, V
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { elevatedShadow, type SurfaceLevel, surfaceBackground } from '../../../lib/elevated';
+import { elevatedShadow, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
@@ -168,8 +168,8 @@ function alignLeft(align: PopoverAlign, rect: Rect, panelW: number): number {
 export type PopoverContentProps = {
   children: ReactNode;
   accessibilityLabel?: string;
-  /** Float level — picks the `shadow-elevated-N` recipe (drop + dark rim). @default 4 */
-  elevation?: SurfaceLevel;
+  /** Float level — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 4 */
+  elevation?: SurfaceElevation;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -222,7 +222,12 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
               // opacity — otherwise the scale animation completes invisibly and
               // the panel pops at full size.
               animate={{ ...panelMotion.animate, opacity: measured ? 1 : 0, scale: measured ? 1 : panelMotion.from.scale }}
-              className={cn('max-w-xs border border-border p-4', surfaceBackground(elevation), elevatedShadow(elevation))}
+              className={cn(
+                'max-w-xs p-4',
+                elevation !== 0 && 'border border-border',
+                surfaceBackground(elevation),
+                elevatedShadow(elevation),
+              )}
               // `transformOrigin` is static, so it composes with the animated
               // scale rather than competing with it: the panel grows out of the
               // corner facing the trigger.

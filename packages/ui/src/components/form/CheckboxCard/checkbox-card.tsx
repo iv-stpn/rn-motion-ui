@@ -3,7 +3,7 @@ import { createContext, type ReactNode, useCallback, useContext, useState } from
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { usePressState } from '../../../hooks/use-press-state';
 import { cn } from '../../../lib/cn';
-import { elevated, type SurfaceLevel } from '../../../lib/elevated';
+import { elevated, type SurfaceElevation } from '../../../lib/elevated';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
 import { CheckboxBox } from '../Checkbox/checkbox';
@@ -20,7 +20,7 @@ type CheckboxCardCtx = {
   /** The group's own testID, used to derive per-card ones. */
   testID?: string;
   /** Group-level elevation. A card can override it. */
-  elevation: SurfaceLevel;
+  elevation: SurfaceElevation;
 };
 
 const CheckboxCardContext = createContext<CheckboxCardCtx | null>(null);
@@ -45,12 +45,13 @@ export type CheckboxCardGroupProps = {
    */
   checkTransition?: Partial<MotiTransitionProp>;
   /**
-   * Surface elevation for every card in the group (1–8). Controls both the
+   * Surface elevation for every card in the group (0–8). Controls both the
    * background tint (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`).
-   * Default: `3` (the standard card level). A card can override it with its own
-   * `elevation`.
+   * `0` is the flat resting surface — a `surface-3` fill with no shadow or
+   * border. Default: `3` (the standard card level). A card can override it with
+   * its own `elevation`.
    */
-  elevation?: SurfaceLevel;
+  elevation?: SurfaceElevation;
 };
 
 // Layout swaps the flex direction; cards keep flex-1 so a row shares width evenly.
@@ -147,11 +148,12 @@ export type CheckboxCardProps = {
   /** Replace the check-mark icon. Default: `<Svg width={12} height={12}><Path d={CHECK_PATH} .../></Svg>`. */
   checkIcon?: ReactNode;
   /**
-   * Surface elevation (1–8). Controls both the background tint
-   * (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`). Inherits the
+   * Surface elevation (0–8). Controls both the background tint
+   * (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`). `0` is the flat
+   * resting surface (a `surface-3` fill, no shadow or border). Inherits the
    * group's value when unset. Default: `3` (the standard card level).
    */
-  elevation?: SurfaceLevel;
+  elevation?: SurfaceElevation;
 };
 
 /**

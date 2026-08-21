@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clampSurfaceLevel, elevated, elevatedShadow, SURFACE_LEVELS, type SurfaceLevel, surfaceBackground } from '../elevated';
+import {
+  clampSurfaceLevel,
+  elevated,
+  elevatedShadow,
+  SURFACE_CLASSNAME,
+  SURFACE_LEVELS,
+  type SurfaceElevation,
+  type SurfaceLevel,
+  surfaceBackground,
+} from '../elevated';
 
 describe('SURFACE_LEVELS', () => {
   it('enumerates the 1–8 ladder in ascending order', () => {
@@ -67,5 +76,37 @@ describe('SurfaceLevel type', () => {
   it('accepts the literal union at compile time', () => {
     const level: SurfaceLevel = 5;
     expect(elevatedShadow(level)).toBe('shadow-elevated-5');
+  });
+});
+
+describe('elevation 0 (flat surface)', () => {
+  it('maps the background to the resting surface-3 fill', () => {
+    expect(surfaceBackground(0)).toBe('bg-surface-3');
+  });
+
+  it('carries no shadow or border', () => {
+    expect(elevatedShadow(0)).toBe('');
+  });
+
+  it('combines to a flat bg-surface-3 with no shadow class', () => {
+    expect(elevated(0)).toBe('bg-surface-3');
+  });
+
+  it('floats a background above a flat (shadowless) elevation', () => {
+    expect(elevated(3, 0)).toBe('bg-surface-3');
+    expect(elevated(6, 0)).toBe('bg-surface-6');
+  });
+
+  it('exposes the flat entry in SURFACE_CLASSNAME', () => {
+    expect(SURFACE_CLASSNAME[0]).toBe('bg-surface-3');
+  });
+});
+
+describe('SurfaceElevation type', () => {
+  it('accepts 0 and the 1–8 union at compile time', () => {
+    const flat: SurfaceElevation = 0;
+    const level: SurfaceElevation = 5;
+    expect(elevated(flat)).toBe('bg-surface-3');
+    expect(elevated(level)).toBe('bg-surface-5 shadow-elevated-5');
   });
 });

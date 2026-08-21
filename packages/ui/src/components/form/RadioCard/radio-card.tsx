@@ -4,7 +4,7 @@ import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { cssColorToOklch, oklchToSrgb } from '../../../lib/color';
-import { elevated, type SurfaceLevel } from '../../../lib/elevated';
+import { elevated, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
@@ -93,7 +93,7 @@ type RadioCardCtx = {
   /** Group-level variant. A card can override it. */
   variant?: RadioCardVariant;
   /** Group-level elevation. A card can override it. */
-  elevation: SurfaceLevel;
+  elevation: SurfaceElevation;
 };
 
 const RadioCardContext = createContext<RadioCardCtx | null>(null);
@@ -122,12 +122,13 @@ export type RadioCardGroupProps = {
    */
   variant?: RadioCardVariant;
   /**
-   * Surface elevation for every card in the group (1–8). Controls both the
+   * Surface elevation for every card in the group (0–8). Controls both the
    * background tint (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`).
-   * Default: `3` (the standard card level). A card can override it with its own
-   * `elevation`.
+   * `0` is the flat resting surface — a `surface-3` fill with no shadow or
+   * border. Default: `3` (the standard card level). A card can override it with
+   * its own `elevation`.
    */
-  elevation?: SurfaceLevel;
+  elevation?: SurfaceElevation;
 };
 
 // Layout swaps the flex direction; cards keep flex-1 so a row shares width evenly.
@@ -229,11 +230,12 @@ export type RadioCardProps = {
    */
   variant?: RadioCardVariant;
   /**
-   * Surface elevation (1–8). Controls both the background tint
-   * (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`). Inherits the
+   * Surface elevation (0–8). Controls both the background tint
+   * (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`). `0` is the flat
+   * resting surface (a `surface-3` fill, no shadow or border). Inherits the
    * group's value when unset. Default: `3` (the standard card level).
    */
-  elevation?: SurfaceLevel;
+  elevation?: SurfaceElevation;
 };
 
 /**

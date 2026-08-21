@@ -17,18 +17,15 @@ import '../global.css';
 // class — rather than '' — is what makes the light selection authoritative;
 // with no class, the @media block would keep the tokens dark under a dark OS.
 //
-// Wrap every story in a surface-coloured background that tracks the theme
-// toolbar. The View fills the Storybook canvas so the story content sits on the
-// correct theme surface instead of the default white/transparent backdrop.
-// globals.theme is read directly (rather than useThemeColor, which reads the CSS
-// var via getComputedStyle during render and would lag one frame behind the
-// class-swap effect) so the backdrop flips in the same render as the toggle.
-// Surface hex values mirror tokens.css / use-theme-color.ts (light: #fafafa ≈
-// oklch(99% 0 0), dark: #111111 ≈ oklch(9% 0 0)).
+// Wrap every story in a background that tracks the `background` colour token.
+// `bg-background` resolves `--color-background` in CSS, so it flips in the same
+// render the .light/.dark class lands on <html> — no getComputedStyle read
+// (useThemeColor) that would lag one frame behind the class-swap effect. The
+// View fills the Storybook canvas so the story content sits on the correct
+// theme surface instead of the default white/transparent backdrop.
 // biome-ignore lint/style/useComponentExportOnlyModules: Storybook decorator — internal to preview.tsx, not a public component
 const ThemeDecorator: Decorator = (Story) => {
   const [globals] = useGlobals();
-  const isDark = globals.theme === 'dark';
 
   // Both halves of the direction story, because they are separate mechanisms:
   // `dir` on the wrapping View is what makes react-native-web actually flip the
@@ -44,7 +41,7 @@ const ThemeDecorator: Decorator = (Story) => {
         <View
           // @ts-expect-error - the dir attribute does not exist on RN View, but RNW forwards it to the DOM and to its own locale context
           dir={direction}
-          className={cn('flex-1 p-6', isDark ? 'bg-black' : 'bg-[#f6f6f6]')}
+          className={cn('flex-1 bg-background p-6')}
         >
           <Story />
         </View>

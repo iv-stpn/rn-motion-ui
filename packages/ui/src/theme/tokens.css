@@ -161,10 +161,11 @@
   --color-white: oklch(100% 0 0);
   --color-black: oklch(0% 0 0);
 
-  /* Theme-flipping background — white in light mode, black in dark mode.
-     Unlike `white` / `black` (which are absolute and never flip), this token
-     tracks the active scheme so a page-level background automatically inverts. */
-  --color-background: oklch(100% 0 0);
+  /* Theme-flipping background — near-white with a whisper of the hue-270 tint
+     in light mode, black in dark mode. Unlike `white` / `black` (which are
+     absolute and never flip), this token tracks the active scheme so a
+     page-level background automatically inverts. */
+  --color-background: oklch(95% 0.004 270);
 
   /* Surface elevation shadows — a crisp 1px ring at full strength plus drop
      layers whose opacity decays as blur grows (natural light fall-off).
@@ -514,7 +515,7 @@
   --color-white: oklch(100% 0 0);
   --color-black: oklch(0% 0 0);
 
-  --color-background: oklch(100% 0 0);
+  --color-background: oklch(95% 0.003 270);
 
   --shadow-surface-1: 0 0 0 1px oklch(0% 0 0 / 0.06);
   --shadow-surface-2: 0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06);

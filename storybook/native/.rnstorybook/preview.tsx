@@ -35,7 +35,7 @@ const preview: Preview = {
       }, [isDark]);
 
       return (
-        <ScrollView className="flex-1" contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
+        <ScrollView className="flex-1 bg-background" contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
           <View className="mb-4 self-start">
             <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
           </View>
@@ -44,15 +44,6 @@ const preview: Preview = {
       );
     },
   ],
-  parameters: {
-    backgrounds: {
-      default: 'plain',
-      values: [
-        { name: 'plain', value: '#ffffff' },
-        { name: 'dark', value: '#151515' },
-      ],
-    },
-  },
 };
 
 export default preview;

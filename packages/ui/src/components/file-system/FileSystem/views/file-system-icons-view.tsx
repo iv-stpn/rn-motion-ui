@@ -264,7 +264,10 @@ export function FileSystemIconsView({
   // The grid lays its tiles out in entry order, so the entry list *is* the
   // ordering a Shift-range runs through.
   const orderedPaths = useMemo(() => entries.map((entry) => entry.path), [entries]);
-  const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
+  // The icons view is a web surface: multi-select is Ctrl/Cmd-click and Shift-click,
+  // never a touch long-press. `onLongPress` (the touch join) is deliberately left
+  // unwired so a long-press falls through to the tile's context menu instead.
+  const { onPress: activate } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
   const { containerRef, hover, marquee, onLayout, onScroll, scrollRef, tileWidth, width } = useIconsGrid({
     draggable,
     entries,
@@ -320,7 +323,6 @@ export function FileSystemIconsView({
                   onContextMenuAction={onContextMenuAction}
                   onExternalDrop={onExternalDrop}
                   onMove={onMove}
-                  onSelectLongPress={selectLongPress}
                   pageUrlCache={pageUrlCache}
                   renderEntryIcon={renderEntryIcon}
                   renderFilePreview={renderFilePreview}

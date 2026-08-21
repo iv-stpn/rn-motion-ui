@@ -1724,18 +1724,19 @@ async function holdDrag(node: Element, to: ClientPoint, onHeld?: () => void | Pr
 }
 
 /**
- * `selectionMode="multiple"` adds the two gestures a file browser is expected to
- * have: Ctrl-click (Cmd-click on macOS) on web, and a long-press on touch. Both
- * toggle the entry under the pointer in or out of the selection; a plain press
- * still replaces it, and a press on the background still clears it.
+ * `selectionMode="multiple"` adds the gestures a file browser is expected to
+ * have on the web views: Ctrl-click (Cmd-click on macOS) toggles the entry under
+ * the pointer in or out of the selection, and Shift-click runs a range. A plain
+ * press still replaces the selection, and a press on the background still clears
+ * it.
  *
  * The selected set arrives through `onSelectedItemsChange`, in the order the
  * entries were picked. `onSelectionChange` keeps its single-entry shape and
  * follows the *lead* — the one added most recently — which is what the columns
  * trail, the gallery stage and the preview pane keep showing.
  *
- * Long-press is the entry context menu's trigger on touch, and multi-selection
- * takes it over; right-click still opens the menu on web.
+ * The touch long-press is the *mobile* views' way into multi-select; on these
+ * web views a long-press opens the entry's context menu instead.
  */
 export const MultiSelect: Story = {
   name: 'Demo: Select several entries',
@@ -1767,17 +1768,9 @@ export const MultiSelect: Story = {
     modifierClick(await canvas.findByRole('button', { name: 'Budget-2026.xlsx' }), 'metaKey');
     await canvas.findByText('· 3 selected');
 
-    // A long press is the same join without a keyboard — the touch gesture. It
-    // never removes: re-holding a selected entry keeps it, so a drag lifted off
-    // it can carry the whole group again.
-    await longPress(await canvas.findByRole('button', { name: 'README.md' }));
-    await canvas.findByText('· 4 selected');
-
-    // Ctrl/Cmd-click is the removal toggle. Toggle a member that was picked by
-    // click, not the row just held — a synthetic click carries no pressIn, so
-    // the held row's hold-vs-tap latch would swallow it.
+    // Ctrl/Cmd-click is the removal toggle.
     modifierClick(await canvas.findByRole('button', { name: 'Documents' }), 'ctrlKey');
-    await canvas.findByText('· 3 selected');
+    await canvas.findByText('· 2 selected');
 
     // Clear is the way out where there is no background left to tap.
     await userEvent.click(await canvas.findByLabelText('Clear selection'));

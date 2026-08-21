@@ -585,7 +585,10 @@ export function FileSystemListView({
   // column on mount at the widths where it belongs.
   const showDate = width === null || width >= DATE_COLUMN_MIN_WIDTH;
 
-  const { onPress: activate, onLongPress: selectLongPress } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
+  // The list view is a web surface: multi-select is Ctrl/Cmd-click and Shift-click,
+  // never a touch long-press. `onLongPress` (the touch join) is deliberately left
+  // unwired so a long-press falls through to the entry's context menu instead.
+  const { onPress: activate } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width), []);
   const handleContainerLayout = useCallback(
@@ -724,7 +727,6 @@ export function FileSystemListView({
             onContextMenuAction={onContextMenuAction}
             onExternalDrop={onExternalDrop}
             onMove={onMove}
-            onSelectLongPress={selectLongPress}
             onToggleExpanded={toggleExpanded}
             renderEntryIcon={renderEntryIcon}
             row={item}
@@ -748,7 +750,6 @@ export function FileSystemListView({
       overlayFolderPaths,
       renderEntryIcon,
       selectedPaths,
-      selectLongPress,
       showDate,
       testID,
       toggleExpanded,

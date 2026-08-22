@@ -11,8 +11,17 @@ import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT }
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 
-const CHECK_PATH = 'm4.514 12.83l5.657 5.656L21.485 7.172';
-const INDETERMINATE_PATH = 'M4 12.83h18';
+/**
+ * Checkmark and indeterminate-dash glyphs, drawn in a 32×32 viewBox rendered at
+ * 16×16 (0.5× scale) so placement has half-pixel granularity. Both glyphs are
+ * nudged right one half-unit (half a pixel) to sit optically centred — the check
+ * because its vertex sits left of its stroke bbox, the dash to match the check's
+ * resting centre. All coordinates stay whole numbers and the SVG stays a fixed
+ * 16×16, so flex centring adds no sub-pixel offset.
+ */
+const GLYPH_VIEWBOX = '0 0 32 32';
+const CHECK_PATH = 'M7 14L15 22L27 10';
+const INDETERMINATE_PATH = 'M7 16H27';
 
 /**
  * Checked border class per tone. A static map (not a `border-${tone}` template
@@ -77,6 +86,9 @@ export function CheckboxBox({
     // own background between the surface and accent fills. Animating the box
     // (rather than an absolutely-positioned fill overlay) keeps the selected
     // background inside the border, so it never needs to overlap the border.
+    // `relative` makes the box the containing block for the absolutely-positioned
+    // mark below, so its `inset-0` stays anchored here on web (native already
+    // anchors absolute children to their parent).
     <MotiView
       animate={{
         scale: pressed && !reduce && !disabled ? 0.92 : 1,
@@ -85,8 +97,8 @@ export function CheckboxBox({
       transition={{ scale: SPRING_PRESS, backgroundColor: ct }}
       testID={testID ? `${testID}-control` : undefined}
       className={cn(
-        'h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2',
-        showMark ? BOX_TONE_BORDER[tone] : 'border-muted-foreground/50',
+        'relative h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-2',
+        showMark && !disabled ? BOX_TONE_BORDER[tone] : 'border-muted-foreground/50',
       )}
     >
       {/* The check/dash cross-fade in place: the mark is absolutely positioned
@@ -104,8 +116,8 @@ export function CheckboxBox({
             className="absolute inset-0 items-center justify-center"
           >
             {checkIcon ?? (
-              <Svg width={12} height={12} viewBox="0 0 24 24">
-                <Path d={path} fill="none" stroke={checkColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+              <Svg width={16} height={16} viewBox={GLYPH_VIEWBOX}>
+                <Path d={path} fill="none" stroke={checkColor} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
               </Svg>
             )}
           </MotiView>

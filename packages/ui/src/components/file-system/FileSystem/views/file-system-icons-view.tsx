@@ -21,6 +21,7 @@ import { shiftZoneRects } from '../../../gestures/drag-store';
 import { useActiveDrag } from '../../../gestures/use-drag-store';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
+import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import {
   GLYPH_BOX_HEIGHT,
   GLYPH_BOX_WIDTH,
@@ -57,6 +58,8 @@ type IconsGrid = {
   marquee: FileSystemMarqueeController;
   onLayout: (event: LayoutChangeEvent) => void;
   onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  /** Retries the consumer's pending initial scroll once the grid has content. */
+  onContentSizeChange: () => void;
   /** Measured viewport width — tiles render only once this lands (see `useIconsGrid`). */
   width: number;
   tileWidth: number;
@@ -134,6 +137,12 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
   const columnsRef = useRef(1);
   const tileWidthRef = useRef(0);
   const selectedIndexesRef = useRef<ReadonlySet<number>>(new Set());
+
+  // The consumer's scroll contract: restore `initialScrollOffset` on mount and
+  // report the live offset on every scroll.
+  const scrollToOffset = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
+  const { retryPendingScroll, reportScrollOffset } = useFileSystemScroll(scrollToOffset);
+
   selectedIndexesRef.current = useMemo(() => {
     const indexes = new Set<number>();
     entries.forEach((entry, entryIndex) => {
@@ -217,6 +226,8 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
       const delta = offset - scrollOffsetRef.current;
       scrollOffsetRef.current = offset;
       if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
+      // The consumer's position record (URL param, per-tab state) follows.
+      reportScrollOffset(offset);
       // The pointer sits still while the tiles move under it, so the highlight has
       // to re-resolve — including while a drag auto-scrolls the grid. The band is
       // anchored in the content frame, so it has to be re-placed for the same
@@ -224,10 +235,20 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
       hover.refresh();
       marquee.refresh();
     },
-    [hover, managerPath, marquee],
+    [hover, managerPath, marquee, reportScrollOffset],
   );
 
-  return { containerRef, hover, marquee, onLayout, onScroll, scrollRef, tileWidth, width };
+  return {
+    containerRef,
+    hover,
+    marquee,
+    onContentSizeChange: retryPendingScroll,
+    onLayout,
+    onScroll,
+    scrollRef,
+    tileWidth,
+    width,
+  };
 }
 
 // ── View ───────────────────────────────────────────────────────────────────────
@@ -268,7 +289,7 @@ export function FileSystemIconsView({
   // never a touch long-press. `onLongPress` (the touch join) is deliberately left
   // unwired so a long-press falls through to the tile's context menu instead.
   const { onPress: activate } = useEntryActivation(onOpen, onSelect, selectionMode, orderedPaths);
-  const { containerRef, hover, marquee, onLayout, onScroll, scrollRef, tileWidth, width } = useIconsGrid({
+  const { containerRef, hover, marquee, onContentSizeChange, onLayout, onScroll, scrollRef, tileWidth, width } = useIconsGrid({
     draggable,
     entries,
     marqueeEnabled: selectionMode === 'multiple',
@@ -301,6 +322,7 @@ export function FileSystemIconsView({
     <ScrollView
       ref={scrollRef}
       className="flex-1"
+      onContentSizeChange={onContentSizeChange}
       onScroll={onScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}

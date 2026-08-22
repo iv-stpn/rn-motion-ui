@@ -530,6 +530,29 @@ export type FileSystemProps = {
   onExternalDrop?: (event: FileSystemExternalDropEvent) => void;
   /** Fixed viewport height. Defaults to 480. */
   height?: number;
+  /**
+   * Vertical scroll offset the active view starts at, in pixels. Applied when
+   * the view mounts and again whenever the value changes, so a consumer can
+   * restore an exact position (e.g. from a URL on refresh) or jump back to the
+   * top.
+   *
+   * Only the single-axis vertical views participate — `list`, `icons`,
+   * `mobile-grid` and `mobile-list`. The `columns` view scrolls per-pane and
+   * the `gallery` view's filmstrip scrolls horizontally, so neither consumes
+   * it. The offset is clamped by the scroll container once its content exists;
+   * the views retry the scroll on their first content load, so an offset
+   * larger than the initially-empty container still lands once children
+   * arrive.
+   */
+  initialScrollOffset?: number;
+  /**
+   * Called with the active view's vertical scroll offset (in pixels) as the
+   * user scrolls, throttled to the view's scroll-event cadence. Fires for the
+   * same views that consume {@link FileSystemProps.initialScrollOffset}. Use it
+   * to keep an external position record (a URL param, per-tab state) in
+   * lockstep with the browser.
+   */
+  onScrollOffsetChange?: (offset: number) => void;
   // ── Headless slots ──────────────────────────────────────────────────────
   /**
    * Replace the built-in header toolbar with your own. Receives all the state

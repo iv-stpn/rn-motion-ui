@@ -1880,6 +1880,68 @@ export const LazyChildrenList: Story = {
   },
 };
 
+// ─── Scroll position ─────────────────────────────────────────────────────────
+
+/**
+ * A manifest tall enough to scroll the list view: 80 rows × 30 px ≈ 2400 px of
+ * content against the 460 px story viewport.
+ */
+const SCROLL_ITEMS: FileSystemItem[] = Array.from({ length: 80 }, (_, index) => ({
+  createdAt: DATES.june,
+  kind: 'file',
+  path: `File-${String(index + 1).padStart(3, '0')}.md`,
+  size: 1000 + index,
+  updatedAt: DATES.june,
+}));
+
+/** The view's scroll container on web: an overflow-y div taller than its viewport. */
+function findScroller(canvasElement: HTMLElement): HTMLElement | null {
+  return (
+    Array.from(canvasElement.querySelectorAll<HTMLElement>('*')).find((el) => {
+      const style = getComputedStyle(el);
+      return (style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight + 2;
+    }) ?? null
+  );
+}
+
+/**
+ * The scroll-offset contract: `initialScrollOffset` restores an exact position
+ * once the view has content, and `onScrollOffsetChange` reports the live
+ * offset so a consumer can keep an external position record (URL, per-tab
+ * state) in lockstep.
+ */
+export const ScrollPosition: Story = {
+  name: 'Demo: Scroll position restore and report',
+  args: {
+    defaultView: 'list',
+    initialScrollOffset: 600,
+    items: SCROLL_ITEMS,
+    onScrollOffsetChange: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    // The HoldMenu portal renders an always-mounted aria-hidden twin of every
+    // row, so the file name matches twice (see the rn-motion-ui maintenance
+    // skill's HoldMenu note) — `.first()` picks the functional copy.
+    await canvas.findAllByText('File-001.md');
+
+    // The pending initial scroll lands once content exists — the container is
+    // empty on first mount, so the retry is what actually moves it.
+    const scroller = findScroller(canvasElement);
+    expect(scroller).not.toBeNull();
+    await waitFor(() => expect(scroller?.scrollTop ?? 0).toBeGreaterThan(0));
+    expect(Math.abs((scroller?.scrollTop ?? 0) - (args.initialScrollOffset ?? 0))).toBeLessThan(50);
+
+    // The restore itself reports (the scrollTo fires onScroll), then a real
+    // user scroll keeps the callback in lockstep. NOTE: rn-web monkey-patches
+    // the scroll node's `scrollTo` to the RN API (`{y, animated}`), so a DOM
+    // `scrollTo({top})` scrolls to the top — assign `scrollTop` directly.
+    await waitFor(() => expect(args.onScrollOffsetChange).toHaveBeenCalledWith(expect.any(Number)));
+    scroller!.scrollTop = 200;
+    await waitFor(() => expect(args.onScrollOffsetChange).toHaveBeenCalledWith(200));
+  },
+};
+
 // ─── Viewer ────────────────────────────────────────────────────────────────────
 
 export const ImageViewer: Story = {

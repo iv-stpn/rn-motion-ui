@@ -28,6 +28,7 @@ import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
+import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
@@ -325,6 +326,9 @@ export function FileSystemMobileGridView({
   // fold is reachable without releasing. Runs for external drags too.
   const scrollTo = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
   useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
+  // The consumer's scroll contract: restore `initialScrollOffset` on mount and
+  // report the live offset on every scroll.
+  const { retryPendingScroll, reportScrollOffset } = useFileSystemScroll(scrollTo);
 
   // The same edge-scroll engine the drag above uses, driven by the scrub's pointer
   // stream instead — dragging to multi-select scrolls the grid when the finger goes
@@ -439,14 +443,17 @@ export function FileSystemMobileGridView({
       const delta = offset - scrollOffsetRef.current;
       scrollOffsetRef.current = offset;
       if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
+      // The consumer's position record (URL param, per-tab state) follows.
+      reportScrollOffset(offset);
     },
-    [managerPath],
+    [managerPath, reportScrollOffset],
   );
 
   return (
     <View className="min-h-0 flex-1" onLayout={handleLayout} ref={containerRef}>
       <ScrollView
         className="flex-1"
+        onContentSizeChange={retryPendingScroll}
         onScroll={onScroll}
         ref={scrollRef}
         scrollEventThrottle={16}

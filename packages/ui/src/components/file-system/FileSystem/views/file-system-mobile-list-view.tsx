@@ -28,6 +28,7 @@ import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
+import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { formatFileSystemStats } from '../logic/file-system-format';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
@@ -294,6 +295,9 @@ export function FileSystemMobileListView({
   // fold is reachable without releasing. Runs for external drags too.
   const scrollTo = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ animated: false, offset }), []);
   useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
+  // The consumer's scroll contract: restore `initialScrollOffset` on mount and
+  // report the live offset on every scroll.
+  const { retryPendingScroll, reportScrollOffset } = useFileSystemScroll(scrollTo);
 
   // The same edge-scroll engine the drag above uses, driven by the scrub's pointer
   // stream instead — dragging to multi-select scrolls the list when the finger goes
@@ -370,8 +374,10 @@ export function FileSystemMobileListView({
       const delta = offset - scrollOffsetRef.current;
       scrollOffsetRef.current = offset;
       if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
+      // The consumer's position record (URL param, per-tab state) follows.
+      reportScrollOffset(offset);
     },
-    [managerPath],
+    [managerPath, reportScrollOffset],
   );
 
   const rowProps = useMemo(
@@ -429,6 +435,7 @@ export function FileSystemMobileListView({
         getItemLayout={getItemLayout}
         ItemSeparatorComponent={MobileRowSeparator}
         keyExtractor={keyExtractor}
+        onContentSizeChange={retryPendingScroll}
         onScroll={onScroll}
         renderItem={renderRow}
         scrollEventThrottle={16}

@@ -124,6 +124,20 @@ type ConsumerSlice = {
   draggable?: boolean;
   selectionMode: FileSystemSelectionMode;
   testID?: string;
+  /**
+   * Vertical scroll offset the active view starts at, in pixels. Applied when
+   * the view mounts and again whenever the value changes, so a consumer can
+   * restore an exact position (e.g. from a URL on refresh) or jump to the top.
+   * The view retries the scroll once its content exists, so an offset larger
+   * than the initially-empty container still lands after children load.
+   */
+  initialScrollOffset?: number;
+  /**
+   * Called with the active view's vertical scroll offset as the user scrolls,
+   * throttled to the view's scroll-event cadence. Keep an external position
+   * record (a URL param, per-tab state) in lockstep with the browser.
+   */
+  onScrollOffsetChange?: (offset: number) => void;
   getBackgroundContextMenuActions?: () => FileSystemContextMenuAction[];
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
   getFileUrl?: (file: FileSystemFileItem) => string | Promise<string>;
@@ -188,6 +202,12 @@ type FileSystemActions = {
   // Viewer
   openFile: (file: FileEntry) => void;
   closeFile: () => void;
+  /**
+   * Records the active view's vertical scroll offset and forwards it to the
+   * consumer's `onScrollOffsetChange`. No-op when the offset is unchanged, so
+   * a view reporting on every scroll frame only notifies on actual movement.
+   */
+  setScrollOffset: (offset: number) => void;
   // Sync (called from file-system.tsx, not by internal components)
   _syncConsumer: (patch: Partial<ConsumerSlice>) => void;
   _syncLayout: (patch: LayoutSlice) => void;
@@ -204,6 +224,8 @@ type FileSystemStore = {
   viewer: ViewerSlice;
   layout: LayoutSlice;
   consumer: ConsumerSlice;
+  /** The active view's vertical scroll offset, kept for `onScrollOffsetChange`. */
+  scrollOffset: number;
 } & FileSystemActions;
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
@@ -461,6 +483,8 @@ export type FileSystemStoreInit = {
   onSelectedItemsChange?: ConsumerSlice['onSelectedItemsChange'];
   onSelectionChange?: ConsumerSlice['onSelectionChange'];
   onViewChange?: ConsumerSlice['onViewChange'];
+  initialScrollOffset?: ConsumerSlice['initialScrollOffset'];
+  onScrollOffsetChange?: ConsumerSlice['onScrollOffsetChange'];
   views?: ConsumerSlice['views'];
   renderEmptyState?: ConsumerSlice['renderEmptyState'];
   renderEntryIcon?: ConsumerSlice['renderEntryIcon'];
@@ -544,6 +568,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         pageUrlCache: new Map<string, string>(),
       },
       layout: { layout: 'full', isCompact: false },
+      scrollOffset: 0,
       consumer: {
         title: init.title,
         rootLabel: init.rootLabel,
@@ -551,6 +576,8 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         draggable: init.draggable,
         selectionMode: init.selectionMode,
         testID: init.testID,
+        initialScrollOffset: init.initialScrollOffset,
+        onScrollOffsetChange: init.onScrollOffsetChange,
         getBackgroundContextMenuActions: init.getBackgroundContextMenuActions,
         getContextMenuActions: init.getContextMenuActions,
         getFileUrl: init.getFileUrl,
@@ -916,6 +943,13 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       closeFile: () => set((s) => ({ viewer: { ...s.viewer, opened: null } })),
 
       // ── Sync actions (called from file-system.tsx, never by internal components)
+      setScrollOffset: (offset) => {
+        const s = get();
+        if (s.scrollOffset === offset) return;
+        set({ scrollOffset: offset });
+        s.consumer.onScrollOffsetChange?.(offset);
+      },
+
       _syncConsumer: (patch) => {
         const s = get();
         const changed = objectKeys(patch).some((k) => s.consumer[k] !== patch[k]);

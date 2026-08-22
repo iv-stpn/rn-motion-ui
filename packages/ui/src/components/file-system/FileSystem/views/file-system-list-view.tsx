@@ -34,6 +34,7 @@ import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options'
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { type AugmentedEntry, useFileSystemRowAnimation } from '../hooks/use-file-system-row-animation';
 import { type FileSystemRowInteractionReturn, useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
+import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { formatByteSize, formatTimestamp } from '../logic/file-system-format';
 import type { FileSystemRow } from '../logic/file-system-rows';
 import { FS_ROW_HEIGHT, flattenFileSystemRows, toggleExpandedPath } from '../logic/file-system-rows';
@@ -508,6 +509,11 @@ export function FileSystemListView({
   /** The drawn rows, readable from callbacks that outlive the render that made them. */
   const rowsRef = useRef<FileSystemRow[]>([]);
 
+  // The consumer's scroll contract: restore `initialScrollOffset` on mount and
+  // report the live offset on every scroll.
+  const scrollToOffset = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ offset, animated: false }), []);
+  const { retryPendingScroll, reportScrollOffset } = useFileSystemScroll(scrollToOffset);
+
   const rows = useMemo(() => flattenFileSystemRows({ currentPath, expanded, index }), [currentPath, expanded, index]);
 
   const activeDrag = useActiveDrag();
@@ -696,12 +702,14 @@ export function FileSystemListView({
       if (delta !== 0) shiftZoneRects(0, delta, managerPath, isZoneInScrollableContent);
       // Kept in React state so overlay dropzones reposition with the scroll.
       setScrollOffset(offset);
+      // The consumer's position record (URL param, per-tab state) follows.
+      reportScrollOffset(offset);
       // The pointer has not moved but the rows under it have, so the highlight has
       // to re-resolve — including while a drag auto-scrolls the list.
       hover.refresh();
       marquee.refresh();
     },
-    [hover, managerPath, marquee],
+    [hover, managerPath, marquee, reportScrollOffset],
   );
 
   const renderRow = useCallback(
@@ -765,6 +773,7 @@ export function FileSystemListView({
       extraData={selectedPaths}
       getItemLayout={getItemLayout}
       keyExtractor={keyExtractor}
+      onContentSizeChange={retryPendingScroll}
       onScroll={onScroll}
       renderItem={renderRow}
       scrollEventThrottle={16}

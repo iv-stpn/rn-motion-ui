@@ -1,5 +1,104 @@
 # rn-motion-ui
 
+## 6.0.2
+
+### Patch Changes
+
+- cc8b793: fix(checkbox): centre the check and dash glyphs and mute the disabled border
+
+  The checkmark and indeterminate-dash glyphs are redrawn in a 32×32 viewBox
+  rendered at 16×16, giving half-pixel placement so both glyphs sit optically
+  centred instead of drifting by device or zoom level. The box is now `relative` so
+  the absolutely-positioned mark anchors correctly on web, the glyphs carry a
+  gutter so their round caps are no longer clipped, and a disabled checkbox now
+  mutes its border to match its muted fill.
+
+- 7d858e3: feat(demo): add a live retint-on-save tint control
+
+  The demo's neutral-axis tint now comes from a `tokens.config.json` (`hue` +
+  `chroma`) instead of a hand-tuned `tokens.css`. `metro.config.js` runs the
+  `rn-motion-ui-tokens` generator on boot and on every config change, writing a
+  gitignored `tokens.css`; a `/__tint` dev endpoint plus an in-app `TintControl`
+  close the loop from the UI. Applying a tint reloads the page — uniwind bakes
+  resolved colours into inline styles on web, so a CSS-only regeneration can't
+  recolor already-mounted components. The demo is also wrapped in
+  `SafeAreaProvider` so `FileSystemBackgroundMenu`'s safe-area read no longer
+  crashes.
+
+- cd0f988: feat(elevated): add a flat `elevation={0}` variant
+
+  The `elevation` prop on every surface component (Card, RadioCard, CheckboxCard,
+  WheelPicker, CloseButton, and the menu/modal panels) now accepts `0`. It renders
+  the flat resting surface — a `surface-3` fill with no shadow and no border — so
+  a panel can sit flush against its backdrop instead of always floating.
+  `elevated()`, `surfaceBackground()` and `elevatedShadow()` handle the `0` case,
+  and `SURFACE_CLASSNAME` carries a `0` entry for the dropdown panels.
+
+- 5094ea3: fix(FileSystem): drop touch long-press multiselect from the web list and icons views
+
+  The `list` and `icons` views wired the touch long-press join (`onLongPress` from
+  `useEntryActivation`) into every row/tile, so holding one entry then another on
+  a touch screen accumulated a multi-selection. Those views are web surfaces — on
+  the web the hold gesture is inert and multiselect is Ctrl/Cmd-click and
+  Shift-click — so the touch join is now left unwired: a long-press falls through
+  to the entry's context menu, matching the `single`-mode behavior. Web
+  Ctrl/Cmd-click and Shift-click multiselect are unchanged, and the dedicated
+  `mobile-list` / `mobile-grid` views keep their long-press way into multi-select.
+
+- f23fb15: perf(FileSystem): memoize the icon and gallery tiles and stabilize their container styles
+
+  `IconTile` and the gallery `StripTile` are now wrapped in `memo`, and the
+  `containerStyles` objects handed to `HoldItem` are hoisted to a module constant
+  or memoized instead of recreated on every render. A fresh object literal was
+  defeating `HoldItem`'s own memo and re-running its hold/gesture/drag stack for
+  every tile on every re-render.
+
+- 6bcdf24: fix(MultiStepMenu): slide panes at a constant rate instead of a spring
+
+  The pane swap was driven by a spring, which made the two layers (held a full
+  width apart) read as a hand that speeds up and slows down — a "staggers, then
+  moves at the end" feel. It now uses a linear `timing` (280ms), so the strip of
+  pages slides past the window at a constant rate, mirroring Tabs' slide push.
+
+- 6589d15: chore: remove the orphaned root `tokens.css`
+
+  The repo-root `tokens.css` was a stale, unimported artifact of running the token
+  generator from the repo root. It shadowed the canonical
+  `packages/ui/src/theme/tokens.css` (shipped as `rn-motion-ui/tokens.css`) but had
+  drifted out of sync, still carrying the pre-refactor `--shadow-input*` tokens and
+  the pre-deepen `--color-info` value. No entry point imports it: the web and
+  native storybooks use the shipped sheet, and the demo uses its own
+  `storybook/demo/tokens.css`.
+
+- 7302a9f: feat(surface): add a shared surface-container class helper and adopt it across containers
+
+  A new `surface(elevation, radius?)` helper combines the elevation ladder
+  (`bg-surface-N shadow-elevated-N`) with an optional corner-radius token, so
+  surface containers spell their fill, shadow and radius in one place. Card,
+  RadioCard, CheckboxCard, BouncyAccordion, SwipeableList, Dock, every menu/modal
+  panel, the file-system background menu, and the draggable stories now build their
+  container surface through it. `surface(0)` renders the flat resting surface
+  (`bg-surface-3`, no shadow or border) for containers that should sit flush.
+
+- 6fa2f31: feat(surface): expose an `elevation` prop on the remaining surface components
+
+  Dock, BouncyAccordion, Drawer, BloomMenu, FullSheet, SwipeableList and
+  BottomSheet previously hardcoded their surface level (`surface(0)` / `surface(3)`).
+  They now accept an `elevation` prop (0–8) so their fill, shadow and dark-mode rim
+  can be lifted or flattened, matching Card and the other panels. Their stories —
+  plus WheelPicker and Popover — also gained an `Elevation` chip for live
+  customization.
+
+- 23cafcb: feat(theme): tint the light-mode `background` token with the neutral hue
+
+  `--color-background` in light mode was pure white (`oklch(100% 0 0)`). It now
+  carries the neutral tint — `oklch(95% 0.004 270)` — so the page background
+  tracks the same hue-270 direction as the foreground and surface ladder, and is
+  picked up by the token generator's retint pass instead of staying frozen at
+  white. The web and native storybook harnesses resolve the token via
+  `bg-background` rather than the hardcoded `#f6f6f6` / `#ffffff` backdrops they
+  used before.
+
 ## 6.0.1
 
 ### Patch Changes

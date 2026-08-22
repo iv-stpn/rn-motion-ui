@@ -27,8 +27,7 @@ export type MorphingFABProps = {
    *  through the trigger's IconButton at 20px with the variant's stroke colour. */
   icon?: ComponentType<IconProps>;
   position?: 'bottom-right' | 'bottom-left';
-  /** Collapsed trigger variant — the same variants as {@link IconButton}.
-   *  Defaults to `elevated` (surface-3 fill + floating-input shadow). */
+  /** Collapsed trigger variant — the same variants as {@link IconButton}. Defaults to `elevated`. */
   variant?: IconButtonVariant;
   /** Expanded pane width in px. Defaults to 300. */
   expandedWidth?: number;

@@ -107,7 +107,7 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   'special-foreground': [1, 0, 0],
   white: [1, 0, 0],
   black: [0, 0, 0],
-  background: [0.95, 0.003, NEUTRAL_HUE],
+  background: [0.95, 0.004, NEUTRAL_HUE],
 };
 
 const DARK_OKLCH: Record<ThemeToken, Oklch> = {

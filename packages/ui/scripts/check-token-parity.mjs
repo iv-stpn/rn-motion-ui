@@ -66,11 +66,27 @@ function parseCssOklch(value) {
 
 const TABLE_RE = /'?([a-z0-9-]+)'?:\s*\[([^\]]+)\]/g;
 
+/** `const NAME = <number>;` definitions at module scope in the TS file. */
+const CONST_RE = /const\s+([A-Z_][A-Z0-9_]*)\s*=\s*([\d.]+);/g;
+
 /** `token: [L, C, H, a?]` entries from a LIGHT_OKLCH / DARK_OKLCH literal. */
 function tsTable(name) {
   const source = block(ts, `const ${name}: Record<ThemeToken, Oklch> = {`);
+  // Tuple entries may reference a module-scope constant (e.g. NEUTRAL_HUE)
+  // rather than a numeric literal, so resolve identifiers before comparing.
+  const constants = new Map();
+  for (const [, cname, cvalue] of ts.matchAll(CONST_RE)) constants.set(cname, Number(cvalue));
   const out = new Map();
-  for (const [, token, body] of source.matchAll(TABLE_RE)) out.set(token, body.split(',').map((n) => Number(n.trim())));
+  for (const [, token, body] of source.matchAll(TABLE_RE)) {
+    out.set(
+      token,
+      body.split(',').map((n) => {
+        const raw = n.trim();
+        const value = Number(raw);
+        return Number.isNaN(value) && constants.has(raw) ? constants.get(raw) : value;
+      }),
+    );
+  }
   return out;
 }
 

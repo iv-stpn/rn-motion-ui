@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
-import { ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
+import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { Button } from '../../form/Button/button';
 import { Text } from '../../typography/Text/text';
@@ -63,6 +64,7 @@ function SheetPlayground() {
   const [closeOnOverlay, setCloseOnOverlay] = useState(true);
   const [longContent, setLongContent] = useState(false);
   const [tinted, setTinted] = useState(false);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [open, setOpen] = useState(false);
   const [closes, setCloses] = useState(0);
   const trigger = useTriggerState();
@@ -74,6 +76,7 @@ function SheetPlayground() {
   return (
     <Playground className="min-w-[340px]">
       <ControlCard title="Options">
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Long content" onChange={setLongContent} value={longContent} />
         <Toggle label="Close on overlay" onChange={setCloseOnOverlay} value={closeOnOverlay} />
@@ -98,6 +101,7 @@ function SheetPlayground() {
       <BottomSheet
         backdropClassName={tinted ? TINTED_BACKDROP : undefined}
         closeOnOverlayClick={closeOnOverlay}
+        elevation={ELEVATIONS[elevationKey]}
         fullSheet={fullSheet}
         handleClassName={tinted ? TINTED_HANDLE : undefined}
         onAfterClose={handleAfterClose}

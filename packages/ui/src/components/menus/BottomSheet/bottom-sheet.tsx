@@ -7,6 +7,7 @@ import { useFocusTrap } from '../../../hooks/use-focus-trap';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { surface } from '../../../lib/surface';
 import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
@@ -49,6 +50,12 @@ export type BottomSheetProps = {
   onAfterClose?: () => void;
   /** When true, the sheet stretches to full screen height instead of capping at 90%. */
   fullSheet?: boolean;
+  /**
+   * Surface elevation of the sheet panel (0–8) — drives the background tint and
+   * the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow
+   * or border). Defaults to `3`.
+   */
+  elevation?: SurfaceElevation;
   /** When false, clicking the overlay will not close the sheet. Defaults to true. */
   closeOnOverlayClick?: boolean;
   // Phase 5.4 — slot classNames
@@ -85,6 +92,7 @@ export function BottomSheet({
   containerClassName,
   onAfterClose,
   fullSheet,
+  elevation = 3,
   closeOnOverlayClick = true,
   handleClassName,
   backdropClassName,
@@ -189,7 +197,7 @@ export function BottomSheet({
             <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>
               <View
                 ref={sheetRef}
-                className={cn('w-full overflow-hidden', surface(3), fullSheet ? 'rounded-t-none' : 'rounded-t-modal')}
+                className={cn('w-full overflow-hidden', surface(elevation), fullSheet ? 'rounded-t-none' : 'rounded-t-modal')}
                 testID={testID}
                 role="dialog"
                 aria-modal={true}

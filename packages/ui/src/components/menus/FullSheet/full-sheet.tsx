@@ -6,6 +6,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { CARD_RADIUS } from '../../../lib/radius';
 import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
@@ -163,6 +164,12 @@ export type FullSheetProps = {
   /** Caller owns all layout — no header or content padding is applied. */
   customLayout?: boolean;
   /**
+   * Surface elevation of the sheet (0–8) — drives the background tint and the
+   * drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or
+   * border). Defaults to `0`.
+   */
+  elevation?: SurfaceElevation;
+  /**
    * `'default'` — standard header with optional title and close button (default).
    * `'back-button'` — back arrow overlaid at top-left; caller owns content layout.
    */
@@ -205,6 +212,7 @@ export function FullSheet({
   scrollable = true,
   compact = false,
   customLayout = false,
+  elevation = 0,
   mode = 'default',
   dismissable = true,
   onAfterClose,
@@ -267,7 +275,7 @@ export function FullSheet({
             {isAnimOpen ? (
               <MotiView
                 key="fullsheet"
-                className={cn('flex-1', surface(0))}
+                className={cn('flex-1', surface(elevation))}
                 from={{ translateY: height, borderRadius: CARD_RADIUS }}
                 animate={{ translateY: 0, borderRadius: 0 }}
                 exit={{ translateY: height, borderRadius: CARD_RADIUS }}

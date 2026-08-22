@@ -3,6 +3,7 @@ import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
@@ -25,6 +26,12 @@ export type BouncyAccordionProps = {
   defaultValue?: string | null;
   onValueChange?: (value: string | null) => void;
   collapsible?: boolean;
+  /**
+   * Surface elevation of every row (0–8) — drives the background tint and the
+   * drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or
+   * border). Defaults to `0`.
+   */
+  elevation?: SurfaceElevation;
   /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -72,6 +79,7 @@ export type BouncyAccordionRowProps = {
   endsGroup: boolean;
   separatedFromPrevious: boolean;
   reduce: boolean;
+  elevation: SurfaceElevation;
   onToggle: (id: string) => void;
   /** Replace the expand/collapse chevron. Default: `<ChevronDown size={16} color={chevronColor} />`. */
   chevronIcon?: ReactNode;
@@ -86,6 +94,7 @@ function BouncyAccordionRow({
   endsGroup,
   separatedFromPrevious,
   reduce,
+  elevation,
   onToggle,
   chevronIcon,
   testID,
@@ -115,7 +124,7 @@ function BouncyAccordionRow({
           borderBottomRightRadius: bottomRadius,
         }}
         transition={reduce ? { type: 'timing', duration: 0 } : ROW_TRANSITION}
-        className={cn('overflow-hidden', surface(0), item.disabled ? 'opacity-50' : 'opacity-100')}
+        className={cn('overflow-hidden', surface(elevation), item.disabled ? 'opacity-50' : 'opacity-100')}
       >
         <Pressable
           accessibilityRole="button"
@@ -167,6 +176,7 @@ export function BouncyAccordion({
   defaultValue = null,
   onValueChange,
   collapsible = true,
+  elevation = 0,
   className,
   style,
   testID,
@@ -206,6 +216,7 @@ export function BouncyAccordion({
             endsGroup={endsGroup}
             separatedFromPrevious={separatedFromPrevious}
             reduce={reduce}
+            elevation={elevation}
             onToggle={toggleItem}
             chevronIcon={chevronIcon}
             testID={testID ? `${testID}-item-${item.id}` : undefined}

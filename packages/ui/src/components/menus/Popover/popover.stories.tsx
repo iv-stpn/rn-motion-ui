@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { Text } from '../../typography/Text/text';
@@ -71,6 +72,7 @@ function PopoverPlayground() {
   const [align, setAlign] = useState<PopoverAlign>('center');
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('14');
   const [radiusKey, setRadiusKey] = useState<RadiusKey>('16');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('4');
   const trigger = useTriggerState();
 
   return (
@@ -80,6 +82,7 @@ function PopoverPlayground() {
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
         <Choice label="Radius" onChange={setRadiusKey} options={RADII} value={radiusKey} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
       <TriggerControls state={trigger} />
@@ -99,7 +102,7 @@ function PopoverPlayground() {
               <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={EDIT_PROFILE} onPress={noop} />
             </View>
           </PopoverTrigger>
-          <PopoverContent>
+          <PopoverContent elevation={ELEVATIONS[elevationKey]}>
             <View className="max-w-[220px] gap-1">
               <Text weight="medium" className="text-foreground text-sm">
                 {DIMENSIONS_TITLE}

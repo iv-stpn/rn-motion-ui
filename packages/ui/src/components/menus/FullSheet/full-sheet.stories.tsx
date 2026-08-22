@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { cn } from '../../../lib/cn';
@@ -76,6 +77,7 @@ function SheetPlayground() {
   const [dismissable, setDismissable] = useState(true);
   const [long, setLong] = useState(false);
   const [open, setOpen] = useState(false);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const trigger = useTriggerState();
 
   const handleOpen = useCallback(() => setOpen(true), []);
@@ -90,6 +92,7 @@ function SheetPlayground() {
     <Playground className="min-w-[340px]">
       <ControlCard title="Options">
         <Choice label="Mode" onChange={setMode} options={MODES} value={mode} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Subtitle" onChange={setWithSubtitle} value={withSubtitle} />
         <Toggle label="Close button" onChange={setWithClose} value={withClose} />
         <Toggle label="Compact" onChange={setCompact} value={compact} />
@@ -117,6 +120,7 @@ function SheetPlayground() {
         compact={compact}
         customLayout={customLayout}
         dismissable={dismissable}
+        elevation={ELEVATIONS[elevationKey]}
         mode={mode}
         onOpenChange={setOpen}
         open={open}

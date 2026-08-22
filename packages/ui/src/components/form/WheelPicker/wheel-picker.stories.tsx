@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { Card } from '../../display/Card/card';
 import { WheelPicker } from './wheel-picker';
@@ -131,6 +132,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
   const [size, setSize] = useState('Medium');
   const [rowKey, setRowKey] = useState<RowKey>('5');
   const [heightKey, setHeightKey] = useState<HeightKey>('36');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [disabled, setDisabled] = useState(false);
   const [sound, setSound] = useState(false);
 
@@ -139,6 +141,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
       <ControlCard title="Options">
         <Choice label="Visible rows" onChange={setRowKey} options={ROWS} value={rowKey} />
         <Choice label="Row height" onChange={setHeightKey} options={HEIGHTS} value={heightKey} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Toggle label="Tick sound" onChange={setSound} value={sound} />
       </ControlCard>
@@ -149,6 +152,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
             {...args}
             accessibilityLabel="Size"
             disabled={disabled}
+            elevation={ELEVATIONS[elevationKey]}
             itemHeight={Number(heightKey)}
             onValueChange={setSize}
             options={SIZES}

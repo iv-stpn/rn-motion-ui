@@ -9,7 +9,9 @@ import { MusicLine as Music } from 'rn-motion-ui-icons/icons/music-line';
 import { Settings1Line as Settings } from 'rn-motion-ui-icons/icons/settings-1-line';
 import { SparklesLine as Sparkles } from 'rn-motion-ui-icons/icons/sparkles-line';
 import { expect, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { INTERACTIVE_HEIGHT } from '../../../lib/radius';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Dock, DockItem, DockSeparator } from './dock';
@@ -76,9 +78,9 @@ function DockButton({ id, label, icon: Icon, active, iconSize, onSelect }: DockB
   );
 }
 
-type DockDemoProps = { size?: SizeKey; separator?: boolean; onSelect?: (id: string) => void };
+type DockDemoProps = { size?: SizeKey; separator?: boolean; elevation?: SurfaceElevation; onSelect?: (id: string) => void };
 
-function DockDemo({ size = 'lg', separator = true, onSelect }: DockDemoProps) {
+function DockDemo({ size = 'lg', separator = true, elevation = 0, onSelect }: DockDemoProps) {
   const [active, setActive] = useState('home');
   const color = useThemeColor('foreground');
   const itemPx = ITEM_PX[size];
@@ -94,7 +96,7 @@ function DockDemo({ size = 'lg', separator = true, onSelect }: DockDemoProps) {
   const selectSettings = useCallback(() => select('settings'), [select]);
 
   return (
-    <Dock size={size}>
+    <Dock size={size} elevation={elevation}>
       {ITEMS.map((item) => (
         <DockButton
           active={active === item.id}
@@ -121,19 +123,21 @@ function DockDemo({ size = 'lg', separator = true, onSelect }: DockDemoProps) {
 function DockPlayground() {
   const [sizeKey, setSizeKey] = useState<SizeKey>('lg');
   const [separator, setSeparator] = useState(true);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [selected, setSelected] = useState('home');
 
   return (
     <Playground>
       <ControlCard title="Options">
         <Choice label="Size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Separator" onChange={setSeparator} value={separator} />
       </ControlCard>
 
       {/* The highlight is a single pill that measures each item's box and glides
           between them, so a size change moves both the pill and its travel. */}
       <View className="items-center gap-2">
-        <DockDemo onSelect={setSelected} separator={separator} size={sizeKey} />
+        <DockDemo elevation={ELEVATIONS[elevationKey]} onSelect={setSelected} separator={separator} size={sizeKey} />
         <Note testID="story-selected">{selected}</Note>
       </View>
 

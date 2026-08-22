@@ -4,6 +4,7 @@ import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_LAYOUT, SPRING_PRESS } from '../../../lib/ease';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { H_INTERACTIVE, INTERACTIVE_HEIGHT, PX_INTERACTIVE } from '../../../lib/radius';
 import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
@@ -31,6 +32,12 @@ export type DockProps = {
   children: ReactNode;
   /** Height variant — drives the container's interactive size token and item dimensions. Default `lg`. */
   size?: 'sm' | 'md' | 'lg';
+  /**
+   * Surface elevation of the dock bar (0–8) — drives the background tint and the
+   * drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or
+   * border). Defaults to `0`.
+   */
+  elevation?: SurfaceElevation;
   /** Additional UniWind class names merged onto the dock bar. */
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -38,7 +45,7 @@ export type DockProps = {
 };
 
 // biome-ignore lint/style/useExportsLast: type LayoutEvent (private) must stay adjacent to DockItem below; hoisting all private types above would scatter the context-private/component-public grouping
-export function Dock({ children, size = 'lg', className, style, testID }: DockProps) {
+export function Dock({ children, size = 'lg', elevation = 0, className, style, testID }: DockProps) {
   const reduce = useReducedMotion();
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -77,7 +84,7 @@ export function Dock({ children, size = 'lg', className, style, testID }: DockPr
           H_INTERACTIVE[size],
           PX_INTERACTIVE[size],
           'relative flex-row items-center gap-1.5 self-start rounded-2xl border border-border',
-          surface(0),
+          surface(elevation),
           className,
         )}
         style={style}

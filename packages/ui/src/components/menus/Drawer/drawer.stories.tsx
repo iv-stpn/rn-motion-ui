@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { Text } from '../../typography/Text/text';
@@ -27,6 +28,7 @@ const SIDES = ['left', 'right'] as const satisfies readonly DrawerSide[];
 
 function DrawerPlayground() {
   const [side, setSide] = useState<DrawerSide>('left');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
   const handleOpen = useCallback(() => setOpen(true), []);
@@ -35,13 +37,20 @@ function DrawerPlayground() {
     <Playground>
       <ControlCard title="Options">
         <Choice label="Side" onChange={setSide} options={SIDES} value={side} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
       <TriggerControls state={trigger} />
 
       <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
 
-      <Drawer open={open} onOpenChange={setOpen} side={side} accessibilityLabel="Demo drawer">
+      <Drawer
+        open={open}
+        onOpenChange={setOpen}
+        side={side}
+        elevation={ELEVATIONS[elevationKey]}
+        accessibilityLabel="Demo drawer"
+      >
         <View className="gap-2 p-6">
           <Text weight="semibold" className="text-foreground text-sm">
             {DRAWER_TITLE}

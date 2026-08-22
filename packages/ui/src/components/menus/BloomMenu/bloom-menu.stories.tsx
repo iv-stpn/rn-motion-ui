@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { FileLine as FileText } from 'rn-motion-ui-icons/icons/file-line';
 import { FolderLine as FolderClosed } from 'rn-motion-ui-icons/icons/folder-line';
@@ -8,6 +8,8 @@ import { LinkLine as Link } from 'rn-motion-ui-icons/icons/link-line';
 import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-line';
 import { TableLine as Table } from 'rn-motion-ui-icons/icons/table-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
+import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
 import { BloomMenu, type BloomMenuItem } from './bloom-menu';
 
 const ITEMS: BloomMenuItem[] = [
@@ -36,10 +38,25 @@ function BloomMenuDemo(props: ComponentProps<typeof BloomMenu>) {
   );
 }
 
+function BloomMenuPlayground() {
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
+
+  return (
+    <Playground>
+      <ControlCard title="Options">
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+      </ControlCard>
+      <View className="min-h-[420px] items-center justify-center">
+        <BloomMenu elevation={ELEVATIONS[elevationKey]} items={ITEMS} title="Create" triggerLabel="Create" />
+      </View>
+    </Playground>
+  );
+}
+
 export default meta;
 
 export const Interactive: Story = {
-  render: (args) => <BloomMenuDemo {...args} />,
+  render: () => <BloomMenuPlayground />,
 };
 
 export const Default: Story = {

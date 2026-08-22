@@ -15,6 +15,7 @@ import {
 import { Animated, PanResponder, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { surface } from '../../../lib/surface';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
@@ -48,6 +49,12 @@ export type SwipeableListProps = {
   actionWidth?: number;
   revealThreshold?: number;
   closeOnAction?: boolean;
+  /**
+   * Surface elevation of every row's draggable surface (0–8) — drives the
+   * background tint and the drop shadow + dark-mode rim. `0` is the flat resting
+   * surface (no shadow or border). Defaults to `3`.
+   */
+  elevation?: SurfaceElevation;
   /**
    * Root testID, defaulting to `'swipeable-list'`. Each row takes
    * `<testID>-row-<item.id>` and each of its action buttons
@@ -214,6 +221,7 @@ export type SwipeableListRowProps = {
   openId: string | null;
   setOpenId: (id: string | null) => void;
   closeOnAction: boolean;
+  elevation: SurfaceElevation;
   onAction?: SwipeableListProps['onAction'];
   /** The row's own testID; its action buttons derive `-action-<id>` from it. */
   testID?: string;
@@ -227,6 +235,7 @@ function SwipeableListRow({
   openId,
   setOpenId,
   closeOnAction,
+  elevation,
   onAction,
   testID,
 }: SwipeableListRowProps) {
@@ -544,7 +553,7 @@ function SwipeableListRow({
 
       {/* Draggable surface */}
       <Animated.View
-        className={cn('rounded-2xl border border-border px-4 py-3', surface(3))}
+        className={cn('rounded-2xl border border-border px-4 py-3', surface(elevation))}
         style={[
           {
             minHeight: 72,
@@ -571,6 +580,7 @@ export function SwipeableListImpl({
   actionWidth = 56,
   revealThreshold = 34,
   closeOnAction = true,
+  elevation = 3,
   testID,
   className,
   style,
@@ -589,6 +599,7 @@ export function SwipeableListImpl({
           openId={openId}
           setOpenId={setOpenId}
           closeOnAction={closeOnAction}
+          elevation={elevation}
           onAction={onAction}
           // Derived from the root when there is one, so two lists on a screen
           // don't collide. The bare `swipeable-row-<id>` is the shape this

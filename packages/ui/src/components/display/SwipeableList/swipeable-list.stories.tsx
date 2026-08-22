@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { ClockLine as Clock3 } from 'rn-motion-ui-icons/icons/clock-line';
 import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
+import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
 import { SWIPE_TONE_ICON_COLOR, type SwipeAction, SwipeableList, type SwipeableListItem } from './swipeable-list';
 
 // -- Shared story data -------------------------------------------------------
@@ -94,11 +97,31 @@ export default meta;
 
 // -- Stories -----------------------------------------------------------------
 
+function SwipeableListPlayground() {
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+
+  return (
+    <Playground>
+      <ControlCard title="Options">
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+      </ControlCard>
+      <SwipeableList
+        actionWidth={56}
+        closeOnAction={true}
+        elevation={ELEVATIONS[elevationKey]}
+        items={defaultItems}
+        revealThreshold={34}
+      />
+    </Playground>
+  );
+}
+
 /**
  * Default story: 4 items with left (Done/Pin) and right (Later/Trash) actions.
  * Swipe gesture is hard to simulate in play, so we verify items render correctly.
  */
 export const Interactive: Story = {
+  render: () => <SwipeableListPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 

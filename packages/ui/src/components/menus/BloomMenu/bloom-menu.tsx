@@ -4,6 +4,7 @@ import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
@@ -34,6 +35,12 @@ export type BloomMenuProps = {
   title?: string;
   /** Trigger label. Default "Create". */
   triggerLabel?: string;
+  /**
+   * Surface elevation of the bloom card (0–8) — drives the background tint and
+   * the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow
+   * or border). Defaults to `0`.
+   */
+  elevation?: SurfaceElevation;
   /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -106,6 +113,7 @@ export function BloomMenu({
   onSelect,
   title = 'Create',
   triggerLabel = 'Create',
+  elevation = 0,
   className,
   style,
   testID,
@@ -166,7 +174,7 @@ export function BloomMenu({
         <MotiView
           animate={{ width: open ? PANEL_W : TRIGGER_W, height: open ? (panelH ?? BOX_H) : TRIGGER_H }}
           transition={morph}
-          className={cn('items-center justify-center overflow-hidden border border-border', surface(0, 'menu'))}
+          className={cn('items-center justify-center overflow-hidden border border-border', surface(elevation, 'menu'))}
         >
           {/* Panel content, fixed at its open-state size and centred in the
               card, so the growing clip reveals it centre-out (iris). The grid

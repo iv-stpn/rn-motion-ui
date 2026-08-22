@@ -8,6 +8,7 @@ import { RadioLine as RadioTower } from 'rn-motion-ui-icons/icons/radio-line';
 import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line';
 import { TimeLine as CalendarClock } from 'rn-motion-ui-icons/icons/time-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { BouncyAccordion, type BouncyAccordionItem } from './bouncy-accordion';
@@ -90,6 +91,7 @@ function BouncyAccordionPlayground() {
   const [icons, setIcons] = useState(true);
   const [countKey, setCountKey] = useState<CountKey>('6');
   const [lockLast, setLockLast] = useState(false);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [open, setOpen] = useState<string | null>(null);
   const iconColor = useThemeColor('muted-foreground');
 
@@ -108,6 +110,7 @@ function BouncyAccordionPlayground() {
     <Playground>
       <ControlCard title="Options">
         <Choice label="Rows" onChange={setCountKey} options={COUNTS} value={countKey} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Collapsible" onChange={setCollapsible} value={collapsible} />
         <Toggle label="Icons" onChange={setIcons} value={icons} />
         <Toggle label="Lock last row" onChange={setLockLast} value={lockLast} />
@@ -116,7 +119,13 @@ function BouncyAccordionPlayground() {
       {/* With `collapsible` off, pressing the open row keeps it open — one row is
           always expanded. With it on, the same press closes it and `value` is null. */}
       <View className="gap-2">
-        <BouncyAccordion collapsible={collapsible} items={items} onValueChange={setOpen} value={open} />
+        <BouncyAccordion
+          collapsible={collapsible}
+          elevation={ELEVATIONS[elevationKey]}
+          items={items}
+          onValueChange={setOpen}
+          value={open}
+        />
         <Note testID="story-open">{open ?? NOTHING_OPEN}</Note>
       </View>
 

@@ -6,9 +6,11 @@ import { FileLine } from 'rn-motion-ui-icons/icons/file-line';
 import { Home1Line } from 'rn-motion-ui-icons/icons/home-1-line';
 import { Settings1Line } from 'rn-motion-ui-icons/icons/settings-1-line';
 import { StarLine } from 'rn-motion-ui-icons/icons/star-line';
-import { expect, screen, userEvent, within } from 'storybook/test';
+import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
+import { Choice, ControlCard, Note, Toggle } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
-import { MorphingSwitcher, type MorphingSwitcherItem } from './morphing-switcher';
+import { MorphingSwitcher, type MorphingSwitcherItem, type MorphingSwitcherVariant } from './morphing-switcher';
 
 const meta = {
   title: 'Display/MorphingSwitcher',
@@ -47,7 +49,60 @@ const SPACES: readonly MorphingSwitcherItem[] = [
   { value: 'settings', label: 'Settings', icon: Settings1Line },
 ];
 
+// ── Playground ───────────────────────────────────────────────────────────────
+
+const VARIANTS = ['select', 'switcher'] as const;
+
+/** The same spaces stripped of their icons — the `Item icons` toggle swaps the two sets. */
+const PLAIN_SPACES: readonly MorphingSwitcherItem[] = SPACES.map(({ value, label }) => ({ value, label }));
+
+const PLAYGROUND_HINT =
+  'select is a pill that hugs its label; switcher is a full-width bar with stacked carets. Either way the trigger stays mounted and becomes the active row of the open list. Elevation sets the resting float — the shell lifts two rungs higher while open.';
+
+function MorphingSwitcherPlayground() {
+  const [variant, setVariant] = useState<MorphingSwitcherVariant>('switcher');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [withIcons, setWithIcons] = useState(true);
+  const [closeCaret, setCloseCaret] = useState(true);
+  const [value, setValue] = useState('home');
+
+  return (
+    <AppSurface hint={PLAYGROUND_HINT}>
+      <View className="gap-3 px-5">
+        <ControlCard title="Options">
+          <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+          <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+          <Toggle label="Item icons" onChange={setWithIcons} value={withIcons} />
+          {/* `closeIcon` only reaches the trigger in `select` — `switcher` always keeps its stacked carets. */}
+          {variant === 'select' ? <Toggle label="Close caret" onChange={setCloseCaret} value={closeCaret} /> : null}
+        </ControlCard>
+
+        {/* Above the switcher: the open pane overlays whatever sits below it. */}
+        <Note testID="story-selected-space">{`Selected: ${value}`}</Note>
+
+        <MorphingSwitcher
+          items={withIcons ? SPACES : PLAIN_SPACES}
+          value={value}
+          onValueChange={setValue}
+          variant={variant}
+          elevation={ELEVATIONS[elevationKey]}
+          closeIcon={closeCaret ? undefined : null}
+          accessibilityLabel="Switch space"
+          triggerTestID="playground-trigger"
+          testID="playground"
+        />
+      </View>
+    </AppSurface>
+  );
+}
+
 // ── Stories ──────────────────────────────────────────────────────────────────
+
+/** Drive the variant, the item icons, and the close caret with the controls — the same
+ *  switcher re-styles in place, keeping whatever value you last picked. */
+export const Interactive: Story = {
+  render: () => <MorphingSwitcherPlayground />,
+};
 
 /** The pill shows the current item (icon + label + caret); it morphs into the item list. */
 export const SwitchBetweenItems: Story = {
@@ -58,6 +113,7 @@ export const SwitchBetweenItems: Story = {
         <MorphingSwitcher
           items={SPACES}
           defaultValue="home"
+          variant="select"
           accessibilityLabel="Switch space"
           triggerTestID="switcher-trigger"
           testID="switcher"
@@ -83,13 +139,14 @@ export const SwitchBetweenItems: Story = {
     // The active item is highlighted; picking another folds the switcher back
     // and reports the new value.
     await userEvent.click(await screen.findByText('All files'));
-    await expect(await canvas.findByTestId('switcher-trigger')).toBeTruthy();
+    // The trigger persists through the morph — it now shows the new value.
+    const closedTrigger = await canvas.findByTestId('switcher-trigger');
     await expect(screen.queryByText('Favorites')).toBeNull();
-    await expect(within(trigger).getByText('All files')).toBeTruthy();
+    await expect(within(closedTrigger).getByText('All files')).toBeTruthy();
   },
 };
 
-/** The switcher can be controlled from outside — the pane closes through the up-caret. */
+/** The switcher can be controlled from outside — the trigger toggles the pane. */
 export const Controlled: Story = {
   name: 'Demo: controlled',
   render: () => {
@@ -97,7 +154,7 @@ export const Controlled: Story = {
       const [value, setValue] = useState('home');
       const [open, setOpen] = useState(false);
       return (
-        <AppSurface hint="The open state is controlled: the pane closes via its up-caret or an external toggle.">
+        <AppSurface hint="The open state is controlled: the trigger (now the active header) toggles the pane closed.">
           <View className="gap-3 px-5">
             <MorphingSwitcher
               items={SPACES}
@@ -105,6 +162,7 @@ export const Controlled: Story = {
               onValueChange={setValue}
               open={open}
               onOpenChange={setOpen}
+              variant="select"
               accessibilityLabel="Switch space"
               triggerTestID="controlled-trigger"
               testID="controlled"
@@ -122,25 +180,25 @@ export const Controlled: Story = {
     await userEvent.click(await canvas.findByTestId('controlled-trigger'));
     await expect(await screen.findByText('Favorites')).toBeTruthy();
 
-    // The up-caret close control folds the pane back without selecting.
-    await userEvent.click(await screen.findByTestId('controlled-close'));
-    await expect(await canvas.findByTestId('controlled-trigger')).toBeTruthy();
-    await expect(screen.queryByText('Settings')).toBeNull();
+    // The open trigger is disabled — an outside press closes the pane without selecting.
+    fireEvent.pointerDown(document.body);
+    await waitFor(() => expect(screen.queryByText('Settings')).toBeNull());
     // Nothing was selected.
     await expect(await canvas.findByText('Current: home')).toBeTruthy();
   },
 };
 
-/** A pane without a close control — selection is the only way out. */
+/** `closeIcon={null}` drops the open trigger's caret — the trigger is still disabled while open. */
 export const NoCloseControl: Story = {
-  name: 'Demo: no close control',
+  name: 'Demo: no close caret',
   render: () => (
-    <AppSurface hint="closeIcon={null} — the pane has no close affordance; picking an item is the only way to fold it back.">
+    <AppSurface hint="closeIcon={null} — the open trigger has no trailing caret; the trigger is disabled while open, and picking an item folds it back.">
       <View className="px-5">
         <MorphingSwitcher
           items={SPACES}
           defaultValue="files"
           closeIcon={null}
+          variant="select"
           accessibilityLabel="Switch space"
           triggerTestID="noclose-trigger"
           testID="noclose"
@@ -153,9 +211,10 @@ export const NoCloseControl: Story = {
 
     await userEvent.click(await canvas.findByTestId('noclose-trigger'));
     await expect(await screen.findByText('Settings')).toBeTruthy();
-    // No close control rendered.
+    // No trailing caret / close affordance on the open trigger.
     await expect(screen.queryByTestId('noclose-close')).toBeNull();
 
+    // Selecting an item still folds the switcher back.
     await userEvent.click(await screen.findByText('Settings'));
     await expect(await canvas.findByTestId('noclose-trigger')).toBeTruthy();
     await expect(screen.queryByText('Favorites')).toBeNull();
@@ -175,6 +234,7 @@ export const LabelOnly: Story = {
             { value: 'c', label: 'Option C' },
           ]}
           defaultValue="a"
+          variant="select"
           accessibilityLabel="Choose option"
           triggerTestID="labelonly-trigger"
           testID="labelonly"
@@ -190,6 +250,74 @@ export const LabelOnly: Story = {
     await userEvent.click(await screen.findByText('Option B'));
     await expect(await canvas.findByTestId('labelonly-trigger')).toBeTruthy();
     await expect(screen.queryByText('Option C')).toBeNull();
+  },
+};
+
+/** Full-width bar: the trigger becomes the active row and the current item is not repeated. */
+export const SwitcherVariant: Story = {
+  name: 'Demo: full-width switcher',
+  render: () => (
+    <AppSurface hint="A full-width bar with stacked carets — the trigger becomes the active row and the current item isn't repeated below.">
+      <View className="px-5">
+        <MorphingSwitcher
+          variant="switcher"
+          items={SPACES}
+          defaultValue="home"
+          accessibilityLabel="Switch space"
+          triggerTestID="switcher-variant-trigger"
+          testID="switcher-variant"
+        />
+      </View>
+    </AppSurface>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = await canvas.findByTestId('switcher-variant-trigger');
+    await expect(within(trigger).getByText('Home')).toBeTruthy();
+    // Collapsed — nothing but the current item is visible.
+    await expect(screen.queryByText('All files')).toBeNull();
+
+    // Open from the trigger itself; the current item is lifted out of the list.
+    await userEvent.click(trigger);
+    await expect(await screen.findByText('All files')).toBeTruthy();
+    await expect(await screen.findByText('Favorites')).toBeTruthy();
+    await expect(await screen.findByText('Settings')).toBeTruthy();
+    // The current item has no list row of its own — the trigger is that row.
+    await expect(screen.queryByTestId('switcher-variant-item-home')).toBeNull();
+
+    // The trigger is disabled while open — an outside press closes the switcher.
+    fireEvent.pointerDown(document.body);
+    await waitFor(() => expect(screen.queryByText('Favorites')).toBeNull());
+  },
+};
+
+/** Selecting an item from the full-width switcher folds it back with the new value. */
+export const SwitcherVariantSelect: Story = {
+  name: 'Demo: full-width switcher selection',
+  render: () => (
+    <AppSurface hint="Picking a row from the full-width switcher folds it back and lifts the new value into the trigger.">
+      <View className="px-5">
+        <MorphingSwitcher
+          variant="switcher"
+          items={SPACES}
+          defaultValue="home"
+          accessibilityLabel="Switch space"
+          triggerTestID="switcher-select-trigger"
+          testID="switcher-select"
+        />
+      </View>
+    </AppSurface>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByTestId('switcher-select-trigger'));
+    await expect(await screen.findByText('Favorites')).toBeTruthy();
+
+    // Selecting a non-current item closes and promotes it to the trigger.
+    await userEvent.click(await screen.findByText('Favorites'));
+    const trigger = await canvas.findByTestId('switcher-select-trigger');
+    await expect(within(trigger).getByText('Favorites')).toBeTruthy();
+    await expect(screen.queryByText('Settings')).toBeNull();
   },
 };
 

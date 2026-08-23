@@ -7,7 +7,7 @@ import { cn } from '../../lib/cn';
 import { SPRING_LAYOUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
 import { ThemedIcon } from '../icon/themed-icon';
-import { Text } from '../typography/Text/text';
+import { Text, type TextWeight } from '../typography/Text/text';
 
 /** Icon renderer — compatible with this project's icon set signature. */
 export type MenuItemIcon = (props: IconProps) => ReactNode;
@@ -123,6 +123,11 @@ export type MenuItemProps = Omit<PressableProps, 'children'> & {
   icon?: MenuItemIcon;
   /** Row label. */
   label: ReactNode;
+  /**
+   * Overrides the label font weight. Defaults to `medium` in `sidebar` mode
+   * (the standard settings-sidebar look) and `normal` otherwise.
+   */
+  labelWeight?: TextWeight;
   /** Marks this row as the active/selected item. */
   active?: boolean;
   /**
@@ -217,6 +222,7 @@ export function MenuItem({
   mode = 'menu',
   icon: Icon,
   label,
+  labelWeight,
   active = false,
   trailing,
   iconBackgroundColor,
@@ -310,7 +316,7 @@ export function MenuItem({
       <Text
         numberOfLines={1}
         className={cn('flex-1', scale.labelClass, labelColorClass)}
-        weight={mode === 'sidebar' && !hasIconTile ? 'medium' : 'normal'}
+        weight={labelWeight ?? (mode === 'sidebar' && !hasIconTile ? 'medium' : 'normal')}
       >
         {label}
       </Text>

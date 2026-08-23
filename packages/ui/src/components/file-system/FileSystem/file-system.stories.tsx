@@ -1970,12 +1970,15 @@ export const ScrollSurvivesHiddenContainer: Story = {
 
     // Flip the view's own container to display:none (a tab switch hiding the
     // pane): the container measures 0, the grid's tiles unmount, and the
-    // browser clamps the scroll position back to the top.
+    // browser clamps the scroll position back to the top. The clamp fires a
+    // scroll event reporting 0 — it must NOT reach the consumer (that would
+    // wipe the last real position), so the callback keeps 300 as its last call.
     const container = scroller!.parentElement;
     expect(container).not.toBeNull();
     const previousDisplay = container!.style.display;
     container!.style.display = 'none';
     await waitFor(() => expect(scroller!.scrollTop).toBe(0));
+    expect(args.onScrollOffsetChange).not.toHaveBeenCalledWith(0);
 
     // Back to visible: the content remounts and the view re-applies the last
     // reported offset on its own — no consumer change involved.

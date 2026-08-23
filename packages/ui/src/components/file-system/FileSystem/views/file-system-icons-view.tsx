@@ -21,7 +21,7 @@ import { shiftZoneRects } from '../../../gestures/drag-store';
 import { useActiveDrag } from '../../../gestures/use-drag-store';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
-import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
+import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import {
   GLYPH_BOX_HEIGHT,
   GLYPH_BOX_WIDTH,
@@ -219,6 +219,11 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
+      // A container that cannot scroll (empty content — e.g. the view sits in a
+      // display:none pane whose tiles just unmounted) fires a clamp event
+      // reporting 0; reporting it would wipe the last real position (the
+      // hidden-tab scroll-loss bug). Only real scrolls report.
+      if (!scrollEventCanScroll(event)) return;
       // Same correction as the desktop list view: the store's cached zone rects
       // are window boxes from the last measure, and a scroll moves the tiles
       // without any layout event, so the drop targeting and the shared drop

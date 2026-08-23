@@ -22,8 +22,23 @@
 // consumer involvement.
 
 import { useCallback, useEffect, useRef } from 'react';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useStore } from 'zustand';
 import { useFileSystemConsumer, useFileSystemStoreContext } from '../store/file-system-context';
+
+/**
+ * Whether a scroll event comes from a container that can actually scroll. A
+ * container whose content fits (or has none — e.g. the view sits in a
+ * `display: none` pane whose tiles just unmounted) fires a clamp event
+ * reporting offset 0; reporting it would overwrite the view's last real
+ * position with 0, which is the hidden-tab scroll-loss bug. Only real scrolls
+ * on overflow content report.
+ */
+export function scrollEventCanScroll(event: NativeSyntheticEvent<NativeScrollEvent>): boolean {
+  const contentHeight = event.nativeEvent.contentSize?.height ?? 0;
+  const viewportHeight = event.nativeEvent.layoutMeasurement?.height ?? 0;
+  return contentHeight > viewportHeight + 2;
+}
 
 export function useFileSystemScroll(applyScrollTo: (offset: number) => void) {
   const consumer = useFileSystemConsumer();

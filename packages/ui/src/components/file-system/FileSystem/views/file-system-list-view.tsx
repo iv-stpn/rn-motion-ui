@@ -34,7 +34,7 @@ import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options'
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { type AugmentedEntry, useFileSystemRowAnimation } from '../hooks/use-file-system-row-animation';
 import { type FileSystemRowInteractionReturn, useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
-import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
+import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { formatByteSize, formatTimestamp } from '../logic/file-system-format';
 import type { FileSystemRow } from '../logic/file-system-rows';
 import { FS_ROW_HEIGHT, flattenFileSystemRows, toggleExpandedPath } from '../logic/file-system-rows';
@@ -690,6 +690,11 @@ export function FileSystemListView({
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
+      // A container that cannot scroll (empty content — e.g. the view sits in a
+      // display:none pane whose tiles just unmounted) fires a clamp event
+      // reporting 0; reporting it would wipe the last real position (the
+      // hidden-tab scroll-loss bug). Only real scrolls report.
+      if (!scrollEventCanScroll(event)) return;
       // The store's zone rects are window boxes from the last measure (drag
       // start or last layout pass). A scroll moves the rows without any layout
       // event, so without this the hit test and the shared drop indicator

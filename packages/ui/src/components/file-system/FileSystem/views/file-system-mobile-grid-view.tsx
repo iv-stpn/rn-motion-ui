@@ -28,7 +28,7 @@ import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
-import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
+import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
@@ -436,6 +436,11 @@ export function FileSystemMobileGridView({
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
+      // A container that cannot scroll (empty content — e.g. the view sits in a
+      // display:none pane whose tiles just unmounted) fires a clamp event
+      // reporting 0; reporting it would wipe the last real position (the
+      // hidden-tab scroll-loss bug). Only real scrolls report.
+      if (!scrollEventCanScroll(event)) return;
       // Same correction as the desktop list view: the store's cached zone rects
       // are window boxes from the last measure, and a scroll moves the tiles
       // without any layout event, so the drop targeting and the shared drop

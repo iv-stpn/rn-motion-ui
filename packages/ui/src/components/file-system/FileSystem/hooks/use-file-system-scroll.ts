@@ -10,10 +10,35 @@
 // consumer changes `initialScrollOffset`, so a later "jump to position" (URL
 // adoption, sidebar reset to top) applies even if the container had no content
 // at the moment the value arrived.
+//
+// Why the last-reported fallback: a view's content can unmount and remount
+// without the consumer changing anything — e.g. the FileSystem sits inside a
+// container that flips `display: none` (a hidden tab pane) and back. The
+// browser clamps `scrollTop` to 0 the moment the content disappears, so the
+// position the user actually had is gone from the DOM; it lives only in the
+// store the view reported into. `retryPendingScroll` falls back to that last
+// reported offset once the content is back, making the view self-restoring —
+// a content remount re-applies the position the user last had, with no
+// consumer involvement.
 
 import { useCallback, useEffect, useRef } from 'react';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useStore } from 'zustand';
 import { useFileSystemConsumer, useFileSystemStoreContext } from '../store/file-system-context';
+
+/**
+ * Whether a scroll event comes from a container that can actually scroll. A
+ * container whose content fits (or has none — e.g. the view sits in a
+ * `display: none` pane whose tiles just unmounted) fires a clamp event
+ * reporting offset 0; reporting it would overwrite the view's last real
+ * position with 0, which is the hidden-tab scroll-loss bug. Only real scrolls
+ * on overflow content report.
+ */
+export function scrollEventCanScroll(event: NativeSyntheticEvent<NativeScrollEvent>): boolean {
+  const contentHeight = event.nativeEvent.contentSize?.height ?? 0;
+  const viewportHeight = event.nativeEvent.layoutMeasurement?.height ?? 0;
+  return contentHeight > viewportHeight + 2;
+}
 
 export function useFileSystemScroll(applyScrollTo: (offset: number) => void) {
   const consumer = useFileSystemConsumer();
@@ -23,6 +48,11 @@ export function useFileSystemScroll(applyScrollTo: (offset: number) => void) {
   applyRef.current = applyScrollTo;
 
   const pendingOffsetRef = useRef<number | null>(null);
+  // The last offset the view reported (live scrolls). Never the restore source
+  // while a pending initial offset is un-consumed — the consumer's explicit
+  // value wins. Once the initial offset has been applied (or was 0), content
+  // remounts restore from here.
+  const lastReportedOffsetRef = useRef(0);
 
   // Apply on mount and whenever the consumer changes the offset. The ref keeps
   // the value even when the container cannot take it yet — `retryPendingScroll`
@@ -35,13 +65,23 @@ export function useFileSystemScroll(applyScrollTo: (offset: number) => void) {
   }, [consumer.initialScrollOffset]);
 
   const retryPendingScroll = useCallback(() => {
-    const target = pendingOffsetRef.current;
-    if (target === null || target <= 0) return;
+    // The initial offset applies at most once (the first time content exists).
+    // Consume it even when it is 0 so later retries fall back to the view's
+    // own last reported position instead of being blocked by a pending 0.
+    const pending = pendingOffsetRef.current;
     pendingOffsetRef.current = null;
+    const target = pending ?? lastReportedOffsetRef.current;
+    if (target <= 0) return;
     applyRef.current(target);
   }, []);
 
-  const reportScrollOffset = useCallback((offset: number) => setScrollOffset(offset), [setScrollOffset]);
+  const reportScrollOffset = useCallback(
+    (offset: number) => {
+      lastReportedOffsetRef.current = offset;
+      setScrollOffset(offset);
+    },
+    [setScrollOffset],
+  );
 
   return { retryPendingScroll, reportScrollOffset };
 }

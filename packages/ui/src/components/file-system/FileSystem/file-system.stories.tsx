@@ -1942,6 +1942,52 @@ export const ScrollPosition: Story = {
   },
 };
 
+/**
+ * The scroll position must survive the view's content unmounting and remounting
+ * — the hidden-tab-pane case. When a FileSystem sits inside a container that
+ * flips `display: none` (an inactive tab pane, a collapsed section), the view
+ * measures 0, its tiles unmount, and the browser clamps the scroll container
+ * back to the top. The consumer never changes `initialScrollOffset` — the
+ * position the user actually had lives only in the view's own report — so the
+ * restore must come from the last reported offset once the content is back.
+ */
+export const ScrollSurvivesHiddenContainer: Story = {
+  name: 'Demo: Scroll survives a hidden-then-shown container',
+  args: {
+    defaultView: 'mobile-grid',
+    items: SCROLL_ITEMS,
+    onScrollOffsetChange: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await canvas.findAllByText('File-001.md');
+
+    const scroller = findScroller(canvasElement);
+    expect(scroller).not.toBeNull();
+    // A real user scroll; assign scrollTop directly — rn-web patches scrollTo.
+    scroller!.scrollTop = 300;
+    await waitFor(() => expect(args.onScrollOffsetChange).toHaveBeenCalledWith(300));
+
+    // Flip the view's own container to display:none (a tab switch hiding the
+    // pane): the container measures 0, the grid's tiles unmount, and the
+    // browser clamps the scroll position back to the top. The clamp fires a
+    // scroll event reporting 0 — it must NOT reach the consumer (that would
+    // wipe the last real position), so the callback keeps 300 as its last call.
+    const container = scroller!.parentElement;
+    expect(container).not.toBeNull();
+    const previousDisplay = container!.style.display;
+    container!.style.display = 'none';
+    await waitFor(() => expect(scroller!.scrollTop).toBe(0));
+    expect(args.onScrollOffsetChange).not.toHaveBeenCalledWith(0);
+
+    // Back to visible: the content remounts and the view re-applies the last
+    // reported offset on its own — no consumer change involved.
+    container!.style.display = previousDisplay;
+    await waitFor(() => expect(scroller!.scrollTop).toBeGreaterThan(200));
+    expect(Math.abs(scroller!.scrollTop - 300)).toBeLessThan(50);
+  },
+};
+
 // ─── Viewer ────────────────────────────────────────────────────────────────────
 
 export const ImageViewer: Story = {

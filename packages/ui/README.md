@@ -104,6 +104,7 @@ Subpaths are namespaced by category:
 | `/item-row`                    | `ItemRow`                                                                |
 | `/item-row-group`              | `ItemRowGroup`                                                           |
 | `/morphing-fab`                | `MorphingFAB`                                                            |
+| `/morphing-switcher`           | `MorphingSwitcher`                                                        |
 | `/sortable-list`               | `SortableList`                                                           |
 | `/stateful-button`             | `StatefulButton`                                                         |
 | `/switch`                      | `Switch`                                                                 |

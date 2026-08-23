@@ -362,6 +362,11 @@
       "types": "./src/components/menus/MorphingModal/morphing-modal.tsx",
       "default": "./src/components/menus/MorphingModal/morphing-modal.tsx"
     },
+    "./morphing-switcher": {
+      "source": "./src/components/display/MorphingSwitcher/morphing-switcher.tsx",
+      "types": "./src/components/display/MorphingSwitcher/morphing-switcher.tsx",
+      "default": "./src/components/display/MorphingSwitcher/morphing-switcher.tsx"
+    },
     "./multi-drag": {
       "source": "./src/components/gestures/DragManager/multi-drag.ts",
       "types": "./src/components/gestures/DragManager/multi-drag.ts",

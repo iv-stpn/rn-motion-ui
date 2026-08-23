@@ -233,7 +233,7 @@ if (missingFromPkgReadme.length > 0 && FIX) {
     while (pos < pkgReadme.length) {
       const lineEnd = pkgReadme.indexOf('\n', pos);
       const line = pkgReadme.slice(pos, lineEnd === -1 ? pkgReadme.length : lineEnd);
-      const m = line.match(/^\| `\/([^`]+)` \|/);
+      const m = line.match(/^\| `\/([^`]+)`[ \t]*\|/);
       if (!m) break;
       existing.push({ name: m[1], start: pos, end: lineEnd === -1 ? pkgReadme.length : lineEnd + 1 });
       if (lineEnd === -1) break;

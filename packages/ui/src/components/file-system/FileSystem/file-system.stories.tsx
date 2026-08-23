@@ -1928,7 +1928,7 @@ export const ScrollPosition: Story = {
     // The pending initial scroll lands once content exists — the container is
     // empty on first mount, so the retry is what actually moves it.
     const scroller = findScroller(canvasElement);
-    expect(scroller).not.toBeNull();
+    if (!scroller) throw new Error('no scroll container rendered');
     await waitFor(() => expect(scroller?.scrollTop ?? 0).toBeGreaterThan(0));
     expect(Math.abs((scroller?.scrollTop ?? 0) - (args.initialScrollOffset ?? 0))).toBeLessThan(50);
 
@@ -1937,7 +1937,7 @@ export const ScrollPosition: Story = {
     // the scroll node's `scrollTo` to the RN API (`{y, animated}`), so a DOM
     // `scrollTo({top})` scrolls to the top — assign `scrollTop` directly.
     await waitFor(() => expect(args.onScrollOffsetChange).toHaveBeenCalledWith(expect.any(Number)));
-    scroller!.scrollTop = 200;
+    scroller.scrollTop = 200;
     await waitFor(() => expect(args.onScrollOffsetChange).toHaveBeenCalledWith(200));
   },
 };
@@ -1963,9 +1963,9 @@ export const ScrollSurvivesHiddenContainer: Story = {
     await canvas.findAllByText('File-001.md');
 
     const scroller = findScroller(canvasElement);
-    expect(scroller).not.toBeNull();
+    if (!scroller) throw new Error('no scroll container rendered');
     // A real user scroll; assign scrollTop directly — rn-web patches scrollTo.
-    scroller!.scrollTop = 300;
+    scroller.scrollTop = 300;
     await waitFor(() => expect(args.onScrollOffsetChange).toHaveBeenCalledWith(300));
 
     // Flip the view's own container to display:none (a tab switch hiding the
@@ -1973,18 +1973,18 @@ export const ScrollSurvivesHiddenContainer: Story = {
     // browser clamps the scroll position back to the top. The clamp fires a
     // scroll event reporting 0 — it must NOT reach the consumer (that would
     // wipe the last real position), so the callback keeps 300 as its last call.
-    const container = scroller!.parentElement;
-    expect(container).not.toBeNull();
-    const previousDisplay = container!.style.display;
-    container!.style.display = 'none';
-    await waitFor(() => expect(scroller!.scrollTop).toBe(0));
+    const container = scroller.parentElement;
+    if (!container) throw new Error('no scroll container parent');
+    const previousDisplay = container.style.display;
+    container.style.display = 'none';
+    await waitFor(() => expect(scroller.scrollTop).toBe(0));
     expect(args.onScrollOffsetChange).not.toHaveBeenCalledWith(0);
 
     // Back to visible: the content remounts and the view re-applies the last
     // reported offset on its own — no consumer change involved.
-    container!.style.display = previousDisplay;
-    await waitFor(() => expect(scroller!.scrollTop).toBeGreaterThan(200));
-    expect(Math.abs(scroller!.scrollTop - 300)).toBeLessThan(50);
+    container.style.display = previousDisplay;
+    await waitFor(() => expect(scroller.scrollTop).toBeGreaterThan(200));
+    expect(Math.abs(scroller.scrollTop - 300)).toBeLessThan(50);
   },
 };
 

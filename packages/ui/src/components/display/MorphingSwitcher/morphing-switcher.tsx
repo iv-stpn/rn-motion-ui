@@ -1,4 +1,5 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: switcher shell, morph transition, and trigger/pane layouts collocated by design
+// biome-ignore-all lint/style/useExportsLast: the public icon/item/variant/props types head the module so the sub-components below read against them
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import {
   type LayoutChangeEvent,
@@ -316,6 +317,7 @@ function getWebDocument(): WebDocument | undefined {
   return isWebDocument(doc) ? doc : undefined;
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the shell wires trigger measurement, outside-press handling, and the morph pane around shared refs/state — splitting would prop-drill the shared values across function boundaries
 export function MorphingSwitcher({
   items,
   value: valueProp,

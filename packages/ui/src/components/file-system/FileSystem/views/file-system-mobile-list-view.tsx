@@ -244,6 +244,7 @@ function MobileListRow({
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the view wires hold-to-select, marquee/scrub sessions, drag auto-scroll, and the FlatList row renderer around shared refs/state — splitting would scatter the interdependent selection and scrub plumbing
 export function FileSystemMobileListView({
   draggable = false,
   ensureChildren,

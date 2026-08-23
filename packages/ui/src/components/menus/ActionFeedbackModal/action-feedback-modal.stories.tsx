@@ -203,16 +203,20 @@ export const Loading: Story = {
     // The dots paint in after the modal portals; poll until one is actually
     // coloured instead of assuming a fixed settle delay is enough — under
     // parallel test load the render races the clock, so a 400 ms nap flakes.
-    await waitFor(() => {
-      const vessel = Array.from(doc.querySelectorAll('div')).find((d) =>
-        (d.getAttribute('class') ?? '').includes('rounded-full'),
-      );
-      if (!vessel) throw new Error('morph vessel not found');
-      const dotIsColoured = Array.from(vessel.querySelectorAll('div')).some(
-        (d) => win.getComputedStyle(d).backgroundColor !== 'rgba(0, 0, 0, 0)',
-      );
-      expect(dotIsColoured).toBe(true);
-    });
+    // The generous timeout (over the 1000 ms default) absorbs the same race.
+    await waitFor(
+      () => {
+        const vessel = Array.from(doc.querySelectorAll('div')).find((d) =>
+          (d.getAttribute('class') ?? '').includes('rounded-full'),
+        );
+        if (!vessel) throw new Error('morph vessel not found');
+        const dotIsColoured = Array.from(vessel.querySelectorAll('div')).some(
+          (d) => win.getComputedStyle(d).backgroundColor !== 'rgba(0, 0, 0, 0)',
+        );
+        expect(dotIsColoured).toBe(true);
+      },
+      { timeout: 3000 },
+    );
     // The escape hatch must actually reach the user. Its layering is DOM order,
     // not z-index — both Modal roots are `position: fixed` siblings on
     // document.body — and `userEvent` dispatches straight at the node without

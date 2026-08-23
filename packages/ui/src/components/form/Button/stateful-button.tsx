@@ -588,7 +588,7 @@ export function StatefulButton({
 
   const content = (
     // accessibilityLiveRegion mirrors the web's aria-live="polite"
-    <View accessible={false} accessibilityLiveRegion="polite" className={`flex-row items-center ${stateGapClass}`}>
+    <View accessible={false} accessibilityLiveRegion="polite" className={cn('flex-row items-center', stateGapClass)}>
       <AnimatePresence>
         {state === 'success' ? (
           <IconSlot keyId="success-icon" reduce={reduce} slotWidth={iconSize}>

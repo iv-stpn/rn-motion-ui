@@ -10,6 +10,7 @@ import { Share2Line as Share } from 'rn-motion-ui-icons/icons/share-2-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
+import { cn } from '../../lib/cn';
 import { SURFACE_CLASSNAME } from '../../lib/elevated';
 import { Button } from '../form/Button/button';
 import { Switch } from '../form/Switch/switch';
@@ -57,7 +58,7 @@ type PanelProps = { children: ReactNode; width?: number; framed?: boolean };
 
 function MenuPanel({ children, width = 260, framed = true }: PanelProps) {
   return (
-    <View className={framed ? `overflow-hidden rounded-menu ${SURFACE_CLASSNAME[3]}` : undefined} style={{ width }}>
+    <View className={cn(framed && 'overflow-hidden rounded-menu', framed && SURFACE_CLASSNAME[3])} style={{ width }}>
       {children}
     </View>
   );

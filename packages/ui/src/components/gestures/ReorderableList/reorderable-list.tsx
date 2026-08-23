@@ -76,7 +76,7 @@ type InsertionIndicatorProps = {
 function InsertionIndicator({ position: pos, testID }: InsertionIndicatorProps) {
   const edge = pos === 'above' ? 'top-0 -translate-y-1/2' : 'bottom-0 translate-y-1/2';
   return (
-    <View testID={testID} className={`pointer-events-none absolute right-0 left-0 z-10 flex-row items-center ${edge}`}>
+    <View testID={testID} className={cn('pointer-events-none absolute right-0 left-0 z-10 flex-row items-center', edge)}>
       <View className="h-2 w-2 rounded-full bg-primary" />
       <View className="h-0.5 flex-1 rounded-full bg-primary" />
       <View className="h-2 w-2 rounded-full bg-primary" />

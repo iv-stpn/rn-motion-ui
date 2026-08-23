@@ -13,6 +13,7 @@ import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer, settle } from '../../../__stories__/story-drag';
 import { Choice, ControlCard, Note, Playground, Section } from '../../../__stories__/story-harness';
+import { cn } from '../../../lib/cn';
 import { surface } from '../../../lib/surface';
 import { Text } from '../../typography/Text/text';
 import { SortableList } from './sortable-list';
@@ -25,8 +26,8 @@ const REORDER_READOUT = 'story-sortable-reorder-readout';
 /** Separated cards have shadow + rounded corners — the extra 8 px act as the visual gap. */
 const SEPARATED_ITEM_HEIGHT = 56;
 /**
- * Grouped rows sit flush with no gap between them; a border-b is the only divider.
- * The height matches the content exactly so rows touch.
+ * Grouped rows sit flush with no gap between them; the height matches the
+ * content exactly so rows touch.
  */
 const GROUPED_ITEM_HEIGHT = 44;
 
@@ -78,14 +79,17 @@ function groupedRadius(first: boolean, last: boolean): GroupedRadius {
 }
 
 function GroupedRow({ first, isDragging, item, last }: RowProps) {
-  // The divider (`border-b`) and the corner radius describe where this row sits
-  // in the stack, not the row itself. While dragging, the row travels to the
-  // insertion slot, so it must shed both — otherwise a divider line and rounded
-  // corners ride along and show up in the middle of the list.
+  // The corner radius describes where this row sits in the stack, not the row
+  // itself. While dragging, the row travels to the insertion slot, so it sheds
+  // the radius — otherwise rounded corners ride along into the middle of the list.
   const radius = isDragging ? '' : groupedRadius(first, last);
   return (
     <View
-      className={`flex-row items-center border-border bg-surface-1 px-4 py-3 transition-all duration-300 ease-out ${isDragging ? 'opacity-40' : ''} ${radius} ${last || isDragging ? 'border-b-0' : 'border-b'}`}
+      className={cn(
+        'flex-row items-center bg-surface-1 px-4 py-3 transition-opacity duration-300 ease-out',
+        isDragging && 'opacity-40',
+        radius,
+      )}
     >
       <GripHandle />
       <Text>{item.title}</Text>
@@ -96,7 +100,12 @@ function GroupedRow({ first, isDragging, item, last }: RowProps) {
 function SeparatedRow({ isDragging, item }: Omit<RowProps, 'first' | 'last'>) {
   return (
     <View
-      className={`flex-row items-center rounded-lg border border-border ${surface(2)} px-4 py-3 transition-all duration-300 ease-out ${isDragging ? 'scale-[0.98] opacity-40' : ''}`}
+      className={cn(
+        'flex-row items-center rounded-lg',
+        surface(2),
+        'px-4 py-3 transition-[opacity,scale] duration-300 ease-out',
+        isDragging && 'scale-[0.98] opacity-40',
+      )}
     >
       <GripHandle />
       <Text>{item.title}</Text>
@@ -153,7 +162,7 @@ function InteractiveDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS
       </ControlCard>
       <Note testID={REORDER_READOUT}>{lastReorder}</Note>
       <Section title="List">
-        <View className={variant === 'grouped' ? 'overflow-hidden rounded-lg border border-border' : undefined}>
+        <View className={variant === 'grouped' ? 'overflow-hidden rounded-lg' : undefined}>
           <SortableList
             disabled={disabled}
             itemHeight={itemHeight}
@@ -400,7 +409,10 @@ export const DifferentHeights: Story = {
       const renderItem: SortableListProps<Todo>['renderItem'] = useCallback(
         (item, _i, isDragging) => (
           <View
-            className={`flex-row items-start overflow-hidden rounded-lg border border-border bg-surface-1 px-4 py-3 transition-all duration-300 ease-out ${isDragging ? 'opacity-40' : ''}`}
+            className={cn(
+              'flex-row items-start overflow-hidden rounded-lg bg-surface-1 px-4 py-3 transition-opacity duration-300 ease-out',
+              isDragging && 'opacity-40',
+            )}
           >
             <GripHandle />
             <Text>{item.title}</Text>

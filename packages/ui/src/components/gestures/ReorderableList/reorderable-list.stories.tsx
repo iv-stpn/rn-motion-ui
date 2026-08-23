@@ -13,6 +13,7 @@ import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer, settle } from '../../../__stories__/story-drag';
 import { Choice, ControlCard, Note, Playground, Section } from '../../../__stories__/story-harness';
+import { cn } from '../../../lib/cn';
 import { surface } from '../../../lib/surface';
 import { Text } from '../../typography/Text/text';
 import { ReorderableList } from './reorderable-list';
@@ -80,7 +81,12 @@ function GroupedRow({ first, isDragging, item, last }: RowProps) {
   const radius = groupedRadius(first, last);
   return (
     <View
-      className={`flex-row items-center border-border border-b bg-surface-1 px-4 py-3 transition-all duration-300 ease-out ${isDragging ? 'opacity-40' : ''} ${radius} ${last ? 'border-b-0' : ''}`}
+      className={cn(
+        'flex-row items-center border-border border-b bg-surface-1 px-4 py-3 transition-all duration-300 ease-out',
+        isDragging && 'opacity-40',
+        radius,
+        last && 'border-b-0',
+      )}
     >
       <GripHandle />
       <Text>{item.title}</Text>
@@ -95,7 +101,12 @@ function GroupedRow({ first, isDragging, item, last }: RowProps) {
 function SeparatedRow({ isDragging, item }: Omit<RowProps, 'first' | 'last'>) {
   return (
     <View
-      className={`flex-row items-center rounded-lg border border-border ${surface(2)} px-4 py-3 transition-all duration-300 ease-out ${isDragging ? 'scale-[0.98] opacity-40' : ''}`}
+      className={cn(
+        'flex-row items-center rounded-lg border border-border',
+        surface(2),
+        'px-4 py-3 transition-all duration-300 ease-out',
+        isDragging && 'scale-[0.98] opacity-40',
+      )}
     >
       <GripHandle />
       <Text>{item.title}</Text>

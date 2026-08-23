@@ -450,13 +450,10 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
       onFocus={onFocus}
       onBlur={onBlur}
       {...pressHandlers}
-      className={`${H_INTERACTIVE[size]} ${PX_INTERACTIVE[size]} justify-center`}
+      className={cn(H_INTERACTIVE[size], PX_INTERACTIVE[size], 'justify-center')}
       testID={testID}
     >
-      <Text
-        weight="medium"
-        className={highlighted ? `text-foreground ${TEXT_INTERACTIVE.md}` : `text-muted-foreground ${TEXT_INTERACTIVE.md}`}
-      >
+      <Text weight="medium" className={cn(highlighted ? 'text-foreground' : 'text-muted-foreground', TEXT_INTERACTIVE.md)}>
         {children}
       </Text>
     </Pressable>

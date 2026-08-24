@@ -1,7 +1,9 @@
 import { type ReactNode, useEffect, useState, useSyncExternalStore } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { getOutletDepth, getTopOutletSetter, pushOutlet, subscribeOutletStack } from './overlay-portal-store';
+
+const IS_ANDROID = Platform.OS === 'android';
 
 const FILL = StyleSheet.create({
   layer: {
@@ -10,6 +12,12 @@ const FILL = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
+    // The outlet must draw above every overlay panel it portals into. BottomSheet's
+    // panel carries Android `elevation: 24` — the only hard elevation in the overlay
+    // set — so the outlet clears it to keep injected content (e.g. a portaled
+    // button) from slipping below the sheet. No-op on iOS, where `zIndex`/document
+    // order already puts the last sibling on top.
+    ...(IS_ANDROID ? { elevation: 25 } : null),
   },
 });
 

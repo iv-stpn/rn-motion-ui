@@ -10,7 +10,7 @@ import { LockLine as Lock } from 'rn-motion-ui-icons/icons/lock-line';
 import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { useThemeColor } from '../../../theme/use-theme-color';
@@ -213,13 +213,24 @@ const PLACEMENTS = [
 type MorphingModalDemoProps = {
   placement: 'bottom' | 'center' | 'bottom-sheet';
   elevation?: SurfaceElevation;
+  elevated?: boolean;
   kind?: TriggerState['kind'];
   size?: TriggerState['size'];
   shape?: TriggerState['shape'];
+  triggerElevated?: boolean;
   testID?: string;
 };
 
-function MorphingModalDemo({ placement, elevation = 6, kind, size, shape, testID }: MorphingModalDemoProps) {
+function MorphingModalDemo({
+  placement,
+  elevation = 6,
+  elevated = true,
+  kind,
+  size,
+  shape,
+  triggerElevated,
+  testID,
+}: MorphingModalDemoProps) {
   const [view, setView] = useState<WalletView>(null);
   const showOptions = useCallback(() => setView('options'), []);
   const close = useCallback(() => setView(null), []);
@@ -227,9 +238,16 @@ function MorphingModalDemo({ placement, elevation = 6, kind, size, shape, testID
   const showRecovery = useCallback(() => setView('recovery'), []);
   return (
     <View className="items-center gap-3">
-      <TriggerButton kind={kind} size={size} shape={shape} label={OPEN_LABEL} onPress={showOptions} />
+      <TriggerButton kind={kind} size={size} shape={shape} elevated={triggerElevated} label={OPEN_LABEL} onPress={showOptions} />
       <Text className="text-muted-foreground text-xs">{HINT}</Text>
-      <MorphingModal viewId={view} onClose={close} placement={placement} elevation={elevation} testID={testID}>
+      <MorphingModal
+        viewId={view}
+        onClose={close}
+        placement={placement}
+        elevation={elevation}
+        elevated={elevated}
+        testID={testID}
+      >
         {renderModalView(view, { close, showOptions, showPrivateKey, showRecovery })}
       </MorphingModal>
     </View>
@@ -239,20 +257,24 @@ function MorphingModalDemo({ placement, elevation = 6, kind, size, shape, testID
 function MorphingModalPlayground() {
   const [placement, setPlacement] = useState<'bottom' | 'center' | 'bottom-sheet'>('bottom');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
+  const [elevated, setElevated] = useState(true);
   const trigger = useTriggerState();
   return (
     <Playground className="min-w-[340px]">
       <ControlCard title="Options">
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
       <TriggerControls state={trigger} />
       <MorphingModalDemo
         placement={placement}
         elevation={ELEVATIONS[elevationKey]}
+        elevated={elevated}
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
+        triggerElevated={trigger.elevated}
       />
     </Playground>
   );

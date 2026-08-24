@@ -7,7 +7,8 @@ import { Document2Line } from 'rn-motion-ui-icons/icons/document-2-line';
 import { LinkLine } from 'rn-motion-ui-icons/icons/link-line';
 import { Message1Line as MessageSquare } from 'rn-motion-ui-icons/icons/message-1-line';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import { Choice, ControlCard } from '../../../__stories__/story-harness';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
+import { Choice, ControlCard, Toggle } from '../../../__stories__/story-harness';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { SPRING_SWAP } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
@@ -187,18 +188,24 @@ const PLAYGROUND_HINT = 'Toggle between Feedback (form → sent/error) and Menu 
 
 function MorphingFABPlayground() {
   const [example, setExample] = useState<Example>('feedback');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [elevated, setElevated] = useState(true);
 
   return (
     <AppSurface hint={PLAYGROUND_HINT}>
       <View className="gap-3 px-5">
         <ControlCard title="Example">
           <Choice label="Content" onChange={setExample} options={EXAMPLES} value={example} />
+          <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+          <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         </ControlCard>
       </View>
       {example === 'feedback' ? (
         <MorphingFAB
           expandedWidth={300}
           expandedHeight={230}
+          elevated={elevated}
+          elevation={ELEVATIONS[elevationKey]}
           icon={MessageSquare}
           accessibilityLabel="Send feedback"
           triggerTestID="fab-trigger"
@@ -211,7 +218,14 @@ function MorphingFABPlayground() {
           )}
         </MorphingFAB>
       ) : (
-        <MorphingFAB expandedWidth={232} expandedHeight={192} accessibilityLabel="Open actions" triggerTestID="fab-trigger">
+        <MorphingFAB
+          expandedWidth={232}
+          expandedHeight={192}
+          elevated={elevated}
+          elevation={ELEVATIONS[elevationKey]}
+          accessibilityLabel="Open actions"
+          triggerTestID="fab-trigger"
+        >
           {({ close }) => (
             <View className="gap-1 pt-1">
               <MenuItem icon={CameraLine} label="Take photo" onPress={close} />

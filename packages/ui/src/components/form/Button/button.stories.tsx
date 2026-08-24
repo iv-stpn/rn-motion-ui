@@ -68,6 +68,13 @@ function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
   return colors.foreground;
 }
 
+// `elevated` is tri-state, so it needs three chips rather than a Toggle: unset
+// defers to the variant's own resting float (the filled plates float, the flat
+// ones don't), and `flat`/`raised` override it in either direction.
+const ELEVATED_MODES = ['auto', 'flat', 'raised'] as const;
+type ElevatedMode = (typeof ELEVATED_MODES)[number];
+const ELEVATED_MODE: Record<ElevatedMode, boolean | undefined> = { auto: undefined, flat: false, raised: true };
+
 function ButtonPlayground(args: ComponentProps<typeof Button>) {
   const [variant, setVariant] = useState<ButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
@@ -76,6 +83,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
   const [disabled, setDisabled] = useState(false);
   const [ripple, setRipple] = useState(false);
   const [iconSide, setIconSide] = useState<IconSide>('none');
+  const [elevatedMode, setElevatedMode] = useState<ElevatedMode>('auto');
   const [count, setCount] = useState(0);
 
   const colors = useThemeColors();
@@ -85,7 +93,16 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
     args.onPress?.();
   }, [args.onPress]);
 
-  const live = { ...args, variant, size, shape: pill ? ('pill' as const) : ('rounded' as const), loading, disabled, ripple };
+  const live = {
+    ...args,
+    variant,
+    size,
+    shape: pill ? ('pill' as const) : ('rounded' as const),
+    loading,
+    disabled,
+    ripple,
+    elevated: ELEVATED_MODE[elevatedMode],
+  };
   const icon = <ArrowRight color={iconColor} size={16} />;
 
   return (
@@ -94,6 +111,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Icon" onChange={setIconSide} options={ICON_SIDES} value={iconSide} />
+        <Choice label="Elevated" onChange={setElevatedMode} options={ELEVATED_MODES} value={elevatedMode} />
         <Toggle label="Pill" onChange={setPill} value={pill} />
         <Toggle label="Loading" onChange={setLoading} value={loading} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />

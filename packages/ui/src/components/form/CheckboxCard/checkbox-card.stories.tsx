@@ -51,11 +51,13 @@ function CheckboxCardPlayground() {
   const [numeric, setNumeric] = useState(true);
   const [disabled, setDisabled] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [elevated, setElevated] = useState(true);
 
   return (
     <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />
         <Toggle label="Extra content" onChange={setDetails} value={details} />
@@ -66,6 +68,7 @@ function CheckboxCardPlayground() {
       {/* Any number of cards can be checked, so each one animates its own box
           into the `info` accent. The group just owns the selected array. */}
       <CheckboxCardGroup
+        elevated={elevated}
         elevation={ELEVATIONS[elevationKey]}
         isDisabled={disabled}
         onValueChange={setAddons}
@@ -94,6 +97,7 @@ function CheckboxCardPlayground() {
       <Section title="Standalone (checked / unchecked)">
         <View className="flex-row gap-3">
           <CheckboxCard
+            elevated={elevated}
             elevation={ELEVATIONS[elevationKey]}
             isSelected={true}
             numeric={true}
@@ -103,6 +107,7 @@ function CheckboxCardPlayground() {
           />
           <CheckboxCard
             badge={SUPPORT_BADGE}
+            elevated={elevated}
             elevation={ELEVATIONS[elevationKey]}
             isSelected={false}
             numeric={true}
@@ -116,6 +121,7 @@ function CheckboxCardPlayground() {
       <Section title="Disabled">
         <View className="flex-row gap-3">
           <CheckboxCard
+            elevated={elevated}
             elevation={ELEVATIONS[elevationKey]}
             isDisabled={true}
             isSelected={true}
@@ -125,6 +131,7 @@ function CheckboxCardPlayground() {
             title={SEATS_TITLE}
           />
           <CheckboxCard
+            elevated={elevated}
             elevation={ELEVATIONS[elevationKey]}
             isDisabled={true}
             isSelected={false}
@@ -139,6 +146,7 @@ function CheckboxCardPlayground() {
       <Section title="With custom content">
         <View style={{ width: NARROW_WIDTH }}>
           <CheckboxCard
+            elevated={elevated}
             elevation={ELEVATIONS[elevationKey]}
             isSelected={false}
             onSelectedChange={handleChange}

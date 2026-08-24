@@ -53,12 +53,14 @@ function RadioCardPlayground() {
   const [numeric, setNumeric] = useState(true);
   const [variant, setVariant] = useState<RadioCardVariant>('radio');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [elevated, setElevated] = useState(true);
 
   return (
     <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />
         <Toggle label="Extra content" onChange={setDetails} value={details} />
@@ -69,6 +71,7 @@ function RadioCardPlayground() {
           and the dot fades and scales in place. Nothing travels between cards,
           so no geometry is measured. */}
       <RadioCardGroup
+        elevated={elevated}
         elevation={ELEVATIONS[elevationKey]}
         onValueChange={setPlan}
         orientation={orientation}
@@ -97,6 +100,7 @@ function RadioCardPlayground() {
       <Section title="Standalone (selected / unselected)">
         <View className="flex-row gap-3">
           <RadioCard
+            elevated={elevated}
             elevation={ELEVATIONS[elevationKey]}
             numeric={true}
             onPress={handlePress}
@@ -107,6 +111,7 @@ function RadioCardPlayground() {
           />
           <RadioCard
             badge={YEARLY_BADGE}
+            elevated={elevated}
             elevation={ELEVATIONS[elevationKey]}
             numeric={true}
             onPress={handlePress}
@@ -121,6 +126,7 @@ function RadioCardPlayground() {
       <Section title="With custom content">
         <View className="w-60">
           <RadioCard
+            elevated={elevated}
             elevation={ELEVATIONS[elevationKey]}
             onPress={handlePress}
             selected={false}

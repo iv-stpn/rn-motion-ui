@@ -249,6 +249,7 @@ function MenuPlayground() {
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
+        elevated={trigger.elevated}
         label={OPEN_SETTINGS_LABEL}
         onPress={handleOpen}
       />

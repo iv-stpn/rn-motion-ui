@@ -78,9 +78,15 @@ function DockButton({ id, label, icon: Icon, active, iconSize, onSelect }: DockB
   );
 }
 
-type DockDemoProps = { size?: SizeKey; separator?: boolean; elevation?: SurfaceElevation; onSelect?: (id: string) => void };
+type DockDemoProps = {
+  size?: SizeKey;
+  separator?: boolean;
+  elevation?: SurfaceElevation;
+  elevated?: boolean;
+  onSelect?: (id: string) => void;
+};
 
-function DockDemo({ size = 'lg', separator = true, elevation = 0, onSelect }: DockDemoProps) {
+function DockDemo({ size = 'lg', separator = true, elevation = 0, elevated = true, onSelect }: DockDemoProps) {
   const [active, setActive] = useState('home');
   const color = useThemeColor('foreground');
   const itemPx = ITEM_PX[size];
@@ -96,7 +102,7 @@ function DockDemo({ size = 'lg', separator = true, elevation = 0, onSelect }: Do
   const selectSettings = useCallback(() => select('settings'), [select]);
 
   return (
-    <Dock size={size} elevation={elevation}>
+    <Dock size={size} elevation={elevation} elevated={elevated}>
       {ITEMS.map((item) => (
         <DockButton
           active={active === item.id}
@@ -124,12 +130,14 @@ function DockPlayground() {
   const [sizeKey, setSizeKey] = useState<SizeKey>('lg');
   const [separator, setSeparator] = useState(true);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
+  const [elevated, setElevated] = useState(true);
   const [selected, setSelected] = useState('home');
 
   return (
     <Playground>
       <ControlCard title="Options">
         <Choice label="Size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Separator" onChange={setSeparator} value={separator} />
       </ControlCard>
@@ -137,7 +145,13 @@ function DockPlayground() {
       {/* The highlight is a single pill that measures each item's box and glides
           between them, so a size change moves both the pill and its travel. */}
       <View className="items-center gap-2">
-        <DockDemo elevation={ELEVATIONS[elevationKey]} onSelect={setSelected} separator={separator} size={sizeKey} />
+        <DockDemo
+          elevated={elevated}
+          elevation={ELEVATIONS[elevationKey]}
+          onSelect={setSelected}
+          separator={separator}
+          size={sizeKey}
+        />
         <Note testID="story-selected">{selected}</Note>
       </View>
 

@@ -64,6 +64,7 @@ function SheetPlayground() {
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const [longContent, setLongContent] = useState(false);
   const [tinted, setTinted] = useState(false);
+  const [elevated, setElevated] = useState(true);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [open, setOpen] = useState(false);
   const [closes, setCloses] = useState(0);
@@ -76,6 +77,7 @@ function SheetPlayground() {
   return (
     <Playground className="min-w-[340px]">
       <ControlCard title="Options">
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Long content" onChange={setLongContent} value={longContent} />
@@ -89,6 +91,7 @@ function SheetPlayground() {
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
+        elevated={trigger.elevated}
         label={OPEN_SHEET_LABEL}
         onPress={handleOpen}
       />
@@ -101,6 +104,7 @@ function SheetPlayground() {
       <BottomSheet
         backdropClassName={tinted ? TINTED_BACKDROP : undefined}
         closeOnOutsidePress={closeOnOutside}
+        elevated={elevated}
         elevation={ELEVATIONS[elevationKey]}
         fullSheet={fullSheet}
         handleClassName={tinted ? TINTED_HANDLE : undefined}

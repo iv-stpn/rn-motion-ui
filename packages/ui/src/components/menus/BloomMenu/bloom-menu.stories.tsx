@@ -9,7 +9,7 @@ import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-
 import { TableLine as Table } from 'rn-motion-ui-icons/icons/table-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { BloomMenu, type BloomMenuItem } from './bloom-menu';
 
 const ITEMS: BloomMenuItem[] = [
@@ -40,14 +40,16 @@ function BloomMenuDemo(props: ComponentProps<typeof BloomMenu>) {
 
 function BloomMenuPlayground() {
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
+  const [elevated, setElevated] = useState(true);
 
   return (
     <Playground>
       <ControlCard title="Options">
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
       <View className="min-h-[420px] items-center justify-center">
-        <BloomMenu elevation={ELEVATIONS[elevationKey]} items={ITEMS} title="Create" triggerLabel="Create" />
+        <BloomMenu elevated={elevated} elevation={ELEVATIONS[elevationKey]} items={ITEMS} title="Create" triggerLabel="Create" />
       </View>
     </Playground>
   );

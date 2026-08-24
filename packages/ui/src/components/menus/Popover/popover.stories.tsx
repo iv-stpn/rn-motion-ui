@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { Text } from '../../typography/Text/text';
 import { Popover, type PopoverAlign, PopoverContent, type PopoverSide, PopoverTrigger } from './popover';
@@ -73,6 +73,7 @@ function PopoverPlayground() {
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('14');
   const [radiusKey, setRadiusKey] = useState<RadiusKey>('16');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('4');
+  const [elevated, setElevated] = useState(true);
   const trigger = useTriggerState();
 
   return (
@@ -82,6 +83,7 @@ function PopoverPlayground() {
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
         <Choice label="Radius" onChange={setRadiusKey} options={RADII} value={radiusKey} />
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
@@ -99,10 +101,17 @@ function PopoverPlayground() {
               full appearance (SVG layers, shadows, gloss). */}
           <PopoverTrigger className="rounded-none border-0 bg-transparent p-0">
             <View pointerEvents="none">
-              <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={EDIT_PROFILE} onPress={noop} />
+              <TriggerButton
+                kind={trigger.kind}
+                size={trigger.size}
+                shape={trigger.shape}
+                elevated={trigger.elevated}
+                label={EDIT_PROFILE}
+                onPress={noop}
+              />
             </View>
           </PopoverTrigger>
-          <PopoverContent elevation={ELEVATIONS[elevationKey]}>
+          <PopoverContent elevation={ELEVATIONS[elevationKey]} elevated={elevated}>
             <View className="max-w-[220px] gap-1">
               <Text weight="medium" className="text-foreground text-sm">
                 {DIMENSIONS_TITLE}

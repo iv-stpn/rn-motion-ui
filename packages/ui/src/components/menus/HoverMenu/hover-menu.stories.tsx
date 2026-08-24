@@ -83,15 +83,24 @@ function PlainTrigger({ open }: PlainTriggerProps) {
   );
 }
 
-type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape'>;
+type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape' | 'elevated'>;
 
 // The playground's trigger: still the `{ open, toggle }` render prop, but the body
 // is a `TriggerButton` so the Trigger chips can swap Button / ElevatedButton /
 // bare Pressable under one menu. Each of those is pressable in its own right,
 // which is exactly why `onPress` has to be `toggle` — see TRIGGER_NOTE.
 
-function SwappableTrigger({ kind, size, shape, open, toggle }: SwappableTriggerProps) {
-  return <TriggerButton kind={kind} size={size} shape={shape} label={open ? TRIGGER_OPEN : TRIGGER_CLOSED} onPress={toggle} />;
+function SwappableTrigger({ kind, size, shape, elevated, open, toggle }: SwappableTriggerProps) {
+  return (
+    <TriggerButton
+      kind={kind}
+      size={size}
+      shape={shape}
+      elevated={elevated}
+      label={open ? TRIGGER_OPEN : TRIGGER_CLOSED}
+      onPress={toggle}
+    />
+  );
 }
 
 const renderPlainTrigger = (props: PlainTriggerProps) => <PlainTrigger open={props.open} />;
@@ -102,15 +111,23 @@ function HoverMenuPlayground() {
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('4');
   const [delayKey, setDelayKey] = useState<DelayKey>('100');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
+  const [elevated, setElevated] = useState(true);
   const trigger = useTriggerState();
   const [open, setOpen] = useState(false);
 
   const delay = Number(delayKey);
   const renderTrigger = useCallback(
     (props: TriggerRenderProps) => (
-      <SwappableTrigger kind={trigger.kind} size={trigger.size} shape={trigger.shape} open={props.open} toggle={props.toggle} />
+      <SwappableTrigger
+        kind={trigger.kind}
+        size={trigger.size}
+        shape={trigger.shape}
+        elevated={trigger.elevated}
+        open={props.open}
+        toggle={props.toggle}
+      />
     ),
-    [trigger.kind, trigger.size, trigger.shape],
+    [trigger.kind, trigger.size, trigger.shape, trigger.elevated],
   );
 
   return (
@@ -124,6 +141,7 @@ function HoverMenuPlayground() {
       </ControlCard>
 
       <ControlCard title="Elevation">
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
@@ -135,6 +153,7 @@ function HoverMenuPlayground() {
         align={align}
         closeDelay={delay}
         elevation={ELEVATIONS[elevationKey]}
+        elevated={elevated}
         offset={Number(offsetKey)}
         onOpenChange={setOpen}
         open={open}

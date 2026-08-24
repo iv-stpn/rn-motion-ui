@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { Text } from '../../typography/Text/text';
 import { Drawer } from './drawer';
@@ -29,6 +29,7 @@ const SIDES = ['left', 'right'] as const satisfies readonly DrawerSide[];
 function DrawerPlayground() {
   const [side, setSide] = useState<DrawerSide>('left');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
+  const [elevated, setElevated] = useState(true);
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
   const handleOpen = useCallback(() => setOpen(true), []);
@@ -37,18 +38,27 @@ function DrawerPlayground() {
     <Playground>
       <ControlCard title="Options">
         <Choice label="Side" onChange={setSide} options={SIDES} value={side} />
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
       <TriggerControls state={trigger} />
 
-      <TriggerButton kind={trigger.kind} size={trigger.size} shape={trigger.shape} label={OPEN_LABEL} onPress={handleOpen} />
+      <TriggerButton
+        kind={trigger.kind}
+        size={trigger.size}
+        shape={trigger.shape}
+        elevated={trigger.elevated}
+        label={OPEN_LABEL}
+        onPress={handleOpen}
+      />
 
       <Drawer
         open={open}
         onOpenChange={setOpen}
         side={side}
         elevation={ELEVATIONS[elevationKey]}
+        elevated={elevated}
         accessibilityLabel="Demo drawer"
       >
         <View className="gap-2 p-6">

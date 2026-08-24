@@ -7,7 +7,7 @@ import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { PinLine as Pin } from 'rn-motion-ui-icons/icons/pin-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, Playground } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { SWIPE_TONE_ICON_COLOR, type SwipeAction, SwipeableList, type SwipeableListItem } from './swipeable-list';
 
 // -- Shared story data -------------------------------------------------------
@@ -99,16 +99,19 @@ export default meta;
 
 function SwipeableListPlayground() {
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [elevated, setElevated] = useState(true);
 
   return (
     <Playground>
       <ControlCard title="Options">
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
       <SwipeableList
         actionWidth={56}
         closeOnAction={true}
         elevation={ELEVATIONS[elevationKey]}
+        elevated={elevated}
         items={defaultItems}
         revealThreshold={34}
       />

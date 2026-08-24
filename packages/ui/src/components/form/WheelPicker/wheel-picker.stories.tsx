@@ -133,6 +133,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
   const [rowKey, setRowKey] = useState<RowKey>('5');
   const [heightKey, setHeightKey] = useState<HeightKey>('36');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [elevated, setElevated] = useState(true);
   const [disabled, setDisabled] = useState(false);
   const [sound, setSound] = useState(false);
 
@@ -141,6 +142,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
       <ControlCard title="Options">
         <Choice label="Visible rows" onChange={setRowKey} options={ROWS} value={rowKey} />
         <Choice label="Row height" onChange={setHeightKey} options={HEIGHTS} value={heightKey} />
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Toggle label="Tick sound" onChange={setSound} value={sound} />
@@ -152,6 +154,7 @@ function WheelPickerPlayground(args: ComponentProps<typeof WheelPicker>) {
             {...args}
             accessibilityLabel="Size"
             disabled={disabled}
+            elevated={elevated}
             elevation={ELEVATIONS[elevationKey]}
             itemHeight={Number(heightKey)}
             onValueChange={setSize}

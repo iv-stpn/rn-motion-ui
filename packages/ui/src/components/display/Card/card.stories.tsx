@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
-import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { SURFACE_LEVELS, type SurfaceElevation, type SurfaceLevel } from '../../../lib/elevated';
 import { Text } from '../../typography/Text/text';
 import { Card, type CardSize } from './card';
@@ -11,10 +11,11 @@ const meta = {
   title: 'Display/Card',
   component: Card,
   parameters: { layout: 'centered' },
-  args: { size: 'md', elevation: 3 },
+  args: { size: 'md', elevation: 3, elevated: true },
   argTypes: {
     size: { control: 'select', options: ['compact', 'md', 'lg'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
+    elevated: { control: 'boolean' },
   },
 } satisfies Meta<typeof Card>;
 
@@ -31,6 +32,7 @@ type ElevationKey = (typeof ELEVATION_KEYS)[number];
 function CardPlayground(args: ComponentProps<typeof Card>) {
   const [size, setSize] = useState<CardSize>('md');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [elevated, setElevated] = useState(true);
   // The chips carry strings; the ladder is numeric. `0` is the flat resting
   // surface — otherwise the chip value indexes the ladder's own levels.
   const elevation: SurfaceElevation = elevationKey === '0' ? 0 : (SURFACE_LEVELS[Number(elevationKey) - 1] ?? 3);
@@ -39,10 +41,11 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
     <Playground>
       <ControlCard title="Options">
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
-      <Card {...args} elevation={elevation} size={size} className="w-[280px]">
+      <Card {...args} elevation={elevation} elevated={elevated} size={size} className="w-[280px]">
         <Text weight="semibold" className="text-base text-foreground">
           {TITLE}
         </Text>
@@ -54,13 +57,13 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
           ladder is best read as a stack — each step is one surface token up. */}
       <Section title="Elevation ladder">
         <View className="gap-3">
-          <Card {...args} elevation={0} size={size} className="w-[280px]">
+          <Card {...args} elevation={0} elevated={elevated} size={size} className="w-[280px]">
             <Text weight="semibold" className="text-foreground text-sm">
               Flat (0)
             </Text>
           </Card>
           {SURFACE_LEVELS.map((level) => (
-            <Card {...args} elevation={level} key={level} size={size} className="w-[280px]">
+            <Card {...args} elevation={level} elevated={elevated} key={level} size={size} className="w-[280px]">
               <Text weight="semibold" className="text-foreground text-sm">{`Elevation ${level}`}</Text>
             </Card>
           ))}
@@ -71,7 +74,7 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
         <Variants direction="column">
           {SIZES.map((name) => (
             <Sample key={name} label={name}>
-              <Card {...args} elevation={elevation} size={name}>
+              <Card {...args} elevation={elevation} elevated={elevated} size={name}>
                 <Text weight="semibold" className="text-foreground text-sm">
                   {SIZE_LABELS[name]}
                 </Text>

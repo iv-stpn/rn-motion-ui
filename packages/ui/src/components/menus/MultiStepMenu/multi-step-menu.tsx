@@ -139,6 +139,10 @@ export type MultiStepMenuProps = {
   widePanelSize?: WidePanelSize;
   ref?: RefObject<MultiStepMenuHandle | null>;
   testID?: string;
+  /** When false, the dimming backdrop is not rendered. Defaults to true. */
+  overlay?: boolean;
+  /** When false, pressing outside the menu will not close it. Defaults to true. */
+  closeOnOutsidePress?: boolean;
 };
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small layouts are tightly coupled to shared state
@@ -159,6 +163,8 @@ export const MultiStepMenu = function MultiStepMenu({
   widePanelSize,
   ref,
   testID,
+  overlay = true,
+  closeOnOutsidePress = true,
 }: MultiStepMenuProps) {
   const [path, setPath] = useState<string[]>(isWideScreen ? (defaultPath ?? []) : []);
   const [direction, setDirection] = useState<MultiStepDirection>(null);
@@ -412,6 +418,8 @@ export const MultiStepMenu = function MultiStepMenu({
       widePanelSize={widePanelSize}
       onAfterClose={onAfterClose}
       testID={testID}
+      overlay={overlay}
+      closeOnOutsidePress={closeOnOutsidePress}
     >
       {content}
     </AdaptiveModal>,

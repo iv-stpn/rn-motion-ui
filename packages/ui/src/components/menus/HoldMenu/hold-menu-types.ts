@@ -132,4 +132,8 @@ export type HoldMenuProviderProps = {
   onOpen?: () => void;
   /** Called when the menu ends. */
   onClose?: () => void;
+  /** When false, the dimming backdrop is not rendered behind the menu. Defaults to true. */
+  overlay?: boolean;
+  /** When false, tapping the backdrop will not close the menu. Defaults to true. */
+  closeOnOutsidePress?: boolean;
 };

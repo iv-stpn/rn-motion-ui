@@ -10,6 +10,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 /** Floating panel vs. bottom sheet cutoff. */
@@ -85,7 +86,12 @@ export type AdaptiveDropdownProps = {
    */
   motion?: MenuMotion;
   testID?: string;
+  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
+  overlay?: boolean;
+  /** When false, pressing outside the panel will not close it. Defaults to true. */
+  closeOnOutsidePress?: boolean;
 };
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the overlay/outside-press branches add two decision points to a component already at the threshold
 export function AdaptiveDropdown({
   trigger,
   children,
@@ -106,6 +112,8 @@ export function AdaptiveDropdown({
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   motion,
   testID,
+  overlay = true,
+  closeOnOutsidePress = true,
 }: AdaptiveDropdownProps) {
   const { width: vpWidth, height: vpHeight } = useWindowDimensions();
   const isWideScreen = isWidthAtLeast(vpWidth, wideBreakpoint);
@@ -224,7 +232,13 @@ export function AdaptiveDropdown({
 
       {isWideScreen ? (
         <Modal visible={panelMounted} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={close}>
-          <Pressable className="flex-1" onPress={close}>
+          <Pressable className="flex-1" onPress={closeOnOutsidePress ? close : undefined}>
+            {overlay ? (
+              <View pointerEvents="none" className="absolute inset-0">
+                <OverlayBlur />
+                <View className="absolute inset-0 bg-black/20" />
+              </View>
+            ) : null}
             <AnimatePresence onExitComplete={handlePanelExitComplete}>
               {open && isWideScreen ? (
                 <MotiView
@@ -258,7 +272,13 @@ export function AdaptiveDropdown({
           <OverlayOutlet />
         </Modal>
       ) : (
-        <BottomSheet open={open} onOpenChange={close} fullSheet={fullSheet}>
+        <BottomSheet
+          open={open}
+          onOpenChange={close}
+          fullSheet={fullSheet}
+          overlay={overlay}
+          closeOnOutsidePress={closeOnOutsidePress}
+        >
           {header}
           {body}
         </BottomSheet>

@@ -35,6 +35,8 @@ const ProviderComponent = ({
   safeAreaInsets,
   onOpen,
   onClose,
+  overlay = true,
+  closeOnOutsidePress = true,
 }: HoldMenuProviderProps) => {
   const state = useSharedValue<CONTEXT_MENU_STATE>(CONTEXT_MENU_STATE.UNDETERMINED);
   const theme = useSharedValue<'light' | 'dark'>(selectedTheme || 'light');
@@ -122,8 +124,21 @@ const ProviderComponent = ({
       rootViewportHeight,
       AnimatedIcon,
       rootRef,
+      overlay,
+      closeOnOutsidePress,
     }),
-    [state, theme, menuProps, safeAreaInsetsValue, windowSize, rootViewportHeight, AnimatedIcon, rootRef],
+    [
+      state,
+      theme,
+      menuProps,
+      safeAreaInsetsValue,
+      windowSize,
+      rootViewportHeight,
+      AnimatedIcon,
+      rootRef,
+      overlay,
+      closeOnOutsidePress,
+    ],
   );
 
   return (

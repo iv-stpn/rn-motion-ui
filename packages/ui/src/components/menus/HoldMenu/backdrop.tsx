@@ -21,7 +21,7 @@ import { BACKDROP_BLUR_BACKGROUND_COLOR } from './hold-menu-theme';
  * together.
  */
 const BackdropComponent = () => {
-  const { state, windowSize } = useHoldMenuInternal();
+  const { state, windowSize, overlay, closeOnOutsidePress } = useHoldMenuInternal();
 
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
@@ -73,29 +73,32 @@ const BackdropComponent = () => {
   // RNW forwards onClick on View, but RN's core types do not declare it — the
   // cast keeps the web-only prop off the native type (same pattern as HoldItem).
   // biome-ignore lint/plugin: RNW View accepts onClick at runtime
-  const webProps = { onClick: closeIfActive } as Record<string, unknown>;
+  const webProps = (closeOnOutsidePress ? { onClick: closeIfActive } : {}) as Record<string, unknown>;
 
   // The blur under the dim. The dim lives on its own layer so the `OverlayBlur`
   // can sit beneath it — painting the dim as the container's own
   // `backgroundColor` would put it *behind* the blur, not over it.
-  const backdropFill = (
+  const backdropFill = overlay ? (
     <>
       <OverlayBlur />
       <Animated.View className="absolute inset-0" style={animatedBackgroundStyle} />
     </>
-  );
+  ) : null;
 
-  return IS_WEB ? (
-    <Animated.View {...webProps} testID="hold-menu-backdrop" className="absolute inset-0 z-0" style={animatedContainerStyle}>
+  const backdrop = (
+    <Animated.View testID="hold-menu-backdrop" className="absolute inset-0 z-0" style={animatedContainerStyle}>
       {backdropFill}
     </Animated.View>
-  ) : (
-    <GestureDetector gesture={tapGesture}>
-      <Animated.View testID="hold-menu-backdrop" className="absolute inset-0 z-0" style={animatedContainerStyle}>
+  );
+
+  if (IS_WEB)
+    return (
+      <Animated.View {...webProps} testID="hold-menu-backdrop" className="absolute inset-0 z-0" style={animatedContainerStyle}>
         {backdropFill}
       </Animated.View>
-    </GestureDetector>
-  );
+    );
+
+  return closeOnOutsidePress ? <GestureDetector gesture={tapGesture}>{backdrop}</GestureDetector> : backdrop;
 };
 
 export const Backdrop = memo(BackdropComponent);

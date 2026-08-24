@@ -52,6 +52,10 @@ export type CommandPaletteProps = {
   onOpenChange?: (open: boolean) => void;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  /** When false, the dimming backdrop is not rendered. Defaults to true. */
+  overlay?: boolean;
+  /** When false, pressing outside the palette will not close it. Defaults to true. */
+  closeOnOutsidePress?: boolean;
   /**
    * Root testID. Each row derives `-item-<id>` from it and each group heading
    * `-group-<name>` — the heading is plain text with no role to query by. An
@@ -130,6 +134,8 @@ export function CommandPalette({
   accessibilityLabel = 'Command palette',
   testID,
   searchIcon,
+  overlay = true,
+  closeOnOutsidePress = true,
 }: CommandPaletteProps) {
   const reduce = useReducedMotion();
   const placeholderColor = useThemeColor('muted-foreground');
@@ -203,6 +209,8 @@ export function CommandPalette({
       scrollable={false}
       smallScreenMode="fullSheet"
       largeScreenMode="modal"
+      overlay={overlay}
+      closeOnOutsidePress={closeOnOutsidePress}
     >
       <View testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
         <View className="flex-row items-center gap-3 border-border border-b px-4">

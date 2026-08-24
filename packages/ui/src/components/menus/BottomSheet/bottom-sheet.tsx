@@ -56,8 +56,10 @@ export type BottomSheetProps = {
    * or border). Defaults to `3`.
    */
   elevation?: SurfaceElevation;
-  /** When false, clicking the overlay will not close the sheet. Defaults to true. */
-  closeOnOverlayClick?: boolean;
+  /** When false, the dimming backdrop is not rendered — the sheet floats over the page with no scrim. Defaults to true. */
+  overlay?: boolean;
+  /** When false, pressing outside the sheet will not close it. Defaults to true. */
+  closeOnOutsidePress?: boolean;
   // Phase 5.4 — slot classNames
   /** Additional class names merged onto the drag handle bar. */
   handleClassName?: string;
@@ -93,7 +95,8 @@ export function BottomSheet({
   onAfterClose,
   fullSheet,
   elevation = 3,
-  closeOnOverlayClick = true,
+  overlay = true,
+  closeOnOutsidePress = true,
   handleClassName,
   backdropClassName,
   safeArea = true,
@@ -147,8 +150,8 @@ export function BottomSheet({
     });
 
   const handleOverlayPress = useCallback(() => {
-    if (closeOnOverlayClick) handleClose();
-  }, [closeOnOverlayClick, handleClose]);
+    if (closeOnOutsidePress) handleClose();
+  }, [closeOnOutsidePress, handleClose]);
 
   if (!isMounted) return null;
 
@@ -164,31 +167,36 @@ export function BottomSheet({
       aria-modal={true}
     >
       <View className="flex-1" style={{ pointerEvents: 'box-none' }}>
-        <Animated.View
-          renderToHardwareTextureAndroid={IS_ANDROID}
-          className={backdropClassName}
-          style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }, backdropStyle]}
-        >
-          <OverlayBlur />
-          <View className="absolute inset-0" style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' /* scrim — theme-independent */ }} />
-        </Animated.View>
+        {overlay ? (
+          <Animated.View
+            renderToHardwareTextureAndroid={IS_ANDROID}
+            className={backdropClassName}
+            style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }, backdropStyle]}
+          >
+            <OverlayBlur />
+            <View
+              className="absolute inset-0"
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' /* scrim — theme-independent */ }}
+            />
+          </Animated.View>
+        ) : null}
         <View className="flex-1 justify-end">
           {fullSheet ? null : (
             // The backdrop is also the only dismiss control a screen-reader or
             // keyboard user can reach — the drag handle is pointer-only — so it
             // carries a real button role and label rather than being an
-            // unlabelled tap target. When `closeOnOverlayClick` is off it does
+            // unlabelled tap target. When `closeOnOutsidePress` is off it does
             // nothing, and it leaves the a11y tree instead of lying about it.
-            <View pointerEvents={open && closeOnOverlayClick ? 'auto' : 'none'} className="flex-1">
+            <View pointerEvents={open && closeOnOutsidePress ? 'auto' : 'none'} className="flex-1">
               <Pressable
                 onPress={handleOverlayPress}
                 className="flex-1"
-                accessibilityRole={closeOnOverlayClick ? 'button' : undefined}
-                accessibilityLabel={closeOnOverlayClick ? closeAccessibilityLabel : undefined}
-                accessibilityElementsHidden={!closeOnOverlayClick}
-                importantForAccessibility={closeOnOverlayClick ? 'yes' : 'no-hide-descendants'}
-                aria-hidden={closeOnOverlayClick ? undefined : true}
-                focusable={closeOnOverlayClick}
+                accessibilityRole={closeOnOutsidePress ? 'button' : undefined}
+                accessibilityLabel={closeOnOutsidePress ? closeAccessibilityLabel : undefined}
+                accessibilityElementsHidden={!closeOnOutsidePress}
+                importantForAccessibility={closeOnOutsidePress ? 'yes' : 'no-hide-descendants'}
+                aria-hidden={closeOnOutsidePress ? undefined : true}
+                focusable={closeOnOutsidePress}
                 testID={testID ? `${testID}-backdrop` : undefined}
               />
             </View>

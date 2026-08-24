@@ -106,7 +106,7 @@ function ModalPlayground() {
   const [compact, setCompact] = useState(false);
   const [scrollable, setScrollable] = useState(false);
   const [customLayout, setCustomLayout] = useState(false);
-  const [closeOnOverlay, setCloseOnOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
 
@@ -129,7 +129,7 @@ function ModalPlayground() {
         <Toggle label="Compact" onChange={setCompact} value={compact} />
         <Toggle label="Scrollable" onChange={setScrollable} value={scrollable} />
         <Toggle label="Custom layout" onChange={setCustomLayout} value={customLayout} />
-        <Toggle label="Close on overlay" onChange={setCloseOnOverlay} value={closeOnOverlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 
       <TriggerControls state={trigger} />
@@ -144,7 +144,7 @@ function ModalPlayground() {
       <Note testID="story-open">{openNote}</Note>
 
       <AdaptiveModal
-        closeOnOverlayClick={closeOnOverlay}
+        closeOnOutsidePress={closeOnOutside}
         compact={compact}
         customLayout={customLayout}
         elevation={ELEVATIONS[elevationKey]}

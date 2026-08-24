@@ -61,7 +61,7 @@ function SheetBody({ long = false, full = false, onClose }: SheetBodyProps) {
 
 function SheetPlayground() {
   const [fullSheet, setFullSheet] = useState(false);
-  const [closeOnOverlay, setCloseOnOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const [longContent, setLongContent] = useState(false);
   const [tinted, setTinted] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
@@ -79,7 +79,7 @@ function SheetPlayground() {
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Long content" onChange={setLongContent} value={longContent} />
-        <Toggle label="Close on overlay" onChange={setCloseOnOverlay} value={closeOnOverlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
         <Toggle label="Tinted chrome" onChange={setTinted} value={tinted} />
       </ControlCard>
 
@@ -100,7 +100,7 @@ function SheetPlayground() {
 
       <BottomSheet
         backdropClassName={tinted ? TINTED_BACKDROP : undefined}
-        closeOnOverlayClick={closeOnOverlay}
+        closeOnOutsidePress={closeOnOutside}
         elevation={ELEVATIONS[elevationKey]}
         fullSheet={fullSheet}
         handleClassName={tinted ? TINTED_HANDLE : undefined}

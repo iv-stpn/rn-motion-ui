@@ -9,6 +9,7 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 export type PopoverSide = 'top' | 'bottom';
@@ -30,6 +31,8 @@ type PopoverContext = {
   panelRadius: number;
   motion?: MenuMotion;
   reduce: boolean;
+  overlay: boolean;
+  closeOnOutsidePress: boolean;
 };
 
 const Ctx = createContext<PopoverContext | null>(null);
@@ -70,6 +73,10 @@ export type PopoverProps = {
   gooStrength?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
+  overlay?: boolean;
+  /** When false, pressing outside the panel will not close it. Defaults to true. */
+  closeOnOutsidePress?: boolean;
 };
 
 export function Popover({
@@ -84,6 +91,8 @@ export function Popover({
   motion,
   style,
   testID,
+  overlay = true,
+  closeOnOutsidePress = true,
 }: PopoverProps) {
   const reduce = useReducedMotion();
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -102,8 +111,22 @@ export function Popover({
   const toggle = useCallback(() => setOpen(!open), [setOpen, open]);
 
   const ctx = useMemo<PopoverContext>(
-    () => ({ open, setOpen, toggle, rect, setRect, side, align, gap: sideOffset, panelRadius, motion, reduce }),
-    [open, setOpen, toggle, rect, side, align, sideOffset, panelRadius, motion, reduce],
+    () => ({
+      open,
+      setOpen,
+      toggle,
+      rect,
+      setRect,
+      side,
+      align,
+      gap: sideOffset,
+      panelRadius,
+      motion,
+      reduce,
+      overlay,
+      closeOnOutsidePress,
+    }),
+    [open, setOpen, toggle, rect, side, align, sideOffset, panelRadius, motion, reduce, overlay, closeOnOutsidePress],
   );
 
   return (
@@ -173,7 +196,8 @@ export type PopoverContentProps = {
 };
 
 export function PopoverContent({ children, accessibilityLabel, elevation = 4, style, testID }: PopoverContentProps) {
-  const { open, setOpen, rect, side, align, gap, panelRadius, motion, reduce } = usePopover('PopoverContent');
+  const { open, setOpen, rect, side, align, gap, panelRadius, motion, reduce, overlay, closeOnOutsidePress } =
+    usePopover('PopoverContent');
   const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
   const [panel, setPanel] = useState({ w: 0, h: 0 });
 
@@ -209,7 +233,17 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
       <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="popover-overlay" className="flex-1">
-            <Pressable accessibilityLabel="Close" onPress={handleClose} className="absolute top-0 right-0 bottom-0 left-0" />
+            {overlay ? (
+              <View pointerEvents="none" className="absolute inset-0">
+                <OverlayBlur />
+                <View className="absolute inset-0 bg-black/20" />
+              </View>
+            ) : null}
+            <Pressable
+              accessibilityLabel="Close"
+              onPress={closeOnOutsidePress ? handleClose : undefined}
+              className="absolute top-0 right-0 bottom-0 left-0"
+            />
             <MotiView
               accessibilityLabel={accessibilityLabel}
               testID={testID}

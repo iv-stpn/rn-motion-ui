@@ -61,6 +61,10 @@ export type MorphingModalProps = {
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
+  overlay?: boolean;
+  /** When false, pressing outside the panel will not close it. Defaults to true. */
+  closeOnOutsidePress?: boolean;
 };
 
 export function MorphingModal({
@@ -74,6 +78,8 @@ export function MorphingModal({
   accessibilityLabel,
   style,
   testID,
+  overlay = true,
+  closeOnOutsidePress = true,
 }: MorphingModalProps) {
   const open = viewId !== null;
   const reduce = useReducedMotion();
@@ -139,11 +145,11 @@ export function MorphingModal({
             transition={{ type: 'timing', duration: 200, easing: EASE_OUT }}
             className="absolute top-0 right-0 bottom-0 left-0"
           >
-            <OverlayBlur />
+            {overlay ? <OverlayBlur /> : null}
             <Pressable
               accessibilityLabel="Close"
-              onPress={handleClose}
-              className="flex-1 bg-foreground/20"
+              onPress={closeOnOutsidePress ? handleClose : undefined}
+              className={overlay ? 'flex-1 bg-foreground/20' : 'flex-1'}
               testID={testID ? `${testID}-backdrop` : undefined}
             />
           </MotiView>

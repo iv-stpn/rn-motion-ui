@@ -64,8 +64,10 @@ type AdaptiveModalProps = {
   customLayout?: boolean;
   /** Called after the close animation has fully completed and the modal is unmounted. */
   onAfterClose?: () => void;
-  /** When false, clicking the overlay will not close the modal. Defaults to true. */
-  closeOnOverlayClick?: boolean;
+  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
+  overlay?: boolean;
+  /** When false, pressing outside the panel will not close the modal. Defaults to true. */
+  closeOnOutsidePress?: boolean;
   /** Surface elevation (0–8) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
   elevation?: SurfaceElevation;
   /**
@@ -121,7 +123,8 @@ export function AdaptiveModal({
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   customLayout = false,
   onAfterClose,
-  closeOnOverlayClick = true,
+  overlay = true,
+  closeOnOutsidePress = true,
   elevation = 6,
   safeArea = true,
   testID,
@@ -268,15 +271,15 @@ export function AdaptiveModal({
           {isWideOpen ? (
             <MotiView
               key="wide-overlay"
-              className="flex-1 backdrop-blur-xs"
+              className={cn('flex-1', overlay && 'backdrop-blur-xs')}
               from={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={overlayTransition}
             >
-              <OverlayBlur />
+              {overlay ? <OverlayBlur /> : null}
               {isRightDrawer ? (
-                <TouchableOpacity className="flex-1" activeOpacity={1} onPress={closeOnOverlayClick ? handleClose : undefined}>
+                <TouchableOpacity className="flex-1" activeOpacity={1} onPress={closeOnOutsidePress ? handleClose : undefined}>
                   <View className="flex-1 items-end">
                     <MotiView
                       className="h-full"
@@ -307,7 +310,7 @@ export function AdaptiveModal({
                 <TouchableOpacity
                   className="flex-1 items-center justify-center px-8"
                   activeOpacity={1}
-                  onPress={closeOnOverlayClick ? handleClose : undefined}
+                  onPress={closeOnOutsidePress ? handleClose : undefined}
                 >
                   <MotiView
                     from={{ opacity: 0, scale: 0.965, translateY: desktopEnterOffset }}
@@ -357,7 +360,8 @@ export function AdaptiveModal({
       onOpenChange={handleClose}
       containerClassName={containerPaddingClass}
       onAfterClose={onAfterClose}
-      closeOnOverlayClick={closeOnOverlayClick}
+      overlay={overlay}
+      closeOnOutsidePress={closeOnOutsidePress}
       safeArea={safeArea}
       testID={testID}
     >

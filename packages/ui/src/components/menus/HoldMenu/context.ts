@@ -39,6 +39,10 @@ export type HoldMenuInternalContextType = {
   rootViewportHeight: SharedValue<number>;
   /** The provider's `iconComponent`, animated — or `null` when none was given. */
   AnimatedIcon: HoldMenuIconComponent | null;
+  /** Whether the dimming backdrop scrim is shown behind the menu. */
+  overlay: boolean;
+  /** Whether tapping the backdrop dismisses the menu. */
+  closeOnOutsidePress: boolean;
   /**
    * Ref to the provider's root `Animated.View` — the containing block the
    * `Menu`'s absolute positioning is relative to. `measure(rootRef)` yields its

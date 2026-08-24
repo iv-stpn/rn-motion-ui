@@ -26,8 +26,10 @@ export type DrawerProps = {
    */
   elevation?: SurfaceElevation;
   children: ReactNode;
+  /** When false, the dimming backdrop is not rendered behind the panel. Default true. */
+  overlay?: boolean;
   /** Close when the backdrop is tapped. Default true. */
-  dismissable?: boolean;
+  closeOnOutsidePress?: boolean;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   /**
@@ -45,7 +47,8 @@ export function Drawer({
   side = 'right',
   elevation = 0,
   children,
-  dismissable = true,
+  overlay = true,
+  closeOnOutsidePress = true,
   accessibilityLabel,
   style,
   safeArea = true,
@@ -60,8 +63,8 @@ export function Drawer({
 
   const handleRequestClose = useCallback(() => onOpenChange(false), [onOpenChange]);
   const handleBackdropPress = useCallback(() => {
-    if (dismissable) onOpenChange(false);
-  }, [dismissable, onOpenChange]);
+    if (closeOnOutsidePress) onOpenChange(false);
+  }, [closeOnOutsidePress, onOpenChange]);
   const handleLayout = useCallback((e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width), []);
 
   if (!rendered) return null;
@@ -80,12 +83,12 @@ export function Drawer({
               transition={{ type: 'timing', duration: 250 }}
               className="absolute top-0 right-0 bottom-0 left-0"
             >
-              <OverlayBlur />
+              {overlay ? <OverlayBlur /> : null}
               <Pressable
                 accessibilityLabel="Close"
-                disabled={!dismissable}
+                disabled={!closeOnOutsidePress}
                 onPress={handleBackdropPress}
-                className="flex-1 bg-foreground/40"
+                className={overlay ? 'flex-1 bg-foreground/40' : 'flex-1'}
               />
             </MotiView>
             <MotiView

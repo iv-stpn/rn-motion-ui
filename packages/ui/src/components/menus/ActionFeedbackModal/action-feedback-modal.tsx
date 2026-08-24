@@ -146,6 +146,10 @@ export type ActionFeedbackModalProps = {
   /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
   elevation?: SurfaceElevation;
   testID?: string;
+  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
+  overlay?: boolean;
+  /** When false, pressing outside the panel will not close it. Defaults to true. */
+  closeOnOutsidePress?: boolean;
 };
 
 export function ActionFeedbackModal({
@@ -161,6 +165,8 @@ export function ActionFeedbackModal({
   tagline,
   elevation = 6,
   testID,
+  overlay = true,
+  closeOnOutsidePress = true,
 }: ActionFeedbackModalProps) {
   const isOpen = openProp ?? false;
   const isDismissible = state === 'error';
@@ -193,8 +199,8 @@ export function ActionFeedbackModal({
   }, [isOpen, state, handleClose]);
 
   const handleBackdropPress = useCallback(() => {
-    if (isDismissible) handleClose();
-  }, [isDismissible, handleClose]);
+    if (closeOnOutsidePress && isDismissible) handleClose();
+  }, [closeOnOutsidePress, isDismissible, handleClose]);
 
   const renderContent = ({ open: isAnimOpen, onExitComplete }: OverlayShellContext) => (
     <AnimatePresence onExitComplete={onExitComplete}>
@@ -208,13 +214,17 @@ export function ActionFeedbackModal({
           transition={reduced ? RM_TRANSITION : TIMING_BASE}
           exitTransition={{ type: 'timing', duration: reduced ? 100 : 180 }}
         >
-          <OverlayBlur />
-          <View className="absolute inset-0 bg-black/40" />
+          {overlay ? (
+            <>
+              <OverlayBlur />
+              <View className="absolute inset-0 bg-black/40" />
+            </>
+          ) : null}
           <TouchableOpacity
             className="absolute inset-0"
             activeOpacity={1}
             onPress={handleBackdropPress}
-            disabled={!isDismissible}
+            disabled={!(isDismissible && closeOnOutsidePress)}
           />
           <MotiView
             from={{ opacity: 0, scale: 0.96 }}

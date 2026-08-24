@@ -1,7 +1,7 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: cross-platform hover menu — web DOM helpers, positioning math, and dual-platform render collocated in one module
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { type LayoutChangeEvent, Modal, Platform, Pressable, useWindowDimensions, type View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, Modal, Platform, Pressable, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { useHoverCapable } from '../../../hooks/use-hover-capable';
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
@@ -12,6 +12,7 @@ import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 
 const DEFAULT_WIDTH = 200;
@@ -78,6 +79,14 @@ export type HoverMenuProps = {
    */
   motion?: MenuMotion;
   testID?: string;
+  /**
+   * When false, the dimming backdrop is not rendered behind the panel (native
+   * only — a web hover menu has no overlay by design, since one would cover the
+   * trigger and break hover continuity). Defaults to true.
+   */
+  overlay?: boolean;
+  /** When false, pressing outside the panel will not close it. Defaults to true. */
+  closeOnOutsidePress?: boolean;
 };
 
 // Minimal web-only DOM types — the RN package tsconfig omits the DOM lib, so the
@@ -172,6 +181,7 @@ function computePanelLayout(options: ComputePanelLayoutOptions): PanelLayout {
 const handlePanelPress = () => undefined;
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: positioning, hover timers, and dual-platform render are collocated around shared refs/state
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the overlay/outside-press branches add two decision points to a component already at the threshold
 export function HoverMenu({
   trigger,
   triggerIsPressable = false,
@@ -188,6 +198,8 @@ export function HoverMenu({
   elevation = 5,
   motion,
   testID,
+  overlay = true,
+  closeOnOutsidePress = true,
 }: HoverMenuProps) {
   const canHover = useHoverCapable();
   const reduce = useReducedMotion();
@@ -340,7 +352,7 @@ export function HoverMenu({
   // dismisses via the overlay + hardware back (Modal `onRequestClose`).
   // biome-ignore lint/plugin: document-level pointerdown/keydown/focusout listeners can't be expressed as RN event handlers or derived state
   useEffect(() => {
-    if (!(canHover && open)) return;
+    if (!(canHover && open && closeOnOutsidePress)) return;
     const doc = getWebDocument();
     if (!doc) return;
 
@@ -383,7 +395,7 @@ export function HoverMenu({
       doc.removeEventListener('keydown', onKeyDown);
       doc.removeEventListener('focusout', onFocusOut);
     };
-  }, [canHover, open, close]);
+  }, [canHover, open, close, closeOnOutsidePress]);
 
   const handlePanelLayout = useCallback((event: LayoutChangeEvent) => {
     const { width: lw, height: lh } = event.nativeEvent.layout;
@@ -487,7 +499,13 @@ export function HoverMenu({
         <AnimatePresence onExitComplete={onExitComplete}>{panel}</AnimatePresence>
       ) : (
         <Modal visible={rendered} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={close}>
-          <Pressable onPress={close} style={OVERLAY_STYLE} />
+          {overlay ? (
+            <View pointerEvents="none" style={OVERLAY_STYLE}>
+              <OverlayBlur />
+              <View className="absolute inset-0 bg-black/20" />
+            </View>
+          ) : null}
+          <Pressable onPress={closeOnOutsidePress ? close : undefined} style={OVERLAY_STYLE} />
           <AnimatePresence onExitComplete={onExitComplete}>{panel}</AnimatePresence>
           {/* Overlay outlet: native path only — web uses fixed-position in one document. */}
           <OverlayOutlet />

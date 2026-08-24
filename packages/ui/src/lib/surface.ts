@@ -21,7 +21,7 @@
  */
 
 import { cn } from './cn';
-import { elevated, type SurfaceElevation } from './elevated';
+import { elevated as elevatedSurface, type SurfaceElevation } from './elevated';
 import { ROUNDED_CARD, ROUNDED_MENU, ROUNDED_MODAL } from './radius';
 
 // Static literal map — the scanner reads the class names from these values.
@@ -36,10 +36,12 @@ export type SurfaceRadius = 'card' | 'menu' | 'modal';
 
 /**
  * Surface classes for an elevation: the radius token (when given) plus the
- * ladder `bg-surface-N shadow-elevated-N`. At `0` the surface is flat —
- * `bg-surface-3` alone, no shadow or border. Omit `radius` to keep the
- * caller's own corner class (a non-token radius like `rounded-2xl`).
+ * ladder `bg-surface-N`, and — when `elevated` — the `shadow-elevated-N` recipe
+ * from {@link elevatedShadow}. At `0` the surface is flat — `bg-surface-3`
+ * alone, no shadow or border. `elevated` toggles only the shadow layer; the
+ * background tint still follows `elevation`. Omit `radius` to keep the caller's
+ * own corner class (a non-token radius like `rounded-2xl`).
  */
-export function surface(elevation: SurfaceElevation, radius?: SurfaceRadius): string {
-  return cn(radius ? SURFACE_RADIUS_CLASS[radius] : undefined, elevated(elevation));
+export function surface(elevation: SurfaceElevation, radius?: SurfaceRadius, elevated = true): string {
+  return cn(radius ? SURFACE_RADIUS_CLASS[radius] : undefined, elevatedSurface(elevation, elevation, elevated));
 }

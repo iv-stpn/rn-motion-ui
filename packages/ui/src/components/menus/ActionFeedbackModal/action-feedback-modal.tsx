@@ -143,6 +143,12 @@ export type ActionFeedbackModalProps = {
   errorTitle?: string;
   dismissLabel?: string;
   tagline?: string;
+  /**
+   * Whether the panel casts the `shadow-elevated-N` recipe (drop + dark rim).
+   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
+   * Defaults to true.
+   */
+  elevated?: boolean;
   /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
   elevation?: SurfaceElevation;
   testID?: string;
@@ -163,6 +169,7 @@ export function ActionFeedbackModal({
   errorTitle = 'Error',
   dismissLabel = 'Dismiss',
   tagline,
+  elevated = true,
   elevation = 6,
   testID,
   overlay = true,
@@ -235,7 +242,7 @@ export function ActionFeedbackModal({
             className={cn(
               'w-full max-w-sm',
 
-              surface(elevation, 'modal'),
+              surface(elevation, 'modal', elevated),
               'p-6',
             )}
             testID={testID}

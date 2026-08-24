@@ -32,10 +32,16 @@ export type CloseButtonProps = {
    */
   size?: CloseButtonSize;
   /**
-   * Surface elevation level (0–8) — drives the background colour and the
-   * drop-shadow + dark-mode rim. `0` is the flat resting surface (no shadow or
-   * border). Defaults to 3, the resting level for cards and popovers, so the
-   * button floats just above the page.
+   * Whether the button casts the `shadow-elevated-N` recipe (drop + dark rim).
+   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
+   * @default true
+   */
+  elevated?: boolean;
+  /**
+   * Surface elevation level (0–8) — drives the background colour and, when
+   * `elevated`, the drop-shadow + dark-mode rim. `0` is the flat resting surface
+   * (no shadow or border). Defaults to 3, the resting level for cards and
+   * popovers, so the button floats just above the page.
    * @default 3
    */
   elevation?: SurfaceElevation;
@@ -74,6 +80,7 @@ export type CloseButtonProps = {
  */
 export function CloseButton({
   size = 'md',
+  elevated = true,
   elevation = 3,
   onPress,
   accessibilityLabel = 'Close',
@@ -89,7 +96,7 @@ export function CloseButton({
   const scale = SIZE_SCALE[size];
 
   return (
-    <View className={cn('overflow-hidden', scale.shellClass, surface(elevation), className)} testID={testID}>
+    <View className={cn('overflow-hidden', scale.shellClass, surface(elevation, undefined, elevated), className)} testID={testID}>
       <Pressable
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"

@@ -68,6 +68,12 @@ type AdaptiveModalProps = {
   overlay?: boolean;
   /** When false, pressing outside the panel will not close the modal. Defaults to true. */
   closeOnOutsidePress?: boolean;
+  /**
+   * Whether the wide (desktop) panel casts the `shadow-elevated-N` recipe (drop
+   * + dark rim). `false` drops the shadow so the surface sits flat, keeping its
+   * surface tint. Defaults to true.
+   */
+  elevated?: boolean;
   /** Surface elevation (0–8) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
   elevation?: SurfaceElevation;
   /**
@@ -125,6 +131,7 @@ export function AdaptiveModal({
   onAfterClose,
   overlay = true,
   closeOnOutsidePress = true,
+  elevated = true,
   elevation = 6,
   safeArea = true,
   testID,
@@ -326,7 +333,7 @@ export function AdaptiveModal({
                     >
                       <View
                         className={cn(
-                          surface(elevation, 'modal'),
+                          surface(elevation, 'modal', elevated),
 
                           wideHeight !== undefined && 'flex-1',
                           containerPaddingClass,

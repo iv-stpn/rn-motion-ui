@@ -164,9 +164,15 @@ export type FullSheetProps = {
   /** Caller owns all layout — no header or content padding is applied. */
   customLayout?: boolean;
   /**
-   * Surface elevation of the sheet (0–8) — drives the background tint and the
-   * drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or
-   * border). Defaults to `0`.
+   * Whether the sheet casts the `shadow-elevated-N` recipe (drop + dark rim).
+   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
+   * Defaults to `true`.
+   */
+  elevated?: boolean;
+  /**
+   * Surface elevation of the sheet (0–8) — drives the background tint and, when
+   * `elevated`, the drop shadow + dark-mode rim. `0` is the flat resting surface
+   * (no shadow or border). Defaults to `0`.
    */
   elevation?: SurfaceElevation;
   /**
@@ -212,6 +218,7 @@ export function FullSheet({
   scrollable = true,
   compact = false,
   customLayout = false,
+  elevated = true,
   elevation = 0,
   mode = 'default',
   dismissable = true,
@@ -275,7 +282,7 @@ export function FullSheet({
             {isAnimOpen ? (
               <MotiView
                 key="fullsheet"
-                className={cn('flex-1', surface(elevation))}
+                className={cn('flex-1', surface(elevation, undefined, elevated))}
                 from={{ translateY: height, borderRadius: CARD_RADIUS }}
                 animate={{ translateY: 0, borderRadius: 0 }}
                 exit={{ translateY: height, borderRadius: CARD_RADIUS }}

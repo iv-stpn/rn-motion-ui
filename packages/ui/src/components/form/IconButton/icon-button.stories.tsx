@@ -6,7 +6,8 @@ import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { DownloadLine as Download } from 'rn-motion-ui-icons/icons/download-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { IconButton, type IconButtonProps, type IconButtonVariant } from './icon-button';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { IconButton, type IconButtonProps } from './icon-button';
 
 const meta = {
   title: 'Form/IconButton',
@@ -14,17 +15,16 @@ const meta = {
   parameters: { layout: 'centered' },
   args: {
     icon: Trash2,
-    variant: 'neutral',
+    elevated: true,
+    elevation: 3,
     size: 'md',
     shape: 'pill',
     accessibilityLabel: 'Delete',
     onPress: fn(),
   },
   argTypes: {
-    variant: {
-      control: 'select',
-      options: ['neutral', 'elevated'],
-    },
+    elevated: { control: 'boolean' },
+    elevation: { control: 'select', options: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
   },
@@ -32,12 +32,25 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const VARIANTS = ['neutral', 'elevated'] as const satisfies readonly IconButtonVariant[];
+const ELEVATIONS = ['0', '1', '2', '3', '4', '5', '6', '7', '8'] as const;
+type ElevationLabel = (typeof ELEVATIONS)[number];
+const ELEVATION_LEVEL: Record<ElevationLabel, SurfaceElevation> = {
+  '0': 0,
+  '1': 1,
+  '2': 2,
+  '3': 3,
+  '4': 4,
+  '5': 5,
+  '6': 6,
+  '7': 7,
+  '8': 8,
+};
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
 
 function IconButtonPlayground(args: IconButtonProps) {
-  const [variant, setVariant] = useState<IconButtonVariant>('neutral');
+  const [elevated, setElevated] = useState(true);
+  const [elevation, setElevation] = useState<ElevationLabel>('3');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [pill, setPill] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -50,12 +63,22 @@ function IconButtonPlayground(args: IconButtonProps) {
     args.onPress?.();
   }, [args.onPress]);
 
-  const live: IconButtonProps = { ...args, variant, size, shape: pill ? 'pill' : 'rounded', loading, disabled, ripple };
+  const live: IconButtonProps = {
+    ...args,
+    elevated,
+    elevation: ELEVATION_LEVEL[elevation],
+    size,
+    shape: pill ? 'pill' : 'rounded',
+    loading,
+    disabled,
+    ripple,
+  };
 
   return (
     <Playground>
       <ControlCard title="Options">
-        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Choice label="Elevation" onChange={setElevation} options={ELEVATIONS} value={elevation} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Toggle label="Pill" onChange={setPill} value={pill} />
         <Toggle label="Loading" onChange={setLoading} value={loading} />
@@ -69,20 +92,21 @@ function IconButtonPlayground(args: IconButtonProps) {
       </View>
 
       <View className="h-3" />
-      <Section title="Variants">
+      <Section title="Elevation">
         <Variants>
-          {VARIANTS.map((name) => (
-            <Sample key={name} label={name}>
-              <IconButton {...args} size={size} variant={name} />
-            </Sample>
-          ))}
+          <Sample label="flat">
+            <IconButton {...args} size={size} elevated={false} />
+          </Sample>
+          <Sample label="elevated">
+            <IconButton {...args} size={size} elevated={true} />
+          </Sample>
         </Variants>
       </Section>
 
       <Section title="Sizes">
         <Variants align="center">
           {SIZES.map((name) => (
-            <IconButton {...args} key={name} size={name} variant={variant} />
+            <IconButton {...args} key={name} size={name} elevated={elevated} />
           ))}
         </Variants>
       </Section>
@@ -90,27 +114,27 @@ function IconButtonPlayground(args: IconButtonProps) {
       <Section title="Shapes">
         <Variants align="center">
           <Sample label="rounded">
-            <IconButton {...args} variant={variant} />
+            <IconButton {...args} elevated={elevated} />
           </Sample>
           <Sample label="pill">
-            <IconButton {...args} shape="pill" variant={variant} />
+            <IconButton {...args} shape="pill" elevated={elevated} />
           </Sample>
         </Variants>
       </Section>
 
       <Section title="States">
         <Variants align="center">
-          <Sample label="loading (neutral)">
-            <IconButton {...args} icon={Download} loading={true} variant="neutral" />
+          <Sample label="loading (flat)">
+            <IconButton {...args} icon={Download} loading={true} elevated={false} />
           </Sample>
           <Sample label="loading (elevated)">
-            <IconButton {...args} icon={Download} loading={true} variant="elevated" />
+            <IconButton {...args} icon={Download} loading={true} elevated={true} />
           </Sample>
-          <Sample label="disabled">
-            <IconButton {...args} disabled={true} variant="neutral" />
+          <Sample label="disabled (flat)">
+            <IconButton {...args} disabled={true} elevated={false} />
           </Sample>
           <Sample label="disabled (elevated)">
-            <IconButton {...args} disabled={true} variant="elevated" />
+            <IconButton {...args} disabled={true} elevated={true} />
           </Sample>
         </Variants>
       </Section>
@@ -120,8 +144,8 @@ function IconButtonPlayground(args: IconButtonProps) {
 
 export default meta;
 
-/** Every variant, size, shape and state in one place: drive the top button with
- *  the controls, or read the rows below for the full catalogue. */
+/** Every elevation state, size, shape and interaction in one place: drive the top
+ *  button with the controls, or read the rows below for the full catalogue. */
 export const Interactive: Story = {
   render: (args) => <IconButtonPlayground {...args} />,
 };
@@ -136,27 +160,28 @@ export const Primary: Story = {
   },
 };
 
-/** Both variants at the default md size, with a secondary icon for visual
+/** Flat vs. elevated at the default md size, with a secondary icon for visual
  *  variety. */
-export const AllVariants: Story = {
+export const ElevationStates: Story = {
   render: (args) => (
     <Variants>
-      {VARIANTS.map((name) => (
-        <Sample key={name} label={name}>
-          <IconButton {...args} icon={ArrowRight} variant={name} accessibilityLabel={name} />
-        </Sample>
-      ))}
+      <Sample label="flat">
+        <IconButton {...args} icon={ArrowRight} elevated={false} accessibilityLabel="Flat" />
+      </Sample>
+      <Sample label="elevated">
+        <IconButton {...args} icon={ArrowRight} elevated={true} accessibilityLabel="Elevated" />
+      </Sample>
     </Variants>
   ),
 };
 
-/** The three sizes side by side for the neutral variant. */
+/** The three sizes side by side, flat. */
 export const AllSizes: Story = {
   render: (args) => (
     <Variants align="center">
       {SIZES.map((name) => (
         <Sample key={name} label={SIZE_LABELS[name]}>
-          <IconButton {...args} size={name} variant="neutral" accessibilityLabel={SIZE_LABELS[name]} />
+          <IconButton {...args} size={name} elevated={false} accessibilityLabel={SIZE_LABELS[name]} />
         </Sample>
       ))}
     </Variants>

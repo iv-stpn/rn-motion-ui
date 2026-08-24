@@ -97,12 +97,15 @@ export function surfaceBackground(level: SurfaceElevation): string {
 }
 
 /**
- * Surface classes for an elevation: `bg-surface-N shadow-elevated-N`. At `0`
- * the surface is flat — `bg-surface-3` alone, no shadow or border. Pass a
- * separate `shadowLevel` to float a surface higher (or lower) than its
+ * Surface classes for an elevation: `bg-surface-N` plus, when `elevated`, the
+ * `shadow-elevated-N` recipe from {@link elevatedShadow}. The background is
+ * always applied — `elevated` only toggles the shadow layer (the drop + dark
+ * rim), so a non-elevated surface keeps its tint but sits flat. At `0` the
+ * surface is flat — `bg-surface-3` alone, no shadow or border. Pass a separate
+ * `shadowLevel` to float a surface's shadow higher (or lower) than its
  * background tint — the pattern the surface components use for their
  * `elevation` prop.
  */
-export function elevated(level: SurfaceElevation, shadowLevel: SurfaceElevation = level): string {
-  return [surfaceBackground(level), elevatedShadow(shadowLevel)].filter(Boolean).join(' ');
+export function elevated(level: SurfaceElevation, shadowLevel: SurfaceElevation = level, isElevated = true): string {
+  return [surfaceBackground(level), isElevated ? elevatedShadow(shadowLevel) : ''].filter(Boolean).join(' ');
 }

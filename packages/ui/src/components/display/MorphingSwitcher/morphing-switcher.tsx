@@ -16,7 +16,7 @@ import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, SPRING_LAYOUT } from '../../../lib/ease';
-import { clampSurfaceLevel, elevated, type SurfaceElevation } from '../../../lib/elevated';
+import { clampSurfaceLevel, elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem, type MenuItemSize } from '../../rows/menu-item';
@@ -170,6 +170,12 @@ export type MorphingSwitcherProps = {
   /** Trigger and row height — the shared interactive ramp, so it lines up with
    *  a Button or IconButton of the same size. @default 'md' */
   size?: MorphingSwitcherSize;
+  /**
+   * Whether the shell casts the `shadow-elevated-N` recipe (drop + dark rim).
+   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
+   * @default true
+   */
+  elevated?: boolean;
   /**
    * Float level for the shell — picks the `shadow-elevated-N` recipe (drop +
    * dark rim) the resting trigger sits at. Opening lifts it
@@ -441,6 +447,7 @@ export function MorphingSwitcher({
   closeIcon,
   variant = 'switcher',
   size = 'md',
+  elevated = true,
   elevation = 3,
   style,
   accessibilityLabel,
@@ -619,7 +626,7 @@ export function MorphingSwitcher({
         transition={morphTransition}
         className={cn(
           'absolute top-0 left-0 overflow-hidden p-1',
-          elevated(elevation, open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation),
+          elevatedSurface(elevation, open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation, elevated),
         )}
         style={[
           // Flip the stack when opening up so the trigger lands at the bottom (its

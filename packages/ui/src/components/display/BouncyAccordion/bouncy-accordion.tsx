@@ -27,6 +27,12 @@ export type BouncyAccordionProps = {
   onValueChange?: (value: string | null) => void;
   collapsible?: boolean;
   /**
+   * Whether each row casts the `shadow-elevated-N` recipe (drop + dark rim).
+   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
+   * Defaults to true.
+   */
+  elevated?: boolean;
+  /**
    * Surface elevation of every row (0–8) — drives the background tint and the
    * drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or
    * border). Defaults to `0`.
@@ -79,6 +85,7 @@ export type BouncyAccordionRowProps = {
   endsGroup: boolean;
   separatedFromPrevious: boolean;
   reduce: boolean;
+  elevated: boolean;
   elevation: SurfaceElevation;
   onToggle: (id: string) => void;
   /** Replace the expand/collapse chevron. Default: `<ChevronDown size={16} color={chevronColor} />`. */
@@ -94,6 +101,7 @@ function BouncyAccordionRow({
   endsGroup,
   separatedFromPrevious,
   reduce,
+  elevated,
   elevation,
   onToggle,
   chevronIcon,
@@ -124,7 +132,7 @@ function BouncyAccordionRow({
           borderBottomRightRadius: bottomRadius,
         }}
         transition={reduce ? { type: 'timing', duration: 0 } : ROW_TRANSITION}
-        className={cn('overflow-hidden', surface(elevation), item.disabled ? 'opacity-50' : 'opacity-100')}
+        className={cn('overflow-hidden', surface(elevation, undefined, elevated), item.disabled ? 'opacity-50' : 'opacity-100')}
       >
         <Pressable
           accessibilityRole="button"
@@ -176,6 +184,7 @@ export function BouncyAccordion({
   defaultValue = null,
   onValueChange,
   collapsible = true,
+  elevated = true,
   elevation = 0,
   className,
   style,
@@ -216,6 +225,7 @@ export function BouncyAccordion({
             endsGroup={endsGroup}
             separatedFromPrevious={separatedFromPrevious}
             reduce={reduce}
+            elevated={elevated}
             elevation={elevation}
             onToggle={toggleItem}
             chevronIcon={chevronIcon}

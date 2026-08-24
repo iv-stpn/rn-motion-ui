@@ -189,13 +189,26 @@ function alignLeft(align: PopoverAlign, rect: Rect, panelW: number): number {
 export type PopoverContentProps = {
   children: ReactNode;
   accessibilityLabel?: string;
+  /**
+   * Whether the panel casts the `shadow-elevated-N` recipe (drop + dark rim).
+   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
+   * @default true
+   */
+  elevated?: boolean;
   /** Float level — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 4 */
   elevation?: SurfaceElevation;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
 
-export function PopoverContent({ children, accessibilityLabel, elevation = 4, style, testID }: PopoverContentProps) {
+export function PopoverContent({
+  children,
+  accessibilityLabel,
+  elevated = true,
+  elevation = 4,
+  style,
+  testID,
+}: PopoverContentProps) {
   const { open, setOpen, rect, side, align, gap, panelRadius, motion, reduce, overlay, closeOnOutsidePress } =
     usePopover('PopoverContent');
   const { rendered, onExitComplete: handleExitComplete } = useModalRender(open);
@@ -257,7 +270,7 @@ export function PopoverContent({ children, accessibilityLabel, elevation = 4, st
               className={cn(
                 'max-w-xs p-4',
 
-                surface(elevation),
+                surface(elevation, undefined, elevated),
               )}
               // `transformOrigin` is static, so it composes with the animated
               // scale rather than competing with it: the panel grows out of the

@@ -70,6 +70,15 @@ describe('elevated', () => {
     expect(elevated(3, 6)).toBe('bg-surface-3 shadow-elevated-6');
     expect(elevated(4, 2)).toBe('bg-surface-4 shadow-elevated-2');
   });
+
+  it('drops the shadow but keeps the background when not elevated', () => {
+    expect(elevated(3, 3, false)).toBe('bg-surface-3');
+    expect(elevated(6, 6, false)).toBe('bg-surface-6');
+  });
+
+  it('ignores a shadowLevel when not elevated', () => {
+    expect(elevated(3, 6, false)).toBe('bg-surface-3');
+  });
 });
 
 describe('SurfaceLevel type', () => {

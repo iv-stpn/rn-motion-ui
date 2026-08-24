@@ -17,4 +17,9 @@ describe('surface', () => {
     expect(surface(0)).toBe('bg-surface-3');
     expect(surface(0, 'card')).toBe('rounded-card bg-surface-3');
   });
+
+  it('drops the shadow but keeps the background when not elevated', () => {
+    expect(surface(3, undefined, false)).toBe('bg-surface-3');
+    expect(surface(6, 'card', false)).toBe('rounded-card bg-surface-6');
+  });
 });

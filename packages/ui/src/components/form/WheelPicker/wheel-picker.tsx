@@ -276,16 +276,21 @@ const REDUCED_BAND_CLASS: Record<WheelPickerVariant, string> = {
   plain: 'absolute inset-x-1 z-10 rounded-xl bg-surface-selected',
 };
 
-type WheelPickerFrameProps = ViewProps & { variant: WheelPickerVariant; elevation: SurfaceElevation; ref?: Ref<View> };
+type WheelPickerFrameProps = ViewProps & {
+  variant: WheelPickerVariant;
+  elevation: SurfaceElevation;
+  elevated: boolean;
+  ref?: Ref<View>;
+};
 
 // The outer shell. `card` is an elevated Card surface; `plain` is a bare
 // transparent View — no fill, no shadow, no radius — so a parent can frame
 // several wheels as one control. Both keep `overflow-hidden` (rows near the
 // horizon would otherwise paint past the window) and no padding (rows are
 // absolutely positioned against the container box, so padding offsets the drum).
-function WheelPickerFrame({ variant, elevation, className, ...props }: WheelPickerFrameProps) {
+function WheelPickerFrame({ variant, elevation, elevated, className, ...props }: WheelPickerFrameProps) {
   if (variant === 'plain') return <View className={cn('relative overflow-hidden bg-transparent', className)} {...props} />;
-  return <Card className={cn('relative overflow-hidden p-0', className)} elevation={elevation} {...props} />;
+  return <Card className={cn('relative overflow-hidden p-0', className)} elevation={elevation} elevated={elevated} {...props} />;
 }
 
 export type WheelPickerOption = string | { label: string; value: string };
@@ -313,6 +318,12 @@ export type WheelPickerProps = {
   sound?: boolean;
   /** Container treatment. Default `card`. See {@link WheelPickerVariant}. */
   variant?: WheelPickerVariant;
+  /**
+   * Whether the outer Card casts the `shadow-elevated-N` recipe (drop + dark
+   * rim). `false` drops the shadow so the surface sits flat, keeping its surface
+   * tint. Default true. Ignored when `variant="plain"`.
+   */
+  elevated?: boolean;
   /** Surface elevation of the outer Card container (0–8). `0` is the flat resting surface (no shadow or border). Default 3. Ignored when `variant="plain"`. */
   elevation?: SurfaceElevation;
   /** Additional UniWind class names forwarded to the container. */
@@ -343,6 +354,7 @@ export function WheelPicker({
   disabled = false,
   sound = false,
   variant = 'card',
+  elevated = true,
   elevation = 3,
   className,
   style,
@@ -679,6 +691,7 @@ export function WheelPicker({
     return (
       <WheelPickerFrame
         variant={variant}
+        elevated={elevated}
         elevation={elevation}
         accessibilityRole="adjustable"
         accessibilityLabel={accessibilityLabel}
@@ -725,6 +738,7 @@ export function WheelPicker({
     <WheelPickerFrame
       ref={containerRef}
       variant={variant}
+      elevated={elevated}
       elevation={elevation}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}

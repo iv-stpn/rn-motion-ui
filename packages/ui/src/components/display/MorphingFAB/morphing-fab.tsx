@@ -6,8 +6,9 @@ import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../../lib/ease';
+import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
-import { ICON_BUTTON_LG_SIZE, IconButton, type IconButtonVariant } from '../../form/IconButton/icon-button';
+import { ICON_BUTTON_LG_SIZE, IconButton } from '../../form/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 
 const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
@@ -26,11 +27,21 @@ export type MorphingFABProps = {
   /** Expanded pane content, or a render-prop receiving `{ close }`. */
   children: ReactNode | ((api: MorphingFABApi) => ReactNode);
   /** Collapsed trigger icon component. Defaults to a plus (`AddLine`). Rendered
-   *  through the trigger's IconButton at 20px with the variant's stroke colour. */
+   *  through the trigger's IconButton at 20px with the foreground stroke colour. */
   icon?: ComponentType<IconProps>;
   position?: 'bottom-right' | 'bottom-left';
-  /** Collapsed trigger variant — the same variants as {@link IconButton}. Defaults to `elevated`. */
-  variant?: IconButtonVariant;
+  /**
+   * Whether the trigger and pane cast the `shadow-elevated-N` recipe (drop +
+   * dark rim). `false` drops the shadow so the surface sits flat, keeping its
+   * surface tint. @default true
+   */
+  elevated?: boolean;
+  /**
+   * Surface elevation level (0–8) — drives the background tint (`bg-surface-N`)
+   * and, when `elevated`, the `shadow-elevated-N` recipe. `0` is the flat resting
+   * surface — a `surface-3` fill with no shadow or border. @default 3
+   */
+  elevation?: SurfaceElevation;
   /** Expanded pane width in px. Defaults to 300. */
   expandedWidth?: number;
   /** Expanded pane height in px. Defaults to 230. */
@@ -54,8 +65,8 @@ export type MorphingFABProps = {
 
 /**
  * A floating action button that morphs into a rounded pane. Collapsed it is a
- * circular IconButton (the `lg` size, plus icon by default) whose `variant`
- * drives its styling (defaults to `elevated`). Tapping it springs the shell open into a
+ * circular IconButton (the `lg` size, plus icon by default) whose `elevated` /
+ * `elevation` drive its styling. Tapping it springs the shell open into a
  * floating surface of `expandedWidth`×`expandedHeight` and renders `children`
  * inside. The pane closes via the top-right close affordance, the render-prop
  * `close()`, or the controlled `open` prop.
@@ -70,7 +81,8 @@ export function MorphingFAB({
   children,
   icon,
   position = 'bottom-right',
-  variant = 'elevated',
+  elevated = true,
+  elevation = 3,
   expandedWidth = 300,
   expandedHeight = 230,
   open: openProp,
@@ -131,7 +143,7 @@ export function MorphingFAB({
           borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS,
         }}
         transition={morphTransition}
-        className="absolute bottom-0 overflow-hidden bg-surface-3 shadow-floating"
+        className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, elevated)}`}
         style={{ ...(left ? { left: 0 } : { right: 0 }) }}
       >
         {open ? (
@@ -161,7 +173,8 @@ export function MorphingFAB({
         ) : (
           <IconButton
             icon={icon ?? Plus}
-            variant={variant}
+            elevated={elevated}
+            elevation={elevation}
             size="lg"
             shape="pill"
             onPress={handleOpen}

@@ -1,11 +1,10 @@
-import { cva } from 'class-variance-authority';
 import type { ComponentType } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Pressable, View } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { SURFACE_CLASSNAME } from '../../../lib/elevated';
+import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { INTERACTIVE_HEIGHT } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
@@ -17,11 +16,6 @@ import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../
 
 type IconButtonSize = 'sm' | 'md' | 'lg';
 type IconButtonShape = 'rounded' | 'pill';
-
-/** IconButton's variant union — `neutral` (a surface-3 plate) or `elevated`
- *  (surface-3 plus the input's diffuse floating shadow). */
-// biome-ignore lint/style/useExportsLast: the IconButtonVariant type heads the module next to the size/shape unions and the variant table it enumerates, keeping them readable together
-export type IconButtonVariant = 'neutral' | 'elevated';
 
 // ── Box geometry ─────────────────────────────────────────────────────────────
 // Static literals so the uniwind/Tailwind scanner registers every class.
@@ -43,6 +37,7 @@ const ICON_BUTTON_BOX: Record<IconButtonShape, Record<IconButtonSize, string>> =
 };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: the `lg` box's pixel twin — the MorphingFAB reads it so its trigger shell stays exactly the size of an `lg` IconButton
+// biome-ignore lint/style/useExportsLast: same reason — it must sit against ICON_BUTTON_BOX above, whose `lg` height it mirrors, so the two can never drift apart
 export const ICON_BUTTON_LG_SIZE = INTERACTIVE_HEIGHT.lg;
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
@@ -64,23 +59,6 @@ const ICON_TILE: Record<IconButtonSize, { tileClass: string; iconSize: number }>
 /** Spinner diameter per button size. */
 const SPINNER_SIZE: Record<IconButtonSize, number> = { sm: 12, md: 16, lg: 20 };
 
-// ── Variant styling ──────────────────────────────────────────────────────────
-// Two surface-3 fills: `neutral` is the plain plate, `elevated` adds the input's
-// large diffuse drop so an icon-only control reads as a raised card without a
-// rim.
-
-const container = cva('flex-row items-center justify-center', {
-  variants: {
-    variant: {
-      neutral: SURFACE_CLASSNAME[3],
-      // Surface-3 fill + the input's large diffuse drop — the floating-input
-      // recipe, so an icon-only control reads as a raised card without a rim.
-      elevated: 'bg-surface-3 shadow-floating',
-    },
-  },
-  defaultVariants: { variant: 'neutral' },
-});
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 export type IconButtonProps = {
@@ -99,8 +77,19 @@ export type IconButtonProps = {
    */
   iconColor?: string;
 
-  /** Visual variant — `neutral` (surface-3 plate) or `elevated` (surface-3 fill with the input's diffuse floating shadow). @default 'neutral' */
-  variant?: IconButtonVariant;
+  /**
+   * Whether the button casts the `shadow-elevated-N` recipe (drop + dark rim).
+   * `false` drops the shadow so the plate sits flat, keeping its surface tint.
+   * @default true
+   */
+  elevated?: boolean;
+
+  /**
+   * Surface elevation level (0–8) — drives the background tint (`bg-surface-N`)
+   * and, when `elevated`, the `shadow-elevated-N` recipe. `0` is the flat resting
+   * surface — a `surface-3` fill with no shadow or border. @default 3
+   */
+  elevation?: SurfaceElevation;
 
   /** Button size — the square, and the icon or tile inside it. Shares
    *  {@link Button}'s height ramp (24/32/40px), so the two line up in a row. @default 'md' */
@@ -153,22 +142,25 @@ export type IconButtonProps = {
 
 /**
  * A purpose-built icon-only button — a square pressable that displays an icon,
- * with two surface-3 variants (`neutral` / `elevated`) and the same
- * `icon`/`iconBackgroundColor`/`iconColor` API as {@link MenuItem}.
+ * on a surface-3 plate that can be raised via `elevated`/`elevation`, with the
+ * same `icon`/`iconBackgroundColor`/`iconColor` API as {@link MenuItem}.
  *
  * Supersedes `<Button size="icon">`: every prop is meaningful for an icon-only
  * control, and `accessibilityLabel` is required so no instance ships without an
  * accessible name.
  *
  * @example
- * // A raised delete button — surface-3 fill + floating-input shadow
- * <IconButton icon={Trash2} variant="elevated" accessibilityLabel="Delete" onPress={handleDelete} />
+ * // A raised delete button — surface-3 fill + elevation shadow
+ * <IconButton icon={Trash2} accessibilityLabel="Delete" onPress={handleDelete} />
+ *
+ * @example
+ * // A flat plate, no shadow
+ * <IconButton icon={Trash2} elevated={false} accessibilityLabel="Delete" onPress={handleDelete} />
  *
  * @example
  * // iOS Settings-style icon tile
  * <IconButton
  *   icon={Bell}
- *   variant="neutral"
  *   iconBackgroundColor="#FF3B30"
  *   accessibilityLabel="Notifications"
  *   onPress={handleNotifications}
@@ -176,11 +168,12 @@ export type IconButtonProps = {
  *
  * @example
  * // Loading state — spinner replaces the icon
- * <IconButton icon={Download} variant="neutral" loading accessibilityLabel="Downloading" />
+ * <IconButton icon={Download} loading accessibilityLabel="Downloading" />
  */
 export function IconButton({
   icon: IconComponent,
-  variant = 'neutral',
+  elevated = true,
+  elevation = 3,
   size = 'md',
   shape = 'pill',
   onPress,
@@ -204,7 +197,7 @@ export function IconButton({
   const colors = useThemeColors();
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
-  const v = variant ?? 'neutral';
+  const surfaceClass = elevatedSurface(elevation, elevation, elevated);
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -216,7 +209,7 @@ export function IconButton({
   const hasTile = Boolean(iconBackgroundColor);
 
   // Icon colour: explicit prop wins; tile mode defaults to white; otherwise the
-  // plain foreground stroke (both variants are light surface-3 fills).
+  // plain foreground stroke (the plate is a light surface fill).
   const resolvedIconColor = iconColor ?? (hasTile ? 'white' : colors.foreground);
 
   let iconElement: React.ReactNode;
@@ -249,7 +242,8 @@ export function IconButton({
         onPressOut={handlePressOut}
         onPress={onPress}
         className={cn(
-          container({ variant: v }),
+          'flex-row items-center justify-center',
+          surfaceClass,
           boxClass,
           isDisabled && !noDisabledOpacity && 'opacity-50',
           'overflow-hidden',

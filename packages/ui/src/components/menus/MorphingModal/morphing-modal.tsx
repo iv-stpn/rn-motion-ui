@@ -54,6 +54,12 @@ export type MorphingModalProps = {
   children: ReactNode;
   /** "bottom" anchors near the bottom (mobile-like). "center" centers vertically. */
   placement?: MorphingModalPlacement;
+  /**
+   * Whether the panel casts the `shadow-elevated-N` recipe (drop + dark rim).
+   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
+   * Defaults to true.
+   */
+  elevated?: boolean;
   /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
   elevation?: SurfaceElevation;
   /** When true, renders a close button in the top-right corner of the panel. */
@@ -73,6 +79,7 @@ export function MorphingModal({
   onOpenChange,
   children,
   placement = 'bottom',
+  elevated = true,
   elevation = 6,
   showClose,
   accessibilityLabel,
@@ -164,7 +171,7 @@ export function MorphingModal({
                 'overflow-hidden',
 
                 placement === 'bottom-sheet' ? 'w-full max-w-sm rounded-t-modal' : 'w-full max-w-sm',
-                surface(elevation, placement === 'bottom-sheet' ? undefined : 'modal'),
+                surface(elevation, placement === 'bottom-sheet' ? undefined : 'modal', elevated),
               )}
               style={style}
             >

@@ -118,7 +118,8 @@ export type MorphingSwitcherProps = {
   triggerTestID?: string;
   /**
    * When true (default), pressing/clicking outside the switcher closes it.
-   * Web only — an inline control has no outside-press concept on native.
+   * Works on every platform: web listens on the document, native gets a
+   * full-window transparent backdrop measured from the trigger's position.
    * @default true
    */
   closeOnOutsidePress?: boolean;
@@ -190,11 +191,12 @@ type SwitcherTriggerProps = {
  * unnamed, `aria-hidden`, non-interactive copy that reserves the collapsed
  * footprint and reports the exact pill size via `onLayout`.
  *
- * The interactive trigger is disabled while the pane is open — it represents
- * the already-selected item, so pressing it does nothing; the switcher closes
- * by picking another item or pressing outside. The trigger paints no background
- * of its own — no hover, press, or open fill — so the shell's surface shows
- * through whether the switcher is open or closed.
+ * The interactive trigger only LOOKS disabled while the pane is open
+ * (`opacity-40` — it is the already-selected item, so it reads inert) but stays
+ * pressable: re-tapping it folds the pane back, the standard select/dropdown
+ * dismissal. The trigger paints no background of its own — no hover, press, or
+ * open fill — so the shell's surface shows through whether the switcher is open
+ * or closed.
  */
 function SwitcherTrigger({
   icon,
@@ -239,7 +241,9 @@ function SwitcherTrigger({
   return (
     <Pressable
       onPress={onPress}
-      disabled={open}
+      // Only the LOOK is disabled while open (`opacity-40`): the trigger is the
+      // already-selected item, so it reads inert, but it must stay pressable —
+      // re-tapping it is the dismiss.
       accessibilityRole="button"
       aria-expanded={open}
       accessibilityLabel={accessibilityLabel ?? label}
@@ -257,6 +261,33 @@ type MorphingSwitcherRowProps = {
   onSelect: (item: MorphingSwitcherItem) => void;
   testID?: string;
 };
+
+type OutsidePressBackdropProps = {
+  /** The backdrop's window-covering frame — negative offsets from the root's measured window position. */
+  frame: { top: number; left: number; width: number; height: number };
+  onPress: () => void;
+  testID?: string;
+};
+
+/**
+ * Full-window transparent layer that folds the switcher on an outside tap
+ * (native). Rendered inside the small root but measured to cover the whole
+ * window, so a tap anywhere outside the pane — the page, the header, another
+ * control — lands here and dismisses. Sits below the shell (zIndex 40), above
+ * the page.
+ */
+function OutsidePressBackdrop({ frame, onPress, testID }: OutsidePressBackdropProps) {
+  const handlePress = useCallback(() => onPress(), [onPress]);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Close"
+      testID={testID}
+      onPress={handlePress}
+      style={{ position: 'absolute', top: frame.top, left: frame.left, width: frame.width, height: frame.height }}
+    />
+  );
+}
 
 /**
  * One row in the open pane: icon + label. The current item never renders here —
@@ -340,7 +371,7 @@ export function MorphingSwitcher({
   closeOnOutsidePress = true,
 }: MorphingSwitcherProps) {
   const reduce = useReducedMotion();
-  const { height: windowHeight } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const rootRef = useRef<View>(null);
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = openProp ?? internalOpen;
@@ -349,6 +380,14 @@ export function MorphingSwitcher({
   const [triggerSize, setTriggerSize] = useState<{ width: number; height: number } | null>(null);
   /** True while the pane opens upward — the list sits above the trigger instead of below. */
   const [openAbove, setOpenAbove] = useState(false);
+  /**
+   * The outside-press backdrop's window-covering frame — negative offsets from
+   * the root's window position, so an absolutely-positioned child inside the
+   * (small, content-sized) root still covers the whole window and catches
+   * outside taps on native (web closes via its document listener instead).
+   * Null while closed or before the async native measure lands.
+   */
+  const [backdropFrame, setBackdropFrame] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
   const current = items.find((item) => item.value === value);
 
@@ -375,6 +414,33 @@ export function MorphingSwitcher({
       setOpen(true);
     });
   }, [setOpen, windowHeight, paneHeight]);
+
+  // The trigger toggles: while open it is the already-selected item, so re-tapping
+  // it folds the pane back (the standard select dismissal) instead of doing nothing.
+  const handleTriggerPress = useCallback(() => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    handleOpen();
+  }, [open, setOpen, handleOpen]);
+
+  // Measure the root's window position whenever the pane opens (or the window
+  // resizes while open — rotation) so the native outside-press backdrop exactly
+  // covers the window. `measureInWindow` is async on native; until the frame
+  // lands there is simply no backdrop yet.
+  // biome-ignore lint/plugin: measuring the root on open/rotate is a DOM/native measure side effect, not derived state — the backdrop frame must follow the window
+  useEffect(() => {
+    if (!(open && closeOnOutsidePress)) {
+      setBackdropFrame(null);
+      return;
+    }
+    rootRef.current?.measureInWindow((x, y) => {
+      setBackdropFrame({ top: -y, left: -x, width: windowWidth, height: windowHeight });
+    });
+  }, [open, closeOnOutsidePress, windowWidth, windowHeight]);
+
+  const handleClose = useCallback(() => setOpen(false), [setOpen]);
 
   // Close on an outside press (web). The switcher is inline — no modal backdrop
   // to catch a stray press — so a document-level `pointerdown` listener detects a
@@ -448,6 +514,13 @@ export function MorphingSwitcher({
         onLayout={handleTriggerLayout}
       />
 
+      {/* Outside-press backdrop (native): covers the whole window so a tap
+          anywhere outside the pane folds it back — the web path is the
+          document listener above. */}
+      {open && closeOnOutsidePress && backdropFrame !== null ? (
+        <OutsidePressBackdrop frame={backdropFrame} onPress={handleClose} testID={`${testID}-backdrop`} />
+      ) : null}
+
       {/* Keyed by variant: Moti holds the last value of every key it has animated,
           so a `select` pane that later re-renders as `switcher` would keep its
           240px width instead of spanning the parent. Remounting drops it. */}
@@ -477,14 +550,15 @@ export function MorphingSwitcher({
           variant === 'switcher' ? { right: 0 } : undefined,
         ]}
       >
-        {/* The trigger persists — it morphs into the active header row. */}
+        {/* The trigger persists — it morphs into the active header row. Re-tapping
+            it while open folds the pane back (it only LOOKS disabled). */}
         <SwitcherTrigger
           icon={triggerIcon}
           label={triggerLabel}
           variant={variant}
           open={open}
           closeIcon={closeIcon}
-          onPress={handleOpen}
+          onPress={handleTriggerPress}
           accessibilityLabel={accessibilityLabel}
           testID={triggerTestID}
         />

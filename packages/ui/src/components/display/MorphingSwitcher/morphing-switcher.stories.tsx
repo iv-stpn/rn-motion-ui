@@ -179,20 +179,30 @@ export const Controlled: Story = {
 
     await userEvent.click(await canvas.findByTestId('controlled-trigger'));
     await expect(await screen.findByText('Favorites')).toBeTruthy();
+    // The full-window outside-press backdrop is mounted while open.
+    await expect(await screen.findByTestId('controlled-backdrop')).toBeTruthy();
 
-    // The open trigger is disabled — an outside press closes the pane without selecting.
-    fireEvent.pointerDown(document.body);
+    // Re-tapping the open trigger folds the pane back — it only LOOKS disabled
+    // (opacity-40) but stays pressable, so the selected item dismisses on re-tap.
+    await userEvent.click(await canvas.findByTestId('controlled-trigger'));
     await waitFor(() => expect(screen.queryByText('Settings')).toBeNull());
     // Nothing was selected.
+    await expect(await canvas.findByText('Current: home')).toBeTruthy();
+
+    // An outside press (the backdrop) closes it too, without selecting.
+    await userEvent.click(await canvas.findByTestId('controlled-trigger'));
+    await expect(await screen.findByText('Favorites')).toBeTruthy();
+    await userEvent.click(await screen.findByTestId('controlled-backdrop'));
+    await waitFor(() => expect(screen.queryByText('Settings')).toBeNull());
     await expect(await canvas.findByText('Current: home')).toBeTruthy();
   },
 };
 
-/** `closeIcon={null}` drops the open trigger's caret — the trigger is still disabled while open. */
+/** `closeIcon={null}` drops the open trigger's caret — the trigger still dismisses on re-tap. */
 export const NoCloseControl: Story = {
   name: 'Demo: no close caret',
   render: () => (
-    <AppSurface hint="closeIcon={null} — the open trigger has no trailing caret; the trigger is disabled while open, and picking an item folds it back.">
+    <AppSurface hint="closeIcon={null} — the open trigger has no trailing caret; it only looks disabled, so re-tapping it or picking an item folds the pane back.">
       <View className="px-5">
         <MorphingSwitcher
           items={SPACES}
@@ -285,7 +295,15 @@ export const SwitcherVariant: Story = {
     // The current item has no list row of its own — the trigger is that row.
     await expect(screen.queryByTestId('switcher-variant-item-home')).toBeNull();
 
-    // The trigger is disabled while open — an outside press closes the switcher.
+    // The trigger only LOOKS disabled while open — re-tapping it (the selected
+    // item's row) folds the switcher back, and the backdrop covers the window.
+    await expect(await screen.findByTestId('switcher-variant-backdrop')).toBeTruthy();
+    await userEvent.click(trigger);
+    await waitFor(() => expect(screen.queryByText('Favorites')).toBeNull());
+
+    // An outside press (the document listener / backdrop) also closes it.
+    await userEvent.click(trigger);
+    await expect(await screen.findByText('All files')).toBeTruthy();
     fireEvent.pointerDown(document.body);
     await waitFor(() => expect(screen.queryByText('Favorites')).toBeNull());
   },

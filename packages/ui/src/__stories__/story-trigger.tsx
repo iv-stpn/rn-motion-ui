@@ -35,7 +35,7 @@ import type { ElevatedVariant } from '../components/form/Button/elevated-button'
 import { ElevatedButton } from '../components/form/Button/elevated-button';
 import { Text } from '../components/typography/Text/text';
 import { cn } from '../lib/cn';
-import { Choice, ControlCard } from './story-harness';
+import { Choice, ControlCard, Toggle } from './story-harness';
 
 // Private Tailwind class maps for the bare Pressable kind, mirroring ButtonMetrics.
 // Kept before the exports so all non-exports precede all exports (useExportsLast).
@@ -89,6 +89,15 @@ export type TriggerButtonProps = {
    * the `Pressable` wrapper — useful for one-off layout or colour overrides.
    */
   className?: string;
+  /**
+   * `kind === 'button'` only. Forwarded to `Button`'s `elevated`, so a story can
+   * show its trigger floating or flat independently of the surface it opens.
+   *
+   * The other two kinds have nothing to toggle: `ElevatedButton` *is* the
+   * elevated chip — its glossy drop + coloured ring are the component, not an
+   * option — and the bare `Pressable` is underlined text with no surface at all.
+   */
+  elevated?: boolean;
 };
 
 /**
@@ -112,6 +121,7 @@ export function TriggerButton({
   buttonVariant = 'neutral',
   elevatedVariant = 'neutral',
   className,
+  elevated,
 }: TriggerButtonProps) {
   if (kind === 'elevated')
     return (
@@ -141,7 +151,7 @@ export function TriggerButton({
     );
 
   return (
-    <Button className="self-start" onPress={onPress} shape={shape} size={size} variant={buttonVariant}>
+    <Button className="self-start" elevated={elevated} onPress={onPress} shape={shape} size={size} variant={buttonVariant}>
       {label}
     </Button>
   );
@@ -157,6 +167,9 @@ export type TriggerState = {
   setSize: (next: TriggerSize) => void;
   shape: ButtonShape;
   setShape: (next: ButtonShape) => void;
+  /** Drives `TriggerButton`'s `elevated` — visible on the `button` kind only. */
+  elevated: boolean;
+  setElevated: (next: boolean) => void;
 };
 
 /**
@@ -175,7 +188,10 @@ export function useTriggerState(): TriggerState {
   const [kind, setKind] = useState<TriggerKind>('button');
   const [size, setSize] = useState<TriggerSize>('md');
   const [shape, setShape] = useState<ButtonShape>('pill');
-  return { kind, setKind, size, setSize, shape, setShape };
+  // Starts flat: the default `button` kind is the `neutral` variant, which rests
+  // flat, so the trigger looks exactly as it always has until the toggle is used.
+  const [elevated, setElevated] = useState(false);
+  return { kind, setKind, size, setSize, shape, setShape, elevated, setElevated };
 }
 
 /**
@@ -191,6 +207,11 @@ export function TriggerControls({ state }: TriggerControlsProps) {
       <Choice label="Button type" onChange={state.setKind} options={TRIGGER_KINDS} value={state.kind} />
       <Choice label="Size" onChange={state.setSize} options={TRIGGER_SIZES} value={state.size} />
       <Choice label="Shape" onChange={state.setShape} options={TRIGGER_SHAPES} value={state.shape} />
+      {/* Labelled "Elevated trigger", not "Elevated": Toggle derives its testID
+          from the label, and menu playgrounds also carry an "Elevated" toggle for
+          the surface itself — identical labels would collide on
+          `story-toggle-elevated`. */}
+      <Toggle label="Elevated trigger" onChange={state.setElevated} value={state.elevated} />
     </ControlCard>
   );
 }

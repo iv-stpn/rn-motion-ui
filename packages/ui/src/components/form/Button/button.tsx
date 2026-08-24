@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Pressable, StyleSheet } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { elevatedShadow, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -31,6 +32,10 @@ export type ButtonVariant =
 // Colour is the only axis here: the box (height, padding, radius) is the family's,
 // resolved through {@link BUTTON_BOX} so a flat `md` occupies exactly the same
 // rectangle as an elevated chip or an ActionSwap at `md`.
+//
+// The float is deliberately NOT in this table — it is applied separately from
+// `elevated`/`elevation` so a caller can raise or flatten any variant. See
+// {@link ELEVATED_BY_DEFAULT} for the per-variant resting state.
 const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
@@ -38,17 +43,27 @@ const container = cva('flex-row items-center justify-center', {
       inverse: 'bg-foreground',
       ghost: 'bg-transparent',
       outline: 'border border-border bg-transparent',
-      danger: 'bg-danger shadow-elevated-3',
-      success: 'bg-success shadow-elevated-3',
-      warning: 'bg-warning shadow-elevated-3',
-      info: 'bg-info shadow-elevated-3',
-      special: 'bg-special shadow-elevated-3',
+      danger: 'bg-danger',
+      success: 'bg-success',
+      warning: 'bg-warning',
+      info: 'bg-info',
+      special: 'bg-special',
       outlineDanger: 'border border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
     },
   },
   defaultVariants: { variant: 'neutral' },
 });
+
+// The variants that float at rest. The vivid filled plates read as raised
+// controls, so they carry the elevation shadow unless a caller opts out; the
+// flat, ghost and outline variants sit on the page and stay flat unless a
+// caller opts in. Keeping this beside the colour table above means the two
+// cannot drift.
+const ELEVATED_BY_DEFAULT = new Set<ButtonVariant>(['danger', 'success', 'warning', 'info', 'special']);
+
+/** The shadow level a floating Button rests at — the level the filled variants shipped before `elevation` was configurable. */
+const DEFAULT_BUTTON_ELEVATION: SurfaceElevation = 3;
 
 // biome-ignore lint/style/useComponentExportOnlyModules: label cva is a styling utility consumed by StatefulButton in the same component family; splitting to a separate file would fragment tightly-coupled button styles
 export const label = cva('', {
@@ -104,12 +119,33 @@ function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof use
 export interface ButtonProps extends VariantProps<typeof container>, BaseButtonProps {
   size?: ButtonSize;
   shape?: ButtonShape;
+
+  /**
+   * Whether the button casts the `shadow-elevated-N` recipe (drop + dark rim).
+   * Defaults to the variant's own resting float: the filled plates (`danger`,
+   * `success`, `warning`, `info`, `special`) float, and `neutral`/`inverse`/
+   * `ghost`/`outline`/`outlineDanger`/`ghostDanger` sit flat. Set it explicitly
+   * to override in either direction — `elevated` raises a flat variant,
+   * `elevated={false}` flattens a filled one.
+   */
+  elevated?: boolean;
+
+  /**
+   * Shadow level (0–8) used when the button is elevated. Unlike the surface
+   * components this drives the shadow *only* — a Button's background comes from
+   * its `variant`, not the surface ladder, so raising `elevation` floats the
+   * button without recolouring it. Ignored when the button is not elevated.
+   * @default 3
+   */
+  elevation?: SurfaceElevation;
 }
 
 export function Button({
   variant = 'neutral',
   size = 'md',
   shape = 'pill',
+  elevated,
+  elevation = DEFAULT_BUTTON_ELEVATION,
   children,
   leftAdornment,
   rightAdornment,
@@ -135,6 +171,9 @@ export function Button({
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
   const v = variant ?? 'neutral';
+  // `elevated` is tri-state: unset defers to the variant's resting float, so the
+  // filled plates keep their shadow and the flat ones keep none.
+  const isElevated = elevated ?? ELEVATED_BY_DEFAULT.has(v);
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -173,6 +212,7 @@ export function Button({
         onPress={onPress}
         className={cn(
           container({ variant }),
+          isElevated && elevatedShadow(elevation),
           BUTTON_BOX[shape][size],
           isDisabled && !noDisabledOpacity && 'opacity-50',
           'overflow-hidden',

@@ -6,6 +6,7 @@ import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SURFACE_CLASSNAME } from '../../../lib/elevated';
+import { INTERACTIVE_HEIGHT } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
 import { MOTION_SNAPPY, mergeTransition } from '../../../theme/motion';
@@ -24,36 +25,40 @@ export type IconButtonVariant = 'neutral' | 'elevated';
 
 // ── Box geometry ─────────────────────────────────────────────────────────────
 // Static literals so the uniwind/Tailwind scanner registers every class.
-// Tracks the BUTTON_BOX.icon pattern: square at each interactive height.
-// `lg` steps OFF the interactive ramp (24/32/40px) to 48px — the MorphingFAB
-// trigger size — so the FAB can render as an IconButton.
+// Tracks the BUTTON_BOX.icon pattern: the square at each interactive height.
+// Every size sits on the shared ramp (24/32/40px), so an IconButton and a Button
+// of the same `size` are the same height and a row of the two lines up.
 
 const ICON_BUTTON_BOX: Record<IconButtonShape, Record<IconButtonSize, string>> = {
   rounded: {
     sm: 'h-interactive-sm w-interactive-sm rounded-interactive',
     md: 'h-interactive-md w-interactive-md rounded-interactive',
-    lg: 'h-12 w-12 rounded-interactive',
+    lg: 'h-interactive-lg w-interactive-lg rounded-interactive',
   },
   pill: {
     sm: 'h-interactive-sm w-interactive-sm rounded-full',
     md: 'h-interactive-md w-interactive-md rounded-full',
-    lg: 'h-12 w-12 rounded-full',
+    lg: 'h-interactive-lg w-interactive-lg rounded-full',
   },
 };
 
 // biome-ignore lint/style/useComponentExportOnlyModules: the `lg` box's pixel twin — the MorphingFAB reads it so its trigger shell stays exactly the size of an `lg` IconButton
-export const ICON_BUTTON_LG_SIZE = 48;
+export const ICON_BUTTON_LG_SIZE = INTERACTIVE_HEIGHT.lg;
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
 
 /** Icon size in px when rendered without a background tile. */
 const ICON_SIZE: Record<IconButtonSize, number> = { sm: 14, md: 16, lg: 20 };
 
-/** Tile dimensions and inner icon size when `iconBackgroundColor` is set. */
+/**
+ * Tile dimensions and inner icon size when `iconBackgroundColor` is set. The
+ * tile steps 16/20/24px against the box's 24/32/40px, so every size keeps the
+ * same ring of breathing room around the plate.
+ */
 const ICON_TILE: Record<IconButtonSize, { tileClass: string; iconSize: number }> = {
   sm: { tileClass: 'h-4 w-4 rounded-sm', iconSize: 10 },
   md: { tileClass: 'h-5 w-5 rounded-[5px]', iconSize: 12 },
-  lg: { tileClass: 'h-7 w-7 rounded-lg', iconSize: 16 },
+  lg: { tileClass: 'h-6 w-6 rounded-md', iconSize: 14 },
 };
 
 /** Spinner diameter per button size. */
@@ -97,7 +102,8 @@ export type IconButtonProps = {
   /** Visual variant — `neutral` (surface-3 plate) or `elevated` (surface-3 fill with the input's diffuse floating shadow). @default 'neutral' */
   variant?: IconButtonVariant;
 
-  /** Button size — controls the outer square and the icon or tile inside it. @default 'md' */
+  /** Button size — the square, and the icon or tile inside it. Shares
+   *  {@link Button}'s height ramp (24/32/40px), so the two line up in a row. @default 'md' */
   size?: IconButtonSize;
 
   /** Corner shape. @default 'pill' */

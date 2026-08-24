@@ -19,40 +19,104 @@ import { EASE_OUT, SPRING_LAYOUT } from '../../../lib/ease';
 import { clampSurfaceLevel, elevated, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
-import { MenuItem } from '../../rows/menu-item';
+import { MenuItem, type MenuItemSize } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 
-const TRIGGER_HEIGHT = 36;
-const PANE_RADIUS = 20;
-/** Rows are the trigger's twin, so one height serves both. */
-const ROW_HEIGHT = TRIGGER_HEIGHT;
 /** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
 const VIEWPORT_PADDING = 8;
 /** `p-1` inset between the shell edge and its content, so the trigger and hover pills never run flush to the pane rim. */
 const PANE_INSET = 4;
-
-/**
- * The row geometry the trigger and every item row share, so the trigger reads as
- * the active row of the list rather than a differently-sized header: one height,
- * one inset, one gap. `py-0` drops {@link MenuItem}'s own vertical padding — the
- * fixed height owns it here.
- */
-const ROW_CLASSNAME = 'h-9 gap-2 px-3 py-0';
-/** {@link MenuItem}'s `md` leading-icon size — the trigger matches it. */
-const ROW_ICON_SIZE = 21;
-/** The single caret of the `select` trigger. */
-const CARET_SIZE = 14;
-/** Each caret of the `switcher` trigger's stacked pair. */
-const STACKED_CARET_SIZE = 12;
-/**
- * Overlap for the lower stacked caret. The chevron glyph fills only ~5.7 of its
- * 24-unit box, so two boxes set flush leave ~9px of air between the strokes —
- * far too much to read as one control. Pulling the second up by most of that
- * gap lands the pair ~2px apart.
- */
-const STACKED_CARET_STYLE = { marginTop: -7 };
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
+
+/** Switcher size — the trigger and every row stand at the matching interactive height. */
+export type MorphingSwitcherSize = 'sm' | 'md' | 'lg';
+
+/**
+ * Everything one size decides. The trigger and the item rows read from the same
+ * entry, which is what makes the trigger the active row of the list rather than
+ * a differently-sized header: one height, one inset, one gap, one icon, one type
+ * size.
+ */
+type SwitcherScale = {
+  /** Trigger and row height in px — the pixel twin of `rowClassName`'s height, for the pane arithmetic. */
+  height: number;
+  /**
+   * The row box. Height comes from the shared `--spacing-interactive-*` ramp, so
+   * a switcher lines up with a Button or IconButton of the same size. The
+   * horizontal padding is a row's, not a button's (`--spacing-interactive-pad-*`
+   * is tuned for a label hugged by a pill, far too wide for a full-width bar).
+   * `py-0` drops {@link MenuItem}'s own vertical padding — the fixed height owns it.
+   */
+  rowClassName: string;
+  /** Gap between icon and label, and between the label block and the carets. */
+  gapClassName: string;
+  /** The size the item rows render their {@link MenuItem} at. */
+  menuItemSize: MenuItemSize;
+  /** That MenuItem size's leading-icon size — the trigger matches it so the two stacks align. */
+  iconSize: number;
+  /** {@link Text} size matching the MenuItem label's, for the same reason. */
+  labelSize: 'xs' | 'sm';
+  /** The single caret of the `select` trigger. */
+  caretSize: number;
+  /** Each caret of the `switcher` trigger's stacked pair. */
+  stackedCaretSize: number;
+  /**
+   * Overlap for the lower stacked caret. The chevron glyph fills only ~5.7 of its
+   * 24-unit box, so two boxes set flush leave most of a caret's height in air
+   * between the strokes — far too much to read as one control. Pulling the second
+   * up by ~0.6 of the box lands the pair ~2px apart at every size.
+   */
+  stackedCaretStyle: { marginTop: number };
+  /** Corner radius of the open pane — a touch tighter than the collapsed pill's half-height. */
+  paneRadius: number;
+};
+
+/**
+ * `lg` deliberately shares `md`'s icon and label rather than stepping up, the
+ * same divergence the button family's `LABEL_TEXT_CLASS` makes: past the `md`
+ * box the extra height and padding already carry the size difference, and
+ * MenuItem's `lg` ramp (26px icon, 18px label) belongs to a settings list, not
+ * to a switcher bar.
+ */
+const SWITCHER_SCALE: Record<MorphingSwitcherSize, SwitcherScale> = {
+  sm: {
+    height: 24,
+    rowClassName: 'h-interactive-sm px-2 py-0',
+    gapClassName: 'gap-1.5',
+    menuItemSize: 'sm',
+    iconSize: 16,
+    labelSize: 'xs',
+    caretSize: 11,
+    stackedCaretSize: 9,
+    stackedCaretStyle: { marginTop: -5 },
+    paneRadius: 14,
+  },
+  md: {
+    height: 32,
+    rowClassName: 'h-interactive-md px-2.5 py-0',
+    gapClassName: 'gap-2',
+    menuItemSize: 'md',
+    iconSize: 21,
+    labelSize: 'sm',
+    caretSize: 12,
+    stackedCaretSize: 10,
+    stackedCaretStyle: { marginTop: -6 },
+    paneRadius: 16,
+  },
+  lg: {
+    height: 40,
+    rowClassName: 'h-interactive-lg px-3 py-0',
+    gapClassName: 'gap-2',
+    menuItemSize: 'md',
+    iconSize: 21,
+    labelSize: 'sm',
+    caretSize: 14,
+    stackedCaretSize: 12,
+    stackedCaretStyle: { marginTop: -7 },
+    paneRadius: 20,
+  },
+};
 
 /** Icon renderer — compatible with this project's icon set signature. */
 export type MorphingSwitcherIcon = (props: IconProps) => ReactNode;
@@ -103,6 +167,9 @@ export type MorphingSwitcherProps = {
   closeIcon?: ReactNode | null;
   /** Collapsed-trigger layout. Defaults to `"switcher"`. */
   variant?: MorphingSwitcherVariant;
+  /** Trigger and row height — the shared interactive ramp, so it lines up with
+   *  a Button or IconButton of the same size. @default 'md' */
+  size?: MorphingSwitcherSize;
   /**
    * Float level for the shell — picks the `shadow-elevated-N` recipe (drop +
    * dark rim) the resting trigger sits at. Opening lifts it
@@ -154,20 +221,25 @@ export type MorphingSwitcherProps = {
  * trigger stays put as the list's bottom row and the items fill in above it.
  */
 
-type TriggerCaretsProps = { variant: MorphingSwitcherVariant; open: boolean; closeIcon: ReactNode | null | undefined };
+type TriggerCaretsProps = {
+  variant: MorphingSwitcherVariant;
+  open: boolean;
+  closeIcon: ReactNode | null | undefined;
+  scale: SwitcherScale;
+};
 
 /** The trailing carets — a down/up caret for `select`, stacked up/down for `switcher`. */
-function TriggerCarets({ variant, open, closeIcon }: TriggerCaretsProps) {
+function TriggerCarets({ variant, open, closeIcon, scale }: TriggerCaretsProps) {
   if (variant === 'switcher')
     return (
       <View className="flex-col items-center">
-        <ThemedIcon icon={ChevronUp} token="muted-foreground" size={STACKED_CARET_SIZE} />
-        <ThemedIcon icon={ChevronDown} token="muted-foreground" size={STACKED_CARET_SIZE} style={STACKED_CARET_STYLE} />
+        <ThemedIcon icon={ChevronUp} token="muted-foreground" size={scale.stackedCaretSize} />
+        <ThemedIcon icon={ChevronDown} token="muted-foreground" size={scale.stackedCaretSize} style={scale.stackedCaretStyle} />
       </View>
     );
-  if (!open) return <ThemedIcon icon={ChevronDown} token="muted-foreground" size={CARET_SIZE} />;
+  if (!open) return <ThemedIcon icon={ChevronDown} token="muted-foreground" size={scale.caretSize} />;
   if (closeIcon === null) return null;
-  return closeIcon ?? <ThemedIcon icon={ChevronUp} token="muted-foreground" size={CARET_SIZE} />;
+  return closeIcon ?? <ThemedIcon icon={ChevronUp} token="muted-foreground" size={scale.caretSize} />;
 }
 
 type SwitcherTriggerProps = {
@@ -176,6 +248,7 @@ type SwitcherTriggerProps = {
   variant: MorphingSwitcherVariant;
   open: boolean;
   closeIcon: ReactNode | null | undefined;
+  scale: SwitcherScale;
   /** Present on the interactive copy; absent on the offscreen measurer. */
   onPress?: () => void;
   onLayout?: (event: LayoutChangeEvent) => void;
@@ -204,22 +277,24 @@ function SwitcherTrigger({
   variant,
   open,
   closeIcon,
+  scale,
   onPress,
   onLayout,
   accessibilityLabel,
   testID,
 }: SwitcherTriggerProps) {
   const leading = (
-    <View className="flex-row items-center gap-2">
-      {icon ? <ThemedIcon icon={icon} token="foreground" size={ROW_ICON_SIZE} /> : null}
-      <Text size="sm" weight="medium" numberOfLines={1}>
+    <View className={cn('flex-row items-center', scale.gapClassName)}>
+      {icon ? <ThemedIcon icon={icon} token="foreground" size={scale.iconSize} /> : null}
+      <Text size={scale.labelSize} weight="medium" numberOfLines={1}>
         {label}
       </Text>
     </View>
   );
 
   const className = cn(
-    ROW_CLASSNAME,
+    scale.rowClassName,
+    scale.gapClassName,
     'relative flex-row items-center overflow-hidden',
     open || variant === 'switcher' ? 'justify-between self-stretch' : 'self-start',
   );
@@ -227,7 +302,7 @@ function SwitcherTrigger({
   const inner = (
     <>
       {leading}
-      <TriggerCarets variant={variant} open={open} closeIcon={closeIcon} />
+      <TriggerCarets variant={variant} open={open} closeIcon={closeIcon} scale={scale} />
     </>
   );
 
@@ -259,6 +334,7 @@ type MorphingSwitcherRowProps = {
   item: MorphingSwitcherItem;
   /** Stable handler — the row binds its own item so no per-render closure. */
   onSelect: (item: MorphingSwitcherItem) => void;
+  scale: SwitcherScale;
   testID?: string;
 };
 
@@ -291,18 +367,19 @@ function OutsidePressBackdrop({ frame, onPress, testID }: OutsidePressBackdropPr
 
 /**
  * One row in the open pane: icon + label. The current item never renders here —
- * the trigger is its row. {@link ROW_CLASSNAME} pins the row to the trigger's
+ * the trigger is its row. The scale's row classes pin the row to the trigger's
  * geometry, so the two stacks align and the highlight runs the full pane width.
  */
-function MorphingSwitcherRow({ item, onSelect, testID }: MorphingSwitcherRowProps) {
+function MorphingSwitcherRow({ item, onSelect, scale, testID }: MorphingSwitcherRowProps) {
   const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
   return (
     <MenuItem
+      size={scale.menuItemSize}
       icon={item.icon}
       label={item.label}
       labelWeight="medium"
       onPress={handlePress}
-      className={cn(ROW_CLASSNAME, 'rounded-full')}
+      className={cn(scale.rowClassName, scale.gapClassName, 'rounded-full')}
       testID={testID}
     />
   );
@@ -363,6 +440,7 @@ export function MorphingSwitcher({
   onOpenChange,
   closeIcon,
   variant = 'switcher',
+  size = 'md',
   elevation = 3,
   style,
   accessibilityLabel,
@@ -371,6 +449,7 @@ export function MorphingSwitcher({
   closeOnOutsidePress = true,
 }: MorphingSwitcherProps) {
   const reduce = useReducedMotion();
+  const scale = SWITCHER_SCALE[size];
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const rootRef = useRef<View>(null);
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -395,7 +474,7 @@ export function MorphingSwitcher({
   // never repeat it — for both variants.
   const visibleItems = items.filter((item) => item.value !== value);
 
-  const paneHeight = expandedHeight ?? TRIGGER_HEIGHT + visibleItems.length * ROW_HEIGHT + PANE_INSET * 2;
+  const paneHeight = expandedHeight ?? scale.height + visibleItems.length * scale.height + PANE_INSET * 2;
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -497,7 +576,7 @@ export function MorphingSwitcher({
   // collapsed pill and the open pane both frame their content instead of running
   // flush to the edge.
   const closedWidth = (triggerSize?.width ?? 0) + PANE_INSET * 2;
-  const closedHeight = (triggerSize?.height ?? TRIGGER_HEIGHT) + PANE_INSET * 2;
+  const closedHeight = (triggerSize?.height ?? scale.height) + PANE_INSET * 2;
   // `switcher` spans its parent, so its width is not animated — the shell's
   // `right: 0` pins it full-width and only height/radius morph.
   const openWidth = Math.max(expandedWidth, closedWidth);
@@ -511,6 +590,7 @@ export function MorphingSwitcher({
         variant={variant}
         open={false}
         closeIcon={closeIcon}
+        scale={scale}
         onLayout={handleTriggerLayout}
       />
 
@@ -528,7 +608,7 @@ export function MorphingSwitcher({
         key={variant}
         animate={{
           height: open ? paneHeight : closedHeight,
-          borderRadius: open ? PANE_RADIUS : closedHeight / 2,
+          borderRadius: open ? scale.paneRadius : closedHeight / 2,
           // Opening upward anchors the pane's bottom to the trigger's bottom edge:
           // shift the shell up by its growth so it extends above instead of below.
           // `translateY` shares the morph spring, so the two stay in lockstep and
@@ -558,6 +638,7 @@ export function MorphingSwitcher({
           variant={variant}
           open={open}
           closeIcon={closeIcon}
+          scale={scale}
           onPress={handleTriggerPress}
           accessibilityLabel={accessibilityLabel}
           testID={triggerTestID}
@@ -570,7 +651,13 @@ export function MorphingSwitcher({
             transition={paneEnterTransition}
           >
             {visibleItems.map((item) => (
-              <MorphingSwitcherRow key={item.value} item={item} onSelect={handleSelect} testID={`${testID}-item-${item.value}`} />
+              <MorphingSwitcherRow
+                key={item.value}
+                item={item}
+                onSelect={handleSelect}
+                scale={scale}
+                testID={`${testID}-item-${item.value}`}
+              />
             ))}
           </MotiView>
         ) : null}

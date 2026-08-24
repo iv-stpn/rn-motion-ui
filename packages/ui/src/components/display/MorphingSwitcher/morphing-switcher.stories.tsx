@@ -10,7 +10,12 @@ import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Toggle } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
-import { MorphingSwitcher, type MorphingSwitcherItem, type MorphingSwitcherVariant } from './morphing-switcher';
+import {
+  MorphingSwitcher,
+  type MorphingSwitcherItem,
+  type MorphingSwitcherSize,
+  type MorphingSwitcherVariant,
+} from './morphing-switcher';
 
 const meta = {
   title: 'Display/MorphingSwitcher',
@@ -52,6 +57,8 @@ const SPACES: readonly MorphingSwitcherItem[] = [
 // ── Playground ───────────────────────────────────────────────────────────────
 
 const VARIANTS = ['select', 'switcher'] as const;
+const SIZES = ['sm', 'md', 'lg'] as const satisfies readonly MorphingSwitcherSize[];
+const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
 
 /** The same spaces stripped of their icons — the `Item icons` toggle swaps the two sets. */
 const PLAIN_SPACES: readonly MorphingSwitcherItem[] = SPACES.map(({ value, label }) => ({ value, label }));
@@ -61,6 +68,7 @@ const PLAYGROUND_HINT =
 
 function MorphingSwitcherPlayground() {
   const [variant, setVariant] = useState<MorphingSwitcherVariant>('switcher');
+  const [size, setSize] = useState<MorphingSwitcherSize>('md');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [withIcons, setWithIcons] = useState(true);
   const [closeCaret, setCloseCaret] = useState(true);
@@ -71,6 +79,7 @@ function MorphingSwitcherPlayground() {
       <View className="gap-3 px-5">
         <ControlCard title="Options">
           <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+          <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
           <Toggle label="Item icons" onChange={setWithIcons} value={withIcons} />
           {/* `closeIcon` only reaches the trigger in `select` — `switcher` always keeps its stacked carets. */}
@@ -85,6 +94,7 @@ function MorphingSwitcherPlayground() {
           value={value}
           onValueChange={setValue}
           variant={variant}
+          size={size}
           elevation={ELEVATIONS[elevationKey]}
           closeIcon={closeCaret ? undefined : null}
           accessibilityLabel="Switch space"
@@ -102,6 +112,33 @@ function MorphingSwitcherPlayground() {
  *  switcher re-styles in place, keeping whatever value you last picked. */
 export const Interactive: Story = {
   render: () => <MorphingSwitcherPlayground />,
+};
+
+/** The three heights side by side — sm/md/lg stand at the shared interactive
+ *  ramp, so a switcher lines up with a Button or IconButton of the same size. */
+export const AllSizes: Story = {
+  render: () => (
+    <AppSurface hint="Three sizes on the shared interactive ramp (24 / 32 / 40px).">
+      <View className="gap-3 px-5">
+        {SIZES.map((name) => (
+          <View key={name} className="gap-1">
+            <Text size="xs" className="text-muted-foreground">
+              {SIZE_LABELS[name]}
+            </Text>
+            <MorphingSwitcher
+              items={SPACES}
+              defaultValue="home"
+              variant="select"
+              size={name}
+              accessibilityLabel={`${SIZE_LABELS[name]} space`}
+              triggerTestID={`allsizes-${name}-trigger`}
+              testID={`allsizes-${name}`}
+            />
+          </View>
+        ))}
+      </View>
+    </AppSurface>
+  ),
 };
 
 /** The pill shows the current item (icon + label + caret); it morphs into the item list. */

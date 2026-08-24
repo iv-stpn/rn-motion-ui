@@ -11,7 +11,9 @@ import { ICON_BUTTON_LG_SIZE, IconButton, type IconButtonVariant } from '../../f
 import { ThemedIcon } from '../../icon/themed-icon';
 
 const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
-const TRIGGER_RADIUS = 40;
+/** The collapsed trigger is a circle, so its radius is half the box — whatever
+ *  the shared interactive ramp puts an `lg` IconButton at. */
+const TRIGGER_RADIUS = TRIGGER_SIZE / 2;
 const PANE_RADIUS = 20;
 
 /** Handed to render-prop children so panel content can close the FAB. */

@@ -5,6 +5,7 @@ import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
+import { MENU_RADIUS } from '../../../lib/radius';
 import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
@@ -176,13 +177,15 @@ export function BloomMenu({
         ]}
       >
         {/* The shared-layout card: one element whose frame springs between the
-            trigger and the panel, carrying the border/background/radius across
-            the morph — the RN stand-in for the web's shared `layoutId`. Its
-            overflow clip doubles as the clip-path iris over the centred panel. */}
+            trigger and the panel, carrying the background/radius across the
+            morph — the RN stand-in for the web's shared `layoutId`. Its overflow
+            clip doubles as the clip-path iris over the centred panel. The card
+            has no outline of its own; like the other menu surfaces it reads
+            against the page through `surface()`'s fill and shadow alone. */}
         <MotiView
           animate={{ width: open ? PANEL_W : TRIGGER_W, height: open ? (panelH ?? BOX_H) : TRIGGER_H }}
           transition={morph}
-          className={cn('items-center justify-center overflow-hidden border border-border', surface(elevation, 'menu', floating))}
+          className={cn('items-center justify-center overflow-hidden', surface(elevation, 'menu', floating))}
         >
           {/* Panel content, fixed at its open-state size and centred in the
               card, so the growing clip reveals it centre-out (iris). The grid
@@ -247,7 +250,10 @@ export function BloomMenu({
             transition={open ? { type: 'timing', duration: 120 } : { type: 'timing', duration: 150, delay: reduce ? 0 : 80 }}
             className="bg-surface-3"
             style={[
-              { position: 'absolute', top: 1, left: 1, right: 1, bottom: 1, borderRadius: 15 },
+              // Full-bleed over the card: with the card's outline gone there is
+              // no 1px edge left to inset from, so the face covers it corner to
+              // corner at the card's own radius.
+              { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: MENU_RADIUS },
               { pointerEvents: open ? 'none' : 'auto' },
             ]}
           >

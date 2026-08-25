@@ -28,7 +28,7 @@ export type CardProps = ViewProps & {
    * and the `shadow-elevated-N` recipe (drop + dark-mode rim), so fill and rim
    * highlight sit at the same level. `0` is the flat resting surface: a
    * `surface-3` fill with no shadow or border.
-   * @default 3
+   * @default 0
    */
   elevation?: SurfaceElevation;
   /** When provided the card renders as a `Pressable` instead of a plain `View`. */
@@ -36,7 +36,7 @@ export type CardProps = ViewProps & {
   ref?: Ref<View>;
 };
 
-export function Card({ size = 'md', floating = false, elevation = 3, className, onPress, ...props }: CardProps) {
+export function Card({ size = 'md', floating = false, elevation = 0, className, onPress, ...props }: CardProps) {
   // The surface derives its background from `elevation`; `floating` swaps the
   // `shadow-elevated-N` rung for the input field's diffuse halo.
   const cardClassname = cn(card({ size }), surface(elevation, 'card', floating), className);

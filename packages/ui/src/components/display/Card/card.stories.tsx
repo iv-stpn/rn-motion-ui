@@ -11,7 +11,7 @@ const meta = {
   title: 'Display/Card',
   component: Card,
   parameters: { layout: 'centered' },
-  args: { size: 'md', elevation: 3, floating: false },
+  args: { size: 'md', elevation: 0, floating: false },
   argTypes: {
     size: { control: 'select', options: ['compact', 'md', 'lg'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
@@ -31,7 +31,7 @@ type ElevationKey = (typeof ELEVATION_KEYS)[number];
 
 function CardPlayground(args: ComponentProps<typeof Card>) {
   const [size, setSize] = useState<CardSize>('md');
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [floating, setFloating] = useState(false);
   // The chips carry strings; the ladder is numeric. `0` is the flat resting
   // surface — otherwise the chip value indexes the ladder's own levels.

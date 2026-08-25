@@ -249,13 +249,15 @@ export function CheckboxCard({
           element. */}
       <View className={cn('rounded-2xl', surface(resolvedElevation, undefined, resolvedFloating), className)} style={style}>
         {/* The visual surface carries the border + selection tint. When unchecked
-            it's transparent so the wrapper's surface background shows through;
-            when checked the `bg-info/5` tint overlays it. */}
+            both are transparent — no resting outline, and the wrapper's surface
+            background shows through; when checked the `border-info` edge and the
+            `bg-info/5` tint overlay it. The `border` width is reserved in both
+            states so checking a card doesn't shift its content. */}
         <View
           className={cn(
             'flex-1 gap-3 rounded-2xl border p-4',
             disabled ? 'opacity-60' : 'opacity-100',
-            checked ? 'border-info bg-info/5' : 'border-border',
+            checked ? 'border-info bg-info/5' : 'border-transparent',
           )}
         >
           <View className="flex-row items-center justify-between">

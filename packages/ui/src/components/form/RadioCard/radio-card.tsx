@@ -200,8 +200,9 @@ export type RadioCardProps = {
   /** Custom content rendered below the title/subtitle. */
   children?: ReactNode;
   /**
-   * Additional UniWind class names merged onto the card surface — the
-   * bordered, padded box that carries the selected styling.
+   * Additional UniWind class names merged onto the card surface — the padded
+   * box that carries the selected styling. Pass a `border-*` color here to give
+   * the card a resting outline; by default it has none until selected.
    */
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -267,8 +268,9 @@ export type RadioCardProps = {
  * card reads its state from it.
  *
  * Each card animates its own selection: the border and background tint
- * cross-fade, and the dot fades and scales in place. Nothing travels between
- * cards, so no geometry is measured.
+ * cross-fade in from nothing — a resting card has no outline of its own and
+ * reads as a plain surface — and the dot fades and scales in place. Nothing
+ * travels between cards, so no geometry is measured.
  */
 export function RadioCard({
   value,
@@ -294,7 +296,6 @@ export function RadioCard({
   const inGroup = groupCtx !== null && value !== undefined;
   const reduce = useReducedMotion();
   const info = useThemeColor('info');
-  const borderColor = useThemeColor('border');
 
   const selected = inGroup ? groupCtx.value === value : Boolean(selectedProp);
   const resolvedVariant = variant ?? groupCtx?.variant ?? 'radio';
@@ -335,10 +336,17 @@ export function RadioCard({
         {/* The animated surface. A Pressable can't be animated directly (motify
             is only applied to host primitives, and MotiPressable nests a MotiView
             the same way), so the border/tint live here and the Pressable above
-            keeps the role and press handling. */}
+            keeps the role and press handling.
+
+            The border is purely the selection affordance: unselected it is the
+            accent at alpha 0, so the resting card shows no outline and leans on
+            the wrapper's surface fill instead. Both ends run through `tintAt`
+            for the reason spelled out on that helper — a literal `transparent`
+            end would interpolate through `rgba(0,0,0,0)` and darken the edge on
+            the way in. The reserved `border` width keeps the box from shifting. */}
         <MotiView
           animate={{
-            borderColor: selected ? info : borderColor,
+            borderColor: tintAt(info, selected ? 1 : 0),
             backgroundColor: tintAt(info, selected ? TINT_ALPHA : 0),
           }}
           transition={ct}

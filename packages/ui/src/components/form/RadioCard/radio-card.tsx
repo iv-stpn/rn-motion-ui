@@ -65,7 +65,7 @@ function RadioCardRing({ selected, transition, testID }: RadioCardRingProps) {
       // `shrink-0` matters inline, where the ring shares a row with the text
       // column and would otherwise be squeezed by a long title. Matches Radio
       // and Checkbox, whose own controls are already shrink-proof.
-      className="h-5 w-5 shrink-0 items-center justify-center rounded-full border"
+      className="h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.5px]"
     >
       <AnimatePresence>
         {selected ? (
@@ -445,7 +445,7 @@ export function RadioCard({
             backgroundColor: tintAt(info, selected ? TINT_ALPHA : 0),
           }}
           transition={ct}
-          className={cn('flex-1 gap-3 rounded-2xl border p-4', inline && 'flex-row items-center')}
+          className={cn('flex-1 gap-3 rounded-2xl border-[1.5px] p-4', inline && 'flex-row items-center')}
         >
           {/* Stacked, the ring leads a row of its own and the badge rides its
               far end. Inline that row has no reason to exist — the ring moves to

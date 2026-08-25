@@ -83,7 +83,7 @@ type CustomBodyProps = { onClose: () => void };
 
 function CustomBody({ onClose }: CustomBodyProps) {
   return (
-    <View className="gap-4 border-border border-t p-6">
+    <View className="gap-4 border-border border-t-[1.5px] p-6">
       <Text size="lg" weight="semibold">
         {CUSTOM_LAYOUT_TITLE}
       </Text>

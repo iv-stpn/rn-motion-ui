@@ -82,7 +82,7 @@ function GroupedRow({ first, isDragging, item, last }: RowProps) {
   return (
     <View
       className={cn(
-        'flex-row items-center border-border border-b bg-surface-1 px-4 py-3 transition-all duration-300 ease-out',
+        'flex-row items-center border-border border-b-[1.5px] bg-surface-1 px-4 py-3 transition-all duration-300 ease-out',
         isDragging && 'opacity-40',
         radius,
         last && 'border-b-0',
@@ -102,7 +102,7 @@ function SeparatedRow({ isDragging, item }: Omit<RowProps, 'first' | 'last'>) {
   return (
     <View
       className={cn(
-        'flex-row items-center rounded-lg border border-border',
+        'flex-row items-center rounded-lg border-[1.5px] border-border',
         surface(2),
         'px-4 py-3 transition-all duration-300 ease-out',
         isDragging && 'scale-[0.98] opacity-40',
@@ -160,7 +160,7 @@ function InteractiveDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS
       </ControlCard>
       <Note testID={REORDER_READOUT}>{lastReorder}</Note>
       <Section title="List">
-        <View className={variant === 'grouped' ? 'overflow-hidden rounded-lg border border-border' : undefined}>
+        <View className={variant === 'grouped' ? 'overflow-hidden rounded-lg border-[1.5px] border-border' : undefined}>
           <ReorderableList
             className={variant === 'separated' ? 'gap-2' : undefined}
             disabled={disabled}

@@ -312,7 +312,7 @@ export const MultiStepMenu = function MultiStepMenu({
 
     content = (
       <View className="flex-1 flex-row overflow-hidden rounded-modal">
-        <View className="w-56 justify-between border-border border-r p-3 lg:w-64">
+        <View className="w-56 justify-between border-border border-r-[1.5px] p-3 lg:w-64">
           <View className="min-h-0 flex-1">{sidebar(helpers)}</View>
           {sidebarFooter}
         </View>

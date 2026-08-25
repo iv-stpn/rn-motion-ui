@@ -51,7 +51,7 @@ type ChipProps = { label: string };
 /** What gets dragged. A plain view — `Draggable` adds the grab, not the look. */
 function Chip({ label }: ChipProps) {
   return (
-    <View className="flex-row items-center gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-1.5">
+    <View className="flex-row items-center gap-1.5 rounded-md border-[1.5px] border-border bg-surface-2 px-3 py-1.5">
       <FileText size={14} />
       <Text size="sm">{label}</Text>
     </View>
@@ -98,7 +98,7 @@ function DragTray({ disabled = false, transports = 'auto' }: TrayProps) {
         ))}
       </View>
       <Dragzone
-        className="items-center justify-center rounded-lg border border-border border-dashed py-6"
+        className="items-center justify-center rounded-lg border-[1.5px] border-border border-dashed py-6"
         eligibleClassName="border-info"
         onDrop={({ transfer }) => setReceived(`Zone received ${transfer.getData(MIME)}`)}
         overClassName="border-info bg-info/10"
@@ -189,7 +189,7 @@ function BareDropZone() {
       </Draggable>
       <View
         ref={ref}
-        className="items-center justify-center rounded-lg border border-border border-dashed py-6"
+        className="items-center justify-center rounded-lg border-[1.5px] border-border border-dashed py-6"
         testID={BARE_TEST_ID}
       >
         <Text className="text-muted-foreground" size="sm">

@@ -20,7 +20,7 @@ import type { FileEntry, FileSystemFileItem } from '../types/file-system.types';
 const DEFAULT_PREVIEW_ASPECT_RATIO = 0.72;
 
 /** The tile face: paper-white in both themes, so previews read like documents. */
-const TILE_FACE_CLASSNAME = 'overflow-hidden rounded-md border border-border bg-white';
+const TILE_FACE_CLASSNAME = 'overflow-hidden rounded-md border-[1.5px] border-border bg-white';
 
 /** The fallback icon scales with the tile, down to a legible floor. */
 const ICON_MIN_SIZE = 16;

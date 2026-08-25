@@ -33,7 +33,7 @@ const MenuItemComponent = ({ item, isLast }: MenuItemComponentProps) => {
 
     return {
       borderBottomColor,
-      borderBottomWidth: isLast ? 0 : 1,
+      borderBottomWidth: isLast ? 0 : 1.5,
     };
   }, [theme, isLast, item]);
 

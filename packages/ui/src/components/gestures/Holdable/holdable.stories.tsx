@@ -58,9 +58,9 @@ function mousePointer(node: Element, type: string, pointerId = 1) {
 type HoldDemoProps = { cursorMode?: boolean; disabled?: boolean };
 
 function chipClass(isHeld: boolean, isPressed: boolean) {
-  if (isHeld) return 'rounded-xl border border-primary bg-primary/10 px-6 py-4';
-  if (isPressed) return 'rounded-xl border border-border bg-surface-2 px-6 py-4 opacity-70';
-  return 'rounded-xl border border-border bg-surface-2 px-6 py-4';
+  if (isHeld) return 'rounded-xl border-[1.5px] border-primary bg-primary/10 px-6 py-4';
+  if (isPressed) return 'rounded-xl border-[1.5px] border-border bg-surface-2 px-6 py-4 opacity-70';
+  return 'rounded-xl border-[1.5px] border-border bg-surface-2 px-6 py-4';
 }
 
 function chipLabel(isHeld: boolean, isPressed: boolean) {

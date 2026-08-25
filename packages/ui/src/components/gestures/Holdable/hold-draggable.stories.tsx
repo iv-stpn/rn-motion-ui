@@ -73,9 +73,9 @@ function mousePointer(node: Element, type: string, point: TouchPoint = {}) {
 type HoldDragDemoProps = { cursorMode?: boolean; disabled?: boolean; showMenu?: boolean };
 
 function chipClass(isHeld: boolean, isPressed: boolean) {
-  if (isHeld) return 'rounded-xl border border-primary bg-primary/10 px-6 py-4';
-  if (isPressed) return 'rounded-xl border border-border bg-surface-2 px-6 py-4 opacity-70';
-  return 'rounded-xl border border-border bg-surface-2 px-6 py-4';
+  if (isHeld) return 'rounded-xl border-[1.5px] border-primary bg-primary/10 px-6 py-4';
+  if (isPressed) return 'rounded-xl border-[1.5px] border-border bg-surface-2 px-6 py-4 opacity-70';
+  return 'rounded-xl border-[1.5px] border-border bg-surface-2 px-6 py-4';
 }
 
 function chipLabel(isHeld: boolean, isPressed: boolean) {
@@ -119,7 +119,7 @@ function HoldDragDemo({ cursorMode = false, disabled = false, showMenu = false }
   );
 
   const chipBody = (
-    <View className="rounded-xl border border-border bg-surface-2 px-6 py-4">
+    <View className="rounded-xl border-[1.5px] border-border bg-surface-2 px-6 py-4">
       <Text size="sm" weight="medium">
         Hold for menu · Move to drag
       </Text>

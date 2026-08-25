@@ -57,7 +57,7 @@ function Demo({ once, y, amount }: DemoProps) {
 
   return (
     <View
-      className="w-[360px] overflow-hidden rounded-2xl border border-border"
+      className="w-[360px] overflow-hidden rounded-2xl border-[1.5px] border-border"
       style={{ height: VIEWPORT }}
       testID="scroll-reveal-demo"
     >
@@ -73,7 +73,7 @@ function Demo({ once, y, amount }: DemoProps) {
             viewportHeight={VIEWPORT}
             y={y}
           >
-            <View className="rounded-xl border border-border bg-surface-3 px-4 py-12">
+            <View className="rounded-xl border-[1.5px] border-border bg-surface-3 px-4 py-12">
               <Text weight="medium" className="text-center text-[16px]">
                 {label}
               </Text>

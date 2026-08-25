@@ -253,8 +253,8 @@ function BodyDropSurface({ external }: BodyDropSurfaceProps) {
       className={cn(
         'pointer-events-none absolute inset-0 z-[3]',
         external
-          ? 'items-center justify-center border border-foreground/20 border-dashed bg-foreground/[0.03]'
-          : 'rounded-lg border-2 border-info',
+          ? 'items-center justify-center border-[1.5px] border-foreground/20 border-dashed bg-foreground/[0.03]'
+          : 'rounded-lg border-[1.5px] border-info',
       )}
     >
       {external ? (

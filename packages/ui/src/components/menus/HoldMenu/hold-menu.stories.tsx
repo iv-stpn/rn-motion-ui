@@ -167,7 +167,7 @@ function HomeScene() {
                 justifyContent: 'space-between',
                 padding: 16,
                 backgroundColor: palette.secondary,
-                borderBottomWidth: index === HOME_ROWS.length - 1 ? 0 : 1,
+                borderBottomWidth: index === HOME_ROWS.length - 1 ? 0 : 1.5,
                 borderBottomColor: palette.bg,
               }}
             >
@@ -326,7 +326,7 @@ function WhatsAppScene() {
           scrollEventThrottle={16}
           style={{ flex: 1 }}
         />
-        <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: 'rgba(0, 0, 0, 0.1)', backgroundColor: '#FFFFFF' }}>
+        <View style={{ padding: 12, borderTopWidth: 1.5, borderTopColor: 'rgba(0, 0, 0, 0.1)', backgroundColor: '#FFFFFF' }}>
           <Text size="sm" style={{ color: '#474747' }}>
             {`Last action: ${picked}`}
           </Text>
@@ -389,7 +389,7 @@ function NestedFileRow({ name, size, onAction }: NestedFileRowProps) {
           justifyContent: 'space-between',
           paddingVertical: 10,
           paddingHorizontal: 4,
-          borderBottomWidth: 1,
+          borderBottomWidth: 1.5,
           borderBottomColor: 'rgba(0, 0, 0, 0.06)',
         }}
       >
@@ -449,7 +449,7 @@ function NestedScrollScene() {
           ))}
         </ScrollView>
         <View style={{ flex: 1 }} />
-        <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: 'rgba(0, 0, 0, 0.1)', backgroundColor: '#FFFFFF' }}>
+        <View style={{ padding: 12, borderTopWidth: 1.5, borderTopColor: 'rgba(0, 0, 0, 0.1)', backgroundColor: '#FFFFFF' }}>
           <Text size="sm" style={{ color: '#474747' }}>
             {`Last action: ${picked}`}
           </Text>
@@ -480,7 +480,7 @@ function InteractiveScene() {
       <View
         style={{
           padding: 12,
-          borderBottomWidth: 1,
+          borderBottomWidth: 1.5,
           borderBottomColor: 'rgba(0, 0, 0, 0.1)',
           backgroundColor: '#FFFFFF',
         }}

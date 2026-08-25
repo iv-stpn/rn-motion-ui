@@ -71,7 +71,7 @@ type TriggerRenderProps = { open: boolean; toggle: () => void };
 type PlainTriggerProps = { open: boolean };
 
 function PlainTrigger({ open }: PlainTriggerProps) {
-  const containerClass = `flex-row items-center gap-2 rounded-full border px-4 py-2 ${open ? 'border-primary bg-primary' : 'border-border bg-surface-3'}`;
+  const containerClass = `flex-row items-center gap-2 rounded-full border-[1.5px] px-4 py-2 ${open ? 'border-primary bg-primary' : 'border-border bg-surface-3'}`;
   const textClass = open ? 'text-primary-foreground text-sm' : 'text-foreground text-sm';
   const label = open ? TRIGGER_OPEN : TRIGGER_CLOSED;
   return (

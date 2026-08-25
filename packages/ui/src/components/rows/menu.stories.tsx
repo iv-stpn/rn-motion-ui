@@ -174,7 +174,9 @@ type KbdProps = { hint: string };
 
 function Kbd({ hint }: KbdProps) {
   return (
-    <Text className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">{hint}</Text>
+    <Text className="rounded border-[1.5px] border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+      {hint}
+    </Text>
   );
 }
 

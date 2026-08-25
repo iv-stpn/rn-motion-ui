@@ -249,8 +249,8 @@ export const HOLD_MENU_LIST_CLASS = 'py-1';
  * back here.
  */
 export const HOLD_MENU_SEPARATOR_HEIGHT = 10;
-/** Panel hairline border, top + bottom — `border`. */
-export const HOLD_MENU_BORDER_HEIGHT = 2;
+/** Panel hairline border, top + bottom — `border-[1.5px]`. */
+export const HOLD_MENU_BORDER_HEIGHT = 3;
 /**
  * Smallest the panel is ever capped to: border, list inset and one row. A panel
  * clamped below this shows no whole row at all, and the held item is the thing

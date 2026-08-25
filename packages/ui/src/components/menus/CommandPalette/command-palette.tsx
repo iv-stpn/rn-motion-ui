@@ -100,7 +100,7 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
       <>
         {item.badge ? <View className="shrink-0">{item.badge}</View> : null}
         {item.hint ? (
-          <Text className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          <Text className="rounded border-[1.5px] border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
             {item.hint}
           </Text>
         ) : null}
@@ -213,7 +213,7 @@ export function CommandPalette({
       closeOnOutsidePress={closeOnOutsidePress}
     >
       <View testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
-        <View className="flex-row items-center gap-3 border-border border-b px-4">
+        <View className="flex-row items-center gap-3 border-border border-b-[1.5px] px-4">
           {searchIcon ?? <ThemedIcon icon={Search} variant="ghost" size={16} />}
           <TextInput
             autoFocus={true}
@@ -228,7 +228,7 @@ export function CommandPalette({
             accessibilityRole="button"
             accessibilityLabel="Close"
             onPress={handleClose}
-            className="rounded border border-border bg-surface-2 px-1.5 py-0.5"
+            className="rounded border-[1.5px] border-border bg-surface-2 px-1.5 py-0.5"
           >
             <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
           </Pressable>

@@ -38,7 +38,7 @@ type DefaultMultiDragGhostProps = { count: number };
  */
 function DefaultMultiDragGhost({ count }: DefaultMultiDragGhostProps) {
   return (
-    <View className="flex-row items-center gap-1.5 self-start rounded-md border border-border bg-surface-1 px-2 py-1">
+    <View className="flex-row items-center gap-1.5 self-start rounded-md border-[1.5px] border-border bg-surface-1 px-2 py-1">
       <View className="h-1.5 w-1.5 rounded-full bg-primary" />
       <DefaultMultiDragGhostText count={count} />
     </View>

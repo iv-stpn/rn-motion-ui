@@ -90,7 +90,7 @@ function GallerySidebar({ entry, index, renderFilePreview, sizeLabel }: SidebarP
 
   return (
     <ScrollView
-      className="shrink-0 border-border border-l"
+      className="shrink-0 border-border border-l-[1.5px]"
       contentContainerClassName="gap-3 p-4"
       showsVerticalScrollIndicator={false}
       style={{ width: SIDEBAR_WIDTH }}

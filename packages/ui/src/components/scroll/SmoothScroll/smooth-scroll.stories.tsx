@@ -41,7 +41,7 @@ function ScrollTopButton({ onPress }: ScrollTopButtonProps) {
       accessibilityLabel="Scroll to top"
       testID="scroll-top"
       onPress={handlePress}
-      className="absolute right-3 bottom-3 h-9 w-9 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa]"
+      className="absolute right-3 bottom-3 h-9 w-9 items-center justify-center rounded-full border-[#e5e5e5] border-[1.5px] bg-[#fafafa]"
     >
       <ArrowUp size={16} color={color} />
     </Pressable>
@@ -50,7 +50,7 @@ function ScrollTopButton({ onPress }: ScrollTopButtonProps) {
 
 function Demo() {
   return (
-    <View className="h-[280px] w-[360px] overflow-hidden rounded-2xl border border-[#e5e5e5]">
+    <View className="h-[280px] w-[360px] overflow-hidden rounded-2xl border-[#e5e5e5] border-[1.5px]">
       <SmoothScroll testID="smooth-scroll" contentContainerStyle={{ padding: 12, gap: 10 }}>
         {SECTIONS.map((n) => (
           <View key={n} className="rounded-[10px] bg-[#f4f4f5] px-3 py-4">

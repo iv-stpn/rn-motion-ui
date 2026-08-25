@@ -29,7 +29,7 @@ function Row({ item, expanded, onToggle, onRemove }: RowProps) {
   const toggle = useCallback(() => onToggle(item.id), [onToggle, item.id]);
   const remove = useCallback(() => onRemove(item.id), [onRemove, item.id]);
   return (
-    <View className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-surface-3 px-4 py-3 shadow-surface-3">
+    <View className="flex-row items-center justify-between gap-3 rounded-2xl border-[1.5px] border-border bg-surface-3 px-4 py-3 shadow-surface-3">
       <Pressable className="flex-1" onPress={toggle}>
         <Text weight="medium" className="text-base text-foreground">
           {item.label}

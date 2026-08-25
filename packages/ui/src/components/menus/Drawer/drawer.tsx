@@ -108,8 +108,8 @@ export function Drawer({
               transition={reduce ? { type: 'timing', duration: 200 } : SPRING_PANEL}
               className={cn(
                 side === 'right'
-                  ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l'
-                  : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r',
+                  ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l-[1.5px]'
+                  : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r-[1.5px]',
                 surface(elevation, undefined, floating),
               )}
               style={safeArea ? [{ paddingTop: insets.top, paddingBottom: insets.bottom }, style] : style}

@@ -68,7 +68,7 @@ export const SIZE_SCALE: Record<
 /** Base surface per variant — hover/press overlays are composed on top. */
 export const VARIANT_CLASSES: Record<ItemRowVariant, string> = {
   default: 'bg-transparent rounded-interactive',
-  outline: 'border border-border rounded-interactive',
+  outline: 'border-[1.5px] border-border rounded-interactive',
   muted: 'bg-surface-contrast rounded-interactive',
 };
 

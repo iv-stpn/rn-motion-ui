@@ -21,10 +21,10 @@ type DockContextValue = {
 
 const DockContext = createContext<DockContextValue | null>(null);
 
-// Container hairline border ("border border-border" = 1px). The active pill is
-// positioned against the padding box, so item layouts (border-box relative) are
-// offset by this amount.
-const BORDER_WIDTH = 1;
+// Container hairline border ("border-[1.5px] border-border" = 1.5px). The active
+// pill is positioned against the padding box, so item layouts (border-box
+// relative) are offset by this amount.
+const BORDER_WIDTH = 1.5;
 // Gap between the pill edge and the item edge on every side.
 const PILL_INSET = 2;
 
@@ -90,7 +90,7 @@ export function Dock({ children, size = 'lg', floating = false, elevation = 0, c
         className={cn(
           H_INTERACTIVE[size],
           PX_INTERACTIVE[size],
-          'relative flex-row items-center gap-1.5 self-start rounded-2xl border border-border',
+          'relative flex-row items-center gap-1.5 self-start rounded-2xl border-[1.5px] border-border',
           surface(elevation, undefined, floating),
           className,
         )}
@@ -99,7 +99,7 @@ export function Dock({ children, size = 'lg', floating = false, elevation = 0, c
         {/* Shared-layout pill glides to the active item's measured rect. Item
             layouts are reported relative to the container's border box, but this
             absolutely-positioned pill is placed against the padding box (inside
-            the 1px border) — subtract the border width so it centres on the item. */}
+            the 1.5px border) — subtract the border width so it centres on the item. */}
         {active ? (
           <MotiView
             animate={{

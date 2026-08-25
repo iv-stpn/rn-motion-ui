@@ -356,7 +356,7 @@ export function CheckboxCard({
             states so checking a card doesn't shift its content. */}
         <View
           className={cn(
-            'flex-1 gap-3 rounded-2xl border p-4',
+            'flex-1 gap-3 rounded-2xl border-[1.5px] p-4',
             inline && 'flex-row items-center',
             disabled ? 'opacity-60' : 'opacity-100',
             checked ? 'border-info bg-info/5' : 'border-transparent',

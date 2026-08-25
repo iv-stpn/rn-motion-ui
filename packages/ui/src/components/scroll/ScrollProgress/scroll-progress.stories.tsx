@@ -62,7 +62,7 @@ function ScrollBox({ children, width = BOX_W, height = BOX_H }: ScrollBoxProps) 
   );
 
   return (
-    <View className="overflow-hidden rounded-2xl border border-border" style={{ width, height }}>
+    <View className="overflow-hidden rounded-2xl border-[1.5px] border-border" style={{ width, height }}>
       {children(progress)}
       <ScrollView
         contentContainerStyle={{ padding: 12, gap: 10 }}

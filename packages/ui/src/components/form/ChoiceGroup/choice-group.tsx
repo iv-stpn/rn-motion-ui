@@ -29,16 +29,16 @@ const SHAPE_RADIUS: Record<ChoiceGroupShape, string> = { rounded: 'rounded-inter
 const VARIANT_SELECTED: Record<ChoiceGroupVariant, string> = {
   neutral: 'bg-primary',
   info: 'bg-info',
-  outline: 'border border-primary',
-  'outline-info': 'border border-info',
+  outline: 'border-[1.5px] border-primary',
+  'outline-info': 'border-[1.5px] border-info',
 };
 
 /** Unselected-item class per variant — filled items keep the surface, outline items keep a hairline border. */
 const VARIANT_UNSELECTED: Record<ChoiceGroupVariant, string> = {
   neutral: 'bg-surface-contrast',
   info: 'bg-surface-contrast',
-  outline: 'border border-border',
-  'outline-info': 'border border-border',
+  outline: 'border-[1.5px] border-border',
+  'outline-info': 'border-[1.5px] border-border',
 };
 
 /** Selected label colour per variant — the accent's `-foreground` on filled items, the accent ink on outline items. */

@@ -47,7 +47,7 @@ export function groupedRowClass(index: number, lastIndex: number): string {
     index === 0 && 'rounded-b-none',
     index === lastIndex && 'rounded-t-none',
     index > 0 && index < lastIndex && 'rounded-none',
-    index !== lastIndex && 'border-border border-b',
+    index !== lastIndex && 'border-border border-b-[1.5px]',
   );
 }
 
@@ -78,7 +78,7 @@ export function RowGroupContainer({ variant, size, className, style, testID, chi
   return (
     <View
       testID={testID}
-      className={cn('flex flex-col overflow-hidden rounded-interactive border border-border', className)}
+      className={cn('flex flex-col overflow-hidden rounded-interactive border-[1.5px] border-border', className)}
       style={style}
     >
       {children}

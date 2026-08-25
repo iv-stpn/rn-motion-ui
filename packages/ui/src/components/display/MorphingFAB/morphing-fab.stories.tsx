@@ -36,7 +36,7 @@ type AppSurfaceProps = { children: ReactNode; hint: string };
 function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
     <View className="min-h-[380px] flex-1 bg-surface-1">
-      <View className="border-border border-b px-5 py-3">
+      <View className="border-border border-b-[1.5px] px-5 py-3">
         <View className="h-2.5 w-24 rounded-full bg-surface-contrast-foreground/20" />
       </View>
       <View className="gap-3 p-5">

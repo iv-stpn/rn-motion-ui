@@ -34,8 +34,8 @@ function Demo({ onPress }: DemoProps) {
   };
 
   return (
-    <View className="h-[320px] w-[360px] overflow-hidden rounded-2xl border border-border">
-      <View className="flex-row gap-1.5 border-border border-b p-2">
+    <View className="h-[320px] w-[360px] overflow-hidden rounded-2xl border-[1.5px] border-border">
+      <View className="flex-row gap-1.5 border-border border-b-[1.5px] p-2">
         {SECTIONS.map((s) => (
           <ScrollTo
             key={s.id}
@@ -44,7 +44,7 @@ function Demo({ onPress }: DemoProps) {
             offset={-8}
             onPress={onPress}
             testID={`nav-${s.id}`}
-            className="rounded-full border border-border bg-surface-3 px-3 py-1"
+            className="rounded-full border-[1.5px] border-border bg-surface-3 px-3 py-1"
           >
             {s.label}
           </ScrollTo>

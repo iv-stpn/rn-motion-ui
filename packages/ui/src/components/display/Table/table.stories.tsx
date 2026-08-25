@@ -16,10 +16,10 @@ import { type SortState, Table, type TableColumn, type TableProps } from './tabl
 
 const CLASSIC_TABLE = {
   className: '',
-  headerClassName: 'border-border border-b',
-  rowClassName: 'border-border border-b',
-  cardClassName: 'border-border border-b',
-  footerClassName: 'border-border border-t',
+  headerClassName: 'border-border border-b-[1.5px]',
+  rowClassName: 'border-border border-b-[1.5px]',
+  cardClassName: 'border-border border-b-[1.5px]',
+  footerClassName: 'border-border border-t-[1.5px]',
   selectedClassName: 'bg-surface-selected',
   dropIndicatorClassName: 'bg-primary',
   skeletonClassName: 'bg-border',

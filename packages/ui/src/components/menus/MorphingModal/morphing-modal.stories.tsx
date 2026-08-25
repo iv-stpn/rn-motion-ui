@@ -181,7 +181,7 @@ function RecoveryView({ onBack }: RecoveryViewProps) {
       <Text className="mt-2 text-muted-foreground text-sm">{RECOVERY_DESC}</Text>
       <View className="mt-4 flex-row flex-wrap gap-2">
         {RECOVERY_WORDS.map((word, index) => (
-          <View key={word} className="grow basis-[30%] flex-row rounded-lg border border-border bg-surface-1 px-2 py-1.5">
+          <View key={word} className="grow basis-[30%] flex-row rounded-lg border-[1.5px] border-border bg-surface-1 px-2 py-1.5">
             <Text className="mr-1 text-muted-foreground text-xs">{`${index + 1}.`}</Text>
             <Text className="text-foreground text-xs">{word}</Text>
           </View>

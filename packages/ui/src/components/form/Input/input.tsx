@@ -59,9 +59,9 @@ const field = cva('relative flex-row items-center overflow-hidden', {
 // cva so the call site can gate it on `elevation` without fighting cva's variant
 // types.
 const stateBorder = {
-  idle: 'web:border web:border-border',
-  focused: 'web:border web:border-foreground/40',
-  error: 'web:border web:border-danger',
+  idle: 'web:border-[1.5px] web:border-border',
+  focused: 'web:border-[1.5px] web:border-foreground/40',
+  error: 'web:border-[1.5px] web:border-danger',
 } as const;
 
 // Size-aware input box: font size and padding track --spacing-interactive-* tokens.

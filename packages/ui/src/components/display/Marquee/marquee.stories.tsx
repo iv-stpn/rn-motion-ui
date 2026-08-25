@@ -13,7 +13,7 @@ type ChipProps = { label: string };
 
 function Chip({ label }: ChipProps) {
   return (
-    <View className="h-12 items-center justify-center rounded-lg border border-border bg-surface-3 px-6">
+    <View className="h-12 items-center justify-center rounded-lg border-[1.5px] border-border bg-surface-3 px-6">
       <Text weight="medium" className="text-foreground text-sm">
         {label}
       </Text>

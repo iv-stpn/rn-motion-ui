@@ -53,7 +53,7 @@ function Chip({ groups, label, mime }: ChipProps) {
       groups={groups}
       testID={`${CHIP_TEST_ID}-${label}`}
     >
-      <View className="rounded-md border border-border bg-surface-2 px-3 py-1.5">
+      <View className="rounded-md border-[1.5px] border-border bg-surface-2 px-3 py-1.5">
         <Text size="sm">{label}</Text>
       </View>
     </Draggable>
@@ -96,7 +96,7 @@ type DropBoxProps = {
 function DropBox({ children, className, label, onDrop, ...props }: DropBoxProps) {
   return (
     <Dragzone
-      className={cn('min-w-[150px] rounded-lg border border-border border-dashed p-3', className)}
+      className={cn('min-w-[150px] rounded-lg border-[1.5px] border-border border-dashed p-3', className)}
       eligibleClassName="border-info"
       onDrop={(event) => onDrop?.(label, event)}
       overClassName="border-info bg-info/10"

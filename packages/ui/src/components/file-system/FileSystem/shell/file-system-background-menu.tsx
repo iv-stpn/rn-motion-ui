@@ -127,7 +127,7 @@ function BackgroundPanel({ items, layout, menuHeight, onClose, onMenuHeight, red
   return (
     <MotiView
       {...panelMotion}
-      className={cn('absolute overflow-hidden border border-border', surface(PANEL_ELEVATION, 'menu'))}
+      className={cn('absolute overflow-hidden border-[1.5px] border-border', surface(PANEL_ELEVATION, 'menu'))}
       onLayout={onMenuHeight}
       style={{
         left: layout.left,

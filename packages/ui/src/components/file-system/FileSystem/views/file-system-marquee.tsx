@@ -360,7 +360,7 @@ export function FileSystemMarqueeBox({ controller }: FileSystemMarqueeBoxProps) 
   const { rect, opacity } = controller;
   return (
     <Animated.View
-      className="pointer-events-none absolute rounded-sm border border-info bg-info/20"
+      className="pointer-events-none absolute rounded-sm border-[1.5px] border-info bg-info/20"
       style={{ height: rect.height, left: rect.x, opacity, top: rect.y, width: rect.width, zIndex: 5 }}
       testID={FS_MARQUEE_TEST_ID}
     />

@@ -62,7 +62,7 @@ function Chip({ label, onDragEnd }: ChipProps) {
       onDragEnd={onDragEnd}
       testID={`${CHIP_TEST_ID}-${label}`}
     >
-      <View className="rounded-md border border-border bg-surface-2 px-3 py-1.5">
+      <View className="rounded-md border-[1.5px] border-border bg-surface-2 px-3 py-1.5">
         <Text size="sm">{label}</Text>
       </View>
     </Draggable>
@@ -82,7 +82,7 @@ type SlotProps = { label: string };
 function Slot({ label }: SlotProps) {
   return (
     <Dragzone
-      className="min-w-[130px] rounded-lg border border-border border-dashed p-3"
+      className="min-w-[130px] rounded-lg border-[1.5px] border-border border-dashed p-3"
       eligibleClassName="border-info"
       overClassName="border-info bg-info/10"
       testID={`${ZONE_TEST_ID}-${label}`}
@@ -119,7 +119,7 @@ type BoardProps = {
 function Board({ groups, isolate, label, onDragEnd, onDrop }: BoardProps) {
   return (
     <DragManager
-      className="gap-2 rounded-xl border border-border p-3"
+      className="gap-2 rounded-xl border-[1.5px] border-border p-3"
       groups={groups}
       isolate={isolate}
       onDrop={(event) => onDrop(label, event)}
@@ -205,7 +205,7 @@ function LifecycleDemo() {
         setLog('start');
       }}
     >
-      <DragManager className="flex-row gap-3 rounded-xl border border-border p-3">
+      <DragManager className="flex-row gap-3 rounded-xl border-[1.5px] border-border p-3">
         <Chip label="nested-card" />
         <Slot label="nested-slot" />
       </DragManager>

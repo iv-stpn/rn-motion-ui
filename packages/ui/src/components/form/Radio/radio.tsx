@@ -138,7 +138,7 @@ export type RadioGroupItemProps = {
 };
 
 // Border swaps to primary when selected; the shared dot in RadioGroup glides to it.
-const control = cva('h-5 w-5 shrink-0 rounded-full border-2', {
+const control = cva('h-5 w-5 shrink-0 rounded-full border-[1.5px]', {
   variants: {
     selected: {
       true: 'border-primary',

@@ -56,7 +56,7 @@ const container = cva('flex-row items-center justify-center overflow-hidden', {
     variant: {
       primary: 'bg-primary',
       secondary: 'bg-surface-3',
-      outline: 'border border-border bg-transparent',
+      outline: 'border-[1.5px] border-border bg-transparent',
       ghost: 'bg-transparent',
     },
   },

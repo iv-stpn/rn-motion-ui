@@ -271,5 +271,5 @@ export function FileSystemDropzone({
 
 /** The outline drawn over a folder a release would land in. */
 export function FileSystemDropOutline() {
-  return <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border border-primary" />;
+  return <View className="pointer-events-none absolute inset-0 z-[3] rounded-md border-[1.5px] border-primary" />;
 }

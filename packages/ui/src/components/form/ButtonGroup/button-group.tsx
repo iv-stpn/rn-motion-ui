@@ -143,8 +143,8 @@ export function ButtonGroup({
     // adjacent edges never double up.
     let positionClass = 'flex-1';
     if (total > 1) {
-      if (isHorizontal && !isLast) positionClass += ' border-r border-border/50';
-      else if (!isLast) positionClass += ' border-b border-border/50';
+      if (isHorizontal && !isLast) positionClass += ' border-r-[1.5px] border-border/50';
+      else if (!isLast) positionClass += ' border-b-[1.5px] border-border/50';
 
       if (!isFirst) positionClass += isHorizontal ? ' border-l-0' : ' border-t-0';
     }

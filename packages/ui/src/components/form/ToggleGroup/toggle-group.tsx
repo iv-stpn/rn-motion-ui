@@ -120,7 +120,10 @@ export function ToggleGroup({
       PX_INTERACTIVE[size],
       !isHorizontal && 'py-3',
       selected ? 'bg-info' : 'bg-surface-contrast',
-      total > 1 && !isLast && !suppressDivider && (isHorizontal ? 'border-r border-border' : 'border-b border-border'),
+      total > 1 &&
+        !isLast &&
+        !suppressDivider &&
+        (isHorizontal ? 'border-r-[1.5px] border-border' : 'border-b-[1.5px] border-border'),
     );
 
     return (
@@ -149,7 +152,11 @@ export function ToggleGroup({
   return (
     <View
       testID={testID ?? 'toggle-group'}
-      className={cn('relative flex max-w-full flex-col self-start overflow-hidden border border-border', radius, className)}
+      className={cn(
+        'relative flex max-w-full flex-col self-start overflow-hidden border-[1.5px] border-border',
+        radius,
+        className,
+      )}
       style={style}
     >
       {isHorizontal ? (

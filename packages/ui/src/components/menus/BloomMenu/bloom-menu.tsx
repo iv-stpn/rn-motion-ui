@@ -65,9 +65,9 @@ function cellClass(i: number, count: number) {
   const lastRowStart = (rows - 1) * COLS;
   const borderR = i % COLS !== COLS - 1 && i < count - 1;
   const borderB = i < lastRowStart;
-  if (borderR && borderB) return 'items-center justify-center px-3 py-6 border-r border-b border-border';
-  if (borderR) return 'items-center justify-center px-3 py-6 border-r border-border';
-  if (borderB) return 'items-center justify-center px-3 py-6 border-b border-border';
+  if (borderR && borderB) return 'items-center justify-center px-3 py-6 border-r-[1.5px] border-b-[1.5px] border-border';
+  if (borderR) return 'items-center justify-center px-3 py-6 border-r-[1.5px] border-border';
+  if (borderB) return 'items-center justify-center px-3 py-6 border-b-[1.5px] border-border';
   return 'items-center justify-center px-3 py-6';
 }
 
@@ -201,7 +201,7 @@ export function BloomMenu({
             <MotiView
               animate={{ opacity: open ? 1 : 0 }}
               transition={open ? { type: 'timing', duration: 200, delay: reduce ? 0 : 120 } : { type: 'timing', duration: 120 }}
-              className="flex-row items-center justify-between border-border border-b px-4 py-3"
+              className="flex-row items-center justify-between border-border border-b-[1.5px] px-4 py-3"
             >
               <Text weight="medium" className="text-muted-foreground text-sm">
                 {title}

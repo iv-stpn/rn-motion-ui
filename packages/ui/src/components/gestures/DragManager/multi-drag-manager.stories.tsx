@@ -63,7 +63,7 @@ function Row({ id, isSelected, onPress }: RowProps) {
       <Pressable onPress={() => onPress(id)} testID={`${ROW_TEST_ID}-${id}-press`}>
         <View
           className={cn(
-            'flex-row items-center justify-between rounded-md border border-border px-3 py-2',
+            'flex-row items-center justify-between rounded-md border-[1.5px] border-border px-3 py-2',
             isSelected && 'border-info bg-info/10',
             isLifting && 'opacity-40',
           )}
@@ -83,7 +83,7 @@ type GroupChipProps = { count: number };
 /** The group's ghost: one chip naming the count, since a group has no single name. */
 function GroupChip({ count }: GroupChipProps) {
   return (
-    <View className="self-start rounded-md border border-border bg-surface-4 px-2 py-1">
+    <View className="self-start rounded-md border-[1.5px] border-border bg-surface-4 px-2 py-1">
       <Text size="xs">{count} items</Text>
     </View>
   );
@@ -135,7 +135,7 @@ function RowsDemo() {
         ))}
       </View>
       <Dragzone
-        className="rounded-lg border border-border border-dashed p-3"
+        className="rounded-lg border-[1.5px] border-border border-dashed p-3"
         eligibleClassName="border-info"
         onDrop={took}
         overClassName="border-info bg-info/10"

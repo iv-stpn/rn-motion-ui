@@ -198,7 +198,7 @@ export function FileSystemDropIndicator({ containerRef }: FileSystemDropIndicato
 
   return (
     <Animated.View
-      className="pointer-events-none absolute rounded-md border-2 border-info"
+      className="pointer-events-none absolute rounded-md border-[1.5px] border-info"
       pointerEvents="none"
       style={{ height: pos.height, left: pos.x, opacity: pos.opacity, top: pos.y, width: pos.width, zIndex: 40 }}
       testID={isPortalZone(overZoneId) ? FS_OVERLAY_DROPZONE_TEST_ID : FS_DROP_INDICATOR_TEST_ID}

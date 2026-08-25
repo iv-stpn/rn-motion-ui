@@ -34,7 +34,7 @@ const OTP_SHAKE_STEPS = [-5, 5, -3, 3, -1, 0] as const;
 
 type SlotState = 'success' | 'error' | 'active' | 'filled' | 'idle';
 
-const slot = cva('relative h-interactive-lg w-interactive-lg items-center justify-center rounded-interactive border', {
+const slot = cva('relative h-interactive-lg w-interactive-lg items-center justify-center rounded-interactive border-[1.5px]', {
   variants: {
     state: {
       success: 'border-success',
@@ -199,11 +199,13 @@ function OtpSlot({
       style={slotStyleOverrides}
     >
       {/* Outline ring around the active slot so the selected cell is
-          immediately obvious. Rendered as an absolutely-positioned sibling that
-          extends beyond the slot bounds — overflow is only hidden on the
-          animated content, not the slot itself. */}
+          immediately obvious. An absolutely-positioned sibling pinned to the
+          slot's own bounds, so its border lands exactly on top of the slot's
+          and the active cell reads as a single 1.5px edge rather than a doubled
+          one — the slot keeps its status colour underneath (success, error),
+          which the ring covers while the cell is active. */}
       {isActive ? (
-        <View className="pointer-events-none absolute -inset-px rounded-interactive border-2 border-foreground" />
+        <View className="pointer-events-none absolute inset-0 rounded-interactive border-[1.5px] border-foreground" />
       ) : null}
 
       {/* Blinking caret — shown only in an EMPTY active slot (with stick visible).

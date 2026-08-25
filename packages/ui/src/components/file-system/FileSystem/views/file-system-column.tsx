@@ -117,7 +117,9 @@ function ColumnDropSurface({ external }: ColumnDropSurfaceProps) {
     <View
       className={cn(
         'pointer-events-none absolute inset-0 z-[3]',
-        external ? 'border border-foreground/20 border-dashed bg-foreground/[0.03]' : 'rounded-lg border-2 border-info',
+        external
+          ? 'border-[1.5px] border-foreground/20 border-dashed bg-foreground/[0.03]'
+          : 'rounded-lg border-[1.5px] border-info',
       )}
     />
   );
@@ -499,7 +501,7 @@ function FileSystemColumnImpl({
   return (
     <Pressable
       ref={containerRef}
-      className="shrink-0 select-none border-border border-r"
+      className="shrink-0 select-none border-border border-r-[1.5px]"
       style={{ width: COLUMN_WIDTH }}
       testID={FS_DRAG_CONTAINER_TEST_ID.column}
     >

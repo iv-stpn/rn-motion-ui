@@ -5,7 +5,9 @@ import { ArrowRightLine as ArrowRight } from 'rn-motion-ui-icons/icons/arrow-rig
 import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { DownloadLine as Download } from 'rn-motion-ui-icons/icons/download-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
+import { SURFACE_LEVELS } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button, type ButtonVariant } from './button';
 
@@ -13,7 +15,7 @@ const meta = {
   title: 'Form/Button',
   component: Button,
   parameters: { layout: 'centered' },
-  args: { children: 'Continue', variant: 'neutral', size: 'md', onPress: fn() },
+  args: { children: 'Continue', variant: 'neutral', size: 'md', elevation: 0, floating: false, onPress: fn() },
   argTypes: {
     variant: {
       control: 'select',
@@ -21,6 +23,8 @@ const meta = {
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
+    elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
+    floating: { control: 'boolean' },
   },
 } satisfies Meta<typeof Button>;
 
@@ -77,6 +81,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
   const [ripple, setRipple] = useState(false);
   const [iconSide, setIconSide] = useState<IconSide>('none');
   const [floating, setFloating] = useState(false);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [count, setCount] = useState(0);
 
   const colors = useThemeColors();
@@ -95,6 +100,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
     disabled,
     ripple,
     floating,
+    elevation: ELEVATIONS[elevationKey],
   };
   const icon = <ArrowRight color={iconColor} size={16} />;
 
@@ -105,6 +111,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Icon" onChange={setIconSide} options={ICON_SIDES} value={iconSide} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Pill" onChange={setPill} value={pill} />
         <Toggle label="Loading" onChange={setLoading} value={loading} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
@@ -143,6 +150,26 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
           <Button {...args} accessibilityLabel="Delete" size="icon" variant="inverse">
             <Trash2 color={colors['surface-1']} size={16} />
           </Button>
+        </Variants>
+      </Section>
+
+      {/* The shadow is the only thing `elevation` moves (a Button's fill comes
+          from its variant), so the ladder is best read on a flat variant that
+          has no resting shadow to mask it. */}
+      <Section title="Elevation ladder">
+        <Variants align="center">
+          <Sample label="flat (0)">
+            <Button {...args} elevation={0} floating={floating} shape={live.shape} size={size} variant="neutral">
+              {CONTINUE_LABEL}
+            </Button>
+          </Sample>
+          {SURFACE_LEVELS.map((level) => (
+            <Sample key={level} label={`${level}`}>
+              <Button {...args} elevation={level} floating={floating} shape={live.shape} size={size} variant="neutral">
+                {CONTINUE_LABEL}
+              </Button>
+            </Sample>
+          ))}
         </Variants>
       </Section>
 

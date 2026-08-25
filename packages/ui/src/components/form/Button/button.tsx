@@ -2,7 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Pressable, StyleSheet } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { FLOATING_SHADOW_CLASSNAME } from '../../../lib/elevated';
+import { elevatedShadow, FLOATING_SHADOW_CLASSNAME, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -32,6 +32,10 @@ export type ButtonVariant =
 // Colour is the only axis here: the box (height, padding, radius) is the family's,
 // resolved through {@link BUTTON_BOX} so a flat `md` occupies exactly the same
 // rectangle as an elevated chip or an ActionSwap at `md`.
+//
+// The float is deliberately NOT in this table — it is applied separately from
+// `elevation`/`floating` so a caller can raise or flatten any variant. See
+// {@link FILLED_ELEVATION_VARIANTS} for the per-variant resting shadow.
 const container = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
@@ -39,11 +43,11 @@ const container = cva('flex-row items-center justify-center', {
       inverse: 'bg-foreground',
       ghost: 'bg-transparent',
       outline: 'border border-border bg-transparent',
-      danger: 'bg-danger shadow-elevated-3',
-      success: 'bg-success shadow-elevated-3',
-      warning: 'bg-warning shadow-elevated-3',
-      info: 'bg-info shadow-elevated-3',
-      special: 'bg-special shadow-elevated-3',
+      danger: 'bg-danger',
+      success: 'bg-success',
+      warning: 'bg-warning',
+      info: 'bg-info',
+      special: 'bg-special',
       outlineDanger: 'border border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
     },
@@ -107,14 +111,22 @@ export interface ButtonProps extends VariantProps<typeof container>, BaseButtonP
   shape?: ButtonShape;
 
   /**
-   * Swap the button's drop for the input field's large, diffuse halo
-   * (`shadow-floating`) — the same recipe {@link Input}'s `floating` variant
-   * wears. It *replaces* whatever shadow the variant carries rather than adding
-   * to it, since both write `box-shadow`: a floating `danger` trades its
-   * `shadow-elevated-3` rung for the halo, and a floating `ghost` gains one
+   * Swap the button's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`) — the same recipe {@link Input}'s `floating` prop wears.
+   * It *replaces* whatever shadow `elevation` resolved rather than adding to it,
+   * since both write `box-shadow`: a floating `danger` at `elevation={3}` trades
+   * its `shadow-elevated-3` rung for the halo, and a floating `ghost` gains one
    * where it had none. @default false
    */
   floating?: boolean;
+
+  /**
+   * Shadow level (0–8) the button casts. Unlike the surface components this
+   * drives the shadow *only* — a Button's background comes from its `variant`,
+   * not the surface ladder, so raising `elevation` floats the button without
+   * recolouring it. `0` is flat (no shadow). @default 0
+   */
+  elevation?: SurfaceElevation;
 }
 
 export function Button({
@@ -122,6 +134,7 @@ export function Button({
   size = 'md',
   shape = 'pill',
   floating = false,
+  elevation,
   children,
   leftAdornment,
   rightAdornment,
@@ -147,6 +160,9 @@ export function Button({
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
   const v = variant ?? 'neutral';
+  // The shadow is `elevation`-driven and defaults to flat (`0`); `floating`
+  // swaps whichever rung resolves for the halo.
+  const resolvedElevation: SurfaceElevation = elevation ?? 0;
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -185,9 +201,9 @@ export function Button({
         onPress={onPress}
         className={cn(
           container({ variant }),
-          // After the variant so tailwind-merge lets the halo win over a
-          // filled variant's `shadow-elevated-3`.
-          floating && FLOATING_SHADOW_CLASSNAME,
+          // After the variant so tailwind-merge lets the halo win over the
+          // resolved `shadow-elevated-N` rung.
+          floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(resolvedElevation),
           BUTTON_BOX[shape][size],
           isDisabled && !noDisabledOpacity && 'opacity-50',
           'overflow-hidden',

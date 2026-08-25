@@ -6,7 +6,9 @@ import { EyeLine as Eye } from 'rn-motion-ui-icons/icons/eye-line';
 import { MailLine as Mail } from 'rn-motion-ui-icons/icons/mail-line';
 import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
+import { SURFACE_LEVELS } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Input } from './input';
 
@@ -14,10 +16,11 @@ const meta = {
   title: 'Form/Input',
   component: Input,
   parameters: { layout: 'centered' },
-  args: { label: 'Email', placeholder: 'you@example.com', onChange: fn() },
+  args: { label: 'Email', placeholder: 'you@example.com', onChange: fn(), elevation: 0, floating: false },
   argTypes: {
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
-    variant: { control: 'select', options: ['base', 'elevated', 'floating'] },
+    elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
+    floating: { control: 'boolean' },
     shape: { control: 'select', options: ['rounded', 'pill'] },
   },
 } satisfies Meta<typeof Input>;
@@ -26,7 +29,6 @@ type Story = StoryObj<typeof meta>;
 
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SHAPES = ['rounded', 'pill'] as const;
-const VARIANTS = ['base', 'elevated', 'floating'] as const;
 const STATES = ['default', 'error', 'success', 'disabled'] as const;
 const EMAIL_ERROR = 'Enter a valid email address.';
 
@@ -46,7 +48,8 @@ function RevealButton({ shown, onToggle, color }: RevealButtonProps) {
 function InputPlayground(args: ComponentProps<typeof Input>) {
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');
-  const [variant, setVariant] = useState<(typeof VARIANTS)[number]>('base');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
+  const [floating, setFloating] = useState(false);
   const [state, setState] = useState<FieldState>('default');
   const [leftIcon, setLeftIcon] = useState(true);
   const [hint, setHint] = useState(false);
@@ -67,7 +70,8 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
       <ControlCard title="Options">
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
-        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Choice label="State" onChange={setState} options={STATES} value={state} />
         <Toggle label="Left icon" onChange={setLeftIcon} value={leftIcon} />
         <Toggle label="Hint" onChange={setHint} value={hint} />
@@ -76,7 +80,9 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
       <Input
         {...args}
         disabled={state === 'disabled'}
+        elevation={ELEVATIONS[elevationKey]}
         error={state === 'error' ? EMAIL_ERROR : typedError}
+        floating={floating}
         hint={hint ? 'We only use this to sign you in.' : undefined}
         inputType="email"
         label="Email"
@@ -85,11 +91,31 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
         shape={shape}
         size={size}
         success={state === 'success'}
-        variant={variant}
         value={email}
       />
 
       <View className="h-3" />
+      {/* The field reads its fill and float off the same ladder every other
+          surface uses, so the rungs are best compared as a stack. `0` — the
+          default — is the flat resting field; `floating` swaps whichever rung's
+          shadow for the diffuse halo, which is why the toggle stays live here. */}
+      <Section title="Elevation ladder">
+        <View className="gap-4">
+          <Input {...args} elevation={0} floating={floating} label="Flat (0)" shape={shape} size={size} />
+          {SURFACE_LEVELS.map((level) => (
+            <Input
+              {...args}
+              elevation={level}
+              floating={floating}
+              key={level}
+              label={`Elevation ${level}`}
+              shape={shape}
+              size={size}
+            />
+          ))}
+        </View>
+      </Section>
+
       <Section title="States">
         <Variants direction="column">
           <Sample label="error">

@@ -16,6 +16,7 @@ import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../../hooks/use-shake-animation';
 import { cn } from '../../../lib/cn';
+import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
@@ -31,22 +32,15 @@ function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focu
   return 'idle';
 }
 
-// State drives the border colour, not a shadow: the field always carries a 1px
-// border on web, tinted by state (border on idle, foreground on focus, danger
-// on error); error wins over focus. Only `floating` adds a shadow — a large
-// diffuse drop — while `base` / `elevated` are flat fills.
-const field = cva('relative flex-row items-center overflow-hidden web:border', {
+// State drives the border colour, not a shadow: the field carries a 1px border
+// on web only while flat (`elevation` 0), tinted by state (border on idle,
+// foreground on focus, danger on error); error wins over focus. Above 0 the
+// `shadow-elevated-N` recipe already draws the dark-mode rim, so a border would
+// double up. The fill and the float are *not* in this table — they come from the
+// shared surface ladder (`elevation` + `floating`) and are merged on at the call
+// site, exactly as every other surface does it.
+const field = cva('relative flex-row items-center overflow-hidden', {
   variants: {
-    variant: {
-      base: 'bg-input',
-      elevated: 'bg-surface-contrast',
-      floating: 'bg-surface-3 shadow-floating',
-    },
-    state: {
-      idle: 'web:border-border',
-      focused: 'web:border-foreground/40',
-      error: 'web:border-danger',
-    },
     size: {
       sm: 'min-h-interactive-sm',
       md: 'min-h-interactive-md',
@@ -57,8 +51,18 @@ const field = cva('relative flex-row items-center overflow-hidden web:border', {
       pill: 'rounded-full',
     },
   },
-  defaultVariants: { variant: 'base', state: 'idle', size: 'md', shape: 'pill' },
+  defaultVariants: { size: 'md', shape: 'pill' },
 });
+
+// The state-tinted border, applied only while the field is flat (elevation 0) —
+// the ladder's `shadow-elevated-N` rim supersedes it above 0. Kept out of the
+// cva so the call site can gate it on `elevation` without fighting cva's variant
+// types.
+const stateBorder = {
+  idle: 'web:border web:border-border',
+  focused: 'web:border web:border-foreground/40',
+  error: 'web:border web:border-danger',
+} as const;
 
 // Size-aware input box: font size and padding track --spacing-interactive-* tokens.
 // `font-sans-normal` is the same per-weight-family token the `Text` component
@@ -184,10 +188,23 @@ export type InputProps = {
   inputType?: InputType;
   /** Field height variant. Default: `md`. */
   size?: 'sm' | 'md' | 'lg';
-  /** Background variant. `base` (default) is a flat white/neutral fill,
-   *  `elevated` a slightly muted raised fill, `floating` a `surface-3` fill
-   *  with a large diffuse shadow. All three keep a 1px border on web. */
-  variant?: 'base' | 'elevated' | 'floating';
+  /**
+   * Swap the field's ladder shadow for the large, diffuse halo
+   * (`shadow-floating`) — the recipe the old `variant="floating"` wore. It
+   * replaces the `shadow-elevated-N` rung rather than adding to it, so the field
+   * keeps its `elevation` tint but trades the layered drop for the halo.
+   * @default false
+   */
+  floating?: boolean;
+  /**
+   * Surface elevation level (0–8) — drives the field fill (`bg-surface-N`) and
+   * the `shadow-elevated-N` recipe. `0` is the flat resting surface — a
+   * `surface-3` fill with no shadow — which is what a text field usually wants,
+   * so unlike the panel surfaces this one rests at `0` rather than `3`. The
+   * state-tinted web border is drawn only at `0`; above it the elevation shadow
+   * already carries the rim. @default 0
+   */
+  elevation?: SurfaceElevation;
   /** Border-radius variant. `pill` (default) for a full-circle shape, `rounded` for a standard input. */
   shape?: 'rounded' | 'pill';
   disabled?: boolean;
@@ -225,7 +242,8 @@ export function Input({
   successIcon,
   inputType = 'text',
   size = 'md',
-  variant = 'base',
+  floating = false,
+  elevation = 0,
   shape = 'pill',
   disabled,
   secureTextEntry,
@@ -311,7 +329,17 @@ export function Input({
       ) : null}
 
       <Animated.View
-        className={cn(field({ variant, state, size, shape }), disabled ? 'opacity-60' : 'opacity-100')}
+        className={cn(
+          field({ size, shape }),
+          // The fill follows `elevation`; `floating` swaps that rung's shadow
+          // for the diffuse halo. At the default `0` this is a bare
+          // `bg-surface-3` — a flat field, as before. The state border is
+          // drawn only at 0: above it the elevation shadow already carries the
+          // rim, so a border would double up.
+          elevation === 0 && stateBorder[state],
+          elevatedSurface(elevation, elevation, floating),
+          disabled ? 'opacity-60' : 'opacity-100',
+        )}
         style={{ transform: [{ translateX: shakeX }] }}
       >
         {leftIcon ? (

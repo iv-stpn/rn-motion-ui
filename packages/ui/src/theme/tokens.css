@@ -120,9 +120,11 @@
   --color-muted-foreground: oklch(50% 0.004 270);
   --color-border: oklch(0% 0 0 / 0.1);
 
-  /* Input field fills — the resting backgrounds for the input variants.
-     `base` is page-white, `elevated` the muted raised fill, `floating`
-     reuses `surface-3` (no dedicated token needed). */
+  /* Flat neutral fills. `input` is the page-white field fill; `Input` itself now
+     reads the surface ladder (`elevation` + `floating`) like every other
+     surface, so this is left for app code that wants the old flat field colour.
+     `surface-contrast` is the muted raised fill used by tabs, skeletons,
+     segmented controls and the like. */
   --color-input: oklch(100% 0 0);
   --color-surface-contrast: oklch(95% 0 0);
 

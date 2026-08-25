@@ -79,7 +79,7 @@ export type IconButtonProps = {
 
   /**
    * Swap the plate's ladder shadow for the input field's large, diffuse halo
-   * (`shadow-floating`) — the recipe {@link Input}'s `floating` variant wears.
+   * (`shadow-floating`) — the recipe {@link Input}'s `floating` prop wears.
    * It replaces the `shadow-elevated-N` rung rather than adding to it, so the
    * plate keeps its `elevation` tint but trades the layered drop for the halo.
    * @default false

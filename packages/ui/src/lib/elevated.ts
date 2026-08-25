@@ -65,7 +65,7 @@ const FLAT_SURFACE_CLASSNAME = 'bg-surface-3';
  * fixed black alpha, zero-offset so it spreads evenly on every side). It is a
  * wholly separate recipe from the `shadow-elevated-N` ladder, not a rung of it:
  * the ladder stacks offset drop layers plus a dark-mode rim to place a surface
- * on the depth scale, while this is the soft halo Input's `floating` variant
+ * on the depth scale, while this is the soft halo Input's `floating` prop
  * wears.
  * A surface picks one or the other — never both, since they are the same CSS
  * property.

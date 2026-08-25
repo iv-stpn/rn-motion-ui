@@ -28,13 +28,15 @@ import { CloseButton } from '../CloseButton/close-button';
 // past a window. A spring (or any ease) reads as a hand that speeds up and
 // slows down — the "staggers, then moves at the end" feel.
 const SLIDE_TRANSITION = { type: 'timing' as const, duration: 280, easing: Easing.linear };
-// Exiting deeper-menu content fades almost instantly: the slide/roll still runs
-// its full course, but the rows vanish early instead of lingering at full opacity.
+// Exiting deeper-menu content disappears instantly: the slide/roll still runs its
+// full course, but the rows are hidden immediately instead of lingering on screen.
+// `opacity` uses a 1ms timing (not `no-animation`) so it still fires the completion
+// callback that gates the pane's unmount.
 const SLIDE_EXIT_TRANSITION = {
   type: 'timing' as const,
   duration: 280,
   easing: Easing.linear,
-  opacity: { type: 'timing' as const, duration: 100 },
+  opacity: { type: 'timing' as const, duration: 1 },
 } as const;
 const ARROW_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
 const ARROW_EXIT_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
@@ -189,7 +191,7 @@ export const MultiStepMenu = function MultiStepMenu({
 
   const slideTransition = reduced ? { type: 'timing' as const, duration: 160 } : SLIDE_TRANSITION;
   const slideExitTransition = reduced
-    ? { type: 'timing' as const, duration: 160, opacity: { type: 'timing' as const, duration: 80 } }
+    ? { type: 'timing' as const, duration: 160, opacity: { type: 'timing' as const, duration: 1 } }
     : SLIDE_EXIT_TRANSITION;
   const arrowTransition = reduced
     ? { type: 'timing' as const, duration: 160, opacity: { type: 'timing' as const, duration: 100 } }
@@ -365,8 +367,8 @@ export const MultiStepMenu = function MultiStepMenu({
     const paneKey = isRoot ? '__root__' : path.join('/');
 
     // Content panes slide HORIZONTALLY like tabs, with two small-screen exceptions:
-    // - Navigating BACK to the root (no back caret) rolls the content up alongside
-    //   the title instead of sliding sideways.
+    // - Navigating BACK to the root (no back caret): the deeper menu disappears
+    //   instantly (no exit animation) and the root content rolls up into place.
     // - Navigating FORWARD from the root into the first layer fades it in with
     //   opacity — there's no parent pane to slide against, so a slide reads as a
     //   jump in from off-screen.
@@ -386,7 +388,8 @@ export const MultiStepMenu = function MultiStepMenu({
     })();
     const exitTo = (() => {
       if (isRoot) return isForward ? { opacity: 0 } : { translateX: -paneWidth };
-      if (isBackward) return isFirstLayer ? { translateY: -TITLE_ROLL, opacity: 0 } : { translateX: paneWidth, opacity: 0 };
+      // Back to the root: no exit animation — the deeper menu just disappears.
+      if (isBackward) return isFirstLayer ? false : { translateX: paneWidth, opacity: 0 };
       return { translateX: -paneWidth, opacity: 0 };
     })();
     const animateTo = (() => {
@@ -394,8 +397,8 @@ export const MultiStepMenu = function MultiStepMenu({
       if (isForward && isFirstLayer) return { opacity: 1 };
       return { translateX: 0 };
     })();
-    // Deeper menus fade their content out almost instantly on exit; the root's
-    // forward exit stays a slower cross-fade against the entering first layer.
+    // Deeper menus hide their content instantly on exit; the root's forward exit
+    // stays a slower cross-fade against the entering first layer.
     const exitTransition = isRoot ? slideTransition : slideExitTransition;
 
     content = (

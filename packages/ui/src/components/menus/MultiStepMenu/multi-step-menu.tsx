@@ -16,6 +16,7 @@ import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, Vie
 import { Easing } from 'react-native-reanimated';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
+import { EASE_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { MenuItem, type MenuItemIcon } from '../../rows/menu-item';
@@ -23,11 +24,16 @@ import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
 import { CloseButton } from '../CloseButton/close-button';
 
-// Linear, not a spring or eased tween: the pane swap is two layers held a full
-// pane height apart, so a constant rate reads as one strip of pages rolling
-// past a window. A spring (or any ease) reads as a hand that speeds up and
-// slows down — the "staggers, then moves at the end" feel.
-const SLIDE_TRANSITION = { type: 'timing' as const, duration: 280, easing: Easing.linear };
+// A lightly-damped spring glides the pane into place with a hair of settle at the
+// end instead of the abrupt start/stop a linear tween gives. Opacity stays a
+// timed fade (the first-layer enter) so it never overshoots the way a spring would.
+const SLIDE_TRANSITION = {
+  type: 'spring' as const,
+  stiffness: 280,
+  damping: 30,
+  mass: 1,
+  opacity: { type: 'timing' as const, duration: 280, easing: EASE_OUT },
+};
 // Exiting deeper-menu content disappears instantly: the slide/roll still runs its
 // full course, but the rows are hidden immediately instead of lingering on screen.
 // `opacity` uses a 1ms timing (not `no-animation`) so it still fires the completion

@@ -9,6 +9,7 @@ import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_IN_OUT, SPRING_SWAP } from '../../../lib/ease';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -77,7 +78,42 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
    * `success`, error → `danger` — so the fill, gloss, rim and shadow update in full
    * rather than overlaying a flat plate. Omit (default) for the flat button. */
   chip?: 'elevated';
+
+  // ── styling surface ───────────────────────────────────────────────────────
+  // Button's own styling props, re-declared here because StatefulButton owns its
+  // content row: it hands the wrapper a <View>, not a label, so the class that
+  // Button would have merged onto its label text has to be routed to the roll
+  // slot by hand (see TextSlot). The rest are documented rather than rewired,
+  // since what they attach to shifts once the machine is in the middle.
+
+  /** Tailwind classes merged onto the outer wrapper — the box the press-scale
+   *  spring animates. Layout lives here: margin, width, self-alignment. */
+  className?: string;
+  /** Tailwind classes merged onto the pressable plate (background, border,
+   *  radius, padding). Merged *after* the success/error padding squeeze, so a
+   *  `px-*` passed here overrides the squeeze for every state. */
+  contentClassName?: string;
+  /** Tailwind classes merged onto the rolling label, on top of the variant/size
+   *  ramp. Applies to every state — idle, loading, success and error all roll
+   *  through the same slot — and to both copies of it, so the invisible sizer
+   *  keeps measuring the same box the visible label paints in.
+   *
+   *  A `text-*` colour here holds on idle/loading but *loses* on success/error,
+   *  where the state's foreground colour is applied inline to stay legible
+   *  against the state fill. */
+  labelClassName?: string;
+  /** Inline styles for the outer wrapper, applied alongside `className`. */
   style?: StyleProp<ViewStyle>;
+  /** Swap the resolved shadow for the input field's large, diffuse halo.
+   *
+   * Flat button only: the elevated `chip` casts its own coloured drop-shadow
+   * ring, sized to its fill, and ignores both this and `elevation` rather than
+   * writing a second `box-shadow` over it. @default false */
+  floating?: boolean;
+  /** Shadow level (0–8) the button casts. Drives the shadow only — the fill
+   *  comes from `variant` — so raising it floats the button without recolouring
+   *  it. Flat button only (see `floating`). @default 0 */
+  elevation?: SurfaceElevation;
 }
 
 // Roll distance before the slot height has been measured (px).
@@ -242,9 +278,11 @@ type TextSlotProps = {
   reduce: boolean;
   /** Overrides the Tailwind label colour — used when a state backdrop changes the bg. */
   textColor?: string;
+  /** Consumer classes merged onto the label after the variant/size ramp. */
+  labelClassName?: string;
 };
 
-function TextSlot({ value, children, variant = 'neutral', size = 'md', reduce, textColor }: TextSlotProps) {
+function TextSlot({ value, children, variant = 'neutral', size = 'md', reduce, textColor, labelClassName }: TextSlotProps) {
   // Roll distance = one line-box height, so the label travels exactly one line
   // as it rolls in/out. Width is left to the in-flow sizer (no tween — see below).
   const [roll, setRoll] = useState(ROLL_FALLBACK);
@@ -255,7 +293,11 @@ function TextSlot({ value, children, variant = 'neutral', size = 'md', reduce, t
     if (height) setRoll((prev) => (prev === height ? prev : height));
   }, []);
 
-  const textClass = labelStyle({ variant, size });
+  // Merged once and used by BOTH copies below: the sizer must keep measuring the
+  // exact box the visible overlay paints in, so a consumer class that changes the
+  // metrics (font size, tracking, weight) has to land on both or the button
+  // sizes itself to the wrong label.
+  const textClass = cn(labelStyle({ variant, size }), labelClassName);
   const colorStyle = textColor ? { color: textColor } : undefined;
 
   return (
@@ -282,7 +324,7 @@ function TextSlot({ value, children, variant = 'neutral', size = 'md', reduce, t
         {textLabel === null ? (
           children
         ) : (
-          <Text className={textClass} style={colorStyle}>
+          <Text className={textClass} style={colorStyle} weight="medium">
             {textLabel}
           </Text>
         )}
@@ -305,7 +347,7 @@ function TextSlot({ value, children, variant = 'neutral', size = 'md', reduce, t
             importantForAccessibility="no-hide-descendants"
           >
             {typeof children === 'string' ? (
-              <Text className={textClass} style={colorStyle}>
+              <Text className={textClass} style={colorStyle} weight="medium">
                 {children}
               </Text>
             ) : (
@@ -401,6 +443,12 @@ export function StatefulButton({
   variant = 'neutral',
   size = 'md',
   shape,
+  className,
+  contentClassName,
+  labelClassName,
+  style,
+  floating,
+  elevation,
   ...rest
 }: StatefulButtonProps) {
   const reduce = useReducedMotion();
@@ -573,7 +621,9 @@ export function StatefulButton({
   // Shared across both wrapper branches. `keepAppearance` maps onto the wrapper's
   // skip-the-dim `noDisabledOpacity`: the flat Button keeps full opacity, the
   // elevated chip keeps its gloss/fill while the machine holds it disabled.
-  const { contentClassName: externalContentClassName, ...otherRest } = rest;
+  // `floating`/`elevation` are deliberately NOT in here: they are flat-Button
+  // props, and the chip resolves its own drop-shadow ring from its variant. Only
+  // the Button branch below picks them up.
   const sharedProps = {
     size: size ?? 'md',
     shape: shape ?? 'pill',
@@ -581,9 +631,12 @@ export function StatefulButton({
     loading: false as const,
     noDisabledOpacity: keepAppearance,
     backdropColor,
-    contentClassName: cn(squeezeClass, externalContentClassName),
+    className,
+    style,
+    // Consumer classes land after the squeeze so an explicit `px-*` wins over it.
+    contentClassName: cn(squeezeClass, contentClassName),
     onPress: handlePress,
-    ...otherRest,
+    ...rest,
   };
 
   const content = (
@@ -608,7 +661,14 @@ export function StatefulButton({
             No overflow:hidden here — dots bounce freely above the baseline. */}
       <View className="relative">
         <MotiView animate={{ opacity: state === 'loading' ? 0 : 1 }} transition={{ type: 'timing', duration: 150 }}>
-          <TextSlot value={textKey} variant={v} size={size} reduce={reduce} textColor={resolvedTextColor}>
+          <TextSlot
+            value={textKey}
+            variant={v}
+            size={size}
+            reduce={reduce}
+            textColor={resolvedTextColor}
+            labelClassName={labelClassName}
+          >
             {stateText}
           </TextSlot>
         </MotiView>
@@ -647,7 +707,7 @@ export function StatefulButton({
     );
 
   return (
-    <Button variant={variant} {...sharedProps}>
+    <Button variant={variant} floating={floating} elevation={elevation} {...sharedProps}>
       {content}
     </Button>
   );

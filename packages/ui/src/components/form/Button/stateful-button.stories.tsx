@@ -3,6 +3,7 @@ import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { ArrowRightLine as ArrowRight } from 'rn-motion-ui-icons/icons/arrow-right-line';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import {
   Action,
   Choice,
@@ -14,6 +15,7 @@ import {
   Toggle,
   Variants,
 } from '../../../__stories__/story-harness';
+import { SURFACE_LEVELS } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { StatefulButton } from './stateful-button';
 
@@ -42,6 +44,14 @@ const CUSTOM_LABELS = {
   errorText: 'Upload failed',
 } as const;
 
+const SUBMIT_LABEL = 'Submit';
+const SUCCESS_LABEL = 'Done';
+// Two properties uniwind maps straight onto the label's computed style, so the
+// LabelClassName play function can read them back off both copies of the label.
+const LABEL_CLASS = 'uppercase italic';
+const CONTENT_CLASS = 'border-2 border-special border-dashed';
+const WRAPPER_CLASS = 'w-52';
+
 function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   const colors = useThemeColors();
   const [chip, setChip] = useState<(typeof CHIP_OPTIONS)[number]>('none');
@@ -49,6 +59,9 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   const [withIcon, setWithIcon] = useState(false);
   const [shouldAutoReset, setShouldAutoReset] = useState(true);
   const [customLabels, setCustomLabels] = useState(false);
+  const [styled, setStyled] = useState(false);
+  const [floating, setFloating] = useState(false);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [outcome, setOutcome] = useState<(typeof OUTCOMES)[number]>('success');
   const [lastRun, setLastRun] = useState('Idle — press to run.');
   // `shouldReset` is edge-triggered, so the parent raises it and drops it again
@@ -80,6 +93,16 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
     ...(customLabels ? CUSTOM_LABELS : {}),
     chip: chip === 'none' ? undefined : chip,
     size,
+    // Both shadow props are flat-button only — the chip resolves its own coloured
+    // drop-shadow ring from its fill, so toggling these with `Chip: elevated`
+    // selected changes nothing.
+    floating,
+    elevation: ELEVATIONS[elevationKey],
+    // One toggle for the whole class surface, so the machine can be run with it
+    // on and the classes watched riding through every state.
+    className: styled ? WRAPPER_CLASS : undefined,
+    contentClassName: styled ? CONTENT_CLASS : undefined,
+    labelClassName: styled ? LABEL_CLASS : undefined,
     icon: withIcon ? <ArrowRight size={16} color={iconColor} /> : undefined,
   };
 
@@ -88,10 +111,16 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
       <ControlCard title="Options">
         <Choice label="Chip" onChange={setChip} options={CHIP_OPTIONS} value={chip} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
-        <Choice label="Outcome" onChange={setOutcome} options={OUTCOMES} value={outcome} />
         <Toggle label="With icon" onChange={setWithIcon} value={withIcon} />
         <Toggle label="Auto reset" onChange={setShouldAutoReset} value={shouldAutoReset} />
         <Toggle label="Custom labels" onChange={setCustomLabels} value={customLabels} />
+        <Toggle label="Styled" onChange={setStyled} value={styled} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+      </ControlCard>
+
+      <ControlCard title="Run">
+        <Choice label="Outcome" onChange={setOutcome} options={OUTCOMES} value={outcome} />
         <Action label="Reset now" onPress={requestReset} />
       </ControlCard>
 
@@ -129,6 +158,46 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
               <StatefulButton {...shared} size={name} />
             </Sample>
           ))}
+        </Variants>
+      </Section>
+
+      <View className="h-3" />
+      {/* Run the live button above with `Styled` on to watch the same classes
+          ride the label, plate and wrapper through loading → success → error. */}
+      <Section title="Styling — each class stays on through every state">
+        <Variants align="center">
+          <Sample label="labelClassName">
+            <StatefulButton {...shared} labelClassName={LABEL_CLASS} />
+          </Sample>
+          <Sample label="contentClassName">
+            <StatefulButton {...shared} contentClassName={CONTENT_CLASS} />
+          </Sample>
+          <Sample label="className">
+            <StatefulButton {...shared} className={WRAPPER_CLASS} />
+          </Sample>
+        </Variants>
+        <Note>
+          labelClassName lands on the rolling label, contentClassName on the pressable plate, className + style on the outer
+          wrapper the press spring animates.
+        </Note>
+      </Section>
+
+      <View className="h-3" />
+      {/* The fill comes from `variant`, so the ladder only moves the shadow —
+          best read against the flat neutral plate that has none at rest. */}
+      <Section title="Shadow — flat button only; the `elevated` chip casts its own ring">
+        <Variants align="center">
+          <Sample label="flat (0)">
+            <StatefulButton {...shared} elevation={0} floating={false} />
+          </Sample>
+          {SURFACE_LEVELS.map((level) => (
+            <Sample key={level} label={`${level}`}>
+              <StatefulButton {...shared} elevation={level} floating={false} />
+            </Sample>
+          ))}
+          <Sample label="floating">
+            <StatefulButton {...shared} floating={true} />
+          </Sample>
         </Variants>
       </Section>
     </Playground>
@@ -324,6 +393,42 @@ export const ResetMidFlight: Story = {
     await new Promise((resolve) => setTimeout(resolve, 500));
     await expect(args.afterSuccess).not.toHaveBeenCalled();
     await expect(button).not.toHaveAttribute('aria-disabled', 'true');
+  },
+};
+
+/** `labelClassName` has to be routed to the roll slot by hand: StatefulButton
+ *  hands the wrapper a content row rather than a bare label, so the class the
+ *  wrapper would normally merge onto its own label text never reaches this one.
+ *
+ *  Two things to pin. Both copies of the label carry it — TextSlot paints an
+ *  invisible sizer that drives the button's width plus the animated overlay that
+ *  paints it, and a class that shifts the metrics on only one of them would size
+ *  the button to a box it doesn't render. And it survives the machine: the
+ *  success label rolls in wearing the same class. */
+export const LabelClassName: Story = {
+  name: 'Demo: labelClassName styles every state',
+  args: {
+    labelClassName: LABEL_CLASS,
+    onPress: fn(() => Promise.resolve()),
+    minLoadingMs: 50,
+    successDurationMs: 100,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = await canvas.findByTestId('button');
+
+    // Sizer + overlay, so this is an -All- query by construction.
+    const idle = await canvas.findAllByText(SUBMIT_LABEL);
+    await expect(idle.map((label) => getComputedStyle(label).textTransform)).toEqual(['uppercase', 'uppercase']);
+    await expect(idle.map((label) => getComputedStyle(label).fontStyle)).toEqual(['italic', 'italic']);
+
+    // Run to success and read the state label: it rolls through the same slot,
+    // so it wears the class too. No auto-reset, so the button holds it there.
+    await userEvent.click(button);
+    await waitFor(async () => {
+      const done = await canvas.findAllByText(SUCCESS_LABEL);
+      expect(done.map((label) => getComputedStyle(label).textTransform)).toEqual(['uppercase', 'uppercase']);
+    });
   },
 };
 

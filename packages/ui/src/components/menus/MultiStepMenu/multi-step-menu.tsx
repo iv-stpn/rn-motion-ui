@@ -28,6 +28,14 @@ import { CloseButton } from '../CloseButton/close-button';
 // past a window. A spring (or any ease) reads as a hand that speeds up and
 // slows down — the "staggers, then moves at the end" feel.
 const SLIDE_TRANSITION = { type: 'timing' as const, duration: 280, easing: Easing.linear };
+// Exiting deeper-menu content fades almost instantly: the slide/roll still runs
+// its full course, but the rows vanish early instead of lingering at full opacity.
+const SLIDE_EXIT_TRANSITION = {
+  type: 'timing' as const,
+  duration: 280,
+  easing: Easing.linear,
+  opacity: { type: 'timing' as const, duration: 100 },
+} as const;
 const ARROW_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
 const ARROW_EXIT_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
 // The header title rolls ±12px on enter/exit; the content's back-to-root roll
@@ -180,6 +188,9 @@ export const MultiStepMenu = function MultiStepMenu({
   const reduced = useReducedMotion();
 
   const slideTransition = reduced ? { type: 'timing' as const, duration: 160 } : SLIDE_TRANSITION;
+  const slideExitTransition = reduced
+    ? { type: 'timing' as const, duration: 160, opacity: { type: 'timing' as const, duration: 80 } }
+    : SLIDE_EXIT_TRANSITION;
   const arrowTransition = reduced
     ? { type: 'timing' as const, duration: 160, opacity: { type: 'timing' as const, duration: 100 } }
     : ARROW_TRANSITION;
@@ -375,14 +386,17 @@ export const MultiStepMenu = function MultiStepMenu({
     })();
     const exitTo = (() => {
       if (isRoot) return isForward ? { opacity: 0 } : { translateX: -paneWidth };
-      if (isBackward) return isFirstLayer ? { translateY: -TITLE_ROLL } : { translateX: paneWidth };
-      return { translateX: -paneWidth };
+      if (isBackward) return isFirstLayer ? { translateY: -TITLE_ROLL, opacity: 0 } : { translateX: paneWidth, opacity: 0 };
+      return { translateX: -paneWidth, opacity: 0 };
     })();
     const animateTo = (() => {
       if (isRoot && isBackward) return { translateY: 0 };
       if (isForward && isFirstLayer) return { opacity: 1 };
       return { translateX: 0 };
     })();
+    // Deeper menus fade their content out almost instantly on exit; the root's
+    // forward exit stays a slower cross-fade against the entering first layer.
+    const exitTransition = isRoot ? slideTransition : slideExitTransition;
 
     content = (
       <View className="flex-1" onLayout={handlePaneLayout}>
@@ -453,6 +467,7 @@ export const MultiStepMenu = function MultiStepMenu({
               animate={animateTo}
               exit={exitTo}
               transition={slideTransition}
+              exitTransition={exitTransition}
               className="absolute inset-0 px-5"
             >
               <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="pb-6">

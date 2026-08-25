@@ -36,6 +36,8 @@ export type TextRollingProps = {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
+  /** Reports the label's natural height (e.g. to size an animated slot). */
+  onLayout?: (event: LayoutChangeEvent) => void;
 };
 
 /**

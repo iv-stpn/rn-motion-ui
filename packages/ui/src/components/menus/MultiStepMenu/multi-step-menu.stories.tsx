@@ -5,7 +5,7 @@ import { MoonLine as Moon } from 'rn-motion-ui-icons/icons/moon-line';
 import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-line';
 import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
-import { expect, screen, userEvent, within } from 'storybook/test';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import {
   Action,
   Choice,
@@ -338,5 +338,34 @@ export const WideScreen: Story = {
     await userEvent.click(await screen.findByText('Notifications'));
     // Verify the Notifications section body (unique text) is now shown.
     await expect(await screen.findByText(NOTIFICATIONS_BODY)).toBeTruthy();
+    // Go two levels deep so the wide back button (path.length > 1) is visible.
+    await userEvent.click(await screen.findByText('Appearance'));
+    await userEvent.click(await screen.findByText(ADVANCED_APPEARANCE_LABEL));
+    await expect(await screen.findByText(ADVANCED_BODY)).toBeTruthy();
+    // Back to the first-level menu: the content pane below the title translates
+    // along with the title's roll instead of swapping in one step — the old
+    // body must leave the tree once the exit slide completes.
+    await userEvent.click(await screen.findByLabelText('Back'));
+    await expect(await screen.findByText(APPEARANCE_BODY)).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText(ADVANCED_BODY)).toBeNull());
+  },
+};
+
+/** Small-screen layout: full sheet whose panes roll vertically with the title. */
+export const SmallScreen: Story = {
+  name: 'Demo: Small screen navigation',
+  render: () => <MultiStepSheetStory isWideScreen={false} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole('button', { name: OPEN_SETTINGS_LABEL }));
+    await expect(await screen.findByLabelText('Close')).toBeTruthy();
+    // Root menu → Appearance submenu.
+    await userEvent.click(await screen.findByText('Appearance', { exact: true }));
+    await expect(await screen.findByText(APPEARANCE_BODY)).toBeTruthy();
+    // Back to the first menu: the root list must return once the exit roll
+    // completes, and the Appearance body must leave the tree.
+    await userEvent.click(await screen.findByLabelText('Back'));
+    await expect(await screen.findByText('Privacy & Security')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText(APPEARANCE_BODY)).toBeNull());
   },
 };

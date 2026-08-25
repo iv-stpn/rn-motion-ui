@@ -24,12 +24,15 @@ import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-mod
 import { CloseButton } from '../CloseButton/close-button';
 
 // Linear, not a spring or eased tween: the pane swap is two layers held a full
-// width apart, so a constant rate reads as one strip of pages sliding past a
-// window. A spring (or any ease) reads as a hand that speeds up and slows down —
-// the "staggers, then moves at the end" feel. Mirrors Tabs' slide push.
+// pane height apart, so a constant rate reads as one strip of pages rolling
+// past a window. A spring (or any ease) reads as a hand that speeds up and
+// slows down — the "staggers, then moves at the end" feel.
 const SLIDE_TRANSITION = { type: 'timing' as const, duration: 280, easing: Easing.linear };
 const ARROW_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
 const ARROW_EXIT_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
+// The header title rolls ±12px on enter/exit; the content's back-to-root roll
+// mirrors it so the two move in lockstep instead of the content sliding sideways.
+const TITLE_ROLL = 12;
 
 const MultiStepMenuContext = createContext<MultiStepHelpers | null>(null);
 
@@ -169,6 +172,11 @@ export const MultiStepMenu = function MultiStepMenu({
   const [path, setPath] = useState<string[]>(isWideScreen ? (defaultPath ?? []) : []);
   const [direction, setDirection] = useState<MultiStepDirection>(null);
   const [paneWidth, setPaneWidth] = useState(0);
+  const [widePaneWidth, setWidePaneWidth] = useState(0);
+  // The below-the-header title's natural height (text-2xl line ≈ 32px; a
+  // wrapped title measures taller). Animated on enter/exit so the header
+  // grows/collapses smoothly instead of snapping the pane area.
+  const [titleSlotHeight, setTitleSlotHeight] = useState(32);
   const reduced = useReducedMotion();
 
   const slideTransition = reduced ? { type: 'timing' as const, duration: 160 } : SLIDE_TRANSITION;
@@ -245,6 +253,14 @@ export const MultiStepMenu = function MultiStepMenu({
   );
 
   const handlePaneLayout = useCallback((e: LayoutChangeEvent) => setPaneWidth(e.nativeEvent.layout.width), []);
+  const handleWidePaneLayout = useCallback((e: LayoutChangeEvent) => setWidePaneWidth(e.nativeEvent.layout.width), []);
+  const handleTitleSlotLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const height = e.nativeEvent.layout.height;
+      if (height > 0 && height !== titleSlotHeight) setTitleSlotHeight(height);
+    },
+    [titleSlotHeight],
+  );
 
   useImperativeHandle(ref, () => ({
     navigate: navigateTo,
@@ -263,6 +279,17 @@ export const MultiStepMenu = function MultiStepMenu({
     const activeNode = effectivePath.length > 0 ? resolveSection(sections, effectivePath) : null;
     const showBack = path.length > 1;
     const title = activeNode?.title ?? rootTitle;
+
+    // The content below the title slides HORIZONTALLY, tracking the sidebar
+    // selection instead of swapping in one step. `direction` is committed before
+    // the path (set-direction-then-commit), so the exiting pane renders its
+    // correct `exit` value and the entering pane its `from` on the same render pass.
+    const widePaneKey = effectivePath.length > 0 ? effectivePath.join('/') : '__root__';
+    const wideEnterFrom = (() => {
+      if (!direction) return false;
+      return direction === 'backward' ? { translateX: -widePaneWidth } : { translateX: widePaneWidth };
+    })();
+    const wideExitTo = direction === 'forward' ? { translateX: -widePaneWidth } : { translateX: widePaneWidth };
 
     content = (
       <View className="flex-1 flex-row overflow-hidden rounded-modal">
@@ -296,13 +323,26 @@ export const MultiStepMenu = function MultiStepMenu({
             </View>
             <CloseButton className="absolute top-2 right-2" onPress={handleClose} />
           </View>
-          {activeNode ? (
-            <ScrollView className="min-h-0 flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="px-6 pb-8">
-              {activeNode.render(helpers)}
-            </ScrollView>
-          ) : (
-            <View className="flex-1">{widePlaceholder}</View>
-          )}
+          <View className="min-h-0 flex-1 overflow-hidden" onLayout={handleWidePaneLayout}>
+            <AnimatePresence>
+              <MotiView
+                key={widePaneKey}
+                from={wideEnterFrom}
+                animate={{ translateX: 0 }}
+                exit={wideExitTo}
+                transition={slideTransition}
+                className="absolute inset-0"
+              >
+                {activeNode ? (
+                  <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="px-6 pb-8">
+                    {activeNode.render(helpers)}
+                  </ScrollView>
+                ) : (
+                  <View className="flex-1">{widePlaceholder}</View>
+                )}
+              </MotiView>
+            </AnimatePresence>
+          </View>
         </View>
       </View>
     );
@@ -313,13 +353,35 @@ export const MultiStepMenu = function MultiStepMenu({
     const title = isRoot ? rootTitle : (activeNode?.title ?? rootTitle);
     const paneKey = isRoot ? '__root__' : path.join('/');
 
+    // Content panes slide HORIZONTALLY like tabs, with two small-screen exceptions:
+    // - Navigating BACK to the root (no back caret) rolls the content up alongside
+    //   the title instead of sliding sideways.
+    // - Navigating FORWARD from the root into the first layer fades it in with
+    //   opacity — there's no parent pane to slide against, so a slide reads as a
+    //   jump in from off-screen.
+    //
+    // `enterFrom`/`animateTo` describe the pane ENTERING (the new path), while
+    // `exitTo` describes the pane EXITING (the old path). The set-direction-then-
+    // commit flow commits `direction` before `path`, so each is evaluated against
+    // the path it actually applies to: `isFirstLayer` means the exiting depth-1
+    // pane on the way back to root, or the entering depth-1 pane coming from root.
+    const isForward = direction === 'forward';
+    const isBackward = direction === 'backward';
+    const isFirstLayer = path.length === 1;
     const enterFrom = (() => {
-      if (isRoot) return direction === 'backward' ? { translateX: -paneWidth } : false;
-      return direction === 'backward' ? { translateX: -paneWidth } : { translateX: paneWidth };
+      if (isRoot) return isBackward ? { translateY: TITLE_ROLL } : false;
+      if (isForward && isFirstLayer) return { opacity: 0 };
+      return isBackward ? { translateX: -paneWidth } : { translateX: paneWidth };
     })();
     const exitTo = (() => {
-      if (isRoot) return { translateX: -paneWidth };
-      return direction === 'forward' ? { translateX: -paneWidth } : { translateX: paneWidth };
+      if (isRoot) return isForward ? { opacity: 0 } : { translateX: -paneWidth };
+      if (isBackward) return isFirstLayer ? { translateY: -TITLE_ROLL } : { translateX: paneWidth };
+      return { translateX: -paneWidth };
+    })();
+    const animateTo = (() => {
+      if (isRoot && isBackward) return { translateY: 0 };
+      if (isForward && isFirstLayer) return { opacity: 1 };
+      return { translateX: 0 };
     })();
 
     content = (
@@ -354,9 +416,9 @@ export const MultiStepMenu = function MultiStepMenu({
                 {isRoot && (
                   <MotiView
                     key="mobile-title-top"
-                    from={{ opacity: 0, translateY: 12 }}
+                    from={{ opacity: 0, translateY: TITLE_ROLL }}
                     animate={{ opacity: 1, translateY: 0 }}
-                    exit={{ opacity: 0, translateY: 12 }}
+                    exit={{ opacity: 0, translateY: TITLE_ROLL }}
                     transition={arrowTransition}
                     exitTransition={arrowExitTransition}
                   >
@@ -371,14 +433,14 @@ export const MultiStepMenu = function MultiStepMenu({
             {!isRoot && (
               <MotiView
                 key="mobile-title-below"
-                from={{ opacity: 0, translateY: -12 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                exit={{ opacity: 0, translateY: -12 }}
+                from={{ opacity: 0, translateY: -TITLE_ROLL, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, translateY: 0, height: titleSlotHeight, marginTop: 8 }}
+                exit={{ opacity: 0, translateY: -TITLE_ROLL, height: 0, marginTop: 0 }}
                 transition={arrowTransition}
                 exitTransition={arrowExitTransition}
-                className="mt-2"
+                className="overflow-hidden"
               >
-                <TextRolling text={title} weight="bold" className="text-2xl text-foreground" />
+                <TextRolling text={title} weight="bold" className="text-2xl text-foreground" onLayout={handleTitleSlotLayout} />
               </MotiView>
             )}
           </AnimatePresence>
@@ -388,7 +450,7 @@ export const MultiStepMenu = function MultiStepMenu({
             <MotiView
               key={paneKey}
               from={enterFrom}
-              animate={{ translateX: 0 }}
+              animate={animateTo}
               exit={exitTo}
               transition={slideTransition}
               className="absolute inset-0 px-5"

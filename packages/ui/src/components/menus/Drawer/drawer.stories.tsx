@@ -29,7 +29,7 @@ const SIDES = ['left', 'right'] as const satisfies readonly DrawerSide[];
 function DrawerPlayground() {
   const [side, setSide] = useState<DrawerSide>('left');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
   const handleOpen = useCallback(() => setOpen(true), []);
@@ -38,7 +38,7 @@ function DrawerPlayground() {
     <Playground>
       <ControlCard title="Options">
         <Choice label="Side" onChange={setSide} options={SIDES} value={side} />
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
@@ -48,7 +48,7 @@ function DrawerPlayground() {
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
-        elevated={trigger.elevated}
+        floating={trigger.floating}
         label={OPEN_LABEL}
         onPress={handleOpen}
       />
@@ -58,7 +58,7 @@ function DrawerPlayground() {
         onOpenChange={setOpen}
         side={side}
         elevation={ELEVATIONS[elevationKey]}
-        elevated={elevated}
+        floating={floating}
         accessibilityLabel="Demo drawer"
       >
         <View className="gap-2 p-6">

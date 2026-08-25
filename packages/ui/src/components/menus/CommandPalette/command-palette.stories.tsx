@@ -43,7 +43,7 @@ function PalettePlayground() {
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
-        elevated={trigger.elevated}
+        floating={trigger.floating}
         label={OPEN_LABEL}
         onPress={handleOpen}
       />

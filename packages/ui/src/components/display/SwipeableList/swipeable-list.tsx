@@ -50,11 +50,12 @@ export type SwipeableListProps = {
   revealThreshold?: number;
   closeOnAction?: boolean;
   /**
-   * Whether each row casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * Defaults to true.
+   * Swap the row's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the row keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
    * Surface elevation of every row's draggable surface (0–8) — drives the
    * background tint and the drop shadow + dark-mode rim. `0` is the flat resting
@@ -227,7 +228,7 @@ export type SwipeableListRowProps = {
   openId: string | null;
   setOpenId: (id: string | null) => void;
   closeOnAction: boolean;
-  elevated: boolean;
+  floating: boolean;
   elevation: SurfaceElevation;
   onAction?: SwipeableListProps['onAction'];
   /** The row's own testID; its action buttons derive `-action-<id>` from it. */
@@ -242,7 +243,7 @@ function SwipeableListRow({
   openId,
   setOpenId,
   closeOnAction,
-  elevated,
+  floating,
   elevation,
   onAction,
   testID,
@@ -561,7 +562,7 @@ function SwipeableListRow({
 
       {/* Draggable surface */}
       <Animated.View
-        className={cn('rounded-2xl border border-border px-4 py-3', surface(elevation, undefined, elevated))}
+        className={cn('rounded-2xl border border-border px-4 py-3', surface(elevation, undefined, floating))}
         style={[
           {
             minHeight: 72,
@@ -588,7 +589,7 @@ export function SwipeableListImpl({
   actionWidth = 56,
   revealThreshold = 34,
   closeOnAction = true,
-  elevated = true,
+  floating = false,
   elevation = 3,
   testID,
   className,
@@ -608,7 +609,7 @@ export function SwipeableListImpl({
           openId={openId}
           setOpenId={setOpenId}
           closeOnAction={closeOnAction}
-          elevated={elevated}
+          floating={floating}
           elevation={elevation}
           onAction={onAction}
           // Derived from the root when there is one, so two lists on a screen

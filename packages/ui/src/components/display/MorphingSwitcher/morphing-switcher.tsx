@@ -171,11 +171,12 @@ export type MorphingSwitcherProps = {
    *  a Button or IconButton of the same size. @default 'md' */
   size?: MorphingSwitcherSize;
   /**
-   * Whether the shell casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * @default true
+   * Swap the shell's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the shell keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
    * Float level for the shell — picks the `shadow-elevated-N` recipe (drop +
    * dark rim) the resting trigger sits at. Opening lifts it
@@ -447,7 +448,7 @@ export function MorphingSwitcher({
   closeIcon,
   variant = 'switcher',
   size = 'md',
-  elevated = true,
+  floating = false,
   elevation = 3,
   style,
   accessibilityLabel,
@@ -626,7 +627,7 @@ export function MorphingSwitcher({
         transition={morphTransition}
         className={cn(
           'absolute top-0 left-0 overflow-hidden p-1',
-          elevatedSurface(elevation, open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation, elevated),
+          elevatedSurface(elevation, open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation, floating),
         )}
         style={[
           // Flip the stack when opening up so the trigger lands at the bottom (its

@@ -83,20 +83,20 @@ function PlainTrigger({ open }: PlainTriggerProps) {
   );
 }
 
-type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape' | 'elevated'>;
+type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape' | 'floating'>;
 
 // The playground's trigger: still the `{ open, toggle }` render prop, but the body
 // is a `TriggerButton` so the Trigger chips can swap Button / ElevatedButton /
 // bare Pressable under one menu. Each of those is pressable in its own right,
 // which is exactly why `onPress` has to be `toggle` — see TRIGGER_NOTE.
 
-function SwappableTrigger({ kind, size, shape, elevated, open, toggle }: SwappableTriggerProps) {
+function SwappableTrigger({ kind, size, shape, floating, open, toggle }: SwappableTriggerProps) {
   return (
     <TriggerButton
       kind={kind}
       size={size}
       shape={shape}
-      elevated={elevated}
+      floating={floating}
       label={open ? TRIGGER_OPEN : TRIGGER_CLOSED}
       onPress={toggle}
     />
@@ -111,7 +111,7 @@ function HoverMenuPlayground() {
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('4');
   const [delayKey, setDelayKey] = useState<DelayKey>('100');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const trigger = useTriggerState();
   const [open, setOpen] = useState(false);
 
@@ -122,12 +122,12 @@ function HoverMenuPlayground() {
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
-        elevated={trigger.elevated}
+        floating={trigger.floating}
         open={props.open}
         toggle={props.toggle}
       />
     ),
-    [trigger.kind, trigger.size, trigger.shape, trigger.elevated],
+    [trigger.kind, trigger.size, trigger.shape, trigger.floating],
   );
 
   return (
@@ -141,7 +141,7 @@ function HoverMenuPlayground() {
       </ControlCard>
 
       <ControlCard title="Elevation">
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
@@ -153,7 +153,7 @@ function HoverMenuPlayground() {
         align={align}
         closeDelay={delay}
         elevation={ELEVATIONS[elevationKey]}
-        elevated={elevated}
+        floating={floating}
         offset={Number(offsetKey)}
         onOpenChange={setOpen}
         open={open}

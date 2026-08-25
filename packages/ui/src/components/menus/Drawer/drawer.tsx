@@ -20,15 +20,16 @@ export type DrawerProps = {
   onOpenChange: (open: boolean) => void;
   side?: DrawerSide;
   /**
-   * Whether the drawer panel casts the `shadow-elevated-N` recipe (drop + dark
-   * rim). `false` drops the shadow so the surface sits flat, keeping its surface
-   * tint. Defaults to `true`.
+   * Swap the drawer panel's ladder shadow for the input field's large, diffuse
+   * halo (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather
+   * than adding to it, so the panel keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
    * Surface elevation of the drawer panel (0–8) — drives the background tint
-   * and, when `elevated`, the drop shadow + dark-mode rim. `0` is the flat
-   * resting surface (no shadow or border). Defaults to `0`.
+   * and the `shadow-elevated-N` recipe (drop shadow + dark-mode rim). `0` is the
+   * flat resting surface (no shadow or border). Defaults to `0`.
    */
   elevation?: SurfaceElevation;
   children: ReactNode;
@@ -51,7 +52,7 @@ export function Drawer({
   open,
   onOpenChange,
   side = 'right',
-  elevated = true,
+  floating = false,
   elevation = 0,
   children,
   overlay = true,
@@ -109,7 +110,7 @@ export function Drawer({
                 side === 'right'
                   ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l'
                   : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r',
-                surface(elevation, undefined, elevated),
+                surface(elevation, undefined, floating),
               )}
               style={safeArea ? [{ paddingTop: insets.top, paddingBottom: insets.bottom }, style] : style}
             >

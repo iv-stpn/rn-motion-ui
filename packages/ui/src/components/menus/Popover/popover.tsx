@@ -190,11 +190,12 @@ export type PopoverContentProps = {
   children: ReactNode;
   accessibilityLabel?: string;
   /**
-   * Whether the panel casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * @default true
+   * Swap the panel's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the panel keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /** Float level — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 4 */
   elevation?: SurfaceElevation;
   style?: StyleProp<ViewStyle>;
@@ -204,7 +205,7 @@ export type PopoverContentProps = {
 export function PopoverContent({
   children,
   accessibilityLabel,
-  elevated = true,
+  floating = false,
   elevation = 4,
   style,
   testID,
@@ -270,7 +271,7 @@ export function PopoverContent({
               className={cn(
                 'max-w-xs p-4',
 
-                surface(elevation, undefined, elevated),
+                surface(elevation, undefined, floating),
               )}
               // `transformOrigin` is static, so it composes with the animated
               // scale rather than competing with it: the panel grows out of the

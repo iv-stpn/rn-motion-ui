@@ -22,8 +22,8 @@ type CheckboxCardCtx = {
   testID?: string;
   /** Group-level elevation. A card can override it. */
   elevation: SurfaceElevation;
-  /** Group-level shadow toggle. A card can override it. */
-  elevated: boolean;
+  /** Group-level floating halo. A card can override it. */
+  floating: boolean;
 };
 
 const CheckboxCardContext = createContext<CheckboxCardCtx | null>(null);
@@ -48,17 +48,19 @@ export type CheckboxCardGroupProps = {
    */
   checkTransition?: Partial<MotiTransitionProp>;
   /**
-   * Whether every card casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * Default: `true`. A card can override it with its own `elevated`.
+   * Swap the card's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the card keeps its `elevation` tint but trades the
+   * layered drop for the halo. A card can override it with its own `floating`.
+   * @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
    * Surface elevation for every card in the group (0–8). Controls the
-   * background tint (`bg-surface-N`) and, when `elevated`, the drop shadow
-   * (`shadow-elevated-N`). `0` is the flat resting surface — a `surface-3` fill
-   * with no shadow or border. Default: `3` (the standard card level). A card can
-   * override it with its own `elevation`.
+   * background tint (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`).
+   * `0` is the flat resting surface — a `surface-3` fill with no shadow or
+   * border. Default: `3` (the standard card level). A card can override it with
+   * its own `elevation`.
    */
   elevation?: SurfaceElevation;
 };
@@ -90,7 +92,7 @@ export function CheckboxCardGroup({
   style,
   testID,
   checkTransition,
-  elevated = true,
+  floating = false,
   elevation = 3,
 }: CheckboxCardGroupProps) {
   const [internal, setInternal] = useState<string[]>(defaultValue ?? []);
@@ -107,7 +109,7 @@ export function CheckboxCardGroup({
   );
 
   return (
-    <CheckboxCardContext.Provider value={{ values: current, toggle, isDisabled, checkTransition, testID, elevated, elevation }}>
+    <CheckboxCardContext.Provider value={{ values: current, toggle, isDisabled, checkTransition, testID, floating, elevation }}>
       <View role="group" testID={testID} className={cn(group({ orientation }), className)} style={style}>
         {children}
       </View>
@@ -158,16 +160,18 @@ export type CheckboxCardProps = {
   /** Replace the check-mark icon. Default: `<Svg width={12} height={12}><Path d={CHECK_PATH} .../></Svg>`. */
   checkIcon?: ReactNode;
   /**
-   * Whether the card casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * Inherits the group's value when unset. Default: `true`.
+   * Swap the card's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the card keeps its `elevation` tint but trades the
+   * layered drop for the halo. Inherits the group's value when unset.
+   * @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
-   * Surface elevation (0–8). Controls the background tint (`bg-surface-N`) and,
-   * when `elevated`, the drop shadow (`shadow-elevated-N`). `0` is the flat
-   * resting surface (a `surface-3` fill, no shadow or border). Inherits the
-   * group's value when unset. Default: `3` (the standard card level).
+   * Surface elevation (0–8). Controls the background tint (`bg-surface-N`) and
+   * the drop shadow (`shadow-elevated-N`). `0` is the flat resting surface (a
+   * `surface-3` fill, no shadow or border). Inherits the group's value when
+   * unset. Default: `3` (the standard card level).
    */
   elevation?: SurfaceElevation;
 };
@@ -200,7 +204,7 @@ export function CheckboxCard({
   testID,
   checkTransition,
   checkIcon,
-  elevated,
+  floating,
   elevation,
 }: CheckboxCardProps) {
   const groupCtx = useContext(CheckboxCardContext);
@@ -211,7 +215,7 @@ export function CheckboxCard({
 
   const checked = inGroup ? groupCtx.values.includes(value) : Boolean(selectedProp);
   const disabled = isDisabled ?? groupCtx?.isDisabled ?? false;
-  const resolvedElevated = elevated ?? groupCtx?.elevated ?? true;
+  const resolvedFloating = floating ?? groupCtx?.floating ?? false;
   const resolvedElevation = elevation ?? groupCtx?.elevation ?? 3;
   const ct = mergeTransition(TIMING_FAST, checkTransition ?? groupCtx?.checkTransition);
   // Derive from the group so cards are addressable without threading a testID
@@ -243,7 +247,7 @@ export function CheckboxCard({
           it lives on a dedicated View rather than on the surface below. Both
           `className` and `style` land here so consumer overrides all target one
           element. */}
-      <View className={cn('rounded-2xl', surface(resolvedElevation, undefined, resolvedElevated), className)} style={style}>
+      <View className={cn('rounded-2xl', surface(resolvedElevation, undefined, resolvedFloating), className)} style={style}>
         {/* The visual surface carries the border + selection tint. When unchecked
             it's transparent so the wrapper's surface background shows through;
             when checked the `bg-info/5` tint overlays it. */}

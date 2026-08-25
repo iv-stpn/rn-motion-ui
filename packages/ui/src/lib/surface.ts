@@ -36,12 +36,14 @@ export type SurfaceRadius = 'card' | 'menu' | 'modal';
 
 /**
  * Surface classes for an elevation: the radius token (when given) plus the
- * ladder `bg-surface-N`, and — when `elevated` — the `shadow-elevated-N` recipe
- * from {@link elevatedShadow}. At `0` the surface is flat — `bg-surface-3`
- * alone, no shadow or border. `elevated` toggles only the shadow layer; the
- * background tint still follows `elevation`. Omit `radius` to keep the caller's
+ * ladder `bg-surface-N shadow-elevated-N`. At `0` the surface is flat —
+ * `bg-surface-3` alone, no shadow or border. Omit `radius` to keep the caller's
  * own corner class (a non-token radius like `rounded-2xl`).
+ *
+ * Pass `floating` to swap the ladder shadow for the input field's diffuse halo
+ * (`shadow-floating`). The background tint still follows `elevation` — only the
+ * shadow recipe changes.
  */
-export function surface(elevation: SurfaceElevation, radius?: SurfaceRadius, elevated = true): string {
-  return cn(radius ? SURFACE_RADIUS_CLASS[radius] : undefined, elevatedSurface(elevation, elevation, elevated));
+export function surface(elevation: SurfaceElevation, radius?: SurfaceRadius, floating = false): string {
+  return cn(radius ? SURFACE_RADIUS_CLASS[radius] : undefined, elevatedSurface(elevation, elevation, floating));
 }

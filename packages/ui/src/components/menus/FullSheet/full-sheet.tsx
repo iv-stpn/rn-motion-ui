@@ -164,15 +164,16 @@ export type FullSheetProps = {
   /** Caller owns all layout — no header or content padding is applied. */
   customLayout?: boolean;
   /**
-   * Whether the sheet casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * Defaults to `true`.
+   * Swap the sheet's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the sheet keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
-   * Surface elevation of the sheet (0–8) — drives the background tint and, when
-   * `elevated`, the drop shadow + dark-mode rim. `0` is the flat resting surface
-   * (no shadow or border). Defaults to `0`.
+   * Surface elevation of the sheet (0–8) — drives the background tint and the
+   * `shadow-elevated-N` recipe (drop shadow + dark-mode rim). `0` is the flat
+   * resting surface (no shadow or border). Defaults to `0`.
    */
   elevation?: SurfaceElevation;
   /**
@@ -218,7 +219,7 @@ export function FullSheet({
   scrollable = true,
   compact = false,
   customLayout = false,
-  elevated = true,
+  floating = false,
   elevation = 0,
   mode = 'default',
   dismissable = true,
@@ -282,7 +283,7 @@ export function FullSheet({
             {isAnimOpen ? (
               <MotiView
                 key="fullsheet"
-                className={cn('flex-1', surface(elevation, undefined, elevated))}
+                className={cn('flex-1', surface(elevation, undefined, floating))}
                 from={{ translateY: height, borderRadius: CARD_RADIUS }}
                 animate={{ translateY: 0, borderRadius: 0 }}
                 exit={{ translateY: height, borderRadius: CARD_RADIUS }}

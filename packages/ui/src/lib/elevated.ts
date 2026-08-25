@@ -60,6 +60,18 @@ const SURFACE_ELEVATED_SHADOW_CLASSNAME: Record<SurfaceLevel, string> = {
 /** Flat (elevation-0) surface — the resting `surface-3` fill, no shadow or border. */
 const FLAT_SURFACE_CLASSNAME = 'bg-surface-3';
 
+/**
+ * The input field's large, diffuse drop (`--shadow-floating`: `0 0 24px` at a
+ * fixed black alpha, zero-offset so it spreads evenly on every side). It is a
+ * wholly separate recipe from the `shadow-elevated-N` ladder, not a rung of it:
+ * the ladder stacks offset drop layers plus a dark-mode rim to place a surface
+ * on the depth scale, while this is the soft halo Input's `floating` variant
+ * wears.
+ * A surface picks one or the other — never both, since they are the same CSS
+ * property.
+ */
+export const FLOATING_SHADOW_CLASSNAME = 'shadow-floating';
+
 /** Combined background + shadow class for an elevation — built from the private lookups so it cannot drift from {@link surfaceBackground} / {@link elevatedShadow}. */
 export const SURFACE_CLASSNAME: Record<SurfaceElevation, string> = {
   0: FLAT_SURFACE_CLASSNAME,
@@ -97,15 +109,19 @@ export function surfaceBackground(level: SurfaceElevation): string {
 }
 
 /**
- * Surface classes for an elevation: `bg-surface-N` plus, when `elevated`, the
- * `shadow-elevated-N` recipe from {@link elevatedShadow}. The background is
- * always applied — `elevated` only toggles the shadow layer (the drop + dark
- * rim), so a non-elevated surface keeps its tint but sits flat. At `0` the
+ * Surface classes for an elevation: `bg-surface-N shadow-elevated-N`. At `0` the
  * surface is flat — `bg-surface-3` alone, no shadow or border. Pass a separate
  * `shadowLevel` to float a surface's shadow higher (or lower) than its
  * background tint — the pattern the surface components use for their
  * `elevation` prop.
+ *
+ * Pass `floating` to swap the ladder shadow for {@link FLOATING_SHADOW_CLASSNAME},
+ * the input field's diffuse halo. It *replaces* rather than adds to the ladder
+ * shadow — both write `box-shadow`, so keeping the two would leave whichever
+ * tailwind-merge resolved last. The background tint still follows `level`, so a
+ * floating surface keeps its place in the ladder while wearing the softer drop.
  */
-export function elevated(level: SurfaceElevation, shadowLevel: SurfaceElevation = level, isElevated = true): string {
-  return [surfaceBackground(level), isElevated ? elevatedShadow(shadowLevel) : ''].filter(Boolean).join(' ');
+export function elevated(level: SurfaceElevation, shadowLevel: SurfaceElevation = level, floating = false): string {
+  const shadow = floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(shadowLevel);
+  return [surfaceBackground(level), shadow].filter(Boolean).join(' ');
 }

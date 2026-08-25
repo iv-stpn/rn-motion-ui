@@ -36,15 +36,16 @@ export type BloomMenuProps = {
   /** Trigger label. Default "Create". */
   triggerLabel?: string;
   /**
-   * Whether the bloom card casts the `shadow-elevated-N` recipe (drop + dark
-   * rim). `false` drops the shadow so the surface sits flat, keeping its surface
-   * tint. Defaults to `true`.
+   * Swap the bloom card's ladder shadow for the input field's large, diffuse
+   * halo (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather
+   * than adding to it, so the card keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
-   * Surface elevation of the bloom card (0–8) — drives the background tint and,
-   * when `elevated`, the drop shadow + dark-mode rim. `0` is the flat resting
-   * surface (no shadow or border). Defaults to `0`.
+   * Surface elevation of the bloom card (0–8) — drives the background tint and
+   * the `shadow-elevated-N` recipe. `0` is the flat resting surface (no shadow
+   * or border). Defaults to `0`.
    */
   elevation?: SurfaceElevation;
   /** Additional UniWind class names merged onto the outer wrapper. */
@@ -119,7 +120,7 @@ export function BloomMenu({
   onSelect,
   title = 'Create',
   triggerLabel = 'Create',
-  elevated = true,
+  floating = false,
   elevation = 0,
   className,
   style,
@@ -181,7 +182,7 @@ export function BloomMenu({
         <MotiView
           animate={{ width: open ? PANEL_W : TRIGGER_W, height: open ? (panelH ?? BOX_H) : TRIGGER_H }}
           transition={morph}
-          className={cn('items-center justify-center overflow-hidden border border-border', surface(elevation, 'menu', elevated))}
+          className={cn('items-center justify-center overflow-hidden border border-border', surface(elevation, 'menu', floating))}
         >
           {/* Panel content, fixed at its open-state size and centred in the
               card, so the growing clip reveals it centre-out (iris). The grid

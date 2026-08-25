@@ -64,11 +64,12 @@ export type AdaptiveDropdownProps = {
   /** When true, the bottom sheet on small screens stretches to full height. @default false */
   fullSheet?: boolean;
   /**
-   * Whether the panel casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * @default true
+   * Swap the panel's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the panel keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 5 */
   elevation?: SurfaceElevation;
   /**
@@ -114,7 +115,7 @@ export function AdaptiveDropdown({
   contentClassName,
   triggerClassName,
   fullSheet = false,
-  elevated = true,
+  floating = false,
   elevation = 5,
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   motion,
@@ -252,7 +253,7 @@ export function AdaptiveDropdown({
                   key="panel"
                   onLayout={handlePanelLayout}
                   {...panelMotion}
-                  className={cn('absolute flex-col overflow-hidden', surface(elevation, 'menu', elevated))}
+                  className={cn('absolute flex-col overflow-hidden', surface(elevation, 'menu', floating))}
                   // `transformOrigin` is static, so it composes with the animated
                   // scale rather than competing with it: the panel grows out of the
                   // corner facing the trigger.

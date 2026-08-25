@@ -82,11 +82,11 @@ type DockDemoProps = {
   size?: SizeKey;
   separator?: boolean;
   elevation?: SurfaceElevation;
-  elevated?: boolean;
+  floating?: boolean;
   onSelect?: (id: string) => void;
 };
 
-function DockDemo({ size = 'lg', separator = true, elevation = 0, elevated = true, onSelect }: DockDemoProps) {
+function DockDemo({ size = 'lg', separator = true, elevation = 0, floating = false, onSelect }: DockDemoProps) {
   const [active, setActive] = useState('home');
   const color = useThemeColor('foreground');
   const itemPx = ITEM_PX[size];
@@ -102,7 +102,7 @@ function DockDemo({ size = 'lg', separator = true, elevation = 0, elevated = tru
   const selectSettings = useCallback(() => select('settings'), [select]);
 
   return (
-    <Dock size={size} elevation={elevation} elevated={elevated}>
+    <Dock size={size} elevation={elevation} floating={floating}>
       {ITEMS.map((item) => (
         <DockButton
           active={active === item.id}
@@ -130,14 +130,14 @@ function DockPlayground() {
   const [sizeKey, setSizeKey] = useState<SizeKey>('lg');
   const [separator, setSeparator] = useState(true);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const [selected, setSelected] = useState('home');
 
   return (
     <Playground>
       <ControlCard title="Options">
         <Choice label="Size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Separator" onChange={setSeparator} value={separator} />
       </ControlCard>
@@ -146,7 +146,7 @@ function DockPlayground() {
           between them, so a size change moves both the pill and its travel. */}
       <View className="items-center gap-2">
         <DockDemo
-          elevated={elevated}
+          floating={floating}
           elevation={ELEVATIONS[elevationKey]}
           onSelect={setSelected}
           separator={separator}

@@ -18,8 +18,8 @@ describe('surface', () => {
     expect(surface(0, 'card')).toBe('rounded-card bg-surface-3');
   });
 
-  it('drops the shadow but keeps the background when not elevated', () => {
-    expect(surface(3, undefined, false)).toBe('bg-surface-3');
-    expect(surface(6, 'card', false)).toBe('rounded-card bg-surface-6');
+  it('swaps the ladder shadow for the input halo when floating', () => {
+    expect(surface(3, undefined, true)).toBe('bg-surface-3 shadow-floating');
+    expect(surface(6, 'card', true)).toBe('rounded-card bg-surface-6 shadow-floating');
   });
 });

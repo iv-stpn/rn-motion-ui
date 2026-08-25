@@ -90,14 +90,14 @@ export type TriggerButtonProps = {
    */
   className?: string;
   /**
-   * `kind === 'button'` only. Forwarded to `Button`'s `elevated`, so a story can
-   * show its trigger floating or flat independently of the surface it opens.
+   * `kind === 'button'` only. Forwarded to `Button`'s `floating`, so a story can
+   * show its trigger wearing the input halo independently of the surface it opens.
    *
    * The other two kinds have nothing to toggle: `ElevatedButton` *is* the
    * elevated chip — its glossy drop + coloured ring are the component, not an
    * option — and the bare `Pressable` is underlined text with no surface at all.
    */
-  elevated?: boolean;
+  floating?: boolean;
 };
 
 /**
@@ -121,7 +121,7 @@ export function TriggerButton({
   buttonVariant = 'neutral',
   elevatedVariant = 'neutral',
   className,
-  elevated,
+  floating,
 }: TriggerButtonProps) {
   if (kind === 'elevated')
     return (
@@ -151,7 +151,7 @@ export function TriggerButton({
     );
 
   return (
-    <Button className="self-start" elevated={elevated} onPress={onPress} shape={shape} size={size} variant={buttonVariant}>
+    <Button className="self-start" floating={floating} onPress={onPress} shape={shape} size={size} variant={buttonVariant}>
       {label}
     </Button>
   );
@@ -167,9 +167,9 @@ export type TriggerState = {
   setSize: (next: TriggerSize) => void;
   shape: ButtonShape;
   setShape: (next: ButtonShape) => void;
-  /** Drives `TriggerButton`'s `elevated` — visible on the `button` kind only. */
-  elevated: boolean;
-  setElevated: (next: boolean) => void;
+  /** Drives `TriggerButton`'s `floating` — visible on the `button` kind only. */
+  floating: boolean;
+  setFloating: (next: boolean) => void;
 };
 
 /**
@@ -188,10 +188,10 @@ export function useTriggerState(): TriggerState {
   const [kind, setKind] = useState<TriggerKind>('button');
   const [size, setSize] = useState<TriggerSize>('md');
   const [shape, setShape] = useState<ButtonShape>('pill');
-  // Starts flat: the default `button` kind is the `neutral` variant, which rests
-  // flat, so the trigger looks exactly as it always has until the toggle is used.
-  const [elevated, setElevated] = useState(false);
-  return { kind, setKind, size, setSize, shape, setShape, elevated, setElevated };
+  // Starts off, so the trigger looks exactly as it always has until the toggle
+  // is used.
+  const [floating, setFloating] = useState(false);
+  return { kind, setKind, size, setSize, shape, setShape, floating, setFloating };
 }
 
 /**
@@ -207,11 +207,11 @@ export function TriggerControls({ state }: TriggerControlsProps) {
       <Choice label="Button type" onChange={state.setKind} options={TRIGGER_KINDS} value={state.kind} />
       <Choice label="Size" onChange={state.setSize} options={TRIGGER_SIZES} value={state.size} />
       <Choice label="Shape" onChange={state.setShape} options={TRIGGER_SHAPES} value={state.shape} />
-      {/* Labelled "Elevated trigger", not "Elevated": Toggle derives its testID
-          from the label, and menu playgrounds also carry an "Elevated" toggle for
+      {/* Labelled "Floating trigger", not "Floating": Toggle derives its testID
+          from the label, and menu playgrounds also carry a "Floating" toggle for
           the surface itself — identical labels would collide on
-          `story-toggle-elevated`. */}
-      <Toggle label="Elevated trigger" onChange={state.setElevated} value={state.elevated} />
+          `story-toggle-floating`. */}
+      <Toggle label="Floating trigger" onChange={state.setFloating} value={state.floating} />
     </ControlCard>
   );
 }

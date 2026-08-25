@@ -78,7 +78,7 @@ function SheetPlayground() {
   const [long, setLong] = useState(false);
   const [open, setOpen] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const trigger = useTriggerState();
 
   const handleOpen = useCallback(() => setOpen(true), []);
@@ -93,7 +93,7 @@ function SheetPlayground() {
     <Playground className="min-w-[340px]">
       <ControlCard title="Options">
         <Choice label="Mode" onChange={setMode} options={MODES} value={mode} />
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Subtitle" onChange={setWithSubtitle} value={withSubtitle} />
         <Toggle label="Close button" onChange={setWithClose} value={withClose} />
@@ -110,7 +110,7 @@ function SheetPlayground() {
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
-        elevated={trigger.elevated}
+        floating={trigger.floating}
         label={OPEN_SHEET_LABEL}
         onPress={handleOpen}
       />
@@ -124,7 +124,7 @@ function SheetPlayground() {
         customLayout={customLayout}
         dismissable={dismissable}
         elevation={ELEVATIONS[elevationKey]}
-        elevated={elevated}
+        floating={floating}
         mode={mode}
         onOpenChange={setOpen}
         open={open}

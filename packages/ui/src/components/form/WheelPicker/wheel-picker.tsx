@@ -279,7 +279,7 @@ const REDUCED_BAND_CLASS: Record<WheelPickerVariant, string> = {
 type WheelPickerFrameProps = ViewProps & {
   variant: WheelPickerVariant;
   elevation: SurfaceElevation;
-  elevated: boolean;
+  floating: boolean;
   ref?: Ref<View>;
 };
 
@@ -288,9 +288,9 @@ type WheelPickerFrameProps = ViewProps & {
 // several wheels as one control. Both keep `overflow-hidden` (rows near the
 // horizon would otherwise paint past the window) and no padding (rows are
 // absolutely positioned against the container box, so padding offsets the drum).
-function WheelPickerFrame({ variant, elevation, elevated, className, ...props }: WheelPickerFrameProps) {
+function WheelPickerFrame({ variant, elevation, floating, className, ...props }: WheelPickerFrameProps) {
   if (variant === 'plain') return <View className={cn('relative overflow-hidden bg-transparent', className)} {...props} />;
-  return <Card className={cn('relative overflow-hidden p-0', className)} elevation={elevation} elevated={elevated} {...props} />;
+  return <Card className={cn('relative overflow-hidden p-0', className)} elevation={elevation} floating={floating} {...props} />;
 }
 
 export type WheelPickerOption = string | { label: string; value: string };
@@ -319,11 +319,12 @@ export type WheelPickerProps = {
   /** Container treatment. Default `card`. See {@link WheelPickerVariant}. */
   variant?: WheelPickerVariant;
   /**
-   * Whether the outer Card casts the `shadow-elevated-N` recipe (drop + dark
-   * rim). `false` drops the shadow so the surface sits flat, keeping its surface
-   * tint. Default true. Ignored when `variant="plain"`.
+   * Swap the picker's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the picker keeps its `elevation` tint but trades the
+   * layered drop for the halo. Ignored when `variant="plain"`. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /** Surface elevation of the outer Card container (0–8). `0` is the flat resting surface (no shadow or border). Default 3. Ignored when `variant="plain"`. */
   elevation?: SurfaceElevation;
   /** Additional UniWind class names forwarded to the container. */
@@ -354,7 +355,7 @@ export function WheelPicker({
   disabled = false,
   sound = false,
   variant = 'card',
-  elevated = true,
+  floating = false,
   elevation = 3,
   className,
   style,
@@ -691,7 +692,7 @@ export function WheelPicker({
     return (
       <WheelPickerFrame
         variant={variant}
-        elevated={elevated}
+        floating={floating}
         elevation={elevation}
         accessibilityRole="adjustable"
         accessibilityLabel={accessibilityLabel}
@@ -738,7 +739,7 @@ export function WheelPicker({
     <WheelPickerFrame
       ref={containerRef}
       variant={variant}
-      elevated={elevated}
+      floating={floating}
       elevation={elevation}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}

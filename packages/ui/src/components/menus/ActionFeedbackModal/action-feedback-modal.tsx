@@ -144,11 +144,12 @@ export type ActionFeedbackModalProps = {
   dismissLabel?: string;
   tagline?: string;
   /**
-   * Whether the panel casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * Defaults to true.
+   * Swap the panel's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the panel keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
   elevation?: SurfaceElevation;
   testID?: string;
@@ -169,7 +170,7 @@ export function ActionFeedbackModal({
   errorTitle = 'Error',
   dismissLabel = 'Dismiss',
   tagline,
-  elevated = true,
+  floating = false,
   elevation = 6,
   testID,
   overlay = true,
@@ -242,7 +243,7 @@ export function ActionFeedbackModal({
             className={cn(
               'w-full max-w-sm',
 
-              surface(elevation, 'modal', elevated),
+              surface(elevation, 'modal', floating),
               'p-6',
             )}
             testID={testID}

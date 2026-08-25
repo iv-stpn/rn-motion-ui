@@ -51,15 +51,16 @@ export type BottomSheetProps = {
   /** When true, the sheet stretches to full screen height instead of capping at 90%. */
   fullSheet?: boolean;
   /**
-   * Whether the sheet panel casts the `shadow-elevated-N` recipe (drop + dark
-   * rim). `false` drops the shadow so the surface sits flat, keeping its surface
-   * tint. Defaults to `true`.
+   * Swap the sheet panel's ladder shadow for the input field's large, diffuse
+   * halo (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather
+   * than adding to it, so the panel keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
    * Surface elevation of the sheet panel (0–8) — drives the background tint
-   * and, when `elevated`, the drop shadow + dark-mode rim. `0` is the flat
-   * resting surface (no shadow or border). Defaults to `3`.
+   * and the `shadow-elevated-N` recipe. `0` is the flat resting surface (no
+   * shadow or border). Defaults to `3`.
    */
   elevation?: SurfaceElevation;
   /** When false, the dimming backdrop is not rendered — the sheet floats over the page with no scrim. Defaults to true. */
@@ -100,7 +101,7 @@ export function BottomSheet({
   containerClassName,
   onAfterClose,
   fullSheet,
-  elevated = true,
+  floating = false,
   elevation = 3,
   overlay = true,
   closeOnOutsidePress = true,
@@ -214,7 +215,7 @@ export function BottomSheet({
                 ref={sheetRef}
                 className={cn(
                   'w-full overflow-hidden',
-                  surface(elevation, undefined, elevated),
+                  surface(elevation, undefined, floating),
                   fullSheet ? 'rounded-t-none' : 'rounded-t-modal',
                 )}
                 testID={testID}

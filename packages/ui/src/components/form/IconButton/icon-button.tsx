@@ -78,16 +78,18 @@ export type IconButtonProps = {
   iconColor?: string;
 
   /**
-   * Whether the button casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the plate sits flat, keeping its surface tint.
-   * @default true
+   * Swap the plate's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`) — the recipe {@link Input}'s `floating` variant wears.
+   * It replaces the `shadow-elevated-N` rung rather than adding to it, so the
+   * plate keeps its `elevation` tint but trades the layered drop for the halo.
+   * @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
 
   /**
    * Surface elevation level (0–8) — drives the background tint (`bg-surface-N`)
-   * and, when `elevated`, the `shadow-elevated-N` recipe. `0` is the flat resting
-   * surface — a `surface-3` fill with no shadow or border. @default 3
+   * and the `shadow-elevated-N` recipe. `0` is the flat resting surface — a
+   * `surface-3` fill with no shadow or border. @default 3
    */
   elevation?: SurfaceElevation;
 
@@ -142,20 +144,21 @@ export type IconButtonProps = {
 
 /**
  * A purpose-built icon-only button — a square pressable that displays an icon,
- * on a surface-3 plate that can be raised via `elevated`/`elevation`, with the
- * same `icon`/`iconBackgroundColor`/`iconColor` API as {@link MenuItem}.
+ * on a surface plate whose depth comes from `elevation` and whose shadow recipe
+ * can be swapped for the input halo via `floating`, with the same
+ * `icon`/`iconBackgroundColor`/`iconColor` API as {@link MenuItem}.
  *
  * Supersedes `<Button size="icon">`: every prop is meaningful for an icon-only
  * control, and `accessibilityLabel` is required so no instance ships without an
  * accessible name.
  *
  * @example
- * // A raised delete button — surface-3 fill + elevation shadow
+ * // A delete button on the resting plate — surface-3 fill + its ladder shadow
  * <IconButton icon={Trash2} accessibilityLabel="Delete" onPress={handleDelete} />
  *
  * @example
- * // A flat plate, no shadow
- * <IconButton icon={Trash2} elevated={false} accessibilityLabel="Delete" onPress={handleDelete} />
+ * // The same plate wearing the input field's diffuse halo instead
+ * <IconButton icon={Trash2} floating accessibilityLabel="Delete" onPress={handleDelete} />
  *
  * @example
  * // iOS Settings-style icon tile
@@ -172,7 +175,7 @@ export type IconButtonProps = {
  */
 export function IconButton({
   icon: IconComponent,
-  elevated = true,
+  floating = false,
   elevation = 3,
   size = 'md',
   shape = 'pill',
@@ -197,7 +200,7 @@ export function IconButton({
   const colors = useThemeColors();
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
-  const surfaceClass = elevatedSurface(elevation, elevation, elevated);
+  const surfaceClass = elevatedSurface(elevation, elevation, floating);
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,

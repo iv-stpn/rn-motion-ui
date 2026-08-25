@@ -73,7 +73,7 @@ function PopoverPlayground() {
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('14');
   const [radiusKey, setRadiusKey] = useState<RadiusKey>('16');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('4');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const trigger = useTriggerState();
 
   return (
@@ -83,7 +83,7 @@ function PopoverPlayground() {
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
         <Choice label="Radius" onChange={setRadiusKey} options={RADII} value={radiusKey} />
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
@@ -105,13 +105,13 @@ function PopoverPlayground() {
                 kind={trigger.kind}
                 size={trigger.size}
                 shape={trigger.shape}
-                elevated={trigger.elevated}
+                floating={trigger.floating}
                 label={EDIT_PROFILE}
                 onPress={noop}
               />
             </View>
           </PopoverTrigger>
-          <PopoverContent elevation={ELEVATIONS[elevationKey]} elevated={elevated}>
+          <PopoverContent elevation={ELEVATIONS[elevationKey]} floating={floating}>
             <View className="max-w-[220px] gap-1">
               <Text weight="medium" className="text-foreground text-sm">
                 {DIMENSIONS_TITLE}

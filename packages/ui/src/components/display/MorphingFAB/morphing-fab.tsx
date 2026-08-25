@@ -31,15 +31,16 @@ export type MorphingFABProps = {
   icon?: ComponentType<IconProps>;
   position?: 'bottom-right' | 'bottom-left';
   /**
-   * Whether the trigger and pane cast the `shadow-elevated-N` recipe (drop +
-   * dark rim). `false` drops the shadow so the surface sits flat, keeping its
-   * surface tint. @default true
+   * Swap the trigger's and pane's ladder shadow for the input field's large,
+   * diffuse halo (`shadow-floating`). It replaces the `shadow-elevated-N` rung
+   * rather than adding to it, so both keep their `elevation` tint but trade the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
    * Surface elevation level (0–8) — drives the background tint (`bg-surface-N`)
-   * and, when `elevated`, the `shadow-elevated-N` recipe. `0` is the flat resting
-   * surface — a `surface-3` fill with no shadow or border. @default 3
+   * and the `shadow-elevated-N` recipe. `0` is the flat resting surface — a
+   * `surface-3` fill with no shadow or border. @default 3
    */
   elevation?: SurfaceElevation;
   /** Expanded pane width in px. Defaults to 300. */
@@ -65,7 +66,7 @@ export type MorphingFABProps = {
 
 /**
  * A floating action button that morphs into a rounded pane. Collapsed it is a
- * circular IconButton (the `lg` size, plus icon by default) whose `elevated` /
+ * circular IconButton (the `lg` size, plus icon by default) whose `floating` /
  * `elevation` drive its styling. Tapping it springs the shell open into a
  * floating surface of `expandedWidth`×`expandedHeight` and renders `children`
  * inside. The pane closes via the top-right close affordance, the render-prop
@@ -81,7 +82,7 @@ export function MorphingFAB({
   children,
   icon,
   position = 'bottom-right',
-  elevated = true,
+  floating = false,
   elevation = 3,
   expandedWidth = 300,
   expandedHeight = 230,
@@ -143,7 +144,7 @@ export function MorphingFAB({
           borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS,
         }}
         transition={morphTransition}
-        className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, elevated)}`}
+        className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, floating)}`}
         style={{ ...(left ? { left: 0 } : { right: 0 }) }}
       >
         {open ? (
@@ -173,7 +174,7 @@ export function MorphingFAB({
         ) : (
           <IconButton
             icon={icon ?? Plus}
-            elevated={elevated}
+            floating={floating}
             elevation={elevation}
             size="lg"
             shape="pill"

@@ -99,19 +99,19 @@ export default meta;
 
 function SwipeableListPlayground() {
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
 
   return (
     <Playground>
       <ControlCard title="Options">
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
       <SwipeableList
         actionWidth={56}
         closeOnAction={true}
         elevation={ELEVATIONS[elevationKey]}
-        elevated={elevated}
+        floating={floating}
         items={defaultItems}
         revealThreshold={34}
       />

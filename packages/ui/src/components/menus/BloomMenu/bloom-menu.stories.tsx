@@ -40,16 +40,16 @@ function BloomMenuDemo(props: ComponentProps<typeof BloomMenu>) {
 
 function BloomMenuPlayground() {
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
 
   return (
     <Playground>
       <ControlCard title="Options">
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
       <View className="min-h-[420px] items-center justify-center">
-        <BloomMenu elevated={elevated} elevation={ELEVATIONS[elevationKey]} items={ITEMS} title="Create" triggerLabel="Create" />
+        <BloomMenu floating={floating} elevation={ELEVATIONS[elevationKey]} items={ITEMS} title="Create" triggerLabel="Create" />
       </View>
     </Playground>
   );

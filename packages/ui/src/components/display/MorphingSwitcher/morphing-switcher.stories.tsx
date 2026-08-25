@@ -70,7 +70,7 @@ function MorphingSwitcherPlayground() {
   const [variant, setVariant] = useState<MorphingSwitcherVariant>('switcher');
   const [size, setSize] = useState<MorphingSwitcherSize>('md');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const [withIcons, setWithIcons] = useState(true);
   const [closeCaret, setCloseCaret] = useState(true);
   const [value, setValue] = useState('home');
@@ -81,7 +81,7 @@ function MorphingSwitcherPlayground() {
         <ControlCard title="Options">
           <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
           <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
-          <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+          <Toggle label="Floating" onChange={setFloating} value={floating} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
           <Toggle label="Item icons" onChange={setWithIcons} value={withIcons} />
           {/* `closeIcon` only reaches the trigger in `select` — `switcher` always keeps its stacked carets. */}
@@ -98,7 +98,7 @@ function MorphingSwitcherPlayground() {
           variant={variant}
           size={size}
           elevation={ELEVATIONS[elevationKey]}
-          elevated={elevated}
+          floating={floating}
           closeIcon={closeCaret ? undefined : null}
           accessibilityLabel="Switch space"
           triggerTestID="playground-trigger"

@@ -92,7 +92,7 @@ function BouncyAccordionPlayground() {
   const [countKey, setCountKey] = useState<CountKey>('6');
   const [lockLast, setLockLast] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const iconColor = useThemeColor('muted-foreground');
 
@@ -111,7 +111,7 @@ function BouncyAccordionPlayground() {
     <Playground>
       <ControlCard title="Options">
         <Choice label="Rows" onChange={setCountKey} options={COUNTS} value={countKey} />
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Collapsible" onChange={setCollapsible} value={collapsible} />
         <Toggle label="Icons" onChange={setIcons} value={icons} />
@@ -124,7 +124,7 @@ function BouncyAccordionPlayground() {
         <BouncyAccordion
           collapsible={collapsible}
           elevation={ELEVATIONS[elevationKey]}
-          elevated={elevated}
+          floating={floating}
           items={items}
           onValueChange={setOpen}
           value={open}

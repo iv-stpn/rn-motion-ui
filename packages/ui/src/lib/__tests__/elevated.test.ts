@@ -71,13 +71,16 @@ describe('elevated', () => {
     expect(elevated(4, 2)).toBe('bg-surface-4 shadow-elevated-2');
   });
 
-  it('drops the shadow but keeps the background when not elevated', () => {
-    expect(elevated(3, 3, false)).toBe('bg-surface-3');
-    expect(elevated(6, 6, false)).toBe('bg-surface-6');
+  it('swaps the ladder shadow for the input halo when floating', () => {
+    expect(elevated(3, 3, true)).toBe('bg-surface-3 shadow-floating');
+    expect(elevated(6, 6, true)).toBe('bg-surface-6 shadow-floating');
   });
 
-  it('ignores a shadowLevel when not elevated', () => {
-    expect(elevated(3, 6, false)).toBe('bg-surface-3');
+  it('keeps the background tint on the ladder while floating', () => {
+    // The two shadows are the same CSS property, so floating replaces the rung
+    // rather than stacking on it — but the surface keeps its place in the ladder.
+    expect(elevated(3, 6, true)).toBe('bg-surface-3 shadow-floating');
+    expect(elevated(0, 0, true)).toBe('bg-surface-3 shadow-floating');
   });
 });
 

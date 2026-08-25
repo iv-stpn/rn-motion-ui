@@ -213,22 +213,22 @@ const PLACEMENTS = [
 type MorphingModalDemoProps = {
   placement: 'bottom' | 'center' | 'bottom-sheet';
   elevation?: SurfaceElevation;
-  elevated?: boolean;
+  floating?: boolean;
   kind?: TriggerState['kind'];
   size?: TriggerState['size'];
   shape?: TriggerState['shape'];
-  triggerElevated?: boolean;
+  triggerFloating?: boolean;
   testID?: string;
 };
 
 function MorphingModalDemo({
   placement,
   elevation = 6,
-  elevated = true,
+  floating = false,
   kind,
   size,
   shape,
-  triggerElevated,
+  triggerFloating,
   testID,
 }: MorphingModalDemoProps) {
   const [view, setView] = useState<WalletView>(null);
@@ -238,14 +238,14 @@ function MorphingModalDemo({
   const showRecovery = useCallback(() => setView('recovery'), []);
   return (
     <View className="items-center gap-3">
-      <TriggerButton kind={kind} size={size} shape={shape} elevated={triggerElevated} label={OPEN_LABEL} onPress={showOptions} />
+      <TriggerButton kind={kind} size={size} shape={shape} floating={triggerFloating} label={OPEN_LABEL} onPress={showOptions} />
       <Text className="text-muted-foreground text-xs">{HINT}</Text>
       <MorphingModal
         viewId={view}
         onClose={close}
         placement={placement}
         elevation={elevation}
-        elevated={elevated}
+        floating={floating}
         testID={testID}
       >
         {renderModalView(view, { close, showOptions, showPrivateKey, showRecovery })}
@@ -257,24 +257,24 @@ function MorphingModalDemo({
 function MorphingModalPlayground() {
   const [placement, setPlacement] = useState<'bottom' | 'center' | 'bottom-sheet'>('bottom');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const trigger = useTriggerState();
   return (
     <Playground className="min-w-[340px]">
       <ControlCard title="Options">
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
       <TriggerControls state={trigger} />
       <MorphingModalDemo
         placement={placement}
         elevation={ELEVATIONS[elevationKey]}
-        elevated={elevated}
+        floating={floating}
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
-        triggerElevated={trigger.elevated}
+        triggerFloating={trigger.floating}
       />
     </Playground>
   );

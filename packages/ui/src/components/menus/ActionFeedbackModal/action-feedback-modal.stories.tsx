@@ -95,7 +95,7 @@ function FeedbackPlayground() {
   const [outcome, setOutcome] = useState<'success' | 'error'>('success');
   const [withText, setWithText] = useState(true);
   const [withTagline, setWithTagline] = useState(false);
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const trigger = useTriggerState();
 
@@ -121,7 +121,7 @@ function FeedbackPlayground() {
     <Playground>
       <ControlCard title="Overlay">
         <Choice label="Resolves to" onChange={setOutcome} options={OUTCOMES} value={outcome} />
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
@@ -144,13 +144,13 @@ function FeedbackPlayground() {
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
-        elevated={trigger.elevated}
+        floating={trigger.floating}
         label={RUN_LABEL}
         onPress={run}
       />
 
       <ActionFeedbackModal
-        elevated={elevated}
+        floating={floating}
         elevation={ELEVATIONS[elevationKey]}
         onOpenChange={handleClose}
         state={state}

@@ -189,14 +189,14 @@ const PLAYGROUND_HINT = 'Toggle between Feedback (form → sent/error) and Menu 
 function MorphingFABPlayground() {
   const [example, setExample] = useState<Example>('feedback');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
 
   return (
     <AppSurface hint={PLAYGROUND_HINT}>
       <View className="gap-3 px-5">
         <ControlCard title="Example">
           <Choice label="Content" onChange={setExample} options={EXAMPLES} value={example} />
-          <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+          <Toggle label="Floating" onChange={setFloating} value={floating} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         </ControlCard>
       </View>
@@ -204,7 +204,7 @@ function MorphingFABPlayground() {
         <MorphingFAB
           expandedWidth={300}
           expandedHeight={230}
-          elevated={elevated}
+          floating={floating}
           elevation={ELEVATIONS[elevationKey]}
           icon={MessageSquare}
           accessibilityLabel="Send feedback"
@@ -221,7 +221,7 @@ function MorphingFABPlayground() {
         <MorphingFAB
           expandedWidth={232}
           expandedHeight={192}
-          elevated={elevated}
+          floating={floating}
           elevation={ELEVATIONS[elevationKey]}
           accessibilityLabel="Open actions"
           triggerTestID="fab-trigger"

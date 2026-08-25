@@ -68,19 +68,19 @@ function PlaygroundTrigger({ open, toggle }: TriggerRenderProps) {
   );
 }
 
-type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape' | 'elevated'>;
+type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape' | 'floating'>;
 
 // The playground's trigger: the same `{ open, toggle }` render prop as above, but
 // the body is a `TriggerButton` so the Trigger chips can swap Button /
 // ElevatedButton / bare Pressable under one dropdown.
 
-function SwappableTrigger({ kind, size, shape, elevated, open, toggle }: SwappableTriggerProps) {
+function SwappableTrigger({ kind, size, shape, floating, open, toggle }: SwappableTriggerProps) {
   return (
     <TriggerButton
       kind={kind}
       size={size}
       shape={shape}
-      elevated={elevated}
+      floating={floating}
       label={open ? CLOSE_MENU_LABEL : MENU_LABEL}
       onPress={toggle}
     />
@@ -97,7 +97,7 @@ function DropdownPlayground() {
   const [align, setAlign] = useState<Align>('start');
   const [widthKey, setWidthKey] = useState<WidthKey>('320');
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('8');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
   const [withTitle, setWithTitle] = useState(true);
   const [withHeaderAction, setWithHeaderAction] = useState(false);
@@ -115,12 +115,12 @@ function DropdownPlayground() {
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
-        elevated={trigger.elevated}
+        floating={trigger.floating}
         open={props.open}
         toggle={props.toggle}
       />
     ),
-    [trigger.kind, trigger.size, trigger.shape, trigger.elevated],
+    [trigger.kind, trigger.size, trigger.shape, trigger.floating],
   );
   // Only hand `open`/`onOpenChange` over when the toggle is on — omitting them lets
   // the component own its state, which is the other half of the API to exhibit.
@@ -129,7 +129,7 @@ function DropdownPlayground() {
   return (
     <Playground className="min-w-[340px]">
       <ControlCard title="Dropdown panel">
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Choice label="Align" onChange={setAlign} options={ALIGNS} value={align} />
         <Choice label="Width" onChange={setWidthKey} options={WIDTHS} value={widthKey} />
@@ -149,7 +149,7 @@ function DropdownPlayground() {
 
       <AdaptiveDropdown
         align={align}
-        elevated={elevated}
+        floating={floating}
         elevation={ELEVATIONS[elevationKey]}
         fullSheet={fullSheet}
         headerSuffix={withHeaderAction ? HEADER_ACTION : undefined}

@@ -33,14 +33,15 @@ export type DockProps = {
   /** Height variant — drives the container's interactive size token and item dimensions. Default `lg`. */
   size?: 'sm' | 'md' | 'lg';
   /**
-   * Whether the dock bar casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * Defaults to `true`.
+   * Swap the bar's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the bar keeps its `elevation` tint but trades the
+   * layered drop for the halo. @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
-   * Surface elevation of the dock bar (0–8) — drives the background tint and,
-   * when `elevated`, the drop shadow + dark-mode rim. `0` is the flat resting
+   * Surface elevation of the dock bar (0–8) — drives the background tint and the
+   * `shadow-elevated-N` recipe (drop + dark-mode rim). `0` is the flat resting
    * surface (no shadow or border). Defaults to `0`.
    */
   elevation?: SurfaceElevation;
@@ -51,7 +52,7 @@ export type DockProps = {
 };
 
 // biome-ignore lint/style/useExportsLast: type LayoutEvent (private) must stay adjacent to DockItem below; hoisting all private types above would scatter the context-private/component-public grouping
-export function Dock({ children, size = 'lg', elevated = true, elevation = 0, className, style, testID }: DockProps) {
+export function Dock({ children, size = 'lg', floating = false, elevation = 0, className, style, testID }: DockProps) {
   const reduce = useReducedMotion();
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export function Dock({ children, size = 'lg', elevated = true, elevation = 0, cl
           H_INTERACTIVE[size],
           PX_INTERACTIVE[size],
           'relative flex-row items-center gap-1.5 self-start rounded-2xl border border-border',
-          surface(elevation, undefined, elevated),
+          surface(elevation, undefined, floating),
           className,
         )}
         style={style}

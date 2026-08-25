@@ -95,8 +95,8 @@ type RadioCardCtx = {
   variant?: RadioCardVariant;
   /** Group-level elevation. A card can override it. */
   elevation: SurfaceElevation;
-  /** Group-level shadow toggle. A card can override it. */
-  elevated: boolean;
+  /** Group-level floating halo. A card can override it. */
+  floating: boolean;
 };
 
 const RadioCardContext = createContext<RadioCardCtx | null>(null);
@@ -125,17 +125,19 @@ export type RadioCardGroupProps = {
    */
   variant?: RadioCardVariant;
   /**
-   * Whether every card casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * Default: `true`. A card can override it with its own `elevated`.
+   * Swap the card's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the card keeps its `elevation` tint but trades the
+   * layered drop for the halo. A card can override it with its own `floating`.
+   * @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
    * Surface elevation for every card in the group (0–8). Controls the
-   * background tint (`bg-surface-N`) and, when `elevated`, the drop shadow
-   * (`shadow-elevated-N`). `0` is the flat resting surface — a `surface-3` fill
-   * with no shadow or border. Default: `3` (the standard card level). A card can
-   * override it with its own `elevation`.
+   * background tint (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`).
+   * `0` is the flat resting surface — a `surface-3` fill with no shadow or
+   * border. Default: `3` (the standard card level). A card can override it with
+   * its own `elevation`.
    */
   elevation?: SurfaceElevation;
 };
@@ -166,7 +168,7 @@ export function RadioCardGroup({
   testID,
   transition,
   variant,
-  elevated = true,
+  floating = false,
   elevation = 3,
 }: RadioCardGroupProps) {
   const [internal, setInternal] = useState(defaultValue);
@@ -182,7 +184,7 @@ export function RadioCardGroup({
   );
 
   return (
-    <RadioCardContext.Provider value={{ value: current, setValue, transition, testID, variant, elevated, elevation }}>
+    <RadioCardContext.Provider value={{ value: current, setValue, transition, testID, variant, floating, elevation }}>
       <View accessibilityRole="radiogroup" testID={testID} className={cn(group({ orientation }), className)} style={style}>
         {children}
       </View>
@@ -240,16 +242,18 @@ export type RadioCardProps = {
    */
   variant?: RadioCardVariant;
   /**
-   * Whether the card casts the `shadow-elevated-N` recipe (drop + dark rim).
-   * `false` drops the shadow so the surface sits flat, keeping its surface tint.
-   * Inherits the group's value when unset. Default: `true`.
+   * Swap the card's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
+   * adding to it, so the card keeps its `elevation` tint but trades the
+   * layered drop for the halo. Inherits the group's value when unset.
+   * @default false
    */
-  elevated?: boolean;
+  floating?: boolean;
   /**
-   * Surface elevation (0–8). Controls the background tint (`bg-surface-N`) and,
-   * when `elevated`, the drop shadow (`shadow-elevated-N`). `0` is the flat
-   * resting surface (a `surface-3` fill, no shadow or border). Inherits the
-   * group's value when unset. Default: `3` (the standard card level).
+   * Surface elevation (0–8). Controls the background tint (`bg-surface-N`) and
+   * the drop shadow (`shadow-elevated-N`). `0` is the flat resting surface (a
+   * `surface-3` fill, no shadow or border). Inherits the group's value when
+   * unset. Default: `3` (the standard card level).
    */
   elevation?: SurfaceElevation;
 };
@@ -281,7 +285,7 @@ export function RadioCard({
   testID,
   transition,
   variant,
-  elevated,
+  floating,
   elevation,
 }: RadioCardProps) {
   const groupCtx = useContext(RadioCardContext);
@@ -294,7 +298,7 @@ export function RadioCard({
 
   const selected = inGroup ? groupCtx.value === value : Boolean(selectedProp);
   const resolvedVariant = variant ?? groupCtx?.variant ?? 'radio';
-  const resolvedElevated = elevated ?? groupCtx?.elevated ?? true;
+  const resolvedFloating = floating ?? groupCtx?.floating ?? false;
   const resolvedElevation = elevation ?? groupCtx?.elevation ?? 3;
   const t = mergeTransition(TIMING_FAST, transition ?? groupCtx?.transition);
   const ct = reduce ? TIMING_INSTANT : t;
@@ -327,7 +331,7 @@ export function RadioCard({
           it lives on a dedicated View rather than on the animated surface below.
           Both `className` and `style` land here so consumer overrides all target
           one element. */}
-      <View className={cn('rounded-2xl', surface(resolvedElevation, undefined, resolvedElevated), className)} style={style}>
+      <View className={cn('rounded-2xl', surface(resolvedElevation, undefined, resolvedFloating), className)} style={style}>
         {/* The animated surface. A Pressable can't be animated directly (motify
             is only applied to host primitives, and MotiPressable nests a MotiView
             the same way), so the border/tint live here and the Pressable above

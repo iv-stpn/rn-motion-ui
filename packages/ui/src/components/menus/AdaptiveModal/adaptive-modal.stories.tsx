@@ -100,7 +100,7 @@ function ModalPlayground() {
   const [largeMode, setLargeMode] = useState<LargeScreenMode>('modal');
   const [smallMode, setSmallMode] = useState<SmallScreenMode>('bottomSheet');
   const [sizeKey, setSizeKey] = useState<PanelSizeKey>('auto');
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [withSubtitle, setWithSubtitle] = useState(true);
   const [withClose, setWithClose] = useState(true);
@@ -121,7 +121,7 @@ function ModalPlayground() {
         <Choice label="Wide layout" onChange={setLargeMode} options={LARGE_MODES} value={largeMode} />
         <Choice label="Narrow layout" onChange={setSmallMode} options={SMALL_MODES} value={smallMode} />
         <Choice label="Panel size" onChange={setSizeKey} options={PANEL_SIZE_OPTIONS} value={sizeKey} />
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
@@ -140,7 +140,7 @@ function ModalPlayground() {
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}
-        elevated={trigger.elevated}
+        floating={trigger.floating}
         label={OPEN_MODAL_LABEL}
         onPress={handleOpen}
       />
@@ -150,7 +150,7 @@ function ModalPlayground() {
         closeOnOutsidePress={closeOnOutside}
         compact={compact}
         customLayout={customLayout}
-        elevated={elevated}
+        floating={floating}
         elevation={ELEVATIONS[elevationKey]}
         isWideScreen={isAutoWide}
         largeScreenMode={largeMode}

@@ -15,7 +15,7 @@ const meta = {
   parameters: { layout: 'centered' },
   args: {
     icon: Trash2,
-    elevated: true,
+    floating: false,
     elevation: 3,
     size: 'md',
     shape: 'pill',
@@ -23,7 +23,7 @@ const meta = {
     onPress: fn(),
   },
   argTypes: {
-    elevated: { control: 'boolean' },
+    floating: { control: 'boolean' },
     elevation: { control: 'select', options: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -49,7 +49,7 @@ const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
 
 function IconButtonPlayground(args: IconButtonProps) {
-  const [elevated, setElevated] = useState(true);
+  const [floating, setFloating] = useState(false);
   const [elevation, setElevation] = useState<ElevationLabel>('3');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [pill, setPill] = useState(true);
@@ -65,7 +65,7 @@ function IconButtonPlayground(args: IconButtonProps) {
 
   const live: IconButtonProps = {
     ...args,
-    elevated,
+    floating,
     elevation: ELEVATION_LEVEL[elevation],
     size,
     shape: pill ? 'pill' : 'rounded',
@@ -77,7 +77,7 @@ function IconButtonPlayground(args: IconButtonProps) {
   return (
     <Playground>
       <ControlCard title="Options">
-        <Toggle label="Elevated" onChange={setElevated} value={elevated} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevation} options={ELEVATIONS} value={elevation} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Toggle label="Pill" onChange={setPill} value={pill} />
@@ -92,13 +92,13 @@ function IconButtonPlayground(args: IconButtonProps) {
       </View>
 
       <View className="h-3" />
-      <Section title="Elevation">
+      <Section title="Shadow">
         <Variants>
-          <Sample label="flat">
-            <IconButton {...args} size={size} elevated={false} />
+          <Sample label="resting">
+            <IconButton {...args} size={size} floating={false} />
           </Sample>
-          <Sample label="elevated">
-            <IconButton {...args} size={size} elevated={true} />
+          <Sample label="floating">
+            <IconButton {...args} size={size} floating={true} />
           </Sample>
         </Variants>
       </Section>
@@ -106,7 +106,7 @@ function IconButtonPlayground(args: IconButtonProps) {
       <Section title="Sizes">
         <Variants align="center">
           {SIZES.map((name) => (
-            <IconButton {...args} key={name} size={name} elevated={elevated} />
+            <IconButton {...args} key={name} size={name} floating={floating} />
           ))}
         </Variants>
       </Section>
@@ -114,27 +114,27 @@ function IconButtonPlayground(args: IconButtonProps) {
       <Section title="Shapes">
         <Variants align="center">
           <Sample label="rounded">
-            <IconButton {...args} elevated={elevated} />
+            <IconButton {...args} floating={floating} />
           </Sample>
           <Sample label="pill">
-            <IconButton {...args} shape="pill" elevated={elevated} />
+            <IconButton {...args} shape="pill" floating={floating} />
           </Sample>
         </Variants>
       </Section>
 
       <Section title="States">
         <Variants align="center">
-          <Sample label="loading (flat)">
-            <IconButton {...args} icon={Download} loading={true} elevated={false} />
+          <Sample label="loading (resting)">
+            <IconButton {...args} icon={Download} loading={true} floating={false} />
           </Sample>
-          <Sample label="loading (elevated)">
-            <IconButton {...args} icon={Download} loading={true} elevated={true} />
+          <Sample label="loading (floating)">
+            <IconButton {...args} icon={Download} loading={true} floating={true} />
           </Sample>
-          <Sample label="disabled (flat)">
-            <IconButton {...args} disabled={true} elevated={false} />
+          <Sample label="disabled (resting)">
+            <IconButton {...args} disabled={true} floating={false} />
           </Sample>
-          <Sample label="disabled (elevated)">
-            <IconButton {...args} disabled={true} elevated={true} />
+          <Sample label="disabled (floating)">
+            <IconButton {...args} disabled={true} floating={true} />
           </Sample>
         </Variants>
       </Section>
@@ -160,16 +160,16 @@ export const Primary: Story = {
   },
 };
 
-/** Flat vs. elevated at the default md size, with a secondary icon for visual
+/** Resting vs. floating at the default md size, with a secondary icon for visual
  *  variety. */
 export const ElevationStates: Story = {
   render: (args) => (
     <Variants>
-      <Sample label="flat">
-        <IconButton {...args} icon={ArrowRight} elevated={false} accessibilityLabel="Flat" />
+      <Sample label="resting">
+        <IconButton {...args} icon={ArrowRight} floating={false} accessibilityLabel="Resting" />
       </Sample>
-      <Sample label="elevated">
-        <IconButton {...args} icon={ArrowRight} elevated={true} accessibilityLabel="Elevated" />
+      <Sample label="floating">
+        <IconButton {...args} icon={ArrowRight} floating={true} accessibilityLabel="Floating" />
       </Sample>
     </Variants>
   ),
@@ -181,7 +181,7 @@ export const AllSizes: Story = {
     <Variants align="center">
       {SIZES.map((name) => (
         <Sample key={name} label={SIZE_LABELS[name]}>
-          <IconButton {...args} size={name} elevated={false} accessibilityLabel={SIZE_LABELS[name]} />
+          <IconButton {...args} size={name} floating={false} accessibilityLabel={SIZE_LABELS[name]} />
         </Sample>
       ))}
     </Variants>

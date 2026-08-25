@@ -30,8 +30,12 @@ const SUPPORT_TEXT = '24/7 response, 1 h SLA';
 const handleChange = fn();
 
 type Orientation = NonNullable<CheckboxCardGroupProps['orientation']>;
+type Layout = NonNullable<CheckboxCardGroupProps['layout']>;
 
 const ORIENTATIONS = ['horizontal', 'vertical'] as const satisfies readonly Orientation[];
+// Two independent axes: `orientation` lays the cards out, `layout` lays each
+// card's own contents out. Flip both in the playground to see they compose.
+const LAYOUTS = ['stacked', 'inline'] as const satisfies readonly Layout[];
 
 function CheckboxCardGroupDemo() {
   const [addons, setAddons] = useState<string[]>(['support']);
@@ -43,9 +47,28 @@ function CheckboxCardGroupDemo() {
   );
 }
 
+/** Inline cards in a vertical group — the settings-list shape the layout exists
+ *  for: text on the left, box on the trailing edge, one row per option. */
+function CheckboxCardInlineDemo() {
+  const [addons, setAddons] = useState<string[]>([]);
+  return (
+    <CheckboxCardGroup
+      layout="inline"
+      onValueChange={setAddons}
+      orientation="vertical"
+      style={{ width: ROW_WIDTH }}
+      value={addons}
+    >
+      <CheckboxCard numeric={true} subtitle={SEATS_SUB} title={SEATS_TITLE} value="seats" />
+      <CheckboxCard badge={SUPPORT_BADGE} numeric={true} subtitle={SUPPORT_SUB} title={SUPPORT_TITLE} value="support" />
+    </CheckboxCardGroup>
+  );
+}
+
 function CheckboxCardPlayground() {
   const [addons, setAddons] = useState<string[]>(['support']);
   const [orientation, setOrientation] = useState<Orientation>('horizontal');
+  const [layout, setLayout] = useState<Layout>('stacked');
   const [badges, setBadges] = useState(true);
   const [details, setDetails] = useState(false);
   const [numeric, setNumeric] = useState(true);
@@ -57,6 +80,7 @@ function CheckboxCardPlayground() {
     <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        <Choice label="Layout" onChange={setLayout} options={LAYOUTS} value={layout} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />
@@ -71,6 +95,7 @@ function CheckboxCardPlayground() {
         floating={floating}
         elevation={ELEVATIONS[elevationKey]}
         isDisabled={disabled}
+        layout={layout}
         onValueChange={setAddons}
         orientation={orientation}
         value={addons}
@@ -190,6 +215,23 @@ export const Default: Story = {
     const card = await canvas.findByRole('checkbox', { name: SUPPORT_TITLE });
     await userEvent.click(card);
     await expect(handleChange).toHaveBeenCalledWith(true);
+  },
+};
+
+export const Inline: Story = {
+  name: 'Demo: Inline layout',
+  render: () => <CheckboxCardInlineDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Moving the box to the trailing edge is presentation only: the card is
+    // still one checkbox named by its title, and still toggles on press.
+    const support = await canvas.findByRole('checkbox', { name: SUPPORT_TITLE });
+    await expect(support).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(support);
+    await expect(support).toHaveAttribute('aria-checked', 'true');
+    // The badge follows the title inline rather than riding the box's row, but
+    // it keeps its derived testID either way.
+    await expect(await canvas.findByTestId('checkbox-card-group-card-support-badge')).toBeVisible();
   },
 };
 

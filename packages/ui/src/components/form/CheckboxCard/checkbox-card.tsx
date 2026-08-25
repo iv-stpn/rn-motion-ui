@@ -9,6 +9,16 @@ import { type MotiTransitionProp, mergeTransition, TIMING_FAST } from '../../../
 import { Text } from '../../typography/Text/text';
 import { CheckboxBox } from '../Checkbox/checkbox';
 
+/**
+ * How a card arranges its own contents. `"stacked"` puts the box on a row of
+ * its own above the text; `"inline"` moves it to the trailing edge, centred
+ * against the text beside it.
+ *
+ * Distinct from the group's `orientation`, which lays the *cards* out relative
+ * to each other — the two compose freely.
+ */
+type CheckboxCardLayout = 'stacked' | 'inline';
+
 type CheckboxCardCtx = {
   /** Every currently-checked card value. */
   values: string[];
@@ -24,6 +34,8 @@ type CheckboxCardCtx = {
   elevation: SurfaceElevation;
   /** Group-level floating halo. A card can override it. */
   floating: boolean;
+  /** Group-level card layout. A card can override it. */
+  layout: CheckboxCardLayout;
 };
 
 const CheckboxCardContext = createContext<CheckboxCardCtx | null>(null);
@@ -35,7 +47,17 @@ export type CheckboxCardGroupProps = {
   defaultValue?: string[];
   onValueChange?: (value: string[]) => void;
   children: ReactNode;
+  /**
+   * How the *cards* are laid out relative to each other — side by side or
+   * stacked. Independent of each card's own `layout`. @default 'horizontal'
+   */
   orientation?: 'vertical' | 'horizontal';
+  /**
+   * How every card arranges its own contents. `"stacked"` (default) puts the
+   * box on a row above the text; `"inline"` moves it to the trailing edge,
+   * centred against the text. A card can override it with its own `layout`.
+   */
+  layout?: CheckboxCardLayout;
   /** Disables every card. A card can opt back in with `isDisabled={false}`. */
   isDisabled?: boolean;
   /** Additional UniWind class names merged onto the group container. */
@@ -87,6 +109,7 @@ export function CheckboxCardGroup({
   onValueChange,
   children,
   orientation = 'horizontal',
+  layout = 'stacked',
   isDisabled = false,
   className,
   style,
@@ -109,11 +132,58 @@ export function CheckboxCardGroup({
   );
 
   return (
-    <CheckboxCardContext.Provider value={{ values: current, toggle, isDisabled, checkTransition, testID, floating, elevation }}>
+    <CheckboxCardContext.Provider
+      value={{ values: current, toggle, isDisabled, checkTransition, testID, floating, elevation, layout }}
+    >
       <View role="group" testID={testID} className={cn(group({ orientation }), className)} style={style}>
         {children}
       </View>
     </CheckboxCardContext.Provider>
+  );
+}
+
+type CheckboxCardBodyProps = {
+  title: string;
+  subtitle?: string;
+  numeric: boolean;
+  /** The already-built badge, or `null` when the card has none. */
+  badge: ReactNode;
+  inline: boolean;
+  children?: ReactNode;
+};
+
+/**
+ * The card's text column — title, optional subtitle, any custom content. Inline,
+ * the badge joins the title it qualifies; stacked, it rides the box's row
+ * instead and only the title lands here.
+ *
+ * Private to this file; split out so `CheckboxCard` stays under the complexity
+ * cap. `flex-1` when inline so the column claims the width the box isn't using,
+ * and `shrink` on the title so a long one wraps rather than pushing the badge
+ * past the card's edge.
+ */
+function CheckboxCardBody({ title, subtitle, numeric, badge, inline, children }: CheckboxCardBodyProps) {
+  return (
+    <View className={cn('gap-1', inline && 'flex-1')}>
+      {inline ? (
+        <View className="flex-row items-center gap-2">
+          <Text weight="semibold" className="shrink text-base text-foreground">
+            {title}
+          </Text>
+          {badge}
+        </View>
+      ) : (
+        <Text weight="semibold" className="text-base text-foreground">
+          {title}
+        </Text>
+      )}
+      {subtitle ? (
+        <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
+          {subtitle}
+        </Text>
+      ) : null}
+      {children}
+    </View>
   );
 }
 
@@ -142,6 +212,13 @@ export type CheckboxCardProps = {
   onSelectedChange?: (isSelected: boolean) => void;
   /** Dims the card and blocks presses. Inherits the group's value when unset. */
   isDisabled?: boolean;
+  /**
+   * How the card arranges its contents. `"stacked"` (default) puts the box on a
+   * row above the text; `"inline"` moves it to the trailing edge, centred
+   * against the text, and the `badge` follows the title instead of sharing the
+   * box's row. Inherits the group's value when unset.
+   */
+  layout?: CheckboxCardLayout;
   accessibilityLabel?: string;
   /**
    * Inside a `<CheckboxCardGroup>`, defaults to
@@ -193,6 +270,7 @@ export function CheckboxCard({
   isSelected: selectedProp,
   onSelectedChange,
   isDisabled,
+  layout,
   title,
   subtitle,
   badge,
@@ -217,6 +295,7 @@ export function CheckboxCard({
   const disabled = isDisabled ?? groupCtx?.isDisabled ?? false;
   const resolvedFloating = floating ?? groupCtx?.floating ?? false;
   const resolvedElevation = elevation ?? groupCtx?.elevation ?? 3;
+  const inline = (layout ?? groupCtx?.layout ?? 'stacked') === 'inline';
   const ct = mergeTransition(TIMING_FAST, checkTransition ?? groupCtx?.checkTransition);
   // Derive from the group so cards are addressable without threading a testID
   // through every child; an explicit prop still wins. Falls back to the
@@ -229,6 +308,28 @@ export function CheckboxCard({
     if (groupCtx && value !== undefined) groupCtx.toggle(value);
     else onSelectedChange?.(!checked);
   }, [disabled, groupCtx, value, onSelectedChange, checked]);
+
+  // The box and the badge move between rows with the layout, so both are built
+  // once here and placed by the tree below rather than spelled twice.
+  const box = (
+    <CheckboxBox
+      checked={checked}
+      disabled={disabled}
+      pressed={pressed}
+      tone="info"
+      transition={ct}
+      checkIcon={checkIcon}
+      testID={cardTestID}
+    />
+  );
+
+  const badgeNode = badge ? (
+    <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
+      <Text weight="semibold" className="text-primary text-xs">
+        {badge}
+      </Text>
+    </View>
+  ) : null;
 
   return (
     <Pressable
@@ -256,39 +357,24 @@ export function CheckboxCard({
         <View
           className={cn(
             'flex-1 gap-3 rounded-2xl border p-4',
+            inline && 'flex-row items-center',
             disabled ? 'opacity-60' : 'opacity-100',
             checked ? 'border-info bg-info/5' : 'border-transparent',
           )}
         >
-          <View className="flex-row items-center justify-between">
-            <CheckboxBox
-              checked={checked}
-              disabled={disabled}
-              pressed={pressed}
-              tone="info"
-              transition={ct}
-              checkIcon={checkIcon}
-              testID={cardTestID}
-            />
-            {badge ? (
-              <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
-                <Text weight="semibold" className="text-primary text-xs">
-                  {badge}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          <View className="gap-1">
-            <Text weight="semibold" className="text-base text-foreground">
-              {title}
-            </Text>
-            {subtitle ? (
-              <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
-                {subtitle}
-              </Text>
-            ) : null}
+          {/* Stacked, the box leads a row of its own and the badge rides its far
+              end. Inline that row has no reason to exist — the box moves to the
+              trailing edge below and the badge to the title. */}
+          {inline ? null : (
+            <View className="flex-row items-center justify-between">
+              {box}
+              {badgeNode}
+            </View>
+          )}
+          <CheckboxCardBody title={title} subtitle={subtitle} numeric={numeric} badge={badgeNode} inline={inline}>
             {children}
-          </View>
+          </CheckboxCardBody>
+          {inline ? box : null}
         </View>
       </View>
     </Pressable>

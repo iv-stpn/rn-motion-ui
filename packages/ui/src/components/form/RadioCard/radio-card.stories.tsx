@@ -30,10 +30,26 @@ const TEAM_TEXT = 'Unlimited seats, priority support';
 const handlePress = fn();
 
 type Orientation = NonNullable<RadioCardGroupProps['orientation']>;
+type Layout = NonNullable<RadioCardGroupProps['layout']>;
 
 const ORIENTATIONS = ['horizontal', 'vertical'] as const satisfies readonly Orientation[];
+// Two independent axes: `orientation` lays the cards out, `layout` lays each
+// card's own contents out. Flip both in the playground to see they compose.
+const LAYOUTS = ['stacked', 'inline'] as const satisfies readonly Layout[];
 
 const VARIANTS: RadioCardVariant[] = ['radio', 'card'];
+
+/** Inline cards in a vertical group — the settings-list shape the layout exists
+ *  for: text on the left, ring on the trailing edge, one row per option. */
+function RadioCardInlineDemo() {
+  const [plan, setPlan] = useState('monthly');
+  return (
+    <RadioCardGroup className="w-120" layout="inline" onValueChange={setPlan} orientation="vertical" value={plan}>
+      <RadioCard numeric={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} value="monthly" />
+      <RadioCard badge={YEARLY_BADGE} numeric={true} subtitle={YEARLY_SUB} title={YEARLY_TITLE} value="yearly" />
+    </RadioCardGroup>
+  );
+}
 
 function RadioCardGroupDemo() {
   const [plan, setPlan] = useState('monthly');
@@ -48,6 +64,7 @@ function RadioCardGroupDemo() {
 function RadioCardPlayground() {
   const [plan, setPlan] = useState('yearly');
   const [orientation, setOrientation] = useState<Orientation>('horizontal');
+  const [layout, setLayout] = useState<Layout>('stacked');
   const [badges, setBadges] = useState(true);
   const [details, setDetails] = useState(false);
   const [numeric, setNumeric] = useState(true);
@@ -59,6 +76,7 @@ function RadioCardPlayground() {
     <Playground className="w-120">
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
+        <Choice label="Layout" onChange={setLayout} options={LAYOUTS} value={layout} />
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
@@ -73,6 +91,7 @@ function RadioCardPlayground() {
       <RadioCardGroup
         floating={floating}
         elevation={ELEVATIONS[elevationKey]}
+        layout={layout}
         onValueChange={setPlan}
         orientation={orientation}
         value={plan}
@@ -168,6 +187,27 @@ export const Default: Story = {
     const radio = await canvas.findByText(YEARLY_TITLE);
     await userEvent.click(radio);
     await expect(handlePress).toHaveBeenCalled();
+  },
+};
+
+export const Inline: Story = {
+  name: 'Demo: Inline layout',
+  render: () => <RadioCardInlineDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Moving the ring to the trailing edge is presentation only: selection
+    // still moves between cards and the dot still lands in the chosen one.
+    const monthly = await canvas.findByTestId('radio-card-group-card-monthly');
+    const yearly = await canvas.findByTestId('radio-card-group-card-yearly');
+    await expect(monthly).toHaveAttribute('aria-checked', 'true');
+
+    await userEvent.click(yearly);
+    await expect(yearly).toHaveAttribute('aria-checked', 'true');
+    await expect(monthly).toHaveAttribute('aria-checked', 'false');
+    await expect(await canvas.findByTestId('radio-card-group-card-yearly-dot')).toBeVisible();
+    // The badge follows the title inline rather than riding the ring's row, but
+    // it keeps its derived testID either way.
+    await expect(await canvas.findByTestId('radio-card-group-card-yearly-badge')).toBeVisible();
   },
 };
 

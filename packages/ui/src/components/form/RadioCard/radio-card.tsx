@@ -62,7 +62,10 @@ function RadioCardRing({ selected, transition, testID }: RadioCardRingProps) {
       animate={{ borderColor: selected ? info : border }}
       transition={t}
       testID={testID ? `${testID}-ring` : undefined}
-      className="h-5 w-5 items-center justify-center rounded-full border"
+      // `shrink-0` matters inline, where the ring shares a row with the text
+      // column and would otherwise be squeezed by a long title. Matches Radio
+      // and Checkbox, whose own controls are already shrink-proof.
+      className="h-5 w-5 shrink-0 items-center justify-center rounded-full border"
     >
       <AnimatePresence>
         {selected ? (
@@ -84,6 +87,17 @@ function RadioCardRing({ selected, transition, testID }: RadioCardRingProps) {
  *  and background tint to indicate selection. */
 type RadioCardVariant = 'radio' | 'card';
 
+/**
+ * How a card arranges its own contents. `"stacked"` puts the ring on a row of
+ * its own above the text; `"inline"` moves it to the trailing edge, centred
+ * against the text beside it.
+ *
+ * Distinct from the group's `orientation`, which lays the *cards* out relative
+ * to each other — the two compose freely. Under `variant="card"` there is no
+ * ring to place, so the layout only decides where the badge sits.
+ */
+type RadioCardLayout = 'stacked' | 'inline';
+
 type RadioCardCtx = {
   value: string;
   setValue: (value: string) => void;
@@ -97,6 +111,8 @@ type RadioCardCtx = {
   elevation: SurfaceElevation;
   /** Group-level floating halo. A card can override it. */
   floating: boolean;
+  /** Group-level card layout. A card can override it. */
+  layout: RadioCardLayout;
 };
 
 const RadioCardContext = createContext<RadioCardCtx | null>(null);
@@ -107,7 +123,17 @@ export type RadioCardGroupProps = {
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   children: ReactNode;
+  /**
+   * How the *cards* are laid out relative to each other — side by side or
+   * stacked. Independent of each card's own `layout`. @default 'horizontal'
+   */
   orientation?: 'vertical' | 'horizontal';
+  /**
+   * How every card arranges its own contents. `"stacked"` (default) puts the
+   * ring on a row above the text; `"inline"` moves it to the trailing edge,
+   * centred against the text. A card can override it with its own `layout`.
+   */
+  layout?: RadioCardLayout;
   /** Additional UniWind class names merged onto the group container. */
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -163,6 +189,7 @@ export function RadioCardGroup({
   onValueChange,
   children,
   orientation = 'horizontal',
+  layout = 'stacked',
   className,
   style,
   testID,
@@ -184,11 +211,56 @@ export function RadioCardGroup({
   );
 
   return (
-    <RadioCardContext.Provider value={{ value: current, setValue, transition, testID, variant, floating, elevation }}>
+    <RadioCardContext.Provider value={{ value: current, setValue, transition, testID, variant, floating, elevation, layout }}>
       <View accessibilityRole="radiogroup" testID={testID} className={cn(group({ orientation }), className)} style={style}>
         {children}
       </View>
     </RadioCardContext.Provider>
+  );
+}
+
+type RadioCardBodyProps = {
+  title: string;
+  subtitle?: string;
+  numeric: boolean;
+  /** The already-built badge, or `null` when the card has none. */
+  badge: ReactNode;
+  inline: boolean;
+  children?: ReactNode;
+};
+
+/**
+ * The card's text column — title, optional subtitle, any custom content. Inline,
+ * the badge joins the title it qualifies; stacked, it rides the ring's row
+ * instead and only the title lands here.
+ *
+ * Private to this file; split out so `RadioCard` stays under the complexity cap.
+ * `flex-1` when inline so the column claims the width the ring isn't using, and
+ * `shrink` on the title so a long one wraps rather than pushing the badge past
+ * the card's edge.
+ */
+function RadioCardBody({ title, subtitle, numeric, badge, inline, children }: RadioCardBodyProps) {
+  return (
+    <View className={cn('gap-1', inline && 'flex-1')}>
+      {inline ? (
+        <View className="flex-row items-center gap-2">
+          <Text weight="semibold" className="shrink text-base text-foreground">
+            {title}
+          </Text>
+          {badge}
+        </View>
+      ) : (
+        <Text weight="semibold" className="text-base text-foreground">
+          {title}
+        </Text>
+      )}
+      {subtitle ? (
+        <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
+          {subtitle}
+        </Text>
+      ) : null}
+      {children}
+    </View>
   );
 }
 
@@ -243,6 +315,13 @@ export type RadioCardProps = {
    */
   variant?: RadioCardVariant;
   /**
+   * How the card arranges its contents. `"stacked"` (default) puts the ring on
+   * a row above the text; `"inline"` moves it to the trailing edge, centred
+   * against the text, and the `badge` follows the title instead of sharing the
+   * ring's row. Inherits the group's value when unset.
+   */
+  layout?: RadioCardLayout;
+  /**
    * Swap the card's ladder shadow for the input field's large, diffuse halo
    * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
    * adding to it, so the card keeps its `elevation` tint but trades the
@@ -287,6 +366,7 @@ export function RadioCard({
   testID,
   transition,
   variant,
+  layout,
   floating,
   elevation,
 }: RadioCardProps) {
@@ -301,6 +381,7 @@ export function RadioCard({
   const resolvedVariant = variant ?? groupCtx?.variant ?? 'radio';
   const resolvedFloating = floating ?? groupCtx?.floating ?? false;
   const resolvedElevation = elevation ?? groupCtx?.elevation ?? 3;
+  const inline = (layout ?? groupCtx?.layout ?? 'stacked') === 'inline';
   const t = mergeTransition(TIMING_FAST, transition ?? groupCtx?.transition);
   const ct = reduce ? TIMING_INSTANT : t;
   // Derive from the group so cards are addressable without threading a testID
@@ -314,6 +395,20 @@ export function RadioCard({
     if (groupCtx && value !== undefined) groupCtx.setValue(value);
     else onPress?.();
   }, [groupCtx, value, onPress]);
+
+  // The ring and the badge move between rows with the layout, so both are built
+  // once here and placed by the tree below rather than spelled twice. Under
+  // `variant="card"` there is no ring at all — the border and tint carry the
+  // selection on their own.
+  const ring = resolvedVariant === 'radio' ? <RadioCardRing selected={selected} transition={t} testID={cardTestID} /> : null;
+
+  const badgeNode = badge ? (
+    <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
+      <Text weight="semibold" className="text-primary text-xs">
+        {badge}
+      </Text>
+    </View>
+  ) : null;
 
   return (
     <Pressable
@@ -350,34 +445,22 @@ export function RadioCard({
             backgroundColor: tintAt(info, selected ? TINT_ALPHA : 0),
           }}
           transition={ct}
-          className="flex-1 gap-3 rounded-2xl border p-4"
+          className={cn('flex-1 gap-3 rounded-2xl border p-4', inline && 'flex-row items-center')}
         >
-          <View className="flex-row items-center justify-between">
-            {resolvedVariant === 'radio' ? (
-              <RadioCardRing selected={selected} transition={t} testID={cardTestID} />
-            ) : (
-              /* Spacer so the badge still aligns to the right when there's no ring */
-              <View />
-            )}
-            {badge ? (
-              <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
-                <Text weight="semibold" className="text-primary text-xs">
-                  {badge}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          <View className="gap-1">
-            <Text weight="semibold" className="text-base text-foreground">
-              {title}
-            </Text>
-            {subtitle ? (
-              <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
-                {subtitle}
-              </Text>
-            ) : null}
+          {/* Stacked, the ring leads a row of its own and the badge rides its
+              far end. Inline that row has no reason to exist — the ring moves to
+              the trailing edge below and the badge to the title. */}
+          {inline ? null : (
+            <View className="flex-row items-center justify-between">
+              {/* Spacer so the badge still aligns to the right when there's no ring */}
+              {ring ?? <View />}
+              {badgeNode}
+            </View>
+          )}
+          <RadioCardBody title={title} subtitle={subtitle} numeric={numeric} badge={badgeNode} inline={inline}>
             {children}
-          </View>
+          </RadioCardBody>
+          {inline ? ring : null}
         </MotiView>
       </View>
     </Pressable>

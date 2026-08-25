@@ -1,15 +1,8 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: switcher shell, morph transition, and trigger/pane layouts collocated by design
 // biome-ignore-all lint/style/useExportsLast: the public icon/item/variant/props types head the module so the sub-components below read against them
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import {
-  type LayoutChangeEvent,
-  Platform,
-  Pressable,
-  type StyleProp,
-  useWindowDimensions,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
+import { Platform, Pressable, useWindowDimensions, View } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
@@ -61,13 +54,6 @@ type SwitcherScale = {
   caretSize: number;
   /** Each caret of the `switcher` trigger's stacked pair. */
   stackedCaretSize: number;
-  /**
-   * Overlap for the lower stacked caret. The chevron glyph fills only ~5.7 of its
-   * 24-unit box, so two boxes set flush leave most of a caret's height in air
-   * between the strokes — far too much to read as one control. Pulling the second
-   * up by ~0.6 of the box lands the pair ~2px apart at every size.
-   */
-  stackedCaretStyle: { marginTop: number };
   /** Corner radius of the open pane — a touch tighter than the collapsed pill's half-height. */
   paneRadius: number;
 };
@@ -87,9 +73,8 @@ const SWITCHER_SCALE: Record<MorphingSwitcherSize, SwitcherScale> = {
     menuItemSize: 'sm',
     iconSize: 16,
     labelSize: 'xs',
-    caretSize: 11,
-    stackedCaretSize: 9,
-    stackedCaretStyle: { marginTop: -5 },
+    caretSize: 12,
+    stackedCaretSize: 11,
     paneRadius: 14,
   },
   md: {
@@ -99,9 +84,8 @@ const SWITCHER_SCALE: Record<MorphingSwitcherSize, SwitcherScale> = {
     menuItemSize: 'md',
     iconSize: 21,
     labelSize: 'sm',
-    caretSize: 12,
-    stackedCaretSize: 10,
-    stackedCaretStyle: { marginTop: -6 },
+    caretSize: 14,
+    stackedCaretSize: 13,
     paneRadius: 16,
   },
   lg: {
@@ -111,9 +95,8 @@ const SWITCHER_SCALE: Record<MorphingSwitcherSize, SwitcherScale> = {
     menuItemSize: 'md',
     iconSize: 21,
     labelSize: 'sm',
-    caretSize: 14,
-    stackedCaretSize: 12,
-    stackedCaretStyle: { marginTop: -7 },
+    caretSize: 16,
+    stackedCaretSize: 15,
     paneRadius: 20,
   },
 };
@@ -241,7 +224,7 @@ function TriggerCarets({ variant, open, closeIcon, scale }: TriggerCaretsProps) 
     return (
       <View className="flex-col items-center">
         <ThemedIcon icon={ChevronUp} token="muted-foreground" size={scale.stackedCaretSize} />
-        <ThemedIcon icon={ChevronDown} token="muted-foreground" size={scale.stackedCaretSize} style={scale.stackedCaretStyle} />
+        <ThemedIcon icon={ChevronDown} token="muted-foreground" size={scale.stackedCaretSize} />
       </View>
     );
   if (!open) return <ThemedIcon icon={ChevronDown} token="muted-foreground" size={scale.caretSize} />;

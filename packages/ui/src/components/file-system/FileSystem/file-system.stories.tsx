@@ -17,6 +17,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button } from '../../form/Button/button';
 import { Draggable } from '../../gestures/Draggable/draggable';
 import { Text } from '../../typography/Text/text';
+import { STORY_PREVIEWS as PREVIEWS, type StoryPreview } from './__stories__/file-system-previews';
 import { FileSystem } from './file-system';
 import {
   FS_DRAG_CONTAINER_TEST_ID,
@@ -28,6 +29,7 @@ import {
 import type {
   FileSystemContextMenuAction,
   FileSystemExternalDropEvent,
+  FileSystemFileItem,
   FileSystemFilterOperator,
   FileSystemFiltersState,
   FileSystemHeaderState,
@@ -44,6 +46,7 @@ import { FS_HOVER_TEST_ID } from './views/file-system-hover';
 import { FS_TILE_DROP_TARGET_TEST_ID } from './views/file-system-icons-tile';
 import { FS_MARQUEE_TEST_ID } from './views/file-system-marquee';
 import { FS_SEARCH_MATCH_TEST_ID } from './views/file-system-search-view';
+import { FS_THUMBNAIL_TEST_ID, MAX_THUMBNAIL_ELONGATION } from './views/file-system-thumbnail';
 
 // ─── Shared data ───────────────────────────────────────────────────────────────
 // A small, deterministic manifest. Only files are listed at the top level —
@@ -52,22 +55,18 @@ import { FS_SEARCH_MATCH_TEST_ID } from './views/file-system-search-view';
 // `loadChildren` (see LazyChildren below).
 
 /**
- * Tiny (8–12px) PNGs as data URIs, upscaled by the tiles into abstract
- * gradients. Inline so the previews render identically on web and native, with
- * nothing to fetch and no fixture server in the test run.
+ * Spread a fixture onto a manifest entry: its picture, and the proportions that
+ * picture was drawn at.
+ *
+ * The two travel together on purpose. `previewAspectRatio` is what decides the
+ * box a file is drawn in — before the picture has even loaded — so a ratio that
+ * disagrees with the image is what leaves paper showing around a thumbnail.
+ * Declaring the truth here is what makes the margin in `Thumbnails` below the
+ * ratio *limit* rather than a mismatch.
  */
-const PREVIEWS = {
-  dunes:
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAICAIAAABChommAAAASUlEQVR42mP4dqqLIGJ4u78RK/r/7RqczfB0cwVW9P/btf/frkHYDHdW5GNFEEUQNsOVOakEEcPpiTEEEcPh1mCCiGFXlRdBBAAh9rlFlMxWWwAAAABJRU5ErkJggg==',
-  forest:
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAICAIAAABChommAAAAN0lEQVR42mPYc20FQcSw/PAMgohh0oZOgoihdm4lQcSQ2Z1JEDGEVEQSRAz2qV4EEYNWkBVBBABKR40B+0IKAQAAAABJRU5ErkJggg==',
-  harbour:
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAICAIAAABChommAAAASUlEQVR42mOYdeoFQcTQufMmVvT/2zU4m6FyxWms6P+3a/+/XYOwGTKm78GKIIogbIaI9nUEEYN72XyCiME8dSJBxKAW0kQQAQDXyaIPabO+EAAAAABJRU5ErkJggg==',
-  page: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAIAAADQ/GvKAAAAUUlEQVR42mN49+4DVsTw5MkLrIjh1u37WBHD+YvXsSKGo8fPY0UMu/cdw4oYNm7ZhxUxLF+9FStimLtwLVbEMGn6UqyIoaNvDlbEUNcyBSsCAJYN0mFYbm40AAAAAElFTkSuQmCC',
-};
-
-/** Landscape photo proportions; documents keep the default portrait page. */
-const PHOTO_RATIO = 1.5;
+function preview({ aspectRatio, uri }: StoryPreview) {
+  return { previewAspectRatio: aspectRatio, previewImageUrl: uri };
+}
 
 /** Fixed timestamps keep the Date Modified column and the date sorts stable. */
 const DATES = {
@@ -83,11 +82,11 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
   { hasChildren: true, kind: 'folder', path: 'Archive/', updatedAt: DATES.january },
   { createdAt: DATES.june, kind: 'file', path: 'README.md', pinnedAt: DATES.june, size: 2480, updatedAt: DATES.june },
   {
+    ...preview(PREVIEWS.invoice),
     createdAt: DATES.may,
     favoritedAt: DATES.may,
     kind: 'file',
     path: 'Invoice-0042.pdf',
-    previewImageUrl: PREVIEWS.page,
     size: 84_120,
   },
   { createdAt: DATES.april, kind: 'file', path: 'Roadmap.pptx', pinnedAt: DATES.april, size: 1_204_000, updatedAt: DATES.may },
@@ -112,85 +111,114 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
     createdAt: DATES.january,
     kind: 'file',
     path: 'Documents/Reports/Q1-report.pdf',
+    previewAspectRatio: PREVIEWS.reportChart.aspectRatio,
     // Three pages, two of them provided eagerly: the tile pager loads the third
-    // through `loadPreviewImageUrl`.
-    previewImageUrls: [PREVIEWS.page, PREVIEWS.page],
+    // — the donut — through `loadPreviewImageUrl`.
+    previewImageUrls: [PREVIEWS.reportChart.uri, PREVIEWS.reportText.uri],
     previewPageCount: 3,
     size: 320_500,
     updatedAt: DATES.april,
   },
   {
+    ...preview(PREVIEWS.reportChart),
     createdAt: DATES.april,
     favoritedAt: DATES.april,
     kind: 'file',
     path: 'Documents/Reports/Q2-report.pdf',
-    previewImageUrl: PREVIEWS.page,
     size: 298_100,
     updatedAt: DATES.june,
   },
   {
+    ...preview(PREVIEWS.dunes),
     createdAt: DATES.march,
     kind: 'file',
     path: 'Photos/dunes.jpg',
     pinnedAt: DATES.march,
-    previewAspectRatio: PHOTO_RATIO,
-    previewImageUrl: PREVIEWS.dunes,
     size: 2_140_000,
     updatedAt: DATES.march,
-    url: PREVIEWS.dunes,
+    url: PREVIEWS.dunes.uri,
   },
   {
+    ...preview(PREVIEWS.harbour),
     createdAt: DATES.may,
     kind: 'file',
     path: 'Photos/harbour.jpg',
-    previewAspectRatio: PHOTO_RATIO,
-    previewImageUrl: PREVIEWS.harbour,
     size: 1_880_000,
     updatedAt: DATES.may,
-    url: PREVIEWS.harbour,
+    url: PREVIEWS.harbour.uri,
   },
   {
+    // Portrait, among landscapes: each keeps its own proportions in the grid.
+    ...preview(PREVIEWS.forest),
     createdAt: DATES.june,
     favoritedAt: DATES.june,
     kind: 'file',
     path: 'Photos/forest.png',
-    previewAspectRatio: PHOTO_RATIO,
-    previewImageUrl: PREVIEWS.forest,
     size: 3_260_000,
     updatedAt: DATES.june,
-    url: PREVIEWS.forest,
+    url: PREVIEWS.forest.uri,
   },
   {
+    // 4:1, past the box clamp — see `Thumbnails`.
+    ...preview(PREVIEWS.panorama),
+    createdAt: DATES.may,
+    kind: 'file',
+    path: 'Photos/coast-panorama.jpg',
+    size: 4_120_000,
+    updatedAt: DATES.may,
+    url: PREVIEWS.panorama.uri,
+  },
+  {
+    // 1:3.2 — past it the other way round.
+    ...preview(PREVIEWS.lighthouse),
+    createdAt: DATES.april,
+    kind: 'file',
+    path: 'Photos/lighthouse.jpg',
+    size: 1_640_000,
+    updatedAt: DATES.april,
+    url: PREVIEWS.lighthouse.uri,
+  },
+  {
+    // A picture with no picture: nothing was ever generated for it, so it falls
+    // all the way through to the file-type icon.
+    createdAt: DATES.june,
+    kind: 'file',
+    path: 'Photos/IMG-4021.heic',
+    size: 3_940_000,
+    updatedAt: DATES.june,
+  },
+  {
+    ...preview(PREVIEWS.invoice),
     createdAt: DATES.april,
     kind: 'file',
     path: 'Receipt-scan.pdf',
-    previewImageUrl: PREVIEWS.page,
     size: 182_400,
     updatedAt: DATES.may,
   },
   {
+    ...preview(PREVIEWS.reportText),
     createdAt: DATES.june,
     kind: 'file',
     path: 'Scan-0001.pdf',
-    previewImageUrl: PREVIEWS.page,
     size: 96_700,
     updatedAt: DATES.june,
   },
   { createdAt: DATES.may, favoritedAt: DATES.may, kind: 'file', path: 'Tax-2025.xlsx', size: 214_000, updatedAt: DATES.june },
   { createdAt: DATES.march, kind: 'file', path: 'Trip-itinerary.docx', size: 58_300, updatedAt: DATES.may },
   {
+    ...preview(PREVIEWS.reportText),
     createdAt: DATES.february,
     kind: 'file',
     path: 'Vaccination-record.pdf',
-    previewImageUrl: PREVIEWS.page,
     size: 144_800,
     updatedAt: DATES.april,
   },
   {
+    // A wide document: 10:3, so it letterboxes the same way the panorama does.
+    ...preview(PREVIEWS.floorPlan),
     createdAt: DATES.april,
     kind: 'file',
     path: 'Zoo-trip-map.pdf',
-    previewImageUrl: PREVIEWS.page,
     size: 310_000,
     updatedAt: DATES.april,
   },
@@ -203,43 +231,40 @@ const SAMPLE_ITEMS: FileSystemItem[] = [
     updatedAt: DATES.may,
   },
   {
+    ...preview(PREVIEWS.invoice),
     createdAt: DATES.june,
     kind: 'file',
     path: 'Warranty-card.pdf',
-    previewImageUrl: PREVIEWS.page,
     size: 88_500,
     updatedAt: DATES.june,
   },
   { createdAt: DATES.february, kind: 'file', path: 'Year-review.pptx', size: 1_860_000, updatedAt: DATES.april },
   {
+    ...preview(PREVIEWS.dunes),
     createdAt: DATES.april,
     kind: 'file',
     path: 'Wallpaper-sunset.jpg',
-    previewAspectRatio: PHOTO_RATIO,
-    previewImageUrl: PREVIEWS.dunes,
     size: 2_410_000,
     updatedAt: DATES.april,
-    url: PREVIEWS.dunes,
+    url: PREVIEWS.dunes.uri,
   },
   {
+    ...preview(PREVIEWS.panorama),
     createdAt: DATES.may,
     kind: 'file',
     path: 'Wallpaper-mountains.jpg',
-    previewAspectRatio: PHOTO_RATIO,
-    previewImageUrl: PREVIEWS.forest,
     size: 3_020_000,
     updatedAt: DATES.may,
-    url: PREVIEWS.forest,
+    url: PREVIEWS.panorama.uri,
   },
   {
+    ...preview(PREVIEWS.harbour),
     createdAt: DATES.june,
     kind: 'file',
     path: 'Wallpaper-coast.jpg',
-    previewAspectRatio: PHOTO_RATIO,
-    previewImageUrl: PREVIEWS.harbour,
     size: 2_780_000,
     updatedAt: DATES.june,
-    url: PREVIEWS.harbour,
+    url: PREVIEWS.harbour.uri,
   },
 ];
 
@@ -258,7 +283,7 @@ const SCROLLABLE_ITEMS: FileSystemItem[] = [
 
 /** What `Archive/` resolves to. Kept out of `items` so the load is observable. */
 const ARCHIVE_ITEMS: FileSystemItem[] = [
-  { createdAt: DATES.january, kind: 'file', path: 'Archive/2024-summary.pdf', previewImageUrl: PREVIEWS.page, size: 210_300 },
+  { ...preview(PREVIEWS.reportChart), createdAt: DATES.january, kind: 'file', path: 'Archive/2024-summary.pdf', size: 210_300 },
   { createdAt: DATES.january, kind: 'file', path: 'Archive/legacy.zip', size: 8_412_000 },
   {
     createdAt: DATES.january,
@@ -282,7 +307,7 @@ async function loadArchiveChildren() {
 /** Third page of the quarterly report, resolved on demand by the tile pager. */
 async function loadPreviewImageUrl() {
   await new Promise((resolve) => setTimeout(resolve, LOAD_DELAY_MS));
-  return PREVIEWS.page;
+  return PREVIEWS.reportDonut.uri;
 }
 
 // ─── External-drop tray ───────────────────────────────────────────────────────
@@ -874,6 +899,189 @@ export const CustomView: Story = {
 
     await canvas.findByText('Kanban board');
     await canvas.findAllByText('README.md');
+  },
+};
+
+// ─── Thumbnails ────────────────────────────────────────────────────────────────
+// How a file is pictured, in every view: the page thumbnail the manifest
+// carries, else the node `renderFilePreview` hands back, else the file-type
+// icon. The box that picture is drawn in follows the file's own ratio — up to a
+// point, which is what the story below is for.
+
+/** The one kind the story's consumer draws itself, and the node it draws. */
+const SWATCH_EXTENSION = '.sketch';
+const CUSTOM_PREVIEW_TEST_ID = 'story-custom-preview';
+
+/**
+ * The middle rung of the fallback chain. `renderFilePreview` is asked only about
+ * files with no thumbnail of their own, and returning `null` for the kinds it
+ * does not know leaves those to the file-type icon — so one callback shows both
+ * rungs at once.
+ */
+function renderSwatchPreview(file: FileSystemFileItem) {
+  if (!file.path.endsWith(SWATCH_EXTENSION)) return null;
+  return (
+    <View className="size-full items-center justify-center bg-primary/15" testID={CUSTOM_PREVIEW_TEST_ID}>
+      <Text className="text-primary" size="xs" weight="semibold">
+        SKETCH
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * One folder covering the three things a thumbnail can be: a picture drawn at
+ * its own proportions, a picture too elongated to draw at them, and no picture
+ * at all. Grouped that way here; the grid itself sorts them by name.
+ */
+const THUMBNAIL_ITEMS: FileSystemItem[] = [
+  // Inside the limit: the box *is* the picture's ratio, so it fills edge to edge.
+  { ...preview(PREVIEWS.dunes), kind: 'file', path: 'Dunes.jpg', size: 2_140_000, updatedAt: DATES.march },
+  { ...preview(PREVIEWS.forest), kind: 'file', path: 'Forest.png', size: 3_260_000, updatedAt: DATES.june },
+  { ...preview(PREVIEWS.invoice), kind: 'file', path: 'Invoice-0042.pdf', size: 84_120, updatedAt: DATES.may },
+  { ...preview(PREVIEWS.slide), kind: 'file', path: 'Keynote-deck.pdf', size: 640_000, updatedAt: DATES.april },
+  // Past it: the box stops at 2:1 and the picture is fitted inside, which leaves
+  // the paper showing along two of its edges rather than cropping the picture.
+  { ...preview(PREVIEWS.panorama), kind: 'file', path: 'Coast-panorama.jpg', size: 4_120_000, updatedAt: DATES.may },
+  { ...preview(PREVIEWS.lighthouse), kind: 'file', path: 'Lighthouse.jpg', size: 1_640_000, updatedAt: DATES.april },
+  { ...preview(PREVIEWS.floorPlan), kind: 'file', path: 'Floor-plan.pdf', size: 310_000, updatedAt: DATES.june },
+  // No picture: the consumer's node for the one kind it knows, the file-type
+  // icon for the rest — a page with its extension printed on it, or a brand mark.
+  { kind: 'file', path: 'Logo.sketch', size: 1_120_000, updatedAt: DATES.june },
+  { kind: 'file', path: 'Untitled.heic', size: 3_940_000, updatedAt: DATES.june },
+  { kind: 'file', path: 'Backup.zip', size: 8_412_000, updatedAt: DATES.february },
+  { kind: 'file', path: 'Q3-deck.pptx', size: 1_860_000, updatedAt: DATES.march },
+];
+
+const THUMBNAILS_TEST_ID = 'thumbnails';
+
+const THUMBNAILS_NOTE =
+  'Every file is drawn at its own proportions, up to twice as long as it is wide. Past that the box stops at the limit and the picture keeps its shape inside it: Coast-panorama.jpg and Floor-plan.pdf keep paper above and below, Lighthouse.jpg keeps it either side. Four files carry no thumbnail at all — Logo.sketch falls back to the consumer’s own preview node, Backup.zip, Q3-deck.pptx and Untitled.heic to their file-type icon.';
+
+function renderThumbnails(args: FileSystemProps) {
+  return (
+    <View className="gap-3">
+      <Note>{THUMBNAILS_NOTE}</Note>
+      <FileSystem {...args} />
+    </View>
+  );
+}
+
+/** The tile for `path`, whatever it drew inside. */
+async function thumbnailTile(canvas: ReturnType<typeof within>, path: string): Promise<HTMLElement> {
+  const tiles: HTMLElement[] = await canvas.findAllByTestId(fileSystemEntryTestID(THUMBNAILS_TEST_ID, path));
+  const tile = tiles[0];
+  if (!tile) throw new Error(`no tile rendered for ${path}`);
+  return tile;
+}
+
+/**
+ * What a tile drew, measured off the DOM: the box the view gave the file, and
+ * the proportions of the picture that landed in it.
+ *
+ * Two nodes, because they answer different halves. The box is
+ * `FS_THUMBNAIL_TEST_ID` — the node the clamp sizes. The picture's own shape
+ * comes off the real `<img>` react-native-web keeps behind every `Image`: it is
+ * laid out at its intrinsic ratio rather than stretched, so it is no use as a
+ * box, but `naturalWidth`/`naturalHeight` is the file as drawn. Fitting one
+ * into the other is what `resizeMode="contain"` does, so the leftover is the
+ * paper the story is about.
+ */
+async function measureThumbnail(canvas: ReturnType<typeof within>, path: string) {
+  const tile = await thumbnailTile(canvas, path);
+  const [boxNode] = within(tile).getAllByTestId(FS_THUMBNAIL_TEST_ID);
+  const image = tile.querySelector('img');
+  if (!(boxNode && image)) throw new Error(`no picture drawn for ${path}`);
+  // Decoding is asynchronous even for a data URI, and the natural size is what
+  // the margin is computed from.
+  await waitFor(() => expect(image.naturalWidth).toBeGreaterThan(0));
+
+  const box = boxNode.getBoundingClientRect();
+  const scale = Math.min(box.width / image.naturalWidth, box.height / image.naturalHeight);
+  return {
+    boxRatio: box.width / box.height,
+    marginX: (box.width - image.naturalWidth * scale) / 2,
+    marginY: (box.height - image.naturalHeight * scale) / 2,
+    pictureRatio: image.naturalWidth / image.naturalHeight,
+  };
+}
+
+/**
+ * The ratio limit and the fallback chain, in one folder.
+ *
+ * A thumbnail follows its file's proportions only up to `MAX_THUMBNAIL_ELONGATION`
+ * — twice as long as it is wide, either way round. Past that a picture drawn to
+ * width would be a sliver in a row's glyph lane, so the box stops at the limit
+ * and the picture is fitted inside it: the paper it is printed on shows along
+ * two edges instead of the picture being sliced to fit.
+ *
+ * The same component decides what to draw when there is no picture, which is why
+ * no view carries a fallback of its own: the consumer's preview node comes
+ * first, then the file-type icon — with its extension printed on the page, at
+ * tile sizes where that is legible.
+ */
+export const Thumbnails: Story = {
+  name: 'Demo: Thumbnails, ratio limits and fallbacks',
+  args: {
+    items: THUMBNAIL_ITEMS,
+    renderFilePreview: renderSwatchPreview,
+    testID: THUMBNAILS_TEST_ID,
+    title: 'Previews',
+  },
+  render: renderThumbnails,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findAllByText('Dunes.jpg');
+
+    // A 3:2 photo is inside the limit, so its box is its own ratio and the
+    // picture covers it — no paper showing on any edge.
+    const dunes = await measureThumbnail(canvas, 'Dunes.jpg');
+    expect(dunes.pictureRatio).toBeCloseTo(1.5, 1);
+    expect(dunes.boxRatio).toBeCloseTo(dunes.pictureRatio, 1);
+    expect(dunes.marginX + dunes.marginY).toBeLessThan(1);
+
+    // 4:1 is twice the limit: the box comes back to 2:1 …
+    const panorama = await measureThumbnail(canvas, 'Coast-panorama.jpg');
+    expect(panorama.pictureRatio).toBeCloseTo(4, 1);
+    expect(panorama.boxRatio).toBeCloseTo(MAX_THUMBNAIL_ELONGATION, 1);
+    // … and the picture keeps its own shape inside it, so the paper shows above
+    // and below it rather than the sides being cropped off.
+    expect(panorama.marginY).toBeGreaterThan(2);
+    expect(panorama.marginX).toBeLessThan(1);
+
+    // The same limit the other way round, and the margin moves to the sides.
+    const lighthouse = await measureThumbnail(canvas, 'Lighthouse.jpg');
+    expect(lighthouse.boxRatio).toBeCloseTo(1 / MAX_THUMBNAIL_ELONGATION, 1);
+    expect(lighthouse.marginX).toBeGreaterThan(2);
+    expect(lighthouse.marginY).toBeLessThan(1);
+
+    // A document is clamped by the same rule a photo is — nothing here reads the
+    // file's kind, only the ratio it declares.
+    const plan = await measureThumbnail(canvas, 'Floor-plan.pdf');
+    expect(plan.pictureRatio).toBeGreaterThan(MAX_THUMBNAIL_ELONGATION);
+    expect(plan.boxRatio).toBeCloseTo(MAX_THUMBNAIL_ELONGATION, 1);
+    expect(plan.marginY).toBeGreaterThan(2);
+
+    // No thumbnail: the consumer's node is asked first and answers for `.sketch`.
+    // It still gets a framed box — as far as the layout is concerned it is a
+    // picture, just not one the manifest carried.
+    const sketch = await thumbnailTile(canvas, 'Logo.sketch');
+    expect(within(sketch).queryAllByTestId(CUSTOM_PREVIEW_TEST_ID)).not.toHaveLength(0);
+    expect(within(sketch).queryAllByTestId(FS_THUMBNAIL_TEST_ID)).not.toHaveLength(0);
+
+    // What that node declines falls through to the file-type icon, which takes
+    // the slot rather than a thumbnail box — no box, no raster — and prints the
+    // extension on its page at this size.
+    const heic = await thumbnailTile(canvas, 'Untitled.heic');
+    expect(within(heic).queryAllByTestId(FS_THUMBNAIL_TEST_ID)).toHaveLength(0);
+    expect(heic.querySelector('img')).toBeNull();
+    within(heic).getByText('HEIC');
+
+    // A brand glyph is drawn full-bleed instead, so it prints no label: there is
+    // no page margin to print one in.
+    const deck = await thumbnailTile(canvas, 'Q3-deck.pptx');
+    expect(within(deck).queryAllByTestId(FS_THUMBNAIL_TEST_ID)).toHaveLength(0);
+    expect(within(deck).queryByText('PPTX')).toBeNull();
   },
 };
 

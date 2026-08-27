@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
+/** biome-ignore-all lint/style/useComponentExportOnlyModules: the box's test id belongs with the node it names */
 // How a file is pictured, everywhere in the file system: `FileThumbnail` is the
 // one component every view draws a file with — list rows, icon tiles, the
 // gallery strip and stage, the columns rows and preview pane.
@@ -39,8 +40,11 @@ const DEFAULT_PREVIEW_ASPECT_RATIO = 0.72;
  * Past that a thumbnail stops being a picture and becomes a sliver — a panorama
  * drawn to width in a 16 px lane is a few pixels tall. So the box stops at the
  * limit and the image sits inside it, which leaves margin rather than cropping.
+ *
+ * Exported because it is the number the stories measure the box against, and a
+ * second copy of it there could only drift.
  */
-const MAX_THUMBNAIL_ELONGATION = 2;
+export const MAX_THUMBNAIL_ELONGATION = 2;
 
 /**
  * Below this width the face keeps its paper but drops its border: a 1.5 px
@@ -55,6 +59,17 @@ const FRAMED_MIN_WIDTH = 24;
  * reads as the page it is printed on rather than as a gap.
  */
 const FACE_CLASSNAME = 'size-full overflow-hidden bg-white';
+
+/**
+ * The box a picture is drawn in. Fixed rather than a prop, for the same reason
+ * the tile's drop mark is: the clamp below is geometry, so the only way to
+ * assert it is to find this node and measure it.
+ *
+ * Only a file that *has* a picture draws one — a file that fell through to its
+ * icon has no box — so the id doubles as the answer to which rung of the
+ * fallback chain a file landed on.
+ */
+export const FS_THUMBNAIL_TEST_ID = 'file-system-thumbnail';
 
 type ThumbnailBox = { height: number; width: number };
 
@@ -283,7 +298,7 @@ export function FileThumbnail({
   }
 
   return (
-    <View className={cn('relative shrink-0', className)} style={box}>
+    <View className={cn('relative shrink-0', className)} style={box} testID={FS_THUMBNAIL_TEST_ID}>
       <View
         className={cn(FACE_CLASSNAME, width < FRAMED_MIN_WIDTH ? 'rounded-[3px]' : 'rounded-md border-[1.5px] border-border')}
       >

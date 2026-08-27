@@ -102,7 +102,7 @@ function SwipeableListPlayground() {
   const [floating, setFloating] = useState(false);
 
   return (
-    <Playground>
+    <Playground className="w-full">
       <ControlCard title="Options">
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />

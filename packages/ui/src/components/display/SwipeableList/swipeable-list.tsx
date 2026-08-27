@@ -562,7 +562,7 @@ function SwipeableListRow({
 
       {/* Draggable surface */}
       <Animated.View
-        className={cn('rounded-2xl border-[1.5px] border-border px-4 py-3', surface(elevation, undefined, floating))}
+        className={cn('rounded-2xl px-4 py-3', surface(elevation, undefined, floating))}
         style={[
           {
             minHeight: 72,

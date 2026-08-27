@@ -12,8 +12,10 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { expect, within } from 'storybook/test';
 import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer, settle } from '../../../__stories__/story-drag';
-import { Choice, ControlCard, Note, Playground, Section } from '../../../__stories__/story-harness';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
+import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { surface } from '../../../lib/surface';
 import { Text } from '../../typography/Text/text';
 import { SortableList } from './sortable-list';
@@ -97,12 +99,14 @@ function GroupedRow({ first, isDragging, item, last }: RowProps) {
   );
 }
 
-function SeparatedRow({ isDragging, item }: Omit<RowProps, 'first' | 'last'>) {
+type SeparatedRowProps = { isDragging: boolean; item: Todo; elevation: SurfaceElevation; floating: boolean };
+
+function SeparatedRow({ isDragging, item, elevation, floating }: SeparatedRowProps) {
   return (
     <View
       className={cn(
         'flex-row items-center rounded-lg',
-        surface(2),
+        surface(elevation, undefined, floating),
         'px-4 py-3 transition-[opacity,scale] duration-300 ease-out',
         isDragging && 'scale-[0.98] opacity-40',
       )}
@@ -125,6 +129,8 @@ function InteractiveDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS
   const [groupedItems, setGroupedItems] = useState(initialItems);
   const [spacedItems, setSpacedItems] = useState(initialItems);
   const [lastReorder, setLastReorder] = useState('None');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('2');
+  const [floating, setFloating] = useState(false);
 
   const items = variant === 'grouped' ? groupedItems : spacedItems;
   const setItems = variant === 'grouped' ? setGroupedItems : setSpacedItems;
@@ -149,16 +155,20 @@ function InteractiveDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS
   );
 
   const renderSeparatedItem: SortableListProps<Todo>['renderItem'] = useCallback(
-    (item, _index, isDragging) => <SeparatedRow isDragging={isDragging} item={item} />,
-    [],
+    (item, _index, isDragging) => (
+      <SeparatedRow elevation={ELEVATIONS[elevationKey]} floating={floating} isDragging={isDragging} item={item} />
+    ),
+    [elevationKey, floating],
   );
 
   const renderItem = variant === 'grouped' ? renderGroupedItem : renderSeparatedItem;
 
   return (
-    <Playground>
+    <Playground className="w-full">
       <ControlCard title="Options">
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
       <Note testID={REORDER_READOUT}>{lastReorder}</Note>
       <Section title="List">
@@ -203,7 +213,7 @@ function StaticDemo({ disabled = false, items: initialItems = DEFAULT_ITEMS }: S
   }, []);
 
   const renderItem: SortableListProps<Todo>['renderItem'] = useCallback(
-    (item, _i, isDragging) => <SeparatedRow isDragging={isDragging} item={item} />,
+    (item, _i, isDragging) => <SeparatedRow elevation={2} floating={false} isDragging={isDragging} item={item} />,
     [],
   );
 

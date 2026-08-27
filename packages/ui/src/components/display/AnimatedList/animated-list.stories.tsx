@@ -3,7 +3,11 @@ import { useCallback, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { Action, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
+import { Action, Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
+import { cn } from '../../../lib/cn';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { surface } from '../../../lib/surface';
 import { Text } from '../../typography/Text/text';
 import { AnimatedList, AnimatedListItem } from './animated-list';
 
@@ -21,15 +25,24 @@ const EXPAND_BODY =
   "Expanding this content grows the item's measured height. The outer container animates to the new height, pushing siblings out of the way without a layout prop.";
 const HINT = 'Press a row to grow it, or the × to collapse it out of the list.';
 
-type RowProps = { item: Item; expanded: boolean; onToggle: (id: number) => void; onRemove: (id: number) => void };
+type RowProps = {
+  item: Item;
+  expanded: boolean;
+  onToggle: (id: number) => void;
+  onRemove: (id: number) => void;
+  elevation: SurfaceElevation;
+  floating: boolean;
+};
 
 // Its own component so each row's handlers are stable per id.
 
-function Row({ item, expanded, onToggle, onRemove }: RowProps) {
+function Row({ item, expanded, onToggle, onRemove, elevation, floating }: RowProps) {
   const toggle = useCallback(() => onToggle(item.id), [onToggle, item.id]);
   const remove = useCallback(() => onRemove(item.id), [onRemove, item.id]);
   return (
-    <View className="flex-row items-center justify-between gap-3 rounded-2xl border-[1.5px] border-border bg-surface-3 px-4 py-3 shadow-surface-3">
+    <View
+      className={cn('flex-row items-center justify-between gap-3 rounded-2xl px-4 py-3', surface(elevation, undefined, floating))}
+    >
       <Pressable className="flex-1" onPress={toggle}>
         <Text weight="medium" className="text-base text-foreground">
           {item.label}
@@ -53,6 +66,8 @@ function AnimatedListPlayground() {
 
   const [items, setItems] = useState<Item[]>(() => SEED.map((label) => make(label)));
   const [expanded, setExpanded] = useState<number[]>([]);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [floating, setFloating] = useState(false);
 
   const add = useCallback(() => setItems((prev) => [...prev, make(`Item ${prev.length + 1}`)]), [make]);
   const removeLast = useCallback(() => setItems((prev) => prev.slice(0, -1)), []);
@@ -67,11 +82,13 @@ function AnimatedListPlayground() {
   const summary = `${items.length} items, ${expanded.length} expanded`;
 
   return (
-    <Playground className="w-[320px]">
+    <Playground className="w-full max-w-[320px]">
       <ControlCard title="Options">
         <Action label="Add item" onPress={add} />
         <Action label="Remove last" onPress={removeLast} />
         <Toggle label="Expand all" onChange={expandAll} value={allExpanded} />
+        <Toggle label="Floating" onChange={setFloating} value={floating} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
       <Note>{summary}</Note>
@@ -79,7 +96,14 @@ function AnimatedListPlayground() {
       <AnimatedList>
         {items.map((item) => (
           <AnimatedListItem key={item.id}>
-            <Row expanded={expanded.includes(item.id)} item={item} onRemove={remove} onToggle={toggle} />
+            <Row
+              elevation={ELEVATIONS[elevationKey]}
+              expanded={expanded.includes(item.id)}
+              floating={floating}
+              item={item}
+              onRemove={remove}
+              onToggle={toggle}
+            />
           </AnimatedListItem>
         ))}
       </AnimatedList>

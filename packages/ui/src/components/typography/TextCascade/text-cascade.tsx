@@ -1,5 +1,5 @@
 import { type StyleProp, View, type ViewStyle } from 'react-native';
-import { ActionSwapText } from '../../display/ActionSwap/action-swap';
+import { ButtonSwapText } from '../../form/Button/button-swap';
 import type { TextWeight } from '../Text/text';
 
 export type TextCascadeProps = {
@@ -16,11 +16,11 @@ export type TextCascadeProps = {
 
 /**
  * Letter-by-letter slot roll for standalone text — the old letters drop away
- * as the new ones land, left to right. Same motion as the action-swap
+ * as the new ones land, left to right. Same motion as the button-swap
  * cascade variant, with a text-first API.
  *
- * Delegates to `ActionSwapText` (`animation="cascade"`) so the cascade stays
- * in lockstep with the action-swap button. The wrapper only adds the
+ * Delegates to `ButtonSwapText` (`animation="cascade"`) so the cascade stays
+ * in lockstep with the button-swap button. The wrapper only adds the
  * `text`/`className` API and an accessible label.
  */
 export function TextCascade({ text, className, weight, style, accessibilityLabel, testID }: TextCascadeProps) {
@@ -31,9 +31,9 @@ export function TextCascade({ text, className, weight, style, accessibilityLabel
       accessibilityLabel={accessibilityLabel ?? text}
       style={[{ overflow: 'hidden' }, style]}
     >
-      <ActionSwapText value={text} animation="cascade" textClassName={className} weight={weight}>
+      <ButtonSwapText value={text} animation="cascade" textClassName={className} weight={weight}>
         {text}
-      </ActionSwapText>
+      </ButtonSwapText>
     </View>
   );
 }

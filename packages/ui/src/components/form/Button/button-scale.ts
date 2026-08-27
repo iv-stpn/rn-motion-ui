@@ -1,6 +1,6 @@
 // The button family's shared scale: the one place a button's box (height,
 // horizontal padding, corner radius), its adornment gap and its label type ramp
-// are decided. A flat Button, an elevated chip and an ActionSwapButton at the
+// are decided. A flat Button, an elevated chip and a ButtonSwap at the
 // same `size` are therefore the same box with the same text inside it, and a row
 // of mixed types lines up.
 //
@@ -12,7 +12,7 @@
 // a number instead of a class: ElevatedButton's SVG rim has to follow the same
 // curve as the Pressable, and it can't read a class.
 //
-// Data only, no React — ActionSwap imports this without pulling in the family's
+// Data only, no React — a sibling imports this without pulling in the family's
 // press/ripple machinery (button-internals.tsx, which re-exports the two types
 // below so existing import sites keep working).
 

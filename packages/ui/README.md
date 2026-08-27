@@ -98,6 +98,7 @@ Subpaths are namespaced by category:
 | `/action-row-group`            | `ActionRowGroup`                                                         |
 | `/button`                      | `Button`                                                                 |
 | `/button-group`                | `ButtonGroup`                                                            |
+| `/button-swap`                 | `ButtonSwap`, `ButtonSwapText`, `ButtonSwapIcon`                         |
 | `/close-button`                | `CloseButton`                                                            |
 | `/elevated-button`             | `ElevatedButton`                                                         |
 | `/feedback-fab`                | `FeedbackFAB`                                                            |
@@ -168,7 +169,6 @@ Subpaths are namespaced by category:
 | `/overflow-actions`            | `OverflowActions`                                                        |
 | `/bouncy-accordion`            | `BouncyAccordion`                                                        |
 | `/dynamic-island`              | `DynamicIsland`                                                          |
-| `/action-swap`                 | `ActionSwap`                                                             |
 | `/animated-list`               | `AnimatedList`, `AnimatedListItem`                                       |
 | `/swipeable-list`              | `SwipeableList`                                                          |
 | `/range-slider`                | `RangeSlider`                                                            |

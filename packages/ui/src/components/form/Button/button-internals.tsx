@@ -85,9 +85,9 @@ export function pressAnimate(opts: PressAnimateOpts) {
 // ── exports ─────────────────────────────────────────────────────────────────
 
 // The size/shape axes and the label ramp live in button-scale.ts, next to the
-// box geometry they belong to (and reachable from ActionSwap without pulling in
-// this file's SVG/Moti dependencies). Re-exported here so every sibling keeps
-// importing its types from one place.
+// box geometry they belong to (and reachable without pulling in this file's
+// SVG/Moti dependencies). Re-exported here so every sibling keeps importing its
+// types from one place.
 export type { ButtonShape, ButtonSize } from './button-scale';
 
 /**

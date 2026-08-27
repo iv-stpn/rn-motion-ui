@@ -1,32 +1,30 @@
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: the three swap animations, the two slot primitives and the button that composes them read best in one file */
-import { cva, type VariantProps } from 'class-variance-authority';
+import type { VariantProps } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
-import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { usePageVisible } from '../../../hooks/use-page-visible';
-import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '../../../lib/ease';
+import { EASE_IN_OUT, EASE_OUT, SPRING_SWAP } from '../../../lib/ease';
+import { elevatedShadow, FLOATING_SHADOW_CLASSNAME, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiText } from '../../../moti/components/text';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import {
-  BUTTON_BOX,
-  BUTTON_GAP_CLASSNAME,
-  type ButtonShape,
-  type ButtonSize,
-  LABEL_TEXT_CLASS,
-} from '../../form/Button/button-scale';
+import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { Text, type TextWeight } from '../../typography/Text/text';
+import { type BaseButtonProps, ButtonRipples, pressAnimate, usePressRipples } from './button-internals';
+import { BUTTON_BOX, BUTTON_GAP_CLASSNAME, type ButtonShape, type ButtonSize } from './button-scale';
+import { buttonContainer as container, FILLED_RIPPLE_VARIANTS, buttonLabel as labelClass } from './button-variants';
 
-export type ActionSwapItem = { id: string; label: ReactNode; icon?: ReactNode; ariaLabel?: string };
+// The family's public types, re-exported so a ButtonSwap consumer takes its
+// axes from the same place a Button consumer does.
+export type { ButtonShape, ButtonSize } from './button-scale';
+export type { ButtonVariant } from './button-variants';
 
-export type ActionSwapButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
-/** Aliases of the button family's own axes — an ActionSwapButton is a button. */
-export type ActionSwapButtonSize = ButtonSize;
-export type ActionSwapButtonShape = ButtonShape;
+export type ButtonSwapItem = { id: string; label: ReactNode; icon?: ReactNode; ariaLabel?: string };
+
 // biome-ignore lint/style/useExportsLast: CoreAnimation narrows this type and must stay immediately below it for readability
-export type ActionSwapAnimation = 'blur' | 'roll' | 'cascade';
+export type ButtonSwapAnimation = 'blur' | 'roll' | 'cascade';
 
 /** Animations with a single-element variant set (cascade animates per letter). */
 type CoreAnimation = 'blur' | 'roll';
@@ -47,41 +45,13 @@ const CASCADE_EXIT_DURATION = 160; // ms (web original: 0.16 s)
 // Fallback roll distance before the slot has been measured (px).
 const ROLL_FALLBACK = 18;
 
-// Colour is the only axis here: the box (height, padding, radius) is the button
-// family's, resolved through {@link BUTTON_BOX}, so an ActionSwapButton drops
-// into a row of Buttons at the same `size` without a seam. `overflow-hidden`
-// clips the swap — a letter rolling in from below must not escape the box.
-const container = cva('flex-row items-center justify-center overflow-hidden', {
-  variants: {
-    variant: {
-      primary: 'bg-primary',
-      secondary: 'bg-surface-3',
-      outline: 'border-[1.5px] border-border bg-transparent',
-      ghost: 'bg-transparent',
-    },
-  },
-  defaultVariants: { variant: 'secondary' },
-});
+/** Square edge (px) of the icon slot, matching the adornment icons a Button carries. */
+const ICON_SLOT_SIZE = 16;
 
-// Label colour per variant; the weight and size come from the family's ramp so a
-// swapping label is the same text a flat Button paints at that size.
-const labelClass = cva('', {
-  variants: {
-    variant: {
-      primary: 'text-primary-foreground',
-      secondary: 'text-foreground',
-      outline: 'text-foreground',
-      ghost: 'text-muted-foreground',
-    },
-    size: LABEL_TEXT_CLASS,
-  },
-  defaultVariants: { variant: 'secondary', size: 'md' },
-});
-
-export type ActionSwapTextProps = {
+export type ButtonSwapTextProps = {
   value: string;
   children: ReactNode;
-  animation?: ActionSwapAnimation;
+  animation?: ButtonSwapAnimation;
   /** Applied to the outer measured slot. */
   style?: StyleProp<ViewStyle>;
   /** Applied to the rendered text (colour/size). */
@@ -91,21 +61,31 @@ export type ActionSwapTextProps = {
   testID?: string;
 };
 
-export type ActionSwapIconProps = {
+export type ButtonSwapIconProps = {
   value: string;
   children: ReactNode;
-  animation?: ActionSwapAnimation;
+  animation?: ButtonSwapAnimation;
   /** Square edge of the icon slot in px. Default 16. */
   size?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
 
-export interface ActionSwapButtonProps extends VariantProps<typeof container> {
-  items: ActionSwapItem[];
+/**
+ * A Button whose label and icon swap under it. It carries the whole Button
+ * styling surface — the same `variant` table, `size`/`shape` box, `elevation`,
+ * `floating` halo, ripples and class overrides — so a swapping button drops into
+ * a row of Buttons without a seam. What it does NOT take from Button is content:
+ * the label comes from `items`, not `children`, and the state it swaps between is
+ * its own (there is no `loading`; reach for {@link StatefulButton} for that).
+ */
+export interface ButtonSwapProps
+  extends VariantProps<typeof container>,
+    Omit<BaseButtonProps, 'children' | 'leftAdornment' | 'rightAdornment' | 'loading'> {
+  items: ButtonSwapItem[];
   value?: string;
   defaultValue?: string;
-  onValueChange?: (value: string, item: ActionSwapItem) => void;
+  onValueChange?: (value: string, item: ButtonSwapItem) => void;
   size?: ButtonSize;
   /**
    * Corner treatment. Defaults to `pill` — a swapping label reads as a capsule,
@@ -113,26 +93,35 @@ export interface ActionSwapButtonProps extends VariantProps<typeof container> {
    * family's radius ramp instead and match a neighbouring Button exactly.
    */
   shape?: ButtonShape;
-  animation?: ActionSwapAnimation;
+  animation?: ButtonSwapAnimation;
   iconOnly?: boolean;
   /** Advance to the next item on press. Default true. */
   cycle?: boolean;
-  disabled?: boolean;
-  /** Scale the button settles to while pressed. */
-  pressScale?: number;
-  style?: StyleProp<ViewStyle>;
-  accessibilityLabel?: string;
-  testID?: string;
+
+  /**
+   * Swap the button's ladder shadow for the input field's large, diffuse halo
+   * (`shadow-floating`) — the same recipe {@link Button}'s `floating` prop wears.
+   * It *replaces* whatever shadow `elevation` resolved rather than adding to it,
+   * since both write `box-shadow`. @default false
+   */
+  floating?: boolean;
+
+  /**
+   * Shadow level (0–8) the button casts. Drives the shadow *only* — the fill
+   * comes from `variant`, not the surface ladder — so raising `elevation` floats
+   * the button without recolouring it. `0` is flat (no shadow). @default 0
+   */
+  elevation?: SurfaceElevation;
 }
 
-export function ActionSwapText({
+export function ButtonSwapText({
   value,
   children,
   animation = 'blur',
   textClassName = 'text-foreground',
   weight,
   ...props
-}: ActionSwapTextProps) {
+}: ButtonSwapTextProps) {
   const reduce = useReducedMotion();
   const pageVisible = usePageVisible();
   const [rollHeight, setRollHeight] = useState(0);
@@ -249,13 +238,21 @@ export function ActionSwapText({
     </View>
   );
 }
-export function ActionSwapIcon({ value, children, animation = 'blur', size = 16, style, testID }: ActionSwapIconProps) {
+
+export function ButtonSwapIcon({
+  value,
+  children,
+  animation = 'blur',
+  size = ICON_SLOT_SIZE,
+  style,
+  testID,
+}: ButtonSwapIconProps) {
   const reduce = useReducedMotion();
   const pageVisible = usePageVisible();
   // Icons are single elements — cascade maps to its closest motion, roll.
   const core: CoreAnimation = animation === 'cascade' ? 'roll' : animation;
 
-  // Same hidden-page fallback as ActionSwapText — see the comment there.
+  // Same hidden-page fallback as ButtonSwapText — see the comment there.
   if (reduce || !pageVisible)
     return (
       <View testID={testID} className="items-center justify-center" style={[{ width: size, height: size }, style]}>
@@ -282,25 +279,49 @@ export function ActionSwapIcon({ value, children, animation = 'blur', size = 16,
   );
 }
 
-export function ActionSwapButton({
+export function ButtonSwap({
   items,
   value,
   defaultValue,
   onValueChange,
-  variant = 'secondary',
+  variant = 'neutral',
   size = 'md',
   shape = 'pill',
+  floating = false,
+  elevation,
   animation = 'blur',
   iconOnly = size === 'icon',
   cycle = true,
+  onPress,
   disabled,
-  pressScale = 0.97,
+  ripple = false,
+  pressScale = 0.93,
+  pressMode = 'scale',
+  noDisabledOpacity = false,
+  backdropColor,
+  pressTransition,
+  fitWidth,
+  className,
+  contentClassName,
+  labelClassName,
   style,
   accessibilityLabel,
   testID,
-}: ActionSwapButtonProps) {
+}: ButtonSwapProps) {
   const reduce = useReducedMotion();
-  const { pressed, pressHandlers } = usePressState();
+  const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
+  const v = variant ?? 'neutral';
+  const isDisabled = Boolean(disabled);
+  // The shadow is `elevation`-driven and defaults to flat (`0`); `floating`
+  // swaps whichever rung resolves for the halo.
+  const resolvedElevation: SurfaceElevation = elevation ?? 0;
+
+  const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
+    ripple,
+    reduce,
+    trackDims: false,
+  });
+
   const [internalValue, setInternalValue] = useState(defaultValue ?? items[0]?.id);
   const currentValue = value ?? internalValue;
   const activeIndex = Math.max(
@@ -312,10 +333,12 @@ export function ActionSwapButton({
   const nextItem = cycle && items.length > 0 ? items[(activeIndex + 1) % items.length] : undefined;
 
   const handlePress = useCallback(() => {
-    if (disabled || !cycle || !nextItem) return;
+    if (disabled) return;
+    onPress?.();
+    if (!(cycle && nextItem)) return;
     if (value === undefined) setInternalValue(nextItem.id);
     onValueChange?.(nextItem.id, nextItem);
-  }, [disabled, cycle, nextItem, value, onValueChange]);
+  }, [disabled, cycle, nextItem, value, onValueChange, onPress]);
 
   if (!activeItem) return null;
 
@@ -325,32 +348,58 @@ export function ActionSwapButton({
     (iconOnly && typeof activeItem.label === 'string' ? activeItem.label : undefined);
 
   return (
-    <MotiView animate={{ scale: pressed && !reduce && !disabled ? pressScale : 1 }} transition={SPRING_PRESS} style={style}>
+    <MotiView
+      animate={pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale })}
+      transition={pressSpring}
+      className={cn(fitWidth && 'w-full', className)}
+      style={style}
+    >
       <Pressable
         accessibilityRole="button"
-        aria-disabled={Boolean(disabled)}
+        aria-disabled={Boolean(isDisabled)}
         accessibilityLabel={accessibleLabel}
-        testID={testID ?? 'action-swap-button'}
-        disabled={disabled}
-        {...pressHandlers}
+        testID={testID ?? 'button-swap'}
+        disabled={isDisabled}
+        onLayout={onLayout}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         onPress={handlePress}
-        className={cn(container({ variant }), BUTTON_BOX[shape][size], disabled && 'opacity-50', BUTTON_GAP_CLASSNAME)}
+        className={cn(
+          container({ variant }),
+          // After the variant so tailwind-merge lets the halo win over the
+          // resolved `shadow-elevated-N` rung.
+          floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(resolvedElevation),
+          BUTTON_BOX[shape][size],
+          isDisabled && !noDisabledOpacity && 'opacity-50',
+          // Clips the swap — a letter rolling in from below must not escape the box.
+          'overflow-hidden',
+          BUTTON_GAP_CLASSNAME,
+          contentClassName,
+        )}
       >
+        {/* State backdrop — animates in/out by opacity so the variant background
+            shows through when idle and the state colour fills it when set. */}
+        <MotiView
+          animate={{ opacity: backdropColor === undefined ? 0 : 1 }}
+          transition={TIMING_BASE}
+          style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent', pointerEvents: 'none' }]}
+        />
         {hasIcon ? (
-          <ActionSwapIcon value={activeItem.id} animation={animation} size={16}>
+          <ButtonSwapIcon value={activeItem.id} animation={animation} size={ICON_SLOT_SIZE}>
             {activeItem.icon ?? null}
-          </ActionSwapIcon>
+          </ButtonSwapIcon>
         ) : null}
         {iconOnly ? null : (
-          <ActionSwapText
+          <ButtonSwapText
             value={activeItem.id}
             animation={animation}
-            textClassName={labelClass({ variant, size })}
+            textClassName={cn(labelClass({ variant: v, size }), labelClassName)}
             weight="medium"
           >
             {activeItem.label}
-          </ActionSwapText>
+          </ButtonSwapText>
         )}
+        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}
       </Pressable>
     </MotiView>
   );

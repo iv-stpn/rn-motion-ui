@@ -14,8 +14,9 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
-import { Button, type ButtonProps, type ButtonSize, type ButtonVariant, label as labelStyle } from './button';
+import { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from './button';
 import { STATE_BUTTON_GAP_CLASSNAME, STATE_ICON_SIZE } from './button-scale';
+import { buttonLabel as labelStyle } from './button-variants';
 import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './elevated-button';
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';

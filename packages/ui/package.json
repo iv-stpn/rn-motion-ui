@@ -62,11 +62,6 @@
       "types": "./src/components/menus/ActionFeedbackModal/action-feedback-modal.tsx",
       "default": "./src/components/menus/ActionFeedbackModal/action-feedback-modal.tsx"
     },
-    "./action-swap": {
-      "source": "./src/components/display/ActionSwap/action-swap.tsx",
-      "types": "./src/components/display/ActionSwap/action-swap.tsx",
-      "default": "./src/components/display/ActionSwap/action-swap.tsx"
-    },
     "./adaptive-dropdown": {
       "source": "./src/components/menus/AdaptiveDropdown/adaptive-dropdown.tsx",
       "types": "./src/components/menus/AdaptiveDropdown/adaptive-dropdown.tsx",
@@ -121,6 +116,11 @@
       "source": "./src/components/form/ButtonGroup/button-group.tsx",
       "types": "./src/components/form/ButtonGroup/button-group.tsx",
       "default": "./src/components/form/ButtonGroup/button-group.tsx"
+    },
+    "./button-swap": {
+      "source": "./src/components/form/Button/button-swap.tsx",
+      "types": "./src/components/form/Button/button-swap.tsx",
+      "default": "./src/components/form/Button/button-swap.tsx"
     },
     "./calendar": {
       "source": "./src/lib/calendar.ts",
@@ -278,9 +278,9 @@
       "default": "./src/components/file-system/FileSystem/file-system.tsx"
     },
     "./file-icon": {
-      "source": "./src/components/file-system/FileIcon/file-icons.tsx",
-      "types": "./src/components/file-system/FileIcon/file-icons.tsx",
-      "default": "./src/components/file-system/FileIcon/file-icons.tsx"
+      "source": "./src/components/file-system/FileIcon/file-icon.ts",
+      "types": "./src/components/file-system/FileIcon/file-icon.ts",
+      "default": "./src/components/file-system/FileIcon/file-icon.ts"
     },
     "./full-sheet": {
       "source": "./src/components/menus/FullSheet/full-sheet.tsx",

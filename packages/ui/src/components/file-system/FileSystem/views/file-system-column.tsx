@@ -7,7 +7,7 @@
 
 import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { GestureResponderEvent, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import { FlatList, Image, Pressable, View } from 'react-native';
+import { FlatList, Pressable, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
 import { PinFill as Pin } from 'rn-motion-ui-icons/icons/pin-fill';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
@@ -21,12 +21,12 @@ import { shiftZoneRects } from '../../../gestures/drag-store';
 import { useActiveDrag } from '../../../gestures/use-drag-store';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
-import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
+import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowAnimation } from '../hooks/use-file-system-row-animation';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
-import { filePreviewUrls, folderHasChildren } from '../logic/file-system-index';
+import { folderHasChildren } from '../logic/file-system-index';
 import type { FileSystemSelectionMode } from '../logic/file-system-selection';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
@@ -41,6 +41,7 @@ import type {
 import { FileSystemAnimatedRow } from './file-system-animated-row';
 import { FileSystemHoverHighlight, FS_HOVER_TEST_ID, useFileSystemRowHover } from './file-system-hover';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
+import { FileThumbnail } from './file-system-thumbnail';
 import { FileSystemEmptyState } from './file-system-view';
 
 const LOADING_LABEL = 'Loading…';
@@ -56,8 +57,6 @@ const COLUMN_GLYPH_SIZE = 22;
 const COLUMN_FOLDER_PADDING_X = 2;
 /** Icon *width*; a portrait page is ~1.29× that tall, so it must stay under 0.77 of the glyph lane. */
 const COLUMN_ICON_SIZE = 16;
-/** File-icon height as a fraction of the row height — see `ColumnRowGlyph`. */
-const COLUMN_FILE_PREVIEW_HEIGHT_FRACTION = 0.6;
 const COLUMN_CHEVRON_SIZE = 14;
 const COLUMN_PIN_ICON_SIZE = 10;
 const COLUMN_FAV_ICON_SIZE = 10;
@@ -171,23 +170,12 @@ function ColumnRowGlyph({
       </View>
     );
 
-  const coverUrl = filePreviewUrls(entry)[0];
-  if (coverUrl) {
-    const imageSize = { height: COLUMN_ICON_SIZE, width: COLUMN_ICON_SIZE };
-    return (
-      renderEntryIcon?.(entry, COLUMN_ICON_SIZE) ?? (
-        <Image className="shrink-0 rounded-[3px] bg-white" resizeMode="cover" source={{ uri: coverUrl }} style={imageSize} />
-      )
-    );
-  }
-  // Height comes from the row, not the file's own ratio, so every row's preview
-  // shares one height; the width keeps the icons on a common left edge.
+  // The lane, not the file's own ratio, is the height budget — so a column of
+  // mixed types shares one slot, and each file fills what it can of it.
   return (
-    <FileTypeIcon
-      fileName={entry.name}
-      height={COLUMN_ROW_HEIGHT * COLUMN_FILE_PREVIEW_HEIGHT_FRACTION}
-      size={COLUMN_ICON_SIZE}
-    />
+    renderEntryIcon?.(entry, COLUMN_ICON_SIZE) ?? (
+      <FileThumbnail file={entry} height={COLUMN_GLYPH_SIZE} width={COLUMN_ICON_SIZE} />
+    )
   );
 }
 

@@ -12,7 +12,7 @@ import { Loader } from '../../../display/Loader/loader';
 import { useResolvedFileUrl } from '../hooks/use-resolved-file-url';
 import { viewerKindForFile } from '../logic/file-system-kinds';
 import type { FileEntry, FileSystemFileItem, FileSystemViewerArgs } from '../types/file-system.types';
-import { FileVisual } from './file-system-visual';
+import { FileThumbnail } from './file-system-thumbnail';
 
 /** Stage geometry (px). */
 const STAGE_THUMBNAIL_WIDTH = 224;
@@ -62,7 +62,7 @@ export function FileSystemGalleryStage({
   if (viewer) return <View className="size-full">{viewer}</View>;
 
   return (
-    <FileVisual
+    <FileThumbnail
       file={file}
       loadPreviewImageUrl={loadPreviewImageUrl}
       pageUrlCache={pageUrlCache}

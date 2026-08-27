@@ -22,7 +22,7 @@ import { useDragScope } from '../../../gestures/drag-scope';
 import { shiftZoneRects } from '../../../gestures/drag-store';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
-import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
+import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
@@ -41,6 +41,7 @@ import type {
   FileSystemViewProps,
 } from '../types/file-system.types';
 import { FileSystemMobileMenu } from './file-system-mobile-menu';
+import { FileThumbnail } from './file-system-thumbnail';
 
 /** A two-line row, taller than the desktop list's single line. */
 const MOBILE_ROW_HEIGHT = 56;
@@ -195,7 +196,9 @@ function MobileListRow({
               ? (renderEntryIcon?.(entry, GLYPH_LANE_WIDTH) ?? (
                   <FileSystemFolderGlyph size={GLYPH_LANE_WIDTH} variant={hasChildren ? 'filled' : 'empty'} />
                 ))
-              : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
+              : (renderEntryIcon?.(entry, ICON_SIZE) ?? (
+                  <FileThumbnail file={entry} height={GLYPH_LANE_WIDTH} width={ICON_SIZE} />
+                ))}
           </View>
           <View className="min-w-0 flex-1">
             <View className="flex-row items-center gap-1">

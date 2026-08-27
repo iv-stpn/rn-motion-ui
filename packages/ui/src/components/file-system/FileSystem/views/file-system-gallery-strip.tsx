@@ -26,7 +26,7 @@ import type {
   FileSystemItem,
 } from '../types/file-system.types';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
-import { FileVisual } from './file-system-visual';
+import { FileThumbnail } from './file-system-thumbnail';
 
 /** Filmstrip geometry (px). Uniform tiles keep `getItemLayout` exact. */
 const STRIP_TILE_SIZE = 56;
@@ -151,7 +151,7 @@ function StripTileComponent({
               <FileSystemFolderGlyph size={STRIP_FOLDER_GLYPH_SIZE} variant={hasChildren ? 'filled' : 'empty'} />
             ))
           : (renderEntryIcon?.(entry, STRIP_THUMBNAIL_WIDTH) ?? (
-              <FileVisual
+              <FileThumbnail
                 file={entry}
                 previewAspectRatio={STRIP_ASPECT_RATIO}
                 renderFilePreview={renderFilePreview}

@@ -17,9 +17,9 @@ import type { FileEntry, FileSystemEntry } from '../types/file-system.types';
 import { FileSystemGalleryStage } from './file-system-gallery-stage';
 import { FileSystemGalleryStrip } from './file-system-gallery-strip';
 import { FileSystemInformation } from './file-system-information';
+import { FileThumbnail } from './file-system-thumbnail';
 import type { FileSystemViewProps } from './file-system-view';
 import { FileSystemEmptyState } from './file-system-view';
-import { FileVisual } from './file-system-visual';
 
 const EMPTY_LABEL = 'No files to show';
 const FOLDER_LABEL = 'Folder';
@@ -31,10 +31,10 @@ const SIDEBAR_MIN_VIEWPORT_WIDTH = 640;
 const STAGE_PADDING = 12;
 const STAGE_FOLDER_GLYPH_SIZE = 128;
 const SIDEBAR_FOLDER_GLYPH_SIZE = 32;
-const SIDEBAR_PORTRAIT_WIDTH = 36;
-const SIDEBAR_LANDSCAPE_WIDTH = 64;
+/** The slot beside the name: a photo fills its width, a page its height. */
+const SIDEBAR_THUMBNAIL_WIDTH = 64;
+const SIDEBAR_THUMBNAIL_HEIGHT = 46;
 const SIDEBAR_ASPECT_RATIO = 0.78;
-const LANDSCAPE_RATIO = 1.2;
 const STAGE_LOADER_SIZE = 24;
 
 /** How long the selection must hold still before the stage resolves a URL. */
@@ -88,7 +88,6 @@ type SidebarProps = Pick<FileSystemViewProps, 'index' | 'renderFilePreview'> & {
 
 /** Name, kind and metadata for the active entry, beside the stage. */
 function GallerySidebar({ entry, index, renderFilePreview, sizeLabel }: SidebarProps) {
-  const isLandscape = entry.kind === 'file' && (entry.previewAspectRatio ?? 0) > LANDSCAPE_RATIO;
   const kindLabel = entry.kind === 'file' ? fileKindLabel(entry) : FOLDER_LABEL;
   const subtitle = sizeLabel ? `${kindLabel}${KIND_SIZE_SEPARATOR}${sizeLabel}` : kindLabel;
 
@@ -109,11 +108,12 @@ function GallerySidebar({ entry, index, renderFilePreview, sizeLabel }: SidebarP
             variant={folderHasChildren(index, entry) ? 'filled' : 'empty'}
           />
         ) : (
-          <FileVisual
+          <FileThumbnail
             file={entry}
+            height={SIDEBAR_THUMBNAIL_HEIGHT}
             previewAspectRatio={SIDEBAR_ASPECT_RATIO}
             renderFilePreview={renderFilePreview}
-            width={isLandscape ? SIDEBAR_LANDSCAPE_WIDTH : SIDEBAR_PORTRAIT_WIDTH}
+            width={SIDEBAR_THUMBNAIL_WIDTH}
           />
         )}
         <View className="flex-1">

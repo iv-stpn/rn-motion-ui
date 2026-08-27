@@ -25,18 +25,21 @@ import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-intera
 import { GLYPH_BOX_HEIGHT, GLYPH_BOX_WIDTH, TILE_HEIGHT } from '../logic/file-system-icons-grid';
 import { FileSystemDropzone } from '../shell/file-system-dropzone';
 import type { FileSystemEntry, FileSystemExternalDropEvent, FileSystemMoveEvent } from '../types/file-system.types';
+import { FileThumbnail } from './file-system-thumbnail';
 import type { FileSystemViewProps } from './file-system-view';
-import { FileVisual } from './file-system-visual';
 
 // Tile *geometry* lives in file-system-icons-grid.ts — the drag session resolves
 // pointer positions with those constants, and the hover highlight derives the
 // glyph box's rect from them, so no side can drift. What's here is glyph sizing,
 // which only the render cares about.
 const FOLDER_GLYPH_SIZE = 60;
-/** Landscape thumbnails get the wider face so they fill the tile. */
-const LANDSCAPE_RATIO = 1.2;
-const PORTRAIT_TILE_WIDTH = 48;
-const LANDSCAPE_TILE_WIDTH = 76;
+/**
+ * The slot a file's picture is fitted into, inside the glyph box: a landscape
+ * photo fills the width, a portrait page the height, and each keeps its own
+ * proportions — see `FileThumbnail`, which owns that arithmetic for every view.
+ */
+const TILE_THUMBNAIL_WIDTH = 76;
+const TILE_THUMBNAIL_HEIGHT = 62;
 const TILE_PREVIEW_RATIO = 0.78;
 
 /** How faint the tile left behind under a drag reads. */
@@ -80,9 +83,8 @@ function IconTileFace({
   isSelected,
   renderEntryIcon,
   width,
-  ...visualProps
+  ...thumbnailProps
 }: IconTileFaceProps) {
-  const isLandscape = entry.kind === 'file' && (entry.previewAspectRatio ?? 0) > LANDSCAPE_RATIO;
   const colors = useThemeColors();
   const active = isSelected || isDropTarget;
 
@@ -100,11 +102,12 @@ function IconTileFace({
               <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} variant={hasChildren ? 'filled' : 'empty'} />
             ))
           : (renderEntryIcon?.(entry, GLYPH_BOX_HEIGHT) ?? (
-              <FileVisual
+              <FileThumbnail
                 file={entry}
+                height={TILE_THUMBNAIL_HEIGHT}
                 previewAspectRatio={TILE_PREVIEW_RATIO}
-                width={isLandscape ? LANDSCAPE_TILE_WIDTH : PORTRAIT_TILE_WIDTH}
-                {...visualProps}
+                width={TILE_THUMBNAIL_WIDTH}
+                {...thumbnailProps}
               />
             ))}
       </View>

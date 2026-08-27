@@ -28,7 +28,7 @@ import { useActiveDrag, useDragzoneState } from '../../../gestures/use-drag-stor
 import { ThemedIcon } from '../../../icon/themed-icon';
 import { HoldItem, type HoldItemDragOptions } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
-import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
+import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
@@ -53,6 +53,7 @@ import type {
 import { FileSystemAnimatedRow } from './file-system-animated-row';
 import { FileSystemHoverHighlight, FS_HOVER_TEST_ID, useFileSystemRowHover } from './file-system-hover';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
+import { FileThumbnail } from './file-system-thumbnail';
 import type { FileSystemViewProps } from './file-system-view';
 
 const NAME_LABEL = 'Name';
@@ -345,7 +346,7 @@ function ListRowBody({
                 )}
               </View>
             ) : (
-              (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)
+              (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileThumbnail file={entry} height={GLYPH_LANE_WIDTH} width={ICON_SIZE} />)
             )}
           </View>
           {entry.pinnedAt ? <Pin color={isActive ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}

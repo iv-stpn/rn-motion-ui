@@ -34,14 +34,13 @@ import { folderHasChildren } from '../logic/file-system-index';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
-  FileEntry,
   FileSystemEntry,
   FileSystemExternalDropEvent,
   FileSystemMoveEvent,
   FileSystemViewProps,
 } from '../types/file-system.types';
 import { FileSystemMobileMenu } from './file-system-mobile-menu';
-import { FileVisual } from './file-system-visual';
+import { FileThumbnail } from './file-system-thumbnail';
 
 /** Content padding around the grid, on all four sides. */
 const GRID_PADDING = 12;
@@ -56,18 +55,10 @@ const TRAILING_CONTROL_SIZE = 28;
 /** Inset from the box edges, so a preview never touches the selection ring. */
 const GLYPH_BOX_INSET = 12;
 const FOLDER_GLYPH_SIZE = 56;
-/** Fallback portrait ratio, matching `FileVisual`'s default. */
-const DEFAULT_PREVIEW_RATIO = 0.72;
 
 /** How the tile left behind under a drag reads — and what the lifted ghost copy
  *  carries with it: a card, so the ghost stays visible against the page. */
 const DRAG_SOURCE_CLASSNAME = 'rounded-lg bg-surface-3 shadow-lg';
-
-/** Preview width that fits a file's thumbnail inside the box without clipping. */
-function previewWidthFor(tileWidth: number, entry: FileEntry): number {
-  const ratio = entry.previewAspectRatio ?? DEFAULT_PREVIEW_RATIO;
-  return Math.round(Math.min(tileWidth - GLYPH_BOX_INSET * 2, GLYPH_BOX_HEIGHT * ratio));
-}
 
 /** A tile's content rect, captured via `onLayout` for the scrub's hit-test. */
 type TileRect = { x: number; y: number; width: number; height: number };
@@ -196,12 +187,13 @@ function MobileGridTile({
             <View className="size-full items-center justify-center p-1">
               {isFile
                 ? (renderEntryIcon?.(entry, GLYPH_BOX_HEIGHT) ?? (
-                    <FileVisual
+                    <FileThumbnail
                       file={entry}
+                      height={GLYPH_BOX_HEIGHT}
                       loadPreviewImageUrl={loadPreviewImageUrl}
                       pageUrlCache={pageUrlCache}
                       renderFilePreview={renderFilePreview}
-                      width={previewWidthFor(tileWidth, entry)}
+                      width={tileWidth - GLYPH_BOX_INSET * 2}
                     />
                   ))
                 : (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? (

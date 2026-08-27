@@ -27,13 +27,14 @@ import { cn } from '../../../../lib/cn';
 import { ThemedIcon } from '../../../icon/themed-icon';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
-import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
+import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
 import { folderHasChildren } from '../logic/file-system-index';
 import { buildCrumbs, CRUMB_SEPARATOR, splitSearchMatches } from '../logic/file-system-search';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemItem } from '../types/file-system.types';
+import { FileThumbnail } from './file-system-thumbnail';
 import type { FileSystemViewProps } from './file-system-view';
 
 /** Icon *width*; a portrait page is ~1.29× that tall, so it must stay under 0.77 of the lane. */
@@ -143,7 +144,7 @@ function SearchRow({
           {entry.kind === 'folder' ? (
             <FileSystemFolderGlyph size={GLYPH_LANE_WIDTH} variant={hasChildren ? 'filled' : 'empty'} />
           ) : (
-            <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />
+            <FileThumbnail file={entry} height={GLYPH_LANE_WIDTH} width={ICON_SIZE} />
           )}
         </View>
         <View className="flex-1 justify-center gap-0.5">

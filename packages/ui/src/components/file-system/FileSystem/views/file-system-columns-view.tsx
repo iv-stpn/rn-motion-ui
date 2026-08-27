@@ -12,8 +12,8 @@ import { fileKindLabel } from '../logic/file-system-kinds';
 import type { FileEntry, FileSystemEntry } from '../types/file-system.types';
 import { COLUMN_WIDTH, FileSystemColumn } from './file-system-column';
 import { FileSystemInformation } from './file-system-information';
+import { FileThumbnail } from './file-system-thumbnail';
 import type { FileSystemViewProps } from './file-system-view';
-import { FileVisual } from './file-system-visual';
 
 /** Preview pane geometry (px). */
 const PREVIEW_MIN_WIDTH = 240;
@@ -64,7 +64,7 @@ function PreviewPane({ file, index, viewportWidth, ...visualProps }: PreviewPane
       showsVerticalScrollIndicator={false}
       style={{ width: paneWidth }}
     >
-      <FileVisual file={file} pageable={true} previewAspectRatio={PREVIEW_ASPECT_RATIO} width={visualWidth} {...visualProps} />
+      <FileThumbnail file={file} pageable={true} previewAspectRatio={PREVIEW_ASPECT_RATIO} width={visualWidth} {...visualProps} />
       <View className="w-full items-center">
         <Text className="text-center" size="sm" weight="semibold">
           {file.name}

@@ -102,7 +102,7 @@ function columnRowsInRect(rect: FileSystemMarqueeRect, entries: FileSystemEntry[
  * The tint a row in flight keeps for the length of the drag — see the list view's
  * note. Every row the drag carries takes it, across every pane it spans.
  */
-const LIFTING_ROW_CLASS = 'bg-surface-contrast';
+const LIFTING_ROW_CLASS = 'bg-muted';
 
 /**
  * The mark over a whole pane a release would land in. Absolutely positioned, so it

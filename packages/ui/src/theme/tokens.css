@@ -114,7 +114,9 @@
   --color-surface-hover: oklch(0% 0 0 / 0.04);
   --color-surface-selected: oklch(0% 0 0 / 0.08);
 
-  /* Foreground stack — near-extremes carry a whisper of the hue-270 tint. */
+  /* Foreground stack — near-extremes carry a whisper of the hue-270 tint.
+     `muted` doubles as the raised neutral fill used by tabs, skeletons,
+     segmented controls and the like; `muted-foreground` is its ink. */
   --color-foreground: oklch(18% 0.004 270);
   --color-muted: oklch(95% 0 0);
   --color-muted-foreground: oklch(50% 0.004 270);
@@ -122,11 +124,8 @@
 
   /* Flat neutral fills. `input` is the page-white field fill; `Input` itself now
      reads the surface ladder (`elevation` + `floating`) like every other
-     surface, so this is left for app code that wants the old flat field colour.
-     `surface-contrast` is the muted raised fill used by tabs, skeletons,
-     segmented controls and the like. */
+     surface, so this is left for app code that wants the old flat field colour. */
   --color-input: oklch(100% 0 0);
-  --color-surface-contrast: oklch(95% 0 0);
 
   /* Brand — monochrome primary (near-black on light, near-white on dark). */
   --color-primary: oklch(22% 0 0);
@@ -391,7 +390,6 @@
   --color-muted-foreground: oklch(73% 0.004 270);
   --color-border: oklch(100% 0 0 / 0.1);
   --color-input: oklch(22% 0 0);
-  --color-surface-contrast: oklch(21% 0 0);
   --color-primary: oklch(95% 0.004 270);
   --color-primary-foreground: oklch(13% 0.004 270);
   --color-secondary: oklch(35% 0.004 270);
@@ -494,7 +492,6 @@
   --color-muted-foreground: oklch(50% 0.004 270);
   --color-border: oklch(0% 0 0 / 0.1);
   --color-input: oklch(100% 0 0);
-  --color-surface-contrast: oklch(95% 0 0);
   --color-primary: oklch(22% 0 0);
   --color-primary-foreground: oklch(98% 0.002 270);
   --color-secondary: oklch(92% 0 0);

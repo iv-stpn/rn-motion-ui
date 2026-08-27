@@ -38,7 +38,6 @@ type ThemeToken =
   | 'muted-foreground'
   | 'border'
   | 'input'
-  | 'surface-contrast'
   | 'primary'
   | 'primary-foreground'
   | 'secondary'
@@ -88,7 +87,6 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   'muted-foreground': [0.5, 0.004, NEUTRAL_HUE],
   border: [0, 0, 0, 0.1],
   input: [1, 0, 0],
-  'surface-contrast': [0.95, 0, 0],
   primary: [0.22, 0, 0],
   'primary-foreground': [0.98, 0.002, NEUTRAL_HUE],
   secondary: [0.92, 0, 0],
@@ -126,7 +124,6 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   'muted-foreground': [0.73, 0.004, NEUTRAL_HUE],
   border: [1, 0, 0, 0.1],
   input: [0.22, 0, 0],
-  'surface-contrast': [0.21, 0, 0],
   primary: [0.95, 0.004, NEUTRAL_HUE],
   'primary-foreground': [0.13, 0.004, NEUTRAL_HUE],
   secondary: [0.35, 0.004, NEUTRAL_HUE],

@@ -88,7 +88,7 @@ function Row({ icon, label, danger, onPress }: RowProps) {
       className={
         danger
           ? 'flex-row items-center gap-3 rounded-2xl bg-danger/10 px-4 py-3'
-          : 'flex-row items-center gap-3 rounded-2xl bg-surface-contrast px-4 py-3'
+          : 'flex-row items-center gap-3 rounded-2xl bg-muted px-4 py-3'
       }
     >
       {icon}

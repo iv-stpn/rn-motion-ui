@@ -10,7 +10,7 @@ const PULSE_EASING = Easing.bezier(0.4, 0, 0.6, 1);
 
 // cva drives the static styling layer — class strings are static literals so
 // the Tailwind/uniwind scanner picks them up. Mirrors the Card pattern.
-const skeleton = cva('bg-surface-contrast', {
+const skeleton = cva('bg-muted', {
   variants: {
     shape: {
       rounded: 'rounded-md',

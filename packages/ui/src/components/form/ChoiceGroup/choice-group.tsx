@@ -35,8 +35,8 @@ const VARIANT_SELECTED: Record<ChoiceGroupVariant, string> = {
 
 /** Unselected-item class per variant — filled items keep the surface, outline items keep a hairline border. */
 const VARIANT_UNSELECTED: Record<ChoiceGroupVariant, string> = {
-  neutral: 'bg-surface-contrast',
-  info: 'bg-surface-contrast',
+  neutral: 'bg-muted',
+  info: 'bg-muted',
   outline: 'border-[1.5px] border-border',
   'outline-info': 'border-[1.5px] border-border',
 };

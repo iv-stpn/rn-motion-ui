@@ -34,12 +34,12 @@ function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
     <View className="min-h-[380px] flex-1 bg-surface-1">
       <View className="border-border border-b-[1.5px] px-5 py-3">
-        <View className="h-2.5 w-24 rounded-full bg-surface-contrast-foreground/20" />
+        <View className="h-2.5 w-24 rounded-full bg-muted-foreground/20" />
       </View>
       <View className="gap-3 p-5">
-        <View className="h-2.5 w-3/4 rounded-full bg-surface-contrast-foreground/15" />
-        <View className="h-2.5 w-1/2 rounded-full bg-surface-contrast-foreground/15" />
-        <View className="h-20 w-full rounded-2xl bg-surface-contrast-foreground/[0.06]" />
+        <View className="h-2.5 w-3/4 rounded-full bg-muted-foreground/15" />
+        <View className="h-2.5 w-1/2 rounded-full bg-muted-foreground/15" />
+        <View className="h-20 w-full rounded-2xl bg-muted-foreground/[0.06]" />
         <Text className="text-muted-foreground text-sm">{hint}</Text>
       </View>
       {children}

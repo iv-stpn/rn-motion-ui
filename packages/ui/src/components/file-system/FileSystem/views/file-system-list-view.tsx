@@ -85,7 +85,7 @@ const LIST_PADDING_TOP = 4;
  * has moved to the drop target by then, so without this the rows the gesture is
  * actually about are the only ones on screen with no mark at all.
  */
-const LIFTING_ROW_CLASS = 'bg-surface-contrast';
+const LIFTING_ROW_CLASS = 'bg-muted';
 
 /** Container-local point → row index, or null for padding / past-last-row. */
 function rowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {

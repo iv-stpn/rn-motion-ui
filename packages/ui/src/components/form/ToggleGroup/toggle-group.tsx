@@ -119,7 +119,7 @@ export function ToggleGroup({
       'items-center justify-center',
       PX_INTERACTIVE[size],
       !isHorizontal && 'py-3',
-      selected ? 'bg-info' : 'bg-surface-contrast',
+      selected ? 'bg-info' : 'bg-muted',
       total > 1 &&
         !isLast &&
         !suppressDivider &&

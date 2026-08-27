@@ -69,7 +69,7 @@ export const SIZE_SCALE: Record<
 export const VARIANT_CLASSES: Record<ItemRowVariant, string> = {
   default: 'bg-transparent rounded-interactive',
   outline: 'border-[1.5px] border-border rounded-interactive',
-  muted: 'bg-surface-contrast rounded-interactive',
+  muted: 'bg-muted rounded-interactive',
 };
 
 /**

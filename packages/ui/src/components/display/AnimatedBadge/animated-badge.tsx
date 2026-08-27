@@ -118,7 +118,7 @@ type BadgePulseProps = { color: string };
  * the UI thread and re-renders never touch it. `Easing.linear` is the other half
  * — `withTiming` defaults to `Easing.inOut(Easing.quad)`, which eases to a stop
  * at each revolution boundary, so even an uninterrupted loop visibly paused
- * once per turn. Mirrors the Marquee/TextShimmer loops.
+ * once per turn. Mirrors the TextShimmer loop.
  */
 function BadgeSpinner({ children }: BadgeSpinnerProps) {
   const angle = useSharedValue(0);

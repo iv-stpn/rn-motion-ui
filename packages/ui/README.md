@@ -127,7 +127,6 @@ Subpaths are namespaced by category:
 | `/text-reveal`                 | `TextReveal`                                                             |
 | `/text-rolling`                | `TextRolling`                                                            |
 | `/text-shimmer`                | `TextShimmer`                                                            |
-| `/marquee`                     | `Marquee`                                                                |
 | `/scroll-reveal`               | `ScrollReveal`                                                           |
 | `/scroll-progress`             | `ScrollProgress`                                                         |
 | `/scroll-to`                   | `ScrollTo`                                                               |

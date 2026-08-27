@@ -337,11 +337,6 @@
       "types": "./src/components/display/Loader/loader.tsx",
       "default": "./src/components/display/Loader/loader.tsx"
     },
-    "./marquee": {
-      "source": "./src/components/display/Marquee/marquee.tsx",
-      "types": "./src/components/display/Marquee/marquee.tsx",
-      "default": "./src/components/display/Marquee/marquee.tsx"
-    },
     "./menu": {
       "source": "./src/components/rows/menu.tsx",
       "types": "./src/components/rows/menu.tsx",

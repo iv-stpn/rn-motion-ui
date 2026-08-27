@@ -743,6 +743,8 @@ const HEIGHT_KEYS = ['380', '460', '560'] as const satisfies readonly HeightKey[
 const COMPACT_WIDTH = 420;
 /** A phone-width container for the two mobile views. */
 const MOBILE_WIDTH = 360;
+/** A tablet-width container, to show the mobile grid packing past two columns. */
+const TABLET_WIDTH = 768;
 const VIEWER_NOTE = 'Only images open in place without a viewer — everything else needs `renderFileViewer`.';
 
 const VIEWER_PLACEHOLDER = 'Your PDF renderer goes here';
@@ -2988,6 +2990,27 @@ export const MobileGrid: Story = {
   decorators: [
     (Story) => (
       <View style={{ maxWidth: '100%', width: MOBILE_WIDTH }}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: {
+    defaultView: 'mobile-grid',
+    selectionMode: 'multiple',
+    getContextMenuActions: resolveContextMenuActions,
+  },
+};
+
+/**
+ * The same grid in a tablet-width container. Columns are packed at a minimum tile
+ * width rather than fixed at two, so a wider container gets more tiles per row
+ * instead of two stretched ones — five across here, against two at phone width.
+ */
+export const MobileGridWide: Story = {
+  name: 'Demo: Mobile grid (wide)',
+  decorators: [
+    (Story) => (
+      <View style={{ maxWidth: '100%', width: TABLET_WIDTH }}>
         <Story />
       </View>
     ),

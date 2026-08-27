@@ -14,6 +14,7 @@ import {
   type FileIconBrand,
   type FileIconCategory,
   type FileIconColorToken,
+  FOLDER_GLYPH_ASPECT_RATIO,
   fileIconAspectRatio,
   fileIconBadgeColor,
   fileIconColor,
@@ -82,9 +83,6 @@ const BRAND_GLYPHS: Record<FileIconBrand, ComponentType<{ width: number; height:
   FileVideo: FileVideoGlyph,
 };
 
-/** Aspect ratio of the folder glyph's content bounds (54×43), so it fills its box with no horizontal padding. */
-const FOLDER_ASPECT_RATIO = 54 / 43;
-
 /**
  * The back plane: the tab along the top-left, then the full body behind the
  * front panel. Corner radii are deliberately tight (4 at the tab, 3.5 at the
@@ -148,7 +146,7 @@ export function FileSystemFolderGlyph({ size = 64, variant = 'empty' }: FileSyst
   const paperId = useId();
 
   return (
-    <Svg height={size / FOLDER_ASPECT_RATIO} viewBox="5 4 54 43" width={size}>
+    <Svg height={size / FOLDER_GLYPH_ASPECT_RATIO} viewBox="5 4 54 43" width={size}>
       <Defs>
         <LinearGradient id={backId} x1="0" x2="0" y1="0" y2="1">
           <Stop offset="0" stopColor="#3dabf5" />

@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
 /** biome-ignore-all lint/style/noExcessiveLinesPerFile: the tile, its glyph box and its name row are one render layer */
-// The mobile grid view: a two-column thumbnail grid for touch.
+// The mobile grid view: a wrapping thumbnail grid for touch, two columns at
+// phone width and more as the container grows (see `mobileGridMetrics`).
 //
 // Unlike the desktop `icons` view this one carries no marquee or hover — a phone
 // has no right button to summon a menu and no pointer to hover with — so each tile
@@ -22,6 +23,7 @@ import { useDragScope } from '../../../gestures/drag-scope';
 import { shiftZoneRects } from '../../../gestures/drag-store';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
+import { folderGlyphWidthForBox } from '../../FileIcon/file-icon';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
@@ -31,6 +33,7 @@ import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-intera
 import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { folderHasChildren } from '../logic/file-system-index';
+import { GRID_GAP, GRID_PADDING, GRID_ROW_GAP, mobileGridMetrics } from '../logic/file-system-mobile-grid';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
@@ -42,19 +45,23 @@ import type {
 import { FileSystemMobileMenu } from './file-system-mobile-menu';
 import { FileThumbnail } from './file-system-thumbnail';
 
-/** Content padding around the grid, on all four sides. */
-const GRID_PADDING = 12;
-/** A phone grid is two across. */
-const GRID_COLUMNS = 2;
-/** Horizontal gap between the two columns. */
-const GRID_GAP = 8;
 /** Fixed glyph-box height — taller than the desktop icons view, as a phone grid wants. */
 const GLYPH_BOX_HEIGHT = 96;
 /** The trailing kebab/checkbox's edge size (`size-7`), half of which is its centre offset. */
 const TRAILING_CONTROL_SIZE = 28;
-/** Inset from the box edges, so a preview never touches the selection ring. */
+/** Inset on all four sides of the box, so no glyph touches its fill or its selection ring. */
 const GLYPH_BOX_INSET = 12;
-const FOLDER_GLYPH_SIZE = 56;
+/** The height a glyph may draw in, once that inset is taken off both ends of the box. */
+const GLYPH_HEIGHT = GLYPH_BOX_HEIGHT - GLYPH_BOX_INSET * 2;
+/**
+ * A second inset the folder alone takes, on top of the box's.
+ *
+ * A page is drawn as one, edges and all, so it reads as big as it measures; the
+ * folder is a solid block of colour, which at the same height reads heavier than
+ * the files beside it. Giving it more room than it fills is what evens the two
+ * out — the number is optical, so it is tuned by eye rather than derived.
+ */
+const FOLDER_INSET = 8;
 
 /** How the tile left behind under a drag reads — and what the lifted ghost copy
  *  carries with it: a card, so the ghost stays visible against the page. */
@@ -121,6 +128,14 @@ function MobileGridTile({
   const colors = useThemeColors();
   const isFile = entry.kind === 'file';
 
+  // The room inside the box's inset. A file draws to `GLYPH_HEIGHT` and comes out
+  // narrower than this — every file glyph is a portrait page — while the folder,
+  // the one landscape shape in the set, fills the height its own inset leaves and
+  // spreads into the width it needs for it. Squaring the two off against each other
+  // is what used to leave a folder half the height of the files beside it.
+  const glyphWidth = Math.max(0, tileWidth - GLYPH_BOX_INSET * 2);
+  const folderWidth = folderGlyphWidthForBox(Math.max(0, glyphWidth - FOLDER_INSET * 2), GLYPH_HEIGHT - FOLDER_INSET * 2);
+
   // The body has no menu of its own — the kebab is the menu. Passing no
   // `getContextMenuActions` keeps `HoldItem` inert (empty items), so a
   // hold fires only `onHoldAction` (the multi-select join) rather than a panel.
@@ -184,21 +199,26 @@ function MobileGridTile({
             className={cn('overflow-hidden rounded-lg bg-surface-2', showsSelected && 'bg-info/15')}
             style={{ height: GLYPH_BOX_HEIGHT, width: '100%' }}
           >
-            <View className="size-full items-center justify-center p-1">
-              {isFile
-                ? (renderEntryIcon?.(entry, GLYPH_BOX_HEIGHT) ?? (
-                    <FileThumbnail
-                      file={entry}
-                      height={GLYPH_BOX_HEIGHT}
-                      loadPreviewImageUrl={loadPreviewImageUrl}
-                      pageUrlCache={pageUrlCache}
-                      renderFilePreview={renderFilePreview}
-                      width={tileWidth - GLYPH_BOX_INSET * 2}
-                    />
-                  ))
-                : (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? (
-                    <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} variant={hasChildren ? 'filled' : 'empty'} />
-                  ))}
+            {/* The inset is padding rather than something the glyphs are asked to
+                leave: the box clips, so a glyph handed the full height would be cut
+                off at the fill's edge instead of sitting inside it. */}
+            <View className="size-full items-center justify-center" style={{ padding: GLYPH_BOX_INSET }}>
+              {/* One size for both kinds, and it is the height: that is the largest
+                  square the inset leaves, so a consumer's icon fits whatever the
+                  entry is. The defaults below each take their own shape from it. */}
+              {renderEntryIcon?.(entry, GLYPH_HEIGHT) ??
+                (isFile ? (
+                  <FileThumbnail
+                    file={entry}
+                    height={GLYPH_HEIGHT}
+                    loadPreviewImageUrl={loadPreviewImageUrl}
+                    pageUrlCache={pageUrlCache}
+                    renderFilePreview={renderFilePreview}
+                    width={glyphWidth}
+                  />
+                ) : (
+                  <FileSystemFolderGlyph size={folderWidth} variant={hasChildren ? 'filled' : 'empty'} />
+                ))}
             </View>
           </View>
           <View className="flex-row items-start gap-1 pt-1.5 pr-7">
@@ -429,8 +449,9 @@ export function FileSystemMobileGridView({
     endAutoScroll();
   }, [endScrub, endAutoScroll]);
 
-  const tileWidth =
-    width > 0 ? Math.max(0, Math.floor((width - GRID_PADDING * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS)) : 0;
+  // Columns are packed from the measured width rather than fixed at two, so a
+  // tablet or a wide pane fills its row instead of stretching two tiles across it.
+  const { tileWidth } = mobileGridMetrics(width);
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -470,7 +491,7 @@ export function FileSystemMobileGridView({
         nestedScrollEnabled={true}
       >
         {tileWidth > 0 ? (
-          <View className="flex-row flex-wrap" style={{ columnGap: GRID_GAP, padding: GRID_PADDING, rowGap: 12 }}>
+          <View className="flex-row flex-wrap" style={{ columnGap: GRID_GAP, padding: GRID_PADDING, rowGap: GRID_ROW_GAP }}>
             {entries.map((entry) => (
               <MobileGridTile
                 draggable={draggable}

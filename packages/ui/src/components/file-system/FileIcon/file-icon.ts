@@ -357,6 +357,26 @@ export function fileIconWidthForBox(width: number, height: number): number {
 }
 
 /**
+ * Aspect ratio of the folder glyph's ink (54×43) — the one landscape shape in a
+ * set of portrait pages, which is why a box the two share can only ever be
+ * filled by one of them on both axes.
+ */
+export const FOLDER_GLYPH_ASPECT_RATIO = 54 / 43;
+
+/**
+ * The width to draw the folder glyph at so it fills a `width`×`height` slot.
+ *
+ * The counterpart of `fileIconWidthForBox`, and the same rule read the other way
+ * round: a box tall enough for a page leaves the folder room to spread sideways,
+ * so sizing it by the height it may fill — rather than by a nominal size the
+ * width happens to allow — is what stops a folder reading as the runt of a grid
+ * of files.
+ */
+export function folderGlyphWidthForBox(width: number, height: number): number {
+  return Math.floor(Math.min(width, height * FOLDER_GLYPH_ASPECT_RATIO));
+}
+
+/**
  * The colour a category badge is drawn in. Always the light half of the pair:
  * the badge sits on the icon's white paper, whatever the theme behind it, so it
  * is the colour the icon generator sized its contrast against.

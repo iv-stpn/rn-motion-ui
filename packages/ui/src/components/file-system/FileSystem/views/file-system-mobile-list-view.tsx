@@ -22,6 +22,7 @@ import { useDragScope } from '../../../gestures/drag-scope';
 import { shiftZoneRects } from '../../../gestures/drag-store';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
+import { FOLDER_GLYPH_ASPECT_RATIO } from '../../FileIcon/file-icon';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
@@ -49,10 +50,25 @@ const MOBILE_ROW_HEIGHT = 56;
 const VERTICAL_ROW_GAP = 8;
 /** The full stride one row occupies in the list (row + gap), used by `getItemLayout` and the scrub's row mapping. */
 const ROW_STRIDE = MOBILE_ROW_HEIGHT + VERTICAL_ROW_GAP;
-/** Icon *width*; a portrait page is ~1.29× that tall, so it must stay under 0.77 of the lane. */
-const ICON_SIZE = 20;
-/** Shared glyph lane: folders fill it, file icons sit centred with padding. */
-const GLYPH_LANE_WIDTH = 28;
+/**
+ * The glyph lane. Wide, and shaped to the folder rather than squared off: the
+ * folder is the one landscape glyph in the set, so a lane at its proportions
+ * holds it with an even margin all round, and a file, drawn to the lane's full
+ * height, keeps its portrait page under the height a touch row can give it.
+ * Squaring the lane instead would strand a band of empty row above and below
+ * every folder to buy the pages a width their own ratio then refuses to use.
+ */
+const GLYPH_LANE_WIDTH = 40;
+const GLYPH_LANE_HEIGHT = Math.round(GLYPH_LANE_WIDTH / FOLDER_GLYPH_ASPECT_RATIO);
+/**
+ * The margin the folder keeps inside that lane — the same trade the desktop list
+ * makes with its own `FOLDER_PADDING_X`. A page is drawn as one, edges and all,
+ * so it reads as big as it measures; the folder is a solid block of colour, which
+ * at the lane's full size reads heavier than the files above and below it.
+ */
+const FOLDER_INSET = 4;
+/** What the folder is actually drawn at: the lane, less that margin either side. */
+const FOLDER_GLYPH_WIDTH = GLYPH_LANE_WIDTH - FOLDER_INSET * 2;
 const PIN_ICON_SIZE = 10;
 const FAV_ICON_SIZE = 10;
 
@@ -191,14 +207,17 @@ function MobileListRow({
           style={{ height: MOBILE_ROW_HEIGHT }}
           testID={testID}
         >
-          <View className="items-center justify-center" style={{ height: GLYPH_LANE_WIDTH, width: GLYPH_LANE_WIDTH }}>
-            {entry.kind === 'folder'
-              ? (renderEntryIcon?.(entry, GLYPH_LANE_WIDTH) ?? (
-                  <FileSystemFolderGlyph size={GLYPH_LANE_WIDTH} variant={hasChildren ? 'filled' : 'empty'} />
-                ))
-              : (renderEntryIcon?.(entry, ICON_SIZE) ?? (
-                  <FileThumbnail file={entry} height={GLYPH_LANE_WIDTH} width={ICON_SIZE} />
-                ))}
+          <View className="items-center justify-center" style={{ height: GLYPH_LANE_HEIGHT, width: GLYPH_LANE_WIDTH }}>
+            {/* One size for both kinds, and it is the height: that is the largest
+                square the lane holds, so a consumer's icon fits whatever the entry
+                is. The defaults below each take their own shape from the lane —
+                the folder by its width, a file by the height it may fill. */}
+            {renderEntryIcon?.(entry, GLYPH_LANE_HEIGHT) ??
+              (entry.kind === 'folder' ? (
+                <FileSystemFolderGlyph size={FOLDER_GLYPH_WIDTH} variant={hasChildren ? 'filled' : 'empty'} />
+              ) : (
+                <FileThumbnail file={entry} height={GLYPH_LANE_HEIGHT} width={GLYPH_LANE_WIDTH} />
+              ))}
           </View>
           <View className="min-w-0 flex-1">
             <View className="flex-row items-center gap-1">

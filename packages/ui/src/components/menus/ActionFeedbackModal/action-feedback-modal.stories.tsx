@@ -216,8 +216,14 @@ export const Loading: Story = {
     // The generous timeout (over the 1000 ms default) absorbs the same race.
     await waitFor(
       () => {
-        const vessel = Array.from(doc.querySelectorAll('div')).find((d) =>
-          (d.getAttribute('class') ?? '').includes('rounded-full'),
+        // The morph vessel is the only `rounded-full` element that also wraps
+        // the Loader (`role="progressbar"`). Requiring the Loader keeps a leaked
+        // `rounded-full` element from a prior story — a FAB close chip, a
+        // morphing-modal vessel, etc., still in `document.body` under the shared
+        // page — from being mistaken for the vessel and reporting its (empty)
+        // children as uncoloured dots.
+        const vessel = Array.from(doc.querySelectorAll('div')).find(
+          (d) => (d.getAttribute('class') ?? '').includes('rounded-full') && d.querySelector('[role="progressbar"]'),
         );
         if (!vessel) throw new Error('morph vessel not found');
         const dotIsColoured = Array.from(vessel.querySelectorAll('div')).some(

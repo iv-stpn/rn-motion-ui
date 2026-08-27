@@ -137,13 +137,19 @@ function Dot({ size, speed, color, reduce, index }: PartProps & { index: number 
     if (reduce) {
       translateY.value = 0;
       opacity.value = withRepeat(withTiming(1, { duration: half, easing: EASE_IN_OUT }), -1, true);
-      return;
+      return () => cancelAnimation(opacity);
     }
     opacity.value = withTiming(1, { duration: 240 });
     translateY.value = withDelay(
       index * speed * 160,
       withRepeat(withTiming(top, { duration: half, easing: EASE_IN_OUT }), -1, true),
     );
+    // The `withRepeat` is owned by the shared value, so React unmounting the
+    // Dot does NOT stop it (unlike a moti `loop`, which useAnimatedStyle tears
+    // down). Cancel it here so a loader that unmounts mid-flight doesn't leave
+    // an infinite animation driving `translateY` on the shared page forever —
+    // same contract as Spinner.
+    return () => cancelAnimation(translateY);
   }, [reduce, top, half, index, speed, translateY, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({

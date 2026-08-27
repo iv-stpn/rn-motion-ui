@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   interpolateColor,
   type SharedValue,
@@ -138,6 +139,11 @@ export function TextShimmer({
     if (!animating) return;
     progress.value = 0;
     progress.value = withRepeat(withTiming(1, { duration: duration * 1000, easing: Easing.linear }), -1, false);
+    // The `withRepeat` is owned by the shared value, so unmounting does not stop
+    // it (unlike a moti `loop`, which useAnimatedStyle tears down). Cancel it so
+    // a shimmer that unmounts mid-sweep doesn't leave an infinite animation
+    // driving `progress` forever.
+    return () => cancelAnimation(progress);
   }, [animating, duration, progress]);
 
   // Non-string content (or reduced motion) can't be split per character, so it

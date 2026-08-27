@@ -11,6 +11,7 @@ import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { formatByteSize } from '../logic/file-system-format';
+import { folderHasChildren } from '../logic/file-system-index';
 import { fileKindLabel } from '../logic/file-system-kinds';
 import type { FileEntry, FileSystemEntry } from '../types/file-system.types';
 import { FileSystemGalleryStage } from './file-system-gallery-stage';
@@ -60,12 +61,15 @@ type StagePaneProps = Pick<
   entry: FileSystemEntry | null;
   /** The active file once the selection has settled; `null` while scrubbing. */
   file: FileEntry | null;
+  /** Whether a staged folder holds anything — drives the folder glyph's variant. */
+  hasChildren: boolean;
   width: number;
 };
 
 /** What the stage shows: a folder glyph, a spinner while scrubbing, or the file. */
-function GalleryStagePane({ entry, file, width, ...stageProps }: StagePaneProps) {
-  if (entry?.kind === 'folder') return <FileSystemFolderGlyph size={STAGE_FOLDER_GLYPH_SIZE} />;
+function GalleryStagePane({ entry, file, hasChildren, width, ...stageProps }: StagePaneProps) {
+  if (entry?.kind === 'folder')
+    return <FileSystemFolderGlyph size={STAGE_FOLDER_GLYPH_SIZE} variant={hasChildren ? 'filled' : 'empty'} />;
 
   if (!file)
     return (
@@ -100,7 +104,10 @@ function GallerySidebar({ entry, index, renderFilePreview, sizeLabel }: SidebarP
     >
       <View className="flex-row items-center gap-3">
         {entry.kind === 'folder' ? (
-          <FileSystemFolderGlyph size={SIDEBAR_FOLDER_GLYPH_SIZE} />
+          <FileSystemFolderGlyph
+            size={SIDEBAR_FOLDER_GLYPH_SIZE}
+            variant={folderHasChildren(index, entry) ? 'filled' : 'empty'}
+          />
         ) : (
           <FileVisual
             file={entry}
@@ -163,7 +170,13 @@ export function FileSystemGalleryView(props: FileSystemViewProps) {
     <View className="flex-1 select-none" onLayout={handleLayout}>
       <View className="min-h-0 flex-1 flex-row">
         <View className="min-h-0 flex-1 items-center justify-center p-3">
-          <GalleryStagePane {...props} entry={activeEntry} file={stagedFile} width={stageWidth} />
+          <GalleryStagePane
+            {...props}
+            entry={activeEntry}
+            file={stagedFile}
+            hasChildren={activeEntry?.kind === 'folder' && folderHasChildren(index, activeEntry)}
+            width={stageWidth}
+          />
         </View>
         {showSidebar && activeEntry ? (
           <GallerySidebar entry={activeEntry} index={index} renderFilePreview={renderFilePreview} sizeLabel={sizeLabel} />
@@ -174,6 +187,7 @@ export function FileSystemGalleryView(props: FileSystemViewProps) {
         draggable={draggable}
         entries={entries}
         getContextMenuActions={getContextMenuActions}
+        index={index}
         onActivate={activate}
         onClearSelection={handleClearSelection}
         onContextMenuAction={onContextMenuAction}

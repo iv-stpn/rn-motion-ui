@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The library badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <path d="M201 207h31v98h-31zm40-21h31v119h-31zm40 21h31v98h-31z" fill="none" stroke="#7652a6" stroke-width="15" stroke-linejoin="round"/>
+    <path d="M191 319h130" stroke="#7652a6" stroke-width="16" stroke-linecap="round"/>
+  </g>
+</svg>

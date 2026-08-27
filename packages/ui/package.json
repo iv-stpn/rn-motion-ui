@@ -808,6 +808,7 @@
     "!src/**/__stories__/**",
     "!src/**/__tests__/**",
     "!src/**/*.test.*",
+    "!src/**/FileIcon/svg/**",
     "scripts/gen-tokens.mjs",
     "README.md",
     "LICENSE"

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The audio badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <path d="M193 292v-72l106-26v72" fill="none" stroke="#a63d9f" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="176" cy="300" r="25" fill="#a63d9f"/><circle cx="282" cy="274" r="25" fill="#a63d9f"/>
+    <path d="M325 239c20 15 20 43 0 58M351 216c39 29 39 75 0 104" fill="none" stroke="#a63d9f" stroke-width="15" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -51,8 +51,13 @@ export const COLUMN_ROW_HEIGHT = 28;
 const COLUMN_ROW_GAP = 1;
 
 export const COLUMN_ROW_STRIDE = COLUMN_ROW_HEIGHT + COLUMN_ROW_GAP;
-const COLUMN_GLYPH_SIZE = 18;
+const COLUMN_GLYPH_SIZE = 22;
+/** Horizontal inset on the folder glyph, so a folder reads slightly narrower than the lane. */
+const COLUMN_FOLDER_PADDING_X = 2;
+/** Icon *width*; a portrait page is ~1.29× that tall, so it must stay under 0.77 of the glyph lane. */
 const COLUMN_ICON_SIZE = 16;
+/** File-icon height as a fraction of the row height — see `ColumnRowGlyph`. */
+const COLUMN_FILE_PREVIEW_HEIGHT_FRACTION = 0.6;
 const COLUMN_CHEVRON_SIZE = 14;
 const COLUMN_PIN_ICON_SIZE = 10;
 const COLUMN_FAV_ICON_SIZE = 10;
@@ -146,11 +151,25 @@ type ColumnRowProps = {
 /** The row's leading glyph: folder, cover thumbnail, or file-type icon. */
 function ColumnRowGlyph({
   entry,
-  isSelected,
+  hasChildren,
   renderEntryIcon,
-}: Pick<ColumnRowProps, 'entry' | 'isSelected' | 'renderEntryIcon'>) {
+}: Pick<ColumnRowProps, 'entry' | 'renderEntryIcon'> & { hasChildren: boolean }) {
   if (entry.kind === 'folder')
-    return renderEntryIcon?.(entry, COLUMN_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={COLUMN_GLYPH_SIZE} />;
+    // Inset the folder so it takes slightly less width than the lane; files keep
+    // the full lane, centred.
+    return (
+      <View
+        className="items-center justify-center"
+        style={{ height: COLUMN_GLYPH_SIZE, width: COLUMN_GLYPH_SIZE, paddingHorizontal: COLUMN_FOLDER_PADDING_X }}
+      >
+        {renderEntryIcon?.(entry, COLUMN_GLYPH_SIZE - 2 * COLUMN_FOLDER_PADDING_X) ?? (
+          <FileSystemFolderGlyph
+            size={COLUMN_GLYPH_SIZE - 2 * COLUMN_FOLDER_PADDING_X}
+            variant={hasChildren ? 'filled' : 'empty'}
+          />
+        )}
+      </View>
+    );
 
   const coverUrl = filePreviewUrls(entry)[0];
   if (coverUrl) {
@@ -161,9 +180,15 @@ function ColumnRowGlyph({
       )
     );
   }
-  // A selected row sits on the primary surface, the inverse of the pane behind
-  // it, so the icon palette flips with it.
-  return <FileTypeIcon fileName={entry.name} size={COLUMN_ICON_SIZE} surface={isSelected ? 'inverted' : 'theme'} />;
+  // Height comes from the row, not the file's own ratio, so every row's preview
+  // shares one height; the width keeps the icons on a common left edge.
+  return (
+    <FileTypeIcon
+      fileName={entry.name}
+      height={COLUMN_ROW_HEIGHT * COLUMN_FILE_PREVIEW_HEIGHT_FRACTION}
+      size={COLUMN_ICON_SIZE}
+    />
+  );
 }
 
 /**
@@ -229,7 +254,10 @@ function ColumnRow({
             style={{ height: COLUMN_ROW_HEIGHT }}
             testID={testID}
           >
-            <ColumnRowGlyph entry={entry} isSelected={isActive} renderEntryIcon={renderEntryIcon} />
+            {/* Shared glyph lane: the folder fills it, the file icon sits centred with padding. */}
+            <View className="items-center justify-center" style={{ height: COLUMN_GLYPH_SIZE, width: COLUMN_GLYPH_SIZE }}>
+              <ColumnRowGlyph entry={entry} hasChildren={hasChildren} renderEntryIcon={renderEntryIcon} />
+            </View>
             {entry.pinnedAt ? <Pin color={isActive ? colors.white : colors.primary} size={COLUMN_PIN_ICON_SIZE} /> : null}
             <Text className={cn('flex-1', isActive && 'text-white')} numberOfLines={1} size="sm">
               {entry.name}

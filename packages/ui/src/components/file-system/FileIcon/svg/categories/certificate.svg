@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The certificate badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <circle cx="256" cy="255" r="57" fill="none" stroke="#b68a19" stroke-width="16"/>
+    <path d="m222 299-10 43 44-19 44 19-10-43" fill="none" stroke="#b68a19" stroke-width="16" stroke-linejoin="round"/>
+    <path d="m256 218 11 22 25 4-18 18 4 25-22-12-22 12 4-25-18-18 25-4z" fill="#b68a19"/>
+  </g>
+</svg>

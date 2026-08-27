@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The archive badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <path d="M174 210h164v32H174zm8 32h148v84H182z" fill="none" stroke="#bd6a21" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M244 262h24m-12 0v40" stroke="#bd6a21" stroke-width="16" stroke-linecap="round"/>
+  </g>
+</svg>

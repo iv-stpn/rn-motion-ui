@@ -30,13 +30,16 @@ import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
+import { folderHasChildren } from '../logic/file-system-index';
 import { buildCrumbs, CRUMB_SEPARATOR, splitSearchMatches } from '../logic/file-system-search';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemItem } from '../types/file-system.types';
 import type { FileSystemViewProps } from './file-system-view';
 
+/** Icon *width*; a portrait page is ~1.29× that tall, so it must stay under 0.77 of the lane. */
 const ICON_SIZE = 16;
-const FOLDER_GLYPH_SIZE = 18;
+/** Shared glyph lane: folders fill it, file icons sit centred with padding. */
+const GLYPH_LANE_WIDTH = 22;
 /** Two-line row: name above, breadcrumb trail below. */
 export const SEARCH_ROW_HEIGHT = 44;
 
@@ -82,6 +85,8 @@ function highlightMatches(text: string, query: string): ReactNode {
 type SearchRowProps = {
   entry: FileSystemEntry;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
+  /** Whether a folder hit holds anything — drives the folder glyph's variant. */
+  hasChildren: boolean;
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: (action: FileSystemContextMenuAction, item: FileSystemItem) => void | Promise<void>;
@@ -96,6 +101,7 @@ type SearchRowProps = {
 function SearchRow({
   entry,
   getContextMenuActions,
+  hasChildren,
   isSelected,
   onActivate,
   onContextMenuAction,
@@ -133,9 +139,9 @@ function SearchRow({
         style={{ height: SEARCH_ROW_HEIGHT }}
         testID={testID}
       >
-        <View className="items-center justify-center" style={{ width: FOLDER_GLYPH_SIZE }}>
+        <View className="items-center justify-center" style={{ height: GLYPH_LANE_WIDTH, width: GLYPH_LANE_WIDTH }}>
           {entry.kind === 'folder' ? (
-            <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />
+            <FileSystemFolderGlyph size={GLYPH_LANE_WIDTH} variant={hasChildren ? 'filled' : 'empty'} />
           ) : (
             <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />
           )}
@@ -164,6 +170,7 @@ function SearchRow({
 export function FileSystemSearchView({
   entries,
   getContextMenuActions,
+  index,
   onContextMenuAction,
   onOpen,
   onSelect,
@@ -195,6 +202,7 @@ export function FileSystemSearchView({
       <SearchRow
         entry={item}
         getContextMenuActions={getContextMenuActions}
+        hasChildren={item.kind === 'folder' && folderHasChildren(index, item)}
         isSelected={selectedPaths.has(item.path)}
         onActivate={activate}
         onContextMenuAction={onContextMenuAction}
@@ -204,7 +212,7 @@ export function FileSystemSearchView({
         testID={fileSystemEntryTestID(testID, item.path)}
       />
     ),
-    [activate, getContextMenuActions, onContextMenuAction, rootLabel, searchQuery, selectedPaths, selectLongPress, testID],
+    [activate, getContextMenuActions, index, onContextMenuAction, rootLabel, searchQuery, selectedPaths, selectLongPress, testID],
   );
 
   // No empty branch here: `FileSystemBodyContent` yields to the placeholder

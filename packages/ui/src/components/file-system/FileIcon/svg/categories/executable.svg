@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The executable badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <rect x="181" y="203" width="150" height="106" rx="12" fill="none" stroke="#c24d37" stroke-width="16"/>
+    <path d="m211 238 25 18-25 18m49 0h38" fill="none" stroke="#c24d37" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

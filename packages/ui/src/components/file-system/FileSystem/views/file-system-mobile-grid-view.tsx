@@ -30,6 +30,7 @@ import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
 import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
+import { folderHasChildren } from '../logic/file-system-index';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
@@ -78,6 +79,8 @@ type MobileGridTileProps = Pick<
   draggable: boolean;
   ensureChildren?: (folderPath: string) => void;
   entry: FileSystemEntry;
+  /** Whether a folder tile holds anything — drives the folder glyph's variant. */
+  hasChildren: boolean;
   isSelected: boolean;
   selecting: boolean;
   tileWidth: number;
@@ -103,6 +106,7 @@ function MobileGridTile({
   ensureChildren,
   entry,
   getContextMenuActions,
+  hasChildren,
   isSelected,
   loadPreviewImageUrl,
   onActivate,
@@ -200,7 +204,9 @@ function MobileGridTile({
                       width={previewWidthFor(tileWidth, entry)}
                     />
                   ))
-                : (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)}
+                : (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? (
+                    <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} variant={hasChildren ? 'filled' : 'empty'} />
+                  ))}
             </View>
           </View>
           <View className="flex-row items-start gap-1 pt-1.5 pr-7">
@@ -273,6 +279,7 @@ export function FileSystemMobileGridView({
   ensureChildren,
   entries,
   getContextMenuActions,
+  index,
   loadPreviewImageUrl,
   onContextMenuAction,
   onDeselectMarquee,
@@ -478,6 +485,7 @@ export function FileSystemMobileGridView({
                 ensureChildren={ensureChildren}
                 entry={entry}
                 getContextMenuActions={getContextMenuActions}
+                hasChildren={entry.kind === 'folder' && folderHasChildren(index, entry)}
                 isScrubTarget={scrubTarget === entry.path}
                 isSelected={selectedPaths.has(entry.path)}
                 key={entry.path}

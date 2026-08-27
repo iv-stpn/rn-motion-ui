@@ -65,8 +65,12 @@ const INDENT_PER_LEVEL = 14;
 const CHEVRON_SIZE = 18;
 /** The row's own left inset, matching the `px-2` its className sets. */
 const ROW_PADDING_X = 8;
+/** Icon *width*; a portrait page is ~1.29× that tall, so it must stay under 0.77 of the lane. */
 const ICON_SIZE = 16;
-const FOLDER_GLYPH_SIZE = 18;
+/** Shared glyph lane: folders fill it, file icons sit centred with padding. */
+const GLYPH_LANE_WIDTH = 22;
+/** Horizontal inset on the folder glyph, so a folder reads slightly narrower than a file's lane. */
+const FOLDER_PADDING_X = 2;
 const PIN_ICON_SIZE = 10;
 const FAV_ICON_SIZE = 10;
 /** Below this the date column drops out, leaving name + size. */
@@ -253,6 +257,8 @@ type ListRowBodyProps = {
   handleOpenChange: (open: boolean) => void;
   handlePress: (event: GestureResponderEvent) => void;
   handlePressIn: () => void;
+  /** Whether a folder row holds anything — drives the folder glyph's variant. */
+  hasChildren: boolean;
   isExpandable: boolean;
   isExpanded: boolean;
   isSelected: boolean;
@@ -279,6 +285,7 @@ function ListRowBody({
   handleOpenChange,
   handlePress,
   handlePressIn,
+  hasChildren,
   isExpandable,
   isExpanded,
   isSelected,
@@ -322,9 +329,25 @@ function ListRowBody({
           {/* The chevron's lane, held open on file rows too so names stay aligned
               across kinds. On a folder row the control below sits over this box. */}
           <View style={{ width: CHEVRON_SIZE }} />
-          {entry.kind === 'folder'
-            ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
-            : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
+          <View className="items-center justify-center" style={{ height: GLYPH_LANE_WIDTH, width: GLYPH_LANE_WIDTH }}>
+            {entry.kind === 'folder' ? (
+              // Inset the folder so it takes slightly less width than the lane;
+              // files keep the full lane, centred.
+              <View
+                className="items-center justify-center"
+                style={{ height: GLYPH_LANE_WIDTH, width: GLYPH_LANE_WIDTH, paddingHorizontal: FOLDER_PADDING_X }}
+              >
+                {renderEntryIcon?.(entry, GLYPH_LANE_WIDTH - 2 * FOLDER_PADDING_X) ?? (
+                  <FileSystemFolderGlyph
+                    size={GLYPH_LANE_WIDTH - 2 * FOLDER_PADDING_X}
+                    variant={hasChildren ? 'filled' : 'empty'}
+                  />
+                )}
+              </View>
+            ) : (
+              (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)
+            )}
+          </View>
           {entry.pinnedAt ? <Pin color={isActive ? colors.white : colors.primary} size={PIN_ICON_SIZE} /> : null}
           <Text className={cn('flex-1', textClassName)} numberOfLines={1} size="sm">
             {entry.name}
@@ -427,6 +450,7 @@ function ListRow({
       handleOpenChange={handleOpenChange}
       handlePress={handlePress}
       handlePressIn={handlePressIn}
+      hasChildren={entry.kind === 'folder' && isExpandable}
       isExpandable={isExpandable}
       isExpanded={isExpanded}
       isSelected={isSelected}
@@ -797,7 +821,7 @@ export function FileSystemListView({
       {/* The header's left padding matches a level-0 row: chevron lane + icon. */}
       <View className="shrink-0 flex-row items-center gap-1 border-border border-b-[1.5px] py-1 pr-2 pl-2">
         {/* Chevron lane + icon + their gap — matches a level-0 row. */}
-        <View style={{ width: CHEVRON_SIZE + ICON_SIZE + 4 }} />
+        <View style={{ width: CHEVRON_SIZE + GLYPH_LANE_WIDTH + 4 }} />
         <ColumnHeader className="flex-1" label={NAME_LABEL} onPress={onSortColumnClick} sort={sort} sortKey="name" />
         {showDate ? (
           <ColumnHeader className="w-44" label={DATE_LABEL} onPress={onSortColumnClick} sort={sort} sortKey="updatedAt" />

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The apk badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <path d="M184 289c0-47 35-84 72-84s72 37 72 84v24H184z" fill="#2d9a58"/>
+    <path d="m204 213-20-25m124 25 20-25" fill="none" stroke="#2d9a58" stroke-width="13" stroke-linecap="round"/>
+    <circle cx="226" cy="255" r="7" fill="#fff"/><circle cx="286" cy="255" r="7" fill="#fff"/>
+    <path d="M207 313v20m98-20v20" stroke="#2d9a58" stroke-width="15" stroke-linecap="round"/>
+  </g>
+</svg>

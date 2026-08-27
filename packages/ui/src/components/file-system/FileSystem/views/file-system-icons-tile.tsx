@@ -32,7 +32,7 @@ import { FileVisual } from './file-system-visual';
 // pointer positions with those constants, and the hover highlight derives the
 // glyph box's rect from them, so no side can drift. What's here is glyph sizing,
 // which only the render cares about.
-const FOLDER_GLYPH_SIZE = 52;
+const FOLDER_GLYPH_SIZE = 60;
 /** Landscape thumbnails get the wider face so they fill the tile. */
 const LANDSCAPE_RATIO = 1.2;
 const PORTRAIT_TILE_WIDTH = 48;
@@ -55,6 +55,8 @@ type IconTileFaceProps = Pick<
   'loadPreviewImageUrl' | 'pageUrlCache' | 'renderEntryIcon' | 'renderFilePreview'
 > & {
   entry: FileSystemEntry;
+  /** Whether a folder tile holds anything — drives the folder glyph's variant. */
+  hasChildren: boolean;
   /** A drop would land here — the label chip fills, under the hover-tinted glyph. */
   isDropTarget?: boolean;
   isSelected: boolean;
@@ -71,7 +73,15 @@ type IconTileFaceProps = Pick<
  * lighting up beneath a hovered glyph: no outline, nothing added to the layout,
  * just the two shapes the tile already has going up a strength.
  */
-function IconTileFace({ entry, isDropTarget = false, isSelected, renderEntryIcon, width, ...visualProps }: IconTileFaceProps) {
+function IconTileFace({
+  entry,
+  hasChildren,
+  isDropTarget = false,
+  isSelected,
+  renderEntryIcon,
+  width,
+  ...visualProps
+}: IconTileFaceProps) {
   const isLandscape = entry.kind === 'file' && (entry.previewAspectRatio ?? 0) > LANDSCAPE_RATIO;
   const colors = useThemeColors();
   const active = isSelected || isDropTarget;
@@ -86,7 +96,9 @@ function IconTileFace({ entry, isDropTarget = false, isSelected, renderEntryIcon
         style={{ height: GLYPH_BOX_HEIGHT, width: GLYPH_BOX_WIDTH }}
       >
         {entry.kind === 'folder'
-          ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
+          ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? (
+              <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} variant={hasChildren ? 'filled' : 'empty'} />
+            ))
           : (renderEntryIcon?.(entry, GLYPH_BOX_HEIGHT) ?? (
               <FileVisual
                 file={entry}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The disk-image badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <rect x="178" y="191" width="156" height="130" rx="12" fill="none" stroke="#6c7785" stroke-width="16"/>
+    <circle cx="256" cy="256" r="35" fill="none" stroke="#6c7785" stroke-width="15"/><circle cx="256" cy="256" r="8" fill="#6c7785"/>
+    <path d="M198 301h31" stroke="#6c7785" stroke-width="14" stroke-linecap="round"/>
+  </g>
+</svg>

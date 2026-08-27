@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The database badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <ellipse cx="256" cy="205" rx="72" ry="27" fill="none" stroke="#256c9b" stroke-width="16"/>
+    <path d="M184 205v94c0 15 32 27 72 27s72-12 72-27v-94m-144 47c0 15 32 27 72 27s72-12 72-27" fill="none" stroke="#256c9b" stroke-width="16"/>
+  </g>
+</svg>

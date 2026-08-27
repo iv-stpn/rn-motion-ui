@@ -25,18 +25,27 @@ import { ghostOffset } from '../../../gestures/drag-geometry';
 import { getDragSnapshot } from '../../../gestures/drag-store';
 import { useDragMove, useDragSnapshot } from '../../../gestures/use-drag-store';
 import { Text } from '../../../typography/Text/text';
+import { fileIconWidthForBox } from '../../FileIcon/file-icon';
 import { FileSystemFolderGlyph, FileTypeIcon } from '../../FileIcon/file-icons';
 import { type FileSystemDragItem, fileSystemDragData, fileSystemDragItems, fileSystemDragLabel } from '../logic/file-system-drag';
+import { folderHasChildren } from '../logic/file-system-index';
 import { FS_DROP_HINT_TEST_ID } from '../logic/file-system-test-id';
 import { useFileSystemEntries, useFileSystemSelection, useFileSystemSelectionActions } from '../store/file-system-context';
+import type { FileSystemIndex } from '../types/file-system.types';
 import { FileSystemDropIndicator } from './file-system-drop-indicator';
 import { zoneDestinationFor } from './file-system-dropzone';
 
-type FileSystemGroupGhostProps = { items: readonly FileSystemDragItem[] };
+type FileSystemGroupGhostProps = { index: FileSystemIndex; items: readonly FileSystemDragItem[] };
 
 /** Sizing for the icons inside a group ghost chip. */
 const GHOST_ICON_SIZE = 14;
 const GHOST_FOLDER_GLYPH_SIZE = 14;
+/**
+ * File icons all draw at one width and take whatever height their own shape
+ * asks for, so the chip is solved for the tallest of them — a page, at 1.29×
+ * its width — rather than filled edge to edge like the folder.
+ */
+const GHOST_FILE_ICON_WIDTH = fileIconWidthForBox(GHOST_ICON_SIZE, GHOST_ICON_SIZE);
 /** How far each stacked icon offsets from the one beneath it (px). */
 const STACK_OFFSET = 6;
 /** How many items to show in the stack. */
@@ -55,7 +64,7 @@ const STACK_DEPTH = 3;
  * child. So dragging one row shows that row, which is both free and the better
  * picture.
  */
-function FileSystemGroupGhost({ items }: FileSystemGroupGhostProps) {
+function FileSystemGroupGhost({ index, items }: FileSystemGroupGhostProps) {
   const visible = items.slice(0, STACK_DEPTH);
 
   return (
@@ -71,16 +80,22 @@ function FileSystemGroupGhost({ items }: FileSystemGroupGhostProps) {
         {visible.map((item, i) => {
           const left = i * STACK_OFFSET;
           const top = (visible.length - 1 - i) * STACK_OFFSET;
+          // The drag payload carries only the path — look the folder up in the
+          // index to tell a full folder from an empty one in the ghost.
+          const folder = item.kind === 'folder' ? index.folders.get(item.path) : undefined;
           return (
             <View
-              className="absolute rounded-sm bg-surface-2"
+              className="absolute items-center justify-center rounded-sm bg-surface-2"
               key={item.path}
               style={{ height: GHOST_ICON_SIZE, left, top, width: GHOST_ICON_SIZE }}
             >
-              {item.kind === 'folder' ? (
-                <FileSystemFolderGlyph size={GHOST_FOLDER_GLYPH_SIZE} />
+              {folder ? (
+                <FileSystemFolderGlyph
+                  size={GHOST_FOLDER_GLYPH_SIZE}
+                  variant={folderHasChildren(index, folder) ? 'filled' : 'empty'}
+                />
               ) : (
-                <FileTypeIcon fileName={item.name} size={GHOST_ICON_SIZE} />
+                <FileTypeIcon fileName={item.name} size={GHOST_FILE_ICON_WIDTH} />
               )}
             </View>
           );
@@ -201,7 +216,7 @@ export function FileSystemDragScope({ children }: FileSystemDragScopeProps) {
   const renderPreview = useCallback(
     (paths: readonly string[]) => {
       if (paths.length < 2) return null;
-      return <FileSystemGroupGhost items={fileSystemDragItems(index, paths)} />;
+      return <FileSystemGroupGhost index={index} items={fileSystemDragItems(index, paths)} />;
     },
     [index],
   );

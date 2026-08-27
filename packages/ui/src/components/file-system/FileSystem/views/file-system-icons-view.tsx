@@ -33,6 +33,7 @@ import {
   tileHitAt,
   tilesInRect,
 } from '../logic/file-system-icons-grid';
+import { folderHasChildren } from '../logic/file-system-index';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { useBackgroundContextMenu } from '../shell/file-system-context-menu';
 import { isZoneInScrollableContent } from '../shell/file-system-dropzone';
@@ -265,6 +266,7 @@ export function FileSystemIconsView({
   fileFilter,
   getBackgroundContextMenuActions,
   getContextMenuActions,
+  index,
   loadPreviewImageUrl,
   onBackgroundContextMenuAction,
   onContextMenuAction,
@@ -344,6 +346,7 @@ export function FileSystemIconsView({
                   draggable={draggable}
                   entry={entry}
                   getContextMenuActions={getContextMenuActions}
+                  hasChildren={entry.kind === 'folder' && folderHasChildren(index, entry)}
                   isSelected={selectedPaths.has(entry.path)}
                   loadPreviewImageUrl={loadPreviewImageUrl}
                   onActivate={activate}

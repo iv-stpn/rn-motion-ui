@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--based on the matt icon theme by sixsixfive released under CC0 (https://creativecommons.org/publicdomain/zero/1.0/) on openclipart-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <!-- page: light gray at the top fading to pure white by ~85% down -->
+    <linearGradient id="page" gradientUnits="userSpaceOnUse" x1="64" y1="6" x2="64" y2="120">
+      <stop stop-color="#e5e5e5"/>
+      <stop offset=".5" stop-color="#f6f6f6"/>
+      <stop offset=".85" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <!-- flap: darkest along the crease, brightening toward the curled free edge -->
+    <linearGradient id="fold-shade" gradientUnits="userSpaceOnUse" x1="97.5" y1="28.4" x2="92.2" y2="33.7">
+      <stop stop-color="#d0d0d0"/>
+      <stop offset=".55" stop-color="#e6e6e6"/>
+      <stop offset="1" stop-color="#fbfbfb"/>
+    </linearGradient>
+    <!-- shadow cast by the curl onto the page: full-dark at the contact edge, long fade downward -->
+    <linearGradient id="under-shade" gradientUnits="userSpaceOnUse" x1="95.3" y1="31.6" x2="91.8" y2="44.7">
+      <stop stop-color="#000" stop-opacity=".5"/>
+      <stop offset=".5" stop-color="#000" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="blur-tight" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur stdDeviation=".9"/>
+    </filter>
+    <filter id="blur-wide" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+    <filter id="blur-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+    <filter id="blur-under" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation=".8"/>
+    </filter>
+    <filter id="blur-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1"/>
+    </filter>
+    <!-- page silhouette: sharp corner where the crease meets the top edge, rounded where it meets the right edge -->
+    <path id="page-shape" d="M21 6H75.1L104.2 35.1Q107 37.9 107 41.9V120H21Z"/>
+    <!-- curled flap: straight crease along the silhouette diagonal, S-curved left edge down to the tip, flat-to-45° sweep back to the crease -->
+    <path id="fold" d="M75.1 6C80 12.4 84.7 23 85.2 30.6 92 30.6 101 32.2 105.46 36.36Z"/>
+    <!-- the flap's free edge alone (for the bright paper-edge glow) -->
+    <path id="fold-edge" d="M75.1 6C80 12.4 84.7 23 85.2 30.6 92 30.6 101 32.2 105.46 36.36"/>
+    <!-- region under the curl's bottom edge that receives the cast shadow -->
+    <path id="under-fold" d="M85.2 30.6C92 30.6 101 32.2 105.46 36.36Q107 37.9 107 41.9V52H84Z"/>
+    <clipPath id="page-clip"><use href="#page-shape"/></clipPath>
+    <clipPath id="fold-clip"><use href="#fold"/></clipPath>
+  </defs>
+  <!-- page drop shadow: tight dark line at the edges plus a slightly wider soft layer -->
+  <use href="#page-shape" y="2.2" fill="#000" opacity=".2" filter="url(#blur-wide)"/>
+  <use href="#page-shape" y=".9" fill="#000" opacity=".38" filter="url(#blur-tight)"/>
+  <!-- page -->
+  <use href="#page-shape" fill="url(#page)"/>
+  <g clip-path="url(#page-clip)">
+    <!-- soft shadow hugging the left side of the curl -->
+    <use href="#fold" transform="translate(-.8 1.2)" fill="#000" opacity=".32" filter="url(#blur-soft)"/>
+    <!-- dark shadow under the curl's bottom edge, fading down the page -->
+    <use href="#under-fold" fill="url(#under-shade)" filter="url(#blur-under)"/>
+  </g>
+  <!-- curled flap -->
+  <use href="#fold" fill="url(#fold-shade)"/>
+  <!-- bright paper edge: soft white glow just inside the free edge of the flap -->
+  <g clip-path="url(#fold-clip)">
+    <use href="#fold-edge" fill="none" stroke="#fff" stroke-width="3" opacity=".85" filter="url(#blur-glow)"/>
+  </g>
+</svg>

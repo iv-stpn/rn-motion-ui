@@ -1,8 +1,9 @@
 /** biome-ignore-all lint/style/useExportsLast: props types sit with their components */
-// The file thumbnail: a paper-white page tile showing an externally generated
-// preview image, a caller-supplied preview node, or the file-type icon plus its
-// extension. Multi-page files get a pager (page thumbnails are loaded on demand
-// through `loadPreviewImageUrl` and shared via a `path#pageIndex` cache).
+// The file thumbnail: an externally generated preview image or a caller-supplied
+// preview node, framed in a paper-white page tile — or, when a file has neither,
+// the file-type icon on its own. Multi-page files get a pager (page thumbnails
+// are loaded on demand through `loadPreviewImageUrl` and shared via a
+// `path#pageIndex` cache).
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
@@ -11,9 +12,9 @@ import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../../lib/cn';
 import { Loader } from '../../../display/Loader/loader';
 import { Text } from '../../../typography/Text/text';
+import { fileIconWidthForBox } from '../../FileIcon/file-icon';
 import { FileTypeIcon } from '../../FileIcon/file-icons';
 import { filePreviewUrls } from '../logic/file-system-index';
-import { fileExtension } from '../logic/file-system-paths';
 import type { FileEntry, FileSystemFileItem } from '../types/file-system.types';
 
 /** Portrait page proportions, the fallback when a file declares no ratio. */
@@ -21,10 +22,6 @@ const DEFAULT_PREVIEW_ASPECT_RATIO = 0.72;
 
 /** The tile face: paper-white in both themes, so previews read like documents. */
 const TILE_FACE_CLASSNAME = 'overflow-hidden rounded-md border-[1.5px] border-border bg-white';
-
-/** The fallback icon scales with the tile, down to a legible floor. */
-const ICON_MIN_SIZE = 16;
-const ICON_WIDTH_DIVISOR = 3;
 
 export type FilePagesState = {
   pageIndex: number;
@@ -94,23 +91,6 @@ function useFilePages(
   const goToPage = useCallback((index: number) => setPageIndex(Math.max(0, Math.min(totalPages - 1, index))), [totalPages]);
 
   return { goToPage, isPending, pageIndex: clampedPageIndex, previewUrl, totalPages };
-}
-
-export type FileGenericPreviewProps = { file: FileEntry; iconSize?: number };
-
-/** Icon + uppercase extension, shown when a file has no preview image. */
-export function FileGenericPreview({ file, iconSize = 28 }: FileGenericPreviewProps) {
-  const extension = fileExtension(file.name);
-  return (
-    <View className="flex-1 items-center justify-center gap-1.5">
-      <FileTypeIcon fileName={file.name} size={iconSize} surface="light" />
-      {extension ? (
-        <Text className="text-neutral-400 uppercase tracking-wide" size="xs" weight="semibold">
-          {extension}
-        </Text>
-      ) : null}
-    </View>
-  );
 }
 
 export type FileVisualProps = {
@@ -195,8 +175,12 @@ function FileTileFace({ children, file, height, isPending, previewUrl, width }: 
 
 /**
  * A file's visual: its page thumbnail when one exists, otherwise the consumer's
- * preview node or the built-in icon + extension fallback. The tile keeps a
- * paper-white face in both themes so previews read as documents.
+ * preview node, otherwise the file-type icon.
+ *
+ * Only the first two are framed — a thumbnail is arbitrary content, so it gets a
+ * paper-white tile in both themes to read as a document. The icon already *is* a
+ * drawn page, so it stands bare: a second page drawn around it would only box a
+ * picture of a file inside a picture of a file.
  */
 export function FileVisual({
   className,
@@ -219,13 +203,22 @@ export function FileVisual({
   const customPreview = previewUrl || isPending ? null : renderFilePreview?.(file);
   const showPager = pageable && totalPages > 1;
 
+  // Same box as a thumbnail would take, so nothing shifts if one loads later —
+  // the icon is sized to draw to those bounds rather than to float in the middle
+  // of them. The width is the file-blind one, so every icon in a grid of mixed
+  // types lands on the same vertical edges.
+  if (!(previewUrl || isPending || customPreview))
+    return (
+      <View className={cn('items-center justify-center', className)} style={{ height, width }}>
+        <FileTypeIcon fileName={file.name} size={fileIconWidthForBox(width, height)} />
+      </View>
+    );
+
   return (
     <View className={cn('relative', className)} style={{ height, width }}>
       <View className={cn(TILE_FACE_CLASSNAME, 'size-full')}>
         <FileTileFace file={file} height={height} isPending={isPending} previewUrl={previewUrl} width={width}>
-          {customPreview ?? (
-            <FileGenericPreview file={file} iconSize={Math.max(ICON_MIN_SIZE, Math.round(width / ICON_WIDTH_DIVISOR))} />
-          )}
+          {customPreview}
         </FileTileFace>
       </View>
       {showPager ? <FileVisualPager goToPage={goToPage} pageIndex={pageIndex} totalPages={totalPages} /> : null}

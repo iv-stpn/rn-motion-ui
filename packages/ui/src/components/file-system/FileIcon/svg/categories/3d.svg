@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The 3d badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <path d="m256 189 69 40v79l-69 40-69-40v-79z" fill="none" stroke="#5c7cbe" stroke-width="16" stroke-linejoin="round"/>
+    <path d="m187 229 69 40 69-40m-69 40v79" fill="none" stroke="#5c7cbe" stroke-width="16" stroke-linejoin="round"/>
+  </g>
+</svg>

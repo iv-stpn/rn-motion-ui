@@ -15,12 +15,14 @@ import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
+import { folderHasChildren } from '../logic/file-system-index';
 import type { FileSystemSelectionMode } from '../logic/file-system-selection';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import type {
   FileSystemContextMenuAction,
   FileSystemEntry,
   FileSystemFileItem,
+  FileSystemIndex,
   FileSystemItem,
 } from '../types/file-system.types';
 import { FileSystemMarqueeBox, type FileSystemMarqueeRect, useFileSystemMarquee, useMarqueeGate } from './file-system-marquee';
@@ -70,6 +72,12 @@ type StripTileProps = {
   draggable: boolean;
   entry: FileSystemEntry;
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
+  /**
+   * Whether a folder tile holds anything — drives the folder glyph's variant.
+   * Resolved by the strip rather than read here so the `memo` below still bails
+   * out: the index is a fresh object on every recompute, this boolean is not.
+   */
+  hasChildren: boolean;
   /** This tile is the one on the stage. Always also selected, bar the fallback to entry 0. */
   isActive: boolean;
   isSelected: boolean;
@@ -87,6 +95,7 @@ function StripTileComponent({
   draggable,
   entry,
   getContextMenuActions,
+  hasChildren,
   isActive,
   isSelected,
   onActivate,
@@ -138,7 +147,9 @@ function StripTileComponent({
         testID={testID}
       >
         {entry.kind === 'folder'
-          ? (renderEntryIcon?.(entry, STRIP_FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={STRIP_FOLDER_GLYPH_SIZE} />)
+          ? (renderEntryIcon?.(entry, STRIP_FOLDER_GLYPH_SIZE) ?? (
+              <FileSystemFolderGlyph size={STRIP_FOLDER_GLYPH_SIZE} variant={hasChildren ? 'filled' : 'empty'} />
+            ))
           : (renderEntryIcon?.(entry, STRIP_THUMBNAIL_WIDTH) ?? (
               <FileVisual
                 file={entry}
@@ -172,6 +183,8 @@ export type FileSystemGalleryStripProps = {
   draggable?: boolean;
   entries: FileSystemEntry[];
   getContextMenuActions?: (item: FileSystemItem) => FileSystemContextMenuAction[];
+  /** The sorted index, read only to tell a full folder tile from an empty one. */
+  index: FileSystemIndex;
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   /** Called when the user presses empty space in the strip — clears the selection. */
   onClearSelection?: () => void;
@@ -191,6 +204,7 @@ export function FileSystemGalleryStrip({
   draggable = false,
   entries,
   getContextMenuActions,
+  index,
   onActivate,
   onClearSelection,
   onContextMenuAction,
@@ -240,8 +254,8 @@ export function FileSystemGalleryStrip({
   // biome-ignore lint/plugin: scrolling an imperative list handle to the active tile is an effect on a ref, not derivable state
   useEffect(() => {
     if (!activePath) return;
-    const index = entries.findIndex((entry) => entry.path === activePath);
-    if (index >= 0) listRef.current?.scrollToIndex({ animated: true, index, viewPosition: 0.5 });
+    const activeIndex = entries.findIndex((entry) => entry.path === activePath);
+    if (activeIndex >= 0) listRef.current?.scrollToIndex({ animated: true, index: activeIndex, viewPosition: 0.5 });
   }, [activePath, entries]);
 
   const renderTile = useCallback(
@@ -250,6 +264,7 @@ export function FileSystemGalleryStrip({
         draggable={draggable}
         entry={item}
         getContextMenuActions={getContextMenuActions}
+        hasChildren={item.kind === 'folder' && folderHasChildren(index, item)}
         isActive={item.path === activePath}
         isSelected={selectedPaths.has(item.path)}
         onActivate={onActivate}
@@ -264,6 +279,7 @@ export function FileSystemGalleryStrip({
       activePath,
       draggable,
       getContextMenuActions,
+      index,
       onActivate,
       onContextMenuAction,
       onSelectLongPress,
@@ -276,10 +292,10 @@ export function FileSystemGalleryStrip({
 
   const keyExtractor = useCallback((entry: FileSystemEntry) => entry.path, []);
   const getItemLayout = useCallback(
-    (_data: ArrayLike<FileSystemEntry> | null | undefined, index: number) => ({
-      index,
+    (_data: ArrayLike<FileSystemEntry> | null | undefined, tileIndex: number) => ({
+      index: tileIndex,
       length: STRIP_TILE_STRIDE,
-      offset: STRIP_TILE_STRIDE * index,
+      offset: STRIP_TILE_STRIDE * tileIndex,
     }),
     [],
   );

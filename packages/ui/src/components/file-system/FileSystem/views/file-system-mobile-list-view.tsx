@@ -31,6 +31,7 @@ import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-intera
 import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { formatFileSystemStats } from '../logic/file-system-format';
+import { folderHasChildren } from '../logic/file-system-index';
 import { fileSystemEntryTestID } from '../logic/file-system-test-id';
 import { FileSystemDropzone, isZoneInScrollableContent } from '../shell/file-system-dropzone';
 import type {
@@ -47,8 +48,10 @@ const MOBILE_ROW_HEIGHT = 56;
 const VERTICAL_ROW_GAP = 8;
 /** The full stride one row occupies in the list (row + gap), used by `getItemLayout` and the scrub's row mapping. */
 const ROW_STRIDE = MOBILE_ROW_HEIGHT + VERTICAL_ROW_GAP;
-const ICON_SIZE = 22;
-const FOLDER_GLYPH_SIZE = 24;
+/** Icon *width*; a portrait page is ~1.29× that tall, so it must stay under 0.77 of the lane. */
+const ICON_SIZE = 20;
+/** Shared glyph lane: folders fill it, file icons sit centred with padding. */
+const GLYPH_LANE_WIDTH = 28;
 const PIN_ICON_SIZE = 10;
 const FAV_ICON_SIZE = 10;
 
@@ -81,6 +84,8 @@ type MobileListRowProps = {
   ensureChildren?: (folderPath: string) => void;
   entry: FileSystemEntry;
   getContextMenuActions?: FileSystemViewProps['getContextMenuActions'];
+  /** Whether a folder row holds anything — drives the folder glyph's variant. */
+  hasChildren: boolean;
   isSelected: boolean;
   onActivate: (entry: FileSystemEntry, event?: GestureResponderEvent) => void;
   onContextMenuAction?: FileSystemViewProps['onContextMenuAction'];
@@ -109,6 +114,7 @@ function MobileListRow({
   ensureChildren,
   entry,
   getContextMenuActions,
+  hasChildren,
   isSelected,
   onActivate,
   onContextMenuAction,
@@ -184,9 +190,13 @@ function MobileListRow({
           style={{ height: MOBILE_ROW_HEIGHT }}
           testID={testID}
         >
-          {entry.kind === 'folder'
-            ? (renderEntryIcon?.(entry, FOLDER_GLYPH_SIZE) ?? <FileSystemFolderGlyph size={FOLDER_GLYPH_SIZE} />)
-            : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
+          <View className="items-center justify-center" style={{ height: GLYPH_LANE_WIDTH, width: GLYPH_LANE_WIDTH }}>
+            {entry.kind === 'folder'
+              ? (renderEntryIcon?.(entry, GLYPH_LANE_WIDTH) ?? (
+                  <FileSystemFolderGlyph size={GLYPH_LANE_WIDTH} variant={hasChildren ? 'filled' : 'empty'} />
+                ))
+              : (renderEntryIcon?.(entry, ICON_SIZE) ?? <FileTypeIcon fileName={entry.name} size={ICON_SIZE} />)}
+          </View>
           <View className="min-w-0 flex-1">
             <View className="flex-row items-center gap-1">
               {entry.pinnedAt ? <Pin color={colors.primary} size={PIN_ICON_SIZE} /> : null}
@@ -396,6 +406,7 @@ export function FileSystemMobileListView({
       <MobileListRow
         childCount={index.children.get(item.path)?.length}
         entry={item}
+        hasChildren={item.kind === 'folder' && folderHasChildren(index, item)}
         isScrubTarget={scrubTarget === item.path}
         isSelected={selectedPaths.has(item.path)}
         onActivate={activate}

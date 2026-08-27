@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The config badge glyph, on the 512-square canvas the badges are authored against. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g>
+    <circle cx="256" cy="256" r="29" fill="none" stroke="#667085" stroke-width="18"/>
+    <path d="M256 187v25m0 88v25m69-69h-25m-88 0h-25m93-49-18 18m-44 62-18 18m80 0-18-18m-44-62-18-18" stroke="#667085" stroke-width="18" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -130,6 +130,8 @@ type MobileKebabProps = Pick<FileSystemMobileMenuProps, 'entry' | 'onToggleSelec
    * the same `open` — the slot's shape decision depends on it.
    */
   menuProps: ContextMenuHookReturn['menuProps'];
+  /** Selection mode has taken the slot: keep the kebab mounted but inert and glyph-less. */
+  disabled: boolean;
 };
 
 /**
@@ -142,7 +144,7 @@ type MobileKebabProps = Pick<FileSystemMobileMenuProps, 'entry' | 'onToggleSelec
  * keeps the kebab mounted while this menu is open, so the selection the tap just
  * produced cannot unmount the menu underneath it (see `FileSystemMobileMenu`).
  */
-function MobileKebab({ entry, menuProps, onToggleSelect, testID }: MobileKebabProps) {
+function MobileKebab({ disabled, entry, menuProps, onToggleSelect, testID }: MobileKebabProps) {
   // Stable handle for `HoldItem onHold` — a fresh arrow per render would
   // rebuild the hook's `latest` ref on every render of the slot.
   const handleHold = useCallback(() => onToggleSelect(entry), [entry, onToggleSelect]);
@@ -150,24 +152,29 @@ function MobileKebab({ entry, menuProps, onToggleSelect, testID }: MobileKebabPr
   return (
     <HoldItem
       activateOn="tap"
+      disabled={disabled}
       items={menuProps.items}
       onHold={handleHold}
       onOpenChange={menuProps.onOpenChange}
-      testID={testID ? `${testID}${MOBILE_KEBAB_SUFFIX}` : undefined}
+      // While the checkbox takes the slot the kebab must not stay queryable — the
+      // stories assert the kebab is gone once selection mode is on.
+      testID={disabled || !testID ? undefined : `${testID}${MOBILE_KEBAB_SUFFIX}`}
     >
-      {/* The button role the kebab exposes: `HoldItem`'s wrapper carries the tap
-          (and its twin), while this element is the accessible name — the same
-          `role="button"` the old `trigger="pressable"` rendered. A `View`, not a
-          `Pressable`: a Pressable's responder swallows the click (its `onClick`
-          calls `stopPropagation` even with no `onPress`), which would starve the
-          wrapper's tap, so the press must not double-fire. */}
-      <View
-        accessibilityLabel={`More actions for ${entry.name}`}
-        accessibilityRole="button"
-        className="size-7 items-center justify-center"
-      >
-        <ThemedIcon icon={More} size={16} token="muted-foreground" />
-      </View>
+      {disabled ? null : (
+        /* The button role the kebab exposes: `HoldItem`'s wrapper carries the tap
+           (and its twin), while this element is the accessible name — the same
+           `role="button"` the old `trigger="pressable"` rendered. A `View`, not a
+           `Pressable`: a Pressable's responder swallows the click (its `onClick`
+           calls `stopPropagation` even with no `onPress`), which would starve the
+           wrapper's tap, so the press must not double-fire. */
+        <View
+          accessibilityLabel={`More actions for ${entry.name}`}
+          accessibilityRole="button"
+          className="size-7 items-center justify-center"
+        >
+          <ThemedIcon icon={More} size={16} token="muted-foreground" />
+        </View>
+      )}
     </HoldItem>
   );
 }
@@ -177,19 +184,32 @@ function MobileKebab({ entry, menuProps, onToggleSelect, testID }: MobileKebabPr
  * return hides it entirely when there is no context menu to offer and no
  * selection to toggle into.
  *
- * One wrinkle: while the kebab's *own* menu is open the kebab stays in the slot
- * even though `selecting` is true. The kebab tap both opens the menu and selects
- * the entry (see `MobileKebab`), and the overlay is rendered through the
- * provider's portal by the kebab's `HoldItem` — flipping the slot to the checkbox
- * under the open menu would unmount that menu in the same commit that produced
- * it. The flip waits for the menu to close; `selecting` alone decides the shape
- * from then on.
+ * The kebab's `HoldItem` stays mounted for the slot's whole life, and `selecting`
+ * only disables it and hides its glyph while the checkbox takes the slot. That is
+ * the performance fix: the old code swapped the two shapes, so unselecting the
+ * last entry remounted a `HoldItem` (plus its portal twin) for every row at once —
+ * the multi-second stall. Keeping it mounted also removes the old wrinkle of
+ * deferring the flip while the kebab's own menu is open; the menu's `HoldItem`
+ * never unmounts, so nothing has to wait for it to close.
  */
 export function FileSystemMobileMenu(props: FileSystemMobileMenuProps) {
   // Resolved here, not inside `MobileKebab`, so the slot's shape decision and
   // the kebab's menu read the same `open` state.
   const { menuProps } = useContextMenu(props.entry, props.getContextMenuActions, props.onContextMenuAction);
   if (!props.getContextMenuActions) return props.selecting ? <MobileCheckbox {...props} /> : null;
-  if (props.selecting && !menuProps.open) return <MobileCheckbox {...props} />;
-  return <MobileKebab entry={props.entry} menuProps={menuProps} onToggleSelect={props.onToggleSelect} testID={props.testID} />;
+  // The checkbox appears once selection mode is on and the kebab's own menu (if
+  // any) has closed; the kebab stays mounted underneath it, disabled.
+  const showCheckbox = props.selecting && !menuProps.open;
+  return (
+    <>
+      <MobileKebab
+        disabled={showCheckbox}
+        entry={props.entry}
+        menuProps={menuProps}
+        onToggleSelect={props.onToggleSelect}
+        testID={props.testID}
+      />
+      {showCheckbox ? <MobileCheckbox {...props} /> : null}
+    </>
+  );
 }

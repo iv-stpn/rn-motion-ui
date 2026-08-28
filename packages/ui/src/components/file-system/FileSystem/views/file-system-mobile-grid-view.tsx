@@ -11,7 +11,7 @@
 // selection keeps dragging past the escape slop, lifting the multi-selection onto
 // a folder tile — the drag wiring mirrors the desktop `IconTile`.
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import type { GestureResponderEvent, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Pressable, ScrollView, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
@@ -99,7 +99,7 @@ type MobileGridTileProps = Pick<
 };
 
 /** One tile: a tappable glyph + two-line name, with the kebab/checkbox overlaid to the right of the name. */
-function MobileGridTile({
+const MobileGridTile = memo(function MobileGridTileComponent({
   draggable,
   ensureChildren,
   entry,
@@ -283,7 +283,7 @@ function MobileGridTile({
       {tile}
     </FileSystemDropzone>
   );
-}
+});
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: the tile is a single render layer, so its body is one function
 export function FileSystemMobileGridView({

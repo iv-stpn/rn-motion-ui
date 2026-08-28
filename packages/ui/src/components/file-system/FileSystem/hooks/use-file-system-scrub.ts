@@ -25,8 +25,10 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { fireHapticFeedback } from '../../../../lib/haptics';
 import type { HapticFeedbackVariant } from '../../../../lib/haptics-types';
 import { type DragTuning, resolveDragBehavior } from '../../../gestures/drag-behavior';
-import { runBetween } from '../logic/file-system-selection';
+import { type FileSystemScrubHit, resolveScrubDirection, resolveScrubRun, type ScrubDirection } from '../logic/file-system-scrub';
 import type { FileSystemEntry } from '../types/file-system.types';
+
+export type { FileSystemScrubHit, ScrubDirection } from '../logic/file-system-scrub';
 
 /** What the touch callbacks remember between frames, on a shared value because they are worklets. */
 type ScrubArm = {
@@ -54,6 +56,9 @@ type ScrubState = {
   startPath: string;
   /** Fixed for the whole drag by the start entry's state: select or deselect the run. */
   mode: 'add' | 'remove';
+  /** The direction the drag set off in, locked on the first move off the anchor — an
+   *  over-drag back past the anchor leaves it out, a same-direction over-drag keeps it. */
+  direction: ScrubDirection | null;
 };
 
 type ScrubGestureParams = { onStart: (x: number, y: number) => void; onMove: (x: number, y: number) => void; onEnd: () => void };
@@ -79,29 +84,6 @@ export type FileSystemScrubSession = {
 };
 
 /**
- * What the finger resolved to for one scrub move: an entry, an over-drag past
- * either edge of the list/grid, or nothing (empty space between entries).
- */
-export type FileSystemScrubHit = { kind: 'item'; path: string } | { kind: 'beyond'; side: 'above' | 'below' } | null;
-
-/**
- * The run one scrub move commits. Over an entry it is the contiguous span from the
- * anchor to it; past an edge it is everything on the far side of the anchor, with
- * the anchor itself cancelled — the entry the drag began on is left out. `below`
- * spans the anchor to the end; `above` spans the start to the anchor.
- */
-function resolveScrubRun(
-  scrub: ScrubState,
-  hit: NonNullable<FileSystemScrubHit>,
-  orderedPaths: readonly string[],
-): string[] | null {
-  if (hit.kind === 'item') return runBetween(scrub.startPath, hit.path, orderedPaths);
-  const startIndex = orderedPaths.indexOf(scrub.startPath);
-  if (startIndex === -1) return null;
-  return hit.side === 'below' ? orderedPaths.slice(startIndex + 1) : orderedPaths.slice(0, startIndex);
-}
-
-/**
  * The JS side of the scrub. The three callbacks are stable for the component's life —
  * they read the latest selection, ordering and resolver off a ref — so the native
  * gesture never has to rebuild mid-scrub.
@@ -123,7 +105,7 @@ export function useFileSystemScrubSession(params: FileSystemScrubSessionParams):
     // The Photos model: the start entry's state decides the whole drag. An unselected
     // start adds the run; a selected start removes it — so dragging over an
     // already-selected entry is how you clear a run without tapping each one.
-    scrubRef.current = { base, startPath, mode: base.has(startPath) ? 'remove' : 'add' };
+    scrubRef.current = { base, startPath, mode: base.has(startPath) ? 'remove' : 'add', direction: null };
     lastPathRef.current = startPath;
     setScrubTarget(startPath);
   }, []);
@@ -134,7 +116,10 @@ export function useFileSystemScrubSession(params: FileSystemScrubSessionParams):
     const { orderedPaths, onMarquee, onDeselectMarquee, resolveItemAt } = paramsRef.current;
     const hit = resolveItemAt(x, y);
     if (!hit) return;
-    const run = resolveScrubRun(scrub, hit, orderedPaths);
+    // Lock the direction on the first move off the anchor, so an over-drag can tell
+    // a same-direction sweep (anchor kept) from a reversal (anchor cancelled).
+    if (scrub.direction === null) scrub.direction = resolveScrubDirection(scrub.startPath, hit, orderedPaths);
+    const run = resolveScrubRun(scrub.startPath, scrub.direction, hit, orderedPaths);
     if (!run) return;
     // Re-evaluating from `base` each move is what lets the finger drag back over a run
     // it just cleared and re-add it, instead of sticking to the first clear.

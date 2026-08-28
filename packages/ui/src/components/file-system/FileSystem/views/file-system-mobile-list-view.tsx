@@ -10,7 +10,7 @@
 // a folder row — the drag wiring mirrors the desktop list view (`ListRow`), with
 // no hover anywhere: a phone has no right button and no pointer to hover with.
 
-import { useCallback, useMemo, useRef } from 'react';
+import { memo, useCallback, useMemo, useRef } from 'react';
 import type { GestureResponderEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { FlatList, Pressable, View } from 'react-native';
 import { HeartFill as Heart } from 'rn-motion-ui-icons/icons/heart-fill';
@@ -125,7 +125,7 @@ type MobileListRowProps = {
  * overlaid to the right like the list view's disclosure chevron — a sibling, never
  * a child of the row button, so the two Pressables never nest.
  */
-function MobileListRow({
+const MobileListRow = memo(function MobileListRowComponent({
   childCount,
   draggable,
   ensureChildren,
@@ -274,7 +274,7 @@ function MobileListRow({
       {row}
     </FileSystemDropzone>
   );
-}
+});
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: the view wires hold-to-select, marquee/scrub sessions, drag auto-scroll, and the FlatList row renderer around shared refs/state — splitting would scatter the interdependent selection and scrub plumbing
 export function FileSystemMobileListView({

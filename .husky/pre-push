@@ -1,3 +1,5 @@
+node packages/ui/scripts/check-no-hardcoded-colors.mjs
+
 node packages/ui/scripts/check-readme.mjs --fix
 
 # If README.md was resynced, auto-commit the change so it goes out with the push.

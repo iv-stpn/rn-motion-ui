@@ -437,7 +437,7 @@ export function RadioCard({
             accent at alpha 0, so the resting card shows no outline and leans on
             the wrapper's surface fill instead. Both ends run through `tintAt`
             for the reason spelled out on that helper — a literal `transparent`
-            end would interpolate through `rgba(0,0,0,0)` and darken the edge on
+            end would interpolate through transparent black and darken the edge on
             the way in. The reserved `border` width keeps the box from shifting. */}
         <MotiView
           animate={{

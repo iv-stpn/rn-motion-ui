@@ -11,17 +11,7 @@
 // `preventDefault` the browser refuses the drop and shows a "no" cursor), and that
 // a payload arrived from outside the page entirely.
 
-import {
-  type ReactNode,
-  type Ref,
-  useCallback,
-  useEffect,
-  useId,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useSyncExternalStore,
-} from 'react';
+import { type ReactNode, type Ref, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef } from 'react';
 import { type LayoutChangeEvent, View, type ViewProps } from 'react-native';
 import { cn } from '../../../lib/cn';
 import type {
@@ -35,8 +25,8 @@ import type {
   DragzoneRenderState,
 } from '../drag.types';
 import { useDragScope } from '../drag-scope';
-import { type DragzoneRegistration, getZoneStanding, registerDragzone, subscribeDragStore } from '../drag-store';
-import { useLatest } from '../use-drag-store';
+import { type DragzoneRegistration, registerDragzone } from '../drag-store';
+import { useLatest, useZoneStanding } from '../use-drag-store';
 import { useDragzoneWeb } from './use-dragzone-web';
 
 export type DragzoneProps = Omit<ViewProps, 'children'> & {
@@ -202,18 +192,13 @@ export function Dragzone({
     [skipRectMeasure, remeasure, consumerOnLayout],
   );
 
-  // This zone's standing in the drag, subscribed per zone rather than to the whole
-  // snapshot: the store caches one object per entry and replaces it only when that
-  // zone's own fields changed, so `Object.is` in `useSyncExternalStore` lets React
-  // skip this render on every crossing that happens somewhere else in the tree. A
-  // file system's every folder row is a `<Dragzone>`, so a full-snapshot
-  // subscription here re-rendered the entire row list on each folder boundary the
-  // pointer crossed — the drag lag the per-zone subscription exists for.
-  const standing = useSyncExternalStore(
-    subscribeDragStore,
-    () => getZoneStanding(id),
-    () => getZoneStanding(id),
-  );
+  // This zone's standing in the drag, on this zone's own channel: the store wakes
+  // only the entries whose fields actually moved, so a crossing between two other
+  // zones neither re-renders this one nor calls back into it. A file system's every
+  // folder row is a `<Dragzone>`, so a whole-store subscription here meant every row
+  // in the list was woken on each folder boundary the pointer crossed — the drag lag
+  // the per-zone channel exists for.
+  const standing = useZoneStanding(id);
   const isExternalOver = useDragzoneWeb({ acceptsExternal, dropEffect, enabled: !disabled, nodeRef, zoneId: id });
 
   useImperativeHandle(ref, () => ({ getId: () => id, getNode: () => nodeRef.current, measure, remeasure }), [

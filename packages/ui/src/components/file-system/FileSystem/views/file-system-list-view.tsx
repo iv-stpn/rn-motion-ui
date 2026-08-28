@@ -24,7 +24,7 @@ import { useIsLifting } from '../../../gestures/DragManager/multi-drag-scope';
 import type { DragzoneAcceptEvent, DragzoneHandle } from '../../../gestures/drag.types';
 import { useDragScope } from '../../../gestures/drag-scope';
 import { refreshDragzones, shiftZoneRects } from '../../../gestures/drag-store';
-import { useActiveDrag, useDragzoneState } from '../../../gestures/use-drag-store';
+import { useDragzoneState, useIsDragging } from '../../../gestures/use-drag-store';
 import { ThemedIcon } from '../../../icon/themed-icon';
 import { HoldItem, type HoldItemDragOptions } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
@@ -541,8 +541,11 @@ export function FileSystemListView({
 
   const rows = useMemo(() => flattenFileSystemRows({ currentPath, expanded, index }), [currentPath, expanded, index]);
 
-  const activeDrag = useActiveDrag();
-  const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
+  // The lifecycle channel, not the snapshot: this component renders the row list,
+  // so re-rendering it on every zone crossing rebuilt every row for each folder
+  // boundary the pointer swept over. It only ever needed the transition.
+  const dragging = useIsDragging();
+  const isDragging = useCallback(() => dragging, [dragging]);
   // The manager this view's zones registered under — the scope the scroll
   // correction applies to, so a second FileSystem on the page keeps its own boxes.
   const { managerPath } = useDragScope();
@@ -556,11 +559,10 @@ export function FileSystemListView({
   const [dragActive, setDragActive] = useState(false);
   // biome-ignore lint/plugin: deferring the overlay mount past `dragstart` is the whole point
   useEffect(() => {
-    const next = activeDrag !== null;
-    if (next === dragActive) return;
-    const id = setTimeout(() => setDragActive(next), 0);
+    if (dragging === dragActive) return;
+    const id = setTimeout(() => setDragActive(dragging), 0);
     return () => clearTimeout(id);
-  }, [activeDrag, dragActive]);
+  }, [dragActive, dragging]);
 
   // During an in-library drag the enter animation is suppressed: spring-load
   // inserts children that otherwise animate 0 → full height over ~280ms, during
@@ -571,8 +573,8 @@ export function FileSystemListView({
   const { augmentedEntries: augmentedRows, onExitComplete } = useFileSystemRowAnimation(
     rows,
     currentPath,
-    (row) => row.entry.path,
-    activeDrag === null,
+    keyExtractor,
+    !dragging,
   );
   rowsRef.current = augmentedRows;
 

@@ -19,6 +19,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  */
 const EXIT_ANIM_DURATION_MS = 400;
 
+/** Shared empty source for the key sets the unchanged path skips building. */
+const NO_KEYS: readonly string[] = [];
+
 /**
  * Timeout-managed cleanup for exiting entries. The callback-based path
  * (`onExitComplete`) is the primary removal mechanism — a timeout is only
@@ -87,6 +90,12 @@ export function useFileSystemRowAnimation<T>(
   const prevEntriesRef = useRef<T[]>([]);
   const prevFolderRef = useRef(folderPath);
   const prevShouldAnimateRef = useRef(shouldAnimate);
+  // The three refs the identity reuse below rests on: the array last handed out,
+  // whether it carries `entering` tags that the next render has to clear, and how
+  // many exiting rows were folded into it.
+  const prevResultRef = useRef<AugmentedEntry<T>[] | null>(null);
+  const prevHadEnteringRef = useRef(false);
+  const prevExitingCountRef = useRef(0);
 
   // Exiting rows: key → { data, position }. Ref for synchronous access during
   // render; `exitTick` counter drives re-renders when an exit completes.
@@ -97,15 +106,33 @@ export function useFileSystemRowAnimation<T>(
   const folderChanged = prevFolderRef.current !== folderPath;
   const animateToggled = prevShouldAnimateRef.current !== shouldAnimate;
 
+  // ── The unchanged case ──────────────────────────────────────────────────────
+  //
+  // The caller handed back the very same array, in the same folder, with no exit
+  // in flight and no `entering` tag left to clear. Nothing can have entered or
+  // left, so the whole diff below — three `Set`s and a `map` over every row — is
+  // provably a no-op, and the answer is the array we returned last time.
+  //
+  // This is the overwhelmingly common call: a view re-renders for a scroll, a
+  // selection, a drag starting, and its row list is untouched. Paying O(rows) in
+  // allocations to rediscover that on every one of those is what made a view's
+  // re-render cost scale with how much was in it.
+  const unchanged =
+    currentEntries === prevEntriesRef.current &&
+    !(folderChanged || animateToggled) &&
+    !prevHadEnteringRef.current &&
+    exitingRef.current.size === prevExitingCountRef.current;
+  const cached = unchanged ? prevResultRef.current : null;
+
   // ── Diff current vs previous ────────────────────────────────────────────────
-  const currentKeys = currentEntries.map(getKey);
-  const currentKeySet = new Set(currentKeys);
-  const prevKeySet = new Set(prevKeysRef.current);
+  const currentKeys = cached === null ? currentEntries.map(getKey) : prevKeysRef.current;
+  const currentKeySet = new Set(cached === null ? currentKeys : NO_KEYS);
+  const prevKeySet = new Set(cached === null ? prevKeysRef.current : NO_KEYS);
 
   const enteringSet = new Set<string>();
   const exitingSet = new Set<string>();
 
-  const canDiff = !(folderChanged || animateToggled) && shouldAnimate && prevKeysRef.current.length > 0;
+  const canDiff = cached === null && !(folderChanged || animateToggled) && shouldAnimate && prevKeysRef.current.length > 0;
   if (canDiff) {
     for (const key of currentKeySet) {
       if (!(prevKeySet.has(key) || exitingRef.current.has(key))) enteringSet.add(key);
@@ -129,25 +156,54 @@ export function useFileSystemRowAnimation<T>(
   if (folderChanged || animateToggled) exitingRef.current.clear();
 
   // ── Build augmented entries ─────────────────────────────────────────────────
-  const augmentedEntries: AugmentedEntry<T>[] = [];
+  //
+  // Two identity rules, both load-bearing for the views that consume this.
+  //
+  // A row with no animation status is passed through *as it came in* rather than
+  // shallow-copied. The copy was the expensive part: it gave every row a new
+  // identity on every render, so any re-render of the view — a scroll, a selection,
+  // a drag crossing — rebuilt the entire list, defeated `memo` on the row
+  // components, and churned the `useMemo`/`useCallback` chains that hang off this
+  // array (`overlayZones` → `overlayFolderPaths` → `renderItem`). Steady state is
+  // now literally the caller's own array elements, which are memoized upstream.
+  //
+  // And the array itself is reused whole when the `unchanged` test above held —
+  // the common case by far, since exits and entrances happen only when the
+  // folder's contents actually change.
+  const exitingList = cached === null ? [...exitingRef.current.entries()].sort(([, a], [, b]) => a.position - b.position) : [];
 
-  for (const entry of currentEntries)
-    augmentedEntries.push({ ...entry, _animStatus: enteringSet.has(getKey(entry)) ? 'entering' : undefined });
+  let augmentedEntries: AugmentedEntry<T>[];
+  if (cached === null) {
+    augmentedEntries = [];
+    for (const entry of currentEntries) {
+      // Only a row that is actually animating needs the wrapper object.
+      if (enteringSet.has(getKey(entry))) augmentedEntries.push({ ...entry, _animStatus: 'entering' as const });
+      // biome-ignore lint/plugin: ts/no-as-cast — `_animStatus` is optional, so every `T` already *is* an `AugmentedEntry<T>` at runtime; TS just cannot prove that for an unconstrained generic. Passing the caller's own object through, rather than copying it, is the point of this branch.
+      else augmentedEntries.push(entry as AugmentedEntry<T>);
+    }
 
-  // Insert exiting entries at their original positions, sorted front-to-back so
-  // earlier insertions don't shift later targets.
-  const exitingList = [...exitingRef.current.entries()].sort(([, a], [, b]) => a.position - b.position);
-  for (const [, { data, position }] of exitingList)
-    augmentedEntries.splice(Math.min(position, augmentedEntries.length), 0, {
-      ...data,
-      _animStatus: 'exiting' as const,
-    });
+    // Insert exiting entries at their original positions, sorted front-to-back so
+    // earlier insertions don't shift later targets.
+    for (const [, { data, position }] of exitingList)
+      augmentedEntries.splice(Math.min(position, augmentedEntries.length), 0, {
+        ...data,
+        _animStatus: 'exiting' as const,
+      });
+  } else augmentedEntries = cached;
 
   // ── Store for next render ───────────────────────────────────────────────────
   prevKeysRef.current = currentKeys;
   prevEntriesRef.current = currentEntries;
   prevFolderRef.current = folderPath;
   prevShouldAnimateRef.current = shouldAnimate;
+  // Whether *this* render tagged anything `entering`: the next render must rebuild
+  // to clear those tags, so a reuse cannot hand back a row still marked as entering.
+  prevHadEnteringRef.current = enteringSet.size > 0;
+  // Read off the map, not off `exitingList` — the unchanged path never builds that
+  // list, and zeroing the count here would make the next render think an exit had
+  // completed and rebuild for nothing.
+  prevExitingCountRef.current = exitingRef.current.size;
+  prevResultRef.current = augmentedEntries;
 
   // ── Exit completion callback ─────────────────────────────────────────────────
   const onExitComplete = useCallback((key: string) => {

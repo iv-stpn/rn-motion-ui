@@ -18,7 +18,7 @@ import {
 import { LayoutAnimationConfig } from 'react-native-reanimated';
 import { useDragScope } from '../../../gestures/drag-scope';
 import { shiftZoneRects } from '../../../gestures/drag-store';
-import { useActiveDrag } from '../../../gestures/use-drag-store';
+import { useIsDragging } from '../../../gestures/use-drag-store';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
@@ -180,8 +180,11 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
   const scrollTo = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
   useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
 
-  const activeDrag = useActiveDrag();
-  const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
+  // The lifecycle channel, not the snapshot: this component renders the tile grid,
+  // so re-rendering it on every zone crossing rebuilt every tile for each folder
+  // boundary the pointer swept over. It only ever needed the transition.
+  const dragging = useIsDragging();
+  const isDragging = useCallback(() => dragging, [dragging]);
   // The manager this view's zones registered under — the scope the scroll
   // correction applies to, so a second FileSystem on the page keeps its own boxes.
   const { managerPath } = useDragScope();

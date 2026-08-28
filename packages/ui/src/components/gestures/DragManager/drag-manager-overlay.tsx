@@ -16,7 +16,7 @@ import type { DragPoint, DragRect } from '../drag.types';
 import { ghostOffset } from '../drag-geometry';
 import { DragGhost } from '../drag-ghost';
 import { getDragPoint, getDragSnapshot } from '../drag-store';
-import { useDragMove, useDragSnapshot } from '../use-drag-store';
+import { useActiveDrag, useDragMove, useDragPreview } from '../use-drag-store';
 
 export type DragManagerOverlayProps = {
   /** This manager's own id — it draws only the previews addressed to it. */
@@ -43,7 +43,11 @@ export type DragManagerOverlayProps = {
  * browser makes its own drag image and a second one would double it.
  */
 export function DragManagerOverlay({ hostId, measure, rectRef }: DragManagerOverlayProps) {
-  const { drag, preview } = useDragSnapshot();
+  // Both on the lifecycle channel: the ghost is fixed at the lift and cleared at the
+  // release, so reading them off the whole snapshot re-rendered this overlay on every
+  // zone crossing only to learn that neither had changed.
+  const drag = useActiveDrag();
+  const preview = useDragPreview();
   const pos = useRef(new Animated.ValueXY()).current;
   const opacity = useRef(new Animated.Value(1)).current;
   const [settling, setSettling] = useState(false);

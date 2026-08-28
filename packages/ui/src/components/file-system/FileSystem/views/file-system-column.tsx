@@ -18,7 +18,7 @@ import type { DragRect, DragzoneEntry, DragzoneRenderState } from '../../../gest
 import { rectsIntersect } from '../../../gestures/drag-geometry';
 import { useDragScope } from '../../../gestures/drag-scope';
 import { shiftZoneRects } from '../../../gestures/drag-store';
-import { useActiveDrag } from '../../../gestures/use-drag-store';
+import { useIsDragging } from '../../../gestures/use-drag-store';
 import { HoldItem } from '../../../menus/HoldMenu/hold-menu';
 import { Text } from '../../../typography/Text/text';
 import { FileSystemFolderGlyph } from '../../FileIcon/file-icons';
@@ -348,8 +348,11 @@ function FileSystemColumnImpl({
   const scrollTo = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ animated: false, offset }), []);
   useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
 
-  const activeDrag = useActiveDrag();
-  const isDragging = useCallback(() => activeDrag !== null, [activeDrag]);
+  // The lifecycle channel, not the snapshot: this component renders the pane's row
+  // list, so re-rendering it on every zone crossing rebuilt every row for each
+  // folder boundary the pointer swept over. It only ever needed the transition.
+  const dragging = useIsDragging();
+  const isDragging = useCallback(() => dragging, [dragging]);
   // The manager this pane's zones registered under — the scope the scroll
   // correction applies to, so a second FileSystem on the page keeps its own boxes.
   const { managerPath } = useDragScope();
@@ -360,14 +363,14 @@ function FileSystemColumnImpl({
   const viewportRef = useRef<DragRect | null>(null);
   // biome-ignore lint/plugin: measuring the pane once per drag for a scroll correction is a layout side-effect, not derived render state
   useEffect(() => {
-    if (activeDrag === null) {
+    if (!dragging) {
       viewportRef.current = null;
       return;
     }
     containerRef.current?.measureInWindow((x, y, width, height) => {
       viewportRef.current = { height, width, x, y };
     });
-  }, [activeDrag]);
+  }, [dragging]);
   const isInThisPane = useCallback((entry: DragzoneEntry) => {
     const viewport = viewportRef.current;
     return isZoneInScrollableContent(entry) && viewport !== null && entry.rect !== null && rectsIntersect(entry.rect, viewport);

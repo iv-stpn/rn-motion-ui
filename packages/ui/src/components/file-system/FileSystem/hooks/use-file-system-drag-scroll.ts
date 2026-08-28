@@ -11,7 +11,7 @@
 // begins a scroll when a drag lifts, feeds the pointer in, and ends it on release.
 
 import { useCallback, useEffect } from 'react';
-import { useActiveDrag, useDragMove } from '../../../gestures/use-drag-store';
+import { useDragMove, useIsDragging } from '../../../gestures/use-drag-store';
 import { type UseFileSystemAutoScrollParams, useFileSystemAutoScroll } from './use-file-system-auto-scroll';
 
 export type UseFileSystemDragScrollParams = UseFileSystemAutoScrollParams & {
@@ -39,8 +39,10 @@ export function useFileSystemDragScroll({
 }: UseFileSystemDragScrollParams): void {
   const { begin, move, end } = useFileSystemAutoScroll({ containerRef, scrollTo, scrollOffsetRef });
 
-  const drag = useActiveDrag();
-  const isDragging = enabled && drag !== null;
+  // The lifecycle channel: this hook runs inside a view that renders a row list, so
+  // a subscription that also fired on zone crossings would re-render that whole list
+  // once per folder boundary the drag sweeps over.
+  const isDragging = useIsDragging() && enabled;
 
   // The box is measured when a drag starts and dropped when it ends, which also
   // stops any run still running — a drag released in the scroll zone would

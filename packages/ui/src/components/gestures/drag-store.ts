@@ -109,6 +109,30 @@ const listeners = new Set<() => void>();
 const moveListeners = new Set<(point: DragPoint) => void>();
 /** Woken when a scroll shifted every zone's cached rect under a live drag — the signal that an overlay painting from `getZoneRect` must re-paint. */
 const shiftListeners = new Set<() => void>();
+/**
+ * Woken only when the drag *itself* starts or ends — never on a crossing.
+ *
+ * The coarse channel above reports crossings too, and a crossing is the most
+ * frequent thing that happens in a drag: sweeping a pointer across a folder list
+ * fires one per boundary. Anything that only wants to know "is a drag in flight"
+ * — a view that mounts overlay zones, a manager that draws a ghost, an
+ * auto-scroller — was re-rendering on every one of those, and in a list view
+ * that meant rebuilding the whole row list per boundary crossed. Splitting the
+ * lifecycle out gives those consumers exactly two notifications per drag.
+ */
+const activeDragListeners = new Set<() => void>();
+/**
+ * Per-zone listeners, woken only when *that* zone's standing changed.
+ *
+ * `publish` already keeps one standing object per zone so a subscriber can bail
+ * out by identity, but every zone was still being *called* on every publish — a
+ * thousand no-op wake-ups per crossing on a large list. The set is keyed by zone
+ * id so a crossing wakes exactly the two zones it is a party to.
+ */
+const zoneListeners = new Map<string, Set<() => void>>();
+
+/** The `drag` the last publish reported, so the lifecycle channel can fire on transitions only. */
+let publishedDrag: ActiveDrag | null = null;
 
 /** Whether `path` sits under `prefix` in the manager tree — the zone-owns check. */
 function pathIsUnder(path: readonly string[], prefix: readonly string[]): boolean {
@@ -123,35 +147,64 @@ function isIsolating(managerId: string): boolean {
   return managers.get(managerId)?.getConfig().isolate ?? false;
 }
 
+/** Wake the listeners registered for one zone, if any. */
+function notifyZone(zoneId: string) {
+  const subscribers = zoneListeners.get(zoneId);
+  if (subscribers === undefined) return;
+  for (const listener of subscribers) listener();
+}
+
 /**
- * Rebuild the snapshot and wake every subscriber.
+ * Re-derive the published state and wake exactly the subscribers it moved.
  *
- * Called only when something render-visible changed — a drag starting or ending,
- * the pointer crossing a zone edge, a zone registering mid-drag. Pointer movement
- * inside one zone does not come through here; that is what `moveListeners` is for.
+ * Called whenever something *might* have changed — a drag starting or ending, the
+ * pointer crossing a zone edge, a zone registering mid-drag, a scroll shifting the
+ * boxes. Pointer movement inside one zone does not come through here; that is what
+ * `moveListeners` is for.
  *
- * The same pass refreshes every zone's cached standing. A zone's standing is the
- * object *its* subscriber compares by identity, so each entry keeps its previous
- * object unless a field of its own changed — a crossing re-renders the zone left
- * and the zone entered, and nothing else. `eligible` is built as a Set first so
- * each per-zone lookup is O(1) rather than an `includes` over the whole array per
- * zone (O(n²) per publish on a tree of rows).
+ * Every wake-up is conditional on the thing that subscriber reads having actually
+ * changed, which is the property the whole drag path rests on. It used to allocate
+ * a fresh snapshot and call every listener unconditionally, so the many publishes
+ * that change nothing render-visible — a zone registering, a scroll shift, a
+ * re-resolve that picked the same winner — each re-rendered every consumer of the
+ * coarse channel. In a file system those consumers are whole views, and a view
+ * re-render rebuilds its row list, so a drag sweeping across folders was doing
+ * O(rows) work per boundary crossed.
+ *
+ * Three channels, narrowest first:
+ *  • per-zone standings — only the zones whose own fields moved (a crossing: two);
+ *  • the lifecycle channel — only when the drag itself started or ended;
+ *  • the snapshot channel — only when the snapshot object is genuinely new.
+ *
+ * `eligible` is built as a Set so each per-zone lookup is O(1) rather than an
+ * `includes` over the whole array per zone (O(n²) per publish on a tree of rows).
  */
 function publish() {
-  snapshot =
-    session === null
-      ? IDLE
-      : {
-          drag: session.drag,
-          eligibleZoneIds: session.eligible,
-          overZoneId: session.overZoneId,
-          preview: session.preview,
-        };
   const drag = session?.drag ?? null;
+  const overZoneId = session?.overZoneId ?? null;
+  // Reference-stable while the set holds — see `recomputeEligible`.
+  const eligibleIds = session?.eligible ?? NO_IDS;
+  const preview = session?.preview ?? null;
+
+  // The snapshot is rebuilt only when one of its own fields moved, so
+  // `useSyncExternalStore` can bail out on identity. `DragSnapshot` documents
+  // this ("identity is stable while nothing render-visible changes"); before, the
+  // unconditional rebuild quietly broke that contract on every call.
+  const previousSnapshot = snapshot;
+  if (
+    previousSnapshot.drag !== drag ||
+    previousSnapshot.overZoneId !== overZoneId ||
+    previousSnapshot.eligibleZoneIds !== eligibleIds ||
+    previousSnapshot.preview !== preview
+  )
+    snapshot = session === null ? IDLE : { drag, eligibleZoneIds: eligibleIds, overZoneId, preview };
+
   // An empty set when idle — the same shape either way, so each zone lookup is
   // one `Set#has` with no null branch.
-  const eligible = new Set(session?.eligible ?? NO_IDS);
-  const overZoneId = session?.overZoneId ?? null;
+  const eligible = new Set(eligibleIds);
+  // Collected rather than notified in place: a listener is free to read any zone's
+  // standing, so every entry must be settled before the first one is woken.
+  const moved: string[] = [];
   for (const entry of zonesList) {
     const isEligible = eligible.has(entry.id);
     const isOver = overZoneId === entry.id;
@@ -161,10 +214,18 @@ function publish() {
     // the object it has. Building the object inside the guard also skips the
     // allocation for every untouched zone — a crossing publishes to the whole
     // tree, and on a large row list that is most of them.
-    if (previous === undefined || previous.drag !== drag || previous.isEligible !== isEligible || previous.isOver !== isOver)
+    if (previous === undefined || previous.drag !== drag || previous.isEligible !== isEligible || previous.isOver !== isOver) {
       entry.standing = { drag, isEligible, isOver };
+      moved.push(entry.id);
+    }
   }
-  for (const listener of listeners) listener();
+
+  for (const zoneId of moved) notifyZone(zoneId);
+  if (publishedDrag !== drag) {
+    publishedDrag = drag;
+    for (const listener of activeDragListeners) listener();
+  }
+  if (snapshot !== previousSnapshot) for (const listener of listeners) listener();
 }
 
 /** The managers enclosing `path`, innermost first — the order callbacks fire in. */
@@ -191,12 +252,27 @@ function zoneList(): DragzoneEntry[] {
   return zonesList;
 }
 
+/**
+ * Re-derive which zones would take this drag, keeping the previous array when the
+ * answer is unchanged.
+ *
+ * The identity is what `publish` compares to decide whether the snapshot moved, so
+ * an unconditional reassignment would make every caller of this look like a
+ * render-visible change. Most callers are not: eligibility is deliberately decided
+ * with `hitTest: false`, so it cannot depend on a zone's rect — which means the two
+ * highest-frequency callers, `shiftZoneRects` (once per scroll frame) and
+ * `refreshDragzones` (after every measure), can only ever recompute the same set.
+ * Comparing costs one pass and saves waking the tree.
+ */
 function recomputeEligible() {
   if (session === null) return;
   const { drag, point } = session;
   const sourceRect = sourceRectAt(session, point);
   const params = { drag, external: false, isIsolating, point, sourceRect, transfer: drag.transfer, zones: zoneList() };
-  session.eligible = eligibleZoneIds(params);
+  const next = eligibleZoneIds(params);
+  const current = session.eligible;
+  if (next.length === current.length && next.every((id, index) => id === current[index])) return;
+  session.eligible = next;
 }
 
 function sourceRectAt({ drag }: Session, point: DragPoint): DragRect | null {
@@ -552,6 +628,18 @@ export function getDragSnapshot(): DragSnapshot {
 }
 
 /**
+ * The ghost to draw and the manager that should draw it, or `null`.
+ *
+ * Off the snapshot on purpose: the preview is fixed at the lift and cleared at the
+ * release, so it belongs on the lifecycle channel with {@link getActiveDrag}. Read
+ * from the snapshot instead, the overlay drawing the ghost would re-render on every
+ * zone crossing to learn that the ghost had not changed.
+ */
+export function getDragPreview(): { hostId: string | null; node: ReactNode } | null {
+  return session?.preview ?? null;
+}
+
+/**
  * How one zone stands with respect to the drag in flight, without subscribing to
  * the whole snapshot.
  *
@@ -649,6 +737,51 @@ export function subscribeDragStore(listener: () => void): () => void {
 }
 
 /**
+ * Subscribe to the drag *lifecycle* alone: fired when a drag starts and when it
+ * ends, and at no other time. Pair with `getActiveDrag` in `useSyncExternalStore`.
+ *
+ * This is the channel for anything whose render depends on *whether* a drag is in
+ * flight rather than on where it is — a view that mounts drop overlays for the
+ * duration, a manager drawing a ghost, an edge auto-scroller. Those read one field
+ * off the snapshot, and taking it from `subscribeDragStore` meant re-rendering on
+ * every zone crossing as well: on a folder list that is one full view re-render per
+ * boundary the pointer sweeps over.
+ */
+export function subscribeActiveDrag(listener: () => void): () => void {
+  activeDragListeners.add(listener);
+  return () => {
+    activeDragListeners.delete(listener);
+  };
+}
+
+/**
+ * Subscribe to one zone's standing, woken only when *that* zone's own fields move.
+ *
+ * `getZoneStanding` already returns a reference-stable object so a subscriber can
+ * bail out, but bailing out still costs a call per zone per publish. Keying the
+ * listeners by zone id means a crossing wakes the zone left and the zone entered
+ * and nothing else, which is what keeps the cost of a crossing independent of how
+ * many zones are mounted.
+ *
+ * Subscribing under an id that is not registered is valid and inert: such a zone
+ * reads `IDLE_ZONE` forever and is never woken, which is what lets a consumer
+ * subscribe before its zone's id is known.
+ */
+export function subscribeZoneStanding(zoneId: string, listener: () => void): () => void {
+  let subscribers = zoneListeners.get(zoneId);
+  if (subscribers === undefined) {
+    subscribers = new Set();
+    zoneListeners.set(zoneId, subscribers);
+  }
+  const set = subscribers;
+  set.add(listener);
+  return () => {
+    set.delete(listener);
+    if (set.size === 0) zoneListeners.delete(zoneId);
+  };
+}
+
+/**
  * Subscribe to the pointer, at whatever rate the transport reports it. This is the
  * frame-rate channel: drive an `Animated.Value` from it, never `setState`.
  */
@@ -742,9 +875,12 @@ export function resetDragStore(): void {
   zonesList = [];
   session = null;
   snapshot = IDLE;
+  publishedDrag = null;
   _lastMoveWasFromZoneDrop = false;
   _settling = false;
   listeners.clear();
   moveListeners.clear();
   shiftListeners.clear();
+  activeDragListeners.clear();
+  zoneListeners.clear();
 }

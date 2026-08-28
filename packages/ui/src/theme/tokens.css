@@ -116,9 +116,15 @@
 
   /* Foreground stack — near-extremes carry a whisper of the hue-270 tint.
      `muted` doubles as the raised neutral fill used by tabs, skeletons,
-     segmented controls and the like; `muted-foreground` is its ink. */
+     segmented controls and the like; `muted-foreground` is its ink.
+
+     `muted` is deliberately offset from BOTH neighbours it composites against:
+     it sits 5% below `background` (95%) and 7% below `surface-1` in light, and
+     7.5% above `surface-1` in dark. It used to match `background` outright in
+     light mode, which made every muted track invisible on a page. Keep a
+     ≥4% lightness gap from `background` on either side when retuning. */
   --color-foreground: oklch(18% 0.004 270);
-  --color-muted: oklch(95% 0 0);
+  --color-muted: oklch(90% 0 0);
   --color-muted-foreground: oklch(50% 0.004 270);
   --color-border: oklch(0% 0 0 / 0.1);
 
@@ -386,7 +392,7 @@
   --color-surface-hover: oklch(100% 0 0 / 0.04);
   --color-surface-selected: oklch(100% 0 0 / 0.08);
   --color-foreground: oklch(94% 0.004 270);
-  --color-muted: oklch(24% 0.004 270);
+  --color-muted: oklch(28% 0.004 270);
   --color-muted-foreground: oklch(73% 0.004 270);
   --color-border: oklch(100% 0 0 / 0.1);
   --color-input: oklch(22% 0 0);
@@ -488,7 +494,7 @@
   --color-surface-hover: oklch(0% 0 0 / 0.04);
   --color-surface-selected: oklch(0% 0 0 / 0.08);
   --color-foreground: oklch(18% 0.004 270);
-  --color-muted: oklch(95% 0 0);
+  --color-muted: oklch(90% 0 0);
   --color-muted-foreground: oklch(50% 0.004 270);
   --color-border: oklch(0% 0 0 / 0.1);
   --color-input: oklch(100% 0 0);

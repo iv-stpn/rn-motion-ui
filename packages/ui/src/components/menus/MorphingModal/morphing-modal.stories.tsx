@@ -14,7 +14,7 @@ import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/st
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { useThemeColor } from '../../../theme/use-theme-color';
-import { Button } from '../../form/Button/button';
+import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
 import { MorphingModal } from './morphing-modal';
 

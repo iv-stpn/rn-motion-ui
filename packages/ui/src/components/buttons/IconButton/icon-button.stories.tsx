@@ -10,7 +10,7 @@ import type { SurfaceElevation } from '../../../lib/elevated';
 import { IconButton, type IconButtonProps } from './icon-button';
 
 const meta = {
-  title: 'Form/IconButton',
+  title: 'Buttons/IconButton',
   component: IconButton,
   parameters: { layout: 'centered' },
   args: {

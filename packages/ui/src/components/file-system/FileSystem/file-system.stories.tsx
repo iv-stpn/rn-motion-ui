@@ -14,7 +14,7 @@ import { centerOf, dragOnto, fireDrag, liftDrag, newDragTransfer, settle } from 
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { cn } from '../../../lib/cn';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { Button } from '../../form/Button/button';
+import { Button } from '../../buttons/Button/button';
 import { Draggable } from '../../gestures/Draggable/draggable';
 import { Text } from '../../typography/Text/text';
 import { STORY_PREVIEWS as PREVIEWS, type StoryPreview } from './__stories__/file-system-previews';

@@ -9,7 +9,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './elevated-button';
 
 const meta = {
-  title: 'Form/ElevatedButton',
+  title: 'Buttons/ElevatedButton',
   component: ElevatedButton,
   parameters: { layout: 'centered' },
   args: { children: 'Continue', variant: 'neutral', size: 'md', onPress: fn() },

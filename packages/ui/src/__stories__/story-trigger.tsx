@@ -28,11 +28,11 @@
 
 import { useState } from 'react';
 import { Pressable } from 'react-native';
-import type { ButtonVariant } from '../components/form/Button/button';
-import { Button } from '../components/form/Button/button';
-import type { ButtonShape, ButtonSize } from '../components/form/Button/button-scale';
-import type { ElevatedVariant } from '../components/form/Button/elevated-button';
-import { ElevatedButton } from '../components/form/Button/elevated-button';
+import type { ButtonVariant } from '../components/buttons/Button/button';
+import { Button } from '../components/buttons/Button/button';
+import type { ButtonShape, ButtonSize } from '../components/buttons/Button/button-scale';
+import type { ElevatedVariant } from '../components/buttons/Button/elevated-button';
+import { ElevatedButton } from '../components/buttons/Button/elevated-button';
 import { Text } from '../components/typography/Text/text';
 import { cn } from '../lib/cn';
 import { Choice, ControlCard, Toggle } from './story-harness';

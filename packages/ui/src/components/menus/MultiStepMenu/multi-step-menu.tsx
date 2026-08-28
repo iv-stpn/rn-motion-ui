@@ -19,10 +19,10 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { MenuItem, type MenuItemIcon } from '../../rows/menu-item';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
-import { CloseButton } from '../CloseButton/close-button';
 
 // A lightly-damped spring glides the pane into place with a hair of settle at the
 // end instead of the abrupt start/stop a linear tween gives. Opacity stays a

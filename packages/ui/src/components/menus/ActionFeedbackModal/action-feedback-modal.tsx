@@ -7,7 +7,7 @@ import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
-import { Button } from '../../form/Button/button';
+import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';

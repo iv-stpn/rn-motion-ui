@@ -19,7 +19,7 @@ import {
 } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
-import { Button } from '../../form/Button/button';
+import { Button } from '../../buttons/Button/button';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import type { MultiStepHelpers, MultiStepMenuHandle, MultiStepSection } from './multi-step-menu';

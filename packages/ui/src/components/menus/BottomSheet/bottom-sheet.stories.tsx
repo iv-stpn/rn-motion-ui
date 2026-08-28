@@ -5,7 +5,7 @@ import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
-import { Button } from '../../form/Button/button';
+import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from './bottom-sheet';
 

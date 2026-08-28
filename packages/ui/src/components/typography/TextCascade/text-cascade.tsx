@@ -1,5 +1,5 @@
 import { type StyleProp, View, type ViewStyle } from 'react-native';
-import { ButtonSwapText } from '../../form/Button/button-swap';
+import { ButtonSwapText } from '../../buttons/Button/button-swap';
 import type { TextWeight } from '../Text/text';
 
 export type TextCascadeProps = {

@@ -12,7 +12,7 @@ import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { cn } from '../../lib/cn';
 import { SURFACE_CLASSNAME } from '../../lib/elevated';
-import { Button } from '../form/Button/button';
+import { Button } from '../buttons/Button/button';
 import { Switch } from '../form/Switch/switch';
 import { AdaptiveDropdown, type ContentRenderProps, type TriggerRenderProps } from '../menus/AdaptiveDropdown/adaptive-dropdown';
 import { Text } from '../typography/Text/text';

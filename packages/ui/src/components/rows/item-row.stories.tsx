@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { fn } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
-import { Button } from '../form/Button/button';
+import { Button } from '../buttons/Button/button';
 import { Switch } from '../form/Switch/switch';
 import { ItemRow, type ItemRowAdornment, type ItemRowSize, type ItemRowVariant } from './item-row';
 

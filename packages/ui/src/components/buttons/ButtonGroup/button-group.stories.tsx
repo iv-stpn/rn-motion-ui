@@ -7,7 +7,7 @@ import { Button } from '../Button/button';
 import { ButtonGroup } from './button-group';
 
 const meta = {
-  title: 'Form/ButtonGroup',
+  title: 'Buttons/ButtonGroup',
   component: ButtonGroup,
   parameters: { layout: 'centered' },
   args: { variant: 'spaced', orientation: 'horizontal', size: 'md' },

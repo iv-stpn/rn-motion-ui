@@ -22,7 +22,7 @@ import { StatefulButton } from './stateful-button';
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const meta = {
-  title: 'Form/StatefulButton',
+  title: 'Buttons/StatefulButton',
   component: StatefulButton,
   parameters: { layout: 'centered' },
   args: { children: 'Submit', onPress: fn(() => Promise.resolve()) },

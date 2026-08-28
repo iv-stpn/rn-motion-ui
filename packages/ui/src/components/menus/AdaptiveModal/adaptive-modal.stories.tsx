@@ -6,7 +6,7 @@ import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__storie
 import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
-import { Button } from '../../form/Button/button';
+import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
 import { AdaptiveModal, type LargeScreenMode, type SmallScreenMode, type WidePanelSize } from './adaptive-modal';
 

@@ -108,19 +108,19 @@
       "default": "./src/components/display/BouncyAccordion/bouncy-accordion.tsx"
     },
     "./button": {
-      "source": "./src/components/form/Button/button.tsx",
-      "types": "./src/components/form/Button/button.tsx",
-      "default": "./src/components/form/Button/button.tsx"
+      "source": "./src/components/buttons/Button/button.tsx",
+      "types": "./src/components/buttons/Button/button.tsx",
+      "default": "./src/components/buttons/Button/button.tsx"
     },
     "./button-group": {
-      "source": "./src/components/form/ButtonGroup/button-group.tsx",
-      "types": "./src/components/form/ButtonGroup/button-group.tsx",
-      "default": "./src/components/form/ButtonGroup/button-group.tsx"
+      "source": "./src/components/buttons/ButtonGroup/button-group.tsx",
+      "types": "./src/components/buttons/ButtonGroup/button-group.tsx",
+      "default": "./src/components/buttons/ButtonGroup/button-group.tsx"
     },
     "./button-swap": {
-      "source": "./src/components/form/Button/button-swap.tsx",
-      "types": "./src/components/form/Button/button-swap.tsx",
-      "default": "./src/components/form/Button/button-swap.tsx"
+      "source": "./src/components/buttons/Button/button-swap.tsx",
+      "types": "./src/components/buttons/Button/button-swap.tsx",
+      "default": "./src/components/buttons/Button/button-swap.tsx"
     },
     "./calendar": {
       "source": "./src/lib/calendar.ts",
@@ -163,9 +163,9 @@
       "default": "./src/components/form/ChoiceGroup/choice-group.tsx"
     },
     "./close-button": {
-      "source": "./src/components/menus/CloseButton/close-button.tsx",
-      "types": "./src/components/menus/CloseButton/close-button.tsx",
-      "default": "./src/components/menus/CloseButton/close-button.tsx"
+      "source": "./src/components/buttons/CloseButton/close-button.tsx",
+      "types": "./src/components/buttons/CloseButton/close-button.tsx",
+      "default": "./src/components/buttons/CloseButton/close-button.tsx"
     },
     "./color": {
       "source": "./src/lib/color.ts",
@@ -268,9 +268,9 @@
       "default": "./src/lib/elevated.ts"
     },
     "./elevated-button": {
-      "source": "./src/components/form/Button/elevated-button.tsx",
-      "types": "./src/components/form/Button/elevated-button.tsx",
-      "default": "./src/components/form/Button/elevated-button.tsx"
+      "source": "./src/components/buttons/Button/elevated-button.tsx",
+      "types": "./src/components/buttons/Button/elevated-button.tsx",
+      "default": "./src/components/buttons/Button/elevated-button.tsx"
     },
     "./file-system": {
       "source": "./src/components/file-system/FileSystem/file-system.tsx",
@@ -303,9 +303,9 @@
       "default": "./src/components/icon/themed-icon.tsx"
     },
     "./icon-button": {
-      "source": "./src/components/form/IconButton/icon-button.tsx",
-      "types": "./src/components/form/IconButton/icon-button.tsx",
-      "default": "./src/components/form/IconButton/icon-button.tsx"
+      "source": "./src/components/buttons/IconButton/icon-button.tsx",
+      "types": "./src/components/buttons/IconButton/icon-button.tsx",
+      "default": "./src/components/buttons/IconButton/icon-button.tsx"
     },
     "./input": {
       "source": "./src/components/form/Input/input.tsx",
@@ -393,9 +393,9 @@
       "default": "./src/components/form/OtpInput/otp-input.tsx"
     },
     "./overflow-actions": {
-      "source": "./src/components/menus/OverflowActions/overflow-actions.tsx",
-      "types": "./src/components/menus/OverflowActions/overflow-actions.tsx",
-      "default": "./src/components/menus/OverflowActions/overflow-actions.tsx"
+      "source": "./src/components/navigation/OverflowActions/overflow-actions.tsx",
+      "types": "./src/components/navigation/OverflowActions/overflow-actions.tsx",
+      "default": "./src/components/navigation/OverflowActions/overflow-actions.tsx"
     },
     "./popover": {
       "source": "./src/components/menus/Popover/popover.tsx",
@@ -453,9 +453,9 @@
       "default": "./src/components/form/StarRating/star-rating.tsx"
     },
     "./stateful-button": {
-      "source": "./src/components/form/Button/stateful-button.tsx",
-      "types": "./src/components/form/Button/stateful-button.tsx",
-      "default": "./src/components/form/Button/stateful-button.tsx"
+      "source": "./src/components/buttons/Button/stateful-button.tsx",
+      "types": "./src/components/buttons/Button/stateful-button.tsx",
+      "default": "./src/components/buttons/Button/stateful-button.tsx"
     },
     "./swipeable-list": {
       "source": "./src/components/display/SwipeableList/swipeable-list.tsx",

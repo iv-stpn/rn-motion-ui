@@ -12,7 +12,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button, type ButtonVariant } from './button';
 
 const meta = {
-  title: 'Form/Button',
+  title: 'Buttons/Button',
   component: Button,
   parameters: { layout: 'centered' },
   args: { children: 'Continue', variant: 'neutral', size: 'md', elevation: 0, floating: false, onPress: fn() },

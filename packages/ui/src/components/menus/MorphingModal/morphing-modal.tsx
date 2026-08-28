@@ -7,8 +7,8 @@ import type { SurfaceElevation } from '../../../lib/elevated';
 import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { Text } from '../../typography/Text/text';
-import { CloseButton } from '../CloseButton/close-button';
 import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 

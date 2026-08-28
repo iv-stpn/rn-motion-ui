@@ -11,7 +11,7 @@ import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__storie
 import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } from '../../../__stories__/story-trigger';
 import { useThemeColor } from '../../../theme/use-theme-color';
-import { Button } from '../../form/Button/button';
+import { Button } from '../../buttons/Button/button';
 import { Menu, type MenuEntry } from '../../rows/menu';
 import { Text } from '../../typography/Text/text';
 import { AdaptiveDropdown, type TriggerRenderProps } from './adaptive-dropdown';

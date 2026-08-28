@@ -11,7 +11,7 @@ import { useThemeColor } from '../../../theme/use-theme-color';
 import { type OverflowActionItem, OverflowActions, type OverflowActionsSize } from './overflow-actions';
 
 const meta = {
-  title: 'Menus/OverflowActions',
+  title: 'Navigation/OverflowActions',
   component: OverflowActions,
   parameters: { layout: 'centered' },
   args: {

@@ -10,7 +10,7 @@ import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } fr
 import { useInterval } from '../../../hooks/use-interval';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
-import { Button } from '../../form/Button/button';
+import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
 import { DynamicIsland, DynamicIslandView } from './dynamic-island';
 

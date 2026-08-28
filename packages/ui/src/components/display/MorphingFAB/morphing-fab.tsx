@@ -8,7 +8,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../../lib/ease';
 import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
-import { ICON_BUTTON_LG_SIZE, IconButton } from '../../form/IconButton/icon-button';
+import { ICON_BUTTON_LG_SIZE, IconButton } from '../../buttons/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 
 const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;

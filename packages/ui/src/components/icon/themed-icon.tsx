@@ -1,8 +1,8 @@
 import type { ComponentType } from 'react';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { type ThemeToken, useThemeColors } from '../../theme/use-theme-color';
-import type { ButtonVariant } from '../form/Button/button';
-import type { ElevatedVariant } from '../form/Button/elevated-button';
+import type { ButtonVariant } from '../buttons/Button/button';
+import type { ElevatedVariant } from '../buttons/Button/elevated-button';
 
 /**
  * Foreground token for an icon living inside a given button variant.

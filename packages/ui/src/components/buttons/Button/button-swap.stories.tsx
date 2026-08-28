@@ -258,7 +258,7 @@ function ButtonSwapPlayground(args: ComponentProps<typeof ButtonSwap>) {
 }
 
 const meta = {
-  title: 'Form/ButtonSwap',
+  title: 'Buttons/ButtonSwap',
   component: ButtonSwap,
   parameters: { layout: 'centered' },
   args: {

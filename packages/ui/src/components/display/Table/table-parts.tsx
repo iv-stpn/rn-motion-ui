@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { cn } from '../../../lib/cn';
 import { useThemeColor } from '../../../theme/use-theme-color';
-import { Button } from '../../form/Button/button';
+import { Button } from '../../buttons/Button/button';
 import { Checkbox } from '../../form/Checkbox/checkbox';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';

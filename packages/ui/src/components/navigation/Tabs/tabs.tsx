@@ -3,11 +3,11 @@
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
-import { Easing } from 'react-native-reanimated';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { EASE_OUT } from '../../../lib/ease';
 import { SURFACE_CLASSNAME } from '../../../lib/elevated';
 import { H_INTERACTIVE, INTERACTIVE_RADIUS, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
@@ -26,11 +26,20 @@ const TAB_INDICATOR_SPRING = { type: 'spring' as const, stiffness: 170, damping:
 // immediately — the incoming panel needs that space — and finishes the trip as an
 // absolutely positioned layer over the spot it held.
 const FADE_TRANSITION = { type: 'timing' as const, duration: 180 };
-// Linear, unlike the rest of the library's tweens: a push is two layers held a
-// container width apart, so any ease reads as the pair being dragged by a hand
-// that speeds up and slows down. A constant rate reads as one strip of pages
-// moving past a window, which is the illusion being sold.
-const SLIDE_TRANSITION = { type: 'timing' as const, duration: 280, easing: Easing.linear };
+// The same lightly-damped spring MultiStepMenu slides its panes on: it glides the
+// pair in with a hair of settle at the end instead of the dead stop a tween gives.
+// A push is two layers held a container width apart, and the pair still reads as
+// one strip of pages moving past a window because both halves read this one
+// transition — they overshoot and settle by the same amount, at the same moment.
+// Opacity stays a timed fade: only the very first panel fades (it has nothing to
+// slide from), and a spring on opacity would overshoot past 1.
+const SLIDE_TRANSITION = {
+  type: 'spring' as const,
+  stiffness: 280,
+  damping: 30,
+  mass: 1,
+  opacity: { type: 'timing' as const, duration: 280, easing: EASE_OUT },
+};
 const DROP_IN_TRANSITION = { type: 'spring' as const, stiffness: 260, damping: 20, mass: 0.9 };
 /** Fall distance of a dropping panel (px). */
 const DROP_OFFSET = 18;
@@ -113,15 +122,35 @@ function contentTransitionFor(animation: TabsContentAnimation, reduce: boolean) 
   return FADE_TRANSITION;
 }
 
-/** How long to hold a slide when the transition is a spring (no duration to read). */
+/** Fallback hold for a spring that doesn't state the mass/damping to read a settle time off. */
 const SPRING_SETTLE_MS = 600;
 /** Slack added before releasing a slide, so it never cuts the last frame of travel. */
 const SETTLE_MARGIN_MS = 60;
+/** Reanimated's own defaults, for a spring that only overrides one of the pair. */
+const SPRING_DEFAULT_MASS = 1;
+const SPRING_DEFAULT_DAMPING = 10;
 
-/** Roughly when `transition` stops moving — only needs to be an upper bound. */
+/**
+ * Roughly when `transition` stops moving — an upper bound, but it has to be a close
+ * one: this same number releases the entering panel's clip, and a clip held past the
+ * end of the travel cuts the shadow of a panel that has visibly settled.
+ *
+ * A spring's amplitude decays as `e^(-t·damping/2·mass)`, so after `12·mass/damping`
+ * seconds it is within 0.25% of its target, whatever the stiffness — under a pixel on
+ * any travel a panel could have, which is the bar here: the clip has to outlast the
+ * motion, and the usual 2% settling figure would still be ~6px out on a 320px push.
+ * That holds for the underdamped and near-critical configs a slide would ever use;
+ * the fixed fallback covers anything stranger.
+ */
 function settleDuration(transition: MotiTransitionProp) {
   if (transition.type === 'timing' && typeof transition.duration === 'number') return transition.duration + SETTLE_MARGIN_MS;
-  return SPRING_SETTLE_MS + SETTLE_MARGIN_MS;
+  // Everything but the spring branch is left to the fallback: `decay` has no target
+  // to settle onto, and `no-animation` never animates in the first place.
+  if (transition.type === 'timing' || transition.type === 'decay' || transition.type === 'no-animation')
+    return SPRING_SETTLE_MS + SETTLE_MARGIN_MS;
+  const { mass = SPRING_DEFAULT_MASS, damping = SPRING_DEFAULT_DAMPING } = transition;
+  if (damping <= 0 || mass <= 0) return SPRING_SETTLE_MS + SETTLE_MARGIN_MS;
+  return Math.min(SPRING_SETTLE_MS, (12_000 * mass) / damping) + SETTLE_MARGIN_MS;
 }
 
 /** The frame a panel occupied while it was in flow, so it can hold that spot once it's pinned. */
@@ -284,8 +313,8 @@ export type TabsProps = {
   contentAnimation?: TabsContentAnimation;
   /**
    * Override the content-panel transition. Partial — only changed fields needed.
-   * Defaults per animation: 180 ms timing (`fade`), 280 ms ease-out (`slide`),
-   * spring (`dropIn`).
+   * Defaults per animation: 180 ms timing (`fade`), a lightly-damped spring
+   * (`slide`, shared with `MultiStepMenu`), a springier drop (`dropIn`).
    */
   contentTransition?: Partial<MotiTransitionProp>;
 };

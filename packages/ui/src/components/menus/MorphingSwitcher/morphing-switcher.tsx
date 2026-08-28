@@ -2,7 +2,7 @@
 // biome-ignore-all lint/style/useExportsLast: the public icon/item/variant/props types head the module so the sub-components below read against them
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
-import { Platform, Pressable, useWindowDimensions, View } from 'react-native';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
@@ -14,6 +14,8 @@ import { MotiView } from '../../../moti/components/view';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem, type MenuItemSize } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
+import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
+import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
 
 /** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
 const VIEWPORT_PADDING = 8;
@@ -180,6 +182,12 @@ export type MorphingSwitcherProps = {
    * @default true
    */
   closeOnOutsidePress?: boolean;
+  /**
+   * When true, the dimming scrim renders behind the pane. Defaults to false —
+   * like the other morphing menus, it morphs in place with no scrim.
+   * @default false
+   */
+  overlay?: boolean;
 };
 
 /**
@@ -328,33 +336,6 @@ type MorphingSwitcherRowProps = {
   testID?: string;
 };
 
-type OutsidePressBackdropProps = {
-  /** The backdrop's window-covering frame — negative offsets from the root's measured window position. */
-  frame: { top: number; left: number; width: number; height: number };
-  onPress: () => void;
-  testID?: string;
-};
-
-/**
- * Full-window transparent layer that folds the switcher on an outside tap
- * (native). Rendered inside the small root but measured to cover the whole
- * window, so a tap anywhere outside the pane — the page, the header, another
- * control — lands here and dismisses. Sits below the shell (zIndex 40), above
- * the page.
- */
-function OutsidePressBackdrop({ frame, onPress, testID }: OutsidePressBackdropProps) {
-  const handlePress = useCallback(() => onPress(), [onPress]);
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Close"
-      testID={testID}
-      onPress={handlePress}
-      style={{ position: 'absolute', top: frame.top, left: frame.left, width: frame.width, height: frame.height }}
-    />
-  );
-}
-
 /**
  * One row in the open pane: icon + label. The current item never renders here —
  * the trigger is its row. The scale's row classes pin the row to the trigger's
@@ -386,35 +367,6 @@ function opensUpward(paneHeight: number, y: number, h: number, windowHeight: num
   return paneHeight > spaceBelow && spaceAbove > spaceBelow;
 }
 
-// Minimal web-only DOM types — the RN package tsconfig omits the DOM lib, so the
-// browser `document`/pointer globals aren't declared here. Mirrors HoverMenu's
-// `WebNode`/`getWebDocument` (Reflect.get + a typeof guard, no cast).
-type WebNode = { contains: (node: unknown) => boolean };
-type WebPointerEvent = { target: unknown };
-type WebDocument = {
-  addEventListener: (type: 'pointerdown', listener: (event: WebPointerEvent) => void) => void;
-  removeEventListener: (type: 'pointerdown', listener: (event: WebPointerEvent) => void) => void;
-};
-
-function isWebNode(node: unknown): node is WebNode {
-  return node !== null && typeof node === 'object' && typeof Reflect.get(node, 'contains') === 'function';
-}
-
-function isWebDocument(value: unknown): value is WebDocument {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    typeof Reflect.get(value, 'addEventListener') === 'function' &&
-    typeof Reflect.get(value, 'removeEventListener') === 'function'
-  );
-}
-
-function getWebDocument(): WebDocument | undefined {
-  if (Platform.OS !== 'web') return;
-  const doc = Reflect.get(globalThis, 'document');
-  return isWebDocument(doc) ? doc : undefined;
-}
-
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: the shell wires trigger measurement, outside-press handling, and the morph pane around shared refs/state — splitting would prop-drill the shared values across function boundaries
 export function MorphingSwitcher({
   items,
@@ -438,6 +390,7 @@ export function MorphingSwitcher({
   testID = 'morphing-switcher',
   triggerTestID = 'morphing-switcher-trigger',
   closeOnOutsidePress = true,
+  overlay = false,
 }: MorphingSwitcherProps) {
   const reduce = useReducedMotion();
   const scale = SWITCHER_SCALE[size];
@@ -457,7 +410,7 @@ export function MorphingSwitcher({
    * outside taps on native (web closes via its document listener instead).
    * Null while closed or before the async native measure lands.
    */
-  const [backdropFrame, setBackdropFrame] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  const [backdropFrame, setBackdropFrame] = useState<OutsidePressFrame | null>(null);
 
   const current = items.find((item) => item.value === value);
 
@@ -501,14 +454,14 @@ export function MorphingSwitcher({
   // lands there is simply no backdrop yet.
   // biome-ignore lint/plugin: measuring the root on open/rotate is a DOM/native measure side effect, not derived state — the backdrop frame must follow the window
   useEffect(() => {
-    if (!(open && closeOnOutsidePress)) {
+    if (!(open && (overlay || closeOnOutsidePress))) {
       setBackdropFrame(null);
       return;
     }
     rootRef.current?.measureInWindow((x, y) => {
       setBackdropFrame({ top: -y, left: -x, width: windowWidth, height: windowHeight });
     });
-  }, [open, closeOnOutsidePress, windowWidth, windowHeight]);
+  }, [open, overlay, closeOnOutsidePress, windowWidth, windowHeight]);
 
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
 
@@ -587,9 +540,14 @@ export function MorphingSwitcher({
 
       {/* Outside-press backdrop (native): covers the whole window so a tap
           anywhere outside the pane folds it back — the web path is the
-          document listener above. */}
-      {open && closeOnOutsidePress && backdropFrame !== null ? (
-        <OutsidePressBackdrop frame={backdropFrame} onPress={handleClose} testID={`${testID}-backdrop`} />
+          document listener above. When `overlay` is on it also dims the page. */}
+      {open && (overlay || closeOnOutsidePress) && backdropFrame !== null ? (
+        <OutsidePressBackdrop
+          frame={backdropFrame}
+          onPress={closeOnOutsidePress ? handleClose : undefined}
+          overlay={overlay}
+          testID={`${testID}-backdrop`}
+        />
       ) : null}
 
       {/* Keyed by variant: Moti holds the last value of every key it has animated,

@@ -21,7 +21,7 @@ import { Text } from '../../typography/Text/text';
 import { MorphingFAB } from './morphing-fab';
 
 const meta = {
-  title: 'Display/MorphingFAB',
+  title: 'Menus/MorphingFAB',
   component: MorphingFAB,
   parameters: { layout: 'fullscreen' },
   args: { position: 'bottom-right', children: null },
@@ -190,6 +190,8 @@ function MorphingFABPlayground() {
   const [example, setExample] = useState<Example>('feedback');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
+  const [overlay, setOverlay] = useState(false);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
 
   return (
     <AppSurface hint={PLAYGROUND_HINT}>
@@ -198,6 +200,8 @@ function MorphingFABPlayground() {
           <Choice label="Content" onChange={setExample} options={EXAMPLES} value={example} />
           <Toggle label="Floating" onChange={setFloating} value={floating} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+          <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+          <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
         </ControlCard>
       </View>
       {example === 'feedback' ? (
@@ -206,6 +210,8 @@ function MorphingFABPlayground() {
           expandedHeight={230}
           floating={floating}
           elevation={ELEVATIONS[elevationKey]}
+          overlay={overlay}
+          closeOnOutsidePress={closeOnOutside}
           icon={MessageSquare}
           accessibilityLabel="Send feedback"
           triggerTestID="fab-trigger"
@@ -223,6 +229,8 @@ function MorphingFABPlayground() {
           expandedHeight={192}
           floating={floating}
           elevation={ELEVATIONS[elevationKey]}
+          overlay={overlay}
+          closeOnOutsidePress={closeOnOutside}
           accessibilityLabel="Open actions"
           triggerTestID="fab-trigger"
         >

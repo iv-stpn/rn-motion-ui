@@ -1,6 +1,6 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: FAB shell, morph transition, and trigger/pane layouts collocated by design
-import { type ComponentType, type ReactNode, useCallback, useState } from 'react';
-import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { type ComponentType, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { Pressable, type StyleProp, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
@@ -10,6 +10,8 @@ import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib
 import { MotiView } from '../../../moti/components/view';
 import { ICON_BUTTON_LG_SIZE, IconButton } from '../../buttons/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
+import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
+import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
 
 const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
 /** The collapsed trigger is a circle, so its radius is half the box — whatever
@@ -62,6 +64,19 @@ export type MorphingFABProps = {
   testID?: string;
   /** testID for the collapsed trigger button. */
   triggerTestID?: string;
+  /**
+   * When true, the dimming scrim renders behind the pane. Defaults to false —
+   * like the other morphing menus, it morphs in place with no scrim.
+   * @default false
+   */
+  overlay?: boolean;
+  /**
+   * When true (default), pressing/clicking outside the pane closes the FAB.
+   * Works on every platform: web listens on the document, native gets a
+   * full-window transparent backdrop measured from the FAB's position.
+   * @default true
+   */
+  closeOnOutsidePress?: boolean;
 };
 
 /**
@@ -94,6 +109,8 @@ export function MorphingFAB({
   accessibilityLabel,
   testID = 'morphing-fab',
   triggerTestID = 'morphing-fab-trigger',
+  overlay = false,
+  closeOnOutsidePress = true,
 }: MorphingFABProps) {
   const reduce = useReducedMotion();
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -110,6 +127,53 @@ export function MorphingFAB({
 
   const handleOpen = useCallback(() => setOpen(true), [setOpen]);
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
+
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const rootRef = useRef<View>(null);
+  /**
+   * The outside-press backdrop's window-covering frame — negative offsets from
+   * the FAB's window position, so an absolutely-positioned child inside the
+   * (small, corner-anchored) root still covers the whole window and catches
+   * outside taps on native (web closes via its document listener instead).
+   * Null while closed or before the async native measure lands.
+   */
+  const [backdropFrame, setBackdropFrame] = useState<OutsidePressFrame | null>(null);
+
+  // Measure the root's window position whenever the pane opens (or the window
+  // resizes while open — rotation) so the native outside-press backdrop exactly
+  // covers the window. `measureInWindow` is async on native; until the frame
+  // lands there is simply no backdrop yet.
+  // biome-ignore lint/plugin: measuring the root on open/rotate is a DOM/native measure side effect, not derived state — the backdrop frame must follow the window
+  useEffect(() => {
+    if (!(open && (overlay || closeOnOutsidePress))) {
+      setBackdropFrame(null);
+      return;
+    }
+    rootRef.current?.measureInWindow((x, y) => {
+      setBackdropFrame({ top: -y, left: -x, width: windowWidth, height: windowHeight });
+    });
+  }, [open, overlay, closeOnOutsidePress, windowWidth, windowHeight]);
+
+  // Close on an outside press (web). The FAB is inline — no modal backdrop to
+  // catch a stray press — so a document-level `pointerdown` listener detects a
+  // press landing anywhere but the FAB and folds it shut. `getWebDocument()`
+  // returns undefined off-web, where an inline control has no outside press.
+  // biome-ignore lint/plugin: document-level pointerdown can't be expressed as an RN handler or derived state
+  useEffect(() => {
+    if (!(open && closeOnOutsidePress)) return;
+    const doc = getWebDocument();
+    if (!doc) return;
+
+    const onPointerDown = (event: WebPointerEvent) => {
+      const node = rootRef.current;
+      const target = event.target;
+      if (isWebNode(node) && node.contains(target)) return;
+      setOpen(false);
+    };
+
+    doc.addEventListener('pointerdown', onPointerDown);
+    return () => doc.removeEventListener('pointerdown', onPointerDown);
+  }, [open, closeOnOutsidePress, setOpen]);
 
   // Staggered springs: width snaps open fast, height bounces — reads as unfolding.
   const morphTransition = reduce
@@ -131,12 +195,26 @@ export function MorphingFAB({
 
   return (
     <View
+      ref={rootRef}
+      collapsable={false}
       testID={testID}
       style={[
         { position: 'absolute', bottom: 16, zIndex: 30, pointerEvents: 'box-none', ...(left ? { left: 16 } : { right: 16 }) },
         style,
       ]}
     >
+      {/* Outside-press backdrop (native): covers the whole window so a tap
+          anywhere outside the pane folds it back — the web path is the
+          document listener above. When `overlay` is on it also dims the page. */}
+      {open && (overlay || closeOnOutsidePress) && backdropFrame !== null ? (
+        <OutsidePressBackdrop
+          frame={backdropFrame}
+          onPress={closeOnOutsidePress ? handleClose : undefined}
+          overlay={overlay}
+          testID={`${testID}-backdrop`}
+        />
+      ) : null}
+
       <MotiView
         animate={{
           width: open ? expandedWidth : TRIGGER_SIZE,

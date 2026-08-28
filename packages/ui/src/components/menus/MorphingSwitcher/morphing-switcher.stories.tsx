@@ -18,7 +18,7 @@ import {
 } from './morphing-switcher';
 
 const meta = {
-  title: 'Display/MorphingSwitcher',
+  title: 'Menus/MorphingSwitcher',
   component: MorphingSwitcher,
   parameters: { layout: 'fullscreen' },
   args: { items: [] },
@@ -74,6 +74,8 @@ function MorphingSwitcherPlayground() {
   const [withIcons, setWithIcons] = useState(true);
   const [closeCaret, setCloseCaret] = useState(true);
   const [value, setValue] = useState('home');
+  const [overlay, setOverlay] = useState(false);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
 
   return (
     <AppSurface hint={PLAYGROUND_HINT}>
@@ -84,6 +86,8 @@ function MorphingSwitcherPlayground() {
           <Toggle label="Floating" onChange={setFloating} value={floating} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
           <Toggle label="Item icons" onChange={setWithIcons} value={withIcons} />
+          <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+          <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
           {/* `closeIcon` only reaches the trigger in `select` — `switcher` always keeps its stacked carets. */}
           {variant === 'select' ? <Toggle label="Close caret" onChange={setCloseCaret} value={closeCaret} /> : null}
         </ControlCard>
@@ -99,6 +103,8 @@ function MorphingSwitcherPlayground() {
           size={size}
           elevation={ELEVATIONS[elevationKey]}
           floating={floating}
+          overlay={overlay}
+          closeOnOutsidePress={closeOnOutside}
           closeIcon={closeCaret ? undefined : null}
           accessibilityLabel="Switch space"
           triggerTestID="playground-trigger"

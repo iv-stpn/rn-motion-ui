@@ -343,9 +343,9 @@
       "default": "./src/components/rows/menu-item.tsx"
     },
     "./morphing-fab": {
-      "source": "./src/components/display/MorphingFAB/morphing-fab.tsx",
-      "types": "./src/components/display/MorphingFAB/morphing-fab.tsx",
-      "default": "./src/components/display/MorphingFAB/morphing-fab.tsx"
+      "source": "./src/components/menus/MorphingFAB/morphing-fab.tsx",
+      "types": "./src/components/menus/MorphingFAB/morphing-fab.tsx",
+      "default": "./src/components/menus/MorphingFAB/morphing-fab.tsx"
     },
     "./morphing-menu": {
       "source": "./src/components/menus/MorphingMenu/morphing-menu.tsx",
@@ -358,9 +358,9 @@
       "default": "./src/components/menus/MorphingModal/morphing-modal.tsx"
     },
     "./morphing-switcher": {
-      "source": "./src/components/display/MorphingSwitcher/morphing-switcher.tsx",
-      "types": "./src/components/display/MorphingSwitcher/morphing-switcher.tsx",
-      "default": "./src/components/display/MorphingSwitcher/morphing-switcher.tsx"
+      "source": "./src/components/menus/MorphingSwitcher/morphing-switcher.tsx",
+      "types": "./src/components/menus/MorphingSwitcher/morphing-switcher.tsx",
+      "default": "./src/components/menus/MorphingSwitcher/morphing-switcher.tsx"
     },
     "./multi-drag": {
       "source": "./src/components/gestures/DragManager/multi-drag.ts",

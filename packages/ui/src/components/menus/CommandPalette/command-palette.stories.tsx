@@ -6,7 +6,7 @@ import { Home2Line as Home } from 'rn-motion-ui-icons/icons/home-2-line';
 import { Settings1Line as Settings } from 'rn-motion-ui-icons/icons/settings-1-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
-import { Playground } from '../../../__stories__/story-harness';
+import { ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { type CommandItem, CommandPalette } from './command-palette';
 
@@ -33,11 +33,17 @@ const OPEN_LABEL = 'Open command palette';
 
 function PalettePlayground() {
   const [open, setOpen] = useState(false);
+  const [overlay, setOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();
   const handleOpen = useCallback(() => setOpen(true), []);
 
   return (
     <Playground className="min-w-[340px]">
+      <ControlCard title="Options">
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
+      </ControlCard>
       <TriggerControls state={trigger} />
       <TriggerButton
         kind={trigger.kind}
@@ -47,7 +53,14 @@ function PalettePlayground() {
         label={OPEN_LABEL}
         onPress={handleOpen}
       />
-      <CommandPalette items={ITEMS} onOpenChange={setOpen} open={open} shortcut="j" />
+      <CommandPalette
+        closeOnOutsidePress={closeOnOutside}
+        items={ITEMS}
+        onOpenChange={setOpen}
+        open={open}
+        overlay={overlay}
+        shortcut="j"
+      />
     </Playground>
   );
 }

@@ -97,6 +97,8 @@ function FeedbackPlayground() {
   const [withTagline, setWithTagline] = useState(false);
   const [floating, setFloating] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
+  const [overlay, setOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();
 
   // The real flow: open on `loading`, then resolve to the chosen outcome.
@@ -123,6 +125,8 @@ function FeedbackPlayground() {
         <Choice label="Resolves to" onChange={setOutcome} options={OUTCOMES} value={outcome} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 
       <ControlCard title="Optional text">
@@ -150,9 +154,11 @@ function FeedbackPlayground() {
       />
 
       <ActionFeedbackModal
+        closeOnOutsidePress={closeOnOutside}
         floating={floating}
         elevation={ELEVATIONS[elevationKey]}
         onOpenChange={handleClose}
+        overlay={overlay}
         state={state}
         tagline={withTagline ? TAGLINE : undefined}
         open={visible}

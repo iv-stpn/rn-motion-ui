@@ -218,6 +218,8 @@ type MorphingModalDemoProps = {
   size?: TriggerState['size'];
   shape?: TriggerState['shape'];
   triggerFloating?: boolean;
+  overlay?: boolean;
+  closeOnOutsidePress?: boolean;
   testID?: string;
 };
 
@@ -229,6 +231,8 @@ function MorphingModalDemo({
   size,
   shape,
   triggerFloating,
+  overlay = true,
+  closeOnOutsidePress = true,
   testID,
 }: MorphingModalDemoProps) {
   const [view, setView] = useState<WalletView>(null);
@@ -246,6 +250,8 @@ function MorphingModalDemo({
         placement={placement}
         elevation={elevation}
         floating={floating}
+        overlay={overlay}
+        closeOnOutsidePress={closeOnOutsidePress}
         testID={testID}
       >
         {renderModalView(view, { close, showOptions, showPrivateKey, showRecovery })}
@@ -258,6 +264,8 @@ function MorphingModalPlayground() {
   const [placement, setPlacement] = useState<'bottom' | 'center' | 'bottom-sheet'>('bottom');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
+  const [overlay, setOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();
   return (
     <Playground className="min-w-[340px]">
@@ -265,12 +273,16 @@ function MorphingModalPlayground() {
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
       <TriggerControls state={trigger} />
       <MorphingModalDemo
         placement={placement}
         elevation={ELEVATIONS[elevationKey]}
         floating={floating}
+        overlay={overlay}
+        closeOnOutsidePress={closeOnOutside}
         kind={trigger.kind}
         size={trigger.size}
         shape={trigger.shape}

@@ -74,6 +74,8 @@ function PopoverPlayground() {
   const [radiusKey, setRadiusKey] = useState<RadiusKey>('16');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('4');
   const [floating, setFloating] = useState(false);
+  const [overlay, setOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();
 
   return (
@@ -85,6 +87,8 @@ function PopoverPlayground() {
         <Choice label="Radius" onChange={setRadiusKey} options={RADII} value={radiusKey} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 
       <TriggerControls state={trigger} />
@@ -93,7 +97,14 @@ function PopoverPlayground() {
           side/align pair lands differently near a screen edge — the position is
           clamped into the viewport rather than overflowing it. */}
       <View className="items-center py-6">
-        <Popover align={align} panelRadius={Number(radiusKey)} side={side} sideOffset={Number(offsetKey)}>
+        <Popover
+          align={align}
+          closeOnOutsidePress={closeOnOutside}
+          overlay={overlay}
+          panelRadius={Number(radiusKey)}
+          side={side}
+          sideOffset={Number(offsetKey)}
+        >
           {/* PopoverTrigger provides the outer Pressable that measures its frame
               and opens the popover. The TriggerButton inside is purely visual —
               pointerEvents="none" lets touches fall through to PopoverTrigger so

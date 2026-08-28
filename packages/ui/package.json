@@ -82,11 +82,6 @@
       "types": "./src/components/display/AnimatedList/animated-list.tsx",
       "default": "./src/components/display/AnimatedList/animated-list.tsx"
     },
-    "./bloom-menu": {
-      "source": "./src/components/menus/BloomMenu/bloom-menu.tsx",
-      "types": "./src/components/menus/BloomMenu/bloom-menu.tsx",
-      "default": "./src/components/menus/BloomMenu/bloom-menu.tsx"
-    },
     "./bottom-sheet": {
       "source": "./src/components/menus/BottomSheet/bottom-sheet.tsx",
       "types": "./src/components/menus/BottomSheet/bottom-sheet.tsx",
@@ -351,6 +346,11 @@
       "source": "./src/components/display/MorphingFAB/morphing-fab.tsx",
       "types": "./src/components/display/MorphingFAB/morphing-fab.tsx",
       "default": "./src/components/display/MorphingFAB/morphing-fab.tsx"
+    },
+    "./morphing-menu": {
+      "source": "./src/components/menus/MorphingMenu/morphing-menu.tsx",
+      "types": "./src/components/menus/MorphingMenu/morphing-menu.tsx",
+      "default": "./src/components/menus/MorphingMenu/morphing-menu.tsx"
     },
     "./morphing-modal": {
       "source": "./src/components/menus/MorphingModal/morphing-modal.tsx",

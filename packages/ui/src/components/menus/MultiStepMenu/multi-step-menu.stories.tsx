@@ -206,6 +206,8 @@ function MenuPlayground() {
   const [iosStyle, setIosStyle] = useState(false);
   const [visible, setVisible] = useState(false);
   const [path, setPath] = useState<string[]>([]);
+  const [overlay, setOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const menuRef = useRef<MultiStepMenuHandle | null>(null);
   const trigger = useTriggerState();
 
@@ -236,6 +238,8 @@ function MenuPlayground() {
         <Toggle label="Sidebar footer" onChange={setWithFooter} value={withFooter} />
         <Toggle label="Wide placeholder" onChange={setWithPlaceholder} value={withPlaceholder} />
         <Toggle label="iOS-style rows" onChange={setIosStyle} value={iosStyle} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 
       <ControlCard title="Actions">
@@ -258,11 +262,13 @@ function MenuPlayground() {
       <Note>{START_NOTE}</Note>
 
       <MultiStepMenu
+        closeOnOutsidePress={closeOnOutside}
         defaultPath={START_PATHS[startKey]}
         isWideScreen={isWideScreen}
         onAfterClose={handleAfterClose}
         onClose={handleClose}
         onPathChange={setPath}
+        overlay={overlay}
         ref={menuRef}
         rootTitle={SETTINGS_ROOT_TITLE}
         sections={sections}

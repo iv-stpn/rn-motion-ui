@@ -30,6 +30,8 @@ function DrawerPlayground() {
   const [side, setSide] = useState<DrawerSide>('left');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [floating, setFloating] = useState(false);
+  const [overlay, setOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
   const handleOpen = useCallback(() => setOpen(true), []);
@@ -40,6 +42,8 @@ function DrawerPlayground() {
         <Choice label="Side" onChange={setSide} options={SIDES} value={side} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 
       <TriggerControls state={trigger} />
@@ -59,6 +63,8 @@ function DrawerPlayground() {
         side={side}
         elevation={ELEVATIONS[elevationKey]}
         floating={floating}
+        overlay={overlay}
+        closeOnOutsidePress={closeOnOutside}
         accessibilityLabel="Demo drawer"
       >
         <View className="gap-2 p-6">

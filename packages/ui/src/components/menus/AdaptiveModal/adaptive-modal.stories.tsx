@@ -108,6 +108,7 @@ function ModalPlayground() {
   const [scrollable, setScrollable] = useState(false);
   const [customLayout, setCustomLayout] = useState(false);
   const [closeOnOutside, setCloseOnOutside] = useState(true);
+  const [overlay, setOverlay] = useState(true);
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
 
@@ -132,6 +133,7 @@ function ModalPlayground() {
         <Toggle label="Scrollable" onChange={setScrollable} value={scrollable} />
         <Toggle label="Custom layout" onChange={setCustomLayout} value={customLayout} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
       </ControlCard>
 
       <TriggerControls state={trigger} />
@@ -156,6 +158,7 @@ function ModalPlayground() {
         largeScreenMode={largeMode}
         onOpenChange={setOpen}
         open={open}
+        overlay={overlay}
         scrollable={scrollable}
         showClose={withClose}
         smallScreenMode={smallMode}

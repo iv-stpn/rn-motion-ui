@@ -62,6 +62,7 @@ function SheetBody({ long = false, full = false, onClose }: SheetBodyProps) {
 function SheetPlayground() {
   const [fullSheet, setFullSheet] = useState(false);
   const [closeOnOutside, setCloseOnOutside] = useState(true);
+  const [overlay, setOverlay] = useState(true);
   const [longContent, setLongContent] = useState(false);
   const [tinted, setTinted] = useState(false);
   const [floating, setFloating] = useState(false);
@@ -82,6 +83,7 @@ function SheetPlayground() {
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Long content" onChange={setLongContent} value={longContent} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
         <Toggle label="Tinted chrome" onChange={setTinted} value={tinted} />
       </ControlCard>
 
@@ -111,6 +113,7 @@ function SheetPlayground() {
         onAfterClose={handleAfterClose}
         onOpenChange={setOpen}
         open={open}
+        overlay={overlay}
       >
         <SheetBody full={fullSheet} long={longContent} onClose={handleClose} />
       </BottomSheet>

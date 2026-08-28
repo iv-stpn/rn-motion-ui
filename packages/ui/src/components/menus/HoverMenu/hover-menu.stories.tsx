@@ -112,6 +112,8 @@ function HoverMenuPlayground() {
   const [delayKey, setDelayKey] = useState<DelayKey>('100');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
   const [floating, setFloating] = useState(false);
+  const [overlay, setOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();
   const [open, setOpen] = useState(false);
 
@@ -138,6 +140,8 @@ function HoverMenuPlayground() {
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
         <Choice label="Hover delay" onChange={setDelayKey} options={DELAYS} value={delayKey} />
         <Toggle label="Open" onChange={setOpen} value={open} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 
       <ControlCard title="Elevation">
@@ -152,12 +156,14 @@ function HoverMenuPlayground() {
       <HoverMenu
         align={align}
         closeDelay={delay}
+        closeOnOutsidePress={closeOnOutside}
         elevation={ELEVATIONS[elevationKey]}
         floating={floating}
         offset={Number(offsetKey)}
         onOpenChange={setOpen}
         open={open}
         openDelay={delay}
+        overlay={overlay}
         trigger={renderTrigger}
         triggerIsPressable={true}
         width={WIDTHS[widthKey]}

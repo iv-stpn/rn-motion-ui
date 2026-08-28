@@ -7,12 +7,12 @@ import { LayoutGridLine as LayoutGrid } from 'rn-motion-ui-icons/icons/layout-gr
 import { LinkLine as Link } from 'rn-motion-ui-icons/icons/link-line';
 import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-line';
 import { TableLine as Table } from 'rn-motion-ui-icons/icons/table-line';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
-import { BloomMenu, type BloomMenuItem } from './bloom-menu';
+import { MorphingMenu, type MorphingMenuItem } from './morphing-menu';
 
-const ITEMS: BloomMenuItem[] = [
+const ITEMS: MorphingMenuItem[] = [
   { label: 'Doc', icon: FileText },
   { label: 'Board', icon: LayoutGrid },
   { label: 'Table', icon: Table },
@@ -22,34 +22,46 @@ const ITEMS: BloomMenuItem[] = [
 ];
 
 const meta = {
-  title: 'Menus/BloomMenu',
-  component: BloomMenu,
+  title: 'Menus/MorphingMenu',
+  component: MorphingMenu,
   parameters: { layout: 'centered' },
   args: { items: ITEMS, onSelect: fn(), title: 'Create', triggerLabel: 'Create' },
-} satisfies Meta<typeof BloomMenu>;
+} satisfies Meta<typeof MorphingMenu>;
 
 type Story = StoryObj<typeof meta>;
 
-function BloomMenuDemo(props: ComponentProps<typeof BloomMenu>) {
+function MorphingMenuDemo(props: ComponentProps<typeof MorphingMenu>) {
   return (
     <View className="min-h-[420px] items-center justify-center">
-      <BloomMenu {...props} />
+      <MorphingMenu {...props} />
     </View>
   );
 }
 
-function BloomMenuPlayground() {
+function MorphingMenuPlayground() {
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [floating, setFloating] = useState(false);
+  const [overlay, setOverlay] = useState(false);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
 
   return (
     <Playground>
       <ControlCard title="Options">
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
       <View className="min-h-[420px] items-center justify-center">
-        <BloomMenu floating={floating} elevation={ELEVATIONS[elevationKey]} items={ITEMS} title="Create" triggerLabel="Create" />
+        <MorphingMenu
+          closeOnOutsidePress={closeOnOutside}
+          elevation={ELEVATIONS[elevationKey]}
+          floating={floating}
+          items={ITEMS}
+          overlay={overlay}
+          title="Create"
+          triggerLabel="Create"
+        />
       </View>
     </Playground>
   );
@@ -58,17 +70,18 @@ function BloomMenuPlayground() {
 export default meta;
 
 export const Interactive: Story = {
-  render: () => <BloomMenuPlayground />,
+  render: () => <MorphingMenuPlayground />,
 };
 
 export const Default: Story = {
   name: 'Demo: Open and select',
-  render: (args) => <BloomMenuDemo {...args} />,
+  render: (args) => <MorphingMenuDemo {...args} />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    // Tapping the trigger blooms the panel open; a grid item then fires onSelect.
+    // Tapping the trigger morphs the panel open; a grid item then fires onSelect.
     await userEvent.click(await canvas.findByRole('button', { name: 'Create' }));
-    const doc = await canvas.findByRole('button', { name: 'Doc' });
+    // Panel cells mount inside a Modal — use screen to query outside the canvas.
+    const doc = await screen.findByRole('button', { name: 'Doc' });
     await userEvent.click(doc);
     await expect(args.onSelect).toHaveBeenCalledWith('Doc');
   },

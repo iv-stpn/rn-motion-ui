@@ -105,6 +105,8 @@ function DropdownPlayground() {
   const [longList, setLongList] = useState(false);
   const [fullSheet, setFullSheet] = useState(false);
   const [controlled, setControlled] = useState(false);
+  const [overlay, setOverlay] = useState(true);
+  const [closeOnOutside, setCloseOnOutside] = useState(true);
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
 
@@ -143,18 +145,22 @@ function DropdownPlayground() {
         <Toggle label="Scrollable" onChange={setScrollable} value={scrollable} />
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Controlled" onChange={setControlled} value={controlled} />
+        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 
       <TriggerControls state={trigger} />
 
       <AdaptiveDropdown
         align={align}
+        closeOnOutsidePress={closeOnOutside}
         floating={floating}
         elevation={ELEVATIONS[elevationKey]}
         fullSheet={fullSheet}
         headerSuffix={withHeaderAction ? HEADER_ACTION : undefined}
         maxHeight={SCROLL_MAX_HEIGHT}
         offset={Number(offsetKey)}
+        overlay={overlay}
         scrollable={scrollable}
         title={withTitle ? PANEL_TITLE : undefined}
         trigger={renderTrigger}

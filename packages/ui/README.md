@@ -162,7 +162,7 @@ Subpaths are namespaced by category:
 | `/menu`                        | `Menu`, `MenuSeparator`, `MenuLabel`                                     |
 | `/menu-item`                   | `MenuItem`                                                               |
 | `/multi-step-menu`             | `MultiStepMenu`                                                          |
-| `/bloom-menu`                  | `BloomMenu`                                                              |
+| `/morphing-menu`               | `MorphingMenu`                                                           |
 | `/hover-menu`                  | `HoverMenu`                                                              |
 | `/hold-menu`                   | `HoldMenuProvider`, `HoldItem`, `HoldMenuIcon`                           |
 | `/overflow-actions`            | `OverflowActions`                                                        |

@@ -72,6 +72,27 @@ const preview: Preview = {
   },
   parameters: {
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
+    options: {
+      // Explicit group order for the sidebar. `Buttons` sits first — ahead of
+      // `File System` — rather than relying on filesystem discovery order,
+      // which would otherwise place the groups by directory walk (`Display`,
+      // `File System`, …). `*` keeps any future group in alphabetical fallback.
+      storySort: {
+        order: [
+          'Buttons',
+          'Display',
+          'File System',
+          'Form',
+          'Gestures',
+          'Menus',
+          'Navigation',
+          'Rows',
+          'Scroll',
+          'Typography',
+          '*',
+        ],
+      },
+    },
   },
 };
 

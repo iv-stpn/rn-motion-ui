@@ -44,6 +44,28 @@ const preview: Preview = {
       );
     },
   ],
+  parameters: {
+    options: {
+      // Explicit group order for the story list, matching the web sidebar:
+      // `Buttons` sits first, ahead of `File System`. `*` keeps any future group
+      // in alphabetical fallback.
+      storySort: {
+        order: [
+          'Buttons',
+          'Display',
+          'File System',
+          'Form',
+          'Gestures',
+          'Menus',
+          'Navigation',
+          'Rows',
+          'Scroll',
+          'Typography',
+          '*',
+        ],
+      },
+    },
+  },
 };
 
 export default preview;

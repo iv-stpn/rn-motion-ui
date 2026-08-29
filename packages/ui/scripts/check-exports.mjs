@@ -28,6 +28,14 @@ const WRITE = process.argv.includes('--write');
 // 1. Collect all source files that should be exported
 // ---------------------------------------------------------------------------
 
+/** A file counts as an exportable source only if it is TypeScript and neither a story nor a test. */
+function isExportableSourceFile(entry, full) {
+  const isTypeScript = entry.endsWith('.ts') || entry.endsWith('.tsx');
+  const isStory = entry.endsWith('.stories.ts') || entry.endsWith('.stories.tsx');
+  const isTest = entry.endsWith('.test.ts') || entry.endsWith('.test.tsx') || full.includes('__tests__');
+  return isTypeScript && !isStory && !isTest;
+}
+
 /** Recursively list all .ts / .tsx files, excluding stories and test files. */
 function collectSourceFiles(dir) {
   const results = [];
@@ -35,14 +43,7 @@ function collectSourceFiles(dir) {
     const full = resolve(dir, entry);
     if (statSync(full).isDirectory()) {
       results.push(...collectSourceFiles(full));
-    } else if (
-      (entry.endsWith('.ts') || entry.endsWith('.tsx')) &&
-      !entry.endsWith('.stories.tsx') &&
-      !entry.endsWith('.stories.ts') &&
-      !entry.endsWith('.test.ts') &&
-      !entry.endsWith('.test.tsx') &&
-      !full.includes('__tests__')
-    ) {
+    } else if (isExportableSourceFile(entry, full)) {
       results.push(full);
     }
   }

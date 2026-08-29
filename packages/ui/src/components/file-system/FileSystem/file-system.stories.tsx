@@ -19,6 +19,7 @@ import { Draggable } from '../../gestures/Draggable/draggable';
 import { Text } from '../../typography/Text/text';
 import { STORY_PREVIEWS as PREVIEWS, type StoryPreview } from './__stories__/file-system-previews';
 import { FileSystem } from './file-system';
+import { FS_ROW_HEIGHT } from './logic/file-system-rows';
 import {
   FS_DRAG_CONTAINER_TEST_ID,
   FS_DROP_HINT_TEST_ID,
@@ -2667,23 +2668,37 @@ export const DragIntoOwnSubtree: Story = {
     await userEvent.click(expandDocs);
     const row = await listRow(canvas, 'Documents');
     const child = await listRow(canvas, 'Reports');
+    const sibling = await listRow(canvas, 'Photos');
+
+    // The children the expand revealed animate open (height 0 → full) with a
+    // fast-start ease, so the rows below them — `Photos/` included — shift the
+    // most in the first ~100ms, and keep creeping for the full 280ms. A drop
+    // point sampled while that runs is stale by the time the release is
+    // hit-tested against the zone's measured box. Wait until the entering row has
+    // grown to full height — the deterministic stand-in for a fixed settle count,
+    // which races under load.
+    await waitFor(() => {
+      const container = child.closest('.overflow-hidden');
+      expect(container?.getBoundingClientRect().height ?? 0).toBeGreaterThanOrEqual(FS_ROW_HEIGHT - 0.5);
+    });
 
     // `Documents/Reports/` is inside `Documents/`: a valid-looking folder row that
     // would make the path circular. Its zone refuses the drag outright, so the
     // release falls through to the background zone — the open folder, which is
     // where `Documents/` already sits, so that is not a move either.
     const transfer = newDragTransfer();
-    await dragOnto({ source: row, target: child, to: centerOf(child), transfer });
-    fireDrag(row, 'dragend', transfer, centerOf(child));
+    const ontoChild = centerOf(child);
+    await dragOnto({ source: row, target: child, to: ontoChild, transfer });
+    fireDrag(row, 'dragend', transfer, ontoChild);
     await expect(args.onMove).not.toHaveBeenCalled();
 
     // The same folder, the same gesture, a destination outside its subtree: this
     // one reports. Without it the assertion above would also pass on a drag that
     // never armed at all.
-    const sibling = await listRow(canvas, 'Photos');
     const second = newDragTransfer();
-    await dragOnto({ source: row, target: sibling, to: centerOf(sibling), transfer: second });
-    fireDrag(row, 'dragend', second, centerOf(sibling));
+    const ontoSibling = centerOf(sibling);
+    await dragOnto({ source: row, target: sibling, to: ontoSibling, transfer: second });
+    fireDrag(row, 'dragend', second, ontoSibling);
     await waitFor(() => expect(args.onMove).toHaveBeenCalledWith({ destination: 'Photos/', sources: ['Documents/'] }));
   },
 };

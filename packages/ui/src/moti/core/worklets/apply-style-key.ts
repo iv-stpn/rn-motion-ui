@@ -60,7 +60,8 @@ export function applyStyleKey({ final, key, value, transition, defaultDelay, cal
           // biome-ignore lint/plugin: getSequenceArray returns unknown[]; withSequence needs the animation-object tuple shape, unrecoverable from unknown
           const sequenceTuple = sequence as [ReturnType<typeof withTiming>, ...ReturnType<typeof withTiming>[]];
           let finalValue = withSequence(...sequenceTuple);
-          if (shouldRepeat) finalValue = withRepeat(finalValue, repeatCount, repeatReverse, callback);
+          // `undefined` matches the non-transform path + applyAnimation: getSequenceArray already fires `callback` per step, so withRepeat must not fire it again at completion.
+          if (shouldRepeat) finalValue = withRepeat(finalValue, repeatCount, repeatReverse, undefined);
           transform[transformKey] = finalValue;
         }
       } else {
@@ -138,10 +139,12 @@ export function applyStyleKey({ final, key, value, transition, defaultDelay, cal
     final[key] = {};
     // biome-ignore lint/plugin: final[key] was just set to {}; the index-write target needs a Record shape that its `unknown` value type doesn't provide
     const nested = final[key] as Record<string, unknown>;
-    for (const innerStyleKey of Object.keys(value)) {
+    // biome-ignore lint/plugin: the nested style value was narrowed to `object` above; the cast re-exposes its index signature so inner keys can be read
+    const nestedValue = value as Record<string, unknown>;
+    for (const innerStyleKey of Object.keys(nestedValue)) {
       // biome-ignore lint/plugin: applyAnimation returns unknown; nested style value needs the concrete animation-node type
       nested[innerStyleKey] = applyAnimation({
-        value,
+        value: nestedValue[innerStyleKey],
         animation,
         config,
         callback,

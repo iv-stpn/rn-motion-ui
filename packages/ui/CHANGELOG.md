@@ -1,5 +1,635 @@
 # rn-motion-ui
 
+## 7.0.0
+
+### Major Changes
+
+- b2fffd9: feat: rename `BloomMenu` to `MorphingMenu`, and give it `overlay` + `closeOnOutsidePress`
+
+  **Breaking change**
+
+  `BloomMenu` is now `MorphingMenu`, and it joins the other menus on the shared
+  overlay/outside-press surface:
+
+  | before                    | after                        |
+  | ------------------------- | ---------------------------- |
+  | `rn-motion-ui/bloom-menu` | `rn-motion-ui/morphing-menu` |
+  | `BloomMenu`               | `MorphingMenu`               |
+  | `BloomMenuProps`          | `MorphingMenuProps`          |
+  | `BloomMenuItem`           | `MorphingMenuItem`           |
+  | `BloomIcon`               | `MorphingIcon`               |
+  | `BloomIconProps`          | `MorphingIconProps`          |
+
+  The two new props are independent, like the rest of the menu family:
+
+  - **`closeOnOutsidePress`** (`boolean`, default `true`) — whether tapping/clicking
+    outside the morph card closes it.
+  - **`overlay`** (`boolean`, default `false`) — whether the dimming scrim renders
+    behind the card. Unlike the other menus, which default it to `true`,
+    `MorphingMenu` defaults it to `false`: like `MorphingFab`, it morphs in place
+    over the page with no scrim. The old `BloomMenu` had no scrim either, so the
+    default rendering is unchanged; pass `overlay` to opt into one.
+
+  The stories gain the shared `Show overlay` / `Close on outside` toggles, with the
+  overlay toggle starting off to match the new default.
+
+- a30218e: feat: add an `elevation` (`0–8`) prop to `Button`, and flatten it by default
+
+  **Breaking change**
+
+  `Button` gains `elevation` (`0–8`, default `0`), which drives the shadow _only_ — a Button's background still comes from its `variant`, not the surface ladder. The float is no longer baked into the variant table, so the five filled plates (`danger`, `success`, `warning`, `info`, `special`) that previously shipped `shadow-elevated-3` are now flat by default; pass `elevation={3}` to restore their old look. `floating` still overrides whichever `shadow-elevated-N` rung resolves.
+
+  The `Interactive` story gains an `Elevation` control and an elevation ladder, both starting at `0` so the flat default is visible.
+
+- d181736: feat(ButtonSwap): rename `ActionSwap` and give it the full `Button` styling surface
+
+  **Breaking change**
+
+  `ActionSwap` is now `ButtonSwap`, and it is a member of the button family rather than a display component:
+
+  | before                                           | after                                    |
+  | ------------------------------------------------ | ---------------------------------------- |
+  | `rn-motion-ui/action-swap`                       | `rn-motion-ui/button-swap`               |
+  | `ActionSwapButton`                               | `ButtonSwap`                             |
+  | `ActionSwapText` / `ActionSwapIcon`              | `ButtonSwapText` / `ButtonSwapIcon`      |
+  | `ActionSwapItem` / `ActionSwapAnimation`         | `ButtonSwapItem` / `ButtonSwapAnimation` |
+  | `ActionSwapButtonVariant`                        | `ButtonVariant` (Button's own)           |
+  | `ActionSwapButtonSize` / `ActionSwapButtonShape` | `ButtonSize` / `ButtonShape`             |
+
+  Its four-variant table (`primary`, `secondary`, `outline`, `ghost`) is gone. `ButtonSwap` now paints from the same colour table `Button` does, so map `primary` → `inverse`, `secondary` → `neutral` (the new default), and keep `outline`/`ghost`; the eight remaining variants (`danger`, `success`, `warning`, `info`, `special`, `outlineDanger`, `ghostDanger`) are new to it.
+
+  On top of the variant table it gains the rest of Button's styling surface: `elevation` (`0–8`), `floating`, `ripple`, `pressMode`, `pressTransition`, `noDisabledOpacity`, `backdropColor`, `fitWidth`, `className`, `contentClassName`, `labelClassName` and `onPress` (fired on every press, alongside the `cycle` advance). `pressScale` now defaults to `0.93`, matching `Button`, rather than `0.97`; the press spring is `MOTION_SNAPPY` for the same reason. The default `testID` is `button-swap` (was `action-swap-button`).
+
+  The colour tables themselves moved to an internal `button-variants` module that `Button` and `ButtonSwap` both read, so the two can no longer drift. The `label` cva is no longer re-exported from `rn-motion-ui/button`.
+
+  The story moves to `Form/ButtonSwap` and gains Elevation/Floating/Ripple controls, an elevation ladder, a styling showcase, and a test pinning that `labelClassName` reaches both copies of the swapping label.
+
+- 8fc1dfa: feat: flatten `Card` by default
+
+  **Breaking change**
+
+  `Card`'s `elevation` default flips from `3` to `0`, matching `Input` (and the new flat `Button` default). A plain `<Card>` now renders the flat `surface-3` fill with no shadow or border; pass `elevation={3}` to restore the previous resting card.
+
+  The `Interactive` story's `Elevation` control now starts at `0` so the flat default is visible.
+
+- 936b222: feat: replace `Input`'s `variant` prop with the shared `floating` + `elevation` surface props
+
+  **Breaking change**
+
+  `Input` was the last surface spelling its own fill and float as a `variant` table (`'base' | 'elevated' | 'floating'`). It now takes the same two props every other surface does:
+
+  - `elevation` (`0–8`, default `0`) — the ladder rung, driving the field fill (`bg-surface-N`) and the `shadow-elevated-N` recipe. `0` is the flat resting surface (a `surface-3` fill, no shadow), matching the new flat default on the other surfaces.
+  - `floating` (`boolean`, default `false`) — swaps that rung's ladder shadow for the large, diffuse halo (`shadow-floating`) the old `variant="floating"` wore.
+
+  The state-tinted web border is drawn only at `elevation={0}`; at `1–8` the elevation shadow already carries the rim, so a border would double up.
+
+  | before                         | after                                             | notes                                                                                                                                                   |
+  | ------------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `variant="base"` (the default) | _(nothing — `elevation` already defaults to `0`)_ | identical in light mode; in dark the fill moves from `--color-input` (`oklch(22%)`) to `surface-3` (`oklch(26.4%)`), so the field reads a touch lighter |
+  | `variant="elevated"`           | `elevation={1}`                                   | nearest rung: `bg-surface-1` replaces the `surface-contrast` fill, and the field picks up `shadow-elevated-1`                                           |
+  | `variant="floating"`           | `floating`                                        | exact — at `elevation={0}` the fill is already `bg-surface-3`, so this resolves to the same `bg-surface-3 shadow-floating`                              |
+
+  Because `elevation` and `floating` are independent, combinations the variant table could not express — a raised field at `elevation={5}`, or the halo over any rung — are now reachable.
+
+  The `--color-input` token is still defined (and still readable via `useThemeColor('input')`) but nothing in the library consumes it any more; it is kept for app code that wants the old flat field colour.
+
+- dfb3478: feat: add `overlay` + `closeOnOutsidePress` to every menu; rename legacy outside-press props
+
+  Every menu now takes two independent props, both defaulting to `true`:
+
+  - **`overlay`** — whether the dimming backdrop/scrim is rendered behind the panel. Set `false` to float the panel over the page with no scrim.
+  - **`closeOnOutsidePress`** — whether tapping/clicking outside the panel closes it. Set `false` to require an explicit dismiss action (close button, back gesture, etc.).
+
+  Because they are independent, all four combinations are available: dim + close, dim + no-close, transparent + close, transparent + no-close.
+
+  **Breaking prop renames** (the major bump):
+
+  - `BottomSheet` / `AdaptiveModal`: `closeOnOverlayClick` → `closeOnOutsidePress`.
+  - `Drawer`: `dismissable` → `closeOnOutsidePress`.
+
+  `FullSheet`'s `dismissable` (overall dismissability, not an outside-press toggle) and the date-picker hooks are unchanged.
+
+  Affected components: `BottomSheet`, `AdaptiveModal`, `CommandPalette`, `MultiStepMenu`, `AdaptiveDropdown`, `Popover`, `HoverMenu`, `Drawer`, `MorphingModal`, `ActionFeedbackModal`, and `HoldMenuProvider`.
+
+  Note: `HoverMenu`'s `overlay` only applies on native — a web hover menu has no scrim by design, since one would cover the trigger and break hover continuity.
+
+- eda3f5e: feat(Marquee)!: remove the `Marquee` component
+
+  **Breaking change**
+
+  `Marquee` is gone, and with it the `rn-motion-ui/marquee` subpath. The removed
+  exports are `Marquee`, `MarqueeProps` and `MarqueeDirection`.
+
+  There is no drop-in replacement. A marquee is two duplicated tracks translated in
+  lockstep by a `withRepeat(withTiming(…), -1)` loop on a shared value — roughly
+  thirty lines against `react-native-reanimated` — so consumers still needing one
+  should vendor it rather than reach for another component here.
+
+  Unaffected: the FileSystem's drag-to-select box, which is also called a marquee
+  internally (`useFileSystemMarquee`, `selectMarquee`). It is a separate feature and
+  stays exactly as it is.
+
+- 9f4a6c0: feat: replace IconButton/MorphingFAB `variant` with a `floating` toggle, and add the same toggle to every surface
+
+  **Breaking changes**
+
+  - **`IconButton`** — the `variant` prop (`'neutral' | 'elevated'`) is removed, replaced by two independent props:
+
+    - `elevation` (`0–8`, default `3`) — the surface level, driving the background tint (`bg-surface-N`) and the `shadow-elevated-N` recipe.
+    - `floating` (`boolean`, default `false`) — swaps that ladder shadow for the input field's large, diffuse halo (`shadow-floating`).
+
+    The two old variants map onto the new defaults exactly, so the migration is mechanical and nothing changes visually:
+
+    | before                            | after                                             |
+    | --------------------------------- | ------------------------------------------------- |
+    | `variant="neutral"` (the default) | _(nothing — `elevation` already defaults to `3`)_ |
+    | `variant="elevated"`              | `floating`                                        |
+
+  - **`MorphingFAB`** — same change: `variant` is removed in favour of `floating` + `elevation`.
+
+  **New `floating` toggle on every other surface**
+
+  Every component that already exposed `elevation` (`0–8`) now also takes `floating` (`boolean`, default `false`). It swaps the `shadow-elevated-N` recipe for `shadow-floating` — the same soft, zero-offset halo `Input`'s `floating` variant wears. The two are alternatives rather than layers, since both write `box-shadow`; the background tint still follows `elevation`, so a floating surface keeps its place in the ladder while wearing the softer drop.
+
+  Because it defaults to `false`, every existing surface renders exactly as before.
+
+  Affected: `Card`, `RadioCard`, `CheckboxCard`, `WheelPicker`, `Dock`, `Drawer`, `BottomSheet`, `Popover`, `FullSheet`, `BloomMenu`, `CloseButton`, `MorphingModal`, `ActionFeedbackModal`, `AdaptiveDropdown`, `AdaptiveModal`, `HoverMenu`, `SwipeableList`, `BouncyAccordion`, and `MorphingSwitcher`.
+
+  The shared helpers `elevated()` (`packages/ui/src/lib/elevated.ts`) and `surface()` (`packages/ui/src/lib/surface.ts`) each take a trailing, defaulted `floating` argument to carry the toggle, and `FLOATING_SHADOW_CLASSNAME` is exported so components share one definition of the halo.
+
+### Minor Changes
+
+- 9f4a6c0: feat(Button): add a `floating` prop
+
+  `Button` now takes `floating` (`boolean`, default `false`), which swaps whatever
+  shadow its `variant` carries for the input field's large, diffuse halo
+  (`shadow-floating`) — the recipe `Input`'s `floating` variant wears. It replaces
+  rather than layers, since both write `box-shadow`: a floating `danger` trades
+  its `shadow-elevated-3` for the halo, and a floating `ghost` gains one where it
+  had none.
+
+  This is purely additive — the variant colour table is untouched, so with
+  `floating` unset every variant renders exactly the classes it did before.
+
+  `ElevatedButton` intentionally has no `floating` prop: its glossy drop and
+  coloured 1px ring are computed per-variant from the fill colour rather than
+  coming from a shadow token, and they are the component's whole identity rather
+  than an option.
+
+- b6b43fc: feat(RadioCard, CheckboxCard): add an inline layout
+
+  Both cards take a new `layout` prop — `'stacked' | 'inline'`, on the group and
+  overridable per card. `"stacked"` is the existing arrangement and the default,
+  so nothing changes unless you opt in: the ring/box leads a row of its own above
+  the text, with the badge riding that row's far end.
+
+  `"inline"` moves the control to the card's trailing edge, centred against the
+  text beside it, and the badge follows the title it qualifies instead. That's the
+  settings-list shape — text on the left, control on the right, one row per option.
+
+  It's a separate axis from the group's `orientation`, which lays the _cards_ out
+  rather than each card's contents, and the two compose freely. Under
+  `variant="card"` there's no ring to place, so `layout` only decides where the
+  badge sits.
+
+  The text column moves into a private `RadioCardBody` / `CheckboxCardBody` so
+  each card component stays under the complexity cap, and `RadioCardRing` gains
+  `shrink-0` so a long title can't squeeze the ring now that they can share a row
+  — matching `Radio` and `Checkbox`, whose controls were already shrink-proof.
+  Both stories gain a Layout control in the playground and an inline demo.
+
+- 1ddd315: feat(menus): rebuild HoldMenu on the shared `Menu`; add a `variant` prop to menu rows
+
+  `HoldMenu` no longer renders its own bespoke row/separator components. It maps
+  its items onto the shared `Menu` in a new `'segmented'` style, so the hold-menu
+  and every other menu read from one row implementation.
+
+  **New API on `Menu` and its rows:**
+
+  - `Menu`, `MenuItem`, `MenuSeparator` and `MenuLabel` take a `variant` prop —
+    `'base'` (default, the CommandPalette look: icon leading, no borders between
+    rows) or `'segmented'` (the hold-menu look: icon trailing, a hairline below
+    each row but the last, centred captions, solid band separators). `MenuVariant`
+    is exported from `Menu`.
+  - `MenuItem` and `MenuLabel` take `bottomBorder` to draw that hairline.
+
+  `HoldMenu`'s panel also changes shape: instead of a fixed 40%-of-window width it
+  now sizes to its widest row (measured off-screen before the first hold), floored
+  at 160 px and still capped at 40% of the window so a long label wraps instead of
+  running off the edge. Rows are full-height (40 px) now, matching the
+  `'segmented'` scale.
+
+  Nothing is removed from the public API — `HoldMenu`'s old `MenuItem`, `MenuItems`
+  and `Separator` were internal.
+
+- 1ddd315: feat(menus): raise default elevation to 6, darken scrims, settle menu radius at 12 px
+
+  Every floating menu now rests at a consistent, higher elevation so panels
+  separate from the page:
+
+  - `BottomSheet` (3 → 6), `Drawer`, `FullSheet` and `MorphingMenu` (0 → 6),
+    `HoverMenu` and `AdaptiveDropdown` (5 → 6), `Popover` (4 → 6).
+  - `CommandPalette` gains an `elevation` prop (default 6), matching the rest.
+
+  The dimming scrims behind each panel deepen in step: the light `bg-black/20`
+  scrim becomes `bg-black/40`, the `bg-foreground/20` backdrop becomes `/40`, and
+  the heavier modal scrims move up too (BottomSheet 45% → 60%, ActionFeedbackModal
+  40% → 50%).
+
+  Menu overlays settle on a 12 px radius (`--radius-menu` 6 → 12, `MENU_RADIUS`
+  16 → 12), and the `MenuItem` row scale is retuned — taller rows, larger icons
+  and labels — so the shared row reads the same in every menu.
+
+  `CommandPalette` also stops preselecting its first row on open: the highlight
+  appears only once you press a row.
+
+- dba82d1: feat: give `MorphingFAB` and `MorphingSwitcher` the menu `overlay` + `closeOnOutsidePress` surface
+
+  The two morph-in-place components now fold on an outside press and can dim the
+  page behind them, joining the rest of the menu family:
+
+  - **`MorphingFAB`** gains **`closeOnOutsidePress`** (`boolean`, default `true`) —
+    pressing/clicking outside the expanded pane closes it — and **`overlay`**
+    (`boolean`, default `false`) — a dimming scrim behind the pane.
+  - **`MorphingSwitcher`** gains **`overlay`** (`boolean`, default `false`); it
+    already honoured `closeOnOutsidePress`.
+
+  Both default `overlay` to `false` so the morph-in-place look is unchanged — pass
+  `overlay` to opt into the scrim, like `MorphingMenu`.
+
+  Both components also moved from `components/display/` to `components/menus/`, so
+  their Storybook stories now sit under `Menus/`. The public import paths
+  (`rn-motion-ui/morphing-fab`, `rn-motion-ui/morphing-switcher`) are unchanged, so
+  no migration is required.
+
+- 5ba9cca: feat(StatefulButton): expose the Button styling surface and fix the label weight
+
+  `StatefulButton` now accepts the full `Button` styling surface: `className` (outer wrapper), `contentClassName` (pressable plate, merged after the success/error squeeze), `labelClassName` (rolling label, on top of the variant/size ramp), and `style`. `labelClassName` was previously accepted but silently dropped — the content row bypasses the shared label builder — so it is now routed to both copies of the roll-slot label, keeping the invisible sizer measuring the same box the visible label paints in.
+
+  `floating` and `elevation` pass through to the flat button and are ignored by the elevated `chip`, which casts its own drop-shadow ring.
+
+  The label now renders at `weight="medium"`, matching `Button` (it previously fell back to regular).
+
+  The `Interactive` story gains `Styled`/`Floating`/`Elevation` controls, a styling showcase, a shadow ladder, and a test pinning that `labelClassName` styles every state.
+
+### Patch Changes
+
+- 613dddd: fix(AnimatedList): render items on Fabric by animating height through a layout transition
+
+  `AnimatedListItem` drove its height through `useAnimatedStyle` (a shared value),
+  which Reanimated drops on the new architecture — Yoga never round-trips the
+  animated `height`, so the item collapsed to 0 and the list rendered empty on
+  Android. The height is now a static style whose 0 → content → 0 change rides a
+  Reanimated layout transition (`layout={LinearTransition}`), matching the
+  `BouncyAccordion` fix; the inner content is laid out absolutely so `onLayout`
+  can measure its natural height while the outer is still collapsed. Style props
+  (opacity/translate/scale) still animate through shared values, which are safe on
+  Fabric. The exit releases the item on a timer matched to the collapse duration
+  instead of a `withTiming` completion callback.
+
+- 2d6625f: fix(BloomMenu): drop the morph card's outline and full-bleed the trigger face
+
+  The shared-layout card that springs between the trigger and the panel carried a
+  `border-border` outline, which the other menu surfaces had already dropped —
+  they read against the page through `surface()`'s fill and shadow alone. The
+  outline is gone, so BloomMenu matches them.
+
+  The trigger face was inset by 1px on every side to sit inside that outline, and
+  rounded at a hardcoded `15` to match the card's radius minus the inset. With no
+  edge left to inset from, it now covers the card corner to corner and takes the
+  shared `MENU_RADIUS` constant instead of the literal.
+
+- 0cd284f: feat(theme): draw every border at 1.5px
+
+  Tailwind's bare `border` is 1px, which renders thin and washed-out against the
+  low-alpha `border` token — on high-density screens the edge all but disappears.
+  Every border in the library now carries an explicit 1.5px width: `border`
+  becomes `border-[1.5px]`, the side utilities (`border-t`, `border-r`,
+  `border-b`, `border-l`) become their `-[1.5px]` equivalents, and the handful of
+  2px accents (`border-2`) come down to the same 1.5px so the library has one
+  border weight rather than three. `border-*-0` still means no border, and
+  `border-border` and every other color utility are untouched.
+
+  The 2px accents that changed are `Radio` and `Checkbox`'s control, `OtpInput`'s
+  slot and its active ring, `FileSystem`'s internal-drop highlight (column and
+  body) and its drop indicator. `OtpInput`'s active ring also drops its
+  `-inset-px` offset for `inset-0`: at 2px the ring covered the slot's own border
+  while bleeding 1px past the slot bounds, and at 1.5px that offset would have
+  left a hairline of the slot's status colour (success, error) showing inside it.
+  Pinned to the slot's bounds the two borders land on top of each other, so an
+  active cell reads as a single 1.5px edge in every state.
+
+  The two places that mirror a border width in JS move with it:
+  `HOLD_MENU_BORDER_HEIGHT` goes from `2` to `3` (top + bottom) so the hold-menu
+  panel's pre-mount height estimate stays exact, and `Dock`'s `BORDER_WIDTH`
+  goes from `1` to `1.5` so the active pill still centres on its item — item
+  layouts are reported against the border box, the pill is placed against the
+  padding box. `HoldMenu`'s row divider moves to a 1.5px `borderBottomWidth` to
+  match.
+
+  Consumers passing `border` (or a side variant) through `className` keep the 1px
+  Tailwind default; pass `border-[1.5px]` to match the library.
+
+- c2903ee: fix(RadioCard, CheckboxCard): drop the resting outline so an unselected card reads as a plain surface
+
+  Both cards drew a `border-border` outline at rest, so an unselected card was
+  ringed against the surface it sat on and a group read as a grid of boxes. The
+  border is now purely the selection affordance: unselected it is transparent and
+  the card leans on the wrapper's `surface()` fill, and selecting one brings the
+  `info` edge in with the tint it already animated.
+
+  `RadioCard` animates its border, so the unselected end is the accent at alpha 0
+  via `tintAt` rather than a literal `transparent` — the same reason the
+  background tint already used it, since a literal would interpolate through
+  `rgba(0, 0, 0, 0)` and darken the edge on the way in. `useThemeColor('border')`
+  is no longer read. `CheckboxCard` switches its static class to
+  `border-transparent`.
+
+  Both keep the `border` width reserved in both states, so selecting a card
+  doesn't shift its contents. Passing a `border-*` color through `className`
+  still gives a card a resting outline.
+
+- e2e3423: add CloseButton stories and pin the storybook group order
+
+  `CloseButton` gains its first stories — an `Interactive` playground (floating,
+  elevation, size), a press demo that asserts `onPress` fires, and an `AllSizes`
+  catalogue. The storybook sidebar/story list also gets an explicit
+  `options.storySort`, so the `Buttons` group sorts above `File System` instead of
+  relying on filesystem discovery order.
+
+- 1f07f22: fix(CommandPalette): hide shortcut hints and swap the ESC chip for a close button on touch screens
+
+  The palette renders as a centred modal on wide (≥ `sm`) screens but as a full
+  touch sheet on narrow ones, where keyboard-shortcut hints are meaningless and no
+  hardware ESC key exists. Row shortcut hints are now hidden and the `ESC` chip is
+  replaced by a proper `CloseButton` in the top right on narrow screens; wide
+  screens keep the `ESC` chip and show each item's shortcut hint.
+
+- ebf1f12: chore: block hardcoded colours on push
+
+  A `pre-push` guard now runs `check-no-hardcoded-colors.mjs` before tests, so a
+  raw hex/rgba literal in `src/components` fails the push instead of slipping into
+  the package. Also rewrote a prose line in `RadioCard` that quoted
+  `rgba(0,0,0,0)` (the reason `tintAt` exists), so the guard no longer flags its
+  own explanatory comment as a hardcoded colour.
+
+- 40d8224: fix(motion): drive animated layout props through layout transitions so morphs animate on Fabric
+
+  Animating `width`/`height`/`top`/`left`/`margin`/`padding` through Moti's
+  `animate`/`from`/`exit` pipeline doesn't round-trip Yoga on the new architecture
+  (Fabric), so size changes either collapsed to 0×0 (clipped to nothing) or snapped
+  instead of animating. Every animated layout prop now rides a Reanimated layout
+  transition (`layout={LinearTransition}`) with a static size, or a transform:
+
+  - `MorphingFAB`, `MorphingSwitcher`, `MorphingMenu`, `MorphingModal` and
+    `DynamicIsland` keep a static shell and animate the size via `layout`.
+  - The `Tabs` indicator and `Dock` pill glide via layout transitions.
+  - `BouncyAccordion`'s expand/collapse and row separation move to layout transitions.
+  - `OverflowActions`' reveal, `MultiStepMenu`'s back button and below-title slot,
+    and `StatefulButton`'s icon slot hold a static footprint and fade/slide instead
+    of tweening `width`/`height`/`padding`.
+  - `Loader` bars loop `scaleY` on a static height instead of `height`.
+  - `ActionFeedbackModal`'s morph icon keeps a static size and morphs the fill.
+  - `CylinderCarousel` and `SortableList` move constant layout props out of
+    `useAnimatedStyle` into static style.
+
+  Each layout transition mirrors the spring/timing it replaces and collapses to a
+  snap under reduced motion.
+
+- 5c1ee1c: fix(FileSystem): settle the expand animation before sampling drop points in `DragIntoOwnSubtree`
+
+  The `DragIntoOwnSubtree` story measured its drop coordinates right after
+  clicking the expand chevron, while the children it revealed were still animating
+  open (height 0 → full). The rows below — `Photos/` included — shift most in the
+  first ~100ms and keep creeping for the full 280ms, so a point sampled mid-anim
+  was stale by the time the release was hit-tested against the drop zone's measured
+  box. The play function now waits until the entering row has grown to full height
+  before sampling either target, replacing a fixed settle count that raced under
+  load.
+
+- 9c5e092: feat(FileSystem): pack the mobile grid by width, and size the folder glyph by its own ratio
+
+  The mobile grid was fixed at two columns, so a tablet or a wide pane got two
+  stretched tiles instead of a full row. Columns are now packed from the measured
+  width at a 140pt floor and then share out the slack: every phone viewport still
+  ships two across (320pt lands at 144pt tiles, 430pt at 199pt), a container packs
+  past two from ~510pt on and reaches five at 768pt, and anything below the floor
+  drops to a single column rather than squeezing a tile past what a two-line name
+  can hold beside its kebab. At phone width the tiles land exactly where the old
+  math had them. The geometry moved to a pure `mobileGridMetrics` module with unit
+  tests; `Demo: Mobile grid (wide)` shows the packing at tablet width.
+
+  The folder is the one landscape glyph in a set of portrait pages, so squaring it
+  off against them left it reading as the runt of a grid of files — half their
+  height in the grid, and hemmed into a 28pt lane in the list. Both mobile views
+  now size it by the height it may fill and let it spread into the width its ratio
+  asks for, less a small optical inset that offsets the folder being a solid block
+  of colour where a page is drawn as one. The list's glyph lane grows to 40×31,
+  shaped to the folder rather than square, so a page keeps its height under what a
+  touch row can give it. `rn-motion-ui/file-icon` gains
+  `FOLDER_GLYPH_ASPECT_RATIO` and `folderGlyphWidthForBox`, the counterpart of
+  `fileIconWidthForBox`.
+
+  `renderEntryIcon` now receives one size for both files and folders — the largest
+  square the box holds, 72 in the mobile grid and 31 in the mobile list — where it
+  previously got a different number per kind (96/56 and 20/28). A custom icon that
+  was drawn to fill the number it was handed will change size accordingly.
+
+- 9589e5f: fix(gestures): claim the pan at hold so a held item dragged vertically lifts instead of scrolling
+
+  On native, a held `<FileSystem draggable>` row inside a vertical `ScrollView` scrolled
+  when dragged straight down — the drag only lifted on horizontal movement. The pan
+  transport waited for the finger to travel past `escapeSlop` (24px) before calling
+  `manager.activate()`, but the native scroll begins at ~10px, so the scroll claimed the
+  vertical movement and cancelled the pan first.
+
+  The pan now claims the finger the moment the press commits (past `armDelay`),
+  activating the gesture to take the vertical movement off the enclosing `ScrollView`,
+  while the drag itself still lifts on the move past `slop`/`escapeSlop`. Claiming and
+  lifting are two separate `PanArm` flags (`active` vs `dragging`) so the hold that arms
+  the drag never becomes a drag on its own — a bare hold keeps opening its context menu
+  exactly as before.
+
+- 294ca01: feat: align IconButton and MorphingSwitcher heights with the Button ramp; add a `size` prop to MorphingSwitcher
+
+  - **IconButton `lg` now sits on the shared interactive ramp.** It was 48px (an off-ramp step reserved for MorphingFAB's trigger); it is now 40px, exactly matching `Button`/`ButtonSwap` at `lg`. `sm`/`md`/`lg` (24/32/40px) line up across the family, and the tile/icon ratios inside `lg` were re-proportioned to keep the same ring of breathing room.
+  - **MorphingFAB's trigger stays circle-sized.** Its trigger was driven by `ICON_BUTTON_LG_SIZE`, so it now stands at 40px with a matching 20px radius — no visual change in proportion, just the shared size.
+  - **MorphingSwitcher gains `size` (`sm` | `md` | `lg`, default `md`).** The trigger and every item row now stand at the shared interactive height (24/32/40px), with icon, label, caret, and pane radius scaling to suit. Previously it was a fixed 36px.
+
+- dcc3eb1: fix(MenuItem): tighten base-variant padding when the leading icon slot is occupied
+
+  The base variant used its `px` to indent a bare text row; when a leading icon
+  (or its same-size placeholder) occupies the slot, that icon already supplies the
+  indent, so the extra padding over-indented the label. The base row now uses a
+  tighter horizontal padding whenever the leading slot is filled.
+
+- b2fffd9: docs(menus): add `Show overlay` / `Close on outside` toggles to every menu story
+
+  Every menu's `Interactive` playground now exposes the same two live controls —
+  `Show overlay` and `Close on outside` — driving the `overlay` and
+  `closeOnOutsidePress` props, so the overlay/outside-press behaviour can be
+  flipped at runtime instead of read back out of the code.
+
+  `FullSheet` is the exception: a full-screen sheet has no outside region or scrim
+  to toggle, so it keeps its `dismissable` control. The `MorphingMenu` playground's
+  overlay toggle starts off, matching that component's new no-scrim default.
+
+- af06238: fix(MorphingModal): stop the elevated shadow from being clipped by the panel
+
+  The panel carried `overflow-hidden` on the elevated surface itself, which clipped
+  the shadow ring to nothing and left only the flat background — the shadow must
+  render outside the clip region, as in RadioCard / ElevatedButton. The clip now
+  lives on a dedicated inner wrapper that also carries the corner radius, so the
+  surface, its shadow, and the rounded clip all share one `panelRadiusClass`
+  (top-only for the bottom sheet, all four corners otherwise).
+
+- 8f7cd1b: fix(MorphingSwitcher): size the stacked carets to sit flush without a negative margin
+
+  The `switcher` trigger's stacked caret pair was pulled together with a per-size
+  `marginTop` of −5 to −7, chosen to close the gap the chevron glyph's padding
+  leaves inside its 24-unit box. Overlapping the boxes that hard made the pair
+  sensitive to the glyph's exact metrics, and it read as one squashed mark rather
+  than two carets.
+
+  The pair is now sized instead of shifted: `stackedCaretSize` rises to within a
+  unit of `caretSize` at every size (sm 9→11, md 10→13, lg 12→15) and both carets
+  render with no style override, so the boxes sit flush and the strokes land the
+  same ~2px apart the margin was aiming for. `caretSize` moves up in step (sm
+  11→12, md 12→14, lg 14→16) to keep the single caret matched to the stacked pair.
+  `SwitcherScale.stackedCaretStyle` is gone, since nothing overrides the glyph
+  position any more.
+
+- 5a02f4d: fix(MultiStepMenu): roll content up on back-to-root and fade in the first layer
+
+  On the small screen the content below the title slid horizontally while the title
+  rolled up, so the two moved out of sync. Returning to the root now rolls the
+  entering root content up into place while the deeper menu disappears instantly
+  (no exit animation), and entering the first layer from the root fades it in with
+  opacity instead of sliding in from the side — there's no parent pane to slide
+  against. Deeper navigation keeps its horizontal slide, and a deeper menu's
+  content disappears instantly as it leaves, so its rows don't linger on screen
+  during the slide.
+
+  The below-the-header title animates its height and margin on enter/exit so the
+  header collapses smoothly instead of snapping, and the wide-screen content pane
+  (previously an instant swap) now slides horizontally with the sidebar selection.
+
+- 0c55535: fix(theme): separate `muted` from `background`
+
+  `muted` was indistinguishable from the page in light mode — `oklch(95% 0 0)`
+  against a `background` of `oklch(95% 0.004 270)`, a lightness delta of zero, so
+  every muted fill (tabs and segmented-control tracks, the slider track, toggle
+  groups, skeletons, the elevated-button disabled plate, the `muted` item-row
+  variant) vanished on a `bg-background` page. Dark mode read as too close to the
+  low end of the surface ladder.
+
+  - Light: `oklch(95% 0 0)` → `oklch(90% 0 0)` — 5% below `background`, 7% below
+    `surface-1`, 10% below the `surface-3` card white.
+  - Dark: `oklch(24% 0.004 270)` → `oklch(28% 0.004 270)` — 7.5% above
+    `surface-1`, 4.5% above `surface-2`.
+
+  `muted-foreground` is unchanged and still clears its fill in both schemes (50%
+  ink on 90%, 73% ink on 28%). The native `LIGHT_OKLCH` / `DARK_OKLCH` tables in
+  `use-theme-color.ts` move with the sheet, so `useThemeColor('muted')` matches.
+
+  Apps that relied on `bg-muted` blending into `bg-background` should override
+  `--color-muted` back to `oklch(95% 0 0)` / `oklch(24% 0.004 270)` in their own
+  `@theme` block.
+
+- 62e70fc: fix(motion): resolve nested style objects and fix repeating-transform callback
+
+  Two correctness fixes in the Moti animation core:
+
+  - Nested style objects (`shadowOffset`, `textShadowOffset`, …) now animate each
+    inner value independently. Previously the whole `{ width, height }` object was
+    handed to the spring, so a shadow-offset animation collapsed onto a single
+    shared value instead of tweening each channel.
+  - `onDidAnimate` no longer fires twice on repeating transform sequences. The
+    transform path passed the callback to `withRepeat` in addition to the per-step
+    callback, so it fired once per repetition _and_ once more at final completion —
+    unlike every other repeating animation, which fires once per repetition.
+
+- a23dff5: fix(Overlay): keep the portal outlet above BottomSheet on Android
+
+  The overlay outlet layer now carries `elevation: 25` on Android. `BottomSheet`'s
+  panel sets `elevation: 24` — the only hard elevation in the overlay set — which
+  on Android wins over sibling order, so content portaled through the outlet (a
+  button, a menu) could render _underneath_ the sheet. Clearing the sheet's
+  elevation puts injected content back on top. No-op on iOS and web, where
+  `zIndex` and document order already put the last sibling in front.
+
+- d20f295: feat(theme): remove the `special` color token and its variants
+
+  Drops the non-semantic `special` accent: the `--color-special` /
+  `--color-special-foreground` tokens (and their native OKLCH entries in
+  `useThemeColor`) are gone, along with the `special` variant on `Button`,
+  `ElevatedButton`, `StatefulButton`, `Checkbox`, `Switch` and `ThemedIcon`.
+  Pick a semantic status fill (`info`, `success`, `warning`, `danger`) instead.
+
+- bfcc568: reorganise component source into `buttons` and `navigation` categories
+
+  `Button`, `ButtonGroup`, `ButtonSwap`, `ElevatedButton`, `StatefulButton`,
+  `IconButton` and `CloseButton` move from `components/form/*` and
+  `components/menus/CloseButton` into `components/buttons/*`, and `OverflowActions`
+  moves from `components/menus/*` into `components/navigation/*`. The public import
+  subpaths (`.button`, `.icon-button`, `.overflow-actions`, …) are unchanged, as are
+  the `source`/`types`/`default` targets now pointing at the new locations — this is a
+  source-tree tidy with no consumer-facing API change.
+
+- d02102e: refactor(theme): fold `surface-contrast` into `muted`
+
+  The `surface-contrast` token was a near-duplicate of `muted`: identical in light
+  mode (`oklch(95% 0 0)`) and a hair apart in dark (`oklch(21% 0 0)` vs
+  `oklch(24% 0.004 270)`, which carries the same hue-270 tint as the rest of the
+  surface ladder). The token is removed and every usage now reads `muted`:
+
+  - `bg-surface-contrast` → `bg-muted` (tabs, segmented controls, skeletons,
+    choice/toggle groups, slider track, overflow-actions shell, swipeable-list
+    row + badge, elevated-button white/disabled plates, item-row `muted` variant,
+    FileSystem lifting-row tint).
+  - `bg-surface-contrast-foreground` → `bg-muted-foreground` (story grip dots and
+    skeleton bars — this also fixes those stories, which referenced an
+    unregistered token and rendered the dots transparent).
+
+  `--color-surface-contrast` is gone from `tokens.css` and
+  `useThemeColor('surface-contrast')` is gone from the theme API. Consumers using
+  either should switch to `muted` / `bg-muted` (`muted-foreground` for the
+  foreground pair).
+
+- 824482b: fix(SwipeableList): drop the row's resting border so it reads as a plain surface
+
+  The draggable row drew a `border-border` outline at rest, ringed against the
+  surface it sat on. The border is now owned by `surface(elevation, floating)`
+  like every other surface in the app: elevated rows wear the `shadow-elevated-N`
+  ring, `floating` rows the diffuse halo, and a flat (`elevation=0`) row carries
+  no border at all. The `elevation` and `floating` props that already existed on
+  `SwipeableList` now fully control the row's boundary.
+
+- ed1f321: fix(Tabs): slide panels on `MultiStepMenu`'s spring instead of a linear tween
+
+  `contentAnimation="slide"` pushed its two panels with `{ type: 'timing', duration:
+280, easing: linear }`. The constant rate was chosen to read as one strip of pages
+  moving past a window, but it starts and stops dead, which is not how any other
+  travelling surface in the library moves — `MultiStepMenu`, whose pane slide is the
+  same gesture, glides on a lightly-damped spring with a hair of settle at the end.
+
+  `slide` now shares that spring (`stiffness 280, damping 30, mass 1`), with `opacity`
+  kept as a 280 ms ease-out so the first panel's mount fade can't overshoot past 1.
+  Both halves of a push still read the one transition, so they stay in lockstep.
+
+  The hold that keeps the outgoing panel mounted — and the clip on the entering one —
+  is derived from the spring rather than falling to the flat 600 ms bucket for
+  anything that isn't a timing config: a spring is within a pixel of its target after
+  `12·mass/damping` seconds, so the default settles in 460 ms instead of being held
+  660 ms. That matters because the same timer releases the entering panel's
+  `overflow: hidden`, and a clip outliving the motion cuts the shadow of a panel that
+  has visibly stopped.
+
+  `contentTransition` overrides still apply. One thing to note if you passed a bare
+  `{ duration: n }`: it now merges onto a spring, so it reads as Reanimated's
+  duration-based spring rather than as a tween. Pass `{ type: 'timing', duration: n }`
+  for the old behaviour.
+
 ## 6.3.1
 
 ### Patch Changes

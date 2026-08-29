@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import { LinearTransition } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, SPRING_PANEL } from '../../../lib/ease';
@@ -15,7 +16,10 @@ import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell
 // biome-ignore lint/style/useExportsLast: placement type before INSTANT constant — collocated for readability
 export type MorphingModalPlacement = 'bottom' | 'center' | 'bottom-sheet';
 
-const INSTANT = { type: 'timing' as const, duration: 0 };
+/** Content-height morph rides a Fabric-safe layout transition instead of
+ *  animating `height` through `useAnimatedStyle` (layout props don't round-trip
+ *  Yoga on Fabric). Spring params match `SPRING_PANEL`. */
+const PANEL_LAYOUT = LinearTransition.springify().damping(40).stiffness(420).mass(0.5);
 
 // `pointerEvents: 'box-none'` MUST come from StyleSheet.create, not an inline
 // style object. On react-native-web, `box-none` is not real CSS — it is a
@@ -187,9 +191,9 @@ export function MorphingModal({
                * card grows; the cross-fade masks the reveal.
                */}
               <MotiView
-                animate={contentHeight === null ? {} : { height: contentHeight }}
-                transition={reduce || !morphing ? INSTANT : SPRING_PANEL}
+                layout={reduce || !morphing ? undefined : PANEL_LAYOUT}
                 className="overflow-hidden"
+                style={{ height: contentHeight ?? 0 }}
               >
                 <AnimatePresence>
                   <MotiView

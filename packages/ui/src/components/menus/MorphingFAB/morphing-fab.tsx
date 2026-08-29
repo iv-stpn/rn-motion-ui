@@ -1,6 +1,7 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: FAB shell, morph transition, and trigger/pane layouts collocated by design
 import { type ComponentType, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, type StyleProp, useWindowDimensions, View, type ViewStyle } from 'react-native';
+import { LinearTransition } from 'react-native-reanimated';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
@@ -18,6 +19,11 @@ const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
  *  the shared interactive ramp puts an `lg` IconButton at. */
 const TRIGGER_RADIUS = TRIGGER_SIZE / 2;
 const PANE_RADIUS = 20;
+/** Collapsed circle ↔ expanded pane size morph, driven as a Fabric-safe layout
+ *  transition instead of animating `width`/`height` through `useAnimatedStyle`
+ *  (layout props don't round-trip Yoga on Fabric). Spring params match the
+ *  borderRadius spring below so the corner stays in lockstep with the resize. */
+const MORPH_LAYOUT = LinearTransition.springify().damping(30).stiffness(350).mass(0.55);
 
 /** Handed to render-prop children so panel content can close the FAB. */
 export type MorphingFABApi = {
@@ -175,17 +181,11 @@ export function MorphingFAB({
     return () => doc.removeEventListener('pointerdown', onPointerDown);
   }, [open, closeOnOutsidePress, setOpen]);
 
-  // Staggered springs: width snaps open fast, height bounces — reads as unfolding.
+  // The size morph rides the layout transition above; only the corner radius
+  // still animates through Moti (a style prop, safe on Fabric) on the same spring.
   const morphTransition = reduce
     ? { type: 'timing' as const, duration: 0 }
-    : ({
-        type: 'spring' as const,
-        stiffness: 200,
-        damping: 18,
-        mass: 0.95,
-        width: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
-        borderRadius: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
-      } satisfies import('../../../moti/core/types').MotiTransition);
+    : { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 };
 
   const paneEnterTransition = reduce
     ? { type: 'timing' as const, duration: 0 }
@@ -216,14 +216,15 @@ export function MorphingFAB({
       ) : null}
 
       <MotiView
-        animate={{
+        animate={{ borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS }}
+        transition={morphTransition}
+        layout={reduce ? undefined : MORPH_LAYOUT}
+        className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, floating)}`}
+        style={{
           width: open ? expandedWidth : TRIGGER_SIZE,
           height: open ? expandedHeight : TRIGGER_SIZE,
-          borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS,
+          ...(left ? { left: 0 } : { right: 0 }),
         }}
-        transition={morphTransition}
-        className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, floating)}`}
-        style={{ ...(left ? { left: 0 } : { right: 0 }) }}
       >
         {open ? (
           <View className="w-full">

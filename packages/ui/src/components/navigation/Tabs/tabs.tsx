@@ -3,6 +3,7 @@
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { LinearTransition } from 'react-native-reanimated';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
@@ -15,6 +16,11 @@ import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../
 import { Text } from '../../typography/Text/text';
 
 const TAB_INDICATOR_SPRING = { type: 'spring' as const, stiffness: 170, damping: 24, mass: 1.2 };
+/** Indicator resize rides a Fabric-safe layout transition instead of animating
+ *  `width`/`height` through `useAnimatedStyle` (layout props don't round-trip
+ *  Yoga on Fabric). Spring params match `TAB_INDICATOR_SPRING` so the glide and
+ *  the resize stay in lockstep. */
+const INDICATOR_LAYOUT = LinearTransition.springify().damping(24).stiffness(170).mass(1.2);
 
 // ── Content-panel motion ─────────────────────────────────────────────────────
 // `fade` and `dropIn` are enter-only: TabsContent renders nothing for the tab it
@@ -431,17 +437,20 @@ export function TabsList({ children, testID }: TabsListProps) {
         <MotiView
           animate={{
             translateX: active.x,
-            width: active.width,
             translateY: variant === 'underline' ? active.y + active.height - 2 : active.y,
-            height: variant === 'underline' ? 2 : active.height,
           }}
           transition={!hasPositioned.current || reduce ? TIMING_INSTANT : indicatorSpring}
+          layout={!hasPositioned.current || reduce ? undefined : INDICATOR_LAYOUT}
           className={cn(
             variant === 'underline' ? 'bg-primary' : SURFACE_CLASSNAME[5],
             'pointer-events-none absolute top-0 left-0',
           )}
           testID={testID ? `${testID}-indicator` : undefined}
-          style={{ borderRadius: indicatorBorderRadius }}
+          style={{
+            borderRadius: indicatorBorderRadius,
+            width: active.width,
+            height: variant === 'underline' ? 2 : active.height,
+          }}
         />
       ) : null}
       {children}

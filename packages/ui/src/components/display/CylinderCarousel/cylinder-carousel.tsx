@@ -135,20 +135,33 @@ function CylinderItem({
     const display = Math.abs(x) > halfWidth + itemSize ? ('none' as const) : ('flex' as const);
 
     return {
-      position: 'absolute' as const,
-      top: '50%',
-      left: '50%',
-      width: itemSize,
-      height: itemSize,
-      marginLeft: -itemSize / 2,
-      marginTop: -itemSize / 2,
       zIndex: Math.round(scale * 100),
       transform: [{ translateX: x }, { translateY: y }, { scale }],
       display,
     };
   });
 
-  return <Animated.View style={animatedStyle}>{children}</Animated.View>;
+  // Position/size are constant (motion is via `transform`), so they live in the
+  // static style instead of the animated-style path, where layout props don't
+  // belong on Fabric.
+  return (
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          width: itemSize,
+          height: itemSize,
+          marginLeft: -itemSize / 2,
+          marginTop: -itemSize / 2,
+        },
+        animatedStyle,
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
 }
 
 export type CylinderCarouselVariant = 'concave' | 'convex';

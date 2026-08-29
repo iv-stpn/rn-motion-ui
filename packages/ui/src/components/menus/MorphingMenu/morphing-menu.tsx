@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import { LinearTransition } from 'react-native-reanimated';
 import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
@@ -29,6 +30,13 @@ const TRIGGER_H = 44;
 const PANEL_W = 320;
 const BOX_H = 300;
 const COLS = 3;
+/** Card size adjustments after mount (measured panel height) as a Fabric-safe
+ *  layout transition — animating `width`/`height` through `useAnimatedStyle`
+ *  doesn't round-trip Yoga on Fabric. */
+const MENU_LAYOUT = LinearTransition.springify().damping(32).stiffness(300).mass(0.9);
+/** Card enter/exit scale — the trigger width relative to the panel width, so the
+ *  card grows out of the trigger's footprint instead of snapping at full size. */
+const CARD_SCALE = TRIGGER_W / PANEL_W;
 
 // The card is centred on the trigger's centre point, so the 320×300 stage sits
 // at (72 - 160, 22 - 150) relative to the trigger's top-left corner.
@@ -360,12 +368,14 @@ export function MorphingMenu({
                   ]}
                 >
                   <MotiView
-                    from={{ width: TRIGGER_W, height: TRIGGER_H }}
-                    animate={{ width: PANEL_W, height: panelH ?? BOX_H }}
-                    exit={{ width: TRIGGER_W, height: TRIGGER_H }}
+                    from={{ scale: CARD_SCALE }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: CARD_SCALE }}
                     transition={morph}
                     exitTransition={morph}
+                    layout={reduce ? undefined : MENU_LAYOUT}
                     className={cn('items-center justify-center overflow-hidden', surface(elevation, 'menu', floating))}
+                    style={{ width: PANEL_W, height: panelH ?? BOX_H }}
                   >
                     <MorphingPanel
                       items={items}

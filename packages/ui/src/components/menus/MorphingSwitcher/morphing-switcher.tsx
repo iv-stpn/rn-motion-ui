@@ -3,6 +3,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import { Pressable, useWindowDimensions, View } from 'react-native';
+import { LinearTransition } from 'react-native-reanimated';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
@@ -23,6 +24,11 @@ const VIEWPORT_PADDING = 8;
 const PANE_INSET = 4;
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
+/** Collapsed-trigger ↔ open-pane size morph, driven as a Fabric-safe layout
+ *  transition (animating `height`/`width` through `useAnimatedStyle` doesn't
+ *  round-trip Yoga on Fabric). Spring params match `SPRING_LAYOUT` so the size
+ *  stays in lockstep with the `translateY` upward-open shift below. */
+const MORPH_LAYOUT = LinearTransition.springify().damping(32).stiffness(360).mass(0.6);
 
 /** Switcher size — the trigger and every row stand at the matching interactive height. */
 export type MorphingSwitcherSize = 'sm' | 'md' | 'lg';
@@ -501,10 +507,10 @@ export function MorphingSwitcher({
     setTriggerSize((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
   }, []);
 
-  // One spring for every morphing property. Height, width and radius arriving on
-  // separate, underdamped springs is what made the morph read as gooey — the box
-  // stretched, overshot, and settled in pieces. `SPRING_LAYOUT` is the library's
-  // shared-layout glide: just past critical damping, so it lands without bounce.
+  // The size morph rides `MORPH_LAYOUT` (a layout transition — `height`/`width`
+  // don't round-trip Yoga on Fabric through `useAnimatedStyle`), while the radius
+  // and upward-open `translateY` still spring on `SPRING_LAYOUT`. Matching spring
+  // params keep the bottom edge anchored as the pane unfolds.
   const morphTransition = reduce ? { type: 'timing' as const, duration: 0 } : SPRING_LAYOUT;
 
   // The rows follow the shell closely — a long delay left the pane looking empty
@@ -556,16 +562,15 @@ export function MorphingSwitcher({
       <MotiView
         key={variant}
         animate={{
-          height: open ? paneHeight : closedHeight,
           borderRadius: open ? scale.paneRadius : closedHeight / 2,
           // Opening upward anchors the pane's bottom to the trigger's bottom edge:
           // shift the shell up by its growth so it extends above instead of below.
           // `translateY` shares the morph spring, so the two stay in lockstep and
           // the bottom edge never drifts while the pane unfolds.
           translateY: open && openAbove ? closedHeight - paneHeight : 0,
-          ...(variant === 'select' ? { width: open ? openWidth : closedWidth } : {}),
         }}
         transition={morphTransition}
+        layout={reduce ? undefined : MORPH_LAYOUT}
         className={cn(
           'absolute top-0 left-0 overflow-hidden p-1',
           elevatedSurface(elevation, open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation, floating),
@@ -574,9 +579,9 @@ export function MorphingSwitcher({
           // Flip the stack when opening up so the trigger lands at the bottom (its
           // closed position) and the list fills in above it. Persists past the open
           // flip so the closing morph keeps the trigger pinned at the bottom too.
-          { flexDirection: openAbove ? 'column-reverse' : 'column' },
+          { flexDirection: openAbove ? 'column-reverse' : 'column', height: open ? paneHeight : closedHeight },
           open ? { zIndex: 40 } : undefined,
-          variant === 'switcher' ? { right: 0 } : undefined,
+          variant === 'switcher' ? { right: 0 } : { width: open ? openWidth : closedWidth },
         ]}
       >
         {/* The trigger persists — it morphs into the active header row. Re-tapping

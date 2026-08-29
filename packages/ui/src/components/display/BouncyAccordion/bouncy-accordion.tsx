@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { LinearTransition } from 'react-native-reanimated';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
@@ -56,10 +57,14 @@ export type BouncyAccordionProps = {
 // The gap/radius spring stays lightly damped so connected rows move together.
 const noMotion = { type: 'timing', duration: 0 } as const;
 const ROW_TRANSITION = { type: 'spring', stiffness: 240, damping: 19, mass: 1 } as const;
-const CONTENT_OPEN_TRANSITION = { type: 'spring', stiffness: 220, damping: 20, mass: 1 } as const;
-const CONTENT_CLOSE_TRANSITION = { type: 'spring', stiffness: 260, damping: 24, mass: 1 } as const;
 const CHEVRON_TRANSITION = { type: 'spring', stiffness: 300, damping: 25, mass: 1 } as const;
 const DESCRIPTION_TRANSITION = { type: 'timing', duration: 180 } as const;
+// Fabric-safe layout transitions replace the animated `height`/`marginTop`
+// layout props (they don't round-trip Yoga on Fabric). Spring params mirror the
+// Moti springs they replace.
+const ROW_LAYOUT = LinearTransition.springify().damping(19).stiffness(240).mass(1);
+const CONTENT_OPEN_LAYOUT = LinearTransition.springify().damping(20).stiffness(220).mass(1);
+const CONTENT_CLOSE_LAYOUT = LinearTransition.springify().damping(24).stiffness(260).mass(1);
 
 function useControllableValue(
   value: string | null | undefined,
@@ -116,15 +121,12 @@ function BouncyAccordionRow({
 
   const topRadius = startsGroup ? 28 : 0;
   const bottomRadius = endsGroup ? 28 : 0;
-  const openContentTransition = open ? CONTENT_OPEN_TRANSITION : CONTENT_CLOSE_TRANSITION;
-  const contentTransition = reduce ? noMotion : openContentTransition;
   const descTransition = reduce ? noMotion : DESCRIPTION_TRANSITION;
+  const openContentLayout = open ? CONTENT_OPEN_LAYOUT : CONTENT_CLOSE_LAYOUT;
+  const contentLayout = reduce ? undefined : openContentLayout;
 
   return (
-    <MotiView
-      animate={{ marginTop: separatedFromPrevious ? 12 : 0 }}
-      transition={reduce ? { type: 'timing', duration: 0 } : ROW_TRANSITION}
-    >
+    <MotiView layout={reduce ? undefined : ROW_LAYOUT} style={{ marginTop: separatedFromPrevious ? 12 : 0 }}>
       <MotiView
         animate={{
           borderTopLeftRadius: topRadius,
@@ -161,9 +163,9 @@ function BouncyAccordionRow({
         {/* Animated clip: outer height springs between 0 and the measured content
             height. The inner block is always laid out so onLayout can measure it. */}
         <MotiView
-          animate={{ height: open && item.description ? contentHeight : 0 }}
-          transition={contentTransition}
+          layout={contentLayout}
           className="overflow-hidden"
+          style={{ height: open && item.description ? contentHeight : 0 }}
         >
           <MotiView
             animate={{ opacity: open ? 1 : 0 }}

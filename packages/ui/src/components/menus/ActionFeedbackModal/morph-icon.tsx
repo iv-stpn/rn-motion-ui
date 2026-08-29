@@ -1,5 +1,7 @@
+import { LinearTransition } from 'react-native-reanimated';
 import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { InformationLine as AlertCircle } from 'rn-motion-ui-icons/icons/information-line';
+import { EASE_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
@@ -24,6 +26,10 @@ import {
 // rather than announcing "image" between the announcements that matter.
 
 const MORPH_SIZE: Record<ActionFeedbackState, number> = { loading: 40, success: 44, error: 44 };
+/** Vessel resize rides a Fabric-safe layout transition instead of animating
+ *  `width`/`height` through `useAnimatedStyle` (layout props don't round-trip
+ *  Yoga on Fabric). Timing mirrors `MORPH_CONTAINER_TRANSITION`. */
+const MORPH_LAYOUT = LinearTransition.duration(300).easing(EASE_OUT);
 
 export type MorphIconProps = { state: ActionFeedbackState; reduced: boolean };
 
@@ -39,11 +45,12 @@ export function MorphIcon({ state, reduced }: MorphIconProps) {
 
   return (
     <MotiView
-      animate={{ width: size, height: size, backgroundColor }}
+      animate={{ backgroundColor }}
       transition={reduced ? RM_TRANSITION : MORPH_CONTAINER_TRANSITION}
-      // Static size mirrors the animate target so the vessel paints at the
-      // correct dimensions on the first frame; the animated style still wins
-      // every subsequent frame (motify merges as [static, animated]).
+      layout={reduced ? undefined : MORPH_LAYOUT}
+      // Static size paints the correct dimensions on the first frame and is the
+      // target the layout transition springs toward; `backgroundColor` still
+      // morphs through Moti (a style prop, safe on Fabric).
       style={{ width: size, height: size }}
       className="items-center justify-center rounded-full"
       accessibilityElementsHidden={true}

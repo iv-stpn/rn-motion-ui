@@ -1,6 +1,7 @@
 import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { LinearTransition } from 'react-native-reanimated';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { More1Line as MoreHorizontal } from 'rn-motion-ui-icons/icons/more-1-line';
 import { usePressState } from '../../../hooks/use-press-state';
@@ -56,6 +57,10 @@ export type OverflowActionsProps = {
 
 // Softer than the app defaults so the group stays attached to the toggle.
 const SHELL_SPRING = { type: 'spring', stiffness: 220, damping: 17, mass: 0.85 } as const;
+/** Reveal clip rides a Fabric-safe layout transition instead of animating
+ *  `width`/`marginLeft` through `useAnimatedStyle` (layout props don't
+ *  round-trip Yoga on Fabric). Spring params match `SHELL_SPRING`. */
+const REVEAL_LAYOUT = LinearTransition.springify().damping(17).stiffness(220).mass(0.85);
 
 // cva drives the static per-size styling; class strings stay static literals.
 // No flex `gap` here: the overflow clip is an always-mounted flex child, so a
@@ -146,13 +151,11 @@ export function OverflowActions({
             and that width (expanded). Flex reflows each frame, so the toggle to
             the right glides over smoothly instead of teleporting. */}
         <MotiView
-          animate={{
-            width: isExpanded ? overflowWidth : 0,
-            marginLeft: isExpanded ? gap : 0,
-            opacity: isExpanded ? 1 : 0,
-          }}
+          animate={{ opacity: isExpanded ? 1 : 0 }}
           transition={spring}
+          layout={reduce ? undefined : REVEAL_LAYOUT}
           className="overflow-hidden"
+          style={{ width: isExpanded ? overflowWidth : 0, marginLeft: isExpanded ? gap : 0 }}
         >
           {/* Offscreen measurer at natural size — feeds the spring its target.
               aria-hidden keeps the duplicate buttons out of the accessibility tree

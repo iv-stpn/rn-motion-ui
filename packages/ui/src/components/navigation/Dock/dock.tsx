@@ -1,9 +1,10 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useState } from 'react';
 import { type LayoutRectangle, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { LinearTransition } from 'react-native-reanimated';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { SPRING_LAYOUT, SPRING_PRESS } from '../../../lib/ease';
+import { SPRING_PRESS } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { H_INTERACTIVE, INTERACTIVE_HEIGHT, PX_INTERACTIVE } from '../../../lib/radius';
 import { surface } from '../../../lib/surface';
@@ -27,6 +28,10 @@ const DockContext = createContext<DockContextValue | null>(null);
 const BORDER_WIDTH = 1.5;
 // Gap between the pill edge and the item edge on every side.
 const PILL_INSET = 2;
+/** Pill glide rides a Fabric-safe layout transition instead of animating
+ *  `width`/`height`/`translateX` through `useAnimatedStyle` (layout props don't
+ *  round-trip Yoga on Fabric). Spring params match `SPRING_LAYOUT`. */
+const PILL_LAYOUT = LinearTransition.springify().damping(32).stiffness(360).mass(0.6);
 
 export type DockProps = {
   children: ReactNode;
@@ -102,14 +107,14 @@ export function Dock({ children, size = 'lg', floating = false, elevation = 0, c
             the 1.5px border) — subtract the border width so it centres on the item. */}
         {active ? (
           <MotiView
-            animate={{
-              translateX: active.x + PILL_INSET - BORDER_WIDTH,
-              translateY: active.y + PILL_INSET - BORDER_WIDTH,
+            layout={reduce ? undefined : PILL_LAYOUT}
+            className="pointer-events-none absolute rounded-xl bg-surface-selected"
+            style={{
+              left: active.x + PILL_INSET - BORDER_WIDTH,
+              top: active.y + PILL_INSET - BORDER_WIDTH,
               width: active.width - PILL_INSET * 2,
               height: active.height - PILL_INSET * 2,
             }}
-            transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
-            className="pointer-events-none absolute top-0 left-0 rounded-xl bg-surface-selected"
           />
         ) : null}
         {children}

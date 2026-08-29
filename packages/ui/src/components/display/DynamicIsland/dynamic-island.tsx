@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
+import { LinearTransition } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { EASE_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
@@ -11,11 +12,11 @@ type Size = { width: number; height: number };
 type IslandContextValue = { view: string | null };
 const IslandContext = createContext<IslandContextValue | null>(null);
 
-// iPhone pill dimensions. Also the shell's pre-measure animate target: if the
-// first commit already has a view active (e.g. a click replayed after
-// hydration), the shell blooms from the pill instead of rendering expanded
-// with no animation. Lives in `animate`, not `from`, so there is no entry
-// animation and server/client markup agree.
+// iPhone pill dimensions. Also the shell's pre-measure size: if the first
+// commit already has a view active (e.g. a click replayed after hydration),
+// the shell renders the pill then blooms to the measured size via the layout
+// transition. It lives in static style, not `animate`/`from`, so there is no
+// entry animation and server/client markup agree.
 const PILL_WIDTH = 126;
 const PILL_HEIGHT = 37;
 
@@ -24,7 +25,10 @@ const PILL_HEIGHT = 37;
 const RADIUS = 32;
 
 // Shell reads as one long, barely-bouncy glide (web: duration 0.8 / bounce 0.2).
-const SHELL_SPRING = { type: 'spring', stiffness: 200, damping: 24, mass: 1 } as const;
+// Size morph rides a Fabric-safe layout transition instead of animating
+// `width`/`height` through `useAnimatedStyle` (layout props don't round-trip
+// Yoga on Fabric). Spring params mirror the old shell spring.
+const SHELL_LAYOUT = LinearTransition.springify().damping(24).stiffness(200).mass(1);
 // Content gets a touch more life than the shell (web: bounce 0.35).
 const CONTENT_SPRING = { type: 'spring', stiffness: 260, damping: 22, mass: 0.9 } as const;
 // Exit is sucked up into the pill — fast, before the shrinking shell can clip
@@ -109,8 +113,7 @@ export function DynamicIsland({ view, compact, children, className, style, acces
         accessibilityLabel={accessibilityLabel}
         accessibilityLiveRegion="polite"
         testID={testID}
-        animate={size ? { width: size.width, height: size.height } : { width: PILL_WIDTH, height: PILL_HEIGHT }}
-        transition={reduce ? { type: 'timing', duration: 0 } : SHELL_SPRING}
+        layout={reduce ? undefined : SHELL_LAYOUT}
         // items-start pins content to the top edge while the shell springs, so
         // expansion reads as unfurling downward out of the pill; justify-center
         // keeps it centered as the shell blooms symmetrically. position:relative
@@ -118,6 +121,8 @@ export function DynamicIsland({ view, compact, children, className, style, acces
         className={['bg-black', className].filter(Boolean).join(' ')}
         style={[
           {
+            width: size?.width ?? PILL_WIDTH,
+            height: size?.height ?? PILL_HEIGHT,
             borderRadius: RADIUS,
             flexDirection: 'row',
             alignItems: 'flex-start',

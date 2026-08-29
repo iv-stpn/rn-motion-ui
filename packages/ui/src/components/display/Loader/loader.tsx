@@ -170,22 +170,44 @@ function Dots({ size, speed, color, reduce }: PartProps) {
   );
 }
 
-function Bars({ size, speed, color, reduce }: PartProps) {
+function Bar({ size, speed, color, reduce, index }: PartProps & { index: number }) {
   const bar = size * 0.16;
-  // Animate height (not scaleY): scaling would also squash the vertical
-  // border-radius, flattening the round caps into ellipses. Driving height keeps
-  // the caps true half-circles (radius = half width) at every bar height.
-  const minH = size * 0.3;
+  // The bar keeps a static full height and loops its `scaleY` instead of driving
+  // `height` — a looping layout prop is dropped by Yoga on Fabric, collapsing the
+  // bar to 0. `transformOrigin: 'center'` grows from the vertical centre like the
+  // original `items-center` height morph; the short end (minH = size * 0.3) is
+  // scale 0.3, which squashes the caps slightly — the Fabric-safe tradeoff.
+  const minScale = 0.3;
+  const half = speed * 500;
+  const delay = index * speed * 120;
+  const scaleY = useSharedValue(minScale);
+
+  // biome-ignore lint/plugin: the loop animation is an imperative side-effect assigned to a shared value — not expressible as derived state, and must run once per [reduce,size,speed,index] rather than every render
+  useEffect(() => {
+    const target = reduce ? 0.6 : 1;
+    scaleY.value = withDelay(delay, withRepeat(withTiming(target, { duration: half }), -1, true));
+    return () => cancelAnimation(scaleY);
+  }, [reduce, scaleY, half, delay]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleY: scaleY.value }],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        { width: bar, height: size, borderRadius: bar / 2, backgroundColor: color, transformOrigin: 'center' },
+        animatedStyle,
+      ]}
+    />
+  );
+}
+
+function Bars({ size, speed, color, reduce }: PartProps) {
   return (
     <View className="flex-row items-center" style={{ gap: size * 0.1, height: size }}>
       {[0, 1, 2, 3].map((i) => (
-        <MotiView
-          key={i}
-          from={{ height: minH }}
-          animate={reduce ? { height: size * 0.6 } : { height: size }}
-          transition={{ type: 'timing', duration: speed * 500, loop: true, repeatReverse: true, delay: i * speed * 120 }}
-          style={{ width: bar, borderRadius: bar / 2, backgroundColor: color }}
-        />
+        <Bar key={i} size={size} speed={speed} color={color} reduce={reduce} index={i} />
       ))}
     </View>
   );

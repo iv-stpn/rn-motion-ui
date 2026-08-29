@@ -256,11 +256,16 @@ function IconSlot({ keyId, children, reduce, slotWidth }: IconSlotProps) {
   return (
     <MotiView
       key={keyId}
-      from={reduce ? { opacity: 0 } : { opacity: 0, width: 0, scale: 0.7 }}
-      animate={reduce ? { opacity: 1 } : { opacity: 1, width: slotWidth, scale: 1 }}
-      exit={reduce ? { opacity: 0 } : { opacity: 0, width: 0, scale: 0.7 }}
+      from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7 }}
+      animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+      exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7 }}
       transition={reduce ? { type: 'timing', duration: 150 } : { ...SPRING_SWAP }}
       className="items-center justify-center overflow-hidden"
+      // Static width so the slot paints its full footprint on the first frame —
+      // animating `width` through `useAnimatedStyle` doesn't round-trip Yoga on
+      // Fabric, so the reveal is carried by the fade + scale (style props) and the
+      // slot simply holds its reserved width.
+      style={{ width: slotWidth }}
     >
       {children}
     </MotiView>

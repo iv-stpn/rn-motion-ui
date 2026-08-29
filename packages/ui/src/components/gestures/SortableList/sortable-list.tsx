@@ -177,8 +177,9 @@ function SortableItem({ children, itemKey, index, listId, mimeType, disabled = f
     lastDropVersion.value = dropVersionSV.value;
   }, [index, translateY, lastDropVersion, dropVersionSV]);
 
+  // `height` is constant (motion is via `translateY`), so it stays out of the
+  // animated-style path where layout props don't belong on Fabric.
   const animatedStyle = useAnimatedStyle(() => ({
-    height: itemHeight,
     transform: [{ translateY: translateY.value }],
   }));
 
@@ -211,7 +212,7 @@ function SortableItem({ children, itemKey, index, listId, mimeType, disabled = f
   );
 
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={[{ height: itemHeight }, animatedStyle]}>
       <Dragzone ref={zoneRef} accepts={accepts} disabled={disabled} groups={[listId]} skipRectMeasure={true}>
         <Draggable
           data={{ [mimeType]: itemKey }}

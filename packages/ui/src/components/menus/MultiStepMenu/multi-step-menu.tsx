@@ -324,11 +324,15 @@ export const MultiStepMenu = function MultiStepMenu({
                   <MotiView
                     key="wide-back"
                     className="overflow-hidden"
-                    from={{ opacity: 0, width: 0, paddingRight: 0 }}
-                    animate={{ opacity: 1, width: 32, paddingRight: 8 }}
-                    exit={{ opacity: 0, width: 0, paddingRight: 0 }}
+                    from={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     transition={arrowTransition}
                     exitTransition={arrowExitTransition}
+                    // Static width + padding hold the button's footprint on Fabric —
+                    // animating `width`/`paddingRight` through `useAnimatedStyle`
+                    // doesn't round-trip Yoga, so the reveal rides the fade.
+                    style={{ width: 32, paddingRight: 8 }}
                   >
                     <Pressable onPress={goBack} accessibilityLabel="Back">
                       <View className="rotate-180">
@@ -456,12 +460,16 @@ export const MultiStepMenu = function MultiStepMenu({
             {!isRoot && (
               <MotiView
                 key="mobile-title-below"
-                from={{ opacity: 0, translateY: -TITLE_ROLL, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, translateY: 0, height: titleSlotHeight, marginTop: 8 }}
-                exit={{ opacity: 0, translateY: -TITLE_ROLL, height: 0, marginTop: 0 }}
+                from={{ opacity: 0, translateY: -TITLE_ROLL }}
+                animate={{ opacity: 1, translateY: 0 }}
+                exit={{ opacity: 0, translateY: -TITLE_ROLL }}
                 transition={arrowTransition}
                 exitTransition={arrowExitTransition}
                 className="overflow-hidden"
+                // Static height + margin hold the slot open on Fabric — animating
+                // `height`/`marginTop` through `useAnimatedStyle` doesn't round-trip
+                // Yoga, so the reveal rides the fade + translateY roll instead.
+                style={{ height: titleSlotHeight, marginTop: 8 }}
               >
                 <TextRolling text={title} weight="bold" className="text-2xl text-foreground" onLayout={handleTitleSlotLayout} />
               </MotiView>

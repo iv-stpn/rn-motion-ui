@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, ViewProps } from 'react-native';
 import { View } from 'react-native';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -79,7 +79,10 @@ export function AnimatedListItem({ children }: AnimatedListItemProps) {
   const translateY = useSharedValue(-10);
   const scale = useSharedValue(0.97);
 
-  const isMeasured = useRef(false);
+  // Natural content height from the latest layout pass. `onLayout` only records
+  // it; the tween below consumes it post-commit (see FileSystemAnimatedRow).
+  const [contentHeight, setContentHeight] = useState(0);
+  const hasEntered = useRef(false);
 
   const containerStyle = useAnimatedStyle(() => ({
     height: containerHeight.value,
@@ -115,28 +118,38 @@ export function AnimatedListItem({ children }: AnimatedListItemProps) {
     }
   }, [isPresent, reduced]);
 
-  const onContentLayout = useCallback(
-    (event: LayoutChangeEvent) => {
-      const height = event.nativeEvent.layout.height;
-      if (height <= 0 || !isPresentRef.current) return;
+  // Enter + expand/collapse, driven from a post-commit effect rather than the
+  // `onLayout` callback. On native `onLayout` can fire in the same commit that
+  // first applies the animated zero height — before Reanimated has registered the
+  // shared value's starting point — so a `withTiming` issued inside the callback
+  // starts from the full height instead of zero and the item lands already-open
+  // with no animation. A `useEffect` runs after that commit, so the timing always
+  // starts from the shared value's real current value.
+  // biome-ignore lint/plugin: enter animation is an imperative side effect on shared values, fired when the measured height or presence changes — not derivable from render state, not mount-only (useMountEffect doesn't apply)
+  useEffect(() => {
+    if (contentHeight <= 0 || !isPresent) return;
 
-      const dur = (full: number) => (reduced ? 80 : full);
-      const easeOut = reduced ? Easing.linear : EASE_OUT;
+    const dur = (full: number) => (reduced ? 80 : full);
+    const easeOut = reduced ? Easing.linear : EASE_OUT;
 
-      if (isMeasured.current) {
-        // Content changed height (expand / collapse)
-        containerHeight.value = withTiming(height, { duration: dur(260), easing: easeOut });
-      } else {
-        // First measurement — animate the item into view
-        isMeasured.current = true;
-        containerHeight.value = withTiming(height, { duration: dur(280), easing: easeOut });
-        opacity.value = withTiming(1, { duration: dur(240), easing: easeOut });
-        translateY.value = withTiming(0, { duration: dur(280), easing: easeOut });
-        scale.value = withTiming(1, { duration: dur(280), easing: easeOut });
-      }
-    },
-    [containerHeight, opacity, translateY, scale, reduced],
-  );
+    if (hasEntered.current) {
+      // Content changed height (expand / collapse)
+      containerHeight.value = withTiming(contentHeight, { duration: dur(260), easing: easeOut });
+    } else {
+      // First measurement — animate the item into view
+      hasEntered.current = true;
+      containerHeight.value = withTiming(contentHeight, { duration: dur(280), easing: easeOut });
+      opacity.value = withTiming(1, { duration: dur(240), easing: easeOut });
+      translateY.value = withTiming(0, { duration: dur(280), easing: easeOut });
+      scale.value = withTiming(1, { duration: dur(280), easing: easeOut });
+    }
+  }, [contentHeight, isPresent, reduced, containerHeight, opacity, translateY, scale]);
+
+  const onContentLayout = useCallback((event: LayoutChangeEvent) => {
+    const height = event.nativeEvent.layout.height;
+    if (height <= 0 || !isPresentRef.current) return;
+    setContentHeight(height);
+  }, []);
 
   return (
     <Animated.View className="overflow-hidden" style={containerStyle}>

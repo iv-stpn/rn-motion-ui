@@ -72,7 +72,7 @@ function PopoverPlayground() {
   const [align, setAlign] = useState<PopoverAlign>('center');
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('14');
   const [radiusKey, setRadiusKey] = useState<RadiusKey>('16');
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('4');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
   const [overlay, setOverlay] = useState(true);
   const [closeOnOutside, setCloseOnOutside] = useState(true);

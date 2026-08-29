@@ -3,6 +3,7 @@ import { Pressable, ScrollView, type StyleProp, TextInput, View, type ViewStyle 
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
+import type { SurfaceElevation } from '../../../lib/elevated';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem } from '../../rows/menu-item';
@@ -56,6 +57,8 @@ export type CommandPaletteProps = {
   overlay?: boolean;
   /** When false, pressing outside the palette will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
+  /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
+  elevation?: SurfaceElevation;
   /**
    * Root testID. Each row derives `-item-<id>` from it and each group heading
    * `-group-<name>` — the heading is plain text with no role to query by. An
@@ -120,6 +123,7 @@ function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSel
       trailing={trailing}
       iconPlaceholder={hasIcons && !item.icon}
       reduce={reduce}
+      className="rounded-md"
     />
   );
 }
@@ -136,6 +140,7 @@ export function CommandPalette({
   searchIcon,
   overlay = true,
   closeOnOutsidePress = true,
+  elevation = 6,
 }: CommandPaletteProps) {
   const reduce = useReducedMotion();
   const placeholderColor = useThemeColor('muted-foreground');
@@ -146,7 +151,10 @@ export function CommandPalette({
   const open = controlled ? controlledOpen : internalOpen;
 
   const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
+  // `-1` means no row is highlighted; the highlight appears only once a row is
+  // tapped/pressed (onPressIn → onActivate). Defaulting to 0 preselects the
+  // first item on every open, which reads as an accidental selection.
+  const [active, setActive] = useState(-1);
 
   const setOpen = useCallback(
     (v: boolean) => {
@@ -160,13 +168,13 @@ export function CommandPalette({
   useEffect(() => {
     if (open) {
       setQuery('');
-      setActive(0);
+      setActive(-1);
     }
   }, [open]);
 
   const updateQuery = useCallback((value: string) => {
     setQuery(value);
-    setActive(0);
+    setActive(-1);
   }, []);
 
   const filtered = useMemo(() => {
@@ -211,6 +219,7 @@ export function CommandPalette({
       largeScreenMode="modal"
       overlay={overlay}
       closeOnOutsidePress={closeOnOutsidePress}
+      elevation={elevation}
     >
       <View testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
         <View className="flex-row items-center gap-3 border-border border-b-[1.5px] px-4">
@@ -222,7 +231,7 @@ export function CommandPalette({
             placeholder={placeholder}
             placeholderTextColor={placeholderColor}
             accessibilityLabel={placeholder}
-            className="h-12 flex-1 font-sans-normal text-foreground text-sm"
+            className="h-12 flex-1 font-sans-normal text-foreground text-sm outline-none"
           />
           <Pressable
             accessibilityRole="button"
@@ -233,7 +242,7 @@ export function CommandPalette({
             <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
           </Pressable>
         </View>
-        <ScrollView className="max-h-[60vh] py-2" keyboardShouldPersistTaps="handled">
+        <ScrollView className="max-h-[60vh] px-2 py-2" keyboardShouldPersistTaps="handled">
           {filtered.length === 0 ? (
             <View className="p-8">
               <Text className="text-center text-muted-foreground text-sm">{emptyMessage}</Text>

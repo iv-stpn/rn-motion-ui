@@ -16,7 +16,7 @@ import { Button } from '../buttons/Button/button';
 import { Switch } from '../form/Switch/switch';
 import { AdaptiveDropdown, type ContentRenderProps, type TriggerRenderProps } from '../menus/AdaptiveDropdown/adaptive-dropdown';
 import { Text } from '../typography/Text/text';
-import { Menu, type MenuActionEntry, type MenuEntry } from './menu';
+import { Menu, type MenuActionEntry, type MenuEntry, type MenuVariant } from './menu';
 import type { MenuItemMode, MenuItemSize } from './menu-item';
 
 const meta = {
@@ -32,6 +32,7 @@ type Story = StoryObj<typeof meta>;
 const SIZES = ['sm', 'md', 'lg'] as const satisfies readonly MenuItemSize[];
 const MODES = ['menu', 'sidebar'] as const satisfies readonly MenuItemMode[];
 const GUTTERS = ['auto', 'on', 'off'] as const;
+const VARIANTS = ['base', 'segmented'] as const satisfies readonly MenuVariant[];
 
 const MENU_LABEL = 'Item actions';
 const TRIGGER_LABEL = 'Actions';
@@ -43,6 +44,9 @@ const DROPDOWN_TEST_ID = 'menu-dropdown';
 
 const FRAMED_NOTE = 'Framed: surface, radius and width come from the container; the top and bottom inset from the list.';
 const BARE_NOTE = 'Bare: the list has no frame of its own — rows go edge to edge, on whatever is behind them.';
+const BASE_NOTE = 'Base: the CommandPalette look — icon leading, rows flush, hairlines between groups.';
+const SEGMENTED_NOTE =
+  'Segmented: the hold-menu look — icon trailing, a hairline below each row but the last, centred captions, solid band separators.';
 
 type PanelProps = { children: ReactNode; width?: number; framed?: boolean };
 
@@ -106,6 +110,7 @@ function MenuPlayground() {
   const [size, setSize] = useState<MenuItemSize>('md');
   const [mode, setMode] = useState<MenuItemMode>('menu');
   const [iconGutter, setIconGutter] = useState<(typeof GUTTERS)[number]>('auto');
+  const [variant, setVariant] = useState<MenuVariant>('base');
   const [withLabel, setWithLabel] = useState(true);
   const [withSeparators, setWithSeparators] = useState(true);
   const [withNode, setWithNode] = useState(false);
@@ -123,6 +128,19 @@ function MenuPlayground() {
   const handleSelect = useCallback((entry: MenuActionEntry) => setChosen(entry.id), []);
 
   const frameNote = framed ? FRAMED_NOTE : BARE_NOTE;
+  const variantNote = variant === 'segmented' ? SEGMENTED_NOTE : BASE_NOTE;
+
+  const menu = (
+    <Menu
+      accessibilityLabel={MENU_LABEL}
+      entries={entries}
+      iconGutter={iconGutter}
+      mode={mode}
+      onSelect={handleSelect}
+      size={size}
+      variant={variant}
+    />
+  );
 
   return (
     <Playground className="min-w-[320px]">
@@ -130,6 +148,7 @@ function MenuPlayground() {
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Mode" onChange={setMode} options={MODES} value={mode} />
         <Choice label="Icon gutter" onChange={setIconGutter} options={GUTTERS} value={iconGutter} />
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Toggle label="Dropdown container" onChange={setFramed} value={framed} />
       </ControlCard>
 
@@ -142,17 +161,9 @@ function MenuPlayground() {
         <Toggle label="Disabled row" onChange={setWithDisabled} value={withDisabled} />
       </ControlCard>
 
-      <MenuPanel framed={framed}>
-        <Menu
-          accessibilityLabel={MENU_LABEL}
-          entries={entries}
-          iconGutter={iconGutter}
-          mode={mode}
-          onSelect={handleSelect}
-          size={size}
-        />
-      </MenuPanel>
+      <MenuPanel framed={framed}>{menu}</MenuPanel>
       <Note testID="story-chosen">{chosen ? `Chose: ${chosen}` : 'Nothing chosen yet'}</Note>
+      <Note>{variantNote}</Note>
       <Note>{frameNote}</Note>
     </Playground>
   );
@@ -245,6 +256,38 @@ function DropdownDemo() {
   );
 }
 
+const VARIANT_ENTRIES: MenuEntry[] = [
+  { type: 'label', label: GROUP_LABEL },
+  { id: 'edit', label: EDIT_LABEL, icon: Pencil },
+  { id: 'share', label: 'Share', icon: Share },
+  { id: 'duplicate', label: 'Duplicate', icon: Copy },
+  { type: 'separator' },
+  { id: 'delete', label: DANGER_LABEL, icon: Trash2, destructive: true },
+];
+
+/** The two row styles side by side: the base CommandPalette look and the segmented hold-menu look. */
+function SurfaceShowcase() {
+  return (
+    <Playground>
+      <Section title="Base and segmented side by side">
+        <Variants>
+          <Sample label="base">
+            <MenuPanel width={220}>
+              <Menu accessibilityLabel="Base menu" entries={VARIANT_ENTRIES} />
+            </MenuPanel>
+          </Sample>
+          <Sample label="segmented">
+            <MenuPanel width={220}>
+              <Menu accessibilityLabel="Segmented menu" entries={VARIANT_ENTRIES} variant="segmented" />
+            </MenuPanel>
+          </Sample>
+        </Variants>
+      </Section>
+      <Note>{SEGMENTED_NOTE}</Note>
+    </Playground>
+  );
+}
+
 export default meta;
 
 /** Every knob in one canvas: size, mode, icon gutter, and each entry type on a toggle. */
@@ -254,6 +297,12 @@ export const Interactive: Story = { render: () => <MenuPlayground /> };
 export const Anatomy: Story = {
   name: 'Anatomy: the four entry types',
   render: () => <SizesShowcase />,
+};
+
+/** The two row styles at a glance: the base CommandPalette look and the segmented hold-menu look. */
+export const Surfaces: Story = {
+  name: 'Variants: base and segmented',
+  render: () => <SurfaceShowcase />,
 };
 
 /**

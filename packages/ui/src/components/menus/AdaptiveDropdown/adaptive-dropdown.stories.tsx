@@ -98,7 +98,7 @@ function DropdownPlayground() {
   const [widthKey, setWidthKey] = useState<WidthKey>('320');
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('8');
   const [floating, setFloating] = useState(false);
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [withTitle, setWithTitle] = useState(true);
   const [withHeaderAction, setWithHeaderAction] = useState(false);
   const [scrollable, setScrollable] = useState(false);

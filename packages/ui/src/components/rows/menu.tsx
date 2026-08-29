@@ -106,7 +106,9 @@ import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
 import { MENU_ITEM_STAGGER_MS, MOTION_STANDARD, TIMING_INSTANT } from '../../theme/motion';
 import { Text } from '../typography/Text/text';
-import { MenuItem, type MenuItemIcon, type MenuItemMode, type MenuItemSize } from './menu-item';
+import { MenuItem, type MenuItemIcon, type MenuItemMode, type MenuItemSize, type MenuVariant } from './menu-item';
+
+export type { MenuVariant } from './menu-item';
 
 /** An action row — the default entry, so `type` may be omitted. */
 export type MenuActionEntry = {
@@ -210,6 +212,13 @@ export type MenuProps = {
    * that puts each `menuitem` directly inside the element owning `menu`.
    */
   role?: 'menu' | 'none';
+  /**
+   * Row style. `'base'` (default) is the CommandPalette look — icon leading, no
+   * borders between rows. `'segmented'` is the hold-menu look — icon trailing,
+   * a hairline below each row but the last, centred captions and solid band
+   * separators. See {@link MenuVariant}. @default 'base'
+   */
+  variant?: MenuVariant;
   /** Accessible name for the list. */
   accessibilityLabel?: string;
   /**
@@ -277,21 +286,47 @@ export const MENU_SEPARATOR_HEIGHT: Record<MenuItemSize, number> = {
   lg: 16, // h-1   (4px) + my-1.5 (6px ×2)
 };
 
-export type MenuSeparatorProps = { className?: string; testID?: string; size?: MenuItemSize };
+export type MenuSeparatorProps = { className?: string; testID?: string; size?: MenuItemSize; variant?: MenuVariant };
 
 const SEPARATOR_SIZE_CLASS: Record<MenuItemSize, string> = { sm: 'h-px my-0.5', md: 'h-0.5 my-1', lg: 'h-1 my-1.5' };
 
+/**
+ * The `'segmented'` separator: a solid band between groups, no margin. Its `md`
+ * height (8 px) is mirrored by `HOLD_MENU_SEGMENTED_SEPARATOR_HEIGHT` in
+ * `menu-placement`, so a panel that predicts its own height before layout can.
+ */
+const SEGMENTED_SEPARATOR_CLASS: Record<MenuItemSize, string> = { sm: 'h-1.5', md: 'h-2', lg: 'h-2.5' };
+
 /** The hairline between two groups. Exported so a `node` entry can draw a matching one. */
-export function MenuSeparator({ className, testID, size = 'md' }: MenuSeparatorProps) {
-  return <View className={cn('bg-border', SEPARATOR_SIZE_CLASS[size], className)} testID={testID} />;
+export function MenuSeparator({ className, testID, size = 'md', variant = 'base' }: MenuSeparatorProps) {
+  const sizeClass = variant === 'segmented' ? SEGMENTED_SEPARATOR_CLASS[size] : SEPARATOR_SIZE_CLASS[size];
+  return <View className={cn('bg-border', sizeClass, className)} testID={testID} />;
 }
 
-export type MenuLabelProps = { children: ReactNode; className?: string; testID?: string; size?: MenuItemSize };
+export type MenuLabelProps = {
+  children: ReactNode;
+  className?: string;
+  testID?: string;
+  size?: MenuItemSize;
+  variant?: MenuVariant;
+  /** Draws the hairline below a `'segmented'` caption, like the rows around it. */
+  bottomBorder?: boolean;
+};
 
 /** The caption above a group. Exported for the same reason as {@link MenuSeparator}. */
-export function MenuLabel({ children, className, testID, size = 'md' }: MenuLabelProps) {
+export function MenuLabel({ children, className, testID, size = 'md', variant = 'base', bottomBorder = false }: MenuLabelProps) {
+  // `'segmented'` titles are centred full rows — the hold-menu section header —
+  // not the small left-aligned caption the base list uses.
   return (
-    <View className={className} role="presentation" testID={testID}>
+    <View
+      className={cn(
+        variant === 'segmented' && 'min-h-10 items-center justify-center px-4',
+        variant === 'segmented' && bottomBorder && 'border-border border-b-[1.5px]',
+        className,
+      )}
+      role="presentation"
+      testID={testID}
+    >
       <Text className="text-muted-foreground" numberOfLines={1} size={LABEL_TEXT_SIZE[size]}>
         {children}
       </Text>
@@ -303,6 +338,8 @@ type MenuRowProps = {
   entry: MenuActionEntry;
   size: MenuItemSize;
   mode: MenuItemMode;
+  variant: MenuVariant;
+  bottomBorder: boolean;
   iconPlaceholder: boolean;
   isMenu: boolean;
   reduce: boolean;
@@ -314,7 +351,20 @@ type MenuRowProps = {
 };
 
 /** One action row. Its own component so `onPress` is a stable per-row callback. */
-function MenuRow({ entry, size, mode, iconPlaceholder, isMenu, reduce, onClose, onSelect, testID, index }: MenuRowProps) {
+function MenuRow({
+  entry,
+  size,
+  mode,
+  variant,
+  bottomBorder,
+  iconPlaceholder,
+  isMenu,
+  reduce,
+  onClose,
+  onSelect,
+  testID,
+  index,
+}: MenuRowProps) {
   const handlePress = useCallback(() => {
     // Close first, then act: the panel starts leaving while the action runs, so
     // an action that navigates does not leave a modal stranded on the old screen.
@@ -343,6 +393,7 @@ function MenuRow({ entry, size, mode, iconPlaceholder, isMenu, reduce, onClose, 
         // Web: RN maps `disabled` to the DOM attribute, which is not read on a
         // non-form element; `aria-disabled` is what leaves the row announced.
         aria-disabled={entry.disabled}
+        bottomBorder={bottomBorder}
         className={entry.className}
         destructive={entry.destructive}
         disabled={entry.disabled}
@@ -357,6 +408,7 @@ function MenuRow({ entry, size, mode, iconPlaceholder, isMenu, reduce, onClose, 
         size={entry.size ?? size}
         testID={entry.testID ?? (testID ? `${testID}-item-${entry.id}` : undefined)}
         trailing={entry.trailing}
+        variant={variant}
       />
     </MotiView>
   );
@@ -428,6 +480,7 @@ export function Menu({
   mode = 'menu',
   iconGutter = 'auto',
   role = 'menu',
+  variant = 'base',
   accessibilityLabel,
   className,
   testID,
@@ -435,18 +488,26 @@ export function Menu({
   const reduce = useReducedMotion();
   const scale = SIZE_SCALE[size];
   const isMenu = role === 'menu';
+  const segmented = variant === 'segmented';
 
   const keyed = keyEntries(entries);
   // Reserve the icon slot on iconless rows only when the menu is actually mixed —
   // a list where nothing has an icon should not be indented by a phantom gutter.
+  // `'segmented'` has no leading gutter to reserve: its icons sit trailing.
   const hasIcon = keyed.some(({ entry }) => isActionEntry(entry) && Boolean(entry.icon));
-  const iconPlaceholder = iconGutter === 'auto' ? hasIcon : iconGutter === 'on';
+  const iconPlaceholder = !segmented && (iconGutter === 'auto' ? hasIcon : iconGutter === 'on');
 
-  return (
+  // `'segmented'` draws a hairline below every row but the last, so name that
+  // last row up front — the last action row or caption — instead of per entry.
+  const lastRowKey = segmented
+    ? keyed.filter(({ entry }) => isActionEntry(entry) || entry.type === 'label').at(-1)?.key
+    : undefined;
+
+  const list = (
     <View
       accessibilityLabel={accessibilityLabel}
       aria-label={accessibilityLabel}
-      className={cn(mode === 'sidebar' && scale.gapClass, 'py-(--menu-vertical-padding)', className)}
+      className={cn(mode === 'sidebar' && scale.gapClass, !segmented && 'py-(--menu-vertical-padding)', className)}
       role={isMenu ? 'menu' : undefined}
       testID={testID}
     >
@@ -465,10 +526,17 @@ export function Menu({
 
           switch (entry.type) {
             case 'separator':
-              return <MenuSeparator size={size} className={entry.className} key={key} testID={entryTestID} />;
+              return <MenuSeparator size={size} className={entry.className} key={key} testID={entryTestID} variant={variant} />;
             case 'label':
               return (
-                <MenuLabel className={cn(scale.labelClass, entry.className)} key={key} size={size} testID={entryTestID}>
+                <MenuLabel
+                  bottomBorder={segmented && key !== lastRowKey}
+                  className={cn(!segmented && scale.labelClass, entry.className)}
+                  key={key}
+                  size={size}
+                  testID={entryTestID}
+                  variant={variant}
+                >
                   {entry.label}
                 </MenuLabel>
               );
@@ -482,6 +550,7 @@ export function Menu({
               actionIndex += 1; // the `MenuRow` below also increments, but this is the one that counts for the stagger
               return (
                 <MenuRow
+                  bottomBorder={segmented && key !== lastRowKey}
                   entry={entry}
                   iconPlaceholder={iconPlaceholder && !entry.icon}
                   index={actionIndex}
@@ -493,6 +562,7 @@ export function Menu({
                   reduce={reduce}
                   size={size}
                   testID={testID}
+                  variant={variant}
                 />
               );
           }
@@ -500,4 +570,6 @@ export function Menu({
       })()}
     </View>
   );
+
+  return list;
 }

@@ -29,7 +29,7 @@ export type DrawerProps = {
   /**
    * Surface elevation of the drawer panel (0–8) — drives the background tint
    * and the `shadow-elevated-N` recipe (drop shadow + dark-mode rim). `0` is the
-   * flat resting surface (no shadow or border). Defaults to `0`.
+   * flat resting surface (no shadow or border). Defaults to `6`.
    */
   elevation?: SurfaceElevation;
   children: ReactNode;
@@ -53,7 +53,7 @@ export function Drawer({
   onOpenChange,
   side = 'right',
   floating = false,
-  elevation = 0,
+  elevation = 6,
   children,
   overlay = true,
   closeOnOutsidePress = true,
@@ -96,7 +96,7 @@ export function Drawer({
                 accessibilityLabel="Close"
                 disabled={!closeOnOutsidePress}
                 onPress={handleBackdropPress}
-                className={overlay ? 'flex-1 bg-foreground/40' : 'flex-1'}
+                className={overlay ? 'flex-1 bg-foreground/50' : 'flex-1'}
               />
             </MotiView>
             <MotiView

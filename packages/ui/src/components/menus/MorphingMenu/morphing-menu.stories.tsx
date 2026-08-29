@@ -39,7 +39,7 @@ function MorphingMenuDemo(props: ComponentProps<typeof MorphingMenu>) {
 }
 
 function MorphingMenuPlayground() {
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
   const [overlay, setOverlay] = useState(false);
   const [closeOnOutside, setCloseOnOutside] = useState(true);

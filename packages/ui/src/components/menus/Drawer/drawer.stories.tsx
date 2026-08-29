@@ -28,7 +28,7 @@ const SIDES = ['left', 'right'] as const satisfies readonly DrawerSide[];
 
 function DrawerPlayground() {
   const [side, setSide] = useState<DrawerSide>('left');
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
   const [overlay, setOverlay] = useState(true);
   const [closeOnOutside, setCloseOnOutside] = useState(true);

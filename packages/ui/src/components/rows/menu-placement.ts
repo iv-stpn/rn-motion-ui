@@ -222,26 +222,33 @@ export type HoldMenuLayout = {
  */
 
 /** Action row minimum height. */
-export const HOLD_MENU_ROW_HEIGHT = 32;
+export const HOLD_MENU_ROW_HEIGHT = 40;
 /** Floor applied to each action row, mirroring {@link HOLD_MENU_ROW_HEIGHT}. */
-export const HOLD_MENU_ROW_CLASS = 'min-h-8';
+export const HOLD_MENU_ROW_CLASS = 'min-h-10';
 /** Heading row minimum height. */
 export const HOLD_MENU_HEADING_HEIGHT = 24;
 /** Floor applied to the heading row, mirroring {@link HOLD_MENU_HEADING_HEIGHT}. */
 export const HOLD_MENU_HEADING_CLASS = 'min-h-6 justify-center';
 /**
- * The list's vertical inset inside the panel. `Menu` ships a default one, but
- * this panel overrides it with a number of its own: the estimate below has to be
- * exact, and a value the list is free to retune is not one to predict a position
- * from.
+ * The `'base'` list's vertical inset inside the panel — 4 px top and bottom, read
+ * by the background menu's `estimateHoldMenuHeight`. The `'segmented'` variant
+ * runs its rows flush to the panel edge, so `HoldMenu`'s `calculateMenuHeight`
+ * adds no such inset and does not read this.
  */
 export const HOLD_MENU_LIST_PADDING = 8;
 /** Vertical inset applied to the list, mirroring {@link HOLD_MENU_LIST_PADDING}. */
 export const HOLD_MENU_LIST_CLASS = 'py-1';
 /**
- * Separator band between groups — `Menu`'s own `md` separator: a `h-1` hairline
- * with `my-1` around it. Explicit in `Menu`'s size scale, so unlike the rows
- * above there is nothing to pin here, only to mirror.
+ * The `'segmented'` list's vertical inset — none. Its rows run flush to the
+ * panel edge, so unlike {@link HOLD_MENU_LIST_PADDING} this is zero. `HoldMenu`'s
+ * `calculateMenuHeight` and `MIN_PANEL_HEIGHT` add it anyway so the two variants'
+ * height maths read in parallel.
+ */
+export const HOLD_MENU_SEGMENTED_LIST_PADDING = 0;
+/**
+ * Separator band between groups — `Menu`'s own `md` base separator: a `h-0.5`
+ * hairline with `my-1` around it. Explicit in `Menu`'s size scale, so unlike the
+ * rows above there is nothing to pin here, only to mirror.
  *
  * Mirrored rather than imported: this module is pure geometry with no component
  * imports, which is what lets it be unit-tested without a renderer. The source of
@@ -249,6 +256,20 @@ export const HOLD_MENU_LIST_CLASS = 'py-1';
  * back here.
  */
 export const HOLD_MENU_SEPARATOR_HEIGHT = 10;
+/**
+ * The `'segmented'` variant's separator — `Menu`'s `md` band: a solid `h-2`
+ * (8 px) divider with no margin around it, the hold-menu group break. Mirrored
+ * here for the same reason as {@link HOLD_MENU_SEPARATOR_HEIGHT}; the source of
+ * truth is `SEGMENTED_SEPARATOR_CLASS.md` in `Menu`.
+ */
+export const HOLD_MENU_SEGMENTED_SEPARATOR_HEIGHT = 8;
+/**
+ * The 1.5 px hairline the `'segmented'` variant draws below every row but the
+ * last. A row's border adds to its box, so HoldMenu's `calculateMenuHeight`
+ * counts one seam per gap between rows; the source of truth is the
+ * `border-b-[1.5px]` on `MenuItem` in segmented mode.
+ */
+export const HOLD_MENU_SEGMENTED_SEAM_HEIGHT = 1.5;
 /** Panel hairline border, top + bottom — `border-[1.5px]`. */
 export const HOLD_MENU_BORDER_HEIGHT = 3;
 /**

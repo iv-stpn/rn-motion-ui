@@ -67,8 +67,7 @@ const HoldItemTwinComponent = ({
   );
 
   const animatedPortalStyle = useAnimatedStyle(() => {
-    const itemsWithSeparator = items.filter((item) => item.withSeparator);
-    const menuHeight = calculateMenuHeight(items.length, itemsWithSeparator.length, windowSize.value.fontScale);
+    const menuHeight = calculateMenuHeight(items);
     // Clamp against the root's VISIBLE extent, not the window's — the two
     // differ whenever the provider root is inset from the window (storybook's
     // padding) or taller than it because it sits inside a scroll view (its

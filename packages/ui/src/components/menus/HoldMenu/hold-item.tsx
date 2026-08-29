@@ -1,4 +1,4 @@
-import { memo, type Ref, type RefObject, useEffect, useId } from 'react';
+import { memo, type Ref, type RefObject, useCallback, useEffect, useId } from 'react';
 import { Animated as NativeAnimated, type View, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -17,6 +17,7 @@ import { HOLD_ITEM_TRANSFORM_DURATION, IS_WEB } from './constants';
 import { useHoldMenuInternal } from './context';
 import { HoldItemTwin } from './hold-item-twin';
 import type { HoldItemProps } from './hold-menu-types';
+import { MeasureMenuWidth } from './measure-menu-width';
 import { useHoldItemActivation } from './use-hold-item-activation';
 import { useHoldItemDrag } from './use-hold-item-drag';
 import { useHoldItemGesture } from './use-hold-item-gesture';
@@ -73,6 +74,14 @@ const HoldItemComponent = ({
   const { state, menuProps, windowSize, rootViewportHeight, safeAreaInsets, rootRef } = useHoldMenuInternal();
 
   const isActive = useSharedValue(false);
+  /** Widest-row content width, reported by `MeasureMenuWidth`'s `onLayout` before the first hold. */
+  const contentWidth = useSharedValue(0);
+  const handleMeasureWidth = useCallback(
+    (width: number) => {
+      contentWidth.value = width;
+    },
+    [contentWidth],
+  );
   /**
    * The twin/original handover, 0 = active (the twin is the visible copy), 1 =
    * released (the in-place item is back). A single shared value drives BOTH
@@ -127,6 +136,7 @@ const HoldItemComponent = ({
     windowSize,
     rootViewportHeight,
     safeAreaInsets,
+    contentWidth,
     scaleHold,
   });
 
@@ -309,6 +319,7 @@ const HoldItemComponent = ({
       >
         {children}
       </HoldItemTwin>
+      {items.length > 0 ? <MeasureMenuWidth items={items} onWidth={handleMeasureWidth} /> : null}
     </>
   );
 };

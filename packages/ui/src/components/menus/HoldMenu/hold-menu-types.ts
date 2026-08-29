@@ -40,6 +40,7 @@ export type MenuInternalProps = {
   itemX: number;
   anchorPosition: TransformOriginAnchorPosition;
   menuHeight: number;
+  menuWidth: number;
   transformValue: number;
   actionParams: { [name: string]: unknown[] };
 };

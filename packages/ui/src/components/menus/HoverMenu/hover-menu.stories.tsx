@@ -110,7 +110,7 @@ function HoverMenuPlayground() {
   const [widthKey, setWidthKey] = useState<WidthKey>('200');
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('4');
   const [delayKey, setDelayKey] = useState<DelayKey>('100');
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('5');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
   const [overlay, setOverlay] = useState(true);
   const [closeOnOutside, setCloseOnOutside] = useState(true);

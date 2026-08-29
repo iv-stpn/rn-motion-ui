@@ -21,6 +21,14 @@ export type MenuItemSize = 'sm' | 'md' | 'lg';
  */
 export type MenuItemMode = 'menu' | 'sidebar';
 
+/**
+ * The surface a menu row is drawn for.
+ * - `'base'` — the CommandPalette style: icon leading, no borders between rows.
+ * - `'segmented'` — the hold-menu style: icon trailing, a hairline below each
+ *   row but the last, centred captions and solid separator bands.
+ */
+export type MenuVariant = 'base' | 'segmented';
+
 /** Pressable's own handler types, so the row can wrap them without restating the event shapes. */
 type HoverHandler = NonNullable<PressableProps['onHoverIn']>;
 
@@ -33,26 +41,37 @@ const DEFAULT_VARIANT: Record<
   { rowClass: string; iconSize: number; iconPlaceholderClass: string; labelClass: string }
 > = {
   sm: {
-    rowClass: 'gap-1.5 px-1.5 py-1',
+    rowClass: 'gap-1.5 px-2 py-1.5',
     iconSize: 16,
-    iconPlaceholderClass: 'h-3.5 w-3.5',
-    labelClass: 'text-[12px]',
+    iconPlaceholderClass: 'h-4 w-4',
+    labelClass: 'text-sm',
   },
   md: {
-    rowClass: 'gap-2 px-2 py-1.5',
-    iconSize: 21,
-    iconPlaceholderClass: 'h-5 w-5',
-    labelClass: 'text-[14px]',
+    rowClass: 'gap-2 px-4 py-2.5',
+    iconSize: 18,
+    iconPlaceholderClass: 'h-4.5 w-4.5',
+    labelClass: 'text-base leading-5',
   },
   lg: {
-    rowClass: 'gap-3 px-3 py-2',
-    iconSize: 26,
-    iconPlaceholderClass: 'h-6 w-6',
-    labelClass: 'text-[18px]',
+    rowClass: 'gap-3 px-5 py-3',
+    iconSize: 22,
+    iconPlaceholderClass: 'h-5.5 w-5.5',
+    labelClass: 'text-lg',
   },
 };
 
 const ROUNDED_VARIANT: Record<MenuItemSize, string> = { sm: 'rounded', md: 'rounded-md', lg: 'rounded-lg' };
+
+/**
+ * Row layout for the segmented variant — the icon trailing, so the row is
+ * `justify-between` rather than the leading-icon `gap-*` of the base scale.
+ * Padding and label ramp are the base scale's, only the distribution differs.
+ */
+const SEGMENTED_ROW_CLASS: Record<MenuItemSize, string> = {
+  sm: 'justify-between px-2 py-1.5',
+  md: 'justify-between px-4 py-2.5',
+  lg: 'justify-between px-5 py-3',
+};
 
 /**
  * Scale for the iOS-style (iconBackgroundColor) variant — row height, icon
@@ -141,6 +160,18 @@ export type MenuItemProps = Omit<PressableProps, 'children'> & {
    */
   mode?: MenuItemMode;
   /**
+   * Surface variant. `'segmented'` moves the icon trailing and lays the row out
+   * `justify-between` (the hold-menu style); `'base'` keeps it leading.
+   * @default 'base'
+   */
+  variant?: MenuVariant;
+  /**
+   * Draws the 1.5 px hairline below the row — the segmentation of the
+   * `'segmented'` variant. Omitted on the last row, which ends flush.
+   * @default false
+   */
+  bottomBorder?: boolean;
+  /**
    * When set, the icon is placed inside a coloured rounded square
    * (iOS-style settings rows, e.g. MultiStepMenu sidebar).
    * When omitted the icon is rendered with themed muted/foreground colours.
@@ -220,6 +251,8 @@ function MenuItemIconSlot({ icon: Icon, size, active, token, bgStyle, iconColor,
 export function MenuItem({
   size = 'md',
   mode = 'menu',
+  variant = 'base',
+  bottomBorder = false,
   icon: Icon,
   label,
   labelWeight,
@@ -266,17 +299,32 @@ export function MenuItem({
 
   const scale = hasIconTile ? ICON_TILE_VARIANT[size] : DEFAULT_VARIANT[size];
   const canInteract = !(active || disabled);
+  const segmented = variant === 'segmented';
 
   const labelColorClass = getLabelColorClass({ hasIconTile, mode, active, destructive });
   const iconToken = getIconToken({ mode, active, destructive });
+
+  // The leading slot in `'base'`, the trailing one in `'segmented'` — extracted
+  // so the single instance can move without duplicating its props.
+  const iconSlot = (
+    <MenuItemIconSlot
+      icon={Icon}
+      size={size}
+      active={active}
+      token={iconToken}
+      bgStyle={backgroundStyle}
+      iconColor={iconColor}
+      iconPlaceholder={iconPlaceholder}
+    />
+  );
 
   return (
     <Pressable
       {...props}
       className={cn(
         'relative flex-row items-center overflow-hidden',
-        mode === 'sidebar' && ROUNDED_VARIANT[size],
-        scale.rowClass,
+        segmented ? SEGMENTED_ROW_CLASS[size] : cn(mode === 'sidebar' && ROUNDED_VARIANT[size], scale.rowClass),
+        bottomBorder && 'border-border border-b-[1.5px]',
         hasIconTile && active && 'bg-info',
         canInteract && hovered && 'bg-surface-hover',
         canInteract && pressed && 'bg-surface-selected',
@@ -301,16 +349,8 @@ export function MenuItem({
         />
       ) : null}
 
-      {/* Icon */}
-      <MenuItemIconSlot
-        icon={Icon}
-        size={size}
-        active={active}
-        token={iconToken}
-        bgStyle={backgroundStyle}
-        iconColor={iconColor}
-        iconPlaceholder={iconPlaceholder}
-      />
+      {/* Icon — leading in `base`, trailing in `segmented` */}
+      {!segmented && iconSlot}
 
       {/* Label */}
       <Text
@@ -320,6 +360,8 @@ export function MenuItem({
       >
         {label}
       </Text>
+
+      {segmented && iconSlot}
 
       {/* Trailing */}
       {trailing ?? null}

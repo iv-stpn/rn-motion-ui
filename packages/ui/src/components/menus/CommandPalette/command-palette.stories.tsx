@@ -6,7 +6,8 @@ import { Home2Line as Home } from 'rn-motion-ui-icons/icons/home-2-line';
 import { Settings1Line as Settings } from 'rn-motion-ui-icons/icons/settings-1-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
-import { ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
+import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
+import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { type CommandItem, CommandPalette } from './command-palette';
 
@@ -35,6 +36,7 @@ function PalettePlayground() {
   const [open, setOpen] = useState(false);
   const [overlay, setOverlay] = useState(true);
   const [closeOnOutside, setCloseOnOutside] = useState(true);
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const trigger = useTriggerState();
   const handleOpen = useCallback(() => setOpen(true), []);
 
@@ -43,6 +45,7 @@ function PalettePlayground() {
       <ControlCard title="Options">
         <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
+        <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
       <TriggerControls state={trigger} />
       <TriggerButton
@@ -55,6 +58,7 @@ function PalettePlayground() {
       />
       <CommandPalette
         closeOnOutsidePress={closeOnOutside}
+        elevation={ELEVATIONS[elevationKey]}
         items={ITEMS}
         onOpenChange={setOpen}
         open={open}

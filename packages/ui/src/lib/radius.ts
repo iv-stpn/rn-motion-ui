@@ -26,8 +26,8 @@ export const ROUNDED_INTERACTIVE = 'rounded-interactive' as const;
 /** Tailwind class backed by --radius-card. */
 export const ROUNDED_CARD = 'rounded-card' as const;
 
-/** Corner radius in px for menu overlays — HoverMenu, Dropdown. */
-export const MENU_RADIUS = 16;
+/** Corner radius in px for menu overlays — HoverMenu, Dropdown, HoldMenu. */
+export const MENU_RADIUS = 12;
 
 /** Tailwind class backed by --radius-menu. */
 export const ROUNDED_MENU = 'rounded-menu' as const;

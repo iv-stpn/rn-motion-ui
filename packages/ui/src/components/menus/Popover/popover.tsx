@@ -196,7 +196,7 @@ export type PopoverContentProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
-  /** Float level — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 4 */
+  /** Float level — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 6 */
   elevation?: SurfaceElevation;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -206,7 +206,7 @@ export function PopoverContent({
   children,
   accessibilityLabel,
   floating = false,
-  elevation = 4,
+  elevation = 6,
   style,
   testID,
 }: PopoverContentProps) {
@@ -250,7 +250,7 @@ export function PopoverContent({
             {overlay ? (
               <View pointerEvents="none" className="absolute inset-0">
                 <OverlayBlur />
-                <View className="absolute inset-0 bg-black/20" />
+                <View className="absolute inset-0 bg-black/40" />
               </View>
             ) : null}
             <Pressable

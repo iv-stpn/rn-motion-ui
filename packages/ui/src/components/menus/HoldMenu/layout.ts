@@ -29,16 +29,16 @@
  * can run them on the UI thread.
  */
 
-import { HOLD_MENU_VIEWPORT_PADDING, MENU_TRANSFORM_ORIGIN_TOLERENCE } from './constants';
 import {
-  MENU_TEXT_DARK_COLOR,
-  MENU_TEXT_DESTRUCTIVE_COLOR_DARK,
-  MENU_TEXT_DESTRUCTIVE_COLOR_LIGHT,
-  MENU_TEXT_LIGHT_COLOR,
-  MENU_TITLE_COLOR,
-} from './hold-menu-theme';
+  HOLD_MENU_BORDER_HEIGHT,
+  HOLD_MENU_ROW_HEIGHT,
+  HOLD_MENU_SEGMENTED_LIST_PADDING,
+  HOLD_MENU_SEGMENTED_SEAM_HEIGHT,
+  HOLD_MENU_SEGMENTED_SEPARATOR_HEIGHT,
+} from '../../rows/menu-placement';
+import { HOLD_MENU_VIEWPORT_PADDING, MENU_MIN_WIDTH, MENU_TRANSFORM_ORIGIN_TOLERENCE, MENU_WIDTH_RATIO } from './constants';
 import type { MenuItemProps, TransformOriginAnchorPosition } from './hold-menu-types';
-import { SPACING, TYPOGRAPHY } from './style-guide';
+import { SPACING } from './style-guide';
 
 function fieldAreSame(obj1: MenuItemProps, obj2: MenuItemProps): boolean {
   'worklet';
@@ -111,21 +111,42 @@ export const deepEqual = (array1: MenuItemProps[], array2: MenuItemProps[]): boo
   return false;
 };
 
-/** Height of one action row at the given font scale — upstream's `MenuItemHeight()`. */
-// biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
-export const menuItemHeight = (fontScale: number): number => {
+/**
+ * Estimated panel height for one open — the generic `Menu`'s `'segmented'`
+ * metrics, since `HoldMenu` renders that variant.
+ *
+ * Every item is a full `md` row (40 px) — a title is a centred full row now, not
+ * the shorter base caption — and a `withSeparator` band (8 px) follows its row,
+ * the trailing one included exactly as the list renders it. A 1.5 px hairline
+ * sits below every row but the last. The `'segmented'` list runs its rows flush
+ * to the panel edge, so its list-level inset is zero — the
+ * `HOLD_MENU_SEGMENTED_LIST_PADDING` term below, kept so the two variants' maths
+ * read in parallel. The numbers come from `rows/menu-placement` — the same module
+ * the background menu's `estimateHoldMenuHeight` reads — so the two menus cannot
+ * drift apart.
+ */
+export const calculateMenuHeight = (items: MenuItemProps[]): number => {
   'worklet';
-  return TYPOGRAPHY.callout.lineHeight * fontScale + SPACING * 2.5;
+  let height = HOLD_MENU_BORDER_HEIGHT + HOLD_MENU_SEGMENTED_LIST_PADDING;
+  for (const item of items) {
+    height += HOLD_MENU_ROW_HEIGHT;
+    if (item.withSeparator) height += HOLD_MENU_SEGMENTED_SEPARATOR_HEIGHT;
+  }
+  // One hairline below each row but the last.
+  if (items.length > 1) height += (items.length - 1) * HOLD_MENU_SEGMENTED_SEAM_HEIGHT;
+  return height;
 };
 
 /**
- * Estimated panel height for N rows and separator bands — upstream's
- * `calculateMenuHeight`, counting the inter-row 1 px seams it counts.
+ * The panel width for one open: the widest row's measured content width, floored
+ * to {@link MENU_MIN_WIDTH} so a short menu never looks pinched, and capped to
+ * the window-ratio maximum so a long label wraps instead of running off-screen.
+ * `Math.ceil` keeps the panel never narrower than its rows by a sub-pixel.
  */
-// biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
-export const calculateMenuHeight = (itemLength: number, separatorCount: number, fontScale = 1): number => {
+export const resolveMenuWidth = (contentWidth: number, windowWidth: number): number => {
   'worklet';
-  return menuItemHeight(fontScale) * itemLength + (itemLength - 1) + separatorCount * SPACING;
+  const max = Math.round(windowWidth * MENU_WIDTH_RATIO);
+  return Math.min(max, Math.max(MENU_MIN_WIDTH, Math.ceil(contentWidth)));
 };
 
 /**
@@ -279,11 +300,12 @@ export const menuMaxHeight = (input: HoldMenuTravelInput): number => {
 };
 
 /**
- * Smallest the panel is ever capped to: one row. A panel clamped below this
- * shows no whole row at all, and the held item can afford to hang off the edge
- * instead.
+ * Smallest the panel is ever capped to: the panel border, the (zero) segmented
+ * list inset, and one row — the base variant's `HOLD_MENU_MIN_PANEL_HEIGHT`
+ * carries its own 8 px inset in place of that zero. A panel clamped below this
+ * shows no whole row at all, and the held item can afford to hang off the edge.
  */
-export const MIN_PANEL_HEIGHT = TYPOGRAPHY.callout.lineHeight + SPACING * 2.5;
+export const MIN_PANEL_HEIGHT = HOLD_MENU_BORDER_HEIGHT + HOLD_MENU_SEGMENTED_LIST_PADDING + HOLD_MENU_ROW_HEIGHT;
 
 /**
  * The height the panel actually renders at: the estimate, capped to what fits
@@ -490,19 +512,4 @@ export const resolveMenuAnchorPosition = ({
   if (horizontal === 'right' && overflows('right') && !overflows('left')) return anchorFor('left');
   if (horizontal === 'left' && overflows('left') && !overflows('right')) return anchorFor('right');
   return anchor;
-};
-
-/** Row text colour from the item flags and theme — upstream's `getColor`. */
-export const getColor = (
-  isTitle: boolean | undefined,
-  isDestructive: boolean | undefined,
-  isDisabled: boolean | undefined,
-  themeValue: 'light' | 'dark',
-) => {
-  'worklet';
-  // Disabled reads like a title — grey, inert — and wins over a destructive
-  // flag: a disabled "Delete" is not red, it is unavailable.
-  if (isTitle || isDisabled) return MENU_TITLE_COLOR;
-  if (isDestructive) return themeValue === 'dark' ? MENU_TEXT_DESTRUCTIVE_COLOR_DARK : MENU_TEXT_DESTRUCTIVE_COLOR_LIGHT;
-  return themeValue === 'dark' ? MENU_TEXT_DARK_COLOR : MENU_TEXT_LIGHT_COLOR;
 };

@@ -60,7 +60,7 @@
  *
  * - `--radius-interactive` (6 px) — buttons, inputs, tabs, button groups.
  * - `--radius-card` (16 px) — card containers.
- * - `--radius-menu` (16 px) — HoverMenu, Dropdown, HoldContextMenu overlays.
+ * - `--radius-menu` (12 px) — HoverMenu, Dropdown, HoldMenu overlays.
  * - `--radius-modal` (16 px) — Modals, Popovers, MorphingModal, BottomSheet.
  *
  * Unlike the colors, geometry tokens carry no dark-mode counterpart — geometry
@@ -267,7 +267,7 @@
 
   --menu-vertical-padding: 4px;
 
-  --radius-menu: 6px;
+  --radius-menu: 12px;
   --radius-interactive: 6px;
   --radius-card: 16px;
   --radius-modal: 16px;

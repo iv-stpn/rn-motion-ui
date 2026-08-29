@@ -77,7 +77,7 @@ function SheetPlayground() {
   const [dismissable, setDismissable] = useState(true);
   const [long, setLong] = useState(false);
   const [open, setOpen] = useState(false);
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
   const trigger = useTriggerState();
 

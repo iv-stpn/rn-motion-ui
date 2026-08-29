@@ -57,8 +57,11 @@ export type CONTEXT_MENU_STATE = (typeof CONTEXT_MENU_STATE)[keyof typeof CONTEX
 /** Half-width tolerance inside which an item counts as centred on screen. */
 export const MENU_TRANSFORM_ORIGIN_TOLERENCE = 10;
 
-/** The panel is this fraction of the window width — upstream's `MENU_WIDTH` formula, lowered from upstream's 0.6 for a tighter panel. */
+/** The panel is at most this fraction of the window width — upstream's `MENU_WIDTH` formula, lowered from upstream's 0.6. A content-fit panel caps here so a long label wraps instead of running past the edge. */
 export const MENU_WIDTH_RATIO = 0.4;
+
+/** Smallest the panel is ever drawn — content that measures below this still gets a full-width-looking panel. */
+export const MENU_MIN_WIDTH = 160;
 
 /** Margin kept between the panel and the safe-area edges. */
 export const HOLD_MENU_VIEWPORT_PADDING = 8;

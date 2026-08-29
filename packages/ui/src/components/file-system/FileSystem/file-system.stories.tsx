@@ -2305,10 +2305,12 @@ export const WithContextMenu: Story = {
     const readmeTile = await canvas.findByRole('button', { name: 'README.md' });
     await userEvent.pointer({ target: readmeTile, keys: '[MouseRight]' });
 
-    // The menu resolves async — wait for at least one action to appear.
-    const openAction = await screen.findByText('Open');
-    expect(screen.getByText('Download')).toBeTruthy();
-    expect(screen.getByText('Delete')).toBeTruthy();
+    // The menu resolves async — wait for at least one action to appear. Roles,
+    // not text: `HoldMenu` keeps an `aria-hidden` measurement copy of every
+    // entry's rows off-screen, and `getByText` matches those too.
+    const openAction = await screen.findByRole('menuitem', { name: 'Open' });
+    expect(screen.getByRole('menuitem', { name: 'Download' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeTruthy();
 
     // Selecting an action fires the callback and closes the menu.
     await userEvent.click(openAction);
@@ -3187,7 +3189,7 @@ export const MobileKebabSelects: Story = {
     // actions appear (the same ones a right-click would show) while the row is
     // painted selected — the kebab stays in the slot until the menu closes.
     await userEvent.click(within(kebab).getByRole('button'));
-    await screen.findByText('Open');
+    await screen.findByRole('menuitem', { name: 'Open' });
     await waitFor(() =>
       expect(args.onSelectedItemsChange).toHaveBeenLastCalledWith([expect.objectContaining({ name: 'README.md' })]),
     );
@@ -3195,7 +3197,7 @@ export const MobileKebabSelects: Story = {
 
     // Closing the menu releases the slot: the kebab gives way to the checked
     // checkbox, the selection-mode surface.
-    await userEvent.click(await screen.findByText('Open'));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Open' }));
     await waitFor(() => expect(canvas.queryByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-kebab`)).toBeNull());
     expect(await canvas.findByTestId(`${ENTRY_TEST_ID_PREFIX}README.md-checkbox`)).toHaveAttribute('aria-checked', 'true');
   },
@@ -3504,7 +3506,7 @@ async function pickMenuAction(canvas: ReturnType<typeof within>, name: string, a
   const tiles = await canvas.findAllByRole('button', { name });
   const tile = tiles[0];
   await userEvent.pointer({ target: tile, keys: '[MouseRight]' });
-  await userEvent.click(await screen.findByText(action));
+  await userEvent.click(await screen.findByRole('menuitem', { name: action }));
 }
 
 /**
@@ -3526,7 +3528,7 @@ export const PlaygroundMenuActions: Story = {
     await expect(await screen.findByRole('menuitem', { name: 'Share…' })).toHaveAttribute('aria-disabled', 'true');
 
     // Duplicate names the copy before the extension and puts it beside the file.
-    await userEvent.click(await screen.findByText('Duplicate'));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Duplicate' }));
     await canvas.findByText('Duplicated README.md');
     // findAllByText: HoldItem double-renders draggable rows — pick first.
     expect((await canvas.findAllByText('README copy.md'))[0]).toBeDefined();

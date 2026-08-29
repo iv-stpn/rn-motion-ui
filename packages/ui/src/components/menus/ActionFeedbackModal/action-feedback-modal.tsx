@@ -225,7 +225,7 @@ export function ActionFeedbackModal({
           {overlay ? (
             <>
               <OverlayBlur />
-              <View className="absolute inset-0 bg-black/40" />
+              <View className="absolute inset-0 bg-black/50" />
             </>
           ) : null}
           <TouchableOpacity

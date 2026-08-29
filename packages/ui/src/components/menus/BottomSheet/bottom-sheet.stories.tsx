@@ -29,12 +29,8 @@ const SWIPE_SUFFIX = ' — swipe to dismiss';
 const CLOSED_NOTE = 'Closed';
 const FULL_SHEET_NOTE = '"Full sheet" drops the drag handle and the 90% height cap, so the sheet owns the whole screen.';
 const LOCKED_NOTE = 'With "Close on overlay" off, only the sheet\'s own button (or a downward swipe) dismisses it.';
-const CHROME_NOTE = 'The handle and backdrop each take their own className, so the chrome can be re-tinted per sheet.';
 
 const FILLER_KEYS = ['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10', 'r11', 'r12'] as const;
-
-const TINTED_HANDLE = 'bg-surface-3';
-const TINTED_BACKDROP = 'bg-primary/20';
 
 type SheetBodyProps = { long?: boolean; full?: boolean; onClose: () => void };
 
@@ -64,9 +60,8 @@ function SheetPlayground() {
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const [overlay, setOverlay] = useState(true);
   const [longContent, setLongContent] = useState(false);
-  const [tinted, setTinted] = useState(false);
   const [floating, setFloating] = useState(false);
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [open, setOpen] = useState(false);
   const [closes, setCloses] = useState(0);
   const trigger = useTriggerState();
@@ -84,7 +79,6 @@ function SheetPlayground() {
         <Toggle label="Long content" onChange={setLongContent} value={longContent} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
         <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
-        <Toggle label="Tinted chrome" onChange={setTinted} value={tinted} />
       </ControlCard>
 
       <TriggerControls state={trigger} />
@@ -101,15 +95,12 @@ function SheetPlayground() {
 
       <Note>{FULL_SHEET_NOTE}</Note>
       <Note>{LOCKED_NOTE}</Note>
-      <Note>{CHROME_NOTE}</Note>
 
       <BottomSheet
-        backdropClassName={tinted ? TINTED_BACKDROP : undefined}
         closeOnOutsidePress={closeOnOutside}
         floating={floating}
         elevation={ELEVATIONS[elevationKey]}
         fullSheet={fullSheet}
-        handleClassName={tinted ? TINTED_HANDLE : undefined}
         onAfterClose={handleAfterClose}
         onOpenChange={setOpen}
         open={open}

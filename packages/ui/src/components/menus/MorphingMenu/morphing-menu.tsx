@@ -63,7 +63,7 @@ export type MorphingMenuProps = {
   /**
    * Surface elevation of the morph card (0–8) — drives the background tint and
    * the `shadow-elevated-N` recipe. `0` is the flat resting surface (no shadow
-   * or border). Defaults to `0`.
+   * or border). Defaults to `6`.
    */
   elevation?: SurfaceElevation;
   /** Additional UniWind class names merged onto the outer wrapper. */
@@ -242,7 +242,7 @@ export function MorphingMenu({
   title = 'Create',
   triggerLabel = 'Create',
   floating = false,
-  elevation = 0,
+  elevation = 6,
   className,
   style,
   overlay = false,
@@ -339,7 +339,7 @@ export function MorphingMenu({
                   <Pressable
                     accessibilityLabel="Close"
                     onPress={closeOnOutsidePress ? handleClose : undefined}
-                    className={overlay ? 'flex-1 bg-foreground/20' : 'flex-1'}
+                    className={overlay ? 'flex-1 bg-foreground/40' : 'flex-1'}
                     testID={testID ? `${testID}-backdrop` : undefined}
                   />
                 </MotiView>

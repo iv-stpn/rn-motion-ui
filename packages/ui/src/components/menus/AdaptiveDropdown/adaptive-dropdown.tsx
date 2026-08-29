@@ -70,7 +70,7 @@ export type AdaptiveDropdownProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
-  /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 5 */
+  /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 6 */
   elevation?: SurfaceElevation;
   /**
    * Minimum window width for the floating-panel layout; below it the content
@@ -116,7 +116,7 @@ export function AdaptiveDropdown({
   triggerClassName,
   fullSheet = false,
   floating = false,
-  elevation = 5,
+  elevation = 6,
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   motion,
   testID,
@@ -244,7 +244,7 @@ export function AdaptiveDropdown({
             {overlay ? (
               <View pointerEvents="none" className="absolute inset-0">
                 <OverlayBlur />
-                <View className="absolute inset-0 bg-black/20" />
+                <View className="absolute inset-0 bg-black/40" />
               </View>
             ) : null}
             <AnimatePresence onExitComplete={handlePanelExitComplete}>

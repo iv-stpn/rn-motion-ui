@@ -157,7 +157,7 @@ export function MorphingModal({
             <Pressable
               accessibilityLabel="Close"
               onPress={closeOnOutsidePress ? handleClose : undefined}
-              className={overlay ? 'flex-1 bg-foreground/20' : 'flex-1'}
+              className={overlay ? 'flex-1 bg-foreground/40' : 'flex-1'}
               testID={testID ? `${testID}-backdrop` : undefined}
             />
           </MotiView>

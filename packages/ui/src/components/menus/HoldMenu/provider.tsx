@@ -48,6 +48,7 @@ const ProviderComponent = ({
     items: [],
     anchorPosition: 'top-center',
     menuHeight: 0,
+    menuWidth: 0,
     transformValue: 0,
     actionParams: {},
   });

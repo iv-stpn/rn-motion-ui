@@ -71,7 +71,7 @@ export type HoverMenuProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
-  /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 5 */
+  /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 6 */
   elevation?: SurfaceElevation;
   /**
    * Overrides the shared open/close animation — the same `motion` prop
@@ -203,7 +203,7 @@ export function HoverMenu({
   closeDelay = DEFAULT_CLOSE_DELAY,
   contentClassName,
   floating = false,
-  elevation = 5,
+  elevation = 6,
   motion,
   testID,
   overlay = true,
@@ -510,7 +510,7 @@ export function HoverMenu({
           {overlay ? (
             <View pointerEvents="none" style={OVERLAY_STYLE}>
               <OverlayBlur />
-              <View className="absolute inset-0 bg-black/20" />
+              <View className="absolute inset-0 bg-black/40" />
             </View>
           ) : null}
           <Pressable onPress={closeOnOutsidePress ? close : undefined} style={OVERLAY_STYLE} />

@@ -60,7 +60,7 @@ export type BottomSheetProps = {
   /**
    * Surface elevation of the sheet panel (0–8) — drives the background tint
    * and the `shadow-elevated-N` recipe. `0` is the flat resting surface (no
-   * shadow or border). Defaults to `3`.
+   * shadow or border). Defaults to `6`.
    */
   elevation?: SurfaceElevation;
   /** When false, the dimming backdrop is not rendered — the sheet floats over the page with no scrim. Defaults to true. */
@@ -102,7 +102,7 @@ export function BottomSheet({
   onAfterClose,
   fullSheet,
   floating = false,
-  elevation = 3,
+  elevation = 6,
   overlay = true,
   closeOnOutsidePress = true,
   handleClassName,
@@ -184,7 +184,7 @@ export function BottomSheet({
             <OverlayBlur />
             <View
               className="absolute inset-0"
-              style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' /* scrim — theme-independent */ }}
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' /* scrim — theme-independent */ }}
             />
           </Animated.View>
         ) : null}

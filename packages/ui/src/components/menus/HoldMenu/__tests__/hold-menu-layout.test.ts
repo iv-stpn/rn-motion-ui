@@ -6,7 +6,7 @@ vi.mock('react-native', () => ({ Platform: { OS: 'web' } }));
 
 import type { TransformOriginAnchorPosition } from '../hold-menu-types';
 import type { HoldMenuPanelLeftInput } from '../layout';
-import { resolveMenuAnchorPosition, resolveMenuPanelLeft, resolveRootViewportHeight } from '../layout';
+import { resolveMenuAnchorPosition, resolveMenuPanelLeft, resolveMenuWidth, resolveRootViewportHeight } from '../layout';
 
 /** Square viewport, no insets — a 240 px panel leaves an 8..152 px range. */
 const WINDOW_WIDTH = 400;
@@ -114,5 +114,23 @@ describe('resolveRootViewportHeight', () => {
 
   it('is the window height for a full-screen root', () => {
     expect(resolveRootViewportHeight(800, 0, 800)).toBe(800);
+  });
+});
+
+describe('resolveMenuWidth', () => {
+  it('floors content below the minimum to the minimum width', () => {
+    expect(resolveMenuWidth(80, 1000)).toBe(160);
+  });
+
+  it('sizes to content between the floor and the window-ratio cap', () => {
+    expect(resolveMenuWidth(200, 1000)).toBe(200);
+  });
+
+  it('caps content at the window-ratio maximum', () => {
+    expect(resolveMenuWidth(600, 1000)).toBe(400);
+  });
+
+  it('rounds fractional content up so the panel is never narrower than its rows', () => {
+    expect(resolveMenuWidth(180.4, 1000)).toBe(181);
   });
 });

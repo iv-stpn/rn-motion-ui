@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import Animated, { type AnimatedRef, measure, type SharedValue, useSharedValue } from 'react-native-reanimated';
-import { MENU_WIDTH_RATIO } from './constants';
 import type { HoldMenuWindowSize } from './context';
 import type {
   HoldItemProps,
@@ -15,6 +14,7 @@ import {
   menuPanelHeight,
   resolveHoldMenuTravel,
   resolveMenuAnchorPosition,
+  resolveMenuWidth,
   resolveRootViewportHeight,
 } from './layout';
 
@@ -32,6 +32,8 @@ type UseHoldItemActivationOptions = {
   /** The provider root's visible extent — the travel clamp's viewport, updated each activation. */
   rootViewportHeight: SharedValue<number>;
   safeAreaInsets: SharedValue<HoldMenuSafeAreaInsets>;
+  /** Measured widest-row content width, in px — floored/capped into the panel width. */
+  contentWidth: SharedValue<number>;
   scaleHold: (duration?: number) => void;
 };
 
@@ -78,6 +80,7 @@ export function useHoldItemActivation({
   windowSize,
   rootViewportHeight,
   safeAreaInsets,
+  contentWidth,
   scaleHold,
 }: UseHoldItemActivationOptions): UseHoldItemActivationResult {
   const itemRectY = useSharedValue<number>(0);
@@ -89,15 +92,15 @@ export function useHoldItemActivation({
 
   const transformOrigin = useSharedValue<TransformOriginAnchorPosition>(menuAnchorPosition || 'top-right');
 
-  /** Estimated panel height for this item's rows, at the rotation-safe font scale. */
+  /** Estimated panel height for this item's rows. */
+  // biome-ignore lint/plugin: the 'worklet' directive requires a block body — a one-liner would be a string expression, not a directive
   const getMenuHeight = useCallback(() => {
     'worklet';
-    const itemsWithSeparator = items.filter((item) => item.withSeparator);
-    return calculateMenuHeight(items.length, itemsWithSeparator.length, windowSize.value.fontScale);
-  }, [items, windowSize]);
+    return calculateMenuHeight(items);
+  }, [items]);
 
   const setMenuProps = useCallback(
-    (effectiveMenuHeight: number) => {
+    (effectiveMenuHeight: number, menuWidth: number) => {
       'worklet';
 
       menuProps.value = {
@@ -107,6 +110,7 @@ export function useHoldItemActivation({
         itemX: itemRectX.value,
         anchorPosition: transformOrigin.value,
         menuHeight: effectiveMenuHeight,
+        menuWidth,
         items,
         transformValue: transformValue.value,
         actionParams: actionParams || {},
@@ -145,9 +149,11 @@ export function useHoldItemActivation({
       // is never narrower than the item it copies.
       itemRectWidth.value = measured.width + 1;
 
-      // The hinted (or auto-picked) anchor is overflow-checked against the panel
-      // width, so a hint that would push the panel off-screen flips to the other side.
-      const menuWidth = Math.round(windowSize.value.width * MENU_WIDTH_RATIO);
+      // The panel width is the widest row's content, floored to the minimum and
+      // capped to the window-ratio max. The hinted (or auto-picked) anchor is
+      // overflow-checked against it, so a hint that would push the panel
+      // off-screen flips to the other side.
+      const menuWidth = resolveMenuWidth(contentWidth.value, windowSize.value.width);
       const position =
         menuAnchorPosition ?? getTransformOrigin(measured.pageX, itemRectWidth.value, windowSize.value.width, bottom);
       transformOrigin.value = resolveMenuAnchorPosition({
@@ -172,7 +178,7 @@ export function useHoldItemActivation({
         safeBottom: safeAreaInsets.value.bottom,
       });
       transformValue.value = travel.tY;
-      setMenuProps(menuPanelHeight(height, travel.maxHeight));
+      setMenuProps(menuPanelHeight(height, travel.maxHeight), menuWidth);
       didMeasureLayout.value = true;
     }
   }, [
@@ -192,6 +198,7 @@ export function useHoldItemActivation({
     getMenuHeight,
     disableMove,
     safeAreaInsets,
+    contentWidth,
     setMenuProps,
   ]);
 

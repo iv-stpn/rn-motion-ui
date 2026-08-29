@@ -371,6 +371,66 @@ function opensUpward(paneHeight: number, y: number, h: number, windowHeight: num
   return paneHeight > spaceBelow && spaceAbove > spaceBelow;
 }
 
+/**
+ * The pane's open height: one row per item stacked on the trigger's height, plus
+ * the shell's `p-1` inset on both ends — overridden by `expandedHeight` when the
+ * consumer pins an exact height.
+ */
+function computePaneHeight(scale: SwitcherScale, itemCount: number, expandedHeight: number | undefined): number {
+  return expandedHeight ?? scale.height + itemCount * scale.height + PANE_INSET * 2;
+}
+
+/** A measured trigger's bounding box. */
+type TriggerSize = { width: number; height: number };
+
+/**
+ * Merge a freshly-measured trigger size, returning the previous object unchanged
+ * when the dimensions match. `useState` then bails out on identity, so a layout
+ * pass that reports the same size does not re-render.
+ */
+function mergeTriggerSize(prev: TriggerSize | null, size: TriggerSize): TriggerSize {
+  if (prev && prev.width === size.width && prev.height === size.height) return prev;
+  return size;
+}
+
+/**
+ * The shell's surface class: the resting `shadow-elevated-N` recipe, lifted
+ * {@link OPEN_ELEVATION_LIFT} rungs while open (or the floating halo in its
+ * place).
+ */
+function switcherSurfaceClass(elevation: SurfaceElevation, open: boolean, floating: boolean): string {
+  return elevatedSurface(elevation, open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation, floating);
+}
+
+/**
+ * The pane's horizontal constraint: `switcher` spans its parent (pinned by
+ * `right: 0`), `select` settles on the open width (or the trigger footprint when
+ * the consumer's `expandedWidth` is narrower).
+ */
+function switcherPaneSizeStyle(
+  variant: MorphingSwitcherVariant,
+  open: boolean,
+  openWidth: number,
+  closedWidth: number,
+): ViewStyle {
+  if (variant === 'switcher') return { right: 0 };
+  return { width: open ? openWidth : closedWidth };
+}
+
+/**
+ * The pane's vertical layout. Upward-open reverses the stack so the trigger
+ * lands at the bottom and the list fills in above it; the height morphs between
+ * the closed trigger footprint and the open pane. The reversed direction
+ * persists past the open flip (`openAbove` stays set), so the closing morph
+ * keeps the trigger pinned at the bottom too.
+ */
+function paneLayoutStyle(openAbove: boolean, open: boolean, paneHeight: number, closedHeight: number): ViewStyle {
+  return {
+    flexDirection: openAbove ? 'column-reverse' : 'column',
+    height: open ? paneHeight : closedHeight,
+  };
+}
+
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: the shell wires trigger measurement, outside-press handling, and the morph pane around shared refs/state — splitting would prop-drill the shared values across function boundaries
 export function MorphingSwitcher({
   items,
@@ -422,7 +482,7 @@ export function MorphingSwitcher({
   // never repeat it — for both variants.
   const visibleItems = items.filter((item) => item.value !== value);
 
-  const paneHeight = expandedHeight ?? scale.height + visibleItems.length * scale.height + PANE_INSET * 2;
+  const paneHeight = computePaneHeight(scale, visibleItems.length, expandedHeight);
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -502,7 +562,7 @@ export function MorphingSwitcher({
   const handleTriggerLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
     if (width <= 0 || height <= 0) return;
-    setTriggerSize((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
+    setTriggerSize((prev) => mergeTriggerSize(prev, { width, height }));
   }, []);
 
   // The size morph rides `MORPH_LAYOUT` (a layout transition — `height`/`width`
@@ -567,17 +627,11 @@ export function MorphingSwitcher({
         }}
         transition={morphTransition}
         layout={reduce ? undefined : MORPH_LAYOUT}
-        className={cn(
-          'absolute top-0 left-0 overflow-hidden p-1',
-          elevatedSurface(elevation, open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation, floating),
-        )}
+        className={cn('absolute top-0 left-0 overflow-hidden p-1', switcherSurfaceClass(elevation, open, floating))}
         style={[
-          // Flip the stack when opening up so the trigger lands at the bottom (its
-          // closed position) and the list fills in above it. Persists past the open
-          // flip so the closing morph keeps the trigger pinned at the bottom too.
-          { flexDirection: openAbove ? 'column-reverse' : 'column', height: open ? paneHeight : closedHeight },
+          paneLayoutStyle(openAbove, open, paneHeight, closedHeight),
           open ? { zIndex: 40 } : undefined,
-          variant === 'switcher' ? { right: 0 } : { width: open ? openWidth : closedWidth },
+          switcherPaneSizeStyle(variant, open, openWidth, closedWidth),
         ]}
       >
         {/* The trigger persists — it morphs into the active header row. Re-tapping

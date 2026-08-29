@@ -54,8 +54,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
-  # Builds the native Storybook app as an Android APK on every main push,
-  # mirroring the offkeep release artifact flow. rn-motion-ui is a public
+  # Builds the native Storybook app as an Android APK on every main push.
+  # rn-motion-ui is a public
   # repo, so GitHub-hosted runners are free (no self-hosted SDK needed).
   # The APK lets anyone install the component library demo directly on a
   # device; the artifact is downloadable from the Actions run page.
@@ -113,7 +113,7 @@ jobs:
         run: |
           echo "sdk.dir=${ANDROID_HOME:-/usr/local/lib/android/sdk}" > local.properties
           # --no-parallel: the Expo/RN composite build races on the execution
-          # history cache lock under parallel=true (same failure as offkeep).
+          # history cache lock under parallel=true.
           # arm64-v8a only: the sole ABI real devices use; halves NDK/CMake
           # compile time. --build-cache reuses task outputs across runs.
           ./gradlew assembleRelease --no-parallel -PreactNativeArchitectures=arm64-v8a --build-cache
@@ -127,8 +127,7 @@ jobs:
           retention-days: 7
 
       # Serve the raw APK (no ZIP wrapper — artifact downloads always zip) via a
-      # prerelease asset, then post the public download link to @OffkeepBot —
-      # the same distribution pattern as the offkeep staging APK job.
+      # prerelease asset, then post the public download link to Telegram.
       - name: Create storybook prerelease
         uses: softprops/action-gh-release@v2
         with:

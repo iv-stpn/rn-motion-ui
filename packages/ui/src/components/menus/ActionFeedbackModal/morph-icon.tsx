@@ -18,8 +18,8 @@ import {
 // A single circular vessel that morphs its size + fill colour as `state`
 // changes, while the glyph inside cross-fades (spinner ↔ check ↔ close). The
 // icon persists across state transitions so the morph reads as one continuous
-// shape-change rather than three static icons swapping in/out. Ported from
-// offkeep's web ActionFeedbackModal MorphIcon (framer-motion → moti).
+// shape-change rather than three static icons swapping in/out. Ported from a
+// web MorphIcon (framer-motion → moti).
 //
 // Purely decorative: the outcome is carried by the text beside it, which sits
 // in a live region, so the vessel and its glyphs stay out of the a11y tree

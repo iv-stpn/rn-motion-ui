@@ -197,7 +197,7 @@ export function ActionFeedbackModal({
     onOpenChange?.(false);
   }, [onOpenChange]);
 
-  // Auto-close after success — mirrors offkeep's useTimeout behaviour.
+  // Auto-close after success.
   // biome-ignore lint/plugin: timer side-effect cannot be expressed as derived state — fires once when success lands, cleans up on unmount
   useEffect(() => {
     if (isOpen && state === 'success') {

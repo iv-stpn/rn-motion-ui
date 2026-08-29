@@ -7,7 +7,7 @@ import { cssColorToSrgb, oklchToSrgb } from '../lib/color';
  *
  * Each key corresponds to a `--color-<token>` CSS custom property.
  *
- * Surfaces follow the cubby-ui elevation ladder: `surface-1` (the page)
+ * Surfaces follow an elevation ladder: `surface-1` (the page)
  * through `surface-8`, plus the `surface-hover` / `surface-selected`
  * translucent state overlays. `surface-3` is the resting level for contained
  * content (cards, popovers, dialogs, inputs).

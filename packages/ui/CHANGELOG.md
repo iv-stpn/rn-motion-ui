@@ -1192,7 +1192,7 @@ blur(20px)` — the equivalent of upstream's expo-blur `BlurView` behind the
 
 - 699cb8a: **Button / IconButton: re-add `outline` variant; ThemedIcon token for it; OtpInput theme text styles typed as `TextStyle`**
 
-  - `Button` and `IconButton` gain an `outline` variant (`border border-border bg-transparent`, label `text-foreground`) — a bordered ghost, distinct from the borderless `ghost`. Previously pruned in the variant-consolidation refactor; consumers (offkeep) need it back.
+  - `Button` and `IconButton` gain an `outline` variant (`border border-border bg-transparent`, label `text-foreground`) — a bordered ghost, distinct from the borderless `ghost`. Previously pruned in the variant-consolidation refactor; consumers need it back.
   - `ThemedIcon` maps `outline` to the `foreground` token so icons inside outline buttons resolve a legible stroke colour.
   - `OtpInput`'s `OtpInputTheme.pinCodeTextStyle` / `placeholderTextStyle` are now `TextStyle` instead of `ViewStyle` — they are applied to `Text`, so the old typing rejected legitimate font styles (letterSpacing, fontSize, fontWeight).
 
@@ -4777,7 +4777,7 @@ blur(20px)` — the equivalent of upstream's expo-blur `BlurView` behind the
 
 ### Major Changes
 
-- c2fd8d1: Adopt the cubby-ui surfaces system as the token foundation.
+- c2fd8d1: Adopt the surfaces system as the token foundation.
 
   **Breaking — token model reworked** (`rn-motion-ui/tokens.css`):
 
@@ -4785,7 +4785,7 @@ blur(20px)` — the equivalent of upstream's expo-blur `BlurView` behind the
     paired `--shadow-surface-1` … `--shadow-surface-8` recipes (crisp 1px ring +
     progressive drop layers). Surfaces address the ladder directly — `surface-1`
     is the page, `surface-3` the resting level for contained content (cards,
-    popovers, dialogs, inputs). The shadcn-style container/page aliases
+    popovers, dialogs, inputs). The container/page aliases
     (`--color-surface`, `--color-card`, `--color-popover`, `--color-input`) are
     gone; use `bg-surface-1` / `bg-surface-3` instead. Light mode keeps surfaces
     neutral and lets shadows carry elevation; dark mode steps lightness per
@@ -4822,10 +4822,10 @@ blur(20px)` — the equivalent of upstream's expo-blur `BlurView` behind the
   elevation is a no-op in light mode; in dark mode a higher `elevation` reads as
   a lighter, more-floated surface. Backing this is a new `--shadow-elevated-1` …
   `--shadow-elevated-8` token pair (rim + drop folded into one box-shadow, since
-  React Native has no `::after` to paint cubby's pseudo-element rim) and the
+  React Native has no `::after` to paint the pseudo-element rim) and the
   `rn-motion-ui/elevated` helper (`elevated`, `elevatedShadow`,
   `surfaceBackground`, `clampSurfaceLevel`, `SURFACE_LEVELS`, `SurfaceLevel`)
-  mirroring cubby's `surfaceClasses` two-arg (background level / float level)
+  mirroring the `surfaceClasses` two-arg (background level / float level)
   split. The dark stack also gains `--surface-hi-*` highlight and
   `--surface-ring-*` ring tokens driving the rim recipe.
 
@@ -5202,7 +5202,7 @@ blur(20px)` — the equivalent of upstream's expo-blur `BlurView` behind the
 ### Minor Changes
 
 - cb83916: Add `className`/`style` support to all components; extend Button
-  variants; port Input improvements from offkeep
+  variants; port Input improvements
 
   **Button / StatefulButton**
 

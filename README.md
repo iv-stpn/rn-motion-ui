@@ -136,7 +136,7 @@ Import the token sheet in your global CSS, then override any token in a later `@
 
 ### Surface elevation ladder
 
-Backgrounds follow [cubby-ui's surfaces system](https://www.cubby-ui.dev/docs/getting-started/surfaces): an elevation ladder `surface-1` … `surface-8` with paired shadow recipes.
+Backgrounds follow a surfaces system: an elevation ladder `surface-1` … `surface-8` with paired shadow recipes.
 
 | Class | Role |
 | --- | --- |
@@ -255,8 +255,6 @@ CI (`.github/workflows/release.yml`) runs the changesets action on every push to
 
 ## Acknowledgements
 
-- Many components in this library are inspired by or adapted from **[beUI](https://github.com/starc007/ui-components)** — a motion component library for React / Next.js by Saurabh Chauhan. beUI's component designs and interaction patterns were ported to the React Native primitive model, swapping Framer Motion for Moti / Reanimated.
-- Token system and surface ladder follow the conventions of **[cubby-ui](https://www.cubby-ui.dev/docs/getting-started/surfaces)**.
 - Animation layer built on **[Moti](https://moti.fyi/)** by Fernando Rojo.
 - Icon artwork is **[MingCute](https://github.com/Richard9394/MingCute)** by MingCute Design, licensed Apache-2.0 and redistributed in `rn-motion-ui-icons`.
 
@@ -269,3 +267,10 @@ CI (`.github/workflows/release.yml`) runs the changesets action on every push to
 `rn-motion-ui-icons` is `(MIT AND Apache-2.0)`: the wrapper components are MIT,
 and the MingCute icon artwork they draw is [Apache-2.0](./packages/icons/LICENSE-APACHE).
 See [`packages/icons/NOTICE`](./packages/icons/NOTICE).
+
+---
+
+## Inspirations
+
+- Many components in this library are inspired by or adapted from **[beUI](https://github.com/starc007/ui-components)** — a motion component library for React / Next.js. beUI's component designs and interaction patterns were ported to the React Native primitive model, swapping Framer Motion for Moti / Reanimated.
+- The surfaces system — the `surface-1` … `surface-8` elevation ladder with paired shadow recipes — follows **[Fluid Functionalism](https://github.com/mickadesign/fluid-functionalism)**.

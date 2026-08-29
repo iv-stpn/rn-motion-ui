@@ -9,8 +9,7 @@
  *
  * ## Surface system
  *
- * Backgrounds are organised as an elevation ladder (surface-1 … surface-8),
- * after cubby-ui's surfaces system (https://www.cubby-ui.dev):
+ * Backgrounds are organised as an elevation ladder (surface-1 … surface-8):
  *
  *  - `surface-1` is the page. `surface-3` is the resting level for cards,
  *    popovers and dialogs. Higher levels exist for stacked overlays.
@@ -227,9 +226,8 @@
   /* Elevated shadow recipe — the shadow applied by the `elevated()` util and
      the `elevation` prop. Each level composites the surface *rim* (inset
      highlight + ring, declared above) in front of the `shadow-surface-N` drop
-     layers, in a SINGLE box-shadow. React Native has no `::after`, so
-     cubby-ui's pseudo-element rim can't be used — the two layers are combined
-     instead (cubby's own `SURFACE_SHADOW_COMBINED` path).
+     layers, in a SINGLE box-shadow. React Native has no `::after` to paint the
+     pseudo-element rim, so the two layers are combined into one shadow instead.
      One definition covers both schemes, and it belongs in @theme rather than in
      the variants: `--surface-rim-N` is a transparent no-op in light and the
      inset recipe in dark, and `--shadow-surface-N` also flips, so this token
@@ -299,8 +297,8 @@
  * surface/foreground ladder (hue 270, chroma 0.004); the surface ladder values
  * in the theme blocks spell that tint out literally so uniwind resolves them on
  * native. They live in @layer base (plain custom properties, not @theme
- * utilities) so they are always emitted verbatim and stay overridable,
- * mirroring cubby-ui's globals.css. Nothing resolves them at runtime — a
+ * utilities) so they are always emitted verbatim and stay overridable. Nothing
+ * resolves them at runtime — a
  * var() inside oklch() never folds on native — so they are documentation, and
  * the input `npx rn-motion-ui-tokens` reads to retune the ramp.
  */
@@ -446,10 +444,10 @@
   --surface-ring-mid: oklch(1 0 0 / 0.04);
   --surface-ring-high: oklch(1 0 0 / 0.06);
 
-  /* Inset portion of the dark elevation recipe. In cubby-ui these are painted
-     via an ::after pseudo-element so they sit above opaque children; RN has no
-     pseudo-elements, so --shadow-elevated-N composites this rim in front of the
-     drop layers within one box-shadow instead. */
+  /* Inset portion of the dark elevation recipe — the rim highlight + ring that
+     would otherwise sit above opaque children via an ::after pseudo-element. RN
+     has no pseudo-elements, so --shadow-elevated-N composites this rim in front
+     of the drop layers within one box-shadow instead. */
   --surface-rim-1: inset 0 0 0 1px var(--surface-ring-base);
   --surface-rim-2: inset 0 1px 0 0 var(--surface-hi-base), inset 0 0 0 1px var(--surface-ring-base);
   --surface-rim-3: inset 0 1px 0 0 var(--surface-hi-mid), inset 0 0 0 1px var(--surface-ring-base);

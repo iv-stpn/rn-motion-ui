@@ -1,16 +1,15 @@
 /**
- * elevated — surface elevation classes for the cubby-derived surface ladder.
+ * elevated — surface elevation classes for the surface ladder.
  *
  * A surface sits at a level 1–8 (page is 1; cards/popovers rest at 3). The
  * elevation shadow for a level is `shadow-elevated-N`, which composites the
  * inset *rim* (`--surface-rim-N`: a top highlight + full-perimeter ring, a
  * no-op in light, the recipe in dark) in front of the `shadow-surface-N` drop
- * layers within ONE box-shadow. cubby-ui paints that rim with an `::after`
- * pseudo-element so it stays above opaque children; React Native has no
- * pseudo-elements, so the two layers are folded into a single shadow token
- * instead (cubby's own `SURFACE_SHADOW_COMBINED` path).
+ * layers within ONE box-shadow. A pseudo-element (`::after`) would paint that
+ * rim above opaque children, but React Native has no pseudo-elements, so the
+ * two layers are folded into a single shadow token instead.
  *
- * `elevated(level, shadowLevel)` mirrors cubby's `surfaceClasses` two-arg
+ * `elevated(level, shadowLevel)` takes a two-arg
  * signature: the surface's *background* level and its *float* (shadow) level are
  * separable. The library's surface components anchor their background at their
  * semantic level and expose the float level as an `elevation` prop, so raising

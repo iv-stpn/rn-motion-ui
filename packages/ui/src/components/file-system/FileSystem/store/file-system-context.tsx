@@ -294,6 +294,45 @@ function computeFileTypeOptions(index: FileSystemIndex): FileTypeFilterOption[] 
   return cachedFileTypeOptions;
 }
 
+/**
+ * Whether `ensureChildren(folderPath)` should return without doing anything: the
+ * folder does not exist or has no children, its children are already loaded, no
+ * loader was provided, or a load is already in flight. A failed folder is the
+ * one in-flight case that must still proceed, so the retry path stays reachable.
+ */
+function shouldSkipChildrenLoad(store: FileSystemStore, requestedFolders: ReadonlySet<string>, folderPath: string): boolean {
+  const folder = store.entries.index.folders.get(folderPath);
+  if (!folder?.hasChildren) return true;
+  if (store.entries.index.children.get(folderPath)?.length) return true;
+  if (!store.consumer.loadChildren) return true;
+  return requestedFolders.has(folderPath) && !store.navigation.errorFolders.has(folderPath);
+}
+
+/**
+ * The folder paths a manifest declared explicitly. One that is absent from the
+ * next manifest was deleted, not emptied — the index must not resurrect it as a
+ * preserved husk.
+ */
+function collectDeclaredFolderPaths(items: readonly FileSystemItem[]): Set<string> {
+  const declaredFolders = new Set<string>();
+  for (const item of items) {
+    if (item.kind === 'folder') {
+      const path = normalizeFolderPath(item.path);
+      if (path) declaredFolders.add(path);
+    }
+  }
+  return declaredFolders;
+}
+
+/**
+ * The per-file predicate the visibility pipeline applies, or `null` when no
+ * filter is active — the pipeline then skips per-file testing entirely.
+ */
+function makeFileFilter(filters: readonly FileSystemFilter[]): ((file: FileEntry) => boolean) | null {
+  if (filters.length === 0) return null;
+  return (file: FileEntry) => filters.every((f) => fileMatchesFilter(file, f));
+}
+
 type HistoryStep = {
   navigation: NavigationSlice;
   search: SearchSlice;
@@ -402,7 +441,7 @@ function _recomputeEntries(s: FileSystemStore, options?: RecomputeEntriesOptions
   const { filters } = s.filters;
   const { scope, searchQuery } = s.search;
 
-  const fileFilter = filters.length === 0 ? null : (file: FileEntry) => filters.every((f) => fileMatchesFilter(file, f));
+  const fileFilter = makeFileFilter(filters);
   const fileTypeOptions = computeFileTypeOptions(index);
 
   // A root-scoped query walks the whole manifest rather than the open folder's
@@ -624,13 +663,7 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
 
       ensureChildren: (folderPath) => {
         const fileSystemStore = get();
-        const folder = fileSystemStore.entries.index.folders.get(folderPath);
-
-        if (!folder?.hasChildren) return;
-        if (fileSystemStore.entries.index.children.get(folderPath)?.length) return;
-        if (!fileSystemStore.consumer.loadChildren) return;
-        // Prevent double-loading, but allow retry of failed folders.
-        if (requestedFolders.has(folderPath) && !fileSystemStore.navigation.errorFolders.has(folderPath)) return;
+        if (shouldSkipChildrenLoad(fileSystemStore, requestedFolders, folderPath)) return;
 
         // Retry: clear from errorFolders and allow re-request.
         if (fileSystemStore.navigation.errorFolders.has(folderPath)) {
@@ -748,16 +781,8 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       _setItems: (items) => {
         const s = get();
         const allItems = s.navigation.loadedItems.length ? [...items, ...s.navigation.loadedItems] : items;
-        // Folders the previous manifest declared explicitly. One that is absent
-        // from the new items was deleted, not emptied — the index must not
-        // resurrect it as a preserved husk.
-        const declaredFolders = new Set<string>();
-        for (const item of s.entries.items) {
-          if (item.kind === 'folder') {
-            const path = normalizeFolderPath(item.path);
-            if (path) declaredFolders.add(path);
-          }
-        }
+        // The previous manifest's explicitly-declared folders (deleted ≠ emptied).
+        const declaredFolders = collectDeclaredFolderPaths(s.entries.items);
         // Preserve folders from the previous index that lost all their children
         // (e.g. every file was dragged out). Without this an inferred folder — one
         // the consumer never listed as `{ kind: 'folder', path: '...' }` — vanishes

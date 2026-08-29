@@ -3606,10 +3606,11 @@ export const WithBodyWrapper: Story = {
     await canvas.findByText('19 in Files');
     await canvas.findByText('icons view');
 
-    // Selecting shows the name three times over: the tile, the rail, and the
-    // twin `HoldItem` keeps mounted (its portal copy of the held tile).
+    // Selecting shows the name twice: the tile and the rail. The `HoldItem`
+    // twin only mounts its portal copy while the hold menu is open, so at rest
+    // there is no third copy.
     await userEvent.click(await canvas.findByRole('button', { name: 'README.md' }));
-    await waitFor(async () => expect(await canvas.findAllByText('README.md')).toHaveLength(3));
+    await waitFor(async () => expect(await canvas.findAllByText('README.md')).toHaveLength(2));
     await waitFor(() => expect(canvas.queryByText(NO_SELECTION)).toBeNull());
 
     // Navigating rewires both halves at once.

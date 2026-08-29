@@ -1,7 +1,8 @@
-import { memo, type Ref, type RefObject, useCallback, useEffect, useId } from 'react';
+import { memo, type Ref, type RefObject, useCallback, useEffect, useId, useState } from 'react';
 import { Animated as NativeAnimated, type View, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  runOnJS,
   useAnimatedReaction,
   useAnimatedRef,
   useSharedValue,
@@ -173,6 +174,35 @@ const HoldItemComponent = ({
     },
   );
 
+  // The twin's children only need to exist while the twin is showing — the
+  // lifted copy that takes over on activation and travels back on release. At
+  // rest `releaseProgress` is pinned to 1 (twin opacity 0, in-place item
+  // opaque), so rendering the children there only duplicates their testIDs: on
+  // Android, Detox's `by.id()` reads `view.getTag()`, which ignores the
+  // `importantForAccessibility="no-hide-descendants"` the twin already applies,
+  // so every descendant id matches twice and `.atIndex(0)` resolves to the 0×0
+  // ghost. Gating on `releaseProgress < 1` keeps the copy mounted only for the
+  // life of the lift, so at rest the id exists once.
+  const [showTwinChildren, setShowTwinChildren] = useState(false);
+  useAnimatedReaction(
+    () => releaseProgress.value < 1,
+    (shouldShow, previous) => {
+      // Skip the on-mount fire (`previous === null`): the predicate is already
+      // false at rest, mirroring the isActive reaction's guard so no phantom
+      // setState runs.
+      if (previous === null || shouldShow === previous) return;
+      runOnJS(setShowTwinChildren)(shouldShow);
+    },
+    [releaseProgress],
+  );
+
+  // Pre-mount the twin's children the moment the menu opens, on the JS thread —
+  // a full squeeze ahead of the twin's fade-in/travel. Relying on the reaction
+  // above alone would mount them only after `releaseProgress` first drops below
+  // 1, and the travelling twin (opacity snaps to 1 instantly) would be empty for
+  // that first frame while the in-place item is already hidden.
+  const handleWillOpen = useCallback(() => setShowTwinChildren(true), []);
+
   const webHold = IS_WEB && isHold;
 
   const { handleActivate, handleOpen, closeMenu } = useHoldItemMenu({
@@ -180,6 +210,7 @@ const HoldItemComponent = ({
     disabled,
     onHold: onHoldProp,
     onOpenChange: onOpenChangeProp,
+    onWillOpen: handleWillOpen,
     state,
     isActive,
     didMeasureLayout,
@@ -317,7 +348,7 @@ const HoldItemComponent = ({
         name={name}
         transformOrigin={transformOrigin}
       >
-        {children}
+        {showTwinChildren ? children : null}
       </HoldItemTwin>
       {items.length > 0 ? <MeasureMenuWidth items={items} onWidth={handleMeasureWidth} /> : null}
     </>

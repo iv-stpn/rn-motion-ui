@@ -9,6 +9,13 @@ type UseHoldItemMenuOptions = {
   disabled: boolean;
   onHold: (() => void) | undefined;
   onOpenChange: ((open: boolean) => void) | undefined;
+  /**
+   * Fires on the JS thread the instant a menu actually opens (i.e. `canOpen`),
+   * before the twin's lift handover. The host uses it to pre-mount the twin's
+   * children during the squeeze, so the travelling twin is never empty for the
+   * one-frame it would otherwise wait on a `releaseProgress` round-trip.
+   */
+  onWillOpen?: () => void;
   state: SharedValue<CONTEXT_MENU_STATE>;
   isActive: SharedValue<boolean>;
   didMeasureLayout: SharedValue<boolean>;
@@ -41,6 +48,7 @@ export function useHoldItemMenu({
   disabled,
   onHold,
   onOpenChange,
+  onWillOpen,
   state,
   isActive,
   didMeasureLayout,
@@ -54,8 +62,9 @@ export function useHoldItemMenu({
     if (canOpen) {
       openedRef.current = true;
       onOpenChange?.(true);
+      onWillOpen?.();
     }
-  }, [canOpen, onOpenChange]);
+  }, [canOpen, onOpenChange, onWillOpen]);
 
   const handleHold = useCallback(() => {
     if (!disabled) onHold?.();

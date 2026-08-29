@@ -227,8 +227,6 @@ export const HOLD_MENU_ROW_HEIGHT = 40;
 export const HOLD_MENU_ROW_CLASS = 'min-h-10';
 /** Heading row minimum height. */
 export const HOLD_MENU_HEADING_HEIGHT = 24;
-/** Floor applied to the heading row, mirroring {@link HOLD_MENU_HEADING_HEIGHT}. */
-export const HOLD_MENU_HEADING_CLASS = 'min-h-6 justify-center';
 /**
  * The `'base'` list's vertical inset inside the panel — 4 px top and bottom, read
  * by the background menu's `estimateHoldMenuHeight`. The `'segmented'` variant
@@ -284,13 +282,6 @@ export const HOLD_MENU_GAP = 8;
 export const HOLD_MENU_VIEWPORT_PADDING = 8;
 /** Default panel width, before clamping to the viewport. */
 export const HOLD_MENU_DEFAULT_WIDTH = 240;
-/**
- * Scale the held item is squeezed to before it lifts — upstream's
- * `HOLD_ITEM_SCALE_DOWN_VALUE`. Shared by the in-place item (which squeezes to
- * it during the hold) and the lifted copy (which springs out of it), so the
- * handover between the two is invisible.
- */
-export const HOLD_ITEM_SCALE = 0.95;
 
 // ── Functions ────────────────────────────────────────────────────────────────
 

@@ -74,6 +74,8 @@ def s3_request(
     method: str,
     query_params: dict | None = None,
     body: bytes | None = None,
+    content_type: str | None = None,
+    content_disposition: str | None = None,
 ) -> tuple[int, bytes]:
     """Send a signed S3 request (path-style). Returns (status, body)."""
     host = urllib.parse.urlparse(endpoint).netloc
@@ -88,7 +90,10 @@ def s3_request(
     if body is not None:
         payload_hash = sha256_hex(body)
     headers["x-amz-content-sha256"] = payload_hash
-
+    if content_type is not None:
+        headers["content-type"] = content_type
+    if content_disposition is not None:
+        headers["content-disposition"] = content_disposition
     signed_headers = ";".join(sorted(headers))
     canonical_headers = "".join(f"{k}:{headers[k]}\n" for k in sorted(headers))
     qs = canonical_query(query_params or {})
@@ -247,6 +252,19 @@ def main() -> int:
         help="Object-key prefix to prune under (default: the uploaded key's directory, "
         "which only ever holds one object — pass e.g. apks/staging/ to prune across runs)",
     )
+    parser.add_argument(
+        "--content-type",
+        default="application/vnd.android.package-archive",
+        help="Content-Type stored on the object (default: the APK MIME type). "
+        "CRITICAL: without it S4 stores application/x-www-form-urlencoded and "
+        "Android refuses the download with 'Can't open file'.",
+    )
+    parser.add_argument(
+        "--content-disposition",
+        default=None,
+        help='Content-Disposition stored on the object, e.g. attachment; filename="app.apk" '
+        "(default: attachment with the key's basename)",
+    )
     args = parser.parse_args()
 
     try:
@@ -255,6 +273,9 @@ def main() -> int:
     except OSError as exc:
         print(f"error: cannot read {args.file}: {exc}", file=sys.stderr)
         return 1
+
+    if args.content_disposition is None:
+        args.content_disposition = f'attachment; filename="{args.key.rsplit("/", 1)[-1]}"'
 
     status, resp = s3_request(
         args.endpoint,
@@ -265,6 +286,8 @@ def main() -> int:
         args.region,
         "PUT",
         body=body,
+        content_type=args.content_type,
+        content_disposition=args.content_disposition,
     )
     if status != 200:
         print(

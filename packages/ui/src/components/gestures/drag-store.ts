@@ -147,6 +147,24 @@ function isIsolating(managerId: string): boolean {
   return managers.get(managerId)?.getConfig().isolate ?? false;
 }
 
+/**
+ * Whether the resolution from `endDrag`'s `point` is untrustworthy and should be
+ * redone at the drag's last known position.
+ *
+ * Untrustworthy when the incoming point is not already the session point and
+ * either the zone's own `drop` handler advanced the drag (Safari's
+ * plausible-but-wrong `dragend` coords) or it hit no target (Chrome's (0, 0),
+ * which the unconditional fallback also covers).
+ */
+function shouldReResolveAtSessionPoint(
+  resolved: DragPoint,
+  sessionPoint: DragPoint,
+  wasZoneDrop: boolean,
+  target: DragzoneEntry | null,
+): boolean {
+  return resolved !== sessionPoint && (wasZoneDrop || target === null);
+}
+
 /** Wake the listeners registered for one zone, if any. */
 function notifyZone(zoneId: string) {
   const subscribers = zoneListeners.get(zoneId);
@@ -555,6 +573,9 @@ export function endDrag({ commit, point, sourceId, transportDropEffect }: EndDra
   // resolve under the release point. A pan transport passes no verdict, and there
   // the store's own resolution stands.
   const browserCancelled = commit && transportDropEffect === 'none';
+  // A drop may be credited only when the gesture is committed and the transport
+  // did not report `'none'` — a `'none'` verdict means nothing accepted it.
+  const mayCreditDrop = commit && !browserCancelled;
   // The HTML5 transport's `dragend` reports bogus coordinates in two engines:
   //  • Chrome — (0, 0): the browser tears down the session by the time dragend
   //    fires. Fall back to the last position from `moveDrag` unconditionally.
@@ -565,8 +586,8 @@ export function endDrag({ commit, point, sourceId, transportDropEffect }: EndDra
   //    existing `target === null` guard only catches the case where they hit
   //    nothing, not where they hit a different zone.
   let resolved = point.x === 0 && point.y === 0 ? session.point : point;
-  let target = commit && !browserCancelled ? targetAt(resolved) : null;
-  if (commit && !browserCancelled && resolved !== session.point && (wasZoneDrop || target === null)) {
+  let target = mayCreditDrop ? targetAt(resolved) : null;
+  if (mayCreditDrop && shouldReResolveAtSessionPoint(resolved, session.point, wasZoneDrop, target)) {
     const fallback = targetAt(session.point);
     if (fallback !== null) {
       resolved = session.point;

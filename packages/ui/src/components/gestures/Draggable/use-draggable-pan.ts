@@ -42,8 +42,14 @@ type PanEvent = { absoluteX: number; absoluteY: number };
  * mutation of `value`'s interior.
  */
 type PanArm = {
-  /** The pan activated. The touch callbacks stop deciding anything from here. */
+  /**
+   * The pan activated and claimed the finger — the enclosing `ScrollView` can no
+   * longer take the vertical movement. Distinct from {@link dragging}: the claim
+   * happens as soon as the press commits, before the drag itself lifts.
+   */
   active: boolean;
+  /** A drag has actually lifted — `begin` ran and `onUpdate` is streaming the moves. */
+  dragging: boolean;
   /** Travelled before `armDelay`, so this touch is a scroll and never arms. */
   failed: boolean;
   /** When the touch went down, against which both deadlines are measured. */
@@ -61,7 +67,7 @@ type PanArm = {
   touches: number;
 };
 
-const PAN_ARM_IDLE: PanArm = { active: false, failed: false, startAt: 0, startX: 0, startY: 0, touches: 0 };
+const PAN_ARM_IDLE: PanArm = { active: false, dragging: false, failed: false, startAt: 0, startX: 0, startY: 0, touches: 0 };
 
 type PanGestureParams = {
   arm: SharedValue<PanArm>;
@@ -148,6 +154,7 @@ function buildPanGesture({ arm, effectAllowed, session, timeline, tuning }: PanG
         if (!touch) return;
         arm.value = {
           active: false,
+          dragging: false,
           failed: false,
           startAt: Date.now(),
           startX: touch.absoluteX,
@@ -159,7 +166,9 @@ function buildPanGesture({ arm, effectAllowed, session, timeline, tuning }: PanG
       .onTouchesMove((event, manager) => {
         'worklet';
         const state = arm.value;
-        if (state.active || state.failed) return;
+        // Once the drag has lifted, the pan's own update stream carries the moves;
+        // once the arm window ended in a scroll, nothing here can revive it.
+        if (state.dragging || state.failed) return;
         const touch = event.allTouches[0];
         if (!touch) return;
         const travel = Math.hypot(touch.absoluteX - state.startX, touch.absoluteY - state.startY);
@@ -175,12 +184,28 @@ function buildPanGesture({ arm, effectAllowed, session, timeline, tuning }: PanG
           }
           return;
         }
+        // Past the arm window the press has committed: claim the gesture so the
+        // enclosing `ScrollView` cannot take the vertical movement from here. The
+        // claim precedes the lift — a held item dragged straight down must lift,
+        // not scroll — and it is what makes the pan win the direction the scroll
+        // would otherwise have claimed.
+        if (!state.active) {
+          arm.value = { ...state, active: true };
+          manager.activate();
+        }
         // Past the hold deadline the bar rises: something the hold put on screen is
         // under the finger now, so escaping it takes a shove rather than a drift.
         // Derived from elapsed time rather than read back off the JS thread — a flag
         // JS set when the timer fired would still be in flight for a frame or two.
         const lift = holdDelay !== null && elapsed >= holdDelay ? escapeSlop : slop;
-        if (travel > lift) manager.activate();
+        if (travel > lift) {
+          arm.value = { ...arm.value, dragging: true };
+          // Lift before begin, so a menu the hold opened is on its way out in the
+          // same batch the ghost appears in — and a hold still pending never fires
+          // behind a drag that has already started.
+          scheduleOnRN(liftPress);
+          scheduleOnRN(beginJS, touch.absoluteX, touch.absoluteY);
+        }
       })
       .onTouchesUp((event, manager) => {
         'worklet';
@@ -213,18 +238,18 @@ function buildPanGesture({ arm, effectAllowed, session, timeline, tuning }: PanG
           manager.fail();
         }
       })
-      // Activation only — the pan is never active without one, so this is the lift.
-      .onStart(({ absoluteX, absoluteY }: PanEvent) => {
+      // Activation is the claim, not the lift: the pan is activated the moment the
+      // press commits (see `onTouchesMove`) to take the finger off the enclosing
+      // scroll, and the drag itself lifts there on the move past `slop`/`escapeSlop`.
+      .onStart(() => {
         'worklet';
         arm.value = { ...arm.value, active: true };
-        // Before the lift, so a menu the hold opened is on its way out in the same
-        // batch the ghost appears in — and so a hold still pending never fires
-        // behind a drag that has already started.
-        scheduleOnRN(liftPress);
-        scheduleOnRN(beginJS, absoluteX, absoluteY);
       })
       .onUpdate(({ absoluteX, absoluteY }: PanEvent) => {
         'worklet';
+        // Between the claim and the lift the pan is active but not dragging yet —
+        // those moves are the escape in progress, not a drag to stream.
+        if (!arm.value.dragging) return;
         scheduleOnRN(moveJS, absoluteX, absoluteY);
       })
       .onEnd(({ absoluteX, absoluteY }: PanEvent) => {

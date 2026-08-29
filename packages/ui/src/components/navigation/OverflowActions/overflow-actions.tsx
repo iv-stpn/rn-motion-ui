@@ -1,15 +1,15 @@
 import { cva } from 'class-variance-authority';
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
-import { LinearTransition } from 'react-native-reanimated';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { More1Line as MoreHorizontal } from 'rn-motion-ui-icons/icons/more-1-line';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { SPRING_PRESS } from '../../../lib/ease';
+import { SPRING_PRESS, springLayout } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { TIMING_INSTANT } from '../../../theme/motion';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 
@@ -57,10 +57,8 @@ export type OverflowActionsProps = {
 
 // Softer than the app defaults so the group stays attached to the toggle.
 const SHELL_SPRING = { type: 'spring', stiffness: 220, damping: 17, mass: 0.85 } as const;
-/** Reveal clip rides a Fabric-safe layout transition instead of animating
- *  `width`/`marginLeft` through `useAnimatedStyle` (layout props don't
- *  round-trip Yoga on Fabric). Spring params match `SHELL_SPRING`. */
-const REVEAL_LAYOUT = LinearTransition.springify().damping(17).stiffness(220).mass(0.85);
+/** Reveal clip rides `springLayout` on the same spring as `SHELL_SPRING`. */
+const REVEAL_LAYOUT = springLayout(SHELL_SPRING);
 
 // cva drives the static per-size styling; class strings stay static literals.
 // No flex `gap` here: the overflow clip is an always-mounted flex child, so a
@@ -128,7 +126,7 @@ export function OverflowActions({
   const handleTogglePressOut = useCallback(() => setTogglePressed(false), []);
   const handleTogglePress = useCallback(() => setExpanded(!isExpanded), [setExpanded, isExpanded]);
 
-  const spring = reduce ? { type: 'timing' as const, duration: 0 } : SHELL_SPRING;
+  const spring = reduce ? TIMING_INSTANT : SHELL_SPRING;
 
   return (
     <View testID={testID} className={cn('flex-row self-start', className)} style={style}>

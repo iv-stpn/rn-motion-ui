@@ -3,12 +3,11 @@
 import { cva } from 'class-variance-authority';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
-import { LinearTransition } from 'react-native-reanimated';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { EASE_OUT } from '../../../lib/ease';
+import { EASE_OUT, springLayout } from '../../../lib/ease';
 import { SURFACE_CLASSNAME } from '../../../lib/elevated';
 import { H_INTERACTIVE, INTERACTIVE_RADIUS, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
@@ -16,11 +15,9 @@ import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../
 import { Text } from '../../typography/Text/text';
 
 const TAB_INDICATOR_SPRING = { type: 'spring' as const, stiffness: 170, damping: 24, mass: 1.2 };
-/** Indicator resize rides a Fabric-safe layout transition instead of animating
- *  `width`/`height` through `useAnimatedStyle` (layout props don't round-trip
- *  Yoga on Fabric). Spring params match `TAB_INDICATOR_SPRING` so the glide and
- *  the resize stay in lockstep. */
-const INDICATOR_LAYOUT = LinearTransition.springify().damping(24).stiffness(170).mass(1.2);
+/** Indicator resize rides `springLayout` on `TAB_INDICATOR_SPRING` so the glide
+ *  and the resize stay in lockstep. */
+const INDICATOR_LAYOUT = springLayout(TAB_INDICATOR_SPRING);
 
 // ── Content-panel motion ─────────────────────────────────────────────────────
 // `fade` and `dropIn` are enter-only: TabsContent renders nothing for the tab it

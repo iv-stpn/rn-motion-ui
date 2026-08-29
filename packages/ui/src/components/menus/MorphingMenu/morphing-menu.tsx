@@ -1,16 +1,16 @@
 import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
-import { LinearTransition } from 'react-native-reanimated';
 import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { EASE_OUT } from '../../../lib/ease';
+import { EASE_OUT, springLayout } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { MENU_RADIUS } from '../../../lib/radius';
 import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { TIMING_INSTANT } from '../../../theme/motion';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
@@ -30,10 +30,8 @@ const TRIGGER_H = 44;
 const PANEL_W = 320;
 const BOX_H = 300;
 const COLS = 3;
-/** Card size adjustments after mount (measured panel height) as a Fabric-safe
- *  layout transition — animating `width`/`height` through `useAnimatedStyle`
- *  doesn't round-trip Yoga on Fabric. */
-const MENU_LAYOUT = LinearTransition.springify().damping(32).stiffness(300).mass(0.9);
+/** Card size adjustments after mount (measured panel height). */
+const MENU_LAYOUT = springLayout({ stiffness: 300, damping: 32, mass: 0.9 });
 /** Card enter/exit scale — the trigger width relative to the panel width, so the
  *  card grows out of the trigger's footprint instead of snapping at full size. */
 const CARD_SCALE = TRIGGER_W / PANEL_W;
@@ -45,7 +43,6 @@ const STAGE_TOP = TRIGGER_H / 2 - BOX_H / 2;
 
 // Folder-open feel: a touch of overshoot as the card expands, kept subtle.
 const SPRING_FOLDER = { type: 'spring', stiffness: 300, damping: 32, mass: 0.9 } as const;
-const INSTANT = { type: 'timing' as const, duration: 0 };
 
 // `pointerEvents: 'box-none'` MUST come from StyleSheet.create, not an inline
 // style object — the inline path drops it on react-native-web, and the empty
@@ -128,8 +125,8 @@ function MorphingCell({ item, className, reduce, dist, onSelect, testID }: Morph
         from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
         animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
         exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
-        transition={reduce ? INSTANT : { type: 'spring', stiffness: 440, damping: 34, delay: 100 + dist * 70 }}
-        exitTransition={reduce ? INSTANT : { type: 'timing', duration: 120 }}
+        transition={reduce ? TIMING_INSTANT : { type: 'spring', stiffness: 440, damping: 34, delay: 100 + dist * 70 }}
+        exitTransition={reduce ? TIMING_INSTANT : { type: 'timing', duration: 120 }}
         className="items-center gap-2"
       >
         {/* Icons default to the `foreground` token — no explicit color needed. */}
@@ -154,8 +151,8 @@ type MorphingPanelProps = {
 
 /** Header + grid, fixed at the panel's open-state size and centred in the card. */
 function MorphingPanel({ items, title, reduce, rows, onSelect, onClose, testID }: MorphingPanelProps) {
-  const headerEnter = reduce ? INSTANT : { type: 'timing' as const, duration: 200, delay: 120 };
-  const headerExit = reduce ? INSTANT : { type: 'timing' as const, duration: 120 };
+  const headerEnter = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 200, delay: 120 };
+  const headerExit = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 120 };
   return (
     <View style={{ width: PANEL_W }}>
       <MotiView
@@ -296,9 +293,9 @@ export function MorphingMenu({
     if (next > 0) setPanelH(next);
   }, []);
 
-  const faceFade = reduce ? INSTANT : { type: 'timing' as const, duration: 120 };
-  const faceReturn = reduce ? INSTANT : { type: 'timing' as const, duration: 150, delay: 80 };
-  const backdropTransition = reduce ? INSTANT : { type: 'timing' as const, duration: 200, easing: EASE_OUT };
+  const faceFade = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 120 };
+  const faceReturn = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 150, delay: 80 };
+  const backdropTransition = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 200, easing: EASE_OUT };
 
   return (
     <>

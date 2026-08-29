@@ -1,14 +1,14 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: FAB shell, morph transition, and trigger/pane layouts collocated by design
 import { type ComponentType, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, type StyleProp, useWindowDimensions, View, type ViewStyle } from 'react-native';
-import { LinearTransition } from 'react-native-reanimated';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { EASE_OUT } from '../../../lib/ease';
+import { EASE_OUT, springLayout } from '../../../lib/ease';
 import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
+import { TIMING_INSTANT } from '../../../theme/motion';
 import { ICON_BUTTON_LG_SIZE, IconButton } from '../../buttons/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
@@ -19,11 +19,9 @@ const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
  *  the shared interactive ramp puts an `lg` IconButton at. */
 const TRIGGER_RADIUS = TRIGGER_SIZE / 2;
 const PANE_RADIUS = 20;
-/** Collapsed circle ↔ expanded pane size morph, driven as a Fabric-safe layout
- *  transition instead of animating `width`/`height` through `useAnimatedStyle`
- *  (layout props don't round-trip Yoga on Fabric). Spring params match the
- *  borderRadius spring below so the corner stays in lockstep with the resize. */
-const MORPH_LAYOUT = LinearTransition.springify().damping(30).stiffness(350).mass(0.55);
+/** Collapsed circle ↔ expanded pane size morph, on the same spring as the
+ *  `borderRadius` morph below so the corner stays in lockstep with the resize. */
+const MORPH_LAYOUT = springLayout({ stiffness: 350, damping: 30, mass: 0.55 });
 
 /** Handed to render-prop children so panel content can close the FAB. */
 export type MorphingFABApi = {
@@ -183,13 +181,9 @@ export function MorphingFAB({
 
   // The size morph rides the layout transition above; only the corner radius
   // still animates through Moti (a style prop, safe on Fabric) on the same spring.
-  const morphTransition = reduce
-    ? { type: 'timing' as const, duration: 0 }
-    : { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 };
+  const morphTransition = reduce ? TIMING_INSTANT : { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 };
 
-  const paneEnterTransition = reduce
-    ? { type: 'timing' as const, duration: 0 }
-    : { type: 'timing' as const, duration: 200, delay: 150, easing: EASE_OUT };
+  const paneEnterTransition = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 200, delay: 150, easing: EASE_OUT };
 
   const resolvedPane = typeof children === 'function' ? children({ close: handleClose }) : children;
 

@@ -7,6 +7,7 @@ import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { useIsRTL } from '../../../hooks/use-direction';
 import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
+import { TIMING_INSTANT } from '../../../theme/motion';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Checkbox } from '../../form/Checkbox/checkbox';
 import { Text } from '../../typography/Text/text';
@@ -228,7 +229,7 @@ export function TableRow<T>({
       {/* Selected row background — spring fade */}
       <MotiView
         animate={{ opacity: isSelected ? 1 : 0 }}
-        transition={reduce ? { type: 'timing', duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
+        transition={reduce ? TIMING_INSTANT : { type: 'spring', stiffness: 300, damping: 30 }}
         className={cn('pointer-events-none absolute inset-0', selectedClassName)}
       />
 

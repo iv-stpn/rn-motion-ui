@@ -1,12 +1,13 @@
 import { type ReactNode, useCallback, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
-import { LinearTransition } from 'react-native-reanimated';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
+import { springLayout } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
+import { TIMING_INSTANT } from '../../../theme/motion';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 
@@ -55,16 +56,14 @@ export type BouncyAccordionProps = {
 
 // Bouncy springs mirror the web bounce values (dampingRatio ≈ 1 − bounce).
 // The gap/radius spring stays lightly damped so connected rows move together.
-const noMotion = { type: 'timing', duration: 0 } as const;
 const ROW_TRANSITION = { type: 'spring', stiffness: 240, damping: 19, mass: 1 } as const;
 const CHEVRON_TRANSITION = { type: 'spring', stiffness: 300, damping: 25, mass: 1 } as const;
 const DESCRIPTION_TRANSITION = { type: 'timing', duration: 180 } as const;
-// Fabric-safe layout transitions replace the animated `height`/`marginTop`
-// layout props (they don't round-trip Yoga on Fabric). Spring params mirror the
-// Moti springs they replace.
-const ROW_LAYOUT = LinearTransition.springify().damping(19).stiffness(240).mass(1);
-const CONTENT_OPEN_LAYOUT = LinearTransition.springify().damping(20).stiffness(220).mass(1);
-const CONTENT_CLOSE_LAYOUT = LinearTransition.springify().damping(24).stiffness(260).mass(1);
+// `springLayout` drives the open/close height + gap springs that used to animate
+// `height`/`marginTop` through Moti (layout props don't round-trip Yoga on Fabric).
+const ROW_LAYOUT = springLayout(ROW_TRANSITION);
+const CONTENT_OPEN_LAYOUT = springLayout({ stiffness: 220, damping: 20, mass: 1 });
+const CONTENT_CLOSE_LAYOUT = springLayout({ stiffness: 260, damping: 24, mass: 1 });
 
 function useControllableValue(
   value: string | null | undefined,
@@ -121,7 +120,7 @@ function BouncyAccordionRow({
 
   const topRadius = startsGroup ? 28 : 0;
   const bottomRadius = endsGroup ? 28 : 0;
-  const descTransition = reduce ? noMotion : DESCRIPTION_TRANSITION;
+  const descTransition = reduce ? TIMING_INSTANT : DESCRIPTION_TRANSITION;
   const openContentLayout = open ? CONTENT_OPEN_LAYOUT : CONTENT_CLOSE_LAYOUT;
   const contentLayout = reduce ? undefined : openContentLayout;
 
@@ -134,7 +133,7 @@ function BouncyAccordionRow({
           borderBottomLeftRadius: bottomRadius,
           borderBottomRightRadius: bottomRadius,
         }}
-        transition={reduce ? { type: 'timing', duration: 0 } : ROW_TRANSITION}
+        transition={reduce ? TIMING_INSTANT : ROW_TRANSITION}
         className={cn('overflow-hidden', surface(elevation, undefined, floating), item.disabled ? 'opacity-50' : 'opacity-100')}
       >
         <Pressable
@@ -153,7 +152,7 @@ function BouncyAccordionRow({
           </Text>
           <MotiView
             animate={{ rotate: open ? '180deg' : '0deg' }}
-            transition={reduce ? { type: 'timing', duration: 0 } : CHEVRON_TRANSITION}
+            transition={reduce ? TIMING_INSTANT : CHEVRON_TRANSITION}
             className="h-6 w-6 shrink-0 items-center justify-center"
           >
             {chevronIcon ?? <ThemedIcon icon={ChevronDown} variant="ghost" size={16} />}

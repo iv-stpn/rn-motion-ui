@@ -3,15 +3,15 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import { Pressable, useWindowDimensions, View } from 'react-native';
-import { LinearTransition } from 'react-native-reanimated';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { EASE_OUT, SPRING_LAYOUT } from '../../../lib/ease';
+import { EASE_OUT, SPRING_LAYOUT, springLayout } from '../../../lib/ease';
 import { clampSurfaceLevel, elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
+import { TIMING_INSTANT } from '../../../theme/motion';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem, type MenuItemSize } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
@@ -24,11 +24,9 @@ const VIEWPORT_PADDING = 8;
 const PANE_INSET = 4;
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
-/** Collapsed-trigger ↔ open-pane size morph, driven as a Fabric-safe layout
- *  transition (animating `height`/`width` through `useAnimatedStyle` doesn't
- *  round-trip Yoga on Fabric). Spring params match `SPRING_LAYOUT` so the size
+/** Collapsed-trigger ↔ open-pane size morph, on `SPRING_LAYOUT` so the size
  *  stays in lockstep with the `translateY` upward-open shift below. */
-const MORPH_LAYOUT = LinearTransition.springify().damping(32).stiffness(360).mass(0.6);
+const MORPH_LAYOUT = springLayout(SPRING_LAYOUT);
 
 /** Switcher size — the trigger and every row stand at the matching interactive height. */
 export type MorphingSwitcherSize = 'sm' | 'md' | 'lg';
@@ -511,13 +509,11 @@ export function MorphingSwitcher({
   // don't round-trip Yoga on Fabric through `useAnimatedStyle`), while the radius
   // and upward-open `translateY` still spring on `SPRING_LAYOUT`. Matching spring
   // params keep the bottom edge anchored as the pane unfolds.
-  const morphTransition = reduce ? { type: 'timing' as const, duration: 0 } : SPRING_LAYOUT;
+  const morphTransition = reduce ? TIMING_INSTANT : SPRING_LAYOUT;
 
   // The rows follow the shell closely — a long delay left the pane looking empty
   // while it unfolded, which is the other half of the gooey read.
-  const paneEnterTransition = reduce
-    ? { type: 'timing' as const, duration: 0 }
-    : { type: 'timing' as const, duration: 180, delay: 40, easing: EASE_OUT };
+  const paneEnterTransition = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 180, delay: 40, easing: EASE_OUT };
 
   const triggerIcon = current?.icon ?? placeholderIcon;
   const triggerLabel = current?.label ?? placeholder;

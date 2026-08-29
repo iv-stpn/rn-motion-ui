@@ -22,6 +22,7 @@ import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { TIMING_INSTANT } from '../../../theme/motion';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 
@@ -407,7 +408,7 @@ export function StarRating({
                 from={{ translateY: direction * 12, opacity: 0 }}
                 animate={{ translateY: 0, opacity: 1 }}
                 exit={{ translateY: direction * -12, opacity: 0 }}
-                transition={reduce ? { type: 'timing', duration: 0 } : VALUE_SPRING}
+                transition={reduce ? TIMING_INSTANT : VALUE_SPRING}
                 className="absolute top-0 left-0"
               >
                 <Text weight="medium" className={valueLabel}>

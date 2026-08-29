@@ -18,6 +18,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { TIMING_INSTANT } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 
@@ -233,7 +234,7 @@ export function AnimatedBadge({
               animate={{ opacity: 1, translateY: 0, scale: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 210, damping: 24, mass: 0.85 }}
-              exitTransition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 160 }}
+              exitTransition={reduce ? TIMING_INSTANT : { type: 'timing', duration: 160 }}
             >
               {status === 'loading' && !reduce && !icon ? (
                 <BadgeSpinner>
@@ -255,7 +256,7 @@ export function AnimatedBadge({
               animate={{ opacity: 1, translateY: 0 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -10 }}
               transition={{ type: 'spring', stiffness: 210, damping: 24, mass: 0.85 }}
-              exitTransition={reduce ? { type: 'timing', duration: 0 } : { type: 'timing', duration: 160 }}
+              exitTransition={reduce ? TIMING_INSTANT : { type: 'timing', duration: 160 }}
             >
               <Text weight="medium" className={labelClass({ status, size })}>
                 {children}

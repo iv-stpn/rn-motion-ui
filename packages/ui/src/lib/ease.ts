@@ -3,7 +3,10 @@
  * that mirror the original web easing values.
  */
 
-import { Easing } from 'react-native-reanimated';
+import { Easing, LinearTransition } from 'react-native-reanimated';
+
+/** The spring subset a layout transition needs to mirror a Moti spring. */
+type SpringLayoutConfig = { stiffness: number; damping: number; mass: number };
 
 // Cubic bezier control points (mirrored from web). Single source of truth so the
 // Moti-facing factory and the plain JS-thread function stay on the same curve.
@@ -84,3 +87,22 @@ export const CONTENT_TRANSITION = {
   duration: 280,
   easing: EASE_OUT,
 } as const;
+
+/**
+ * Builds a Fabric-safe Reanimated layout transition that mirrors a Moti spring
+ * config.
+ *
+ * On the new architecture (Fabric), animating layout props (`width`, `height`,
+ * `top`, `left`, `margin`, `padding`) through Moti's `animate`/`from`/`exit`
+ * pipeline does not round-trip Yoga — a size morph collapses to 0×0 or snaps
+ * instead of animating. Give the shell a static size and drive the change with
+ * `layout={springLayout(...)}`; style props (`opacity`, `transform`,
+ * `borderRadius`, color) keep animating through Moti.
+ *
+ * Pass one of the shared spring tokens above (e.g. `SPRING_LAYOUT`) so the
+ * layout glide and any parallel Moti spring stay on the same physics instead of
+ * carrying a second, hand-kept copy of the numbers.
+ */
+export function springLayout(spring: SpringLayoutConfig) {
+  return LinearTransition.springify().damping(spring.damping).stiffness(spring.stiffness).mass(spring.mass);
+}

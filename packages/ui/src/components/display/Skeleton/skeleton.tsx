@@ -4,6 +4,7 @@ import { Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
+import { TIMING_INSTANT } from '../../../theme/motion';
 
 // cubic-bezier(0.4, 0, 0.6, 1) — Tailwind's `animate-pulse` easing.
 const PULSE_EASING = Easing.bezier(0.4, 0, 0.6, 1);
@@ -68,7 +69,7 @@ export function Skeleton({ shape = 'rounded', speed = 2, className, ...props }: 
       animate={{ opacity: reduce ? 1 : 0.5 }}
       transition={
         reduce
-          ? { type: 'timing', duration: 0 }
+          ? TIMING_INSTANT
           : { type: 'timing', duration: (speed / 2) * 1000, loop: true, repeatReverse: true, easing: PULSE_EASING }
       }
       className={cn(skeleton({ shape }), className)}

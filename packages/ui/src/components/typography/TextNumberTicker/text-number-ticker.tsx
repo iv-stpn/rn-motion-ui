@@ -6,6 +6,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, EASE_OUT_FN } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
+import { TIMING_INSTANT } from '../../../theme/motion';
 import { Text, type TextWeight } from '../Text/text';
 import { formatNumber, isDigit } from './text-number-ticker.logic';
 
@@ -251,9 +252,7 @@ function Digit({ digit, delay, duration, box, className, weight, digitClassName 
         from={{ translateY: 0 }}
         animate={{ translateY: -digit * box.h }}
         transition={
-          reduce
-            ? { type: 'timing', duration: 0 }
-            : { type: 'timing', duration: duration * 1000, delay: delay * 1000, easing: EASE_OUT }
+          reduce ? TIMING_INSTANT : { type: 'timing', duration: duration * 1000, delay: delay * 1000, easing: EASE_OUT }
         }
       >
         {DIGITS.map((number) => (

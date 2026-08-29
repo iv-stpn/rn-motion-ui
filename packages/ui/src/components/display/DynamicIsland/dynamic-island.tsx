@@ -1,8 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
-import { LinearTransition } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { EASE_OUT } from '../../../lib/ease';
+import { EASE_OUT, springLayout } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { PresenceContext } from '../../../moti/presence/animate-presence-context';
@@ -25,10 +24,7 @@ const PILL_HEIGHT = 37;
 const RADIUS = 32;
 
 // Shell reads as one long, barely-bouncy glide (web: duration 0.8 / bounce 0.2).
-// Size morph rides a Fabric-safe layout transition instead of animating
-// `width`/`height` through `useAnimatedStyle` (layout props don't round-trip
-// Yoga on Fabric). Spring params mirror the old shell spring.
-const SHELL_LAYOUT = LinearTransition.springify().damping(24).stiffness(200).mass(1);
+const SHELL_LAYOUT = springLayout({ stiffness: 200, damping: 24, mass: 1 });
 // Content gets a touch more life than the shell (web: bounce 0.35).
 const CONTENT_SPRING = { type: 'spring', stiffness: 260, damping: 22, mass: 0.9 } as const;
 // Exit is sucked up into the pill — fast, before the shrinking shell can clip

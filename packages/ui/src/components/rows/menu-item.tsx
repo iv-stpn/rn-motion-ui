@@ -6,6 +6,7 @@ import { usePressState } from '../../hooks/use-press-state';
 import { cn } from '../../lib/cn';
 import { SPRING_LAYOUT } from '../../lib/ease';
 import { MotiView } from '../../moti/components/view';
+import { TIMING_INSTANT } from '../../theme/motion';
 import { ThemedIcon } from '../icon/themed-icon';
 import { Text, type TextWeight } from '../typography/Text/text';
 
@@ -345,7 +346,7 @@ export function MenuItem({
           className="pointer-events-none absolute inset-0 bg-surface-selected"
           from={{ opacity: 0, scale: reduce ? 1 : 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={reduce ? { type: 'timing', duration: 0 } : SPRING_LAYOUT}
+          transition={reduce ? TIMING_INSTANT : SPRING_LAYOUT}
         />
       ) : null}
 

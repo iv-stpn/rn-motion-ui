@@ -13,6 +13,7 @@ import {
   buttonContainer as container,
   FILLED_RIPPLE_VARIANTS,
   buttonLabel as label,
+  variantIconColorToken,
 } from './button-variants';
 
 // The family's public types, re-exported beside the imports that resolve them so
@@ -23,23 +24,7 @@ export type { ButtonVariant } from './button-variants';
 
 // Spinner stroke matches the label colour so it reads on every variant.
 function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
-  switch (variant) {
-    case 'inverse':
-      return colors['surface-1'];
-    case 'danger':
-      return colors['primary-foreground'];
-    case 'success':
-      return colors['success-foreground'];
-    case 'warning':
-      return colors['warning-foreground'];
-    case 'info':
-      return colors['info-foreground'];
-    case 'outlineDanger':
-    case 'ghostDanger':
-      return colors.danger;
-    default:
-      return colors.foreground;
-  }
+  return colors[variantIconColorToken(variant)];
 }
 
 export interface ButtonProps extends VariantProps<typeof container>, BaseButtonProps {

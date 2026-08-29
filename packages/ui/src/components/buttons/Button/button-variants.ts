@@ -11,7 +11,28 @@
 // press/ripple machinery (button-internals.tsx).
 
 import { cva } from 'class-variance-authority';
+import type { ThemeToken } from '../../../theme/use-theme-color';
 import { LABEL_TEXT_CLASS } from './button-scale';
+
+/**
+ * The glyph (spinner/icon) colour token per variant — the single source of truth
+ * for the flat Button's spinner and the stateful Button's state icon, so the two
+ * can never drift apart. Variants not listed (`neutral`, `ghost`, `outline`)
+ * resolve to `foreground`.
+ */
+const VARIANT_ICON_COLOR_TOKEN: Partial<Record<ButtonVariant, ThemeToken>> = {
+  inverse: 'surface-1',
+  danger: 'primary-foreground',
+  success: 'success-foreground',
+  warning: 'warning-foreground',
+  info: 'info-foreground',
+  outlineDanger: 'danger',
+  ghostDanger: 'danger',
+};
+
+export function variantIconColorToken(variant: ButtonVariant): ThemeToken {
+  return VARIANT_ICON_COLOR_TOKEN[variant] ?? 'foreground';
+}
 
 export type ButtonVariant =
   | 'neutral'

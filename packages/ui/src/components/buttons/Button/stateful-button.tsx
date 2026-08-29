@@ -16,7 +16,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from './button';
 import { STATE_BUTTON_GAP_CLASSNAME, STATE_ICON_SIZE } from './button-scale';
-import { buttonLabel as labelStyle } from './button-variants';
+import { buttonLabel as labelStyle, variantIconColorToken } from './button-variants';
 import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './elevated-button';
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
@@ -133,16 +133,10 @@ const CLIP_SLACK = 64;
 // padding to give back.
 const SQUEEZE_PADDING_CLASS: Record<ButtonSize, string> = { sm: 'px-1.5', md: 'px-2.5', lg: 'px-3.5', icon: '' };
 
-// Matches Button's buildSpinnerColor: returns the icon stroke colour for each
-// variant so the icon reads correctly against every button background.
+// Icon stroke colour for each variant, read against the button background — the
+// same table the flat Button's spinner uses (see variantIconColorToken).
 function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>): string {
-  if (v === 'danger') return c['primary-foreground'];
-  if (v === 'success') return c['success-foreground'];
-  if (v === 'warning') return c['warning-foreground'];
-  if (v === 'info') return c['info-foreground'];
-  if (v === 'inverse') return c['surface-1'];
-  if (v === 'outlineDanger' || v === 'ghostDanger') return c.danger;
-  return c.foreground;
+  return c[variantIconColorToken(v)];
 }
 
 // Flat variant → elevated palette for the idle/loading chip. The danger family
@@ -150,10 +144,18 @@ function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>
 // (`success`/`warning`/`info`) carry over as themselves (all exist on the
 // elevated union); every remaining variant is monochrome or transparent, so it
 // takes the `neutral` fill.
+const ELEVATED_PALETTE_FOR_VARIANT: Partial<Record<ButtonVariant, ElevatedVariant>> = {
+  danger: 'danger',
+  outlineDanger: 'danger',
+  ghostDanger: 'danger',
+  inverse: 'inverse',
+  success: 'success',
+  warning: 'warning',
+  info: 'info',
+};
+
 function elevatedPaletteFor(v: ButtonVariant): ElevatedVariant {
-  if (v === 'danger' || v === 'outlineDanger' || v === 'ghostDanger') return 'danger';
-  if (v === 'inverse' || v === 'success' || v === 'warning' || v === 'info') return v;
-  return 'neutral';
+  return ELEVATED_PALETTE_FOR_VARIANT[v] ?? 'neutral';
 }
 
 type WrapperResolved = {

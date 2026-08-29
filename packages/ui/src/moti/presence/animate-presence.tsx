@@ -16,6 +16,65 @@ function setsEqual<T>(a: ReadonlySet<T>, b: ReadonlySet<T>): boolean {
   return true;
 }
 
+type KeyClassification = {
+  newExits: string[];
+  abandonedHeldKeys: string[];
+  reenteredKeys: string[];
+  newEntries: string[];
+};
+
+/** Partition the current keys against the previous render into the four sets the lifecycle reacts to. */
+function classifyKeyChanges(
+  prevCurrentKeys: ReadonlySet<string>,
+  currentKeys: ReadonlySet<string>,
+  exitingKeys: ReadonlySet<string>,
+  heldKeys: ReadonlySet<string>,
+): KeyClassification {
+  // Keys that left the tree since the last render. A held key was never
+  // rendered, so it is dropped silently instead of being exited.
+  const newExits: string[] = [];
+  const abandonedHeldKeys: string[] = [];
+  for (const key of prevCurrentKeys) {
+    if (!(currentKeys.has(key) || exitingKeys.has(key))) {
+      if (heldKeys.has(key)) abandonedHeldKeys.push(key);
+      else newExits.push(key);
+    }
+  }
+
+  // Keys that re-appeared while exiting — cancel their exit.
+  const reenteredKeys: string[] = [];
+  for (const key of exitingKeys) if (currentKeys.has(key)) reenteredKeys.push(key);
+
+  // Keys that just appeared for the first time.
+  const newEntries: string[] = [];
+  for (const key of currentKeys) if (!prevCurrentKeys.has(key)) newEntries.push(key);
+
+  return { newExits, abandonedHeldKeys, reenteredKeys, newEntries };
+}
+
+/**
+ * Prune keys that have fully unmounted from the stable order, then insert new
+ * current keys at the position their sibling order implies, so exiting items
+ * stay at their original list position rather than being appended at the end.
+ */
+function maintainKeyOrder(order: readonly string[], activeKeys: ReadonlySet<string>, currentKeys: readonly string[]): string[] {
+  const result = order.filter((key) => activeKeys.has(key));
+  const inOrder = new Set(result);
+  for (const [index, key] of currentKeys.entries()) {
+    if (!inOrder.has(key)) {
+      if (index === 0) result.unshift(key);
+      else {
+        // index > 0 is guaranteed by the else branch above; fall back to append if somehow undefined
+        const prevKey = currentKeys[index - 1];
+        const prevIdx = prevKey === undefined ? -1 : result.indexOf(prevKey);
+        result.splice(prevIdx >= 0 ? prevIdx + 1 : result.length, 0, key);
+      }
+      inOrder.add(key);
+    }
+  }
+  return result;
+}
+
 type KeyCallbacks = { register: (childId: string) => () => void; safeToUnmount: (childId: string) => void };
 
 export type AnimatePresenceProps = {
@@ -70,8 +129,7 @@ export type AnimatePresenceProps = {
  *
  * @see {@link usePresenceContext} for the hook consumed by every Moti component.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: AnimatePresence orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining complexity is setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: AnimatePresence orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining lines are setup and a single style-key loop; further splitting would require passing shared worklet references across function boundaries
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: AnimatePresence orchestrates the full animation lifecycle (animate/from/exit/state/presence) — the remaining lines are derived-state flushes and registry wiring that share refs and setters, not separable concerns
 export function AnimatePresence({ children, custom, initial = true, onExitComplete, exitBeforeEnter }: AnimatePresenceProps) {
   const validChildren = getValidChildren(children);
 
@@ -152,26 +210,12 @@ export function AnimatePresence({ children, custom, initial = true, onExitComple
 
   const currentKeySet: ReadonlySet<string> = new Set(currentMap.keys());
 
-  // Classify keys that left the tree since the last render. A held key was
-  // never rendered, so it is dropped silently instead of being exited.
-  const newExits: string[] = [];
-  const abandonedHeldKeys: string[] = [];
-  for (const key of prevCurrentKeys) {
-    if (!(currentMap.has(key) || exitingKeys.has(key))) {
-      if (heldKeys.has(key)) abandonedHeldKeys.push(key);
-      else newExits.push(key);
-    }
-  }
-
-  // Keys that re-appeared while exiting — cancel their exit.
-  const reenteredKeys: string[] = [];
-  for (const key of exitingKeys) if (currentMap.has(key)) reenteredKeys.push(key);
-
-  // Detect which keys just appeared for the first time.
-  const newEntries: string[] = [];
-  for (const key of currentKeySet) {
-    if (!prevCurrentKeys.has(key)) newEntries.push(key);
-  }
+  const { newExits, abandonedHeldKeys, reenteredKeys, newEntries } = classifyKeyChanges(
+    prevCurrentKeys,
+    currentKeySet,
+    exitingKeys,
+    heldKeys,
+  );
 
   // Reset completion flags for keys starting or canceling an exit, so stale
   // reports from a previous (canceled) exit can't complete the next one early.
@@ -232,23 +276,11 @@ export function AnimatePresence({ children, custom, initial = true, onExitComple
   // updates on the next pass). Include them so keyOrderRef doesn't prune a key
   // before it's been added to exitingKeys, which would prevent its exit render.
   const allActive = new Set([...currentKeySet, ...exitingKeys, ...newExits]);
-  // Prune keys that have fully unmounted from the order record.
-  keyOrderRef.current = keyOrderRef.current.filter((k) => allActive.has(k));
-  // Insert new current keys at the position their sibling order implies.
-  const inOrder = new Set(keyOrderRef.current);
-  const currentKeysInOrder = validChildren.map((child) => child.key ?? '');
-  for (const [index, key] of currentKeysInOrder.entries()) {
-    if (!inOrder.has(key)) {
-      if (index === 0) keyOrderRef.current.unshift(key);
-      else {
-        // index > 0 is guaranteed by the else branch above; fall back to append if somehow undefined
-        const prevKey = currentKeysInOrder[index - 1];
-        const prevIdx = prevKey === undefined ? -1 : keyOrderRef.current.indexOf(prevKey);
-        keyOrderRef.current.splice(prevIdx >= 0 ? prevIdx + 1 : keyOrderRef.current.length, 0, key);
-      }
-      inOrder.add(key);
-    }
-  }
+  keyOrderRef.current = maintainKeyOrder(
+    keyOrderRef.current,
+    allActive,
+    validChildren.map((child) => child.key ?? ''),
+  );
 
   // Build the render list from the stable order, respecting exitBeforeEnter.
   const keysToRender: string[] = [];

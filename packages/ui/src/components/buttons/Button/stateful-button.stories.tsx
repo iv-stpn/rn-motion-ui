@@ -49,7 +49,7 @@ const SUCCESS_LABEL = 'Done';
 // Two properties uniwind maps straight onto the label's computed style, so the
 // LabelClassName play function can read them back off both copies of the label.
 const LABEL_CLASS = 'uppercase italic';
-const CONTENT_CLASS = 'border-[1.5px] border-special border-dashed';
+const CONTENT_CLASS = 'border-[1.5px] border-info border-dashed';
 const WRAPPER_CLASS = 'w-52';
 
 function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {

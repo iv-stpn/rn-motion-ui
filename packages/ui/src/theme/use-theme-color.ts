@@ -12,10 +12,9 @@ import { cssColorToSrgb, oklchToSrgb } from '../lib/color';
  * translucent state overlays. `surface-3` is the resting level for contained
  * content (cards, popovers, dialogs, inputs).
  *
- * Status tokens come in pairs: `danger`, `success`, `warning`, `info` and
- * `special` are vivid filled backgrounds; `*-foreground` is white for legible
- * text/icons on that fill. `special` is the one non-semantic member of the row
- * — a promotion or an upgrade path rather than a state.
+ * Status tokens come in pairs: `danger`, `success`, `warning` and `info` are
+ * vivid filled backgrounds; `*-foreground` is white for legible text/icons on
+ * that fill.
  *
  * `white` and `black` are the two absolute colors: identical in both schemes, so
  * they do NOT flip with the theme. They exist for the places that legitimately
@@ -52,8 +51,6 @@ type ThemeToken =
   | 'info-foreground'
   | 'danger'
   | 'danger-foreground'
-  | 'special'
-  | 'special-foreground'
   | 'white'
   | 'black'
   | 'background';
@@ -101,8 +98,6 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   'info-foreground': [1, 0, 0],
   danger: [0.62, 0.22, 25],
   'danger-foreground': [1, 0, 0],
-  special: [0.59, 0.25, 295],
-  'special-foreground': [1, 0, 0],
   white: [1, 0, 0],
   black: [0, 0, 0],
   background: [0.95, 0.004, NEUTRAL_HUE],
@@ -138,8 +133,6 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   'info-foreground': [1, 0, 0],
   danger: [0.66, 0.22, 25],
   'danger-foreground': [1, 0, 0],
-  special: [0.59, 0.25, 295],
-  'special-foreground': [1, 0, 0],
   // Absolute colors — same in both schemes, on purpose.
   white: [1, 0, 0],
   black: [0, 0, 0],

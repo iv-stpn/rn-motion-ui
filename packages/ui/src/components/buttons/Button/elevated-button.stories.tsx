@@ -16,7 +16,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['neutral', 'inverse', 'danger', 'success', 'warning', 'info', 'special', 'white', 'gray'],
+      options: ['neutral', 'inverse', 'danger', 'success', 'warning', 'info', 'white', 'gray'],
       description: 'Fill colour. Coloured fills get the gloss + rim + shadow; white/gray are flat plates.',
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
@@ -33,7 +33,6 @@ const VARIANTS = [
   'success',
   'warning',
   'info',
-  'special',
   'white',
   'gray',
 ] as const satisfies readonly ElevatedVariant[];

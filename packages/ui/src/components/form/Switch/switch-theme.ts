@@ -39,7 +39,7 @@ export type SwitchThemeColors = {
 };
 
 /** Built-in themes, one per status token plus the monochrome `primary`. */
-export type SwitchThemeName = 'info' | 'primary' | 'success' | 'warning' | 'danger' | 'special';
+export type SwitchThemeName = 'info' | 'primary' | 'success' | 'warning' | 'danger';
 
 /** The theme's three fills, resolved to concrete sRGB strings. */
 export type SwitchColors = { track: string; trackOff: string; thumb: string };
@@ -63,7 +63,6 @@ const SWITCH_THEMES: Record<SwitchThemeName, Required<SwitchThemeColors>> = {
   success: { track: 'success', trackOff: TRACK_OFF, thumb: 'white' },
   warning: { track: 'warning', trackOff: TRACK_OFF, thumb: 'white' },
   danger: { track: 'danger', trackOff: TRACK_OFF, thumb: 'white' },
-  special: { track: 'special', trackOff: TRACK_OFF, thumb: 'white' },
 };
 
 // `<token>/<alpha>` — alpha is a Tailwind-style percentage (60 → 0.6).

@@ -35,11 +35,10 @@ const BOX_TONE_BORDER: Record<CheckboxTone, string> = {
   warning: 'border-warning',
   info: 'border-info',
   danger: 'border-danger',
-  special: 'border-special',
 };
 
 /** Filled accent tokens — each has a matching `-foreground` for the mark. */
-export type CheckboxTone = 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'info' | 'danger' | 'special';
+export type CheckboxTone = 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'info' | 'danger';
 
 export type CheckboxBoxProps = {
   checked: boolean;

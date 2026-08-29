@@ -19,7 +19,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['neutral', 'inverse', 'ghost', 'danger', 'special', 'outlineDanger', 'ghostDanger'],
+      options: ['neutral', 'inverse', 'ghost', 'danger', 'outlineDanger', 'ghostDanger'],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -38,7 +38,6 @@ const VARIANTS = [
   'success',
   'warning',
   'info',
-  'special',
   'outlineDanger',
   'ghostDanger',
 ] as const satisfies readonly ButtonVariant[];
@@ -49,8 +48,7 @@ const CONTINUE_LABEL = 'Continue';
 const DOWNLOAD_LABEL = 'Download';
 const pressedLabel = (n: number) => `Pressed ${n} times`;
 
-// The two token-backed fills, probed in TokenFillsResolve.
-const SPECIAL_KEY = 'special-key';
+// The one token-backed fill, probed in TokenFillsResolve.
 const INVERSE_KEY = 'inverse-key';
 // What the browser computes for both an unset custom property and an absent
 // background utility — the collision TokenFillsResolve has to rule out.
@@ -66,7 +64,6 @@ function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
   if (variant === 'success') return colors['success-foreground'];
   if (variant === 'warning') return colors['warning-foreground'];
   if (variant === 'info') return colors['info-foreground'];
-  if (variant === 'special') return colors['special-foreground'];
   if (variant === 'inverse') return colors['surface-1'];
   if (variant === 'outlineDanger' || variant === 'ghostDanger') return colors.danger;
   return colors.foreground;
@@ -220,17 +217,14 @@ export const Primary: Story = {
   },
 };
 
-/** `special` and `inverse` are the only variants whose fill/label utilities
- *  (`bg-special`, `text-special-foreground`, `bg-foreground`, `text-background`)
- *  aren't used anywhere else in the library, so a scanner miss would fail open:
- *  the class would simply not exist and the chip would render transparent with
- *  inherited text. This pins each one to the custom property it must resolve to. */
+/** `inverse` is the only variant whose fill/label utilities (`bg-foreground`,
+ *  `text-background`) aren't used anywhere else in the library, so a scanner
+ *  miss would fail open: the class would simply not exist and the chip would
+ *  render transparent with inherited text. This pins it to the custom
+ *  properties it must resolve to. */
 export const TokenFillsResolve: Story = {
   render: () => (
     <View className="flex-row gap-4">
-      <Button testID={SPECIAL_KEY} variant="special">
-        {CONTINUE_LABEL}
-      </Button>
       <Button testID={INVERSE_KEY} variant="inverse">
         {CONTINUE_LABEL}
       </Button>
@@ -238,7 +232,6 @@ export const TokenFillsResolve: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const specialKey = await canvas.findByTestId(SPECIAL_KEY);
     const inverseKey = await canvas.findByTestId(INVERSE_KEY);
     const labelOf = (key: HTMLElement) => within(key).getByText(CONTINUE_LABEL);
 
@@ -258,8 +251,6 @@ export const TokenFillsResolve: Story = {
     };
 
     try {
-      expect(getComputedStyle(specialKey).backgroundColor).toBe(resolveToken('--color-special'));
-      expect(getComputedStyle(labelOf(specialKey)).color).toBe(resolveToken('--color-special-foreground'));
       expect(getComputedStyle(inverseKey).backgroundColor).toBe(resolveToken('--color-foreground'));
       expect(getComputedStyle(labelOf(inverseKey)).color).toBe(resolveToken('--color-background'));
     } finally {

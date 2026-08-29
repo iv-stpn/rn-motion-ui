@@ -21,7 +21,6 @@ const VARIANT_TOKEN: Record<IconVariant, ThemeToken> = {
   ghost: 'foreground',
   outline: 'foreground',
   danger: 'danger-foreground',
-  special: 'special-foreground',
   outlineDanger: 'danger',
   ghostDanger: 'danger',
   // ── ElevatedVariant (extras not in ButtonVariant) ────────────────────────

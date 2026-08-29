@@ -20,7 +20,7 @@ const noop = () => {
 };
 
 /** Every built-in theme, in the order the docs list them. */
-const THEMES: readonly SwitchThemeName[] = ['info', 'primary', 'success', 'warning', 'danger', 'special'];
+const THEMES: readonly SwitchThemeName[] = ['info', 'primary', 'success', 'warning', 'danger'];
 
 /** All size variants. */
 const SIZES: readonly SwitchSize[] = ['sm', 'md', 'lg'];
@@ -185,7 +185,7 @@ function SwitchPlayground(args: ComponentProps<typeof Switch>) {
               {...SWATCH}
               accessibilityLabel="Custom alpha-suffixed track"
               isSelected={true}
-              theme={{ track: 'special/70' }}
+              theme={{ track: 'info/70' }}
             />
           </Sample>
         </Variants>

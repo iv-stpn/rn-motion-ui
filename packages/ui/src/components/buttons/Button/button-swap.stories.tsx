@@ -45,7 +45,6 @@ const VARIANTS = [
   'success',
   'warning',
   'info',
-  'special',
   'outlineDanger',
   'ghostDanger',
 ] as const satisfies readonly ButtonVariant[];
@@ -64,7 +63,6 @@ function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
   if (variant === 'success') return colors['success-foreground'];
   if (variant === 'warning') return colors['warning-foreground'];
   if (variant === 'info') return colors['info-foreground'];
-  if (variant === 'special') return colors['special-foreground'];
   if (variant === 'inverse') return colors['surface-1'];
   if (variant === 'outlineDanger' || variant === 'ghostDanger') return colors.danger;
   return colors.foreground;

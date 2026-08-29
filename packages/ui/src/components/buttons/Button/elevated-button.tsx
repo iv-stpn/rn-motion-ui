@@ -19,14 +19,12 @@ import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass } from
  * `gray` (a Geist-style secondary plate — a fixed #F2F2F2 fill, #707070 label, a
  * 1px neutral ring plus a hairline white top sheen, no gloss and no hover shift).
  *
- * `special` is the non-semantic accent — a promotion or an upgrade path, where
- * `info`/`success`/`warning`/`danger` each carry a meaning. `inverse` is the
- * `neutral` of the *opposite* theme — the `primary`/`primary-foreground` pair
- * swapped — so it stays the exact inverse of the primary action through any
- * consumer retint.
+ * `inverse` is the `neutral` of the *opposite* theme — the
+ * `primary`/`primary-foreground` pair swapped — so it stays the exact inverse of
+ * the primary action through any consumer retint.
  */
 // biome-ignore lint/style/useExportsLast: declared up top so the colour tables below can key off it; kept with its doc comment for readability
-export type ElevatedVariant = 'neutral' | 'inverse' | 'danger' | 'success' | 'warning' | 'info' | 'special' | 'white' | 'gray';
+export type ElevatedVariant = 'neutral' | 'inverse' | 'danger' | 'success' | 'warning' | 'info' | 'white' | 'gray';
 
 // A glossy filled chip (or, for `white`/`gray`, a flat plate). Everything colour-
 // dependent is resolved from `variant` here so one component covers every hue
@@ -46,7 +44,6 @@ const ELEVATED_BG: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = 
   success: 'bg-success',
   warning: 'bg-warning',
   info: 'bg-info',
-  special: 'bg-special',
 };
 
 // Label colour class per variant. Coloured fills are vivid, so their
@@ -60,7 +57,6 @@ const ELEVATED_LABEL: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string>
   success: 'text-success-foreground',
   warning: 'text-warning-foreground',
   info: 'text-info-foreground',
-  special: 'text-special-foreground',
 };
 
 // Foreground token per variant — drives the loading spinner stroke so it matches
@@ -72,7 +68,6 @@ const ELEVATED_FOREGROUND_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray
   success: 'success-foreground',
   warning: 'warning-foreground',
   info: 'info-foreground',
-  special: 'special-foreground',
 };
 
 // Fill token per variant — resolved to sRGB for the drop shadow: the 1px ring is
@@ -84,7 +79,6 @@ const ELEVATED_FILL_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, Th
   success: 'success',
   warning: 'warning',
   info: 'info',
-  special: 'special',
 };
 
 // The white stroke plate: light surface + muted label at rest; on hover it
@@ -302,8 +296,8 @@ function ElevatedHighlights({ id, hovered, radiusClass, width, height }: Elevate
 export interface ElevatedButtonProps extends BaseButtonProps {
   /** Fill colour. Most colours get the glossy treatment (top-down sheen + 1px rim
    *  highlight + coloured drop-shadow ring); `white` is a stroke plate and `gray`
-   *  a fixed Geist-style secondary plate. `special` is the non-semantic accent and
-   *  `inverse` the `neutral` fill of the opposite theme. Defaults to `neutral`. */
+   *  a fixed Geist-style secondary plate. `inverse` is the `neutral` fill of the
+   *  opposite theme. Defaults to `neutral`. */
   variant?: ElevatedVariant;
   size?: ButtonSize;
   shape?: ButtonShape;

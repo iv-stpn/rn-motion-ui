@@ -34,8 +34,6 @@ function buildSpinnerColor(variant: ButtonVariant, colors: ReturnType<typeof use
       return colors['warning-foreground'];
     case 'info':
       return colors['info-foreground'];
-    case 'special':
-      return colors['special-foreground'];
     case 'outlineDanger':
     case 'ghostDanger':
       return colors.danger;

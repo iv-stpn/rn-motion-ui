@@ -22,7 +22,6 @@ export type ButtonVariant =
   | 'success'
   | 'warning'
   | 'info'
-  | 'special'
   | 'outlineDanger'
   | 'ghostDanger';
 
@@ -44,7 +43,6 @@ export const buttonContainer = cva('flex-row items-center justify-center', {
       success: 'bg-success',
       warning: 'bg-warning',
       info: 'bg-info',
-      special: 'bg-special',
       outlineDanger: 'border-[1.5px] border-danger bg-transparent',
       ghostDanger: 'bg-transparent',
     },
@@ -68,7 +66,6 @@ export const buttonLabel = cva('', {
       success: 'text-success-foreground',
       warning: 'text-warning-foreground',
       info: 'text-info-foreground',
-      special: 'text-special-foreground',
       outlineDanger: 'text-danger',
       ghostDanger: 'text-danger',
     },
@@ -84,4 +81,4 @@ export const buttonLabel = cva('', {
  * shimmer white to be visible. Everything else is a light surface plate and takes
  * the dark ripple.
  */
-export const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['inverse', 'danger', 'success', 'warning', 'info', 'special']);
+export const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['inverse', 'danger', 'success', 'warning', 'info']);

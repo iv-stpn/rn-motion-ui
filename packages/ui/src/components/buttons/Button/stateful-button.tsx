@@ -140,20 +140,19 @@ function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>
   if (v === 'success') return c['success-foreground'];
   if (v === 'warning') return c['warning-foreground'];
   if (v === 'info') return c['info-foreground'];
-  if (v === 'special') return c['special-foreground'];
   if (v === 'inverse') return c['surface-1'];
   if (v === 'outlineDanger' || v === 'ghostDanger') return c.danger;
   return c.foreground;
 }
 
 // Flat variant → elevated palette for the idle/loading chip. The danger family
-// collapses onto the `danger` fill; `special`/`inverse` and the status fills
+// collapses onto the `danger` fill; `inverse` and the status fills
 // (`success`/`warning`/`info`) carry over as themselves (all exist on the
 // elevated union); every remaining variant is monochrome or transparent, so it
 // takes the `neutral` fill.
 function elevatedPaletteFor(v: ButtonVariant): ElevatedVariant {
   if (v === 'danger' || v === 'outlineDanger' || v === 'ghostDanger') return 'danger';
-  if (v === 'special' || v === 'inverse' || v === 'success' || v === 'warning' || v === 'info') return v;
+  if (v === 'inverse' || v === 'success' || v === 'warning' || v === 'info') return v;
   return 'neutral';
 }
 

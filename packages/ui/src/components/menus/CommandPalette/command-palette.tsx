@@ -2,9 +2,11 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react
 import { Pressable, ScrollView, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
+import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { useThemeColor } from '../../../theme/use-theme-color';
+import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
@@ -17,7 +19,9 @@ import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
 // Cmd/Ctrl+K shortcut has no RN equivalent, so `shortcut` is kept for API
 // parity but is a no-op. Rows are tapped rather than arrow-navigated; the
 // active row highlight tracks the tapped/last-focused item and fades in via
-// moti. The `ESC` kbd chip is a real close button here (no hardware ESC key).
+// moti. On wide screens the `ESC` kbd chip is the close button and rows show
+// their keyboard-shortcut hints; on narrow (touch) screens those shortcuts are
+// meaningless and a proper close button sits in the top right instead.
 
 const ESC_LABEL = 'ESC';
 
@@ -86,6 +90,8 @@ type CommandRowProps = {
   index: number;
   isActive: boolean;
   hasIcons: boolean;
+  /** Whether to show the item's keyboard-shortcut hint (wide screens only). */
+  showShortcuts: boolean;
   reduce: boolean;
   onActivate: (index: number) => void;
   onSelect: (item: CommandItem) => void;
@@ -93,16 +99,16 @@ type CommandRowProps = {
   testID?: string;
 };
 
-function CommandRow({ item, index, isActive, hasIcons, reduce, onActivate, onSelect, testID }: CommandRowProps) {
+function CommandRow({ item, index, isActive, hasIcons, showShortcuts, reduce, onActivate, onSelect, testID }: CommandRowProps) {
   const handlePressIn = useCallback(() => onActivate(index), [onActivate, index]);
   const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
 
   // Compose badge + hint into a single trailing node when either is present.
   const trailing =
-    item.badge || item.hint ? (
+    item.badge || (showShortcuts && item.hint) ? (
       <>
         {item.badge ? <View className="shrink-0">{item.badge}</View> : null}
-        {item.hint ? (
+        {showShortcuts && item.hint ? (
           <Text className="rounded border-[1.5px] border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
             {item.hint}
           </Text>
@@ -144,6 +150,10 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const reduce = useReducedMotion();
   const placeholderColor = useThemeColor('muted-foreground');
+  // Wide = the palette renders as a centred modal (≥ `sm`, matching the
+  // AdaptiveModal wide breakpoint); narrow = the full-sheet touch surface where
+  // keyboard shortcuts don't exist and a tap-to-close button takes their place.
+  const isWideScreen = useBreakpointAtLeast('sm');
 
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -233,14 +243,18 @@ export function CommandPalette({
             accessibilityLabel={placeholder}
             className="h-12 flex-1 font-sans-normal text-foreground text-sm outline-none"
           />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={handleClose}
-            className="rounded border-[1.5px] border-border bg-surface-2 px-1.5 py-0.5"
-          >
-            <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
-          </Pressable>
+          {isWideScreen ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={handleClose}
+              className="rounded border-[1.5px] border-border bg-surface-2 px-1.5 py-0.5"
+            >
+              <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
+            </Pressable>
+          ) : (
+            <CloseButton onPress={handleClose} size="sm" />
+          )}
         </View>
         <ScrollView className="max-h-[60vh] px-2 py-2" keyboardShouldPersistTaps="handled">
           {filtered.length === 0 ? (
@@ -263,6 +277,7 @@ export function CommandPalette({
                       index={idx}
                       isActive={idx === active}
                       hasIcons={hasIcons}
+                      showShortcuts={isWideScreen}
                       reduce={reduce}
                       onActivate={setActive}
                       onSelect={handleSelect}

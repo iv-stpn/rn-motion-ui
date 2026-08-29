@@ -165,6 +165,15 @@ function shouldReResolveAtSessionPoint(
   return resolved !== sessionPoint && (wasZoneDrop || target === null);
 }
 
+/** The spatial half of the rect-shift test: under `prefix` and not excluded by the caller's predicate. `rect !== null` stays at the call site so its narrowing survives. */
+function entryUnderScrollPrefix(
+  entry: DragzoneEntry,
+  prefix: readonly string[],
+  shouldShift?: (entry: DragzoneEntry) => boolean,
+): boolean {
+  return pathIsUnder(entry.managerPath, prefix) && (shouldShift === undefined || shouldShift(entry));
+}
+
 /** Wake the listeners registered for one zone, if any. */
 function notifyZone(zoneId: string) {
   const subscribers = zoneListeners.get(zoneId);
@@ -732,7 +741,7 @@ export function shiftZoneRects(
 ): void {
   if (session === null || (dx === 0 && dy === 0)) return;
   for (const entry of zonesList) {
-    if (entry.rect !== null && pathIsUnder(entry.managerPath, prefix) && (shouldShift === undefined || shouldShift(entry)))
+    if (entry.rect !== null && entryUnderScrollPrefix(entry, prefix, shouldShift))
       entry.rect = { ...entry.rect, x: entry.rect.x - dx, y: entry.rect.y - dy };
   }
   for (const listener of shiftListeners) listener();

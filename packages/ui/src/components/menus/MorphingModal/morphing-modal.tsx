@@ -141,6 +141,10 @@ export function MorphingModal({
   }, [contentHeight, morphing]);
 
   const positionerClassName = POSITIONER_CLASS[placement];
+  // The panel's corner radius — top-only for the bottom-anchored sheet, all four
+  // for the centred/bottom modal. Shared by the elevated surface (so the shadow
+  // ring follows the curve) and the clip wrapper (so content clips to the curve).
+  const panelRadiusClass = placement === 'bottom-sheet' ? 'rounded-t-modal' : 'rounded-modal';
 
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: shared-element morph requires coordinating clip, height-spring, and cross-fade branches in one render path
   const renderPanel = ({ open: isAnimOpen, onExitComplete }: OverlayShellContext) => (
@@ -170,49 +174,57 @@ export function MorphingModal({
               exit={{ opacity: 0, translateY: enterY, scale: reduce || placement === 'bottom-sheet' ? 1 : 0.98 }}
               transition={reduce ? { type: 'timing', duration: 180, easing: EASE_OUT } : SPRING_PANEL}
               className={cn(
-                'overflow-hidden',
+                'w-full max-w-sm',
 
-                placement === 'bottom-sheet' ? 'w-full max-w-sm rounded-t-modal' : 'w-full max-w-sm',
-                surface(elevation, placement === 'bottom-sheet' ? undefined : 'modal', floating),
+                panelRadiusClass,
+                surface(elevation, undefined, floating),
               )}
               style={style}
             >
-              {showClose ? (
-                <View className="absolute top-2 right-2 z-10">
-                  <CloseButton onPress={handleClose} testID={testID ? `${testID}-close` : undefined} />
-                </View>
-              ) : null}
               {/*
-               * Height morphs toward the measured height of the active view.
-               * overflow:hidden clips the taller incoming content while the
-               * card grows; the cross-fade masks the reveal.
+               * The clip wrapper carries `overflow-hidden` on its own element —
+               * putting it on the surface above would clip the elevated shadow,
+               * leaving only the flat background behind (the shadow must render
+               * outside the clip region, as in RadioCard / ElevatedButton).
                */}
-              <MotiView
-                layout={reduce || !morphing ? undefined : PANEL_LAYOUT}
-                className="overflow-hidden"
-                style={{ height: contentHeight ?? 0 }}
-              >
-                <AnimatePresence>
-                  <MotiView
-                    key={viewId}
-                    from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8 }}
-                    transition={{ type: 'timing', duration: reduce ? 160 : 240, easing: EASE_OUT }}
-                    exitTransition={{ type: 'timing', duration: reduce ? 140 : 160, easing: EASE_OUT }}
-                    onLayout={onContentLayout(viewId ?? '')}
-                    className="absolute top-0 right-0 left-0"
-                  >
-                    <View className="p-5">
-                      {typeof children === 'string' || typeof children === 'number' ? (
-                        <Text className="text-foreground text-sm">{children}</Text>
-                      ) : (
-                        children
-                      )}
-                    </View>
-                  </MotiView>
-                </AnimatePresence>
-              </MotiView>
+              <View className={cn('overflow-hidden', panelRadiusClass)}>
+                {showClose ? (
+                  <View className="absolute top-2 right-2 z-10">
+                    <CloseButton onPress={handleClose} testID={testID ? `${testID}-close` : undefined} />
+                  </View>
+                ) : null}
+                {/*
+                 * Height morphs toward the measured height of the active view.
+                 * overflow:hidden clips the taller incoming content while the
+                 * card grows; the cross-fade masks the reveal.
+                 */}
+                <MotiView
+                  layout={reduce || !morphing ? undefined : PANEL_LAYOUT}
+                  className="overflow-hidden"
+                  style={{ height: contentHeight ?? 0 }}
+                >
+                  <AnimatePresence>
+                    <MotiView
+                      key={viewId}
+                      from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8 }}
+                      transition={{ type: 'timing', duration: reduce ? 160 : 240, easing: EASE_OUT }}
+                      exitTransition={{ type: 'timing', duration: reduce ? 140 : 160, easing: EASE_OUT }}
+                      onLayout={onContentLayout(viewId ?? '')}
+                      className="absolute top-0 right-0 left-0"
+                    >
+                      <View className="p-5">
+                        {typeof children === 'string' || typeof children === 'number' ? (
+                          <Text className="text-foreground text-sm">{children}</Text>
+                        ) : (
+                          children
+                        )}
+                      </View>
+                    </MotiView>
+                  </AnimatePresence>
+                </MotiView>
+              </View>
             </MotiView>
           </View>
         </View>

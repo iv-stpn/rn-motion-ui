@@ -2,7 +2,7 @@ import type { PropsWithChildren } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, ViewProps } from 'react-native';
 import { View } from 'react-native';
-import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { usePresenceContext } from '../../../moti/presence/animate-presence-context';
@@ -13,6 +13,18 @@ import { usePresenceContext } from '../../../moti/presence/animate-presence-cont
 // Easings
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1); // fast start, smooth landing
 const EASE_IN = Easing.bezier(0.4, 0, 1, 1); // slow start, sharp end
+
+// Fabric-safe layout transitions for the item height. On the new architecture an
+// animated `height` (via useAnimatedStyle) is dropped by Yoga and the item
+// collapses to 0, so the height stays static and its change rides `layout` instead.
+const ITEM_LAYOUT = LinearTransition.duration(280).easing(EASE_OUT);
+const ITEM_EXIT_LAYOUT = LinearTransition.duration(240).easing(EASE_IN);
+
+/** The Fabric-safe layout transition for the current phase; undefined snaps under reduced motion. */
+function itemLayout(reduced: boolean, isPresent: boolean) {
+  if (reduced) return;
+  return isPresent ? ITEM_LAYOUT : ITEM_EXIT_LAYOUT;
+}
 
 export type AnimatedListProps = PropsWithChildren<ViewProps>;
 
@@ -48,14 +60,16 @@ export type AnimatedListItemProps = PropsWithChildren;
 
 /**
  * Two-layer animated list item:
- *  - Outer Animated.View: animates `height` 0 → content → 0.
- *    This is what drives layout reflow for siblings — no Reanimated `layout`
- *    prop needed; siblings move naturally as the height changes.
- *  - Inner Animated.View: visual polish (opacity, translateY, scale).
+ *  - Outer Animated.View: holds the item height (0 → content → 0). The height is
+ *    a static style whose change rides a `layout` transition, so siblings reflow
+ *    naturally as it grows/shrinks — animating `height` through `useAnimatedStyle`
+ *    is dropped by Yoga on Fabric and the item collapses to nothing.
+ *  - Inner Animated.View: visual polish (opacity, translateY, scale), laid out
+ *    absolutely so `onLayout` can measure it even while the outer is collapsed.
  *
  * Also handles card grow/collapse automatically: when inner content changes
- * height (e.g. subtasks expand), `onLayout` fires and `containerHeight`
- * springs to the new value, pushing siblings out of the way.
+ * height (e.g. subtasks expand), `onLayout` fires and the outer height follows
+ * via the layout transition, pushing siblings out of the way.
  *
  * Give each item a stable `key` inside `AnimatedList`.
  */
@@ -71,22 +85,16 @@ export function AnimatedListItem({ children }: AnimatedListItemProps) {
   const isPresentRef = useRef(isPresent);
   isPresentRef.current = isPresent;
 
-  // Outer: height controls how much layout space the item occupies
-  const containerHeight = useSharedValue(0);
-
-  // Inner: visual style
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(-10);
-  const scale = useSharedValue(0.97);
-
-  // Natural content height from the latest layout pass. `onLayout` only records
-  // it; the tween below consumes it post-commit (see FileSystemAnimatedRow).
+  // Natural content height from the latest layout pass. The item's height is a
+  // *static* style driven by this state — not an animated `height` — because an
+  // animated height is dropped by Yoga on Fabric and the item collapses to 0.
   const [contentHeight, setContentHeight] = useState(0);
   const hasEntered = useRef(false);
 
-  const containerStyle = useAnimatedStyle(() => ({
-    height: containerHeight.value,
-  }));
+  // Visual polish (opacity, translateY, scale) — style props, safe on Fabric.
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(-10);
+  const scale = useSharedValue(0.97);
 
   const contentStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -99,51 +107,37 @@ export function AnimatedListItem({ children }: AnimatedListItemProps) {
     if (!isPresent) {
       const dur = (full: number) => (reduced ? 80 : full);
       const easeIn = reduced ? Easing.linear : EASE_IN;
-      // Height collapse drives the sibling reflow — runs slightly longer so
-      // the space is fully gone before unmount.
-      containerHeight.value = withTiming(0, { duration: dur(240), easing: easeIn }, (finished) => {
-        // safeToUnmount is null while the item is still present; read via ref
-        // so the latest bound callback fires once the collapse completes.
-        if (!finished) return;
-        const done = safeToUnmountRef.current;
-        if (done) runOnJS(done)();
-      });
       // Visual exit: fade + drop (inspired by framer-motion recipe's y:8 on exit).
       // Positive translateY (downward) is safe under overflow:hidden — content
       // sinks into the shrinking container and is clipped from below. Only a
       // negative (upward) translation would escape above the container's top edge.
+      // The height collapse rides the `layout` transition (no completion
+      // callback), so release the item on a timer matched to its duration.
       opacity.value = withTiming(0, { duration: dur(220), easing: easeIn });
       scale.value = withTiming(0.97, { duration: dur(220) });
       translateY.value = withTiming(8, { duration: dur(220), easing: easeIn });
+      const id = setTimeout(() => {
+        const done = safeToUnmountRef.current;
+        if (done) done();
+      }, dur(240));
+      return () => clearTimeout(id);
     }
   }, [isPresent, reduced]);
 
-  // Enter + expand/collapse, driven from a post-commit effect rather than the
-  // `onLayout` callback. On native `onLayout` can fire in the same commit that
-  // first applies the animated zero height — before Reanimated has registered the
-  // shared value's starting point — so a `withTiming` issued inside the callback
-  // starts from the full height instead of zero and the item lands already-open
-  // with no animation. A `useEffect` runs after that commit, so the timing always
-  // starts from the shared value's real current value.
-  // biome-ignore lint/plugin: enter animation is an imperative side effect on shared values, fired when the measured height or presence changes — not derivable from render state, not mount-only (useMountEffect doesn't apply)
+  // Enter polish: the first layout pass reports a height, then fade/settle in.
+  // The height grow itself rides the `layout` transition (a static-style change),
+  // so this effect only drives the style props that pair with it.
+  // biome-ignore lint/plugin: enter polish is an imperative side effect on shared values, fired when the measured height first lands — not derivable from render state, not mount-only (useMountEffect doesn't apply)
   useEffect(() => {
-    if (contentHeight <= 0 || !isPresent) return;
+    if (contentHeight <= 0 || !isPresent || hasEntered.current) return;
+    hasEntered.current = true;
 
     const dur = (full: number) => (reduced ? 80 : full);
     const easeOut = reduced ? Easing.linear : EASE_OUT;
-
-    if (hasEntered.current) {
-      // Content changed height (expand / collapse)
-      containerHeight.value = withTiming(contentHeight, { duration: dur(260), easing: easeOut });
-    } else {
-      // First measurement — animate the item into view
-      hasEntered.current = true;
-      containerHeight.value = withTiming(contentHeight, { duration: dur(280), easing: easeOut });
-      opacity.value = withTiming(1, { duration: dur(240), easing: easeOut });
-      translateY.value = withTiming(0, { duration: dur(280), easing: easeOut });
-      scale.value = withTiming(1, { duration: dur(280), easing: easeOut });
-    }
-  }, [contentHeight, isPresent, reduced, containerHeight, opacity, translateY, scale]);
+    opacity.value = withTiming(1, { duration: dur(240), easing: easeOut });
+    translateY.value = withTiming(0, { duration: dur(280), easing: easeOut });
+    scale.value = withTiming(1, { duration: dur(280), easing: easeOut });
+  }, [contentHeight, isPresent, reduced, opacity, translateY, scale]);
 
   const onContentLayout = useCallback((event: LayoutChangeEvent) => {
     const height = event.nativeEvent.layout.height;
@@ -151,14 +145,17 @@ export function AnimatedListItem({ children }: AnimatedListItemProps) {
     setContentHeight(height);
   }, []);
 
+  // Present and measured → full height; entering or exiting → 0.
+  const height = isPresent && contentHeight > 0 ? contentHeight : 0;
+
   return (
-    <Animated.View className="overflow-hidden" style={containerStyle}>
+    <Animated.View layout={itemLayout(reduced, isPresent)} className="overflow-hidden" style={{ height }}>
       {/*
-       * onLayout on this view reports the natural content height regardless of
-       * the outer's height: 0, because RN's yoga computes child dimensions
-       * independently of the parent's explicit height.
+       * Absolute so the content is laid out (and measured) independently of the
+       * outer height. A normal-flow child inside a height-0 container reports 0
+       * on Android, which is how the list rendered empty.
        */}
-      <Animated.View onLayout={onContentLayout} style={contentStyle}>
+      <Animated.View onLayout={onContentLayout} style={[{ position: 'absolute', top: 0, left: 0, right: 0 }, contentStyle]}>
         {/* pb-3 (12px) so the gap collapses with the item */}
         <View className="pb-3">{children}</View>
       </Animated.View>

@@ -184,7 +184,7 @@ export function BottomSheet({
             <OverlayBlur />
             <View
               className="absolute inset-0"
-              style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' /* scrim — theme-independent */ }}
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' /* theme-exempt — scrim stays black in both themes */ }}
             />
           </Animated.View>
         ) : null}

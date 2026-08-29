@@ -61,6 +61,18 @@ const DEFAULT_VARIANT: Record<
   },
 };
 
+/**
+ * Row class for the base variant when the leading icon slot is occupied (a real
+ * icon or its same-size placeholder). The icon already supplies the visual
+ * indent a bare text row gets from `px` alone, so the horizontal padding is a
+ * step tighter to keep the label from feeling over-indented.
+ */
+const BASE_ROW_CLASS_WITH_ICON: Record<MenuItemSize, string> = {
+  sm: 'gap-1.5 px-1.5 py-1.5',
+  md: 'gap-2 px-3 py-2.5',
+  lg: 'gap-3 px-4 py-3',
+};
+
 const ROUNDED_VARIANT: Record<MenuItemSize, string> = { sm: 'rounded', md: 'rounded-md', lg: 'rounded-lg' };
 
 /**
@@ -301,6 +313,10 @@ export function MenuItem({
   const scale = hasIconTile ? ICON_TILE_VARIANT[size] : DEFAULT_VARIANT[size];
   const canInteract = !(active || disabled);
   const segmented = variant === 'segmented';
+  // The base variant tightens its horizontal padding when the leading slot is
+  // occupied — the icon (or its placeholder) carries the indent, so the extra
+  // `px` a bare text row needs would only push the label further right.
+  const hasLeadingSlot = Boolean(Icon) || iconPlaceholder;
 
   const labelColorClass = getLabelColorClass({ hasIconTile, mode, active, destructive });
   const iconToken = getIconToken({ mode, active, destructive });
@@ -324,7 +340,12 @@ export function MenuItem({
       {...props}
       className={cn(
         'relative flex-row items-center overflow-hidden',
-        segmented ? SEGMENTED_ROW_CLASS[size] : cn(mode === 'sidebar' && ROUNDED_VARIANT[size], scale.rowClass),
+        segmented
+          ? SEGMENTED_ROW_CLASS[size]
+          : cn(
+              mode === 'sidebar' && ROUNDED_VARIANT[size],
+              hasLeadingSlot && !hasIconTile ? BASE_ROW_CLASS_WITH_ICON[size] : scale.rowClass,
+            ),
         bottomBorder && 'border-border border-b-[1.5px]',
         hasIconTile && active && 'bg-info',
         canInteract && hovered && 'bg-surface-hover',

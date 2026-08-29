@@ -115,32 +115,3 @@ export function reorderItems<T>(items: readonly T[], fromIndex: number, toIndex:
   result.splice(toIndex, 0, moved);
   return result;
 }
-
-/**
- * Move a group of items identified by a `Set` of keys to `toIndex`.
- *
- * The moved items are removed in their current order, then re-inserted as a
- * contiguous block at the target index (which is computed *after* removal,
- * just like `reorderItems`). Returns a new array; does not mutate the input.
- */
-export function reorderMultipleItems<T>(
-  items: readonly T[],
-  keys: readonly string[],
-  selectedSet: ReadonlySet<string>,
-  toIndex: number,
-): T[] {
-  // Partition items into selected and not-selected.
-  const selected: T[] = [];
-  const remaining: T[] = [];
-  for (let i = 0; i < items.length; i += 1) {
-    const item = items[i];
-    if (item !== undefined) {
-      const key = keys[i] ?? '';
-      (selectedSet.has(key) ? selected : remaining).push(item);
-    }
-  }
-  // Splice the selected block into the remaining array at toIndex.
-  const result = [...remaining];
-  result.splice(toIndex, 0, ...selected);
-  return result;
-}

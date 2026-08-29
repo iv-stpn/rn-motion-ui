@@ -103,9 +103,6 @@ export const EXTENSION_MIME_TYPES: Record<string, string> = {
 
 export const FALLBACK_MIME_TYPE = 'application/octet-stream';
 
-/** Below this width the toolbar collapses to the tablet/phone layout. */
-export const IPAD_MIN_WIDTH = 768;
-
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';

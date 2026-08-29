@@ -29,31 +29,7 @@ export function fileExtension(name: string): string {
   return dotIndex === -1 ? '' : name.slice(dotIndex + 1).toLowerCase();
 }
 
-/** Every directory prefix appearing in the given paths (no trailing slashes). */
-export function directoryPathsOf(paths: readonly string[]): Set<string> {
-  const directoryPaths = new Set<string>();
-  for (const relativePath of paths) {
-    let slashIndex = relativePath.indexOf('/');
-    while (slashIndex !== -1) {
-      directoryPaths.add(relativePath.slice(0, slashIndex));
-      slashIndex = relativePath.indexOf('/', slashIndex + 1);
-    }
-  }
-  return directoryPaths;
-}
-
 /** Case-insensitive, natural-order name comparison (Finder's Name column). */
 export function compareEntryNames(left: NamedEntry, right: NamedEntry): number {
   return left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: 'base' });
-}
-
-/** Ancestor folder paths of `path`, root-first, excluding `path` and the root. */
-export function ancestorFolderPaths(path: string): string[] {
-  const ancestors: string[] = [];
-  let parent = pathParent(path);
-  while (parent) {
-    ancestors.unshift(parent);
-    parent = pathParent(parent);
-  }
-  return ancestors;
 }

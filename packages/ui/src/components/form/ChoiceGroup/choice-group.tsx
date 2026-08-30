@@ -149,7 +149,11 @@ export function ChoiceGroup({
             onPress={getOnValueChangeHandler(item.value)}
             className={cn(
               radius,
-              H_INTERACTIVE[size],
+              // Horizontal items keep the fixed interactive height; vertical items
+              // drop it and grow from `py-3` instead, so the label keeps its full
+              // line box rather than being squeezed into the fixed height minus
+              // the padding.
+              isHorizontal && H_INTERACTIVE[size],
               PX_INTERACTIVE[size],
               selected ? VARIANT_SELECTED[variant] : VARIANT_UNSELECTED[variant],
               'items-center justify-center',

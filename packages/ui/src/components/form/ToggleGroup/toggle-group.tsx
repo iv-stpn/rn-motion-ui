@@ -115,7 +115,10 @@ export function ToggleGroup({
     const suppressDivider = isConnected || (selectedIdx !== -1 && (index === selectedIdx || index === selectedIdx - 1));
 
     const itemClass = cn(
-      H_INTERACTIVE[size],
+      // Horizontal items keep the fixed interactive height; vertical items drop
+      // it and grow from `py-3` instead, so the label keeps its full line box
+      // instead of being squeezed into the fixed height minus the padding.
+      isHorizontal && H_INTERACTIVE[size],
       'items-center justify-center',
       PX_INTERACTIVE[size],
       !isHorizontal && 'py-3',
@@ -160,7 +163,11 @@ export function ToggleGroup({
       style={style}
     >
       {isHorizontal ? (
-        <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+        // `grow-0` neutralises the ScrollView's default `flexGrow: 1` so the
+        // horizontal strip hugs its items' height instead of stretching to fill
+        // the shell's column main axis on native. Width still comes from the
+        // shell's cross-axis stretch, so overflowing rows keep scrolling.
+        <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} className="grow-0">
           {segmentedItems}
         </ScrollView>
       ) : (

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../../__stories__/story-harness';
+import { INTERACTIVE_HEIGHT } from '../../../lib/radius';
 import { ChoiceGroup } from './choice-group';
 
 const meta = {
@@ -230,8 +231,15 @@ export const Vertical: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const group = await canvas.findByTestId('choice-vertical');
-    expect(await within(group).findAllByRole('radio')).toHaveLength(3);
+    const radios = await within(group).findAllByRole('radio');
+    expect(radios).toHaveLength(3);
     expect(group.className).toContain('flex-col');
+    // Vertical items grow from vertical padding instead of the fixed interactive
+    // height, so each label keeps its full line box (taller than the fixed
+    // height, never clipped).
+    const firstRadio = radios[0];
+    if (!firstRadio) throw new Error('expected at least one radio');
+    expect(firstRadio.getBoundingClientRect().height).toBeGreaterThan(INTERACTIVE_HEIGHT.md);
   },
 };
 

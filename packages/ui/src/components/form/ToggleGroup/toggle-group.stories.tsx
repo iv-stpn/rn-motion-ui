@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, userEvent, within } from 'storybook/test';
 import { Choice, ControlCard, Playground, Sample, Section, Variants } from '../../../__stories__/story-harness';
+import { INTERACTIVE_HEIGHT } from '../../../lib/radius';
 import { ToggleGroup } from './toggle-group';
 
 const meta = {
@@ -118,14 +119,20 @@ export const BorderedRounded: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const group = await canvas.findByTestId('bordered-rounded');
-    const radios = within(group).findAllByRole('radio');
-    expect(await radios).toHaveLength(3);
+    const radios = await within(group).findAllByRole('radio');
+    expect(radios).toHaveLength(3);
     // Outer border present
     expect(group.className).toContain('border');
     expect(group.className).toContain('rounded-interactive');
     // Selected item (center, index 1) suppresses adjacent dividers — only 1 divider remains
     const dividers = group.querySelectorAll(':scope > [class*="border-r"]');
     expect(dividers.length).toBeLessThanOrEqual(1);
+    // The horizontal strip hugs its items' height — it must not stretch beyond
+    // the item height plus its border.
+    const firstRadio = radios[0];
+    if (!firstRadio) throw new Error('expected at least one radio');
+    const itemHeight = firstRadio.getBoundingClientRect().height;
+    expect(group.getBoundingClientRect().height).toBeLessThanOrEqual(itemHeight + 4);
   },
 };
 
@@ -232,8 +239,15 @@ export const Vertical: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const group = await canvas.findByTestId('vertical-toggle');
-    const radios = within(group).findAllByRole('radio');
-    expect(await radios).toHaveLength(3);
+    const radios = await within(group).findAllByRole('radio');
+    expect(radios).toHaveLength(3);
     expect(group.className).toContain('flex-col');
+    // Vertical items grow from vertical padding instead of the fixed interactive
+    // height, so each label keeps its full line box (taller than the fixed
+    // height, never clipped).
+    const firstRadio = radios[0];
+    if (!firstRadio) throw new Error('expected at least one radio');
+    const itemHeight = firstRadio.getBoundingClientRect().height;
+    expect(itemHeight).toBeGreaterThan(INTERACTIVE_HEIGHT.md);
   },
 };

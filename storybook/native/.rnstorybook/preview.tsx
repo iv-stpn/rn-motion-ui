@@ -35,12 +35,19 @@ const preview: Preview = {
       }, [isDark]);
 
       return (
-        <ScrollView className="flex-1 bg-background" contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
-          <View className="mb-4 self-start">
-            <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
-          </View>
-          <Story />
-        </ScrollView>
+        // `flex-1` sits on a wrapper View, not the ScrollView itself: a native
+        // ScrollView reports its content size to Yoga, so `flex: 1` (flexBasis:
+        // 0) directly on it can let it grow to its content height and stop
+        // scrolling. Bounding the wrapper first gives the ScrollView a definite
+        // height to scroll within — the same shape the demo app uses.
+        <View className="flex-1 bg-background">
+          <ScrollView contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
+            <View className="mb-4 self-start">
+              <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
+            </View>
+            <Story />
+          </ScrollView>
+        </View>
       );
     },
   ],

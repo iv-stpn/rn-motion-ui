@@ -44,14 +44,14 @@ function parseRgb(color: string): [number, number, number] {
 // its place — the same `rgba(27,28,29,…)` drop ElevatedButton wears at its top
 // strength.
 const FILLED_SHADOW_DROP: Record<SurfaceLevel, string> = {
-  1: '0 1px 2px 0 rgba(27, 28, 29, 0.16)',
-  2: '0 1px 2px 0 rgba(27, 28, 29, 0.22)',
-  3: '0 1px 3px 0 rgba(27, 28, 29, 0.28)',
-  4: '0 2px 4px 0 rgba(27, 28, 29, 0.34)',
-  5: '0 2px 5px 0 rgba(27, 28, 29, 0.4)',
-  6: '0 3px 8px 0 rgba(27, 28, 29, 0.44)',
-  7: '0 3px 10px 0 rgba(27, 28, 29, 0.46)',
-  8: '0 4px 12px 0 rgba(27, 28, 29, 0.48)',
+  1: '0 1px 2px 0 rgba(27, 28, 29, 0.16)' /* theme-exempt: fixed dark-neutral drop */,
+  2: '0 1px 2px 0 rgba(27, 28, 29, 0.22)' /* theme-exempt: fixed dark-neutral drop */,
+  3: '0 1px 3px 0 rgba(27, 28, 29, 0.28)' /* theme-exempt: fixed dark-neutral drop */,
+  4: '0 2px 4px 0 rgba(27, 28, 29, 0.34)' /* theme-exempt: fixed dark-neutral drop */,
+  5: '0 2px 5px 0 rgba(27, 28, 29, 0.4)' /* theme-exempt: fixed dark-neutral drop */,
+  6: '0 3px 8px 0 rgba(27, 28, 29, 0.44)' /* theme-exempt: fixed dark-neutral drop */,
+  7: '0 3px 10px 0 rgba(27, 28, 29, 0.46)' /* theme-exempt: fixed dark-neutral drop */,
+  8: '0 4px 12px 0 rgba(27, 28, 29, 0.48)' /* theme-exempt: fixed dark-neutral drop */,
 };
 
 /**
@@ -65,7 +65,7 @@ const FILLED_SHADOW_DROP: Record<SurfaceLevel, string> = {
 function filledButtonShadow(variant: ButtonVariant, level: SurfaceLevel, colors: ReturnType<typeof useThemeColors>): string {
   const fill = colors[FILLED_FILL_TOKEN[variant] ?? 'foreground'];
   const [r, g, b] = parseRgb(fill);
-  return `${FILLED_SHADOW_DROP[level]}, 0 0 0 1px rgba(${r}, ${g}, ${b}, 1)`;
+  return `${FILLED_SHADOW_DROP[level]}, 0 0 0 1px rgba(${r}, ${g}, ${b}, 1)`; /* theme-exempt: ring tint derived from the themed fill RGB */
 }
 
 // Spinner stroke matches the label colour so it reads on every variant.

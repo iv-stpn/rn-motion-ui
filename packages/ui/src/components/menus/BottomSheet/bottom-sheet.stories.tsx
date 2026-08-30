@@ -48,7 +48,7 @@ function SheetBody({ long = false, full = false, onClose }: SheetBodyProps) {
             </Text>
           ))
         : null}
-      <Button onPress={onClose} variant="inverse">
+      <Button onPress={onClose} variant="neutral">
         {DISMISS_LABEL}
       </Button>
     </View>
@@ -88,6 +88,7 @@ function SheetPlayground() {
         size={trigger.size}
         shape={trigger.shape}
         floating={trigger.floating}
+        elevation={ELEVATIONS[trigger.elevation]}
         label={OPEN_SHEET_LABEL}
         onPress={handleOpen}
       />

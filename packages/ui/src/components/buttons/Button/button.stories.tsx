@@ -19,7 +19,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['neutral', 'inverse', 'ghost', 'danger', 'outlineDanger', 'ghostDanger'],
+      options: ['primary', 'neutral', 'ghost', 'danger', 'outlineDanger', 'ghostDanger'],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['rounded', 'pill'] },
@@ -31,8 +31,8 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const VARIANTS = [
+  'primary',
   'neutral',
-  'inverse',
   'ghost',
   'danger',
   'success',
@@ -49,7 +49,11 @@ const DOWNLOAD_LABEL = 'Download';
 const pressedLabel = (n: number) => `Pressed ${n} times`;
 
 // The one token-backed fill, probed in TokenFillsResolve.
-const INVERSE_KEY = 'inverse-key';
+const NEUTRAL_KEY = 'neutral-key';
+// The raised filled button whose elevation shadow FilledElevationCastsFillAwareShadow pins.
+const RAISED_KEY = 'raised-key';
+// The raised neutral button whose elevation shadow NeutralElevationCastsSurfaceLadder pins.
+const NEUTRAL_RAISED_KEY = 'neutral-raised-key';
 // What the browser computes for both an unset custom property and an absent
 // background utility — the collision TokenFillsResolve has to rule out.
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
@@ -57,14 +61,13 @@ const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 type IconSide = (typeof ICON_SIDES)[number];
 
 // Icon colour per variant — filled variants carry their fill's foreground
-// partner (`inverse` the page, so it punches through the slab), the danger
-// outlines carry the danger hue, everything else the plain foreground.
+// partner, the danger outlines carry the danger hue, everything else (including
+// `neutral`'s light surface plate) the plain foreground.
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
-  if (variant === 'neutral' || variant === 'danger') return colors['primary-foreground'];
+  if (variant === 'primary' || variant === 'danger') return colors['primary-foreground'];
   if (variant === 'success') return colors['success-foreground'];
   if (variant === 'warning') return colors['warning-foreground'];
   if (variant === 'info') return colors['info-foreground'];
-  if (variant === 'inverse') return colors['surface-1'];
   if (variant === 'outlineDanger' || variant === 'ghostDanger') return colors.danger;
   return colors.foreground;
 }
@@ -144,8 +147,8 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
               {SIZE_LABELS[name]}
             </Button>
           ))}
-          <Button {...args} accessibilityLabel="Delete" size="icon" variant="inverse">
-            <Trash2 color={colors['surface-1']} size={16} />
+          <Button {...args} accessibilityLabel="Delete" size="icon" variant="neutral">
+            <Trash2 color={colors.foreground} size={16} />
           </Button>
         </Variants>
       </Section>
@@ -173,8 +176,8 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
       <Section title="States">
         <Variants align="center">
           <Sample label="leading icon">
-            <Button {...args} variant="inverse">
-              <Download color={colors['surface-1']} size={16} />
+            <Button {...args} variant="neutral">
+              <Download color={colors.foreground} size={16} />
               {DOWNLOAD_LABEL}
             </Button>
           </Sample>
@@ -217,22 +220,21 @@ export const Primary: Story = {
   },
 };
 
-/** `inverse` is the only variant whose fill/label utilities (`bg-foreground`,
- *  `text-background`) aren't used anywhere else in the library, so a scanner
- *  miss would fail open: the class would simply not exist and the chip would
- *  render transparent with inherited text. This pins it to the custom
- *  properties it must resolve to. */
+/** `neutral` rests on the light surface plate: `bg-surface-3` with `foreground`
+ *  ink. It resolves through the same custom properties the surface ladder and the
+ *  rest of the library use, so the comparison is sRGB-vs-sRGB and survives a
+ *  retint of the token itself. */
 export const TokenFillsResolve: Story = {
   render: () => (
     <View className="flex-row gap-4">
-      <Button testID={INVERSE_KEY} variant="inverse">
+      <Button testID={NEUTRAL_KEY} variant="neutral">
         {CONTINUE_LABEL}
       </Button>
     </View>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const inverseKey = await canvas.findByTestId(INVERSE_KEY);
+    const neutralKey = await canvas.findByTestId(NEUTRAL_KEY);
     const labelOf = (key: HTMLElement) => within(key).getByText(CONTINUE_LABEL);
 
     // Resolve each token the same way the browser resolved the class, so the
@@ -251,8 +253,80 @@ export const TokenFillsResolve: Story = {
     };
 
     try {
-      expect(getComputedStyle(inverseKey).backgroundColor).toBe(resolveToken('--color-foreground'));
-      expect(getComputedStyle(labelOf(inverseKey)).color).toBe(resolveToken('--color-background'));
+      expect(getComputedStyle(neutralKey).backgroundColor).toBe(resolveToken('--color-surface-3'));
+      expect(getComputedStyle(labelOf(neutralKey)).color).toBe(resolveToken('--color-foreground'));
+    } finally {
+      probe.remove();
+    }
+  },
+};
+
+/**
+ * A raised *filled* button casts a *fill-aware* shadow, not the surface ladder's
+ * subtle drop. The ladder is tuned for surfaces resting on the page and reads as
+ * "no elevation" on an opaque button fill (`primary`, the vivid status fills), so
+ * those variants graduate a stronger drop plus a fill-coloured ring instead.
+ * Asserting the two shadows differ is the point: identical would mean the
+ * fill-aware recipe regressed back to the ladder.
+ */
+export const FilledElevationCastsFillAwareShadow: Story = {
+  render: () => (
+    <View className="flex-row gap-4">
+      <Button testID={RAISED_KEY} variant="primary" elevation={3}>
+        {CONTINUE_LABEL}
+      </Button>
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const raised = await canvas.findByTestId(RAISED_KEY);
+    // Probe the ladder's rung directly, like Card's ladder test does, so the
+    // comparison is shadow-recipe vs shadow-recipe rather than against a literal.
+    const probe = document.createElement('div');
+    canvasElement.appendChild(probe);
+    try {
+      probe.className = 'shadow-elevated-3';
+      const ladder = getComputedStyle(probe).boxShadow;
+      const raisedShadow = getComputedStyle(raised).boxShadow;
+      // A real shadow, and a *different* one than the surface ladder would cast.
+      expect(raisedShadow).not.toBe('none');
+      expect(raisedShadow).not.toBe(ladder);
+    } finally {
+      probe.remove();
+    }
+  },
+};
+
+/**
+ * A raised `neutral` button is a *surface* — its `bg-surface-3` plate is the flat
+ * resting surface, so raising `elevation` casts the surface ladder's
+ * `shadow-elevated-N` (drop + rim), exactly like a Card at the same rung. The
+ * regression this pins is a raised `neutral` button that swaps to the filled
+ * variant's fill-aware ring instead. Asserting the two shadows match is the
+ * point: different would mean the neutral plate drifted off the surface ladder.
+ */
+export const NeutralElevationCastsSurfaceLadder: Story = {
+  render: () => (
+    <View className="flex-row gap-4">
+      <Button testID={NEUTRAL_RAISED_KEY} variant="neutral" elevation={3}>
+        {CONTINUE_LABEL}
+      </Button>
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const raised = await canvas.findByTestId(NEUTRAL_RAISED_KEY);
+    // Probe the ladder's rung directly, like Card's ladder test does, so the
+    // comparison is shadow-recipe vs shadow-recipe rather than against a literal.
+    const probe = document.createElement('div');
+    canvasElement.appendChild(probe);
+    try {
+      probe.className = 'shadow-elevated-3';
+      const ladder = getComputedStyle(probe).boxShadow;
+      const raisedShadow = getComputedStyle(raised).boxShadow;
+      // The neutral plate keeps the surface ladder — the shadow is the ladder's own.
+      expect(raisedShadow).not.toBe('none');
+      expect(raisedShadow).toBe(ladder);
     } finally {
       probe.remove();
     }

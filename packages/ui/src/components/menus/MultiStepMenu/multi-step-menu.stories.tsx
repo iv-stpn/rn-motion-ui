@@ -6,6 +6,7 @@ import { NotificationLine as Bell } from 'rn-motion-ui-icons/icons/notification-
 import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
+import { ELEVATIONS } from '../../../__stories__/story-elevations';
 import {
   Action,
   Choice,
@@ -64,7 +65,7 @@ function AppearanceSection({ helpers }: AppearanceSectionProps) {
   return (
     <View className="gap-3">
       <Text className="text-muted-foreground">{APPEARANCE_BODY}</Text>
-      <Button variant="inverse" size="sm" onPress={navigateAdvanced}>
+      <Button variant="neutral" size="sm" onPress={navigateAdvanced}>
         {ADVANCED_APPEARANCE_LABEL}
       </Button>
     </View>
@@ -254,6 +255,7 @@ function MenuPlayground() {
         size={trigger.size}
         shape={trigger.shape}
         floating={trigger.floating}
+        elevation={ELEVATIONS[trigger.elevation]}
         label={OPEN_SETTINGS_LABEL}
         onPress={handleOpen}
       />

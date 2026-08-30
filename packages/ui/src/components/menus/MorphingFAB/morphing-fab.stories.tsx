@@ -155,7 +155,7 @@ function FeedbackPane({ close }: FeedbackPaneProps) {
       </View>
       <View className="flex-row items-center gap-2 px-1 pt-2 pb-1">
         <View className="flex-1">
-          <Button variant="inverse" size="md" onPress={close} disabled={status === 'sending'} className="w-full">
+          <Button variant="neutral" size="md" onPress={close} disabled={status === 'sending'} className="w-full">
             {CANCEL}
           </Button>
         </View>

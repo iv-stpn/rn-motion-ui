@@ -35,7 +35,7 @@ function rightAdornmentFor(
   switch (mode) {
     case 'button':
       return (
-        <Button size="sm" variant="inverse" onPress={onPress} disabled={disabled}>
+        <Button size="sm" variant="neutral" onPress={onPress} disabled={disabled}>
           {OPEN_LABEL}
         </Button>
       );
@@ -95,7 +95,7 @@ function ShowcasePlayground() {
                     description="Manage your account"
                     leftAdornment={{ icon: User }}
                     rightAdornment={
-                      <Button size="sm" variant="inverse" onPress={onPress}>
+                      <Button size="sm" variant="neutral" onPress={onPress}>
                         {OPEN_LABEL}
                       </Button>
                     }

@@ -98,7 +98,7 @@ function StateContent(props: StateContentProps) {
           ) : null}
           {taglineText}
           <Button
-            variant="inverse"
+            variant="neutral"
             size="sm"
             onPress={onDismiss}
             className="mt-2"

@@ -115,7 +115,7 @@ export function TintControl() {
           className="w-24"
           accessibilityLabel={CHROMA_LABEL}
         />
-        <Button size="sm" variant="inverse" onPress={apply} disabled={status === 'applying'} accessibilityLabel={APPLY_LABEL}>
+        <Button size="sm" variant="neutral" onPress={apply} disabled={status === 'applying'} accessibilityLabel={APPLY_LABEL}>
           {APPLY_LABEL}
         </Button>
       </Row>

@@ -37,8 +37,8 @@ const THEME_ITEMS: ButtonSwapItem[] = [
 
 const ANIMATIONS = ['blur', 'roll', 'cascade'] as const satisfies readonly ButtonSwapAnimation[];
 const VARIANTS = [
+  'primary',
   'neutral',
-  'inverse',
   'ghost',
   'outline',
   'danger',
@@ -59,11 +59,10 @@ const STYLED_KEY = 'styled-key';
 /** Icon stroke per variant — the same mapping the label colours make (Button's
  *  `iconColorFor`), so the icon and the label read as one unit on every plate. */
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
-  if (variant === 'danger') return colors['primary-foreground'];
+  if (variant === 'primary' || variant === 'danger') return colors['primary-foreground'];
   if (variant === 'success') return colors['success-foreground'];
   if (variant === 'warning') return colors['warning-foreground'];
   if (variant === 'info') return colors['info-foreground'];
-  if (variant === 'inverse') return colors['surface-1'];
   if (variant === 'outlineDanger' || variant === 'ghostDanger') return colors.danger;
   return colors.foreground;
 }
@@ -167,7 +166,7 @@ function ButtonSwapPlayground(args: ComponentProps<typeof ButtonSwap>) {
             <Swap animation="blur" variant="neutral" />
           </Sample>
           <Sample label="roll">
-            <Swap animation="roll" kind="send" variant="inverse" />
+            <Swap animation="roll" kind="send" variant="neutral" />
           </Sample>
           <Sample label="cascade">
             <Swap animation="cascade" variant="outline" />
@@ -236,7 +235,7 @@ function ButtonSwapPlayground(args: ComponentProps<typeof ButtonSwap>) {
       <Section title="Styling">
         <Variants align="center">
           <Sample label="ripple">
-            <Swap animation={animation} ripple={true} variant="inverse" />
+            <Swap animation={animation} ripple={true} variant="neutral" />
           </Sample>
           <Sample label="contentClassName">
             <ButtonSwap animation={animation} contentClassName="border-[1.5px] border-info" items={COPY_ITEMS} variant="ghost" />

@@ -60,7 +60,7 @@ function SheetBody({ long = false, padded = false, centered = false, onClose }: 
             </Text>
           ))
         : null}
-      <Button onPress={onClose} size="sm" style={{ alignSelf: centered ? 'center' : 'flex-start' }} variant="inverse">
+      <Button onPress={onClose} size="sm" style={{ alignSelf: centered ? 'center' : 'flex-start' }} variant="neutral">
         {CLOSE_LABEL}
       </Button>
     </View>
@@ -111,6 +111,7 @@ function SheetPlayground() {
         size={trigger.size}
         shape={trigger.shape}
         floating={trigger.floating}
+        elevation={ELEVATIONS[trigger.elevation]}
         label={OPEN_SHEET_LABEL}
         onPress={handleOpen}
       />

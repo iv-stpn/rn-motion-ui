@@ -35,6 +35,8 @@ import type { ElevatedVariant } from '../components/buttons/Button/elevated-butt
 import { ElevatedButton } from '../components/buttons/Button/elevated-button';
 import { Text } from '../components/typography/Text/text';
 import { cn } from '../lib/cn';
+import type { SurfaceElevation } from '../lib/elevated';
+import { ELEVATION_KEYS, type ElevationKey } from './story-elevations';
 import { Choice, ControlCard, Toggle } from './story-harness';
 
 // Private Tailwind class maps for the bare Pressable kind, mirroring ButtonMetrics.
@@ -98,6 +100,11 @@ export type TriggerButtonProps = {
    * option — and the bare `Pressable` is underlined text with no surface at all.
    */
   floating?: boolean;
+  /**
+   * `kind === 'button'` only. Forwarded to `Button`'s `elevation`, so the trigger
+   * can float at a rung of the button ladder. `0` is flat (no shadow).
+   */
+  elevation?: SurfaceElevation;
 };
 
 /**
@@ -122,6 +129,7 @@ export function TriggerButton({
   elevatedVariant = 'neutral',
   className,
   floating,
+  elevation,
 }: TriggerButtonProps) {
   if (kind === 'elevated')
     return (
@@ -151,7 +159,15 @@ export function TriggerButton({
     );
 
   return (
-    <Button className="self-start" floating={floating} onPress={onPress} shape={shape} size={size} variant={buttonVariant}>
+    <Button
+      className="self-start"
+      elevation={elevation}
+      floating={floating}
+      onPress={onPress}
+      shape={shape}
+      size={size}
+      variant={buttonVariant}
+    >
       {label}
     </Button>
   );
@@ -170,6 +186,9 @@ export type TriggerState = {
   /** Drives `TriggerButton`'s `floating` — visible on the `button` kind only. */
   floating: boolean;
   setFloating: (next: boolean) => void;
+  /** Drives `TriggerButton`'s `elevation` — visible on the `button` kind only. */
+  elevation: ElevationKey;
+  setElevation: (next: ElevationKey) => void;
 };
 
 /**
@@ -191,7 +210,8 @@ export function useTriggerState(): TriggerState {
   // Starts off, so the trigger looks exactly as it always has until the toggle
   // is used.
   const [floating, setFloating] = useState(false);
-  return { kind, setKind, size, setSize, shape, setShape, floating, setFloating };
+  const [elevation, setElevation] = useState<ElevationKey>('0');
+  return { kind, setKind, size, setSize, shape, setShape, floating, setFloating, elevation, setElevation };
 }
 
 /**
@@ -212,6 +232,15 @@ export function TriggerControls({ state }: TriggerControlsProps) {
           the surface itself — identical labels would collide on
           `story-toggle-floating`. */}
       <Toggle label="Floating trigger" onChange={state.setFloating} value={state.floating} />
+      {/* `elevation` only exists on the `button` kind: ElevatedButton is always
+          elevated (its glossy drop is the component) and the bare Pressable has no
+          surface to float, so the chip is hidden for the other two kinds. Labelled
+          "Trigger elevation", not "Elevation", for the same reason as the toggle
+          above: menu playgrounds also carry a panel "Elevation" choice, and
+          identical labels would collide on `story-choice-elevation`. */}
+      {state.kind === 'button' ? (
+        <Choice label="Trigger elevation" onChange={state.setElevation} options={ELEVATION_KEYS} value={state.elevation} />
+      ) : null}
     </ControlCard>
   );
 }

@@ -143,6 +143,7 @@ function ModalPlayground() {
         size={trigger.size}
         shape={trigger.shape}
         floating={trigger.floating}
+        elevation={ELEVATIONS[trigger.elevation]}
         label={OPEN_MODAL_LABEL}
         onPress={handleOpen}
       />

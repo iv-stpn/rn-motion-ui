@@ -153,7 +153,7 @@ function PrivateKeyView({ onBack }: PrivateKeyViewProps) {
         <ChecklistItem icon={<Ban size={16} color={mutedForeground} />} text="If you lose it, we can't recover it" />
       </View>
       <View className="mt-5 flex-row gap-2">
-        <Button variant="inverse" onPress={onBack} className="flex-1">
+        <Button variant="neutral" onPress={onBack} className="flex-1">
           {CANCEL_LABEL}
         </Button>
         <Button onPress={onBack} className="flex-1">
@@ -218,6 +218,7 @@ type MorphingModalDemoProps = {
   size?: TriggerState['size'];
   shape?: TriggerState['shape'];
   triggerFloating?: boolean;
+  triggerElevation?: SurfaceElevation;
   overlay?: boolean;
   closeOnOutsidePress?: boolean;
   testID?: string;
@@ -231,6 +232,7 @@ function MorphingModalDemo({
   size,
   shape,
   triggerFloating,
+  triggerElevation,
   overlay = true,
   closeOnOutsidePress = true,
   testID,
@@ -242,7 +244,15 @@ function MorphingModalDemo({
   const showRecovery = useCallback(() => setView('recovery'), []);
   return (
     <View className="items-center gap-3">
-      <TriggerButton kind={kind} size={size} shape={shape} floating={triggerFloating} label={OPEN_LABEL} onPress={showOptions} />
+      <TriggerButton
+        kind={kind}
+        size={size}
+        shape={shape}
+        floating={triggerFloating}
+        elevation={triggerElevation}
+        label={OPEN_LABEL}
+        onPress={showOptions}
+      />
       <Text className="text-muted-foreground text-xs">{HINT}</Text>
       <MorphingModal
         viewId={view}
@@ -287,6 +297,7 @@ function MorphingModalPlayground() {
         size={trigger.size}
         shape={trigger.shape}
         triggerFloating={trigger.floating}
+        triggerElevation={ELEVATIONS[trigger.elevation]}
       />
     </Playground>
   );

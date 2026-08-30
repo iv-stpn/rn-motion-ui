@@ -117,6 +117,7 @@ function PopoverPlayground() {
                 size={trigger.size}
                 shape={trigger.shape}
                 floating={trigger.floating}
+                elevation={ELEVATIONS[trigger.elevation]}
                 label={EDIT_PROFILE}
                 onPress={noop}
               />

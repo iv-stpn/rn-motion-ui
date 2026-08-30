@@ -16,8 +16,8 @@ import type { ElevatedVariant } from '../buttons/Button/elevated-button';
  */
 const VARIANT_TOKEN: Record<IconVariant, ThemeToken> = {
   // ── ButtonVariant ────────────────────────────────────────────────────────
-  neutral: 'primary-foreground',
-  inverse: 'primary',
+  primary: 'primary-foreground',
+  neutral: 'background',
   ghost: 'foreground',
   outline: 'foreground',
   danger: 'danger-foreground',
@@ -48,7 +48,7 @@ export type ThemedIconProps = Omit<IconProps, 'color'> & {
    * Pass any `ButtonVariant` / `ElevatedVariant` name to match a specific
    * button family.
    *
-   * @example variant="neutral"  → primary-foreground (white on primary fill)
+   * @example variant="primary"  → primary-foreground (white on primary fill)
    * @example variant="ghost"    → foreground
    * @example variant="success"  → success-foreground (white on green fill)
    * @example variant="outlineDanger" → danger (the danger hue itself)
@@ -73,8 +73,8 @@ export type ThemedIconProps = Omit<IconProps, 'color'> & {
  * the wrapped icon unchanged.
  *
  * @example
- * // Adornment in a neutral (primary-fill) button — picks up primary-foreground
- * <ThemedIcon icon={ArrowRight} variant="neutral" size={16} />
+ * // Adornment in a primary (primary-fill) button — picks up primary-foreground
+ * <ThemedIcon icon={ArrowRight} variant="primary" size={16} />
  *
  * @example
  * // Standalone status icon — success-foreground (white) on the green fill

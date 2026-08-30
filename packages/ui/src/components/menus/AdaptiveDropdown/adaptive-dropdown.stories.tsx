@@ -68,19 +68,20 @@ function PlaygroundTrigger({ open, toggle }: TriggerRenderProps) {
   );
 }
 
-type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape' | 'floating'>;
+type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape' | 'floating' | 'elevation'>;
 
 // The playground's trigger: the same `{ open, toggle }` render prop as above, but
 // the body is a `TriggerButton` so the Trigger chips can swap Button /
 // ElevatedButton / bare Pressable under one dropdown.
 
-function SwappableTrigger({ kind, size, shape, floating, open, toggle }: SwappableTriggerProps) {
+function SwappableTrigger({ kind, size, shape, floating, elevation, open, toggle }: SwappableTriggerProps) {
   return (
     <TriggerButton
       kind={kind}
       size={size}
       shape={shape}
       floating={floating}
+      elevation={ELEVATIONS[elevation]}
       label={open ? CLOSE_MENU_LABEL : MENU_LABEL}
       onPress={toggle}
     />
@@ -118,11 +119,12 @@ function DropdownPlayground() {
         size={trigger.size}
         shape={trigger.shape}
         floating={trigger.floating}
+        elevation={trigger.elevation}
         open={props.open}
         toggle={props.toggle}
       />
     ),
-    [trigger.kind, trigger.size, trigger.shape, trigger.floating],
+    [trigger.kind, trigger.size, trigger.shape, trigger.floating, trigger.elevation],
   );
   // Only hand `open`/`onOpenChange` over when the toggle is on — omitting them lets
   // the component own its state, which is the other half of the API to exhibit.

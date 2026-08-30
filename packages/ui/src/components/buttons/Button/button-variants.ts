@@ -21,7 +21,7 @@ import { LABEL_TEXT_CLASS } from './button-scale';
  * resolve to `foreground`.
  */
 const VARIANT_ICON_COLOR_TOKEN: Partial<Record<ButtonVariant, ThemeToken>> = {
-  inverse: 'surface-1',
+  primary: 'primary-foreground',
   danger: 'primary-foreground',
   success: 'success-foreground',
   warning: 'warning-foreground',
@@ -35,8 +35,8 @@ export function variantIconColorToken(variant: ButtonVariant): ThemeToken {
 }
 
 export type ButtonVariant =
+  | 'primary'
   | 'neutral'
-  | 'inverse'
   | 'ghost'
   | 'outline'
   | 'danger'
@@ -56,8 +56,8 @@ export type ButtonVariant =
 export const buttonContainer = cva('flex-row items-center justify-center', {
   variants: {
     variant: {
+      primary: 'bg-primary',
       neutral: 'bg-surface-3',
-      inverse: 'bg-foreground',
       ghost: 'bg-transparent',
       outline: 'border-[1.5px] border-border bg-transparent',
       danger: 'bg-danger',
@@ -79,8 +79,8 @@ export const buttonContainer = cva('flex-row items-center justify-center', {
 export const buttonLabel = cva('', {
   variants: {
     variant: {
+      primary: 'text-primary-foreground',
       neutral: 'text-foreground',
-      inverse: 'text-background',
       ghost: 'text-foreground',
       outline: 'text-foreground',
       danger: 'text-white',
@@ -99,7 +99,25 @@ export const buttonLabel = cva('', {
 
 /**
  * Variants whose background is an opaque, dark-or-vivid fill, so a ripple has to
- * shimmer white to be visible. Everything else is a light surface plate and takes
- * the dark ripple.
+ * shimmer white to be visible. Everything else (`neutral`'s light surface plate,
+ * ghost/outline's transparency) takes the dark ripple.
  */
-export const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['inverse', 'danger', 'success', 'warning', 'info']);
+export const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['primary', 'danger', 'success', 'warning', 'info']);
+
+/**
+ * Fill token per *filled* variant — the variant's own fill colour, resolved for the
+ * elevation ring (a filled button casts a fill-coloured ring so its edge reads on
+ * any substrate). Mirrors ElevatedButton's `ELEVATED_FILL_TOKEN`: `primary` fills
+ * with the `primary` token and the vivid status fills with themselves. Transparent
+ * variants (`ghost`, `outline`, the danger outlines) have no fill and are absent —
+ * and so is `neutral`: its `surface-3` plate is a *surface*, not an opaque fill, so
+ * a raised neutral button keeps the surface ladder's `shadow-elevated-N` rather than
+ * the fill-aware ring.
+ */
+export const FILLED_FILL_TOKEN: Partial<Record<ButtonVariant, ThemeToken>> = {
+  primary: 'primary',
+  danger: 'danger',
+  success: 'success',
+  warning: 'warning',
+  info: 'info',
+};

@@ -19,27 +19,24 @@ import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass } from
  * `gray` (a Geist-style secondary plate — a fixed #F2F2F2 fill, #707070 label, a
  * 1px neutral ring plus a hairline white top sheen, no gloss and no hover shift).
  *
- * `inverse` is the `neutral` of the *opposite* theme — the
- * `primary`/`primary-foreground` pair swapped — so it stays the exact inverse of
- * the primary action through any consumer retint.
+ * `primary` is the filled monochrome plate — the `primary`/`primary-foreground`
+ * pair — so it stays the primary action. `neutral` is the neutral colour scheme:
+ * the `foreground`/`background` pair, matching the flat Button's `neutral`.
  */
 // biome-ignore lint/style/useExportsLast: declared up top so the colour tables below can key off it; kept with its doc comment for readability
-export type ElevatedVariant = 'neutral' | 'inverse' | 'danger' | 'success' | 'warning' | 'info' | 'white' | 'gray';
+export type ElevatedVariant = 'primary' | 'neutral' | 'danger' | 'success' | 'warning' | 'info' | 'white' | 'gray';
 
 // A glossy filled chip (or, for `white`/`gray`, a flat plate). Everything colour-
 // dependent is resolved from `variant` here so one component covers every hue
 // plus the two plate styles.
 
-// Background class per variant. `neutral` reuses the monochrome `primary` token
-// (near-black on light, near-white on dark). Spelled as literals so the
-// uniwind/Tailwind scanner registers each class.
+// Background class per variant. `primary` reuses the monochrome `primary` token
+// (near-black on light, near-white on dark); `neutral` uses the neutral
+// `foreground` token — the same fill the flat Button's `neutral` wears. Spelled
+// as literals so the uniwind/Tailwind scanner registers each class.
 const ELEVATED_BG: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = {
-  neutral: 'bg-primary',
-  // `inverse` is the `neutral` fill rendered in the opposite theme: `primary`
-  // and `primary-foreground` are each other's opposite-theme twin (a near-black
-  // `primary` pairs with a near-white `primary-foreground`, and the dark theme
-  // swaps them), so the flip stays legible through any retint.
-  inverse: 'bg-primary-foreground',
+  primary: 'bg-primary',
+  neutral: 'bg-foreground',
   danger: 'bg-danger',
   success: 'bg-success',
   warning: 'bg-warning',
@@ -47,12 +44,11 @@ const ELEVATED_BG: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = 
 };
 
 // Label colour class per variant. Coloured fills are vivid, so their
-// `*-foreground` (white) partner reads on top; neutral uses `primary-foreground`.
+// `*-foreground` (white) partner reads on top; primary uses `primary-foreground`
+// and neutral the `background` ink on the `foreground` slab.
 const ELEVATED_LABEL: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = {
-  neutral: 'text-primary-foreground',
-  // The `primary` ink on the `primary-foreground` slab — the opposite-theme twin
-  // of `neutral`'s `primary-foreground` on `primary`.
-  inverse: 'text-primary',
+  primary: 'text-primary-foreground',
+  neutral: 'text-background',
   danger: 'text-danger-foreground',
   success: 'text-success-foreground',
   warning: 'text-warning-foreground',
@@ -62,8 +58,8 @@ const ELEVATED_LABEL: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string>
 // Foreground token per variant — drives the loading spinner stroke so it matches
 // the label on the filled chip.
 const ELEVATED_FOREGROUND_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, ThemeToken> = {
-  neutral: 'primary-foreground',
-  inverse: 'primary',
+  primary: 'primary-foreground',
+  neutral: 'background',
   danger: 'danger-foreground',
   success: 'success-foreground',
   warning: 'warning-foreground',
@@ -73,8 +69,8 @@ const ELEVATED_FOREGROUND_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray
 // Fill token per variant — resolved to sRGB for the drop shadow: the 1px ring is
 // the fill itself and the shadow tint is the fill darkened toward black.
 const ELEVATED_FILL_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, ThemeToken> = {
-  neutral: 'primary',
-  inverse: 'primary-foreground',
+  primary: 'primary',
+  neutral: 'foreground',
   danger: 'danger',
   success: 'success',
   warning: 'warning',
@@ -146,7 +142,7 @@ function parseRgb(color: string): [number, number, number] {
 /**
  * Drop-shadow + ring for an elevated chip. Matches `shadow-fancy-buttons-*` on
  * web: a soft 1px-blur shadow at 48% plus a crisp 1px ring. The monochrome fills
- * (`neutral`, `inverse`) and `white` cast a dark-neutral shadow
+ * (`primary`, `neutral`) and `white` cast a dark-neutral shadow
  * (`rgba(27,28,29,.48)`); vivid fills tint the shadow
  * with the fill darkened toward black. The ring is the fill itself, or the theme border
  * for `white`. `boxShadow` composes both layers in one value (web and native ≥ 0.76
@@ -158,10 +154,10 @@ function elevatedShadow(variant: ElevatedVariant, fill: string, borderColor: str
 
   const [red, green, blue] = parseRgb(fill);
   // The two monochrome fills cast the fixed dark-neutral drop rather than a tint
-  // of themselves: `primary` and `primary-foreground` flip with the page, and
-  // darkening the one that lands near-white in dark mode would put a pale grey
-  // haze under the chip instead of a shadow.
-  if (variant === 'neutral' || variant === 'inverse')
+  // of themselves: `primary` and `foreground` flip with the page, and darkening
+  // the one that lands near-white in dark mode would put a pale grey haze under
+  // the chip instead of a shadow.
+  if (variant === 'primary' || variant === 'neutral')
     return `0px 1px 2px 0px rgba(27,28,29,0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`; /* theme-exempt: fixed dark-neutral shadow for monochrome fills */
 
   const darken = (c: number) => Math.round(c * 0.7);
@@ -296,8 +292,8 @@ function ElevatedHighlights({ id, hovered, radiusClass, width, height }: Elevate
 export interface ElevatedButtonProps extends BaseButtonProps {
   /** Fill colour. Most colours get the glossy treatment (top-down sheen + 1px rim
    *  highlight + coloured drop-shadow ring); `white` is a stroke plate and `gray`
-   *  a fixed Geist-style secondary plate. `inverse` is the `neutral` fill of the
-   *  opposite theme. Defaults to `neutral`. */
+   *  a fixed Geist-style secondary plate. `primary` is the monochrome filled
+   *  plate and `neutral` the neutral `foreground` plate. Defaults to `neutral`. */
   variant?: ElevatedVariant;
   size?: ButtonSize;
   shape?: ButtonShape;

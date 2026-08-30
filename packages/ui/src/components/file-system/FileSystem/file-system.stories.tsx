@@ -527,7 +527,7 @@ function PlaygroundStatus({ message, onReset }: PlaygroundStatusProps) {
       <Text className={cn('flex-1', message ? 'text-foreground' : 'text-muted-foreground')} size="xs">
         {message ?? PLAYGROUND_HINT}
       </Text>
-      <Button onPress={onReset} size="sm" variant="inverse">
+      <Button onPress={onReset} size="sm" variant="neutral">
         {RESET_LABEL}
       </Button>
     </View>
@@ -3695,7 +3695,7 @@ export const WithCustomEmptyState: Story = {
           <Text size="sm" weight="semibold">
             {`${folderName} is ready`}
           </Text>
-          <Button onPress={onEmptyCtaPress} size="sm" variant="inverse">
+          <Button onPress={onEmptyCtaPress} size="sm" variant="neutral">
             {EMPTY_CTA}
           </Button>
         </View>

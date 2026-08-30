@@ -83,20 +83,21 @@ function PlainTrigger({ open }: PlainTriggerProps) {
   );
 }
 
-type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape' | 'floating'>;
+type SwappableTriggerProps = TriggerRenderProps & Pick<TriggerState, 'kind' | 'size' | 'shape' | 'floating' | 'elevation'>;
 
 // The playground's trigger: still the `{ open, toggle }` render prop, but the body
 // is a `TriggerButton` so the Trigger chips can swap Button / ElevatedButton /
 // bare Pressable under one menu. Each of those is pressable in its own right,
 // which is exactly why `onPress` has to be `toggle` — see TRIGGER_NOTE.
 
-function SwappableTrigger({ kind, size, shape, floating, open, toggle }: SwappableTriggerProps) {
+function SwappableTrigger({ kind, size, shape, floating, elevation, open, toggle }: SwappableTriggerProps) {
   return (
     <TriggerButton
       kind={kind}
       size={size}
       shape={shape}
       floating={floating}
+      elevation={ELEVATIONS[elevation]}
       label={open ? TRIGGER_OPEN : TRIGGER_CLOSED}
       onPress={toggle}
     />
@@ -125,11 +126,12 @@ function HoverMenuPlayground() {
         size={trigger.size}
         shape={trigger.shape}
         floating={trigger.floating}
+        elevation={trigger.elevation}
         open={props.open}
         toggle={props.toggle}
       />
     ),
-    [trigger.kind, trigger.size, trigger.shape, trigger.floating],
+    [trigger.kind, trigger.size, trigger.shape, trigger.floating, trigger.elevation],
   );
 
   return (

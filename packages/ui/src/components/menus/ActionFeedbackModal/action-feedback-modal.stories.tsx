@@ -149,6 +149,7 @@ function FeedbackPlayground() {
         size={trigger.size}
         shape={trigger.shape}
         floating={trigger.floating}
+        elevation={ELEVATIONS[trigger.elevation]}
         label={RUN_LABEL}
         onPress={run}
       />

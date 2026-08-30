@@ -52,7 +52,7 @@ function ThemeSwitcher() {
         <Button
           key={name}
           size="sm"
-          variant={theme === name ? 'inverse' : 'neutral'}
+          variant={theme === name ? 'primary' : 'ghost'}
           accessibilityLabel={THEME_LABELS[name]}
           onPress={SET_THEME[name]}
         >

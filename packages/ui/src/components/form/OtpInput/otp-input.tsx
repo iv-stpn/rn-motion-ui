@@ -198,16 +198,6 @@ function OtpSlot({
       className={slotClassName}
       style={slotStyleOverrides}
     >
-      {/* Outline ring around the active slot so the selected cell is
-          immediately obvious. An absolutely-positioned sibling pinned to the
-          slot's own bounds, so its border lands exactly on top of the slot's
-          and the active cell reads as a single 1.5px edge rather than a doubled
-          one — the slot keeps its status colour underneath (success, error),
-          which the ring covers while the cell is active. */}
-      {isActive ? (
-        <View className="pointer-events-none absolute inset-0 rounded-interactive border-[1.5px] border-foreground" />
-      ) : null}
-
       {/* Blinking caret — shown only in an EMPTY active slot (with stick visible).
           Flexbox wrapper centres the stick; MotiView handles the blink. */}
       {isActive && !char && !showSuccess && !hideStick && !reduce ? (

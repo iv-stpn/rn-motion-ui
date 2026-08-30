@@ -193,7 +193,17 @@ export function MorphingFAB({
       collapsable={false}
       testID={testID}
       style={[
-        { position: 'absolute', bottom: 16, zIndex: 30, pointerEvents: 'box-none', ...(left ? { left: 16 } : { right: 16 }) },
+        {
+          position: 'absolute',
+          bottom: 16,
+          zIndex: 30,
+          pointerEvents: 'box-none',
+          // Size the root to the shell so the shell's corner anchor stays
+          // non-negative — a 0×0 parent drops the absolute child on Fabric.
+          width: open ? expandedWidth : TRIGGER_SIZE,
+          height: open ? expandedHeight : TRIGGER_SIZE,
+          ...(left ? { left: 16 } : { right: 16 }),
+        },
         style,
       ]}
     >

@@ -24,7 +24,6 @@ import {
   FS_DRAG_CONTAINER_TEST_ID,
   FS_DROP_HINT_TEST_ID,
   FS_DROP_INDICATOR_TEST_ID,
-  FS_OVERLAY_DROPZONE_TEST_ID,
   fileSystemEntryTestID,
 } from './logic/file-system-test-id';
 import type {
@@ -2805,20 +2804,21 @@ export const DropIntoOwnFolder: Story = {
     const ownFolder = await listRow(canvas, 'Reports');
     const ancestor = await listRow(canvas, 'Documents');
 
-    // Lift, then drive the pointer to the release point and wait for an overlay
-    // dropzone to own it. The overlays mount one tick *after* the drag starts
-    // (`dragActive` is deferred so mounting over the source row doesn't tear the
-    // browser's drag down) and measure a tick after that; each paints its outline
-    // the moment it has measured and won the hit test. Waiting on that outline is
-    // the deterministic stand-in for a fixed settle count, which races under load —
-    // `liftDrag`'s own settle covers none of these, and releasing against unmeasured
-    // boxes makes the store resolve the wrong (ancestor) zone instead.
-    const dropOn = async (target: Element) => {
+    // Lift, then drive the pointer to the release point and wait for the store to
+    // name *this* folder the drop target. The overlays mount one tick *after* the
+    // drag starts (`dragActive` is deferred so mounting over the source row doesn't
+    // tear the browser's drag down) and measure a tick after that. Both the
+    // Documents and Reports overlays are portal zones, so the shared outline can
+    // flash the ancestor first while the descendant is still measuring; the
+    // "Move into <folder>" hint names the over zone's destination, so waiting on its
+    // label pins the drop to the right overlay — and the hint only appears once that
+    // zone has measured and won the hit test.
+    const dropOn = async (target: Element, label: string) => {
       const transfer = newDragTransfer();
       const to = centerOf(target);
       await liftDrag(file, transfer, centerOf(file));
       fireDrag(file, 'drag', transfer, to);
-      await canvas.findByTestId(FS_OVERLAY_DROPZONE_TEST_ID);
+      await waitFor(() => expect(canvas.queryByTestId(FS_DROP_HINT_TEST_ID)).toHaveTextContent(`Move into ${label}`));
       fireDrag(target, 'dragenter', transfer, to);
       fireDrag(target, 'dragover', transfer, to);
       fireDrag(target, 'drop', transfer, to);
@@ -2827,12 +2827,12 @@ export const DropIntoOwnFolder: Story = {
 
     // Onto its own folder: the Reports/ overlay wins the tie-break over the larger
     // Documents/ overlay, but nothing can move into the folder it already lives in.
-    await dropOn(ownFolder);
+    await dropOn(ownFolder, 'Reports');
     await expect(args.onMove).not.toHaveBeenCalled();
 
     // The same file onto its ancestor still moves, proving the lift above really
     // carried a movable entry and the no-op was the folder's own, not a dead drag.
-    await dropOn(ancestor);
+    await dropOn(ancestor, 'Documents');
     await waitFor(() =>
       expect(args.onMove).toHaveBeenCalledWith({
         destination: 'Documents/',

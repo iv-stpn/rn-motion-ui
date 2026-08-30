@@ -5,7 +5,7 @@ import { expect, fn, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
-import { CheckboxCard, CheckboxCardGroup, type CheckboxCardGroupProps } from './checkbox-card';
+import { CheckboxCard, CheckboxCardGroup, type CheckboxCardGroupProps, type CheckboxCardProps } from './checkbox-card';
 
 const meta = {
   title: 'Form/CheckboxCard',
@@ -31,11 +31,17 @@ const handleChange = fn();
 
 type Orientation = NonNullable<CheckboxCardGroupProps['orientation']>;
 type Layout = NonNullable<CheckboxCardGroupProps['layout']>;
+type Tone = NonNullable<CheckboxCardProps['tone']>;
+type Variant = NonNullable<CheckboxCardProps['variant']>;
 
 const ORIENTATIONS = ['horizontal', 'vertical'] as const satisfies readonly Orientation[];
 // Two independent axes: `orientation` lays the cards out, `layout` lays each
 // card's own contents out. Flip both in the playground to see they compose.
 const LAYOUTS = ['stacked', 'inline'] as const satisfies readonly Layout[];
+// The selection accent: `neutral` (primary) vs `info` (blue).
+const TONES = ['neutral', 'info'] as const satisfies readonly Tone[];
+// Whether the box + mark indicator shows, or the border alone carries selection.
+const VARIANTS = ['checkbox', 'card'] as const satisfies readonly Variant[];
 
 function CheckboxCardGroupDemo() {
   const [addons, setAddons] = useState<string[]>(['support']);
@@ -69,6 +75,8 @@ function CheckboxCardPlayground() {
   const [addons, setAddons] = useState<string[]>(['support']);
   const [orientation, setOrientation] = useState<Orientation>('horizontal');
   const [layout, setLayout] = useState<Layout>('stacked');
+  const [tone, setTone] = useState<Tone>('neutral');
+  const [variant, setVariant] = useState<Variant>('checkbox');
   const [badges, setBadges] = useState(true);
   const [details, setDetails] = useState(false);
   const [numeric, setNumeric] = useState(true);
@@ -81,6 +89,8 @@ function CheckboxCardPlayground() {
       <ControlCard title="Options">
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
         <Choice label="Layout" onChange={setLayout} options={LAYOUTS} value={layout} />
+        <Choice label="Tone" onChange={setTone} options={TONES} value={tone} />
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />
@@ -90,7 +100,7 @@ function CheckboxCardPlayground() {
       </ControlCard>
 
       {/* Any number of cards can be checked, so each one animates its own box
-          into the `info` accent. The group just owns the selected array. */}
+          into the selected tone's accent. The group just owns the selected array. */}
       <CheckboxCardGroup
         floating={floating}
         elevation={ELEVATIONS[elevationKey]}
@@ -98,7 +108,9 @@ function CheckboxCardPlayground() {
         layout={layout}
         onValueChange={setAddons}
         orientation={orientation}
+        tone={tone}
         value={addons}
+        variant={variant}
       >
         <CheckboxCard numeric={numeric} subtitle={SEATS_SUB} title={SEATS_TITLE} value="seats">
           {details ? <Text className="text-muted-foreground text-xs">{SEATS_TEXT}</Text> : null}
@@ -129,6 +141,8 @@ function CheckboxCardPlayground() {
             onSelectedChange={handleChange}
             subtitle={SEATS_SUB}
             title={SEATS_TITLE}
+            tone={tone}
+            variant={variant}
           />
           <CheckboxCard
             badge={SUPPORT_BADGE}
@@ -139,6 +153,8 @@ function CheckboxCardPlayground() {
             onSelectedChange={handleChange}
             subtitle={SUPPORT_SUB}
             title={SUPPORT_TITLE}
+            tone={tone}
+            variant={variant}
           />
         </View>
       </Section>
@@ -154,6 +170,8 @@ function CheckboxCardPlayground() {
             onSelectedChange={handleChange}
             subtitle={SEATS_SUB}
             title={SEATS_TITLE}
+            tone={tone}
+            variant={variant}
           />
           <CheckboxCard
             floating={floating}
@@ -164,6 +182,8 @@ function CheckboxCardPlayground() {
             onSelectedChange={handleChange}
             subtitle={SUPPORT_SUB}
             title={SUPPORT_TITLE}
+            tone={tone}
+            variant={variant}
           />
         </View>
       </Section>
@@ -177,6 +197,8 @@ function CheckboxCardPlayground() {
             onSelectedChange={handleChange}
             subtitle={SEATS_SUB}
             title={SEATS_TITLE}
+            tone={tone}
+            variant={variant}
           >
             <Text className="text-muted-foreground text-xs">{SEATS_TEXT}</Text>
           </CheckboxCard>
@@ -250,6 +272,29 @@ export const MultiSelect: Story = {
     // Clicking a checked card removes it from the array rather than doing nothing.
     await userEvent.click(support);
     await expect(support).toHaveAttribute('aria-checked', 'false');
+    await expect(seats).toHaveAttribute('aria-checked', 'true');
+  },
+};
+
+export const CardVariant: Story = {
+  name: 'Demo: Border-only (variant="card")',
+  render: () => (
+    <CheckboxCardGroup defaultValue={['support']} style={{ width: ROW_WIDTH }} variant="card">
+      <CheckboxCard numeric={true} subtitle={SEATS_SUB} title={SEATS_TITLE} value="seats" />
+      <CheckboxCard badge={SUPPORT_BADGE} numeric={true} subtitle={SUPPORT_SUB} title={SUPPORT_TITLE} value="support" />
+    </CheckboxCardGroup>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // variant="card" drops the box and its mark, so the derived -control/-check
+    // testIDs never render and the border + tint carry selection alone.
+    const support = await canvas.findByRole('checkbox', { name: SUPPORT_TITLE });
+    await expect(support).toHaveAttribute('aria-checked', 'true');
+    await expect(canvas.queryByTestId('checkbox-card-group-card-support-control')).toBeNull();
+    await expect(canvas.queryByTestId('checkbox-card-group-card-support-check')).toBeNull();
+    // Toggling still works without the indicator.
+    const seats = await canvas.findByRole('checkbox', { name: SEATS_TITLE });
+    await userEvent.click(seats);
     await expect(seats).toHaveAttribute('aria-checked', 'true');
   },
 };

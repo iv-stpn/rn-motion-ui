@@ -97,7 +97,7 @@ export function CheckboxBox({
       transition={{ scale: SPRING_PRESS, backgroundColor: ct }}
       testID={testID ? `${testID}-control` : undefined}
       className={cn(
-        'relative h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-md border-[1.5px]',
+        'relative h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm border-[1.5px]',
         showMark && !disabled ? BOX_TONE_BORDER[tone] : 'border-muted-foreground/50',
       )}
     >

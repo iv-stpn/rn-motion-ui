@@ -56,10 +56,10 @@ const group = cva('gap-3', {
   defaultVariants: { orientation: 'vertical' },
 });
 
-// Ring outer size (h-5 = 20 px) and dot size (h-2.5 = 10 px). Used to centre
+// Ring outer size (h-5 = 20 px) and dot size (h-3 = 12 px). Used to centre
 // the overlay dot inside the ring measured via the Pressable's onLayout.
 const RING_SIZE = 20;
-const DOT_SIZE = 10;
+const DOT_SIZE = 12;
 
 export function RadioGroup({
   value,
@@ -114,7 +114,7 @@ export function RadioGroup({
             }}
             transition={reduce ? TIMING_INSTANT : indicatorSpring}
             testID={`${testID ?? 'radio-group'}-indicator`}
-            className="pointer-events-none absolute top-0 left-0 h-2.5 w-2.5 rounded-full bg-primary"
+            className="pointer-events-none absolute top-0 left-0 h-3 w-3 rounded-full bg-primary"
           />
         ) : null}
         {children}

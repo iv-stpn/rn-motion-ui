@@ -8,6 +8,7 @@ import { Text } from '../../typography/Text/text';
 import { RadioCard, RadioCardGroup, type RadioCardGroupProps, type RadioCardProps } from './radio-card';
 
 type RadioCardVariant = NonNullable<RadioCardProps['variant']>;
+type RadioCardTone = NonNullable<RadioCardProps['tone']>;
 
 const meta = {
   title: 'Form/RadioCard',
@@ -38,6 +39,8 @@ const ORIENTATIONS = ['horizontal', 'vertical'] as const satisfies readonly Orie
 const LAYOUTS = ['stacked', 'inline'] as const satisfies readonly Layout[];
 
 const VARIANTS: RadioCardVariant[] = ['radio', 'card'];
+// The selection accent: `neutral` (primary) vs `info` (blue).
+const TONES = ['neutral', 'info'] as const satisfies readonly RadioCardTone[];
 
 /** Inline cards in a vertical group — the settings-list shape the layout exists
  *  for: text on the left, ring on the trailing edge, one row per option. */
@@ -69,6 +72,7 @@ function RadioCardPlayground() {
   const [details, setDetails] = useState(false);
   const [numeric, setNumeric] = useState(true);
   const [variant, setVariant] = useState<RadioCardVariant>('radio');
+  const [tone, setTone] = useState<RadioCardTone>('neutral');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
 
@@ -78,6 +82,7 @@ function RadioCardPlayground() {
         <Choice label="Orientation" onChange={setOrientation} options={ORIENTATIONS} value={orientation} />
         <Choice label="Layout" onChange={setLayout} options={LAYOUTS} value={layout} />
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
+        <Choice label="Tone" onChange={setTone} options={TONES} value={tone} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Badges" onChange={setBadges} value={badges} />
@@ -94,6 +99,7 @@ function RadioCardPlayground() {
         layout={layout}
         onValueChange={setPlan}
         orientation={orientation}
+        tone={tone}
         value={plan}
         variant={variant}
       >
@@ -126,6 +132,7 @@ function RadioCardPlayground() {
             selected={true}
             subtitle={MONTHLY_SUB}
             title={MONTHLY_TITLE}
+            tone={tone}
             variant={variant}
           />
           <RadioCard
@@ -137,6 +144,7 @@ function RadioCardPlayground() {
             selected={false}
             subtitle={YEARLY_SUB}
             title={YEARLY_TITLE}
+            tone={tone}
             variant={variant}
           />
         </View>
@@ -151,6 +159,7 @@ function RadioCardPlayground() {
             selected={false}
             subtitle={MONTHLY_SUB}
             title={MONTHLY_TITLE}
+            tone={tone}
             variant={variant}
           >
             <Text className="text-muted-foreground text-xs">{SEAT_TEXT}</Text>
@@ -230,5 +239,29 @@ export const SingleSelect: Story = {
     await userEvent.click(monthly);
     await expect(monthly).toHaveAttribute('aria-checked', 'true');
     await expect(yearly).toHaveAttribute('aria-checked', 'false');
+  },
+};
+
+export const CardVariant: Story = {
+  name: 'Demo: Border-only (variant="card")',
+  render: () => (
+    <RadioCardGroup className="w-120" defaultValue="monthly" variant="card">
+      <RadioCard numeric={true} subtitle={MONTHLY_SUB} title={MONTHLY_TITLE} value="monthly" />
+      <RadioCard badge={YEARLY_BADGE} numeric={true} subtitle={YEARLY_SUB} title={YEARLY_TITLE} value="yearly" />
+    </RadioCardGroup>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // variant="card" drops the ring and dot, so the derived -ring/-dot testIDs
+    // never render and the border + tint carry selection alone.
+    const monthly = await canvas.findByTestId('radio-card-group-card-monthly');
+    await expect(monthly).toHaveAttribute('aria-checked', 'true');
+    await expect(canvas.queryByTestId('radio-card-group-card-monthly-ring')).toBeNull();
+    await expect(canvas.queryByTestId('radio-card-group-card-monthly-dot')).toBeNull();
+    // Selection still moves between cards without the indicator.
+    const yearly = await canvas.findByTestId('radio-card-group-card-yearly');
+    await userEvent.click(yearly);
+    await expect(yearly).toHaveAttribute('aria-checked', 'true');
+    await expect(monthly).toHaveAttribute('aria-checked', 'false');
   },
 };

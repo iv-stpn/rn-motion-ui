@@ -12,9 +12,6 @@ import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT }
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 
-/** Opacity of the selected card's `info` wash — the animated `bg-info/5`. */
-const TINT_ALPHA = 0.05;
-
 /**
  * The selection accent at a given alpha, derived from the live token so a
  * consumer `@theme` override carries into the tint.
@@ -35,6 +32,8 @@ function tintAt(color: string, alpha: number) {
 
 type RadioCardRingProps = {
   selected: boolean;
+  /** Resolved selection accent color — the token already mapped through `TONE_TOKEN`. */
+  accent: string;
   /** Resolved selection animation, already merged with the group/card overrides. */
   transition: MotiTransitionProp;
   /** The card's resolved testID; the ring and dot derive from it. */
@@ -45,21 +44,21 @@ type RadioCardRingProps = {
  * The radio ring and its dot. Kept private to this file because only `RadioCard`
  * renders it, and split out of the card body so the card stays readable.
  *
- * The ring's border cross-fades between `border` and `info` as a real color
- * interpolation; the dot fades and scales in place. Nothing is measured — each
- * card owns its own dot, so there is no cross-card geometry to resolve.
+ * The ring's border cross-fades between `border` and the card's accent as a real
+ * color interpolation; the dot fades and scales in place. Nothing is measured —
+ * each card owns its own dot, so there is no cross-card geometry to resolve.
  */
-function RadioCardRing({ selected, transition, testID }: RadioCardRingProps) {
+function RadioCardRing({ selected, accent, transition, testID }: RadioCardRingProps) {
   const reduce = useReducedMotion();
-  // Resolve both ends of the border cross-fade through the token bridge so they
-  // follow consumer @theme overrides.
-  const info = useThemeColor('info');
+  // Resolve the unselected end of the border cross-fade through the token bridge
+  // so it follows consumer @theme overrides; the selected end is the accent the
+  // caller resolved, so the ring and the card tint can never drift apart.
   const border = useThemeColor('border');
   const t = reduce ? TIMING_INSTANT : transition;
 
   return (
     <MotiView
-      animate={{ borderColor: selected ? info : border }}
+      animate={{ borderColor: selected ? accent : border }}
       transition={t}
       testID={testID ? `${testID}-ring` : undefined}
       // `shrink-0` matters inline, where the ring shares a row with the text
@@ -75,7 +74,10 @@ function RadioCardRing({ selected, transition, testID }: RadioCardRingProps) {
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
             transition={t}
             testID={testID ? `${testID}-dot` : undefined}
-            className="h-3.5 w-3.5 rounded-full bg-info"
+            // Same 12 px dot as Radio — the ring is already the same 20 px circle,
+            // so this keeps the two controls pixel-identical.
+            className="h-3 w-3 rounded-full"
+            style={{ backgroundColor: accent }}
           />
         ) : null}
       </AnimatePresence>
@@ -87,9 +89,40 @@ function RadioCardRing({ selected, transition, testID }: RadioCardRingProps) {
  *  and background tint to indicate selection. */
 type RadioCardVariant = 'radio' | 'card';
 
+/** Selection accent. `"neutral"` (default) is the primary token — the same
+ *  near-black/near-white fill a default `Radio` uses — and `"info"` is the blue
+ *  status token. */
+type RadioCardTone = 'neutral' | 'info';
+
+/** Token resolved for a tone; `neutral` maps to the monochrome `primary` token. */
+const TONE_TOKEN: Record<RadioCardTone, 'primary' | 'info'> = { neutral: 'primary', info: 'info' };
+
+/** Selected background wash alpha per tone. `neutral` carries twice the wash of
+ *  `info` because `primary` is achromatic and reads fainter at the same alpha. */
+const TONE_TINT_ALPHA: Record<RadioCardTone, number> = { neutral: 0.1, info: 0.05 };
+
+/**
+ * Wash alpha for the selected background: zero on a light surface (the selection
+ * reads through the border + dot alone, and a grey wash would muddy the white),
+ * the per-tone alpha on a dark surface where a light tint lifts the selected
+ * card off its neighbours. Keyed off the resolved surface rather than
+ * `useColorScheme` so it follows the manual `.dark`/`.light` toggles that
+ * `useThemeColor` already subscribes to.
+ */
+function tintAlphaFor(tone: RadioCardTone, surfaceColor: string): number {
+  const isDark = (cssColorToOklch(surfaceColor)?.lightness ?? 1) < 0.5;
+  return isDark ? TONE_TINT_ALPHA[tone] : 0;
+}
+
+/** Border-width class for the card surface: the resting 1.5px hairline steps up
+ *  to 2px when selected so the highlight reads stronger than the resting edge. */
+function cardBorderWidth(selected: boolean) {
+  return selected ? 'border-2' : 'border-[1.5px]';
+}
+
 /**
  * How a card arranges its own contents. `"stacked"` puts the ring on a row of
- * its own above the text; `"inline"` moves it to the trailing edge, centred
+ * its own above the text; `"inline"` moves it to the trailing edge, top-aligned
  * against the text beside it.
  *
  * Distinct from the group's `orientation`, which lays the *cards* out relative
@@ -107,12 +140,16 @@ type RadioCardCtx = {
   testID?: string;
   /** Group-level variant. A card can override it. */
   variant?: RadioCardVariant;
+  /** Group-level selection accent. A card can override it. */
+  tone?: RadioCardTone;
   /** Group-level elevation. A card can override it. */
   elevation: SurfaceElevation;
   /** Group-level floating halo. A card can override it. */
   floating: boolean;
   /** Group-level card layout. A card can override it. */
   layout: RadioCardLayout;
+  /** Group-level orientation — whether the cards sit side by side or stacked. */
+  orientation: 'vertical' | 'horizontal';
 };
 
 const RadioCardContext = createContext<RadioCardCtx | null>(null);
@@ -131,7 +168,7 @@ export type RadioCardGroupProps = {
   /**
    * How every card arranges its own contents. `"stacked"` (default) puts the
    * ring on a row above the text; `"inline"` moves it to the trailing edge,
-   * centred against the text. A card can override it with its own `layout`.
+   * top-aligned against the text. A card can override it with its own `layout`.
    */
   layout?: RadioCardLayout;
   /** Additional UniWind class names merged onto the group container. */
@@ -150,6 +187,12 @@ export type RadioCardGroupProps = {
    * tint. A card can override it with its own `variant`.
    */
   variant?: RadioCardVariant;
+  /**
+   * Selection accent for every card in the group. `"neutral"` (default) fills
+   * the dot and tints the border with the primary token; `"info"` uses the blue
+   * status token. A card can override it with its own `tone`.
+   */
+  tone?: RadioCardTone;
   /**
    * Swap the card's ladder shadow for the input field's large, diffuse halo
    * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
@@ -195,6 +238,7 @@ export function RadioCardGroup({
   testID,
   transition,
   variant,
+  tone,
   floating = false,
   elevation = 3,
 }: RadioCardGroupProps) {
@@ -211,7 +255,9 @@ export function RadioCardGroup({
   );
 
   return (
-    <RadioCardContext.Provider value={{ value: current, setValue, transition, testID, variant, floating, elevation, layout }}>
+    <RadioCardContext.Provider
+      value={{ value: current, setValue, transition, testID, variant, tone, floating, elevation, layout, orientation }}
+    >
       <View accessibilityRole="radiogroup" testID={testID} className={cn(group({ orientation }), className)} style={style}>
         {children}
       </View>
@@ -226,23 +272,30 @@ type RadioCardBodyProps = {
   /** The already-built badge, or `null` when the card has none. */
   badge: ReactNode;
   inline: boolean;
+  /** Whether the group lays its cards side by side — the badge drops below the
+   *  title when this is true, beside it when false. */
+  horizontal: boolean;
+  /** No indicator (`variant="card"`): keep the badge in the body rather than on
+   *  a leading indicator row. */
+  card: boolean;
   children?: ReactNode;
 };
 
 /**
  * The card's text column — title, optional subtitle, any custom content. Inline,
- * the badge joins the title it qualifies; stacked, it rides the ring's row
- * instead and only the title lands here.
+ * the badge sits beside the title in a vertical group but drops below it in a
+ * horizontal one, where the narrow card has no room beside; stacked, it rides
+ * the ring's row instead and only the title lands here. Under `variant="card"`
+ * there is no ring, so the badge stays in the body the same way.
  *
  * Private to this file; split out so `RadioCard` stays under the complexity cap.
- * `flex-1` when inline so the column claims the width the ring isn't using, and
- * `shrink` on the title so a long one wraps rather than pushing the badge past
- * the card's edge.
+ * `flex-1` when inline so the column claims the width the ring isn't using.
  */
-function RadioCardBody({ title, subtitle, numeric, badge, inline, children }: RadioCardBodyProps) {
+function RadioCardBody({ title, subtitle, numeric, badge, inline, horizontal, card, children }: RadioCardBodyProps) {
+  const badgeInBody = inline || card;
   return (
     <View className={cn('gap-1', inline && 'flex-1')}>
-      {inline ? (
+      {badgeInBody && !horizontal ? (
         <View className="flex-row items-center gap-2">
           <Text weight="semibold" className="shrink text-base text-foreground">
             {title}
@@ -254,6 +307,7 @@ function RadioCardBody({ title, subtitle, numeric, badge, inline, children }: Ra
           {title}
         </Text>
       )}
+      {badgeInBody && horizontal && badge ? <View className="self-start">{badge}</View> : null}
       {subtitle ? (
         <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
           {subtitle}
@@ -315,10 +369,16 @@ export type RadioCardProps = {
    */
   variant?: RadioCardVariant;
   /**
+   * Selection accent. `"neutral"` (default) fills the dot and tints the border
+   * with the primary token (the same fill a default `Radio` uses); `"info"` uses
+   * the blue status token. Inherits the group's value when unset.
+   */
+  tone?: RadioCardTone;
+  /**
    * How the card arranges its contents. `"stacked"` (default) puts the ring on
-   * a row above the text; `"inline"` moves it to the trailing edge, centred
-   * against the text, and the `badge` follows the title instead of sharing the
-   * ring's row. Inherits the group's value when unset.
+   * a row above the text; `"inline"` moves it to the trailing edge, top-aligned
+   * against the text, and the `badge` joins the title — beside it in a vertical
+   * group, below it in a horizontal one. Inherits the group's value when unset.
    */
   layout?: RadioCardLayout;
   /**
@@ -366,6 +426,7 @@ export function RadioCard({
   testID,
   transition,
   variant,
+  tone,
   layout,
   floating,
   elevation,
@@ -375,13 +436,20 @@ export function RadioCard({
     throw new Error('RadioCardItem with a `value` prop must be used inside <RadioCard>');
   const inGroup = groupCtx !== null && value !== undefined;
   const reduce = useReducedMotion();
-  const info = useThemeColor('info');
 
   const selected = inGroup ? groupCtx.value === value : Boolean(selectedProp);
   const resolvedVariant = variant ?? groupCtx?.variant ?? 'radio';
+  const card = resolvedVariant === 'card';
+  const resolvedTone = tone ?? groupCtx?.tone ?? 'neutral';
+  const accent = useThemeColor(TONE_TOKEN[resolvedTone]);
+  const tintAlpha = tintAlphaFor(resolvedTone, useThemeColor('surface-3'));
   const resolvedFloating = floating ?? groupCtx?.floating ?? false;
   const resolvedElevation = elevation ?? groupCtx?.elevation ?? 3;
   const inline = (layout ?? groupCtx?.layout ?? 'stacked') === 'inline';
+  // Inline + horizontal = narrow cards side by side, where the badge has no room
+  // beside the title; it drops below instead. Standalone there is no group to
+  // read orientation from, so `horizontal` is false and the badge stays beside.
+  const horizontal = groupCtx?.orientation === 'horizontal';
   const t = mergeTransition(TIMING_FAST, transition ?? groupCtx?.transition);
   const ct = reduce ? TIMING_INSTANT : t;
   // Derive from the group so cards are addressable without threading a testID
@@ -400,7 +468,8 @@ export function RadioCard({
   // once here and placed by the tree below rather than spelled twice. Under
   // `variant="card"` there is no ring at all — the border and tint carry the
   // selection on their own.
-  const ring = resolvedVariant === 'radio' ? <RadioCardRing selected={selected} transition={t} testID={cardTestID} /> : null;
+  const ring =
+    resolvedVariant === 'radio' ? <RadioCardRing accent={accent} selected={selected} transition={t} testID={cardTestID} /> : null;
 
   const badgeNode = badge ? (
     <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
@@ -438,26 +507,36 @@ export function RadioCard({
             the wrapper's surface fill instead. Both ends run through `tintAt`
             for the reason spelled out on that helper — a literal `transparent`
             end would interpolate through transparent black and darken the edge on
-            the way in. The reserved `border` width keeps the box from shifting. */}
+            the way in. Selecting steps the border from the 1.5px hairline to 2px so
+            the highlight reads stronger than the resting edge; the half-pixel
+            content shift is negligible. */}
         <MotiView
           animate={{
-            borderColor: tintAt(info, selected ? 1 : 0),
-            backgroundColor: tintAt(info, selected ? TINT_ALPHA : 0),
+            borderColor: tintAt(accent, selected ? 1 : 0),
+            backgroundColor: tintAt(accent, selected ? tintAlpha : 0),
           }}
           transition={ct}
-          className={cn('flex-1 gap-3 rounded-2xl border-[1.5px] p-4', inline && 'flex-row items-center')}
+          className={cn('flex-1 gap-3 rounded-2xl p-4', cardBorderWidth(selected), inline && 'flex-row items-start')}
         >
           {/* Stacked, the ring leads a row of its own and the badge rides its
-              far end. Inline that row has no reason to exist — the ring moves to
-              the trailing edge below and the badge to the title. */}
-          {inline ? null : (
+              far end. Inline and `variant="card"` have no reason for that row —
+              the ring moves to the trailing edge (inline) or disappears (card),
+              and the badge joins the title in the body. */}
+          {inline || card ? null : (
             <View className="flex-row items-center justify-between">
-              {/* Spacer so the badge still aligns to the right when there's no ring */}
-              {ring ?? <View />}
+              {ring}
               {badgeNode}
             </View>
           )}
-          <RadioCardBody title={title} subtitle={subtitle} numeric={numeric} badge={badgeNode} inline={inline}>
+          <RadioCardBody
+            title={title}
+            subtitle={subtitle}
+            numeric={numeric}
+            badge={badgeNode}
+            inline={inline}
+            horizontal={horizontal}
+            card={card}
+          >
             {children}
           </RadioCardBody>
           {inline ? ring : null}

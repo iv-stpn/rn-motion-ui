@@ -3,21 +3,65 @@ import { createContext, type ReactNode, useCallback, useContext, useState } from
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { usePressState } from '../../../hooks/use-press-state';
 import { cn } from '../../../lib/cn';
+import { cssColorToOklch } from '../../../lib/color';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { surface } from '../../../lib/surface';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST } from '../../../theme/motion';
+import { useThemeColor } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
-import { CheckboxBox } from '../Checkbox/checkbox';
+import { CheckboxBox, type CheckboxTone } from '../Checkbox/checkbox';
 
 /**
  * How a card arranges its own contents. `"stacked"` puts the box on a row of
- * its own above the text; `"inline"` moves it to the trailing edge, centred
+ * its own above the text; `"inline"` moves it to the trailing edge, top-aligned
  * against the text beside it.
  *
  * Distinct from the group's `orientation`, which lays the *cards* out relative
  * to each other — the two compose freely.
  */
 type CheckboxCardLayout = 'stacked' | 'inline';
+
+/** Selection accent. `"neutral"` (default) is the primary token — the same
+ *  near-black/near-white fill a default `Checkbox` uses — and `"info"` is the
+ *  blue status token. */
+type CheckboxCardTone = 'neutral' | 'info';
+
+/** Visual variant: `"checkbox"` (default) shows the box + mark indicator;
+ *  `"card"` hides it and lets the animated border + background tint carry the
+ *  selection on their own. */
+type CheckboxCardVariant = 'checkbox' | 'card';
+
+/** `CheckboxBox` tone for a card tone; `neutral` maps to the monochrome `primary`. */
+const BOX_TONE: Record<CheckboxCardTone, CheckboxTone> = { neutral: 'primary', info: 'info' };
+
+/** Selected border class per tone — applied in both schemes so the selected edge
+ *  reads wherever it is. Spelled as literals so UniWind statically resolves each
+ *  member. */
+const SELECTED_BORDER: Record<CheckboxCardTone, string> = { neutral: 'border-primary', info: 'border-info' };
+
+/** Selected background wash per tone — applied only in dark mode, where a light
+ *  wash lifts the selected card off the dark surface. `neutral` carries a
+ *  heavier wash than `info` because `primary` is achromatic and reads fainter at
+ *  the same alpha. */
+const SELECTED_TINT: Record<CheckboxCardTone, string> = { neutral: 'bg-primary/10', info: 'bg-info/5' };
+
+/**
+ * The selected surface classes: the tone's border in both schemes, plus its
+ * background wash only in dark mode. On the light card a grey wash would muddy
+ * the white, so the selection reads through the border + box alone there. Keyed
+ * off the resolved surface rather than `useColorScheme` so it follows the manual
+ * `.dark`/`.light` toggles that `useThemeColor` already subscribes to.
+ */
+function selectedSurface(tone: CheckboxCardTone, surfaceColor: string): string {
+  const isDark = (cssColorToOklch(surfaceColor)?.lightness ?? 1) < 0.5;
+  return cn(SELECTED_BORDER[tone], isDark && SELECTED_TINT[tone]);
+}
+
+/** Border-width class for the card surface: the resting 1.5px hairline steps up
+ *  to 2px when checked so the highlight reads stronger than the resting edge. */
+function cardBorderWidth(checked: boolean) {
+  return checked ? 'border-2' : 'border-[1.5px]';
+}
 
 type CheckboxCardCtx = {
   /** Every currently-checked card value. */
@@ -36,6 +80,12 @@ type CheckboxCardCtx = {
   floating: boolean;
   /** Group-level card layout. A card can override it. */
   layout: CheckboxCardLayout;
+  /** Group-level selection accent. A card can override it. */
+  tone?: CheckboxCardTone;
+  /** Group-level visual variant. A card can override it. */
+  variant?: CheckboxCardVariant;
+  /** Group-level orientation — whether the cards sit side by side or stacked. */
+  orientation: 'vertical' | 'horizontal';
 };
 
 const CheckboxCardContext = createContext<CheckboxCardCtx | null>(null);
@@ -55,9 +105,21 @@ export type CheckboxCardGroupProps = {
   /**
    * How every card arranges its own contents. `"stacked"` (default) puts the
    * box on a row above the text; `"inline"` moves it to the trailing edge,
-   * centred against the text. A card can override it with its own `layout`.
+   * top-aligned against the text. A card can override it with its own `layout`.
    */
   layout?: CheckboxCardLayout;
+  /**
+   * Selection accent for every card in the group. `"neutral"` (default) fills
+   * the box and tints the card with the primary token; `"info"` uses the blue
+   * status token. A card can override it with its own `tone`.
+   */
+  tone?: CheckboxCardTone;
+  /**
+   * Visual variant for every card in the group. `"checkbox"` (default) shows
+   * the box + mark indicator; `"card"` hides it and uses only the animated
+   * border and background tint. A card can override it with its own `variant`.
+   */
+  variant?: CheckboxCardVariant;
   /** Disables every card. A card can opt back in with `isDisabled={false}`. */
   isDisabled?: boolean;
   /** Additional UniWind class names merged onto the group container. */
@@ -110,6 +172,8 @@ export function CheckboxCardGroup({
   children,
   orientation = 'horizontal',
   layout = 'stacked',
+  tone,
+  variant,
   isDisabled = false,
   className,
   style,
@@ -133,7 +197,19 @@ export function CheckboxCardGroup({
 
   return (
     <CheckboxCardContext.Provider
-      value={{ values: current, toggle, isDisabled, checkTransition, testID, floating, elevation, layout }}
+      value={{
+        values: current,
+        toggle,
+        isDisabled,
+        checkTransition,
+        testID,
+        floating,
+        elevation,
+        layout,
+        tone,
+        variant,
+        orientation,
+      }}
     >
       <View role="group" testID={testID} className={cn(group({ orientation }), className)} style={style}>
         {children}
@@ -149,23 +225,30 @@ type CheckboxCardBodyProps = {
   /** The already-built badge, or `null` when the card has none. */
   badge: ReactNode;
   inline: boolean;
+  /** Whether the group lays its cards side by side — the badge drops below the
+   *  title when this is true, beside it when false. */
+  horizontal: boolean;
+  /** No indicator (`variant="card"`): keep the badge in the body rather than on
+   *  a leading indicator row. */
+  card: boolean;
   children?: ReactNode;
 };
 
 /**
  * The card's text column — title, optional subtitle, any custom content. Inline,
- * the badge joins the title it qualifies; stacked, it rides the box's row
- * instead and only the title lands here.
+ * the badge sits beside the title in a vertical group but drops below it in a
+ * horizontal one, where the narrow card has no room beside; stacked, it rides
+ * the box's row instead and only the title lands here. Under `variant="card"`
+ * there is no box, so the badge stays in the body the same way.
  *
  * Private to this file; split out so `CheckboxCard` stays under the complexity
- * cap. `flex-1` when inline so the column claims the width the box isn't using,
- * and `shrink` on the title so a long one wraps rather than pushing the badge
- * past the card's edge.
+ * cap. `flex-1` when inline so the column claims the width the box isn't using.
  */
-function CheckboxCardBody({ title, subtitle, numeric, badge, inline, children }: CheckboxCardBodyProps) {
+function CheckboxCardBody({ title, subtitle, numeric, badge, inline, horizontal, card, children }: CheckboxCardBodyProps) {
+  const badgeInBody = inline || card;
   return (
     <View className={cn('gap-1', inline && 'flex-1')}>
-      {inline ? (
+      {badgeInBody && !horizontal ? (
         <View className="flex-row items-center gap-2">
           <Text weight="semibold" className="shrink text-base text-foreground">
             {title}
@@ -177,6 +260,7 @@ function CheckboxCardBody({ title, subtitle, numeric, badge, inline, children }:
           {title}
         </Text>
       )}
+      {badgeInBody && horizontal && badge ? <View className="self-start">{badge}</View> : null}
       {subtitle ? (
         <Text className="text-muted-foreground text-sm" style={numeric ? { fontVariant: ['tabular-nums'] } : undefined}>
           {subtitle}
@@ -214,11 +298,23 @@ export type CheckboxCardProps = {
   isDisabled?: boolean;
   /**
    * How the card arranges its contents. `"stacked"` (default) puts the box on a
-   * row above the text; `"inline"` moves it to the trailing edge, centred
-   * against the text, and the `badge` follows the title instead of sharing the
-   * box's row. Inherits the group's value when unset.
+   * row above the text; `"inline"` moves it to the trailing edge, top-aligned
+   * against the text, and the `badge` joins the title — beside it in a vertical
+   * group, below it in a horizontal one. Inherits the group's value when unset.
    */
   layout?: CheckboxCardLayout;
+  /**
+   * Selection accent. `"neutral"` (default) fills the box and tints the card
+   * with the primary token (the same fill a default `Checkbox` uses); `"info"`
+   * uses the blue status token. Inherits the group's value when unset.
+   */
+  tone?: CheckboxCardTone;
+  /**
+   * Visual variant. `"checkbox"` (default) shows the box + mark indicator;
+   * `"card"` hides it and uses only the animated border and background tint.
+   * Inherits the group's value when unset.
+   */
+  variant?: CheckboxCardVariant;
   accessibilityLabel?: string;
   /**
    * Inside a `<CheckboxCardGroup>`, defaults to
@@ -271,6 +367,8 @@ export function CheckboxCard({
   onSelectedChange,
   isDisabled,
   layout,
+  tone,
+  variant,
   title,
   subtitle,
   badge,
@@ -296,6 +394,14 @@ export function CheckboxCard({
   const resolvedFloating = floating ?? groupCtx?.floating ?? false;
   const resolvedElevation = elevation ?? groupCtx?.elevation ?? 3;
   const inline = (layout ?? groupCtx?.layout ?? 'stacked') === 'inline';
+  // Inline + horizontal = narrow cards side by side, where the badge has no room
+  // beside the title; it drops below instead. Standalone there is no group to
+  // read orientation from, so `horizontal` is false and the badge stays beside.
+  const horizontal = groupCtx?.orientation === 'horizontal';
+  const resolvedTone = tone ?? groupCtx?.tone ?? 'neutral';
+  const resolvedVariant = variant ?? groupCtx?.variant ?? 'checkbox';
+  const card = resolvedVariant === 'card';
+  const surfaceColor = useThemeColor('surface-3');
   const ct = mergeTransition(TIMING_FAST, checkTransition ?? groupCtx?.checkTransition);
   // Derive from the group so cards are addressable without threading a testID
   // through every child; an explicit prop still wins. Falls back to the
@@ -310,18 +416,21 @@ export function CheckboxCard({
   }, [disabled, groupCtx, value, onSelectedChange, checked]);
 
   // The box and the badge move between rows with the layout, so both are built
-  // once here and placed by the tree below rather than spelled twice.
-  const box = (
-    <CheckboxBox
-      checked={checked}
-      disabled={disabled}
-      pressed={pressed}
-      tone="info"
-      transition={ct}
-      checkIcon={checkIcon}
-      testID={cardTestID}
-    />
-  );
+  // once here and placed by the tree below rather than spelled twice. Under
+  // `variant="card"` there is no box at all — the border and tint carry the
+  // selection on their own.
+  const box =
+    resolvedVariant === 'checkbox' ? (
+      <CheckboxBox
+        checked={checked}
+        disabled={disabled}
+        pressed={pressed}
+        tone={BOX_TONE[resolvedTone]}
+        transition={ct}
+        checkIcon={checkIcon}
+        testID={cardTestID}
+      />
+    ) : null;
 
   const badgeNode = badge ? (
     <View testID={cardTestID ? `${cardTestID}-badge` : undefined} className="rounded-full bg-primary/10 px-2 py-0.5">
@@ -349,29 +458,40 @@ export function CheckboxCard({
           `className` and `style` land here so consumer overrides all target one
           element. */}
       <View className={cn('rounded-2xl', surface(resolvedElevation, undefined, resolvedFloating), className)} style={style}>
-        {/* The visual surface carries the border + selection tint. When unchecked
-            both are transparent — no resting outline, and the wrapper's surface
-            background shows through; when checked the `border-info` edge and the
-            `bg-info/5` tint overlay it. The `border` width is reserved in both
-            states so checking a card doesn't shift its content. */}
+        {/* The visual surface carries the border + (dark-mode) selection tint.
+            When unchecked both are transparent — no resting outline, and the
+            wrapper's surface background shows through; when checked the tone's
+            border (and, in dark mode, a wash) overlays it. Checking steps the
+            border from the 1.5px hairline to 2px; the half-pixel content shift is
+            negligible. */}
         <View
           className={cn(
-            'flex-1 gap-3 rounded-2xl border-[1.5px] p-4',
-            inline && 'flex-row items-center',
+            'flex-1 gap-3 rounded-2xl p-4',
+            cardBorderWidth(checked),
+            inline && 'flex-row items-start',
             disabled ? 'opacity-60' : 'opacity-100',
-            checked ? 'border-info bg-info/5' : 'border-transparent',
+            checked ? selectedSurface(resolvedTone, surfaceColor) : 'border-transparent',
           )}
         >
           {/* Stacked, the box leads a row of its own and the badge rides its far
-              end. Inline that row has no reason to exist — the box moves to the
-              trailing edge below and the badge to the title. */}
-          {inline ? null : (
+              end. Inline and `variant="card"` have no reason for that row — the
+              box moves to the trailing edge (inline) or disappears (card), and
+              the badge joins the title in the body. */}
+          {inline || card ? null : (
             <View className="flex-row items-center justify-between">
               {box}
               {badgeNode}
             </View>
           )}
-          <CheckboxCardBody title={title} subtitle={subtitle} numeric={numeric} badge={badgeNode} inline={inline}>
+          <CheckboxCardBody
+            title={title}
+            subtitle={subtitle}
+            numeric={numeric}
+            badge={badgeNode}
+            inline={inline}
+            horizontal={horizontal}
+            card={card}
+          >
             {children}
           </CheckboxCardBody>
           {inline ? box : null}

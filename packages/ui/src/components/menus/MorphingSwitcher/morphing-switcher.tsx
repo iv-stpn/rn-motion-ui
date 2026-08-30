@@ -2,7 +2,7 @@
 // biome-ignore-all lint/style/useExportsLast: the public icon/item/variant/props types head the module so the sub-components below read against them
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
-import { Pressable, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, useWindowDimensions, View } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
@@ -25,7 +25,10 @@ const PANE_INSET = 4;
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
 /** Collapsed-trigger ↔ open-pane size morph, on `SPRING_LAYOUT` so the size
- *  stays in lockstep with the `translateY` upward-open shift below. */
+ *  stays in lockstep with the `translateY` upward-open shift below. Native
+ *  (Fabric) drives the size through this layout transition; web animates it
+ *  through Moti instead — see `switcherShellGeometry` below. */
+const IS_WEB = Platform.OS === 'web';
 const MORPH_LAYOUT = springLayout(SPRING_LAYOUT);
 
 /** Switcher size — the trigger and every row stand at the matching interactive height. */
@@ -431,6 +434,62 @@ function paneLayoutStyle(openAbove: boolean, open: boolean, paneHeight: number, 
   };
 }
 
+/** Everything the shell's geometry depends on, passed as one bag so the helper
+ *  stays under the parameter cap. */
+type SwitcherShellGeometry = {
+  open: boolean;
+  openAbove: boolean;
+  variant: MorphingSwitcherVariant;
+  scale: SwitcherScale;
+  paneHeight: number;
+  closedHeight: number;
+  openWidth: number;
+  closedWidth: number;
+};
+
+/**
+ * The shell's animated geometry. Web animates `height`/`width` through Moti (the
+ * original smooth morph); Fabric keeps a static size and drives the change via
+ * the `layout` transition (layout props don't round-trip Yoga there). The radius
+ * and upward-open `translateY` spring on `SPRING_LAYOUT` either way.
+ */
+function switcherShellGeometry({
+  open,
+  openAbove,
+  variant,
+  scale,
+  paneHeight,
+  closedHeight,
+  openWidth,
+  closedWidth,
+}: SwitcherShellGeometry) {
+  const radius = open ? scale.paneRadius : closedHeight / 2;
+  // Opening upward anchors the pane's bottom to the trigger's bottom edge: shift
+  // the shell up by its growth so it extends above instead of below. `translateY`
+  // shares the morph spring, so the bottom edge never drifts while it unfolds.
+  const translateY = open && openAbove ? closedHeight - paneHeight : 0;
+  const animate = IS_WEB
+    ? {
+        height: open ? paneHeight : closedHeight,
+        borderRadius: radius,
+        translateY,
+        ...(variant === 'select' ? { width: open ? openWidth : closedWidth } : {}),
+      }
+    : { borderRadius: radius, translateY };
+  const style: StyleProp<ViewStyle> = IS_WEB
+    ? [
+        { flexDirection: openAbove ? 'column-reverse' : 'column' },
+        open ? { zIndex: 40 } : undefined,
+        variant === 'switcher' ? { right: 0 } : undefined,
+      ]
+    : [
+        paneLayoutStyle(openAbove, open, paneHeight, closedHeight),
+        open ? { zIndex: 40 } : undefined,
+        switcherPaneSizeStyle(variant, open, openWidth, closedWidth),
+      ];
+  return { animate, style };
+}
+
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: the shell wires trigger measurement, outside-press handling, and the morph pane around shared refs/state — splitting would prop-drill the shared values across function boundaries
 export function MorphingSwitcher({
   items,
@@ -565,10 +624,10 @@ export function MorphingSwitcher({
     setTriggerSize((prev) => mergeTriggerSize(prev, { width, height }));
   }, []);
 
-  // The size morph rides `MORPH_LAYOUT` (a layout transition — `height`/`width`
-  // don't round-trip Yoga on Fabric through `useAnimatedStyle`), while the radius
-  // and upward-open `translateY` still spring on `SPRING_LAYOUT`. Matching spring
-  // params keep the bottom edge anchored as the pane unfolds.
+  // On web `height`/`width` morph through Moti on `SPRING_LAYOUT`; on Fabric they
+  // ride `MORPH_LAYOUT` (a layout transition — layout props don't round-trip Yoga
+  // through `useAnimatedStyle`). The radius and upward-open `translateY` spring on
+  // `SPRING_LAYOUT` either way; matching params keep the bottom edge anchored.
   const morphTransition = reduce ? TIMING_INSTANT : SPRING_LAYOUT;
 
   // The rows follow the shell closely — a long delay left the pane looking empty
@@ -586,6 +645,8 @@ export function MorphingSwitcher({
   // `switcher` spans its parent, so its width is not animated — the shell's
   // `right: 0` pins it full-width and only height/radius morph.
   const openWidth = Math.max(expandedWidth, closedWidth);
+
+  const shell = switcherShellGeometry({ open, openAbove, variant, scale, paneHeight, closedHeight, openWidth, closedWidth });
 
   return (
     <View ref={rootRef} collapsable={false} testID={testID} style={[{ zIndex: open ? 40 : 0 }, style]}>
@@ -617,22 +678,11 @@ export function MorphingSwitcher({
           240px width instead of spanning the parent. Remounting drops it. */}
       <MotiView
         key={variant}
-        animate={{
-          borderRadius: open ? scale.paneRadius : closedHeight / 2,
-          // Opening upward anchors the pane's bottom to the trigger's bottom edge:
-          // shift the shell up by its growth so it extends above instead of below.
-          // `translateY` shares the morph spring, so the two stay in lockstep and
-          // the bottom edge never drifts while the pane unfolds.
-          translateY: open && openAbove ? closedHeight - paneHeight : 0,
-        }}
+        animate={shell.animate}
         transition={morphTransition}
-        layout={reduce ? undefined : MORPH_LAYOUT}
+        layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
         className={cn('absolute top-0 left-0 overflow-hidden p-1', switcherSurfaceClass(elevation, open, floating))}
-        style={[
-          paneLayoutStyle(openAbove, open, paneHeight, closedHeight),
-          open ? { zIndex: 40 } : undefined,
-          switcherPaneSizeStyle(variant, open, openWidth, closedWidth),
-        ]}
+        style={shell.style}
       >
         {/* The trigger persists — it morphs into the active header row. Re-tapping
             it while open folds the pane back (it only LOOKS disabled). */}

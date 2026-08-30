@@ -1,6 +1,6 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: FAB shell, morph transition, and trigger/pane layouts collocated by design
 import { type ComponentType, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, type StyleProp, useWindowDimensions, View, type ViewStyle } from 'react-native';
+import { Platform, Pressable, type StyleProp, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
@@ -19,9 +19,42 @@ const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
  *  the shared interactive ramp puts an `lg` IconButton at. */
 const TRIGGER_RADIUS = TRIGGER_SIZE / 2;
 const PANE_RADIUS = 20;
-/** Collapsed circle ↔ expanded pane size morph, on the same spring as the
- *  `borderRadius` morph below so the corner stays in lockstep with the resize. */
+/** Web animates the size through Moti; Fabric can't round-trip layout props
+ *  through `useAnimatedStyle`, so native keeps a static size and drives the
+ *  change via this layout transition. */
+const IS_WEB = Platform.OS === 'web';
 const MORPH_LAYOUT = springLayout({ stiffness: 350, damping: 30, mass: 0.55 });
+/** Web's staggered springs — width snaps open fast, height bounces, reading as
+ *  unfolding. Fabric can't animate width/height through Moti, so this only runs
+ *  on web; native springs just the radius and drives the size via `MORPH_LAYOUT`. */
+const WEB_MORPH_TRANSITION = {
+  type: 'spring' as const,
+  stiffness: 200,
+  damping: 18,
+  mass: 0.95,
+  width: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
+  borderRadius: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
+} satisfies import('../../../moti/core/types').MotiTransition;
+
+/** Fabric-safe radius spring — mirrors `MORPH_LAYOUT` so the corner stays in
+ *  lockstep with the layout-driven resize. */
+const NATIVE_MORPH_TRANSITION = { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 };
+
+/**
+ * The shell's animated geometry. Web animates the size through Moti alongside
+ * the radius (smooth staggered springs); Fabric keeps a static size and drives
+ * the change via the `layout` transition (layout props don't round-trip Yoga).
+ */
+function fabShellGeometry(open: boolean, expandedWidth: number, expandedHeight: number, left: boolean) {
+  const size = { width: open ? expandedWidth : TRIGGER_SIZE, height: open ? expandedHeight : TRIGGER_SIZE };
+  const anchor = left ? { left: 0 } : { right: 0 };
+  return {
+    animate: IS_WEB
+      ? { ...size, borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS }
+      : { borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS },
+    style: IS_WEB ? anchor : { ...size, ...anchor },
+  };
+}
 
 /** Handed to render-prop children so panel content can close the FAB. */
 export type MorphingFABApi = {
@@ -179,13 +212,16 @@ export function MorphingFAB({
     return () => doc.removeEventListener('pointerdown', onPointerDown);
   }, [open, closeOnOutsidePress, setOpen]);
 
-  // The size morph rides the layout transition above; only the corner radius
-  // still animates through Moti (a style prop, safe on Fabric) on the same spring.
-  const morphTransition = reduce ? TIMING_INSTANT : { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 };
+  // Web restores the pre-7.0.0 staggered springs (width snaps open fast, height
+  // bounces); Fabric springs only the radius and drives the size via the layout
+  // transition above.
+  const morphSpring = IS_WEB ? WEB_MORPH_TRANSITION : NATIVE_MORPH_TRANSITION;
+  const morphTransition = reduce ? TIMING_INSTANT : morphSpring;
 
   const paneEnterTransition = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 200, delay: 150, easing: EASE_OUT };
 
   const resolvedPane = typeof children === 'function' ? children({ close: handleClose }) : children;
+  const shell = fabShellGeometry(open, expandedWidth, expandedHeight, left);
 
   return (
     <View
@@ -220,15 +256,11 @@ export function MorphingFAB({
       ) : null}
 
       <MotiView
-        animate={{ borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS }}
+        animate={shell.animate}
         transition={morphTransition}
-        layout={reduce ? undefined : MORPH_LAYOUT}
+        layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
         className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, floating)}`}
-        style={{
-          width: open ? expandedWidth : TRIGGER_SIZE,
-          height: open ? expandedHeight : TRIGGER_SIZE,
-          ...(left ? { left: 0 } : { right: 0 }),
-        }}
+        style={shell.style}
       >
         {open ? (
           <View className="w-full">

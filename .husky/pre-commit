@@ -1,6 +1,16 @@
 bun run lint
 bun run typecheck
 
+# Ensure bun.lock stays in sync with the workspace manifests. A frozen dry-run
+# fails if the lockfile would change, i.e. a dependency was edited without
+# running `bun install`.
+bun install --frozen-lockfile --dry-run
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "✖  bun.lock is out of sync. Run \`bun install\` and commit the updated lockfile."
+  exit 1
+fi
+
 # Validate the exports map. If the check fails, auto-fix with --write and
 # stage the result so it ships with the commit. If --write cannot fix
 # everything (e.g. genuinely missing entries the script cannot derive),

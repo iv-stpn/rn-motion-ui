@@ -14,14 +14,15 @@ import { Text } from '../../typography/Text/text';
 /**
  * Checkmark and indeterminate-dash glyphs, drawn in a 32×32 viewBox rendered at
  * 16×16 (0.5× scale) so placement has half-pixel granularity. Both glyphs are
- * nudged right one half-unit (half a pixel) to sit optically centred — the check
- * because its vertex sits left of its stroke bbox, the dash to match the check's
- * resting centre. All coordinates stay whole numbers and the SVG stays a fixed
- * 16×16, so flex centring adds no sub-pixel offset.
+ * nudged one half-unit (half a pixel) up-left of the viewBox centre — the check
+ * because its bottom vertex and the long upper diagonal pull its optical centre
+ * down-right of the stroke bbox, the dash so it shares the check's resting
+ * centre during the cross-fade. All coordinates stay whole numbers and the SVG
+ * stays a fixed 16×16, so flex centring adds no sub-pixel offset.
  */
 const GLYPH_VIEWBOX = '0 0 32 32';
-const CHECK_PATH = 'M7 14L15 22L27 10';
-const INDETERMINATE_PATH = 'M7 16H27';
+const CHECK_PATH = 'M6 13L14 21L26 9';
+const INDETERMINATE_PATH = 'M6 15H26';
 
 /**
  * Checked border class per tone. A static map (not a `border-${tone}` template

@@ -1,5 +1,139 @@
 # rn-motion-ui
 
+## 7.1.0
+
+### Minor Changes
+
+- cea368e: feat(Button): `primary` variant and fill-aware elevation shadows
+
+  `Button` and `ElevatedButton` gain a `primary` variant — the filled monochrome
+  plate (the `primary`/`primary-foreground` pair), replacing the old `inverse`
+  variant. `neutral` is now the neutral scheme (`foreground` fill, `background`
+  label) instead of aliasing the monochrome plate. `ThemedIcon` and
+  `StatefulButton` follow the same rename, and every `inverse` usage across the
+  components is migrated to `primary` or `neutral`.
+
+  Filled variants (`primary` and the status fills `danger`/`success`/`warning`/
+  `info`) now cast a fill-aware elevation shadow when raised: a crisp 1px
+  fill-coloured ring plus a graduated dark-neutral drop, instead of the surface
+  ladder's subtle shadow that read as "flat" against an opaque fill. Transparent
+  variants and `neutral` keep the surface ladder.
+
+- 17fe2a4: feat(Overlay): add `BlurProvider` and consolidate the blur peers on `@danielsaraldi/react-native-blur-view`
+
+  The overlay backdrop blur drops its two optional peers — `@sbaiahmed1/react-native-blur`
+  and `@react-native-community/blur` — for a single `@danielsaraldi/react-native-blur-view`.
+  On iOS its `BlurView` is a `UIVisualEffectView` that blurs behind itself, as before; on
+  Android the same `BlurView` blurs a `BlurTarget` it is pointed at rather than whatever
+  sits behind it.
+
+  A new `BlurProvider` (exported as `rn-motion-ui/overlay/blur-provider`) wraps the app
+  root, renders the `BlurTarget` around its children, and publishes the ref the scrims read.
+  Wrap the app root in `<BlurProvider>` and install `@danielsaraldi/react-native-blur-view`
+  to keep Android backdrop blur; without the provider — or the optional peer — Android
+  scrims degrade to the plain translucent dim.
+
+### Patch Changes
+
+- 3730443: feat(CheckboxCard, RadioCard): tone accents and a border-only card variant
+
+  `RadioCard` and `CheckboxCard` gain a `tone` prop (`neutral` | `info`) for the
+  selection accent, defaulting to the primary token instead of the hardcoded blue.
+  `CheckboxCard` gains a `variant` prop (`checkbox` | `card`): `card` hides the
+  box and mark so the animated border and background tint alone signal selection,
+  matching `RadioCard`'s existing variant. In horizontal groups the `card` variant
+  now drops the badge below the title rather than leaving an empty indicator row.
+  The checkbox box is slightly less rounded and the radio dot slightly larger.
+
+- f819461: fix(Checkbox): nudge the check and dash glyphs up-left to sit optically centred
+
+  The glyphs were nudged right of the viewBox centre, but the check's bottom vertex
+  and its long upper diagonal still pulled the optical centre down-right of the
+  stroke bbox, leaving both marks reading as slightly too low and too far right.
+  Both the check and indeterminate dash now sit one half-unit (half a pixel) up-left
+  so the marks look centred and stay aligned through the cross-fade.
+
+- b0ac3aa: fix(ChoiceGroup): unclip vertical labels
+
+  Vertical groups no longer clip their labels: items drop the fixed
+  `h-interactive-*` height and grow from `py-3` instead, so each label keeps its
+  full line box rather than being squeezed into the fixed height minus the
+  padding. Horizontal items are unchanged.
+
+- e53b404: feat(ColorPicker): HSV colour picker in an adaptive dropdown
+
+  Adds a `ColorPicker` (at `rn-motion-ui/color-picker`) that opens inside an
+  `AdaptiveDropdown` — a floating panel on wide screens, a bottom sheet on narrow
+  ones. It composes a saturation/value plane, a hue slider and a preset swatch
+  grid (the `reanimated-color-picker` anatomy), rebuilt on the package's own
+  PanResponder + `react-native-svg` primitives with no extra dependency. The
+  colour math lives in a pure HSV↔RGB↔hex↔HSL module so it runs identically on
+  web, native and in unit tests. Controlled or uncontrolled; `onChange` fires
+  during drags, `onComplete` when a drag ends or a swatch is tapped.
+
+- e5c29cd: fix(MorphingFAB): size the root view so the trigger mounts on Android (Fabric)
+
+  The collapsed trigger was anchored to a zero-size, absolutely-positioned parent
+  via a negative offset, which Paper renders but Fabric drops — so `triggerTestID`
+  never appeared in the Android view/accessibility tree. The root now carries the
+  shell's real size (`TRIGGER_SIZE` collapsed, `expandedWidth`×`expandedHeight`
+  open) so the shell's corner anchor resolves to a non-negative offset.
+
+- 4d3fe8e: fix(MorphingFAB, MorphingSwitcher): restore the pre-7.0.0 morph animation on web
+
+  The Fabric migration drove both components' size morphs through a single
+  `layout` transition, which flattened the web/storybook feel — the FAB's
+  staggered "unfolding" springs and the switcher's `SPRING_LAYOUT` size morph
+  both regressed to one uniform spring. The morph now splits by platform: web
+  restores the original `animate`-driven size springs (FAB width snaps open fast,
+  height bounces; switcher morphs `height`/`width` on `SPRING_LAYOUT`), while
+  native keeps the Fabric-safe `layout` transition since layout props don't
+  round-trip Yoga through `useAnimatedStyle` there.
+
+- d541b3a: fix(OtpInput): remove the doubled border on the selected slot
+
+  The active slot painted its border twice: the slot's own `active` cva variant and
+  an absolutely-positioned outline ring both drew a `border-foreground` edge, so the
+  selected cell read as a thick doubled border. The ring is removed — the slot's own
+  border (still recolored by `focusColor` / `focusedPinCodeContainerStyle`) is now the
+  single source of truth for the selected state.
+
+- a1e9b00: fix(Overlay): Android backdrop blur, and a scrim that fades without killing the frost
+
+  `OverlayBlur` now blurs on Android via `@danielsaraldi/react-native-blur-view`
+  (the Dimezis `BlurView` under a `BlurTarget`, rendered on the system Render
+  Thread on API 31+) where it previously degraded to the plain translucent scrim.
+  The blur radius drops from 30 to 12 to match the lighter Android blur.
+
+  The blur layer now fades its own opacity in step with the menu's enter/exit,
+  moved outside the dim's opacity fade across `AdaptiveDropdown`, `Drawer`,
+  `MorphingMenu`, `MorphingModal` and `Popover`. That matters on web: an ancestor
+  with `opacity < 1` becomes a CSS "backdrop root" that clips the backdrop, so
+  the frost never rendered under the old parent fade. The dim also switches from
+  `bg-foreground/*` to `bg-black/*` for a neutral scrim in light and dark themes.
+
+- 33ac0e5: fix(SwipeableList): apply the row elevation shadow outside the clipped surface
+
+  The row's `overflow-hidden` clip — needed to keep the sliding draggable surface
+  inside the rounded row — was also swallowing the `shadow-elevated-N` /
+  `shadow-floating` box-shadow that lived on the inner surface. The shadow now
+  sits on the outer row wrapper, whose own clip doesn't cut its own shadow, so the
+  `elevation` ladder drop and the `floating` halo render again. The background tint
+  stays on the draggable surface.
+
+- b0ac3aa: fix(ToggleGroup): hug height in horizontal mode and unclip vertical labels
+
+  Horizontal groups no longer stretch vertically on native: the inner horizontal
+  `ScrollView` carries `grow-0`, neutralising its default `flexGrow: 1` so the
+  strip sizes to its items instead of filling the shell's column main axis (width
+  still comes from the shell's cross-axis stretch, so overflowing rows keep
+  scrolling).
+
+  Vertical groups no longer clip their labels: items drop the fixed
+  `h-interactive-*` height and grow from `py-3` instead, so each label keeps its
+  full line box rather than being squeezed into the fixed height minus the
+  padding.
+
 ## 7.0.0
 
 ### Major Changes

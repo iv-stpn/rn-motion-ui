@@ -14,9 +14,10 @@ import { BACKDROP_BLUR_BACKGROUND_COLOR } from './hold-menu-theme';
  *
  * The scrim is a `BlurView` under a translucent dim (`OverlayBlur` +
  * `BACKDROP_BLUR_BACKGROUND_COLOR`), so the page behind reads as frosted glass
- * instead of a flat wash. `OverlayBlur` resolves to `react-native-blur`'s
- * native `BlurView` on iOS and its CSS-`backdrop-filter` twin in the browser —
- * Android skips the blur for performance and keeps just the dim. The
+ * instead of a flat wash. `OverlayBlur` resolves to
+ * `@danielsaraldi/react-native-blur-view`'s `BlurView` on native (iOS blurs
+ * behind itself; Android blurs the `BlurTarget` an enclosing `<BlurProvider>`
+ * wraps around the app) and its CSS-`backdrop-filter` twin in the browser. The
  * container's `opacity` still drives the fade, so blur and dim come up
  * together.
  */

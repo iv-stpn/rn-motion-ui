@@ -47,6 +47,12 @@
       "types": "./src/components/menus/Overlay/overlay-portal.tsx",
       "default": "./src/components/menus/Overlay/overlay-portal.tsx"
     },
+    "./overlay/blur-provider": {
+      "react-native": "./src/components/menus/Overlay/blur-provider.native.tsx",
+      "source": "./src/components/menus/Overlay/blur-provider.tsx",
+      "types": "./src/components/menus/Overlay/blur-provider.tsx",
+      "default": "./src/components/menus/Overlay/blur-provider.tsx"
+    },
     "./theme/use-theme-color": {
       "source": "./src/theme/use-theme-color.ts",
       "types": "./src/theme/use-theme-color.ts",
@@ -830,8 +836,7 @@
     "zustand": "5.0.3"
   },
   "peerDependencies": {
-    "@react-native-community/blur": ">=4.3.0",
-    "@sbaiahmed1/react-native-blur": ">=6.0.0",
+    "@danielsaraldi/react-native-blur-view": ">=3.0.0",
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
     "react-native-gesture-handler": ">=2.0.0",
@@ -840,10 +845,7 @@
     "react-native-svg": ">=15.0.0"
   },
   "peerDependenciesMeta": {
-    "@react-native-community/blur": {
-      "optional": true
-    },
-    "@sbaiahmed1/react-native-blur": {
+    "@danielsaraldi/react-native-blur-view": {
       "optional": true
     },
     "react-native-safe-area-context": {

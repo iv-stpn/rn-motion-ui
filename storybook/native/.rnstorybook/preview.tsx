@@ -1,6 +1,7 @@
 import type { Preview } from '@storybook/react';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import { BlurProvider } from 'rn-motion-ui/overlay/blur-provider';
 import { Switch } from 'rn-motion-ui/switch';
 import { Uniwind } from 'uniwind';
 import '../global.css';
@@ -35,19 +36,24 @@ const preview: Preview = {
       }, [isDark]);
 
       return (
-        // `flex-1` sits on a wrapper View, not the ScrollView itself: a native
-        // ScrollView reports its content size to Yoga, so `flex: 1` (flexBasis:
-        // 0) directly on it can let it grow to its content height and stop
-        // scrolling. Bounding the wrapper first gives the ScrollView a definite
-        // height to scroll within — the same shape the demo app uses.
-        <View className="flex-1 bg-background">
-          <ScrollView contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
-            <View className="mb-4 self-start">
-              <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
-            </View>
-            <Story />
-          </ScrollView>
-        </View>
+        // BlurProvider wraps the story so overlay scrims (HoldMenu's backdrop,
+        // the modal menus) can frost the page behind them on Android — where the
+        // peer's BlurView blurs the BlurTarget here, not whatever sits behind it.
+        <BlurProvider>
+          {/* `flex-1` sits on a wrapper View, not the ScrollView itself: a native
+              ScrollView reports its content size to Yoga, so `flex: 1` (flexBasis:
+              0) directly on it can let it grow to its content height and stop
+              scrolling. Bounding the wrapper first gives the ScrollView a definite
+              height to scroll within — the same shape the demo app uses. */}
+          <View className="flex-1 bg-background">
+            <ScrollView contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
+              <View className="mb-4 self-start">
+                <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
+              </View>
+              <Story />
+            </ScrollView>
+          </View>
+        </BlurProvider>
       );
     },
   ],

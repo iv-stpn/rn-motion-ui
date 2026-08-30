@@ -1,0 +1,57 @@
+import { type ForwardRefExoticComponent, type ReactNode, type RefAttributes, useRef } from 'react';
+import { Platform, type View } from 'react-native';
+import { BlurTargetContext, type BlurTargetRef } from './blur-context';
+
+/**
+ * NATIVE twin of `./blur-provider`. See that module's doc for the public
+ * contract; this file carries the Android implementation.
+ *
+ * On Android it wraps `children` in the optional peer's `BlurTarget` (a native
+ * view the `BlurView` scrims reference to frost the content) and publishes a ref
+ * to it through `BlurTargetContext`. On iOS there is no target — the peer's
+ * `BlurView` is a `UIVisualEffectView` that blurs what sits behind it — so the
+ * provider is a passthrough with a null ref.
+ *
+ * The peer is resolved with a guarded dynamic `require` (like `overlay-blur`
+ * resolves `BlurView`), so a consumer that never installed the optional peer
+ * still renders — the provider degrades to the passthrough and Android scrims
+ * fall back to the plain translucent dim.
+ */
+
+/** The minimal `BlurTarget` surface this module touches. */
+type BlurTargetProps = { children?: ReactNode; style?: unknown };
+type BlurTargetComponent = ForwardRefExoticComponent<BlurTargetProps & RefAttributes<View>>;
+
+/** Resolves the peer's `BlurTarget` on Android, `null` elsewhere or when absent. */
+function resolveBlurTarget(): BlurTargetComponent | null {
+  if (Platform.OS !== 'android') return null;
+  try {
+    // Optional peer dep — Android backdrop blur; consumers without it get the dim scrim.
+    // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep
+    // biome-ignore lint/plugin: ts/no-as-cast — dynamic require has no static type
+    const mod = require('@danielsaraldi/react-native-blur-view') as { BlurTarget?: BlurTargetComponent };
+    return mod.BlurTarget ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const BlurTarget = resolveBlurTarget();
+
+export type BlurProviderProps = { children: ReactNode };
+
+export function BlurProvider({ children }: BlurProviderProps) {
+  // The ref must outlive every scrim open/close, so it lives on the provider —
+  // the one component mounted for the app's whole lifetime.
+  const blurTargetRef = useRef<View | null>(null);
+
+  if (!BlurTarget) return <BlurTargetContext.Provider value={{ blurTargetRef: null }}>{children}</BlurTargetContext.Provider>;
+
+  const value: { blurTargetRef: BlurTargetRef } = { blurTargetRef };
+
+  return (
+    <BlurTargetContext.Provider value={value}>
+      <BlurTarget ref={blurTargetRef}>{children}</BlurTarget>
+    </BlurTargetContext.Provider>
+  );
+}

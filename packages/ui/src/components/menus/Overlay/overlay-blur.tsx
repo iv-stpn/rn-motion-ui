@@ -5,9 +5,9 @@
  * The scrims (HoldMenu's backdrop and the modal overlays) paint a translucent
  * dim over a blur so the page behind them reads as frosted glass rather than a
  * flat wash. This is the WEB twin of `./overlay-blur` (the `.native.tsx` file
- * carries the guarded `@sbaiahmed1/react-native-blur` require): web never
- * touches the optional peer, so the web bundle builds even when the package is
- * not installed. RNW 0.21 passes `backdropFilter` through (prefixing
+ * carries the guarded `@danielsaraldi/react-native-blur-view` require): web
+ * never touches the optional peer, so the web bundle builds even when the
+ * package is not installed. RNW 0.21 passes `backdropFilter` through (prefixing
  * `WebkitBackdropFilter`), so the frost is the same 12 px the native `BlurView`
  * applies.
  *

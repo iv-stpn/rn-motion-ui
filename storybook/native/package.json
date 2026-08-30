@@ -13,9 +13,8 @@
     "typecheck": "bun run storybook-generate && tsc --noEmit"
   },
   "dependencies": {
+    "@danielsaraldi/react-native-blur-view": "^3.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@react-native-community/blur": "^4.4.1",
-    "@sbaiahmed1/react-native-blur": "^6.0.0",
     "@storybook/addon-ondevice-actions": "10.5.0",
     "@storybook/addon-ondevice-backgrounds": "10.5.0",
     "@storybook/addon-ondevice-controls": "10.5.0",

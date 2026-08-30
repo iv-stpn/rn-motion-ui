@@ -12,8 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@react-native-community/blur": "^4.4.1",
-    "@sbaiahmed1/react-native-blur": "^6.0.0",
+    "@danielsaraldi/react-native-blur-view": "^3.0.2",
     "expo": "^57",
     "expo-dev-client": "^57",
     "expo-font": "^57.0.1",

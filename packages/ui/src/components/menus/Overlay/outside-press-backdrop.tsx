@@ -29,7 +29,7 @@ export function OutsidePressBackdrop({ frame, onPress, overlay = false, testID }
       accessibilityLabel={onPress ? 'Close' : undefined}
       testID={testID}
       onPress={onPress ? handlePress : undefined}
-      className={overlay ? 'bg-foreground/40' : undefined}
+      className={overlay ? 'bg-black/40' : undefined}
       style={{ position: 'absolute', top: frame.top, left: frame.left, width: frame.width, height: frame.height }}
     />
   );

@@ -248,10 +248,17 @@ export function PopoverContent({
         {open ? (
           <View key="popover-overlay" className="flex-1">
             {overlay ? (
-              <View pointerEvents="none" className="absolute inset-0">
+              <>
                 <OverlayBlur />
-                <View className="absolute inset-0 bg-black/40" />
-              </View>
+                <MotiView
+                  pointerEvents="none"
+                  from={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: 'timing', duration: 200 }}
+                  className="absolute inset-0 bg-black/40"
+                />
+              </>
             ) : null}
             <Pressable
               accessibilityLabel="Close"

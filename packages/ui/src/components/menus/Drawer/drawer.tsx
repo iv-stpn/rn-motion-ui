@@ -84,6 +84,10 @@ export function Drawer({
       <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="drawer" className="flex-1" testID={testID}>
+            {/* Blur sits outside the dim's opacity fade: a parent opacity fades
+                out the CSS backdrop-filter on web (backdrop-root clipping), so
+                OverlayBlur fades its own opacity instead. */}
+            {overlay ? <OverlayBlur /> : null}
             <MotiView
               from={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -91,12 +95,11 @@ export function Drawer({
               transition={{ type: 'timing', duration: 250 }}
               className="absolute top-0 right-0 bottom-0 left-0"
             >
-              {overlay ? <OverlayBlur /> : null}
               <Pressable
                 accessibilityLabel="Close"
                 disabled={!closeOnOutsidePress}
                 onPress={handleBackdropPress}
-                className={overlay ? 'flex-1 bg-foreground/50' : 'flex-1'}
+                className={overlay ? 'flex-1 bg-black/50' : 'flex-1'}
               />
             </MotiView>
             <MotiView

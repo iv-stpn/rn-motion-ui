@@ -830,6 +830,7 @@
     "zustand": "5.0.3"
   },
   "peerDependencies": {
+    "@react-native-community/blur": ">=4.3.0",
     "@sbaiahmed1/react-native-blur": ">=6.0.0",
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
@@ -839,6 +840,9 @@
     "react-native-svg": ">=15.0.0"
   },
   "peerDependenciesMeta": {
+    "@react-native-community/blur": {
+      "optional": true
+    },
     "@sbaiahmed1/react-native-blur": {
       "optional": true
     },

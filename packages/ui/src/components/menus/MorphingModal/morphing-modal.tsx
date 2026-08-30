@@ -151,6 +151,10 @@ export function MorphingModal({
     <AnimatePresence onExitComplete={onExitComplete}>
       {isAnimOpen ? (
         <View key="morphing-modal" className="flex-1" testID={testID}>
+          {/* Blur sits outside the dim's opacity fade: a parent opacity fades
+              out the CSS backdrop-filter on web (backdrop-root clipping), so
+              OverlayBlur fades its own opacity instead. */}
+          {overlay ? <OverlayBlur /> : null}
           <MotiView
             from={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -158,11 +162,10 @@ export function MorphingModal({
             transition={{ type: 'timing', duration: 200, easing: EASE_OUT }}
             className="absolute top-0 right-0 bottom-0 left-0"
           >
-            {overlay ? <OverlayBlur /> : null}
             <Pressable
               accessibilityLabel="Close"
               onPress={closeOnOutsidePress ? handleClose : undefined}
-              className={overlay ? 'flex-1 bg-foreground/40' : 'flex-1'}
+              className={overlay ? 'flex-1 bg-black/40' : 'flex-1'}
               testID={testID ? `${testID}-backdrop` : undefined}
             />
           </MotiView>

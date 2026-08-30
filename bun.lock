@@ -36,7 +36,7 @@
     },
     "packages/ui": {
       "name": "rn-motion-ui",
-      "version": "6.0.1",
+      "version": "7.0.0",
       "bin": {
         "rn-motion-ui-tokens": "./scripts/gen-tokens.mjs",
       },
@@ -68,6 +68,7 @@
         "vitest": "4.1.10",
       },
       "peerDependencies": {
+        "@react-native-community/blur": ">=4.3.0",
         "@sbaiahmed1/react-native-blur": ">=6.0.0",
         "react": ">=18.0.0",
         "react-native": ">=0.76.0",
@@ -77,6 +78,7 @@
         "react-native-svg": ">=15.0.0",
       },
       "optionalPeers": [
+        "@react-native-community/blur",
         "@sbaiahmed1/react-native-blur",
         "react-native-safe-area-context",
       ],
@@ -85,6 +87,7 @@
       "name": "@rn-motion-ui/demo",
       "version": "0.0.0",
       "dependencies": {
+        "@react-native-community/blur": "^4.4.1",
         "@sbaiahmed1/react-native-blur": "^6.0.0",
         "expo": "^57",
         "expo-dev-client": "^57",
@@ -117,6 +120,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@react-native-async-storage/async-storage": "2.2.0",
+        "@react-native-community/blur": "^4.4.1",
         "@sbaiahmed1/react-native-blur": "^6.0.0",
         "@storybook/addon-ondevice-actions": "10.5.0",
         "@storybook/addon-ondevice-backgrounds": "10.5.0",
@@ -716,6 +720,8 @@
     "@polka/url": ["@polka/url@1.0.0-next.29", "", {}, "sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww=="],
 
     "@react-native-async-storage/async-storage": ["@react-native-async-storage/async-storage@2.2.0", "", { "dependencies": { "merge-options": "^3.0.4" }, "peerDependencies": { "react-native": "^0.0.0-0 || >=0.65 <1.0" } }, "sha512-gvRvjR5JAaUZF8tv2Kcq/Gbt3JHwbKFYfmb445rhOj6NUMx3qPLixmDx5pZAyb9at1bYvJ4/eTUipU5aki45xw=="],
+
+    "@react-native-community/blur": ["@react-native-community/blur@4.4.1", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-XBSsRiYxE/MOEln2ayunShfJtWztHwUxLFcSL20o+HNNRnuUDv+GXkF6FmM2zE8ZUfrnhQ/zeTqvnuDPGw6O8A=="],
 
     "@react-native-community/datetimepicker": ["@react-native-community/datetimepicker@9.1.0", "", { "dependencies": { "invariant": "^2.2.4" }, "peerDependencies": { "expo": ">=52.0.0", "react": "*", "react-native": "*", "react-native-windows": "*" }, "optionalPeers": ["expo", "react-native-windows"] }, "sha512-eadbnk+I2vxvW30iTAsm/qlCnMMAadkifIMYNEB2lzhxN/SvlKc7S2V4k5DyrwjdCbqdcMk3t9K6fnUMcAV34w=="],
 

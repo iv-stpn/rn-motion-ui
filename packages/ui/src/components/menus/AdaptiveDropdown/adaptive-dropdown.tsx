@@ -241,11 +241,15 @@ export function AdaptiveDropdown({
       {isWideScreen ? (
         <Modal visible={panelMounted} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={close}>
           <Pressable className="flex-1" onPress={closeOnOutsidePress ? close : undefined}>
+            {overlay ? <OverlayBlur /> : null}
             {overlay ? (
-              <View pointerEvents="none" className="absolute inset-0">
-                <OverlayBlur />
-                <View className="absolute inset-0 bg-black/40" />
-              </View>
+              <MotiView
+                pointerEvents="none"
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ type: 'timing', duration: 200 }}
+                className="absolute inset-0 bg-black/40"
+              />
             ) : null}
             <AnimatePresence onExitComplete={handlePanelExitComplete}>
               {open && isWideScreen ? (

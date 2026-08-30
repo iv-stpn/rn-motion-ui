@@ -332,7 +332,11 @@ export function MorphingMenu({
               <View key="morphing-menu" className="flex-1">
                 {/* Scrim: dims the page when `overlay`, and closes on outside
                     press when `closeOnOutsidePress`. Always mounted so a press
-                    outside still lands on something when the dim is hidden. */}
+                    outside still lands on something when the dim is hidden.
+                    Blur sits outside the dim's opacity fade — a parent opacity
+                    fades out the CSS backdrop-filter on web (backdrop-root
+                    clipping), so OverlayBlur fades its own opacity instead. */}
+                {overlay ? <OverlayBlur /> : null}
                 <MotiView
                   from={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -340,11 +344,10 @@ export function MorphingMenu({
                   transition={backdropTransition}
                   className="absolute top-0 right-0 bottom-0 left-0"
                 >
-                  {overlay ? <OverlayBlur /> : null}
                   <Pressable
                     accessibilityLabel="Close"
                     onPress={closeOnOutsidePress ? handleClose : undefined}
-                    className={overlay ? 'flex-1 bg-foreground/40' : 'flex-1'}
+                    className={overlay ? 'flex-1 bg-black/40' : 'flex-1'}
                     testID={testID ? `${testID}-backdrop` : undefined}
                   />
                 </MotiView>

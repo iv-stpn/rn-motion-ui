@@ -15,8 +15,7 @@ import {
 import { Animated, PanResponder, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
+import { elevatedShadow, FLOATING_SHADOW_CLASSNAME, type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 
@@ -518,7 +517,15 @@ function SwipeableListRow({
   return (
     <View
       ref={rowRef}
-      className="relative overflow-hidden rounded-2xl bg-muted"
+      className={cn(
+        'relative overflow-hidden rounded-2xl bg-muted',
+        // The elevation shadow lives on the outer wrapper, not the draggable
+        // surface: `overflow-hidden` here clips the sliding surface to the
+        // rounded row, and that same clip would swallow a shadow on the child.
+        // A box-shadow on the clipping element itself isn't clipped, so the
+        // ladder drop / floating halo can extend past the row's corners.
+        floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(elevation),
+      )}
       style={[
         { opacity: item.disabled ? 0.6 : 1 },
         // Web: keep vertical page scroll but let the wheel handler claim
@@ -562,7 +569,7 @@ function SwipeableListRow({
 
       {/* Draggable surface */}
       <Animated.View
-        className={cn('rounded-2xl px-4 py-3', surface(elevation, undefined, floating))}
+        className={cn('rounded-2xl px-4 py-3', surfaceBackground(elevation))}
         style={[
           {
             minHeight: 72,

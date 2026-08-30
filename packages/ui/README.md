@@ -171,6 +171,7 @@ Subpaths are namespaced by category:
 | `/animated-list`               | `AnimatedList`, `AnimatedListItem`                                       |
 | `/swipeable-list`              | `SwipeableList`                                                          |
 | `/range-slider`                | `RangeSlider`                                                            |
+| `/color-picker`                | `ColorPicker`                                                            |
 | `/cylinder-carousel`           | `CylinderCarousel`                                                       |
 | `/wheel-picker`                | `WheelPicker`                                                            |
 | `/command-palette`             | `CommandPalette`                                                         |

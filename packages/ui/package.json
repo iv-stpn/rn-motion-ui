@@ -167,6 +167,11 @@
       "types": "./src/lib/color.ts",
       "default": "./src/lib/color.ts"
     },
+    "./color-picker": {
+      "source": "./src/components/form/ColorPicker/color-picker.tsx",
+      "types": "./src/components/form/ColorPicker/color-picker.tsx",
+      "default": "./src/components/form/ColorPicker/color-picker.tsx"
+    },
     "./command-palette": {
       "source": "./src/components/menus/CommandPalette/command-palette.tsx",
       "types": "./src/components/menus/CommandPalette/command-palette.tsx",

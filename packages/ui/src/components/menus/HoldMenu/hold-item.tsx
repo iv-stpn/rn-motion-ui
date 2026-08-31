@@ -201,7 +201,17 @@ const HoldItemComponent = ({
   // above alone would mount them only after `releaseProgress` first drops below
   // 1, and the travelling twin (opacity snaps to 1 instantly) would be empty for
   // that first frame while the in-place item is already hidden.
-  const handleWillOpen = useCallback(() => setShowTwinChildren(true), []);
+  //
+  // The mount is deferred by one frame: it runs on the JS thread as a direct
+  // result of the LongPress gesture's `onStart` (via `runOnJS`), so committing
+  // a new native subtree — and starting its Reanimated enter animations — in
+  // the same tick as the gesture's touch dispatch is a native-crash risk on
+  // Android (Fabric mounting views while RNGH is still processing the touch
+  // that activated the hold). One frame later the dispatch window has closed;
+  // the twin's 150 ms fade-in never notices the 16 ms delay.
+  const handleWillOpen = useCallback(() => {
+    requestAnimationFrame(() => setShowTwinChildren(true));
+  }, []);
 
   const webHold = IS_WEB && isHold;
 

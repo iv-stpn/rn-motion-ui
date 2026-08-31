@@ -19,8 +19,7 @@
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/react';
 import { type ReactElement, useCallback, useState } from 'react';
-import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { FlatList, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { AddLine } from 'rn-motion-ui-icons/icons/add-line';
 import { ArrowLeftLine } from 'rn-motion-ui-icons/icons/arrow-left-line';
 import { ArrowRightLine } from 'rn-motion-ui-icons/icons/arrow-right-line';
@@ -321,7 +320,7 @@ function WhatsAppScene({ overlay = true, closeOnOutsidePress = true }: SceneProp
   return (
     <HoldMenuProvider closeOnOutsidePress={closeOnOutsidePress} iconComponent={IconByName} overlay={overlay} theme="light">
       <View style={{ flex: 1, backgroundColor: 'rgb(230, 211, 214)' }}>
-        <Animated.FlatList
+        <FlatList
           contentContainerStyle={{ paddingHorizontal: 8, paddingVertical: 8 }}
           data={WHATSAPP_MESSAGES}
           keyExtractor={(item: ChatMessage) => item.id}

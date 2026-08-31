@@ -154,8 +154,17 @@ const MenuListComponent = () => {
   const entries = useMemo(() => toMenuEntries(itemList, AnimatedIcon, handleSelect), [itemList, AnimatedIcon, handleSelect]);
 
   const setter = (items: MenuItemProps[]) => {
-    setItemList(items);
-    prevList.value = items;
+    // Deferred by one frame, like the twin's children pre-mount: the row list
+    // commits in response to the activation worklet's `menuProps` publish,
+    // which happens inside the LongPress gesture's `onStart` — mounting the
+    // rows (and starting their MotiView stagger animations) in the same tick
+    // as the gesture's touch dispatch is a native-crash risk on Android. One
+    // frame later the dispatch window has closed; the panel's 150 ms pop-in
+    // never notices the 16 ms delay.
+    requestAnimationFrame(() => {
+      setItemList(items);
+      prevList.value = items;
+    });
   };
 
   useAnimatedReaction(

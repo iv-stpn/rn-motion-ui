@@ -367,6 +367,12 @@ function ExternalFileTray() {
 const meta = {
   title: 'File System/FileSystem',
   component: FileSystem,
+  // `centered`, like every other story group: a missing layout resolves to an
+  // empty canvas container style on the native storybook, which collapses the
+  // BlurProvider → flex-1 → ScrollView chain and blanks the story on the
+  // Android APK (the same mechanism that white-screened the four fullscreen
+  // menu stories — see 4250db21).
+  parameters: { layout: 'centered' },
   decorators: [
     (Story) => (
       <View className="w-[880px] max-w-full">

@@ -325,6 +325,15 @@ function WhatsAppScene({ overlay = true, closeOnOutsidePress = true }: SceneProp
           data={WHATSAPP_MESSAGES}
           keyExtractor={(item: ChatMessage) => item.id}
           renderItem={({ item }: MessageRenderItem) => <WhatsAppBubble message={item} onAction={onAction} />}
+          // RN 0.86 defaults `removeClippedSubviews` to TRUE on Android; with
+          // the rows' `collapsable={false}` Animated.View + GestureDetector
+          // subtrees, a re-render (the menu opening re-renders every bubble)
+          // makes the RecyclerView detach/re-attach a clipped cell with a stale
+          // parent — the native view ends up double-parented and HWUI's
+          // `RenderNode::prepareTreeImpl` recurses on the cycle until the
+          // RenderThread stack overflows (SIGSEGV, 500+ identical frames).
+          // Same requirement as every FileSystem list view in this package.
+          removeClippedSubviews={false}
           scrollEventThrottle={16}
           style={{ flex: 1 }}
         />

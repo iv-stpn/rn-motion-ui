@@ -5,6 +5,7 @@ import { BlurProvider } from 'rn-motion-ui/overlay/blur-provider';
 import { Switch } from 'rn-motion-ui/switch';
 import { Uniwind } from 'uniwind';
 import '../global.css';
+import { GlobalErrorReporter, StoryErrorBoundary } from './error-reporter';
 
 // Seed the theme at module scope, before the first story renders, so the very
 // first paint is already light rather than whatever the simulator's OS is set
@@ -50,7 +51,13 @@ const preview: Preview = {
               <View className="mb-4 self-start">
                 <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
               </View>
-              <Story />
+              {/* StoryErrorBoundary renders the real error + stack when a story
+                  crashes, so a white canvas explains itself on the device. */}
+              <StoryErrorBoundary>
+                <Story />
+              </StoryErrorBoundary>
+              {/* GlobalErrorReporter shows uncaught effect/async JS errors. */}
+              <GlobalErrorReporter />
             </ScrollView>
           </View>
         </BlurProvider>

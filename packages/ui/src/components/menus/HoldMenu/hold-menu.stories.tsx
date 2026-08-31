@@ -19,7 +19,7 @@
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/react';
 import { type ReactElement, useCallback, useState } from 'react';
-import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { AddLine } from 'rn-motion-ui-icons/icons/add-line';
 import { ArrowLeftLine } from 'rn-motion-ui-icons/icons/arrow-left-line';
@@ -505,24 +505,26 @@ function InteractiveScene() {
   );
 }
 
-// RN's `DimensionValue` has no room for a `calc()` length, so the web-only
-// height is cast — same pattern as the sibling HoldMenu stories.
-// biome-ignore lint/plugin: calc() is honoured by react-native-web but absent from RN's DimensionValue union, so the web-only style is cast
-const STORY_HEIGHT = { height: 'calc(100vh - 3rem)' } as unknown as ViewStyle;
-
-/**
- * The storybook canvas root has no definite height, so the global decorator's
- * `flex-1` cannot stretch and the provider's `flex: 1` collapses. This wrapper
- * gives the canvas a definite height (the global decorator pads 1.5rem per
- * side, hence 100vh minus 3rem) so each scene and its backdrop cover the whole
- * page. The height must be a definite `height`, not `min-height`, so the
- * WhatsApp list bounds to it and scrolls internally.
- */
-const storyDecorator: Decorator = (Story) => (
-  <View className="w-full" style={STORY_HEIGHT}>
-    <Story />
-  </View>
-);
+// The storybook canvas root has no definite height, so the global decorator's
+// `flex-1` cannot stretch and the provider's `flex: 1` collapses. This wrapper
+// gives the canvas a definite height (the global decorator pads 1.5rem per
+// side, hence 100vh minus 3rem) so each scene and its backdrop cover the whole
+// page. The height must be a definite `height`, not `min-height`, so the
+// WhatsApp list bounds to it and scrolls internally.
+//
+// The height comes from `useWindowDimensions` rather than a `calc()` CSS
+// length: `calc(100vh - 3rem)` is honoured by react-native-web, but RN's Yoga
+// drops the invalid dimension on native — the wrapper collapses to 0 and the
+// provider's `flex: 1` chain white-screens the story on Android.
+const STORY_HEIGHT_OFFSET = 64;
+const storyDecorator: Decorator = (Story) => {
+  const { height } = useWindowDimensions();
+  return (
+    <View className="w-full" style={{ height: Math.max(420, height - STORY_HEIGHT_OFFSET) }}>
+      <Story />
+    </View>
+  );
+};
 
 const meta = {
   title: 'Menus/HoldMenu',

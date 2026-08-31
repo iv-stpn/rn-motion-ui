@@ -85,7 +85,12 @@ function BackgroundScrim({ onClose, testID }: ScrimProps) {
       style={StyleSheet.absoluteFill}
       transition={MENU_SCRIM_TRANSITION}
     >
-      {dims ? <OverlayBlur /> : null}
+      {/* `inline`: the scrim renders inside the content the BlurTarget wraps —
+          on Android that makes the peer's RenderNodeBlurController record the
+          target (which contains this very view) into its own blur node, and
+          HWUI's prepareTreeImpl cycles until the RenderThread stack overflows.
+          Android degrades to the dim; iOS/web keep the frost. */}
+      {dims ? <OverlayBlur inline={true} /> : null}
       <Pressable
         accessibilityLabel={CLOSE_ACCESSIBILITY_LABEL}
         accessibilityRole="button"

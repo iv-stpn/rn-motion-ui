@@ -21,7 +21,7 @@
  */
 
 import type { ComponentType, RefObject } from 'react';
-import { StyleSheet, type View } from 'react-native';
+import { Platform, StyleSheet, type View } from 'react-native';
 import { MotiView } from '../../../moti/components/view';
 import { useBlurTargetRef } from './blur-context';
 
@@ -72,11 +72,27 @@ const BlurView = resolveBlurView();
  * it mirrors the web twin, which must fade its *own* opacity because a parent
  * opacity fades out the backdrop on CSS.
  *
+ * ## `inline` — Android scrims that sit INSIDE their own blur target
+ *
+ * Pass `inline` when this blur view renders inline within the very `BlurTarget`
+ * it is pointed at (the HoldMenu backdrop, FileSystem's background menu — the
+ * portal-host scrims). On Android that combination is a native crash: when the
+ * scrim draws, the peer's `RenderNodeBlurController` records the target's
+ * `RenderNode` into its own blur node, and because the target *contains* the
+ * blur view the RenderNode graph cycles — HWUI's `RenderNode::prepareTreeImpl`
+ * recurses until the RenderThread stack overflows (SIGSEGV, 500+ identical
+ * frames). Modal scrims are in a separate window (outside the target) and are
+ * safe, which is why `inline` scrims are the only ones affected. On Android an
+ * `inline` scrim degrades to the plain translucent dim; iOS (`UIVisualEffectView`)
+ * and web (CSS `backdrop-filter`) blur behind themselves and are unaffected.
+ *
  * Internal to the package — not exported.
  */
-export function OverlayBlur() {
+type OverlayBlurProps = { inline?: boolean };
+
+export function OverlayBlur({ inline = false }: OverlayBlurProps) {
   const blurTargetRef = useBlurTargetRef();
-  if (!BlurView) return null;
+  if (!BlurView || (inline && Platform.OS === 'android')) return null;
   return (
     <MotiView
       pointerEvents="none"

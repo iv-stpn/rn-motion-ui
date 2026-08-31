@@ -2,36 +2,36 @@
 'rn-motion-ui': patch
 ---
 
-fix(HoldMenu): defer open-side commits and stop the Android render-tree overflow
+fix(HoldMenu): inline Android backdrop blur caused the render-thread crash
 
-Two related Android-native crash fixes for the hold-menu open path:
+**Root cause (device tombstone):** opening a HoldMenu on the Android
+storybook APK SIGSEGV'd with 500+ frames of `RenderNode::prepareTreeImpl →
+prepareListAndChildren` — a native stack overflow on the RenderThread. The
+HoldMenu backdrop's `OverlayBlur` renders `@danielsaraldi/react-native-blur-view`'s
+`BlurView` INLINE inside the very `BlurTarget` it is pointed at (the
+`BlurProvider` wraps the whole story, including the portal host the backdrop
+lives in). When the scrim draws (backdrop opacity → 1 at open), the peer's
+`RenderNodeBlurController.drawSnapshot` records the target's `RenderNode`
+into its own blur node (`canvas.drawRenderNode(BlurTarget.renderNode)`); the
+target's display list contains the blur view, so the RenderNode graph cycles
+and HWUI's tree preparation recurses until the ~8 MB RenderThread stack runs
+out. Before the blur-peer consolidation (17fe2a4f) the native `OverlayBlur`
+resolved to null on Android and the backdrop was a plain dim — HoldMenu
+worked. The modal menus' blur views are unaffected: they render inside RN
+Modals (a separate window), outside the BlurTarget.
 
-1. **`removeClippedSubviews` on the story's WhatsApp FlatList** — the actual
-   stack overflow. RN 0.86 defaults `removeClippedSubviews` to TRUE on
-   Android, and the list's rows are `collapsable={false}` Animated.View +
-   GestureDetector subtrees (every `HoldItem`). Opening a menu re-renders
-   every bubble; the RecyclerView then detaches/re-attaches a clipped cell
-   whose subtree already has a parent, and HWUI's
-   `RenderNode::prepareTreeImpl` recurses on the resulting cycle until the
-   RenderThread stack overflows (SIGSEGV, 500+ identical frames). Every
-   FileSystem list view in this package already sets
-   `removeClippedSubviews={false}` for the same reason; the story's list now
-   does too. The same recycle path also explains the storybook UI's details
-   sheet crashing while the story is displayed (its present re-renders the
-   story).
+**Fix:** `OverlayBlur` gains an `inline` prop; on Android an inline scrim
+skips the `BlurView` and degrades to the plain translucent dim (iOS
+`UIVisualEffectView` and web CSS `backdrop-filter` blur behind themselves and
+keep the frost). Applied to the two inline scrims: the HoldMenu backdrop and
+FileSystem's background menu (same latent crash).
 
-2. **One-frame deferral of the open-side commits** (`hold-item.tsx`
-   `handleWillOpen`, `menu-list.tsx` `setter`): the panel rows and the
-   portal twin's lifted copy mounted new native subtrees (with Reanimated
-   enter animations) in the same tick as the LongPress gesture's `onStart`
-   touch dispatch (via `runOnJS`) — a separate Fabric/RNGH commit-during-
-   dispatch hazard. Both now land one frame later; the 150 ms fade-ins never
-   notice the 16 ms delay.
-
-Also un-blank the four story groups that had no `layout` parameter
-(FileSystem, Table, ReorderableList, SortableList): a missing layout
-resolves to an empty canvas container style on the native storybook —
-identical to the `fullscreen` container that white-screened the menu
-stories (4250db21) — and collapsed the BlurProvider → flex-1 → ScrollView
-chain, rendering them as blank white canvases on the Android APK. They now
-use `layout: 'centered'` like every other story group.
+Also keeps the two hardening changes from the first round: the story's
+WhatsApp FlatList now sets `removeClippedSubviews={false}` (RN 0.86 defaults
+it to true on Android; the FileSystem lists already carry it), and the
+open-side commits (panel rows + twin children) are deferred one frame out of
+the gesture's touch dispatch window. Plus `layout: 'centered'` on the four
+story groups that had no layout parameter (FileSystem, Table,
+ReorderableList, SortableList), which un-blanks them on the native storybook
+(a missing layout resolves to the same empty canvas container that
+white-screened the fullscreen menu stories, 4250db21).

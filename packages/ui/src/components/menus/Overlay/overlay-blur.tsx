@@ -26,9 +26,15 @@ import { MotiView } from '../../../moti/components/view';
  * intercepts touches (it is purely decorative — the scrim above it is the tap
  * target), and fades its own opacity in sync with the menu's enter.
  *
+ * The `inline` prop (see the native twin) is accepted for a shared call-site
+ * signature but is a no-op here: CSS `backdrop-filter` blurs behind the view
+ * wherever it sits, so an inline scrim inside the app content is safe.
+ *
  * Internal to the package — not exported.
  */
-export function OverlayBlur() {
+type OverlayBlurProps = { inline?: boolean };
+
+export function OverlayBlur(_props: OverlayBlurProps = {}) {
   return (
     <MotiView
       pointerEvents="none"

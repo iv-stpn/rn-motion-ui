@@ -81,7 +81,14 @@ const BackdropComponent = () => {
   // `backgroundColor` would put it *behind* the blur, not over it.
   const backdropFill = overlay ? (
     <>
-      <OverlayBlur />
+      {/* `inline`: this scrim lives INSIDE the BlurTarget it blurs (the portal
+          host sits within the BlurProvider). On Android that combination makes
+          the peer's RenderNodeBlurController record the target's RenderNode
+          into its own — the target contains the BlurView, so the RenderNode
+          graph cycles and HWUI's prepareTreeImpl stack-overflows (the storybook
+          APK SIGSEGV). Android degrades to the plain translucent dim; iOS/web
+          blur behind themselves and keep the frost. */}
+      <OverlayBlur inline={true} />
       <Animated.View className="absolute inset-0" style={animatedBackgroundStyle} />
     </>
   ) : null;

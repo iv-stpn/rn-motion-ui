@@ -99,6 +99,7 @@ export type AdaptiveDropdownProps = {
   closeOnOutsidePress?: boolean;
 };
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the overlay/outside-press branches add two decision points to a component already at the threshold
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the close affordance and overlay/outside-press branches push the shell four lines past the cap
 export function AdaptiveDropdown({
   trigger,
   children,

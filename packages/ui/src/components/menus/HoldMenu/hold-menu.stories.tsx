@@ -529,7 +529,7 @@ const storyDecorator: Decorator = (Story) => {
 const meta = {
   title: 'Menus/HoldMenu',
   component: HoldMenuProvider,
-  parameters: { layout: 'fullscreen' },
+  parameters: { layout: 'centered' },
   decorators: [storyDecorator],
   // children is supplied per story; a stub satisfies the type checker.
   args: { children: null },

@@ -31,7 +31,7 @@ const EMPTY_SECTIONS: MultiStepSection[] = [];
 const meta = {
   title: 'Menus/MultiStepMenu',
   component: MultiStepMenu,
-  parameters: { layout: 'fullscreen' },
+  parameters: { layout: 'centered' },
   // All required props are managed by each story's render fn; stubs satisfy the type checker
   args: {
     isWideScreen: false,

@@ -18,6 +18,7 @@ import { Button } from '../../buttons/Button/button';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { MorphingFAB } from './morphing-fab';
 
 const meta = {
@@ -190,7 +191,7 @@ function MorphingFABPlayground() {
   const [example, setExample] = useState<Example>('feedback');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
-  const [overlay, setOverlay] = useState(false);
+  const [overlay, setOverlay] = useState<OverlayType>('none');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
 
   return (
@@ -200,7 +201,7 @@ function MorphingFABPlayground() {
           <Choice label="Content" onChange={setExample} options={EXAMPLES} value={example} />
           <Toggle label="Floating" onChange={setFloating} value={floating} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-          <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+          <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
           <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
         </ControlCard>
       </View>

@@ -7,6 +7,7 @@ import { Choice, ControlCard, Note, Playground, Toggle } from '../../../__storie
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { BottomSheet } from './bottom-sheet';
 
 const meta = {
@@ -58,7 +59,7 @@ function SheetBody({ long = false, full = false, onClose }: SheetBodyProps) {
 function SheetPlayground() {
   const [fullSheet, setFullSheet] = useState(false);
   const [closeOnOutside, setCloseOnOutside] = useState(true);
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('blur');
   const [longContent, setLongContent] = useState(false);
   const [floating, setFloating] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
@@ -78,7 +79,7 @@ function SheetPlayground() {
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Long content" onChange={setLongContent} value={longContent} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
       </ControlCard>
 
       <TriggerControls state={trigger} />

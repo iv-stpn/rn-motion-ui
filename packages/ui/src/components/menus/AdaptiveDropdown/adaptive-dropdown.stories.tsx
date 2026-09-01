@@ -14,6 +14,7 @@ import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../buttons/Button/button';
 import { Menu, type MenuEntry } from '../../rows/menu';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { AdaptiveDropdown, type TriggerRenderProps } from './adaptive-dropdown';
 
 const meta = {
@@ -39,6 +40,9 @@ type WidthKey = (typeof WIDTHS)[number];
 
 const OFFSETS = ['0', '8', '20'] as const;
 type OffsetKey = (typeof OFFSETS)[number];
+
+const SMALL_SCREEN_OVERLAYS = ['default', 'none', 'blur', 'opacity'] as const;
+type SmallScreenOverlay = (typeof SMALL_SCREEN_OVERLAYS)[number];
 
 const SCROLL_MAX_HEIGHT = 260;
 const LONG_LIST_LENGTH = 18;
@@ -106,7 +110,8 @@ function DropdownPlayground() {
   const [longList, setLongList] = useState(false);
   const [fullSheet, setFullSheet] = useState(false);
   const [controlled, setControlled] = useState(false);
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('none');
+  const [smallScreenOverlay, setSmallScreenOverlay] = useState<SmallScreenOverlay>('default');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
@@ -147,7 +152,13 @@ function DropdownPlayground() {
         <Toggle label="Scrollable" onChange={setScrollable} value={scrollable} />
         <Toggle label="Full sheet" onChange={setFullSheet} value={fullSheet} />
         <Toggle label="Controlled" onChange={setControlled} value={controlled} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
+        <Choice
+          label="Small screen overlay"
+          onChange={setSmallScreenOverlay}
+          options={SMALL_SCREEN_OVERLAYS}
+          value={smallScreenOverlay}
+        />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 
@@ -164,6 +175,7 @@ function DropdownPlayground() {
         offset={Number(offsetKey)}
         overlay={overlay}
         scrollable={scrollable}
+        smallScreenOverlay={smallScreenOverlay === 'default' ? undefined : smallScreenOverlay}
         title={withTitle ? PANEL_TITLE : undefined}
         trigger={renderTrigger}
         width={Number(widthKey)}

@@ -9,8 +9,9 @@ import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { surface } from '../../../lib/surface';
-import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
+import { OverlayScrim } from '../Overlay/overlay-scrim';
+import type { OverlayType } from '../Overlay/overlay-type';
 import { useSheetPresence } from '../Overlay/use-sheet-presence';
 
 const HANDLE_HEIGHT = 28;
@@ -63,8 +64,8 @@ export type BottomSheetProps = {
    * shadow or border). Defaults to `6`.
    */
   elevation?: SurfaceElevation;
-  /** When false, the dimming backdrop is not rendered — the sheet floats over the page with no scrim. Defaults to true. */
-  overlay?: boolean;
+  /** The scrim behind the sheet: `"blur"`, `"opacity"`, or `"none"` — the sheet floats over the page with no scrim. Defaults to `"blur"`. */
+  overlay?: OverlayType;
   /** When false, pressing outside the sheet will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
   // Phase 5.4 — slot classNames
@@ -103,7 +104,7 @@ export function BottomSheet({
   fullSheet,
   floating = false,
   elevation = 6,
-  overlay = true,
+  overlay = 'blur',
   closeOnOutsidePress = true,
   handleClassName,
   backdropClassName,
@@ -161,6 +162,25 @@ export function BottomSheet({
     if (closeOnOutsidePress) handleClose();
   }, [closeOnOutsidePress, handleClose]);
 
+  // The backdrop doubles as the only reachable dismiss control for screen-reader
+  // and keyboard users, so its a11y props flip with `closeOnOutsidePress`.
+  const backdropA11y = closeOnOutsidePress
+    ? ({
+        accessibilityRole: 'button',
+        accessibilityLabel: closeAccessibilityLabel,
+        importantForAccessibility: 'yes',
+        focusable: true,
+      } as const)
+    : ({
+        accessibilityElementsHidden: true,
+        importantForAccessibility: 'no-hide-descendants',
+        'aria-hidden': true,
+        focusable: false,
+      } as const);
+  const sheetRadiusClass = fullSheet ? 'rounded-t-none' : 'rounded-t-modal';
+  const sheetHeightStyle = { maxHeight: fullSheet ? height : Math.round(height * 0.9), height: fullSheet ? height : undefined };
+  const contentInsetStyle = safeArea ? { paddingTop: fullSheet ? insets.top : 0, paddingBottom: insets.bottom } : undefined;
+
   if (!isMounted) return null;
 
   return (
@@ -175,19 +195,18 @@ export function BottomSheet({
       aria-modal={true}
     >
       <View className="flex-1" style={{ pointerEvents: 'box-none' }}>
-        {overlay ? (
+        {overlay === 'none' ? null : (
           <Animated.View
             renderToHardwareTextureAndroid={IS_ANDROID}
             className={backdropClassName}
             style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }, backdropStyle]}
           >
-            <OverlayBlur />
-            <View
-              className="absolute inset-0"
-              style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' /* theme-exempt — scrim stays black in both themes */ }}
+            <OverlayScrim
+              type={overlay}
+              dimStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' /* theme-exempt — scrim stays black in both themes */ }}
             />
           </Animated.View>
-        ) : null}
+        )}
         <View className="flex-1 justify-end">
           {fullSheet ? null : (
             // The backdrop is also the only dismiss control a screen-reader or
@@ -199,12 +218,7 @@ export function BottomSheet({
               <Pressable
                 onPress={handleOverlayPress}
                 className="flex-1"
-                accessibilityRole={closeOnOutsidePress ? 'button' : undefined}
-                accessibilityLabel={closeOnOutsidePress ? closeAccessibilityLabel : undefined}
-                accessibilityElementsHidden={!closeOnOutsidePress}
-                importantForAccessibility={closeOnOutsidePress ? 'yes' : 'no-hide-descendants'}
-                aria-hidden={closeOnOutsidePress ? undefined : true}
-                focusable={closeOnOutsidePress}
+                {...backdropA11y}
                 testID={testID ? `${testID}-backdrop` : undefined}
               />
             </View>
@@ -213,27 +227,17 @@ export function BottomSheet({
             <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>
               <View
                 ref={sheetRef}
-                className={cn(
-                  'w-full overflow-hidden',
-                  surface(elevation, undefined, floating),
-                  fullSheet ? 'rounded-t-none' : 'rounded-t-modal',
-                )}
+                className={cn('w-full overflow-hidden', surface(elevation, undefined, floating), sheetRadiusClass)}
                 testID={testID}
                 role="dialog"
                 aria-modal={true}
                 accessibilityViewIsModal={true}
                 aria-label={accessibilityLabel}
                 accessibilityLabel={accessibilityLabel}
-                style={{
-                  maxHeight: fullSheet ? height : Math.round(height * 0.9),
-                  height: fullSheet ? height : undefined,
-                }}
+                style={sheetHeightStyle}
               >
                 {fullSheet ? null : <SheetHandle className={handleClassName} />}
-                <View
-                  className={cn('min-h-0 grow', containerClassName)}
-                  style={safeArea ? { paddingTop: fullSheet ? insets.top : 0, paddingBottom: insets.bottom } : undefined}
-                >
+                <View className={cn('min-h-0 grow', containerClassName)} style={contentInsetStyle}>
                   {children}
                 </View>
               </View>

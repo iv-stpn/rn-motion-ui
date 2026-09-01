@@ -10,8 +10,9 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
-import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
+import { OverlayScrim } from '../Overlay/overlay-scrim';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 /** Floating panel vs. bottom sheet cutoff. */
 const DEFAULT_WIDE_BREAKPOINT: BreakpointValue = 'md';
@@ -20,6 +21,38 @@ const VIEWPORT_PADDING = 8;
 const DEFAULT_MAX_HEIGHT = 520;
 
 const noop = () => undefined;
+
+type AnchorRect = { x: number; y: number; width: number; height: number };
+
+type ComputePanelLayoutOptions = {
+  anchor: AnchorRect | null;
+  align: 'start' | 'end';
+  panelWidth: number;
+  viewportWidth: number;
+  viewportHeight: number;
+  offset: number;
+  contentHeight: number;
+};
+
+type PanelLayout = { left: number; top: number; openAbove: boolean };
+
+// Pure geometry for the floating panel: clamps it to the viewport and flips it
+// above the trigger when it wouldn't fit below. Pulled out of the component so
+// the math is testable and the render stays readable.
+function computePanelLayout(options: ComputePanelLayoutOptions): PanelLayout {
+  const { anchor, align, panelWidth, viewportWidth, viewportHeight, offset, contentHeight } = options;
+  const maxLeft = Math.max(VIEWPORT_PADDING, viewportWidth - panelWidth - VIEWPORT_PADDING);
+  const spaceBelow = anchor ? viewportHeight - (anchor.y + anchor.height) - offset - VIEWPORT_PADDING : 0;
+  const spaceAbove = anchor ? anchor.y - offset - VIEWPORT_PADDING : 0;
+  const openAbove = Boolean(anchor) && contentHeight > spaceBelow && spaceAbove > spaceBelow;
+
+  if (!anchor) return { left: 0, top: 0, openAbove: false };
+
+  const raw = align === 'end' ? anchor.x + anchor.width - panelWidth : anchor.x;
+  const left = Math.min(Math.max(raw, VIEWPORT_PADDING), maxLeft);
+  const top = openAbove ? Math.max(VIEWPORT_PADDING, anchor.y - offset - contentHeight) : anchor.y + anchor.height + offset;
+  return { left, top, openAbove };
+}
 
 export type TriggerRenderProps = { open: boolean; toggle: () => void };
 export type ContentRenderProps = { close: () => void };
@@ -93,13 +126,13 @@ export type AdaptiveDropdownProps = {
    */
   motion?: MenuMotion;
   testID?: string;
-  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
-  overlay?: boolean;
+  /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"none"` — a dropdown floats over the page untouched. */
+  overlay?: OverlayType;
+  /** Overrides `overlay` on the small-screen bottom sheet. When omitted, the sheet uses `overlay`. */
+  smallScreenOverlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
 };
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the overlay/outside-press branches add two decision points to a component already at the threshold
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the close affordance and overlay/outside-press branches push the shell four lines past the cap
 export function AdaptiveDropdown({
   trigger,
   children,
@@ -121,7 +154,8 @@ export function AdaptiveDropdown({
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   motion,
   testID,
-  overlay = true,
+  overlay = 'none',
+  smallScreenOverlay,
   closeOnOutsidePress = true,
 }: AdaptiveDropdownProps) {
   const { width: vpWidth, height: vpHeight } = useWindowDimensions();
@@ -129,7 +163,7 @@ export function AdaptiveDropdown({
   const reduced = useReducedMotion();
 
   const triggerRef = useRef<View>(null);
-  const [anchor, setAnchor] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [anchor, setAnchor] = useState<AnchorRect | null>(null);
   const [contentHeight, setContentHeight] = useState(0);
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -182,18 +216,19 @@ export function AdaptiveDropdown({
 
   // ── Positioning ────────────────────────────────────────────────────────────
   const panelWidth = width;
-  const maxLeft = Math.max(VIEWPORT_PADDING, vpWidth - panelWidth - VIEWPORT_PADDING);
-  const spaceBelow = anchor ? vpHeight - (anchor.y + anchor.height) - offset - VIEWPORT_PADDING : 0;
-  const spaceAbove = anchor ? anchor.y - offset - VIEWPORT_PADDING : 0;
-  const openAbove = Boolean(anchor) && contentHeight > spaceBelow && spaceAbove > spaceBelow;
-
-  let panelLeft = 0;
-  let panelTop = 0;
-  if (anchor) {
-    const raw = align === 'end' ? anchor.x + anchor.width - panelWidth : anchor.x;
-    panelLeft = Math.min(Math.max(raw, VIEWPORT_PADDING), maxLeft);
-    panelTop = openAbove ? Math.max(VIEWPORT_PADDING, anchor.y - offset - contentHeight) : anchor.y + anchor.height + offset;
-  }
+  const {
+    left: panelLeft,
+    top: panelTop,
+    openAbove,
+  } = computePanelLayout({
+    anchor,
+    align,
+    panelWidth,
+    viewportWidth: vpWidth,
+    viewportHeight: vpHeight,
+    offset,
+    contentHeight,
+  });
 
   // ── Content resolution ─────────────────────────────────────────────────────
   const resolvedTrigger = typeof trigger === 'function' ? trigger({ open, toggle }) : trigger;
@@ -228,8 +263,12 @@ export function AdaptiveDropdown({
 
   // Shared with Popover and HoverMenu, so every panel this
   // package anchors to a trigger opens and closes the same way.
-  const panelMotion = resolveMenuMotion({ motion, reduce: reduced, side: openAbove ? 'top' : 'bottom' });
-  const transformOrigin = menuTransformOrigin({ align, side: openAbove ? 'top' : 'bottom' });
+  const side = openAbove ? 'top' : 'bottom';
+  const panelMotion = resolveMenuMotion({ motion, reduce: reduced, side });
+  const transformOrigin = menuTransformOrigin({ align, side });
+  // The small-screen bottom sheet defaults to the same scrim as the wide panel;
+  // `smallScreenOverlay` lets a consumer lighten (or drop) it on touch surfaces.
+  const smallOverlay = smallScreenOverlay ?? overlay;
 
   return (
     <>
@@ -242,16 +281,7 @@ export function AdaptiveDropdown({
       {isWideScreen ? (
         <Modal visible={panelMounted} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={close}>
           <Pressable className="flex-1" onPress={closeOnOutsidePress ? close : undefined}>
-            {overlay ? <OverlayBlur /> : null}
-            {overlay ? (
-              <MotiView
-                pointerEvents="none"
-                from={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ type: 'timing', duration: 200 }}
-                className="absolute inset-0 bg-black/40"
-              />
-            ) : null}
+            <OverlayScrim type={overlay} dimClassName="bg-black/40" animateDim={true} />
             <AnimatePresence onExitComplete={handlePanelExitComplete}>
               {open && isWideScreen ? (
                 <MotiView
@@ -289,7 +319,7 @@ export function AdaptiveDropdown({
           open={open}
           onOpenChange={close}
           fullSheet={fullSheet}
-          overlay={overlay}
+          overlay={smallOverlay}
           closeOnOutsidePress={closeOnOutsidePress}
         >
           {header}

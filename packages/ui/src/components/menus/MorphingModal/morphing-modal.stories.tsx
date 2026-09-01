@@ -16,6 +16,7 @@ import type { SurfaceElevation } from '../../../lib/elevated';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { MorphingModal } from './morphing-modal';
 
 const meta = {
@@ -219,7 +220,7 @@ type MorphingModalDemoProps = {
   shape?: TriggerState['shape'];
   triggerFloating?: boolean;
   triggerElevation?: SurfaceElevation;
-  overlay?: boolean;
+  overlay?: OverlayType;
   closeOnOutsidePress?: boolean;
   testID?: string;
 };
@@ -233,7 +234,7 @@ function MorphingModalDemo({
   shape,
   triggerFloating,
   triggerElevation,
-  overlay = true,
+  overlay = 'blur',
   closeOnOutsidePress = true,
   testID,
 }: MorphingModalDemoProps) {
@@ -274,7 +275,7 @@ function MorphingModalPlayground() {
   const [placement, setPlacement] = useState<'bottom' | 'center' | 'bottom-sheet'>('bottom');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('blur');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();
   return (
@@ -283,7 +284,7 @@ function MorphingModalPlayground() {
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
       <TriggerControls state={trigger} />

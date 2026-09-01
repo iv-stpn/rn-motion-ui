@@ -9,6 +9,7 @@ import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { type CommandItem, CommandPalette } from './command-palette';
 
 const onSelect = fn();
@@ -32,9 +33,13 @@ type Story = StoryObj<typeof meta>;
 
 const OPEN_LABEL = 'Open command palette';
 
+const SMALL_SCREEN_OVERLAYS = ['default', 'none', 'blur', 'opacity'] as const;
+type SmallScreenOverlay = (typeof SMALL_SCREEN_OVERLAYS)[number];
+
 function PalettePlayground() {
   const [open, setOpen] = useState(false);
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('blur');
+  const [smallScreenOverlay, setSmallScreenOverlay] = useState<SmallScreenOverlay>('default');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const trigger = useTriggerState();
@@ -43,7 +48,13 @@ function PalettePlayground() {
   return (
     <Playground className="min-w-[340px]">
       <ControlCard title="Options">
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
+        <Choice
+          label="Small screen overlay"
+          onChange={setSmallScreenOverlay}
+          options={SMALL_SCREEN_OVERLAYS}
+          value={smallScreenOverlay}
+        />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
@@ -65,6 +76,7 @@ function PalettePlayground() {
         open={open}
         overlay={overlay}
         shortcut="j"
+        smallScreenOverlay={smallScreenOverlay === 'default' ? undefined : smallScreenOverlay}
       />
     </Playground>
   );

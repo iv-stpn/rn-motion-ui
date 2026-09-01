@@ -39,6 +39,7 @@ import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { Choice, Note, Toggle } from '../../../__stories__/story-harness';
 import { Card } from '../../display/Card/card';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { HoldItem } from './hold-item';
 import type { HoldMenuIconComponentProps, MenuItemProps } from './hold-menu-types';
 import { HoldMenuProvider } from './provider';
@@ -82,12 +83,12 @@ const noop = () => {
 };
 
 /** Optional toggles shared by every scene's provider. */
-type SceneProps = { overlay?: boolean; closeOnOutsidePress?: boolean };
+type SceneProps = { overlay?: OverlayType; closeOnOutsidePress?: boolean };
 
 //#region Clubhouse
 
 /** Clubhouse — a cream screen whose back chevron opens a two-item hold menu. */
-function ClubhouseScene({ overlay = true, closeOnOutsidePress = true }: SceneProps) {
+function ClubhouseScene({ overlay = 'blur', closeOnOutsidePress = true }: SceneProps) {
   return (
     <HoldMenuProvider closeOnOutsidePress={closeOnOutsidePress} iconComponent={IconByName} overlay={overlay} theme="light">
       <View style={{ flex: 1, backgroundColor: '#F3F0E7' }}>
@@ -119,7 +120,7 @@ function ClubhouseScene({ overlay = true, closeOnOutsidePress = true }: ScenePro
 const HOME_ROWS = ['Playground', 'Whatsapp', 'Telegram', 'Clubhouse'];
 
 /** Home — the examples index; rows open a hold menu, and the header toggle flips the provider theme. */
-function HomeScene({ overlay = true, closeOnOutsidePress = true }: SceneProps) {
+function HomeScene({ overlay = 'blur', closeOnOutsidePress = true }: SceneProps) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [picked, setPicked] = useState('—');
   const palette =
@@ -211,7 +212,7 @@ function TelegramTab({ icon, title, items }: TelegramTabProps) {
 }
 
 /** Telegram — a bottom tab bar whose buttons hold-open menus above the bar. */
-function TelegramScene({ overlay = true, closeOnOutsidePress = true }: SceneProps) {
+function TelegramScene({ overlay = 'blur', closeOnOutsidePress = true }: SceneProps) {
   const chatMenu: MenuItemProps[] = [{ text: 'Add Folder', icon: 'plus', onPress: noop }];
   const profileMenu: MenuItemProps[] = [
     { text: 'Add Account', icon: 'plus', onPress: noop },
@@ -313,7 +314,7 @@ function WhatsAppBubble({ message, onAction }: WhatsAppBubbleProps) {
 }
 
 /** WhatsApp — a chat list of holdable bubbles over the brand chat background. */
-function WhatsAppScene({ overlay = true, closeOnOutsidePress = true }: SceneProps) {
+function WhatsAppScene({ overlay = 'blur', closeOnOutsidePress = true }: SceneProps) {
   const [picked, setPicked] = useState('—');
   const onAction = useCallback((label: string) => setPicked(label), []);
 
@@ -485,7 +486,7 @@ type Example = (typeof EXAMPLES)[number];
  */
 function InteractiveScene() {
   const [example, setExample] = useState<Example>('WhatsApp');
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('blur');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
 
   return (
@@ -500,7 +501,7 @@ function InteractiveScene() {
         }}
       >
         <Choice label="Example" value={example} options={EXAMPLES} onChange={setExample} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </View>
       <View style={{ flex: 1 }}>

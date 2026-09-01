@@ -11,6 +11,7 @@ import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../.
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 export type PopoverSide = 'top' | 'bottom';
 export type PopoverAlign = 'start' | 'center' | 'end';
@@ -31,7 +32,7 @@ type PopoverContext = {
   panelRadius: number;
   motion?: MenuMotion;
   reduce: boolean;
-  overlay: boolean;
+  overlay: OverlayType;
   closeOnOutsidePress: boolean;
 };
 
@@ -73,8 +74,8 @@ export type PopoverProps = {
   gooStrength?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
-  overlay?: boolean;
+  /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"none"` — a popover floats over the page untouched. */
+  overlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
 };
@@ -91,7 +92,7 @@ export function Popover({
   motion,
   style,
   testID,
-  overlay = true,
+  overlay = 'none',
   closeOnOutsidePress = true,
 }: PopoverProps) {
   const reduce = useReducedMotion();
@@ -247,9 +248,9 @@ export function PopoverContent({
       <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="popover-overlay" className="flex-1">
-            {overlay ? (
+            {overlay === 'none' ? null : (
               <>
-                <OverlayBlur />
+                {overlay === 'blur' ? <OverlayBlur /> : null}
                 <MotiView
                   pointerEvents="none"
                   from={{ opacity: 0 }}
@@ -259,7 +260,7 @@ export function PopoverContent({
                   className="absolute inset-0 bg-black/40"
                 />
               </>
-            ) : null}
+            )}
             <Pressable
               accessibilityLabel="Close"
               onPress={closeOnOutsidePress ? handleClose : undefined}

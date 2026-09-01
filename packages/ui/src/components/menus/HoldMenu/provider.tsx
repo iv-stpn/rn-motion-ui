@@ -35,7 +35,7 @@ const ProviderComponent = ({
   safeAreaInsets,
   onOpen,
   onClose,
-  overlay = true,
+  overlay = 'blur',
   closeOnOutsidePress = true,
 }: HoldMenuProviderProps) => {
   const state = useSharedValue<CONTEXT_MENU_STATE>(CONTEXT_MENU_STATE.UNDETERMINED);

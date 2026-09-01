@@ -9,8 +9,9 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
 import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
-import { OverlayBlur } from '../Overlay/overlay-blur';
+import { OverlayScrim } from '../Overlay/overlay-scrim';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
+import type { OverlayType } from '../Overlay/overlay-type';
 import { MORPH_CONTENT_TRANSITION, RM_TRANSITION } from './action-feedback-motion';
 import { MorphIcon } from './morph-icon';
 
@@ -153,8 +154,8 @@ export type ActionFeedbackModalProps = {
   /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
   elevation?: SurfaceElevation;
   testID?: string;
-  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
-  overlay?: boolean;
+  /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"blur"`. */
+  overlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
 };
@@ -173,11 +174,13 @@ export function ActionFeedbackModal({
   floating = false,
   elevation = 6,
   testID,
-  overlay = true,
+  overlay = 'blur',
   closeOnOutsidePress = true,
 }: ActionFeedbackModalProps) {
   const isOpen = openProp ?? false;
   const isDismissible = state === 'error';
+  const canDismiss = isDismissible && closeOnOutsidePress;
+  const liveRegion = state === 'error' ? 'assertive' : 'polite';
   const reduced = useReducedMotion();
 
   const announcement = announcementFor({ state, loadingMessage, successLabel, successMessage, errorTitle, errorMessage });
@@ -222,18 +225,8 @@ export function ActionFeedbackModal({
           transition={reduced ? RM_TRANSITION : TIMING_BASE}
           exitTransition={{ type: 'timing', duration: reduced ? 100 : 180 }}
         >
-          {overlay ? (
-            <>
-              <OverlayBlur />
-              <View className="absolute inset-0 bg-black/50" />
-            </>
-          ) : null}
-          <TouchableOpacity
-            className="absolute inset-0"
-            activeOpacity={1}
-            onPress={handleBackdropPress}
-            disabled={!(isDismissible && closeOnOutsidePress)}
-          />
+          <OverlayScrim type={overlay} dimClassName="bg-black/50" />
+          <TouchableOpacity className="absolute inset-0" activeOpacity={1} onPress={handleBackdropPress} disabled={!canDismiss} />
           <MotiView
             from={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -253,11 +246,7 @@ export function ActionFeedbackModal({
                 and each state block mounts fresh. This wrapper outlives the
                 swaps, so loading → success/error is announced. Errors interrupt
                 (`assertive`); progress and success wait their turn. */}
-            <View
-              className="w-full items-center gap-4 py-2"
-              accessibilityLiveRegion={state === 'error' ? 'assertive' : 'polite'}
-              aria-live={state === 'error' ? 'assertive' : 'polite'}
-            >
+            <View className="w-full items-center gap-4 py-2" accessibilityLiveRegion={liveRegion} aria-live={liveRegion}>
               <MorphIcon state={state} reduced={reduced} />
               <StateContent
                 dismissLabel={dismissLabel}

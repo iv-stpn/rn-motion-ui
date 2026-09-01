@@ -12,8 +12,9 @@ import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
-import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
+import { OverlayScrim } from '../Overlay/overlay-scrim';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 const DEFAULT_WIDTH = 200;
 const DEFAULT_OFFSET = 4;
@@ -87,11 +88,11 @@ export type HoverMenuProps = {
   motion?: MenuMotion;
   testID?: string;
   /**
-   * When false, the dimming backdrop is not rendered behind the panel (native
-   * only — a web hover menu has no overlay by design, since one would cover the
-   * trigger and break hover continuity). Defaults to true.
+   * The scrim behind the panel (native only — a web hover menu has no overlay by
+   * design, since one would cover the trigger and break hover continuity):
+   * `"blur"`, `"opacity"`, or `"none"`. Defaults to `"none"`.
    */
-  overlay?: boolean;
+  overlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
 };
@@ -118,6 +119,11 @@ type WebDocument = {
 
 function isWebNode(node: unknown): node is WebNode {
   return node !== null && typeof node === 'object' && typeof Reflect.get(node, 'contains') === 'function';
+}
+
+/** True when `target` sits inside the DOM node `node` — the trigger or panel. */
+function containsNode(node: unknown, target: unknown): boolean {
+  return isWebNode(node) && node.contains(target);
 }
 
 function isWebDocument(value: unknown): value is WebDocument {
@@ -187,8 +193,77 @@ function computePanelLayout(options: ComputePanelLayoutOptions): PanelLayout {
 
 const handlePanelPress = () => undefined;
 
+type UseWebOutsideDismissOptions = {
+  enabled: boolean;
+  triggerRef: { current: View | null };
+  panelRef: { current: View | null };
+  close: () => void;
+};
+
+// Web outside-dismiss: no transparent overlay (it would cover the trigger and
+// break hover continuity), so listen on document for pointerdown outside the
+// trigger+panel, for Escape, and for focus leaving the group (blur). Native
+// dismisses via the overlay + hardware back (Modal `onRequestClose`).
+function useWebOutsideDismiss({ enabled, triggerRef, panelRef, close }: UseWebOutsideDismissOptions) {
+  // biome-ignore lint/plugin: document-level pointerdown/keydown/focusout listeners can't be expressed as RN event handlers or derived state
+  useEffect(() => {
+    if (!enabled) return;
+    const doc = getWebDocument();
+    if (!doc) return;
+
+    const onPointerDown = (event: WebPointerEvent) => {
+      if (containsNode(triggerRef.current, event.target) || containsNode(panelRef.current, event.target)) return;
+      close();
+    };
+    const onKeyDown = (event: WebKeyEvent) => {
+      if (event.key === 'Escape') close();
+    };
+    // Close on blur — but only when focus actually leaves the menu. `focusout`
+    // bubbles and carries `relatedTarget` (the next focus target, null when focus
+    // leaves the page), so a within-menu move (trigger → item) keeps
+    // `relatedTarget` inside the group and is ignored; a real blur (Tab away, or
+    // focus moving outside) closes. No timer needed.
+    const onFocusOut = (event: WebFocusEvent) => {
+      const targetInside = containsNode(triggerRef.current, event.target) || containsNode(panelRef.current, event.target);
+      if (!targetInside) return;
+      const relatedInside =
+        containsNode(triggerRef.current, event.relatedTarget) || containsNode(panelRef.current, event.relatedTarget);
+      if (relatedInside) return;
+      close();
+    };
+
+    doc.addEventListener('pointerdown', onPointerDown);
+    doc.addEventListener('keydown', onKeyDown);
+    doc.addEventListener('focusout', onFocusOut);
+    return () => {
+      doc.removeEventListener('pointerdown', onPointerDown);
+      doc.removeEventListener('keydown', onKeyDown);
+      doc.removeEventListener('focusout', onFocusOut);
+    };
+  }, [enabled, triggerRef, panelRef, close]);
+}
+
+// The wrapper only claims button semantics when it is the thing being pressed.
+// A trigger that is pressable in its own right already carries the role, the
+// label, the expanded state and the tab stop, so the wrapper steps back to a
+// plain hover/measure box — otherwise web gets a <button> inside a <button>
+// and keyboard users get two tab stops for one control.
+function resolveWrapperSemantics(
+  triggerIsPressable: boolean,
+  triggerAccessibilityLabel: string | undefined,
+  open: boolean,
+  toggle: () => void,
+) {
+  if (triggerIsPressable) return { tabIndex: -1 } as const;
+  return {
+    accessibilityRole: 'button',
+    accessibilityLabel: triggerAccessibilityLabel,
+    'aria-expanded': open,
+    onPress: toggle,
+  } as const;
+}
+
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: positioning, hover timers, and dual-platform render are collocated around shared refs/state
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the overlay/outside-press branches add two decision points to a component already at the threshold
 export function HoverMenu({
   trigger,
   triggerIsPressable = false,
@@ -206,7 +281,7 @@ export function HoverMenu({
   elevation = 6,
   motion,
   testID,
-  overlay = true,
+  overlay = 'none',
   closeOnOutsidePress = true,
 }: HoverMenuProps) {
   const canHover = useHoverCapable();
@@ -354,56 +429,12 @@ export function HoverMenu({
     return () => clearTimeout(fallback);
   }, [open, reduce]);
 
-  // Web outside-dismiss: no transparent overlay (it would cover the trigger and
-  // break hover continuity), so listen on document for pointerdown outside the
-  // trigger+panel, for Escape, and for focus leaving the group (blur). Native
-  // dismisses via the overlay + hardware back (Modal `onRequestClose`).
-  // biome-ignore lint/plugin: document-level pointerdown/keydown/focusout listeners can't be expressed as RN event handlers or derived state
-  useEffect(() => {
-    if (!(canHover && open && closeOnOutsidePress)) return;
-    const doc = getWebDocument();
-    if (!doc) return;
-
-    const onPointerDown = (event: WebPointerEvent) => {
-      const triggerNode = triggerRef.current;
-      const panelNode = panelRef.current;
-      const target = event.target;
-      if ((isWebNode(triggerNode) && triggerNode.contains(target)) || (isWebNode(panelNode) && panelNode.contains(target)))
-        return;
-      close();
-    };
-    const onKeyDown = (event: WebKeyEvent) => {
-      if (event.key === 'Escape') close();
-    };
-    // Close on blur — but only when focus actually leaves the menu. `focusout`
-    // bubbles and carries `relatedTarget` (the next focus target, null when focus
-    // leaves the page), so a within-menu move (trigger → item) keeps
-    // `relatedTarget` inside the group and is ignored; a real blur (Tab away, or
-    // focus moving outside) closes. No timer needed.
-    const onFocusOut = (event: WebFocusEvent) => {
-      const triggerNode = triggerRef.current;
-      const panelNode = panelRef.current;
-      const target = event.target;
-      const targetInside =
-        (isWebNode(triggerNode) && triggerNode.contains(target)) || (isWebNode(panelNode) && panelNode.contains(target));
-      if (!targetInside) return;
-      const related = event.relatedTarget;
-      const relatedInside =
-        related !== null &&
-        ((isWebNode(triggerNode) && triggerNode.contains(related)) || (isWebNode(panelNode) && panelNode.contains(related)));
-      if (relatedInside) return;
-      close();
-    };
-
-    doc.addEventListener('pointerdown', onPointerDown);
-    doc.addEventListener('keydown', onKeyDown);
-    doc.addEventListener('focusout', onFocusOut);
-    return () => {
-      doc.removeEventListener('pointerdown', onPointerDown);
-      doc.removeEventListener('keydown', onKeyDown);
-      doc.removeEventListener('focusout', onFocusOut);
-    };
-  }, [canHover, open, close, closeOnOutsidePress]);
+  useWebOutsideDismiss({
+    enabled: canHover && open && closeOnOutsidePress,
+    triggerRef,
+    panelRef,
+    close,
+  });
 
   const handlePanelLayout = useCallback((event: LayoutChangeEvent) => {
     const { width: lw, height: lh } = event.nativeEvent.layout;
@@ -436,21 +467,9 @@ export function HoverMenu({
   const resolvedTrigger = typeof trigger === 'function' ? trigger({ open, toggle }) : trigger;
   const resolvedContent = typeof children === 'function' ? children({ close }) : children;
 
-  // The wrapper only claims button semantics when it is the thing being pressed.
-  // A trigger that is pressable in its own right already carries the role, the
-  // label, the expanded state and the tab stop, so the wrapper steps back to a
-  // plain hover/measure box — otherwise web gets a <button> inside a <button>
-  // and keyboard users get two tab stops for one control.
-  const wrapperSemantics = triggerIsPressable
-    ? ({ tabIndex: -1 } as const)
-    : ({
-        accessibilityRole: 'button',
-        accessibilityLabel: triggerAccessibilityLabel,
-        'aria-expanded': open,
-        onPress: toggle,
-      } as const);
+  const wrapperSemantics = resolveWrapperSemantics(triggerIsPressable, triggerAccessibilityLabel, open, toggle);
 
-  const panel =
+  const renderPanel = () =>
     open && rect ? (
       <Pressable
         key="hover-menu-panel"
@@ -487,6 +506,20 @@ export function HoverMenu({
       </Pressable>
     ) : null;
 
+  const renderNativeModal = () => (
+    <Modal visible={rendered} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={close}>
+      {overlay === 'none' ? null : (
+        <View pointerEvents="none" style={OVERLAY_STYLE}>
+          <OverlayScrim type={overlay} dimClassName="bg-black/40" />
+        </View>
+      )}
+      <Pressable onPress={closeOnOutsidePress ? close : undefined} style={OVERLAY_STYLE} />
+      <AnimatePresence onExitComplete={onExitComplete}>{renderPanel()}</AnimatePresence>
+      {/* Overlay outlet: native path only — web uses fixed-position in one document. */}
+      <OverlayOutlet />
+    </Modal>
+  );
+
   return (
     <>
       {/* Stays a Pressable even when the trigger owns the press: hover lives here so
@@ -503,22 +536,7 @@ export function HoverMenu({
         {resolvedTrigger}
       </Pressable>
 
-      {canHover ? (
-        <AnimatePresence onExitComplete={onExitComplete}>{panel}</AnimatePresence>
-      ) : (
-        <Modal visible={rendered} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={close}>
-          {overlay ? (
-            <View pointerEvents="none" style={OVERLAY_STYLE}>
-              <OverlayBlur />
-              <View className="absolute inset-0 bg-black/40" />
-            </View>
-          ) : null}
-          <Pressable onPress={closeOnOutsidePress ? close : undefined} style={OVERLAY_STYLE} />
-          <AnimatePresence onExitComplete={onExitComplete}>{panel}</AnimatePresence>
-          {/* Overlay outlet: native path only — web uses fixed-position in one document. */}
-          <OverlayOutlet />
-        </Modal>
-      )}
+      {canHover ? <AnimatePresence onExitComplete={onExitComplete}>{renderPanel()}</AnimatePresence> : renderNativeModal()}
     </>
   );
 }

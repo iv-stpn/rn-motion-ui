@@ -12,6 +12,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 export type DrawerSide = 'left' | 'right';
 
@@ -33,8 +34,8 @@ export type DrawerProps = {
    */
   elevation?: SurfaceElevation;
   children: ReactNode;
-  /** When false, the dimming backdrop is not rendered behind the panel. Default true. */
-  overlay?: boolean;
+  /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Default `"blur"`. */
+  overlay?: OverlayType;
   /** Close when the backdrop is tapped. Default true. */
   closeOnOutsidePress?: boolean;
   accessibilityLabel?: string;
@@ -55,7 +56,7 @@ export function Drawer({
   floating = false,
   elevation = 6,
   children,
-  overlay = true,
+  overlay = 'blur',
   closeOnOutsidePress = true,
   accessibilityLabel,
   style,
@@ -87,7 +88,7 @@ export function Drawer({
             {/* Blur sits outside the dim's opacity fade: a parent opacity fades
                 out the CSS backdrop-filter on web (backdrop-root clipping), so
                 OverlayBlur fades its own opacity instead. */}
-            {overlay ? <OverlayBlur /> : null}
+            {overlay === 'blur' ? <OverlayBlur /> : null}
             <MotiView
               from={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -99,7 +100,7 @@ export function Drawer({
                 accessibilityLabel="Close"
                 disabled={!closeOnOutsidePress}
                 onPress={handleBackdropPress}
-                className={overlay ? 'flex-1 bg-black/50' : 'flex-1'}
+                className={overlay === 'none' ? 'flex-1' : 'flex-1 bg-black/50'}
               />
             </MotiView>
             <MotiView

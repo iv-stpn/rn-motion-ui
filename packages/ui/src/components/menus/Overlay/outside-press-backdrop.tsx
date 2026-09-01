@@ -1,5 +1,7 @@
 import { useCallback } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { OverlayBlur } from './overlay-blur';
+import type { OverlayType } from './overlay-type';
 
 /** The backdrop's window-covering frame — negative offsets from the root's measured window position. */
 export type OutsidePressFrame = { top: number; left: number; width: number; height: number };
@@ -9,8 +11,8 @@ export type OutsidePressBackdropProps = {
   frame: OutsidePressFrame;
   /** Fold the host on a backdrop tap. Undefined when `closeOnOutsidePress` is off — the layer then only dims. */
   onPress?: () => void;
-  /** When true, render the dimming scrim; otherwise the layer is transparent. @default false */
-  overlay?: boolean;
+  /** The scrim kind: `"blur"` frosts behind a dim, `"opacity"` dims only, `"none"` is transparent. @default 'none' */
+  overlay?: OverlayType;
   testID?: string;
 };
 
@@ -21,16 +23,36 @@ export type OutsidePressBackdropProps = {
  * another control — lands here and dismisses. Sits below the shell, above the
  * page.
  */
-export function OutsidePressBackdrop({ frame, onPress, overlay = false, testID }: OutsidePressBackdropProps) {
+export function OutsidePressBackdrop({ frame, onPress, overlay = 'none', testID }: OutsidePressBackdropProps) {
   const handlePress = useCallback(() => onPress?.(), [onPress]);
+  const frameStyle = {
+    position: 'absolute' as const,
+    top: frame.top,
+    left: frame.left,
+    width: frame.width,
+    height: frame.height,
+  };
   return (
-    <Pressable
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={onPress ? 'Close' : undefined}
-      testID={testID}
-      onPress={onPress ? handlePress : undefined}
-      className={overlay ? 'bg-black/40' : undefined}
-      style={{ position: 'absolute', top: frame.top, left: frame.left, width: frame.width, height: frame.height }}
-    />
+    <>
+      {/*
+       * The blur is a sibling behind the dim so its backdrop-filter samples the
+       * page (not the flat dim above it). `inline`: this scrim lives inside the
+       * BlurTarget it blurs on Android, which the peer can't render — it degrades
+       * to the plain dim there, same as the HoldMenu backdrop.
+       */}
+      {overlay === 'blur' ? (
+        <View pointerEvents="none" style={frameStyle}>
+          <OverlayBlur inline={true} />
+        </View>
+      ) : null}
+      <Pressable
+        accessibilityRole={onPress ? 'button' : undefined}
+        accessibilityLabel={onPress ? 'Close' : undefined}
+        testID={testID}
+        onPress={onPress ? handlePress : undefined}
+        className={overlay === 'none' ? undefined : 'bg-black/40'}
+        style={frameStyle}
+      />
+    </>
   );
 }

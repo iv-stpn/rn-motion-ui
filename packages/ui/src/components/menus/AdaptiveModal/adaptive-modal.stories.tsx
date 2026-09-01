@@ -8,6 +8,7 @@ import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stor
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { AdaptiveModal, type LargeScreenMode, type SmallScreenMode, type WidePanelSize } from './adaptive-modal';
 
 const meta = {
@@ -31,6 +32,9 @@ const TITLE = 'Settings';
 const SUBTITLE = 'Manage your preferences';
 const CUSTOM_LAYOUT_TITLE = 'Custom layout';
 const CLOSED_NOTE = 'Closed';
+
+const SMALL_SCREEN_OVERLAYS = ['default', 'none', 'blur', 'opacity'] as const;
+type SmallScreenOverlay = (typeof SMALL_SCREEN_OVERLAYS)[number];
 
 const LARGE_MODES = [
   { value: 'modal', label: 'Centered modal' },
@@ -108,7 +112,8 @@ function ModalPlayground() {
   const [scrollable, setScrollable] = useState(false);
   const [customLayout, setCustomLayout] = useState(false);
   const [closeOnOutside, setCloseOnOutside] = useState(true);
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('blur');
+  const [smallScreenOverlay, setSmallScreenOverlay] = useState<SmallScreenOverlay>('default');
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
 
@@ -133,7 +138,13 @@ function ModalPlayground() {
         <Toggle label="Scrollable" onChange={setScrollable} value={scrollable} />
         <Toggle label="Custom layout" onChange={setCustomLayout} value={customLayout} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
+        <Choice
+          label="Small screen overlay"
+          onChange={setSmallScreenOverlay}
+          options={SMALL_SCREEN_OVERLAYS}
+          value={smallScreenOverlay}
+        />
       </ControlCard>
 
       <TriggerControls state={trigger} />
@@ -161,6 +172,7 @@ function ModalPlayground() {
         open={open}
         overlay={overlay}
         scrollable={scrollable}
+        smallScreenOverlay={smallScreenOverlay === 'default' ? undefined : smallScreenOverlay}
         showClose={withClose}
         smallScreenMode={smallMode}
         subtitle={withSubtitle ? SUBTITLE : undefined}

@@ -6,6 +6,7 @@ import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__storie
 import { Action, Choice, ControlCard, Playground, Toggle, Variants } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { ActionFeedbackModal, type ActionFeedbackState } from './action-feedback-modal';
 
 const meta = {
@@ -97,7 +98,7 @@ function FeedbackPlayground() {
   const [withTagline, setWithTagline] = useState(false);
   const [floating, setFloating] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('blur');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();
 
@@ -125,7 +126,7 @@ function FeedbackPlayground() {
         <Choice label="Resolves to" onChange={setOutcome} options={OUTCOMES} value={outcome} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 

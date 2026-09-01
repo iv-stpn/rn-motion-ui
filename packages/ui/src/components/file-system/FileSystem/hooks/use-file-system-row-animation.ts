@@ -1,15 +1,3 @@
-/** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: the hook combines diff, capture, merge and lifecycle — splitting would scatter the refs they all share */
-/** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: the hook combines diff, capture, merge and lifecycle — splitting would scatter the refs */
-/**
- * Hook that detects when entries are added to or removed from a file-system view's
- * row list, and manages the lifecycle of exit animations.
- *
- * Shared by list view (`FileSystemListView`) and columns view (`FileSystemColumn`).
- * Each view instance calls this hook with its current entries, folder path, and a
- * stable key extractor; the hook returns an augmented list that includes
- * still-exiting rows tagged with their animation state.
- */
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
@@ -21,6 +9,95 @@ const EXIT_ANIM_DURATION_MS = 400;
 
 /** Shared empty source for the key sets the unchanged path skips building. */
 const NO_KEYS: readonly string[] = [];
+
+/** The animation state a row carries into the view layer. */
+type RowAnimStatus = 'entering' | 'exiting';
+
+/** An entry augmented with its animation status for the current render. */
+type AugmentedEntry<T> = T & { _animStatus?: RowAnimStatus };
+
+/** One row in the exiting map: `[key, { data, position }]`. */
+type ExitEntry<T> = readonly [string, { data: T; position: number }];
+
+/** The two key sets a diff produces: newly entering and newly exiting. */
+type DiffResult = { enteringSet: Set<string>; exitingSet: Set<string> };
+
+/** Sort exiting rows front-to-back so earlier insertions don't shift later targets. */
+function byPosition<T>(a: ExitEntry<T>, b: ExitEntry<T>): number {
+  return a[1].position - b[1].position;
+}
+
+/** Diff the current key set against the previous one into entering/exiting sets. */
+function diffKeys(
+  currentKeySet: ReadonlySet<string>,
+  prevKeySet: ReadonlySet<string>,
+  exitingKeys: ReadonlyMap<string, unknown>,
+): DiffResult {
+  const enteringSet = new Set<string>();
+  const exitingSet = new Set<string>();
+  for (const key of currentKeySet) {
+    if (!(prevKeySet.has(key) || exitingKeys.has(key))) enteringSet.add(key);
+  }
+  for (const key of prevKeySet) {
+    if (!currentKeySet.has(key)) exitingSet.add(key);
+  }
+  return { enteringSet, exitingSet };
+}
+
+/** Resolve the data + position for new exiting keys from the previous render's entries. */
+function resolveNewExitingEntries<T>(
+  newKeys: readonly string[],
+  prevEntries: readonly T[],
+  prevKeys: readonly string[],
+  getKey: (entry: T) => string,
+): [string, { data: T; position: number }][] {
+  const newEntries: [string, { data: T; position: number }][] = [];
+  for (const key of newKeys) {
+    const entry = prevEntries.find((e) => getKey(e) === key);
+    if (entry) {
+      const index = prevKeys.indexOf(key);
+      newEntries.push([key, { data: entry, position: index >= 0 ? index : prevKeys.length }]);
+    }
+  }
+  return newEntries;
+}
+
+/**
+ * Fold the current entries and the still-exiting rows into one augmented list.
+ *
+ * Two identity rules, both load-bearing for the views that consume this.
+ *
+ * A row with no animation status is passed through *as it came in* rather than
+ * shallow-copied. The copy was the expensive part: it gave every row a new
+ * identity on every render, so any re-render of the view — a scroll, a selection,
+ * a drag crossing — rebuilt the entire list, defeated `memo` on the row
+ * components, and churned the `useMemo`/`useCallback` chains that hang off this
+ * array. Steady state is now literally the caller's own array elements, which
+ * are memoized upstream.
+ */
+function buildAugmentedEntries<T>(
+  currentEntries: readonly T[],
+  enteringSet: ReadonlySet<string>,
+  exitingList: readonly ExitEntry<T>[],
+  getKey: (entry: T) => string,
+): AugmentedEntry<T>[] {
+  const result: AugmentedEntry<T>[] = [];
+  for (const entry of currentEntries) {
+    // Only a row that is actually animating needs the wrapper object.
+    if (enteringSet.has(getKey(entry))) result.push({ ...entry, _animStatus: 'entering' as const });
+    // biome-ignore lint/plugin: ts/no-as-cast — `_animStatus` is optional, so every `T` already *is* an `AugmentedEntry<T>` at runtime; TS just cannot prove that for an unconstrained generic. Passing the caller's own object through, rather than copying it, is the point of this branch.
+    else result.push(entry as AugmentedEntry<T>);
+  }
+
+  // Insert exiting entries at their original positions, sorted front-to-back so
+  // earlier insertions don't shift later targets.
+  for (const [, { data, position }] of exitingList)
+    result.splice(Math.min(position, result.length), 0, {
+      ...data,
+      _animStatus: 'exiting' as const,
+    });
+  return result;
+}
 
 /**
  * Timeout-managed cleanup for exiting entries. The callback-based path
@@ -55,11 +132,7 @@ function useExitTimeout(onExitComplete: (key: string) => void): (key: string) =>
   }, []);
 }
 
-/** The animation state a row carries into the view layer. */
-export type RowAnimStatus = 'entering' | 'exiting';
-
-/** An entry augmented with its animation status for the current render. */
-export type AugmentedEntry<T> = T & { _animStatus?: RowAnimStatus };
+export type { AugmentedEntry };
 
 export type UseFileSystemRowAnimationResult<T> = {
   augmentedEntries: AugmentedEntry<T>[];
@@ -123,73 +196,35 @@ export function useFileSystemRowAnimation<T>(
     !prevHadEnteringRef.current &&
     exitingRef.current.size === prevExitingCountRef.current;
   const cached = unchanged ? prevResultRef.current : null;
+  const needsDiff = cached === null;
 
   // ── Diff current vs previous ────────────────────────────────────────────────
-  const currentKeys = cached === null ? currentEntries.map(getKey) : prevKeysRef.current;
-  const currentKeySet = new Set(cached === null ? currentKeys : NO_KEYS);
-  const prevKeySet = new Set(cached === null ? prevKeysRef.current : NO_KEYS);
+  const currentKeys = needsDiff ? currentEntries.map(getKey) : prevKeysRef.current;
+  const currentKeySet = new Set(needsDiff ? currentKeys : NO_KEYS);
+  const prevKeySet = new Set(needsDiff ? prevKeysRef.current : NO_KEYS);
 
-  const enteringSet = new Set<string>();
-  const exitingSet = new Set<string>();
-
-  const canDiff = cached === null && !(folderChanged || animateToggled) && shouldAnimate && prevKeysRef.current.length > 0;
-  if (canDiff) {
-    for (const key of currentKeySet) {
-      if (!(prevKeySet.has(key) || exitingRef.current.has(key))) enteringSet.add(key);
-    }
-    for (const key of prevKeySet) {
-      if (!currentKeySet.has(key)) exitingSet.add(key);
-    }
-  }
+  const canDiff = needsDiff && !(folderChanged || animateToggled) && shouldAnimate && prevKeysRef.current.length > 0;
+  const { enteringSet, exitingSet } = canDiff
+    ? diffKeys(currentKeySet, prevKeySet, exitingRef.current)
+    : { enteringSet: new Set<string>(), exitingSet: new Set<string>() };
 
   // ── Update exitingRef synchronously ─────────────────────────────────────────
   for (const key of enteringSet) exitingRef.current.delete(key);
-
-  for (const key of exitingSet) {
-    if (!exitingRef.current.has(key)) {
-      const entry = prevEntriesRef.current.find((e) => getKey(e) === key);
-      const position = prevKeysRef.current.indexOf(key);
-      if (entry) exitingRef.current.set(key, { data: entry, position: position >= 0 ? position : prevKeysRef.current.length });
-    }
-  }
+  const newExiting = resolveNewExitingEntries(
+    [...exitingSet].filter((key) => !exitingRef.current.has(key)),
+    prevEntriesRef.current,
+    prevKeysRef.current,
+    getKey,
+  );
+  for (const [key, value] of newExiting) exitingRef.current.set(key, value);
 
   if (folderChanged || animateToggled) exitingRef.current.clear();
 
-  // ── Build augmented entries ─────────────────────────────────────────────────
-  //
-  // Two identity rules, both load-bearing for the views that consume this.
-  //
-  // A row with no animation status is passed through *as it came in* rather than
-  // shallow-copied. The copy was the expensive part: it gave every row a new
-  // identity on every render, so any re-render of the view — a scroll, a selection,
-  // a drag crossing — rebuilt the entire list, defeated `memo` on the row
-  // components, and churned the `useMemo`/`useCallback` chains that hang off this
-  // array (`overlayZones` → `overlayFolderPaths` → `renderItem`). Steady state is
-  // now literally the caller's own array elements, which are memoized upstream.
-  //
-  // And the array itself is reused whole when the `unchanged` test above held —
-  // the common case by far, since exits and entrances happen only when the
-  // folder's contents actually change.
-  const exitingList = cached === null ? [...exitingRef.current.entries()].sort(([, a], [, b]) => a.position - b.position) : [];
+  const exitingList = needsDiff ? [...exitingRef.current.entries()].sort(byPosition) : [];
 
   let augmentedEntries: AugmentedEntry<T>[];
-  if (cached === null) {
-    augmentedEntries = [];
-    for (const entry of currentEntries) {
-      // Only a row that is actually animating needs the wrapper object.
-      if (enteringSet.has(getKey(entry))) augmentedEntries.push({ ...entry, _animStatus: 'entering' as const });
-      // biome-ignore lint/plugin: ts/no-as-cast — `_animStatus` is optional, so every `T` already *is* an `AugmentedEntry<T>` at runtime; TS just cannot prove that for an unconstrained generic. Passing the caller's own object through, rather than copying it, is the point of this branch.
-      else augmentedEntries.push(entry as AugmentedEntry<T>);
-    }
-
-    // Insert exiting entries at their original positions, sorted front-to-back so
-    // earlier insertions don't shift later targets.
-    for (const [, { data, position }] of exitingList)
-      augmentedEntries.splice(Math.min(position, augmentedEntries.length), 0, {
-        ...data,
-        _animStatus: 'exiting' as const,
-      });
-  } else augmentedEntries = cached;
+  if (needsDiff) augmentedEntries = buildAugmentedEntries(currentEntries, enteringSet, exitingList, getKey);
+  else augmentedEntries = cached;
 
   // ── Store for next render ───────────────────────────────────────────────────
   prevKeysRef.current = currentKeys;

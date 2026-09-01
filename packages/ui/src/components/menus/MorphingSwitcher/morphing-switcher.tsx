@@ -16,6 +16,7 @@ import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem, type MenuItemSize } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
+import type { OverlayType } from '../Overlay/overlay-type';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
 
 /** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
@@ -190,11 +191,10 @@ export type MorphingSwitcherProps = {
    */
   closeOnOutsidePress?: boolean;
   /**
-   * When true, the dimming scrim renders behind the pane. Defaults to false —
-   * like the other morphing menus, it morphs in place with no scrim.
-   * @default false
+   * The scrim behind the pane: `"blur"`, `"opacity"`, or `"none"`. Defaults to
+   * `"none"` — like the other morphing menus, it morphs in place with no scrim.
    */
-  overlay?: boolean;
+  overlay?: OverlayType;
 };
 
 /**
@@ -513,7 +513,7 @@ export function MorphingSwitcher({
   testID = 'morphing-switcher',
   triggerTestID = 'morphing-switcher-trigger',
   closeOnOutsidePress = true,
-  overlay = false,
+  overlay = 'none',
 }: MorphingSwitcherProps) {
   const reduce = useReducedMotion();
   const scale = SWITCHER_SCALE[size];
@@ -577,7 +577,7 @@ export function MorphingSwitcher({
   // lands there is simply no backdrop yet.
   // biome-ignore lint/plugin: measuring the root on open/rotate is a DOM/native measure side effect, not derived state — the backdrop frame must follow the window
   useEffect(() => {
-    if (!(open && (overlay || closeOnOutsidePress))) {
+    if (!(open && (overlay !== 'none' || closeOnOutsidePress))) {
       setBackdropFrame(null);
       return;
     }
@@ -664,7 +664,7 @@ export function MorphingSwitcher({
       {/* Outside-press backdrop (native): covers the whole window so a tap
           anywhere outside the pane folds it back — the web path is the
           document listener above. When `overlay` is on it also dims the page. */}
-      {open && (overlay || closeOnOutsidePress) && backdropFrame !== null ? (
+      {open && (overlay !== 'none' || closeOnOutsidePress) && backdropFrame !== null ? (
         <OutsidePressBackdrop
           frame={backdropFrame}
           onPress={closeOnOutsidePress ? handleClose : undefined}

@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type Animated from 'react-native-reanimated';
 import type { AnimatedRef, SharedValue } from 'react-native-reanimated';
+import type { OverlayType } from '../Overlay/overlay-type';
 import type { CONTEXT_MENU_STATE } from './constants';
 import type { HoldMenuIconComponent, HoldMenuSafeAreaInsets, MenuInternalProps } from './hold-menu-types';
 
@@ -39,8 +40,8 @@ export type HoldMenuInternalContextType = {
   rootViewportHeight: SharedValue<number>;
   /** The provider's `iconComponent`, animated — or `null` when none was given. */
   AnimatedIcon: HoldMenuIconComponent | null;
-  /** Whether the dimming backdrop scrim is shown behind the menu. */
-  overlay: boolean;
+  /** Which scrim to show behind the menu: `"blur"`, `"opacity"`, or `"none"`. */
+  overlay: OverlayType;
   /** Whether tapping the backdrop dismisses the menu. */
   closeOnOutsidePress: boolean;
   /**

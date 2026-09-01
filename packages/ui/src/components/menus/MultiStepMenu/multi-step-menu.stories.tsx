@@ -23,6 +23,7 @@ import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { Button } from '../../buttons/Button/button';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import type { MultiStepHelpers, MultiStepMenuHandle, MultiStepSection } from './multi-step-menu';
 import { MenuRow, MultiStepMenu } from './multi-step-menu';
 
@@ -171,6 +172,9 @@ const SIDEBAR_FOOTER_LABEL = 'v2.4.0';
 const PLACEHOLDER_TITLE = 'Pick a section';
 const PLACEHOLDER_BODY = 'Nothing is selected yet.';
 const CLOSED_NOTE = 'Closed';
+
+const SMALL_SCREEN_OVERLAYS = ['default', 'none', 'blur', 'opacity'] as const;
+type SmallScreenOverlay = (typeof SMALL_SCREEN_OVERLAYS)[number];
 const START_NOTE = 'Initial selection and the panel size only apply to the wide layout.';
 
 const SIDEBAR_FOOTER = (
@@ -207,7 +211,8 @@ function MenuPlayground() {
   const [iosStyle, setIosStyle] = useState(false);
   const [visible, setVisible] = useState(false);
   const [path, setPath] = useState<string[]>([]);
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('blur');
+  const [smallScreenOverlay, setSmallScreenOverlay] = useState<SmallScreenOverlay>('default');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const menuRef = useRef<MultiStepMenuHandle | null>(null);
   const trigger = useTriggerState();
@@ -239,7 +244,13 @@ function MenuPlayground() {
         <Toggle label="Sidebar footer" onChange={setWithFooter} value={withFooter} />
         <Toggle label="Wide placeholder" onChange={setWithPlaceholder} value={withPlaceholder} />
         <Toggle label="iOS-style rows" onChange={setIosStyle} value={iosStyle} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
+        <Choice
+          label="Small screen overlay"
+          onChange={setSmallScreenOverlay}
+          options={SMALL_SCREEN_OVERLAYS}
+          value={smallScreenOverlay}
+        />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 
@@ -272,6 +283,7 @@ function MenuPlayground() {
         onPathChange={setPath}
         overlay={overlay}
         ref={menuRef}
+        smallScreenOverlay={smallScreenOverlay === 'default' ? undefined : smallScreenOverlay}
         rootTitle={SETTINGS_ROOT_TITLE}
         sections={sections}
         sidebar={renderMenu}

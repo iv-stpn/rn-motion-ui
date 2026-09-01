@@ -6,6 +6,7 @@ import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__storie
 import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { Drawer } from './drawer';
 
 const meta = {
@@ -30,7 +31,7 @@ function DrawerPlayground() {
   const [side, setSide] = useState<DrawerSide>('left');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('blur');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const [open, setOpen] = useState(false);
   const trigger = useTriggerState();
@@ -42,7 +43,7 @@ function DrawerPlayground() {
         <Choice label="Side" onChange={setSide} options={SIDES} value={side} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 

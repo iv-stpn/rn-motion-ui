@@ -2,6 +2,7 @@ import type { ComponentType, ReactElement, ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
 import type { HapticFeedbackVariant } from '../../../lib/haptics-types';
 import type { DragEffectAllowed, DragEndEvent, DragGroups, DragStartEvent } from '../../gestures/drag.types';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 /** Which corner the menu grows out of and which edge it opens on. `top-*` below the item, `bottom-*` above. */
 export type TransformOriginAnchorPosition =
@@ -133,8 +134,8 @@ export type HoldMenuProviderProps = {
   onOpen?: () => void;
   /** Called when the menu ends. */
   onClose?: () => void;
-  /** When false, the dimming backdrop is not rendered behind the menu. Defaults to true. */
-  overlay?: boolean;
+  /** The scrim behind the menu: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"blur"`. */
+  overlay?: OverlayType;
   /** When false, tapping the backdrop will not close the menu. Defaults to true. */
   closeOnOutsidePress?: boolean;
 };

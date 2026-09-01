@@ -16,8 +16,9 @@ import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
 import { FullSheet } from '../FullSheet/full-sheet';
-import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
+import { OverlayScrim } from '../Overlay/overlay-scrim';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 /** Narrow vs. wide layout cutoff — matches FullSheet's default. */
 const DEFAULT_WIDE_BREAKPOINT: BreakpointValue = 'sm';
@@ -64,8 +65,10 @@ type AdaptiveModalProps = {
   customLayout?: boolean;
   /** Called after the close animation has fully completed and the modal is unmounted. */
   onAfterClose?: () => void;
-  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
-  overlay?: boolean;
+  /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"blur"`. */
+  overlay?: OverlayType;
+  /** Overrides `overlay` on the small-screen bottom sheet. When omitted, the sheet uses `overlay`. */
+  smallScreenOverlay?: OverlayType;
   /** When false, pressing outside the panel will not close the modal. Defaults to true. */
   closeOnOutsidePress?: boolean;
   /**
@@ -106,14 +109,21 @@ function resolveLayoutPaddingClass(
   return context.isBottomSheet ? classes[1] : classes[2];
 }
 
+type CenteredPanelGeometry = {
+  wideWidth: number | undefined;
+  wideHeight: number | undefined;
+  wideMaxWidth: number | undefined;
+  wideMaxHeight: number | undefined;
+  maxModalHeight: number;
+};
+
 export type SmallScreenMode = 'bottomSheet' | 'fullSheet';
 export type LargeScreenMode = 'modal' | 'rightDrawer';
 
 export type Dimension = number | `${number}%`;
 export type WidePanelSize = { width?: Dimension; height?: Dimension; maxWidth?: Dimension; maxHeight?: Dimension };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: three surfaces (bottomSheet / fullSheet / wide modal+drawer) share one render path — splitting scatters tightly-coupled layout state
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — the three branches share header/content/padding helpers
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the three branches share header/content/padding helpers — the line budget is the surface count, not branch depth
 export function AdaptiveModal({
   open: openProp,
   onOpenChange,
@@ -130,7 +140,8 @@ export function AdaptiveModal({
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   customLayout = false,
   onAfterClose,
-  overlay = true,
+  overlay = 'blur',
+  smallScreenOverlay,
   closeOnOutsidePress = true,
   floating = false,
   elevation = 6,
@@ -149,6 +160,9 @@ export function AdaptiveModal({
 
   const isBottomSheet = smallScreenMode === 'bottomSheet';
   const isRightDrawer = largeScreenMode === 'rightDrawer';
+  // The small-screen bottom sheet defaults to the same scrim as the wide panel;
+  // `smallScreenOverlay` lets a consumer lighten (or drop) it on touch surfaces.
+  const smallOverlay = smallScreenOverlay ?? overlay;
 
   const desktopEnterOffset = 18;
   const desktopExitOffset = 10;
@@ -197,27 +211,28 @@ export function AdaptiveModal({
   );
   const contentBottomPaddingClass = resolveLayoutPaddingClass(paddingContext, ['pb-6', 'pb-3', 'pb-5'], ['pb-8', 'pb-5', 'pb-6']);
 
-  const header = hasHeader ? (
-    <View className={compact ? 'mb-3' : 'mb-4'}>
-      <View className="flex-row items-start justify-between gap-4">
-        {renderedTitle || renderedSubtitle ? (
-          <View className="min-w-0 flex-1 gap-2">
-            {renderedTitle ? (
-              <Text weight="semibold" className="mr-4 pt-1 text-foreground text-xl">
-                {renderedTitle}
-              </Text>
-            ) : null}
-            {renderedSubtitle ? (
-              <Text className="text-base text-muted-foreground leading-relaxed">{renderedSubtitle}</Text>
-            ) : null}
-          </View>
-        ) : (
-          <View className="flex-1" />
-        )}
-        {closeButton}
+  const renderHeader = () =>
+    hasHeader ? (
+      <View className={compact ? 'mb-3' : 'mb-4'}>
+        <View className="flex-row items-start justify-between gap-4">
+          {renderedTitle || renderedSubtitle ? (
+            <View className="min-w-0 flex-1 gap-2">
+              {renderedTitle ? (
+                <Text weight="semibold" className="mr-4 pt-1 text-foreground text-xl">
+                  {renderedTitle}
+                </Text>
+              ) : null}
+              {renderedSubtitle ? (
+                <Text className="text-base text-muted-foreground leading-relaxed">{renderedSubtitle}</Text>
+              ) : null}
+            </View>
+          ) : (
+            <View className="flex-1" />
+          )}
+          {closeButton}
+        </View>
       </View>
-    </View>
-  ) : null;
+    ) : null;
 
   const renderContent = useCallback(
     (contentClassName?: string) => {
@@ -257,7 +272,80 @@ export function AdaptiveModal({
     return <View className={cn('w-full', contentBottomPaddingClass)}>{renderedChildren}</View>;
   }, [renderedChildren, contentBottomPaddingClass, height, scrollable]);
 
-  if (isWideScreen) {
+  const renderDrawerPanel = (drawerWidth: number) => (
+    <TouchableOpacity className="flex-1" activeOpacity={1} onPress={closeOnOutsidePress ? handleClose : undefined}>
+      <View className="flex-1 items-end">
+        <MotiView
+          className="h-full"
+          from={{ opacity: 0, translateX: drawerEnterOffset }}
+          animate={{ opacity: 1, translateX: 0 }}
+          exit={{ opacity: 0, translateX: drawerExitOffset }}
+          transition={drawerPanelTransition}
+          exitTransition={panelExitTransition}
+        >
+          <TouchableOpacity activeOpacity={1} className="h-full" style={{ width: drawerWidth }}>
+            <View
+              className={cn('h-full px-8 pt-8 pb-8', surfaceBackground(elevation))}
+              accessibilityViewIsModal={true}
+              aria-modal={true}
+              role="dialog"
+              aria-label={renderedTitle}
+              testID={testID}
+              style={safeArea ? { paddingTop: insets.top, paddingBottom: insets.bottom } : undefined}
+            >
+              {renderHeader()}
+              {renderContent()}
+            </View>
+          </TouchableOpacity>
+        </MotiView>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderCenteredPanel = (geometry: CenteredPanelGeometry) => {
+    const { wideWidth, wideHeight, wideMaxWidth, wideMaxHeight, maxModalHeight } = geometry;
+    return (
+      <TouchableOpacity
+        className="flex-1 items-center justify-center px-8"
+        activeOpacity={1}
+        onPress={closeOnOutsidePress ? handleClose : undefined}
+      >
+        <MotiView
+          from={{ opacity: 0, scale: 0.965, translateY: desktopEnterOffset }}
+          animate={{ opacity: 1, scale: 1, translateY: 0 }}
+          exit={{ opacity: 0, scale: 0.985, translateY: desktopExitOffset }}
+          transition={desktopPanelTransition}
+          exitTransition={panelExitTransition}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            className={cn(wideWidth === undefined && 'w-full', !widePanelSize && 'min-w-xl max-w-xl')}
+            style={{ width: wideWidth, height: wideHeight, maxWidth: wideMaxWidth, maxHeight: wideMaxHeight }}
+          >
+            <View
+              className={cn(
+                surface(elevation, 'modal', floating),
+
+                wideHeight !== undefined && 'flex-1',
+                containerPaddingClass,
+              )}
+              style={wideHeight === undefined ? { maxHeight: maxModalHeight } : undefined}
+              accessibilityViewIsModal={true}
+              aria-modal={true}
+              role="dialog"
+              testID={testID}
+              aria-label={renderedTitle}
+            >
+              {renderHeader()}
+              {renderContent()}
+            </View>
+          </TouchableOpacity>
+        </MotiView>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderWideSurface = () => {
     const drawerWidth = Math.min(760, Math.max(460, Math.round(width * 0.44)));
     const maxModalHeight = Math.min(height - 80, 976);
 
@@ -279,80 +367,16 @@ export function AdaptiveModal({
           {isWideOpen ? (
             <MotiView
               key="wide-overlay"
-              className={cn('flex-1', overlay && 'backdrop-blur-xs')}
+              className={cn('flex-1', overlay === 'blur' && 'backdrop-blur-xs')}
               from={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={overlayTransition}
             >
-              {overlay ? <OverlayBlur /> : null}
-              {isRightDrawer ? (
-                <TouchableOpacity className="flex-1" activeOpacity={1} onPress={closeOnOutsidePress ? handleClose : undefined}>
-                  <View className="flex-1 items-end">
-                    <MotiView
-                      className="h-full"
-                      from={{ opacity: 0, translateX: drawerEnterOffset }}
-                      animate={{ opacity: 1, translateX: 0 }}
-                      exit={{ opacity: 0, translateX: drawerExitOffset }}
-                      transition={drawerPanelTransition}
-                      exitTransition={panelExitTransition}
-                    >
-                      <TouchableOpacity activeOpacity={1} className="h-full" style={{ width: drawerWidth }}>
-                        <View
-                          className={cn('h-full px-8 pt-8 pb-8', surfaceBackground(elevation))}
-                          accessibilityViewIsModal={true}
-                          aria-modal={true}
-                          role="dialog"
-                          aria-label={renderedTitle}
-                          testID={testID}
-                          style={safeArea ? { paddingTop: insets.top, paddingBottom: insets.bottom } : undefined}
-                        >
-                          {header}
-                          {renderContent()}
-                        </View>
-                      </TouchableOpacity>
-                    </MotiView>
-                  </View>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  className="flex-1 items-center justify-center px-8"
-                  activeOpacity={1}
-                  onPress={closeOnOutsidePress ? handleClose : undefined}
-                >
-                  <MotiView
-                    from={{ opacity: 0, scale: 0.965, translateY: desktopEnterOffset }}
-                    animate={{ opacity: 1, scale: 1, translateY: 0 }}
-                    exit={{ opacity: 0, scale: 0.985, translateY: desktopExitOffset }}
-                    transition={desktopPanelTransition}
-                    exitTransition={panelExitTransition}
-                  >
-                    <TouchableOpacity
-                      activeOpacity={1}
-                      className={cn(wideWidth === undefined && 'w-full', !widePanelSize && 'min-w-xl max-w-xl')}
-                      style={{ width: wideWidth, height: wideHeight, maxWidth: wideMaxWidth, maxHeight: wideMaxHeight }}
-                    >
-                      <View
-                        className={cn(
-                          surface(elevation, 'modal', floating),
-
-                          wideHeight !== undefined && 'flex-1',
-                          containerPaddingClass,
-                        )}
-                        style={wideHeight === undefined ? { maxHeight: maxModalHeight } : undefined}
-                        accessibilityViewIsModal={true}
-                        aria-modal={true}
-                        role="dialog"
-                        testID={testID}
-                        aria-label={renderedTitle}
-                      >
-                        {header}
-                        {renderContent()}
-                      </View>
-                    </TouchableOpacity>
-                  </MotiView>
-                </TouchableOpacity>
-              )}
+              <OverlayScrim type={overlay} dimClassName="bg-black/40" dimOnBlur={false} />
+              {isRightDrawer
+                ? renderDrawerPanel(drawerWidth)
+                : renderCenteredPanel({ wideWidth, wideHeight, wideMaxWidth, wideMaxHeight, maxModalHeight })}
             </MotiView>
           ) : null}
         </AnimatePresence>
@@ -360,7 +384,9 @@ export function AdaptiveModal({
         <OverlayOutlet />
       </Modal>
     );
-  }
+  };
+
+  if (isWideScreen) return renderWideSurface();
 
   return isBottomSheet ? (
     <BottomSheet
@@ -368,12 +394,12 @@ export function AdaptiveModal({
       onOpenChange={handleClose}
       containerClassName={containerPaddingClass}
       onAfterClose={onAfterClose}
-      overlay={overlay}
+      overlay={smallOverlay}
       closeOnOutsidePress={closeOnOutsidePress}
       safeArea={safeArea}
       testID={testID}
     >
-      {header}
+      {renderHeader()}
       {renderBottomSheetContent()}
     </BottomSheet>
   ) : (
@@ -386,7 +412,7 @@ export function AdaptiveModal({
       testID={testID}
     >
       <View className={cn('flex-1', containerPaddingClass)}>
-        {header}
+        {renderHeader()}
         {renderContent()}
       </View>
     </FullSheet>

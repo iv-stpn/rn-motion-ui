@@ -6,6 +6,7 @@ import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__storie
 import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { TriggerButton, TriggerControls, useTriggerState } from '../../../__stories__/story-trigger';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { Popover, type PopoverAlign, PopoverContent, type PopoverSide, PopoverTrigger } from './popover';
 
 const meta = {
@@ -74,7 +75,7 @@ function PopoverPlayground() {
   const [radiusKey, setRadiusKey] = useState<RadiusKey>('16');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('none');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();
 
@@ -87,7 +88,7 @@ function PopoverPlayground() {
         <Choice label="Radius" onChange={setRadiusKey} options={RADII} value={radiusKey} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 

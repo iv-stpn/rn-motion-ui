@@ -15,6 +15,7 @@ import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell } from '../Overlay/overlay-shell';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 /** Props passed to a morphing menu icon renderer. */
 export type MorphingIconProps = { size?: number; color?: string };
@@ -75,10 +76,10 @@ export type MorphingMenuProps = {
   className?: string;
   style?: StyleProp<ViewStyle>;
   /**
-   * When false, the dimming backdrop is not rendered behind the panel. Defaults
-   * to false — like `MorphingFab`, it morphs in place with no scrim.
+   * The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to
+   * `"none"` — like `MorphingFab`, it morphs in place with no scrim.
    */
-  overlay?: boolean;
+  overlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
   /**
@@ -250,7 +251,7 @@ export function MorphingMenu({
   elevation = 6,
   className,
   style,
-  overlay = false,
+  overlay = 'none',
   closeOnOutsidePress = true,
   testID,
 }: MorphingMenuProps) {
@@ -336,7 +337,7 @@ export function MorphingMenu({
                     Blur sits outside the dim's opacity fade — a parent opacity
                     fades out the CSS backdrop-filter on web (backdrop-root
                     clipping), so OverlayBlur fades its own opacity instead. */}
-                {overlay ? <OverlayBlur /> : null}
+                {overlay === 'blur' ? <OverlayBlur /> : null}
                 <MotiView
                   from={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -347,7 +348,7 @@ export function MorphingMenu({
                   <Pressable
                     accessibilityLabel="Close"
                     onPress={closeOnOutsidePress ? handleClose : undefined}
-                    className={overlay ? 'flex-1 bg-black/40' : 'flex-1'}
+                    className={overlay === 'none' ? 'flex-1' : 'flex-1 bg-black/40'}
                     testID={testID ? `${testID}-backdrop` : undefined}
                   />
                 </MotiView>

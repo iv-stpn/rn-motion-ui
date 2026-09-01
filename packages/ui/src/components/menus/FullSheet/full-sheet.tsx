@@ -39,91 +39,79 @@ type BuildBodyArgs = {
   backIcon: ReactNode | undefined;
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: two layout modes (back-button/default) plus header-slot branching share one body builder — splitting would scatter tightly-coupled layout state
-function buildBody({
-  mode,
-  isSmallScreen,
-  title,
-  subtitle,
-  showClose,
-  dismissable,
-  handleClose,
-  customLayout,
-  children,
-  headerSlot,
-  compact,
-  scrollable,
-  px,
-  pt,
-  pb,
-  closeIcon,
-  backIcon,
-}: BuildBodyArgs): ReactNode {
-  if (mode === 'back-button') {
-    const headerHeight = isSmallScreen && title ? BACK_BUTTON_HEADER_HEIGHT : 0;
-    let backOverlay: ReactNode = null;
-    if (isSmallScreen && title)
-      backOverlay = (
-        <View
-          className="absolute top-0 right-0 left-0 z-10 flex-row items-center bg-surface-3"
-          style={{ height: BACK_BUTTON_HEADER_HEIGHT }}
-        >
-          {dismissable ? (
-            <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="ml-2 p-2">
-              <View className="rotate-180">{backIcon ?? <ChevronRight size={20} />}</View>
-            </Pressable>
-          ) : (
-            <View className="ml-2 h-10 w-10" />
-          )}
-          <Text weight="semibold" className="flex-1 pr-4 pl-2 text-foreground text-xl" numberOfLines={1}>
-            {title}
-          </Text>
-        </View>
-      );
-    else if (dismissable)
-      backOverlay = (
-        <View className="absolute top-3 left-4">
-          <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="p-2">
+function buildBackButtonBody(args: BuildBodyArgs): ReactNode {
+  const { isSmallScreen, title, dismissable, handleClose, children, backIcon } = args;
+  const headerHeight = isSmallScreen && title ? BACK_BUTTON_HEADER_HEIGHT : 0;
+  let backOverlay: ReactNode = null;
+  if (isSmallScreen && title)
+    backOverlay = (
+      <View
+        className="absolute top-0 right-0 left-0 z-10 flex-row items-center bg-surface-3"
+        style={{ height: BACK_BUTTON_HEADER_HEIGHT }}
+      >
+        {dismissable ? (
+          <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="ml-2 p-2">
             <View className="rotate-180">{backIcon ?? <ChevronRight size={20} />}</View>
           </Pressable>
-        </View>
-      );
-    return (
-      <>
-        <View className="flex-1" style={{ paddingTop: headerHeight }}>
-          {children}
-        </View>
-        {backOverlay}
-      </>
+        ) : (
+          <View className="ml-2 h-10 w-10" />
+        )}
+        <Text weight="semibold" className="flex-1 pr-4 pl-2 text-foreground text-xl" numberOfLines={1}>
+          {title}
+        </Text>
+      </View>
     );
-  }
+  else if (dismissable)
+    backOverlay = (
+      <View className="absolute top-3 left-4">
+        <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="p-2">
+          <View className="rotate-180">{backIcon ?? <ChevronRight size={20} />}</View>
+        </Pressable>
+      </View>
+    );
+  return (
+    <>
+      <View className="flex-1" style={{ paddingTop: headerHeight }}>
+        {children}
+      </View>
+      {backOverlay}
+    </>
+  );
+}
 
+function resolveDefaultHeader(args: BuildBodyArgs): ReactNode {
+  const { headerSlot, title, subtitle, showClose, compact, dismissable, handleClose, closeIcon } = args;
+  if (headerSlot !== undefined) return typeof headerSlot === 'function' ? headerSlot({ close: handleClose }) : headerSlot;
+
+  const hasHeader = Boolean(title || subtitle || showClose);
+  if (!hasHeader) return null;
+
+  return (
+    <View className={compact ? 'mb-3' : 'mb-4'}>
+      <View className="flex-row items-start justify-between gap-4">
+        {title || subtitle ? (
+          <View className="min-w-0 flex-1 gap-2">
+            {title ? (
+              <Text weight="semibold" className="mr-4 pt-1 text-foreground text-xl">
+                {title}
+              </Text>
+            ) : null}
+            {subtitle ? <Text className="text-base text-muted-foreground leading-relaxed">{subtitle}</Text> : null}
+          </View>
+        ) : (
+          <View className="flex-1" />
+        )}
+        {showClose && dismissable ? (closeIcon ?? <CloseButton onPress={handleClose} />) : null}
+      </View>
+    </View>
+  );
+}
+
+function buildDefaultBody(args: BuildBodyArgs): ReactNode {
+  const { customLayout, children, scrollable, px, pt, pb } = args;
   if (customLayout) return children;
 
-  let resolvedHeader: ReactNode;
-  if (headerSlot === undefined) {
-    const hasHeader = Boolean(title || subtitle || showClose);
-    resolvedHeader = hasHeader ? (
-      <View className={compact ? 'mb-3' : 'mb-4'}>
-        <View className="flex-row items-start justify-between gap-4">
-          {title || subtitle ? (
-            <View className="min-w-0 flex-1 gap-2">
-              {title ? (
-                <Text weight="semibold" className="mr-4 pt-1 text-foreground text-xl">
-                  {title}
-                </Text>
-              ) : null}
-              {subtitle ? <Text className="text-base text-muted-foreground leading-relaxed">{subtitle}</Text> : null}
-            </View>
-          ) : (
-            <View className="flex-1" />
-          )}
-          {showClose && dismissable ? (closeIcon ?? <CloseButton onPress={handleClose} />) : null}
-        </View>
-      </View>
-    ) : null;
-  } else resolvedHeader = typeof headerSlot === 'function' ? headerSlot({ close: handleClose }) : headerSlot;
-
+  const resolvedHeader = resolveDefaultHeader(args);
   return (
     <View className={cn('flex-1', px, pt)}>
       {resolvedHeader}
@@ -142,6 +130,10 @@ function buildBody({
       )}
     </View>
   );
+}
+
+function buildBody(args: BuildBodyArgs): ReactNode {
+  return args.mode === 'back-button' ? buildBackButtonBody(args) : buildDefaultBody(args);
 }
 
 export type FullSheetMode = 'default' | 'back-button';

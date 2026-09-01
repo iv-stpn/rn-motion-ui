@@ -10,6 +10,7 @@ import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Toggle } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import {
   MorphingSwitcher,
   type MorphingSwitcherItem,
@@ -74,7 +75,7 @@ function MorphingSwitcherPlayground() {
   const [withIcons, setWithIcons] = useState(true);
   const [closeCaret, setCloseCaret] = useState(true);
   const [value, setValue] = useState('home');
-  const [overlay, setOverlay] = useState(false);
+  const [overlay, setOverlay] = useState<OverlayType>('none');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
 
   return (
@@ -86,7 +87,7 @@ function MorphingSwitcherPlayground() {
           <Toggle label="Floating" onChange={setFloating} value={floating} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
           <Toggle label="Item icons" onChange={setWithIcons} value={withIcons} />
-          <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+          <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
           <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
           {/* `closeIcon` only reaches the trigger in `select` — `switcher` always keeps its stacked carets. */}
           {variant === 'select' ? <Toggle label="Close caret" onChange={setCloseCaret} value={closeCaret} /> : null}

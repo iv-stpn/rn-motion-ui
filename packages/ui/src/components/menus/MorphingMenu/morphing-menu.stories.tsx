@@ -10,6 +10,7 @@ import { TableLine as Table } from 'rn-motion-ui-icons/icons/table-line';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Playground, Toggle } from '../../../__stories__/story-harness';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { MorphingMenu, type MorphingMenuItem } from './morphing-menu';
 
 const ITEMS: MorphingMenuItem[] = [
@@ -41,7 +42,7 @@ function MorphingMenuDemo(props: ComponentProps<typeof MorphingMenu>) {
 function MorphingMenuPlayground() {
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
-  const [overlay, setOverlay] = useState(false);
+  const [overlay, setOverlay] = useState<OverlayType>('none');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
 
   return (
@@ -49,7 +50,7 @@ function MorphingMenuPlayground() {
       <ControlCard title="Options">
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
       <View className="min-h-[420px] items-center justify-center">

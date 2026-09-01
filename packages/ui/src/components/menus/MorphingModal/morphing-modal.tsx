@@ -11,6 +11,7 @@ import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 // biome-ignore lint/style/useExportsLast: placement type before PANEL_LAYOUT constant — collocated for readability
 export type MorphingModalPlacement = 'bottom' | 'center' | 'bottom-sheet';
@@ -69,8 +70,8 @@ export type MorphingModalProps = {
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-  /** When false, the dimming backdrop is not rendered behind the panel. Defaults to true. */
-  overlay?: boolean;
+  /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"blur"`. */
+  overlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
 };
@@ -87,7 +88,7 @@ export function MorphingModal({
   accessibilityLabel,
   style,
   testID,
-  overlay = true,
+  overlay = 'blur',
   closeOnOutsidePress = true,
 }: MorphingModalProps) {
   const open = viewId !== null;
@@ -145,30 +146,77 @@ export function MorphingModal({
   // for the centred/bottom modal. Shared by the elevated surface (so the shadow
   // ring follows the curve) and the clip wrapper (so content clips to the curve).
   const panelRadiusClass = placement === 'bottom-sheet' ? 'rounded-t-modal' : 'rounded-modal';
+  const showDim = overlay !== 'none';
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: shared-element morph requires coordinating clip, height-spring, and cross-fade branches in one render path
+  const renderBackdrop = () => (
+    <>
+      {/* Blur sits outside the dim's opacity fade: a parent opacity fades
+          out the CSS backdrop-filter on web (backdrop-root clipping), so
+          OverlayBlur fades its own opacity instead. */}
+      {overlay === 'blur' ? <OverlayBlur /> : null}
+      <MotiView
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ type: 'timing', duration: 200, easing: EASE_OUT }}
+        className="absolute top-0 right-0 bottom-0 left-0"
+      >
+        <Pressable
+          accessibilityLabel="Close"
+          onPress={closeOnOutsidePress ? handleClose : undefined}
+          className={showDim ? 'flex-1 bg-black/40' : 'flex-1'}
+          testID={testID ? `${testID}-backdrop` : undefined}
+        />
+      </MotiView>
+    </>
+  );
+
+  const renderMorphContent = () => (
+    <View className={cn('overflow-hidden', panelRadiusClass)}>
+      {showClose ? (
+        <View className="absolute top-2 right-2 z-10">
+          <CloseButton onPress={handleClose} testID={testID ? `${testID}-close` : undefined} />
+        </View>
+      ) : null}
+      {/*
+       * Height morphs toward the measured height of the active view.
+       * overflow:hidden clips the taller incoming content while the
+       * card grows; the cross-fade masks the reveal.
+       */}
+      <MotiView
+        layout={reduce || !morphing ? undefined : PANEL_LAYOUT}
+        className="overflow-hidden"
+        style={{ height: contentHeight ?? 0 }}
+      >
+        <AnimatePresence>
+          <MotiView
+            key={viewId}
+            from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8 }}
+            transition={{ type: 'timing', duration: reduce ? 160 : 240, easing: EASE_OUT }}
+            exitTransition={{ type: 'timing', duration: reduce ? 140 : 160, easing: EASE_OUT }}
+            onLayout={onContentLayout(viewId ?? '')}
+            className="absolute top-0 right-0 left-0"
+          >
+            <View className="p-5">
+              {typeof children === 'string' || typeof children === 'number' ? (
+                <Text className="text-foreground text-sm">{children}</Text>
+              ) : (
+                children
+              )}
+            </View>
+          </MotiView>
+        </AnimatePresence>
+      </MotiView>
+    </View>
+  );
+
   const renderPanel = ({ open: isAnimOpen, onExitComplete }: OverlayShellContext) => (
     <AnimatePresence onExitComplete={onExitComplete}>
       {isAnimOpen ? (
         <View key="morphing-modal" className="flex-1" testID={testID}>
-          {/* Blur sits outside the dim's opacity fade: a parent opacity fades
-              out the CSS backdrop-filter on web (backdrop-root clipping), so
-              OverlayBlur fades its own opacity instead. */}
-          {overlay ? <OverlayBlur /> : null}
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ type: 'timing', duration: 200, easing: EASE_OUT }}
-            className="absolute top-0 right-0 bottom-0 left-0"
-          >
-            <Pressable
-              accessibilityLabel="Close"
-              onPress={closeOnOutsidePress ? handleClose : undefined}
-              className={overlay ? 'flex-1 bg-black/40' : 'flex-1'}
-              testID={testID ? `${testID}-backdrop` : undefined}
-            />
-          </MotiView>
+          {renderBackdrop()}
           <View style={styles.positioner} className={positionerClassName}>
             <MotiView
               accessibilityLabel={accessibilityLabel}
@@ -190,44 +238,7 @@ export function MorphingModal({
                * leaving only the flat background behind (the shadow must render
                * outside the clip region, as in RadioCard / ElevatedButton).
                */}
-              <View className={cn('overflow-hidden', panelRadiusClass)}>
-                {showClose ? (
-                  <View className="absolute top-2 right-2 z-10">
-                    <CloseButton onPress={handleClose} testID={testID ? `${testID}-close` : undefined} />
-                  </View>
-                ) : null}
-                {/*
-                 * Height morphs toward the measured height of the active view.
-                 * overflow:hidden clips the taller incoming content while the
-                 * card grows; the cross-fade masks the reveal.
-                 */}
-                <MotiView
-                  layout={reduce || !morphing ? undefined : PANEL_LAYOUT}
-                  className="overflow-hidden"
-                  style={{ height: contentHeight ?? 0 }}
-                >
-                  <AnimatePresence>
-                    <MotiView
-                      key={viewId}
-                      from={reduce ? { opacity: 0 } : { opacity: 0, translateY: 8 }}
-                      animate={{ opacity: 1, translateY: 0 }}
-                      exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -8 }}
-                      transition={{ type: 'timing', duration: reduce ? 160 : 240, easing: EASE_OUT }}
-                      exitTransition={{ type: 'timing', duration: reduce ? 140 : 160, easing: EASE_OUT }}
-                      onLayout={onContentLayout(viewId ?? '')}
-                      className="absolute top-0 right-0 left-0"
-                    >
-                      <View className="p-5">
-                        {typeof children === 'string' || typeof children === 'number' ? (
-                          <Text className="text-foreground text-sm">{children}</Text>
-                        ) : (
-                          children
-                        )}
-                      </View>
-                    </MotiView>
-                  </AnimatePresence>
-                </MotiView>
-              </View>
+              {renderMorphContent()}
             </MotiView>
           </View>
         </View>

@@ -13,6 +13,7 @@ import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } fr
 import { Menu } from '../../rows/menu';
 import type { MenuItemIcon } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
+import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { HoverMenu, type HoverMenuProps } from './hover-menu';
 
 const meta = {
@@ -113,7 +114,7 @@ function HoverMenuPlayground() {
   const [delayKey, setDelayKey] = useState<DelayKey>('100');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
-  const [overlay, setOverlay] = useState(true);
+  const [overlay, setOverlay] = useState<OverlayType>('none');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();
   const [open, setOpen] = useState(false);
@@ -142,7 +143,7 @@ function HoverMenuPlayground() {
         <Choice label="Offset" onChange={setOffsetKey} options={OFFSETS} value={offsetKey} />
         <Choice label="Hover delay" onChange={setDelayKey} options={DELAYS} value={delayKey} />
         <Toggle label="Open" onChange={setOpen} value={open} />
-        <Toggle label="Show overlay" onChange={setOverlay} value={overlay} />
+        <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
       </ControlCard>
 

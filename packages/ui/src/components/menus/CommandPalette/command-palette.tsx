@@ -11,6 +11,7 @@ import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import { AdaptiveModal } from '../AdaptiveModal/adaptive-modal';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 // Renders inside AdaptiveModal with `customLayout` + `scrollable={false}`: the
 // palette owns its layout (a fixed search bar over a scrollable list) while
@@ -57,8 +58,10 @@ export type CommandPaletteProps = {
   onOpenChange?: (open: boolean) => void;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
-  /** When false, the dimming backdrop is not rendered. Defaults to true. */
-  overlay?: boolean;
+  /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"blur"`. */
+  overlay?: OverlayType;
+  /** Overrides `overlay` on the small-screen bottom sheet. When omitted, the sheet uses `overlay`. */
+  smallScreenOverlay?: OverlayType;
   /** When false, pressing outside the palette will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
   /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
@@ -144,7 +147,8 @@ export function CommandPalette({
   accessibilityLabel = 'Command palette',
   testID,
   searchIcon,
-  overlay = true,
+  overlay = 'blur',
+  smallScreenOverlay,
   closeOnOutsidePress = true,
   elevation = 6,
 }: CommandPaletteProps) {
@@ -228,6 +232,7 @@ export function CommandPalette({
       smallScreenMode="fullSheet"
       largeScreenMode="modal"
       overlay={overlay}
+      smallScreenOverlay={smallScreenOverlay}
       closeOnOutsidePress={closeOnOutsidePress}
       elevation={elevation}
     >

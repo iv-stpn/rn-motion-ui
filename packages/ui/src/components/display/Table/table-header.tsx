@@ -14,6 +14,84 @@ import { Text } from '../../typography/Text/text';
 import type { SortDirection, TableColumn } from './table-types';
 import { alignToJustifyClass, alignToTextClass, columnLayoutStyle } from './table-utils';
 
+type SortIndicatorProps = {
+  isActive: boolean;
+  activeDirection: SortDirection | undefined;
+  reduce: boolean;
+  activeColor: string;
+  mutedColor: string;
+  sortIcon?: ReactNode;
+};
+
+function SortIndicator({ isActive, activeDirection, reduce, activeColor, mutedColor, sortIcon }: SortIndicatorProps) {
+  const rotate = isActive && activeDirection === 'desc' ? '180deg' : '0deg';
+  const opacity = isActive ? 1 : 0.35;
+  return (
+    <MotiView animate={{ rotate, opacity }} transition={{ type: 'timing', duration: reduce ? 0 : 180 }}>
+      {sortIcon ?? <ChevronUp size={12} color={isActive ? activeColor : mutedColor} />}
+    </MotiView>
+  );
+}
+
+type ColumnActionOverlayProps = {
+  isRTL: boolean;
+  header: ReactNode;
+  insertColor: string;
+  onInsert?: () => void;
+  onDelete?: () => void;
+};
+
+function ColumnActionOverlay({ isRTL, header, insertColor, onInsert, onDelete }: ColumnActionOverlayProps) {
+  return (
+    <View className={cn('absolute top-0.5 z-10 flex-row gap-0.5', isRTL ? 'left-0.5' : 'right-0.5')}>
+      {onInsert ? (
+        <Pressable
+          className="h-5 w-5 items-center justify-center rounded-full"
+          onPress={onInsert}
+          hitSlop={8}
+          accessibilityLabel={`Insert column before ${header}`}
+        >
+          <Plus size={10} color={insertColor} />
+        </Pressable>
+      ) : null}
+      {onDelete ? (
+        <Pressable
+          className="h-5 w-5 items-center justify-center rounded-full"
+          onPress={onDelete}
+          hitSlop={8}
+          accessibilityLabel={`Delete column ${header}`}
+        >
+          <Trash2 size={10} color={insertColor} />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+type ReorderGripProps = {
+  isRTL: boolean;
+  columnKey: string;
+  mutedColor: string;
+  gripHandlers: (key: string) => GestureResponderHandlers;
+  testID?: string;
+};
+
+function ReorderGrip({ isRTL, columnKey, mutedColor, gripHandlers, testID }: ReorderGripProps) {
+  return (
+    <View
+      {...gripHandlers(columnKey)}
+      // Negative margin pulls the grip into the cell padding on the side it
+      // sits, which the row direction decides — so it mirrors with the row.
+      className={cn('select-none items-center justify-center', isRTL ? '-mr-1' : '-ml-1')}
+      hitSlop={8}
+      accessibilityLabel={`Reorder ${columnKey} column`}
+      testID={`${testID ?? 'table'}-grip-${columnKey}`}
+    >
+      <GripVertical size={14} color={mutedColor} />
+    </View>
+  );
+}
+
 export type HeaderCellProps<T> = {
   column: TableColumn<T>;
   colIndex: number;
@@ -44,7 +122,6 @@ export type HeaderCellProps<T> = {
 
 // One column header. Sort/menu/rename callbacks are stable useCallbacks bound to
 // this column so the header JSX never binds inline arrows.
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: sort direction, column menu, inline-rename, and drag-resize compose many branches
 export function HeaderCell<T>({
   column,
   colIndex,
@@ -87,6 +164,10 @@ export function HeaderCell<T>({
     setPressedColKey(null);
   }, [onDeleteColumn, column.key, setPressedColKey]);
 
+  const dragOpacity = isDragging ? 0.5 : 1;
+  const dragScale = isDragging ? 1.04 : 1;
+  const dragTransition = { type: 'timing' as const, duration: reduce ? 0 : 180 };
+
   return (
     <Pressable
       key={column.key}
@@ -101,22 +182,18 @@ export function HeaderCell<T>({
       {/* Header content lifts (scale + fade) while its column is being dragged. */}
       <MotiView
         className="flex-1 flex-row items-center gap-1"
-        animate={reduce ? { opacity: isDragging ? 0.5 : 1 } : { scale: isDragging ? 1.04 : 1, opacity: isDragging ? 0.5 : 1 }}
-        transition={{ type: 'timing', duration: reduce ? 0 : 180 }}
+        animate={reduce ? { opacity: dragOpacity } : { scale: dragScale, opacity: dragOpacity }}
+        transition={dragTransition}
       >
         {/* Reorder grip — a PanResponder here claims the drag so it never sorts. */}
         {reorderable ? (
-          <View
-            {...gripHandlers(column.key)}
-            // Negative margin pulls the grip into the cell padding on the side it
-            // sits, which the row direction decides — so it mirrors with the row.
-            className={cn('select-none items-center justify-center', isRTL ? '-mr-1' : '-ml-1')}
-            hitSlop={8}
-            accessibilityLabel={`Reorder ${column.key} column`}
-            testID={`${testID ?? 'table'}-grip-${column.key}`}
-          >
-            <GripVertical size={14} color={mutedForeground} />
-          </View>
+          <ReorderGrip
+            isRTL={isRTL}
+            columnKey={column.key}
+            mutedColor={mutedForeground}
+            gripHandlers={gripHandlers}
+            testID={testID}
+          />
         ) : null}
 
         {onColumnRename && !sortEnabled ? (
@@ -132,12 +209,14 @@ export function HeaderCell<T>({
               {column.header}
             </Text>
             {sortEnabled ? (
-              <MotiView
-                animate={{ rotate: isActive && activeDirection === 'desc' ? '180deg' : '0deg', opacity: isActive ? 1 : 0.35 }}
-                transition={{ type: 'timing', duration: reduce ? 0 : 180 }}
-              >
-                {sortIcon ?? <ChevronUp size={12} color={isActive ? foregroundForeground : mutedForeground} />}
-              </MotiView>
+              <SortIndicator
+                isActive={isActive}
+                activeDirection={activeDirection}
+                reduce={reduce}
+                activeColor={foregroundForeground}
+                mutedColor={mutedForeground}
+                sortIcon={sortIcon}
+              />
             ) : null}
           </View>
         )}
@@ -146,28 +225,13 @@ export function HeaderCell<T>({
       {/* Column action overlay on long-press, pinned to the trailing edge — the
           left one under RTL, since `right` stays physical in both directions. */}
       {isColPressed && hasColMenu ? (
-        <View className={cn('absolute top-0.5 z-10 flex-row gap-0.5', isRTL ? 'left-0.5' : 'right-0.5')}>
-          {onInsertColumn ? (
-            <Pressable
-              className="h-5 w-5 items-center justify-center rounded-full"
-              onPress={handleInsertColumn}
-              hitSlop={8}
-              accessibilityLabel={`Insert column before ${column.header}`}
-            >
-              <Plus size={10} color={primaryForeground} />
-            </Pressable>
-          ) : null}
-          {onDeleteColumn ? (
-            <Pressable
-              className="h-5 w-5 items-center justify-center rounded-full"
-              onPress={handleDeleteColumn}
-              hitSlop={8}
-              accessibilityLabel={`Delete column ${column.header}`}
-            >
-              <Trash2 size={10} color={primaryForeground} />
-            </Pressable>
-          ) : null}
-        </View>
+        <ColumnActionOverlay
+          isRTL={isRTL}
+          header={column.header}
+          insertColor={primaryForeground}
+          onInsert={onInsertColumn ? handleInsertColumn : undefined}
+          onDelete={onDeleteColumn ? handleDeleteColumn : undefined}
+        />
       ) : null}
     </Pressable>
   );

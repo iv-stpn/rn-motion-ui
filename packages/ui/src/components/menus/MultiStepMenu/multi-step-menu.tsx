@@ -23,6 +23,7 @@ import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { MenuItem, type MenuItemIcon } from '../../rows/menu-item';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
+import type { OverlayType } from '../Overlay/overlay-type';
 
 // A lightly-damped spring glides the pane into place with a hair of settle at the
 // end instead of the abrupt start/stop a linear tween gives. Opacity stays a
@@ -68,6 +69,50 @@ function computeDirection(current: string[], next: string[]): 'forward' | 'backw
   if (next.length > current.length) return 'forward';
   if (next.length < current.length) return 'backward';
   return 'forward';
+}
+
+/** The pane-motion target objects: any subset of translate/opacity, or `false` for "no enter/exit". */
+type PaneTarget = { translateY?: number; translateX?: number; opacity?: number };
+type PaneMotion = false | PaneTarget;
+
+/** Everything the small-screen pane-motion helpers need to pick a direction. */
+type SmallMotionContext = {
+  isRoot: boolean;
+  isForward: boolean;
+  isBackward: boolean;
+  isFirstLayer: boolean;
+  paneWidth: number;
+};
+
+function computeWideEnterFrom(direction: MultiStepDirection, widePaneWidth: number): PaneMotion {
+  if (!direction) return false;
+  return direction === 'backward' ? { translateX: -widePaneWidth } : { translateX: widePaneWidth };
+}
+
+function computeWideExitTo(direction: MultiStepDirection, widePaneWidth: number): PaneTarget {
+  return direction === 'forward' ? { translateX: -widePaneWidth } : { translateX: widePaneWidth };
+}
+
+function computeSmallEnterFrom(ctx: SmallMotionContext): PaneMotion {
+  const { isRoot, isForward, isBackward, isFirstLayer, paneWidth } = ctx;
+  if (isRoot) return isBackward ? { translateY: TITLE_ROLL } : false;
+  if (isForward && isFirstLayer) return { opacity: 0 };
+  return isBackward ? { translateX: -paneWidth } : { translateX: paneWidth };
+}
+
+function computeSmallExitTo(ctx: SmallMotionContext): PaneMotion {
+  const { isRoot, isForward, isBackward, isFirstLayer, paneWidth } = ctx;
+  if (isRoot) return isForward ? { opacity: 0 } : { translateX: -paneWidth };
+  // Back to the root: no exit animation — the deeper menu just disappears.
+  if (isBackward) return isFirstLayer ? false : { translateX: paneWidth, opacity: 0 };
+  return { translateX: -paneWidth, opacity: 0 };
+}
+
+function computeSmallAnimateTo(ctx: SmallMotionContext): PaneTarget {
+  const { isRoot, isForward, isBackward, isFirstLayer } = ctx;
+  if (isRoot && isBackward) return { translateY: 0 };
+  if (isForward && isFirstLayer) return { opacity: 1 };
+  return { translateX: 0 };
 }
 
 export type MultiStepDirection = 'forward' | 'backward' | null;
@@ -158,14 +203,15 @@ export type MultiStepMenuProps = {
   widePanelSize?: WidePanelSize;
   ref?: RefObject<MultiStepMenuHandle | null>;
   testID?: string;
-  /** When false, the dimming backdrop is not rendered. Defaults to true. */
-  overlay?: boolean;
+  /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"blur"`. */
+  overlay?: OverlayType;
+  /** Overrides `overlay` on the small-screen bottom sheet. When omitted, the sheet uses `overlay`. */
+  smallScreenOverlay?: OverlayType;
   /** When false, pressing outside the menu will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
 };
 
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: same reason — wide and small layouts are tightly coupled to shared state
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: same reason
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: wide and small layouts are tightly coupled to shared state — the line budget is the layout surface count, not branch depth
 export const MultiStepMenu = function MultiStepMenu({
   isWideScreen,
   visible,
@@ -182,7 +228,8 @@ export const MultiStepMenu = function MultiStepMenu({
   widePanelSize,
   ref,
   testID,
-  overlay = true,
+  overlay = 'blur',
+  smallScreenOverlay,
   closeOnOutsidePress = true,
 }: MultiStepMenuProps) {
   const [path, setPath] = useState<string[]>(isWideScreen ? (defaultPath ?? []) : []);
@@ -292,8 +339,7 @@ export const MultiStepMenu = function MultiStepMenu({
     },
   }));
 
-  let content: ReactNode;
-  if (isWideScreen) {
+  const buildWideContent = (): ReactNode => {
     const effectivePath = path.length > 0 ? path : (defaultPath ?? []);
     const activeNode = effectivePath.length > 0 ? resolveSection(sections, effectivePath) : null;
     const showBack = path.length > 1;
@@ -304,13 +350,10 @@ export const MultiStepMenu = function MultiStepMenu({
     // the path (set-direction-then-commit), so the exiting pane renders its
     // correct `exit` value and the entering pane its `from` on the same render pass.
     const widePaneKey = effectivePath.length > 0 ? effectivePath.join('/') : '__root__';
-    const wideEnterFrom = (() => {
-      if (!direction) return false;
-      return direction === 'backward' ? { translateX: -widePaneWidth } : { translateX: widePaneWidth };
-    })();
-    const wideExitTo = direction === 'forward' ? { translateX: -widePaneWidth } : { translateX: widePaneWidth };
+    const wideEnterFrom = computeWideEnterFrom(direction, widePaneWidth);
+    const wideExitTo = computeWideExitTo(direction, widePaneWidth);
 
-    content = (
+    return (
       <View className="flex-1 flex-row overflow-hidden rounded-modal">
         <View className="w-56 justify-between border-border border-r-[1.5px] p-3 lg:w-64">
           <View className="min-h-0 flex-1">{sidebar(helpers)}</View>
@@ -369,7 +412,9 @@ export const MultiStepMenu = function MultiStepMenu({
         </View>
       </View>
     );
-  } else {
+  };
+
+  const buildSmallContent = (): ReactNode => {
     // ── Small screen ──
     const isRoot = path.length === 0;
     const activeNode = isRoot ? null : resolveSection(sections, path);
@@ -391,27 +436,15 @@ export const MultiStepMenu = function MultiStepMenu({
     const isForward = direction === 'forward';
     const isBackward = direction === 'backward';
     const isFirstLayer = path.length === 1;
-    const enterFrom = (() => {
-      if (isRoot) return isBackward ? { translateY: TITLE_ROLL } : false;
-      if (isForward && isFirstLayer) return { opacity: 0 };
-      return isBackward ? { translateX: -paneWidth } : { translateX: paneWidth };
-    })();
-    const exitTo = (() => {
-      if (isRoot) return isForward ? { opacity: 0 } : { translateX: -paneWidth };
-      // Back to the root: no exit animation — the deeper menu just disappears.
-      if (isBackward) return isFirstLayer ? false : { translateX: paneWidth, opacity: 0 };
-      return { translateX: -paneWidth, opacity: 0 };
-    })();
-    const animateTo = (() => {
-      if (isRoot && isBackward) return { translateY: 0 };
-      if (isForward && isFirstLayer) return { opacity: 1 };
-      return { translateX: 0 };
-    })();
+    const motionCtx: SmallMotionContext = { isRoot, isForward, isBackward, isFirstLayer, paneWidth };
+    const enterFrom = computeSmallEnterFrom(motionCtx);
+    const exitTo = computeSmallExitTo(motionCtx);
+    const animateTo = computeSmallAnimateTo(motionCtx);
     // Deeper menus hide their content instantly on exit; the root's forward exit
     // stays a slower cross-fade against the entering first layer.
     const exitTransition = isRoot ? slideTransition : slideExitTransition;
 
-    content = (
+    return (
       <View className="flex-1" onLayout={handlePaneLayout}>
         <View className="px-5 pt-6 pb-5">
           <View className="flex-row items-center justify-between">
@@ -495,7 +528,9 @@ export const MultiStepMenu = function MultiStepMenu({
         </View>
       </View>
     );
-  }
+  };
+
+  const content: ReactNode = isWideScreen ? buildWideContent() : buildSmallContent();
 
   // AdaptiveModal owns the surface: a full sheet on small screens, a centered
   // panel on wide screens. `customLayout` + `scrollable={false}` hand all chrome
@@ -513,6 +548,7 @@ export const MultiStepMenu = function MultiStepMenu({
       onAfterClose={onAfterClose}
       testID={testID}
       overlay={overlay}
+      smallScreenOverlay={smallScreenOverlay}
       closeOnOutsidePress={closeOnOutsidePress}
     >
       {content}

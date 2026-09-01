@@ -4,6 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { type SharedValue, useAnimatedProps, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { Portal } from '../../portal/Portal/portal';
 import { OverlayPortal } from '../Overlay/overlay-host';
+import { overlayHostPageX, overlayHostPageY } from '../Overlay/overlay-host-position';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './constants';
 import { useHoldMenuInternal } from './context';
 import type { HoldItemProps, MenuItemProps, TransformOriginAnchorPosition } from './hold-menu-types';
@@ -98,9 +99,12 @@ const HoldItemTwinComponent = ({
 
     // `itemRectX/Y` are root-space (activation subtracts the root's page offset
     // from the item's page coords). When the twin teleports to the overlay host
-    // its containing block is the window, so add the root's page offset back.
-    const offsetX = teleported ? rootPageX.value : 0;
-    const offsetY = teleported ? rootPageY.value : 0;
+    // its containing block is that host, not the window — and the host itself may
+    // be inset from the window (storybook's chrome, a nested screen). Convert root
+    // space into host space by subtracting the host's own window offset, or the
+    // twin lands too low.
+    const offsetX = teleported ? rootPageX.value - overlayHostPageX.value : 0;
+    const offsetY = teleported ? rootPageY.value - overlayHostPageY.value : 0;
 
     return {
       top: itemRectY.value + offsetY,

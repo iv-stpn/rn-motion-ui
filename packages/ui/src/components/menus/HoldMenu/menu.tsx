@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import Animated, { useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
+import { overlayHostPageX, overlayHostPageY } from '../Overlay/overlay-host-position';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './constants';
 import { useHoldMenuInternal } from './context';
 import { MenuList } from './menu-list';
@@ -24,11 +25,13 @@ const MenuComponent = () => {
 
     // `top`/`left` are root-space (the activation worklet subtracts the root's
     // page offset from the item's page coords). When the overlay is teleported to
-    // the `BlurProvider` overlay host its containing block is the window, not the
-    // root, so add the root's page offset back to land where the panel would have
-    // inside the root.
-    const offsetX = teleported ? rootPageX.value : 0;
-    const offsetY = teleported ? rootPageY.value : 0;
+    // the `BlurProvider` overlay host its containing block is that host, not the
+    // root — and the host itself may be inset from the window (storybook's
+    // chrome, a nested screen). The root's page offset alone would land the panel
+    // too low, so convert root space into host space by subtracting the host's
+    // own window offset.
+    const offsetX = teleported ? rootPageX.value - overlayHostPageX.value : 0;
+    const offsetY = teleported ? rootPageY.value - overlayHostPageY.value : 0;
 
     const top =
       (anchorPositionVertical === 'top'

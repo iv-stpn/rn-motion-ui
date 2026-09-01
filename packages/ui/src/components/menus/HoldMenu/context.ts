@@ -90,19 +90,22 @@ export type HoldMenuInternalContextType = {
    * The root's page offset (`measure(rootRef).pageX/pageY`), stored by
    * activation. The menu/twins compute their `top`/`left` in the root's
    * coordinate space (item page coords minus this offset). When the overlay is
-   * teleported to the `BlurProvider`'s overlay host — a full-screen sibling of
-   * the `BlurTarget` whose origin is the window, not the root — those root-space
-   * coords must be offset back by the root's page position to land where they
-   * would have inside the root (see `teleported`).
+   * teleported to the `BlurProvider`'s overlay host — a sibling of the
+   * `BlurTarget` whose origin is the `BlurProvider`'s parent, not the window —
+   * those root-space coords must be converted into host space by adding this
+   * offset back and subtracting the host's own window offset (see `teleported`
+   * and `overlay-host-position`).
    */
   rootPageX: SharedValue<number>;
   rootPageY: SharedValue<number>;
   /**
    * Whether the overlay (backdrop + menu + twins) renders OUTSIDE the
    * `BlurTarget` through the `BlurProvider` overlay host (Android with the peer
-   * installed) rather than inline inside the root. Teleported pieces must add
-   * `rootPageX`/`rootPageY` to their root-space `top`/`left`, because the host's
-   * containing block is the window rather than the root view.
+   * installed) rather than inline inside the root. Teleported pieces convert
+   * their root-space `top`/`left` into host space by adding `rootPageX`/`rootPageY`
+   * and subtracting the host's own window offset — because the host's containing
+   * block is the `BlurProvider`'s parent (inset from the window whenever anything
+   * sits above the provider), not the window.
    */
   teleported: boolean;
 };

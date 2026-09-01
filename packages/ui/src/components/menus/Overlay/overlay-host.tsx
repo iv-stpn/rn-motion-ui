@@ -1,5 +1,7 @@
-import { Fragment, type ReactNode, useEffect, useId, useSyncExternalStore } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Fragment, type ReactNode, useCallback, useEffect, useId, useSyncExternalStore } from 'react';
+import { StyleSheet } from 'react-native';
+import Animated, { measure, runOnUI, useAnimatedRef } from 'react-native-reanimated';
+import { overlayHostPageX, overlayHostPageY } from './overlay-host-position';
 
 /**
  * A layered, single-host portal for the HoldMenu overlay content (its backdrop
@@ -70,13 +72,31 @@ type OverlayPortalProps = { layer: OverlayLayer; children: ReactNode };
  */
 export function OverlayHost() {
   const current = useSyncExternalStore(subscribe, getEntries);
+  const hostRef = useAnimatedRef<Animated.View>();
+
+  // Measure this host's own window offset so the teleported pieces (whose
+  // containing block is this host, not the provider root) can convert their
+  // root-space coords back into host space. `measure` runs on the UI thread in
+  // the same coordinate system the activation worklet uses for the root/item,
+  // so the offsets match exactly; `onLayout` re-fires on rotation so the stored
+  // offset stays current.
+  const measureOffset = useCallback(() => {
+    runOnUI(() => {
+      const m = measure(hostRef);
+      if (m) {
+        overlayHostPageX.value = m.pageX;
+        overlayHostPageY.value = m.pageY;
+      }
+    })();
+  }, [hostRef]);
+
   if (current.length === 0) return null;
   return (
-    <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+    <Animated.View ref={hostRef} onLayout={measureOffset} pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       {current.map((entry) => (
         <Fragment key={entry.id}>{entry.node}</Fragment>
       ))}
-    </View>
+    </Animated.View>
   );
 }
 

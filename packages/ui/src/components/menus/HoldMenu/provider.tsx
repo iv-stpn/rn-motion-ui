@@ -123,6 +123,18 @@ const ProviderComponent = ({
   const rootRef = useAnimatedRef<Animated.View>();
   const blurTargetRef = useBlurTargetRef();
 
+  // Whether the overlay teleports out of the `BlurTarget` into the provider's
+  // overlay host (Android with the peer installed). When true the menu/twins
+  // must offset their root-space coords back by the root's page position.
+  const teleported = Platform.OS === 'android' && blurTargetRef !== null;
+
+  // The root's page offset, measured during activation and mirrored here so the
+  // teleported overlay (which renders outside this provider's React tree, in the
+  // `BlurProvider` overlay host) can translate root-space coords into the host's
+  // window-space. Zero until the first activation measures it.
+  const rootPageX = useSharedValue(0);
+  const rootPageY = useSharedValue(0);
+
   const internalContextVariables = useMemo<HoldMenuInternalContextType>(
     () => ({
       state,
@@ -133,6 +145,9 @@ const ProviderComponent = ({
       rootViewportHeight,
       AnimatedIcon,
       rootRef,
+      rootPageX,
+      rootPageY,
+      teleported,
       overlay,
       closeOnOutsidePress,
     }),
@@ -145,6 +160,9 @@ const ProviderComponent = ({
       rootViewportHeight,
       AnimatedIcon,
       rootRef,
+      rootPageX,
+      rootPageY,
+      teleported,
       overlay,
       closeOnOutsidePress,
     ],
@@ -175,7 +193,7 @@ const ProviderComponent = ({
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HoldMenuInternalContext.Provider value={internalContextVariables}>
         <Animated.View ref={rootRef} className="flex-1">
-          {Platform.OS === 'android' && blurTargetRef !== null ? (
+          {teleported ? (
             <>
               {children}
               {/* Android: the overlay renders OUTSIDE the `BlurTarget` through the

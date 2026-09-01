@@ -86,6 +86,25 @@ export type HoldMenuInternalContextType = {
    * origin (e.g. storybook's padding decorator on web).
    */
   rootRef: AnimatedRef<Animated.View>;
+  /**
+   * The root's page offset (`measure(rootRef).pageX/pageY`), stored by
+   * activation. The menu/twins compute their `top`/`left` in the root's
+   * coordinate space (item page coords minus this offset). When the overlay is
+   * teleported to the `BlurProvider`'s overlay host — a full-screen sibling of
+   * the `BlurTarget` whose origin is the window, not the root — those root-space
+   * coords must be offset back by the root's page position to land where they
+   * would have inside the root (see `teleported`).
+   */
+  rootPageX: SharedValue<number>;
+  rootPageY: SharedValue<number>;
+  /**
+   * Whether the overlay (backdrop + menu + twins) renders OUTSIDE the
+   * `BlurTarget` through the `BlurProvider` overlay host (Android with the peer
+   * installed) rather than inline inside the root. Teleported pieces must add
+   * `rootPageX`/`rootPageY` to their root-space `top`/`left`, because the host's
+   * containing block is the window rather than the root view.
+   */
+  teleported: boolean;
 };
 
 export const HoldMenuInternalContext = createContext<HoldMenuInternalContextType | null>(null);

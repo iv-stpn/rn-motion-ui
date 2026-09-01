@@ -1,9 +1,8 @@
 import { memo, type ReactNode, useMemo } from 'react';
-import { Platform, View, type ViewProps } from 'react-native';
+import { View, type ViewProps } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { type SharedValue, useAnimatedProps, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { Portal } from '../../portal/Portal/portal';
-import { useBlurTargetRef } from '../Overlay/blur-context';
 import { OverlayPortal } from '../Overlay/overlay-host';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './constants';
 import { useHoldMenuInternal } from './context';
@@ -58,11 +57,7 @@ const HoldItemTwinComponent = ({
   itemScale,
   transformOrigin,
 }: HoldItemTwinProps) => {
-  const { state, safeAreaInsets, windowSize, rootViewportHeight } = useHoldMenuInternal();
-  // Mirrors the provider's gate (see `provider.tsx`): only portal the twin out
-  // of the `BlurTarget` when an `OverlayHost` exists to render it (Android with
-  // the peer installed); otherwise keep the in-tree `Portal` host.
-  const blurTargetRef = useBlurTargetRef();
+  const { state, safeAreaInsets, windowSize, rootViewportHeight, rootPageX, rootPageY, teleported } = useHoldMenuInternal();
 
   const overlayTap = useMemo(
     () =>
@@ -101,9 +96,15 @@ const HoldItemTwinComponent = ({
       return withTiming(-0.1, { duration: HOLD_ITEM_TRANSFORM_DURATION });
     };
 
+    // `itemRectX/Y` are root-space (activation subtracts the root's page offset
+    // from the item's page coords). When the twin teleports to the overlay host
+    // its containing block is the window, so add the root's page offset back.
+    const offsetX = teleported ? rootPageX.value : 0;
+    const offsetY = teleported ? rootPageY.value : 0;
+
     return {
-      top: itemRectY.value,
-      left: itemRectX.value,
+      top: itemRectY.value + offsetY,
+      left: itemRectX.value + offsetX,
       width: itemRectWidth.value,
       height: itemRectHeight.value,
       // `releaseProgress` drives this opacity (0 = active → this twin shows, 1 =
@@ -136,6 +137,9 @@ const HoldItemTwinComponent = ({
     safeAreaInsets,
     windowSize,
     rootViewportHeight,
+    rootPageX,
+    rootPageY,
+    teleported,
   ]);
 
   const animatedPortalProps = useAnimatedProps<ViewProps>(() => ({
@@ -164,11 +168,7 @@ const HoldItemTwinComponent = ({
   // overlay host, above the menu's layer) so the target-based blur does not
   // frost it; iOS/web keep the in-tree `Portal` host, which already lifts the
   // twin above the inline backdrop/menu without leaving the root.
-  return Platform.OS === 'android' && blurTargetRef !== null ? (
-    <OverlayPortal layer="twin">{twin}</OverlayPortal>
-  ) : (
-    <Portal name={name}>{twin}</Portal>
-  );
+  return teleported ? <OverlayPortal layer="twin">{twin}</OverlayPortal> : <Portal name={name}>{twin}</Portal>;
 };
 
 export const HoldItemTwin = memo(HoldItemTwinComponent);

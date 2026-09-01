@@ -17,23 +17,33 @@ import { SPACING } from './style-guide';
  * item rect, so this wrapper stays at `left: 0` (the stylesheet default).
  */
 const MenuComponent = () => {
-  const { state, menuProps } = useHoldMenuInternal();
+  const { state, menuProps, rootPageX, rootPageY, teleported } = useHoldMenuInternal();
 
   const wrapperStyles = useAnimatedStyle(() => {
     const anchorPositionVertical = menuProps.value.anchorPosition.split('-')[0];
 
+    // `top`/`left` are root-space (the activation worklet subtracts the root's
+    // page offset from the item's page coords). When the overlay is teleported to
+    // the `BlurProvider` overlay host its containing block is the window, not the
+    // root, so add the root's page offset back to land where the panel would have
+    // inside the root.
+    const offsetX = teleported ? rootPageX.value : 0;
+    const offsetY = teleported ? rootPageY.value : 0;
+
     const top =
-      anchorPositionVertical === 'top'
+      (anchorPositionVertical === 'top'
         ? menuProps.value.itemHeight + menuProps.value.itemY + SPACING
-        : menuProps.value.itemY - SPACING;
+        : menuProps.value.itemY - SPACING) + offsetY;
     const tY = menuProps.value.transformValue;
 
     // The panel's `left` is absolute in the root's space (item-relative offset
     // applied in `MenuList`), so the wrapper must not also offset by `itemX` —
     // doing so would double-count the item's x and push a right-anchored panel
-    // (e.g. a `fromMe` chat bubble) past the right edge by the item's own x.
+    // (e.g. a `fromMe` chat bubble) past the right edge by the item's own x. The
+    // only horizontal offset it carries is the teleport root-space correction.
     return {
       top,
+      left: offsetX,
       transform: [
         {
           translateY:
@@ -43,10 +53,10 @@ const MenuComponent = () => {
         },
       ],
     };
-  }, [menuProps]);
+  }, [menuProps, rootPageX, rootPageY, teleported]);
 
   return (
-    <Animated.View className="absolute left-0 z-10" style={wrapperStyles}>
+    <Animated.View className="absolute z-10" style={wrapperStyles}>
       <MenuList />
     </Animated.View>
   );

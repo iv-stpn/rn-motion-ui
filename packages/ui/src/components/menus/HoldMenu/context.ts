@@ -1,9 +1,43 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useSyncExternalStore } from 'react';
 import type Animated from 'react-native-reanimated';
 import type { AnimatedRef, SharedValue } from 'react-native-reanimated';
 import type { OverlayType } from '../Overlay/overlay-type';
 import type { CONTEXT_MENU_STATE } from './constants';
 import type { HoldMenuIconComponent, HoldMenuSafeAreaInsets, MenuInternalProps } from './hold-menu-types';
+
+/**
+ * A module-level mirror of the internal context, for the overlay content that
+ * renders OUTSIDE the provider's React tree.
+ *
+ * The `BlurProvider`'s overlay host is a sibling of the `BlurTarget` that wraps
+ * the app, so HoldMenu's backdrop/menu/twins — teleported there through
+ * `overlay-host` — sit outside the `HoldMenuInternalContext.Provider`. React
+ * context does not cross that boundary (the teleported node renders in the
+ * host's tree, not the provider's), so the overlay pieces read the shared values
+ * from this store instead. The provider writes it on mount (see `provider.tsx`)
+ * and clears it on unmount; the shared values themselves are stable, so the
+ * store holds one reference for the provider's whole life.
+ *
+ * In-tree consumers (each `HoldItem`) keep reading the React context directly,
+ * so nesting and re-render semantics there are unchanged. The store only backs
+ * the teleported overlay — a single menu at a time, exactly as upstream keeps.
+ *
+ * (The `HoldMenuInternalContextType` this mirrors is declared below — TypeScript
+ * hoists type declarations, so the forward reference resolves.)
+ */
+let internalContextValue: HoldMenuInternalContextType | null = null;
+const internalContextListeners = new Set<() => void>();
+
+function subscribeHoldMenuInternalContext(listener: () => void): () => void {
+  internalContextListeners.add(listener);
+  return () => {
+    internalContextListeners.delete(listener);
+  };
+}
+
+function getHoldMenuInternalContext(): HoldMenuInternalContextType | null {
+  return internalContextValue;
+}
 
 /** Rotation-safe window metrics, fed from `useWindowDimensions`. */
 export type HoldMenuWindowSize = { width: number; height: number; fontScale: number };
@@ -56,9 +90,18 @@ export type HoldMenuInternalContextType = {
 
 export const HoldMenuInternalContext = createContext<HoldMenuInternalContextType | null>(null);
 
+/** Writes the module-store mirror. Called by `HoldMenuProvider` on mount/change. */
+export function setHoldMenuInternalContext(value: HoldMenuInternalContextType | null): void {
+  if (internalContextValue === value) return;
+  internalContextValue = value;
+  for (const listener of internalContextListeners) listener();
+}
+
 /** Reads the HoldMenu internal context. Must be called under a `HoldMenuProvider`. */
 export const useHoldMenuInternal = (): HoldMenuInternalContextType => {
   const context = useContext(HoldMenuInternalContext);
-  if (!context) throw new Error('HoldMenu components must be used within a <HoldMenuProvider>.');
-  return context;
+  const storeValue = useSyncExternalStore(subscribeHoldMenuInternalContext, getHoldMenuInternalContext);
+  const value = context ?? storeValue;
+  if (!value) throw new Error('HoldMenu components must be used within a <HoldMenuProvider>.');
+  return value;
 };

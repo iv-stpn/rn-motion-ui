@@ -1,6 +1,7 @@
 import { type ForwardRefExoticComponent, type ReactNode, type RefAttributes, useRef } from 'react';
 import { Platform, type View } from 'react-native';
 import { BlurTargetContext, type BlurTargetRef } from './blur-context';
+import { OverlayHost } from './overlay-host';
 
 /**
  * NATIVE twin of `./blur-provider`. See that module's doc for the public
@@ -51,7 +52,13 @@ export function BlurProvider({ children }: BlurProviderProps) {
 
   return (
     <BlurTargetContext.Provider value={value}>
+      {/* The overlay host is a SIBLING of the BlurTarget, never a child of it:
+          inline overlay content (HoldMenu's backdrop/menu/twins, the Morphing*
+          scrims) renders here (see `overlay-host`), outside the target it
+          blurs — so the Android RenderNode graph stays acyclic AND the overlay
+          paints after the blur, crisp instead of frosted. */}
       <BlurTarget ref={blurTargetRef}>{children}</BlurTarget>
+      <OverlayHost />
     </BlurTargetContext.Provider>
   );
 }

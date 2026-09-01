@@ -18,8 +18,10 @@ import { BACKDROP_BLUR_BACKGROUND_COLOR } from './hold-menu-theme';
  * `@danielsaraldi/react-native-blur-view`'s `BlurView` on native (iOS blurs
  * behind itself; Android blurs the `BlurTarget` an enclosing `<BlurProvider>`
  * wraps around the app) and its CSS-`backdrop-filter` twin in the browser. The
- * container's `opacity` still drives the fade, so blur and dim come up
- * together.
+ * whole backdrop is rendered OUTSIDE the `BlurTarget` (through the
+ * `BlurProvider` overlay host — see `./provider`), so on Android the blur
+ * captures only the page, the dim sits over the frost, and the menu paints crisp
+ * above both. The blur rides this container's `opacity` fade.
  */
 const BackdropComponent = () => {
   const { state, windowSize, overlay, closeOnOutsidePress } = useHoldMenuInternal();
@@ -83,14 +85,12 @@ const BackdropComponent = () => {
     overlay === 'none' ? null : (
       <>
         {overlay === 'blur' ? (
-          /* `inline`: this scrim lives INSIDE the BlurTarget it blurs (the portal
-           host sits within the BlurProvider). On Android that combination makes
-           the peer's RenderNodeBlurController record the target's RenderNode
-           into its own — the target contains the BlurView, so the RenderNode
-           graph cycles and HWUI's prepareTreeImpl stack-overflows (the storybook
-           APK SIGSEGV). Android degrades to the plain translucent dim; iOS/web
-           blur behind themselves and keep the frost. */
-          <OverlayBlur inline={true} />
+          /* The blur under the dim. The backdrop — and this blur — render
+           OUTSIDE the BlurTarget through the provider's overlay host, so on
+           Android the `BlurView` is not a descendant of the target it frosts
+           (no RenderNode cycle) and it captures only the page, leaving the menu
+           crisp above. iOS/web blur behind themselves and keep the frost. */
+          <OverlayBlur />
         ) : null}
         <Animated.View className="absolute inset-0" style={animatedBackgroundStyle} />
       </>

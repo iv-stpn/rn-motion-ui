@@ -75,16 +75,17 @@ const BlurView = resolveBlurView();
  * ## `inline` — Android scrims that sit INSIDE their own blur target
  *
  * Pass `inline` when this blur view renders inline within the very `BlurTarget`
- * it is pointed at (the HoldMenu backdrop, FileSystem's background menu — the
- * portal-host scrims). On Android that combination is a native crash: when the
- * scrim draws, the peer's `RenderNodeBlurController` records the target's
- * `RenderNode` into its own blur node, and because the target *contains* the
- * blur view the RenderNode graph cycles — HWUI's `RenderNode::prepareTreeImpl`
- * recurses until the RenderThread stack overflows (SIGSEGV, 500+ identical
- * frames). Modal scrims are in a separate window (outside the target) and are
- * safe, which is why `inline` scrims are the only ones affected. On Android an
- * `inline` scrim degrades to the plain translucent dim; iOS (`UIVisualEffectView`)
- * and web (CSS `backdrop-filter`) blur behind themselves and are unaffected.
+ * it is pointed at (the MorphingFAB/Switcher outside-press backdrops). On
+ * Android a `BlurView` that is a *descendant* of its own target is a native
+ * crash: the peer's `RenderNodeBlurController` records the target's `RenderNode`
+ * into its own blur node, and because the target contains the blur view the
+ * RenderNode graph cycles — HWUI's `RenderNode::prepareTreeImpl` recurses until
+ * the RenderThread stack overflows (SIGSEGV). So an `inline` blur degrades to
+ * `null` (the dim still shows). HoldMenu's backdrop is NOT inline: it renders
+ * through the `BlurProvider`'s overlay host OUTSIDE the target (see
+ * `./overlay-host`), so it blurs the page without the cycle and without
+ * frosting the menu. iOS (`UIVisualEffectView`) and web (CSS `backdrop-filter`)
+ * blur behind themselves and are unaffected.
  *
  * Internal to the package — not exported.
  */
@@ -92,7 +93,12 @@ type OverlayBlurProps = { inline?: boolean };
 
 export function OverlayBlur({ inline = false }: OverlayBlurProps) {
   const blurTargetRef = useBlurTargetRef();
-  if (!BlurView || (inline && Platform.OS === 'android')) return null;
+  if (!BlurView) return null;
+
+  // An inline scrim inside the target it blurs would cycle the RenderNode graph
+  // on Android — degrade to the plain dim rather than crash.
+  if (inline && Platform.OS === 'android') return null;
+
   return (
     <MotiView
       pointerEvents="none"

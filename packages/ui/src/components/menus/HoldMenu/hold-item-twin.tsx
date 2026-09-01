@@ -1,8 +1,10 @@
 import { memo, type ReactNode, useMemo } from 'react';
-import { View, type ViewProps } from 'react-native';
+import { Platform, View, type ViewProps } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { type SharedValue, useAnimatedProps, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { Portal } from '../../portal/Portal/portal';
+import { useBlurTargetRef } from '../Overlay/blur-context';
+import { OverlayPortal } from '../Overlay/overlay-host';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './constants';
 import { useHoldMenuInternal } from './context';
 import type { HoldItemProps, MenuItemProps, TransformOriginAnchorPosition } from './hold-menu-types';
@@ -57,6 +59,10 @@ const HoldItemTwinComponent = ({
   transformOrigin,
 }: HoldItemTwinProps) => {
   const { state, safeAreaInsets, windowSize, rootViewportHeight } = useHoldMenuInternal();
+  // Mirrors the provider's gate (see `provider.tsx`): only portal the twin out
+  // of the `BlurTarget` when an `OverlayHost` exists to render it (Android with
+  // the peer installed); otherwise keep the in-tree `Portal` host.
+  const blurTargetRef = useBlurTargetRef();
 
   const overlayTap = useMemo(
     () =>
@@ -136,24 +142,32 @@ const HoldItemTwinComponent = ({
     pointerEvents: isActive.value ? 'auto' : 'none',
   }));
 
-  return (
-    <Portal name={name}>
-      <Animated.View key={name} className="absolute z-10" style={animatedPortalStyle} animatedProps={animatedPortalProps}>
-        {/* A decorative duplicate of the in-place item: never announce it (a screen
-            reader would read every entry twice), and keep it out of role/text queries
-            while the real item stays the accessible one. `aria-hidden` is the web
-            spelling RNW reads; the two RN props cover native. They sit on a plain
-            `View`, not the `Animated.View` above, because reanimated drops `aria-*`
-            props on the way to the DOM — the twin would otherwise match role queries
-            alongside the real entry. */}
-        <View aria-hidden={true} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
-          <GestureDetector gesture={overlayTap}>
-            <Animated.View className="absolute inset-0 z-[15]" />
-          </GestureDetector>
-          {children}
-        </View>
-      </Animated.View>
-    </Portal>
+  const twin = (
+    <Animated.View key={name} className="absolute z-10" style={animatedPortalStyle} animatedProps={animatedPortalProps}>
+      {/* A decorative duplicate of the in-place item: never announce it (a screen
+          reader would read every entry twice), and keep it out of role/text queries
+          while the real item stays the accessible one. `aria-hidden` is the web
+          spelling RNW reads; the two RN props cover native. They sit on a plain
+          `View`, not the `Animated.View` above, because reanimated drops `aria-*`
+          props on the way to the DOM — the twin would otherwise match role queries
+          alongside the real entry. */}
+      <View aria-hidden={true} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
+        <GestureDetector gesture={overlayTap}>
+          <Animated.View className="absolute inset-0 z-[15]" />
+        </GestureDetector>
+        {children}
+      </View>
+    </Animated.View>
+  );
+
+  // Android lifts the twin out of the `BlurTarget` (through the `BlurProvider`
+  // overlay host, above the menu's layer) so the target-based blur does not
+  // frost it; iOS/web keep the in-tree `Portal` host, which already lifts the
+  // twin above the inline backdrop/menu without leaving the root.
+  return Platform.OS === 'android' && blurTargetRef !== null ? (
+    <OverlayPortal layer="twin">{twin}</OverlayPortal>
+  ) : (
+    <Portal name={name}>{twin}</Portal>
   );
 };
 

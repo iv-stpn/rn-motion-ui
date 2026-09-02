@@ -264,13 +264,10 @@ export function MorphingFAB({
   const resolvedPane = typeof children === 'function' ? children({ close: handleClose }) : children;
   const shell = fabShellGeometry(open, expandedWidth, expandedHeight, left);
 
-  const shellWidth = open ? expandedWidth : TRIGGER_SIZE;
-  const shellHeight = open ? expandedHeight : TRIGGER_SIZE;
-  // The teleported wrapper's top-left: the fixed corner minus the current shell
-  // size (the fixed x edge is the anchor's x, the top is the bottom anchor minus
-  // the height). Deriving it (rather than re-measuring the top-left) pins the
-  // shell's corner as it grows, with no one-frame re-measure glitch.
-  const rootWindow = anchor ? { x: left ? anchor.x : anchor.x - shellWidth, y: anchor.y - shellHeight } : null;
+  // The teleported wrapper's top-left: the fixed root's top-left — its bottom
+  // corner (the anchor) minus the expanded size. The root never resizes, so
+  // this is constant and the teleported shell can't drift from the inline one.
+  const rootWindow = anchor ? { x: left ? anchor.x : anchor.x - expandedWidth, y: anchor.y - expandedHeight } : null;
 
   // Outside-press backdrop (native): covers the whole window so a tap anywhere
   // outside the pane folds it back — the web path is the document listener
@@ -346,17 +343,24 @@ export function MorphingFAB({
           bottom: 16,
           zIndex: 30,
           pointerEvents: 'box-none',
-          // Size the root to the shell so the shell's corner anchor stays
-          // non-negative — a 0×0 parent drops the absolute child on Fabric.
-          width: shellWidth,
-          height: shellHeight,
+          // Keep the root at the FULL expanded size in both states. A root that
+          // resizes with the shell moves its top-left when the pane opens, so
+          // the shell's Fabric layout transition morphs around that moving
+          // origin — the pane appears to grow from its top-left corner instead
+          // of unfolding from the trigger, and collapses inverted on close.
+          // With a fixed root the shell (anchored right/bottom in
+          // `fabShellGeometry`) morphs about its own pinned bottom corner. The
+          // constant size also keeps the box non-zero, so Fabric mounts the
+          // absolute shell (a 0×0 parent drops it).
+          width: expandedWidth,
+          height: expandedHeight,
           ...(left ? { left: 16 } : { right: 16 }),
         },
         style,
       ]}
     >
       {teleported ? (
-        <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={shellWidth} height={shellHeight}>
+        <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={expandedWidth} height={expandedHeight}>
           {backdrop}
           {shellView}
         </TeleportedOverlay>

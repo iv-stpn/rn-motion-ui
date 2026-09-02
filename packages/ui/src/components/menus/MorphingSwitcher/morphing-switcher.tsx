@@ -560,6 +560,15 @@ export function MorphingSwitcher({
     rootRef.current?.measureInWindow((x, y, width, height) => setRootFrame({ x, y, width, height }));
   }, [teleported]);
 
+  // `onLayout` alone misses the teleport toggle — flipping `overlay` to "blur"
+  // changes the children, not the root's own layout, so no layout event fires and
+  // the shell never measures. Run the measure once per teleport change (mount +
+  // toggle); `onLayout` below covers rotation, variant, and content changes.
+  // biome-ignore lint/plugin: measuring the root is a native measure side effect, not derived state — the teleported overlay must follow the window
+  useEffect(() => {
+    measureRoot();
+  }, [measureRoot]);
+
   const current = items.find((item) => item.value === value);
 
   // The current item lives in the persistent trigger header, so the rows below

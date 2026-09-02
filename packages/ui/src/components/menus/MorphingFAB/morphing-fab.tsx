@@ -223,6 +223,15 @@ export function MorphingFAB({
     rootRef.current?.measureInWindow((x, y, width, height) => setAnchor({ x: left ? x : x + width, y: y + height }));
   }, [teleported, left]);
 
+  // `onLayout` alone misses the teleport toggle — flipping `overlay` to "blur"
+  // changes the children, not the root's own layout, so no layout event fires and
+  // the shell never measures. Run the measure once per teleport/left change
+  // (mount + toggle); `onLayout` below covers rotation and size changes.
+  // biome-ignore lint/plugin: measuring the root is a native measure side effect, not derived state — the teleported overlay must follow the window
+  useEffect(() => {
+    measureAnchor();
+  }, [measureAnchor]);
+
   // Close on an outside press (web). The FAB is inline — no modal backdrop to
   // catch a stray press — so a document-level `pointerdown` listener detects a
   // press landing anywhere but the FAB and folds it shut. `getWebDocument()`

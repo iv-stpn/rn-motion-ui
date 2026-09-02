@@ -1,5 +1,162 @@
 # rn-motion-ui
 
+## 7.2.0
+
+### Minor Changes
+
+- 73881b1: fix(HoldMenu): restore the real backdrop blur on Android by moving the overlay out of the `BlurTarget`
+
+  The earlier Android crash fix (`hold-menu-open-commit-race`) made HoldMenu's
+  backdrop degrade to a plain translucent dim on Android — the only way to keep
+  the inline `BlurView` from cycling the peer's RenderNode graph. This change
+  restores the frosted-glass scrim without the crash by lifting the overlay out
+  of the target entirely.
+
+  - `BlurProvider` now renders an `OverlayHost` as a **sibling** of its
+    `BlurTarget`. On Android HoldMenu teleports its backdrop + menu (and each
+    `HoldItem`'s twin) into that host through a new internal `overlay-host`
+    portal, so the target-based blur captures only the page — not the menu it
+    sits under — and the overlay paints crisp above it. A scrim left inside the
+    target would either crash (the RenderNode cycle) or frost the menu.
+  - The overlay pieces now read the menu's shared values from a module-store
+    mirror (`context.ts`) because the teleported nodes render in the host's tree,
+    outside the `HoldMenuInternalContext.Provider`; in-tree consumers (each
+    `HoldItem`) keep reading React context unchanged.
+  - iOS/web are untouched: their blur is a true backdrop (`UIVisualEffectView` /
+    CSS `backdrop-filter`), so the overlay stays inline under the existing
+    `PortalProvider` path.
+
+  MorphingFAB/MorphingSwitcher keep their dim-only fallback on Android: their
+  pane must stay in the same view hierarchy as its trigger for the morph
+  transition, so it cannot be lifted out of the `BlurTarget` the way HoldMenu's
+  menu can.
+
+### Patch Changes
+
+- 6d37246: fix(HoldMenu): size the story frame with a native-safe height on Android
+
+  The HoldMenu stories framed the canvas with a CSS-only
+  `height: calc(100vh - 3rem)` cast to a ViewStyle. React Native Web honours
+  the calc(), but Yoga drops the invalid dimension on native — the wrapper
+  collapsed to 0 and the provider's `flex: 1` chain white-screened the story
+  on the Android storybook APK. The frame now takes its height from
+  `useWindowDimensions` so the scenes render on every platform.
+
+- 7211850: fix(HoldMenu): inline Android backdrop blur caused the render-thread crash
+
+  **Root cause (device tombstone):** opening a HoldMenu on the Android
+  storybook APK SIGSEGV'd with 500+ frames of `RenderNode::prepareTreeImpl →
+prepareListAndChildren` — a native stack overflow on the RenderThread. The
+  HoldMenu backdrop's `OverlayBlur` renders `@danielsaraldi/react-native-blur-view`'s
+  `BlurView` INLINE inside the very `BlurTarget` it is pointed at (the
+  `BlurProvider` wraps the whole story, including the portal host the backdrop
+  lives in). When the scrim draws (backdrop opacity → 1 at open), the peer's
+  `RenderNodeBlurController.drawSnapshot` records the target's `RenderNode`
+  into its own blur node (`canvas.drawRenderNode(BlurTarget.renderNode)`); the
+  target's display list contains the blur view, so the RenderNode graph cycles
+  and HWUI's tree preparation recurses until the ~8 MB RenderThread stack runs
+  out. Before the blur-peer consolidation (17fe2a4f) the native `OverlayBlur`
+  resolved to null on Android and the backdrop was a plain dim — HoldMenu
+  worked. The modal menus' blur views are unaffected: they render inside RN
+  Modals (a separate window), outside the BlurTarget.
+
+  **Fix:** `OverlayBlur` gains an `inline` prop; on Android an inline scrim
+  skips the `BlurView` and degrades to the plain translucent dim (iOS
+  `UIVisualEffectView` and web CSS `backdrop-filter` blur behind themselves and
+  keep the frost). Applied to the two inline scrims: the HoldMenu backdrop and
+  FileSystem's background menu (same latent crash).
+
+  Also keeps the two hardening changes from the first round: the story's
+  WhatsApp FlatList now sets `removeClippedSubviews={false}` (RN 0.86 defaults
+  it to true on Android; the FileSystem lists already carry it), and the
+  open-side commits (panel rows + twin children) are deferred one frame out of
+  the gesture's touch dispatch window. Plus `layout: 'centered'` on the four
+  story groups that had no layout parameter (FileSystem, Table,
+  ReorderableList, SortableList), which un-blanks them on the native storybook
+  (a missing layout resolves to the same empty canvas container that
+  white-screened the fullscreen menu stories, 4250db21).
+
+- ddd8df0: fix(HoldMenu): keep the teleported Android overlay scoped to its local container
+
+  The overlay host that restored Android's backdrop blur teleports the backdrop,
+  menu and twins out of the `BlurTarget` into a full-screen sibling — whose
+  containing block is the window, not the `HoldMenuProvider`'s root. The menu and
+  twins compute their `top`/`left` in the root's coordinate space, so rendering
+  them in the window-space host displaced them by the root's page offset (any
+  inset root: a header above the provider, storybook's padding, a nested screen).
+
+  The provider now mirrors the root's measured page offset into shared values and
+  the teleported menu/twins re-add it, so they land exactly where they would have
+  inside the root. Inline overlays (iOS/web, and Android without the blur peer)
+  are unchanged.
+
+- bfdd9ce: fix(HoldMenu): correct the teleported overlay's vertical position
+
+  The Android overlay host is a sibling of the `BlurTarget`, so its containing
+  block is the `BlurProvider`'s parent — which is inset from the window whenever
+  something sits above the provider (storybook's chrome, a header, a nested
+  screen). The teleported menu and twins were re-adding only the root's page
+  offset to their root-space coordinates, which positioned them in window space
+  and left them `hostPageY` too low.
+
+  The overlay host now measures its own window offset and the teleported menu and
+  twins subtract it, so root-space coordinates convert into host space exactly and
+  the menu lands where it would have inside the root. Inline overlays (iOS/web,
+  and Android without the blur peer) are unchanged.
+
+- a5980b5: fix(morph): damp the MorphingSwitcher morph spring
+
+  MorphingSwitcher shared the `SPRING_LAYOUT` token; it now uses a dedicated,
+  slightly over-damped spring (damping 40) so the shared `SPRING_LAYOUT` used by
+  the Dock pill and menu rows is untouched.
+
+- 10acb6e: fix(MorphingFAB): anchor the native size morph on the trigger's corner
+
+  The root view resized with the shell (48×48 closed → 300×230 open), so on
+  Fabric the shell's layout transition ran against a root whose top-left jumped
+  to the expanded pane's top-left at open. The frame change (0,0,48,48) →
+  (0,0,300,230) is a pure top-left-anchored scale, so the pane appeared to grow
+  from its top-left corner instead of unfolding from the trigger, and collapsed
+  inverted on close. The root now keeps the full expanded size in both states;
+  the shell is anchored right/bottom inside it, so the transition's frames share
+  the pinned bottom corner and the pane unfolds up-left from the trigger on
+  every platform. Web is unaffected — it already animates width/height with
+  right/bottom anchoring.
+
+  On-device follow-up: inside the Android `BlurTarget`/ScrollView tree the
+  shell's layout transition still captured a stale start frame (the pane kept
+  growing from its top-left) even with the fixed root, while the SAME geometry
+  rendered through the `OverlayHost` portal morphed correctly. MorphingFAB now
+  renders through the overlay host on Android whenever a `BlurProvider` host
+  exists — for every `overlay` value, not just `"blur"` — and re-measures the
+  shell's anchor on every open so a FAB that scrolled while closed still opens
+  where its trigger is. Consumers without a provider keep the inline path
+  unchanged.
+
+- 130681a: feat(menus): `overlay` becomes an `OverlayType` — menus gain a dim-only scrim
+
+  The menu `overlay` prop moves from a boolean to an `OverlayType` union
+  (`"blur" | "opacity" | "none"`), so a scrim can keep the frost (`"blur"`), drop
+  to a plain translucent dim (`"opacity"` — lighter on the GPU, and the right call
+  on dense small-screen surfaces where the blur is lost), or render nothing
+  (`"none"`).
+
+  - Every overlay menu (Drawer, BottomSheet, FullSheet, AdaptiveModal,
+    AdaptiveDropdown, ActionFeedbackModal, CommandPalette, HoverMenu, Popover,
+    MorphingFAB, MorphingMenu, MorphingModal, MorphingSwitcher, MultiStepMenu,
+    HoldMenu) accepts the union, defaulting to `"blur"` — except
+    **AdaptiveDropdown, HoverMenu, and Popover**, which now default to `"none"`
+    so a floating surface no longer dims the page behind it by default.
+  - `AdaptiveModal` adds `smallScreenOverlay` so the bottom-sheet branch can
+    lighten or drop its scrim while the wide panel keeps `overlay`.
+
+  Internally the per-file `overlay ? <OverlayBlur/> : <dim/>` branches collapse
+  into one shared `OverlayScrim` (internal, not exported), and the largest
+  cognitive-complexity hotspots — the Table header, the FileSystem row-animation
+  hook, and the moti `animationConfig` worklet — are split into named helpers so
+  their `biome-ignore` suppressions could be removed. No behaviour change beyond
+  the `overlay` prop above.
+
 ## 7.1.0
 
 ### Minor Changes

@@ -13,6 +13,14 @@ export type OutsidePressBackdropProps = {
   onPress?: () => void;
   /** The scrim kind: `"blur"` frosts behind a dim, `"opacity"` dims only, `"none"` is transparent. @default 'none' */
   overlay?: OverlayType;
+  /**
+   * Whether the blur layer renders inline within the `BlurTarget` it frosts
+   * (the Morphing* panes), which the Android peer cannot do — it degrades to
+   * the dim there. Pass `false` when the backdrop is teleported OUT of the
+   * target through the `BlurProvider` overlay host, so the blur renders.
+   * @default true
+   */
+  blurInline?: boolean;
   testID?: string;
 };
 
@@ -23,7 +31,7 @@ export type OutsidePressBackdropProps = {
  * another control — lands here and dismisses. Sits below the shell, above the
  * page.
  */
-export function OutsidePressBackdrop({ frame, onPress, overlay = 'none', testID }: OutsidePressBackdropProps) {
+export function OutsidePressBackdrop({ frame, onPress, overlay = 'none', blurInline = true, testID }: OutsidePressBackdropProps) {
   const handlePress = useCallback(() => onPress?.(), [onPress]);
   const frameStyle = {
     position: 'absolute' as const,
@@ -36,13 +44,15 @@ export function OutsidePressBackdrop({ frame, onPress, overlay = 'none', testID 
     <>
       {/*
        * The blur is a sibling behind the dim so its backdrop-filter samples the
-       * page (not the flat dim above it). `inline`: this scrim lives inside the
-       * BlurTarget it blurs on Android, which the peer can't render — it degrades
-       * to the plain dim there, same as the HoldMenu backdrop.
+       * page (not the flat dim above it). `blurInline` distinguishes the two
+       * homes: inline (the Morphing* pane's own backdrop, inside the BlurTarget
+       * it blurs on Android) degrades to the plain dim there, while a teleported
+       * backdrop (rendered OUT of the target through the BlurProvider overlay
+       * host) passes `blurInline={false}` so the frost actually renders.
        */}
       {overlay === 'blur' ? (
         <View pointerEvents="none" style={frameStyle}>
-          <OverlayBlur inline={true} />
+          <OverlayBlur inline={blurInline} />
         </View>
       ) : null}
       <Pressable

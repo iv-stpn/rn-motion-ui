@@ -11,8 +11,10 @@ import { MotiView } from '../../../moti/components/view';
 import { TIMING_INSTANT } from '../../../theme/motion';
 import { ICON_BUTTON_LG_SIZE, IconButton } from '../../buttons/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
+import { useBlurTargetRef } from '../Overlay/blur-context';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
 import type { OverlayType } from '../Overlay/overlay-type';
+import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
 
 const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
@@ -24,22 +26,25 @@ const PANE_RADIUS = 20;
  *  through `useAnimatedStyle`, so native keeps a static size and drives the
  *  change via this layout transition. */
 const IS_WEB = Platform.OS === 'web';
-const MORPH_LAYOUT = springLayout({ stiffness: 350, damping: 30, mass: 0.55 });
+/** The pre-7.0.0 morph spring — underdamped (ζ≈0.65) so the pane overshoots and
+ *  settles with a visible bounce, the "unfolding" read. Fabric can't stagger
+ *  width against height (one layout transition drives the whole size), so both
+ *  axes share this bouncy spring and the radius mirrors it for lockstep. */
+const MORPH_SPRING = { stiffness: 200, damping: 18, mass: 0.95 };
+const MORPH_LAYOUT = springLayout(MORPH_SPRING);
 /** Web's staggered springs — width snaps open fast, height bounces, reading as
- *  unfolding. Fabric can't animate width/height through Moti, so this only runs
- *  on web; native springs just the radius and drives the size via `MORPH_LAYOUT`. */
+ *  unfolding. Web animates the size through Moti, so it still gets the per-axis
+ *  stagger Fabric can't express; native shares the base `MORPH_SPRING`. */
 const WEB_MORPH_TRANSITION = {
   type: 'spring' as const,
-  stiffness: 200,
-  damping: 18,
-  mass: 0.95,
+  ...MORPH_SPRING,
   width: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
   borderRadius: { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 },
 } satisfies import('../../../moti/core/types').MotiTransition;
 
 /** Fabric-safe radius spring — mirrors `MORPH_LAYOUT` so the corner stays in
  *  lockstep with the layout-driven resize. */
-const NATIVE_MORPH_TRANSITION = { type: 'spring' as const, stiffness: 350, damping: 30, mass: 0.55 };
+const NATIVE_MORPH_TRANSITION = { type: 'spring' as const, ...MORPH_SPRING };
 
 /**
  * The shell's animated geometry. Web animates the size through Moti alongside
@@ -130,6 +135,8 @@ export type MorphingFABProps = {
  * Use the render-prop form to build interactive content — a feedback form,
  * an action menu, or any custom flow — directly inside the expanded pane.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the open/teleport branches gate the blur teleport and backdrop — flattening them would repeat the shell subtree
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the shell wires trigger measurement, outside-press handling, the morph pane, and the Android blur teleport around shared refs/state — splitting would prop-drill the shared values across function boundaries
 export function MorphingFAB({
   children,
   icon,
@@ -153,6 +160,11 @@ export function MorphingFAB({
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = openProp ?? internalOpen;
   const left = position === 'bottom-left';
+  // On Android the blur must render OUTSIDE the `BlurTarget` it frosts (see
+  // `OverlayHost`), so a `"blur"` FAB teleports its backdrop + shell there — the
+  // morph still runs, the shell just lives in the overlay host instead of inline.
+  const blurTargetRef = useBlurTargetRef();
+  const teleported = Platform.OS === 'android' && overlay === 'blur' && blurTargetRef !== null;
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -191,6 +203,26 @@ export function MorphingFAB({
     });
   }, [open, overlay, closeOnOutsidePress, windowWidth, windowHeight]);
 
+  /**
+   * The root's fixed window corner — the FAB pins its bottom edge and one
+   * horizontal edge (`left`/`right`) as it grows, so this is that bottom corner.
+   * Measured on every root layout (mount, open/close, rotation) via the root's
+   * `onLayout` below; the teleported overlay derives its top-left from this minus
+   * the current shell size, so it never re-measures (and never glitches) when the
+   * pane opens or closes.
+   */
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const measureAnchor = useCallback(() => {
+    if (!teleported) {
+      setAnchor(null);
+      return;
+    }
+    // The FAB pins one horizontal edge and the bottom edge as it grows, so the
+    // anchor is that fixed corner: bottom-left for `position="bottom-left"`,
+    // bottom-right otherwise.
+    rootRef.current?.measureInWindow((x, y, width, height) => setAnchor({ x: left ? x : x + width, y: y + height }));
+  }, [teleported, left]);
+
   // Close on an outside press (web). The FAB is inline — no modal backdrop to
   // catch a stray press — so a document-level `pointerdown` listener detects a
   // press landing anywhere but the FAB and folds it shut. `getWebDocument()`
@@ -223,11 +255,82 @@ export function MorphingFAB({
   const resolvedPane = typeof children === 'function' ? children({ close: handleClose }) : children;
   const shell = fabShellGeometry(open, expandedWidth, expandedHeight, left);
 
+  const shellWidth = open ? expandedWidth : TRIGGER_SIZE;
+  const shellHeight = open ? expandedHeight : TRIGGER_SIZE;
+  // The teleported wrapper's top-left: the fixed corner minus the current shell
+  // size (the fixed x edge is the anchor's x, the top is the bottom anchor minus
+  // the height). Deriving it (rather than re-measuring the top-left) pins the
+  // shell's corner as it grows, with no one-frame re-measure glitch.
+  const rootWindow = anchor ? { x: left ? anchor.x : anchor.x - shellWidth, y: anchor.y - shellHeight } : null;
+
+  // Outside-press backdrop (native): covers the whole window so a tap anywhere
+  // outside the pane folds it back — the web path is the document listener
+  // above. When `overlay` is on it also dims the page. Teleported it passes
+  // `blurInline={false}` so the frost actually renders OUT of the BlurTarget.
+  const backdrop =
+    open && (overlay !== 'none' || closeOnOutsidePress) && backdropFrame !== null ? (
+      <OutsidePressBackdrop
+        frame={backdropFrame}
+        onPress={closeOnOutsidePress ? handleClose : undefined}
+        overlay={overlay}
+        blurInline={!teleported}
+        testID={`${testID}-backdrop`}
+      />
+    ) : null;
+
+  const shellView = (
+    <MotiView
+      animate={shell.animate}
+      transition={morphTransition}
+      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, floating)}`}
+      style={shell.style}
+    >
+      {open ? (
+        <View className="w-full">
+          {closeIcon === null ? null : (
+            <View className="flex-row items-center justify-end px-3 pt-3">
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                testID="morphing-fab-close"
+                onPress={handleClose}
+                className="h-5 w-5 items-center justify-center rounded-full bg-surface-selected"
+              >
+                {closeIcon ?? <ThemedIcon icon={X} variant="ghost" size={12} />}
+              </Pressable>
+            </View>
+          )}
+          <MotiView
+            from={reduce ? { opacity: 1 } : { opacity: 0, translateY: 6 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={paneEnterTransition}
+            className="p-2"
+          >
+            {resolvedPane}
+          </MotiView>
+        </View>
+      ) : (
+        <IconButton
+          icon={icon ?? Plus}
+          floating={floating}
+          elevation={elevation}
+          size="lg"
+          shape="pill"
+          onPress={handleOpen}
+          accessibilityLabel={accessibilityLabel ?? 'Open'}
+          testID={triggerTestID}
+        />
+      )}
+    </MotiView>
+  );
+
   return (
     <View
       ref={rootRef}
       collapsable={false}
       testID={testID}
+      onLayout={measureAnchor}
       style={[
         {
           position: 'absolute',
@@ -236,69 +339,24 @@ export function MorphingFAB({
           pointerEvents: 'box-none',
           // Size the root to the shell so the shell's corner anchor stays
           // non-negative — a 0×0 parent drops the absolute child on Fabric.
-          width: open ? expandedWidth : TRIGGER_SIZE,
-          height: open ? expandedHeight : TRIGGER_SIZE,
+          width: shellWidth,
+          height: shellHeight,
           ...(left ? { left: 16 } : { right: 16 }),
         },
         style,
       ]}
     >
-      {/* Outside-press backdrop (native): covers the whole window so a tap
-          anywhere outside the pane folds it back — the web path is the
-          document listener above. When `overlay` is on it also dims the page. */}
-      {open && (overlay !== 'none' || closeOnOutsidePress) && backdropFrame !== null ? (
-        <OutsidePressBackdrop
-          frame={backdropFrame}
-          onPress={closeOnOutsidePress ? handleClose : undefined}
-          overlay={overlay}
-          testID={`${testID}-backdrop`}
-        />
-      ) : null}
-
-      <MotiView
-        animate={shell.animate}
-        transition={morphTransition}
-        layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
-        className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, floating)}`}
-        style={shell.style}
-      >
-        {open ? (
-          <View className="w-full">
-            {closeIcon === null ? null : (
-              <View className="flex-row items-center justify-end px-3 pt-3">
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  testID="morphing-fab-close"
-                  onPress={handleClose}
-                  className="h-5 w-5 items-center justify-center rounded-full bg-surface-selected"
-                >
-                  {closeIcon ?? <ThemedIcon icon={X} variant="ghost" size={12} />}
-                </Pressable>
-              </View>
-            )}
-            <MotiView
-              from={reduce ? { opacity: 1 } : { opacity: 0, translateY: 6 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={paneEnterTransition}
-              className="p-2"
-            >
-              {resolvedPane}
-            </MotiView>
-          </View>
-        ) : (
-          <IconButton
-            icon={icon ?? Plus}
-            floating={floating}
-            elevation={elevation}
-            size="lg"
-            shape="pill"
-            onPress={handleOpen}
-            accessibilityLabel={accessibilityLabel ?? 'Open'}
-            testID={triggerTestID}
-          />
-        )}
-      </MotiView>
+      {teleported ? (
+        <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={shellWidth} height={shellHeight}>
+          {backdrop}
+          {shellView}
+        </TeleportedOverlay>
+      ) : (
+        <>
+          {backdrop}
+          {shellView}
+        </>
+      )}
     </View>
   );
 }

@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useSyncExternalStore } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { measure, runOnUI, useAnimatedRef } from 'react-native-reanimated';
-import { overlayHostPageX, overlayHostPageY } from './overlay-host-position';
+import { overlayHostPageX, overlayHostPageY, setOverlayHostWindowPosition } from './overlay-host-position';
 
 /**
  * A layered, single-host portal for the HoldMenu overlay content (its backdrop
@@ -79,7 +79,8 @@ export function OverlayHost() {
   // root-space coords back into host space. `measure` runs on the UI thread in
   // the same coordinate system the activation worklet uses for the root/item,
   // so the offsets match exactly; `onLayout` re-fires on rotation so the stored
-  // offset stays current.
+  // offset stays current. A JS-thread `measureInWindow` mirrors the offset into
+  // the React-rendered store the Morphing* teleport positions itself from.
   const measureOffset = useCallback(() => {
     runOnUI(() => {
       const m = measure(hostRef);
@@ -88,9 +89,13 @@ export function OverlayHost() {
         overlayHostPageY.value = m.pageY;
       }
     })();
+    hostRef.current?.measureInWindow((x, y) => setOverlayHostWindowPosition({ x, y }));
   }, [hostRef]);
 
-  if (current.length === 0) return null;
+  // Always mounted — even with no entries — so the window offset is measured at
+  // app start and a teleported Morphing* overlay reads a correct host position
+  // on its first open instead of one frame at {0, 0}. Empty, `box-none` and
+  // touch-transparent, so it costs nothing when no overlay is open.
   return (
     <Animated.View ref={hostRef} onLayout={measureOffset} pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       {current.map((entry) => (

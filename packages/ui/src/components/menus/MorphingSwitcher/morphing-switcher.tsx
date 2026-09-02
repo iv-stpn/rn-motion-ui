@@ -15,8 +15,10 @@ import { TIMING_INSTANT } from '../../../theme/motion';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem, type MenuItemSize } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
+import { useBlurTargetRef } from '../Overlay/blur-context';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
 import type { OverlayType } from '../Overlay/overlay-type';
+import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
 
 /** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
@@ -523,6 +525,11 @@ export function MorphingSwitcher({
   const open = openProp ?? internalOpen;
   const [internalValue, setInternalValue] = useState(defaultValue);
   const value = valueProp ?? internalValue;
+  // On Android the blur must render OUTSIDE the `BlurTarget` it frosts (see
+  // `OverlayHost`), so a `"blur"` switcher teleports its backdrop + shell there —
+  // the morph still runs, the shell just lives in the overlay host instead of inline.
+  const blurTargetRef = useBlurTargetRef();
+  const teleported = Platform.OS === 'android' && overlay === 'blur' && blurTargetRef !== null;
   const [triggerSize, setTriggerSize] = useState<{ width: number; height: number } | null>(null);
   /** True while the pane opens upward — the list sits above the trigger instead of below. */
   const [openAbove, setOpenAbove] = useState(false);
@@ -534,6 +541,24 @@ export function MorphingSwitcher({
    * Null while closed or before the async native measure lands.
    */
   const [backdropFrame, setBackdropFrame] = useState<OutsidePressFrame | null>(null);
+
+  /**
+   * The inline root's window frame — its top-left offset and its (content-sized)
+   * footprint, so the teleported shell sits exactly where the inline one would
+   * and, for `variant="switcher"`, spans the same full width (`right: 0` reads
+   * the wrapper's width). Measured on every root layout (mount, rotation, variant/
+   * content changes) via the root's `onLayout` below. Null until measured, so the
+   * teleported shell holds off one frame — the same warm-up the backdrop already
+   * does.
+   */
+  const [rootFrame, setRootFrame] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const measureRoot = useCallback(() => {
+    if (!teleported) {
+      setRootFrame(null);
+      return;
+    }
+    rootRef.current?.measureInWindow((x, y, width, height) => setRootFrame({ x, y, width, height }));
+  }, [teleported]);
 
   const current = items.find((item) => item.value === value);
 
@@ -648,8 +673,76 @@ export function MorphingSwitcher({
 
   const shell = switcherShellGeometry({ open, openAbove, variant, scale, paneHeight, closedHeight, openWidth, closedWidth });
 
+  // The teleported wrapper sits at the inline root's window offset; the shell
+  // inside keeps its own `absolute top-0 left-0` geometry (and `right: 0` full-
+  // width stretch for `switcher`) so it reads the wrapper's measured width.
+  const rootWindow = rootFrame ? { x: rootFrame.x, y: rootFrame.y } : null;
+  const wrapperWidth = rootFrame?.width ?? 0;
+  const wrapperHeight = rootFrame?.height ?? 0;
+
+  // Outside-press backdrop (native): covers the whole window so a tap anywhere
+  // outside the pane folds it back — the web path is the document listener
+  // above. When `overlay` is on it also dims the page. Teleported it passes
+  // `blurInline={false}` so the frost actually renders OUT of the BlurTarget.
+  const backdrop =
+    open && (overlay !== 'none' || closeOnOutsidePress) && backdropFrame !== null ? (
+      <OutsidePressBackdrop
+        frame={backdropFrame}
+        onPress={closeOnOutsidePress ? handleClose : undefined}
+        overlay={overlay}
+        blurInline={!teleported}
+        testID={`${testID}-backdrop`}
+      />
+    ) : null;
+
+  // Keyed by variant: Moti holds the last value of every key it has animated,
+  // so a `select` pane that later re-renders as `switcher` would keep its
+  // 240px width instead of spanning the parent. Remounting drops it.
+  const shellView = (
+    <MotiView
+      key={variant}
+      animate={shell.animate}
+      transition={morphTransition}
+      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      className={cn('absolute top-0 left-0 overflow-hidden p-1', switcherSurfaceClass(elevation, open, floating))}
+      style={shell.style}
+    >
+      {/* The trigger persists — it morphs into the active header row. Re-tapping
+          it while open folds the pane back (it only LOOKS disabled). */}
+      <SwitcherTrigger
+        icon={triggerIcon}
+        label={triggerLabel}
+        variant={variant}
+        open={open}
+        closeIcon={closeIcon}
+        scale={scale}
+        onPress={handleTriggerPress}
+        accessibilityLabel={accessibilityLabel}
+        testID={triggerTestID}
+      />
+
+      {open ? (
+        <MotiView
+          from={reduce ? { opacity: 1 } : { opacity: 0, translateY: 4 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={paneEnterTransition}
+        >
+          {visibleItems.map((item) => (
+            <MorphingSwitcherRow
+              key={item.value}
+              item={item}
+              onSelect={handleSelect}
+              scale={scale}
+              testID={`${testID}-item-${item.value}`}
+            />
+          ))}
+        </MotiView>
+      ) : null}
+    </MotiView>
+  );
+
   return (
-    <View ref={rootRef} collapsable={false} testID={testID} style={[{ zIndex: open ? 40 : 0 }, style]}>
+    <View ref={rootRef} collapsable={false} testID={testID} onLayout={measureRoot} style={[{ zIndex: open ? 40 : 0 }, style]}>
       {/* Offscreen measurer holds the collapsed footprint in flow. */}
       <SwitcherTrigger
         icon={triggerIcon}
@@ -661,61 +754,17 @@ export function MorphingSwitcher({
         onLayout={handleTriggerLayout}
       />
 
-      {/* Outside-press backdrop (native): covers the whole window so a tap
-          anywhere outside the pane folds it back — the web path is the
-          document listener above. When `overlay` is on it also dims the page. */}
-      {open && (overlay !== 'none' || closeOnOutsidePress) && backdropFrame !== null ? (
-        <OutsidePressBackdrop
-          frame={backdropFrame}
-          onPress={closeOnOutsidePress ? handleClose : undefined}
-          overlay={overlay}
-          testID={`${testID}-backdrop`}
-        />
-      ) : null}
-
-      {/* Keyed by variant: Moti holds the last value of every key it has animated,
-          so a `select` pane that later re-renders as `switcher` would keep its
-          240px width instead of spanning the parent. Remounting drops it. */}
-      <MotiView
-        key={variant}
-        animate={shell.animate}
-        transition={morphTransition}
-        layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
-        className={cn('absolute top-0 left-0 overflow-hidden p-1', switcherSurfaceClass(elevation, open, floating))}
-        style={shell.style}
-      >
-        {/* The trigger persists — it morphs into the active header row. Re-tapping
-            it while open folds the pane back (it only LOOKS disabled). */}
-        <SwitcherTrigger
-          icon={triggerIcon}
-          label={triggerLabel}
-          variant={variant}
-          open={open}
-          closeIcon={closeIcon}
-          scale={scale}
-          onPress={handleTriggerPress}
-          accessibilityLabel={accessibilityLabel}
-          testID={triggerTestID}
-        />
-
-        {open ? (
-          <MotiView
-            from={reduce ? { opacity: 1 } : { opacity: 0, translateY: 4 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={paneEnterTransition}
-          >
-            {visibleItems.map((item) => (
-              <MorphingSwitcherRow
-                key={item.value}
-                item={item}
-                onSelect={handleSelect}
-                scale={scale}
-                testID={`${testID}-item-${item.value}`}
-              />
-            ))}
-          </MotiView>
-        ) : null}
-      </MotiView>
+      {teleported ? (
+        <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={wrapperWidth} height={wrapperHeight}>
+          {backdrop}
+          {shellView}
+        </TeleportedOverlay>
+      ) : (
+        <>
+          {backdrop}
+          {shellView}
+        </>
+      )}
     </View>
   );
 }

@@ -14,3 +14,13 @@ the shell is anchored right/bottom inside it, so the transition's frames share
 the pinned bottom corner and the pane unfolds up-left from the trigger on
 every platform. Web is unaffected — it already animates width/height with
 right/bottom anchoring.
+
+On-device follow-up: inside the Android `BlurTarget`/ScrollView tree the
+shell's layout transition still captured a stale start frame (the pane kept
+growing from its top-left) even with the fixed root, while the SAME geometry
+rendered through the `OverlayHost` portal morphed correctly. MorphingFAB now
+renders through the overlay host on Android whenever a `BlurProvider` host
+exists — for every `overlay` value, not just `"blur"` — and re-measures the
+shell's anchor on every open so a FAB that scrolled while closed still opens
+where its trigger is. Consumers without a provider keep the inline path
+unchanged.

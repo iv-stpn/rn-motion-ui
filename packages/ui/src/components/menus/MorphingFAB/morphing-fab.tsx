@@ -161,10 +161,19 @@ export function MorphingFAB({
   const open = openProp ?? internalOpen;
   const left = position === 'bottom-left';
   // On Android the blur must render OUTSIDE the `BlurTarget` it frosts (see
-  // `OverlayHost`), so a `"blur"` FAB teleports its backdrop + shell there — the
-  // morph still runs, the shell just lives in the overlay host instead of inline.
+  // `OverlayHost`), so a `"blur"` FAB teleports its backdrop + shell there —
+  // the morph still runs, the shell just lives in the overlay host instead of
+  // inline. The host tree is ALSO where the Fabric layout transition captures
+  // its start frame correctly: inside the `BlurTarget`/ScrollView tree the
+  // shell's LinearTransition starts from the pane's top-left corner, so the
+  // pane appears to grow from there instead of unfolding from the trigger
+  // (verified on-device: blur/teleported morphs correctly, none/opacity do
+  // not). Whenever a host exists, render through it for EVERY `overlay` —
+  // `overlay` still decides the scrim, teleporting only relocates the
+  // backdrop + shell into the host. Without a provider (`blurTargetRef`
+  // null) the FAB stays inline.
   const blurTargetRef = useBlurTargetRef();
-  const teleported = Platform.OS === 'android' && overlay === 'blur' && blurTargetRef !== null;
+  const teleported = Platform.OS === 'android' && blurTargetRef !== null;
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -226,11 +235,15 @@ export function MorphingFAB({
   // `onLayout` alone misses the teleport toggle — flipping `overlay` to "blur"
   // changes the children, not the root's own layout, so no layout event fires and
   // the shell never measures. Run the measure once per teleport/left change
-  // (mount + toggle); `onLayout` below covers rotation and size changes.
+  // (mount + toggle); `onLayout` below covers rotation and size changes, and the
+  // extra run on every `open` covers the root having scrolled under the FAB
+  // while closed (the teleported shell must open where the trigger IS, not where
+  // it was at mount).
   // biome-ignore lint/plugin: measuring the root is a native measure side effect, not derived state — the teleported overlay must follow the window
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `open` is an intentional re-measure trigger (scroll-under-FAB while closed), not a body dependency
   useEffect(() => {
     measureAnchor();
-  }, [measureAnchor]);
+  }, [measureAnchor, open]);
 
   // Close on an outside press (web). The FAB is inline — no modal backdrop to
   // catch a stray press — so a document-level `pointerdown` listener detects a

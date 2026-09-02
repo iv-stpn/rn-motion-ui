@@ -26,15 +26,16 @@ const PANE_RADIUS = 20;
  *  through `useAnimatedStyle`, so native keeps a static size and drives the
  *  change via this layout transition. */
 const IS_WEB = Platform.OS === 'web';
-/** The pre-7.0.0 morph spring — underdamped (ζ≈0.65) so the pane overshoots and
- *  settles with a visible bounce, the "unfolding" read. Fabric can't stagger
- *  width against height (one layout transition drives the whole size), so both
- *  axes share this bouncy spring and the radius mirrors it for lockstep. */
-const MORPH_SPRING = { stiffness: 200, damping: 18, mass: 0.95 };
+/** The morph spring — critically damped (ζ≈1) so the pane unfolds and settles
+ *  without overshoot. Fabric can't stagger width against height (one layout
+ *  transition drives the whole size), so both axes share this spring and the
+ *  radius mirrors it for lockstep. */
+const MORPH_SPRING = { stiffness: 200, damping: 28, mass: 0.95 };
 const MORPH_LAYOUT = springLayout(MORPH_SPRING);
-/** Web's staggered springs — width snaps open fast, height bounces, reading as
- *  unfolding. Web animates the size through Moti, so it still gets the per-axis
- *  stagger Fabric can't express; native shares the base `MORPH_SPRING`. */
+/** Web's staggered springs — width snaps open fast, height unfolds without
+ *  overshoot, reading as unfolding. Web animates the size through Moti, so it
+ *  still gets the per-axis stagger Fabric can't express; native shares the base
+ *  `MORPH_SPRING`. */
 const WEB_MORPH_TRANSITION = {
   type: 'spring' as const,
   ...MORPH_SPRING,

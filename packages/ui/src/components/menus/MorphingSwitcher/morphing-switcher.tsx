@@ -8,7 +8,7 @@ import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { EASE_OUT, SPRING_LAYOUT, springLayout } from '../../../lib/ease';
+import { EASE_OUT, springLayout } from '../../../lib/ease';
 import { clampSurfaceLevel, elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { TIMING_INSTANT } from '../../../theme/motion';
@@ -27,12 +27,14 @@ const VIEWPORT_PADDING = 8;
 const PANE_INSET = 4;
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
-/** Collapsed-trigger ↔ open-pane size morph, on `SPRING_LAYOUT` so the size
- *  stays in lockstep with the `translateY` upward-open shift below. Native
- *  (Fabric) drives the size through this layout transition; web animates it
- *  through Moti instead — see `switcherShellGeometry` below. */
+/** Collapsed-trigger ↔ open-pane size morph — a slightly over-damped spring so
+ *  the pane unfolds and settles without overshoot. The size stays in lockstep
+ *  with the `translateY` upward-open shift below. Native (Fabric) drives the
+ *  size through this layout transition; web animates it through Moti instead —
+ *  see `switcherShellGeometry` below. */
 const IS_WEB = Platform.OS === 'web';
-const MORPH_LAYOUT = springLayout(SPRING_LAYOUT);
+const MORPH_SPRING = { type: 'spring' as const, stiffness: 360, damping: 40, mass: 0.6 };
+const MORPH_LAYOUT = springLayout(MORPH_SPRING);
 
 /** Switcher size — the trigger and every row stand at the matching interactive height. */
 export type MorphingSwitcherSize = 'sm' | 'md' | 'lg';
@@ -453,7 +455,7 @@ type SwitcherShellGeometry = {
  * The shell's animated geometry. Web animates `height`/`width` through Moti (the
  * original smooth morph); Fabric keeps a static size and drives the change via
  * the `layout` transition (layout props don't round-trip Yoga there). The radius
- * and upward-open `translateY` spring on `SPRING_LAYOUT` either way.
+ * and upward-open `translateY` spring on `MORPH_SPRING` either way.
  */
 function switcherShellGeometry({
   open,
@@ -658,11 +660,11 @@ export function MorphingSwitcher({
     setTriggerSize((prev) => mergeTriggerSize(prev, { width, height }));
   }, []);
 
-  // On web `height`/`width` morph through Moti on `SPRING_LAYOUT`; on Fabric they
+  // On web `height`/`width` morph through Moti on `MORPH_SPRING`; on Fabric they
   // ride `MORPH_LAYOUT` (a layout transition — layout props don't round-trip Yoga
   // through `useAnimatedStyle`). The radius and upward-open `translateY` spring on
-  // `SPRING_LAYOUT` either way; matching params keep the bottom edge anchored.
-  const morphTransition = reduce ? TIMING_INSTANT : SPRING_LAYOUT;
+  // `MORPH_SPRING` either way; matching params keep the bottom edge anchored.
+  const morphTransition = reduce ? TIMING_INSTANT : MORPH_SPRING;
 
   // The rows follow the shell closely — a long delay left the pane looking empty
   // while it unfolded, which is the other half of the gooey read.

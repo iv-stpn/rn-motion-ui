@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useSyncExternalStore } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated, { measure, runOnUI, useAnimatedRef } from 'react-native-reanimated';
+import Animated, { measure, runOnJS, runOnUI, useAnimatedRef } from 'react-native-reanimated';
 import { overlayHostPageX, overlayHostPageY, setOverlayHostWindowPosition } from './overlay-host-position';
 
 /**
@@ -79,17 +79,18 @@ export function OverlayHost() {
   // root-space coords back into host space. `measure` runs on the UI thread in
   // the same coordinate system the activation worklet uses for the root/item,
   // so the offsets match exactly; `onLayout` re-fires on rotation so the stored
-  // offset stays current. A JS-thread `measureInWindow` mirrors the offset into
-  // the React-rendered store the Morphing* teleport positions itself from.
+  // offset stays current. The same `measure` result is mirrored into the JS
+  // store the Morphing* teleport reads — via `runOnJS`, because `useAnimatedRef`
+  // has no JS-thread `.current` to call `measureInWindow` on.
   const measureOffset = useCallback(() => {
     runOnUI(() => {
       const m = measure(hostRef);
       if (m) {
         overlayHostPageX.value = m.pageX;
         overlayHostPageY.value = m.pageY;
+        runOnJS(setOverlayHostWindowPosition)({ x: m.pageX, y: m.pageY });
       }
     })();
-    hostRef.current?.measureInWindow((x, y) => setOverlayHostWindowPosition({ x, y }));
   }, [hostRef]);
 
   // Always mounted — even with no entries — so the window offset is measured at

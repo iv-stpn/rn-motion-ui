@@ -2,11 +2,11 @@
 'rn-motion-ui': patch
 ---
 
-fix(morph): damp the MorphingSwitcher and MorphingFAB morph springs
+fix(morph): reduce springiness of the MorphingSwitcher and MorphingFAB morphs
 
-The morph springs were underdamped, so the pane overshot and settled with a
-visible bounce. MorphingFAB's spring ran at ζ≈0.65 (stiffness 200, damping 18);
-MorphingSwitcher shared the `SPRING_LAYOUT` token. Both now settle without
-overshoot — the FAB spring is critically damped (damping 28) and the switcher
-uses a dedicated, slightly over-damped spring (damping 40) so the shared
-`SPRING_LAYOUT` used by the Dock pill and menu rows is untouched.
+MorphingFAB's morph spring was underdamped (ζ≈0.65), overshooting and settling
+with a heavy bounce. Its damping is raised (18 → 22) so the pane still unfolds
+with a subtle overshoot but settles faster. MorphingSwitcher shared the
+`SPRING_LAYOUT` token; it now uses a dedicated, slightly over-damped spring
+(damping 40) so the shared `SPRING_LAYOUT` used by the Dock pill and menu rows
+is untouched.

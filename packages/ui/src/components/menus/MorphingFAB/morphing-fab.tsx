@@ -1,6 +1,6 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: FAB shell, morph transition, and trigger/pane layouts collocated by design
 import { type ComponentType, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, type StyleProp, useWindowDimensions, View, type ViewStyle } from 'react-native';
+import { Platform, Pressable, type StyleProp, StyleSheet, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
@@ -45,6 +45,31 @@ const WEB_MORPH_TRANSITION = {
 /** Fabric-safe radius spring — mirrors `MORPH_LAYOUT` so the corner stays in
  *  lockstep with the layout-driven resize. */
 const NATIVE_MORPH_TRANSITION = { type: 'spring' as const, ...MORPH_SPRING };
+
+/**
+ * The root's static frame. `pointerEvents: 'box-none'` MUST come from
+ * StyleSheet.create, not an inline style object: on web `box-none` is not real
+ * CSS but a polyfill the StyleSheet compiler expands into two rules
+ * (`pointer-events: none` on the node, `pointer-events: auto` on its direct
+ * children). That expansion only runs in the atomic/class path — RNW's inline
+ * path explicitly does not support `pointerEvents` and passes `box-none`
+ * through to the DOM, where the browser drops it as invalid CSS and the node
+ * keeps `pointer-events: auto`. Because the root is pinned at the full expanded
+ * size in both states (see the geometry comment in the JSX), an inline box-none
+ * would leave that whole invisible box swallowing every click over the content
+ * beneath the FAB corner — the context-menu rows that happen to overlap it.
+ * Native reads the same style object directly, so the class path is correct on
+ * both targets. The size and `left`/`right` anchor stay inline: they are the
+ * geometry that actually changes.
+ */
+const fabRootStyles = StyleSheet.create({
+  root: {
+    position: 'absolute',
+    bottom: 16,
+    zIndex: 30,
+    pointerEvents: 'box-none',
+  },
+});
 
 /**
  * The shell's animated geometry. Web animates the size through Moti alongside
@@ -351,11 +376,8 @@ export function MorphingFAB({
       testID={testID}
       onLayout={measureAnchor}
       style={[
+        fabRootStyles.root,
         {
-          position: 'absolute',
-          bottom: 16,
-          zIndex: 30,
-          pointerEvents: 'box-none',
           // Keep the root at the FULL expanded size in both states. A root that
           // resizes with the shell moves its top-left when the pane opens, so
           // the shell's Fabric layout transition morphs around that moving

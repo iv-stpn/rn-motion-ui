@@ -24,13 +24,17 @@ type BlurTargetProps = { children?: ReactNode; style?: unknown };
 type BlurTargetComponent = ForwardRefExoticComponent<BlurTargetProps & RefAttributes<View>>;
 
 /**
- * True on the new architecture (Fabric). RN installs `nativeFabricUIManager` on
- * the global object under Fabric and never under the legacy arch (see RN's
- * `FabricUIManager.js`); `Reflect.get` keeps the off-type global off the type
- * system, matching `web-document.ts`.
+ * True on the new architecture (Fabric). Prefer `RN$Bridgeless`, which the
+ * native runtime installs eagerly before the bundle's module scope runs; the
+ * Fabric binding `nativeFabricUIManager` is defined lazily and can still be
+ * `undefined` when this module loads in embedded-JS release builds (see RN's
+ * `FabricUIManager.js:140`). The binding is kept as a fallback for RN 0.76–0.79,
+ * where bridged+Fabric was possible and the binding is installed eagerly with
+ * the bridge. `Reflect.get` keeps the off-type globals off the type system,
+ * matching `web-document.ts`.
  */
-function isFabric(): boolean {
-  return Boolean(Reflect.get(globalThis, 'nativeFabricUIManager'));
+function isNewArchitecture(): boolean {
+  return Reflect.get(globalThis, 'RN$Bridgeless') === true || Boolean(Reflect.get(globalThis, 'nativeFabricUIManager'));
 }
 
 /**
@@ -43,7 +47,7 @@ function resolveBlurTarget(): BlurTargetComponent | null {
   // whose `onLayout`/`requestLayout` are old-arch no-ops, so the children are
   // never measured/positioned and the whole app collapses to a white screen.
   // Skip the target there — Android scrims degrade to the plain translucent dim.
-  if (isFabric()) return null;
+  if (isNewArchitecture()) return null;
   try {
     // Optional peer dep — Android backdrop blur; consumers without it get the dim scrim.
     // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep

@@ -1,7 +1,7 @@
 // Shared machinery for the Button family. Button and ElevatedButton both drive
 // the same tap interaction (press-scale flag + Material ripples + measured pixel
 // size) and lay out the same content row (label, optional adornments, loading
-// spinner), so those pieces live here rather than being duplicated per sibling.
+// indicator), so those pieces live here rather than being duplicated per sibling.
 // Nothing here is variant-aware: each component resolves its own colours/classes
 // and passes the results in.
 import { Children, isValidElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
@@ -12,11 +12,13 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { cn } from '../../../lib/cn';
+import { EASE_IN_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
@@ -270,6 +272,71 @@ export function ButtonSpinner({ color, reduce, size = 16 }: ButtonSpinnerProps) 
   );
 }
 
+// Three staggered bouncing dots for the loading state, replacing the rotating
+// circle so Button/ElevatedButton read the same as StatefulButton's DotsLoader
+// while busy. Drive the bounce imperatively (shared value + withRepeat created
+// once in an effect) rather than moti's declarative `loop` — the same failure
+// mode ButtonSpinner's imperative pattern avoids: moti rebuilds its withRepeat on
+// every worklet re-run and a re-render landing at the target (theme toggle,
+// hover) leaves a dot frozen mid-bounce.
+const BUTTON_DOT_SIZE = 4;
+const BUTTON_DOT_GAP = 3;
+const BUTTON_DOT_BOUNCE = 4;
+const BUTTON_DOT_STAGGER = 120;
+
+type ButtonDotProps = { color: string; reduce: boolean; index: number };
+
+function ButtonDot({ color, reduce, index }: ButtonDotProps) {
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(0.5);
+
+  // biome-ignore lint/plugin: the loop animation is an imperative side-effect assigned to a shared value — not expressible as derived state, and must run once per [reduce, index] rather than every render
+  useEffect(() => {
+    if (reduce) {
+      translateY.value = 0;
+      opacity.value = 1;
+      return;
+    }
+    opacity.value = withTiming(1, { duration: 240 });
+    translateY.value = withDelay(
+      index * BUTTON_DOT_STAGGER,
+      withRepeat(withTiming(-BUTTON_DOT_BOUNCE, { duration: 400, easing: EASE_IN_OUT }), -1, true),
+    );
+    return () => cancelAnimation(translateY);
+  }, [reduce, index, translateY, opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width: BUTTON_DOT_SIZE,
+          height: BUTTON_DOT_SIZE,
+          borderRadius: BUTTON_DOT_SIZE / 2,
+          backgroundColor: color,
+        },
+        animatedStyle,
+      ]}
+    />
+  );
+}
+
+type ButtonDotsProps = { color: string; reduce: boolean };
+
+function ButtonDots({ color, reduce }: ButtonDotsProps) {
+  return (
+    <View className="flex-row items-center" style={{ gap: BUTTON_DOT_GAP }}>
+      {[0, 1, 2].map((i) => (
+        <ButtonDot key={i} color={color} reduce={reduce} index={i} />
+      ))}
+    </View>
+  );
+}
+
 // biome-ignore lint/style/useComponentExportOnlyModules: see usePressRipples — buildButtonContent is the layout half of the same shared press/content machinery
 export function buildButtonContent({
   loading,
@@ -281,7 +348,7 @@ export function buildButtonContent({
   spinnerColor,
   labelClassName,
 }: BuildContentArgs): ReactNode {
-  if (loading) return <ButtonSpinner color={spinnerColor} reduce={reduce} />;
+  if (loading) return <ButtonDots color={spinnerColor} reduce={reduce} />;
 
   const hasAdornments = leftAdornment !== undefined || rightAdornment !== undefined;
   const isLeaf = typeof children === 'string' || typeof children === 'number';

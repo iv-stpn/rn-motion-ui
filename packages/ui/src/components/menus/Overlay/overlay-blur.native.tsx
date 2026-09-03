@@ -21,7 +21,7 @@
  */
 
 import type { ComponentType, RefObject } from 'react';
-import { Platform, StyleSheet, type View } from 'react-native';
+import { Platform, requireNativeComponent, StyleSheet, type View } from 'react-native';
 import { MotiView } from '../../../moti/components/view';
 import { useBlurTargetRef } from './blur-context';
 
@@ -52,7 +52,14 @@ function resolveBlurView(): BlurViewComponent | null {
     // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep
     // biome-ignore lint/plugin: ts/no-as-cast — dynamic require has no static type
     const mod = require('@danielsaraldi/react-native-blur-view') as BlurViewModule;
-    return mod.BlurView ?? mod.default ?? mod;
+    const resolved = mod.BlurView ?? mod.default ?? mod;
+    if (!resolved) return null;
+    // The peer can be installed (Bun/pnpm/yarn-berry auto-install optional peers)
+    // while its native module is NOT autolinked — the require() above resolves
+    // but mounting throws. `requireNativeComponent` throws exactly when the
+    // `BlurView` ViewManager is unregistered (old and new arch alike).
+    requireNativeComponent('BlurView');
+    return resolved;
   } catch {
     return null;
   }

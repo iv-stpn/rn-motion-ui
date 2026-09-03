@@ -1,5 +1,5 @@
 import { type ForwardRefExoticComponent, type ReactNode, type RefAttributes, useRef } from 'react';
-import { Platform, type View } from 'react-native';
+import { Platform, requireNativeComponent, type View } from 'react-native';
 import { BlurTargetContext, type BlurTargetRef } from './blur-context';
 import { OverlayHost } from './overlay-host';
 
@@ -53,7 +53,12 @@ function resolveBlurTarget(): BlurTargetComponent | null {
     // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep
     // biome-ignore lint/plugin: ts/no-as-cast — dynamic require has no static type
     const mod = require('@danielsaraldi/react-native-blur-view') as { BlurTarget?: BlurTargetComponent };
-    return mod.BlurTarget ?? null;
+    if (!mod.BlurTarget) return null;
+    // Same installed-but-unlinked gap as `overlay-blur`: the peer auto-installs
+    // under Bun/pnpm/yarn-berry while autolinking never registers its native
+    // view. The peer exposes `BlurTarget` as a native `TargetView`.
+    requireNativeComponent('TargetView');
+    return mod.BlurTarget;
   } catch {
     return null;
   }

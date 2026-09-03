@@ -31,6 +31,34 @@ npm install react react-native react-native-reanimated react-native-gesture-hand
 | `react-native-reanimated`      | `>=4.0.0`       |
 | `react-native-gesture-handler` | `>=2.0.0`       |
 
+### Optional peer — backdrop blur
+
+Overlay scrims (`MorphingModal`, `AdaptiveModal`, `Drawer`, `HoldMenu`, …)
+frost their backdrop when the optional peer
+[`@danielsaraldi/react-native-blur-view`](https://github.com/DanielAraldi/react-native-blur-view)
+(`>=3.0.0`) is installed. If it is absent, they degrade to a plain translucent
+dim automatically.
+
+To enable real blur, **declare it as a regular dependency of your app**:
+
+```sh
+npm install @danielsaraldi/react-native-blur-view
+# or: bun add @danielsaraldi/react-native-blur-view
+```
+
+The native module must be *autolinked*, not merely present in `node_modules`.
+Bun, pnpm and yarn-berry auto-install optional peers, so the package can sit in
+`node_modules` without being declared as a dependency — in that state its native
+`BlurView`/`TargetView` are never registered, and blur silently degrades to the
+dim. Installing it as a real dependency lets autolinking register the native
+module.
+
+On Android, also wrap your app root in `BlurProvider` (exported at
+`rn-motion-ui/overlay/blur-provider`) — the peer's `BlurView` blurs a
+`BlurTarget` rather than whatever sits behind it, and the provider supplies that
+target. On iOS no provider is needed (the `BlurView` is a `UIVisualEffectView`
+that blurs behind itself).
+
 ## Consumer setup
 
 This package **ships TypeScript source** (no prebuilt bundle). Your bundler

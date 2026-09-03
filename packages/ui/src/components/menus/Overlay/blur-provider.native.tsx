@@ -23,9 +23,27 @@ import { OverlayHost } from './overlay-host';
 type BlurTargetProps = { children?: ReactNode; style?: unknown };
 type BlurTargetComponent = ForwardRefExoticComponent<BlurTargetProps & RefAttributes<View>>;
 
-/** Resolves the peer's `BlurTarget` on Android, `null` elsewhere or when absent. */
+/**
+ * True on the new architecture (Fabric). RN installs `nativeFabricUIManager` on
+ * the global object under Fabric and never under the legacy arch (see RN's
+ * `FabricUIManager.js`); `Reflect.get` keeps the off-type global off the type
+ * system, matching `web-document.ts`.
+ */
+function isFabric(): boolean {
+  return Boolean(Reflect.get(globalThis, 'nativeFabricUIManager'));
+}
+
+/**
+ * Resolves the peer's `BlurTarget` on Android, `null` elsewhere, on Fabric, or
+ * when the peer is absent.
+ */
 function resolveBlurTarget(): BlurTargetComponent | null {
   if (Platform.OS !== 'android') return null;
+  // On Fabric the peer's `TargetView` redirects every child into an inner view
+  // whose `onLayout`/`requestLayout` are old-arch no-ops, so the children are
+  // never measured/positioned and the whole app collapses to a white screen.
+  // Skip the target there — Android scrims degrade to the plain translucent dim.
+  if (isFabric()) return null;
   try {
     // Optional peer dep — Android backdrop blur; consumers without it get the dim scrim.
     // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep

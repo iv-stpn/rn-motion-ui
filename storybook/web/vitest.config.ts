@@ -7,6 +7,28 @@ import { defineConfig } from 'vitest/config';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  // Pre-transform the setup file and every story up front, while the Vite
+  // server is still starting. Without this the browser's first burst of dynamic
+  // `import()`s hits Vite's on-demand transform pipeline cold; on slow
+  // filesystems (WSL2/CI) the `vite-plugin-rnw` babel transforms back up enough
+  // that a module fetch is dropped — "Failed to fetch dynamically imported
+  // module". Warming the graph removes the cold-start transform waterfall, so
+  // the browser reads already-transformed modules instead of racing the
+  // transformer. The setup file alone is not enough: the preview loads stories
+  // through a dynamic glob, so warming each story is what pulls the component
+  // graph through the transform cache ahead of time.
+  //
+  // Note: each story logs a non-fatal "Pre-transform error" here, because
+  // @storybook/addon-vitest injects `@storybook/addon-vitest/internal/test-utils`
+  // (a dep-optimizer virtual module) into every story, and that id only resolves
+  // once the browser's real import phase runs. The warmup of the story's own
+  // component graph still succeeds, so the transform cache is warm and the run
+  // is unaffected — the errors are noise, not failures.
+  server: {
+    warmup: {
+      clientFiles: ['./.storybook/vitest.setup.ts', '../../packages/ui/src/components/**/*.stories.tsx'],
+    },
+  },
   plugins: [
     // Turns every story into a vitest test; stories with a `play` function
     // are executed and asserted in a real browser.

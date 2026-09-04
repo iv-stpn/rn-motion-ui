@@ -5,7 +5,6 @@ import { Switch } from 'rn-motion-ui/switch';
 import { Uniwind } from 'uniwind';
 import '../global.css';
 import { GlobalErrorReporter, StoryErrorBoundary } from './error-reporter';
-import { GlassDiag } from './glass-diag';
 
 // Seed the theme at module scope, before the first story renders, so the very
 // first paint is already light rather than whatever the simulator's OS is set
@@ -47,9 +46,6 @@ const preview: Preview = {
             <View className="mb-4 self-start">
               <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
             </View>
-            {/* TEMP (2026-09-04): on-device glass diagnostics — remove with
-                glass-diag.tsx once the Android no-frost issue is settled. */}
-            <GlassDiag />
             {/* StoryErrorBoundary renders the real error + stack when a story
                 crashes, so a white canvas explains itself on the device. */}
             <StoryErrorBoundary>

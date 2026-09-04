@@ -19,10 +19,20 @@
  * Below Android API 31 the peer can only tint (no `RenderEffect` blur), so the
  * scrim degrades to the plain translucent dim: `getGlassCapabilities().supportsBlur`
  * is the gate. iOS blurs on every supported version.
+ *
+ * Resolution is deliberately ONLY a `require` presence check. It must NOT
+ * probe the native side with `requireNativeComponent('LiquidGlassmorphismView')`:
+ * the peer is a codegen component whose own module already registered that name
+ * in React Native's view-config registry, so a second registration throws
+ * "Tried to register two views with the same name" and degrades the scrim
+ * exactly when the peer is present and should render (the 7.3.0 Android
+ * no-frost regression, fixed 2026-09-04). An unlinked native module surfaces
+ * at FIRST RENDER, which `PeerMountGuard` converts into the plain-dim degrade.
  */
 
 import type { ComponentType } from 'react';
-import { Platform, requireNativeComponent, StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import { PeerMountGuard } from '../../../lib/peer-mount-guard';
 import { MotiView } from '../../../moti/components/view';
 
 /**
@@ -45,9 +55,9 @@ type GlassModule = { LiquidGlassView?: LiquidGlassComponent; getGlassCapabilitie
 
 /**
  * Resolves the peer's `LiquidGlassView` and blur capability when the optional
- * peer is installed, `null` otherwise — the same guarded-require pattern the
- * old scrim used for the blur peer. A consumer that never installed the native
- * module still builds; the scrim degrades to the plain dim.
+ * peer's JS is installed, `null` otherwise — the same guarded-require pattern
+ * the Glass primitive uses. A consumer that never installed the native module
+ * still builds; the scrim degrades to the plain dim.
  */
 function resolveScrimBlur(): { View: LiquidGlassComponent; supportsBlur: boolean } | null {
   if (Platform.OS !== 'android' && Platform.OS !== 'ios') return null;
@@ -58,11 +68,6 @@ function resolveScrimBlur(): { View: LiquidGlassComponent; supportsBlur: boolean
     const mod = require('react-native-liquid-glassmorphism') as GlassModule;
     const View = mod.LiquidGlassView;
     if (!View) return null;
-    // The peer can be installed while its native module is NOT autolinked — the
-    // require() above resolves but mounting throws. `requireNativeComponent`
-    // throws exactly when the `LiquidGlassmorphismView` ViewManager is
-    // unregistered (old and new arch alike).
-    requireNativeComponent('LiquidGlassmorphismView');
     const supportsBlur = mod.getGlassCapabilities?.().supportsBlur ?? false;
     return { View, supportsBlur };
   } catch {
@@ -82,6 +87,9 @@ const scrimBlur = resolveScrimBlur();
  * the menu — it mirrors the web twin, which must fade its *own* opacity because
  * a parent opacity fades out the backdrop on CSS.
  *
+ * A peer whose JS is present but native module is unlinked throws at first
+ * render; `PeerMountGuard` turns that into `null` (the same plain-dim degrade).
+ *
  * Internal to the package — not exported.
  */
 export function OverlayBlur() {
@@ -99,7 +107,9 @@ export function OverlayBlur() {
     >
       {/* Plain blurred pane — rim/specular/thickness off, so it is a conventional
           blur under the dim sibling, not liquid glass. */}
-      <LiquidGlassView rim={false} specular={false} thickness={0} blurRadius={12} style={StyleSheet.absoluteFill} />
+      <PeerMountGuard fallback={null}>
+        <LiquidGlassView rim={false} specular={false} thickness={0} blurRadius={12} style={StyleSheet.absoluteFill} />
+      </PeerMountGuard>
     </MotiView>
   );
 }

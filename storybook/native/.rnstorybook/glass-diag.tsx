@@ -35,18 +35,17 @@ const STRIPES = ['#e5484d', '#f5a524', '#30a46c', '#6e56cf'];
 
 const CAPS = getGlassCapabilities();
 
-/** Replicates the library's guarded resolution probe (glass.native.tsx /
- *  overlay-blur.native.tsx) so a mismatch between the probe and reality is
- *  visible on screen. */
+/** Replicates the library's guarded resolution (glass.native.tsx /
+ *  overlay-blur.native.tsx): a `require` presence check only. NOTE: the old
+ *  `requireNativeComponent` probe is GONE — it re-registered the codegen
+ *  peer's name and threw "Tried to register two views with the same name",
+ *  degrading every surface (fixed 2026-09-04). */
 function probeLibraryResolution(): string {
   try {
     // biome-ignore lint/style/noCommonJs: replicating the library's guarded dynamic require for diagnostics
     const mod = require('react-native-liquid-glassmorphism');
     if (!mod?.LiquidGlassView) return 'require ok, but LiquidGlassView export missing';
-    // biome-ignore lint/style/noCommonJs: diagnostic replica of requireNativeComponent probe
-    const { requireNativeComponent } = require('react-native');
-    requireNativeComponent('LiquidGlassmorphismView');
-    return 'ok (peer + ViewManager probe pass)';
+    return 'ok (peer resolves)';
   } catch (e) {
     return `DEGRADED: ${e instanceof Error ? e.message : String(e)}`;
   }
@@ -90,12 +89,19 @@ export function GlassDiag() {
   const [probeResult] = useState(probeLibraryResolution);
   const [rawTier, setRawTier] = useState('native: —');
   const [rawError, setRawError] = useState('');
+  // Suspend the raw probe's per-frame backdrop capture after its first native
+  // pipeline report — one live glass view over the whole storybook window is
+  // enough of a capture load; the tier/error signal has already arrived.
+  const [rawPaused, setRawPaused] = useState(false);
 
-  const onPipelineReady = (e: { nativeEvent: GlassPipelineInfo }) =>
+  const onPipelineReady = (e: { nativeEvent: GlassPipelineInfo }) => {
     setRawTier(`native tier=${e.nativeEvent.tier} sdk=${e.nativeEvent.osVersion} compiled=${e.nativeEvent.shaderCompiled}`);
+    setRawPaused(true);
+  };
   const onError = (e: { nativeEvent: GlassErrorInfo }) => {
     setRawTier(`native ERROR ${e.nativeEvent.code}`);
     setRawError(e.nativeEvent.message);
+    setRawPaused(true);
   };
 
   return (
@@ -113,6 +119,7 @@ export function GlassDiag() {
             thickness={0}
             blurRadius={12}
             tintColor="rgba(255,255,255,0.55)"
+            paused={rawPaused}
             style={StyleSheet.absoluteFill}
             onPipelineReady={onPipelineReady}
             onError={onError}

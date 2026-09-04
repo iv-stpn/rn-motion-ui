@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode, Ref } from 'react';
-import { Platform, requireNativeComponent, StyleSheet, View, type ViewProps } from 'react-native';
+import { Platform, StyleSheet, View, type ViewProps } from 'react-native';
+import { PeerMountGuard } from '../../../lib/peer-mount-guard';
 import { useThemeColor } from '../../../theme/use-theme-color';
 
 /**
@@ -22,10 +23,18 @@ type NativeGlassComponent = ComponentType<NativeGlassProps>;
 type NativeGlassModule = { LiquidGlassView?: NativeGlassComponent };
 
 /**
- * Resolves the optional peer's `LiquidGlassView` when it is installed and
- * autolinked, `null` otherwise — the same guarded-require pattern the overlay
- * scrim used for the old blur peer. A consumer that never installed the native
- * module still builds; the surface degrades to the translucent tint fill.
+ * Resolves the optional peer's `LiquidGlassView` when its JS is installed,
+ * `null` otherwise — the same guarded-require pattern the overlay scrim uses.
+ *
+ * This is deliberately ONLY a `require` presence check. It must NOT probe the
+ * native side with `requireNativeComponent('LiquidGlassmorphismView')`: the
+ * peer is a codegen component whose own module already registered that name in
+ * React Native's view-config registry, so a second registration throws "Tried
+ * to register two views with the same name" and the catch below would degrade
+ * the surface exactly when the peer is present and should render (the 7.3.0
+ * Android no-frost regression, fixed 2026-09-04). The native side being
+ * unlinked surfaces at FIRST RENDER ("View config not found for component
+ * ..."), which `PeerMountGuard` converts into the same tint-fill fallback.
  */
 function resolveLiquidGlassView(): NativeGlassComponent | null {
   if (Platform.OS !== 'android' && Platform.OS !== 'ios') return null;
@@ -34,13 +43,7 @@ function resolveLiquidGlassView(): NativeGlassComponent | null {
     // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep
     // biome-ignore lint/plugin: ts/no-as-cast — dynamic require has no static type
     const mod = require('react-native-liquid-glassmorphism') as NativeGlassModule;
-    if (!mod.LiquidGlassView) return null;
-    // The peer can be installed while its native module is NOT autolinked — the
-    // require() above resolves but mounting throws. `requireNativeComponent`
-    // throws exactly when the `LiquidGlassmorphismView` ViewManager is
-    // unregistered (old and new arch alike).
-    requireNativeComponent('LiquidGlassmorphismView');
-    return mod.LiquidGlassView;
+    return mod.LiquidGlassView ?? null;
   } catch {
     return null;
   }
@@ -76,9 +79,11 @@ export type GlassProps = ViewProps & {
  * material. The fill is the themed `glass` token (`useThemeColor`) passed as
  * `tintColor`, so it follows the active scheme.
  *
- * When the optional peer is absent (or unlinked) it degrades to the translucent
- * `glass` tint fill with no blur — the surface still reads as a translucent
- * panel rather than a flat opaque wash.
+ * When the optional peer is absent it degrades to the translucent `glass` tint
+ * fill with no blur — the surface still reads as a translucent panel rather
+ * than a flat opaque wash. The same fallback is applied through
+ * `PeerMountGuard` when the peer's JS is present but its native module is not
+ * autolinked (mount throws; the guard swaps in the tint fill).
  *
  * The material recipe is a shallow frosted lens: `specular` off (a static
  * surface has no moving sheen), `thickness` at 0.4 (a shallow lens, the
@@ -92,28 +97,33 @@ export function Glass({ blurRadius = 20, borderRadius = 0, rim = true, className
   // silhouette so a rounded surface never leaks square-cornered content.
   const clip = borderRadius > 0 ? ({ borderRadius, overflow: 'hidden' } as const) : null;
 
+  // The degrade fill: translucent `glass` tint, no blur — used when the peer
+  // is absent OR its native view fails to mount.
+  const tintFill = (
+    <View {...props} className={className} style={[{ backgroundColor: tint }, clip, style]}>
+      {children}
+    </View>
+  );
+
   // No native peer (or unlinked) → translucent tint fill, no blur.
-  if (!LiquidGlassView)
-    return (
-      <View {...props} className={className} style={[{ backgroundColor: tint }, clip, style]}>
-        {children}
-      </View>
-    );
+  if (!LiquidGlassView) return tintFill;
 
   return (
-    <View {...props} className={className} style={[clip, style]}>
-      <LiquidGlassView
-        variant="regular"
-        tintColor={tint}
-        blurRadius={blurRadius}
-        rim={rim}
-        specular={false}
-        thickness={0.4}
-        borderRadius={borderRadius}
-        style={StyleSheet.absoluteFill}
-      >
-        {children}
-      </LiquidGlassView>
-    </View>
+    <PeerMountGuard fallback={tintFill}>
+      <View {...props} className={className} style={[clip, style]}>
+        <LiquidGlassView
+          variant="regular"
+          tintColor={tint}
+          blurRadius={blurRadius}
+          rim={rim}
+          specular={false}
+          thickness={0.4}
+          borderRadius={borderRadius}
+          style={StyleSheet.absoluteFill}
+        >
+          {children}
+        </LiquidGlassView>
+      </View>
+    </PeerMountGuard>
   );
 }

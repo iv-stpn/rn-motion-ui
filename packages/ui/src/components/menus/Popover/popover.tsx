@@ -9,7 +9,7 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
-import { OverlayBlur } from '../Overlay/overlay-blur';
+import { ModalBlur } from '../Overlay/blur-host';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 import type { OverlayType } from '../Overlay/overlay-type';
 
@@ -256,7 +256,7 @@ export function PopoverContent({
           <View key="popover-overlay" className="flex-1">
             {overlay === 'none' ? null : (
               <>
-                {overlay === 'blur' ? <OverlayBlur /> : null}
+                {overlay === 'blur' ? <ModalBlur /> : null}
                 <MotiView
                   pointerEvents="none"
                   from={{ opacity: 0 }}

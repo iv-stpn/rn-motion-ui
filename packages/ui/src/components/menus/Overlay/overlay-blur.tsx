@@ -22,6 +22,14 @@ import { StyleSheet, type ViewStyle } from 'react-native';
 import { MotiView } from '../../../moti/components/view';
 
 /**
+ * Web twin of the native capability flag — the CSS blur always renders in the
+ * browser, so consumers of `./blur-host` (which never hosts on web) still bind.
+ * Internal to the package.
+ */
+// biome-ignore lint/style/useComponentExportOnlyModules: module-scope capability fact consumed by ./blur-host — a separate file would split the web twin from the CSS blur it documents
+export const overlayBlurSupported = true;
+
+/**
  * The web blur layer under an overlay scrim. Absolute-fills its parent, never
  * intercepts touches (it is purely decorative — the scrim above it is the tap
  * target), and fades its own opacity in sync with the menu's enter.

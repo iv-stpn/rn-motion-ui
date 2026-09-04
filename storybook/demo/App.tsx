@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Button } from 'rn-motion-ui/button';
+import { OverlayBlurHost } from 'rn-motion-ui/overlay/blur-host';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'rn-motion-ui/tabs';
 import { Text } from 'rn-motion-ui/text';
 import { type ThemeName, Uniwind, useUniwind } from 'uniwind';
@@ -109,6 +110,10 @@ export default function App() {
             </TabsContent>
           </Tabs>
         </ScrollView>
+        {/* Android modal-menu backdrop blur — paints the plain-blur pane behind
+            transparent Modal windows while a menu in overlay="blur" is open.
+            No-op on iOS/web. See rn-motion-ui/overlay/blur-host. */}
+        <OverlayBlurHost />
       </View>
     </SafeAreaProvider>
   );

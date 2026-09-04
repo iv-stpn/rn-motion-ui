@@ -42,6 +42,11 @@
       "types": "./src/components/menus/Overlay/overlay-shell.tsx",
       "default": "./src/components/menus/Overlay/overlay-shell.tsx"
     },
+    "./overlay/blur-host": {
+      "source": "./src/components/menus/Overlay/blur-host.tsx",
+      "types": "./src/components/menus/Overlay/blur-host.tsx",
+      "default": "./src/components/menus/Overlay/blur-host.tsx"
+    },
     "./overlay/overlay-portal": {
       "source": "./src/components/menus/Overlay/overlay-portal.tsx",
       "types": "./src/components/menus/Overlay/overlay-portal.tsx",

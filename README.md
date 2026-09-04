@@ -86,7 +86,7 @@ Types / constants: `moti/types` · `moti/color-keys`
 The shell and presence hook the sheet family (`bottom-sheet`, `full-sheet`, `drawer`, `adaptive-modal`) is built on. Exported so a consumer can build a sheet of their own on the same primitives — but they are infrastructure, not a component API, and they change with the components that use them rather than on their own deprecation cycle.
 
 <!-- generated:internal -->
-`overlay/overlay-portal` · `overlay/overlay-shell` · `overlay/use-sheet-presence`
+`overlay/blur-host` · `overlay/overlay-portal` · `overlay/overlay-shell` · `overlay/use-sheet-presence`
 <!-- /generated:internal -->
 </details>
 

@@ -78,6 +78,17 @@ function resolveScrimBlur(): { View: LiquidGlassComponent; supportsBlur: boolean
 const scrimBlur = resolveScrimBlur();
 
 /**
+ * Whether a real native blur can render on this device — the peer's JS is
+ * present AND the OS supports it (Android API 31+; iOS always). Consumed by
+ * the `OverlayBlurHost` gate: on Android below API 31 (or without the peer)
+ * there is nothing to host, so modal scrims fall back to the plain dim.
+ *
+ * Internal to the package — not exported from the package entry.
+ */
+// biome-ignore lint/style/useComponentExportOnlyModules: module-scope capability fact consumed by ./blur-host — a separate file would split the peer resolution from the component it gates
+export const overlayBlurSupported = scrimBlur?.supportsBlur === true;
+
+/**
  * The blur layer under an overlay scrim. Absolute-fills its parent, never
  * intercepts touches (it is purely decorative — the scrim above it is the tap
  * target), and renders `null` when the peer is absent or the device cannot blur

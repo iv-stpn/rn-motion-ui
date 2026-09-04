@@ -1,13 +1,11 @@
 import { memo, useEffect, useMemo } from 'react';
-import { Platform, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedReaction, useAnimatedRef, useSharedValue } from 'react-native-reanimated';
 import { PortalProvider } from '../../portal/Portal/portal';
-import { useBlurTargetRef } from '../Overlay/blur-context';
-import { OverlayPortal } from '../Overlay/overlay-host';
 import { Backdrop } from './backdrop';
 import { CONTEXT_MENU_STATE } from './constants';
-import { HoldMenuInternalContext, type HoldMenuInternalContextType, setHoldMenuInternalContext } from './context';
+import { HoldMenuInternalContext, type HoldMenuInternalContextType } from './context';
 import type { HoldMenuProviderProps, HoldMenuSafeAreaInsets, MenuInternalProps } from './hold-menu-types';
 import { Menu } from './menu';
 
@@ -17,12 +15,11 @@ import { Menu } from './menu';
  * and the always-mounted `Backdrop` and `Menu`. One menu at a time, driven
  * entirely by the `state` shared value.
  *
- * The overlay's home is platform-split (see the render body): on **Android** the
- * backdrop/menu/twins render OUTSIDE the `BlurTarget` through the `BlurProvider`
- * overlay host so the target-based blur frosts only the page and the menu paints
- * crisp above it (a scrim left inside the target crashes or frosts the menu); on
- * **iOS/web** the blur is a true backdrop, so the overlay stays inline inside the
- * root under a `PortalProvider` (which lifts the twins above the backdrop/menu).
+ * The overlay (backdrop + menu) renders inline inside the root, under a
+ * `PortalProvider` — which lifts the always-mounted twins above the backdrop and
+ * menu. The blur is a true backdrop (`react-native-liquid-glassmorphism`
+ * captures the page as a bitmap), so the overlay stays inside the root on every
+ * platform.
  *
  * Rotation safety is the departure from upstream: window dimensions come from
  * `useWindowDimensions` and are mirrored into a shared value, so the menu and
@@ -121,19 +118,6 @@ const ProviderComponent = ({
   // item's page coords, so the menu anchors correctly even when the root is
   // offset from the viewport origin (storybook's padding decorator on web).
   const rootRef = useAnimatedRef<Animated.View>();
-  const blurTargetRef = useBlurTargetRef();
-
-  // Whether the overlay teleports out of the `BlurTarget` into the provider's
-  // overlay host (Android with the peer installed). When true the menu/twins
-  // must offset their root-space coords back by the root's page position.
-  const teleported = Platform.OS === 'android' && blurTargetRef !== null;
-
-  // The root's page offset, measured during activation and mirrored here so the
-  // teleported overlay (which renders outside this provider's React tree, in the
-  // `BlurProvider` overlay host) can translate root-space coords into the host's
-  // window-space. Zero until the first activation measures it.
-  const rootPageX = useSharedValue(0);
-  const rootPageY = useSharedValue(0);
 
   const internalContextVariables = useMemo<HoldMenuInternalContextType>(
     () => ({
@@ -145,9 +129,6 @@ const ProviderComponent = ({
       rootViewportHeight,
       AnimatedIcon,
       rootRef,
-      rootPageX,
-      rootPageY,
-      teleported,
       overlay,
       closeOnOutsidePress,
     }),
@@ -160,25 +141,13 @@ const ProviderComponent = ({
       rootViewportHeight,
       AnimatedIcon,
       rootRef,
-      rootPageX,
-      rootPageY,
-      teleported,
       overlay,
       closeOnOutsidePress,
     ],
   );
 
-  // Publish the shared values into the module-store mirror (see `context.ts`) so
-  // the overlay content — rendered OUTSIDE this provider's React tree through the
-  // `BlurProvider` overlay host — can still read them (the effect runs post-render).
-  // biome-ignore lint/plugin: prop → shared value sync must run after render, not during it
-  useEffect(() => {
-    setHoldMenuInternalContext(internalContextVariables);
-    return () => setHoldMenuInternalContext(null);
-  }, [internalContextVariables]);
-
-  // The always-mounted overlay (backdrop + menu). Kept stable so the
-  // `OverlayPortal` (Android) registers it once rather than on every render.
+  // The always-mounted overlay (backdrop + menu), kept stable so the portal
+  // host registers it once rather than on every render.
   const overlayContent = useMemo(
     () => (
       <>
@@ -193,27 +162,12 @@ const ProviderComponent = ({
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HoldMenuInternalContext.Provider value={internalContextVariables}>
         <Animated.View ref={rootRef} className="flex-1">
-          {teleported ? (
-            <>
-              {children}
-              {/* Android: the overlay renders OUTSIDE the `BlurTarget` through the
-                  `BlurProvider` overlay host (a sibling of the target). The
-                  target-based blur then captures only the page — not the menu —
-                  and the menu paints after the blur, crisp on top; a scrim left
-                  inside the target would either crash (the peer's RenderNode
-                  cycle) or frost the menu. The twins join it at a higher layer
-                  from each `HoldItem` (see `hold-item-twin`). */}
-              <OverlayPortal layer="menu">{overlayContent}</OverlayPortal>
-            </>
-          ) : (
-            /* iOS/web, and Android without a `BlurProvider` (no overlay host to
-               receive the portal): the blur is a true backdrop, so the overlay stays
-               inline in the root and the `PortalProvider` lifts the twins above it. */
-            <PortalProvider>
-              {children}
-              {overlayContent}
-            </PortalProvider>
-          )}
+          {/* The blur is a true backdrop, so the overlay stays inline in the root
+              and the `PortalProvider` lifts the twins above it. */}
+          <PortalProvider>
+            {children}
+            {overlayContent}
+          </PortalProvider>
         </Animated.View>
       </HoldMenuInternalContext.Provider>
     </GestureHandlerRootView>

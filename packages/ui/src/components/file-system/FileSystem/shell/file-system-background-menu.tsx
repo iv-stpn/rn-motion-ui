@@ -66,12 +66,11 @@ function toHeightItems(entries: readonly MenuEntry[]): { heading?: boolean; sepa
 type ScrimProps = { onClose: () => void; testID?: string };
 
 /**
- * The click-outside scrim. Native paints a dim over a `BlurView` (`OverlayBlur`
- * + `bg-black/35`); on Android the blur needs an enclosing `<BlurProvider>` (its
- * `BlurTarget` wraps the content to frost), and without one the dim stands
- * alone. Web keeps the scrim invisible — a dropdown does not dim the page behind
- * it — but still full-bleed, because it is the only dismiss control reachable
- * without a pointer.
+ * The click-outside scrim. Native paints a dim over a blur (`OverlayBlur` +
+ * `bg-black/35`) — the peer captures the backdrop as a bitmap and self-excludes,
+ * so no wrapping provider is needed. Web keeps the scrim invisible — a dropdown
+ * does not dim the page behind it — but still full-bleed, because it is the only
+ * dismiss control reachable without a pointer.
  */
 function BackgroundScrim({ onClose, testID }: ScrimProps) {
   const dims = Platform.OS !== 'web';
@@ -85,12 +84,7 @@ function BackgroundScrim({ onClose, testID }: ScrimProps) {
       style={StyleSheet.absoluteFill}
       transition={MENU_SCRIM_TRANSITION}
     >
-      {/* `inline`: the scrim renders inside the content the BlurTarget wraps —
-          on Android that makes the peer's RenderNodeBlurController record the
-          target (which contains this very view) into its own blur node, and
-          HWUI's prepareTreeImpl cycles until the RenderThread stack overflows.
-          Android degrades to the dim; iOS/web keep the frost. */}
-      {dims ? <OverlayBlur inline={true} /> : null}
+      {dims ? <OverlayBlur /> : null}
       <Pressable
         accessibilityLabel={CLOSE_ACCESSIBILITY_LABEL}
         accessibilityRole="button"

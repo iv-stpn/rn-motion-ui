@@ -3,8 +3,6 @@ import { View, type ViewProps } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { type SharedValue, useAnimatedProps, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { Portal } from '../../portal/Portal/portal';
-import { OverlayPortal } from '../Overlay/overlay-host';
-import { overlayHostPageX, overlayHostPageY } from '../Overlay/overlay-host-position';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './constants';
 import { useHoldMenuInternal } from './context';
 import type { HoldItemProps, MenuItemProps, TransformOriginAnchorPosition } from './hold-menu-types';
@@ -58,7 +56,7 @@ const HoldItemTwinComponent = ({
   itemScale,
   transformOrigin,
 }: HoldItemTwinProps) => {
-  const { state, safeAreaInsets, windowSize, rootViewportHeight, rootPageX, rootPageY, teleported } = useHoldMenuInternal();
+  const { state, safeAreaInsets, windowSize, rootViewportHeight } = useHoldMenuInternal();
 
   const overlayTap = useMemo(
     () =>
@@ -98,17 +96,10 @@ const HoldItemTwinComponent = ({
     };
 
     // `itemRectX/Y` are root-space (activation subtracts the root's page offset
-    // from the item's page coords). When the twin teleports to the overlay host
-    // its containing block is that host, not the window — and the host itself may
-    // be inset from the window (storybook's chrome, a nested screen). Convert root
-    // space into host space by subtracting the host's own window offset, or the
-    // twin lands too low.
-    const offsetX = teleported ? rootPageX.value - overlayHostPageX.value : 0;
-    const offsetY = teleported ? rootPageY.value - overlayHostPageY.value : 0;
-
+    // from the item's page coords).
     return {
-      top: itemRectY.value + offsetY,
-      left: itemRectX.value + offsetX,
+      top: itemRectY.value,
+      left: itemRectX.value,
       width: itemRectWidth.value,
       height: itemRectHeight.value,
       // `releaseProgress` drives this opacity (0 = active → this twin shows, 1 =
@@ -141,9 +132,6 @@ const HoldItemTwinComponent = ({
     safeAreaInsets,
     windowSize,
     rootViewportHeight,
-    rootPageX,
-    rootPageY,
-    teleported,
   ]);
 
   const animatedPortalProps = useAnimatedProps<ViewProps>(() => ({
@@ -168,11 +156,9 @@ const HoldItemTwinComponent = ({
     </Animated.View>
   );
 
-  // Android lifts the twin out of the `BlurTarget` (through the `BlurProvider`
-  // overlay host, above the menu's layer) so the target-based blur does not
-  // frost it; iOS/web keep the in-tree `Portal` host, which already lifts the
-  // twin above the inline backdrop/menu without leaving the root.
-  return teleported ? <OverlayPortal layer="twin">{twin}</OverlayPortal> : <Portal name={name}>{twin}</Portal>;
+  // The in-tree `Portal` host lifts the twin above the inline backdrop/menu
+  // without leaving the root.
+  return <Portal name={name}>{twin}</Portal>;
 };
 
 export const HoldItemTwin = memo(HoldItemTwinComponent);

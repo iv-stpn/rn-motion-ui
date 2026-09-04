@@ -194,7 +194,7 @@ const meta: Meta<typeof InteractiveDemo> = {
   title: 'Gestures / SortableList',
   // `centered` like every other story group — a missing layout resolves to an
   // empty canvas container on the native storybook, which collapses the
-  // BlurProvider → flex-1 → ScrollView chain and blanks the story on the
+  // flex-1 → ScrollView chain and blanks the story on the
   // Android APK (same mechanism as the fixed fullscreen menu stories, 4250db21).
   parameters: { layout: 'centered' },
 };

@@ -72,8 +72,7 @@ const HoldItemComponent = ({
   testID,
   children,
 }: HoldItemProps) => {
-  const { state, menuProps, windowSize, rootViewportHeight, rootPageX, rootPageY, safeAreaInsets, rootRef } =
-    useHoldMenuInternal();
+  const { state, menuProps, windowSize, rootViewportHeight, safeAreaInsets, rootRef } = useHoldMenuInternal();
 
   const isActive = useSharedValue(false);
   /** Widest-row content width, reported by `MeasureMenuWidth`'s `onLayout` before the first hold. */
@@ -137,8 +136,6 @@ const HoldItemComponent = ({
     menuProps,
     windowSize,
     rootViewportHeight,
-    rootPageX,
-    rootPageY,
     safeAreaInsets,
     contentWidth,
     scaleHold,

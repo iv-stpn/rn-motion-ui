@@ -8,7 +8,7 @@ import { LinkLine } from 'rn-motion-ui-icons/icons/link-line';
 import { Message1Line as MessageSquare } from 'rn-motion-ui-icons/icons/message-1-line';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, Toggle } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, FrostedBackdrop, Toggle } from '../../../__stories__/story-harness';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { SPRING_SWAP } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
@@ -317,6 +317,46 @@ export const FeedbackForm: Story = {
     await userEvent.click(await screen.findByText('Submit'));
 
     await expect(await screen.findByText('Thanks!')).toBeTruthy();
+  },
+};
+
+/**
+ * A frosted FAB trades the opaque surface ladder for the glass backdrop — the
+ * blur is the depth, so neither the surface fill nor the shadow survives. The
+ * shell is transparent while a descendant carries the `backdrop-filter`.
+ */
+export const Frosted: Story = {
+  name: 'Frosted',
+  render: () => (
+    <FrostedBackdrop className="h-[380px]">
+      <MorphingFAB
+        frosted={true}
+        defaultOpen={true}
+        expandedWidth={232}
+        expandedHeight={192}
+        accessibilityLabel="Open actions"
+        testID="frosted-fab"
+      >
+        {({ close }) => (
+          <View className="gap-1 pt-1">
+            <MenuItem icon={CameraLine} label="Take photo" onPress={close} />
+            <MenuItem icon={Document2Line} label="Attach file" onPress={close} />
+            <MenuItem icon={LinkLine} label="Copy link" onPress={close} />
+          </View>
+        )}
+      </MorphingFAB>
+    </FrostedBackdrop>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const fab = await canvas.findByTestId('frosted-fab');
+
+    const glass = Array.from(fab.querySelectorAll('*')).find((el) => getComputedStyle(el).backdropFilter.includes('blur('));
+    expect(glass).toBeTruthy();
+    if (!glass) return;
+    const shell = glass.parentElement;
+    if (!shell) throw new Error('Frosted FAB shell was not found');
+    expect(getComputedStyle(shell).backgroundColor).toBe('rgba(0, 0, 0, 0)');
   },
 };
 

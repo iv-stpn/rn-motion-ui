@@ -369,7 +369,7 @@ const meta = {
   component: FileSystem,
   // `centered`, like every other story group: a missing layout resolves to an
   // empty canvas container style on the native storybook, which collapses the
-  // BlurProvider → flex-1 → ScrollView chain and blanks the story on the
+  // flex-1 → ScrollView chain and blanks the story on the
   // Android APK (the same mechanism that white-screened the four fullscreen
   // menu stories — see 4250db21).
   parameters: { layout: 'centered' },

@@ -5,11 +5,11 @@
  * The scrims (HoldMenu's backdrop and the modal overlays) paint a translucent
  * dim over a blur so the page behind them reads as frosted glass rather than a
  * flat wash. This is the WEB twin of `./overlay-blur` (the `.native.tsx` file
- * carries the guarded `@danielsaraldi/react-native-blur-view` require): web
- * never touches the optional peer, so the web bundle builds even when the
- * package is not installed. RNW 0.21 passes `backdropFilter` through (prefixing
- * `WebkitBackdropFilter`), so the frost is the same 12 px the native `BlurView`
- * applies.
+ * carries the guarded `react-native-liquid-glassmorphism` require): web never
+ * touches the optional peer, so the web bundle builds even when the package is
+ * not installed. RNW passes `backdropFilter` through (prefixing
+ * `WebkitBackdropFilter`), so the frost is the same 12 px the native
+ * `LiquidGlassView` applies.
  *
  * The layer fades its OWN `opacity` from 0→1 on mount (and back out on exit) so
  * the frost appears in step with the menu instead of popping in. The fade must
@@ -26,15 +26,9 @@ import { MotiView } from '../../../moti/components/view';
  * intercepts touches (it is purely decorative — the scrim above it is the tap
  * target), and fades its own opacity in sync with the menu's enter.
  *
- * The `inline` prop (see the native twin) is accepted for a shared call-site
- * signature but is a no-op here: CSS `backdrop-filter` blurs behind the view
- * wherever it sits, so an inline scrim inside the app content is safe.
- *
  * Internal to the package — not exported.
  */
-type OverlayBlurProps = { inline?: boolean };
-
-export function OverlayBlur(_props: OverlayBlurProps = {}) {
+export function OverlayBlur() {
   return (
     <MotiView
       pointerEvents="none"

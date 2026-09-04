@@ -31,9 +31,6 @@ type UseHoldItemActivationOptions = {
   windowSize: SharedValue<HoldMenuWindowSize>;
   /** The provider root's visible extent — the travel clamp's viewport, updated each activation. */
   rootViewportHeight: SharedValue<number>;
-  /** The root's page offset, mirrored into a shared value for the teleported overlay. */
-  rootPageX: SharedValue<number>;
-  rootPageY: SharedValue<number>;
   safeAreaInsets: SharedValue<HoldMenuSafeAreaInsets>;
   /** Measured widest-row content width, in px — floored/capped into the panel width. */
   contentWidth: SharedValue<number>;
@@ -82,8 +79,6 @@ export function useHoldItemActivation({
   menuProps,
   windowSize,
   rootViewportHeight,
-  rootPageX,
-  rootPageY,
   safeAreaInsets,
   contentWidth,
   scaleHold,
@@ -136,12 +131,6 @@ export function useHoldItemActivation({
       const root = measure(rootRef);
       const rootX = root?.pageX ?? 0;
       const rootY = root?.pageY ?? 0;
-      // Mirror the root's page offset so the teleported overlay (Android's
-      // overlay host, whose containing block is the window) can translate the
-      // root-space coords below back into window space. Inline overlays ignore
-      // it — their containing block IS the root, so root space is already right.
-      rootPageX.value = rootX;
-      rootPageY.value = rootY;
       // The travel clamp's viewport: the root's measured height capped to the
       // window's bottom edge relative to the root's top — the part of the root
       // the user can actually see. When the provider sits inside a scrollable
@@ -205,8 +194,6 @@ export function useHoldItemActivation({
     transformValue,
     windowSize,
     rootViewportHeight,
-    rootPageX,
-    rootPageY,
     bottom,
     getMenuHeight,
     disableMove,

@@ -3,7 +3,9 @@ import type { Ref } from 'react';
 import { Pressable, type PressableProps, View, type ViewProps } from 'react-native';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
+import { CARD_RADIUS } from '../../../lib/radius';
 import { surface } from '../../../lib/surface';
+import { Glass } from '../Glass/glass';
 
 // cva drives the padding layer by size; the radius + elevation come from `surface`.
 const card = cva('', {
@@ -33,13 +35,59 @@ export type CardProps = ViewProps & {
   elevation?: SurfaceElevation;
   /** When provided the card renders as a `Pressable` instead of a plain `View`. */
   onPress?: PressableProps['onPress'];
+  /**
+   * Render the card as frosted glass instead of the opaque surface ladder: a
+   * translucent `glass` tint over a backdrop blur, with no drop shadow (the
+   * blur is the depth). `elevation`/`floating` are ignored. @default false
+   */
+  frosted?: boolean;
   ref?: Ref<View>;
 };
 
-export function Card({ size = 'md', floating = false, elevation = 0, className, onPress, ...props }: CardProps) {
+export function Card({
+  size = 'md',
+  floating = false,
+  elevation = 0,
+  frosted = false,
+  className,
+  onPress,
+  children,
+  ...props
+}: CardProps) {
+  // A frosted card drops the opaque surface ladder (fill + shadow) in favour of
+  // the glass backdrop — the blur is the depth, so no shadow. The container is
+  // `relative` so the absolute glass layers beneath the content, and clips both
+  // to `rounded-card`.
+  if (frosted) {
+    const frostedClassname = cn('relative overflow-hidden rounded-card', card({ size }), className);
+    const glass = <Glass className="pointer-events-none absolute inset-0" borderRadius={CARD_RADIUS} />;
+    if (onPress !== undefined)
+      return (
+        <Pressable className={frostedClassname} onPress={onPress} {...props}>
+          {glass}
+          {children}
+        </Pressable>
+      );
+    return (
+      <View className={frostedClassname} {...props}>
+        {glass}
+        {children}
+      </View>
+    );
+  }
+
   // The surface derives its background from `elevation`; `floating` swaps the
   // `shadow-elevated-N` rung for the input field's diffuse halo.
   const cardClassname = cn(card({ size }), surface(elevation, 'card', floating), className);
-  if (onPress !== undefined) return <Pressable className={cardClassname} onPress={onPress} {...props} />;
-  return <View className={cardClassname} {...props} />;
+  if (onPress !== undefined)
+    return (
+      <Pressable className={cardClassname} onPress={onPress} {...props}>
+        {children}
+      </Pressable>
+    );
+  return (
+    <View className={cardClassname} {...props}>
+      {children}
+    </View>
+  );
 }

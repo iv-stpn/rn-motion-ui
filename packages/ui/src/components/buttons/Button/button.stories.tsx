@@ -6,7 +6,17 @@ import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { DownloadLine as Download } from 'rn-motion-ui-icons/icons/download-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
+import {
+  Choice,
+  ControlCard,
+  FrostedBackdrop,
+  Note,
+  Playground,
+  Sample,
+  Section,
+  Toggle,
+  Variants,
+} from '../../../__stories__/story-harness';
 import { SURFACE_LEVELS } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button, type ButtonVariant } from './button';
@@ -330,5 +340,42 @@ export const NeutralElevationCastsSurfaceLadder: Story = {
     } finally {
       probe.remove();
     }
+  },
+};
+
+/**
+ * A frosted button trades the variant's opaque fill (and its shadow) for the
+ * glass backdrop — the blur is the depth, so neither the plate tint nor the
+ * shadow survives. The shell goes fully transparent and shadowless while a
+ * descendant still carries the `backdrop-filter`; the opaque `primary` sibling
+ * keeps its fill for contrast.
+ */
+export const Frosted: Story = {
+  name: 'Frosted',
+  render: () => (
+    <FrostedBackdrop className="p-6">
+      <View className="flex-row items-center gap-4">
+        <Button frosted={true} testID="button-frosted">
+          {CONTINUE_LABEL}
+        </Button>
+        <Button variant="primary" testID="button-opaque">
+          {CONTINUE_LABEL}
+        </Button>
+      </View>
+    </FrostedBackdrop>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const frosted = await canvas.findByTestId('button-frosted');
+    const opaque = canvas.getByTestId('button-opaque');
+
+    // The opaque primary keeps its fill; the frosted shell drops it.
+    expect(getComputedStyle(opaque).backgroundColor).not.toBe(TRANSPARENT);
+    expect(getComputedStyle(frosted).backgroundColor).toBe(TRANSPARENT);
+    expect(getComputedStyle(frosted).boxShadow).toBe('none');
+
+    // The frost lives on the glass child, not the shell.
+    const glass = Array.from(frosted.querySelectorAll('*')).find((el) => getComputedStyle(el).backdropFilter.includes('blur('));
+    expect(glass).toBeTruthy();
   },
 };

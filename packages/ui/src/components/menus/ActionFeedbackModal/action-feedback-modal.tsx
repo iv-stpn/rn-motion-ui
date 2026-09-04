@@ -158,6 +158,11 @@ export type ActionFeedbackModalProps = {
   overlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
+  /**
+   * Fires after the modal has fully presented (iOS `Modal.onShow`) — the moment
+   * it is safe to request keyboard focus on content inside it. No-op on web.
+   */
+  onShow?: () => void;
 };
 
 export function ActionFeedbackModal({
@@ -176,6 +181,7 @@ export function ActionFeedbackModal({
   testID,
   overlay = 'blur',
   closeOnOutsidePress = true,
+  onShow,
 }: ActionFeedbackModalProps) {
   const isOpen = openProp ?? false;
   const isDismissible = state === 'error';
@@ -276,6 +282,7 @@ export function ActionFeedbackModal({
       // The dialog is named by whatever it is currently reporting, so focusing
       // it announces the outcome rather than an anonymous "dialog".
       accessibilityLabel={announcement || undefined}
+      onShow={onShow}
     >
       {renderContent}
     </OverlayShell>

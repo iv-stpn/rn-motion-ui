@@ -46,6 +46,11 @@ export type DrawerProps = {
    * in the tree. Set to `false` to manage insets yourself. @default true
    */
   safeArea?: boolean;
+  /**
+   * Fires after the drawer has fully presented (iOS `Modal.onShow`) — the moment
+   * it is safe to request keyboard focus on content inside it. No-op on web.
+   */
+  onShow?: () => void;
   testID?: string;
 };
 
@@ -61,6 +66,7 @@ export function Drawer({
   accessibilityLabel,
   style,
   safeArea = true,
+  onShow,
   testID,
 }: DrawerProps) {
   const reduce = useReducedMotion();
@@ -81,7 +87,7 @@ export function Drawer({
   const offscreen = side === 'right' ? width : -width;
 
   return (
-    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleRequestClose}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleRequestClose} onShow={onShow}>
       <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="drawer" className="flex-1" testID={testID}>

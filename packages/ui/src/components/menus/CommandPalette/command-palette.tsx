@@ -1,7 +1,8 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
+import { useAutoFocusOnShow } from '../../../hooks/use-auto-focus-on-show';
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import type { SurfaceElevation } from '../../../lib/elevated';
@@ -74,6 +75,12 @@ export type CommandPaletteProps = {
   testID?: string;
   /** Replace the search input icon. Default: `<Search size={16} color={mutedForeground} />`. */
   searchIcon?: ReactNode;
+  /**
+   * Fires after the palette has fully presented (iOS `Modal.onShow`) — the moment
+   * it is safe to request keyboard focus on content inside it. The palette's own
+   * search input is focused first, then this callback runs. No-op on web.
+   */
+  onShow?: () => void;
 };
 
 function fuzzyMatch(needle: string, hay: string) {
@@ -137,6 +144,7 @@ function CommandRow({ item, index, isActive, hasIcons, showShortcuts, reduce, on
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: filtering/grouping + adaptive-surface wiring + the on-show focus chain are collocated around shared state
 export function CommandPalette({
   items,
   placeholder = 'Type a command or search…',
@@ -151,9 +159,12 @@ export function CommandPalette({
   smallScreenOverlay,
   closeOnOutsidePress = true,
   elevation = 6,
+  onShow,
 }: CommandPaletteProps) {
   const reduce = useReducedMotion();
   const placeholderColor = useThemeColor('muted-foreground');
+  const inputRef = useRef<TextInput>(null);
+  const { focusOnShow } = useAutoFocusOnShow(inputRef);
   // Wide = the palette renders as a centred modal (≥ `sm`, matching the
   // AdaptiveModal wide breakpoint); narrow = the full-sheet touch surface where
   // keyboard shortcuts don't exist and a tap-to-close button takes their place.
@@ -213,6 +224,13 @@ export function CommandPalette({
   }, [filtered]);
 
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
+  // Focus the search input once presented (native), then let the caller piggyback
+  // on the same moment. `autoFocus` is left on the input so web — where the modal
+  // has no `onShow` — still autofocuses.
+  const handleShow = useCallback(() => {
+    focusOnShow();
+    onShow?.();
+  }, [focusOnShow, onShow]);
   const handleSelect = useCallback(
     (item: CommandItem) => {
       item.onSelect();
@@ -235,11 +253,13 @@ export function CommandPalette({
       smallScreenOverlay={smallScreenOverlay}
       closeOnOutsidePress={closeOnOutsidePress}
       elevation={elevation}
+      onShow={handleShow}
     >
       <View testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
         <View className="flex-row items-center gap-3 border-border border-b-[1.5px] px-4">
           {searchIcon ?? <ThemedIcon icon={Search} variant="ghost" size={16} />}
           <TextInput
+            ref={inputRef}
             autoFocus={true}
             value={query}
             onChangeText={updateQuery}

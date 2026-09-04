@@ -74,8 +74,15 @@ export type MorphingModalProps = {
   overlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
+  /**
+   * Fires after the modal has fully presented AND the active view has measured to
+   * a non-zero height — the moment it is safe to request keyboard focus without
+   * racing the panel's zero-height clip. No-op on web.
+   */
+  onShow?: () => void;
 };
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the morph height and the onShow gating share the same measured-height state — splitting would prop-drill contentHeight across function boundaries
 export function MorphingModal({
   viewId,
   onClose,
@@ -90,6 +97,7 @@ export function MorphingModal({
   testID,
   overlay = 'blur',
   closeOnOutsidePress = true,
+  onShow,
 }: MorphingModalProps) {
   const open = viewId !== null;
   const reduce = useReducedMotion();
@@ -114,6 +122,28 @@ export function MorphingModal({
   const viewIdRef = useRef(viewId);
   viewIdRef.current = viewId;
 
+  // `onShow` must wait for the first non-zero content measurement — `Modal.onShow`
+  // fires at presentation, before the active view has measured, so a focus request
+  // then would race the panel's zero-height clip. This flag latches the request
+  // until `contentHeight` lands non-null.
+  const showPendingRef = useRef(false);
+
+  const handleShow = useCallback(() => {
+    if (contentHeight === null) {
+      showPendingRef.current = true;
+      return;
+    }
+    onShow?.();
+  }, [contentHeight, onShow]);
+
+  // biome-ignore lint/plugin: deferring the on-show callback until the content measures is a side effect keyed on contentHeight — it can't be derived at render time
+  useEffect(() => {
+    if (showPendingRef.current && contentHeight !== null) {
+      showPendingRef.current = false;
+      onShow?.();
+    }
+  }, [contentHeight, onShow]);
+
   const onContentLayout = useCallback(
     (id: string) => (e: LayoutChangeEvent) => {
       // Ignore measurements from exiting views (stale keys). Read the LIVE
@@ -133,6 +163,7 @@ export function MorphingModal({
     if (open) {
       setContentHeight(null);
       setMorphing(false);
+      showPendingRef.current = false;
     }
   }, [open]);
 
@@ -247,7 +278,7 @@ export function MorphingModal({
   );
 
   return (
-    <OverlayShell open={open} onClose={handleClose}>
+    <OverlayShell open={open} onClose={handleClose} onShow={handleShow}>
       {renderPanel}
     </OverlayShell>
   );

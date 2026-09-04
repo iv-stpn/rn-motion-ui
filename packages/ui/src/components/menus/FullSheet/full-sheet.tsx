@@ -198,6 +198,11 @@ export type FullSheetProps = {
    * in the tree. Set to `false` to manage insets yourself. @default true
    */
   safeArea?: boolean;
+  /**
+   * Fires after the sheet has fully presented (iOS `Modal.onShow`) — the moment
+   * it is safe to request keyboard focus on content inside it. No-op on web.
+   */
+  onShow?: () => void;
   testID?: string;
 };
 
@@ -221,6 +226,7 @@ export function FullSheet({
   backIcon,
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   safeArea = true,
+  onShow,
   testID,
 }: FullSheetProps) {
   const isOpen = open ?? false;
@@ -249,7 +255,7 @@ export function FullSheet({
   const pb = compact ? 'pb-5' : 'pb-6';
 
   return (
-    <OverlayShell open={isOpen} onClose={handleClose} onAfterClose={onAfterClose} dismissable={dismissable}>
+    <OverlayShell open={isOpen} onClose={handleClose} onAfterClose={onAfterClose} dismissable={dismissable} onShow={onShow}>
       {({ open: isAnimOpen, onExitComplete }) => {
         const body = buildBody({
           mode,

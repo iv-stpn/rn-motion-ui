@@ -578,6 +578,11 @@
       "types": "./src/hooks/use-arm-on-view.ts",
       "default": "./src/hooks/use-arm-on-view.ts"
     },
+    "./hooks/use-auto-focus-on-show": {
+      "source": "./src/hooks/use-auto-focus-on-show.ts",
+      "types": "./src/hooks/use-auto-focus-on-show.ts",
+      "default": "./src/hooks/use-auto-focus-on-show.ts"
+    },
     "./hooks/use-breakpoint": {
       "source": "./src/hooks/use-breakpoint.ts",
       "types": "./src/hooks/use-breakpoint.ts",

@@ -200,6 +200,11 @@ export type PopoverContentProps = {
   /** Float level — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 6 */
   elevation?: SurfaceElevation;
   style?: StyleProp<ViewStyle>;
+  /**
+   * Fires after the popover has fully presented (iOS `Modal.onShow`) — the moment
+   * it is safe to request keyboard focus on content inside it. No-op on web.
+   */
+  onShow?: () => void;
   testID?: string;
 };
 
@@ -209,6 +214,7 @@ export function PopoverContent({
   floating = false,
   elevation = 6,
   style,
+  onShow,
   testID,
 }: PopoverContentProps) {
   const { open, setOpen, rect, side, align, gap, panelRadius, motion, reduce, overlay, closeOnOutsidePress } =
@@ -244,7 +250,7 @@ export function PopoverContent({
   const transformOrigin = menuTransformOrigin({ align, side });
 
   return (
-    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose}>
+    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose} onShow={onShow}>
       <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="popover-overlay" className="flex-1">

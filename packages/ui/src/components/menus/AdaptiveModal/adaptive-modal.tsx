@@ -65,6 +65,12 @@ type AdaptiveModalProps = {
   customLayout?: boolean;
   /** Called after the close animation has fully completed and the modal is unmounted. */
   onAfterClose?: () => void;
+  /**
+   * Fires after the modal has fully presented (iOS `Modal.onShow`) — the moment
+   * it is safe to request keyboard focus on content inside it. Forwards to the
+   * wide `Modal` or the narrow `BottomSheet` / `FullSheet`. No-op on web.
+   */
+  onShow?: () => void;
   /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"blur"`. */
   overlay?: OverlayType;
   /** Overrides `overlay` on the small-screen bottom sheet. When omitted, the sheet uses `overlay`. */
@@ -140,6 +146,7 @@ export function AdaptiveModal({
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   customLayout = false,
   onAfterClose,
+  onShow,
   overlay = 'blur',
   smallScreenOverlay,
   closeOnOutsidePress = true,
@@ -362,6 +369,7 @@ export function AdaptiveModal({
         statusBarTranslucent={true}
         accessibilityViewIsModal={true}
         onRequestClose={handleClose}
+        onShow={onShow}
       >
         <AnimatePresence onExitComplete={handleExitComplete}>
           {isWideOpen ? (
@@ -394,6 +402,7 @@ export function AdaptiveModal({
       onOpenChange={handleClose}
       containerClassName={containerPaddingClass}
       onAfterClose={onAfterClose}
+      onShow={onShow}
       overlay={smallOverlay}
       closeOnOutsidePress={closeOnOutsidePress}
       safeArea={safeArea}
@@ -408,6 +417,7 @@ export function AdaptiveModal({
       onOpenChange={handleClose}
       customLayout={true}
       onAfterClose={onAfterClose}
+      onShow={onShow}
       safeArea={safeArea}
       testID={testID}
     >

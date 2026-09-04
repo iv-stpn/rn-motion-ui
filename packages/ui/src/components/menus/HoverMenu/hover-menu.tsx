@@ -95,6 +95,13 @@ export type HoverMenuProps = {
   overlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
+  /**
+   * Fires after the menu has fully presented on native (iOS `Modal.onShow`) — the
+   * moment it is safe to request keyboard focus on content inside it. No-op on
+   * web, where the panel is a fixed-position element in the same document and
+   * `autoFocus` already works.
+   */
+  onShow?: () => void;
 };
 
 // Minimal web-only DOM types — the RN package tsconfig omits the DOM lib, so the
@@ -283,6 +290,7 @@ export function HoverMenu({
   testID,
   overlay = 'none',
   closeOnOutsidePress = true,
+  onShow,
 }: HoverMenuProps) {
   const canHover = useHoverCapable();
   const reduce = useReducedMotion();
@@ -507,7 +515,14 @@ export function HoverMenu({
     ) : null;
 
   const renderNativeModal = () => (
-    <Modal visible={rendered} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={close}>
+    <Modal
+      visible={rendered}
+      transparent={true}
+      animationType="none"
+      statusBarTranslucent={true}
+      onRequestClose={close}
+      onShow={onShow}
+    >
       {overlay === 'none' ? null : (
         <View pointerEvents="none" style={OVERLAY_STYLE}>
           <OverlayScrim type={overlay} dimClassName="bg-black/40" />

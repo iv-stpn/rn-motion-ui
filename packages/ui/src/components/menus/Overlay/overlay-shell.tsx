@@ -25,6 +25,12 @@ export type OverlayShellProps = {
    * title should pass it here so the announcement matches what is on screen.
    */
   accessibilityLabel?: string;
+  /**
+   * Fires after the modal has fully presented (iOS `Modal.onShow`) — the moment
+   * it is safe to request keyboard focus on content inside the overlay. No-op on
+   * web, where `Modal` renders in place and `autoFocus` already works.
+   */
+  onShow?: () => void;
   /** Render prop receiving { open, onExitComplete } to drive AnimatePresence. */
   children: (ctx: OverlayShellContext) => ReactNode;
 };
@@ -51,6 +57,7 @@ export function OverlayShell({
   onAfterClose,
   dismissable = true,
   accessibilityLabel,
+  onShow,
   children,
 }: OverlayShellProps) {
   const { rendered, onExitComplete } = useModalRender(open);
@@ -79,6 +86,7 @@ export function OverlayShell({
       accessibilityViewIsModal={true}
       aria-modal={true}
       onRequestClose={handleRequestClose}
+      onShow={onShow}
     >
       {/* The dialog node: what the focus trap contains, and what carries the
           role + label. `flex-1` matches what Modal children already assume, so

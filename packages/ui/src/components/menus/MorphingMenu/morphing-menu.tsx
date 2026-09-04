@@ -83,6 +83,11 @@ export type MorphingMenuProps = {
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
   /**
+   * Fires after the menu has fully presented (iOS `Modal.onShow`) — the moment it
+   * is safe to request keyboard focus on content inside it. No-op on web.
+   */
+  onShow?: () => void;
+  /**
    * Root testID. The trigger takes `-trigger`, the close button `-close`, and
    * each cell `-item-<index>` — positional, since `MorphingMenuItem` has no `id`.
    * An item's own `testID` overrides the one derived for it.
@@ -253,6 +258,7 @@ export function MorphingMenu({
   style,
   overlay = 'none',
   closeOnOutsidePress = true,
+  onShow,
   testID,
 }: MorphingMenuProps) {
   const reduce = useReducedMotion();
@@ -326,7 +332,7 @@ export function MorphingMenu({
         <MeasurePanel items={items} title={title} onLayout={onPanelLayout} />
       </View>
 
-      <OverlayShell open={open} onClose={handleClose}>
+      <OverlayShell open={open} onClose={handleClose} onShow={onShow}>
         {({ open: isAnimOpen, onExitComplete }) => (
           <AnimatePresence onExitComplete={onExitComplete}>
             {isAnimOpen && anchor ? (

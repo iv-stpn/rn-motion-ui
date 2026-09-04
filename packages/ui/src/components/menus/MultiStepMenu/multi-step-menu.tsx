@@ -209,6 +209,12 @@ export type MultiStepMenuProps = {
   smallScreenOverlay?: OverlayType;
   /** When false, pressing outside the menu will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
+  /**
+   * Fires after the menu has fully presented (iOS `Modal.onShow`) — the moment
+   * it is safe to request keyboard focus on content inside it. Forwards to the
+   * underlying `AdaptiveModal`. No-op on web.
+   */
+  onShow?: () => void;
 };
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: wide and small layouts are tightly coupled to shared state — the line budget is the layout surface count, not branch depth
@@ -231,6 +237,7 @@ export const MultiStepMenu = function MultiStepMenu({
   overlay = 'blur',
   smallScreenOverlay,
   closeOnOutsidePress = true,
+  onShow,
 }: MultiStepMenuProps) {
   const [path, setPath] = useState<string[]>(isWideScreen ? (defaultPath ?? []) : []);
   const [direction, setDirection] = useState<MultiStepDirection>(null);
@@ -550,6 +557,7 @@ export const MultiStepMenu = function MultiStepMenu({
       overlay={overlay}
       smallScreenOverlay={smallScreenOverlay}
       closeOnOutsidePress={closeOnOutsidePress}
+      onShow={onShow}
     >
       {content}
     </AdaptiveModal>,

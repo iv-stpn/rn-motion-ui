@@ -92,6 +92,11 @@ export type BottomSheetProps = {
    * @default 'Close'
    */
   closeAccessibilityLabel?: string;
+  /**
+   * Fires after the sheet has fully presented (iOS `Modal.onShow`) — the moment
+   * it is safe to request keyboard focus on content inside it. No-op on web.
+   */
+  onShow?: () => void;
   testID?: string;
 };
 
@@ -111,6 +116,7 @@ export function BottomSheet({
   safeArea = true,
   accessibilityLabel,
   closeAccessibilityLabel = 'Close',
+  onShow,
   testID,
 }: BottomSheetProps) {
   const isOpen = open ?? false;
@@ -191,6 +197,7 @@ export function BottomSheet({
       statusBarTranslucent={true}
       hardwareAccelerated={IS_ANDROID}
       onRequestClose={handleClose}
+      onShow={onShow}
       accessibilityViewIsModal={true}
       aria-modal={true}
     >

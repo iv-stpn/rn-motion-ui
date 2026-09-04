@@ -132,7 +132,14 @@ export type AdaptiveDropdownProps = {
   smallScreenOverlay?: OverlayType;
   /** When false, pressing outside the panel will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
+  /**
+   * Fires after the dropdown has fully presented (iOS `Modal.onShow`) — the
+   * moment it is safe to request keyboard focus on content inside it. Forwards to
+   * the wide `Modal` or the narrow `BottomSheet`. No-op on web.
+   */
+  onShow?: () => void;
 };
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the wide panel + narrow sheet share the same anchored-layout state — the line budget is the surface count, not branch depth
 export function AdaptiveDropdown({
   trigger,
   children,
@@ -157,6 +164,7 @@ export function AdaptiveDropdown({
   overlay = 'none',
   smallScreenOverlay,
   closeOnOutsidePress = true,
+  onShow,
 }: AdaptiveDropdownProps) {
   const { width: vpWidth, height: vpHeight } = useWindowDimensions();
   const isWideScreen = isWidthAtLeast(vpWidth, wideBreakpoint);
@@ -279,7 +287,14 @@ export function AdaptiveDropdown({
       </View>
 
       {isWideScreen ? (
-        <Modal visible={panelMounted} transparent={true} animationType="none" statusBarTranslucent={true} onRequestClose={close}>
+        <Modal
+          visible={panelMounted}
+          transparent={true}
+          animationType="none"
+          statusBarTranslucent={true}
+          onRequestClose={close}
+          onShow={onShow}
+        >
           <Pressable className="flex-1" onPress={closeOnOutsidePress ? close : undefined}>
             <OverlayScrim type={overlay} dimClassName="bg-black/40" animateDim={true} />
             <AnimatePresence onExitComplete={handlePanelExitComplete}>
@@ -321,6 +336,7 @@ export function AdaptiveDropdown({
           fullSheet={fullSheet}
           overlay={smallOverlay}
           closeOnOutsidePress={closeOnOutsidePress}
+          onShow={onShow}
         >
           {header}
           {body}

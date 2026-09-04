@@ -157,6 +157,13 @@ export type MorphingSwitcherProps = {
   defaultOpen?: boolean;
   /** Called whenever the switcher opens or closes. */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Fires once the switcher has finished opening — the moment its pane has
+   * unfolded far enough to be considered "presented". The switcher renders inline
+   * (no `Modal`), so this rides the `open` flip rather than iOS `Modal.onShow`.
+   * Use it to focus a `TextInput` inside the pane once the pane is on screen.
+   */
+  onShow?: () => void;
   /** Trailing icon rendered on the open trigger (`select` only). Defaults to an
    *  up-caret (the trigger's down-caret flipped). Pass `null` to omit it. The
    *  open trigger is disabled, so this is a visual hint rather than a control. */
@@ -512,6 +519,7 @@ export function MorphingSwitcher({
   open: openProp,
   defaultOpen = false,
   onOpenChange,
+  onShow,
   closeIcon,
   variant = 'switcher',
   size = 'md',
@@ -597,6 +605,14 @@ export function MorphingSwitcher({
   }, [open, overlay, closeOnOutsidePress, windowWidth, windowHeight]);
 
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
+
+  // The switcher renders inline — no `Modal`/`onShow` — so it fires `onShow` once
+  // the pane has opened, giving a consumer the same "now it is safe to focus
+  // content" moment a modal-backed menu exposes.
+  // biome-ignore lint/plugin: fires in response to the open flip — a presentational side effect, not derived render state
+  useEffect(() => {
+    if (open) onShow?.();
+  }, [open, onShow]);
 
   // Close on an outside press (web). The switcher is inline — no modal backdrop
   // to catch a stray press — so a document-level `pointerdown` listener detects a

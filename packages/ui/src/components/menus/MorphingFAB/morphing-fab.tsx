@@ -129,6 +129,13 @@ export type MorphingFABProps = {
   defaultOpen?: boolean;
   /** Called whenever the FAB opens or closes. */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Fires once the FAB has finished opening — the moment its pane has unfolded
+   * far enough to be considered "presented". The FAB renders inline (no `Modal`),
+   * so this rides the `open` flip rather than iOS `Modal.onShow`. Use it to focus
+   * a `TextInput` inside the pane once the pane is on screen.
+   */
+  onShow?: () => void;
   /** Close affordance rendered in a top-right header row while open.
    *  Defaults to a small ×. Pass `null` to omit it when the pane
    *  content owns its own close control. */
@@ -179,6 +186,7 @@ export function MorphingFAB({
   open: openProp,
   defaultOpen = false,
   onOpenChange,
+  onShow,
   closeIcon,
   style,
   accessibilityLabel,
@@ -202,6 +210,14 @@ export function MorphingFAB({
 
   const handleOpen = useCallback(() => setOpen(true), [setOpen]);
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
+
+  // The FAB renders inline — no `Modal`/`onShow` — so it fires `onShow` once the
+  // pane has opened, giving a consumer the same "now it is safe to focus content"
+  // moment a modal-backed menu exposes.
+  // biome-ignore lint/plugin: fires in response to the open flip — a presentational side effect, not derived render state
+  useEffect(() => {
+    if (open) onShow?.();
+  }, [open, onShow]);
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const rootRef = useRef<View>(null);

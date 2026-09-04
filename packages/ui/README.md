@@ -139,6 +139,7 @@ Subpaths are namespaced by category:
 | `/close-button`                | `CloseButton`                                                            |
 | `/elevated-button`             | `ElevatedButton`                                                         |
 | `/feedback-fab`                | `FeedbackFAB`                                                            |
+| `/glass` | `Glass` |
 | `/item-row`                    | `ItemRow`                                                                |
 | `/item-row-group`              | `ItemRowGroup`                                                           |
 | `/morphing-fab`                | `MorphingFAB`                                                            |

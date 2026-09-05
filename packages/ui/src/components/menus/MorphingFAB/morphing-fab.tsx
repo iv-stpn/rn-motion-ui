@@ -8,6 +8,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { EASE_OUT, springLayout } from '../../../lib/ease';
 import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
+import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
 import { ICON_BUTTON_LG_SIZE, IconButton } from '../../buttons/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
@@ -262,7 +263,14 @@ export function MorphingFAB({
    * pane opens or closes.
    */
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  // Guards the async `measureInWindow` round-trip: the mount-time measure can
+  // be dispatched before the root's first native layout (or an ancestor's
+  // settle) and its callback can arrive LAST, pinning the closed FAB at a
+  // stale spot until the next open re-measures it. Each measure bumps the
+  // sequence, so only the newest measure's callback may write the anchor.
+  const measureSeq = useRef(0);
   const measureAnchor = useCallback(() => {
+    const seq = ++measureSeq.current;
     if (!teleported) {
       setAnchor(null);
       return;
@@ -270,7 +278,10 @@ export function MorphingFAB({
     // The FAB pins one horizontal edge and the bottom edge as it grows, so the
     // anchor is that fixed corner: bottom-left for `position="bottom-left"`,
     // bottom-right otherwise.
-    rootRef.current?.measureInWindow((x, y, width, height) => setAnchor({ x: left ? x : x + width, y: y + height }));
+    rootRef.current?.measureInWindow((x, y, width, height) => {
+      if (seq !== measureSeq.current) return;
+      setAnchor({ x: left ? x : x + width, y: y + height });
+    });
   }, [teleported, left]);
 
   // `onLayout` alone misses the teleport toggle — flipping `overlay` to "blur"
@@ -285,6 +296,21 @@ export function MorphingFAB({
   useEffect(() => {
     measureAnchor();
   }, [measureAnchor, open]);
+
+  // Post-mount settle re-measure: the FIRST measure (and the root's own
+  // `onLayout`, which only fires when the root's frame in its PARENT changes)
+  // can both miss a window-space drift caused by an ANCESTOR finishing its
+  // layout after mount — a centering stage, insets, storybook chrome. The
+  // root's parent-relative frame is unchanged under that translation, so no
+  // layout event fires again, and the closed FAB would sit at the pre-settle
+  // spot until the first open re-measures it. Measure once more after the
+  // initial layout has settled so the resting trigger is right from the start.
+  // biome-ignore lint/plugin: deferred re-measure after the native layout settles — a DOM/native measure side effect, not derived render state
+  useEffect(() => {
+    if (!teleported) return;
+    const timer = setTimeout(measureAnchor, 150);
+    return () => clearTimeout(timer);
+  }, [measureAnchor, teleported]);
 
   // Close on an outside press (web). The FAB is inline — no modal backdrop to
   // catch a stray press — so a document-level `pointerdown` listener detects a
@@ -327,9 +353,14 @@ export function MorphingFAB({
   // outside the pane folds it back — the web path is the document listener
   // above. When `overlay` is on it also dims the page. Teleported it passes
   // `blurInline={false}` so the frost actually renders OUT of the BlurTarget.
+  // Keyed + wrapped in `AnimatePresence` at the call sites below so closing the
+  // FAB runs the backdrop's exit fade (dim + blur out over 200 ms) instead of
+  // popping the scrim off in the same frame the pane starts folding — the
+  // progressive unblur the pane's enter already has.
   const backdrop =
     open && (overlay !== 'none' || closeOnOutsidePress) && backdropFrame !== null ? (
       <OutsidePressBackdrop
+        key="morphing-fab-backdrop"
         frame={backdropFrame}
         onPress={closeOnOutsidePress ? handleClose : undefined}
         overlay={overlay}
@@ -412,12 +443,12 @@ export function MorphingFAB({
     >
       {teleported ? (
         <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={expandedWidth} height={expandedHeight}>
-          {backdrop}
+          <AnimatePresence>{backdrop}</AnimatePresence>
           {shellView}
         </TeleportedOverlay>
       ) : (
         <>
-          {backdrop}
+          <AnimatePresence>{backdrop}</AnimatePresence>
           {shellView}
         </>
       )}

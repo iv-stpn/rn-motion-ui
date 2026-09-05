@@ -11,6 +11,7 @@ import { cn } from '../../../lib/cn';
 import { EASE_OUT, springLayout } from '../../../lib/ease';
 import { clampSurfaceLevel, elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
+import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem, type MenuItemSize } from '../../rows/menu-item';
@@ -562,12 +563,21 @@ export function MorphingSwitcher({
    * does.
    */
   const [rootFrame, setRootFrame] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  // Guards the async `measureInWindow` round-trip (same race as the FAB's
+  // anchor): the mount-time measure can be dispatched before the root's first
+  // native layout and its callback can arrive LAST, pinning the teleported
+  // shell at a stale spot. Only the newest measure's callback may write.
+  const measureSeq = useRef(0);
   const measureRoot = useCallback(() => {
+    const seq = ++measureSeq.current;
     if (!teleported) {
       setRootFrame(null);
       return;
     }
-    rootRef.current?.measureInWindow((x, y, width, height) => setRootFrame({ x, y, width, height }));
+    rootRef.current?.measureInWindow((x, y, width, height) => {
+      if (seq !== measureSeq.current) return;
+      setRootFrame({ x, y, width, height });
+    });
   }, [teleported]);
 
   // `onLayout` alone misses the teleport toggle — flipping `overlay` to "blur"
@@ -578,6 +588,19 @@ export function MorphingSwitcher({
   useEffect(() => {
     measureRoot();
   }, [measureRoot]);
+
+  // Post-mount settle re-measure (same rationale as the MorphingFAB anchor):
+  // the first measure can miss a window-space drift caused by an ANCESTOR
+  // finishing its layout after mount (centering stage, insets, chrome) — the
+  // root's frame in its parent is unchanged under that translation, so no
+  // `onLayout` re-fires. Measure again once the initial layout has settled so
+  // the teleported trigger/pane opens at the right spot on the first open.
+  // biome-ignore lint/plugin: deferred re-measure after the native layout settles — a DOM/native measure side effect, not derived render state
+  useEffect(() => {
+    if (!teleported) return;
+    const timer = setTimeout(measureRoot, 150);
+    return () => clearTimeout(timer);
+  }, [measureRoot, teleported]);
 
   const current = items.find((item) => item.value === value);
 
@@ -711,9 +734,14 @@ export function MorphingSwitcher({
   // outside the pane folds it back — the web path is the document listener
   // above. When `overlay` is on it also dims the page. Teleported it passes
   // `blurInline={false}` so the frost actually renders OUT of the BlurTarget.
+  // Keyed + wrapped in `AnimatePresence` at the call sites below so closing the
+  // switcher runs the backdrop's exit fade (dim + blur out over 200 ms) instead
+  // of popping the scrim off in the same frame the pane starts folding — the
+  // progressive unblur the pane's enter already has.
   const backdrop =
     open && (overlay !== 'none' || closeOnOutsidePress) && backdropFrame !== null ? (
       <OutsidePressBackdrop
+        key="morphing-switcher-backdrop"
         frame={backdropFrame}
         onPress={closeOnOutsidePress ? handleClose : undefined}
         overlay={overlay}
@@ -783,12 +811,12 @@ export function MorphingSwitcher({
 
       {teleported ? (
         <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={wrapperWidth} height={wrapperHeight}>
-          {backdrop}
+          <AnimatePresence>{backdrop}</AnimatePresence>
           {shellView}
         </TeleportedOverlay>
       ) : (
         <>
-          {backdrop}
+          <AnimatePresence>{backdrop}</AnimatePresence>
           {shellView}
         </>
       )}

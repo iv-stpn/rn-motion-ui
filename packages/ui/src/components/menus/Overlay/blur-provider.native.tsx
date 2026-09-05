@@ -1,5 +1,5 @@
 import { type ForwardRefExoticComponent, type ReactNode, type RefAttributes, useRef } from 'react';
-import { Platform, requireNativeComponent, type View } from 'react-native';
+import { Platform, type View } from 'react-native';
 import { BlurTargetContext, type BlurTargetRef } from './blur-context';
 import { OverlayHost } from './overlay-host';
 
@@ -33,10 +33,14 @@ type BlurTargetComponent = ForwardRefExoticComponent<BlurTargetProps & RefAttrib
  * (61a606be/19f9d72b) was removed 2026-09-05 — modal/teleported blur was
  * on-device-verified on Fabric BEFORE that gate shipped (08-31/09-02 APKs)
  * and the white screens that motivated it were root-caused to storybook
- * `layout` + CSS-only dimensions instead. The `requireNativeComponent` probe
- * below still degrades cleanly when the optional peer is absent or not
- * autolinked. Scrims that render INSIDE the target they blur (`inline`)
- * remain degraded to the dim — that crash (7eab4fe9) was tombstone-confirmed.
+ * `layout` + CSS-only dimensions instead. NO `requireNativeComponent` probe:
+ * the peer is CODEGEN (its JS registers `TargetView` on import), so a second
+ * registration throws "Tried to register two views with the same name" —
+ * exactly when the peer is present (2026-09-05, see 9a414b4c for the same
+ * trap on the glass peer). The guarded `require()` is the presence check;
+ * an installed-but-unlinked peer surfaces at first render, not here. Scrims
+ * that render INSIDE the target they blur (`inline`) remain degraded to the
+ * dim — that crash (7eab4fe9) was tombstone-confirmed.
  */
 function resolveBlurTarget(): BlurTargetComponent | null {
   if (Platform.OS !== 'android') return null;
@@ -46,10 +50,6 @@ function resolveBlurTarget(): BlurTargetComponent | null {
     // biome-ignore lint/plugin: ts/no-as-cast — dynamic require has no static type
     const mod = require('@danielsaraldi/react-native-blur-view') as { BlurTarget?: BlurTargetComponent };
     if (!mod.BlurTarget) return null;
-    // Same installed-but-unlinked gap as `overlay-blur`: the peer auto-installs
-    // under Bun/pnpm/yarn-berry while autolinking never registers its native
-    // view. The peer exposes `BlurTarget` as a native `TargetView`.
-    requireNativeComponent('TargetView');
     return mod.BlurTarget;
   } catch {
     return null;

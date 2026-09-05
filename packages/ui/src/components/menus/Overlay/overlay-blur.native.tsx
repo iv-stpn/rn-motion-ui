@@ -21,7 +21,7 @@
  */
 
 import type { ComponentType, RefObject } from 'react';
-import { Platform, requireNativeComponent, StyleSheet, type View } from 'react-native';
+import { Platform, StyleSheet, type View } from 'react-native';
 import { MotiView } from '../../../moti/components/view';
 import { useBlurTargetRef } from './blur-context';
 
@@ -45,6 +45,14 @@ type BlurViewModule = { BlurView?: BlurViewComponent; default?: BlurViewComponen
  * Resolves the peer's `BlurView` when the optional peer is installed, `null`
  * otherwise — see the module doc for why it is a guarded require rather than an
  * import.
+ *
+ * NOTE: no `requireNativeComponent` probe here. The peer is a CODEGEN peer
+ * (its `codegenConfig` registers `BlurView` in `ReactNativeViewConfigRegistry`
+ * the moment its JS module loads), so a second registration via
+ * `requireNativeComponent` throws "Tried to register two views with the same
+ * name BlurView" — i.e. the probe fails EXACTLY when the peer is present and
+ * healthy, degrading every scrim to the dim (2026-09-05, same trap the glass
+ * peer hit; see 9a414b4c). The guarded `require()` is the presence check.
  */
 function resolveBlurView(): BlurViewComponent | null {
   try {
@@ -54,11 +62,6 @@ function resolveBlurView(): BlurViewComponent | null {
     const mod = require('@danielsaraldi/react-native-blur-view') as BlurViewModule;
     const resolved = mod.BlurView ?? mod.default ?? mod;
     if (!resolved) return null;
-    // The peer can be installed (Bun/pnpm/yarn-berry auto-install optional peers)
-    // while its native module is NOT autolinked — the require() above resolves
-    // but mounting throws. `requireNativeComponent` throws exactly when the
-    // `BlurView` ViewManager is unregistered (old and new arch alike).
-    requireNativeComponent('BlurView');
     return resolved;
   } catch {
     return null;

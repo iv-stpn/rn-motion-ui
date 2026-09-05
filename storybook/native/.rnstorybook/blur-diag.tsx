@@ -1,42 +1,40 @@
+// biome-ignore-all lint/style/useExportsLast: the component closes the module
 /**
  * TEMP on-device blur diagnostics for the storybook APK (2026-09-05).
  *
  * Symptom: on Android every menu overlay in blur mode shows only the dim.
- * The library's scrim blur needs three links to line up: the optional peer
- * JS module, its native ViewManagers (`BlurView`/`TargetView`), and a
- * mounted `BlurTarget` the scrim points at. This panel answers, on the
- * device, without logcat:
+ * The library's scrim blur needs the optional peer JS module and a mounted
+ * `BlurTarget` the scrim points at. This panel answers, on the device,
+ * without logcat:
  *
  *  1. Does `require('@danielsaraldi/react-native-blur-view')` resolve and
  *     expose `BlurView`/`BlurTarget`?
- *  2. Do the `requireNativeComponent` probes pass (the library's own
- *     guards, same module-scope timing)?
- *  3. Does a RAW peer pair — `BlurTarget` wrapping stripes + a `BlurView`
+ *  2. Does a RAW peer pair — `BlurTarget` wrapping stripes + a `BlurView`
  *     pointing at it, bypassing all rn-motion-ui wiring — frost the
  *     stripes? Frosted stripes = the peer blurs on this device/arch and the
  *     bug is in the library wiring; sharp stripes = the peer itself cannot
  *     blur here (arch/autolink/API-level issue).
  *
+ * 2026-09-05 finding: the earlier requireNativeComponent probes in this
+ * panel (and in the library) threw "Tried to register two views with the
+ * same name BlurView/TargetView" — the peer is a CODEGEN peer whose JS
+ * registers those names on import, so a second registration throws EXACTLY
+ * when the peer is present. The library probes were removed; the
+ * duplicate-registration throw is the positive signal.
+ *
  * Remove this file (and its mount in preview.tsx) once the diagnosis is
  * settled.
  */
-
 import { BlurTarget, BlurView } from '@danielsaraldi/react-native-blur-view';
 import { useRef } from 'react';
-import { Platform, requireNativeComponent, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 const STRIPES = ['#e5484d', '#f5a524', '#30a46c', '#6e56cf'];
+const TITLE = 'Blur diagnostics (temp)';
+const HINT =
+  'Stripes above: frosted/soft = RAW peer blurs on this device (bug is in library wiring). Sharp stripes = the peer itself does not blur here.';
 
-function probeResult(label: string, fn: () => unknown): string {
-  try {
-    const out = fn();
-    return `${label}: ok${out == null ? '' : ` -> ${typeof out}`}`;
-  } catch (e) {
-    return `${label}: THREW — ${e instanceof Error ? e.message : String(e)}`;
-  }
-}
-
-// Module-scope probes, replicating the library's guarded resolution timing.
+// Module-scope peer resolution, replicating the library's guarded require.
 let moduleProbe = 'peer require: —';
 try {
   // biome-ignore lint/style/noCommonJs: diagnostic replica of the library's guarded optional-peer require
@@ -48,19 +46,15 @@ try {
 } catch (e) {
   moduleProbe = `peer require: THREW — ${e instanceof Error ? e.message : String(e)}`;
 }
-const blurViewProbe = probeResult('probe BlurView', () => requireNativeComponent('BlurView'));
-const targetProbe = probeResult('probe TargetView', () => requireNativeComponent('TargetView'));
 
 export function BlurDiag() {
   const targetRef = useRef<View | null>(null);
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Blur diagnostics (temp)</Text>
+      <Text style={styles.title}>{TITLE}</Text>
       <Text style={styles.line}>{`platform: ${Platform.OS} api=${Platform.Version}`}</Text>
       <Text style={styles.line}>{moduleProbe}</Text>
-      <Text style={styles.line}>{blurViewProbe}</Text>
-      <Text style={styles.line}>{targetProbe}</Text>
       <View style={styles.probeBox}>
         <BlurTarget ref={targetRef} style={StyleSheet.absoluteFill}>
           <View style={StyleSheet.absoluteFill}>
@@ -73,10 +67,7 @@ export function BlurDiag() {
         </BlurTarget>
         <BlurView blurTarget={targetRef} type="light" radius={12} pointerEvents="none" style={StyleSheet.absoluteFill} />
       </View>
-      <Text style={styles.hint}>
-        Stripes above: frosted/soft = RAW peer blurs on this device (bug is in library wiring). Sharp stripes = the peer itself
-        does not blur here.
-      </Text>
+      <Text style={styles.hint}>{HINT}</Text>
     </View>
   );
 }

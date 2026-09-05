@@ -5,6 +5,7 @@ import { BlurProvider } from 'rn-motion-ui/overlay/blur-provider';
 import { Switch } from 'rn-motion-ui/switch';
 import { Uniwind } from 'uniwind';
 import '../global.css';
+import { BlurDiag } from './blur-diag';
 import { BUILD_INFO } from './build-info';
 import { GlobalErrorReporter, StoryErrorBoundary } from './error-reporter';
 
@@ -60,9 +61,12 @@ const preview: Preview = {
                   {BUILD_LABEL}
                 </Text>
               </View>
-              {/* StoryErrorBoundary renders the real error + stack when a story
-                  crashes, so a white canvas explains itself on the device. */}
+              {/* TEMP (2026-09-05): on-device blur diagnostics — remove with
+                  blur-diag.tsx once the Android dim-only issue is settled.
+                  Inside the boundary: a raw-peer mount crash shows the red
+                  error box instead of a silent white canvas. */}
               <StoryErrorBoundary>
+                <BlurDiag />
                 <Story />
               </StoryErrorBoundary>
               {/* GlobalErrorReporter shows uncaught effect/async JS errors. */}

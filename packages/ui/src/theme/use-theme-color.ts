@@ -53,7 +53,8 @@ type ThemeToken =
   | 'danger-foreground'
   | 'white'
   | 'black'
-  | 'background';
+  | 'background'
+  | 'glass';
 
 /**
  * OKLCH definitions mirroring the tokens.css @theme block — [L, C, H, alpha?].
@@ -101,6 +102,7 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   white: [1, 0, 0],
   black: [0, 0, 0],
   background: [0.95, 0.004, NEUTRAL_HUE],
+  glass: [1, 0, 0, 0.55],
 };
 
 const DARK_OKLCH: Record<ThemeToken, Oklch> = {
@@ -137,6 +139,7 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   white: [1, 0, 0],
   black: [0, 0, 0],
   background: [0, 0, 0],
+  glass: [0.2, 0.004, NEUTRAL_HUE, 0.45],
 };
 
 /** Resolve an OKLCH definition table to concrete sRGB strings. */

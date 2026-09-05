@@ -169,6 +169,11 @@
      page-level background automatically inverts. */
   --color-background: oklch(95% 0.004 270);
 
+  /* Frosted-glass fill — the translucent tint the Glass primitive composites
+     over its backdrop blur. Flips with the scheme (white glass in light, dark
+     glass in dark) so the pane always reads against whatever it frosts. */
+  --color-glass: oklch(100% 0 0 / 0.55);
+
   /* Surface elevation shadows — a crisp 1px ring at full strength plus drop
      layers whose opacity decays as blur grows (natural light fall-off).
      Pair shadow-surface-N with bg-surface-N. */
@@ -411,6 +416,7 @@
   --color-black: oklch(0% 0 0);
 
   --color-background: oklch(0% 0 0);
+  --color-glass: oklch(20% 0.004 270 / 0.45);
 
   --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
   --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
@@ -511,6 +517,7 @@
   --color-black: oklch(0% 0 0);
 
   --color-background: oklch(95% 0.004 270);
+  --color-glass: oklch(100% 0 0 / 0.55);
 
   --shadow-surface-1: 0 0 0 1px oklch(0% 0 0 / 0.06);
   --shadow-surface-2: 0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06);

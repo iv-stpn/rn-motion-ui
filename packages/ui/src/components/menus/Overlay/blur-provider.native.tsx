@@ -24,30 +24,22 @@ type BlurTargetProps = { children?: ReactNode; style?: unknown };
 type BlurTargetComponent = ForwardRefExoticComponent<BlurTargetProps & RefAttributes<View>>;
 
 /**
- * True on the new architecture (Fabric). Prefer `RN$Bridgeless`, which the
- * native runtime installs eagerly before the bundle's module scope runs; the
- * Fabric binding `nativeFabricUIManager` is defined lazily and can still be
- * `undefined` when this module loads in embedded-JS release builds (see RN's
- * `FabricUIManager.js:140`). The binding is kept as a fallback for RN 0.76–0.79,
- * where bridged+Fabric was possible and the binding is installed eagerly with
- * the bridge. `Reflect.get` keeps the off-type globals off the type system,
- * matching `web-document.ts`.
- */
-function isNewArchitecture(): boolean {
-  return Reflect.get(globalThis, 'RN$Bridgeless') === true || Boolean(Reflect.get(globalThis, 'nativeFabricUIManager'));
-}
-
-/**
- * Resolves the peer's `BlurTarget` on Android, `null` elsewhere, on Fabric, or
- * when the peer is absent.
+ * Resolves the peer's `BlurTarget` on Android, `null` elsewhere or when the
+ * peer is absent/not autolinked. Mounted on every architecture (Fabric
+ * included): the peer (v3.0.2) ships codegen specs (`codegenConfig`) with
+ * ViewManager delegates and resolves its `blurTarget` through the FABRIC
+ * UIManager, so `TargetView`/`BlurView` mount and blur on Fabric as well as
+ * Paper. The 2026-09-03 gate that skipped `BlurTarget` on Fabric
+ * (61a606be/19f9d72b) was removed 2026-09-05 — modal/teleported blur was
+ * on-device-verified on Fabric BEFORE that gate shipped (08-31/09-02 APKs)
+ * and the white screens that motivated it were root-caused to storybook
+ * `layout` + CSS-only dimensions instead. The `requireNativeComponent` probe
+ * below still degrades cleanly when the optional peer is absent or not
+ * autolinked. Scrims that render INSIDE the target they blur (`inline`)
+ * remain degraded to the dim — that crash (7eab4fe9) was tombstone-confirmed.
  */
 function resolveBlurTarget(): BlurTargetComponent | null {
   if (Platform.OS !== 'android') return null;
-  // On Fabric the peer's `TargetView` redirects every child into an inner view
-  // whose `onLayout`/`requestLayout` are old-arch no-ops, so the children are
-  // never measured/positioned and the whole app collapses to a white screen.
-  // Skip the target there — Android scrims degrade to the plain translucent dim.
-  if (isNewArchitecture()) return null;
   try {
     // Optional peer dep — Android backdrop blur; consumers without it get the dim scrim.
     // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep

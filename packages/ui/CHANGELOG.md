@@ -1,5 +1,58 @@
 # rn-motion-ui
 
+## 7.4.1
+
+### Patch Changes
+
+- 4f74055: fix(Overlay): drop the ViewManager probes that killed Android blur
+
+  The `requireNativeComponent('BlurView')` / `requireNativeComponent('TargetView')`
+  probes in `overlay-blur.native.tsx` and `blur-provider.native.tsx` threw
+  "Tried to register two views with the same name" on Android — the blur peer
+  (`@danielsaraldi/react-native-blur-view` v3.0.2) is a CODEGEN peer whose JS
+  registers both names in `ReactNativeViewConfigRegistry` the moment the
+  module loads, so the probe's second registration fails EXACTLY when the
+  peer is present and healthy. The caught throw resolved `BlurView`/`BlurTarget`
+  to null and every Android `overlay="blur"` scrim degraded to the plain
+  dim — on every release since the probes landed (7.2.3+). Same trap the
+  glass peer hit (9a414b4c). The guarded `require()` alone is the presence
+  check; an installed-but-unlinked peer surfaces at first render, not here.
+  Combined with the restored `BlurTarget` mount on the new architecture,
+  Android blur scrims (modal menus, teleported overlays, HoldMenu backdrop)
+  frost again; the `inline` crash-guard is unchanged.
+
+- 364326b: fix(MorphingFAB/Switcher): progressive unblur on close + stable teleported anchor
+
+  Closing a MorphingFAB or MorphingSwitcher with an `overlay` scrim now fades the
+  blur and dim out over 200 ms instead of popping them off in the same frame the
+  pane starts folding — the same progressive unblur the scrim's enter already
+  had. The outside-press dim layer fades in/out through its own opacity (the
+  blur stays a sibling layer, so its `backdrop-filter` is never clipped by an
+  animated ancestor on web).
+
+  The Android-teleported FAB/Switcher also re-measures its window anchor once the
+  initial layout settles and ignores stale `measureInWindow` callbacks, so the
+  closed trigger no longer rests at a pre-settle position (an ancestor centering
+  or chrome shift after mount moves the FAB without firing its own `onLayout`)
+  until the first open corrects it.
+
+- ac8f3f6: fix(Overlay): restore Android blur scrims on the new architecture
+
+  The 2026-09-03 Fabric gate skipped the blur peer's `BlurTarget` wrap on the
+  new architecture, degrading every Android `overlay="blur"` scrim (modal
+  menus, teleported FAB overlays) to a plain translucent dim. The peer
+  (`@danielsaraldi/react-native-blur-view` v3.0.2) is Fabric-aware — it ships
+  codegen specs with ViewManager delegates and resolves its `blurTarget`
+  through the FABRIC UIManager, which reaches the app-window target from
+  inside an RN Modal — and modal/teleported blur was on-device-verified on
+  Fabric before that gate shipped (2026-08-31/09-02 APKs). The white screens
+  that motivated the gate were storybook `layout` + CSS-only dimension bugs,
+  already root-caused and fixed independently. `BlurTarget` is mounted again
+  on every architecture; the absent-peer `requireNativeComponent` probe and
+  the tombstone-confirmed `inline` crash-guard (scrims inside their own
+  target degrade to the dim) are unchanged. Android `overlay="blur"` now
+  frosts again behind modal menus and teleported overlays.
+
 ## 7.4.0
 
 ### Minor Changes

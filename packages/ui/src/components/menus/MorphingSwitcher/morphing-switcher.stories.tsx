@@ -8,7 +8,7 @@ import { Settings1Line } from 'rn-motion-ui-icons/icons/settings-1-line';
 import { StarLine } from 'rn-motion-ui-icons/icons/star-line';
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, FrostedBackdrop, Note, Toggle } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Toggle } from '../../../__stories__/story-harness';
 import { Text } from '../../typography/Text/text';
 import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import {
@@ -383,40 +383,6 @@ export const SwitcherVariantSelect: Story = {
     const trigger = await canvas.findByTestId('switcher-select-trigger');
     await expect(within(trigger).getByText('Favorites')).toBeTruthy();
     await expect(screen.queryByText('Settings')).toBeNull();
-  },
-};
-
-/**
- * A frosted switcher trades the opaque surface ladder for the glass backdrop —
- * the blur is the depth, so neither the surface fill nor the shadow survives.
- * The shell is transparent while a descendant carries the `backdrop-filter`.
- */
-export const Frosted: Story = {
-  name: 'Frosted',
-  render: () => (
-    <FrostedBackdrop className="min-h-[220px] p-5">
-      <MorphingSwitcher
-        items={SPACES}
-        defaultValue="home"
-        frosted={true}
-        defaultOpen={true}
-        variant="select"
-        accessibilityLabel="Switch space"
-        triggerTestID="frosted-switcher-trigger"
-        testID="frosted-switcher"
-      />
-    </FrostedBackdrop>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const switcher = await canvas.findByTestId('frosted-switcher');
-
-    const glass = Array.from(switcher.querySelectorAll('*')).find((el) => getComputedStyle(el).backdropFilter.includes('blur('));
-    expect(glass).toBeTruthy();
-    if (!glass) return;
-    const shell = glass.parentElement;
-    if (!shell) throw new Error('Frosted switcher shell was not found');
-    expect(getComputedStyle(shell).backgroundColor).toBe('rgba(0, 0, 0, 0)');
   },
 };
 

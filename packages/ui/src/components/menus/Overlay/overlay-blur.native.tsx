@@ -1,111 +1,110 @@
 // biome-ignore-all lint/style/useExportsLast: the component closes the module
 /**
  * Native backdrop blur for overlay scrims, backed by
- * `react-native-liquid-glassmorphism`.
+ * `@danielsaraldi/react-native-blur-view` (the package published from
+ * [DanielAraldi/react-native-blur-view](https://github.com/DanielAraldi/react-native-blur-view)):
  *
- * The scrims (HoldMenu's backdrop and the modal overlays) paint a translucent
- * dim over a blur so the page behind them reads as frosted glass rather than a
- * flat wash. This is the NATIVE twin of `./overlay-blur` — web resolves the
- * plain `.tsx` file (a CSS `backdrop-filter` view) and never imports the
- * optional peer, so a consumer without it still bundles.
+ * - **iOS** — its `BlurView` is a `UIVisualEffectView` that blurs whatever sits
+ *   behind it, so a full-bleed scrim frosts the page with no extra wiring.
+ * - **Android** — the same `BlurView` does *not* blur behind itself; it blurs a
+ *   `<BlurTarget>` it is pointed at. The `blurTarget` ref comes from an
+ *   enclosing `<BlurProvider>` (see `./blur-provider`), whose `BlurTarget`
+ *   wraps the app content. Without a provider — or without the optional peer —
+ *   the scrim degrades to the plain translucent color, the pre-blur rendering.
  *
- * The peer captures the backdrop as a bitmap from the window root (self-excluding
- * the glass view), so — unlike the old `@danielsaraldi/react-native-blur-view`
- * it replaces — it blurs behind itself on Android with no `BlurTarget`/overlay
- * host. A plain blurred pane is `rim={false} specular={false} thickness={0}` +
- * `blurRadius`, the recipe the scrim below uses; it is a drop-in conventional
- * blur, not liquid glass.
- *
- * Below Android API 31 the peer can only tint (no `RenderEffect` blur), so the
- * scrim degrades to the plain translucent dim: `getGlassCapabilities().supportsBlur`
- * is the gate. iOS blurs on every supported version.
- *
- * Resolution is deliberately ONLY a `require` presence check. It must NOT
- * probe the native side with `requireNativeComponent('LiquidGlassmorphismView')`:
- * the peer is a codegen component whose own module already registered that name
- * in React Native's view-config registry, so a second registration throws
- * "Tried to register two views with the same name" and degrades the scrim
- * exactly when the peer is present and should render (the 7.3.0 Android
- * no-frost regression, fixed 2026-09-04). An unlinked native module surfaces
- * at FIRST RENDER, which `PeerMountGuard` converts into the plain-dim degrade.
+ * This is the NATIVE twin of `./overlay-blur` — web resolves the plain `.tsx`
+ * file (a CSS `backdrop-filter` view) and never imports the optional peer, so a
+ * consumer without it still bundles. The blur comes from the peer's `BlurView`,
+ * resolved through a guarded dynamic `require` exactly like `use-safe-insets.ts`
+ * resolves `react-native-safe-area-context`; when it cannot run, this renders
+ * `null` and the scrim degrades.
  */
 
-import type { ComponentType } from 'react';
-import { Platform, StyleSheet } from 'react-native';
-import { PeerMountGuard } from '../../../lib/peer-mount-guard';
+import type { ComponentType, RefObject } from 'react';
+import { Platform, requireNativeComponent, StyleSheet, type View } from 'react-native';
 import { MotiView } from '../../../moti/components/view';
+import { useBlurTargetRef } from './blur-context';
 
 /**
- * The minimal `LiquidGlassView` surface this module touches, plus the capability
- * probe — cast against the dynamic `require` below so no import of the optional
- * peer reaches the type system.
+ * The minimal `BlurView` surface this module touches — the props read off the
+ * optional peer. Cast against the dynamic `require` below so no import of an
+ * optional package reaches the type system.
  */
-type LiquidGlassProps = {
-  variant?: 'regular' | 'clear';
-  tintColor?: string;
-  rim?: boolean;
-  specular?: boolean;
-  thickness?: number;
-  blurRadius?: number;
-  dim?: number;
+type BlurViewProps = {
+  type?: string;
+  radius?: number;
+  blurTarget?: RefObject<View | null>;
+  pointerEvents?: string;
   style?: unknown;
 };
-type LiquidGlassComponent = ComponentType<LiquidGlassProps>;
-type GlassModule = { LiquidGlassView?: LiquidGlassComponent; getGlassCapabilities?: () => { supportsBlur: boolean } };
+type BlurViewComponent = ComponentType<BlurViewProps>;
+/** The peer's module namespace — it ships named exports and no default. */
+type BlurViewModule = { BlurView?: BlurViewComponent; default?: BlurViewComponent } & BlurViewComponent;
 
 /**
- * Resolves the peer's `LiquidGlassView` and blur capability when the optional
- * peer's JS is installed, `null` otherwise — the same guarded-require pattern
- * the Glass primitive uses. A consumer that never installed the native module
- * still builds; the scrim degrades to the plain dim.
+ * Resolves the peer's `BlurView` when the optional peer is installed, `null`
+ * otherwise — see the module doc for why it is a guarded require rather than an
+ * import.
  */
-function resolveScrimBlur(): { View: LiquidGlassComponent; supportsBlur: boolean } | null {
-  if (Platform.OS !== 'android' && Platform.OS !== 'ios') return null;
+function resolveBlurView(): BlurViewComponent | null {
   try {
-    // Optional peer dep — scrim blur; consumers without it get the plain dim.
+    // Optional peer dep — scrim blur; consumers without it get the plain translucent scrim.
     // biome-ignore lint/style/noCommonJs: intentional dynamic require for optional peer dep
     // biome-ignore lint/plugin: ts/no-as-cast — dynamic require has no static type
-    const mod = require('react-native-liquid-glassmorphism') as GlassModule;
-    const View = mod.LiquidGlassView;
-    if (!View) return null;
-    const supportsBlur = mod.getGlassCapabilities?.().supportsBlur ?? false;
-    return { View, supportsBlur };
+    const mod = require('@danielsaraldi/react-native-blur-view') as BlurViewModule;
+    const resolved = mod.BlurView ?? mod.default ?? mod;
+    if (!resolved) return null;
+    // The peer can be installed (Bun/pnpm/yarn-berry auto-install optional peers)
+    // while its native module is NOT autolinked — the require() above resolves
+    // but mounting throws. `requireNativeComponent` throws exactly when the
+    // `BlurView` ViewManager is unregistered (old and new arch alike).
+    requireNativeComponent('BlurView');
+    return resolved;
   } catch {
     return null;
   }
 }
 
-const scrimBlur = resolveScrimBlur();
-
-/**
- * Whether a real native blur can render on this device — the peer's JS is
- * present AND the OS supports it (Android API 31+; iOS always). Consumed by
- * the `OverlayBlurHost` gate: on Android below API 31 (or without the peer)
- * there is nothing to host, so modal scrims fall back to the plain dim.
- *
- * Internal to the package — not exported from the package entry.
- */
-// biome-ignore lint/style/useComponentExportOnlyModules: module-scope capability fact consumed by ./blur-host — a separate file would split the peer resolution from the component it gates
-export const overlayBlurSupported = scrimBlur?.supportsBlur === true;
+const BlurView = resolveBlurView();
 
 /**
  * The blur layer under an overlay scrim. Absolute-fills its parent, never
  * intercepts touches (it is purely decorative — the scrim above it is the tap
- * target), and renders `null` when the peer is absent or the device cannot blur
- * (Android < API 31). The dim layer beside it still shows, so the overlay reads
- * as a plain translucent wash rather than frosted glass. The wrapper fades its
- * own `opacity` 0→1 on mount (and out on exit) so the frost appears in step with
- * the menu — it mirrors the web twin, which must fade its *own* opacity because
- * a parent opacity fades out the backdrop on CSS.
+ * target), and renders `null` when the optional peer is absent.
  *
- * A peer whose JS is present but native module is unlinked throws at first
- * render; `PeerMountGuard` turns that into `null` (the same plain-dim degrade).
+ * On Android the `blurTarget` ref (from an enclosing `<BlurProvider>`) points
+ * the `BlurView` at the content to frost; on iOS the prop is ignored (the
+ * `UIVisualEffectView` blurs behind itself). The wrapper fades its own `opacity`
+ * 0→1 on mount (and out on exit) so the frost appears in step with the menu —
+ * it mirrors the web twin, which must fade its *own* opacity because a parent
+ * opacity fades out the backdrop on CSS.
+ *
+ * ## `inline` — Android scrims that sit INSIDE their own blur target
+ *
+ * Pass `inline` when this blur view renders inline within the very `BlurTarget`
+ * it is pointed at (the MorphingFAB/Switcher outside-press backdrops). On
+ * Android a `BlurView` that is a *descendant* of its own target is a native
+ * crash: the peer's `RenderNodeBlurController` records the target's `RenderNode`
+ * into its own blur node, and because the target contains the blur view the
+ * RenderNode graph cycles — HWUI's `RenderNode::prepareTreeImpl` recurses until
+ * the RenderThread stack overflows (SIGSEGV). So an `inline` blur degrades to
+ * `null` (the dim still shows). HoldMenu's backdrop is NOT inline: it renders
+ * through the `BlurProvider`'s overlay host OUTSIDE the target (see
+ * `./overlay-host`), so it blurs the page without the cycle and without
+ * frosting the menu. iOS (`UIVisualEffectView`) and web (CSS `backdrop-filter`)
+ * blur behind themselves and are unaffected.
  *
  * Internal to the package — not exported.
  */
-export function OverlayBlur() {
-  if (!scrimBlur?.supportsBlur) return null;
-  const { View: LiquidGlassView } = scrimBlur;
+type OverlayBlurProps = { inline?: boolean };
+
+export function OverlayBlur({ inline = false }: OverlayBlurProps) {
+  const blurTargetRef = useBlurTargetRef();
+  if (!BlurView) return null;
+
+  // An inline scrim inside the target it blurs would cycle the RenderNode graph
+  // on Android — degrade to the plain dim rather than crash.
+  if (inline && Platform.OS === 'android') return null;
 
   return (
     <MotiView
@@ -116,11 +115,13 @@ export function OverlayBlur() {
       transition={{ type: 'timing', duration: 200 }}
       style={StyleSheet.absoluteFill}
     >
-      {/* Plain blurred pane — rim/specular/thickness off, so it is a conventional
-          blur under the dim sibling, not liquid glass. */}
-      <PeerMountGuard fallback={null}>
-        <LiquidGlassView rim={false} specular={false} thickness={0} blurRadius={12} style={StyleSheet.absoluteFill} />
-      </PeerMountGuard>
+      <BlurView
+        type="light"
+        radius={12}
+        blurTarget={blurTargetRef ?? undefined}
+        pointerEvents="none"
+        style={StyleSheet.absoluteFill}
+      />
     </MotiView>
   );
 }

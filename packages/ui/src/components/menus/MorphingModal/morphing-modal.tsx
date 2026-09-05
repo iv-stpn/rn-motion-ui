@@ -9,7 +9,7 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { Text } from '../../typography/Text/text';
-import { ModalBlur } from '../Overlay/blur-host';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 import type { OverlayType } from '../Overlay/overlay-type';
 
@@ -184,7 +184,7 @@ export function MorphingModal({
       {/* Blur sits outside the dim's opacity fade: a parent opacity fades
           out the CSS backdrop-filter on web (backdrop-root clipping), so
           OverlayBlur fades its own opacity instead. */}
-      {overlay === 'blur' ? <ModalBlur /> : null}
+      {overlay === 'blur' ? <OverlayBlur /> : null}
       <MotiView
         from={{ opacity: 0 }}
         animate={{ opacity: 1 }}

@@ -5,17 +5,7 @@ import { ArrowRightLine as ArrowRight } from 'rn-motion-ui-icons/icons/arrow-rig
 import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { DownloadLine as Download } from 'rn-motion-ui-icons/icons/download-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import {
-  Choice,
-  ControlCard,
-  FrostedBackdrop,
-  Note,
-  Playground,
-  Sample,
-  Section,
-  Toggle,
-  Variants,
-} from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { IconButton, type IconButtonProps } from './icon-button';
 
@@ -57,7 +47,6 @@ const ELEVATION_LEVEL: Record<ElevationLabel, SurfaceElevation> = {
 };
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
-const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
 function IconButtonPlayground(args: IconButtonProps) {
   const [floating, setFloating] = useState(false);
@@ -197,30 +186,4 @@ export const AllSizes: Story = {
       ))}
     </Variants>
   ),
-};
-
-/** A frosted icon button drops the opaque surface fill (and its shadow) for the
- *  glass backdrop — the blur is the depth. The shell is transparent and
- *  shadowless; a descendant carries the `backdrop-filter`, while the opaque
- *  sibling keeps its surface fill. */
-export const Frosted: Story = {
-  name: 'Frosted',
-  render: (args) => (
-    <FrostedBackdrop className="flex-row items-center gap-4 p-6">
-      <IconButton {...args} frosted={true} testID="icon-button-frosted" />
-      <IconButton {...args} testID="icon-button-opaque" />
-    </FrostedBackdrop>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const frosted = await canvas.findByTestId('icon-button-frosted');
-    const opaque = canvas.getByTestId('icon-button-opaque');
-
-    expect(getComputedStyle(opaque).backgroundColor).not.toBe(TRANSPARENT);
-    expect(getComputedStyle(frosted).backgroundColor).toBe(TRANSPARENT);
-    expect(getComputedStyle(frosted).boxShadow).toBe('none');
-
-    const glass = Array.from(frosted.querySelectorAll('*')).find((el) => getComputedStyle(el).backdropFilter.includes('blur('));
-    expect(glass).toBeTruthy();
-  },
 };

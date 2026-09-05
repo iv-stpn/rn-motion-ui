@@ -7,16 +7,7 @@ import { MailLine as Mail } from 'rn-motion-ui-icons/icons/mail-line';
 import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import {
-  Choice,
-  ControlCard,
-  FrostedBackdrop,
-  Playground,
-  Sample,
-  Section,
-  Toggle,
-  Variants,
-} from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { SURFACE_LEVELS } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Input } from './input';
@@ -40,7 +31,6 @@ const SIZES = ['sm', 'md', 'lg'] as const;
 const SHAPES = ['rounded', 'pill'] as const;
 const STATES = ['default', 'error', 'success', 'disabled'] as const;
 const EMAIL_ERROR = 'Enter a valid email address.';
-const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
 type FieldState = (typeof STATES)[number];
 type RevealButtonProps = { shown: boolean; onToggle: () => void; color: string };
@@ -182,40 +172,5 @@ export const Default: Story = {
     const input = await canvas.findByRole('textbox');
     await userEvent.type(input, 'ada');
     await expect(args.onChange).toHaveBeenCalled();
-  },
-};
-
-/**
- * A frosted field trades the opaque `bg-surface-N` fill (and the ladder shadow)
- * for the glass backdrop — the blur is the depth. The shell is transparent and
- * shadowless while a descendant carries the `backdrop-filter`; the opaque
- * sibling keeps its surface fill.
- */
-export const Frosted: Story = {
-  name: 'Frosted',
-  render: (args) => (
-    <FrostedBackdrop className="gap-4 p-6">
-      <Input {...args} frosted={true} testID="input-frosted" />
-      <Input {...args} testID="input-opaque" />
-    </FrostedBackdrop>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const frostedInput = await canvas.findByTestId('input-frosted');
-    const opaqueInput = canvas.getByTestId('input-opaque');
-    // `testID` rides the TextInput; the field shell is its parent container.
-    const frostedShell = frostedInput.parentElement;
-    const opaqueShell = opaqueInput.parentElement;
-    if (!frostedShell) throw new Error('Input field shell was not found');
-    if (!opaqueShell) throw new Error('Input field shell was not found');
-
-    expect(getComputedStyle(opaqueShell).backgroundColor).not.toBe(TRANSPARENT);
-    expect(getComputedStyle(frostedShell).backgroundColor).toBe(TRANSPARENT);
-    expect(getComputedStyle(frostedShell).boxShadow).toBe('none');
-
-    const glass = Array.from(frostedShell.querySelectorAll('*')).find((el) =>
-      getComputedStyle(el).backdropFilter.includes('blur('),
-    );
-    expect(glass).toBeTruthy();
   },
 };

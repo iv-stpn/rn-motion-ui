@@ -12,12 +12,13 @@ import { EASE_OUT, springLayout } from '../../../lib/ease';
 import { clampSurfaceLevel, elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { TIMING_INSTANT } from '../../../theme/motion';
-import { Glass } from '../../display/Glass/glass';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem, type MenuItemSize } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
+import { useBlurTargetRef } from '../Overlay/blur-context';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
 import type { OverlayType } from '../Overlay/overlay-type';
+import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
 
 /** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
@@ -180,12 +181,6 @@ export type MorphingSwitcherProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
-  /**
-   * Render the shell as frosted glass instead of the opaque surface ladder: a
-   * translucent `glass` tint over a backdrop blur, no drop shadow (the blur is
-   * the depth). @default false
-   */
-  frosted?: boolean;
   /**
    * Float level for the shell — picks the `shadow-elevated-N` recipe (drop +
    * dark rim) the resting trigger sits at. Opening lifts it
@@ -524,7 +519,6 @@ export function MorphingSwitcher({
   variant = 'switcher',
   size = 'md',
   floating = false,
-  frosted = false,
   elevation = 3,
   style,
   accessibilityLabel,
@@ -541,6 +535,11 @@ export function MorphingSwitcher({
   const open = openProp ?? internalOpen;
   const [internalValue, setInternalValue] = useState(defaultValue);
   const value = valueProp ?? internalValue;
+  // On Android the blur must render OUTSIDE the `BlurTarget` it frosts (see
+  // `OverlayHost`), so a `"blur"` switcher teleports its backdrop + shell there —
+  // the morph still runs, the shell just lives in the overlay host instead of inline.
+  const blurTargetRef = useBlurTargetRef();
+  const teleported = Platform.OS === 'android' && overlay === 'blur' && blurTargetRef !== null;
   const [triggerSize, setTriggerSize] = useState<{ width: number; height: number } | null>(null);
   /** True while the pane opens upward — the list sits above the trigger instead of below. */
   const [openAbove, setOpenAbove] = useState(false);
@@ -552,6 +551,33 @@ export function MorphingSwitcher({
    * Null while closed or before the async native measure lands.
    */
   const [backdropFrame, setBackdropFrame] = useState<OutsidePressFrame | null>(null);
+
+  /**
+   * The inline root's window frame — its top-left offset and its (content-sized)
+   * footprint, so the teleported shell sits exactly where the inline one would
+   * and, for `variant="switcher"`, spans the same full width (`right: 0` reads
+   * the wrapper's width). Measured on every root layout (mount, rotation, variant/
+   * content changes) via the root's `onLayout` below. Null until measured, so the
+   * teleported shell holds off one frame — the same warm-up the backdrop already
+   * does.
+   */
+  const [rootFrame, setRootFrame] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const measureRoot = useCallback(() => {
+    if (!teleported) {
+      setRootFrame(null);
+      return;
+    }
+    rootRef.current?.measureInWindow((x, y, width, height) => setRootFrame({ x, y, width, height }));
+  }, [teleported]);
+
+  // `onLayout` alone misses the teleport toggle — flipping `overlay` to "blur"
+  // changes the children, not the root's own layout, so no layout event fires and
+  // the shell never measures. Run the measure once per teleport change (mount +
+  // toggle); `onLayout` below covers rotation, variant, and content changes.
+  // biome-ignore lint/plugin: measuring the root is a native measure side effect, not derived state — the teleported overlay must follow the window
+  useEffect(() => {
+    measureRoot();
+  }, [measureRoot]);
 
   const current = items.find((item) => item.value === value);
 
@@ -674,15 +700,24 @@ export function MorphingSwitcher({
 
   const shell = switcherShellGeometry({ open, openAbove, variant, scale, paneHeight, closedHeight, openWidth, closedWidth });
 
+  // The teleported wrapper sits at the inline root's window offset; the shell
+  // inside keeps its own `absolute top-0 left-0` geometry (and `right: 0` full-
+  // width stretch for `switcher`) so it reads the wrapper's measured width.
+  const rootWindow = rootFrame ? { x: rootFrame.x, y: rootFrame.y } : null;
+  const wrapperWidth = rootFrame?.width ?? 0;
+  const wrapperHeight = rootFrame?.height ?? 0;
+
   // Outside-press backdrop (native): covers the whole window so a tap anywhere
   // outside the pane folds it back — the web path is the document listener
-  // above. When `overlay` is on it also dims the page.
+  // above. When `overlay` is on it also dims the page. Teleported it passes
+  // `blurInline={false}` so the frost actually renders OUT of the BlurTarget.
   const backdrop =
     open && (overlay !== 'none' || closeOnOutsidePress) && backdropFrame !== null ? (
       <OutsidePressBackdrop
         frame={backdropFrame}
         onPress={closeOnOutsidePress ? handleClose : undefined}
         overlay={overlay}
+        blurInline={!teleported}
         testID={`${testID}-backdrop`}
       />
     ) : null;
@@ -696,10 +731,9 @@ export function MorphingSwitcher({
       animate={shell.animate}
       transition={morphTransition}
       layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
-      className={cn('absolute top-0 left-0 overflow-hidden p-1', frosted ? '' : switcherSurfaceClass(elevation, open, floating))}
+      className={cn('absolute top-0 left-0 overflow-hidden p-1', switcherSurfaceClass(elevation, open, floating))}
       style={shell.style}
     >
-      {frosted ? <Glass className="pointer-events-none absolute inset-0" rim={false} /> : null}
       {/* The trigger persists — it morphs into the active header row. Re-tapping
           it while open folds the pane back (it only LOOKS disabled). */}
       <SwitcherTrigger
@@ -735,7 +769,7 @@ export function MorphingSwitcher({
   );
 
   return (
-    <View ref={rootRef} collapsable={false} testID={testID} style={[{ zIndex: open ? 40 : 0 }, style]}>
+    <View ref={rootRef} collapsable={false} testID={testID} onLayout={measureRoot} style={[{ zIndex: open ? 40 : 0 }, style]}>
       {/* Offscreen measurer holds the collapsed footprint in flow. */}
       <SwitcherTrigger
         icon={triggerIcon}
@@ -747,8 +781,17 @@ export function MorphingSwitcher({
         onLayout={handleTriggerLayout}
       />
 
-      {backdrop}
-      {shellView}
+      {teleported ? (
+        <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={wrapperWidth} height={wrapperHeight}>
+          {backdrop}
+          {shellView}
+        </TeleportedOverlay>
+      ) : (
+        <>
+          {backdrop}
+          {shellView}
+        </>
+      )}
     </View>
   );
 }

@@ -55,7 +55,6 @@ type SampleProps = {
   style?: StyleProp<ViewStyle>;
 };
 type NoteProps = { children: ReactNode; testID?: string };
-type FrostedBackdropProps = { children: ReactNode; className?: string };
 type CodeProps = { children: ReactNode };
 
 type ChoiceProps<T extends string> = {
@@ -199,26 +198,6 @@ export function Sample({ label, children, className, align = 'flex-start', style
           {label}
         </Text>
       ) : null}
-    </View>
-  );
-}
-
-/**
- * A colourful striped backdrop for frosted-glass stories. Backdrop blur needs
- * high-contrast colour behind it to read, so the striped bars give the frost
- * something to smear and make the translucent `glass` tint actually visible.
- * Children are layered above the stripes.
- */
-export function FrostedBackdrop({ children, className }: FrostedBackdropProps) {
-  return (
-    <View className={cn('relative overflow-hidden rounded-xl', className)}>
-      <View className="absolute inset-0 flex-row">
-        <View className="flex-1 bg-danger" />
-        <View className="flex-1 bg-warning" />
-        <View className="flex-1 bg-success" />
-        <View className="flex-1 bg-primary" />
-      </View>
-      {children}
     </View>
   );
 }

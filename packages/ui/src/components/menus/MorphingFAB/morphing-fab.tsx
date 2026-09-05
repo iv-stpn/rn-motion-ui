@@ -10,10 +10,11 @@ import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib
 import { MotiView } from '../../../moti/components/view';
 import { TIMING_INSTANT } from '../../../theme/motion';
 import { ICON_BUTTON_LG_SIZE, IconButton } from '../../buttons/IconButton/icon-button';
-import { Glass } from '../../display/Glass/glass';
 import { ThemedIcon } from '../../icon/themed-icon';
+import { useBlurTargetRef } from '../Overlay/blur-context';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
 import type { OverlayType } from '../Overlay/overlay-type';
+import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
 
 const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
@@ -107,13 +108,6 @@ export type MorphingFABProps = {
    */
   floating?: boolean;
   /**
-   * Render the shell as frosted glass instead of the opaque surface ladder: a
-   * translucent `glass` tint over a backdrop blur, no drop shadow (the blur is
-   * the depth). The trigger `IconButton` is frosted too, so the collapsed
-   * circle matches the pane. @default false
-   */
-  frosted?: boolean;
-  /**
    * Surface elevation level (0–8) — drives the background tint (`bg-surface-N`)
    * and the `shadow-elevated-N` recipe. `0` is the flat resting surface — a
    * `surface-3` fill with no shadow or border. @default 3
@@ -173,13 +167,13 @@ export type MorphingFABProps = {
  * Use the render-prop form to build interactive content — a feedback form,
  * an action menu, or any custom flow — directly inside the expanded pane.
  */
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the shell wires trigger measurement, outside-press handling, and the morph pane around shared refs/state — splitting would prop-drill the shared values across function boundaries
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the open/teleport branches gate the blur teleport and backdrop — flattening them would repeat the shell subtree
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: the shell wires trigger measurement, outside-press handling, the morph pane, and the Android blur teleport around shared refs/state — splitting would prop-drill the shared values across function boundaries
 export function MorphingFAB({
   children,
   icon,
   position = 'bottom-right',
   floating = false,
-  frosted = false,
   elevation = 3,
   expandedWidth = 300,
   expandedHeight = 230,
@@ -199,6 +193,20 @@ export function MorphingFAB({
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = openProp ?? internalOpen;
   const left = position === 'bottom-left';
+  // On Android the blur must render OUTSIDE the `BlurTarget` it frosts (see
+  // `OverlayHost`), so a `"blur"` FAB teleports its backdrop + shell there —
+  // the morph still runs, the shell just lives in the overlay host instead of
+  // inline. The host tree is ALSO where the Fabric layout transition captures
+  // its start frame correctly: inside the `BlurTarget`/ScrollView tree the
+  // shell's LinearTransition starts from the pane's top-left corner, so the
+  // pane appears to grow from there instead of unfolding from the trigger
+  // (verified on-device: blur/teleported morphs correctly, none/opacity do
+  // not). Whenever a host exists, render through it for EVERY `overlay` —
+  // `overlay` still decides the scrim, teleporting only relocates the
+  // backdrop + shell into the host. Without a provider (`blurTargetRef`
+  // null) the FAB stays inline.
+  const blurTargetRef = useBlurTargetRef();
+  const teleported = Platform.OS === 'android' && blurTargetRef !== null;
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -245,6 +253,39 @@ export function MorphingFAB({
     });
   }, [open, overlay, closeOnOutsidePress, windowWidth, windowHeight]);
 
+  /**
+   * The root's fixed window corner — the FAB pins its bottom edge and one
+   * horizontal edge (`left`/`right`) as it grows, so this is that bottom corner.
+   * Measured on every root layout (mount, open/close, rotation) via the root's
+   * `onLayout` below; the teleported overlay derives its top-left from this minus
+   * the current shell size, so it never re-measures (and never glitches) when the
+   * pane opens or closes.
+   */
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const measureAnchor = useCallback(() => {
+    if (!teleported) {
+      setAnchor(null);
+      return;
+    }
+    // The FAB pins one horizontal edge and the bottom edge as it grows, so the
+    // anchor is that fixed corner: bottom-left for `position="bottom-left"`,
+    // bottom-right otherwise.
+    rootRef.current?.measureInWindow((x, y, width, height) => setAnchor({ x: left ? x : x + width, y: y + height }));
+  }, [teleported, left]);
+
+  // `onLayout` alone misses the teleport toggle — flipping `overlay` to "blur"
+  // changes the children, not the root's own layout, so no layout event fires and
+  // the shell never measures. Run the measure once per teleport/left change
+  // (mount + toggle); `onLayout` below covers rotation and size changes, and the
+  // extra run on every `open` covers the root having scrolled under the FAB
+  // while closed (the teleported shell must open where the trigger IS, not where
+  // it was at mount).
+  // biome-ignore lint/plugin: measuring the root is a native measure side effect, not derived state — the teleported overlay must follow the window
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `open` is an intentional re-measure trigger (scroll-under-FAB while closed), not a body dependency
+  useEffect(() => {
+    measureAnchor();
+  }, [measureAnchor, open]);
+
   // Close on an outside press (web). The FAB is inline — no modal backdrop to
   // catch a stray press — so a document-level `pointerdown` listener detects a
   // press landing anywhere but the FAB and folds it shut. `getWebDocument()`
@@ -277,15 +318,22 @@ export function MorphingFAB({
   const resolvedPane = typeof children === 'function' ? children({ close: handleClose }) : children;
   const shell = fabShellGeometry(open, expandedWidth, expandedHeight, left);
 
+  // The teleported wrapper's top-left: the fixed root's top-left — its bottom
+  // corner (the anchor) minus the expanded size. The root never resizes, so
+  // this is constant and the teleported shell can't drift from the inline one.
+  const rootWindow = anchor ? { x: left ? anchor.x : anchor.x - expandedWidth, y: anchor.y - expandedHeight } : null;
+
   // Outside-press backdrop (native): covers the whole window so a tap anywhere
   // outside the pane folds it back — the web path is the document listener
-  // above. When `overlay` is on it also dims the page.
+  // above. When `overlay` is on it also dims the page. Teleported it passes
+  // `blurInline={false}` so the frost actually renders OUT of the BlurTarget.
   const backdrop =
     open && (overlay !== 'none' || closeOnOutsidePress) && backdropFrame !== null ? (
       <OutsidePressBackdrop
         frame={backdropFrame}
         onPress={closeOnOutsidePress ? handleClose : undefined}
         overlay={overlay}
+        blurInline={!teleported}
         testID={`${testID}-backdrop`}
       />
     ) : null;
@@ -295,10 +343,9 @@ export function MorphingFAB({
       animate={shell.animate}
       transition={morphTransition}
       layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
-      className={`absolute bottom-0 overflow-hidden ${frosted ? '' : elevatedSurface(elevation, elevation, floating)}`}
+      className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, floating)}`}
       style={shell.style}
     >
-      {frosted ? <Glass className="pointer-events-none absolute inset-0" rim={false} /> : null}
       {open ? (
         <View className="w-full">
           {closeIcon === null ? null : (
@@ -327,7 +374,6 @@ export function MorphingFAB({
         <IconButton
           icon={icon ?? Plus}
           floating={floating}
-          frosted={frosted}
           elevation={elevation}
           size="lg"
           shape="pill"
@@ -344,6 +390,7 @@ export function MorphingFAB({
       ref={rootRef}
       collapsable={false}
       testID={testID}
+      onLayout={measureAnchor}
       style={[
         fabRootStyles.root,
         {
@@ -363,8 +410,17 @@ export function MorphingFAB({
         style,
       ]}
     >
-      {backdrop}
-      {shellView}
+      {teleported ? (
+        <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={expandedWidth} height={expandedHeight}>
+          {backdrop}
+          {shellView}
+        </TeleportedOverlay>
+      ) : (
+        <>
+          {backdrop}
+          {shellView}
+        </>
+      )}
     </View>
   );
 }

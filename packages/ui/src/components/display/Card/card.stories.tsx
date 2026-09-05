@@ -16,7 +16,6 @@ const meta = {
     size: { control: 'select', options: ['compact', 'md', 'lg'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
     floating: { control: 'boolean' },
-    frosted: { control: 'boolean' },
   },
 } satisfies Meta<typeof Card>;
 
@@ -173,46 +172,5 @@ export const ElevationPairsSurfaceAndShadow: Story = {
     } finally {
       probe.remove();
     }
-  },
-};
-
-/**
- * A frosted card trades the opaque `bg-surface-N` fill (and the ladder shadow)
- * for the glass backdrop: the blur is the depth, so neither the surface tint nor
- * the shadow survives. This pins that the shell goes fully transparent and
- * shadowless while a descendant still carries the `backdrop-filter` — i.e. the
- * card dropped the opaque ladder, not the frost.
- */
-export const FrostedDropsOpaqueFill: Story = {
-  render: () => (
-    <View className="gap-4">
-      <Card elevation={3} className="w-[280px]" testID="card-opaque">
-        <Text weight="semibold" className="text-foreground text-sm">
-          {TITLE}
-        </Text>
-      </Card>
-      <Card frosted={true} className="w-[280px]" testID="card-frosted">
-        <Text weight="semibold" className="text-foreground text-sm">
-          {TITLE}
-        </Text>
-      </Card>
-    </View>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const opaque = await canvas.findByTestId('card-opaque');
-    const frosted = canvas.getByTestId('card-frosted');
-
-    // The opaque card fills a surface token and casts the ladder shadow; the
-    // frosted card drops both — its shell is transparent and shadowless.
-    expect(getComputedStyle(opaque).backgroundColor).not.toBe(TRANSPARENT);
-    expect(getComputedStyle(opaque).boxShadow).not.toBe('none');
-    expect(getComputedStyle(frosted).backgroundColor).toBe(TRANSPARENT);
-    expect(getComputedStyle(frosted).boxShadow).toBe('none');
-
-    // The frost lives on the glass child, not the shell: some descendant carries
-    // the backdrop blur.
-    const glass = Array.from(frosted.querySelectorAll('*')).find((el) => getComputedStyle(el).backdropFilter.includes('blur('));
-    expect(glass).toBeTruthy();
   },
 };

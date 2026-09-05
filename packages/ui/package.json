@@ -42,15 +42,16 @@
       "types": "./src/components/menus/Overlay/overlay-shell.tsx",
       "default": "./src/components/menus/Overlay/overlay-shell.tsx"
     },
-    "./overlay/blur-host": {
-      "source": "./src/components/menus/Overlay/blur-host.tsx",
-      "types": "./src/components/menus/Overlay/blur-host.tsx",
-      "default": "./src/components/menus/Overlay/blur-host.tsx"
-    },
     "./overlay/overlay-portal": {
       "source": "./src/components/menus/Overlay/overlay-portal.tsx",
       "types": "./src/components/menus/Overlay/overlay-portal.tsx",
       "default": "./src/components/menus/Overlay/overlay-portal.tsx"
+    },
+    "./overlay/blur-provider": {
+      "react-native": "./src/components/menus/Overlay/blur-provider.native.tsx",
+      "source": "./src/components/menus/Overlay/blur-provider.tsx",
+      "types": "./src/components/menus/Overlay/blur-provider.tsx",
+      "default": "./src/components/menus/Overlay/blur-provider.tsx"
     },
     "./theme/use-theme-color": {
       "source": "./src/theme/use-theme-color.ts",
@@ -291,12 +292,6 @@
       "source": "./src/components/menus/FullSheet/full-sheet.tsx",
       "types": "./src/components/menus/FullSheet/full-sheet.tsx",
       "default": "./src/components/menus/FullSheet/full-sheet.tsx"
-    },
-    "./glass": {
-      "react-native": "./src/components/display/Glass/glass.native.tsx",
-      "source": "./src/components/display/Glass/glass.tsx",
-      "types": "./src/components/display/Glass/glass.tsx",
-      "default": "./src/components/display/Glass/glass.tsx"
     },
     "./hold-menu": {
       "source": "./src/components/menus/HoldMenu/hold-menu.tsx",
@@ -846,16 +841,16 @@
     "zustand": "5.0.3"
   },
   "peerDependencies": {
+    "@danielsaraldi/react-native-blur-view": ">=3.0.0",
     "react": ">=18.0.0",
     "react-native": ">=0.76.0",
     "react-native-gesture-handler": ">=2.0.0",
-    "react-native-liquid-glassmorphism": ">=1.0.0",
     "react-native-reanimated": ">=4.0.0",
     "react-native-safe-area-context": ">=4.0.0",
     "react-native-svg": ">=15.0.0"
   },
   "peerDependenciesMeta": {
-    "react-native-liquid-glassmorphism": {
+    "@danielsaraldi/react-native-blur-view": {
       "optional": true
     },
     "react-native-safe-area-context": {

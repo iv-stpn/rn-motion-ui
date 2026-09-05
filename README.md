@@ -35,7 +35,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 > `node packages/ui/scripts/check-readme.mjs --fix`, which CI re-runs on every push.
 
 <!-- generated:components -->
-`action-feedback-modal` · `action-row` · `action-row-group` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `button-group` · `button-swap` · `card` · `checkbox` · `checkbox-card` · `choice-group` · `close-button` · `color-picker` · `command-palette` · `cylinder-carousel` · `dock` · `drag-behavior` · `drag-manager` · `drag-store` · `drag-types` · `draggable` · `dragzone` · `drawer` · `dynamic-island` · `elevated-button` · `file-icon` · `file-system` · `full-sheet` · `glass` · `hold-draggable` · `hold-menu` · `holdable` · `hover-menu` · `icon` · `icon-button` · `input` · `item-row` · `item-row-group` · `loader` · `menu` · `menu-item` · `morphing-fab` · `morphing-menu` · `morphing-modal` · `morphing-switcher` · `multi-drag` · `multi-drag-manager` · `multi-drag-scope` · `multi-draggable` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `portal` · `radio` · `radio-card` · `range-slider` · `reorderable-list` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `sortable-list` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `toggle-group` · `use-drag-behavior` · `use-drag-store` · `use-draggable` · `wheel-picker`
+`action-feedback-modal` · `action-row` · `action-row-group` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `button-group` · `button-swap` · `card` · `checkbox` · `checkbox-card` · `choice-group` · `close-button` · `color-picker` · `command-palette` · `cylinder-carousel` · `dock` · `drag-behavior` · `drag-manager` · `drag-store` · `drag-types` · `draggable` · `dragzone` · `drawer` · `dynamic-island` · `elevated-button` · `file-icon` · `file-system` · `full-sheet` · `hold-draggable` · `hold-menu` · `holdable` · `hover-menu` · `icon` · `icon-button` · `input` · `item-row` · `item-row-group` · `loader` · `menu` · `menu-item` · `morphing-fab` · `morphing-menu` · `morphing-modal` · `morphing-switcher` · `multi-drag` · `multi-drag-manager` · `multi-drag-scope` · `multi-draggable` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `portal` · `radio` · `radio-card` · `range-slider` · `reorderable-list` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `sortable-list` · `star-rating` · `stateful-button` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `toggle-group` · `use-drag-behavior` · `use-drag-store` · `use-draggable` · `wheel-picker`
 <!-- /generated:components -->
 
 <details>
@@ -86,7 +86,7 @@ Types / constants: `moti/types` · `moti/color-keys`
 The shell and presence hook the sheet family (`bottom-sheet`, `full-sheet`, `drawer`, `adaptive-modal`) is built on. Exported so a consumer can build a sheet of their own on the same primitives — but they are infrastructure, not a component API, and they change with the components that use them rather than on their own deprecation cycle.
 
 <!-- generated:internal -->
-`overlay/blur-host` · `overlay/overlay-portal` · `overlay/overlay-shell` · `overlay/use-sheet-presence`
+`overlay/blur-provider` · `overlay/overlay-portal` · `overlay/overlay-shell` · `overlay/use-sheet-presence`
 <!-- /generated:internal -->
 </details>
 
@@ -219,7 +219,7 @@ bun run test          # Vitest + Playwright interaction tests (real Chromium)
 ```
 
 <!-- generated:counts -->
-76 story files, 320 stories.
+75 story files, 312 stories.
 <!-- /generated:counts -->
 
 Every story runs as a vitest test; those with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`. `packages/ui` also carries a jsdom unit suite over the pure layers (Moti worklets, `lib/`, and the OTP edit logic).

@@ -12,12 +12,16 @@ import { BACKDROP_BLUR_BACKGROUND_COLOR } from './hold-menu-theme';
  * bottom of the window after exit (`withDelay` + `withTiming(windowHeight)`).
  * A tap with less than 10 px of movement closes the menu.
  *
- * The scrim is a blur under a translucent dim (`OverlayBlur` +
+ * The scrim is a `BlurView` under a translucent dim (`OverlayBlur` +
  * `BACKDROP_BLUR_BACKGROUND_COLOR`), so the page behind reads as frosted glass
  * instead of a flat wash. `OverlayBlur` resolves to
- * `react-native-liquid-glassmorphism`'s `LiquidGlassView` (plain-blur recipe)
- * on native and its CSS-`backdrop-filter` twin in the browser. The blur rides
- * this container's `opacity` fade.
+ * `@danielsaraldi/react-native-blur-view`'s `BlurView` on native (iOS blurs
+ * behind itself; Android blurs the `BlurTarget` an enclosing `<BlurProvider>`
+ * wraps around the app) and its CSS-`backdrop-filter` twin in the browser. The
+ * whole backdrop is rendered OUTSIDE the `BlurTarget` (through the
+ * `BlurProvider` overlay host — see `./provider`), so on Android the blur
+ * captures only the page, the dim sits over the frost, and the menu paints crisp
+ * above both. The blur rides this container's `opacity` fade.
  */
 const BackdropComponent = () => {
   const { state, windowSize, overlay, closeOnOutsidePress } = useHoldMenuInternal();
@@ -81,9 +85,11 @@ const BackdropComponent = () => {
     overlay === 'none' ? null : (
       <>
         {overlay === 'blur' ? (
-          /* The blur under the dim. The new peer captures the backdrop as a
-           bitmap (self-excluding), so it blurs behind itself on every platform
-           and leaves the menu crisp above. */
+          /* The blur under the dim. The backdrop — and this blur — render
+           OUTSIDE the BlurTarget through the provider's overlay host, so on
+           Android the `BlurView` is not a descendant of the target it frosts
+           (no RenderNode cycle) and it captures only the page, leaving the menu
+           crisp above. iOS/web blur behind themselves and keep the frost. */
           <OverlayBlur />
         ) : null}
         <Animated.View className="absolute inset-0" style={animatedBackgroundStyle} />

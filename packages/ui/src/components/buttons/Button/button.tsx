@@ -12,7 +12,6 @@ import {
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { Glass } from '../../display/Glass/glass';
 import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
 import { BUTTON_BOX, type ButtonShape, type ButtonSize } from './button-scale';
 import {
@@ -89,14 +88,6 @@ export interface ButtonProps extends VariantProps<typeof container>, BaseButtonP
   floating?: boolean;
 
   /**
-   * Render the plate as frosted glass instead of the variant's opaque fill: a
-   * translucent `glass` tint over a backdrop blur, no drop shadow, and the label
-   * reads as `foreground` on the glass (the variant's fill colour is dropped, so
-   * a frosted `primary`/`danger` loses its vivid plate). @default false
-   */
-  frosted?: boolean;
-
-  /**
    * Shadow level (0–8) the button casts. Unlike the surface components this
    * drives the shadow *only* — a Button's background comes from its `variant`,
    * not the surface ladder, so raising `elevation` floats the button without
@@ -110,7 +101,6 @@ export function Button({
   size = 'md',
   shape = 'pill',
   floating = false,
-  frosted = false,
   elevation,
   children,
   leftAdornment,
@@ -137,10 +127,6 @@ export function Button({
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
   const v = variant ?? 'neutral';
-  // Frosted drops the variant fill (and its light label) in favour of a
-  // transparent plate over the glass backdrop — `ghost` is the neutral
-  // "transparent + foreground label" recipe the frosted plate reuses.
-  const resolvedVariant: ButtonVariant = frosted ? 'ghost' : v;
   // The shadow is `elevation`-driven and defaults to flat (`0`); `floating`
   // swaps whichever rung resolves for the halo.
   const resolvedElevation: SurfaceElevation = elevation ?? 0;
@@ -153,11 +139,11 @@ export function Button({
   // box-shadow, so exactly one resolves: `floating` and elevation 0 leave the
   // filled shadow unset and fall through to the class path.
   const filledShadow =
-    !(frosted || floating) && FILLED_FILL_TOKEN[resolvedVariant] !== undefined && resolvedElevation > 0
-      ? filledButtonShadow(resolvedVariant, clampSurfaceLevel(resolvedElevation), colors)
+    !floating && FILLED_FILL_TOKEN[v] !== undefined && resolvedElevation > 0
+      ? filledButtonShadow(v, clampSurfaceLevel(resolvedElevation), colors)
       : undefined;
   let shadowClass: string | undefined;
-  if (!(frosted || filledShadow)) shadowClass = floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(resolvedElevation);
+  if (!filledShadow) shadowClass = floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(resolvedElevation);
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -168,11 +154,11 @@ export function Button({
   const buttonContent = buildButtonContent({
     loading,
     reduce,
-    labelClass: label({ variant: resolvedVariant, size }),
+    labelClass: label({ variant: v, size }),
     children,
     leftAdornment,
     rightAdornment,
-    spinnerColor: buildSpinnerColor(resolvedVariant, colors),
+    spinnerColor: buildSpinnerColor(v, colors),
     labelClassName,
   });
 
@@ -196,7 +182,7 @@ export function Button({
         onPress={onPress}
         style={filledShadow ? { boxShadow: filledShadow } : undefined}
         className={cn(
-          container({ variant: resolvedVariant }),
+          container({ variant }),
           // After the variant so tailwind-merge lets the halo win over the
           // resolved `shadow-elevated-N` rung (and the filled variant's shadow
           // rides the style prop above instead).
@@ -207,9 +193,6 @@ export function Button({
           contentClassName,
         )}
       >
-        {/* Frosted plate — the glass tint + backdrop blur replace the variant fill;
-            the state backdrop still paints over it on success/error. */}
-        {frosted ? <Glass className="pointer-events-none absolute inset-0" rim={false} /> : null}
         {/* State backdrop — animates in/out by opacity so the variant background
             shows through when idle and the state colour fills it on success/error. */}
         <MotiView
@@ -218,7 +201,7 @@ export function Button({
           style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent', pointerEvents: 'none' }]}
         />
         {buttonContent}
-        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(resolvedVariant)} /> : null}
+        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}
       </Pressable>
     </MotiView>
   );

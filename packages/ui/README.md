@@ -35,38 +35,29 @@ npm install react react-native react-native-reanimated react-native-gesture-hand
 
 Overlay scrims (`MorphingModal`, `AdaptiveModal`, `Drawer`, `HoldMenu`, …)
 frost their backdrop when the optional peer
-[`react-native-liquid-glassmorphism`](https://github.com/himanshu-lal4/react-native-liquid-glassmorphism)
-(`>=1.0.0`) is installed. If it is absent — or the device cannot blur — they
-degrade to a plain translucent dim automatically.
+[`@danielsaraldi/react-native-blur-view`](https://github.com/DanielAraldi/react-native-blur-view)
+(`>=3.0.0`) is installed. If it is absent, they degrade to a plain translucent
+dim automatically.
 
 To enable real blur, **declare it as a regular dependency of your app**:
 
 ```sh
-npm install react-native-liquid-glassmorphism
-# or: bun add react-native-liquid-glassmorphism
+npm install @danielsaraldi/react-native-blur-view
+# or: bun add @danielsaraldi/react-native-blur-view
 ```
 
 The native module must be *autolinked*, not merely present in `node_modules`.
 Bun, pnpm and yarn-berry auto-install optional peers, so the package can sit in
 `node_modules` without being declared as a dependency — in that state its native
-`LiquidGlassmorphismView` is never registered, and the glass silently degrades to
-a translucent tint. Installing it as a real dependency lets autolinking register
-the native module.
+`BlurView`/`TargetView` are never registered, and blur silently degrades to the
+dim. Installing it as a real dependency lets autolinking register the native
+module.
 
-No provider is required. The peer captures the backdrop as a bitmap from the
-window root and self-excludes its own view, so a frosted surface blurs whatever
-sits behind it on every platform — there is no `BlurProvider`/`BlurTarget` to
-wrap your app root in, unlike the previous `@danielsaraldi/react-native-blur-view`
-peer.
-
-Blur needs Android API 31+ (a `RenderEffect`); below that the peer can only tint,
-so the scrim falls back to its plain dim. iOS blurs on every supported version.
-
-Frosted surfaces are first-class: `Card`, `Button`, `IconButton`, `Input`,
-`MorphingFAB` and `MorphingSwitcher` all take a `frosted` prop that swaps their
-opaque fill for a glass backdrop. For a bare glass pane, use the `Glass` primitive
-(exported at `rn-motion-ui/glass`) — it resolves the themed `glass` / `glass-rim`
-tokens and degrades to a translucent tint when the peer is absent.
+On Android, also wrap your app root in `BlurProvider` (exported at
+`rn-motion-ui/overlay/blur-provider`) — the peer's `BlurView` blurs a
+`BlurTarget` rather than whatever sits behind it, and the provider supplies that
+target. On iOS no provider is needed (the `BlurView` is a `UIVisualEffectView`
+that blurs behind itself).
 
 ## Consumer setup
 
@@ -139,7 +130,6 @@ Subpaths are namespaced by category:
 | `/close-button`                | `CloseButton`                                                            |
 | `/elevated-button`             | `ElevatedButton`                                                         |
 | `/feedback-fab`                | `FeedbackFAB`                                                            |
-| `/glass` | `Glass` |
 | `/item-row`                    | `ItemRow`                                                                |
 | `/item-row-group`              | `ItemRowGroup`                                                           |
 | `/morphing-fab`                | `MorphingFAB`                                                            |

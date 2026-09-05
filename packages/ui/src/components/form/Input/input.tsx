@@ -21,7 +21,6 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
 import { useThemeColor } from '../../../theme/use-theme-color';
-import { Glass } from '../../display/Glass/glass';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 
@@ -198,13 +197,6 @@ export type InputProps = {
    */
   floating?: boolean;
   /**
-   * Render the field as frosted glass instead of the opaque surface ladder: a
-   * translucent `glass` tint over a backdrop blur, no drop shadow (the blur is
-   * the depth). The state-tinted web border is still drawn at `elevation` 0.
-   * @default false
-   */
-  frosted?: boolean;
-  /**
    * Surface elevation level (0–8) — drives the field fill (`bg-surface-N`) and
    * the `shadow-elevated-N` recipe. `0` is the flat resting surface — a
    * `surface-3` fill with no shadow — which is what a text field usually wants,
@@ -251,7 +243,6 @@ export function Input({
   inputType = 'text',
   size = 'md',
   floating = false,
-  frosted = false,
   elevation = 0,
   shape = 'pill',
   disabled,
@@ -346,12 +337,11 @@ export function Input({
           // drawn only at 0: above it the elevation shadow already carries the
           // rim, so a border would double up.
           elevation === 0 && stateBorder[state],
-          !frosted && elevatedSurface(elevation, elevation, floating),
+          elevatedSurface(elevation, elevation, floating),
           disabled ? 'opacity-60' : 'opacity-100',
         )}
         style={{ transform: [{ translateX: shakeX }] }}
       >
-        {frosted ? <Glass className="pointer-events-none absolute inset-0" rim={false} /> : null}
         {leftIcon ? (
           <View className="pointer-events-none absolute top-0 bottom-0 left-2.5 z-10 items-center justify-center">
             {leftIcon}

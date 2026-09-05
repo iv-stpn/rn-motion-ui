@@ -169,12 +169,6 @@
      page-level background automatically inverts. */
   --color-background: oklch(95% 0.004 270);
 
-  /* Glass / frosted surface — a translucent fill (the glass tint) plus its rim
-     highlight. `glass` composites over a backdrop blur (LiquidGlassView on
-     native, `backdrop-filter` on web); `glass-rim` is the bright edge. */
-  --color-glass: oklch(100% 0 0 / 0.55);
-  --color-glass-rim: oklch(100% 0 0 / 0.65);
-
   /* Surface elevation shadows — a crisp 1px ring at full strength plus drop
      layers whose opacity decays as blur grows (natural light fall-off).
      Pair shadow-surface-N with bg-surface-N. */
@@ -418,11 +412,6 @@
 
   --color-background: oklch(0% 0 0);
 
-  /* Glass / frosted surface — dark tint over the blurred backdrop; the rim
-     stays a bright edge. */
-  --color-glass: oklch(26% 0.004 270 / 0.55);
-  --color-glass-rim: oklch(100% 0 0 / 0.14);
-
   --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
   --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
   --shadow-surface-3:
@@ -522,10 +511,6 @@
   --color-black: oklch(0% 0 0);
 
   --color-background: oklch(95% 0.004 270);
-
-  /* Glass / frosted surface — the light mirror of the @theme defaults. */
-  --color-glass: oklch(100% 0 0 / 0.55);
-  --color-glass-rim: oklch(100% 0 0 / 0.65);
 
   --shadow-surface-1: 0 0 0 1px oklch(0% 0 0 / 0.06);
   --shadow-surface-2: 0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06);

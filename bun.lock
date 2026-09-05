@@ -36,7 +36,7 @@
     },
     "packages/ui": {
       "name": "rn-motion-ui",
-      "version": "7.2.4",
+      "version": "7.0.0",
       "bin": {
         "rn-motion-ui-tokens": "./scripts/gen-tokens.mjs",
       },
@@ -68,16 +68,16 @@
         "vitest": "4.1.10",
       },
       "peerDependencies": {
+        "@danielsaraldi/react-native-blur-view": ">=3.0.0",
         "react": ">=18.0.0",
         "react-native": ">=0.76.0",
         "react-native-gesture-handler": ">=2.0.0",
-        "react-native-liquid-glassmorphism": ">=1.0.0",
         "react-native-reanimated": ">=4.0.0",
         "react-native-safe-area-context": ">=4.0.0",
         "react-native-svg": ">=15.0.0",
       },
       "optionalPeers": [
-        "react-native-liquid-glassmorphism",
+        "@danielsaraldi/react-native-blur-view",
         "react-native-safe-area-context",
       ],
     },
@@ -85,6 +85,7 @@
       "name": "@rn-motion-ui/demo",
       "version": "0.0.0",
       "dependencies": {
+        "@danielsaraldi/react-native-blur-view": "^3.0.2",
         "expo": "^57",
         "expo-dev-client": "^57",
         "expo-font": "^57.0.1",
@@ -94,7 +95,6 @@
         "react-dom": "19.2.7",
         "react-native": "0.86.0",
         "react-native-gesture-handler": "2.32.0",
-        "react-native-liquid-glassmorphism": "^1.2.1",
         "react-native-reanimated": "4.5.2",
         "react-native-safe-area-context": "^5.8.0",
         "react-native-svg": "15.15.5",
@@ -116,6 +116,7 @@
       "name": "@rn-motion-ui/example",
       "version": "0.0.0",
       "dependencies": {
+        "@danielsaraldi/react-native-blur-view": "^3.0.2",
         "@react-native-async-storage/async-storage": "2.2.0",
         "@storybook/addon-ondevice-actions": "10.5.0",
         "@storybook/addon-ondevice-backgrounds": "10.5.0",
@@ -129,7 +130,6 @@
         "react": "19.2.7",
         "react-native": "0.86.0",
         "react-native-gesture-handler": "2.32.0",
-        "react-native-liquid-glassmorphism": "^1.2.1",
         "react-native-reanimated": "4.5.2",
         "react-native-safe-area-context": "5.8.0",
         "react-native-worklets": "0.11.1",
@@ -390,6 +390,8 @@
     "@csstools/css-parser-algorithms": ["@csstools/css-parser-algorithms@3.0.5", "", { "peerDependencies": { "@csstools/css-tokenizer": "^3.0.4" } }, "sha512-DaDeUkXZKjdGhgYaHNJTV9pV7Y9B3b644jCLs9Upc3VeNGg6LWARAT6O+Q+/COo+2gg/bM5rhpMAtf70WqfBdQ=="],
 
     "@csstools/css-tokenizer": ["@csstools/css-tokenizer@3.0.4", "", {}, "sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw=="],
+
+    "@danielsaraldi/react-native-blur-view": ["@danielsaraldi/react-native-blur-view@3.0.2", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-QLDE6Z/MmkuvO7+fGRwF1/WBCIK7nAKW2nXipMfcyyHVfCiWbxLqf/3HC4Uex7DKKgqUbCKbuB+nnp764zdlJw=="],
 
     "@egjs/hammerjs": ["@egjs/hammerjs@2.0.17", "", { "dependencies": { "@types/hammerjs": "^2.0.36" } }, "sha512-XQsZgjm2EcVUiZQf11UBJQfmZeEmOW8DpI1gsFeln6w0ae0ii4dMQEQ0kjl6DspdWX1aGY1/loyXnP0JS06e/A=="],
 
@@ -1718,8 +1720,6 @@
     "react-native-gesture-handler": ["react-native-gesture-handler@2.32.0", "", { "dependencies": { "@egjs/hammerjs": "^2.0.17", "@types/react-test-renderer": "^19.1.0", "hoist-non-react-statics": "^3.3.0", "invariant": "^2.2.4" }, "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-uYIMOKlKENORq2SABE+jIjbPU+h5I/sQKcq2v16zRq848nwEp1fWRVwML4QWqijc8UcXJC25o54S8GQd4Mf2OA=="],
 
     "react-native-is-edge-to-edge": ["react-native-is-edge-to-edge@1.3.1", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-NIXU/iT5+ORyCc7p0z2nnlkouYKX425vuU1OEm6bMMtWWR9yvb+Xg5AZmImTKoF9abxCPqrKC3rOZsKzUYgYZA=="],
-
-    "react-native-liquid-glassmorphism": ["react-native-liquid-glassmorphism@1.2.1", "", { "peerDependencies": { "react": "*", "react-native": ">=0.83.0" } }, "sha512-YgNV8C2oLvc5A8RXFU26lcBRiUGcNeVLUyxfpZdcgrsvpvVU/TcaR7MhdkL5kzmQStIcQ3+E5hd4/2w7wJL0Ow=="],
 
     "react-native-modal-datetime-picker": ["react-native-modal-datetime-picker@18.0.0", "", { "dependencies": { "prop-types": "^15.7.2" }, "peerDependencies": { "@react-native-community/datetimepicker": ">=6.7.0", "react-native": ">=0.65.0" } }, "sha512-0jdvhhraZQlRACwr7pM6vmZ2kxgzJ4CpnmV6J3TVA6MrXMXK6Zo/upRBKkRp0+fTOiKuNblzesA2U59rYo6SGA=="],
 

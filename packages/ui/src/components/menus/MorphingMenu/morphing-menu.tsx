@@ -13,7 +13,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
-import { ModalBlur } from '../Overlay/blur-host';
+import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell } from '../Overlay/overlay-shell';
 import type { OverlayType } from '../Overlay/overlay-type';
 
@@ -343,7 +343,7 @@ export function MorphingMenu({
                     Blur sits outside the dim's opacity fade — a parent opacity
                     fades out the CSS backdrop-filter on web (backdrop-root
                     clipping), so OverlayBlur fades its own opacity instead. */}
-                {overlay === 'blur' ? <ModalBlur /> : null}
+                {overlay === 'blur' ? <OverlayBlur /> : null}
                 <MotiView
                   from={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

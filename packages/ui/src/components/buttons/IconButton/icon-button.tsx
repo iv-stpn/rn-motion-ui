@@ -10,7 +10,6 @@ import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
 import { MOTION_SNAPPY, mergeTransition } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { Glass } from '../../display/Glass/glass';
 import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../Button/button-internals';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -86,13 +85,6 @@ export type IconButtonProps = {
    * @default false
    */
   floating?: boolean;
-
-  /**
-   * Render the plate as frosted glass instead of the opaque surface ladder: a
-   * translucent `glass` tint over a backdrop blur, no drop shadow (the blur is
-   * the depth). `elevation`/`floating` are ignored. @default false
-   */
-  frosted?: boolean;
 
   /**
    * Surface elevation level (0–8) — drives the background tint (`bg-surface-N`)
@@ -184,7 +176,6 @@ export type IconButtonProps = {
 export function IconButton({
   icon: IconComponent,
   floating = false,
-  frosted = false,
   elevation = 3,
   size = 'md',
   shape = 'pill',
@@ -209,7 +200,7 @@ export function IconButton({
   const colors = useThemeColors();
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
-  const surfaceClass = frosted ? undefined : elevatedSurface(elevation, elevation, floating);
+  const surfaceClass = elevatedSurface(elevation, elevation, floating);
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -262,7 +253,6 @@ export function IconButton({
           contentClassName,
         )}
       >
-        {frosted ? <Glass className="pointer-events-none absolute inset-0" rim={false} /> : null}
         {iconElement}
         {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={false} /> : null}
       </Pressable>

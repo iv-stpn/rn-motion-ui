@@ -1,10 +1,11 @@
 import type { Preview } from '@storybook/react';
 import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { BlurProvider } from 'rn-motion-ui/overlay/blur-provider';
 import { Switch } from 'rn-motion-ui/switch';
 import { Uniwind } from 'uniwind';
 import '../global.css';
+import { BUILD_INFO } from './build-info';
 import { GlobalErrorReporter, StoryErrorBoundary } from './error-reporter';
 
 // Seed the theme at module scope, before the first story renders, so the very
@@ -15,6 +16,11 @@ Uniwind.setTheme('light');
 
 // Hoisted like App.tsx's labels so the string never lands as a JSX text literal.
 const DARK_MODE_LABEL = 'Dark mode';
+// The APK build identity — lets a storybook APK test be matched to its main
+// commit without leaving the device. `version` is rn-motion-ui's package
+// version, `sha` the git short sha baked by scripts/bake-build-info.mjs at
+// storybook-generate time ('dev' outside a git checkout).
+const BUILD_LABEL = `rn-motion-ui ${BUILD_INFO.version} · ${BUILD_INFO.sha}`;
 
 const preview: Preview = {
   decorators: [
@@ -48,8 +54,11 @@ const preview: Preview = {
               height to scroll within — the same shape the demo app uses. */}
           <View className="flex-1 bg-background">
             <ScrollView contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
-              <View className="mb-4 self-start">
+              <View className="mb-4 flex-row items-center self-start">
                 <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
+                <Text className="ml-3 text-xs text-muted-foreground" selectable={false}>
+                  {BUILD_LABEL}
+                </Text>
               </View>
               {/* StoryErrorBoundary renders the real error + stack when a story
                   crashes, so a white canvas explains itself on the device. */}

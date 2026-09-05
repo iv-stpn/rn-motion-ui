@@ -17,6 +17,8 @@ storybook/native/ios/
 
 # Storybook React Native (generated)
 storybook.requires.ts
+# Baked at storybook-generate time by scripts/bake-build-info.mjs (version + git sha)
+storybook/native/.rnstorybook/build-info.ts
 
 # Uniwind (generated type declarations for className autocomplete)
 uniwind-types.d.ts

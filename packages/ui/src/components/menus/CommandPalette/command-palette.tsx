@@ -266,7 +266,7 @@ export function CommandPalette({
             placeholder={placeholder}
             placeholderTextColor={placeholderColor}
             accessibilityLabel={placeholder}
-            className="h-12 flex-1 font-sans-normal text-foreground text-sm outline-none"
+            className="input-vcenter h-12 flex-1 font-sans-normal text-foreground text-sm outline-none"
           />
           {isWideScreen ? (
             <Pressable

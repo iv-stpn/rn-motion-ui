@@ -200,7 +200,7 @@ export function HeaderCell<T>({
           <TextInput
             value={column.header}
             onChangeText={handleRename}
-            className={cn('flex-1 p-0 font-sans-medium text-xs', textAlignClass)}
+            className={cn('input-vcenter flex-1 p-0 font-sans-medium text-xs', textAlignClass)}
             accessibilityLabel={`Rename ${column.key} column`}
           />
         ) : (

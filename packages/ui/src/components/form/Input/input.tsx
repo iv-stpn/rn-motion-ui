@@ -368,8 +368,12 @@ export function Input({
           onBlur={handleBlur}
           accessibilityLabel={accessibilityLabel ?? label}
           testID={testID ?? 'input'}
-          className={cn(inputBox({ left: Boolean(leftIcon), right: Boolean(rightSlot || success), size }), inputClassName)}
-          style={[{ textAlignVertical: 'center' }, Platform.OS === 'ios' && { lineHeight: 0 }, inputStyle]}
+          className={cn(
+            inputBox({ left: Boolean(leftIcon), right: Boolean(rightSlot || success), size }),
+            !multiline && 'input-vcenter',
+            inputClassName,
+          )}
+          style={inputStyle}
         />
 
         {rightElement}

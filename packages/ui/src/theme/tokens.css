@@ -296,6 +296,25 @@
   --font-mono-bold: ui-monospace, monospace;
 }
 
+/* ── Input vertical centring ──────────────────────────────────────────────
+ *
+ * A single-line `TextInput` sits inside a flex `items-center` row, so its box is
+ * centred while the text inside is not. On iOS a non-zero `line-height` (set by
+ * the `text-sm` / `text-base` size utilities) bottom-aligns the glyphs against
+ * the field height; zeroing it there re-centres them. Android needs the same
+ * result via `textAlignVertical`, which has no CSS equivalent — so it is spelled
+ * as the raw `text-align-vertical` property, which uniwind passes through to the
+ * native style. Apply to single-line inputs only: a multiline field must keep
+ * its line-height or its lines collapse.
+ */
+@utility input-vcenter {
+  text-align-vertical: center;
+
+  @variant ios {
+    line-height: 0;
+  }
+}
+
 /* ── Neutral tint ─────────────────────────────────────────────────────────
  *
  * `--neutral-hue` / `--neutral-chroma` document the tint baked into the

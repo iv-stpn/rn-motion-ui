@@ -201,7 +201,7 @@ function GlassSearchBar() {
         <TextInput
           placeholder="Search"
           placeholderTextColor={placeholder}
-          className="flex-1 bg-transparent text-foreground text-sm outline-none"
+          className="input-vcenter flex-1 bg-transparent text-foreground text-sm outline-none"
         />
       </View>
     </Surface>

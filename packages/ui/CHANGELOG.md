@@ -1,5 +1,68 @@
 # rn-motion-ui
 
+## 7.5.0
+
+### Minor Changes
+
+- 7f639e4: feat(Surface): reintroduce frosted-glass surfaces on the restored blur-view peer
+
+  A reusable `<Surface>` primitive returns (`rn-motion-ui/surface`), rebuilt on the
+  `@danielsaraldi/react-native-blur-view` optional peer restored by 740a7095 —
+  a translucent `glass` tint over a backdrop blur, with the `react-glass-rim`
+  specular edge recreated as a cross-platform SVG `Rim` layer.
+
+  - **Web** — CSS `backdrop-filter` blur under the themed `bg-glass` fill; the
+    web twin never imports the optional peer, so a consumer without the native
+    module still bundles.
+  - **Native** — the peer's `BlurView` frosts its local backdrop on iOS; on
+    Android it blurs the enclosing `BlurProvider`'s `BlurTarget` and degrades to
+    the translucent `glass` tint when the peer (or a provider) is absent. An
+    inline pane (`inline`) rendering inside its own blur target falls back to the
+    tint fill on Android rather than cycle the RenderNode graph.
+  - **Theme** — new `glass` design token (white glass in light, dark glass in
+    dark), resolved through the `bg-glass` utility and
+    `useThemeColor('glass')`, so the fill follows the active scheme and any
+    consumer `@theme` override.
+
+### Patch Changes
+
+- ee8d4d9: fix(Input): centre text vertically in single-line inputs on iOS
+
+  - New `input-vcenter` utility zeroes the line-height on iOS (via `@variant ios`)
+    and sets `textAlignVertical: center` on Android, so a single-line `TextInput`
+    no longer bottom-aligns its glyphs against the field height.
+  - Applied to `Input` (single-line only — multiline keeps its line-height), the
+    `CommandPalette` search field, and the `Table` column-rename input.
+
+- 68fe208: fix(Surface): auto-degrade frosted panes inside their BlurTarget on Android
+
+  A `BlurView` that renders inside the very `BlurTarget` it references cycles the
+  Android RenderNode graph — the render thread recurses in
+  `RenderNode::prepareTreeImpl` until the stack overflows (`Fatal signal 11`).
+  Because `BlurProvider` wraps the app in its `BlurTarget`, every in-page frosted
+  `Surface` was a descendant of its own blur source, so frosted/rim surfaces
+  crashed on Android (web and iOS blur behind themselves and were unaffected).
+
+  - The provider now marks the `BlurTarget`'s subtree via context
+    (`insideBlurTarget`), and a frosted pane that detects it renders inside the
+    target it would blur degrades to the translucent `glass` tint fill instead of
+    mounting a `BlurView`. `inline` remains as the manual escape hatch for hosts
+    the context can't see.
+  - The `BlurTarget` now fills the region it wraps (`flex: 1`) — the peer's
+    `TargetView` has no default size, so wrapped content collapsed to zero height
+    (a blank app) once the peer was natively linked.
+
+- 81b75ba: fix(Surface): subtle rim by default, faster dropoff, more opaque glass
+
+  - The `Rim` specular edge is subtle by default — peak `intensity` 0.5 and
+    `thickness` 1px — so a frosted `Surface`, `Card`, `IconButton` or `Button`
+    reads as a crisp hairline rather than a heavy glow.
+  - New `falloff` knob on `Rim` (default 2) makes the highlight drop off inward
+    faster — a power curve instead of the old linear ramp.
+  - The frosted `glass` tint is slightly more opaque (light 0.55 → 0.6, dark
+    0.45 → 0.5), and the light-mode hairline border that overlapped the rim is
+    removed.
+
 ## 7.4.1
 
 ### Patch Changes

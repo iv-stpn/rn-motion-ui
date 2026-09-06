@@ -40,7 +40,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 /** The specular highlight is white in every scheme (light reflecting off glass)
  *  — the same default `react-glass-rim` ships. */
-const DEFAULT_ACCENT = '#ffffff';
+const DEFAULT_ACCENT = '#ffffff'; /* theme-exempt: specular highlight is white in every scheme (light reflecting off glass) */
 
 /**
  * The fixed sub-ring width the rim is sliced at. Cutting the band into hairline

@@ -137,6 +137,7 @@ Subpaths are namespaced by category:
 | `/morphing-switcher`           | `MorphingSwitcher`                                                        |
 | `/sortable-list`               | `SortableList`                                                           |
 | `/stateful-button`             | `StatefulButton`                                                         |
+| `/surface` | `Surface` |
 | `/switch`                      | `Switch`                                                                 |
 | `/checkbox`                    | `Checkbox`                                                               |
 | `/checkbox-card`               | `CheckboxCardGroup`, `CheckboxCard`                                      |

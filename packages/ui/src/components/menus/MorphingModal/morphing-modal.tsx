@@ -4,10 +4,10 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, SPRING_PANEL, springLayout } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { CloseButton } from '../../buttons/CloseButton/close-button';
+import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
@@ -249,7 +249,10 @@ export function MorphingModal({
         <View key="morphing-modal" className="flex-1" testID={testID}>
           {renderBackdrop()}
           <View style={styles.positioner} className={positionerClassName}>
-            <MotiView
+            <Surface
+              as={MotiView}
+              elevation={elevation}
+              floating={floating}
               accessibilityLabel={accessibilityLabel}
               from={{ opacity: 0, translateY: enterY, scale: enterScale }}
               animate={{ opacity: 1, translateY: 0, scale: 1 }}
@@ -259,7 +262,6 @@ export function MorphingModal({
                 'w-full max-w-sm',
 
                 panelRadiusClass,
-                surface(elevation, undefined, floating),
               )}
               style={style}
             >
@@ -270,7 +272,7 @@ export function MorphingModal({
                * outside the clip region, as in RadioCard / ElevatedButton).
                */}
               {renderMorphContent()}
-            </MotiView>
+            </Surface>
           </View>
         </View>
       ) : null}

@@ -8,7 +8,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
+import { Surface } from '../../display/Surface/surface';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 import { OverlayScrim } from '../Overlay/overlay-scrim';
 import type { OverlayType } from '../Overlay/overlay-type';
@@ -232,9 +232,11 @@ export function BottomSheet({
           )}
           <GestureDetector gesture={handleGesture}>
             <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>
-              <View
+              <Surface
+                elevation={elevation}
+                floating={floating}
                 ref={sheetRef}
-                className={cn('w-full overflow-hidden', surface(elevation, undefined, floating), sheetRadiusClass)}
+                className={cn('w-full overflow-hidden', sheetRadiusClass)}
                 testID={testID}
                 role="dialog"
                 aria-modal={true}
@@ -247,7 +249,7 @@ export function BottomSheet({
                 <View className={cn('min-h-0 grow', containerClassName)} style={contentInsetStyle}>
                   {children}
                 </View>
-              </View>
+              </Surface>
             </Animated.View>
           </GestureDetector>
         </View>

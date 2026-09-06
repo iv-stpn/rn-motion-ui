@@ -336,6 +336,22 @@ export function compositeOver(top: string, bottom: string): string {
 }
 
 /**
+ * Scale a resolved color's own alpha by `factor` (0–1), round-tripping through
+ * OKLCH so a translucent fill (`rgba(…, 0.55)`) can be thinned without knowing
+ * its channel values. The result alpha is clamped to [0, 1]; unparseable input
+ * returns unchanged.
+ *
+ * @example
+ * scaleAlpha('rgba(255, 255, 255, 0.55)', 0.5) // "rgba(255, 255, 255, 0.275)"
+ */
+export function scaleAlpha(resolved: string, factor: number): string {
+  const components = cssColorToOklch(resolved);
+  if (!components) return resolved;
+  const alpha = Math.min(1, Math.max(0, components.alpha * factor));
+  return oklchToSrgb(components.lightness, components.chroma, components.hue, alpha);
+}
+
+/**
  * Resolve a CSS color string to something React Native / Reanimated can parse.
  *
  * `oklch()` and `lab()` strings are converted to `rgb()` / `rgba()` via the

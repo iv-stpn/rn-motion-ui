@@ -10,7 +10,9 @@ import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
 import { MOTION_SNAPPY, mergeTransition } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { Surface } from '../../display/Surface/surface';
 import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../Button/button-internals';
+import { buttonRadius } from '../Button/button-scale';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,6 +102,21 @@ export type IconButtonProps = {
   /** Corner shape. @default 'pill' */
   shape?: IconButtonShape;
 
+  /**
+   * Backdrop blur radius in px/dp. `0` keeps the plate a solid surface; any
+   * positive value frosts it — a `glass` tint over a backdrop blur (with the
+   * specular edge light when `rim` is set). @default 0
+   */
+  blurRadius?: number;
+  /** Opacity of the frosted tint (0–1); only thins the fill when `blurRadius` is set. @default 1 */
+  opacity?: number;
+  /** Draw the glass edge light — the `Rim` specular ring around the plate. @default false */
+  rim?: boolean;
+  /** Rim width in px/dp. @default 1 */
+  rimWidth?: number;
+  /** Peak alpha (0–1) of the rim's specular highlight — lower is subtler. @default 0.5 */
+  intensity?: number;
+
   // ── Interaction ────────────────────────────────────────────────────────────
 
   onPress?: () => void;
@@ -179,6 +196,11 @@ export function IconButton({
   elevation = 3,
   size = 'md',
   shape = 'pill',
+  blurRadius = 0,
+  opacity = 1,
+  rim = false,
+  rimWidth,
+  intensity,
   onPress,
   disabled,
   loading,
@@ -200,7 +222,8 @@ export function IconButton({
   const colors = useThemeColors();
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const isDisabled = Boolean(disabled || loading);
-  const surfaceClass = elevatedSurface(elevation, elevation, floating);
+  const glass = blurRadius > 0;
+  const surfaceClass = glass ? undefined : elevatedSurface(elevation, elevation, floating);
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -226,36 +249,60 @@ export function IconButton({
     );
   } else iconElement = <IconComponent size={ICON_SIZE[size]} color={resolvedIconColor} />;
 
-  return (
-    <MotiView
-      animate={pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale })}
-      transition={pressSpring}
-      className={cn(fitWidth && 'w-full', className)}
-      style={style}
+  const pressValue = pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale });
+
+  const pressable = (
+    <Pressable
+      accessibilityRole="button"
+      aria-disabled={Boolean(isDisabled)}
+      aria-busy={Boolean(loading)}
+      accessibilityLabel={accessibilityLabel}
+      testID={testID ?? 'icon-button'}
+      disabled={isDisabled}
+      onLayout={onLayout}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      className={cn(
+        'flex-row items-center justify-center',
+        surfaceClass,
+        boxClass,
+        isDisabled && !noDisabledOpacity && 'opacity-50',
+        'overflow-hidden',
+        contentClassName,
+      )}
     >
-      <Pressable
-        accessibilityRole="button"
-        aria-disabled={Boolean(isDisabled)}
-        aria-busy={Boolean(loading)}
-        accessibilityLabel={accessibilityLabel}
-        testID={testID ?? 'icon-button'}
-        disabled={isDisabled}
-        onLayout={onLayout}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-        className={cn(
-          'flex-row items-center justify-center',
-          surfaceClass,
-          boxClass,
-          isDisabled && !noDisabledOpacity && 'opacity-50',
-          'overflow-hidden',
-          contentClassName,
-        )}
+      {iconElement}
+      {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={false} /> : null}
+    </Pressable>
+  );
+
+  // Frosted plates render through the shared Surface primitive; solid plates keep
+  // the existing MotiView wrapper.
+  if (glass)
+    return (
+      <Surface
+        as={MotiView}
+        animate={pressValue}
+        transition={pressSpring}
+        elevation={elevation}
+        floating={floating}
+        blurRadius={blurRadius}
+        opacity={opacity}
+        rim={rim}
+        rimWidth={rimWidth}
+        intensity={intensity}
+        borderRadius={buttonRadius(shape, size)}
+        className={cn(fitWidth && 'w-full', className)}
+        style={style}
       >
-        {iconElement}
-        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={false} /> : null}
-      </Pressable>
+        {pressable}
+      </Surface>
+    );
+
+  return (
+    <MotiView animate={pressValue} transition={pressSpring} className={cn(fitWidth && 'w-full', className)} style={style}>
+      {pressable}
     </MotiView>
   );
 }

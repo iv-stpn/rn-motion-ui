@@ -5,9 +5,9 @@ import { usePressState } from '../../../hooks/use-press-state';
 import { cn } from '../../../lib/cn';
 import { cssColorToOklch } from '../../../lib/color';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST } from '../../../theme/motion';
 import { useThemeColor } from '../../../theme/use-theme-color';
+import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { CheckboxBox, type CheckboxTone } from '../Checkbox/checkbox';
 
@@ -457,7 +457,7 @@ export function CheckboxCard({
           it lives on a dedicated View rather than on the surface below. Both
           `className` and `style` land here so consumer overrides all target one
           element. */}
-      <View className={cn('rounded-2xl', surface(resolvedElevation, undefined, resolvedFloating), className)} style={style}>
+      <Surface elevation={resolvedElevation} floating={resolvedFloating} className={cn('rounded-2xl', className)} style={style}>
         {/* The visual surface carries the border + (dark-mode) selection tint.
             When unchecked both are transparent — no resting outline, and the
             wrapper's surface background shows through; when checked the tone's
@@ -496,7 +496,7 @@ export function CheckboxCard({
           </CheckboxCardBody>
           {inline ? box : null}
         </View>
-      </View>
+      </Surface>
     </Pressable>
   );
 }

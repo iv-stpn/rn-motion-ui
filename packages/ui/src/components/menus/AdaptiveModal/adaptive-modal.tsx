@@ -9,10 +9,10 @@ import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
 import { type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { CloseButton } from '../../buttons/CloseButton/close-button';
+import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
 import { FullSheet } from '../FullSheet/full-sheet';
@@ -329,13 +329,11 @@ export function AdaptiveModal({
             className={cn(wideWidth === undefined && 'w-full', !widePanelSize && 'min-w-xl max-w-xl')}
             style={{ width: wideWidth, height: wideHeight, maxWidth: wideMaxWidth, maxHeight: wideMaxHeight }}
           >
-            <View
-              className={cn(
-                surface(elevation, 'modal', floating),
-
-                wideHeight !== undefined && 'flex-1',
-                containerPaddingClass,
-              )}
+            <Surface
+              elevation={elevation}
+              radius="modal"
+              floating={floating}
+              className={cn(wideHeight !== undefined && 'flex-1', containerPaddingClass)}
               style={wideHeight === undefined ? { maxHeight: maxModalHeight } : undefined}
               accessibilityViewIsModal={true}
               aria-modal={true}
@@ -345,7 +343,7 @@ export function AdaptiveModal({
             >
               {renderHeader()}
               {renderContent()}
-            </View>
+            </Surface>
           </TouchableOpacity>
         </MotiView>
       </TouchableOpacity>

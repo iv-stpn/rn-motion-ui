@@ -8,10 +8,10 @@ import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { CARD_RADIUS } from '../../../lib/radius';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { CloseButton } from '../../buttons/CloseButton/close-button';
+import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { OverlayShell } from '../Overlay/overlay-shell';
 
@@ -279,9 +279,12 @@ export function FullSheet({
         return (
           <AnimatePresence onExitComplete={onExitComplete}>
             {isAnimOpen ? (
-              <MotiView
+              <Surface
+                as={MotiView}
+                elevation={elevation}
+                floating={floating}
                 key="fullsheet"
-                className={cn('flex-1', surface(elevation, undefined, floating))}
+                className="flex-1"
                 from={{ translateY: height, borderRadius: CARD_RADIUS }}
                 animate={{ translateY: 0, borderRadius: 0 }}
                 exit={{ translateY: height, borderRadius: CARD_RADIUS }}
@@ -291,7 +294,7 @@ export function FullSheet({
                 style={safeArea ? { paddingTop: insets.top, paddingBottom: insets.bottom } : undefined}
               >
                 {body}
-              </MotiView>
+              </Surface>
             ) : null}
           </AnimatePresence>
         );

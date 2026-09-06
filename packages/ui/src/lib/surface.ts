@@ -21,7 +21,7 @@
  */
 
 import { cn } from './cn';
-import { elevated as elevatedSurface, type SurfaceElevation } from './elevated';
+import { elevatedShadow, elevated as elevatedSurface, FLOATING_SHADOW_CLASSNAME, type SurfaceElevation } from './elevated';
 import { ROUNDED_CARD, ROUNDED_MENU, ROUNDED_MODAL } from './radius';
 
 // Static literal map — the scanner reads the class names from these values.
@@ -46,4 +46,19 @@ export type SurfaceRadius = 'card' | 'menu' | 'modal';
  */
 export function surface(elevation: SurfaceElevation, radius?: SurfaceRadius, floating = false): string {
   return cn(radius ? SURFACE_RADIUS_CLASS[radius] : undefined, elevatedSurface(elevation, elevation, floating));
+}
+
+/**
+ * Surface classes for a frosted-glass surface: the radius token plus the
+ * elevation shadow, WITHOUT the `bg-surface-N` fill. The `Surface` primitive's
+ * glass mode replaces the opaque ladder fill with the translucent `glass` tint
+ * (thinned by `opacity`) so the backdrop blur shows through — a `bg-surface-N`
+ * fill would composite an opaque wash over the frost and hide it.
+ *
+ * The shadow half is kept: a glass surface still floats at its `elevation`
+ * (the `shadow-elevated-N` rim + drop), it just trades the opaque fill for the
+ * tint. Omit `radius` to keep the caller's own corner class.
+ */
+export function glassSurface(elevation: SurfaceElevation, radius?: SurfaceRadius, floating = false): string {
+  return cn(radius ? SURFACE_RADIUS_CLASS[radius] : undefined, floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(elevation));
 }

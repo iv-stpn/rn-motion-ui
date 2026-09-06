@@ -3,11 +3,11 @@ import { AccessibilityInfo, Platform, TouchableOpacity, View } from 'react-nativ
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
 import { Button } from '../../buttons/Button/button';
+import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { OverlayScrim } from '../Overlay/overlay-scrim';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
@@ -233,7 +233,11 @@ export function ActionFeedbackModal({
         >
           <OverlayScrim type={overlay} dimClassName="bg-black/50" />
           <TouchableOpacity className="absolute inset-0" activeOpacity={1} onPress={handleBackdropPress} disabled={!canDismiss} />
-          <MotiView
+          <Surface
+            as={MotiView}
+            elevation={elevation}
+            radius="modal"
+            floating={floating}
             from={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
@@ -242,7 +246,6 @@ export function ActionFeedbackModal({
             className={cn(
               'w-full max-w-sm',
 
-              surface(elevation, 'modal', floating),
               'p-6',
             )}
             testID={testID}
@@ -268,7 +271,7 @@ export function ActionFeedbackModal({
                 testID={testID}
               />
             </View>
-          </MotiView>
+          </Surface>
         </MotiView>
       ) : null}
     </AnimatePresence>

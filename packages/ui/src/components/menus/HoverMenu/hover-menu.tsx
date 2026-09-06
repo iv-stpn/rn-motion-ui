@@ -8,10 +8,10 @@ import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
+import { Surface } from '../../display/Surface/surface';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 import { OverlayScrim } from '../Overlay/overlay-scrim';
 import type { OverlayType } from '../Overlay/overlay-type';
@@ -492,7 +492,11 @@ export function HoverMenu({
         ]}
         testID={testID ? `${testID}-panel` : undefined}
       >
-        <MotiView
+        <Surface
+          as={MotiView}
+          elevation={elevation}
+          radius="menu"
+          floating={floating}
           {...panelMotion}
           // Held at 0 until the panel has been measured, so it is never painted
           // at an unresolved position. Scale is gated alongside opacity — otherwise
@@ -502,7 +506,6 @@ export function HoverMenu({
           className={cn(
             'z-50 overflow-hidden',
 
-            surface(elevation, 'menu', floating),
             contentClassName,
           )}
           // Static, so it composes with the animated scale rather than competing
@@ -510,7 +513,7 @@ export function HoverMenu({
           style={{ transformOrigin }}
         >
           {resolvedContent}
-        </MotiView>
+        </Surface>
       </Pressable>
     ) : null;
 

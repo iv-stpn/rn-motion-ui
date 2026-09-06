@@ -7,10 +7,10 @@ import { cn } from '../../../lib/cn';
 import { EASE_OUT, springLayout } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { MENU_RADIUS } from '../../../lib/radius';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
+import { Surface } from '../../display/Surface/surface';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
@@ -374,14 +374,18 @@ export function MorphingMenu({
                     },
                   ]}
                 >
-                  <MotiView
+                  <Surface
+                    as={MotiView}
+                    elevation={elevation}
+                    radius="menu"
+                    floating={floating}
                     from={{ scale: CARD_SCALE }}
                     animate={{ scale: 1 }}
                     exit={{ scale: CARD_SCALE }}
                     transition={morph}
                     exitTransition={morph}
                     layout={reduce ? undefined : MENU_LAYOUT}
-                    className={cn('items-center justify-center overflow-hidden', surface(elevation, 'menu', floating))}
+                    className="items-center justify-center overflow-hidden"
                     style={{ width: PANEL_W, height: panelH ?? BOX_H }}
                   >
                     <MorphingPanel
@@ -417,7 +421,7 @@ export function MorphingMenu({
                         <ThemedIcon icon={Plus} variant="ghost" size={16} />
                       </View>
                     </MotiView>
-                  </MotiView>
+                  </Surface>
                 </View>
               </View>
             ) : null}

@@ -11,11 +11,15 @@ const meta = {
   title: 'Display/Card',
   component: Card,
   parameters: { layout: 'centered' },
-  args: { size: 'md', elevation: 0, floating: false },
+  args: { size: 'md', elevation: 0, floating: false, blurRadius: 0, opacity: 1, rim: false },
   argTypes: {
     size: { control: 'select', options: ['compact', 'md', 'lg'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
     floating: { control: 'boolean' },
+    blurRadius: { control: { type: 'range', min: 0, max: 40, step: 1 } },
+    opacity: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
+    rim: { control: 'boolean' },
+    rimWidth: { control: { type: 'range', min: 0.5, max: 6, step: 0.5 } },
   },
 } satisfies Meta<typeof Card>;
 
@@ -33,6 +37,7 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
   const [size, setSize] = useState<CardSize>('md');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [floating, setFloating] = useState(false);
+  const [glass, setGlass] = useState(false);
   // The chips carry strings; the ladder is numeric. `0` is the flat resting
   // surface — otherwise the chip value indexes the ladder's own levels.
   const elevation: SurfaceElevation = elevationKey === '0' ? 0 : (SURFACE_LEVELS[Number(elevationKey) - 1] ?? 3);
@@ -42,15 +47,45 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
       <ControlCard title="Options">
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
+        <Toggle label="Glass" onChange={setGlass} value={glass} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
       </ControlCard>
 
-      <Card {...args} elevation={elevation} floating={floating} size={size} className="w-[280px]">
-        <Text weight="semibold" className="text-base text-foreground">
-          {TITLE}
-        </Text>
-        <Text className="text-muted-foreground text-sm">{BODY}</Text>
-      </Card>
+      <View className="relative w-[280px] overflow-hidden">
+        {/* Coloured shapes sit behind the card so the frosted glass has a
+            backdrop to blur when the Glass toggle is on. */}
+        {glass ? (
+          <>
+            <View
+              className="absolute"
+              style={{ top: 0, left: 0, width: 56, height: 56, borderRadius: 28, backgroundColor: '#3b82f6' }}
+            />
+            <View
+              className="absolute"
+              style={{ right: 0, bottom: 0, width: 64, height: 64, borderRadius: 32, backgroundColor: '#ec4899' }}
+            />
+            <View
+              className="absolute"
+              style={{ top: 8, left: 64, width: 40, height: 40, borderRadius: 20, backgroundColor: '#f59e0b' }}
+            />
+          </>
+        ) : null}
+        <Card
+          {...args}
+          elevation={elevation}
+          floating={floating}
+          size={size}
+          blurRadius={glass ? 24 : 0}
+          opacity={glass ? 0.5 : 1}
+          rim={glass}
+          className="w-full"
+        >
+          <Text weight="semibold" className="text-base text-foreground">
+            {TITLE}
+          </Text>
+          <Text className="text-muted-foreground text-sm">{BODY}</Text>
+        </Card>
+      </View>
 
       <View className="h-3" />
       {/* Elevation drives both the surface fill and the shadow recipe, so the
@@ -173,4 +208,37 @@ export const ElevationPairsSurfaceAndShadow: Story = {
       probe.remove();
     }
   },
+};
+
+/**
+ * The glass treatment — set `blurRadius` to frost the backdrop behind the card,
+ * thin the tint with `opacity`, and draw the `rim` specular edge light. The
+ * coloured shapes behind the card are what the `backdrop-filter` blur reads, so
+ * the frost is only visible over a non-flat backdrop. `rimWidth` steps the edge
+ * light in half-pixel increments.
+ */
+export const Frosted: Story = {
+  args: { blurRadius: 24, opacity: 0.5, rim: true, elevation: 3 },
+  render: (args) => (
+    <View className="relative h-[260px] w-[320px] items-center justify-center overflow-hidden">
+      <View
+        className="absolute"
+        style={{ top: 16, left: 24, width: 96, height: 96, borderRadius: 48, backgroundColor: '#3b82f6' }}
+      />
+      <View
+        className="absolute"
+        style={{ right: 24, bottom: 16, width: 112, height: 112, borderRadius: 56, backgroundColor: '#ec4899' }}
+      />
+      <View
+        className="absolute"
+        style={{ top: 48, right: 40, width: 64, height: 64, borderRadius: 32, backgroundColor: '#f59e0b' }}
+      />
+      <Card {...args} className="w-[240px]">
+        <Text weight="semibold" className="text-foreground text-sm">
+          Frosted glass
+        </Text>
+        <Text className="text-muted-foreground text-xs">Blurs the colours behind it.</Text>
+      </Card>
+    </View>
+  ),
 };

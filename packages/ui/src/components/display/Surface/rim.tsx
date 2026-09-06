@@ -7,10 +7,10 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
  *
  * A recreation of `react-glass-rim`'s specular edge (a highlight that runs along
  * a surface's border and fades inward) as a cross-platform `react-native-svg`
- * layer. It draws `steps` concentric rounded-rect strokes, each `band` px thick,
- * the outermost at full `intensity` fading toward transparent inward — the same
- * recipe the reference library ships (`intensity` / `steps` / `band` /
- * `accentColor` mirror its options).
+ * layer. It draws the rim as a single band of `thickness` px, sliced into
+ * hairline sub-rings (see {@link SLICE}) so the inward fade reads as one
+ * continuous gradient — a wider rim just gets more slices, never coarser
+ * concentric layers.
  *
  * The DOM original masks a conic gradient down to a hairline border for its
  * directional falloff (bright opposite corners, dim between). SVG has no conic
@@ -18,8 +18,8 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
  * accent → transparent → accent along the top-left/bottom-right axis — which
  * reads as the same two bright specular corners.
  *
- * The host must hand in the measured pixel `width`/`height` (the `Glass`
- * surfaces measure themselves on their root, the way `ElevatedButton` feeds its
+ * The host must hand in the measured pixel `width`/`height` (the `Surface`
+ * primitive measures itself on its root, the way `ElevatedButton` feeds its
  * own SVG rim): an absolutely-positioned child cannot measure itself on native,
  * so the ring never draws. Each ring's inward fade is baked into its gradient
  * stops (rather than `strokeOpacity`), so it renders identically on native.
@@ -42,6 +42,14 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
  *  — the same default `react-glass-rim` ships. */
 const DEFAULT_ACCENT = '#ffffff';
 
+/**
+ * The fixed sub-ring width the rim is sliced at. Cutting the band into hairline
+ * slices (rather than a few thick strokes) keeps the inward fade smooth at any
+ * thickness, and it sets the granularity of the rim width: `thickness` snaps to
+ * multiples of this, so a caller can step the rim in 0.5px increments.
+ */
+const SLICE = 0.5;
+
 export type RimProps = {
   /** Measured host width in px — required so the rings trace the host edge. */
   width: number;
@@ -51,12 +59,16 @@ export type RimProps = {
   borderRadius?: number;
   /** Color of the highlight (any CSS color). @default "#ffffff" */
   accentColor?: string;
-  /** Peak alpha (0–1) of the outermost ring; inner rings fade toward 0. @default 0.4 */
+  /** Peak alpha (0–1) of the outermost ring; inner rings fade toward 0. @default 0.5 */
   intensity?: number;
-  /** Number of concentric rings; more = smoother inward fade. @default 2 */
-  steps?: number;
-  /** Thickness in px of each ring; total rim ≈ `steps × band`. @default 1 */
-  band?: number;
+  /**
+   * How fast the highlight drops off inward from the edge — the falloff
+   * exponent. `1` is a linear ramp; higher values concentrate the white at the
+   * outermost ring (a faster, crisper dropoff). @default 2
+   */
+  falloff?: number;
+  /** Total rim width in px; snaps to 0.5px increments. @default 1 */
+  thickness?: number;
   /** Mount/unmount the rim. @default true */
   enabled?: boolean;
 };
@@ -66,9 +78,9 @@ export function Rim({
   height,
   borderRadius = 0,
   accentColor = DEFAULT_ACCENT,
-  intensity = 0.4,
-  steps = 2,
-  band = 1,
+  intensity = 0.5,
+  falloff = 2,
+  thickness = 1,
   enabled = true,
 }: RimProps) {
   // react-native-svg resolves `url(#id)` against the whole document, so each
@@ -78,7 +90,12 @@ export function Rim({
 
   if (!enabled || width <= 0 || height <= 0) return null;
 
-  const ringCount = Math.max(1, Math.round(steps));
+  // Slice the band into hairline sub-rings so the fade is a smooth ramp rather
+  // than visible concentric layers. `ringCount` follows the requested thickness
+  // (snapped to 0.5px), and each sub-ring's stroke is `thickness / ringCount`
+  // wide so fractional widths tile flush against the host edge.
+  const ringCount = Math.max(1, Math.round(thickness / SLICE));
+  const band = thickness / ringCount;
 
   // The gradient's `objectBoundingBox` diagonal is squashed by the iOS painter
   // for non-square hosts, so we draw in `userSpaceOnUse` and correct the endpoint
@@ -96,10 +113,11 @@ export function Rim({
       <Defs>
         {Array.from({ length: ringCount }, (_, index) => {
           const id = `${gradientId}-${index}`;
-          // The outward ring is full `intensity`, each inner ring a step dimmer;
-          // the fade is baked into the stops (rather than `strokeOpacity`) so it
+          // The outward ring is full `intensity`; each inner ring dims by the
+          // falloff curve (`falloff` 1 = linear, higher = faster dropoff). The
+          // fade is baked into the stops (rather than `strokeOpacity`) so it
           // renders identically on native.
-          const alpha = Math.min(1, Math.max(0, intensity * (1 - index / ringCount)));
+          const alpha = Math.min(1, Math.max(0, intensity * (1 - index / ringCount) ** falloff));
           return (
             <LinearGradient key={id} id={id} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={gradientEndX} y2={gradientEndY}>
               <Stop offset={0} stopColor={accentColor} stopOpacity={alpha} />
@@ -110,8 +128,8 @@ export function Rim({
         })}
       </Defs>
       {Array.from({ length: ringCount }, (_, index) => {
-        // Each ring sits `band` px further inward; the stroke is centred on the
-        // path, so `band / 2` keeps the outer ring flush with the edge.
+        // Each sub-ring sits `band` px further inward; the stroke is centred on
+        // the path, so `band / 2` keeps the outermost sub-ring flush with the edge.
         const inset = index * band + band / 2;
         const radius = Math.max(0, borderRadius - inset);
         return (

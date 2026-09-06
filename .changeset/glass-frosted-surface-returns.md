@@ -2,9 +2,9 @@
 'rn-motion-ui': minor
 ---
 
-feat(Glass): reintroduce frosted-glass surfaces on the restored blur-view peer
+feat(Surface): reintroduce frosted-glass surfaces on the restored blur-view peer
 
-A reusable `<Glass>` primitive returns (`rn-motion-ui/glass`), rebuilt on the
+A reusable `<Surface>` primitive returns (`rn-motion-ui/surface`), rebuilt on the
 `@danielsaraldi/react-native-blur-view` optional peer restored by 740a7095 —
 a translucent `glass` tint over a backdrop blur, with the `react-glass-rim`
 specular edge recreated as a cross-platform SVG `Rim` layer.

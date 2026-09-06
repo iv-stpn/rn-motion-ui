@@ -105,9 +105,10 @@ function deriveExportKey(absPath) {
 }
 
 /**
- * Build the three-field export entry (or four-field for ./moti/hover).
- * The convention is source == types == default; the one exception for the
- * react-native platform override is special-cased below.
+ * Build the three-field export entry (or four-field for the two platform-twin
+ * entries ./moti/hover and ./surface). The convention is source == types ==
+ * default; the two exceptions for the react-native platform override are
+ * special-cased below.
  */
 function buildEntry(relFromPkg) {
   const entry = {
@@ -119,6 +120,14 @@ function buildEntry(relFromPkg) {
   if (relFromPkg.includes('/pressable/hoverable.tsx')) {
     return {
       'react-native': relFromPkg.replace('hoverable.tsx', 'hoverable.native.tsx'),
+      ...entry,
+    };
+  }
+  // Special case: ./surface has a react-native platform override (the guarded
+  // BlurView twin carries the optional peer require).
+  if (relFromPkg.includes('/display/Surface/surface.tsx')) {
+    return {
+      'react-native': relFromPkg.replace('surface.tsx', 'surface.native.tsx'),
       ...entry,
     };
   }

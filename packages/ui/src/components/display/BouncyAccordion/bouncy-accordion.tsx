@@ -5,11 +5,11 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { springLayout } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { TIMING_INSTANT } from '../../../theme/motion';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
+import { Surface } from '../Surface/surface';
 
 export type BouncyAccordionItem = {
   id: string;
@@ -126,7 +126,10 @@ function BouncyAccordionRow({
 
   return (
     <MotiView layout={reduce ? undefined : ROW_LAYOUT} style={{ marginTop: separatedFromPrevious ? 12 : 0 }}>
-      <MotiView
+      <Surface
+        as={MotiView}
+        elevation={elevation}
+        floating={floating}
         animate={{
           borderTopLeftRadius: topRadius,
           borderTopRightRadius: topRadius,
@@ -134,7 +137,7 @@ function BouncyAccordionRow({
           borderBottomRightRadius: bottomRadius,
         }}
         transition={reduce ? TIMING_INSTANT : ROW_TRANSITION}
-        className={cn('overflow-hidden', surface(elevation, undefined, floating), item.disabled ? 'opacity-50' : 'opacity-100')}
+        className={cn('overflow-hidden', item.disabled ? 'opacity-50' : 'opacity-100')}
       >
         <Pressable
           accessibilityRole="button"
@@ -175,7 +178,7 @@ function BouncyAccordionRow({
             <Text className="text-[15px] text-muted-foreground leading-6">{item.description}</Text>
           </MotiView>
         </MotiView>
-      </MotiView>
+      </Surface>
     </MotiView>
   );
 }

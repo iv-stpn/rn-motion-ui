@@ -6,9 +6,9 @@ import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
 import { SPRING_PANEL } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
@@ -109,7 +109,10 @@ export function Drawer({
                 className={overlay === 'none' ? 'flex-1' : 'flex-1 bg-black/50'}
               />
             </MotiView>
-            <MotiView
+            <Surface
+              as={MotiView}
+              elevation={elevation}
+              floating={floating}
               accessibilityLabel={accessibilityLabel}
               onLayout={handleLayout}
               from={reduce ? { opacity: 0, translateX: 0 } : { translateX: offscreen }}
@@ -120,7 +123,6 @@ export function Drawer({
                 side === 'right'
                   ? 'absolute inset-y-0 right-0 w-80 max-w-[85%] flex-col border-border border-l-[1.5px]'
                   : 'absolute inset-y-0 left-0 w-80 max-w-[85%] flex-col border-border border-r-[1.5px]',
-                surface(elevation, undefined, floating),
               )}
               style={safeArea ? [{ paddingTop: insets.top, paddingBottom: insets.bottom }, style] : style}
             >
@@ -129,7 +131,7 @@ export function Drawer({
               ) : (
                 children
               )}
-            </MotiView>
+            </Surface>
           </View>
         ) : null}
       </AnimatePresence>

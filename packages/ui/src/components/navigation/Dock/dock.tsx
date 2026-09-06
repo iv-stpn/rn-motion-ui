@@ -6,8 +6,8 @@ import { cn } from '../../../lib/cn';
 import { SPRING_LAYOUT, SPRING_PRESS, springLayout } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { H_INTERACTIVE, INTERACTIVE_HEIGHT, PX_INTERACTIVE } from '../../../lib/radius';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
+import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 
 type DockContextValue = {
@@ -87,13 +87,14 @@ export function Dock({ children, size = 'lg', floating = false, elevation = 0, c
 
   return (
     <DockContext.Provider value={ctx}>
-      <View
+      <Surface
+        elevation={elevation}
+        floating={floating}
         testID={testID}
         className={cn(
           H_INTERACTIVE[size],
           PX_INTERACTIVE[size],
           'relative flex-row items-center gap-1.5 self-start rounded-2xl border-[1.5px] border-border',
-          surface(elevation, undefined, floating),
           className,
         )}
         style={style}
@@ -115,7 +116,7 @@ export function Dock({ children, size = 'lg', floating = false, elevation = 0, c
           />
         ) : null}
         {children}
-      </View>
+      </Surface>
     </DockContext.Provider>
   );
 }

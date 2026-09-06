@@ -4,10 +4,10 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
+import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
@@ -299,11 +299,15 @@ export function AdaptiveDropdown({
             <OverlayScrim type={overlay} dimClassName="bg-black/40" animateDim={true} />
             <AnimatePresence onExitComplete={handlePanelExitComplete}>
               {open && isWideScreen ? (
-                <MotiView
+                <Surface
+                  as={MotiView}
+                  elevation={elevation}
+                  radius="menu"
+                  floating={floating}
                   key="panel"
                   onLayout={handlePanelLayout}
                   {...panelMotion}
-                  className={cn('absolute flex-col overflow-hidden', surface(elevation, 'menu', floating))}
+                  className="absolute flex-col overflow-hidden"
                   // `transformOrigin` is static, so it composes with the animated
                   // scale rather than competing with it: the panel grows out of the
                   // corner facing the trigger.
@@ -322,7 +326,7 @@ export function AdaptiveDropdown({
                     {header}
                     {body}
                   </Pressable>
-                </MotiView>
+                </Surface>
               ) : null}
             </AnimatePresence>
           </Pressable>

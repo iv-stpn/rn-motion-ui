@@ -1,12 +1,12 @@
 // biome-ignore-all lint/style/useExportsLast: the entry types head the module so the implementation below reads against them
 
 import { useCallback, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
 import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { usePressState } from '../../../hooks/use-press-state';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
+import { Surface } from '../../display/Surface/surface';
 import { ThemedIcon } from '../../icon/themed-icon';
 
 export type CloseButtonSize = 'sm' | 'md' | 'lg';
@@ -97,7 +97,12 @@ export function CloseButton({
   const scale = SIZE_SCALE[size];
 
   return (
-    <View className={cn('overflow-hidden', scale.shellClass, surface(elevation, undefined, floating), className)} testID={testID}>
+    <Surface
+      elevation={elevation}
+      floating={floating}
+      className={cn('overflow-hidden', scale.shellClass, className)}
+      testID={testID}
+    >
       <Pressable
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"
@@ -114,6 +119,6 @@ export function CloseButton({
       >
         <ThemedIcon icon={CloseLine} token="muted-foreground" size={scale.iconSize} />
       </Pressable>
-    </View>
+    </Surface>
   );
 }

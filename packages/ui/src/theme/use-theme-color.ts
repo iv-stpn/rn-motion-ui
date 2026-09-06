@@ -102,7 +102,7 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   white: [1, 0, 0],
   black: [0, 0, 0],
   background: [0.95, 0.004, NEUTRAL_HUE],
-  glass: [1, 0, 0, 0.55],
+  glass: [0.99, 0, 0, 0.6],
 };
 
 const DARK_OKLCH: Record<ThemeToken, Oklch> = {
@@ -139,7 +139,7 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   white: [1, 0, 0],
   black: [0, 0, 0],
   background: [0, 0, 0],
-  glass: [0.2, 0.004, NEUTRAL_HUE, 0.45],
+  glass: [0.2, 0.004, NEUTRAL_HUE, 0.5],
 };
 
 /** Resolve an OKLCH definition table to concrete sRGB strings. */

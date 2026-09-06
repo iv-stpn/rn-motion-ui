@@ -5,11 +5,11 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { cssColorToOklch, oklchToSrgb } from '../../../lib/color';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { surface } from '../../../lib/surface';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
 import { useThemeColor } from '../../../theme/use-theme-color';
+import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 
 /**
@@ -496,7 +496,7 @@ export function RadioCard({
           it lives on a dedicated View rather than on the animated surface below.
           Both `className` and `style` land here so consumer overrides all target
           one element. */}
-      <View className={cn('rounded-2xl', surface(resolvedElevation, undefined, resolvedFloating), className)} style={style}>
+      <Surface elevation={resolvedElevation} floating={resolvedFloating} className={cn('rounded-2xl', className)} style={style}>
         {/* The animated surface. A Pressable can't be animated directly (motify
             is only applied to host primitives, and MotiPressable nests a MotiView
             the same way), so the border/tint live here and the Pressable above
@@ -541,7 +541,7 @@ export function RadioCard({
           </RadioCardBody>
           {inline ? ring : null}
         </MotiView>
-      </View>
+      </Surface>
     </Pressable>
   );
 }

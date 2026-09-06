@@ -12,8 +12,9 @@ import {
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { Surface } from '../../display/Surface/surface';
 import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
-import { BUTTON_BOX, type ButtonShape, type ButtonSize } from './button-scale';
+import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadius } from './button-scale';
 import {
   type ButtonVariant,
   buttonContainer as container,
@@ -94,6 +95,19 @@ export interface ButtonProps extends VariantProps<typeof container>, BaseButtonP
    * recolouring it. `0` is flat (no shadow). @default 0
    */
   elevation?: SurfaceElevation;
+
+  /**
+   * Backdrop blur radius in px/dp. `0` keeps the button on its variant fill; any
+   * positive value frosts it — a `glass` tint over a backdrop blur (with the
+   * specular edge light when `rim` is set), replacing the variant fill. @default 0
+   */
+  blurRadius?: number;
+  /** Opacity of the frosted tint (0–1); only thins the fill when `blurRadius` is set. @default 1 */
+  opacity?: number;
+  /** Draw the glass edge light — the `Rim` specular ring around the button. @default false */
+  rim?: boolean;
+  /** Rim width in px/dp. @default 1 */
+  rimWidth?: number;
 }
 
 export function Button({
@@ -102,6 +116,10 @@ export function Button({
   shape = 'pill',
   floating = false,
   elevation,
+  blurRadius = 0,
+  opacity = 1,
+  rim = false,
+  rimWidth,
   children,
   leftAdornment,
   rightAdornment,
@@ -130,6 +148,10 @@ export function Button({
   // The shadow is `elevation`-driven and defaults to flat (`0`); `floating`
   // swaps whichever rung resolves for the halo.
   const resolvedElevation: SurfaceElevation = elevation ?? 0;
+  // Frosted mode: the translucent tint replaces the variant fill, and the surface
+  // ladder (or halo) replaces the fill-aware shadow a glass pane cannot wear — an
+  // opaque drop would read as a solid button.
+  const glass = blurRadius > 0;
 
   // Every opaque fill — `primary` and the vivid status fills — casts the
   // fill-aware shadow; the surface ladder's subtle drop reads as "no elevation"
@@ -139,11 +161,11 @@ export function Button({
   // box-shadow, so exactly one resolves: `floating` and elevation 0 leave the
   // filled shadow unset and fall through to the class path.
   const filledShadow =
-    !floating && FILLED_FILL_TOKEN[v] !== undefined && resolvedElevation > 0
+    !(glass || floating) && FILLED_FILL_TOKEN[v] !== undefined && resolvedElevation > 0
       ? filledButtonShadow(v, clampSurfaceLevel(resolvedElevation), colors)
       : undefined;
   let shadowClass: string | undefined;
-  if (!filledShadow) shadowClass = floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(resolvedElevation);
+  if (!(glass || filledShadow)) shadowClass = floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(resolvedElevation);
 
   const { pressed, onLayout, ripples, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -162,47 +184,70 @@ export function Button({
     labelClassName,
   });
 
-  return (
-    <MotiView
-      animate={pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale })}
-      transition={pressSpring}
-      className={cn(fitWidth && 'w-full', className)}
-      style={style}
+  const pressValue = pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale });
+
+  const pressable = (
+    <Pressable
+      accessibilityRole="button"
+      aria-disabled={Boolean(isDisabled)}
+      aria-busy={Boolean(loading)}
+      accessibilityLabel={accessibilityLabel}
+      testID={testID ?? 'button'}
+      disabled={isDisabled}
+      onLayout={onLayout}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      style={!glass && filledShadow ? { boxShadow: filledShadow } : undefined}
+      className={cn(
+        glass ? 'flex-row items-center justify-center' : container({ variant }),
+        // After the variant so tailwind-merge lets the halo win over the
+        // resolved `shadow-elevated-N` rung (and the filled variant's shadow
+        // rides the style prop above instead).
+        shadowClass,
+        BUTTON_BOX[shape][size],
+        isDisabled && !noDisabledOpacity && 'opacity-50',
+        'overflow-hidden',
+        contentClassName,
+      )}
     >
-      <Pressable
-        accessibilityRole="button"
-        aria-disabled={Boolean(isDisabled)}
-        aria-busy={Boolean(loading)}
-        accessibilityLabel={accessibilityLabel}
-        testID={testID ?? 'button'}
-        disabled={isDisabled}
-        onLayout={onLayout}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-        style={filledShadow ? { boxShadow: filledShadow } : undefined}
-        className={cn(
-          container({ variant }),
-          // After the variant so tailwind-merge lets the halo win over the
-          // resolved `shadow-elevated-N` rung (and the filled variant's shadow
-          // rides the style prop above instead).
-          shadowClass,
-          BUTTON_BOX[shape][size],
-          isDisabled && !noDisabledOpacity && 'opacity-50',
-          'overflow-hidden',
-          contentClassName,
-        )}
+      {/* State backdrop — animates in/out by opacity so the variant background
+          shows through when idle and the state colour fills it on success/error. */}
+      <MotiView
+        animate={{ opacity: backdropColor === undefined ? 0 : 1 }}
+        transition={TIMING_BASE}
+        style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent', pointerEvents: 'none' }]}
+      />
+      {buttonContent}
+      {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}
+    </Pressable>
+  );
+
+  // Frosted buttons render through the shared Surface primitive, which owns the
+  // tint, backdrop blur and rim; solid buttons keep the existing MotiView wrapper.
+  if (glass)
+    return (
+      <Surface
+        as={MotiView}
+        animate={pressValue}
+        transition={pressSpring}
+        elevation={resolvedElevation}
+        floating={floating}
+        blurRadius={blurRadius}
+        opacity={opacity}
+        rim={rim}
+        rimWidth={rimWidth}
+        borderRadius={buttonRadius(shape, size)}
+        className={cn(fitWidth && 'w-full', className)}
+        style={style}
       >
-        {/* State backdrop — animates in/out by opacity so the variant background
-            shows through when idle and the state colour fills it on success/error. */}
-        <MotiView
-          animate={{ opacity: backdropColor === undefined ? 0 : 1 }}
-          transition={TIMING_BASE}
-          style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent', pointerEvents: 'none' }]}
-        />
-        {buttonContent}
-        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}
-      </Pressable>
+        {pressable}
+      </Surface>
+    );
+
+  return (
+    <MotiView animate={pressValue} transition={pressSpring} className={cn(fitWidth && 'w-full', className)} style={style}>
+      {pressable}
     </MotiView>
   );
 }

@@ -15,7 +15,18 @@ const meta = {
   title: 'Buttons/Button',
   component: Button,
   parameters: { layout: 'centered' },
-  args: { children: 'Continue', variant: 'neutral', size: 'md', elevation: 0, floating: false, onPress: fn() },
+  args: {
+    children: 'Continue',
+    variant: 'neutral',
+    size: 'md',
+    elevation: 0,
+    floating: false,
+    blurRadius: 0,
+    opacity: 1,
+    rim: false,
+    rimWidth: 2,
+    onPress: fn(),
+  },
   argTypes: {
     variant: {
       control: 'select',
@@ -25,6 +36,10 @@ const meta = {
     shape: { control: 'select', options: ['rounded', 'pill'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
     floating: { control: 'boolean' },
+    blurRadius: { control: { type: 'range', min: 0, max: 40, step: 1 } },
+    opacity: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
+    rim: { control: 'boolean' },
+    rimWidth: { control: { type: 'range', min: 0.5, max: 6, step: 0.5 } },
   },
 } satisfies Meta<typeof Button>;
 
@@ -81,6 +96,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
   const [ripple, setRipple] = useState(false);
   const [iconSide, setIconSide] = useState<IconSide>('none');
   const [floating, setFloating] = useState(false);
+  const [glass, setGlass] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [count, setCount] = useState(0);
 
@@ -100,6 +116,9 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
     disabled,
     ripple,
     floating,
+    blurRadius: glass ? 24 : 0,
+    opacity: glass ? 0.5 : 1,
+    rim: glass,
     elevation: ELEVATIONS[elevationKey],
   };
   const icon = <ArrowRight color={iconColor} size={16} />;
@@ -111,6 +130,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Icon" onChange={setIconSide} options={ICON_SIDES} value={iconSide} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
+        <Toggle label="Glass" onChange={setGlass} value={glass} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Pill" onChange={setPill} value={pill} />
         <Toggle label="Loading" onChange={setLoading} value={loading} />
@@ -118,7 +138,25 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
         <Toggle label="Ripple" onChange={setRipple} value={ripple} />
       </ControlCard>
 
-      <View className="flex-row items-center gap-4">
+      <View className="relative flex-row items-center gap-4 overflow-hidden rounded-2xl p-4">
+        {/* Coloured shapes sit behind the button so the frosted glass has a
+            backdrop to blur when the Glass toggle is on. */}
+        {glass ? (
+          <>
+            <View
+              className="absolute"
+              style={{ top: 0, left: 0, width: 56, height: 56, borderRadius: 28, backgroundColor: '#3b82f6' }}
+            />
+            <View
+              className="absolute"
+              style={{ right: 0, bottom: 0, width: 64, height: 64, borderRadius: 32, backgroundColor: '#ec4899' }}
+            />
+            <View
+              className="absolute"
+              style={{ top: 8, left: 64, width: 40, height: 40, borderRadius: 20, backgroundColor: '#f59e0b' }}
+            />
+          </>
+        ) : null}
         <Button {...live} onPress={handlePress}>
           {iconSide === 'left' ? icon : null}
           {CONTINUE_LABEL}
@@ -331,4 +369,32 @@ export const NeutralElevationCastsSurfaceLadder: Story = {
       probe.remove();
     }
   },
+};
+
+/**
+ * The glass treatment — set `blurRadius` to frost the backdrop behind the
+ * button, thin the tint with `opacity`, and draw the `rim` specular edge light.
+ * The coloured shapes behind are what the `backdrop-filter` blur reads, so the
+ * frost only reads over a non-flat backdrop. `variant` still picks the label
+ * colour; the fill becomes the translucent `glass` tint instead.
+ */
+export const Frosted: Story = {
+  args: { blurRadius: 24, opacity: 0.5, rim: true, elevation: 3, size: 'lg' },
+  render: (args) => (
+    <View className="relative h-[200px] w-[320px] items-center justify-center overflow-hidden">
+      <View
+        className="absolute"
+        style={{ top: 24, left: 24, width: 96, height: 96, borderRadius: 48, backgroundColor: '#3b82f6' }}
+      />
+      <View
+        className="absolute"
+        style={{ right: 28, bottom: 24, width: 112, height: 112, borderRadius: 56, backgroundColor: '#ec4899' }}
+      />
+      <View
+        className="absolute"
+        style={{ top: 56, right: 48, width: 64, height: 64, borderRadius: 32, backgroundColor: '#f59e0b' }}
+      />
+      <Button {...args}>{CONTINUE_LABEL}</Button>
+    </View>
+  ),
 };

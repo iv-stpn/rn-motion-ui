@@ -7,7 +7,7 @@ import type { SurfaceElevation } from '../../../lib/elevated';
 import { CARD_RADIUS, MENU_RADIUS, MODAL_RADIUS } from '../../../lib/radius';
 import { glassSurface, type SurfaceRadius, surface } from '../../../lib/surface';
 import { useThemeColor } from '../../../theme/use-theme-color';
-import { useBlurTargetRef } from '../../menus/Overlay/blur-context';
+import { useBlurTargetRef, useInsideBlurTarget } from '../../menus/Overlay/blur-context';
 import { Rim } from './rim';
 
 /**
@@ -87,10 +87,14 @@ export type SurfaceProps = ViewProps & {
   /** Numeric corner radius in dp for the rim + blur clip; defaults from `radius`. */
   borderRadius?: number;
   /**
-   * Set true when the surface renders *inside* the `BlurTarget` it blurs (a card
-   * in the page). On Android a `BlurView` that is a descendant of its own target
-   * cycles the RenderNode graph (SIGSEGV), so an inline pane degrades to the tint
-   * fill rather than crash. iOS and web blur behind themselves and are unaffected.
+   * Escape hatch for the inline degrade. On Android a `BlurView` that is a
+   * descendant of the `BlurTarget` it references cycles the RenderNode graph
+   * (SIGSEGV), so a frosted pane inside the target degrades to the tint fill.
+   * Being inside the target is now detected automatically (the provider marks
+   * the target's subtree via context), so most callers never set this — pass it
+   * true to force the degrade when the auto-detection can't see the target
+   * (e.g. the surface is rendered through a non-context host). iOS and web blur
+   * behind themselves and are unaffected.
    * @default false
    */
   inline?: boolean;
@@ -144,6 +148,9 @@ export function Surface({
   // thins the frost on the degrade path only.
   const fill = glass && opacity < 1 ? scaleAlpha(tint, opacity) : tint;
   const blurTargetRef = useBlurTargetRef();
+  // True when this surface renders inside the `BlurTarget` its `BlurView` would
+  // reference — i.e. it is a descendant of its own blur source on Android.
+  const insideBlurTarget = useInsideBlurTarget();
 
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   // Compose the caller's `onLayout` with the measurement the Rim needs — a
@@ -162,9 +169,11 @@ export function Surface({
   // surface never leaks square-cornered content.
   const clip = glass && numericRadius > 0 ? ({ borderRadius: numericRadius, overflow: 'hidden' } as const) : null;
 
-  // An inline pane inside the target it blurs would cycle the RenderNode graph
-  // on Android — degrade to the tint fill rather than crash (see module doc).
-  const renderBlur = BlurView !== null && glass && !(inline && Platform.OS === 'android');
+  // A pane inside the target it blurs would cycle the RenderNode graph on
+  // Android — degrade to the tint fill rather than crash. Being inside the
+  // target is auto-detected via context; `inline` is the manual escape hatch
+  // for when that detection can't see the target (see prop doc).
+  const renderBlur = BlurView !== null && glass && !(Platform.OS === 'android' && (inline || insideBlurTarget));
   // The peer's overlay tint tracks the scheme; `light`/`dark` mirror the web
   // twin's themed `glass` fill well enough that a separate tint layer is noise.
   const blurType = scheme === 'dark' ? 'dark' : 'light';

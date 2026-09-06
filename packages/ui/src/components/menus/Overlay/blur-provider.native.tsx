@@ -23,6 +23,13 @@ import { OverlayHost } from './overlay-host';
 type BlurTargetProps = { children?: ReactNode; style?: unknown };
 type BlurTargetComponent = ForwardRefExoticComponent<BlurTargetProps & RefAttributes<View>>;
 
+// The peer's `TargetView` is an ordinary ViewGroup with no default size, so the
+// content it wraps would collapse to zero height under Yoga (invisible — a blank
+// app) unless the target is told to fill the region it is given. The overlay
+// host SIBLING already absolute-fills the same region; the in-flow target takes
+// it with `flex: 1` (mirrors the sibling's "fills its parent" contract).
+const TARGET_STYLE = { flex: 1 } as const;
+
 /**
  * Resolves the peer's `BlurTarget` on Android, `null` elsewhere or when the
  * peer is absent/not autolinked. Mounted on every architecture (Fabric
@@ -65,9 +72,16 @@ export function BlurProvider({ children }: BlurProviderProps) {
   // the one component mounted for the app's whole lifetime.
   const blurTargetRef = useRef<View | null>(null);
 
-  if (!BlurTarget) return <BlurTargetContext.Provider value={{ blurTargetRef: null }}>{children}</BlurTargetContext.Provider>;
+  if (!BlurTarget)
+    return (
+      <BlurTargetContext.Provider value={{ blurTargetRef: null, insideBlurTarget: false }}>{children}</BlurTargetContext.Provider>
+    );
 
-  const value: { blurTargetRef: BlurTargetRef } = { blurTargetRef };
+  const value: { blurTargetRef: BlurTargetRef; insideBlurTarget: boolean } = {
+    blurTargetRef,
+    // The provider itself (OverlayHost sibling, scrims) sits OUTSIDE the target.
+    insideBlurTarget: false,
+  };
 
   return (
     <BlurTargetContext.Provider value={value}>
@@ -76,7 +90,12 @@ export function BlurProvider({ children }: BlurProviderProps) {
           scrims) renders here (see `overlay-host`), outside the target it
           blurs — so the Android RenderNode graph stays acyclic AND the overlay
           paints after the blur, crisp instead of frosted. */}
-      <BlurTarget ref={blurTargetRef}>{children}</BlurTarget>
+      <BlurTarget ref={blurTargetRef} style={TARGET_STYLE}>
+        {/* Mark the target's own subtree so in-page frosted surfaces can detect
+            they are inside the target they'd blur and degrade (a `BlurView`
+            descendant of its target cycles the RenderNode graph on Android). */}
+        <BlurTargetContext.Provider value={{ blurTargetRef, insideBlurTarget: true }}>{children}</BlurTargetContext.Provider>
+      </BlurTarget>
       <OverlayHost />
     </BlurTargetContext.Provider>
   );

@@ -10,15 +10,29 @@ import type { View } from 'react-native';
  */
 export type BlurTargetRef = RefObject<View | null>;
 
-/** The context value: a `BlurTarget` ref, or null where none is needed. */
-export type BlurTargetContextValue = { blurTargetRef: BlurTargetRef | null };
+/** The context value: a `BlurTarget` ref and a marker for content inside it. */
+export type BlurTargetContextValue = {
+  /** The Android `BlurTarget` ref, or null where none is needed. */
+  blurTargetRef: BlurTargetRef | null;
+  /**
+   * True only for the subtree *inside* the `BlurTarget` — the content the peer
+   * blurs. A `BlurView` descendant of the target it references cycles the
+   * Android RenderNode graph (SIGSEGV), so frosted components read this to
+   * degrade instead. False outside the target (scrims) and on iOS/web (no
+   * target exists).
+   */
+  insideBlurTarget: boolean;
+};
 
 /**
  * Carries the Android `BlurTarget` ref from the provider at the app root to the
  * portal-mounted `OverlayBlur` scrims, which cannot reach it through the tree
  * (the scrim lives in a `Portal` / `Modal`, the target wraps the app).
  */
-export const BlurTargetContext = createContext<BlurTargetContextValue>({ blurTargetRef: null });
+export const BlurTargetContext = createContext<BlurTargetContextValue>({
+  blurTargetRef: null,
+  insideBlurTarget: false,
+});
 
 /**
  * Reads the `BlurTarget` ref provided by an enclosing `<BlurProvider>`, or
@@ -26,4 +40,12 @@ export const BlurTargetContext = createContext<BlurTargetContextValue>({ blurTar
  */
 export function useBlurTargetRef(): BlurTargetRef | null {
   return useContext(BlurTargetContext).blurTargetRef;
+}
+
+/**
+ * Whether the caller renders inside the `BlurTarget` (see `insideBlurTarget`).
+ * Internal to the package.
+ */
+export function useInsideBlurTarget(): boolean {
+  return useContext(BlurTargetContext).insideBlurTarget;
 }

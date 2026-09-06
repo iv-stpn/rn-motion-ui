@@ -35,5 +35,7 @@ import { BlurTargetContext } from './blur-context';
 export type BlurProviderProps = { children: ReactNode };
 
 export function BlurProvider({ children }: BlurProviderProps) {
-  return <BlurTargetContext.Provider value={{ blurTargetRef: null }}>{children}</BlurTargetContext.Provider>;
+  return (
+    <BlurTargetContext.Provider value={{ blurTargetRef: null, insideBlurTarget: false }}>{children}</BlurTargetContext.Provider>
+  );
 }

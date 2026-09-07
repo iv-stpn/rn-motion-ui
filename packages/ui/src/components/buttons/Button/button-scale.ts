@@ -1,39 +1,106 @@
-// The button family's shared scale: the one place a button's box (height,
+// The button family's shared scale: the one place a box's geometry (height,
 // horizontal padding, corner radius), its adornment gap and its label type ramp
-// are decided. A flat Button, an elevated chip and a ButtonSwap at the
-// same `size` are therefore the same box with the same text inside it, and a row
-// of mixed types lines up.
+// are decided. A flat Button, an elevated chip and a ButtonSwap at the same
+// `size` are therefore the same box with the same text inside it, and a row of
+// mixed types lines up.
 //
 // The geometry itself lives in theme/tokens.css (`--spacing-interactive-*`,
-// `--spacing-interactive-pad-*`) and lib/radius.ts (`INTERACTIVE_RADIUS`) — the
-// classes below only name those tokens, so a consumer retunes the whole family
-// by overriding one custom property rather than by passing a class to every
-// button. BUTTON_METRICS mirrors the same number for the effect layers that need
-// a number instead of a class: ElevatedButton's SVG rim has to follow the same
-// curve as the Pressable, and it can't read a class.
+// `--spacing-interactive-pad-*`) and lib/radius.ts (`INTERACTIVE_HEIGHT`,
+// `INTERACTIVE_RADIUS`) — the classes below only name those tokens, so a
+// consumer retunes the whole family by overriding one custom property rather
+// than by passing a class to every button. BUTTON_METRICS mirrors the same
+// number for the effect layers that need a number instead of a class: a pill
+// rounds to half its height, and ElevatedButton's SVG rim has to follow the same
+// curve as the Pressable, which can't read a class.
+//
+// BUTTON_SIZE is the single table every interactive control in the family reads:
+// its `box` is the hugging label box a Button wears, its `square` is the box an
+// IconButton (and `<Button size="icon">`, which is the `md` box squared) fills,
+// and its `px` height is what the MorphingFAB trigger and the MorphingSwitcher
+// rows stand on. A row of mixed controls therefore lines up by construction —
+// there is no per-sibling copy of the numbers or classes to drift. BUTTON_BOX
+// and BUTTON_METRICS are re-indexed views of that table, kept in the shape-major
+// / ButtonSize-major shapes the Button siblings and the effect layers read.
 //
 // Data only, no React — a sibling imports this without pulling in the family's
 // press/ripple machinery (button-internals.tsx, which re-exports the two types
 // below so existing import sites keep working).
 
-import { INTERACTIVE_RADIUS } from '../../../lib/radius';
+import { INTERACTIVE_HEIGHT, INTERACTIVE_RADIUS } from '../../../lib/radius';
 
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 export type ButtonShape = 'rounded' | 'pill';
+
+/** The three standalone box heights of the ramp — everything except `icon`,
+ *  which is the `md` box squared. */
+export type RampSize = 'sm' | 'md' | 'lg';
+
+/** What one ramp height gives every control that stands on it. */
+export type ButtonSizeGeometry = {
+  /** Pixel side — the label box's height and the square's width. Twin of `--spacing-interactive-*`. */
+  px: number;
+  /** The label box classes — a Button hugs its content between horizontal padding. */
+  box: Record<ButtonShape, string>;
+  /** The square classes — an IconButton / `<Button size="icon">` / a MorphingFAB trigger. */
+  square: Record<ButtonShape, string>;
+};
+
+/**
+ * The shared size ramp — the one table the button family and its icon-carrying
+ * siblings read for geometry, so a row of mixed controls lines up by
+ * construction rather than by each sibling copying the same number. `px` is the
+ * {@link INTERACTIVE_HEIGHT} pixel twin; the class strings spell the geometry
+ * tokens as static literals so the Tailwind/uniwind scanner registers every one.
+ */
+export const BUTTON_SIZE: Record<RampSize, ButtonSizeGeometry> = {
+  sm: {
+    px: INTERACTIVE_HEIGHT.sm,
+    box: {
+      rounded: 'h-interactive-sm rounded-interactive px-interactive-pad-sm',
+      pill: 'h-interactive-sm rounded-full px-interactive-pad-sm',
+    },
+    square: {
+      rounded: 'h-interactive-sm w-interactive-sm rounded-interactive',
+      pill: 'h-interactive-sm w-interactive-sm rounded-full',
+    },
+  },
+  md: {
+    px: INTERACTIVE_HEIGHT.md,
+    box: {
+      rounded: 'h-interactive-md rounded-interactive px-interactive-pad-md',
+      pill: 'h-interactive-md rounded-full px-interactive-pad-md',
+    },
+    square: {
+      rounded: 'h-interactive-md w-interactive-md rounded-interactive',
+      pill: 'h-interactive-md w-interactive-md rounded-full',
+    },
+  },
+  lg: {
+    px: INTERACTIVE_HEIGHT.lg,
+    box: {
+      rounded: 'h-interactive-lg rounded-interactive px-interactive-pad-lg',
+      pill: 'h-interactive-lg rounded-full px-interactive-pad-lg',
+    },
+    square: {
+      rounded: 'h-interactive-lg w-interactive-lg rounded-interactive',
+      pill: 'h-interactive-lg w-interactive-lg rounded-full',
+    },
+  },
+};
 
 /**
  * The pixel twin of the geometry tokens. `radius` is the shared interactive
  * corner — a pill's radius depends on the height, so ask {@link buttonRadius}
  * for the resolved value rather than reading this directly.
  *
- * `icon` is the `md` box squared: same height, same curve, no horizontal padding
- * (the square is the padding).
+ * `icon` is the `md` box squared (the table's `md.square`): same height, same
+ * curve, no horizontal padding (the square is the padding).
  */
 export const BUTTON_METRICS: Record<ButtonSize, { height: number; padX: number; radius: number }> = {
-  sm: { height: 24, padX: 8, radius: INTERACTIVE_RADIUS },
-  md: { height: 32, padX: 14, radius: INTERACTIVE_RADIUS },
-  lg: { height: 40, padX: 22, radius: INTERACTIVE_RADIUS },
-  icon: { height: 32, padX: 0, radius: INTERACTIVE_RADIUS },
+  sm: { height: BUTTON_SIZE.sm.px, padX: 8, radius: INTERACTIVE_RADIUS },
+  md: { height: BUTTON_SIZE.md.px, padX: 14, radius: INTERACTIVE_RADIUS },
+  lg: { height: BUTTON_SIZE.lg.px, padX: 22, radius: INTERACTIVE_RADIUS },
+  icon: { height: BUTTON_SIZE.md.px, padX: 0, radius: INTERACTIVE_RADIUS },
 };
 
 /** Space between an adornment (icon, spinner) and the label, at every size. */
@@ -63,23 +130,24 @@ export const STATE_BUTTON_GAP_CLASSNAME: Record<ButtonSize, string> = {
 };
 
 /**
- * Box classes per shape and size, straight from the geometry tokens. Spelled out
- * per shape rather than composed at call time so no two classes ever compete for
- * the same {@link cn} group, and so the Tailwind/uniwind scanner sees every one
- * as a static literal.
+ * Box classes per shape and size — a re-index of {@link BUTTON_SIZE} into the
+ * shape-major order the Button siblings read (`icon` is the table's `md`
+ * square). Re-pointing rather than re-authoring keeps the literals in one place:
+ * no two classes ever compete for the same {@link cn} group, and the
+ * Tailwind/uniwind scanner still sees every static literal in BUTTON_SIZE.
  */
 export const BUTTON_BOX: Record<ButtonShape, Record<ButtonSize, string>> = {
   rounded: {
-    sm: 'h-interactive-sm rounded-interactive px-interactive-pad-sm',
-    md: 'h-interactive-md rounded-interactive px-interactive-pad-md',
-    lg: 'h-interactive-lg rounded-interactive px-interactive-pad-lg',
-    icon: 'h-interactive-md w-interactive-md rounded-interactive',
+    sm: BUTTON_SIZE.sm.box.rounded,
+    md: BUTTON_SIZE.md.box.rounded,
+    lg: BUTTON_SIZE.lg.box.rounded,
+    icon: BUTTON_SIZE.md.square.rounded,
   },
   pill: {
-    sm: 'h-interactive-sm rounded-full px-interactive-pad-sm',
-    md: 'h-interactive-md rounded-full px-interactive-pad-md',
-    lg: 'h-interactive-lg rounded-full px-interactive-pad-lg',
-    icon: 'h-interactive-md w-interactive-md rounded-full',
+    sm: BUTTON_SIZE.sm.box.pill,
+    md: BUTTON_SIZE.md.box.pill,
+    lg: BUTTON_SIZE.lg.box.pill,
+    icon: BUTTON_SIZE.md.square.pill,
   },
 };
 

@@ -10,6 +10,7 @@ import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
+import { BUTTON_SIZE } from '../../buttons/Button/button-scale';
 import { IconButton } from '../../buttons/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { useBlurTargetRef } from '../Overlay/blur-context';
@@ -17,7 +18,6 @@ import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside
 import type { OverlayType } from '../Overlay/overlay-type';
 import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
-import { TRIGGER_RADIUS, TRIGGER_SIZE } from './morphing-fab-scale';
 
 const PANE_RADIUS = 20;
 /** Web animates the size through Moti; Fabric can't round-trip layout props
@@ -75,12 +75,16 @@ const fabRootStyles = StyleSheet.create({
  * the change via the `layout` transition (layout props don't round-trip Yoga).
  */
 function fabShellGeometry(open: boolean, expandedWidth: number, expandedHeight: number, left: boolean) {
-  const size = { width: open ? expandedWidth : TRIGGER_SIZE, height: open ? expandedHeight : TRIGGER_SIZE };
+  // The collapsed trigger is an `lg` IconButton (a square pill). The shared ramp's
+  // `lg` px owns that square, so the shell's resting footprint can never drift from
+  // the size of the button that fills it; a pill rounds to half the side.
+  const triggerSize = BUTTON_SIZE.lg.px;
+  const size = { width: open ? expandedWidth : triggerSize, height: open ? expandedHeight : triggerSize };
   const anchor = left ? { left: 0 } : { right: 0 };
   return {
     animate: IS_WEB
-      ? { ...size, borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS }
-      : { borderRadius: open ? PANE_RADIUS : TRIGGER_RADIUS },
+      ? { ...size, borderRadius: open ? PANE_RADIUS : triggerSize / 2 }
+      : { borderRadius: open ? PANE_RADIUS : triggerSize / 2 },
     style: IS_WEB ? anchor : { ...size, ...anchor },
   };
 }

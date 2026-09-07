@@ -11,27 +11,26 @@ import { MOTION_SNAPPY, mergeTransition } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../Button/button-internals';
-import { buttonRadius } from '../Button/button-scale';
-import { ICON_BUTTON_BOX, type IconButtonShape, type IconButtonSize } from './icon-button-scale';
+import { BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
 
 /** Icon size in px when rendered without a background tile. */
-const ICON_SIZE: Record<IconButtonSize, number> = { sm: 14, md: 16, lg: 20 };
+const ICON_SIZE: Record<RampSize, number> = { sm: 14, md: 16, lg: 20 };
 
 /**
  * Tile dimensions and inner icon size when `iconBackgroundColor` is set. The
  * tile steps 16/20/24px against the box's 24/32/40px, so every size keeps the
  * same ring of breathing room around the plate.
  */
-const ICON_TILE: Record<IconButtonSize, { tileClass: string; iconSize: number }> = {
+const ICON_TILE: Record<RampSize, { tileClass: string; iconSize: number }> = {
   sm: { tileClass: 'h-4 w-4 rounded-sm', iconSize: 10 },
   md: { tileClass: 'h-5 w-5 rounded-[5px]', iconSize: 12 },
   lg: { tileClass: 'h-6 w-6 rounded-md', iconSize: 14 },
 };
 
 /** Spinner diameter per button size. */
-const SPINNER_SIZE: Record<IconButtonSize, number> = { sm: 12, md: 16, lg: 20 };
+const SPINNER_SIZE: Record<RampSize, number> = { sm: 12, md: 16, lg: 20 };
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -69,10 +68,10 @@ export type IconButtonProps = {
 
   /** Button size — the square, and the icon or tile inside it. Shares
    *  {@link Button}'s height ramp (24/32/40px), so the two line up in a row. @default 'md' */
-  size?: IconButtonSize;
+  size?: RampSize;
 
   /** Corner shape. @default 'pill' */
-  shape?: IconButtonShape;
+  shape?: ButtonShape;
 
   /**
    * Backdrop blur radius in px/dp. `0` keeps the plate a solid surface; any
@@ -203,7 +202,7 @@ export function IconButton({
     trackDims: false,
   });
 
-  const boxClass = ICON_BUTTON_BOX[shape][size];
+  const boxClass = BUTTON_SIZE[size].square[shape];
   const hasTile = Boolean(iconBackgroundColor);
 
   // Icon colour: explicit prop wins; tile mode defaults to white; otherwise the

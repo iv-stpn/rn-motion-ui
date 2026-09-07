@@ -3,18 +3,26 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 import { describe, expect, it } from 'vitest';
 import { INTERACTIVE_RADIUS } from '../../../../lib/radius';
-import { TRIGGER_RADIUS, TRIGGER_SIZE } from '../../../menus/MorphingFAB/morphing-fab-scale';
 import { SWITCHER_SCALE } from '../../../menus/MorphingSwitcher/morphing-switcher-scale';
-import { ICON_BUTTON_BOX, ICON_BUTTON_LG_SIZE } from '../../IconButton/icon-button-scale';
-import { BUTTON_BOX, BUTTON_METRICS, type ButtonSize, buttonRadius } from '../button-scale';
+import {
+  BUTTON_BOX,
+  BUTTON_METRICS,
+  BUTTON_SIZE,
+  type ButtonShape,
+  type ButtonSize,
+  buttonRadius,
+  type RampSize,
+} from '../button-scale';
 
-// The button family's geometry is declared twice: as `@theme` tokens in
-// tokens.css (which is what the classes in BUTTON_BOX compile to) and as pixel
-// numbers in BUTTON_METRICS (which is what the effect layers that can't read a
-// class use — ElevatedButton's SVG rim). Nothing at runtime reconciles the two,
-// so a token edited in the stylesheet and missed in
-// the table silently draws a rim on a different curve than the box it sits in.
-// Same contract as scripts/check-token-parity.mjs, for the non-colour tokens.
+// The button family's geometry is authored once, in BUTTON_SIZE, and every
+// interactive sibling reads that table: Button's label boxes (`box`), IconButton
+// squares and the FAB trigger (`square`), and the MorphingSwitcher rows (`px`).
+// But each geometry still exists in two forms — a class that compiles to an
+// @theme token in tokens.css, and a pixel number (BUTTON_SIZE `px` /
+// BUTTON_METRICS) for the effect layers that can't read a class — and nothing at
+// runtime reconciles the two. A token edited in the stylesheet and missed in the
+// table silently draws a rim on a different curve than the box it sits in. Same
+// contract as scripts/check-token-parity.mjs, for the non-colour tokens.
 
 // Resolved from the vitest root (packages/ui) rather than import.meta.url — the
 // jsdom environment doesn't hand this module a file: URL.
@@ -95,56 +103,59 @@ describe('button geometry', () => {
 // The button family's icon-carrying siblings must stand at Button's per-size box,
 // so a row of mixed controls lines up: IconButton's squares, the MorphingFAB's
 // collapsed trigger and the MorphingSwitcher's rows all resolve to the shared
-// `--spacing-interactive-*` ramp. Each author's geometry twice — a class that
-// compiles to the tokens above and a JS pixel twin for the layers that can't read
-// a class — and nothing at runtime reconciles the two, so a token retuned and a
-// sibling's number missed silently mis-sizes that one control. Same dual-
-// declaration contract as the Button tables above, for the siblings that copy them.
+// `--spacing-interactive-*` ramp. They now do so by construction — each one reads
+// BUTTON_SIZE rather than copying a number into its own scale file — so the guard
+// pins that table to the tokens (and to the derived BUTTON_BOX / BUTTON_METRICS
+// views), plus the one sibling that still authors its own row strings.
 
-describe('interactive-family parity — IconButton, MorphingFAB, MorphingSwitcher vs Button', () => {
-  const sizes = ['sm', 'md', 'lg'] as const;
-  const shapes = ['rounded', 'pill'] as const;
+describe('shared geometry — IconButton, MorphingFAB and MorphingSwitcher read BUTTON_SIZE', () => {
+  const sizes: RampSize[] = ['sm', 'md', 'lg'];
+  const shapes: ButtonShape[] = ['rounded', 'pill'];
 
-  it.each(sizes)('IconButton %s is a square on the Button %s ramp', (size) => {
+  it.each(sizes)('the %s px twin sits on its tokens.css declaration', (size) => {
+    expect(BUTTON_SIZE[size].px).toBe(cssPx(`spacing-interactive-${size}`));
+    expect(BUTTON_SIZE[size].px).toBe(BUTTON_METRICS[size].height);
+  });
+
+  it.each(sizes)('the %s box stays the table entry every sibling indexes', (size) => {
+    for (const shape of shapes) expect(BUTTON_BOX[shape][size]).toBe(BUTTON_SIZE[size].box[shape]);
+  });
+
+  it.each(sizes)('the %s square is the shared box squared', (size) => {
     // The square's width class names the same interactive token as its height, so
     // the side is the ramp height the same-size Button box uses — never a token of
     // its own that could drift off the ramp.
     for (const shape of shapes) {
-      const box = ICON_BUTTON_BOX[shape][size];
-      expect(box).toContain(`h-interactive-${size}`);
-      expect(box).toContain(`w-interactive-${size}`);
-      expect(box).toContain(shape === 'pill' ? 'rounded-full' : 'rounded-interactive');
+      const square = BUTTON_SIZE[size].square[shape];
+      expect(square).toContain(`h-interactive-${size}`);
+      expect(square).toContain(`w-interactive-${size}`);
+      expect(square).toContain(shape === 'pill' ? 'rounded-full' : 'rounded-interactive');
+      // A square takes no horizontal padding — the box is the padding.
+      expect(square).not.toContain('px-interactive-pad');
     }
-    expect(BUTTON_METRICS[size].height).toBe(cssPx(`spacing-interactive-${size}`));
   });
 
-  it("IconButton `md` is Button's `icon` box, in both shapes", () => {
+  it("Button's `icon` box is the table's `md` square, in both shapes", () => {
     // IconButton supersedes `<Button size="icon">` (the md box squared), so the md
     // square and Button's icon square must be the same box literally — one class
     // string — or an icon-only swap in a row changes footprint.
-    for (const shape of shapes) expect(ICON_BUTTON_BOX[shape].md).toBe(BUTTON_BOX[shape].icon);
+    for (const shape of shapes) expect(BUTTON_BOX[shape].icon).toBe(BUTTON_SIZE.md.square[shape]);
   });
 
-  it("the icon-box pixel twin mirrors Button's lg height", () => {
-    // The MorphingFAB collapses to this number (via its trigger), so a drift from
-    // the ramp would leave the FAB's shell a different size than the lg IconButton
-    // that fills it.
-    expect(ICON_BUTTON_LG_SIZE).toBe(BUTTON_METRICS.lg.height);
-    expect(ICON_BUTTON_LG_SIZE).toBe(cssPx('spacing-interactive-lg'));
+  it('the MorphingFAB collapses to the `lg` px', () => {
+    // The FAB's collapsed trigger is an `lg` IconButton and its shell reads
+    // BUTTON_SIZE.lg.px directly (no per-FAB constant remains), so pinning the `lg`
+    // px to the token is what keeps the resting circle exactly the size of the
+    // button inside it.
+    expect(BUTTON_SIZE.lg.px).toBe(cssPx('spacing-interactive-lg'));
   });
 
-  it('MorphingFAB collapses to a Button lg circle', () => {
-    expect(TRIGGER_SIZE).toBe(ICON_BUTTON_LG_SIZE);
-    expect(TRIGGER_SIZE).toBe(BUTTON_METRICS.lg.height);
-    expect(TRIGGER_RADIUS).toBe(TRIGGER_SIZE / 2);
-  });
-
-  it.each(sizes)('MorphingSwitcher %s rows stand at the Button %s height', (size) => {
-    // The numeric height drives the pane arithmetic (row stacking, morph start);
-    // the row class names the same token. Both must track the ramp or the open
-    // pane stops matching the closed trigger and a Button next to it.
-    expect(SWITCHER_SCALE[size].height).toBe(cssPx(`spacing-interactive-${size}`));
-    expect(SWITCHER_SCALE[size].height).toBe(BUTTON_METRICS[size].height);
+  it.each(sizes)('MorphingSwitcher %s rows stand at the shared %s px', (size) => {
+    // The numeric height (which drives the pane arithmetic) is read from the same
+    // table as the row's height class names, and the row's own class still names
+    // the shared token. Only the row's horizontal inset is switcher-owned, so that
+    // is what `rowClassName` carries beyond the token.
+    expect(SWITCHER_SCALE[size].height).toBe(BUTTON_SIZE[size].px);
     expect(SWITCHER_SCALE[size].rowClassName).toContain(`h-interactive-${size}`);
     expect(SWITCHER_SCALE[size].rowClassName).toContain('py-0');
   });

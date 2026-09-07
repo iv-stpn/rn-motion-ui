@@ -1,14 +1,16 @@
 // The MorphingSwitcher's shared scale — the one place one size decides the
-// trigger's and every row's height, inset, gap, icon, type size and pane radius.
-// Height comes from the shared `--spacing-interactive-*` ramp (the same tokens
-// Button and IconButton read), so a switcher lines up with a Button or IconButton
-// of the same size; the numeric `height` mirrors that token for the pane
-// arithmetic a class can't do.
+// trigger's and every row's inset, gap, icon, type size and pane radius. The row
+// height is not decided here: it is the shared interactive ramp, imported from
+// the button family's BUTTON_SIZE as the pixel number the pane arithmetic needs
+// (the row's `h-interactive-*` class compiles to the same token). A switcher
+// therefore lines up with a Button or IconButton of the same size by
+// construction, not by a copied number.
 //
 // Data only, no React — a sibling imports this without pulling in the switcher's
 // morph machinery (morphing-switcher.tsx), and the parity tests import it to pin
 // every row to the shared ramp.
 
+import { BUTTON_SIZE } from '../../buttons/Button/button-scale';
 import type { MenuItemSize } from '../../rows/menu-item';
 
 /** Switcher size — the trigger and every row stand at the matching interactive height. */
@@ -21,14 +23,15 @@ export type MorphingSwitcherSize = 'sm' | 'md' | 'lg';
  * size.
  */
 export type SwitcherScale = {
-  /** Trigger and row height in px — the pixel twin of `rowClassName`'s height, for the pane arithmetic. */
+  /** Trigger and row height in px — read from {@link BUTTON_SIZE}, not authored here. */
   height: number;
   /**
-   * The row box. Height comes from the shared `--spacing-interactive-*` ramp, so
-   * a switcher lines up with a Button or IconButton of the same size. The
-   * horizontal padding is a row's, not a button's (`--spacing-interactive-pad-*`
-   * is tuned for a label hugged by a pill, far too wide for a full-width bar).
-   * `py-0` drops {@link MenuItem}'s own vertical padding — the fixed height owns it.
+   * The row box. The height class names the shared `--spacing-interactive-*`
+   * ramp (the same token {@link BUTTON_SIZE} `px` mirrors), so a switcher lines
+   * up with a Button or IconButton of the same size. The horizontal padding is a
+   * row's, not a button's (`--spacing-interactive-pad-*` is tuned for a label
+   * hugged by a pill, far too wide for a full-width bar). `py-0` drops
+   * {@link MenuItem}'s own vertical padding — the fixed height owns it.
    */
   rowClassName: string;
   /** Gap between icon and label, and between the label block and the carets. */
@@ -56,7 +59,7 @@ export type SwitcherScale = {
  */
 export const SWITCHER_SCALE: Record<MorphingSwitcherSize, SwitcherScale> = {
   sm: {
-    height: 24,
+    height: BUTTON_SIZE.sm.px,
     rowClassName: 'h-interactive-sm px-2 py-0',
     gapClassName: 'gap-1.5',
     menuItemSize: 'sm',
@@ -67,7 +70,7 @@ export const SWITCHER_SCALE: Record<MorphingSwitcherSize, SwitcherScale> = {
     paneRadius: 14,
   },
   md: {
-    height: 32,
+    height: BUTTON_SIZE.md.px,
     rowClassName: 'h-interactive-md px-2.5 py-0',
     gapClassName: 'gap-2',
     menuItemSize: 'md',
@@ -78,7 +81,7 @@ export const SWITCHER_SCALE: Record<MorphingSwitcherSize, SwitcherScale> = {
     paneRadius: 16,
   },
   lg: {
-    height: 40,
+    height: BUTTON_SIZE.lg.px,
     rowClassName: 'h-interactive-lg px-3 py-0',
     gapClassName: 'gap-2',
     menuItemSize: 'md',

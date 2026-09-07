@@ -10,18 +10,15 @@ import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
-import { ICON_BUTTON_LG_SIZE, IconButton } from '../../buttons/IconButton/icon-button';
+import { IconButton } from '../../buttons/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { useBlurTargetRef } from '../Overlay/blur-context';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
 import type { OverlayType } from '../Overlay/overlay-type';
 import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
+import { TRIGGER_RADIUS, TRIGGER_SIZE } from './morphing-fab-scale';
 
-const TRIGGER_SIZE = ICON_BUTTON_LG_SIZE;
-/** The collapsed trigger is a circle, so its radius is half the box — whatever
- *  the shared interactive ramp puts an `lg` IconButton at. */
-const TRIGGER_RADIUS = TRIGGER_SIZE / 2;
 const PANE_RADIUS = 20;
 /** Web animates the size through Moti; Fabric can't round-trip layout props
  *  through `useAnimatedStyle`, so native keeps a static size and drives the

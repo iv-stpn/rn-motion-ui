@@ -5,7 +5,6 @@ import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
-import { INTERACTIVE_HEIGHT } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
 import { MOTION_SNAPPY, mergeTransition } from '../../../theme/motion';
@@ -13,34 +12,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../Button/button-internals';
 import { buttonRadius } from '../Button/button-scale';
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-type IconButtonSize = 'sm' | 'md' | 'lg';
-type IconButtonShape = 'rounded' | 'pill';
-
-// ── Box geometry ─────────────────────────────────────────────────────────────
-// Static literals so the uniwind/Tailwind scanner registers every class.
-// Tracks the BUTTON_BOX.icon pattern: the square at each interactive height.
-// Every size sits on the shared ramp (24/32/40px), so an IconButton and a Button
-// of the same `size` are the same height and a row of the two lines up.
-
-const ICON_BUTTON_BOX: Record<IconButtonShape, Record<IconButtonSize, string>> = {
-  rounded: {
-    sm: 'h-interactive-sm w-interactive-sm rounded-interactive',
-    md: 'h-interactive-md w-interactive-md rounded-interactive',
-    lg: 'h-interactive-lg w-interactive-lg rounded-interactive',
-  },
-  pill: {
-    sm: 'h-interactive-sm w-interactive-sm rounded-full',
-    md: 'h-interactive-md w-interactive-md rounded-full',
-    lg: 'h-interactive-lg w-interactive-lg rounded-full',
-  },
-};
-
-// biome-ignore lint/style/useComponentExportOnlyModules: the `lg` box's pixel twin — the MorphingFAB reads it so its trigger shell stays exactly the size of an `lg` IconButton
-// biome-ignore lint/style/useExportsLast: same reason — it must sit against ICON_BUTTON_BOX above, whose `lg` height it mirrors, so the two can never drift apart
-export const ICON_BUTTON_LG_SIZE = INTERACTIVE_HEIGHT.lg;
+import { ICON_BUTTON_BOX, type IconButtonShape, type IconButtonSize } from './icon-button-scale';
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
 

@@ -14,13 +14,18 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
 import { ThemedIcon } from '../../icon/themed-icon';
-import { MenuItem, type MenuItemSize } from '../../rows/menu-item';
+import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import { useBlurTargetRef } from '../Overlay/blur-context';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
 import type { OverlayType } from '../Overlay/overlay-type';
 import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
+import { type MorphingSwitcherSize, SWITCHER_SCALE, type SwitcherScale } from './morphing-switcher-scale';
+
+// The switcher's size type is public API — re-exported beside the import that
+// resolves it so every consumer keeps importing it from `./morphing-switcher`.
+export type { MorphingSwitcherSize } from './morphing-switcher-scale';
 
 /** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
 const VIEWPORT_PADDING = 8;
@@ -36,85 +41,6 @@ const OPEN_ELEVATION_LIFT = 2;
 const IS_WEB = Platform.OS === 'web';
 const MORPH_SPRING = { type: 'spring' as const, stiffness: 360, damping: 40, mass: 0.6 };
 const MORPH_LAYOUT = springLayout(MORPH_SPRING);
-
-/** Switcher size — the trigger and every row stand at the matching interactive height. */
-export type MorphingSwitcherSize = 'sm' | 'md' | 'lg';
-
-/**
- * Everything one size decides. The trigger and the item rows read from the same
- * entry, which is what makes the trigger the active row of the list rather than
- * a differently-sized header: one height, one inset, one gap, one icon, one type
- * size.
- */
-type SwitcherScale = {
-  /** Trigger and row height in px — the pixel twin of `rowClassName`'s height, for the pane arithmetic. */
-  height: number;
-  /**
-   * The row box. Height comes from the shared `--spacing-interactive-*` ramp, so
-   * a switcher lines up with a Button or IconButton of the same size. The
-   * horizontal padding is a row's, not a button's (`--spacing-interactive-pad-*`
-   * is tuned for a label hugged by a pill, far too wide for a full-width bar).
-   * `py-0` drops {@link MenuItem}'s own vertical padding — the fixed height owns it.
-   */
-  rowClassName: string;
-  /** Gap between icon and label, and between the label block and the carets. */
-  gapClassName: string;
-  /** The size the item rows render their {@link MenuItem} at. */
-  menuItemSize: MenuItemSize;
-  /** That MenuItem size's leading-icon size — the trigger matches it so the two stacks align. */
-  iconSize: number;
-  /** {@link Text} size matching the MenuItem label's, for the same reason. */
-  labelSize: 'xs' | 'sm';
-  /** The single caret of the `select` trigger. */
-  caretSize: number;
-  /** Each caret of the `switcher` trigger's stacked pair. */
-  stackedCaretSize: number;
-  /** Corner radius of the open pane — a touch tighter than the collapsed pill's half-height. */
-  paneRadius: number;
-};
-
-/**
- * `lg` deliberately shares `md`'s icon and label rather than stepping up, the
- * same divergence the button family's `LABEL_TEXT_CLASS` makes: past the `md`
- * box the extra height and padding already carry the size difference, and
- * MenuItem's `lg` ramp (26px icon, 18px label) belongs to a settings list, not
- * to a switcher bar.
- */
-const SWITCHER_SCALE: Record<MorphingSwitcherSize, SwitcherScale> = {
-  sm: {
-    height: 24,
-    rowClassName: 'h-interactive-sm px-2 py-0',
-    gapClassName: 'gap-1.5',
-    menuItemSize: 'sm',
-    iconSize: 16,
-    labelSize: 'xs',
-    caretSize: 12,
-    stackedCaretSize: 11,
-    paneRadius: 14,
-  },
-  md: {
-    height: 32,
-    rowClassName: 'h-interactive-md px-2.5 py-0',
-    gapClassName: 'gap-2',
-    menuItemSize: 'md',
-    iconSize: 21,
-    labelSize: 'sm',
-    caretSize: 14,
-    stackedCaretSize: 13,
-    paneRadius: 16,
-  },
-  lg: {
-    height: 40,
-    rowClassName: 'h-interactive-lg px-3 py-0',
-    gapClassName: 'gap-2',
-    menuItemSize: 'md',
-    iconSize: 21,
-    labelSize: 'sm',
-    caretSize: 16,
-    stackedCaretSize: 15,
-    paneRadius: 20,
-  },
-};
 
 /** Icon renderer — compatible with this project's icon set signature. */
 export type MorphingSwitcherIcon = (props: IconProps) => ReactNode;

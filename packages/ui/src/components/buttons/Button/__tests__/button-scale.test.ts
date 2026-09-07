@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 import { describe, expect, it } from 'vitest';
 import { INTERACTIVE_RADIUS } from '../../../../lib/radius';
+import { TRIGGER_RADIUS, TRIGGER_SIZE } from '../../../menus/MorphingFAB/morphing-fab-scale';
+import { SWITCHER_SCALE } from '../../../menus/MorphingSwitcher/morphing-switcher-scale';
+import { ICON_BUTTON_BOX, ICON_BUTTON_LG_SIZE } from '../../IconButton/icon-button-scale';
 import { BUTTON_BOX, BUTTON_METRICS, type ButtonSize, buttonRadius } from '../button-scale';
 
 // The button family's geometry is declared twice: as `@theme` tokens in
@@ -86,5 +89,63 @@ describe('button geometry', () => {
     expect(heights).toStrictEqual([...heights].sort((a, b) => a - b));
     expect(BUTTON_METRICS.icon.height).toBe(BUTTON_METRICS.md.height);
     expect(BUTTON_METRICS.icon.radius).toBe(INTERACTIVE_RADIUS);
+  });
+});
+
+// The button family's icon-carrying siblings must stand at Button's per-size box,
+// so a row of mixed controls lines up: IconButton's squares, the MorphingFAB's
+// collapsed trigger and the MorphingSwitcher's rows all resolve to the shared
+// `--spacing-interactive-*` ramp. Each author's geometry twice — a class that
+// compiles to the tokens above and a JS pixel twin for the layers that can't read
+// a class — and nothing at runtime reconciles the two, so a token retuned and a
+// sibling's number missed silently mis-sizes that one control. Same dual-
+// declaration contract as the Button tables above, for the siblings that copy them.
+
+describe('interactive-family parity — IconButton, MorphingFAB, MorphingSwitcher vs Button', () => {
+  const sizes = ['sm', 'md', 'lg'] as const;
+  const shapes = ['rounded', 'pill'] as const;
+
+  it.each(sizes)('IconButton %s is a square on the Button %s ramp', (size) => {
+    // The square's width class names the same interactive token as its height, so
+    // the side is the ramp height the same-size Button box uses — never a token of
+    // its own that could drift off the ramp.
+    for (const shape of shapes) {
+      const box = ICON_BUTTON_BOX[shape][size];
+      expect(box).toContain(`h-interactive-${size}`);
+      expect(box).toContain(`w-interactive-${size}`);
+      expect(box).toContain(shape === 'pill' ? 'rounded-full' : 'rounded-interactive');
+    }
+    expect(BUTTON_METRICS[size].height).toBe(cssPx(`spacing-interactive-${size}`));
+  });
+
+  it("IconButton `md` is Button's `icon` box, in both shapes", () => {
+    // IconButton supersedes `<Button size="icon">` (the md box squared), so the md
+    // square and Button's icon square must be the same box literally — one class
+    // string — or an icon-only swap in a row changes footprint.
+    for (const shape of shapes) expect(ICON_BUTTON_BOX[shape].md).toBe(BUTTON_BOX[shape].icon);
+  });
+
+  it("the icon-box pixel twin mirrors Button's lg height", () => {
+    // The MorphingFAB collapses to this number (via its trigger), so a drift from
+    // the ramp would leave the FAB's shell a different size than the lg IconButton
+    // that fills it.
+    expect(ICON_BUTTON_LG_SIZE).toBe(BUTTON_METRICS.lg.height);
+    expect(ICON_BUTTON_LG_SIZE).toBe(cssPx('spacing-interactive-lg'));
+  });
+
+  it('MorphingFAB collapses to a Button lg circle', () => {
+    expect(TRIGGER_SIZE).toBe(ICON_BUTTON_LG_SIZE);
+    expect(TRIGGER_SIZE).toBe(BUTTON_METRICS.lg.height);
+    expect(TRIGGER_RADIUS).toBe(TRIGGER_SIZE / 2);
+  });
+
+  it.each(sizes)('MorphingSwitcher %s rows stand at the Button %s height', (size) => {
+    // The numeric height drives the pane arithmetic (row stacking, morph start);
+    // the row class names the same token. Both must track the ramp or the open
+    // pane stops matching the closed trigger and a Button next to it.
+    expect(SWITCHER_SCALE[size].height).toBe(cssPx(`spacing-interactive-${size}`));
+    expect(SWITCHER_SCALE[size].height).toBe(BUTTON_METRICS[size].height);
+    expect(SWITCHER_SCALE[size].rowClassName).toContain(`h-interactive-${size}`);
+    expect(SWITCHER_SCALE[size].rowClassName).toContain('py-0');
   });
 });

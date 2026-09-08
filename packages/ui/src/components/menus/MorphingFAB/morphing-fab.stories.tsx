@@ -8,18 +8,19 @@ import { LinkLine } from 'rn-motion-ui-icons/icons/link-line';
 import { Message1Line as MessageSquare } from 'rn-motion-ui-icons/icons/message-1-line';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
-import { Choice, ControlCard, Toggle } from '../../../__stories__/story-harness';
+import { Choice, ControlCard, Sample, Toggle } from '../../../__stories__/story-harness';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { SPRING_SWAP } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button } from '../../buttons/Button/button';
+import { BUTTON_SIZE } from '../../buttons/Button/button-scale';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
-import { MorphingFAB } from './morphing-fab';
+import { MorphingFAB, type MorphingFABSize } from './morphing-fab';
 
 const meta = {
   title: 'Menus/MorphingFAB',
@@ -29,6 +30,9 @@ const meta = {
 } satisfies Meta<typeof MorphingFAB>;
 
 type Story = StoryObj<typeof meta>;
+
+const FAB_SIZES = ['sm', 'md', 'lg'] as const satisfies readonly MorphingFABSize[];
+const FAB_SIZE_LABELS: Record<MorphingFABSize, string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -318,6 +322,71 @@ export const FeedbackForm: Story = {
 
     await expect(await screen.findByText('Thanks!')).toBeTruthy();
   },
+};
+
+/** The collapsed trigger stands on the shared interactive ramp (24 / 32 / 40px),
+ *  so it lines up with a Button or IconButton of the same size. */
+export const AllSizes: Story = {
+  render: () => (
+    <AppSurface hint="Three collapsed triggers on the shared interactive ramp — sm/md/lg circles.">
+      <View className="flex-row items-end gap-8 px-5">
+        {FAB_SIZES.map((name) => {
+          const px = BUTTON_SIZE[name].px;
+          return (
+            <Sample key={name} label={FAB_SIZE_LABELS[name]}>
+              <MorphingFAB
+                size={name}
+                position="bottom-left"
+                accessibilityLabel={`${FAB_SIZE_LABELS[name]} action`}
+                triggerTestID={`fab-size-${name}`}
+                style={{ position: 'relative', width: px, height: px, left: 0, bottom: 0 }}
+              >
+                {null}
+              </MorphingFAB>
+            </Sample>
+          );
+        })}
+      </View>
+    </AppSurface>
+  ),
+};
+
+/** The frosted-glass FAB — `blurRadius` frosts the trigger and pane over a
+ *  colourful backdrop, `opacity` thins the tint, and `rim` draws the specular
+ *  edge light. The coloured shapes behind are what the backdrop blur reads. */
+export const Frosted: Story = {
+  render: () => (
+    <AppSurface hint="A glass FAB — the frosted trigger and pane blur whatever sits behind them.">
+      <View
+        className="absolute"
+        style={{ bottom: 40, left: 32, width: 120, height: 120, borderRadius: 60, backgroundColor: '#3b82f6' }}
+      />
+      <View
+        className="absolute"
+        style={{ top: 64, left: 160, width: 100, height: 100, borderRadius: 50, backgroundColor: '#ec4899' }}
+      />
+      <View
+        className="absolute"
+        style={{ bottom: 120, right: 56, width: 72, height: 72, borderRadius: 36, backgroundColor: '#f59e0b' }}
+      />
+      <MorphingFAB
+        blurRadius={24}
+        opacity={0.5}
+        rim={true}
+        elevation={3}
+        accessibilityLabel="Open actions"
+        triggerTestID="frosted-fab-trigger"
+      >
+        {({ close }) => (
+          <View className="gap-1 pt-1">
+            <MenuItem icon={CameraLine} label="Take photo" onPress={close} />
+            <MenuItem icon={Document2Line} label="Attach file" onPress={close} />
+            <MenuItem icon={LinkLine} label="Copy link" onPress={close} />
+          </View>
+        )}
+      </MorphingFAB>
+    </AppSurface>
+  ),
 };
 
 export default meta;

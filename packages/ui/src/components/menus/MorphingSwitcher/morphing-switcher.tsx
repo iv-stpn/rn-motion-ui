@@ -13,6 +13,7 @@ import { clampSurfaceLevel, elevated as elevatedSurface, type SurfaceElevation }
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
+import { Surface } from '../../display/Surface/surface';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
@@ -116,6 +117,20 @@ export type MorphingSwitcherProps = {
    * open. @default 3
    */
   elevation?: SurfaceElevation;
+  /**
+   * Backdrop blur radius in px/dp. `0` keeps the shell a solid surface; any
+   * positive value frosts it — a `glass` tint over a backdrop blur (with the
+   * specular edge light when `rim` is set). @default 0
+   */
+  blurRadius?: number;
+  /** Opacity of the frosted tint (0–1); only thins the fill when `blurRadius` is set. @default 1 */
+  opacity?: number;
+  /** Draw the glass edge light — the `Rim` specular ring around the shell. @default false */
+  rim?: boolean;
+  /** Rim width in px/dp. @default 1 */
+  rimWidth?: number;
+  /** Peak alpha (0–1) of the rim's specular highlight — lower is subtler. @default 0.5 */
+  intensity?: number;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
@@ -429,6 +444,7 @@ function switcherShellGeometry({
 }
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: the shell wires trigger measurement, outside-press handling, and the morph pane around shared refs/state — splitting would prop-drill the shared values across function boundaries
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the glass/solid shell branch doubles the surface host the morph subtree renders through — flattening it would duplicate the trigger + row subtree
 export function MorphingSwitcher({
   items,
   value: valueProp,
@@ -447,6 +463,11 @@ export function MorphingSwitcher({
   size = 'md',
   floating = false,
   elevation = 3,
+  blurRadius = 0,
+  opacity = 1,
+  rim = false,
+  rimWidth,
+  intensity,
   style,
   accessibilityLabel,
   testID = 'morphing-switcher',
@@ -676,18 +697,10 @@ export function MorphingSwitcher({
       />
     ) : null;
 
-  // Keyed by variant: Moti holds the last value of every key it has animated,
-  // so a `select` pane that later re-renders as `switcher` would keep its
-  // 240px width instead of spanning the parent. Remounting drops it.
-  const shellView = (
-    <MotiView
-      key={variant}
-      animate={shell.animate}
-      transition={morphTransition}
-      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
-      className={cn('absolute top-0 left-0 overflow-hidden p-1', switcherSurfaceClass(elevation, open, floating))}
-      style={shell.style}
-    >
+  const glass = blurRadius > 0;
+
+  const shellContent = (
+    <>
       {/* The trigger persists — it morphs into the active header row. Re-tapping
           it while open folds the pane back (it only LOOKS disabled). */}
       <SwitcherTrigger
@@ -719,6 +732,44 @@ export function MorphingSwitcher({
           ))}
         </MotiView>
       ) : null}
+    </>
+  );
+
+  // Keyed by variant: Moti holds the last value of every key it has animated,
+  // so a `select` pane that later re-renders as `switcher` would keep its
+  // 240px width instead of spanning the parent. Remounting drops it. The same
+  // key is shared by both hosts (solid `MotiView` and frosted `Surface`), so
+  // toggling glass remounts the shell and drops the stale animated values.
+  const shellView = glass ? (
+    <Surface
+      key={variant}
+      as={MotiView}
+      animate={shell.animate}
+      transition={morphTransition}
+      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      elevation={open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation}
+      floating={floating}
+      blurRadius={blurRadius}
+      opacity={opacity}
+      rim={rim}
+      rimWidth={rimWidth}
+      intensity={intensity}
+      borderRadius={open ? scale.paneRadius : closedHeight / 2}
+      className="absolute top-0 left-0 overflow-hidden p-1"
+      style={shell.style}
+    >
+      {shellContent}
+    </Surface>
+  ) : (
+    <MotiView
+      key={variant}
+      animate={shell.animate}
+      transition={morphTransition}
+      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      className={cn('absolute top-0 left-0 overflow-hidden p-1', switcherSurfaceClass(elevation, open, floating))}
+      style={shell.style}
+    >
+      {shellContent}
     </MotiView>
   );
 

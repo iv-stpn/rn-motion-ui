@@ -151,6 +151,40 @@ export const AllSizes: Story = {
   ),
 };
 
+/** The frosted-glass shell — `blurRadius` frosts the pane over a colourful
+ *  backdrop, `opacity` thins the tint, and `rim` draws the specular edge light.
+ *  The coloured shapes behind are what the backdrop blur reads. */
+export const Frosted: Story = {
+  render: () => (
+    <View className="relative h-[220px] items-center justify-center overflow-hidden rounded-2xl">
+      <View
+        className="absolute"
+        style={{ top: 24, left: 24, width: 96, height: 96, borderRadius: 48, backgroundColor: '#3b82f6' }}
+      />
+      <View
+        className="absolute"
+        style={{ right: 28, bottom: 24, width: 112, height: 112, borderRadius: 56, backgroundColor: '#ec4899' }}
+      />
+      <View
+        className="absolute"
+        style={{ top: 56, right: 48, width: 64, height: 64, borderRadius: 32, backgroundColor: '#f59e0b' }}
+      />
+      <MorphingSwitcher
+        items={SPACES}
+        defaultValue="home"
+        variant="select"
+        blurRadius={24}
+        opacity={0.5}
+        rim={true}
+        elevation={3}
+        accessibilityLabel="Switch space"
+        triggerTestID="frosted-trigger"
+        testID="frosted"
+      />
+    </View>
+  ),
+};
+
 /** The pill shows the current item (icon + label + caret); it morphs into the item list. */
 export const SwitchBetweenItems: Story = {
   name: 'Demo: switch between items',

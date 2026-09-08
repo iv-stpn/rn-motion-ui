@@ -12,6 +12,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
 import { BUTTON_SIZE } from '../../buttons/Button/button-scale';
 import { IconButton } from '../../buttons/IconButton/icon-button';
+import { Surface } from '../../display/Surface/surface';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { useBlurTargetRef } from '../Overlay/blur-context';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside-press-backdrop';
@@ -74,11 +75,21 @@ const fabRootStyles = StyleSheet.create({
  * the radius (smooth staggered springs); Fabric keeps a static size and drives
  * the change via the `layout` transition (layout props don't round-trip Yoga).
  */
-function fabShellGeometry(open: boolean, expandedWidth: number, expandedHeight: number, left: boolean) {
-  // The collapsed trigger is an `lg` IconButton (a square pill). The shared ramp's
-  // `lg` px owns that square, so the shell's resting footprint can never drift from
-  // the size of the button that fills it; a pill rounds to half the side.
-  const triggerSize = BUTTON_SIZE.lg.px;
+/** Everything the shell's geometry depends on, passed as one bag so the helper
+ *  stays under the parameter cap. */
+type FabShellGeometry = {
+  open: boolean;
+  expandedWidth: number;
+  expandedHeight: number;
+  left: boolean;
+  triggerSize: number;
+};
+
+function fabShellGeometry({ open, expandedWidth, expandedHeight, left, triggerSize }: FabShellGeometry) {
+  // The collapsed trigger is an IconButton (a square pill) at the FAB's `size`.
+  // The shared ramp's `size` px owns that square, so the shell's resting footprint
+  // can never drift from the size of the button that fills it; a pill rounds to
+  // half the side.
   const size = { width: open ? expandedWidth : triggerSize, height: open ? expandedHeight : triggerSize };
   const anchor = left ? { left: 0 } : { right: 0 };
   return {
@@ -95,6 +106,10 @@ export type MorphingFABApi = {
   close: () => void;
 };
 
+/** FAB size — the collapsed trigger's IconButton size, read from the shared ramp
+ *  so it lines up with a Button or IconButton of the same size. */
+export type MorphingFABSize = 'sm' | 'md' | 'lg';
+
 export type MorphingFABProps = {
   /** Expanded pane content, or a render-prop receiving `{ close }`. */
   children: ReactNode | ((api: MorphingFABApi) => ReactNode);
@@ -102,6 +117,10 @@ export type MorphingFABProps = {
    *  through the trigger's IconButton at 20px with the foreground stroke colour. */
   icon?: ComponentType<IconProps>;
   position?: 'bottom-right' | 'bottom-left';
+  /** Collapsed trigger size — the trigger's IconButton and the shell's resting
+   *  footprint stand at the shared interactive ramp, so the FAB lines up with a
+   *  Button or IconButton of the same size. @default 'lg' */
+  size?: MorphingFABSize;
   /**
    * Swap the trigger's and pane's ladder shadow for the input field's large,
    * diffuse halo (`shadow-floating`). It replaces the `shadow-elevated-N` rung
@@ -115,6 +134,20 @@ export type MorphingFABProps = {
    * `surface-3` fill with no shadow or border. @default 3
    */
   elevation?: SurfaceElevation;
+  /**
+   * Backdrop blur radius in px/dp. `0` keeps the trigger and pane solid; any
+   * positive value frosts both — a `glass` tint over a backdrop blur (with the
+   * specular edge light when `rim` is set). @default 0
+   */
+  blurRadius?: number;
+  /** Opacity of the frosted tint (0–1); only thins the fill when `blurRadius` is set. @default 1 */
+  opacity?: number;
+  /** Draw the glass edge light — the `Rim` specular ring around the trigger and pane. @default false */
+  rim?: boolean;
+  /** Rim width in px/dp. @default 1 */
+  rimWidth?: number;
+  /** Peak alpha (0–1) of the rim's specular highlight — lower is subtler. @default 0.5 */
+  intensity?: number;
   /** Expanded pane width in px. Defaults to 300. */
   expandedWidth?: number;
   /** Expanded pane height in px. Defaults to 230. */
@@ -175,8 +208,14 @@ export function MorphingFAB({
   children,
   icon,
   position = 'bottom-right',
+  size = 'lg',
   floating = false,
   elevation = 3,
+  blurRadius = 0,
+  opacity = 1,
+  rim = false,
+  rimWidth,
+  intensity,
   expandedWidth = 300,
   expandedHeight = 230,
   open: openProp,
@@ -343,7 +382,11 @@ export function MorphingFAB({
   const paneEnterTransition = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 200, delay: 150, easing: EASE_OUT };
 
   const resolvedPane = typeof children === 'function' ? children({ close: handleClose }) : children;
-  const shell = fabShellGeometry(open, expandedWidth, expandedHeight, left);
+  // The collapsed trigger's px side — the shared ramp entry the `size` names, and
+  // the resting footprint the shell collapses to. A pill rounds to half of it.
+  const triggerSize = BUTTON_SIZE[size].px;
+  const glass = blurRadius > 0;
+  const shell = fabShellGeometry({ open, expandedWidth, expandedHeight, left, triggerSize });
 
   // The teleported wrapper's top-left: the fixed root's top-left — its bottom
   // corner (the anchor) minus the expanded size. The root never resizes, so
@@ -370,14 +413,8 @@ export function MorphingFAB({
       />
     ) : null;
 
-  const shellView = (
-    <MotiView
-      animate={shell.animate}
-      transition={morphTransition}
-      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
-      className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, floating)}`}
-      style={shell.style}
-    >
+  const shellContent = (
+    <>
       {open ? (
         <View className="w-full">
           {closeIcon === null ? null : (
@@ -407,13 +444,49 @@ export function MorphingFAB({
           icon={icon ?? Plus}
           floating={floating}
           elevation={elevation}
-          size="lg"
+          size={size}
           shape="pill"
+          blurRadius={blurRadius}
+          opacity={opacity}
+          rim={rim}
+          rimWidth={rimWidth}
+          intensity={intensity}
           onPress={handleOpen}
           accessibilityLabel={accessibilityLabel ?? 'Open'}
           testID={triggerTestID}
         />
       )}
+    </>
+  );
+
+  const shellView = glass ? (
+    <Surface
+      as={MotiView}
+      animate={shell.animate}
+      transition={morphTransition}
+      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      elevation={elevation}
+      floating={floating}
+      blurRadius={blurRadius}
+      opacity={opacity}
+      rim={rim}
+      rimWidth={rimWidth}
+      intensity={intensity}
+      borderRadius={open ? PANE_RADIUS : triggerSize / 2}
+      className="absolute bottom-0 overflow-hidden"
+      style={shell.style}
+    >
+      {shellContent}
+    </Surface>
+  ) : (
+    <MotiView
+      animate={shell.animate}
+      transition={morphTransition}
+      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      className={`absolute bottom-0 overflow-hidden ${elevatedSurface(elevation, elevation, floating)}`}
+      style={shell.style}
+    >
+      {shellContent}
     </MotiView>
   );
 

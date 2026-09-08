@@ -72,6 +72,7 @@ function MorphingSwitcherPlayground() {
   const [size, setSize] = useState<MorphingSwitcherSize>('md');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
+  const [glass, setGlass] = useState(false);
   const [withIcons, setWithIcons] = useState(true);
   const [closeCaret, setCloseCaret] = useState(true);
   const [value, setValue] = useState('home');
@@ -85,6 +86,7 @@ function MorphingSwitcherPlayground() {
           <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
           <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
           <Toggle label="Floating" onChange={setFloating} value={floating} />
+          <Toggle label="Glass" onChange={setGlass} value={glass} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
           <Toggle label="Item icons" onChange={setWithIcons} value={withIcons} />
           <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
@@ -96,21 +98,44 @@ function MorphingSwitcherPlayground() {
         {/* Above the switcher: the open pane overlays whatever sits below it. */}
         <Note testID="story-selected-space">{`Selected: ${value}`}</Note>
 
-        <MorphingSwitcher
-          items={withIcons ? SPACES : PLAIN_SPACES}
-          value={value}
-          onValueChange={setValue}
-          variant={variant}
-          size={size}
-          elevation={ELEVATIONS[elevationKey]}
-          floating={floating}
-          overlay={overlay}
-          closeOnOutsidePress={closeOnOutside}
-          closeIcon={closeCaret ? undefined : null}
-          accessibilityLabel="Switch space"
-          triggerTestID="playground-trigger"
-          testID="playground"
-        />
+        {/* Coloured shapes sit behind the switcher so the frosted glass has a
+            backdrop to blur when the Glass toggle is on. */}
+        <View className="relative">
+          {glass ? (
+            <>
+              <View
+                className="absolute"
+                style={{ top: 0, left: 0, width: 56, height: 56, borderRadius: 28, backgroundColor: '#3b82f6' }}
+              />
+              <View
+                className="absolute"
+                style={{ top: 6, right: 0, width: 64, height: 64, borderRadius: 32, backgroundColor: '#ec4899' }}
+              />
+              <View
+                className="absolute"
+                style={{ top: 16, left: 96, width: 40, height: 40, borderRadius: 20, backgroundColor: '#f59e0b' }}
+              />
+            </>
+          ) : null}
+          <MorphingSwitcher
+            items={withIcons ? SPACES : PLAIN_SPACES}
+            value={value}
+            onValueChange={setValue}
+            variant={variant}
+            size={size}
+            elevation={ELEVATIONS[elevationKey]}
+            floating={floating}
+            blurRadius={glass ? 24 : 0}
+            opacity={glass ? 0.5 : 1}
+            rim={glass}
+            overlay={overlay}
+            closeOnOutsidePress={closeOnOutside}
+            closeIcon={closeCaret ? undefined : null}
+            accessibilityLabel="Switch space"
+            triggerTestID="playground-trigger"
+            testID="playground"
+          />
+        </View>
       </View>
     </AppSurface>
   );

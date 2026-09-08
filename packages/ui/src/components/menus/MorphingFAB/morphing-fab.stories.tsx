@@ -193,8 +193,10 @@ const PLAYGROUND_HINT = 'Toggle between Feedback (form → sent/error) and Menu 
 
 function MorphingFABPlayground() {
   const [example, setExample] = useState<Example>('feedback');
+  const [size, setSize] = useState<MorphingFABSize>('lg');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
+  const [glass, setGlass] = useState(false);
   const [overlay, setOverlay] = useState<OverlayType>('none');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
 
@@ -203,18 +205,42 @@ function MorphingFABPlayground() {
       <View className="gap-3 px-5">
         <ControlCard title="Example">
           <Choice label="Content" onChange={setExample} options={EXAMPLES} value={example} />
+          <Choice label="Size" onChange={setSize} options={FAB_SIZES} value={size} />
           <Toggle label="Floating" onChange={setFloating} value={floating} />
+          <Toggle label="Glass" onChange={setGlass} value={glass} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
           <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
           <Toggle label="Close on outside" onChange={setCloseOnOutside} value={closeOnOutside} />
         </ControlCard>
       </View>
+      {/* Coloured shapes sit behind the FAB so the frosted glass has a backdrop
+          to blur when the Glass toggle is on. */}
+      {glass ? (
+        <>
+          <View
+            className="absolute"
+            style={{ bottom: 24, right: 40, width: 96, height: 96, borderRadius: 48, backgroundColor: '#3b82f6' }}
+          />
+          <View
+            className="absolute"
+            style={{ bottom: 104, right: 132, width: 72, height: 72, borderRadius: 36, backgroundColor: '#ec4899' }}
+          />
+          <View
+            className="absolute"
+            style={{ bottom: 40, right: 160, width: 56, height: 56, borderRadius: 28, backgroundColor: '#f59e0b' }}
+          />
+        </>
+      ) : null}
       {example === 'feedback' ? (
         <MorphingFAB
           expandedWidth={300}
           expandedHeight={230}
+          size={size}
           floating={floating}
           elevation={ELEVATIONS[elevationKey]}
+          blurRadius={glass ? 24 : 0}
+          opacity={glass ? 0.5 : 1}
+          rim={glass}
           overlay={overlay}
           closeOnOutsidePress={closeOnOutside}
           icon={MessageSquare}
@@ -232,8 +258,12 @@ function MorphingFABPlayground() {
         <MorphingFAB
           expandedWidth={232}
           expandedHeight={192}
+          size={size}
           floating={floating}
           elevation={ELEVATIONS[elevationKey]}
+          blurRadius={glass ? 24 : 0}
+          opacity={glass ? 0.5 : 1}
+          rim={glass}
           overlay={overlay}
           closeOnOutsidePress={closeOnOutside}
           accessibilityLabel="Open actions"

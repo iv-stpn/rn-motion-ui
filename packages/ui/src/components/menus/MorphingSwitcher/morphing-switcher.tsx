@@ -484,10 +484,14 @@ export function MorphingSwitcher({
   const [internalValue, setInternalValue] = useState(defaultValue);
   const value = valueProp ?? internalValue;
   // On Android the blur must render OUTSIDE the `BlurTarget` it frosts (see
-  // `OverlayHost`), so a `"blur"` switcher teleports its backdrop + shell there —
-  // the morph still runs, the shell just lives in the overlay host instead of inline.
+  // `OverlayHost`), so a frosted switcher teleports its backdrop + shell there —
+  // the morph still runs, the shell just lives in the overlay host instead of
+  // inline. Whenever a host exists, render through it for EVERY `overlay` —
+  // `overlay` still decides the scrim, teleporting only relocates the backdrop +
+  // shell into the host (the glass blur works regardless of the scrim). Without
+  // a provider (`blurTargetRef` null) the switcher stays inline.
   const blurTargetRef = useBlurTargetRef();
-  const teleported = Platform.OS === 'android' && overlay === 'blur' && blurTargetRef !== null;
+  const teleported = Platform.OS === 'android' && blurTargetRef !== null;
   const [triggerSize, setTriggerSize] = useState<{ width: number; height: number } | null>(null);
   /** True while the pane opens upward — the list sits above the trigger instead of below. */
   const [openAbove, setOpenAbove] = useState(false);

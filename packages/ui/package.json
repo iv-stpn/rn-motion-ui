@@ -544,6 +544,12 @@
       "types": "./src/components/typography/TextRolling/text-rolling.tsx",
       "default": "./src/components/typography/TextRolling/text-rolling.tsx"
     },
+    "./toaster": {
+      "react-native": "./src/components/display/Toaster/toaster.native.tsx",
+      "source": "./src/components/display/Toaster/toaster.tsx",
+      "types": "./src/components/display/Toaster/toaster.tsx",
+      "default": "./src/components/display/Toaster/toaster.tsx"
+    },
     "./toggle-group": {
       "source": "./src/components/form/ToggleGroup/toggle-group.tsx",
       "types": "./src/components/form/ToggleGroup/toggle-group.tsx",
@@ -843,6 +849,7 @@
     "expo-blur": "~57.0.2",
     "expo-haptics": "~57.0.1",
     "rn-motion-ui-icons": "^0.0.2",
+    "sonner": "^2.0.8",
     "tailwind-merge": "^3.6.0",
     "zustand": "5.0.3"
   },

@@ -175,6 +175,7 @@ Subpaths are namespaced by category:
 | `/drag-types`                  | drag system type definitions                                             |
 | `/drag-store`                  | the drag registry, for custom sources and targets                        |
 | `/choice-group`                | `ChoiceGroup`                                                            |
+| `/toaster` | `Toaster`, `toast` |
 | `/toggle-group`                | `ToggleGroup`                                                            |
 | `/use-drag-store`              | `useActiveDrag`, `useDragSnapshot`, `useDragzoneState`, `useDragMove`    |
 | `/use-draggable`               | `useDraggable` — a drag with no markup attached                          |

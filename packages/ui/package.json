@@ -353,6 +353,11 @@
       "types": "./src/components/rows/menu-item.tsx",
       "default": "./src/components/rows/menu-item.tsx"
     },
+    "./morphing-dock-switch": {
+      "source": "./src/components/navigation/MorphingDockSwitch/morphing-dock-switch.tsx",
+      "types": "./src/components/navigation/MorphingDockSwitch/morphing-dock-switch.tsx",
+      "default": "./src/components/navigation/MorphingDockSwitch/morphing-dock-switch.tsx"
+    },
     "./morphing-fab": {
       "source": "./src/components/menus/MorphingFAB/morphing-fab.tsx",
       "types": "./src/components/menus/MorphingFAB/morphing-fab.tsx",

@@ -72,7 +72,7 @@ function DockButton({ id, label, icon: Icon, active, iconSize, onSelect }: DockB
   const color = useThemeColor('foreground');
   const handlePress = useCallback(() => onSelect(id), [onSelect, id]);
   return (
-    <DockItem accessibilityLabel={label} active={active} onPress={handlePress}>
+    <DockItem label={label} accessibilityLabel={label} active={active} onPress={handlePress}>
       <Icon color={color} size={iconSize} />
     </DockItem>
   );
@@ -83,14 +83,22 @@ type DockDemoProps = {
   separator?: boolean;
   elevation?: SurfaceElevation;
   floating?: boolean;
+  showLabels?: boolean;
   onSelect?: (id: string) => void;
 };
 
-function DockDemo({ size = 'lg', separator = true, elevation = 0, floating = false, onSelect }: DockDemoProps) {
+function DockDemo({
+  size = 'lg',
+  separator = true,
+  elevation = 0,
+  floating = false,
+  showLabels = false,
+  onSelect,
+}: DockDemoProps) {
   const [active, setActive] = useState('home');
   const color = useThemeColor('foreground');
   const itemPx = ITEM_PX[size];
-  const iconSize = Math.round(itemPx * 0.45);
+  const iconSize = Math.round(itemPx * 0.5);
 
   const select = useCallback(
     (id: string) => {
@@ -102,7 +110,7 @@ function DockDemo({ size = 'lg', separator = true, elevation = 0, floating = fal
   const selectSettings = useCallback(() => select('settings'), [select]);
 
   return (
-    <Dock size={size} elevation={elevation} floating={floating}>
+    <Dock size={size} elevation={elevation} floating={floating} showLabels={showLabels}>
       {ITEMS.map((item) => (
         <DockButton
           active={active === item.id}
@@ -115,11 +123,11 @@ function DockDemo({ size = 'lg', separator = true, elevation = 0, floating = fal
         />
       ))}
       {separator ? <DockSeparator /> : null}
-      <DockItem accessibilityLabel="Settings" active={active === 'settings'} onPress={selectSettings}>
+      <DockItem label="Settings" accessibilityLabel="Settings" active={active === 'settings'} onPress={selectSettings}>
         <Settings color={color} size={iconSize} />
       </DockItem>
       {/* No `onPress`: the item renders as a plain View, so it never highlights. */}
-      <DockItem accessibilityLabel="Repository">
+      <DockItem label="Repository" accessibilityLabel="Repository">
         <GitBranch color={color} size={iconSize} />
       </DockItem>
     </Dock>
@@ -131,12 +139,14 @@ function DockPlayground() {
   const [separator, setSeparator] = useState(true);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('0');
   const [floating, setFloating] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
   const [selected, setSelected] = useState('home');
 
   return (
     <Playground>
       <ControlCard title="Options">
         <Choice label="Size" onChange={setSizeKey} options={SIZES} value={sizeKey} />
+        <Toggle label="Show labels" onChange={setShowLabels} value={showLabels} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Toggle label="Separator" onChange={setSeparator} value={separator} />
@@ -150,6 +160,7 @@ function DockPlayground() {
           elevation={ELEVATIONS[elevationKey]}
           onSelect={setSelected}
           separator={separator}
+          showLabels={showLabels}
           size={sizeKey}
         />
         <Note testID="story-selected">{selected}</Note>

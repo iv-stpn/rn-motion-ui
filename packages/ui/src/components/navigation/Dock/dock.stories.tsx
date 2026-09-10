@@ -8,7 +8,8 @@ import { MailLine as Mail } from 'rn-motion-ui-icons/icons/mail-line';
 import { MusicLine as Music } from 'rn-motion-ui-icons/icons/music-line';
 import { Settings1Line as Settings } from 'rn-motion-ui-icons/icons/settings-1-line';
 import { SparklesLine as Sparkles } from 'rn-motion-ui-icons/icons/sparkles-line';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { checkDockLabelMotion, expectDockAlignment } from '../../../__stories__/dock-motion-checks';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import type { SurfaceElevation } from '../../../lib/elevated';
@@ -178,11 +179,77 @@ function DockPlayground() {
   );
 }
 
+function MixedDockFixture() {
+  const [labels, setLabels] = useState(false);
+  return (
+    <View className="items-center gap-4">
+      <Toggle label="Show labels" value={labels} onChange={setLabels} />
+      {SIZES.map(({ value }) => (
+        <Dock key={value} size={value} showLabels={labels} testID={`mixed-${value}`}>
+          {/* biome-ignore lint/complexity/noUselessFragments: verify compound items nested in a fragment */}
+          <>
+            <DockItem label="Home" testID={`mixed-${value}-home`}>
+              H
+            </DockItem>
+            <DockSeparator />
+            <DockItem active={true} testID={`mixed-${value}-custom`} style={{ width: 60, backgroundColor: '#abcdef' }}>
+              C
+            </DockItem>
+          </>
+        </Dock>
+      ))}
+    </View>
+  );
+}
+
 export default meta;
 
 /** One dock with a live selection readout, plus the size ladder. The last item has
  *  no `onPress`, so it stays a plain View and never takes the highlight. */
 export const Interactive: Story = { render: () => <DockPlayground /> };
+
+export const LabelMotion: Story = {
+  render: () => <DockPlayground />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pill = (await canvas.findAllByTestId('dock-highlight'))[0];
+    if (!pill) throw new Error('Dock highlight is missing');
+    const shell = pill.parentElement?.parentElement;
+    if (!shell) throw new Error('Dock shell is missing');
+    const mail = within(shell).getByRole('button', { name: 'Mail' });
+    await userEvent.click(mail);
+    await expectDockAlignment(pill, mail);
+    await checkDockLabelMotion(shell, mail, canvas.getByRole('switch', { name: 'Show labels' }));
+    await expectDockAlignment(pill, mail);
+    expect(shell.querySelector('[data-testid="dock-highlight"]')).toBe(pill);
+    const settings = within(shell).getByRole('button', { name: 'Settings' });
+    await userEvent.click(settings);
+    await expectDockAlignment(pill, settings);
+    const inactiveContent = mail.firstElementChild;
+    if (!inactiveContent) throw new Error('Dock content is missing');
+    await expect(Number(getComputedStyle(inactiveContent).opacity)).toBeCloseTo(0.5, 1);
+  },
+};
+
+export const MixedItems: Story = {
+  render: () => <MixedDockFixture />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('switch', { name: 'Show labels' }));
+    await Promise.all(
+      SIZES.map(async ({ value }) => {
+        const custom = await canvas.findByTestId(`mixed-${value}-custom`);
+        const pill = await canvas.findByTestId(`mixed-${value}-highlight`);
+        await expectDockAlignment(pill, custom);
+        expect(custom.getBoundingClientRect().width).toBe(60);
+        expect(custom.getBoundingClientRect().height).toBe(ITEM_PX[value]);
+        expect(getComputedStyle(custom).backgroundColor).toBe('rgb(171, 205, 239)');
+        const home = canvas.getByTestId(`mixed-${value}-home`);
+        await waitFor(() => expect(home.getBoundingClientRect().height).toBeGreaterThan(ITEM_PX[value]));
+      }),
+    );
+  },
+};
 
 export const Default: Story = {
   name: 'Demo: Select an item',

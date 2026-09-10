@@ -1,43 +1,74 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useState } from 'react';
-import { type LayoutRectangle, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import {
+  type LayoutChangeEvent,
+  type LayoutRectangle,
+  Pressable,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from 'react-native';
+import { useDirection } from '../../../hooks/use-direction';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { SPRING_LAYOUT, SPRING_PRESS, SPRING_SWAP, springLayout } from '../../../lib/ease';
+import { SPRING_PRESS } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
-import { H_INTERACTIVE, INTERACTIVE_HEIGHT } from '../../../lib/radius';
+import { INTERACTIVE_HEIGHT } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
-import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import { TIMING_INSTANT } from '../../../theme/motion';
 import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
+import { DOCK_GAP, DOCK_INSET, dockMetrics } from './dock-metrics';
+import { DockContent, DockFrame, DockHighlight } from './dock-motion';
+import { dockSizeMotion } from './dock-transition';
 
 type DockContextValue = {
   size: number;
-  /** Whether dock items render a tiny label beneath their icon. */
   showLabels: boolean;
   reduce: boolean;
   layouts: Record<string, LayoutRectangle>;
-  register: (id: string, layout: LayoutRectangle) => void;
-  activeId: string | null;
+  register: (id: string, layout: LayoutRectangle | null) => void;
   setActive: (id: string, active: boolean) => void;
 };
 
 const DockContext = createContext<DockContextValue | null>(null);
-
-// Container hairline border ("border-[1.5px] border-border" = 1.5px). The active
-// pill is positioned against the padding box, so item layouts (border-box
-// relative) are offset by this amount.
 const BORDER_WIDTH = 1.5;
-// Icon-only pill width factor — narrower than the labelled pill, so an icon-only
-// item reads as a compact capsule instead of a square.
-const ICON_PILL_ASPECT = 1.2;
-// Labelled pill width factor — wider to fit the icon + caption column.
-const LABEL_PILL_ASPECT = 1.8;
-// The icon renders at its base size and scales up this much in labelled mode.
-const LABEL_ICON_SCALE = 1.25;
-/** Pill glide rides `springLayout` on `SPRING_LAYOUT`. */
-const PILL_LAYOUT = springLayout(SPRING_LAYOUT);
+
+/** Keep a custom item's layout in the target row and its decoration on the moving frame. */
+function splitItemStyle(style: StyleProp<ViewStyle>) {
+  const {
+    width,
+    height,
+    margin,
+    marginHorizontal,
+    marginVertical,
+    marginLeft,
+    marginRight,
+    marginTop,
+    marginBottom,
+    marginStart,
+    marginEnd,
+    alignSelf,
+    ...presentation
+  } = StyleSheet.flatten(style) ?? {};
+  return {
+    slot: {
+      width,
+      height,
+      margin,
+      marginHorizontal,
+      marginVertical,
+      marginLeft,
+      marginRight,
+      marginTop,
+      marginBottom,
+      marginStart,
+      marginEnd,
+      alignSelf,
+    },
+    presentation,
+  };
+}
 
 export type DockProps = {
   children: ReactNode;
@@ -68,7 +99,6 @@ export type DockProps = {
   showLabels?: boolean;
 };
 
-// biome-ignore lint/style/useExportsLast: type LayoutEvent (private) must stay adjacent to DockItem below; hoisting all private types above would scatter the context-private/component-public grouping
 export function Dock({
   children,
   size = 'lg',
@@ -80,79 +110,75 @@ export function Dock({
   showLabels = false,
 }: DockProps) {
   const reduce = useReducedMotion();
+  const direction = useDirection();
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
-  // Item pixel size = container height less 4 px — 2 px breathing room on each
-  // side so the item (and its full-size pill) sit inside the container rim.
+  const [row, setRow] = useState<{ width: number; height: number } | null>(null);
   const itemPx = INTERACTIVE_HEIGHT[size] - 4;
 
-  const register = useCallback((id: string, layout: LayoutRectangle) => {
+  const register = useCallback((id: string, layout: LayoutRectangle | null) => {
     setLayouts((prev) => {
+      if (!layout) return Object.fromEntries(Object.entries(prev).filter(([key]) => key !== id));
       const existing = prev[id];
       if (
         existing &&
         existing.x === layout.x &&
-        existing.width === layout.width &&
         existing.y === layout.y &&
+        existing.width === layout.width &&
         existing.height === layout.height
       )
         return prev;
       return { ...prev, [id]: layout };
     });
   }, []);
-
   const setActive = useCallback((id: string, isActive: boolean) => {
     setActiveId((prev) => {
       if (isActive) return id;
-      if (prev === id) return null;
-      return prev;
+      return prev === id ? null : prev;
     });
   }, []);
-
+  const measureRow = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setRow((prev) => (prev?.width === width && prev.height === height ? prev : { width, height }));
+  }, []);
   const ctx = useMemo<DockContextValue>(
-    () => ({ size: itemPx, showLabels, reduce, layouts, register, activeId, setActive }),
-    [itemPx, showLabels, reduce, layouts, register, activeId, setActive],
+    () => ({ size: itemPx, showLabels, reduce, layouts, register, setActive }),
+    [itemPx, showLabels, reduce, layouts, register, setActive],
   );
-
-  const active = activeId ? layouts[activeId] : undefined;
+  const inset = DOCK_INSET + BORDER_WIDTH;
+  const motion = row ? dockSizeMotion(row.width + inset * 2, row.height + inset * 2, reduce) : { style: undefined };
 
   return (
     <DockContext.Provider value={ctx}>
       <Surface
+        as={MotiView}
+        {...motion}
         elevation={elevation}
         floating={floating}
         testID={testID}
-        className={cn(
-          showLabels ? 'px-2 py-1.5' : cn(H_INTERACTIVE[size], 'px-1'),
-          'relative flex-row items-center gap-1.5 self-start rounded-full border-[1.5px] border-border',
-          className,
-        )}
-        style={style}
+        className={cn('relative self-center rounded-full border-[1.5px] border-border', className)}
+        style={[motion.style, { padding: DOCK_INSET }, style]}
       >
-        {/* Shared-layout pill glides to the active item's measured rect. Item
-            layouts are reported relative to the container's border box, but this
-            absolutely-positioned pill is placed against the padding box (inside
-            the 1.5px border) — subtract the border width so it overlays the item
-            exactly. */}
-        {active ? (
-          <MotiView
-            layout={reduce ? undefined : PILL_LAYOUT}
-            className="pointer-events-none absolute rounded-full bg-surface-selected"
-            style={{
-              left: active.x - BORDER_WIDTH,
-              top: active.y - BORDER_WIDTH,
-              width: active.width,
-              height: active.height,
-            }}
+        {/* Target slots use normal Yoga layout, never animated measurements. The
+            borderless row gives the pill and every visible frame one origin.
+            Slots are position:static so their frames use this row as the containing
+            block, without a one-frame jump when a slot changes position. */}
+        <View
+          onLayout={measureRow}
+          className="relative flex-row items-center self-start"
+          style={{ gap: DOCK_GAP, flexShrink: 0, direction }}
+        >
+          <DockHighlight
+            rect={activeId ? layouts[activeId] : undefined}
+            reduce={reduce}
+            testID={`${testID ?? 'dock'}-highlight`}
           />
-        ) : null}
-        {children}
+          {children}
+        </View>
       </Surface>
     </DockContext.Provider>
   );
 }
-
-type LayoutEvent = { nativeEvent: { layout: LayoutRectangle } };
 
 export type DockItemProps = {
   children: ReactNode;
@@ -170,83 +196,64 @@ export function DockItem({ children, onPress, active, accessibilityLabel, label,
   const dock = useContext(DockContext);
   if (!dock) throw new Error('DockItem must be used inside <Dock>');
   const id = useId();
-  const size = dock?.size ?? 44;
+  const { size, reduce, register, setActive } = dock;
   const { pressed, pressHandlers } = usePressState();
-
-  // biome-ignore lint/plugin: reporting active state to the parent context must happen as a side effect — calling setActive during render would be setState-in-render
+  // biome-ignore lint/plugin: reporting selection to the compound parent is a side effect
   useEffect(() => {
-    dock?.setActive(id, Boolean(active));
-  }, [dock, id, active]);
-
-  const onLayout = useCallback((e: LayoutEvent) => dock?.register(id, e.nativeEvent.layout), [dock, id]);
-
-  // A labelled item is wider and stacks the icon over a tiny, thin caption — the
-  // mobile-dock look. The pill (measured from this box) wraps the full icon +
-  // caption column. An icon-only item is a narrower, shorter pill.
+    setActive(id, Boolean(active));
+    return () => setActive(id, false);
+  }, [setActive, id, active]);
+  // biome-ignore lint/plugin: remove the measured registration when this item unmounts
+  useEffect(() => () => register(id, null), [register, id]);
   const labelled = Boolean(dock.showLabels && label);
-  const scaleTransition = dock.reduce ? TIMING_INSTANT : SPRING_SWAP;
-  const boxStyle: ViewStyle = labelled ? { width: size * LABEL_PILL_ASPECT } : { width: size * ICON_PILL_ASPECT, height: size };
-  const contentClassName = cn('flex-col items-center justify-center rounded-full', labelled && 'gap-0.5');
-  const renderedChildren =
-    typeof children === 'string' || typeof children === 'number' ? <Text className="text-foreground">{children}</Text> : children;
-  const iconNode = (
-    <MotiView animate={{ scale: labelled ? LABEL_ICON_SCALE : 1 }} transition={scaleTransition}>
-      {renderedChildren}
-    </MotiView>
-  );
-  const labelNode = (
-    <AnimatePresence>
-      {labelled ? (
-        <MotiView
-          key="dock-label"
-          from={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0, opacity: 0 }}
-          transition={scaleTransition}
-        >
-          <Text className="text-[10px]" numberOfLines={1}>
-            {label}
-          </Text>
-        </MotiView>
-      ) : null}
-    </AnimatePresence>
+  const onLayout = useCallback((event: LayoutChangeEvent) => register(id, event.nativeEvent.layout), [register, id]);
+  const { width, height } = dockMetrics(size, labelled);
+  const rect = dock.layouts[id];
+  const custom = splitItemStyle(onPress ? undefined : style);
+  const content = (
+    <DockContent itemPx={size} labelled={labelled} active={active} reduce={reduce} label={label}>
+      {typeof children === 'string' || typeof children === 'number' ? (
+        <Text className="text-foreground">{children}</Text>
+      ) : (
+        children
+      )}
+    </DockContent>
   );
 
-  if (onPress)
-    return (
-      <MotiView
-        onLayout={onLayout}
-        animate={{ scale: pressed && !dock?.reduce ? 0.9 : 1 }}
-        transition={SPRING_PRESS}
-        style={[{ position: 'relative' }, boxStyle]}
-      >
-        <Pressable
-          accessibilityRole="button"
-          aria-selected={Boolean(active)}
-          accessibilityLabel={accessibilityLabel}
-          testID={testID}
-          {...pressHandlers}
-          onPress={onPress}
-          className={cn(contentClassName, !labelled && 'flex-1')}
-          style={style}
-        >
-          {iconNode}
-          {labelNode}
-        </Pressable>
-      </MotiView>
-    );
-
-  // Children carry their own control (and its accessible name).
   return (
     <View
       onLayout={onLayout}
-      accessibilityLabel={accessibilityLabel}
-      testID={testID}
-      className={contentClassName}
-      style={[boxStyle, style]}
+      style={[custom.slot, { width: custom.slot.width ?? width, height: custom.slot.height ?? height, position: 'static' }]}
     >
-      {iconNode}
-      {labelNode}
+      {rect ? (
+        <DockFrame rect={rect} reduce={reduce}>
+          <MotiView animate={{ scale: pressed && !reduce ? 0.9 : 1 }} transition={SPRING_PRESS} className="flex-1">
+            {onPress ? (
+              <Pressable
+                accessibilityRole="button"
+                aria-selected={Boolean(active)}
+                accessibilityLabel={accessibilityLabel ?? label}
+                testID={testID}
+                {...pressHandlers}
+                onPress={onPress}
+                className="relative flex-1 items-center justify-center rounded-full"
+                style={style}
+              >
+                {content}
+              </Pressable>
+            ) : (
+              <View
+                accessibilityLabel={accessibilityLabel}
+                testID={testID}
+                className="relative flex-1 items-center justify-center rounded-full"
+                style={custom.presentation}
+              >
+                {content}
+              </View>
+            )}
+          </MotiView>
+        </DockFrame>
+      ) : null}
     </View>
   );
 }
@@ -254,12 +261,23 @@ export function DockItem({ children, onPress, active, accessibilityLabel, label,
 export type DockSeparatorProps = { style?: StyleProp<ViewStyle> };
 
 export function DockSeparator({ style }: DockSeparatorProps) {
+  const reduce = useReducedMotion();
+  const [rect, setRect] = useState<LayoutRectangle>();
+  const measure = useCallback((event: LayoutChangeEvent) => setRect(event.nativeEvent.layout), []);
+  const custom = splitItemStyle(style);
   return (
     <View
+      onLayout={measure}
       accessibilityElementsHidden={true}
       importantForAccessibility="no-hide-descendants"
-      className="mx-1 h-6 w-px self-center bg-border"
-      style={style}
-    />
+      className="mx-1 h-6 w-px self-center"
+      style={[custom.slot, { position: 'static' }]}
+    >
+      {rect ? (
+        <DockFrame rect={rect} reduce={reduce}>
+          <View className="flex-1 bg-border" style={custom.presentation} />
+        </DockFrame>
+      ) : null}
+    </View>
   );
 }

@@ -7,9 +7,11 @@ import { MailLine as Mail } from 'rn-motion-ui-icons/icons/mail-line';
 import { MusicLine as Music } from 'rn-motion-ui-icons/icons/music-line';
 import { Settings1Line as Settings } from 'rn-motion-ui-icons/icons/settings-1-line';
 import { SparklesLine as Sparkles } from 'rn-motion-ui-icons/icons/sparkles-line';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { checkDockLabelMotion, expectDockAlignment } from '../../../__stories__/dock-motion-checks';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
+import { checkContentFallsWithPane, checkSwitcherClose } from '../../../__stories__/switcher-motion-checks';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { OVERLAY_OPTIONS, type OverlayType } from '../../menus/Overlay/overlay-type';
 import { Text } from '../../typography/Text/text';
@@ -169,6 +171,37 @@ export const Interactive: Story = {
   render: () => <DockSwitchPlayground />,
 };
 
+export const LabelMotion: Story = {
+  render: () => <DockSwitchPlayground />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const root = await canvas.findByTestId('playground');
+    for (const glass of [false, true]) {
+      // biome-ignore lint/performance/noAwaitInLoops: exercise the same mounted control in solid then glass mode
+      if (glass) await userEvent.click(canvas.getByRole('switch', { name: 'Glass' }));
+      const shell = await canvas.findByTestId('playground-shell');
+      const pill = await canvas.findByTestId('playground-highlight');
+      const mail = canvas.getByTestId('playground-item-mail');
+      await userEvent.click(mail);
+      await expectDockAlignment(pill, mail);
+      await checkDockLabelMotion(shell, mail, canvas.getByRole('switch', { name: 'Show labels' }));
+      await expectDockAlignment(pill, mail);
+      expect(canvas.getByTestId('playground-highlight')).toBe(pill);
+      await expectDockAlignment(root, shell);
+    }
+    const footprint = root.getBoundingClientRect();
+    await userEvent.click(canvas.getByTestId('playground-trigger'));
+    const settings = await canvas.findByTestId('playground-item-settings');
+    expect(root.getBoundingClientRect().height).toBeCloseTo(footprint.height, 0);
+    await userEvent.click(settings);
+    await waitFor(() => expect(canvas.queryByTestId('playground-highlight')).toBeNull());
+    await userEvent.click(await canvas.findByTestId('playground-trigger'));
+    await expect(await canvas.findByTestId('playground-header')).toHaveAccessibleName('Settings');
+    await userEvent.click(canvas.getByTestId('playground-header'));
+    await expect(await canvas.findByTestId('playground-trigger')).toHaveAttribute('aria-expanded', 'false');
+  },
+};
+
 /** One dock with a live selection readout, plus the size ladder. The double caret
  *  opens the full switcher. */
 export const Default: Story = {
@@ -215,7 +248,48 @@ export const OpenSwitcher: Story = {
     // Picking an overflow item folds the switcher back and reports the new value.
     await userEvent.click(await canvas.findByText('Settings'));
     await expect(await canvas.findByTestId('story-selected')).toHaveTextContent('settings');
-    await expect(canvas.queryByText('Discover')).toBeNull();
+    await waitFor(() => expect(canvas.queryByText('Discover')).toBeNull());
+  },
+};
+
+/** Regression: identical selected-row geometry and phased close, anchored upward. */
+export const CloseMotion: Story = {
+  render: () => (
+    <View className="fixed bottom-6 left-10">
+      <MorphingDockSwitch items={ITEMS} defaultValue="mail" dockCount={4} testID="motion-dock" triggerTestID="motion-trigger" />
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const root = await canvas.findByTestId('motion-dock');
+    await userEvent.click(await canvas.findByTestId('motion-trigger'));
+    const selected = await canvas.findByTestId('motion-dock-header');
+    const home = await canvas.findByTestId('motion-dock-item-home');
+    const selectedRow = canvas.getByTestId('motion-dock-row-mail');
+    await waitFor(() => expect(Number(getComputedStyle(selectedRow).opacity)).toBeCloseTo(1, 3));
+    const rows = ITEMS.map((item) => canvas.getByTestId(`motion-dock-row-${item.value}`));
+    const tops = rows.map((row) => row.getBoundingClientRect().top);
+    expect(tops).toEqual([...tops].sort((a, b) => a - b));
+    expect(tops[0]).toBeLessThan(root.getBoundingClientRect().top);
+    expect(selected.getBoundingClientRect().height).toBeCloseTo(home.getBoundingClientRect().height, 1);
+    expect(getComputedStyle(selected).fontSize).toBe(getComputedStyle(home).fontSize);
+    expect(selected.querySelectorAll('svg')).toHaveLength(1);
+    const homeIcon = home.querySelector('svg');
+    if (!homeIcon) throw new Error('Missing destination icon');
+    expect(selected.querySelector('svg')?.getBoundingClientRect().width).toBeCloseTo(homeIcon.getBoundingClientRect().width, 1);
+    expect(selected).toHaveAttribute('aria-selected', 'true');
+    expect(selected.querySelector('.bg-surface-selected')).not.toBeNull();
+    await userEvent.hover(home);
+    await waitFor(() => expect(selected.querySelector('.bg-surface-selected')).toBeNull());
+    // Closes the dock by re-picking the active row; the list has to come down with
+    // the pane's top edge, thinning out as it falls, rather than dissolving in place
+    // and leaving an emptied shell to collapse alone.
+    await checkContentFallsWithPane(root, 'home', selected);
+    await userEvent.click(await canvas.findByTestId('motion-trigger'));
+    // The pane (and the header in it) remounts on reopen, so the node closed above
+    // is detached — the second pass needs the fresh one or its click lands on nothing.
+    await checkSwitcherClose(root, await canvas.findByTestId('motion-dock-header'), ['home', 'settings']);
+    await expect(await canvas.findByTestId('motion-trigger')).toHaveAttribute('aria-expanded', 'false');
   },
 };
 

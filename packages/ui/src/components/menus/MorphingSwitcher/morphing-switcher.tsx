@@ -2,13 +2,14 @@
 // biome-ignore-all lint/style/useExportsLast: the public icon/item/variant/props types head the module so the sub-components below read against them
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
-import { Platform, Pressable, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
 import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { EASE_OUT, springLayout } from '../../../lib/ease';
+import { springLayout } from '../../../lib/ease';
 import { clampSurfaceLevel, elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
@@ -23,6 +24,8 @@ import type { OverlayType } from '../Overlay/overlay-type';
 import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
 import { type MorphingSwitcherSize, SWITCHER_SCALE, type SwitcherScale } from './morphing-switcher-scale';
+import { SwitcherMotionRow } from './switcher-motion';
+import { CLOSE_LEAD, useSwitcherMotion } from './use-switcher-motion';
 
 // The switcher's size type is public API — re-exported beside the import that
 // resolves it so every consumer keeps importing it from `./morphing-switcher`.
@@ -34,14 +37,23 @@ const VIEWPORT_PADDING = 8;
 const PANE_INSET = 4;
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
-/** Collapsed-trigger ↔ open-pane size morph — a slightly over-damped spring so
- *  the pane unfolds and settles without overshoot. The size stays in lockstep
+/** Collapsed-trigger ↔ open-pane size morph — lightly under-damped.
+ *  The size stays in lockstep
  *  with the `translateY` upward-open shift below. Native (Fabric) drives the
  *  size through this layout transition; web animates it through Moti instead —
  *  see `switcherShellGeometry` below. */
 const IS_WEB = Platform.OS === 'web';
-const MORPH_SPRING = { type: 'spring' as const, stiffness: 360, damping: 40, mass: 0.6 };
+const MORPH_SPRING = { type: 'spring' as const, stiffness: 440, damping: 26, mass: 0.5 };
 const MORPH_LAYOUT = springLayout(MORPH_SPRING);
+
+/** The pane's size morph. Opening has nothing to wait for; a close in flight holds the
+ *  descent for {@link CLOSE_LEAD} so the shell swells to its peak and sits there before
+ *  it starts down, in step with the rows and the content. Keying that hold to the
+ *  resting closed state instead would delay *every* closed-state resize by a beat —
+ *  see {@link dockMorphTransition} in `MorphingDockSwitch`, where that was visible. */
+function closeMorphTransition(closing: boolean) {
+  return closing ? { ...MORPH_SPRING, delay: CLOSE_LEAD } : MORPH_SPRING;
+}
 
 /** Icon renderer — compatible with this project's icon set signature. */
 export type MorphingSwitcherIcon = (props: IconProps) => ReactNode;
@@ -481,6 +493,7 @@ export function MorphingSwitcher({
   const rootRef = useRef<View>(null);
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = openProp ?? internalOpen;
+  const { expanded, closing, scaleStyle } = useSwitcherMotion(open, reduce);
   const [internalValue, setInternalValue] = useState(defaultValue);
   const value = valueProp ?? internalValue;
   // On Android the blur must render OUTSIDE the `BlurTarget` it frosts (see
@@ -654,11 +667,9 @@ export function MorphingSwitcher({
   // ride `MORPH_LAYOUT` (a layout transition — layout props don't round-trip Yoga
   // through `useAnimatedStyle`). The radius and upward-open `translateY` spring on
   // `MORPH_SPRING` either way; matching params keep the bottom edge anchored.
-  const morphTransition = reduce ? TIMING_INSTANT : MORPH_SPRING;
-
-  // The rows follow the shell closely — a long delay left the pane looking empty
-  // while it unfolded, which is the other half of the gooey read.
-  const paneEnterTransition = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 180, delay: 40, easing: EASE_OUT };
+  // Closing holds the descent for `CLOSE_LEAD` so the shell swells and sits at its
+  // peak before it starts down — the same beat the rows and the content keep.
+  const morphTransition = reduce ? TIMING_INSTANT : closeMorphTransition(closing);
 
   const triggerIcon = current?.icon ?? placeholderIcon;
   const triggerLabel = current?.label ?? placeholder;
@@ -672,7 +683,20 @@ export function MorphingSwitcher({
   // `right: 0` pins it full-width and only height/radius morph.
   const openWidth = Math.max(expandedWidth, closedWidth);
 
-  const shell = switcherShellGeometry({ open, openAbove, variant, scale, paneHeight, closedHeight, openWidth, closedWidth });
+  // The geometry follows `open`, never the retained `expanded`: the pane has to
+  // start collapsing on the same frame the close begins, so the outgoing rows
+  // fade against an edge that is already moving instead of dissolving first and
+  // leaving the pane to collapse a beat later — the two reading as one motion.
+  const shell = switcherShellGeometry({
+    open,
+    openAbove,
+    variant,
+    scale,
+    paneHeight,
+    closedHeight,
+    openWidth,
+    closedWidth,
+  });
 
   // The teleported wrapper sits at the inline root's window offset; the shell
   // inside keeps its own `absolute top-0 left-0` geometry (and `right: 0` full-
@@ -711,7 +735,7 @@ export function MorphingSwitcher({
         icon={triggerIcon}
         label={triggerLabel}
         variant={variant}
-        open={open}
+        open={expanded}
         closeIcon={closeIcon}
         scale={scale}
         onPress={handleTriggerPress}
@@ -719,22 +743,22 @@ export function MorphingSwitcher({
         testID={triggerTestID}
       />
 
-      {open ? (
-        <MotiView
-          from={reduce ? { opacity: 1 } : { opacity: 0, translateY: 4 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={paneEnterTransition}
-        >
-          {visibleItems.map((item) => (
-            <MorphingSwitcherRow
+      {expanded ? (
+        <View pointerEvents={closing ? 'none' : 'auto'}>
+          {visibleItems.map((item, index) => (
+            <SwitcherMotionRow
               key={item.value}
-              item={item}
-              onSelect={handleSelect}
-              scale={scale}
-              testID={`${testID}-item-${item.value}`}
-            />
+              index={index}
+              count={visibleItems.length}
+              closing={closing}
+              openAbove={openAbove}
+              reduce={reduce}
+              testID={`${testID}-row-${item.value}`}
+            >
+              <MorphingSwitcherRow item={item} onSelect={handleSelect} scale={scale} testID={`${testID}-item-${item.value}`} />
+            </SwitcherMotionRow>
           ))}
-        </MotiView>
+        </View>
       ) : null}
     </>
   );
@@ -747,6 +771,7 @@ export function MorphingSwitcher({
   const shellView = glass ? (
     <Surface
       key={variant}
+      testID={`${testID}-shell`}
       as={MotiView}
       animate={shell.animate}
       transition={morphTransition}
@@ -767,6 +792,7 @@ export function MorphingSwitcher({
   ) : (
     <MotiView
       key={variant}
+      testID={`${testID}-shell`}
       animate={shell.animate}
       transition={morphTransition}
       layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
@@ -778,7 +804,7 @@ export function MorphingSwitcher({
   );
 
   return (
-    <View ref={rootRef} collapsable={false} testID={testID} onLayout={measureRoot} style={[{ zIndex: open ? 40 : 0 }, style]}>
+    <View ref={rootRef} collapsable={false} testID={testID} onLayout={measureRoot} style={[{ zIndex: expanded ? 40 : 0 }, style]}>
       {/* Offscreen measurer holds the collapsed footprint in flow. */}
       <SwitcherTrigger
         icon={triggerIcon}
@@ -793,12 +819,16 @@ export function MorphingSwitcher({
       {teleported ? (
         <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={wrapperWidth} height={wrapperHeight}>
           <AnimatePresence>{backdrop}</AnimatePresence>
-          {shellView}
+          <Animated.View testID={`${testID}-motion`} style={[StyleSheet.absoluteFill, scaleStyle]}>
+            {shellView}
+          </Animated.View>
         </TeleportedOverlay>
       ) : (
         <>
           <AnimatePresence>{backdrop}</AnimatePresence>
-          {shellView}
+          <Animated.View testID={`${testID}-motion`} style={[StyleSheet.absoluteFill, scaleStyle]}>
+            {shellView}
+          </Animated.View>
         </>
       )}
     </View>

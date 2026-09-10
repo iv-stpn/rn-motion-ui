@@ -40,6 +40,16 @@ export const SPRING_SWAP = {
   mass: 0.55,
 };
 
+/** Dock item icon/label scale — the `showLabels` toggle. Very stiff and
+ *  critically damped so the icon scale-up and caption reveal settle near-instantly
+ *  with no overshoot, reading as a fast, smooth size glide rather than a spring. */
+export const SPRING_DOCK_SCALE = {
+  type: 'spring' as const,
+  stiffness: 800,
+  damping: 36,
+  mass: 0.4,
+};
+
 /** Overlay panel entrances — modals and sheets summoned by pointer. */
 export const SPRING_PANEL = {
   type: 'spring' as const,

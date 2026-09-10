@@ -1,14 +1,16 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: dock shell, morph transition, and trigger/pane layouts collocated by design
 // biome-ignore-all lint/style/useExportsLast: the public icon/item/props types head the module so the sub-components below read against them
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
-import { Platform, Pressable, useWindowDimensions, View } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
-import { DownLine as ChevronDown } from 'rn-motion-ui-icons/icons/down-line';
-import { UpLine as ChevronUp } from 'rn-motion-ui-icons/icons/up-line';
+import { DownFill as ChevronDown } from 'rn-motion-ui-icons/icons/down-fill';
+import { UpFill as ChevronUp } from 'rn-motion-ui-icons/icons/up-fill';
+import { useIsRTL } from '../../../hooks/use-direction';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { EASE_OUT, SPRING_SWAP, springLayout } from '../../../lib/ease';
+import { springLayout } from '../../../lib/ease';
 import { clampSurfaceLevel, elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
 import { INTERACTIVE_HEIGHT } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
@@ -17,32 +19,31 @@ import { TIMING_INSTANT } from '../../../theme/motion';
 import { Surface } from '../../display/Surface/surface';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { SWITCHER_SCALE, type SwitcherScale } from '../../menus/MorphingSwitcher/morphing-switcher-scale';
+import { SwitcherMotionRow } from '../../menus/MorphingSwitcher/switcher-motion';
+import { CLOSE_LEAD, CONTENT_FADE, useSwitcherMotion } from '../../menus/MorphingSwitcher/use-switcher-motion';
 import { useBlurTargetRef } from '../../menus/Overlay/blur-context';
 import { OutsidePressBackdrop, type OutsidePressFrame } from '../../menus/Overlay/outside-press-backdrop';
 import type { OverlayType } from '../../menus/Overlay/overlay-type';
 import { TeleportedOverlay } from '../../menus/Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../../menus/Overlay/web-document';
 import { MenuItem } from '../../rows/menu-item';
-import { Text } from '../../typography/Text/text';
+import { DOCK_GAP, DOCK_ICON_SCALE, dockMetrics, dockRowSize } from '../Dock/dock-metrics';
+import { DockContent, DockFrame, DockHighlight } from '../Dock/dock-motion';
+import { DOCK_SPRING, dockSizeMotion } from '../Dock/dock-transition';
 
 /** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
 const VIEWPORT_PADDING = 8;
 /** `p-1` inset between the shell edge and its content, so the dock icons and open rows never run flush to the rim. */
 const PANE_INSET = 4;
-/** Icon-only pill width factor — narrower than the labelled pill, so an
- *  icon-only item reads as a compact capsule instead of a square. */
-const ICON_PILL_ASPECT = 1.2;
-/** Labelled pill width factor — wider to fit the icon + caption column. */
-const LABEL_PILL_ASPECT = 1.8;
-/** The icon renders at its base size and scales up this much in labelled mode. */
-const LABEL_ICON_SCALE = 1.25;
+/** How far the lower chevron overlaps the upper one (fraction of its size). */
+const CARET_OVERLAP = 0.5;
+
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
-/** Collapsed-dock ↔ open-pane size morph — a slightly over-damped spring so the
- *  pane unfolds and settles without overshoot. Native (Fabric) drives the size
+/** Collapsed-dock ↔ open-pane size morph — a lightly under-damped spring. Native (Fabric) drives the size
  *  through a layout transition; web animates it through Moti instead. */
 const IS_WEB = Platform.OS === 'web';
-const MORPH_SPRING = { type: 'spring' as const, stiffness: 360, damping: 40, mass: 0.6 };
+const MORPH_SPRING = { type: 'spring' as const, stiffness: 440, damping: 26, mass: 0.5 };
 const MORPH_LAYOUT = springLayout(MORPH_SPRING);
 
 /** Icon renderer — compatible with this project's icon set signature. */
@@ -149,138 +150,31 @@ export type MorphingDockSwitchProps = {
  * Collapsed it is a horizontal dock — the first {@link MorphingDockSwitchProps.dockCount}
  * items rendered as icon-only buttons (the active one highlighted), with a
  * stacked up/down caret button on the right. Tapping the caret springs the shell
- * open into a vertical list that morphs in place: the active item becomes the
- * header row (icon + label + the stacked carets), the remaining docked items and
- * any overflow items fill in below with their labels revealed. Picking a row
+ * open into a vertical list in the original destination order. The selected row
+ * starts highlighted, with the same icon and label layout as every other row. Picking a row
  * promotes it to active and folds the dock back; picking a docked icon does the
  * same without opening the switcher.
  *
- * The closed dock is measured once (`onLayout`) so the morph starts from its
- * exact footprint; an offscreen, unnamed measurer keeps that footprint in flow
- * while open, so the pane overlays page content without reflowing the header
- * that hosts it.
+ * The closed footprint is computed from the shared item geometry and stays in
+ * flow while open, so the pane overlays page content without reflowing its host.
  *
  * The pane opens downward by default; when that would run it off the bottom of
  * the viewport (and there is more room above), it opens upward instead — the
- * dock stays put as the list's bottom row and the items fill in above it.
+ * dock's bottom edge stays anchored while the ordered list unfolds above it.
  */
 
 type DockCaretsProps = { size: number };
 
 /** The trailing carets — a stacked up/down pair, the dock's "show all" affordance. */
 function DockCarets({ size }: DockCaretsProps) {
+  // Each chevron lives in a 24×24 viewBox with dead space top and bottom, so a
+  // stacked pair spreads apart; overlap the lower one to read as one tight glyph.
+  const overlap = Math.round(size * CARET_OVERLAP);
   return (
     <View className="flex-col items-center">
       <ThemedIcon icon={ChevronUp} token="muted-foreground" size={size} />
-      <ThemedIcon icon={ChevronDown} token="muted-foreground" size={size} />
+      <ThemedIcon icon={ChevronDown} token="muted-foreground" size={size} style={{ marginTop: -overlap }} />
     </View>
-  );
-}
-
-type DockIconProps = {
-  item: MorphingDockSwitchItem;
-  active: boolean;
-  itemPx: number;
-  iconSize: number;
-  showLabels: boolean;
-  /** Reduced-motion flag — collapses the icon/label scale transitions to instant. */
-  reduce: boolean;
-  /** Present on the interactive copy; absent on the offscreen measurer. */
-  onPress?: () => void;
-  testID?: string;
-};
-
-/** One dock button — icon only, or icon stacked over a tiny caption when
- *  `showLabels` is on. The active one wears the `bg-surface-selected` pill.
- *  Renders a non-interactive `View` when `onPress` is absent. */
-function DockIcon({ item, active, itemPx, iconSize, showLabels, reduce, onPress, testID }: DockIconProps) {
-  const scaleTransition = reduce ? TIMING_INSTANT : SPRING_SWAP;
-  const content = item.icon ? (
-    <MotiView animate={{ scale: showLabels ? LABEL_ICON_SCALE : 1 }} transition={scaleTransition}>
-      <ThemedIcon icon={item.icon} token="foreground" size={iconSize} />
-    </MotiView>
-  ) : null;
-  const label = (
-    <AnimatePresence>
-      {showLabels ? (
-        <MotiView
-          key="label"
-          from={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0, opacity: 0 }}
-          transition={scaleTransition}
-        >
-          <Text className="text-[10px]" numberOfLines={1}>
-            {item.label}
-          </Text>
-        </MotiView>
-      ) : null}
-    </AnimatePresence>
-  );
-  const className = cn(
-    'flex-col items-center justify-center rounded-full',
-    active && 'bg-surface-selected',
-    showLabels && 'gap-0.5',
-  );
-  // A labelled item is wider and stacks the icon over a tiny caption; an
-  // icon-only item is a narrower pill.
-  const style = showLabels ? { width: itemPx * LABEL_PILL_ASPECT } : { width: itemPx * ICON_PILL_ASPECT, height: itemPx };
-  if (!onPress)
-    return (
-      <View className={className} style={style}>
-        {content}
-        {label}
-      </View>
-    );
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      aria-selected={active}
-      accessibilityLabel={item.label}
-      testID={testID}
-      className={className}
-      style={style}
-    >
-      {content}
-      {label}
-    </Pressable>
-  );
-}
-
-type DockCaretProps = {
-  itemPx: number;
-  caretSize: number;
-  open: boolean;
-  /** Present on the interactive copy; absent on the offscreen measurer. */
-  onPress?: () => void;
-  accessibilityLabel?: string;
-  testID?: string;
-};
-
-/** The double-caret trigger button at the dock's right end. */
-function DockCaret({ itemPx, caretSize, open, onPress, accessibilityLabel, testID }: DockCaretProps) {
-  const content = <DockCarets size={caretSize} />;
-  const className = 'items-center justify-center rounded-full';
-  const style = { width: itemPx * ICON_PILL_ASPECT, height: itemPx };
-  if (!onPress)
-    return (
-      <View className={className} style={style}>
-        {content}
-      </View>
-    );
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      aria-expanded={open}
-      accessibilityLabel={accessibilityLabel ?? 'Open dock'}
-      testID={testID}
-      className={className}
-      style={style}
-    >
-      {content}
-    </Pressable>
   );
 }
 
@@ -293,22 +187,37 @@ type DockBarProps = {
   showLabels: boolean;
   reduce: boolean;
   open: boolean;
-  /** When false the bar renders as the offscreen, non-interactive measurer. */
-  interactive: boolean;
-  onSelect?: (item: MorphingDockSwitchItem) => void;
-  onToggle?: () => void;
-  onLayout?: (event: LayoutChangeEvent) => void;
+  onSelect: (item: MorphingDockSwitchItem) => void;
+  onToggle: () => void;
   accessibilityLabel?: string;
-  testID?: string;
-  triggerTestID?: string;
+  testID: string;
+  triggerTestID: string;
 };
 
-/**
- * The collapsed dock: the pinned icon buttons and the trailing caret. Rendered
- * twice — once interactive inside the shell, once unnamed/`aria-hidden` as the
- * offscreen measurer that reserves the collapsed footprint in flow and reports
- * its size via `onLayout`.
- */
+type DockDestinationProps = Pick<DockBarProps, 'itemPx' | 'iconSize' | 'showLabels' | 'reduce' | 'onSelect' | 'testID'> & {
+  item: MorphingDockSwitchItem;
+  active: boolean;
+};
+
+function DockDestination({ item, active, itemPx, iconSize, showLabels, reduce, onSelect, testID }: DockDestinationProps) {
+  const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
+  return (
+    <Pressable
+      onPress={handlePress}
+      accessibilityRole="button"
+      aria-selected={active}
+      accessibilityLabel={item.label}
+      testID={testID}
+      className="relative flex-1 items-center justify-center rounded-full"
+    >
+      <DockContent itemPx={itemPx} labelled={showLabels} active={active} reduce={reduce} label={item.label}>
+        {item.icon ? <ThemedIcon icon={item.icon} token="foreground" size={iconSize} /> : null}
+      </DockContent>
+    </Pressable>
+  );
+}
+
+/** Analytic targets keep the shell, content and shared pill on the same clock. */
 function DockBar({
   dockItems,
   activeValue,
@@ -318,87 +227,71 @@ function DockBar({
   showLabels,
   reduce,
   open,
-  interactive,
   onSelect,
   onToggle,
-  onLayout,
   accessibilityLabel,
   testID,
   triggerTestID,
 }: DockBarProps) {
-  const inner = (
-    <>
-      {dockItems.map((item) => (
-        <DockIcon
-          key={item.value}
-          item={item}
-          active={item.value === activeValue}
-          itemPx={itemPx}
-          iconSize={iconSize}
-          showLabels={showLabels}
-          reduce={reduce}
-          onPress={interactive ? () => onSelect?.(item) : undefined}
-          testID={interactive ? `${testID}-item-${item.value}` : undefined}
-        />
-      ))}
-      <DockCaret
-        itemPx={itemPx}
-        caretSize={caretSize}
-        open={open}
-        onPress={interactive ? onToggle : undefined}
-        accessibilityLabel={accessibilityLabel}
-        testID={interactive ? triggerTestID : undefined}
-      />
-    </>
-  );
-
-  if (!interactive)
-    return (
-      <View aria-hidden={true} onLayout={onLayout} className="pointer-events-none flex-row items-center gap-1.5 opacity-0">
-        {inner}
-      </View>
-    );
-
-  return <View className="flex-row items-center gap-1.5">{inner}</View>;
-}
-
-type DockHeaderProps = { item: MorphingDockSwitchItem; scale: SwitcherScale; onPress: () => void; testID?: string };
-
-/**
- * The active item's header row while open — icon + label on the left, the
- * stacked carets on the right. Re-tapping it folds the dock back (the standard
- * switcher dismissal), so it stays pressable while only looking inert.
- */
-function DockHeader({ item, scale, onPress, testID }: DockHeaderProps) {
+  const rtl = useIsRTL();
+  const box = dockMetrics(itemPx, showLabels);
+  const row = dockRowSize(itemPx, showLabels, dockItems.length + 1);
+  const selected = dockItems.findIndex((item) => item.value === activeValue);
+  const rectAt = (index: number) => ({
+    x: (rtl ? dockItems.length - index : index) * (box.width + DOCK_GAP),
+    y: 0,
+    width: box.width,
+    height: box.height,
+  });
+  const motion = dockSizeMotion(row.width, row.height, reduce);
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={item.label}
-      testID={testID}
-      className={cn(scale.rowClassName, scale.gapClassName, 'justify-between self-stretch opacity-40')}
-    >
-      <View className={cn('flex-row items-center', scale.gapClassName)}>
-        {item.icon ? <ThemedIcon icon={item.icon} token="foreground" size={scale.iconSize} /> : null}
-        <Text size={scale.labelSize} weight="medium" numberOfLines={1}>
-          {item.label}
-        </Text>
-      </View>
-      <DockCarets size={scale.stackedCaretSize} />
-    </Pressable>
+    <MotiView {...motion} style={[{ position: 'relative' }, motion.style]}>
+      <DockHighlight rect={selected < 0 ? undefined : rectAt(selected)} reduce={reduce} testID={`${testID}-highlight`} />
+      {dockItems.map((item, index) => (
+        <DockFrame key={item.value} rect={rectAt(index)} reduce={reduce}>
+          <DockDestination
+            item={item}
+            active={item.value === activeValue}
+            itemPx={itemPx}
+            iconSize={iconSize}
+            showLabels={showLabels}
+            reduce={reduce}
+            onSelect={onSelect}
+            testID={`${testID}-item-${item.value}`}
+          />
+        </DockFrame>
+      ))}
+      <DockFrame rect={rectAt(dockItems.length)} reduce={reduce}>
+        <Pressable
+          onPress={onToggle}
+          accessibilityRole="button"
+          aria-expanded={open}
+          accessibilityLabel={accessibilityLabel ?? 'Open dock'}
+          testID={triggerTestID}
+          className="flex-1 items-center justify-center rounded-full"
+        >
+          <MotiView animate={{ scale: showLabels ? DOCK_ICON_SCALE : 1 }} transition={reduce ? TIMING_INSTANT : DOCK_SPRING}>
+            <DockCarets size={caretSize} />
+          </MotiView>
+        </Pressable>
+      </DockFrame>
+    </MotiView>
   );
 }
 
 type DockRowProps = {
   item: MorphingDockSwitchItem;
-  /** Stable handler — the row binds its own item so no per-render closure. */
   onSelect: (item: MorphingDockSwitchItem) => void;
   scale: SwitcherScale;
+  selected: boolean;
+  highlighted: boolean;
+  reduce: boolean;
   testID?: string;
+  onInteract: () => void;
 };
 
-/** One non-active row in the open pane: icon + label. */
-function DockRow({ item, onSelect, scale, testID }: DockRowProps) {
+/** All destinations share one row layout. Only the active fill differs. */
+function DockRow({ item, onSelect, scale, selected, highlighted, reduce, testID, onInteract }: DockRowProps) {
   const handlePress = useCallback(() => onSelect(item), [onSelect, item]);
   return (
     <MenuItem
@@ -406,7 +299,15 @@ function DockRow({ item, onSelect, scale, testID }: DockRowProps) {
       icon={item.icon}
       label={item.label}
       labelWeight="medium"
+      active={highlighted}
+      reduce={reduce}
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
+      aria-selected={selected}
       onPress={handlePress}
+      onHoverIn={onInteract}
+      onPressIn={onInteract}
+      onFocus={onInteract}
       className={cn(scale.rowClassName, scale.gapClassName, 'rounded-full')}
       testID={testID}
     />
@@ -420,20 +321,9 @@ function opensUpward(paneHeight: number, y: number, h: number, windowHeight: num
   return paneHeight > spaceBelow && spaceAbove > spaceBelow;
 }
 
-/** The pane's open height: one row per non-active item stacked on the header
- *  row's height, plus the shell's `p-1` inset on both ends. */
+/** One equally sized row per destination, plus the shell inset. */
 function computePaneHeight(scale: SwitcherScale, itemCount: number): number {
-  return scale.height + itemCount * scale.height + PANE_INSET * 2;
-}
-
-/** A measured dock's bounding box. */
-type DockSize = { width: number; height: number };
-
-/** Merge a freshly-measured dock size, returning the previous object unchanged
- *  when the dimensions match. */
-function mergeDockSize(prev: DockSize | null, size: DockSize): DockSize {
-  if (prev && prev.width === size.width && prev.height === size.height) return prev;
-  return size;
+  return itemCount * scale.height + PANE_INSET * 2;
 }
 
 /** The shell's surface class: resting `shadow-elevated-N`, lifted
@@ -455,10 +345,34 @@ type DockShellGeometry = {
 };
 
 /**
+ * The shell's morph transition. Closing holds the descent for {@link CLOSE_LEAD} so
+ * the pane swells to its peak and sits there before it starts down. The content, the
+ * row cascade and the geometry all leave on that same frame — the beat delays the
+ * whole close, it never staggers its parts.
+ *
+ * The hold is keyed to a close being *in flight*, not to the resting closed state.
+ * The shell's geometry also changes while it sits closed — a `showLabels` toggle
+ * resizes the whole bar — and a delay parked on the closed state put that resize
+ * `CLOSE_LEAD` behind the row it belongs to, so the bar grew a beat after its own
+ * content and clipped it.
+ */
+function dockMorphTransition(closing: boolean, reduce: boolean) {
+  if (reduce) return TIMING_INSTANT;
+  return closing ? { ...MORPH_SPRING, delay: CLOSE_LEAD } : MORPH_SPRING;
+}
+
+/**
  * The shell's animated geometry. Web animates `height`/`width` through Moti (the
  * original smooth morph); Fabric keeps a static size and drives the change via
  * the `layout` transition (layout props don't round-trip Yoga there). The radius
  * and upward-open `translateY` spring on `MORPH_SPRING` either way.
+ *
+ * The pane stays a plain column — its content is packed against the pane's TOP
+ * edge, so it rides that edge as the pane grows and shrinks. Opening upward
+ * anchors the pane's bottom to the dock's bottom edge, which makes the top edge
+ * the one that travels: the rows descend with it on close and slide back out of
+ * the dock on open. Reversing the column instead would pin them to the fixed
+ * bottom edge, leaving the pane to collapse around a list that never moved.
  */
 function dockShellGeometry({ open, openAbove, scale, paneHeight, closedHeight, openWidth, closedWidth }: DockShellGeometry) {
   const radius = open ? scale.paneRadius : closedHeight / 2;
@@ -474,10 +388,9 @@ function dockShellGeometry({ open, openAbove, scale, paneHeight, closedHeight, o
       }
     : { borderRadius: radius, translateY };
   const style: StyleProp<ViewStyle> = IS_WEB
-    ? [{ flexDirection: openAbove ? 'column-reverse' : 'column' }, open ? { zIndex: 40 } : undefined]
+    ? [open ? { zIndex: 40 } : undefined]
     : [
         {
-          flexDirection: openAbove ? 'column-reverse' : 'column',
           width: open ? openWidth : closedWidth,
           height: open ? paneHeight : closedHeight,
         },
@@ -521,6 +434,7 @@ export function MorphingDockSwitch({
   const rootRef = useRef<View>(null);
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = openProp ?? internalOpen;
+  const { expanded, closing, scaleStyle } = useSwitcherMotion(open, reduce);
   const [internalValue, setInternalValue] = useState<string | undefined>(defaultValue ?? items[0]?.value);
   const value = valueProp ?? internalValue;
 
@@ -532,10 +446,10 @@ export function MorphingDockSwitch({
   const blurTargetRef = useBlurTargetRef();
   const teleported = Platform.OS === 'android' && blurTargetRef !== null;
 
-  /** The measured collapsed dock's footprint. */
-  const [dockSize, setDockSize] = useState<DockSize | null>(null);
   /** True while the pane opens upward — the list sits above the dock instead of below. */
   const [openAbove, setOpenAbove] = useState(false);
+  /** Opening highlights the selection until the user interacts with the list. */
+  const [anyRowFocused, setAnyRowFocused] = useState(false);
   /** The outside-press backdrop's window-covering frame. Null while closed. */
   const [backdropFrame, setBackdropFrame] = useState<OutsidePressFrame | null>(null);
 
@@ -568,17 +482,20 @@ export function MorphingDockSwitch({
     return () => clearTimeout(timer);
   }, [measureRoot, teleported]);
 
-  const activeItem = items.find((item) => item.value === value);
-  const otherItems = items.filter((item) => item.value !== value);
   const dockedCount = Math.min(Math.max(dockCount ?? items.length, 0), items.length);
   const dockItems = items.slice(0, dockedCount);
 
   const itemPx = INTERACTIVE_HEIGHT[size] - 4;
   const iconSize = Math.round(itemPx * 0.5);
+  // The caret chevrons grow with the labelled pill, matching the item icons'
+  // label-mode scale so the trigger reads as part of the same enlarged bar.
+  const caretSize = scale.stackedCaretSize;
 
-  const paneHeight = computePaneHeight(scale, otherItems.length);
-  const closedWidth = (dockSize?.width ?? 0) + PANE_INSET * 2;
-  const closedHeight = (dockSize?.height ?? itemPx) + PANE_INSET * 2;
+  const paneHeight = computePaneHeight(scale, items.length);
+  const closedRow = dockRowSize(itemPx, showLabels, dockItems.length + 1);
+  const closedWidth = closedRow.width + PANE_INSET * 2;
+  const closedHeight = closedRow.height + PANE_INSET * 2;
+  const rootMotion = dockSizeMotion(closedWidth, closedHeight, reduce);
   const openWidth = Math.max(expandedWidth, closedWidth);
 
   const setOpen = useCallback(
@@ -619,6 +536,11 @@ export function MorphingDockSwitch({
     if (open) onShow?.();
   }, [open, onShow]);
 
+  // biome-ignore lint/plugin: presentational side effect driven by the open flip — resets focus tracking so the active row re-highlights on next open
+  useEffect(() => {
+    if (open) setAnyRowFocused(false);
+  }, [open]);
+
   // biome-ignore lint/plugin: document-level pointerdown can't be expressed as an RN handler or derived state
   useEffect(() => {
     if (!(open && closeOnOutsidePress)) return;
@@ -636,6 +558,8 @@ export function MorphingDockSwitch({
     return () => doc.removeEventListener('pointerdown', onPointerDown);
   }, [open, closeOnOutsidePress, setOpen]);
 
+  const handleRowFocus = useCallback(() => setAnyRowFocused(true), []);
+
   const handleDockSelect = useCallback(
     (item: MorphingDockSwitchItem) => {
       if (valueProp === undefined) setInternalValue(item.value);
@@ -646,28 +570,25 @@ export function MorphingDockSwitch({
 
   const handleSelect = useCallback(
     (item: MorphingDockSwitchItem) => {
-      if (valueProp === undefined) setInternalValue(item.value);
-      onValueChange?.(item.value);
+      if (item.value !== value) {
+        if (valueProp === undefined) setInternalValue(item.value);
+        onValueChange?.(item.value);
+      }
       setOpen(false);
     },
-    [valueProp, onValueChange, setOpen],
+    [value, valueProp, onValueChange, setOpen],
   );
-
-  const handleDockLayout = useCallback((event: LayoutChangeEvent) => {
-    const { width, height } = event.nativeEvent.layout;
-    if (width <= 0 || height <= 0) return;
-    setDockSize((prev) => mergeDockSize(prev, { width, height }));
-  }, []);
 
   // On web `height`/`width` morph through Moti on `MORPH_SPRING`; on Fabric they
   // ride `MORPH_LAYOUT` (a layout transition). The radius and upward-open
   // `translateY` spring on `MORPH_SPRING` either way.
-  const morphTransition = reduce ? TIMING_INSTANT : MORPH_SPRING;
-
-  // The rows follow the shell closely — a long delay left the pane looking empty
-  // while it unfolded.
-  const paneEnterTransition = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 180, delay: 40, easing: EASE_OUT };
-
+  //
+  // The geometry follows `open`, never the retained `expanded`: the pane has to
+  // start collapsing on the same frame the content does, so the rows inside it
+  // are carried down by the very edge they are fading against. Waiting out the
+  // retention first is what left the list dissolving in place while an emptied
+  // pane collapsed a beat later, the two reading as separate motions.
+  const morphTransition = dockMorphTransition(closing, reduce);
   const shell = dockShellGeometry({ open, openAbove, scale, paneHeight, closedHeight, openWidth, closedWidth });
 
   const rootWindow = rootFrame ? { x: rootFrame.x, y: rootFrame.y } : null;
@@ -679,7 +600,7 @@ export function MorphingDockSwitch({
       <OutsidePressBackdrop
         key="morphing-dock-switch-backdrop"
         frame={backdropFrame}
-        onPress={closeOnOutsidePress ? handleClose : undefined}
+        onPressIn={closeOnOutsidePress ? handleClose : undefined}
         overlay={overlay}
         blurInline={!teleported}
         testID={`${testID}-backdrop`}
@@ -688,30 +609,54 @@ export function MorphingDockSwitch({
 
   const glass = blurRadius > 0;
 
-  const shellContent = open ? (
-    <>
-      {activeItem ? <DockHeader item={activeItem} scale={scale} onPress={handleClose} testID={`${testID}-header`} /> : null}
-      <MotiView
-        from={reduce ? { opacity: 1 } : { opacity: 0, translateY: 4 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={paneEnterTransition}
-      >
-        {otherItems.map((item) => (
-          <DockRow key={item.value} item={item} onSelect={handleSelect} scale={scale} testID={`${testID}-item-${item.value}`} />
-        ))}
-      </MotiView>
-    </>
+  const shellContent = expanded ? (
+    // The content thins out over the collapse so the rows dissolve *as* they fall
+    // instead of staying solid for most of the drop and blinking out in the last
+    // few frames. It holds through the opening beat — the shell's swell and the
+    // staggered row exit — and spends the fade on the tail, which is why it runs on
+    // `CONTENT_FADE` rather than the shell's own spring. It follows `open`
+    // declaratively: driving it from an effect instead would leave the wrapper
+    // mounted with a stale 0 on the opening frame and flash the content invisible.
+    <MotiView
+      pointerEvents={closing ? 'none' : 'auto'}
+      animate={{ opacity: open ? 1 : 0 }}
+      transition={reduce ? TIMING_INSTANT : CONTENT_FADE}
+      testID={`${testID}-content`}
+    >
+      {items.map((item, index) => (
+        <SwitcherMotionRow
+          key={item.value}
+          index={index}
+          count={items.length}
+          closing={closing}
+          openAbove={openAbove}
+          exitOrder="bottom"
+          reduce={reduce}
+          testID={`${testID}-row-${item.value}`}
+        >
+          <DockRow
+            item={item}
+            onSelect={handleSelect}
+            scale={scale}
+            selected={item.value === value}
+            highlighted={item.value === value && !anyRowFocused}
+            reduce={reduce}
+            testID={item.value === value ? `${testID}-header` : `${testID}-item-${item.value}`}
+            onInteract={handleRowFocus}
+          />
+        </SwitcherMotionRow>
+      ))}
+    </MotiView>
   ) : (
     <DockBar
       dockItems={dockItems}
       activeValue={value}
       itemPx={itemPx}
       iconSize={iconSize}
-      caretSize={scale.stackedCaretSize}
+      caretSize={caretSize}
       showLabels={showLabels}
       reduce={reduce}
       open={open}
-      interactive={true}
       onSelect={handleDockSelect}
       onToggle={handleToggle}
       accessibilityLabel={accessibilityLabel}
@@ -723,6 +668,7 @@ export function MorphingDockSwitch({
   const shellView = glass ? (
     <Surface
       as={MotiView}
+      testID={`${testID}-shell`}
       animate={shell.animate}
       transition={morphTransition}
       layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
@@ -741,6 +687,7 @@ export function MorphingDockSwitch({
     </Surface>
   ) : (
     <MotiView
+      testID={`${testID}-shell`}
       animate={shell.animate}
       transition={morphTransition}
       layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
@@ -752,32 +699,30 @@ export function MorphingDockSwitch({
   );
 
   return (
-    <View ref={rootRef} collapsable={false} testID={testID} onLayout={measureRoot} style={[{ zIndex: open ? 40 : 0 }, style]}>
-      {/* Offscreen measurer holds the collapsed footprint in flow. */}
-      <DockBar
-        dockItems={dockItems}
-        activeValue={value}
-        itemPx={itemPx}
-        iconSize={iconSize}
-        caretSize={scale.stackedCaretSize}
-        showLabels={showLabels}
-        reduce={reduce}
-        open={open}
-        interactive={false}
-        onLayout={handleDockLayout}
-      />
-
+    <MotiView
+      {...rootMotion}
+      ref={rootRef}
+      collapsable={false}
+      testID={testID}
+      onLayout={measureRoot}
+      className="self-center"
+      style={[rootMotion.style, { zIndex: expanded ? 40 : 0 }, style]}
+    >
       {teleported ? (
         <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={wrapperWidth} height={wrapperHeight}>
           <AnimatePresence>{backdrop}</AnimatePresence>
-          {shellView}
+          <Animated.View testID={`${testID}-motion`} style={[StyleSheet.absoluteFill, scaleStyle]}>
+            {shellView}
+          </Animated.View>
         </TeleportedOverlay>
       ) : (
         <>
           <AnimatePresence>{backdrop}</AnimatePresence>
-          {shellView}
+          <Animated.View testID={`${testID}-motion`} style={[StyleSheet.absoluteFill, scaleStyle]}>
+            {shellView}
+          </Animated.View>
         </>
       )}
-    </View>
+    </MotiView>
   );
 }

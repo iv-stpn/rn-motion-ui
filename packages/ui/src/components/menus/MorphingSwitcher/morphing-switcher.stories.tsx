@@ -9,6 +9,7 @@ import { StarLine } from 'rn-motion-ui-icons/icons/star-line';
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Toggle } from '../../../__stories__/story-harness';
+import { checkSwitcherClose } from '../../../__stories__/switcher-motion-checks';
 import { Text } from '../../typography/Text/text';
 import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import {
@@ -54,6 +55,26 @@ const SPACES: readonly MorphingSwitcherItem[] = [
   { value: 'favorites', label: 'Favorites', icon: StarLine },
   { value: 'settings', label: 'Settings', icon: Settings1Line },
 ];
+
+/** Regression: close anticipation, stagger, and press-scale for the plain switcher. */
+export const CloseMotion: Story = {
+  render: () => (
+    <View className="fixed bottom-6 left-10 w-64">
+      <MorphingSwitcher items={SPACES} defaultValue="home" testID="motion-switcher" triggerTestID="motion-trigger" />
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const root = await canvas.findByTestId('motion-switcher');
+    const trigger = await canvas.findByTestId('motion-trigger');
+    await userEvent.click(trigger);
+    const row = await canvas.findByTestId('motion-switcher-row-files');
+    await waitFor(() => expect(Number(getComputedStyle(row).opacity)).toBeCloseTo(1, 3));
+    expect(row.getBoundingClientRect().top).toBeLessThan(root.getBoundingClientRect().top);
+    await checkSwitcherClose(root, trigger, ['files', 'settings']);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  },
+};
 
 // ── Playground ───────────────────────────────────────────────────────────────
 
@@ -247,7 +268,7 @@ export const SwitchBetweenItems: Story = {
     await userEvent.click(await screen.findByText('All files'));
     // The trigger persists through the morph — it now shows the new value.
     const closedTrigger = await canvas.findByTestId('switcher-trigger');
-    await expect(screen.queryByText('Favorites')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('Favorites')).toBeNull());
     await expect(within(closedTrigger).getByText('All files')).toBeTruthy();
   },
 };
@@ -333,7 +354,7 @@ export const NoCloseControl: Story = {
     // Selecting an item still folds the switcher back.
     await userEvent.click(await screen.findByText('Settings'));
     await expect(await canvas.findByTestId('noclose-trigger')).toBeTruthy();
-    await expect(screen.queryByText('Favorites')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('Favorites')).toBeNull());
   },
 };
 
@@ -365,7 +386,7 @@ export const LabelOnly: Story = {
     await expect(await screen.findByText('Option C')).toBeTruthy();
     await userEvent.click(await screen.findByText('Option B'));
     await expect(await canvas.findByTestId('labelonly-trigger')).toBeTruthy();
-    await expect(screen.queryByText('Option C')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('Option C')).toBeNull());
   },
 };
 
@@ -441,7 +462,7 @@ export const SwitcherVariantSelect: Story = {
     await userEvent.click(await screen.findByText('Favorites'));
     const trigger = await canvas.findByTestId('switcher-select-trigger');
     await expect(within(trigger).getByText('Favorites')).toBeTruthy();
-    await expect(screen.queryByText('Settings')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('Settings')).toBeNull());
   },
 };
 

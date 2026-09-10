@@ -15,6 +15,9 @@ export type OutsidePressBackdropProps = {
   frame: OutsidePressFrame;
   /** Fold the host on a backdrop tap. Undefined when `closeOnOutsidePress` is off — the layer then only dims. */
   onPress?: () => void;
+  /** Fold the host the moment a press lands, before it completes — a touch that
+   *  starts outside the pane and drags away still dismisses. */
+  onPressIn?: () => void;
   /** The scrim kind: `"blur"` frosts behind a dim, `"opacity"` dims only, `"none"` is transparent. @default 'none' */
   overlay?: OverlayType;
   /**
@@ -43,9 +46,17 @@ export type OutsidePressBackdropProps = {
  * CSS "backdrop root" that clips a child's `backdrop-filter` on web, so the
  * blur layer carries its own opacity fade (see `OverlayBlur`).
  */
-export function OutsidePressBackdrop({ frame, onPress, overlay = 'none', blurInline = true, testID }: OutsidePressBackdropProps) {
+export function OutsidePressBackdrop({
+  frame,
+  onPress,
+  onPressIn,
+  overlay = 'none',
+  blurInline = true,
+  testID,
+}: OutsidePressBackdropProps) {
   const reduce = useReducedMotion();
   const handlePress = useCallback(() => onPress?.(), [onPress]);
+  const handlePressIn = useCallback(() => onPressIn?.(), [onPressIn]);
   const frameStyle = {
     position: 'absolute' as const,
     top: frame.top,
@@ -77,10 +88,11 @@ export function OutsidePressBackdrop({ frame, onPress, overlay = 'none', blurInl
         style={frameStyle}
       >
         <Pressable
-          accessibilityRole={onPress ? 'button' : undefined}
-          accessibilityLabel={onPress ? 'Close' : undefined}
+          accessibilityRole={onPress || onPressIn ? 'button' : undefined}
+          accessibilityLabel={onPress || onPressIn ? 'Close' : undefined}
           testID={testID}
           onPress={onPress ? handlePress : undefined}
+          onPressIn={onPressIn ? handlePressIn : undefined}
           className={overlay === 'none' ? undefined : 'bg-black/40'}
           style={StyleSheet.absoluteFill}
         />

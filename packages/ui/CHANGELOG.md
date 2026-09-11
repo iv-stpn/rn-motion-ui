@@ -1,5 +1,143 @@
 # rn-motion-ui
 
+## 7.6.0
+
+### Minor Changes
+
+- 2b23055: feat(Toaster): add a cross-platform toast component
+
+  Adds a new `rn-motion-ui/toaster` subpath exposing `<Toaster />` and a callable
+  `toast` API (`toast.success`, `toast.error`, `toast.warning`, `toast.info`,
+  `toast.dismiss`).
+
+  - **Web** delegates to Sonner (`sonner` is now a dependency), mapping the shared
+    contract onto its API — `position: 'top' | 'bottom'` becomes its centred corners,
+    `duration: 0` (sticky) becomes `Infinity`, and `action.onPress`/`onClose` bridge
+    to `action.onClick`/`onDismiss`. Toasts default to **top-centre** on web and
+    shrink to their content (capped at a readable `max-width`), with their surface,
+    text, border and status colours drawn from the theme tokens.
+  - **Native** renders a custom Reanimated toast (inspired by
+    expo-animated-toast): a module-level store drives `useSyncExternalStore`, and each
+    toast slides in from its edge through `AnimatePresence` with a status dot, optional
+    description and action, tap-to-dismiss, and auto-dismiss via a timer. Toasts
+    default to **bottom-centre**, sit at a compact mobile size, and honour a `glass`
+    prop that swaps the opaque surface for a frosted `Surface` (backdrop blur + specular
+    rim).
+
+### Patch Changes
+
+- 66d45f1: feat(Dock/MorphingDockSwitch): pill dock bars, capsule items and animated labels
+
+  Both docks now read as a single pill, and their icon buttons are capsules (wider
+  than tall) instead of squares. The active highlight covers the full item, and
+  toggling `showLabels` scales the icon and fades the caption in and out.
+
+  - **New component** — `rn-motion-ui/morphing-dock-switch` exposes
+    `<MorphingDockSwitch />`: a dock whose trailing double-caret button unfolds it
+    into a vertical switcher (the active item becomes the header row, the rest fill
+    in with labels revealed). Shares the `size` / `floating` / `elevation` /
+    `showLabels` contract with `Dock`.
+  - **Pill / capsule geometry** — the container silhouette is fully rounded
+    (`rounded-full`), and each dock element is a capsule — `1.2×` width icon-only,
+    `1.8×` when labelled — rather than a square. The gliding active highlight now
+    overlays the whole item instead of an inset pill.
+  - **Animated labels** — `showLabels` widens the items and enlarges the icon (a
+    `1.25×` scale), while the caption appears/disappears with a scale + fade
+    animation through `AnimatePresence`. Icons also sit larger overall (base size
+    raised from `0.45×` to `0.5×` the item side).
+
+- 7ecacb5: refactor(Dock/MorphingSwitcher): shared motion primitives and a reworked close
+
+  The Dock, MorphingDockSwitch and MorphingSwitcher now share their geometry and
+  motion instead of each re-deriving it inline:
+
+  - **Shared dock geometry** — `dock-metrics` (pure closed-form arithmetic, now
+    unit-tested), `dock-motion` (`DockFrame` / `DockHighlight` / `DockContent`) and
+    `dock-transition` (`dockSizeMotion`, web-vs-Fabric size handling) replace the
+    per-component constants and pill/highlight rendering in `Dock` and
+    `MorphingDockSwitch`. The container size now springs via a new
+    `SPRING_DOCK_SCALE`, and item slots use static Yoga layout with the moving
+    frames keyed off a borderless row so a changed pill no longer restarts the
+    spring.
+
+  - **Shared switcher close** — `use-switcher-motion` owns the close timeline
+    (swell → hold → collapse with a staggered row peel and a content dissolve), and
+    `SwitcherMotionRow` renders the per-row exit. Both `MorphingSwitcher` and
+    `MorphingDockSwitch` route their pane close through it, so the shell and rows
+    read as one motion instead of dissolving first and collapsing a beat later.
+
+  - **OutsidePressBackdrop** gains `onPressIn`, so a press that starts outside a
+    pane and drags away still dismisses instead of only a completed tap.
+
+  No public API change; `dockMetrics`/`dockRowSize` are exported for the motion
+  checks and `dock-metrics` test.
+
+- 62f28d9: showcase size and glass variants in the MorphingFAB / MorphingSwitcher interactive stories
+
+  The two `Interactive` playgrounds now expose the morph shells' knobs as live
+  controls instead of only in their dedicated `Frosted` / `AllSizes` stories.
+
+  - **MorphingFAB** — a `Size` choice drives the collapsed trigger along the
+    shared interactive ramp (`sm`/`md`/`lg`), and a `Glass` toggle swaps the solid
+    shell for the frosted `Surface` (backdrop blur + tint + rim). Coloured shapes
+    sit behind the FAB so the blur has something to read.
+  - **MorphingSwitcher** — a `Glass` toggle does the same for the switcher shell,
+    with coloured shapes behind the trigger/pane for a visible backdrop-blur read.
+
+- d989fed: feat(MorphingFAB/Switcher): frost the morph shells and let the FAB size off the button ramp
+
+  Both morph menus can now host their trigger + pane inside the frosted-glass
+  `Surface` primitive instead of a solid surface: a positive `blurRadius` swaps the
+  shell's `MotiView` host for a `<Surface>` (same `key={variant}` remount, same
+  morph layout), so the collapsing circle/pill reads as glass over whatever sits
+  behind it.
+
+  - **Glass knobs** — new `blurRadius`, `opacity`, `rim`, `rimWidth`, and
+    `intensity` props on both `MorphingFAB` and `MorphingSwitcher`, wired straight
+    through to the frosted `Surface` and the trigger's `IconButton`. The shell's
+    radius follows the morph (full radius on the pane, half the trigger side when
+    collapsed), and non-glass rendering keeps the exact solid-surface path it had.
+  - **FAB size** — `MorphingFAB` gains a `size` prop (`sm`/`md`/`lg`,
+    `lg` default). The collapsed trigger and the shell's resting footprint now read
+    the shared interactive ramp (`BUTTON_SIZE[size].px`) instead of being pinned to
+    `lg`, so a FAB lines up with a `Button` or `IconButton` of the same size.
+
+- 3027651: fix(Overlay): collapse nested overlays into a single native Modal
+
+  Two overlays opened at once used to each mount their own `<Modal>`. On iOS
+  (Fabric, RN 0.86.3) the second `presentViewController:` targets the app's base
+  VC — already presenting the first modal — so UIKit silently drops it: a confirm
+  dialog raised from a settings menu never appeared.
+
+  `OverlayShell` now collapses N native modals into **one** Modal hosting N
+  JS-stacked layers:
+
+  - The bottom (first-registered) layer owns the Modal and renders every layer in
+    registration order; later layers register as guests and render nothing at their
+    call site.
+  - Each layer keeps its own `AnimatePresence` + `MotiView` exit, its own dialog
+    `role`/`aria-label`/`accessibilityViewIsModal`, and its own focus trap.
+  - `onShow` is emitted per-layer from that layer's enter transition (iOS only).
+  - The toast portal still re-targets onto the topmost layer's outlet.
+
+  No public API change: `open`/`onOpenChange`/`testID` and the
+  `OverlayShell`/`OverlayPortal` exports are unchanged.
+
+- 8abdf9b: feat(MorphingSwitcher): `fullWidth` prop and a tighter stacked caret; fix the Dock/Switcher close height
+
+  - **`fullWidth`** — a new `MorphingSwitcher` prop (default `false`) that stretches
+    the trigger and its open pane across the parent. Out of the box the switcher now
+    hugs its content (icon + label + carets); `variant="switcher"` no longer implies
+    full-width. `expandedWidth` is ignored when `fullWidth` is set.
+  - **Stacked caret** — the switcher's up/down chevrons now overlap by `0.3×` their
+    size so the pair reads as one tight glyph; `MorphingDockSwitch` was brought down
+    from `0.5×` to match.
+  - **Close height fix** — the shell's Fabric layout transition now waits `CLOSE_LEAD`
+    before descending on close, so the height/width collapse keeps the same beat as
+    the Moti radius/translateY spring instead of clipping the staggered rows before
+    their exit plays. The switcher shell is also keyed by width mode so toggling
+    `fullWidth` remounts it instead of retaining the stale measured width.
+
 ## 7.5.0
 
 ### Minor Changes

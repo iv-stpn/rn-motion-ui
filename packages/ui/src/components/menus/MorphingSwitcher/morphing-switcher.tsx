@@ -35,6 +35,10 @@ export type { MorphingSwitcherSize } from './morphing-switcher-scale';
 const VIEWPORT_PADDING = 8;
 /** `p-1` inset between the shell edge and its content, so the trigger and hover pills never run flush to the pane rim. */
 const PANE_INSET = 4;
+/** Fraction of a caret's size to overlap the stacked pair's lower chevron — each
+ *  chevron lives in a 24×24 viewBox with dead space top and bottom, so a stacked
+ *  pair spreads apart; overlapping the lower one reads as one tight glyph. */
+const CARET_OVERLAP = 0.3;
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
 /** Collapsed-trigger ↔ open-pane size morph — lightly under-damped.
@@ -45,6 +49,10 @@ const OPEN_ELEVATION_LIFT = 2;
 const IS_WEB = Platform.OS === 'web';
 const MORPH_SPRING = { type: 'spring' as const, stiffness: 440, damping: 26, mass: 0.5 };
 const MORPH_LAYOUT = springLayout(MORPH_SPRING);
+/** The close's size morph shares the swell-and-hold beat: it waits {@link CLOSE_LEAD}
+ *  before the shell starts down, so the Fabric layout transition and the Moti radius
+ *  /translateY spring (which already carries that delay) descend on the same frame. */
+const MORPH_LAYOUT_CLOSING = springLayout(MORPH_SPRING).delay(CLOSE_LEAD);
 
 /** The pane's size morph. Opening has nothing to wait for; a close in flight holds the
  *  descent for {@link CLOSE_LEAD} so the shell swells to its peak and sits there before
@@ -53,6 +61,17 @@ const MORPH_LAYOUT = springLayout(MORPH_SPRING);
  *  see {@link dockMorphTransition} in `MorphingDockSwitch`, where that was visible. */
 function closeMorphTransition(closing: boolean) {
   return closing ? { ...MORPH_SPRING, delay: CLOSE_LEAD } : MORPH_SPRING;
+}
+
+/**
+ * The shell's Fabric layout transition. Web animates size through Moti (no layout
+ * transition) and reduced motion snaps, so both yield `undefined`. Otherwise the
+ * close uses the {@link CLOSE_LEAD}-delayed builder so the height descent keeps the
+ * same beat as the Moti radius/translateY spring — see {@link MORPH_LAYOUT_CLOSING}.
+ */
+function switcherMorphLayout(closing: boolean, reduce: boolean) {
+  if (reduce || IS_WEB) return;
+  return closing ? MORPH_LAYOUT_CLOSING : MORPH_LAYOUT;
 }
 
 /** Icon renderer — compatible with this project's icon set signature. */
@@ -70,8 +89,9 @@ export type MorphingSwitcherItem = {
  * Collapsed-trigger layout.
  * - `'select'` — a compact pill that hugs its content (icon + label + one down
  *   caret) and morphs into the full item list on open.
- * - `'switcher'` — a full-width bar (`justify-between`) with stacked up/down
- *   carets on the right; on open the trigger becomes the active row of the list.
+ * - `'switcher'` — a bar with stacked up/down carets on the right; on open the
+ *   trigger becomes the active row of the list. It hugs its content unless
+ *   {@link MorphingSwitcherProps.fullWidth} stretches it across the parent.
  */
 export type MorphingSwitcherVariant = 'select' | 'switcher';
 
@@ -88,7 +108,7 @@ export type MorphingSwitcherProps = {
   placeholder?: string;
   /** Icon shown in the trigger when `value` matches no item. */
   placeholderIcon?: MorphingSwitcherIcon;
-  /** Expanded pane width in px. Defaults to 240. Ignored by `variant="switcher"`, which spans its parent. */
+  /** Expanded pane width in px. Defaults to 240. Ignored when `fullWidth` is set, since the pane then spans its parent. */
   expandedWidth?: number;
   /** Expanded pane height in px. Defaults to a fit for the item list. */
   expandedHeight?: number;
@@ -111,6 +131,12 @@ export type MorphingSwitcherProps = {
   closeIcon?: ReactNode | null;
   /** Collapsed-trigger layout. Defaults to `"switcher"`. */
   variant?: MorphingSwitcherVariant;
+  /**
+   * Stretch the trigger (and the open pane) across the parent instead of hugging
+   * the trigger's content. Off by default: the collapsed trigger is exactly as
+   * wide as its icon, label and carets need. @default false
+   */
+  fullWidth?: boolean;
   /** Trigger and row height — the shared interactive ramp, so it lines up with
    *  a Button or IconButton of the same size. @default 'md' */
   size?: MorphingSwitcherSize;
@@ -171,11 +197,12 @@ export type MorphingSwitcherProps = {
  *   trigger content stays put and becomes the active header row while the other
  *   items fade in below. The trigger never unmounts, so it morphs into the list
  *   instead of disappearing and reappearing.
- * - `variant="switcher"` (default) — collapsed it is a full-width bar with the
- *   current item's icon + label on the left and stacked up/down carets on the
- *   right. Tapping springs the shell open from the trigger itself; the trigger
- *   is the active row of the list and the current item is omitted from the rows
- *   below so it never appears twice.
+ * - `variant="switcher"` (default) — collapsed it is a bar with the current
+ *   item's icon + label on the left and stacked up/down carets on the right,
+ *   hugging its content unless `fullWidth` stretches it across the parent.
+ *   Tapping springs the shell open from the trigger itself; the trigger is the
+ *   active row of the list and the current item is omitted from the rows below
+ *   so it never appears twice.
  *
  * The trigger is disabled while the pane is open — it represents the already-
  * selected item, so pressing it does nothing; the switcher closes by picking
@@ -200,13 +227,17 @@ type TriggerCaretsProps = {
 
 /** The trailing carets — a down/up caret for `select`, stacked up/down for `switcher`. */
 function TriggerCarets({ variant, open, closeIcon, scale }: TriggerCaretsProps) {
-  if (variant === 'switcher')
+  if (variant === 'switcher') {
+    // Tuck the lower chevron up into the upper one's viewBox dead space so the
+    // pair reads as one tight glyph instead of two floating carets.
+    const overlap = Math.round(scale.stackedCaretSize * CARET_OVERLAP);
     return (
       <View className="flex-col items-center">
         <ThemedIcon icon={ChevronUp} token="muted-foreground" size={scale.stackedCaretSize} />
-        <ThemedIcon icon={ChevronDown} token="muted-foreground" size={scale.stackedCaretSize} />
+        <ThemedIcon icon={ChevronDown} token="muted-foreground" size={scale.stackedCaretSize} style={{ marginTop: -overlap }} />
       </View>
     );
+  }
   if (!open) return <ThemedIcon icon={ChevronDown} token="muted-foreground" size={scale.caretSize} />;
   if (closeIcon === null) return null;
   return closeIcon ?? <ThemedIcon icon={ChevronUp} token="muted-foreground" size={scale.caretSize} />;
@@ -216,6 +247,8 @@ type SwitcherTriggerProps = {
   icon?: MorphingSwitcherIcon;
   label: string;
   variant: MorphingSwitcherVariant;
+  /** Stretch the trigger to the shell's width instead of hugging its content. */
+  fullWidth: boolean;
   open: boolean;
   closeIcon: ReactNode | null | undefined;
   scale: SwitcherScale;
@@ -228,8 +261,8 @@ type SwitcherTriggerProps = {
 
 /**
  * The trigger. It stays mounted for the switcher's whole life, so opening only
- * re-styles it (compact pill → full-width active header row) and flips its
- * caret; nothing disappears or reappears. With `onPress` it is the interactive
+ * re-styles it (content-hugging pill → stretched active header row) and flips
+ * its caret; nothing disappears or reappears. With `onPress` it is the interactive
  * trigger (named, pressable); without it renders an offscreen measurer — an
  * unnamed, `aria-hidden`, non-interactive copy that reserves the collapsed
  * footprint and reports the exact pill size via `onLayout`.
@@ -245,6 +278,7 @@ function SwitcherTrigger({
   icon,
   label,
   variant,
+  fullWidth,
   open,
   closeIcon,
   scale,
@@ -266,7 +300,7 @@ function SwitcherTrigger({
     scale.rowClassName,
     scale.gapClassName,
     'relative flex-row items-center overflow-hidden',
-    open || variant === 'switcher' ? 'justify-between self-stretch' : 'self-start',
+    open || fullWidth ? 'justify-between self-stretch' : 'self-start',
   );
 
   const inner = (
@@ -371,17 +405,12 @@ function switcherSurfaceClass(elevation: SurfaceElevation, open: boolean, floati
 }
 
 /**
- * The pane's horizontal constraint: `switcher` spans its parent (pinned by
- * `right: 0`), `select` settles on the open width (or the trigger footprint when
- * the consumer's `expandedWidth` is narrower).
+ * The pane's horizontal constraint: with `fullWidth` it spans its parent (pinned
+ * by `right: 0`), otherwise it settles on the open width (or the trigger
+ * footprint when the consumer's `expandedWidth` is narrower).
  */
-function switcherPaneSizeStyle(
-  variant: MorphingSwitcherVariant,
-  open: boolean,
-  openWidth: number,
-  closedWidth: number,
-): ViewStyle {
-  if (variant === 'switcher') return { right: 0 };
+function switcherPaneSizeStyle(fullWidth: boolean, open: boolean, openWidth: number, closedWidth: number): ViewStyle {
+  if (fullWidth) return { right: 0 };
   return { width: open ? openWidth : closedWidth };
 }
 
@@ -404,7 +433,7 @@ function paneLayoutStyle(openAbove: boolean, open: boolean, paneHeight: number, 
 type SwitcherShellGeometry = {
   open: boolean;
   openAbove: boolean;
-  variant: MorphingSwitcherVariant;
+  fullWidth: boolean;
   scale: SwitcherScale;
   paneHeight: number;
   closedHeight: number;
@@ -421,7 +450,7 @@ type SwitcherShellGeometry = {
 function switcherShellGeometry({
   open,
   openAbove,
-  variant,
+  fullWidth,
   scale,
   paneHeight,
   closedHeight,
@@ -438,19 +467,19 @@ function switcherShellGeometry({
         height: open ? paneHeight : closedHeight,
         borderRadius: radius,
         translateY,
-        ...(variant === 'select' ? { width: open ? openWidth : closedWidth } : {}),
+        ...(fullWidth ? {} : { width: open ? openWidth : closedWidth }),
       }
     : { borderRadius: radius, translateY };
   const style: StyleProp<ViewStyle> = IS_WEB
     ? [
         { flexDirection: openAbove ? 'column-reverse' : 'column' },
         open ? { zIndex: 40 } : undefined,
-        variant === 'switcher' ? { right: 0 } : undefined,
+        fullWidth ? { right: 0 } : undefined,
       ]
     : [
         paneLayoutStyle(openAbove, open, paneHeight, closedHeight),
         open ? { zIndex: 40 } : undefined,
-        switcherPaneSizeStyle(variant, open, openWidth, closedWidth),
+        switcherPaneSizeStyle(fullWidth, open, openWidth, closedWidth),
       ];
   return { animate, style };
 }
@@ -472,6 +501,7 @@ export function MorphingSwitcher({
   onShow,
   closeIcon,
   variant = 'switcher',
+  fullWidth = false,
   size = 'md',
   floating = false,
   elevation = 3,
@@ -679,8 +709,9 @@ export function MorphingSwitcher({
   // flush to the edge.
   const closedWidth = (triggerSize?.width ?? 0) + PANE_INSET * 2;
   const closedHeight = (triggerSize?.height ?? scale.height) + PANE_INSET * 2;
-  // `switcher` spans its parent, so its width is not animated — the shell's
-  // `right: 0` pins it full-width and only height/radius morph.
+  // `fullWidth` spans its parent, so its width is not animated — the shell's
+  // `right: 0` pins it full-width and only height/radius morph. Otherwise the
+  // pane settles on `expandedWidth` (never narrower than the trigger).
   const openWidth = Math.max(expandedWidth, closedWidth);
 
   // The geometry follows `open`, never the retained `expanded`: the pane has to
@@ -690,7 +721,7 @@ export function MorphingSwitcher({
   const shell = switcherShellGeometry({
     open,
     openAbove,
-    variant,
+    fullWidth,
     scale,
     paneHeight,
     closedHeight,
@@ -735,6 +766,7 @@ export function MorphingSwitcher({
         icon={triggerIcon}
         label={triggerLabel}
         variant={variant}
+        fullWidth={fullWidth}
         open={expanded}
         closeIcon={closeIcon}
         scale={scale}
@@ -763,19 +795,21 @@ export function MorphingSwitcher({
     </>
   );
 
-  // Keyed by variant: Moti holds the last value of every key it has animated,
-  // so a `select` pane that later re-renders as `switcher` would keep its
-  // 240px width instead of spanning the parent. Remounting drops it. The same
-  // key is shared by both hosts (solid `MotiView` and frosted `Surface`), so
-  // toggling glass remounts the shell and drops the stale animated values.
+  // Keyed by variant and width mode: Moti holds the last value of every key it
+  // has animated, so a content-fit pane that later re-renders as `fullWidth`
+  // would keep its measured width instead of spanning the parent (and a
+  // `select` pane re-rendered as `switcher` would keep its 240px). Remounting
+  // drops it. The same key is shared by both hosts (solid `MotiView` and frosted
+  // `Surface`), so toggling glass remounts the shell and drops the stale values.
+  const shellKey = `${variant}-${fullWidth ? 'full' : 'fit'}`;
   const shellView = glass ? (
     <Surface
-      key={variant}
+      key={shellKey}
       testID={`${testID}-shell`}
       as={MotiView}
       animate={shell.animate}
       transition={morphTransition}
-      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      layout={switcherMorphLayout(closing, reduce)}
       elevation={open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation}
       floating={floating}
       blurRadius={blurRadius}
@@ -791,11 +825,11 @@ export function MorphingSwitcher({
     </Surface>
   ) : (
     <MotiView
-      key={variant}
+      key={shellKey}
       testID={`${testID}-shell`}
       animate={shell.animate}
       transition={morphTransition}
-      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      layout={switcherMorphLayout(closing, reduce)}
       className={cn('absolute top-0 left-0 overflow-hidden p-1', switcherSurfaceClass(elevation, open, floating))}
       style={shell.style}
     >
@@ -810,6 +844,7 @@ export function MorphingSwitcher({
         icon={triggerIcon}
         label={triggerLabel}
         variant={variant}
+        fullWidth={fullWidth}
         open={false}
         closeIcon={closeIcon}
         scale={scale}

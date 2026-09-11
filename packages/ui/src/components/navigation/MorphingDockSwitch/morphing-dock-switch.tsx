@@ -36,7 +36,7 @@ const VIEWPORT_PADDING = 8;
 /** `p-1` inset between the shell edge and its content, so the dock icons and open rows never run flush to the rim. */
 const PANE_INSET = 4;
 /** How far the lower chevron overlaps the upper one (fraction of its size). */
-const CARET_OVERLAP = 0.5;
+const CARET_OVERLAP = 0.3;
 
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
@@ -45,6 +45,12 @@ const OPEN_ELEVATION_LIFT = 2;
 const IS_WEB = Platform.OS === 'web';
 const MORPH_SPRING = { type: 'spring' as const, stiffness: 440, damping: 26, mass: 0.5 };
 const MORPH_LAYOUT = springLayout(MORPH_SPRING);
+/** The close's size morph shares the swell-and-hold beat: it waits {@link CLOSE_LEAD}
+ *  before the shell starts down, so the Fabric layout transition and the Moti radius
+ *  /translateY spring (which already carries that delay) descend on the same frame.
+ *  Without it the shell's height collapsed immediately on native and clipped the
+ *  staggered rows before their exit could play. */
+const MORPH_LAYOUT_CLOSING = springLayout(MORPH_SPRING).delay(CLOSE_LEAD);
 
 /** Icon renderer — compatible with this project's icon set signature. */
 export type MorphingDockSwitchIcon = (props: IconProps) => ReactNode;
@@ -362,6 +368,18 @@ function dockMorphTransition(closing: boolean, reduce: boolean) {
 }
 
 /**
+ * The shell's Fabric layout transition. Web animates size through Moti (no layout
+ * transition) and reduced motion snaps, so both yield `undefined`. Otherwise the
+ * close uses the {@link CLOSE_LEAD}-delayed builder so the height/width descent
+ * keeps the same beat as the Moti radius/translateY spring — see
+ * {@link MORPH_LAYOUT_CLOSING}.
+ */
+function dockMorphLayout(closing: boolean, reduce: boolean) {
+  if (reduce || IS_WEB) return;
+  return closing ? MORPH_LAYOUT_CLOSING : MORPH_LAYOUT;
+}
+
+/**
  * The shell's animated geometry. Web animates `height`/`width` through Moti (the
  * original smooth morph); Fabric keeps a static size and drives the change via
  * the `layout` transition (layout props don't round-trip Yoga there). The radius
@@ -671,7 +689,7 @@ export function MorphingDockSwitch({
       testID={`${testID}-shell`}
       animate={shell.animate}
       transition={morphTransition}
-      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      layout={dockMorphLayout(closing, reduce)}
       elevation={open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation}
       floating={floating}
       blurRadius={blurRadius}
@@ -690,7 +708,7 @@ export function MorphingDockSwitch({
       testID={`${testID}-shell`}
       animate={shell.animate}
       transition={morphTransition}
-      layout={reduce || IS_WEB ? undefined : MORPH_LAYOUT}
+      layout={dockMorphLayout(closing, reduce)}
       className={cn('absolute top-0 left-0 overflow-hidden p-1', dockSurfaceClass(elevation, open, floating))}
       style={shell.style}
     >
@@ -701,6 +719,10 @@ export function MorphingDockSwitch({
   return (
     <MotiView
       {...rootMotion}
+      // The root's own size never changes while opening/closing, so its `layout`
+      // transition is dead — but a nested `layout` on this ancestor would shadow
+      // the shell's size morph on Fabric. Drop it; the shell owns the morph.
+      layout={undefined}
       ref={rootRef}
       collapsable={false}
       testID={testID}

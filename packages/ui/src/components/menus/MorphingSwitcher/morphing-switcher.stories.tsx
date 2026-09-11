@@ -34,7 +34,7 @@ type AppSurfaceProps = { children: ReactNode; hint: string };
 
 function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
-    <View className="min-h-[380px] bg-surface-1">
+    <View className="min-h-[380px] self-stretch bg-surface-1">
       <View className="border-border border-b-[1.5px] px-5 py-3">
         <View className="h-2.5 w-24 rounded-full bg-muted-foreground/20" />
       </View>
@@ -56,26 +56,6 @@ const SPACES: readonly MorphingSwitcherItem[] = [
   { value: 'settings', label: 'Settings', icon: Settings1Line },
 ];
 
-/** Regression: close anticipation, stagger, and press-scale for the plain switcher. */
-export const CloseMotion: Story = {
-  render: () => (
-    <View className="fixed bottom-6 left-10 w-64">
-      <MorphingSwitcher items={SPACES} defaultValue="home" testID="motion-switcher" triggerTestID="motion-trigger" />
-    </View>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const root = await canvas.findByTestId('motion-switcher');
-    const trigger = await canvas.findByTestId('motion-trigger');
-    await userEvent.click(trigger);
-    const row = await canvas.findByTestId('motion-switcher-row-files');
-    await waitFor(() => expect(Number(getComputedStyle(row).opacity)).toBeCloseTo(1, 3));
-    expect(row.getBoundingClientRect().top).toBeLessThan(root.getBoundingClientRect().top);
-    await checkSwitcherClose(root, trigger, ['files', 'settings']);
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  },
-};
-
 // ── Playground ───────────────────────────────────────────────────────────────
 
 const VARIANTS = ['select', 'switcher'] as const;
@@ -86,10 +66,11 @@ const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: '
 const PLAIN_SPACES: readonly MorphingSwitcherItem[] = SPACES.map(({ value, label }) => ({ value, label }));
 
 const PLAYGROUND_HINT =
-  'select is a pill that hugs its label; switcher is a full-width bar with stacked carets. Either way the trigger stays mounted and becomes the active row of the open list. Elevation sets the resting float — the shell lifts two rungs higher while open.';
+  'select is a pill with one caret; switcher is a bar with stacked carets. Both hug their content by default — Full width stretches the trigger (and the pane) across the parent, whichever variant is picked. Either way the trigger stays mounted and becomes the active row of the open list. Elevation sets the resting float — the shell lifts two rungs higher while open.';
 
 function MorphingSwitcherPlayground() {
   const [variant, setVariant] = useState<MorphingSwitcherVariant>('switcher');
+  const [fullWidth, setFullWidth] = useState(false);
   const [size, setSize] = useState<MorphingSwitcherSize>('md');
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
@@ -106,6 +87,9 @@ function MorphingSwitcherPlayground() {
         <ControlCard title="Options">
           <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
           <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+          {/* Off by default: the trigger is only as wide as its content. Turn it
+              on to stretch the trigger — and the open pane — across the parent. */}
+          <Toggle label="Full width" onChange={setFullWidth} value={fullWidth} />
           <Toggle label="Floating" onChange={setFloating} value={floating} />
           <Toggle label="Glass" onChange={setGlass} value={glass} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
@@ -143,6 +127,7 @@ function MorphingSwitcherPlayground() {
             value={value}
             onValueChange={setValue}
             variant={variant}
+            fullWidth={fullWidth}
             size={size}
             elevation={ELEVATIONS[elevationKey]}
             floating={floating}
@@ -164,10 +149,55 @@ function MorphingSwitcherPlayground() {
 
 // ── Stories ──────────────────────────────────────────────────────────────────
 
-/** Drive the variant, the item icons, and the close caret with the controls — the same
- *  switcher re-styles in place, keeping whatever value you last picked. */
+/** Drive the variant, the width mode, the item icons, and the close caret with the
+ *  controls — the same switcher re-styles in place, keeping whatever value you last
+ *  picked. Off by default, `Full width` is the only thing that stretches the trigger:
+ *  out of the box it hugs its icon, label and carets. */
 export const Interactive: Story = {
   render: () => <MorphingSwitcherPlayground />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const root = await canvas.findByTestId('playground');
+    const trigger = await canvas.findByTestId('playground-trigger');
+    const full = root.getBoundingClientRect().width;
+
+    // Default: the trigger hugs its content — nowhere near the parent's width.
+    await waitFor(() => expect(trigger.getBoundingClientRect().width).toBeGreaterThan(0));
+    const hugged = trigger.getBoundingClientRect().width;
+    expect(hugged).toBeLessThan(full * 0.8);
+
+    // Full width stretches the trigger across the parent. The shell is keyed by
+    // variant + width mode, so toggling remounts it — re-query the trigger.
+    await userEvent.click(canvas.getByTestId('story-toggle-full-width'));
+    const stretched = await canvas.findByTestId('playground-trigger');
+    await waitFor(() => expect(stretched.getBoundingClientRect().width).toBeGreaterThan(full * 0.9));
+  },
+};
+
+/** Regression: close anticipation, stagger, and press-scale for the plain switcher. */
+export const CloseMotion: Story = {
+  render: () => (
+    <View className="fixed bottom-6 left-10 w-64">
+      <MorphingSwitcher
+        items={SPACES}
+        defaultValue="home"
+        fullWidth={true}
+        testID="motion-switcher"
+        triggerTestID="motion-trigger"
+      />
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const root = await canvas.findByTestId('motion-switcher');
+    const trigger = await canvas.findByTestId('motion-trigger');
+    await userEvent.click(trigger);
+    const row = await canvas.findByTestId('motion-switcher-row-files');
+    await waitFor(() => expect(Number(getComputedStyle(row).opacity)).toBeCloseTo(1, 3));
+    expect(row.getBoundingClientRect().top).toBeLessThan(root.getBoundingClientRect().top);
+    await checkSwitcherClose(root, trigger, ['files', 'settings']);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  },
 };
 
 /** The three heights side by side — sm/md/lg stand at the shared interactive
@@ -400,6 +430,7 @@ export const SwitcherVariant: Story = {
           variant="switcher"
           items={SPACES}
           defaultValue="home"
+          fullWidth={true}
           accessibilityLabel="Switch space"
           triggerTestID="switcher-variant-trigger"
           testID="switcher-variant"
@@ -446,6 +477,7 @@ export const SwitcherVariantSelect: Story = {
           variant="switcher"
           items={SPACES}
           defaultValue="home"
+          fullWidth={true}
           accessibilityLabel="Switch space"
           triggerTestID="switcher-select-trigger"
           testID="switcher-select"

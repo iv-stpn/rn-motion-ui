@@ -1,5 +1,35 @@
 # rn-motion-ui
 
+## 7.7.0
+
+### Minor Changes
+
+- 85d5c0c: feat(MultiStepMenu): uniform small-screen header — back arrow on every step, close ✕ on deeper steps only
+
+  The small-screen sheet special-cased the root: no back button, the title sat in the
+  header row, and the root content rolled/faded while deeper panes slid sideways.
+  Every step now wears the same chrome:
+
+  - the back arrow (an `IconButton`) is always present — it dismisses the sheet on
+    the root and steps back on deeper steps;
+  - the title sits on its own line below the header on every step;
+  - the close ✕ fades in only once you've stepped past the root;
+  - content panes slide horizontally on every step instead of the root's roll-up and
+    first-layer fade.
+
+### Patch Changes
+
+- 1c105b4: fix(MorphingDockSwitch): run the closed shell's resize on the dock's own spring
+
+  Toggling `showLabels` resized the resting shell on the morph spring
+  (stiffness 440) while the dock items inside it glided on the dock spring
+  (stiffness 800). The items outran their own `overflow-hidden` container, which
+  lagged behind and clipped them as it caught up.
+
+  The resting closed shell now uses `DOCK_SPRING` (and `DOCK_LAYOUT` on Fabric) —
+  matching the `Dock` component it mirrors. Only the open and closing morph keep
+  `MORPH_SPRING`, so the morph's swell-and-hold beat is unchanged.
+
 ## 7.6.1
 
 ### Patch Changes

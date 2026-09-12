@@ -29,7 +29,7 @@ import { getWebDocument, isWebNode, type WebPointerEvent } from '../../menus/Ove
 import { MenuItem } from '../../rows/menu-item';
 import { DOCK_GAP, DOCK_ICON_SCALE, dockMetrics, dockRowSize } from '../Dock/dock-metrics';
 import { DockContent, DockFrame, DockHighlight } from '../Dock/dock-motion';
-import { DOCK_SPRING, dockSizeMotion } from '../Dock/dock-transition';
+import { DOCK_LAYOUT, DOCK_SPRING, dockSizeMotion } from '../Dock/dock-transition';
 
 /** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
 const VIEWPORT_PADDING = 8;
@@ -361,10 +361,17 @@ type DockShellGeometry = {
  * resizes the whole bar — and a delay parked on the closed state put that resize
  * `CLOSE_LEAD` behind the row it belongs to, so the bar grew a beat after its own
  * content and clipped it.
+ *
+ * The resting closed shell also drops {@link MORPH_SPRING} for {@link DOCK_SPRING}:
+ * that size change is the dock bar's own resize, and the bar's items (and the `Dock`
+ * component it mirrors) glide on {@link DOCK_SPRING}. Keeping the closed shell on the
+ * slower morph spring let the items outrun their container — the `overflow-hidden`
+ * shell clipped the caret as it caught up.
  */
-function dockMorphTransition(closing: boolean, reduce: boolean) {
+function dockMorphTransition(closing: boolean, expanded: boolean, reduce: boolean) {
   if (reduce) return TIMING_INSTANT;
-  return closing ? { ...MORPH_SPRING, delay: CLOSE_LEAD } : MORPH_SPRING;
+  if (closing) return { ...MORPH_SPRING, delay: CLOSE_LEAD };
+  return expanded ? MORPH_SPRING : DOCK_SPRING;
 }
 
 /**
@@ -372,11 +379,13 @@ function dockMorphTransition(closing: boolean, reduce: boolean) {
  * transition) and reduced motion snaps, so both yield `undefined`. Otherwise the
  * close uses the {@link CLOSE_LEAD}-delayed builder so the height/width descent
  * keeps the same beat as the Moti radius/translateY spring — see
- * {@link MORPH_LAYOUT_CLOSING}.
+ * {@link MORPH_LAYOUT_CLOSING}. The resting closed shell uses {@link DOCK_LAYOUT}
+ * so a `showLabels` resize tracks the bar's items — see {@link dockMorphTransition}.
  */
-function dockMorphLayout(closing: boolean, reduce: boolean) {
+function dockMorphLayout(closing: boolean, expanded: boolean, reduce: boolean) {
   if (reduce || IS_WEB) return;
-  return closing ? MORPH_LAYOUT_CLOSING : MORPH_LAYOUT;
+  if (closing) return MORPH_LAYOUT_CLOSING;
+  return expanded ? MORPH_LAYOUT : DOCK_LAYOUT;
 }
 
 /**
@@ -606,7 +615,7 @@ export function MorphingDockSwitch({
   // are carried down by the very edge they are fading against. Waiting out the
   // retention first is what left the list dissolving in place while an emptied
   // pane collapsed a beat later, the two reading as separate motions.
-  const morphTransition = dockMorphTransition(closing, reduce);
+  const morphTransition = dockMorphTransition(closing, expanded, reduce);
   const shell = dockShellGeometry({ open, openAbove, scale, paneHeight, closedHeight, openWidth, closedWidth });
 
   const rootWindow = rootFrame ? { x: rootFrame.x, y: rootFrame.y } : null;
@@ -689,7 +698,7 @@ export function MorphingDockSwitch({
       testID={`${testID}-shell`}
       animate={shell.animate}
       transition={morphTransition}
-      layout={dockMorphLayout(closing, reduce)}
+      layout={dockMorphLayout(closing, expanded, reduce)}
       elevation={open ? clampSurfaceLevel(elevation + OPEN_ELEVATION_LIFT) : elevation}
       floating={floating}
       blurRadius={blurRadius}
@@ -708,7 +717,7 @@ export function MorphingDockSwitch({
       testID={`${testID}-shell`}
       animate={shell.animate}
       transition={morphTransition}
-      layout={dockMorphLayout(closing, reduce)}
+      layout={dockMorphLayout(closing, expanded, reduce)}
       className={cn('absolute top-0 left-0 overflow-hidden p-1', dockSurfaceClass(elevation, open, floating))}
       style={shell.style}
     >

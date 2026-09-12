@@ -14,27 +14,21 @@ import {
 } from 'react';
 import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
+import { ArrowLeftLine } from 'rn-motion-ui-icons/icons/arrow-left-line';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
-import { EASE_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { CloseButton } from '../../buttons/CloseButton/close-button';
+import { IconButton } from '../../buttons/IconButton/icon-button';
 import { MenuItem, type MenuItemIcon } from '../../rows/menu-item';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
 import type { OverlayType } from '../Overlay/overlay-type';
 
 // A lightly-damped spring glides the pane into place with a hair of settle at the
-// end instead of the abrupt start/stop a linear tween gives. Opacity stays a
-// timed fade (the first-layer enter) so it never overshoots the way a spring would.
-const SLIDE_TRANSITION = {
-  type: 'spring' as const,
-  stiffness: 280,
-  damping: 30,
-  mass: 1,
-  opacity: { type: 'timing' as const, duration: 280, easing: EASE_OUT },
-};
+// end instead of the abrupt start/stop a linear tween gives.
+const SLIDE_TRANSITION = { type: 'spring' as const, stiffness: 280, damping: 30, mass: 1 };
 // Exiting deeper-menu content disappears instantly: the slide/roll still runs its
 // full course, but the rows are hidden immediately instead of lingering on screen.
 // `opacity` uses a 1ms timing (not `no-animation`) so it still fires the completion
@@ -47,9 +41,6 @@ const SLIDE_EXIT_TRANSITION = {
 } as const;
 const ARROW_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
 const ARROW_EXIT_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
-// The header title rolls ±12px on enter/exit; the content's back-to-root roll
-// mirrors it so the two move in lockstep instead of the content sliding sideways.
-const TITLE_ROLL = 12;
 
 const MultiStepMenuContext = createContext<MultiStepHelpers | null>(null);
 
@@ -75,15 +66,6 @@ function computeDirection(current: string[], next: string[]): 'forward' | 'backw
 type PaneTarget = { translateY?: number; translateX?: number; opacity?: number };
 type PaneMotion = false | PaneTarget;
 
-/** Everything the small-screen pane-motion helpers need to pick a direction. */
-type SmallMotionContext = {
-  isRoot: boolean;
-  isForward: boolean;
-  isBackward: boolean;
-  isFirstLayer: boolean;
-  paneWidth: number;
-};
-
 function computeWideEnterFrom(direction: MultiStepDirection, widePaneWidth: number): PaneMotion {
   if (!direction) return false;
   return direction === 'backward' ? { translateX: -widePaneWidth } : { translateX: widePaneWidth };
@@ -93,26 +75,13 @@ function computeWideExitTo(direction: MultiStepDirection, widePaneWidth: number)
   return direction === 'forward' ? { translateX: -widePaneWidth } : { translateX: widePaneWidth };
 }
 
-function computeSmallEnterFrom(ctx: SmallMotionContext): PaneMotion {
-  const { isRoot, isForward, isBackward, isFirstLayer, paneWidth } = ctx;
-  if (isRoot) return isBackward ? { translateY: TITLE_ROLL } : false;
-  if (isForward && isFirstLayer) return { opacity: 0 };
-  return isBackward ? { translateX: -paneWidth } : { translateX: paneWidth };
+function computeSmallEnterFrom(direction: MultiStepDirection, paneWidth: number): PaneMotion {
+  if (!direction) return false;
+  return direction === 'backward' ? { translateX: -paneWidth } : { translateX: paneWidth };
 }
 
-function computeSmallExitTo(ctx: SmallMotionContext): PaneMotion {
-  const { isRoot, isForward, isBackward, isFirstLayer, paneWidth } = ctx;
-  if (isRoot) return isForward ? { opacity: 0 } : { translateX: -paneWidth };
-  // Back to the root: no exit animation — the deeper menu just disappears.
-  if (isBackward) return isFirstLayer ? false : { translateX: paneWidth, opacity: 0 };
-  return { translateX: -paneWidth, opacity: 0 };
-}
-
-function computeSmallAnimateTo(ctx: SmallMotionContext): PaneTarget {
-  const { isRoot, isForward, isBackward, isFirstLayer } = ctx;
-  if (isRoot && isBackward) return { translateY: 0 };
-  if (isForward && isFirstLayer) return { opacity: 1 };
-  return { translateX: 0 };
+function computeSmallExitTo(direction: MultiStepDirection, paneWidth: number): PaneTarget {
+  return direction === 'forward' ? { translateX: -paneWidth, opacity: 0 } : { translateX: paneWidth, opacity: 0 };
 }
 
 export type MultiStepDirection = 'forward' | 'backward' | null;
@@ -243,10 +212,6 @@ export const MultiStepMenu = function MultiStepMenu({
   const [direction, setDirection] = useState<MultiStepDirection>(null);
   const [paneWidth, setPaneWidth] = useState(0);
   const [widePaneWidth, setWidePaneWidth] = useState(0);
-  // The below-the-header title's natural height (text-2xl line ≈ 32px; a
-  // wrapped title measures taller). Animated on enter/exit so the header
-  // grows/collapses smoothly instead of snapping the pane area.
-  const [titleSlotHeight, setTitleSlotHeight] = useState(32);
   const reduced = useReducedMotion();
 
   const slideTransition = reduced ? { type: 'timing' as const, duration: 160 } : SLIDE_TRANSITION;
@@ -315,6 +280,13 @@ export const MultiStepMenu = function MultiStepMenu({
 
   const handleClose = useCallback(() => onClose(), [onClose]);
 
+  // The back arrow is the dismissal affordance on the root step (there's no
+  // parent to pop to) and a step-back on every deeper step.
+  const handleBack = useCallback(() => {
+    if (path.length === 0) handleClose();
+    else goBack();
+  }, [path, handleClose, goBack]);
+
   const helpers: MultiStepHelpers = useMemo(
     () => ({ navigate: navigateTo, goBack, goBackAfterTimeout, close: handleClose, path, isWideScreen }),
     [navigateTo, goBack, goBackAfterTimeout, handleClose, path, isWideScreen],
@@ -327,13 +299,6 @@ export const MultiStepMenu = function MultiStepMenu({
 
   const handlePaneLayout = useCallback((e: LayoutChangeEvent) => setPaneWidth(e.nativeEvent.layout.width), []);
   const handleWidePaneLayout = useCallback((e: LayoutChangeEvent) => setWidePaneWidth(e.nativeEvent.layout.width), []);
-  const handleTitleSlotLayout = useCallback(
-    (e: LayoutChangeEvent) => {
-      const height = e.nativeEvent.layout.height;
-      if (height > 0 && height !== titleSlotHeight) setTitleSlotHeight(height);
-    },
-    [titleSlotHeight],
-  );
 
   useImperativeHandle(ref, () => ({
     navigate: navigateTo,
@@ -428,103 +393,53 @@ export const MultiStepMenu = function MultiStepMenu({
     const title = isRoot ? rootTitle : (activeNode?.title ?? rootTitle);
     const paneKey = isRoot ? '__root__' : path.join('/');
 
-    // Content panes slide HORIZONTALLY like tabs, with two small-screen exceptions:
-    // - Navigating BACK to the root (no back caret): the deeper menu disappears
-    //   instantly (no exit animation) and the root content rolls up into place.
-    // - Navigating FORWARD from the root into the first layer fades it in with
-    //   opacity — there's no parent pane to slide against, so a slide reads as a
-    //   jump in from off-screen.
+    // Content panes slide HORIZONTALLY like tabs on every step — the root
+    // included. The only wrinkle is the very first mount: `direction` is null
+    // until the first navigation, so `enterFrom` is `false` and the sheet's own
+    // open transition carries the content in rather than sliding it sideways.
     //
-    // `enterFrom`/`animateTo` describe the pane ENTERING (the new path), while
-    // `exitTo` describes the pane EXITING (the old path). The set-direction-then-
-    // commit flow commits `direction` before `path`, so each is evaluated against
-    // the path it actually applies to: `isFirstLayer` means the exiting depth-1
-    // pane on the way back to root, or the entering depth-1 pane coming from root.
-    const isForward = direction === 'forward';
-    const isBackward = direction === 'backward';
-    const isFirstLayer = path.length === 1;
-    const motionCtx: SmallMotionContext = { isRoot, isForward, isBackward, isFirstLayer, paneWidth };
-    const enterFrom = computeSmallEnterFrom(motionCtx);
-    const exitTo = computeSmallExitTo(motionCtx);
-    const animateTo = computeSmallAnimateTo(motionCtx);
-    // Deeper menus hide their content instantly on exit; the root's forward exit
-    // stays a slower cross-fade against the entering first layer.
-    const exitTransition = isRoot ? slideTransition : slideExitTransition;
+    // `enterFrom` describes the pane ENTERING (the new path) and `exitTo` the
+    // pane EXITING (the old path). The set-direction-then-commit flow commits
+    // `direction` before `path`, so each is evaluated against the path it
+    // actually applies to across the two renders.
+    const enterFrom = computeSmallEnterFrom(direction, paneWidth);
+    const exitTo = computeSmallExitTo(direction, paneWidth);
 
     return (
       <View className="flex-1" onLayout={handlePaneLayout}>
         <View className="px-5 pt-6 pb-5">
           <View className="flex-row items-center justify-between">
-            {/* The back button is ABSOLUTE inside the relative slot: it overlays
-                the title's top-left spot instead of taking layout space, so the
-                root title is never pushed right when it appears — the title only
-                rolls DOWN (its exit translateY) into the below-the-header slot. */}
-            <View className="relative flex-1 flex-row items-center">
-              <AnimatePresence>
-                {!isRoot && (
-                  <MotiView
-                    key="mobile-back"
-                    className="absolute left-0"
-                    from={{ opacity: 0, translateX: -8 }}
-                    animate={{ opacity: 1, translateX: 0 }}
-                    exit={{ opacity: 0, translateX: -8 }}
-                    transition={arrowTransition}
-                    exitTransition={arrowExitTransition}
-                  >
-                    <Pressable onPress={goBack} accessibilityLabel="Back">
-                      <View className="rotate-180">
-                        <ChevronRight />
-                      </View>
-                    </Pressable>
-                  </MotiView>
-                )}
-              </AnimatePresence>
-              <AnimatePresence>
-                {isRoot && (
-                  <MotiView
-                    key="mobile-title-top"
-                    from={{ opacity: 0, translateY: TITLE_ROLL }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    exit={{ opacity: 0, translateY: TITLE_ROLL }}
-                    transition={arrowTransition}
-                    exitTransition={arrowExitTransition}
-                  >
-                    <TextRolling text={title} weight="bold" className="text-2xl text-foreground" />
-                  </MotiView>
-                )}
-              </AnimatePresence>
-            </View>
-            <CloseButton onPress={handleClose} />
+            <IconButton icon={ArrowLeftLine} accessibilityLabel="Back" onPress={handleBack} />
+            {/* The close ✕ only shows once you've stepped past the root, fading
+                in/out so the header doesn't jump when it leaves. */}
+            <AnimatePresence>
+              {!isRoot && (
+                <MotiView
+                  key="mobile-close"
+                  from={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={arrowTransition}
+                  exitTransition={arrowExitTransition}
+                >
+                  <CloseButton onPress={handleClose} />
+                </MotiView>
+              )}
+            </AnimatePresence>
           </View>
-          <AnimatePresence>
-            {!isRoot && (
-              <MotiView
-                key="mobile-title-below"
-                from={{ opacity: 0, translateY: -TITLE_ROLL }}
-                animate={{ opacity: 1, translateY: 0 }}
-                exit={{ opacity: 0, translateY: -TITLE_ROLL }}
-                transition={arrowTransition}
-                exitTransition={arrowExitTransition}
-                className="overflow-hidden"
-                // Static height + margin hold the slot open on Fabric — animating
-                // `height`/`marginTop` through `useAnimatedStyle` doesn't round-trip
-                // Yoga, so the reveal rides the fade + translateY roll instead.
-                style={{ height: titleSlotHeight, marginTop: 8 }}
-              >
-                <TextRolling text={title} weight="bold" className="text-2xl text-foreground" onLayout={handleTitleSlotLayout} />
-              </MotiView>
-            )}
-          </AnimatePresence>
+          <View className="mt-2">
+            <TextRolling text={title} weight="bold" className="text-2xl text-foreground" />
+          </View>
         </View>
         <View className="flex-1 overflow-hidden">
           <AnimatePresence>
             <MotiView
               key={paneKey}
               from={enterFrom}
-              animate={animateTo}
+              animate={{ translateX: 0 }}
               exit={exitTo}
               transition={slideTransition}
-              exitTransition={exitTransition}
+              exitTransition={slideExitTransition}
               className="absolute inset-0 px-5"
             >
               <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="pb-6">

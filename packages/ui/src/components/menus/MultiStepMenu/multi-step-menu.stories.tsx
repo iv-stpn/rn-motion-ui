@@ -378,14 +378,18 @@ export const SmallScreen: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole('button', { name: OPEN_SETTINGS_LABEL }));
-    await expect(await screen.findByLabelText('Close')).toBeTruthy();
-    // Root menu → Appearance submenu.
+    // Root step: the back arrow is present but the close ✕ isn't yet.
+    await expect(await screen.findByLabelText('Back')).toBeTruthy();
+    expect(screen.queryByLabelText('Close')).toBeNull();
+    // Root menu → Appearance submenu: the close ✕ fades in alongside the body.
     await userEvent.click(await screen.findByText('Appearance', { exact: true }));
     await expect(await screen.findByText(APPEARANCE_BODY)).toBeTruthy();
-    // Back to the first menu: the root list must return once the exit roll
-    // completes, and the Appearance body must leave the tree.
+    await expect(await screen.findByLabelText('Close')).toBeTruthy();
+    // Back to the first menu: the root list must return, the Appearance body
+    // leave the tree, and the close ✕ fade back out.
     await userEvent.click(await screen.findByLabelText('Back'));
     await expect(await screen.findByText('Privacy & Security')).toBeTruthy();
     await waitFor(() => expect(screen.queryByText(APPEARANCE_BODY)).toBeNull());
+    await waitFor(() => expect(screen.queryByLabelText('Close')).toBeNull());
   },
 };

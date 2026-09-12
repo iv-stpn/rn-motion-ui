@@ -704,15 +704,22 @@ export function MorphingSwitcher({
   const triggerIcon = current?.icon ?? placeholderIcon;
   const triggerLabel = current?.label ?? placeholder;
 
-  // The shell is the trigger's footprint plus a `p-1` inset on every side, so the
-  // collapsed pill and the open pane both frame their content instead of running
-  // flush to the edge.
-  const closedWidth = (triggerSize?.width ?? 0) + PANE_INSET * 2;
-  const closedHeight = (triggerSize?.height ?? scale.height) + PANE_INSET * 2;
+  // The shell IS the trigger's footprint while closed — no inset — so the resting
+  // pill stands at exactly the shared interactive height and a switcher lines up
+  // with a Button or IconButton of the same size. The `p-1` inset frames the OPEN
+  // pane only (see {@link shellInsetClass} below), so it can never inflate the
+  // collapsed box: a switcher used to rest 2 × {@link PANE_INSET} taller than the
+  // icon button beside it.
+  const closedWidth = triggerSize?.width ?? 0;
+  const closedHeight = triggerSize?.height ?? scale.height;
+  // The open pane frames the trigger with that same inset on both sides, so the
+  // pane has to be at least the trigger's footprint PLUS the inset — otherwise a
+  // trigger wider than `expandedWidth` would be clipped horizontally on open.
+  const paneContentWidth = closedWidth + PANE_INSET * 2;
   // `fullWidth` spans its parent, so its width is not animated — the shell's
   // `right: 0` pins it full-width and only height/radius morph. Otherwise the
   // pane settles on `expandedWidth` (never narrower than the trigger).
-  const openWidth = Math.max(expandedWidth, closedWidth);
+  const openWidth = Math.max(expandedWidth, paneContentWidth);
 
   // The geometry follows `open`, never the retained `expanded`: the pane has to
   // start collapsing on the same frame the close begins, so the outgoing rows
@@ -802,6 +809,13 @@ export function MorphingSwitcher({
   // drops it. The same key is shared by both hosts (solid `MotiView` and frosted
   // `Surface`), so toggling glass remounts the shell and drops the stale values.
   const shellKey = `${variant}-${fullWidth ? 'full' : 'fit'}`;
+  // The pane's `p-1` inset — the frame that keeps the trigger and the hover pills
+  // off the pane's rim — applies while OPEN only. Collapsed it would push the
+  // shell {@link PANE_INSET} past the trigger on every side, so the resting pill
+  // would stand taller than the same-size IconButton it sits beside. The trigger
+  // is centred in its row, so the one-frame inset at the start of the open morph
+  // never clips its icon or label.
+  const shellInsetClass = open ? 'p-1' : 'p-0';
   const shellView = glass ? (
     <Surface
       key={shellKey}
@@ -818,7 +832,7 @@ export function MorphingSwitcher({
       rimWidth={rimWidth}
       intensity={intensity}
       borderRadius={open ? scale.paneRadius : closedHeight / 2}
-      className="absolute top-0 left-0 overflow-hidden p-1"
+      className={cn('absolute top-0 left-0 overflow-hidden', shellInsetClass)}
       style={shell.style}
     >
       {shellContent}
@@ -830,7 +844,7 @@ export function MorphingSwitcher({
       animate={shell.animate}
       transition={morphTransition}
       layout={switcherMorphLayout(closing, reduce)}
-      className={cn('absolute top-0 left-0 overflow-hidden p-1', switcherSurfaceClass(elevation, open, floating))}
+      className={cn('absolute top-0 left-0 overflow-hidden', shellInsetClass, switcherSurfaceClass(elevation, open, floating))}
       style={shell.style}
     >
       {shellContent}

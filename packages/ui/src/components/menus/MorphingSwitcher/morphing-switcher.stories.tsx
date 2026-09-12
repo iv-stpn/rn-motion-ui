@@ -10,6 +10,9 @@ import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Note, Toggle } from '../../../__stories__/story-harness';
 import { checkSwitcherClose } from '../../../__stories__/switcher-motion-checks';
+import { Button } from '../../buttons/Button/button';
+import { BUTTON_SIZE } from '../../buttons/Button/button-scale';
+import { IconButton } from '../../buttons/IconButton/icon-button';
 import { Text } from '../../typography/Text/text';
 import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import {
@@ -225,6 +228,65 @@ export const AllSizes: Story = {
       </View>
     </AppSurface>
   ),
+};
+
+/** The row contract: a switcher rests at exactly the height of the `IconButton`
+ *  and `Button` beside it, at every size — the shared interactive ramp (24/32/40).
+ *
+ *  The collapsed shell used to wrap the trigger in the pane's `p-1` inset, so a
+ *  switcher parked 2 × 4px taller than the same-size button it lined up with
+ *  (md rested at 40 against a 32px icon button). The inset now frames the open
+ *  pane only, and this story is the guard: the measured shell has to match the
+ *  measured button, not a table entry both could drift away from together. */
+export const AlignedWithButtons: Story = {
+  render: () => (
+    <AppSurface hint="A switcher, an IconButton and a Button at the same size — one row, one height.">
+      <View className="gap-3 px-5">
+        {SIZES.map((name) => (
+          <View key={name} className="gap-1">
+            <Text size="xs" className="text-muted-foreground">
+              {SIZE_LABELS[name]}
+            </Text>
+            <View className="flex-row items-center gap-2">
+              <MorphingSwitcher
+                items={SPACES}
+                defaultValue="home"
+                variant="select"
+                size={name}
+                accessibilityLabel={`${SIZE_LABELS[name]} space`}
+                triggerTestID={`aligned-${name}-trigger`}
+                testID={`aligned-${name}`}
+              />
+              <IconButton
+                icon={Home1Line}
+                size={name}
+                accessibilityLabel={`${SIZE_LABELS[name]} icon`}
+                testID={`aligned-${name}-icon`}
+              />
+              <Button size={name} testID={`aligned-${name}-button`}>
+                {SIZE_LABELS[name]}
+              </Button>
+            </View>
+          </View>
+        ))}
+      </View>
+    </AppSurface>
+  ),
+  play: async ({ canvasElement }) => {
+    for (const name of SIZES) {
+      const shell = canvasElement.querySelector(`[data-testid="aligned-${name}-shell"]`);
+      const icon = canvasElement.querySelector(`[data-testid="aligned-${name}-icon"]`);
+      const button = canvasElement.querySelector(`[data-testid="aligned-${name}-button"]`);
+      if (!(shell && icon && button)) throw new Error(`Missing aligned-${name} controls`);
+      // The shell is measured before the trigger reports its size (closed width 0),
+      // so wait for a real box before comparing.
+      await waitFor(() => expect(shell.getBoundingClientRect().width).toBeGreaterThan(0));
+      const shellHeight = shell.getBoundingClientRect().height;
+      expect(shellHeight).toBeCloseTo(BUTTON_SIZE[name].px, 1);
+      expect(shellHeight).toBeCloseTo(icon.getBoundingClientRect().height, 1);
+      expect(shellHeight).toBeCloseTo(button.getBoundingClientRect().height, 1);
+    }
+  },
 };
 
 /** The frosted-glass shell — `blurRadius` frosts the pane over a colourful

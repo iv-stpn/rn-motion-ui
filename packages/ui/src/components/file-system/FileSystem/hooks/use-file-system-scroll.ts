@@ -20,43 +20,41 @@
 // reported offset once the content is back, making the view self-restoring —
 // a content remount re-applies the position the user last had, with no
 // consumer involvement.
+//
+// Why the pending offset now verifies: the first `onContentSizeChange` used to
+// apply the consumer's offset exactly once and never check whether it landed.
+// On web a single `scrollTo` can be clobbered — by a later layout pass, by the
+// browser's own scroll restoration, or by content whose height is still settling
+// when the offset arrives. `pendingOffsetRef` therefore stays armed until a
+// genuine scroll reports the target, so a clobbered apply retries on the next
+// content-size change instead of silently losing the requested position.
 
-import { useCallback, useEffect, useRef } from 'react';
-import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import { useStore } from 'zustand';
+import { isClampedScroll, isRestoreConfirmed, toScrollNode } from '../logic/file-system-scroll';
 import { useFileSystemConsumer, useFileSystemStoreContext } from '../store/file-system-context';
 
-/**
- * Whether a scroll event comes from a container that can actually scroll. A
- * container whose content fits (or has none — e.g. the view sits in a
- * `display: none` pane whose tiles just unmounted) fires a clamp event
- * reporting offset 0; reporting it would overwrite the view's last real
- * position with 0, which is the hidden-tab scroll-loss bug. Only real scrolls
- * on overflow content report.
- */
-export function scrollEventCanScroll(event: NativeSyntheticEvent<NativeScrollEvent>): boolean {
-  const contentHeight = event.nativeEvent.contentSize?.height ?? 0;
-  const viewportHeight = event.nativeEvent.layoutMeasurement?.height ?? 0;
-  return contentHeight > viewportHeight + 2;
-}
+/** The subset of a FlatList/ScrollView ref the scroll contract reads: the live node, on web. */
+type ScrollableHandle = { getScrollableNode?: () => unknown };
 
-export function useFileSystemScroll(applyScrollTo: (offset: number) => void) {
+export function useFileSystemScroll(applyScrollTo: (offset: number) => void, scrollNodeRef?: RefObject<ScrollableHandle | null>) {
   const consumer = useFileSystemConsumer();
   const setScrollOffset = useStore(useFileSystemStoreContext(), (state) => state.setScrollOffset);
 
   const applyRef = useRef(applyScrollTo);
   applyRef.current = applyScrollTo;
 
+  // The consumer's explicit offset, re-armed on every prop change and consumed
+  // only once a genuine scroll confirms it landed (see `reportScrollOffset`).
   const pendingOffsetRef = useRef<number | null>(null);
   // The last offset the view reported (live scrolls). Never the restore source
-  // while a pending initial offset is un-consumed — the consumer's explicit
-  // value wins. Once the initial offset has been applied (or was 0), content
-  // remounts restore from here.
+  // while a consumer offset is pending — the consumer's explicit value wins.
+  // Once it has been applied (or was 0), content remounts restore from here.
   const lastReportedOffsetRef = useRef(0);
 
   // Apply on mount and whenever the consumer changes the offset. The ref keeps
   // the value even when the container cannot take it yet — `retryPendingScroll`
-  // consumes it once content exists.
+  // consumes it once content exists and a scroll confirms it landed.
   // biome-ignore lint/plugin: applying an external position record to the scroll container is a genuine effect — the consumer's offset is store state, not render data
   useEffect(() => {
     const target = consumer.initialScrollOffset ?? 0;
@@ -65,23 +63,43 @@ export function useFileSystemScroll(applyScrollTo: (offset: number) => void) {
   }, [consumer.initialScrollOffset]);
 
   const retryPendingScroll = useCallback(() => {
-    // The initial offset applies at most once (the first time content exists).
-    // Consume it even when it is 0 so later retries fall back to the view's
-    // own last reported position instead of being blocked by a pending 0.
     const pending = pendingOffsetRef.current;
-    pendingOffsetRef.current = null;
     const target = pending ?? lastReportedOffsetRef.current;
-    if (target <= 0) return;
+    if (target <= 0) {
+      // A pending 0 is consumed here so later retries fall back to the view's
+      // own last reported position instead of being blocked by a pending 0.
+      pendingOffsetRef.current = null;
+      return;
+    }
+    // Apply, but keep `pending` armed: until a scroll reports the target the
+    // next content-size change re-applies it, so a clobbered `scrollTo` retries
+    // rather than giving up on the requested position.
     applyRef.current(target);
   }, []);
+
+  /**
+   * Whether the live scroll node is hidden right now (a `display: none` pane).
+   * The one event that must be suppressed: the browser clamped `scrollTop` to 0
+   * without the content moving. A real scroll's own event measurements are not
+   * trusted on web — they can be stale or absent while the content settles.
+   */
+  const isClampedScrollEvent = useCallback(
+    () => isClampedScroll(toScrollNode(scrollNodeRef?.current?.getScrollableNode?.())),
+    [scrollNodeRef],
+  );
 
   const reportScrollOffset = useCallback(
     (offset: number) => {
       lastReportedOffsetRef.current = offset;
+      const pending = pendingOffsetRef.current;
+      // A pending restore is confirmed the moment a genuine scroll reports the
+      // target — and only then does the consumer's offset stop winning over the
+      // self-restore fallback.
+      if (pending !== null && isRestoreConfirmed(offset, pending)) pendingOffsetRef.current = null;
       setScrollOffset(offset);
     },
     [setScrollOffset],
   );
 
-  return { retryPendingScroll, reportScrollOffset };
+  return { isClampedScrollEvent, reportScrollOffset, retryPendingScroll };
 }

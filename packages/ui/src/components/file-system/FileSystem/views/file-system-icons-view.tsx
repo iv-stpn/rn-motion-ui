@@ -21,7 +21,7 @@ import { shiftZoneRects } from '../../../gestures/drag-store';
 import { useIsDragging } from '../../../gestures/use-drag-store';
 import { useEntryActivation } from '../hooks/use-entry-activation';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
-import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
+import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import {
   GLYPH_BOX_HEIGHT,
   GLYPH_BOX_WIDTH,
@@ -142,7 +142,7 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
   // The consumer's scroll contract: restore `initialScrollOffset` on mount and
   // report the live offset on every scroll.
   const scrollToOffset = useCallback((offset: number) => scrollRef.current?.scrollTo({ y: offset, animated: false }), []);
-  const { retryPendingScroll, reportScrollOffset } = useFileSystemScroll(scrollToOffset);
+  const { isClampedScrollEvent, reportScrollOffset, retryPendingScroll } = useFileSystemScroll(scrollToOffset, scrollRef);
 
   selectedIndexesRef.current = useMemo(() => {
     const indexes = new Set<number>();
@@ -223,11 +223,11 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
-      // A container that cannot scroll (empty content — e.g. the view sits in a
-      // display:none pane whose tiles just unmounted) fires a clamp event
-      // reporting 0; reporting it would wipe the last real position (the
-      // hidden-tab scroll-loss bug). Only real scrolls report.
-      if (!scrollEventCanScroll(event)) return;
+      // A hidden pane (display:none) fires a clamp event reporting 0 — the browser
+      // forced scrollTop down without the content moving. Reporting it would wipe
+      // the last real position; the live node's `offsetParent` — not the event's
+      // own (possibly stale) measurements — is the discriminator.
+      if (isClampedScrollEvent()) return;
       // Same correction as the desktop list view: the store's cached zone rects
       // are window boxes from the last measure, and a scroll moves the tiles
       // without any layout event, so the drop targeting and the shared drop
@@ -244,7 +244,7 @@ function useIconsGrid({ draggable, entries, marqueeEnabled, onMarquee, selectedP
       hover.refresh();
       marquee.refresh();
     },
-    [hover, managerPath, marquee, reportScrollOffset],
+    [hover, isClampedScrollEvent, managerPath, marquee, reportScrollOffset],
   );
 
   return {

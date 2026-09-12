@@ -30,7 +30,7 @@ import { useFileSystemAutoScroll } from '../hooks/use-file-system-auto-scroll';
 import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options';
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
-import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
+import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { type FileSystemScrubHit, useFileSystemScrubSession } from '../hooks/use-file-system-scrub';
 import { folderHasChildren } from '../logic/file-system-index';
 import { GRID_GAP, GRID_PADDING, GRID_ROW_GAP, mobileGridMetrics } from '../logic/file-system-mobile-grid';
@@ -347,7 +347,7 @@ export function FileSystemMobileGridView({
   useFileSystemDragScroll({ containerRef, enabled: draggable, scrollOffsetRef, scrollTo });
   // The consumer's scroll contract: restore `initialScrollOffset` on mount and
   // report the live offset on every scroll.
-  const { retryPendingScroll, reportScrollOffset } = useFileSystemScroll(scrollTo);
+  const { isClampedScrollEvent, reportScrollOffset, retryPendingScroll } = useFileSystemScroll(scrollTo, scrollRef);
 
   // The same edge-scroll engine the drag above uses, driven by the scrub's pointer
   // stream instead — dragging to multi-select scrolls the grid when the finger goes
@@ -456,11 +456,11 @@ export function FileSystemMobileGridView({
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
-      // A container that cannot scroll (empty content — e.g. the view sits in a
-      // display:none pane whose tiles just unmounted) fires a clamp event
-      // reporting 0; reporting it would wipe the last real position (the
-      // hidden-tab scroll-loss bug). Only real scrolls report.
-      if (!scrollEventCanScroll(event)) return;
+      // A hidden pane (display:none) fires a clamp event reporting 0 — the browser
+      // forced scrollTop down without the content moving. Reporting it would wipe
+      // the last real position; the live node's `offsetParent` — not the event's
+      // own (possibly stale) measurements — is the discriminator.
+      if (isClampedScrollEvent()) return;
       // Same correction as the desktop list view: the store's cached zone rects
       // are window boxes from the last measure, and a scroll moves the tiles
       // without any layout event, so the drop targeting and the shared drop
@@ -471,7 +471,7 @@ export function FileSystemMobileGridView({
       // The consumer's position record (URL param, per-tab state) follows.
       reportScrollOffset(offset);
     },
-    [managerPath, reportScrollOffset],
+    [isClampedScrollEvent, managerPath, reportScrollOffset],
   );
 
   return (

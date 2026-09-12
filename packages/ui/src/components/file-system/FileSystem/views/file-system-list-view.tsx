@@ -34,7 +34,7 @@ import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options'
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { type AugmentedEntry, useFileSystemRowAnimation } from '../hooks/use-file-system-row-animation';
 import { type FileSystemRowInteractionReturn, useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
-import { scrollEventCanScroll, useFileSystemScroll } from '../hooks/use-file-system-scroll';
+import { useFileSystemScroll } from '../hooks/use-file-system-scroll';
 import { formatByteSize, formatTimestamp } from '../logic/file-system-format';
 import type { FileSystemRow } from '../logic/file-system-rows';
 import { FS_ROW_HEIGHT, flattenFileSystemRows, toggleExpandedPath } from '../logic/file-system-rows';
@@ -537,7 +537,7 @@ export function FileSystemListView({
   // The consumer's scroll contract: restore `initialScrollOffset` on mount and
   // report the live offset on every scroll.
   const scrollToOffset = useCallback((offset: number) => flatListRef.current?.scrollToOffset({ offset, animated: false }), []);
-  const { retryPendingScroll, reportScrollOffset } = useFileSystemScroll(scrollToOffset);
+  const { isClampedScrollEvent, reportScrollOffset, retryPendingScroll } = useFileSystemScroll(scrollToOffset, flatListRef);
 
   const rows = useMemo(() => flattenFileSystemRows({ currentPath, expanded, index }), [currentPath, expanded, index]);
 
@@ -717,11 +717,13 @@ export function FileSystemListView({
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.y;
-      // A container that cannot scroll (empty content — e.g. the view sits in a
-      // display:none pane whose tiles just unmounted) fires a clamp event
-      // reporting 0; reporting it would wipe the last real position (the
-      // hidden-tab scroll-loss bug). Only real scrolls report.
-      if (!scrollEventCanScroll(event)) return;
+      // A container hidden by display:none (an inactive tab pane) fires a clamp
+      // event reporting 0 — the browser forced scrollTop down without the content
+      // moving. Reporting it (or re-baselining the drag zones on it) would wipe
+      // the last real position. The live node's `offsetParent` is the
+      // discriminator; the event's own measurements are not trusted on web, where
+      // they can be stale or absent while the content settles.
+      if (isClampedScrollEvent()) return;
       // The store's zone rects are window boxes from the last measure (drag
       // start or last layout pass). A scroll moves the rows without any layout
       // event, so without this the hit test and the shared drop indicator
@@ -741,7 +743,7 @@ export function FileSystemListView({
       hover.refresh();
       marquee.refresh();
     },
-    [hover, managerPath, marquee, reportScrollOffset],
+    [hover, isClampedScrollEvent, managerPath, marquee, reportScrollOffset],
   );
 
   const renderRow = useCallback(

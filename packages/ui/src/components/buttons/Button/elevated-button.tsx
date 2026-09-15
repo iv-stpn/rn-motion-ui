@@ -20,11 +20,23 @@ import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass } from
  * 1px neutral ring plus a hairline white top sheen, no gloss and no hover shift).
  *
  * `primary` is the filled monochrome plate — the `primary`/`primary-foreground`
- * pair — so it stays the primary action. `neutral` is the neutral colour scheme:
+ * pair — so it stays the primary action. `secondary` and `accent` are the light
+ * `secondary`/`accent` fills (their own `*-foreground` label partner), matching
+ * the flat Button's `secondary`/`accent`. `neutral` is the neutral colour scheme:
  * the `foreground`/`background` pair, matching the flat Button's `neutral`.
  */
 // biome-ignore lint/style/useExportsLast: declared up top so the colour tables below can key off it; kept with its doc comment for readability
-export type ElevatedVariant = 'primary' | 'neutral' | 'danger' | 'success' | 'warning' | 'info' | 'white' | 'gray';
+export type ElevatedVariant =
+  | 'primary'
+  | 'secondary'
+  | 'accent'
+  | 'neutral'
+  | 'danger'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'white'
+  | 'gray';
 
 // A glossy filled chip (or, for `white`/`gray`, a flat plate). Everything colour-
 // dependent is resolved from `variant` here so one component covers every hue
@@ -36,6 +48,8 @@ export type ElevatedVariant = 'primary' | 'neutral' | 'danger' | 'success' | 'wa
 // as literals so the uniwind/Tailwind scanner registers each class.
 const ELEVATED_BG: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = {
   primary: 'bg-primary',
+  secondary: 'bg-secondary',
+  accent: 'bg-accent',
   neutral: 'bg-foreground',
   danger: 'bg-danger',
   success: 'bg-success',
@@ -48,6 +62,8 @@ const ELEVATED_BG: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = 
 // and neutral the `background` ink on the `foreground` slab.
 const ELEVATED_LABEL: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string> = {
   primary: 'text-primary-foreground',
+  secondary: 'text-secondary-foreground',
+  accent: 'text-accent-foreground',
   neutral: 'text-background',
   danger: 'text-danger-foreground',
   success: 'text-success-foreground',
@@ -59,6 +75,8 @@ const ELEVATED_LABEL: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, string>
 // the label on the filled chip.
 const ELEVATED_FOREGROUND_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, ThemeToken> = {
   primary: 'primary-foreground',
+  secondary: 'secondary-foreground',
+  accent: 'accent-foreground',
   neutral: 'background',
   danger: 'danger-foreground',
   success: 'success-foreground',
@@ -70,12 +88,25 @@ const ELEVATED_FOREGROUND_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray
 // the fill itself and the shadow tint is the fill darkened toward black.
 const ELEVATED_FILL_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, ThemeToken> = {
   primary: 'primary',
+  secondary: 'secondary',
+  accent: 'accent',
   neutral: 'foreground',
   danger: 'danger',
   success: 'success',
   warning: 'warning',
   info: 'info',
 };
+
+// Monochrome fills cast the fixed dark-neutral drop rather than a tint of their
+// own fill: darkening a neutral grey reads as a grey haze, not a shadow. Only the
+// vivid status fills (`danger`/`success`/`warning`/`info`) tint their shadow with
+// the fill darkened toward black.
+const MONOCHROME_FILL_VARIANTS = new Set<ElevatedVariant>(['primary', 'neutral', 'secondary', 'accent']);
+
+// Light fills that take the dark ripple (a white shimmer would vanish on them):
+// the two flat plates plus the light `secondary`/`accent` fills. Every other chip
+// (`primary`/`neutral`'s dark plate, the vivid status fills) takes the white ripple.
+const LIGHT_RIPPLE_VARIANTS = new Set<ElevatedVariant>(['white', 'gray', 'secondary', 'accent']);
 
 // The white stroke plate: light surface + muted label at rest; on hover it
 // darkens to the weak surface and the label goes strong (mirrors the web
@@ -153,11 +184,10 @@ function elevatedShadow(variant: ElevatedVariant, fill: string, borderColor: str
     return `0 1px 3px 0 rgba(14,18,27,0.12),0 0 0 1px ${borderColor}`; /* theme-exempt: fixed neutral drop for white plate */
 
   const [red, green, blue] = parseRgb(fill);
-  // The two monochrome fills cast the fixed dark-neutral drop rather than a tint
-  // of themselves: `primary` and `foreground` flip with the page, and darkening
-  // the one that lands near-white in dark mode would put a pale grey haze under
-  // the chip instead of a shadow.
-  if (variant === 'primary' || variant === 'neutral')
+  // Monochrome fills cast the fixed dark-neutral drop rather than a tint of
+  // themselves: `primary`/`foreground` land near-white in dark mode, and darkening
+  // a neutral grey reads as a pale haze rather than a shadow.
+  if (MONOCHROME_FILL_VARIANTS.has(variant))
     return `0px 1px 2px 0px rgba(27,28,29,0.48), 0px 0px 0px 1px rgba(${red},${green},${blue},1)`; /* theme-exempt: fixed dark-neutral shadow for monochrome fills */
 
   const darken = (c: number) => Math.round(c * 0.7);
@@ -403,7 +433,7 @@ export function ElevatedButton({
         ) : null}
         {buttonContent}
         {ripple && !reduce ? (
-          <ButtonRipples ripples={ripples} filled={variant !== 'white' && variant !== 'gray'} zIndex={RIPPLE_Z} />
+          <ButtonRipples ripples={ripples} filled={!LIGHT_RIPPLE_VARIANTS.has(variant)} zIndex={RIPPLE_Z} />
         ) : null}
       </Pressable>
     </MotiView>

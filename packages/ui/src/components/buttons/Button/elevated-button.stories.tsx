@@ -16,7 +16,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'neutral', 'danger', 'success', 'warning', 'info', 'white', 'gray'],
+      options: ['primary', 'secondary', 'accent', 'neutral', 'danger', 'success', 'warning', 'info', 'white', 'gray'],
       description: 'Fill colour. Coloured fills get the gloss + rim + shadow; white/gray are flat plates.',
     },
     size: { control: 'select', options: ['xs', 'sm', 'md', 'lg', 'icon'] },
@@ -28,6 +28,8 @@ type Story = StoryObj<typeof meta>;
 
 const VARIANTS = [
   'primary',
+  'secondary',
+  'accent',
   'neutral',
   'danger',
   'success',

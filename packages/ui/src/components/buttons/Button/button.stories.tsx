@@ -30,7 +30,20 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'neutral', 'ghost', 'danger', 'outlineDanger', 'ghostDanger'],
+      options: [
+        'primary',
+        'secondary',
+        'accent',
+        'neutral',
+        'ghost',
+        'outline',
+        'danger',
+        'success',
+        'warning',
+        'info',
+        'outlineDanger',
+        'ghostDanger',
+      ],
     },
     size: { control: 'select', options: ['xs', 'sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
@@ -47,8 +60,11 @@ type Story = StoryObj<typeof meta>;
 
 const VARIANTS = [
   'primary',
+  'secondary',
+  'accent',
   'neutral',
   'ghost',
+  'outline',
   'danger',
   'success',
   'warning',
@@ -81,6 +97,8 @@ type IconSide = (typeof ICON_SIDES)[number];
 // `neutral`'s light surface plate) the plain foreground.
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   if (variant === 'primary') return colors['primary-foreground'];
+  if (variant === 'secondary') return colors['secondary-foreground'];
+  if (variant === 'accent') return colors['accent-foreground'];
   if (variant === 'danger') return colors['danger-foreground'];
   if (variant === 'success') return colors['success-foreground'];
   if (variant === 'warning') return colors['warning-foreground'];

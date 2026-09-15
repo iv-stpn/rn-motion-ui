@@ -38,6 +38,8 @@ const THEME_ITEMS: ButtonSwapItem[] = [
 const ANIMATIONS = ['blur', 'roll', 'cascade'] as const satisfies readonly ButtonSwapAnimation[];
 const VARIANTS = [
   'primary',
+  'secondary',
+  'accent',
   'neutral',
   'ghost',
   'outline',
@@ -60,6 +62,8 @@ const STYLED_KEY = 'styled-key';
  *  `iconColorFor`), so the icon and the label read as one unit on every plate. */
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
   if (variant === 'primary') return colors['primary-foreground'];
+  if (variant === 'secondary') return colors['secondary-foreground'];
+  if (variant === 'accent') return colors['accent-foreground'];
   if (variant === 'danger') return colors['danger-foreground'];
   if (variant === 'success') return colors['success-foreground'];
   if (variant === 'warning') return colors['warning-foreground'];

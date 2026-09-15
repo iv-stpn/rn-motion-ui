@@ -20,7 +20,7 @@ const noop = () => {
 };
 
 /** Every built-in theme, in the order the docs list them. */
-const THEMES: readonly SwitchThemeName[] = ['info', 'primary', 'success', 'warning', 'danger'];
+const THEMES: readonly SwitchThemeName[] = ['info', 'primary', 'secondary', 'accent', 'success', 'warning', 'danger'];
 
 /** All size variants. */
 const SIZES: readonly SwitchSize[] = ['sm', 'md', 'lg'];

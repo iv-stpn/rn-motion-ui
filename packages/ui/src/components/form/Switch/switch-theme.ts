@@ -38,8 +38,8 @@ export type SwitchThemeColors = {
   thumb?: SwitchColor;
 };
 
-/** Built-in themes, one per status token plus the monochrome `primary`. */
-export type SwitchThemeName = 'info' | 'primary' | 'success' | 'warning' | 'danger';
+/** Built-in themes — the monochrome brand fills plus one per status token. */
+export type SwitchThemeName = 'info' | 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'danger';
 
 /** The theme's three fills, resolved to concrete sRGB strings. */
 export type SwitchColors = { track: string; trackOff: string; thumb: string };
@@ -52,14 +52,16 @@ export type SwitchColors = { track: string; trackOff: string; thumb: string };
 const TRACK_OFF: SwitchColor = 'muted-foreground/60';
 
 /**
- * The built-in themes. Each pairs a vivid track fill with the thumb colour that
- * stays legible on it. Status fills all take a `white` thumb; `primary` takes
- * `primary-foreground` instead, because `primary` is near-white in dark mode and
- * a white thumb would vanish into it.
+ * The built-in themes. Each pairs a track fill with the thumb colour that stays
+ * legible on it. Status fills all take a `white` thumb; the monochrome brand
+ * fills take their own `*-foreground` partner instead, because each is near-white
+ * in one scheme and a white thumb would vanish into it.
  */
 const SWITCH_THEMES: Record<SwitchThemeName, Required<SwitchThemeColors>> = {
   info: { track: 'info', trackOff: TRACK_OFF, thumb: 'white' },
   primary: { track: 'primary', trackOff: TRACK_OFF, thumb: 'primary-foreground' },
+  secondary: { track: 'secondary', trackOff: TRACK_OFF, thumb: 'secondary-foreground' },
+  accent: { track: 'accent', trackOff: TRACK_OFF, thumb: 'accent-foreground' },
   success: { track: 'success', trackOff: TRACK_OFF, thumb: 'white' },
   warning: { track: 'warning', trackOff: TRACK_OFF, thumb: 'white' },
   danger: { track: 'danger', trackOff: TRACK_OFF, thumb: 'white' },

@@ -140,15 +140,17 @@ function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>
 }
 
 // Flat variant → elevated palette for the idle/loading chip. The danger family
-// collapses onto the `danger` fill; `primary` and the status fills
-// (`success`/`warning`/`info`) carry over as themselves (all exist on the
-// elevated union); every remaining variant is monochrome or transparent, so it
-// takes the `neutral` fill.
+// collapses onto the `danger` fill; `primary`, `secondary`, `accent` and the
+// status fills (`success`/`warning`/`info`) carry over as themselves (all exist
+// on the elevated union); every remaining variant is monochrome or transparent,
+// so it takes the `neutral` fill.
 const ELEVATED_PALETTE_FOR_VARIANT: Partial<Record<ButtonVariant, ElevatedVariant>> = {
   danger: 'danger',
   outlineDanger: 'danger',
   ghostDanger: 'danger',
   primary: 'primary',
+  secondary: 'secondary',
+  accent: 'accent',
   success: 'success',
   warning: 'warning',
   info: 'info',

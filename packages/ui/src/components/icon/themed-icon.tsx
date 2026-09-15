@@ -17,6 +17,8 @@ import type { ElevatedVariant } from '../buttons/Button/elevated-button';
 const VARIANT_TOKEN: Record<IconVariant, ThemeToken> = {
   // ── ButtonVariant ────────────────────────────────────────────────────────
   primary: 'primary-foreground',
+  secondary: 'secondary-foreground',
+  accent: 'accent-foreground',
   neutral: 'background',
   ghost: 'foreground',
   outline: 'foreground',

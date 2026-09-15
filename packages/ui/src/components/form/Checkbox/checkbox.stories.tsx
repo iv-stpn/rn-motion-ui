@@ -3,7 +3,7 @@ import { type ComponentProps, useState } from 'react';
 import { View } from 'react-native';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ControlCard, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
-import { Checkbox } from './checkbox';
+import { Checkbox, type CheckboxTone } from './checkbox';
 
 const meta = {
   title: 'Form/Checkbox',
@@ -15,6 +15,17 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const TERMS_LABEL = 'Accept terms and conditions';
+
+/** Every accent the box supports, in the order the tokens list them. */
+const TONES = [
+  'primary',
+  'secondary',
+  'accent',
+  'success',
+  'warning',
+  'info',
+  'danger',
+] as const satisfies readonly CheckboxTone[];
 
 function CheckboxPlayground(args: ComponentProps<typeof Checkbox>) {
   const [checked, setChecked] = useState(true);
@@ -54,6 +65,16 @@ function CheckboxPlayground(args: ComponentProps<typeof Checkbox>) {
           <Sample label="Disabled, unchecked">
             <Checkbox {...args} checked={false} disabled={true} label="Disabled" onCheckedChange={args.onCheckedChange} />
           </Sample>
+        </Variants>
+      </Section>
+
+      <Section title="Tones">
+        <Variants direction="column">
+          {TONES.map((tone) => (
+            <Sample key={tone} label={tone}>
+              <Checkbox {...args} checked={true} tone={tone} label={tone} onCheckedChange={args.onCheckedChange} />
+            </Sample>
+          ))}
         </Variants>
       </Section>
     </Playground>

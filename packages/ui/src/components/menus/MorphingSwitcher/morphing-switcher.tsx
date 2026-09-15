@@ -563,7 +563,8 @@ export function MorphingSwitcher({
   // shell at a stale spot. Only the newest measure's callback may write.
   const measureSeq = useRef(0);
   const measureRoot = useCallback(() => {
-    const seq = ++measureSeq.current;
+    measureSeq.current += 1;
+    const seq = measureSeq.current;
     if (!teleported) {
       setRootFrame(null);
       return;

@@ -1,7 +1,14 @@
-import { memo, useEffect, useMemo } from 'react';
+import { memo, type ReactNode, useEffect, useMemo } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedReaction, useAnimatedRef, useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  type AnimatedRef,
+  runOnJS,
+  type SharedValue,
+  useAnimatedReaction,
+  useAnimatedRef,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { PortalProvider } from '../../portal/Portal/portal';
 import { useBlurTargetRef } from '../Overlay/blur-context';
 import { OverlayPortal } from '../Overlay/overlay-host';
@@ -10,6 +17,49 @@ import { CONTEXT_MENU_STATE } from './constants';
 import { HoldMenuInternalContext, type HoldMenuInternalContextType, setHoldMenuInternalContext } from './context';
 import type { HoldMenuProviderProps, HoldMenuSafeAreaInsets, MenuInternalProps } from './hold-menu-types';
 import { Menu } from './menu';
+
+/**
+ * The `Menu`'s initial props — a frozen module-level default so the provider's
+ * `useSharedValue` call stays short. The value is replaced wholesale by worklets,
+ * never mutated in place, so sharing it across provider instances is safe.
+ */
+const INITIAL_MENU_PROPS: MenuInternalProps = {
+  itemHeight: 0,
+  itemWidth: 0,
+  itemY: 0,
+  itemX: 0,
+  items: [],
+  anchorPosition: 'top-center',
+  menuHeight: 0,
+  menuWidth: 0,
+  transformValue: 0,
+  actionParams: {},
+};
+
+/**
+ * Fires `onOpen`/`onClose` when the menu's `state` shared value enters
+ * ACTIVE/END — `runOnJS` bridges the worklet callback to the JS thread.
+ */
+function useMenuOpenClose(state: SharedValue<CONTEXT_MENU_STATE>, onOpen?: () => void, onClose?: () => void) {
+  useAnimatedReaction(
+    () => state.value,
+    (current) => {
+      switch (current) {
+        case CONTEXT_MENU_STATE.ACTIVE: {
+          if (onOpen) runOnJS(onOpen)();
+          break;
+        }
+        case CONTEXT_MENU_STATE.END: {
+          if (onClose) runOnJS(onClose)();
+          break;
+        }
+        default:
+          break;
+      }
+    },
+    [state],
+  );
+}
 
 /**
  * `HoldMenuProvider` — upstream's provider: a `GestureHandlerRootView` (flex
@@ -48,18 +98,7 @@ const ProviderComponent = ({
 }: HoldMenuProviderProps) => {
   const state = useSharedValue<CONTEXT_MENU_STATE>(CONTEXT_MENU_STATE.UNDETERMINED);
   const theme = useSharedValue<'light' | 'dark'>(selectedTheme || 'light');
-  const menuProps = useSharedValue<MenuInternalProps>({
-    itemHeight: 0,
-    itemWidth: 0,
-    itemY: 0,
-    itemX: 0,
-    items: [],
-    anchorPosition: 'top-center',
-    menuHeight: 0,
-    menuWidth: 0,
-    transformValue: 0,
-    actionParams: {},
-  });
+  const menuProps = useSharedValue<MenuInternalProps>(INITIAL_MENU_PROPS);
 
   const { width, height, fontScale } = useWindowDimensions();
   const windowSize = useSharedValue({ width, height, fontScale });
@@ -95,24 +134,7 @@ const ProviderComponent = ({
     windowSize.value = { width, height, fontScale };
   }, [width, height, fontScale]);
 
-  useAnimatedReaction(
-    () => state.value,
-    (current) => {
-      switch (current) {
-        case CONTEXT_MENU_STATE.ACTIVE: {
-          if (onOpen) runOnJS(onOpen)();
-          break;
-        }
-        case CONTEXT_MENU_STATE.END: {
-          if (onClose) runOnJS(onClose)();
-          break;
-        }
-        default:
-          break;
-      }
-    },
-    [state],
-  );
+  useMenuOpenClose(state, onOpen, onClose);
 
   const AnimatedIcon = useMemo(() => (iconComponent ? Animated.createAnimatedComponent(iconComponent) : null), [iconComponent]);
 
@@ -190,34 +212,58 @@ const ProviderComponent = ({
   );
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <HoldMenuInternalContext.Provider value={internalContextVariables}>
-        <Animated.View ref={rootRef} className="flex-1">
-          {teleported ? (
-            <>
-              {children}
-              {/* Android: the overlay renders OUTSIDE the `BlurTarget` through the
-                  `BlurProvider` overlay host (a sibling of the target). The
-                  target-based blur then captures only the page — not the menu —
-                  and the menu paints after the blur, crisp on top; a scrim left
-                  inside the target would either crash (the peer's RenderNode
-                  cycle) or frost the menu. The twins join it at a higher layer
-                  from each `HoldItem` (see `hold-item-twin`). */}
-              <OverlayPortal layer="menu">{overlayContent}</OverlayPortal>
-            </>
-          ) : (
-            /* iOS/web, and Android without a `BlurProvider` (no overlay host to
-               receive the portal): the blur is a true backdrop, so the overlay stays
-               inline in the root and the `PortalProvider` lifts the twins above it. */
-            <PortalProvider>
-              {children}
-              {overlayContent}
-            </PortalProvider>
-          )}
-        </Animated.View>
-      </HoldMenuInternalContext.Provider>
-    </GestureHandlerRootView>
+    <ProviderShell
+      contextValue={internalContextVariables}
+      rootRef={rootRef}
+      teleported={teleported}
+      overlayContent={overlayContent}
+    >
+      {children}
+    </ProviderShell>
   );
 };
+
+type ProviderShellProps = {
+  contextValue: HoldMenuInternalContextType;
+  rootRef: AnimatedRef<Animated.View>;
+  teleported: boolean;
+  overlayContent: ReactNode;
+  children: ReactNode;
+};
+
+/**
+ * The rendered tree — a `GestureHandlerRootView` wrapping the context provider
+ * and the always-mounted overlay. Split out of `ProviderComponent` so the
+ * provider's logic stays under the per-function line budget.
+ */
+const ProviderShell = ({ contextValue, rootRef, teleported, overlayContent, children }: ProviderShellProps) => (
+  <GestureHandlerRootView style={{ flex: 1 }}>
+    <HoldMenuInternalContext.Provider value={contextValue}>
+      <Animated.View ref={rootRef} className="flex-1">
+        {teleported ? (
+          <>
+            {children}
+            {/* Android: the overlay renders OUTSIDE the `BlurTarget` through the
+                `BlurProvider` overlay host (a sibling of the target). The
+                target-based blur then captures only the page — not the menu —
+                and the menu paints after the blur, crisp on top; a scrim left
+                inside the target would either crash (the peer's RenderNode
+                cycle) or frost the menu. The twins join it at a higher layer
+                from each `HoldItem` (see `hold-item-twin`). */}
+            <OverlayPortal layer="menu">{overlayContent}</OverlayPortal>
+          </>
+        ) : (
+          /* iOS/web, and Android without a `BlurProvider` (no overlay host to
+             receive the portal): the blur is a true backdrop, so the overlay stays
+             inline in the root and the `PortalProvider` lifts the twins above it. */
+          <PortalProvider>
+            {children}
+            {overlayContent}
+          </PortalProvider>
+        )}
+      </Animated.View>
+    </HoldMenuInternalContext.Provider>
+  </GestureHandlerRootView>
+);
 
 export const HoldMenuProvider = memo(ProviderComponent);

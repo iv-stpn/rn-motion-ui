@@ -310,7 +310,8 @@ export function MorphingFAB({
   // sequence, so only the newest measure's callback may write the anchor.
   const measureSeq = useRef(0);
   const measureAnchor = useCallback(() => {
-    const seq = ++measureSeq.current;
+    measureSeq.current += 1;
+    const seq = measureSeq.current;
     if (!teleported) {
       setAnchor(null);
       return;

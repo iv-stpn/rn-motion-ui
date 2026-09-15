@@ -56,7 +56,7 @@ const preview: Preview = {
             <ScrollView contentContainerClassName="items-start p-4" nestedScrollEnabled={true}>
               <View className="mb-4 flex-row items-center self-start">
                 <Switch label={DARK_MODE_LABEL} isSelected={isDark} onSelectedChange={setIsDark} />
-                <Text className="ml-3 text-xs text-muted-foreground" selectable={false}>
+                <Text className="ml-3 text-muted-foreground text-xs" selectable={false}>
                   {BUILD_LABEL}
                 </Text>
               </View>

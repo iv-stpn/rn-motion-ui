@@ -273,14 +273,17 @@ export const AlignedWithButtons: Story = {
     </AppSurface>
   ),
   play: async ({ canvasElement }) => {
-    for (const name of SIZES) {
+    const rows = SIZES.map((name) => {
       const shell = canvasElement.querySelector(`[data-testid="aligned-${name}-shell"]`);
       const icon = canvasElement.querySelector(`[data-testid="aligned-${name}-icon"]`);
       const button = canvasElement.querySelector(`[data-testid="aligned-${name}-button"]`);
       if (!(shell && icon && button)) throw new Error(`Missing aligned-${name} controls`);
-      // The shell is measured before the trigger reports its size (closed width 0),
-      // so wait for a real box before comparing.
-      await waitFor(() => expect(shell.getBoundingClientRect().width).toBeGreaterThan(0));
+      return { name, shell, icon, button };
+    });
+    // The shell is measured before the trigger reports its size (closed width 0),
+    // so wait for a real box before comparing.
+    await Promise.all(rows.map(({ shell }) => waitFor(() => expect(shell.getBoundingClientRect().width).toBeGreaterThan(0))));
+    for (const { name, shell, icon, button } of rows) {
       const shellHeight = shell.getBoundingClientRect().height;
       expect(shellHeight).toBeCloseTo(BUTTON_SIZE[name].px, 1);
       expect(shellHeight).toBeCloseTo(icon.getBoundingClientRect().height, 1);

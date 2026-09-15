@@ -47,6 +47,10 @@ const POSITIONER_CLASS: Record<MorphingModalPlacement, string> = {
   center: 'flex-1 items-center justify-center px-4',
 };
 
+// `hug` keeps the same vertical anchor but swaps `bottom`'s large bottom offset
+// for the matching `p-4` side gutter, so every inset edge agrees.
+const HUG_BOTTOM_CLASS = 'flex-1 items-center justify-end px-4 pb-4';
+
 export type MorphingModalProps = {
   /** Which view is currently shown. `null` closes the modal. */
   viewId: string | null;
@@ -56,6 +60,13 @@ export type MorphingModalProps = {
   children: ReactNode;
   /** "bottom" anchors near the bottom (mobile-like). "center" centers vertically. */
   placement?: MorphingModalPlacement;
+  /**
+   * Stretch the panel to the screen width with a symmetric `p-4` left/right
+   * inset instead of the centered `max-w-sm` card. On `"bottom"` the same `p-4`
+   * inset also replaces the larger bottom offset, so left, right and bottom all
+   * hug the screen by the same amount. @default false
+   */
+  hug?: boolean;
   /**
    * Swap the panel's ladder shadow for the input field's large, diffuse halo
    * (`shadow-floating`). It replaces the `shadow-elevated-N` rung rather than
@@ -89,6 +100,7 @@ export function MorphingModal({
   onOpenChange,
   children,
   placement = 'bottom',
+  hug = false,
   floating = false,
   elevation = 6,
   showClose,
@@ -172,7 +184,7 @@ export function MorphingModal({
     if (contentHeight !== null && !morphing) setMorphing(true);
   }, [contentHeight, morphing]);
 
-  const positionerClassName = POSITIONER_CLASS[placement];
+  const positionerClassName = hug && placement === 'bottom' ? HUG_BOTTOM_CLASS : POSITIONER_CLASS[placement];
   // The panel's corner radius — top-only for the bottom-anchored sheet, all four
   // for the centred/bottom modal. Shared by the elevated surface (so the shadow
   // ring follows the curve) and the clip wrapper (so content clips to the curve).
@@ -259,7 +271,8 @@ export function MorphingModal({
               exit={{ opacity: 0, translateY: enterY, scale: reduce || placement === 'bottom-sheet' ? 1 : 0.98 }}
               transition={reduce ? { type: 'timing', duration: 180, easing: EASE_OUT } : SPRING_PANEL}
               className={cn(
-                'w-full max-w-sm',
+                'w-full',
+                !hug && 'max-w-sm',
 
                 panelRadiusClass,
               )}

@@ -48,7 +48,7 @@ const VARIANTS = [
   'outlineDanger',
   'ghostDanger',
 ] as const satisfies readonly ButtonVariant[];
-const SIZES = ['sm', 'md', 'lg', 'icon'] as const satisfies readonly ButtonSize[];
+const SIZES = ['xs', 'sm', 'md', 'lg', 'icon'] as const satisfies readonly ButtonSize[];
 const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const satisfies readonly ButtonShape[];
 
 // The variant whose label class the styled sample overrides, and what it
@@ -59,7 +59,8 @@ const STYLED_KEY = 'styled-key';
 /** Icon stroke per variant — the same mapping the label colours make (Button's
  *  `iconColorFor`), so the icon and the label read as one unit on every plate. */
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
-  if (variant === 'primary' || variant === 'danger') return colors['primary-foreground'];
+  if (variant === 'primary') return colors['primary-foreground'];
+  if (variant === 'danger') return colors['danger-foreground'];
   if (variant === 'success') return colors['success-foreground'];
   if (variant === 'warning') return colors['warning-foreground'];
   if (variant === 'info') return colors['info-foreground'];
@@ -198,9 +199,9 @@ function ButtonSwapPlayground(args: ComponentProps<typeof ButtonSwap>) {
       </Section>
 
       {/* The same shape axis the rest of the button family carries. `pill` is the
-          default here; `rounded` takes the family's radius ramp, `square` stays
-          sharp and `circle` matches `pill`, so a swapping button can sit in a row
-          of Buttons with the same corner. */}
+          default here; `rounded` takes the family's radius ramp, `square` forces
+          a rounded square and `circle` a true circle, so a swapping button can
+          sit in a row of Buttons with the same corner. */}
       <Section title="Shapes">
         <Variants align="center">
           {SHAPES.map((option) => (
@@ -271,7 +272,7 @@ const meta = {
   argTypes: {
     animation: { control: 'select', options: ['blur', 'roll', 'cascade'] },
     variant: { control: 'select', options: VARIANTS },
-    size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
+    size: { control: 'select', options: ['xs', 'sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
     floating: { control: 'boolean' },

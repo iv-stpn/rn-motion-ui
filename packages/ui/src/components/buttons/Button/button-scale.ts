@@ -56,13 +56,13 @@ export const BUTTON_SIZE: Record<RampSize, ButtonSizeGeometry> = {
   xs: {
     px: INTERACTIVE_HEIGHT.xs,
     box: {
-      square: 'h-interactive-xs rounded-none px-interactive-pad-xs',
+      square: 'h-interactive-xs w-interactive-xs rounded-interactive',
       rounded: 'h-interactive-xs rounded-interactive px-interactive-pad-xs',
       pill: 'h-interactive-xs rounded-full px-interactive-pad-xs',
-      circle: 'h-interactive-xs rounded-full px-interactive-pad-xs',
+      circle: 'h-interactive-xs w-interactive-xs rounded-full',
     },
     square: {
-      square: 'h-interactive-xs w-interactive-xs rounded-none',
+      square: 'h-interactive-xs w-interactive-xs rounded-interactive',
       rounded: 'h-interactive-xs w-interactive-xs rounded-interactive',
       pill: 'h-interactive-xs w-interactive-xs rounded-full',
       circle: 'h-interactive-xs w-interactive-xs rounded-full',
@@ -71,13 +71,13 @@ export const BUTTON_SIZE: Record<RampSize, ButtonSizeGeometry> = {
   sm: {
     px: INTERACTIVE_HEIGHT.sm,
     box: {
-      square: 'h-interactive-sm rounded-none px-interactive-pad-sm',
+      square: 'h-interactive-sm w-interactive-sm rounded-interactive',
       rounded: 'h-interactive-sm rounded-interactive px-interactive-pad-sm',
       pill: 'h-interactive-sm rounded-full px-interactive-pad-sm',
-      circle: 'h-interactive-sm rounded-full px-interactive-pad-sm',
+      circle: 'h-interactive-sm w-interactive-sm rounded-full',
     },
     square: {
-      square: 'h-interactive-sm w-interactive-sm rounded-none',
+      square: 'h-interactive-sm w-interactive-sm rounded-interactive',
       rounded: 'h-interactive-sm w-interactive-sm rounded-interactive',
       pill: 'h-interactive-sm w-interactive-sm rounded-full',
       circle: 'h-interactive-sm w-interactive-sm rounded-full',
@@ -86,13 +86,13 @@ export const BUTTON_SIZE: Record<RampSize, ButtonSizeGeometry> = {
   md: {
     px: INTERACTIVE_HEIGHT.md,
     box: {
-      square: 'h-interactive-md rounded-none px-interactive-pad-md',
+      square: 'h-interactive-md w-interactive-md rounded-interactive',
       rounded: 'h-interactive-md rounded-interactive px-interactive-pad-md',
       pill: 'h-interactive-md rounded-full px-interactive-pad-md',
-      circle: 'h-interactive-md rounded-full px-interactive-pad-md',
+      circle: 'h-interactive-md w-interactive-md rounded-full',
     },
     square: {
-      square: 'h-interactive-md w-interactive-md rounded-none',
+      square: 'h-interactive-md w-interactive-md rounded-interactive',
       rounded: 'h-interactive-md w-interactive-md rounded-interactive',
       pill: 'h-interactive-md w-interactive-md rounded-full',
       circle: 'h-interactive-md w-interactive-md rounded-full',
@@ -101,13 +101,13 @@ export const BUTTON_SIZE: Record<RampSize, ButtonSizeGeometry> = {
   lg: {
     px: INTERACTIVE_HEIGHT.lg,
     box: {
-      square: 'h-interactive-lg rounded-none px-interactive-pad-lg',
+      square: 'h-interactive-lg w-interactive-lg rounded-interactive',
       rounded: 'h-interactive-lg rounded-interactive px-interactive-pad-lg',
       pill: 'h-interactive-lg rounded-full px-interactive-pad-lg',
-      circle: 'h-interactive-lg rounded-full px-interactive-pad-lg',
+      circle: 'h-interactive-lg w-interactive-lg rounded-full',
     },
     square: {
-      square: 'h-interactive-lg w-interactive-lg rounded-none',
+      square: 'h-interactive-lg w-interactive-lg rounded-interactive',
       rounded: 'h-interactive-lg w-interactive-lg rounded-interactive',
       pill: 'h-interactive-lg w-interactive-lg rounded-full',
       circle: 'h-interactive-lg w-interactive-lg rounded-full',
@@ -199,28 +199,25 @@ export const BUTTON_BOX: Record<ButtonShape, Record<ButtonSize, string>> = {
 
 /**
  * Resolved corner radius in px, for the layers that can't read a class — the
- * elevated SVG rim and the ring inset calculation. A pill or circle rounds to
- * half its height, a square stays sharp (0), and the rounded shape takes the
- * shared interactive radius.
+ * elevated SVG rim and the ring inset calculation. A square and the rounded
+ * shape both take the shared interactive radius, a pill or circle rounds to
+ * half its height.
  *
  * Prefer {@link buttonRadiusClass} for the CSS border-radius; use this only
  * when the number is required (SVG rx/ry, arithmetic).
  */
 export function buttonRadius(shape: ButtonShape, size: ButtonSize): number {
-  if (shape === 'square') return 0;
-  if (shape === 'rounded') return INTERACTIVE_RADIUS;
+  if (shape === 'square' || shape === 'rounded') return INTERACTIVE_RADIUS;
   return BUTTON_METRICS[size].height / 2;
 }
 
 /**
  * CSS class for the interactive border-radius — the className twin of
- * {@link buttonRadius}. Squares use `rounded-none`, pills and circles use
- * `rounded-full`, and the rounded shape uses `rounded-interactive` (backed by
- * `--radius-interactive`).
+ * {@link buttonRadius}. Squares and the rounded shape use `rounded-interactive`
+ * (backed by `--radius-interactive`), pills and circles use `rounded-full`.
  */
-export function buttonRadiusClass(shape: ButtonShape): 'rounded-none' | 'rounded-full' | 'rounded-interactive' {
-  if (shape === 'square') return 'rounded-none';
-  if (shape === 'rounded') return 'rounded-interactive';
+export function buttonRadiusClass(shape: ButtonShape): 'rounded-full' | 'rounded-interactive' {
+  if (shape === 'square' || shape === 'rounded') return 'rounded-interactive';
   return 'rounded-full';
 }
 

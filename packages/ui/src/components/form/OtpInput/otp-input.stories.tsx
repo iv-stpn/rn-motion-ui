@@ -21,17 +21,20 @@ const meta = {
     numberOfDigits: { control: 'number' },
     secureTextEntry: { control: 'boolean' },
     type: { control: 'select', options: ['alpha', 'numeric', 'alphanumeric'] },
+    size: { control: 'select', options: ['xs', 'sm', 'md', 'lg'] },
   },
 } satisfies Meta<typeof OTPInput>;
 
 type Story = StoryObj<typeof meta>;
 
 const LENGTHS = ['4', '6'] as const;
+const SIZES = ['xs', 'sm', 'md', 'lg'] as const;
 const SUCCESS_MESSAGE = 'Verified.';
 const ERROR_MESSAGE = 'Wrong code, try again.';
 
 function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
   const [lengthKey, setLengthKey] = useState<(typeof LENGTHS)[number]>('6');
+  const [size, setSize] = useState<(typeof SIZES)[number]>('lg');
   const [secureTextEntry, setSecureTextEntry] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [value, setValue] = useState('');
@@ -70,6 +73,7 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
     <Playground>
       <ControlCard title="Input options">
         <Choice label="Number of digits" onChange={handleLength} options={LENGTHS} value={lengthKey} />
+        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
       </ControlCard>
       <ControlCard title="Options">
         <Toggle label="Mask (secureTextEntry)" onChange={setSecureTextEntry} value={secureTextEntry} />
@@ -83,6 +87,7 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
         errorMessage={ERROR_MESSAGE}
         hint={`Enter ${expected} to verify.`}
         numberOfDigits={numberOfDigits}
+        size={size}
         secureTextEntry={secureTextEntry}
         onTextChange={handleChange}
         onFilled={handleFilled}
@@ -90,6 +95,16 @@ function OtpPlayground(args: ComponentProps<typeof OTPInput>) {
         successMessage={SUCCESS_MESSAGE}
         value={value}
       />
+
+      <Section title="Sizes">
+        <Variants align="center">
+          {SIZES.map((name) => (
+            <Sample key={name} label={name} align="center">
+              <OTPInput {...args} hint="Size variant." label={undefined} numberOfDigits={4} size={name} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
 
       {/* The states below are `status`-driven and read-only — a real form would set
           `status` from its own validation, which is what the live field above does. */}

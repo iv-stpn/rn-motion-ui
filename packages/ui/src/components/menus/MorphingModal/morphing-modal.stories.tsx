@@ -17,7 +17,7 @@ import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../buttons/Button/button';
 import { Text } from '../../typography/Text/text';
 import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
-import { MorphingModal } from './morphing-modal';
+import { MorphingModal, type MorphingModalPlacement } from './morphing-modal';
 
 const meta = {
   title: 'Menus/MorphingModal',
@@ -209,10 +209,11 @@ const PLACEMENTS = [
   { value: 'bottom', label: 'Bottom' },
   { value: 'center', label: 'Center' },
   { value: 'bottom-sheet', label: 'Bottom Sheet' },
-] as const satisfies readonly { value: 'bottom' | 'center' | 'bottom-sheet'; label: string }[];
+] as const satisfies readonly { value: MorphingModalPlacement; label: string }[];
 
 type MorphingModalDemoProps = {
-  placement: 'bottom' | 'center' | 'bottom-sheet';
+  placement: MorphingModalPlacement;
+  hug?: boolean;
   elevation?: SurfaceElevation;
   floating?: boolean;
   kind?: TriggerState['kind'];
@@ -227,6 +228,7 @@ type MorphingModalDemoProps = {
 
 function MorphingModalDemo({
   placement,
+  hug = false,
   elevation = 6,
   floating = false,
   kind,
@@ -259,6 +261,7 @@ function MorphingModalDemo({
         viewId={view}
         onClose={close}
         placement={placement}
+        hug={hug}
         elevation={elevation}
         floating={floating}
         overlay={overlay}
@@ -272,7 +275,8 @@ function MorphingModalDemo({
 }
 
 function MorphingModalPlayground() {
-  const [placement, setPlacement] = useState<'bottom' | 'center' | 'bottom-sheet'>('bottom');
+  const [placement, setPlacement] = useState<MorphingModalPlacement>('bottom');
+  const [hug, setHug] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
   const [floating, setFloating] = useState(false);
   const [overlay, setOverlay] = useState<OverlayType>('blur');
@@ -282,6 +286,7 @@ function MorphingModalPlayground() {
     <Playground className="min-w-[340px]">
       <ControlCard title="Options">
         <Choice label="Placement" onChange={setPlacement} options={PLACEMENTS} value={placement} />
+        <Toggle label="Hug" onChange={setHug} value={hug} />
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
         <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
@@ -290,6 +295,7 @@ function MorphingModalPlayground() {
       <TriggerControls state={trigger} />
       <MorphingModalDemo
         placement={placement}
+        hug={hug}
         elevation={ELEVATIONS[elevationKey]}
         floating={floating}
         overlay={overlay}

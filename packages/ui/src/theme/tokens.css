@@ -58,9 +58,9 @@
  * retuned independently without affecting the others:
  *
  * - `--radius-interactive` (8 px) — buttons, inputs, tabs, button groups.
- * - `--radius-card` (16 px) — card containers.
- * - `--radius-menu` (12 px) — HoverMenu, Dropdown, HoldMenu overlays.
- * - `--radius-modal` (16 px) — Modals, Popovers, MorphingModal, BottomSheet.
+ * - `--radius-card` (24 px) — card containers.
+ * - `--radius-menu` (16 px) — HoverMenu, Dropdown, HoldMenu overlays.
+ * - `--radius-modal` (32 px) — Modals, Popovers, MorphingModal, BottomSheet.
  *
  * Unlike the colors, geometry tokens carry no dark-mode counterpart — geometry
  * doesn't flip with the theme. Values are px (not rem): the effect layers that
@@ -268,10 +268,10 @@
 
   --menu-vertical-padding: 4px;
 
-  --radius-menu: 12px;
+  --radius-menu: 16px;
   --radius-interactive: 8px;
-  --radius-card: 16px;
-  --radius-modal: 16px;
+  --radius-card: 24px;
+  --radius-modal: 32px;
 
   /* Typography — per-weight font family tokens. One token per weight so that
      uniwind resolves the correct .ttf file on native (where fontWeight alone

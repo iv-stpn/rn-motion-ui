@@ -22,7 +22,7 @@ import { LABEL_TEXT_CLASS } from './button-scale';
  */
 const VARIANT_ICON_COLOR_TOKEN: Partial<Record<ButtonVariant, ThemeToken>> = {
   primary: 'primary-foreground',
-  danger: 'primary-foreground',
+  danger: 'danger-foreground',
   success: 'success-foreground',
   warning: 'warning-foreground',
   info: 'info-foreground',

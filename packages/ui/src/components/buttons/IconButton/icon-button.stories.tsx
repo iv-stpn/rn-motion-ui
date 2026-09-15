@@ -29,7 +29,7 @@ const meta = {
   argTypes: {
     floating: { control: 'boolean' },
     elevation: { control: 'select', options: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
-    size: { control: 'select', options: ['sm', 'md', 'lg'] },
+    size: { control: 'select', options: ['xs', 'sm', 'md', 'lg'] },
     shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
     blurRadius: { control: { type: 'range', min: 0, max: 40, step: 1 } },
     opacity: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
@@ -53,9 +53,9 @@ const ELEVATION_LEVEL: Record<ElevationLabel, SurfaceElevation> = {
   '7': 7,
   '8': 8,
 };
-const SIZES = ['sm', 'md', 'lg'] as const;
+const SIZES = ['xs', 'sm', 'md', 'lg'] as const;
 const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
-const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
+const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { xs: 'Extra small', sm: 'Small', md: 'Medium', lg: 'Large' };
 
 function IconButtonPlayground(args: IconButtonProps) {
   const [floating, setFloating] = useState(false);

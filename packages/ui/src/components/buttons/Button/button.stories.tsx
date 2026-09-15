@@ -32,7 +32,7 @@ const meta = {
       control: 'select',
       options: ['primary', 'neutral', 'ghost', 'danger', 'outlineDanger', 'ghostDanger'],
     },
-    size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
+    size: { control: 'select', options: ['xs', 'sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
     floating: { control: 'boolean' },
@@ -56,9 +56,9 @@ const VARIANTS = [
   'outlineDanger',
   'ghostDanger',
 ] as const satisfies readonly ButtonVariant[];
-const SIZES = ['sm', 'md', 'lg'] as const;
+const SIZES = ['xs', 'sm', 'md', 'lg'] as const;
 const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
-const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
+const SIZE_LABELS = { xs: 'Extra small', sm: 'Small', md: 'Medium', lg: 'Large' } as const;
 const ICON_SIDES = ['none', 'left', 'right'] as const;
 const CONTINUE_LABEL = 'Continue';
 const DOWNLOAD_LABEL = 'Download';
@@ -80,7 +80,8 @@ type IconSide = (typeof ICON_SIDES)[number];
 // partner, the danger outlines carry the danger hue, everything else (including
 // `neutral`'s light surface plate) the plain foreground.
 function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useThemeColors>): string {
-  if (variant === 'primary' || variant === 'danger') return colors['primary-foreground'];
+  if (variant === 'primary') return colors['primary-foreground'];
+  if (variant === 'danger') return colors['danger-foreground'];
   if (variant === 'success') return colors['success-foreground'];
   if (variant === 'warning') return colors['warning-foreground'];
   if (variant === 'info') return colors['info-foreground'];

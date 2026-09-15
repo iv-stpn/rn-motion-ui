@@ -71,9 +71,26 @@ describe('button geometry', () => {
     }
   });
 
+  it('square and circle box shapes force a 1:1 box and drop horizontal padding', () => {
+    // A label box in the `square` or `circle` shape hugs its content by padding,
+    // which would let a long label stretch it into a pill/rectangle. Both force
+    // the width to the ramp height instead, so overflow clips to the box.
+    for (const size of ['xs', 'sm', 'md', 'lg'] as const) {
+      expect(BUTTON_BOX.square[size]).toContain(`h-interactive-${size}`);
+      expect(BUTTON_BOX.square[size]).toContain(`w-interactive-${size}`);
+      expect(BUTTON_BOX.square[size]).toContain('rounded-interactive');
+      expect(BUTTON_BOX.square[size]).not.toContain('px-interactive-pad');
+
+      expect(BUTTON_BOX.circle[size]).toContain(`h-interactive-${size}`);
+      expect(BUTTON_BOX.circle[size]).toContain(`w-interactive-${size}`);
+      expect(BUTTON_BOX.circle[size]).toContain('rounded-full');
+      expect(BUTTON_BOX.circle[size]).not.toContain('px-interactive-pad');
+    }
+  });
+
   it('resolves each shape to its corner radius', () => {
     for (const size of ['xs', 'sm', 'md', 'lg', 'icon'] as const) {
-      expect(buttonRadius('square', size)).toBe(0);
+      expect(buttonRadius('square', size)).toBe(INTERACTIVE_RADIUS);
       expect(buttonRadius('rounded', size)).toBe(INTERACTIVE_RADIUS);
       expect(buttonRadius('pill', size)).toBe(BUTTON_METRICS[size].height / 2);
       expect(buttonRadius('circle', size)).toBe(BUTTON_METRICS[size].height / 2);
@@ -114,7 +131,7 @@ describe('shared geometry — IconButton, MorphingFAB and MorphingSwitcher read 
   const sizes: RampSize[] = ['xs', 'sm', 'md', 'lg'];
   const shapes: ButtonShape[] = ['square', 'rounded', 'pill', 'circle'];
   const RADIUS_CLASS: Record<ButtonShape, string> = {
-    square: 'rounded-none',
+    square: 'rounded-interactive',
     rounded: 'rounded-interactive',
     pill: 'rounded-full',
     circle: 'rounded-full',

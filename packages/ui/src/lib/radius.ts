@@ -18,7 +18,7 @@ type InteractiveSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon';
 export const INTERACTIVE_RADIUS = 8;
 
 /** Corner radius in px for card containers. */
-export const CARD_RADIUS = 16;
+export const CARD_RADIUS = 24;
 
 /** Tailwind class backed by --radius-interactive. */
 export const ROUNDED_INTERACTIVE = 'rounded-interactive' as const;
@@ -27,13 +27,13 @@ export const ROUNDED_INTERACTIVE = 'rounded-interactive' as const;
 export const ROUNDED_CARD = 'rounded-card' as const;
 
 /** Corner radius in px for menu overlays — HoverMenu, Dropdown, HoldMenu. */
-export const MENU_RADIUS = 12;
+export const MENU_RADIUS = 16;
 
 /** Tailwind class backed by --radius-menu. */
 export const ROUNDED_MENU = 'rounded-menu' as const;
 
 /** Corner radius in px for modal surfaces — Modal, Popover, MorphingModal, BottomSheet. */
-export const MODAL_RADIUS = 16;
+export const MODAL_RADIUS = 32;
 
 /** Tailwind class backed by --radius-modal. */
 export const ROUNDED_MODAL = 'rounded-modal' as const;

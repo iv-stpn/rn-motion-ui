@@ -34,7 +34,13 @@ const OTP_SHAKE_STEPS = [-5, 5, -3, 3, -1, 0] as const;
 
 type SlotState = 'success' | 'error' | 'active' | 'filled' | 'idle';
 
-const slot = cva('relative h-interactive-lg w-interactive-lg items-center justify-center rounded-interactive hairline', {
+/** Glyph (digit / placeholder) size per slot size. */
+const DIGIT_TEXT_CLASS = { xs: 'text-xs', sm: 'text-sm', md: 'text-base', lg: 'text-xl' } as const;
+
+/** Blinking caret height per slot size. */
+const CARET_HEIGHT_CLASS = { xs: 'h-3', sm: 'h-4', md: 'h-5', lg: 'h-6' } as const;
+
+const slot = cva('relative items-center justify-center rounded-interactive hairline', {
   variants: {
     state: {
       success: 'border-success',
@@ -43,8 +49,14 @@ const slot = cva('relative h-interactive-lg w-interactive-lg items-center justif
       filled: 'border-foreground/40',
       idle: 'border-border',
     },
+    size: {
+      xs: 'h-interactive-xs w-interactive-xs',
+      sm: 'h-interactive-sm w-interactive-sm',
+      md: 'h-interactive-md w-interactive-md',
+      lg: 'h-interactive-lg w-interactive-lg',
+    },
   },
-  defaultVariants: { state: 'idle' },
+  defaultVariants: { state: 'idle', size: 'lg' },
 });
 
 const message = cva('text-sm', {
@@ -94,6 +106,7 @@ type OtpSlotProps = {
   index: number;
   char: string;
   state: SlotState;
+  size: OtpInputSize;
   isActive: boolean;
   showSuccess: boolean;
   reduce: boolean;
@@ -113,6 +126,7 @@ function OtpSlot({
   index,
   char,
   state,
+  size,
   isActive,
   showSuccess,
   reduce,
@@ -129,7 +143,7 @@ function OtpSlot({
 }: OtpSlotProps) {
   const handlePress = useCallback(() => onPressSlot(index), [onPressSlot, index]);
 
-  const slotClassName = slot({ state });
+  const slotClassName = slot({ state, size });
 
   const slotStyleOverrides = useMemo(() => {
     const styles: ViewStyle[] = [];
@@ -159,7 +173,7 @@ function OtpSlot({
             {...textProps}
             testID={textProps?.testID ? `${textProps.testID}-${index}` : undefined}
             weight="semibold"
-            className="text-foreground text-xl"
+            className={cn('text-foreground', DIGIT_TEXT_CLASS[size])}
             style={theme.pinCodeTextStyle}
           >
             {displayChar}
@@ -178,7 +192,7 @@ function OtpSlot({
           <Text
             {...textProps}
             testID={textProps?.testID ? `${textProps.testID}-ph-${index}` : undefined}
-            className="text-foreground/50 text-xl"
+            className={cn('text-foreground/50', DIGIT_TEXT_CLASS[size])}
             style={[theme.pinCodeTextStyle, theme.placeholderTextStyle]}
           >
             {placeholderChar}
@@ -186,7 +200,7 @@ function OtpSlot({
         </MotiView>
       );
     return null;
-  }, [char, isPlaceholder, reduce, textProps, index, theme, displayChar, placeholderChar]);
+  }, [char, isPlaceholder, reduce, textProps, index, theme, displayChar, placeholderChar, size]);
 
   return (
     <Pressable
@@ -206,7 +220,7 @@ function OtpSlot({
             from={{ opacity: 1 }}
             animate={{ opacity: 0 }}
             transition={{ type: 'timing', duration: stickBlinkMs, loop: true, repeatReverse: true }}
-            className="h-6 w-px bg-foreground"
+            className={cn(CARET_HEIGHT_CLASS[size], 'w-px bg-foreground')}
             style={focusColor ? { backgroundColor: focusColor } : undefined}
           />
         </View>
@@ -221,6 +235,9 @@ function OtpSlot({
 
 export type OtpInputType = 'alpha' | 'numeric' | 'alphanumeric';
 export type OtpInputStatus = 'idle' | 'error' | 'success';
+/** Box side + glyph scale per size — the same `--spacing-interactive-*` ramp
+ *  the button family reads, so an OTP row lines up with neighbouring controls. */
+export type OtpInputSize = 'xs' | 'sm' | 'md' | 'lg';
 
 export type OtpInputTheme = {
   containerStyle?: ViewStyle;
@@ -263,6 +280,9 @@ export type OtpInputProps = {
   /** External validation feedback. "error" shakes, "success" draws a check. */
   status?: OtpInputStatus;
   label?: string;
+  /** Box size of each slot — the same `--spacing-interactive-*` ramp the button
+   *  family reads, so an OTP row lines up with neighbouring controls. @default 'lg' */
+  size?: OtpInputSize;
   /** Helper text shown below the slots while idle. */
   hint?: string;
   successMessage?: string;
@@ -303,6 +323,7 @@ export function OTPInput({
   value: controlledValue,
   defaultValue = '',
   status = 'idle',
+  size = 'lg',
   label,
   hint,
   successMessage,
@@ -442,6 +463,7 @@ export function OTPInput({
               index={i}
               char={char}
               state={resolveSlotState(showSuccess, status, i === activeIndex, char)}
+              size={size}
               isActive={i === activeIndex}
               showSuccess={showSuccess}
               reduce={reduce}

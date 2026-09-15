@@ -19,7 +19,7 @@ const meta = {
       options: ['primary', 'neutral', 'danger', 'success', 'warning', 'info', 'white', 'gray'],
       description: 'Fill colour. Coloured fills get the gloss + rim + shadow; white/gray are flat plates.',
     },
-    size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
+    size: { control: 'select', options: ['xs', 'sm', 'md', 'lg', 'icon'] },
     shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
   },
 } satisfies Meta<typeof ElevatedButton>;
@@ -36,9 +36,9 @@ const VARIANTS = [
   'white',
   'gray',
 ] as const satisfies readonly ElevatedVariant[];
-const SIZES = ['sm', 'md', 'lg'] as const;
+const SIZES = ['xs', 'sm', 'md', 'lg'] as const;
 const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
-const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
+const SIZE_LABELS = { xs: 'Extra small', sm: 'Small', md: 'Medium', lg: 'Large' } as const;
 const ICON_SIDES = ['none', 'left', 'right'] as const;
 const CONTINUE_LABEL = 'Continue';
 const DOWNLOAD_LABEL = 'Download';

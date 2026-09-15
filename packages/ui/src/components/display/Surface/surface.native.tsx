@@ -143,9 +143,9 @@ export function Surface({
   const scheme = useColorScheme();
   const glass = blurRadius > 0;
   const numericRadius = borderRadius ?? (radius ? RADIUS_PX[radius] : 0);
-  // The frost fill: the neutral `glass` token, thinned by `opacity`. On the
-  // native path it is the BlurView's own tint on the blur branch, so `opacity`
-  // thins the frost on the degrade path only.
+  // The frost fill: the neutral `glass` token, thinned by `opacity`. Layered
+  // over the BlurView on the blur branch (the native counterpart of the web
+  // twin's `backgroundColor: tint`) and used standalone on the degrade path.
   const fill = glass && opacity < 1 ? scaleAlpha(tint, opacity) : tint;
   const blurTargetRef = useBlurTargetRef();
   // True when this surface renders inside the `BlurTarget` its `BlurView` would
@@ -174,32 +174,45 @@ export function Surface({
   // target is auto-detected via context; `inline` is the manual escape hatch
   // for when that detection can't see the target (see prop doc).
   const renderBlur = BlurView !== null && glass && !(Platform.OS === 'android' && (inline || insideBlurTarget));
-  // The peer's overlay tint tracks the scheme; `light`/`dark` mirror the web
-  // twin's themed `glass` fill well enough that a separate tint layer is noise.
-  const blurType = scheme === 'dark' ? 'dark' : 'light';
-
-  // The frost layer: the peer's `BlurView` on the blur path, else the translucent
-  // `glass` tint fill (the degrade path — see module doc). `null` when solid.
+  // The blur's own overlay must stay as tint-less as possible so it doesn't
+  // compound with the `glass` wash layered over it. The subtlest scheme-specific
+  // material styles (`ultra-thin-material-light`/`dark`) do that while tracking
+  // `useColorScheme()` — unlike the adaptive `regular`, which reads the OS
+  // trait/`uiMode` and would drift if the app forces a scheme via
+  // `Appearance.setColorScheme`.
+  const blurType = scheme === 'dark' ? 'ultra-thin-material-dark' : 'ultra-thin-material-light';
+  // The frost layer: the peer's `BlurView` when the pane can blur, with the
+  // translucent `glass` tint layered over it (the native counterpart of the web
+  // twin's `backgroundColor: tint`); the tint alone when the pane degrades (see
+  // module doc). `null` when solid.
   let frost: ReactNode = null;
-  if (renderBlur) {
+  if (glass) {
     frost = (
-      <BlurView
-        type={blurType}
-        radius={blurRadius}
-        blurTarget={blurTargetRef ?? undefined}
-        pointerEvents="none"
-        // The peer's BlurView wrapper hardcodes `zIndex: 10` (its
-        // `globalStyles.container`), which lifts the frosted layer ABOVE the Rim
-        // and `children` siblings and frosts them away into invisibility on iOS.
-        // The Rim + content must sit on top of the frost, so flatten the wrapper
-        // back to the default 0.
-        style={[StyleSheet.absoluteFill, { zIndex: 0 }]}
-      />
+      <>
+        {renderBlur ? (
+          <BlurView
+            type={blurType}
+            radius={blurRadius}
+            blurTarget={blurTargetRef ?? undefined}
+            pointerEvents="none"
+            // The peer's BlurView wrapper hardcodes `zIndex: 10` (its
+            // `globalStyles.container`), which lifts the frosted layer ABOVE the Rim
+            // and `children` siblings and frosts them away into invisibility on iOS.
+            // The Rim + content must sit on top of the frost, so flatten the wrapper
+            // back to the default 0.
+            style={[StyleSheet.absoluteFill, { zIndex: 0 }]}
+          />
+        ) : null}
+        {/* The translucent `glass` tint — over the blur on the blur path, alone on
+            the degrade path, so the pane always reads as a translucent panel. */}
+        <View
+          pointerEvents="none"
+          // Same `zIndex: 0` as the BlurView beneath it — the tint sits on top of the
+          // blur by render order, and the Rim/children (also 0) stay above the tint.
+          style={[StyleSheet.absoluteFill, { backgroundColor: fill, zIndex: 0 }]}
+        />
+      </>
     );
-  } else if (glass) {
-    // The degrade fill: translucent `glass` tint, no blur — the pane still reads
-    // as a translucent panel rather than a flat opaque wash.
-    frost = <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: fill }]} />;
   }
 
   return (

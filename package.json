@@ -35,8 +35,5 @@
     "biome-typescript-best-practices-plugin": "1.2.3",
     "jscpd": "^5.0.14",
     "typescript": "^7"
-  },
-  "dependencies": {
-    "geist": "^1.7.2"
   }
 }

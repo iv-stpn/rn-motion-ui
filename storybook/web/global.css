@@ -5,66 +5,6 @@
 /* Stories live in the library workspace, so point Tailwind's class scanner there. */
 @source "../../packages/ui/src";
 
-/* Override the library's default system font stack with Geist. Each
-   weight is a separate font-family so the per-weight token values
-   (--font-sans-normal, --font-sans-bold, etc.) resolve correctly on
-   both web and native. Font files live in public/fonts/. */
-@theme {
-  --font-sans-normal: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-sans-medium: "Geist-Medium", ui-sans-serif, system-ui, sans-serif;
-  --font-sans-semibold: "Geist-SemiBold", ui-sans-serif, system-ui, sans-serif;
-  --font-sans-bold: "Geist-Bold", ui-sans-serif, system-ui, sans-serif;
-  --font-mono-normal: "GeistMono-Regular", ui-monospace, monospace;
-  --font-mono-medium: "GeistMono-Medium", ui-monospace, monospace;
-  --font-mono-semibold: "GeistMono-SemiBold", ui-monospace, monospace;
-  --font-mono-bold: "GeistMono-Bold", ui-monospace, monospace;
-}
-
-/* Geist Sans — one @font-face per weight, each with its own font-family
-   name so the per-weight token values (e.g. "Geist-Bold") match directly. */
-@font-face {
-  font-family: "Geist";
-  src: url("/fonts/Geist-Regular.woff2") format("woff2");
-  font-display: swap;
-}
-@font-face {
-  font-family: "Geist-Medium";
-  src: url("/fonts/Geist-Medium.woff2") format("woff2");
-  font-display: swap;
-}
-@font-face {
-  font-family: "Geist-SemiBold";
-  src: url("/fonts/Geist-SemiBold.woff2") format("woff2");
-  font-display: swap;
-}
-@font-face {
-  font-family: "Geist-Bold";
-  src: url("/fonts/Geist-Bold.woff2") format("woff2");
-  font-display: swap;
-}
-
-/* Geist Mono — same pattern. */
-@font-face {
-  font-family: "GeistMono-Regular";
-  src: url("/fonts/GeistMono-Regular.woff2") format("woff2");
-  font-display: swap;
-}
-@font-face {
-  font-family: "GeistMono-Medium";
-  src: url("/fonts/GeistMono-Medium.woff2") format("woff2");
-  font-display: swap;
-}
-@font-face {
-  font-family: "GeistMono-SemiBold";
-  src: url("/fonts/GeistMono-SemiBold.woff2") format("woff2");
-  font-display: swap;
-}
-@font-face {
-  font-family: "GeistMono-Bold";
-  src: url("/fonts/GeistMono-Bold.woff2") format("woff2");
-  font-display: swap;
-}
-
 @layer base {
   /* Set the default text colour on the document root so that SVG `currentColor`
      references (e.g. icon strokes) inherit the active foreground token instead

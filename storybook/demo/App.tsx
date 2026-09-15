@@ -1,5 +1,3 @@
-// biome-ignore-all lint/style/noCommonJs: expo-font's useFonts requires require() for asset bundling
-import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -65,19 +63,6 @@ function ThemeSwitcher() {
 }
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
-    Geist: require('geist/dist/fonts/geist-sans/Geist-Regular.ttf'),
-    'Geist-Medium': require('geist/dist/fonts/geist-sans/Geist-Medium.ttf'),
-    'Geist-SemiBold': require('geist/dist/fonts/geist-sans/Geist-SemiBold.ttf'),
-    'Geist-Bold': require('geist/dist/fonts/geist-sans/Geist-Bold.ttf'),
-    'GeistMono-Regular': require('geist/dist/fonts/geist-mono/GeistMono-Regular.ttf'),
-    'GeistMono-Medium': require('geist/dist/fonts/geist-mono/GeistMono-Medium.ttf'),
-    'GeistMono-SemiBold': require('geist/dist/fonts/geist-mono/GeistMono-SemiBold.ttf'),
-    'GeistMono-Bold': require('geist/dist/fonts/geist-mono/GeistMono-Bold.ttf'),
-  });
-
-  if (!fontsLoaded) return null;
-
   return (
     // BlurProvider wraps the app so overlay scrims (e.g. FileSystem's background
     // menu) can frost the page behind them — on Android the peer's BlurView blurs

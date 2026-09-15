@@ -142,6 +142,26 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
       </Section>
 
       <View className="h-3" />
+      {/* The icon exit — each state icon is a direct `AnimatePresence` child keyed
+          per state, so it fades and scales out when the button re-arms
+          (success/error → idle) instead of dropping abruptly. Press a button and
+          watch the trailing icon leave. */}
+      <Section title="Icon exit — state icon fades out on re-arm">
+        <Variants align="center">
+          <Sample label="success → idle">
+            <IconExitDemo outcome="success" />
+          </Sample>
+          <Sample label="error → idle">
+            <IconExitDemo outcome="error" />
+          </Sample>
+        </Variants>
+        <Note>
+          The success Check / error WarningLine (and the trailing idle icon) slide in, then fade and scale out when the machine
+          re-arms — not just vanish.
+        </Note>
+      </Section>
+
+      <View className="h-3" />
       <Section title="Controlled — an explicit `state` bypasses the machine">
         <Variants align="center">
           {STATES.map((state) => (
@@ -232,6 +252,32 @@ function ExternalResetHarness(args: ComponentProps<typeof StatefulButton>) {
       <StatefulButton {...args} shouldReset={resetSignal} />
       <Action label="Reset now" onPress={requestReset} />
     </Variants>
+  );
+}
+
+type IconExitDemoProps = { outcome: (typeof OUTCOMES)[number] };
+
+/** Runs one machine pass to a terminal state and auto-resets, so the state icon
+ *  (Check on success, WarningLine on error) visibly fades/scales out when the
+ *  button re-arms back to idle — the exit the per-state icon `key` restores. */
+function IconExitDemo({ outcome }: IconExitDemoProps) {
+  const colors = useThemeColors();
+  const iconColor = colors['primary-foreground'];
+  const press = useCallback(async () => {
+    await sleep(500);
+    if (outcome === 'error') throw new Error('failed');
+  }, [outcome]);
+  return (
+    <StatefulButton
+      icon={<ArrowRight size={16} color={iconColor} />}
+      minLoadingMs={150}
+      successDurationMs={1200}
+      errorDurationMs={1200}
+      shouldAutoReset={true}
+      onPress={press}
+    >
+      {outcome === 'success' ? 'Save' : 'Delete'}
+    </StatefulButton>
   );
 }
 

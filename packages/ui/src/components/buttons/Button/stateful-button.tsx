@@ -254,11 +254,10 @@ function resolveStateColors({ state, idleIconColor, elevatedVariant, colors }: S
 // IconSlot — animated width collapse / expand for state icons
 // ---------------------------------------------------------------------------
 
-type IconSlotProps = { keyId: string; children: ReactNode; reduce: boolean; slotWidth: number };
-function IconSlot({ keyId, children, reduce, slotWidth }: IconSlotProps) {
+type IconSlotProps = { children: ReactNode; reduce: boolean; slotWidth: number };
+function IconSlot({ children, reduce, slotWidth }: IconSlotProps) {
   return (
     <MotiView
-      key={keyId}
       from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7 }}
       animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
       exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7 }}
@@ -653,13 +652,13 @@ export function StatefulButton({
     <View accessible={false} accessibilityLiveRegion="polite" className={cn('flex-row items-center', stateGapClass)}>
       <AnimatePresence>
         {state === 'success' ? (
-          <IconSlot keyId="success-icon" reduce={reduce} slotWidth={iconSize}>
+          <IconSlot key="success-icon" reduce={reduce} slotWidth={iconSize}>
             <Check size={iconSize} color={iconColor} />
           </IconSlot>
         ) : null}
 
         {state === 'error' ? (
-          <IconSlot keyId="error-icon" reduce={reduce} slotWidth={iconSize}>
+          <IconSlot key="error-icon" reduce={reduce} slotWidth={iconSize}>
             <WarningLine size={iconSize} color={iconColor} />
           </IconSlot>
         ) : null}
@@ -700,7 +699,7 @@ export function StatefulButton({
 
       <AnimatePresence>
         {state === 'idle' && icon ? (
-          <IconSlot keyId="idle-icon" reduce={reduce} slotWidth={iconSize}>
+          <IconSlot key="idle-icon" reduce={reduce} slotWidth={iconSize}>
             {icon}
           </IconSlot>
         ) : null}

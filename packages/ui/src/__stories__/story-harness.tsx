@@ -136,7 +136,7 @@ export function Choice<T extends string>({ label, value, options, onChange }: Ch
         items={items}
         value={value}
         onValueChange={handleChange}
-        size="sm"
+        size="xs"
         testID={`story-choice${label ? `-${slug(label)}` : ''}`}
       />
     </View>

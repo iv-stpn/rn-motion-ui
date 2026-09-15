@@ -32,7 +32,7 @@ function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focu
   return 'idle';
 }
 
-// State drives the border colour, not a shadow: the field carries a 2.5px border
+// State drives the border colour, not a shadow: the field carries a border
 // on web only while flat (`elevation` 0), tinted by state (border on idle,
 // foreground on focus, danger on error); error wins over focus. Above 0 the
 // `shadow-elevated-N` recipe already draws the dark-mode rim, so a border would

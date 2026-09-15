@@ -114,8 +114,8 @@ function tintAlphaFor(tone: RadioCardTone, surfaceColor: string): number {
   return isDark ? TONE_TINT_ALPHA[tone] : 0;
 }
 
-/** Border-width class for the card surface: the resting 2.5px hairline steps up
- *  to 3px when selected so the highlight reads stronger than the resting edge. */
+/** Border-width class for the card surface: the resting hairline border steps
+ *  up to 3px when selected so the highlight reads stronger than the resting edge. */
 function cardBorderWidth(selected: boolean) {
   return selected ? 'border-[3px]' : 'hairline';
 }
@@ -507,9 +507,9 @@ export function RadioCard({
             the wrapper's surface fill instead. Both ends run through `tintAt`
             for the reason spelled out on that helper — a literal `transparent`
             end would interpolate through transparent black and darken the edge on
-            the way in. Selecting steps the border from the 2.5px hairline to 3px so
-            the highlight reads stronger than the resting edge; the half-pixel
-            content shift is negligible. */}
+            the way in. Selecting steps the border from the hairline border to
+            hairline + 0.5px so the highlight reads stronger than the resting edge;
+            the half-pixel content shift is negligible. */}
         <MotiView
           animate={{
             borderColor: tintAt(accent, selected ? 1 : 0),

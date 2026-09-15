@@ -300,34 +300,34 @@
 
 /* ── Hairline border ──────────────────────────────────────────────────────
  *
- * The single border weight in the library. 2.5px reads at full strength on
+ * The single border weight in the library. 2px reads at full strength on
  * high-density screens where a bare 1px `border` washes out, so every border
  * is spelled `hairline` (all four sides) or `hairline-t` / `hairline-r` /
  * `hairline-b` / `hairline-l` (one side) instead of an arbitrary
- * `border-[2.5px]`. The style is `var(--tw-border-style)`, the same variable
+ * `border-[2px]`. The style is `var(--tw-border-style)`, the same variable
  * Tailwind's built-in `border-*` width utilities set, so `hairline border-dashed`
  * still renders dashed. Geometry doesn't flip with the theme, so these live
  * outside `@theme` as plain custom utilities.
  */
 @utility hairline {
   border-style: var(--tw-border-style);
-  border-width: 2.5px;
+  border-width: 2px;
 }
 @utility hairline-t {
   border-top-style: var(--tw-border-style);
-  border-top-width: 2.5px;
+  border-top-width: 2px;
 }
 @utility hairline-r {
   border-right-style: var(--tw-border-style);
-  border-right-width: 2.5px;
+  border-right-width: 2px;
 }
 @utility hairline-b {
   border-bottom-style: var(--tw-border-style);
-  border-bottom-width: 2.5px;
+  border-bottom-width: 2px;
 }
 @utility hairline-l {
   border-left-style: var(--tw-border-style);
-  border-left-width: 2.5px;
+  border-left-width: 2px;
 }
 
 /* ── Input vertical centring ──────────────────────────────────────────────

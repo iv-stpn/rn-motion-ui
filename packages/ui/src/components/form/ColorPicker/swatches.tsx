@@ -15,7 +15,7 @@ function Swatch({ hex, selected, onSelect, testID }: SwatchProps) {
       accessibilityState={{ selected }}
       onPress={handlePress}
       testID={testID}
-      className={cn('rounded-[6px] border-[1.5px]', selected ? 'border-foreground' : 'border-border')}
+      className={cn('hairline rounded-[6px]', selected ? 'border-foreground' : 'border-border')}
       style={{ width: SWATCH_SIZE, height: SWATCH_SIZE, backgroundColor: hex }}
     />
   );

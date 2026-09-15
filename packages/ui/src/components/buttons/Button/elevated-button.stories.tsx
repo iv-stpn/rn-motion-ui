@@ -20,7 +20,7 @@ const meta = {
       description: 'Fill colour. Coloured fills get the gloss + rim + shadow; white/gray are flat plates.',
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
-    shape: { control: 'select', options: ['rounded', 'pill'] },
+    shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
   },
 } satisfies Meta<typeof ElevatedButton>;
 
@@ -37,6 +37,7 @@ const VARIANTS = [
   'gray',
 ] as const satisfies readonly ElevatedVariant[];
 const SIZES = ['sm', 'md', 'lg'] as const;
+const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
 const ICON_SIDES = ['none', 'left', 'right'] as const;
 const CONTINUE_LABEL = 'Continue';
@@ -48,7 +49,7 @@ type IconSide = (typeof ICON_SIDES)[number];
 function ElevatedButtonPlayground(args: ComponentProps<typeof ElevatedButton>) {
   const [variant, setVariant] = useState<ElevatedVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
-  const [pill, setPill] = useState(false);
+  const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');
   const [loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [ripple, setRipple] = useState(false);
@@ -62,7 +63,7 @@ function ElevatedButtonPlayground(args: ComponentProps<typeof ElevatedButton>) {
     args.onPress?.();
   }, [args.onPress]);
 
-  const live = { ...args, variant, size, shape: pill ? ('pill' as const) : ('rounded' as const), loading, disabled, ripple };
+  const live = { ...args, variant, size, shape, loading, disabled, ripple };
   const icon = <ArrowRight color={iconColor} size={16} />;
 
   return (
@@ -71,7 +72,7 @@ function ElevatedButtonPlayground(args: ComponentProps<typeof ElevatedButton>) {
         <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Choice label="Icon" onChange={setIconSide} options={ICON_SIDES} value={iconSide} />
-        <Toggle label="Pill" onChange={setPill} value={pill} />
+        <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
         <Toggle label="Loading" onChange={setLoading} value={loading} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Toggle label="Ripple" onChange={setRipple} value={ripple} />
@@ -109,6 +110,18 @@ function ElevatedButtonPlayground(args: ComponentProps<typeof ElevatedButton>) {
             <ElevatedButton {...args} key={name} size={name} variant={variant}>
               {SIZE_LABELS[name]}
             </ElevatedButton>
+          ))}
+        </Variants>
+      </Section>
+
+      <Section title="Shapes">
+        <Variants align="center">
+          {SHAPES.map((name) => (
+            <Sample key={name} label={name}>
+              <ElevatedButton {...args} shape={name} variant={variant}>
+                {CONTINUE_LABEL}
+              </ElevatedButton>
+            </Sample>
           ))}
         </Variants>
       </Section>

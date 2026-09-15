@@ -38,7 +38,7 @@ type AppSurfaceProps = { children: ReactNode; hint: string };
 function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
     <View className="min-h-[380px] self-stretch bg-surface-1">
-      <View className="border-border border-b-[1.5px] px-5 py-3">
+      <View className="hairline-b border-border px-5 py-3">
         <View className="h-2.5 w-24 rounded-full bg-muted-foreground/20" />
       </View>
       <View className="gap-3 p-5">
@@ -207,7 +207,7 @@ export const CloseMotion: Story = {
  *  ramp, so a switcher lines up with a Button or IconButton of the same size. */
 export const AllSizes: Story = {
   render: () => (
-    <AppSurface hint="Three sizes on the shared interactive ramp (24 / 32 / 40px).">
+    <AppSurface hint="Three sizes on the shared interactive ramp (24 / 36 / 48 / 64px).">
       <View className="gap-3 px-5">
         {SIZES.map((name) => (
           <View key={name} className="gap-1">
@@ -231,7 +231,7 @@ export const AllSizes: Story = {
 };
 
 /** The row contract: a switcher rests at exactly the height of the `IconButton`
- *  and `Button` beside it, at every size — the shared interactive ramp (24/32/40).
+ *  and `Button` beside it, at every size — the shared interactive ramp (24/36/48/64).
  *
  *  The collapsed shell used to wrap the trigger in the pane's `p-1` inset, so a
  *  switcher parked 2 × 4px taller than the same-size button it lined up with

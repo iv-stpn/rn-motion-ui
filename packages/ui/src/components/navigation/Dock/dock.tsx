@@ -32,7 +32,7 @@ type DockContextValue = {
 };
 
 const DockContext = createContext<DockContextValue | null>(null);
-const BORDER_WIDTH = 1.5;
+const BORDER_WIDTH = 2.5;
 
 /** Keep a custom item's layout in the target row and its decoration on the moving frame. */
 function splitItemStyle(style: StyleProp<ViewStyle>) {
@@ -156,7 +156,7 @@ export function Dock({
         elevation={elevation}
         floating={floating}
         testID={testID}
-        className={cn('relative self-center rounded-full border-[1.5px] border-border', className)}
+        className={cn('hairline relative self-center rounded-full border-border', className)}
         style={[motion.style, { padding: DOCK_INSET }, style]}
       >
         {/* Target slots use normal Yoga layout, never animated measurements. The

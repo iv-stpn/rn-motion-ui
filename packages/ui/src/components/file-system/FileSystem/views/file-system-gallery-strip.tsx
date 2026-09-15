@@ -136,7 +136,7 @@ function StripTileComponent({
         // member the stage is showing, so a multi-selection reads as several
         // filled tiles with one outlined.
         className={cn(
-          'relative items-center justify-center rounded-md border-[1.5px] border-transparent p-1',
+          'hairline relative items-center justify-center rounded-md border-transparent p-1',
           (isActive || isSelected) && 'bg-surface-selected',
           isActive && 'border-border',
           isLifting && 'opacity-40',
@@ -303,7 +303,7 @@ export function FileSystemGalleryStrip({
   return (
     <Pressable
       ref={containerRef}
-      className="relative shrink-0 select-none border-border border-t-[1.5px] bg-surface-2"
+      className="hairline-t relative shrink-0 select-none border-border bg-surface-2"
       onPress={onClearSelection}
     >
       <FlatList

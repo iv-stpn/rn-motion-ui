@@ -64,7 +64,7 @@ export type MorphingDockSwitchItem = {
   icon?: MorphingDockSwitchIcon;
 };
 
-/** Dock/switcher size — stands on the shared interactive ramp (24 / 32 / 40px). */
+/** Dock/switcher size — stands on the shared interactive ramp (24 / 36 / 48 / 64px). */
 export type MorphingDockSwitchSize = 'sm' | 'md' | 'lg';
 
 export type MorphingDockSwitchProps = {

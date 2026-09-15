@@ -340,7 +340,7 @@ function DraggableChip({ item }: DraggableChipProps) {
       data={{ [EXTERNAL_DROP_MIME]: JSON.stringify(item) }}
       effectAllowed="copy"
     >
-      <View className="flex-row items-center gap-1.5 rounded-md border-[1.5px] border-border bg-surface-2 px-3 py-1.5">
+      <View className="hairline flex-row items-center gap-1.5 rounded-md border-border bg-surface-2 px-3 py-1.5">
         <FileText size={14} />
         <Text size="sm">{item.name}</Text>
       </View>
@@ -692,7 +692,7 @@ function ViewSwitcherHeader({ isCompact, setView, view }: Pick<FileSystemHeaderS
         <Text size="sm">View</Text>
       </Pressable>
       {open ? (
-        <View className="absolute right-2 z-10 mt-1 rounded-md border-[1.5px] border-border bg-surface-2 p-1">
+        <View className="hairline absolute right-2 z-10 mt-1 rounded-md border-border bg-surface-2 p-1">
           {VIEWS.map((option) => (
             <Pressable
               key={option.value}
@@ -885,7 +885,7 @@ function KanbanView({ entries }: FileSystemViewProps) {
         Kanban board
       </Text>
       {entries.map((entry) => (
-        <View key={entry.path} className="rounded-md border-[1.5px] border-border bg-surface-2 px-3 py-1.5">
+        <View key={entry.path} className="hairline rounded-md border-border bg-surface-2 px-3 py-1.5">
           <Text size="sm">{entry.name}</Text>
         </View>
       ))}
@@ -1537,7 +1537,7 @@ function ScopeChips({ folderName, isAtRoot, rootLabel, searchScope, setSearchSco
         accessibilityState={{ checked: rootActive }}
         aria-checked={rootActive}
         className={cn(
-          'rounded-md border-[1.5px] px-2 py-0.5',
+          'hairline rounded-md px-2 py-0.5',
           rootActive ? 'border-primary bg-primary/10' : 'border-border bg-surface-1',
         )}
         onPress={scopeToRoot}
@@ -1553,7 +1553,7 @@ function ScopeChips({ folderName, isAtRoot, rootLabel, searchScope, setSearchSco
           accessibilityState={{ checked: !rootActive }}
           aria-checked={!rootActive}
           className={cn(
-            'rounded-md border-[1.5px] px-2 py-0.5',
+            'hairline rounded-md px-2 py-0.5',
             rootActive ? 'border-border bg-surface-1' : 'border-primary bg-primary/10',
           )}
           onPress={scopeToFolder}
@@ -1609,9 +1609,9 @@ function FilterBar({
   );
 
   return (
-    <View className="flex-row flex-wrap items-center gap-2 border-border border-b-[1.5px] bg-surface-2 px-3 py-2">
+    <View className="hairline-b flex-row flex-wrap items-center gap-2 border-border bg-surface-2 px-3 py-2">
       {/* Search field */}
-      <View className="min-w-[140px] flex-1 flex-row items-center gap-1.5 rounded-md border-[1.5px] border-border bg-surface-1 px-2.5 py-1.5">
+      <View className="hairline min-w-[140px] flex-1 flex-row items-center gap-1.5 rounded-md border-border bg-surface-1 px-2.5 py-1.5">
         <SearchIcon color={colors['muted-foreground']} size={13} />
         <TextInput
           accessibilityLabel="Search files"
@@ -1644,7 +1644,7 @@ function FilterBar({
             accessibilityState={{ checked: active }}
             aria-checked={active}
             className={cn(
-              'rounded-md border-[1.5px] px-2.5 py-1',
+              'hairline rounded-md px-2.5 py-1',
               active ? 'border-primary bg-primary/10' : 'border-border bg-surface-1',
             )}
             key={option.mime}
@@ -1662,7 +1662,7 @@ function FilterBar({
         <Pressable
           accessibilityLabel={`Modified after ${preset}`}
           accessibilityRole="button"
-          className="rounded-md border-[1.5px] border-border bg-surface-1 px-2.5 py-1"
+          className="hairline rounded-md border-border bg-surface-1 px-2.5 py-1"
           key={preset}
           onPress={() => selectDatePreset('dateModified', preset)}
         >
@@ -1672,7 +1672,7 @@ function FilterBar({
       <Pressable
         accessibilityLabel="Modified in Q1 2026"
         accessibilityRole="button"
-        className="rounded-md border-[1.5px] border-border bg-surface-1 px-2.5 py-1"
+        className="hairline rounded-md border-border bg-surface-1 px-2.5 py-1"
         onPress={handleApplyCustomRange}
       >
         <Text size="xs">Q1 2026</Text>
@@ -3600,7 +3600,7 @@ const renderBodyWithRail: FileSystemProps['renderBody'] = ({ content, currentPat
       {content}
       {isEmpty ? dropHint : null}
     </View>
-    <View className="w-48 gap-1 border-border border-l-[1.5px] p-3">
+    <View className="hairline-l w-48 gap-1 border-border p-3">
       <Text size="xs" weight="medium">
         {selectedEntry?.name ?? NO_SELECTION}
       </Text>

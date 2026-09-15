@@ -42,7 +42,7 @@ export function FileSystemInformation({ entry, index }: FileSystemInformationPro
   if (rows.length === 0) return null;
 
   return (
-    <View className="border-border border-t-[1.5px] pt-3">
+    <View className="hairline-t border-border pt-3">
       <Text className="mb-1.5" size="xs" weight="semibold">
         {INFORMATION_LABEL}
       </Text>

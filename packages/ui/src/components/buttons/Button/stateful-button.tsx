@@ -131,7 +131,7 @@ const CLIP_SLACK = 64;
 // the width the state icon slot adds. Mapped to Tailwind classes (padX - 4) so
 // retuning a button's padding keeps the squeeze proportional; `icon` has no
 // padding to give back.
-const SQUEEZE_PADDING_CLASS: Record<ButtonSize, string> = { sm: 'px-1.5', md: 'px-2.5', lg: 'px-3.5', icon: '' };
+const SQUEEZE_PADDING_CLASS: Record<ButtonSize, string> = { xs: 'px-1', sm: 'px-2', md: 'px-3', lg: 'px-4', icon: '' };
 
 // Icon stroke colour for each variant, read against the button background — the
 // same table the flat Button's spinner uses (see variantIconColorToken).
@@ -633,7 +633,7 @@ export function StatefulButton({
   // the Button branch below picks them up.
   const sharedProps = {
     size: size ?? 'md',
-    shape: shape ?? 'pill',
+    shape: shape ?? 'rounded',
     disabled: disabled || isBusy || machineActive,
     loading: false as const,
     noDisabledOpacity: keepAppearance,

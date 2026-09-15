@@ -28,6 +28,7 @@ const meta = {
   args: { children: 'Submit', onPress: fn(() => Promise.resolve()) },
   argTypes: {
     state: { control: 'select', options: ['idle', 'loading', 'success', 'error'] },
+    shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
   },
 } satisfies Meta<typeof StatefulButton>;
 
@@ -37,6 +38,7 @@ const CHIP_OPTIONS = ['none', 'elevated'] as const;
 const STATES = ['idle', 'loading', 'success', 'error'] as const;
 const OUTCOMES = ['success', 'error'] as const;
 const SIZES = ['sm', 'md', 'lg'] as const;
+const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
 const CUSTOM_LABELS = {
   children: 'Upload',
   loadingText: 'Uploading…',
@@ -49,7 +51,7 @@ const SUCCESS_LABEL = 'Done';
 // Two properties uniwind maps straight onto the label's computed style, so the
 // LabelClassName play function can read them back off both copies of the label.
 const LABEL_CLASS = 'uppercase italic';
-const CONTENT_CLASS = 'border-[1.5px] border-info border-dashed';
+const CONTENT_CLASS = 'hairline border-info border-dashed';
 const WRAPPER_CLASS = 'w-52';
 
 function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
@@ -156,6 +158,17 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
           {SIZES.map((name) => (
             <Sample key={name} label={name}>
               <StatefulButton {...shared} size={name} />
+            </Sample>
+          ))}
+        </Variants>
+      </Section>
+
+      <View className="h-3" />
+      <Section title="Shapes">
+        <Variants align="center">
+          {SHAPES.map((name) => (
+            <Sample key={name} label={name}>
+              <StatefulButton {...shared} shape={name} />
             </Sample>
           ))}
         </Variants>

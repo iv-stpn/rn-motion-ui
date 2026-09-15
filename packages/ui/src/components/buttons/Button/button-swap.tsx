@@ -88,9 +88,9 @@ export interface ButtonSwapProps
   onValueChange?: (value: string, item: ButtonSwapItem) => void;
   size?: ButtonSize;
   /**
-   * Corner treatment. Defaults to `pill` — a swapping label reads as a capsule,
-   * and that's what this component has always been. Pass `rounded` to take the
-   * family's radius ramp instead and match a neighbouring Button exactly.
+   * Corner treatment. Defaults to `rounded` — the family's 8px interactive radius
+   * — so it matches a neighbouring Button. Pass `pill` for the capsule this
+   * component has always worn.
    */
   shape?: ButtonShape;
   animation?: ButtonSwapAnimation;
@@ -286,7 +286,7 @@ export function ButtonSwap({
   onValueChange,
   variant = 'neutral',
   size = 'md',
-  shape = 'pill',
+  shape = 'rounded',
   floating = false,
   elevation,
   animation = 'blur',

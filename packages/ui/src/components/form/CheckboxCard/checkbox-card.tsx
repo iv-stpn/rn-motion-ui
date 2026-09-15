@@ -57,10 +57,10 @@ function selectedSurface(tone: CheckboxCardTone, surfaceColor: string): string {
   return cn(SELECTED_BORDER[tone], isDark && SELECTED_TINT[tone]);
 }
 
-/** Border-width class for the card surface: the resting 1.5px hairline steps up
- *  to 2px when checked so the highlight reads stronger than the resting edge. */
+/** Border-width class for the card surface: the resting 2.5px hairline steps up
+ *  to 3px when checked so the highlight reads stronger than the resting edge. */
 function cardBorderWidth(checked: boolean) {
-  return checked ? 'border-2' : 'border-[1.5px]';
+  return checked ? 'border-[3px]' : 'hairline';
 }
 
 type CheckboxCardCtx = {
@@ -462,7 +462,7 @@ export function CheckboxCard({
             When unchecked both are transparent — no resting outline, and the
             wrapper's surface background shows through; when checked the tone's
             border (and, in dark mode, a wash) overlays it. Checking steps the
-            border from the 1.5px hairline to 2px; the half-pixel content shift is
+            border from the 2.5px hairline to 3px; the half-pixel content shift is
             negligible. */}
         <View
           className={cn(

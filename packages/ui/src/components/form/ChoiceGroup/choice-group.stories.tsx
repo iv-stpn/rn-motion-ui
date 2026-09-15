@@ -13,7 +13,7 @@ const meta = {
   args: { variant: 'outline', shape: 'pill', orientation: 'horizontal', size: 'md' },
   argTypes: {
     variant: { control: 'select', options: ['neutral', 'info', 'outline', 'outline-info'] },
-    shape: { control: 'select', options: ['rounded', 'pill'] },
+    shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
     orientation: { control: 'select', options: ['horizontal', 'vertical'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
   },
@@ -22,7 +22,7 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const VARIANTS = ['neutral', 'info', 'outline', 'outline-info'] as const;
-const SHAPES = ['rounded', 'pill'] as const;
+const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
 

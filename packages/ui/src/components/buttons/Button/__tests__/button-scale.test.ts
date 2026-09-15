@@ -43,10 +43,10 @@ function cssPx(property: string): number {
 }
 
 // `icon` is the `md` box squared, so it names the same tokens rather than its own.
-const TOKEN_SIZE: Record<ButtonSize, string> = { sm: 'sm', md: 'md', lg: 'lg', icon: 'md' };
+const TOKEN_SIZE: Record<ButtonSize, string> = { xs: 'xs', sm: 'sm', md: 'md', lg: 'lg', icon: 'md' };
 
 describe('button geometry', () => {
-  it.each(['sm', 'md', 'lg', 'icon'] as const)('%s matches its tokens.css declaration', (size) => {
+  it.each(['xs', 'sm', 'md', 'lg', 'icon'] as const)('%s matches its tokens.css declaration', (size) => {
     const token = TOKEN_SIZE[size];
     expect(BUTTON_METRICS[size].height).toBe(cssPx(`spacing-interactive-${token}`));
     expect(BUTTON_METRICS[size].radius).toBe(INTERACTIVE_RADIUS);
@@ -58,7 +58,7 @@ describe('button geometry', () => {
     expect(INTERACTIVE_RADIUS).toBe(cssPx('radius-interactive'));
   });
 
-  it.each(['sm', 'md', 'lg', 'icon'] as const)('%s names the geometry tokens in its classes', (size) => {
+  it.each(['xs', 'sm', 'md', 'lg', 'icon'] as const)('%s names the geometry tokens in its classes', (size) => {
     const token = TOKEN_SIZE[size];
     expect(BUTTON_BOX.rounded[size]).toContain(`h-interactive-${token}`);
     expect(BUTTON_BOX.rounded[size]).toContain('rounded-interactive');
@@ -71,10 +71,12 @@ describe('button geometry', () => {
     }
   });
 
-  it('rounds a pill to half its height and everything else to the interactive radius', () => {
-    for (const size of ['sm', 'md', 'lg', 'icon'] as const) {
-      expect(buttonRadius('pill', size)).toBe(BUTTON_METRICS[size].height / 2);
+  it('resolves each shape to its corner radius', () => {
+    for (const size of ['xs', 'sm', 'md', 'lg', 'icon'] as const) {
+      expect(buttonRadius('square', size)).toBe(0);
       expect(buttonRadius('rounded', size)).toBe(INTERACTIVE_RADIUS);
+      expect(buttonRadius('pill', size)).toBe(BUTTON_METRICS[size].height / 2);
+      expect(buttonRadius('circle', size)).toBe(BUTTON_METRICS[size].height / 2);
     }
   });
 
@@ -82,7 +84,7 @@ describe('button geometry', () => {
     // The other direction: a token added to tokens.css that no size names is
     // either dead or a size the table forgot.
     const named = new Set<string>();
-    for (const size of ['sm', 'md', 'lg'] as const) {
+    for (const size of ['xs', 'sm', 'md', 'lg'] as const) {
       named.add(`spacing-interactive-${size}`);
       named.add(`spacing-interactive-pad-${size}`);
     }
@@ -92,8 +94,8 @@ describe('button geometry', () => {
   });
 
   it('keeps every size on one box, so mixed button types line up', () => {
-    // `icon` shares the md height (it's the md box squared), so the ramp is 3 wide.
-    const heights = (['sm', 'md', 'lg'] as const).map((size) => BUTTON_METRICS[size].height);
+    // `icon` shares the md height (it's the md box squared), so the ramp is 4 wide.
+    const heights = (['xs', 'sm', 'md', 'lg'] as const).map((size) => BUTTON_METRICS[size].height);
     expect(heights).toStrictEqual([...heights].sort((a, b) => a - b));
     expect(BUTTON_METRICS.icon.height).toBe(BUTTON_METRICS.md.height);
     expect(BUTTON_METRICS.icon.radius).toBe(INTERACTIVE_RADIUS);
@@ -109,8 +111,14 @@ describe('button geometry', () => {
 // views), plus the one sibling that still authors its own row strings.
 
 describe('shared geometry — IconButton, MorphingFAB and MorphingSwitcher read BUTTON_SIZE', () => {
-  const sizes: RampSize[] = ['sm', 'md', 'lg'];
-  const shapes: ButtonShape[] = ['rounded', 'pill'];
+  const sizes: RampSize[] = ['xs', 'sm', 'md', 'lg'];
+  const shapes: ButtonShape[] = ['square', 'rounded', 'pill', 'circle'];
+  const RADIUS_CLASS: Record<ButtonShape, string> = {
+    square: 'rounded-none',
+    rounded: 'rounded-interactive',
+    pill: 'rounded-full',
+    circle: 'rounded-full',
+  };
 
   it.each(sizes)('the %s px twin sits on its tokens.css declaration', (size) => {
     expect(BUTTON_SIZE[size].px).toBe(cssPx(`spacing-interactive-${size}`));
@@ -129,13 +137,13 @@ describe('shared geometry — IconButton, MorphingFAB and MorphingSwitcher read 
       const square = BUTTON_SIZE[size].square[shape];
       expect(square).toContain(`h-interactive-${size}`);
       expect(square).toContain(`w-interactive-${size}`);
-      expect(square).toContain(shape === 'pill' ? 'rounded-full' : 'rounded-interactive');
+      expect(square).toContain(RADIUS_CLASS[shape]);
       // A square takes no horizontal padding — the box is the padding.
       expect(square).not.toContain('px-interactive-pad');
     }
   });
 
-  it("Button's `icon` box is the table's `md` square, in both shapes", () => {
+  it("Button's `icon` box is the table's `md` square, in every shape", () => {
     // IconButton supersedes `<Button size="icon">` (the md box squared), so the md
     // square and Button's icon square must be the same box literally — one class
     // string — or an icon-only swap in a row changes footprint.
@@ -150,7 +158,7 @@ describe('shared geometry — IconButton, MorphingFAB and MorphingSwitcher read 
     expect(BUTTON_SIZE.lg.px).toBe(cssPx('spacing-interactive-lg'));
   });
 
-  it.each(sizes)('MorphingSwitcher %s rows stand at the shared %s px', (size) => {
+  it.each(['sm', 'md', 'lg'] as const)('MorphingSwitcher %s rows stand at the shared %s px', (size) => {
     // The numeric height (which drives the pane arithmetic) is read from the same
     // table as the row's height class names, and the row's own class still names
     // the shared token. Only the row's horizontal inset is switcher-owned, so that

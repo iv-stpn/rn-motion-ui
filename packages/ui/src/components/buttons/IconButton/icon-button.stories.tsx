@@ -30,7 +30,7 @@ const meta = {
     floating: { control: 'boolean' },
     elevation: { control: 'select', options: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
-    shape: { control: 'select', options: ['rounded', 'pill'] },
+    shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
     blurRadius: { control: { type: 'range', min: 0, max: 40, step: 1 } },
     opacity: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
     rim: { control: 'boolean' },
@@ -54,13 +54,14 @@ const ELEVATION_LEVEL: Record<ElevationLabel, SurfaceElevation> = {
   '8': 8,
 };
 const SIZES = ['sm', 'md', 'lg'] as const;
+const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
 const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { sm: 'Small', md: 'Medium', lg: 'Large' };
 
 function IconButtonPlayground(args: IconButtonProps) {
   const [floating, setFloating] = useState(false);
   const [elevation, setElevation] = useState<ElevationLabel>('3');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
-  const [pill, setPill] = useState(true);
+  const [shape, setShape] = useState<(typeof SHAPES)[number]>('pill');
   const [loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [ripple, setRipple] = useState(false);
@@ -80,7 +81,7 @@ function IconButtonPlayground(args: IconButtonProps) {
     rim: glass,
     elevation: ELEVATION_LEVEL[elevation],
     size,
-    shape: pill ? 'pill' : 'rounded',
+    shape,
     loading,
     disabled,
     ripple,
@@ -93,7 +94,7 @@ function IconButtonPlayground(args: IconButtonProps) {
         <Toggle label="Glass" onChange={setGlass} value={glass} />
         <Choice label="Elevation" onChange={setElevation} options={ELEVATIONS} value={elevation} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
-        <Toggle label="Pill" onChange={setPill} value={pill} />
+        <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
         <Toggle label="Loading" onChange={setLoading} value={loading} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Toggle label="Ripple" onChange={setRipple} value={ripple} />
@@ -144,12 +145,11 @@ function IconButtonPlayground(args: IconButtonProps) {
 
       <Section title="Shapes">
         <Variants align="center">
-          <Sample label="rounded">
-            <IconButton {...args} floating={floating} />
-          </Sample>
-          <Sample label="pill">
-            <IconButton {...args} shape="pill" floating={floating} />
-          </Sample>
+          {SHAPES.map((name) => (
+            <Sample key={name} label={name}>
+              <IconButton {...args} shape={name} floating={floating} />
+            </Sample>
+          ))}
         </Variants>
       </Section>
 

@@ -47,7 +47,7 @@ const DEFAULT_PREVIEW_ASPECT_RATIO = 0.72;
 export const MAX_THUMBNAIL_ELONGATION = 2;
 
 /**
- * Below this width the face keeps its paper but drops its border: a 1.5 px
+ * Below this width the face keeps its paper but drops its border: a 2.5 px
  * hairline around a row-sized glyph is a fifth of the picture, and the corner
  * has to come down with it or the square reads as a lozenge.
  */
@@ -299,9 +299,7 @@ export function FileThumbnail({
 
   return (
     <View className={cn('relative shrink-0', className)} style={box} testID={FS_THUMBNAIL_TEST_ID}>
-      <View
-        className={cn(FACE_CLASSNAME, width < FRAMED_MIN_WIDTH ? 'rounded-[3px]' : 'rounded-md border-[1.5px] border-border')}
-      >
+      <View className={cn(FACE_CLASSNAME, width < FRAMED_MIN_WIDTH ? 'rounded-[3px]' : 'hairline rounded-md border-border')}>
         <ThumbnailFace isPending={isPending} previewUrl={previewUrl}>
           {customPreview}
         </ThumbnailFace>

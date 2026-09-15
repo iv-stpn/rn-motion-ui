@@ -22,7 +22,7 @@ const container = cva('flex', {
 
 // ── gap map ──────────────────────────────────────────────────────────────────
 
-const GAP_CLASS: Record<ButtonSize, string> = { sm: 'gap-2', md: 'gap-3', lg: 'gap-4', icon: 'gap-2' };
+const GAP_CLASS: Record<ButtonSize, string> = { xs: 'gap-1', sm: 'gap-2', md: 'gap-3', lg: 'gap-4', icon: 'gap-2' };
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -143,8 +143,8 @@ export function ButtonGroup({
     // adjacent edges never double up.
     let positionClass = 'flex-1';
     if (total > 1) {
-      if (isHorizontal && !isLast) positionClass += ' border-r-[1.5px] border-border/50';
-      else if (!isLast) positionClass += ' border-b-[1.5px] border-border/50';
+      if (isHorizontal && !isLast) positionClass += ' hairline-r border-border/50';
+      else if (!isLast) positionClass += ' hairline-b border-border/50';
 
       if (!isFirst) positionClass += isHorizontal ? ' border-l-0' : ' border-t-0';
     }

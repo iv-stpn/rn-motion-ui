@@ -64,7 +64,7 @@ function RadioCardRing({ selected, accent, transition, testID }: RadioCardRingPr
       // `shrink-0` matters inline, where the ring shares a row with the text
       // column and would otherwise be squeezed by a long title. Matches Radio
       // and Checkbox, whose own controls are already shrink-proof.
-      className="h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.5px]"
+      className="hairline h-5 w-5 shrink-0 items-center justify-center rounded-full"
     >
       <AnimatePresence>
         {selected ? (
@@ -114,10 +114,10 @@ function tintAlphaFor(tone: RadioCardTone, surfaceColor: string): number {
   return isDark ? TONE_TINT_ALPHA[tone] : 0;
 }
 
-/** Border-width class for the card surface: the resting 1.5px hairline steps up
- *  to 2px when selected so the highlight reads stronger than the resting edge. */
+/** Border-width class for the card surface: the resting 2.5px hairline steps up
+ *  to 3px when selected so the highlight reads stronger than the resting edge. */
 function cardBorderWidth(selected: boolean) {
-  return selected ? 'border-2' : 'border-[1.5px]';
+  return selected ? 'border-[3px]' : 'hairline';
 }
 
 /**
@@ -507,7 +507,7 @@ export function RadioCard({
             the wrapper's surface fill instead. Both ends run through `tintAt`
             for the reason spelled out on that helper — a literal `transparent`
             end would interpolate through transparent black and darken the edge on
-            the way in. Selecting steps the border from the 1.5px hairline to 2px so
+            the way in. Selecting steps the border from the 2.5px hairline to 3px so
             the highlight reads stronger than the resting edge; the half-pixel
             content shift is negligible. */}
         <MotiView

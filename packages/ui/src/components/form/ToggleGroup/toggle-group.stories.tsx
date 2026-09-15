@@ -13,7 +13,7 @@ const meta = {
   args: { containerVariant: 'bordered', shape: 'pill', orientation: 'horizontal', size: 'md' },
   argTypes: {
     containerVariant: { control: 'select', options: ['bordered', 'connected'] },
-    shape: { control: 'select', options: ['rounded', 'pill'] },
+    shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
     orientation: { control: 'select', options: ['horizontal', 'vertical'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
   },
@@ -22,7 +22,7 @@ const meta = {
 type Story = StoryObj<typeof meta>;
 
 const CONTAINER_VARIANTS = ['bordered', 'connected'] as const;
-const SHAPES = ['rounded', 'pill'] as const;
+const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
 const ORIENTATIONS = ['horizontal', 'vertical'] as const;
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
@@ -243,11 +243,11 @@ export const Vertical: Story = {
     expect(radios).toHaveLength(3);
     expect(group.className).toContain('flex-col');
     // Vertical items grow from vertical padding instead of the fixed interactive
-    // height, so each label keeps its full line box (taller than the fixed
-    // height, never clipped).
+    // height, so each label keeps its full line box (at least the fixed height,
+    // never clipped).
     const firstRadio = radios[0];
     if (!firstRadio) throw new Error('expected at least one radio');
     const itemHeight = firstRadio.getBoundingClientRect().height;
-    expect(itemHeight).toBeGreaterThan(INTERACTIVE_HEIGHT.md);
+    expect(itemHeight).toBeGreaterThanOrEqual(INTERACTIVE_HEIGHT.md);
   },
 };

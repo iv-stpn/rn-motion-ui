@@ -134,9 +134,9 @@ export const Bordered: Story = {
     const group = await canvas.findByTestId('bordered-group');
     const btns = within(group).findAllByRole('button');
     expect(await btns).toHaveLength(3);
-    // Only inner-facing edges carry a border (border-r on non-last buttons).
+    // Only inner-facing edges carry a hairline divider (hairline-r on non-last buttons).
     // No border forms on the outer perimeter of the group.
-    const dividers = group.querySelectorAll(':scope > [class*="border-r"]');
+    const dividers = group.querySelectorAll(':scope > [class*="hairline-r"]');
     expect(dividers).toHaveLength(2);
   },
 };

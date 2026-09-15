@@ -21,14 +21,14 @@ const meta = {
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
     floating: { control: 'boolean' },
-    shape: { control: 'select', options: ['rounded', 'pill'] },
+    shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
   },
 } satisfies Meta<typeof Input>;
 
 type Story = StoryObj<typeof meta>;
 
 const SIZES = ['sm', 'md', 'lg'] as const;
-const SHAPES = ['rounded', 'pill'] as const;
+const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
 const STATES = ['default', 'error', 'success', 'disabled'] as const;
 const EMAIL_ERROR = 'Enter a valid email address.';
 
@@ -137,13 +137,18 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
               value={pass}
             />
           </Sample>
-          <Sample label="pill shape">
-            <Input {...args} label="Search" leftIcon={<Search color={icon} size={16} />} shape="pill" />
-          </Sample>
           <Sample label="multiline">
             <Input {...args} label="Notes" multiline={true} placeholder="Anything else?" />
           </Sample>
         </Variants>
+      </Section>
+
+      <Section title="Shapes">
+        <View className="gap-4">
+          {SHAPES.map((name) => (
+            <Input {...args} key={name} label={name} shape={name} />
+          ))}
+        </View>
       </Section>
 
       <Section title="Sizes">

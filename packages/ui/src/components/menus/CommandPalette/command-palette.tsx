@@ -119,7 +119,7 @@ function CommandRow({ item, index, isActive, hasIcons, showShortcuts, reduce, on
       <>
         {item.badge ? <View className="shrink-0">{item.badge}</View> : null}
         {showShortcuts && item.hint ? (
-          <Text className="rounded border-[1.5px] border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          <Text className="hairline rounded border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
             {item.hint}
           </Text>
         ) : null}
@@ -256,7 +256,7 @@ export function CommandPalette({
       onShow={handleShow}
     >
       <View testID={testID} accessibilityLabel={accessibilityLabel} style={style}>
-        <View className="flex-row items-center gap-3 border-border border-b-[1.5px] px-4">
+        <View className="hairline-b flex-row items-center gap-3 border-border px-4">
           {searchIcon ?? <ThemedIcon icon={Search} variant="ghost" size={16} />}
           <TextInput
             ref={inputRef}
@@ -273,7 +273,7 @@ export function CommandPalette({
               accessibilityRole="button"
               accessibilityLabel="Close"
               onPress={handleClose}
-              className="rounded border-[1.5px] border-border bg-surface-2 px-1.5 py-0.5"
+              className="hairline rounded border-border bg-surface-2 px-1.5 py-0.5"
             >
               <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
             </Pressable>

@@ -32,7 +32,7 @@ function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focu
   return 'idle';
 }
 
-// State drives the border colour, not a shadow: the field carries a 1px border
+// State drives the border colour, not a shadow: the field carries a 2.5px border
 // on web only while flat (`elevation` 0), tinted by state (border on idle,
 // foreground on focus, danger on error); error wins over focus. Above 0 the
 // `shadow-elevated-N` recipe already draws the dark-mode rim, so a border would
@@ -42,16 +42,19 @@ function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focu
 const field = cva('relative flex-row items-center overflow-hidden', {
   variants: {
     size: {
+      xs: 'min-h-interactive-xs',
       sm: 'min-h-interactive-sm',
       md: 'min-h-interactive-md',
       lg: 'min-h-interactive-lg',
     },
     shape: {
+      square: 'rounded-none',
       rounded: 'rounded-interactive',
       pill: 'rounded-full',
+      circle: 'rounded-full',
     },
   },
-  defaultVariants: { size: 'md', shape: 'pill' },
+  defaultVariants: { size: 'md', shape: 'rounded' },
 });
 
 // The state-tinted border, applied only while the field is flat (elevation 0) —
@@ -59,9 +62,9 @@ const field = cva('relative flex-row items-center overflow-hidden', {
 // cva so the call site can gate it on `elevation` without fighting cva's variant
 // types.
 const stateBorder = {
-  idle: 'web:border-[1.5px] web:border-border',
-  focused: 'web:border-[1.5px] web:border-foreground/40',
-  error: 'web:border-[1.5px] web:border-danger',
+  idle: 'web:hairline web:border-border',
+  focused: 'web:hairline web:border-foreground/40',
+  error: 'web:hairline web:border-danger',
 } as const;
 
 // Size-aware input box: font size and padding track --spacing-interactive-* tokens.
@@ -73,15 +76,18 @@ const inputBox = cva('flex-1 bg-transparent font-sans-normal text-foreground out
     left: { true: 'pl-8', false: '' },
     right: { true: 'pr-8', false: '' },
     size: {
-      sm: 'py-1 text-xs',
-      md: 'py-1.5 text-sm',
-      lg: 'py-2 text-base',
+      xs: 'py-0.5 text-xs',
+      sm: 'py-1 text-sm',
+      md: 'py-1.5 text-base',
+      lg: 'py-2 text-lg',
     },
   },
   compoundVariants: [
+    { left: false, size: 'xs', class: 'pl-1.5' },
     { left: false, size: 'sm', class: 'pl-2' },
     { left: false, size: 'md', class: 'pl-2.5' },
     { left: false, size: 'lg', class: 'pl-3' },
+    { right: false, size: 'xs', class: 'pr-1.5' },
     { right: false, size: 'sm', class: 'pr-2' },
     { right: false, size: 'md', class: 'pr-2.5' },
     { right: false, size: 'lg', class: 'pr-3' },
@@ -187,7 +193,7 @@ export type InputProps = {
   /** Semantic type — automatically wires keyboard, autoComplete, and textContentType. */
   inputType?: InputType;
   /** Field height variant. Default: `md`. */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   /**
    * Swap the field's ladder shadow for the large, diffuse halo
    * (`shadow-floating`) — the recipe the old `variant="floating"` wore. It
@@ -205,8 +211,11 @@ export type InputProps = {
    * already carries the rim. @default 0
    */
   elevation?: SurfaceElevation;
-  /** Border-radius variant. `pill` (default) for a full-circle shape, `rounded` for a standard input. */
-  shape?: 'rounded' | 'pill';
+  /**
+   * Border-radius variant. `square` for sharp corners, `rounded` (default, 8px)
+   * for a standard input, `pill` / `circle` for a fully rounded shape.
+   */
+  shape?: 'square' | 'rounded' | 'pill' | 'circle';
   disabled?: boolean;
   secureTextEntry?: boolean;
   keyboardType?: KeyboardTypeOptions;
@@ -244,7 +253,7 @@ export function Input({
   size = 'md',
   floating = false,
   elevation = 0,
-  shape = 'pill',
+  shape = 'rounded',
   disabled,
   secureTextEntry,
   keyboardType,

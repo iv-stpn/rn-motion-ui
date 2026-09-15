@@ -321,7 +321,7 @@ export function MenuLabel({ children, className, testID, size = 'md', variant = 
     <View
       className={cn(
         variant === 'segmented' && 'min-h-10 items-center justify-center px-4',
-        variant === 'segmented' && bottomBorder && 'border-border border-b-[1.5px]',
+        variant === 'segmented' && bottomBorder && 'hairline-b border-border',
         className,
       )}
       role="presentation"

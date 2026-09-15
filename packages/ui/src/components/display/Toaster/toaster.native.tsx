@@ -67,7 +67,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
       exit={{ opacity: 0, translateY: travel }}
       transition={MOTION_STANDARD}
       exitTransition={TIMING_FAST}
-      className={cn(PILL_CLASSNAME, glass ? undefined : 'border-[1.5px] border-border')}
+      className={cn(PILL_CLASSNAME, glass ? undefined : 'hairline border-border')}
       testID={`${testID}-${toast.id}`}
       accessibilityLiveRegion="polite"
     >

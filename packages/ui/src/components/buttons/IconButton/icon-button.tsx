@@ -16,21 +16,22 @@ import { BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../B
 // ── Per-size metrics ─────────────────────────────────────────────────────────
 
 /** Icon size in px when rendered without a background tile. */
-const ICON_SIZE: Record<RampSize, number> = { sm: 14, md: 16, lg: 20 };
+const ICON_SIZE: Record<RampSize, number> = { xs: 12, sm: 14, md: 16, lg: 20 };
 
 /**
  * Tile dimensions and inner icon size when `iconBackgroundColor` is set. The
- * tile steps 16/20/24px against the box's 24/32/40px, so every size keeps the
- * same ring of breathing room around the plate.
+ * tile steps 12/16/20/24px against the box's 24/36/48/64px, so every size keeps
+ * a ring of breathing room around the plate.
  */
 const ICON_TILE: Record<RampSize, { tileClass: string; iconSize: number }> = {
+  xs: { tileClass: 'h-3 w-3 rounded-[3px]', iconSize: 8 },
   sm: { tileClass: 'h-4 w-4 rounded-sm', iconSize: 10 },
   md: { tileClass: 'h-5 w-5 rounded-[5px]', iconSize: 12 },
   lg: { tileClass: 'h-6 w-6 rounded-md', iconSize: 14 },
 };
 
 /** Spinner diameter per button size. */
-const SPINNER_SIZE: Record<RampSize, number> = { sm: 12, md: 16, lg: 20 };
+const SPINNER_SIZE: Record<RampSize, number> = { xs: 10, sm: 12, md: 16, lg: 20 };
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -67,10 +68,10 @@ export type IconButtonProps = {
   elevation?: SurfaceElevation;
 
   /** Button size — the square, and the icon or tile inside it. Shares
-   *  {@link Button}'s height ramp (24/32/40px), so the two line up in a row. @default 'md' */
+   *  {@link Button}'s height ramp (24/36/48/64px), so the two line up in a row. @default 'md' */
   size?: RampSize;
 
-  /** Corner shape. @default 'pill' */
+  /** Corner shape. @default 'rounded' */
   shape?: ButtonShape;
 
   /**
@@ -166,7 +167,7 @@ export function IconButton({
   floating = false,
   elevation = 3,
   size = 'md',
-  shape = 'pill',
+  shape = 'rounded',
   blurRadius = 0,
   opacity = 1,
   rim = false,

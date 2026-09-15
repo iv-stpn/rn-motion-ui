@@ -824,7 +824,7 @@ export function FileSystemListView({
   return (
     <View className="min-h-0 flex-1" onLayout={handleLayout}>
       {/* The header's left padding matches a level-0 row: chevron lane + icon. */}
-      <View className="shrink-0 flex-row items-center gap-1 border-border border-b-[1.5px] py-1 pr-2 pl-2">
+      <View className="hairline-b shrink-0 flex-row items-center gap-1 border-border py-1 pr-2 pl-2">
         {/* Chevron lane + icon + their gap — matches a level-0 row. */}
         <View style={{ width: CHEVRON_SIZE + GLYPH_LANE_WIDTH + 4 }} />
         <ColumnHeader className="flex-1" label={NAME_LABEL} onPress={onSortColumnClick} sort={sort} sortKey="name" />

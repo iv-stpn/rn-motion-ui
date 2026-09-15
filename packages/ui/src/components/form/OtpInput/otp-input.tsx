@@ -34,7 +34,7 @@ const OTP_SHAKE_STEPS = [-5, 5, -3, 3, -1, 0] as const;
 
 type SlotState = 'success' | 'error' | 'active' | 'filled' | 'idle';
 
-const slot = cva('relative h-interactive-lg w-interactive-lg items-center justify-center rounded-interactive border-[1.5px]', {
+const slot = cva('relative h-interactive-lg w-interactive-lg items-center justify-center rounded-interactive hairline', {
   variants: {
     state: {
       success: 'border-success',

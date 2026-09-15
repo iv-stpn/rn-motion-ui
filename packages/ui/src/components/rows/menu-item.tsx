@@ -179,7 +179,7 @@ export type MenuItemProps = Omit<PressableProps, 'children'> & {
    */
   variant?: MenuVariant;
   /**
-   * Draws the 1.5 px hairline below the row — the segmentation of the
+   * Draws the 2.5 px hairline below the row — the segmentation of the
    * `'segmented'` variant. Omitted on the last row, which ends flush.
    * @default false
    */
@@ -346,7 +346,7 @@ export function MenuItem({
               mode === 'sidebar' && ROUNDED_VARIANT[size],
               hasLeadingSlot && !hasIconTile ? BASE_ROW_CLASS_WITH_ICON[size] : scale.rowClass,
             ),
-        bottomBorder && 'border-border border-b-[1.5px]',
+        bottomBorder && 'hairline-b border-border',
         hasIconTile && active && 'bg-info',
         canInteract && hovered && 'bg-surface-hover',
         canInteract && pressed && 'bg-surface-selected',

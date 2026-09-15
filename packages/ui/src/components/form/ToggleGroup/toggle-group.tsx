@@ -6,13 +6,18 @@ import { Text } from '../../typography/Text/text';
 
 // ── types ──────────────────────────────────────────────────────────────────────
 
-type ToggleGroupSize = 'sm' | 'md' | 'lg';
-type ToggleGroupShape = 'rounded' | 'pill';
+type ToggleGroupSize = 'xs' | 'sm' | 'md' | 'lg';
+type ToggleGroupShape = 'square' | 'rounded' | 'pill' | 'circle';
 type ToggleGroupContainerVariant = 'bordered' | 'connected';
 
 // ── shape → radius ─────────────────────────────────────────────────────────────
 
-const SHAPE_RADIUS: Record<ToggleGroupShape, string> = { rounded: 'rounded-interactive', pill: 'rounded-full' };
+const SHAPE_RADIUS: Record<ToggleGroupShape, string> = {
+  square: 'rounded-none',
+  rounded: 'rounded-interactive',
+  pill: 'rounded-full',
+  circle: 'rounded-full',
+};
 
 // ── shared text ────────────────────────────────────────────────────────────────
 
@@ -123,10 +128,7 @@ export function ToggleGroup({
       PX_INTERACTIVE[size],
       !isHorizontal && 'py-3',
       selected ? 'bg-info' : 'bg-muted',
-      total > 1 &&
-        !isLast &&
-        !suppressDivider &&
-        (isHorizontal ? 'border-r-[1.5px] border-border' : 'border-b-[1.5px] border-border'),
+      total > 1 && !isLast && !suppressDivider && (isHorizontal ? 'hairline-r border-border' : 'hairline-b border-border'),
     );
 
     return (
@@ -155,11 +157,7 @@ export function ToggleGroup({
   return (
     <View
       testID={testID ?? 'toggle-group'}
-      className={cn(
-        'relative flex max-w-full flex-col self-start overflow-hidden border-[1.5px] border-border',
-        radius,
-        className,
-      )}
+      className={cn('hairline relative flex max-w-full flex-col self-start overflow-hidden border-border', radius, className)}
       style={style}
     >
       {isHorizontal ? (

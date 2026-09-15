@@ -63,7 +63,7 @@ type Ctx = {
   value: string;
   setValue: (v: string) => void;
   variant: Variant;
-  size: 'sm' | 'md' | 'lg';
+  size: 'xs' | 'sm' | 'md' | 'lg';
   layouts: Record<string, Layout>;
   register: (value: string, layout: Layout) => void;
   reduce: boolean;
@@ -99,7 +99,7 @@ const list = cva('flex-row items-center', {
   variants: {
     variant: {
       pill: 'gap-1 rounded-full bg-muted p-1',
-      underline: 'gap-1 border-b-[1.5px] border-border',
+      underline: 'gap-1 hairline-b border-border',
       segment: 'gap-0 rounded-interactive bg-muted p-1',
     },
   },
@@ -301,7 +301,7 @@ export type TabsProps = {
   onValueChange?: (v: string) => void;
   variant?: Variant;
   /** Height variant — drives the trigger's interactive size token. Default `md`. */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   children: ReactNode;
   /** Additional UniWind class names merged onto the outer wrapper. */
   className?: string;
@@ -488,7 +488,7 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
       className={cn(H_INTERACTIVE[size], PX_INTERACTIVE[size], 'justify-center')}
       testID={testID}
     >
-      <Text weight="medium" className={cn(highlighted ? 'text-foreground' : 'text-muted-foreground', TEXT_INTERACTIVE.md)}>
+      <Text weight="medium" className={cn(highlighted ? 'text-foreground' : 'text-muted-foreground', TEXT_INTERACTIVE[size])}>
         {children}
       </Text>
     </Pressable>

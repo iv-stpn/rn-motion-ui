@@ -41,7 +41,7 @@ type AppSurfaceProps = { children: ReactNode; hint: string };
 function AppSurface({ children, hint }: AppSurfaceProps) {
   return (
     <View className="min-h-[380px] bg-surface-1">
-      <View className="border-border border-b-[1.5px] px-5 py-3">
+      <View className="hairline-b border-border px-5 py-3">
         <View className="h-2.5 w-24 rounded-full bg-muted-foreground/20" />
       </View>
       <View className="gap-3 p-5">
@@ -354,7 +354,7 @@ export const FeedbackForm: Story = {
   },
 };
 
-/** The collapsed trigger stands on the shared interactive ramp (24 / 32 / 40px),
+/** The collapsed trigger stands on the shared interactive ramp (24 / 36 / 48 / 64px),
  *  so it lines up with a Button or IconButton of the same size. */
 export const AllSizes: Story = {
   render: () => (

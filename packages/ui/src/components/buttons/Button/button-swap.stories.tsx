@@ -49,7 +49,7 @@ const VARIANTS = [
   'ghostDanger',
 ] as const satisfies readonly ButtonVariant[];
 const SIZES = ['sm', 'md', 'lg', 'icon'] as const satisfies readonly ButtonSize[];
-const SHAPES = ['pill', 'rounded'] as const satisfies readonly ButtonShape[];
+const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const satisfies readonly ButtonShape[];
 
 // The variant whose label class the styled sample overrides, and what it
 // overrides it with — pinned in StylingPropsApply.
@@ -198,8 +198,9 @@ function ButtonSwapPlayground(args: ComponentProps<typeof ButtonSwap>) {
       </Section>
 
       {/* The same shape axis the rest of the button family carries. `pill` is the
-          default here; `rounded` takes the family's radius ramp, so a swapping
-          button can sit in a row of Buttons with the same corner. */}
+          default here; `rounded` takes the family's radius ramp, `square` stays
+          sharp and `circle` matches `pill`, so a swapping button can sit in a row
+          of Buttons with the same corner. */}
       <Section title="Shapes">
         <Variants align="center">
           {SHAPES.map((option) => (
@@ -238,7 +239,7 @@ function ButtonSwapPlayground(args: ComponentProps<typeof ButtonSwap>) {
             <Swap animation={animation} ripple={true} variant="neutral" />
           </Sample>
           <Sample label="contentClassName">
-            <ButtonSwap animation={animation} contentClassName="border-[1.5px] border-info" items={COPY_ITEMS} variant="ghost" />
+            <ButtonSwap animation={animation} contentClassName="hairline border-info" items={COPY_ITEMS} variant="ghost" />
           </Sample>
           <Sample label="labelClassName">
             <ButtonSwap animation={animation} items={COPY_ITEMS} labelClassName={STYLED_LABEL_CLASS} variant="ghost" />
@@ -271,7 +272,7 @@ const meta = {
     animation: { control: 'select', options: ['blur', 'roll', 'cascade'] },
     variant: { control: 'select', options: VARIANTS },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
-    shape: { control: 'select', options: ['rounded', 'pill'] },
+    shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
     floating: { control: 'boolean' },
   },

@@ -28,12 +28,12 @@
 
 import { INTERACTIVE_HEIGHT, INTERACTIVE_RADIUS } from '../../../lib/radius';
 
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
-export type ButtonShape = 'rounded' | 'pill';
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon';
+export type ButtonShape = 'square' | 'rounded' | 'pill' | 'circle';
 
-/** The three standalone box heights of the ramp — everything except `icon`,
+/** The four standalone box heights of the ramp — everything except `icon`,
  *  which is the `md` box squared. */
-export type RampSize = 'sm' | 'md' | 'lg';
+export type RampSize = 'xs' | 'sm' | 'md' | 'lg';
 
 /** What one ramp height gives every control that stands on it. */
 export type ButtonSizeGeometry = {
@@ -53,37 +53,64 @@ export type ButtonSizeGeometry = {
  * tokens as static literals so the Tailwind/uniwind scanner registers every one.
  */
 export const BUTTON_SIZE: Record<RampSize, ButtonSizeGeometry> = {
+  xs: {
+    px: INTERACTIVE_HEIGHT.xs,
+    box: {
+      square: 'h-interactive-xs rounded-none px-interactive-pad-xs',
+      rounded: 'h-interactive-xs rounded-interactive px-interactive-pad-xs',
+      pill: 'h-interactive-xs rounded-full px-interactive-pad-xs',
+      circle: 'h-interactive-xs rounded-full px-interactive-pad-xs',
+    },
+    square: {
+      square: 'h-interactive-xs w-interactive-xs rounded-none',
+      rounded: 'h-interactive-xs w-interactive-xs rounded-interactive',
+      pill: 'h-interactive-xs w-interactive-xs rounded-full',
+      circle: 'h-interactive-xs w-interactive-xs rounded-full',
+    },
+  },
   sm: {
     px: INTERACTIVE_HEIGHT.sm,
     box: {
+      square: 'h-interactive-sm rounded-none px-interactive-pad-sm',
       rounded: 'h-interactive-sm rounded-interactive px-interactive-pad-sm',
       pill: 'h-interactive-sm rounded-full px-interactive-pad-sm',
+      circle: 'h-interactive-sm rounded-full px-interactive-pad-sm',
     },
     square: {
+      square: 'h-interactive-sm w-interactive-sm rounded-none',
       rounded: 'h-interactive-sm w-interactive-sm rounded-interactive',
       pill: 'h-interactive-sm w-interactive-sm rounded-full',
+      circle: 'h-interactive-sm w-interactive-sm rounded-full',
     },
   },
   md: {
     px: INTERACTIVE_HEIGHT.md,
     box: {
+      square: 'h-interactive-md rounded-none px-interactive-pad-md',
       rounded: 'h-interactive-md rounded-interactive px-interactive-pad-md',
       pill: 'h-interactive-md rounded-full px-interactive-pad-md',
+      circle: 'h-interactive-md rounded-full px-interactive-pad-md',
     },
     square: {
+      square: 'h-interactive-md w-interactive-md rounded-none',
       rounded: 'h-interactive-md w-interactive-md rounded-interactive',
       pill: 'h-interactive-md w-interactive-md rounded-full',
+      circle: 'h-interactive-md w-interactive-md rounded-full',
     },
   },
   lg: {
     px: INTERACTIVE_HEIGHT.lg,
     box: {
+      square: 'h-interactive-lg rounded-none px-interactive-pad-lg',
       rounded: 'h-interactive-lg rounded-interactive px-interactive-pad-lg',
       pill: 'h-interactive-lg rounded-full px-interactive-pad-lg',
+      circle: 'h-interactive-lg rounded-full px-interactive-pad-lg',
     },
     square: {
+      square: 'h-interactive-lg w-interactive-lg rounded-none',
       rounded: 'h-interactive-lg w-interactive-lg rounded-interactive',
       pill: 'h-interactive-lg w-interactive-lg rounded-full',
+      circle: 'h-interactive-lg w-interactive-lg rounded-full',
     },
   },
 };
@@ -97,9 +124,10 @@ export const BUTTON_SIZE: Record<RampSize, ButtonSizeGeometry> = {
  * curve, no horizontal padding (the square is the padding).
  */
 export const BUTTON_METRICS: Record<ButtonSize, { height: number; padX: number; radius: number }> = {
-  sm: { height: BUTTON_SIZE.sm.px, padX: 8, radius: INTERACTIVE_RADIUS },
-  md: { height: BUTTON_SIZE.md.px, padX: 14, radius: INTERACTIVE_RADIUS },
-  lg: { height: BUTTON_SIZE.lg.px, padX: 22, radius: INTERACTIVE_RADIUS },
+  xs: { height: BUTTON_SIZE.xs.px, padX: 8, radius: INTERACTIVE_RADIUS },
+  sm: { height: BUTTON_SIZE.sm.px, padX: 12, radius: INTERACTIVE_RADIUS },
+  md: { height: BUTTON_SIZE.md.px, padX: 16, radius: INTERACTIVE_RADIUS },
+  lg: { height: BUTTON_SIZE.lg.px, padX: 20, radius: INTERACTIVE_RADIUS },
   icon: { height: BUTTON_SIZE.md.px, padX: 0, radius: INTERACTIVE_RADIUS },
 };
 
@@ -111,6 +139,7 @@ export const BUTTON_GAP_CLASSNAME = 'gap-2';
  * button size. Sized so the icon reads at a glance without overpowering the label.
  */
 export const STATE_ICON_SIZE: Record<ButtonSize, number> = {
+  xs: 12,
   sm: 16,
   md: 19,
   lg: 24,
@@ -123,6 +152,7 @@ export const STATE_ICON_SIZE: Record<ButtonSize, number> = {
  * button scales.
  */
 export const STATE_BUTTON_GAP_CLASSNAME: Record<ButtonSize, string> = {
+  xs: 'gap-0.5',
   sm: 'gap-1',
   md: 'gap-1.25',
   lg: 'gap-2',
@@ -137,39 +167,61 @@ export const STATE_BUTTON_GAP_CLASSNAME: Record<ButtonSize, string> = {
  * Tailwind/uniwind scanner still sees every static literal in BUTTON_SIZE.
  */
 export const BUTTON_BOX: Record<ButtonShape, Record<ButtonSize, string>> = {
+  square: {
+    xs: BUTTON_SIZE.xs.box.square,
+    sm: BUTTON_SIZE.sm.box.square,
+    md: BUTTON_SIZE.md.box.square,
+    lg: BUTTON_SIZE.lg.box.square,
+    icon: BUTTON_SIZE.md.square.square,
+  },
   rounded: {
+    xs: BUTTON_SIZE.xs.box.rounded,
     sm: BUTTON_SIZE.sm.box.rounded,
     md: BUTTON_SIZE.md.box.rounded,
     lg: BUTTON_SIZE.lg.box.rounded,
     icon: BUTTON_SIZE.md.square.rounded,
   },
   pill: {
+    xs: BUTTON_SIZE.xs.box.pill,
     sm: BUTTON_SIZE.sm.box.pill,
     md: BUTTON_SIZE.md.box.pill,
     lg: BUTTON_SIZE.lg.box.pill,
     icon: BUTTON_SIZE.md.square.pill,
   },
+  circle: {
+    xs: BUTTON_SIZE.xs.box.circle,
+    sm: BUTTON_SIZE.sm.box.circle,
+    md: BUTTON_SIZE.md.box.circle,
+    lg: BUTTON_SIZE.lg.box.circle,
+    icon: BUTTON_SIZE.md.square.circle,
+  },
 };
 
 /**
  * Resolved corner radius in px, for the layers that can't read a class — the
- * elevated SVG rim and the ring inset calculation. A pill rounds to half its
- * height; everything else takes the shared interactive radius.
+ * elevated SVG rim and the ring inset calculation. A pill or circle rounds to
+ * half its height, a square stays sharp (0), and the rounded shape takes the
+ * shared interactive radius.
  *
  * Prefer {@link buttonRadiusClass} for the CSS border-radius; use this only
  * when the number is required (SVG rx/ry, arithmetic).
  */
 export function buttonRadius(shape: ButtonShape, size: ButtonSize): number {
-  return shape === 'pill' ? BUTTON_METRICS[size].height / 2 : INTERACTIVE_RADIUS;
+  if (shape === 'square') return 0;
+  if (shape === 'rounded') return INTERACTIVE_RADIUS;
+  return BUTTON_METRICS[size].height / 2;
 }
 
 /**
  * CSS class for the interactive border-radius — the className twin of
- * {@link buttonRadius}. Pills use `rounded-full`; everything else uses
- * `rounded-interactive` (backed by `--radius-interactive`).
+ * {@link buttonRadius}. Squares use `rounded-none`, pills and circles use
+ * `rounded-full`, and the rounded shape uses `rounded-interactive` (backed by
+ * `--radius-interactive`).
  */
-export function buttonRadiusClass(shape: ButtonShape): 'rounded-full' | 'rounded-interactive' {
-  return shape === 'pill' ? 'rounded-full' : 'rounded-interactive';
+export function buttonRadiusClass(shape: ButtonShape): 'rounded-none' | 'rounded-full' | 'rounded-interactive' {
+  if (shape === 'square') return 'rounded-none';
+  if (shape === 'rounded') return 'rounded-interactive';
+  return 'rounded-full';
 }
 
 /**
@@ -179,19 +231,19 @@ export function buttonRadiusClass(shape: ButtonShape): 'rounded-full' | 'rounded
  * site) and colour is deliberately absent: each sibling resolves its own (Button
  * through a per-variant class), and a shared colour class here would fight those.
  *
- * `lg` deliberately shares `md`'s size rather than stepping up: past the `md` box
- * the extra height and padding already carry the size difference, and a 16px label
- * reads oversized inside a button. That one divergence is why the ramp is spelled
- * out here instead of taken from `TEXT_INTERACTIVE` (which Tabs and ToggleGroup
- * still use verbatim) — retune here, not at the call site.
+ * The ramp tracks the shared interactive type scale — 12 / 14 / 16 / 18 px for
+ * xs / sm / md / lg — the same ramp `TEXT_INTERACTIVE` (which Tabs, ToggleGroup
+ * and ChoiceGroup use verbatim) spells out, so a button and a neighbouring
+ * input/tab/chip at the same size read the same label.
  *
  * ElevatedButton is the one opt-out: a single size for every box, level with `md`.
  *
  * Static literals so the Tailwind/uniwind scanner picks them up.
  */
 export const LABEL_TEXT_CLASS: Record<ButtonSize, string> = {
-  sm: 'text-xs',
-  md: 'text-sm',
-  lg: 'text-[15px]',
-  icon: 'text-sm',
+  xs: 'text-xs',
+  sm: 'text-sm',
+  md: 'text-base',
+  lg: 'text-lg',
+  icon: 'text-base',
 };

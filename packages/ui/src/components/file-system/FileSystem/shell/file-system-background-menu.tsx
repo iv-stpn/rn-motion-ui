@@ -136,7 +136,7 @@ function BackgroundPanel({ items, layout, menuHeight, onClose, onMenuHeight, red
       elevation={PANEL_ELEVATION}
       radius="menu"
       {...panelMotion}
-      className="absolute overflow-hidden border-[1.5px] border-border"
+      className="hairline absolute overflow-hidden border-border"
       onLayout={onMenuHeight}
       style={{
         left: layout.left,

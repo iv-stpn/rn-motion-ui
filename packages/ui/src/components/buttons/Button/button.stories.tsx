@@ -33,7 +33,7 @@ const meta = {
       options: ['primary', 'neutral', 'ghost', 'danger', 'outlineDanger', 'ghostDanger'],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
-    shape: { control: 'select', options: ['rounded', 'pill'] },
+    shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
     elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
     floating: { control: 'boolean' },
     blurRadius: { control: { type: 'range', min: 0, max: 40, step: 1 } },
@@ -57,6 +57,7 @@ const VARIANTS = [
   'ghostDanger',
 ] as const satisfies readonly ButtonVariant[];
 const SIZES = ['sm', 'md', 'lg'] as const;
+const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
 const SIZE_LABELS = { sm: 'Small', md: 'Medium', lg: 'Large' } as const;
 const ICON_SIDES = ['none', 'left', 'right'] as const;
 const CONTINUE_LABEL = 'Continue';
@@ -90,7 +91,7 @@ function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
 function ButtonPlayground(args: ComponentProps<typeof Button>) {
   const [variant, setVariant] = useState<ButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
-  const [pill, setPill] = useState(false);
+  const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');
   const [loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [ripple, setRipple] = useState(false);
@@ -111,7 +112,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
     ...args,
     variant,
     size,
-    shape: pill ? ('pill' as const) : ('rounded' as const),
+    shape,
     loading,
     disabled,
     ripple,
@@ -132,7 +133,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
         <Toggle label="Floating" onChange={setFloating} value={floating} />
         <Toggle label="Glass" onChange={setGlass} value={glass} />
         <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
-        <Toggle label="Pill" onChange={setPill} value={pill} />
+        <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
         <Toggle label="Loading" onChange={setLoading} value={loading} />
         <Toggle label="Disabled" onChange={setDisabled} value={disabled} />
         <Toggle label="Ripple" onChange={setRipple} value={ripple} />
@@ -188,6 +189,18 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
           <Button {...args} accessibilityLabel="Delete" size="icon" variant="neutral">
             <Trash2 color={colors.foreground} size={16} />
           </Button>
+        </Variants>
+      </Section>
+
+      <Section title="Shapes">
+        <Variants align="center">
+          {SHAPES.map((name) => (
+            <Sample key={name} label={name}>
+              <Button {...args} shape={name} variant={variant}>
+                {CONTINUE_LABEL}
+              </Button>
+            </Sample>
+          ))}
         </Variants>
       </Section>
 

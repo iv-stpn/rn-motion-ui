@@ -6,17 +6,22 @@ import { Text } from '../../typography/Text/text';
 
 // ── types ──────────────────────────────────────────────────────────────────────
 
-type ChoiceGroupSize = 'sm' | 'md' | 'lg';
-type ChoiceGroupShape = 'rounded' | 'pill';
+type ChoiceGroupSize = 'xs' | 'sm' | 'md' | 'lg';
+type ChoiceGroupShape = 'square' | 'rounded' | 'pill' | 'circle';
 type ChoiceGroupVariant = 'neutral' | 'info' | 'outline' | 'outline-info';
 
 // ── gap map ────────────────────────────────────────────────────────────────────
 
-const GAP_CLASS: Record<ChoiceGroupSize, string> = { sm: 'gap-2', md: 'gap-3', lg: 'gap-4' };
+const GAP_CLASS: Record<ChoiceGroupSize, string> = { xs: 'gap-1', sm: 'gap-2', md: 'gap-3', lg: 'gap-4' };
 
 // ── shape → radius ─────────────────────────────────────────────────────────────
 
-const SHAPE_RADIUS: Record<ChoiceGroupShape, string> = { rounded: 'rounded-interactive', pill: 'rounded-full' };
+const SHAPE_RADIUS: Record<ChoiceGroupShape, string> = {
+  square: 'rounded-none',
+  rounded: 'rounded-interactive',
+  pill: 'rounded-full',
+  circle: 'rounded-full',
+};
 
 // ── variant → item classes ─────────────────────────────────────────────────────
 
@@ -29,16 +34,16 @@ const SHAPE_RADIUS: Record<ChoiceGroupShape, string> = { rounded: 'rounded-inter
 const VARIANT_SELECTED: Record<ChoiceGroupVariant, string> = {
   neutral: 'bg-primary',
   info: 'bg-info',
-  outline: 'border-[1.5px] border-primary',
-  'outline-info': 'border-[1.5px] border-info',
+  outline: 'hairline border-primary',
+  'outline-info': 'hairline border-info',
 };
 
 /** Unselected-item class per variant — filled items keep the surface, outline items keep a hairline border. */
 const VARIANT_UNSELECTED: Record<ChoiceGroupVariant, string> = {
   neutral: 'bg-muted',
   info: 'bg-muted',
-  outline: 'border-[1.5px] border-border',
-  'outline-info': 'border-[1.5px] border-border',
+  outline: 'hairline border-border',
+  'outline-info': 'hairline border-border',
 };
 
 /** Selected label colour per variant — the accent's `-foreground` on filled items, the accent ink on outline items. */

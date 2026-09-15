@@ -57,7 +57,7 @@
  * Four tokens partition corner curves by surface category, so each family can be
  * retuned independently without affecting the others:
  *
- * - `--radius-interactive` (6 px) — buttons, inputs, tabs, button groups.
+ * - `--radius-interactive` (8 px) — buttons, inputs, tabs, button groups.
  * - `--radius-card` (16 px) — card containers.
  * - `--radius-menu` (12 px) — HoverMenu, Dropdown, HoldMenu overlays.
  * - `--radius-modal` (16 px) — Modals, Popovers, MorphingModal, BottomSheet.
@@ -252,22 +252,24 @@
      button groups) at a given size, so a row of mixed controls lines up.
      Cards have their own `--radius-card`.
 
-     The height ramp steps 8px. `icon` reuses the `md` numbers as a square.
-     A `pill` button ignores the corner radius and takes half its height
-     instead. See lib/radius.ts for the pixel constants used by the effect
-     layers. One scheme only: geometry doesn't flip with the theme, so there
-     are no dark-mode counterparts below. */
-  --spacing-interactive-sm: 24px;
-  --spacing-interactive-md: 32px;
-  --spacing-interactive-lg: 40px;
-  --spacing-interactive-pad-sm: 8px;
-  --spacing-interactive-pad-md: 14px;
-  --spacing-interactive-pad-lg: 22px;
+     Four heights — `xs` 24, `sm` 36, `md` 48, `lg` 64. `icon` reuses the `md`
+     numbers as a square. A `pill` button ignores the corner radius and takes
+     half its height instead. See lib/radius.ts for the pixel constants used by
+     the effect layers. One scheme only: geometry doesn't flip with the theme,
+     so there are no dark-mode counterparts below. */
+  --spacing-interactive-xs: 24px;
+  --spacing-interactive-sm: 36px;
+  --spacing-interactive-md: 48px;
+  --spacing-interactive-lg: 64px;
+  --spacing-interactive-pad-xs: 8px;
+  --spacing-interactive-pad-sm: 12px;
+  --spacing-interactive-pad-md: 16px;
+  --spacing-interactive-pad-lg: 20px;
 
   --menu-vertical-padding: 4px;
 
   --radius-menu: 12px;
-  --radius-interactive: 6px;
+  --radius-interactive: 8px;
   --radius-card: 16px;
   --radius-modal: 16px;
 
@@ -294,6 +296,38 @@
   --font-mono-medium: ui-monospace, monospace;
   --font-mono-semibold: ui-monospace, monospace;
   --font-mono-bold: ui-monospace, monospace;
+}
+
+/* ── Hairline border ──────────────────────────────────────────────────────
+ *
+ * The single border weight in the library. 2.5px reads at full strength on
+ * high-density screens where a bare 1px `border` washes out, so every border
+ * is spelled `hairline` (all four sides) or `hairline-t` / `hairline-r` /
+ * `hairline-b` / `hairline-l` (one side) instead of an arbitrary
+ * `border-[2.5px]`. The style is `var(--tw-border-style)`, the same variable
+ * Tailwind's built-in `border-*` width utilities set, so `hairline border-dashed`
+ * still renders dashed. Geometry doesn't flip with the theme, so these live
+ * outside `@theme` as plain custom utilities.
+ */
+@utility hairline {
+  border-style: var(--tw-border-style);
+  border-width: 2.5px;
+}
+@utility hairline-t {
+  border-top-style: var(--tw-border-style);
+  border-top-width: 2.5px;
+}
+@utility hairline-r {
+  border-right-style: var(--tw-border-style);
+  border-right-width: 2.5px;
+}
+@utility hairline-b {
+  border-bottom-style: var(--tw-border-style);
+  border-bottom-width: 2.5px;
+}
+@utility hairline-l {
+  border-left-style: var(--tw-border-style);
+  border-left-width: 2.5px;
 }
 
 /* ── Input vertical centring ──────────────────────────────────────────────

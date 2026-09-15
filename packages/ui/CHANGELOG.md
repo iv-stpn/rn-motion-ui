@@ -1,5 +1,182 @@
 # rn-motion-ui
 
+## 7.8.0
+
+### Minor Changes
+
+- 223e389: Redesign the interactive geometry and border system
+
+  A library-wide refresh of the shared interactive tokens and the borders drawn
+  from them. This is a breaking change: sizes, label scale, corner radius, default
+  shapes and border weights all move at once.
+
+  **New `hairline` border (2.5px)** — the single border weight in the library.
+  Every `border-[1.5px]` and one-sided `border-t/r/b/l-[1.5px]` is now spelled
+  `hairline` / `hairline-t|r|b|l` (a custom utility, not an arbitrary value), so
+  borders read at full strength on high-density screens. Card/check states that
+  "step up" when selected now use `border-[3px]`. The border maths that HoldMenu's
+  height calculation depends on (segmented seam, panel border) was re-derived for
+  the new weight.
+
+  **Expanded size ramp** — a new `xs` size joins the ramp, and every height steps
+  up: `xs` 24 / `sm` 36 / `md` 48 / `lg` 64 px (previously 24 / 32 / 40), with
+  retuned horizontal padding. `Input`, `Button`, `ChoiceGroup`, `ToggleGroup` and
+  `Tabs` all accept `xs`.
+
+  **New shapes** — `square` and `circle` join `rounded` / `pill` on `Button`,
+  `IconButton`, `Input`, `ChoiceGroup` and `ToggleGroup`. Squares render sharp
+  (`rounded-none`), circles fully round (`rounded-full`).
+
+  **Bigger interactive radius** — `--radius-interactive` moves 6 → 8 px.
+
+  **Retuned label scale** — interactive text tracks `12 / 14 / 16 / 18 px`
+  (`text-xs` → `text-lg`) for `xs` → `lg`, so a button and a neighbouring
+  input/tab/chip at the same size read the same label.
+
+  **Input default shape** — `Input` now defaults to `rounded` instead of `pill`.
+
+- 55256cd: Add a `hug` variant to `MorphingModal`
+
+  A new `hug` boolean stretches the panel to the screen width (drops the
+  `max-w-sm` cap) with a symmetric `p-4` left/right inset, instead of the centered
+  card. On `placement="bottom"` the same `p-4` inset also replaces the larger
+  bottom offset, so the panel hugs the screen by the same amount on the left,
+  right and bottom.
+
+### Patch Changes
+
+- 55256cd: Refine the square/circle shapes, add OTP slot sizes, bump radius tokens
+
+  **`square` is now rounded.** `Button` and `IconButton` squares no longer render
+  sharp (`rounded-none`); they take `rounded-interactive` (8px) and force a 1:1
+  box — the label box drops its horizontal padding and pins `w-interactive-*` to
+  the ramp height, so a long label clips to the square instead of stretching it
+  into a rectangle. `circle` gets the same forced 1:1 box. `buttonRadius('square')`
+  and `buttonRadiusClass('square')` now resolve to the interactive radius (were 0
+  and `rounded-none`).
+
+  **`danger` icon colour.** The `danger` variant's leading icon now reads
+  `danger-foreground` instead of `primary-foreground`, so the icon matches the
+  label on the red plate.
+
+  **`OTPInput` size.** A new `size` prop (`xs | sm | md | lg`, default `lg`) joins
+  the same `--spacing-interactive-*` ramp the button family reads; the slots, the
+  digit glyph and the blinking caret all scale with it.
+
+  **Radius tokens.** `--radius-card` 16 → 24, `--radius-menu` 12 → 16 and
+  `--radius-modal` 16 → 32, with `CARD_RADIUS` / `MENU_RADIUS` / `MODAL_RADIUS`
+  in `radius.ts` updated to match.
+
+  The shared storybook trigger now defaults to the `rounded` shape instead of
+  `pill` (`__stories__/**` is excluded from the published package).
+
+- 7f7bc3a: Settle the hairline border at 2px
+
+  The `hairline` @utility (and its `hairline-t`/`r`/`b`/`l` sides) drops from
+  2.5px to a clean 2px. A bare 1px `border` still washes out on high-density
+  screens, so `hairline` remains the single border weight in the library — it
+  just no longer lands on a fractional pixel.
+
+  `CheckboxCard` and `RadioCard` still step their checked/selected edge up to
+  3px, so the "hairline + 0.5px" half-pixel content shift these components
+  document is unchanged in spirit; only the resting weight it grows from moved.
+
+- 4e0cd4c: Refactor `HoldMenuProvider`, `MorphingFAB` and `MorphingSwitcher` internals
+
+  Internal-only cleanup to satisfy the linter — no public API or behaviour
+  change:
+
+  - `HoldMenuProvider` hoists its `menuProps` default to a module constant,
+    extracts the `onOpen`/`onClose` reaction into a `useMenuOpenClose` hook, and
+    renders through a presentational `ProviderShell`.
+  - `MorphingFAB` and `MorphingSwitcher` replace their `++measureSeq.current`
+    bump with an explicit `measureSeq.current += 1`.
+
+- 0fa4cbf: fix(Surface): composite the `glass` tint over the native frost
+
+  A frosted `Surface` (`blurRadius > 0`) on native rendered the backdrop blur but
+  never composited the translucent `glass` tint over it — the web twin does both
+  (`backgroundColor: tint` alongside `backdropFilter`), so the two platforms
+  disagreed. On the native blur path the `BlurView` was the whole frost layer and
+  the tint was only rendered on the degrade path, which meant:
+
+  - a frosted pane had no `glass` wash, so in light mode it came out _darker_ than
+    the page behind it (measured 234,236,236 over a 237,238,241 backdrop) and read
+    as a dull flat plate rather than a translucent panel;
+  - `opacity` was completely inert whenever the blur rendered at all — `1` and
+    `0.5` produced pixel-identical output on iOS and Android alike, so the prop
+    only ever did anything on the degrade path.
+
+  The tint layer is now rendered on both paths, over the `BlurView` by render
+  order (both at `zIndex: 0`, so the Rim and `children` stay above it). The blur's
+  own material was dropped from `light`/`dark` to `ultra-thin-material-light`/
+  `dark` so it no longer compounds with the `glass` wash layered on top — and
+  because it derives from `useColorScheme()` like the tint does, the two can no
+  longer drift apart when an app forces a scheme via `Appearance.setColorScheme`,
+  which the adaptive `regular` would have done by reading the OS trait
+  collection / `uiMode` instead.
+
+  The degrade path (no peer installed, or an Android pane inside its own
+  `BlurTarget`) and the solid path (`blurRadius: 0`) are untouched — the solid
+  control measures byte-identical before and after on both platforms. Note the
+  Android blur path only fires for a pane rendered as a _sibling_ of the
+  `BlurTarget` it frosts (the `OverlayHost` shape); an in-app pane is inside the
+  target and degrades, which is a separate, intentional limitation.
+
+- 93ad465: Add `secondary` and `accent` variants across buttons, switch and icons
+
+  The two monochrome brand fills join the existing `primary`/`neutral`/status set
+  as first-class variants, so they can be selected without hand-rolled styling.
+
+  **`Button`** — `ButtonVariant` grows `secondary` (`bg-secondary`) and `accent`
+  (`bg-accent`), each pairing with its own `*-foreground` label and leading-icon
+  colour. Both are light fills, so they take the dark ripple rather than the white
+  shimmer reserved for the opaque dark/vivid fills (`FILLED_RIPPLE_VARIANTS`), and
+  they're absent from `FILLED_FILL_TOKEN` — their light fills read the dark ladder
+  drop fine, so a raised button keeps `shadow-elevated-N` instead of the
+  fill-aware ring.
+
+  **`ElevatedButton`** — `ElevatedVariant` grows `secondary` and `accent` with the
+  same bg/label/foreground-token tables. They join the monochrome set
+  (`MONOCHROME_FILL_VARIANTS`) so they cast the fixed dark-neutral drop, and the
+  light-ripple set (`LIGHT_RIPPLE_VARIANTS`) so the ripple shimmers dark on them.
+
+  **`Switch`** — `SwitchThemeName` grows `secondary` and `accent`, each resolving
+  to its own `*-foreground` thumb (both fills are near-white in one scheme, so a
+  white thumb would vanish).
+
+  **`ThemedIcon`** — `IconVariant` maps `secondary` → `secondary-foreground` and
+  `accent` → `accent-foreground`.
+
+  The storybook playgrounds for `Button`, `ButtonSwap`, `ElevatedButton`, `Switch`
+  and `Checkbox` expose the new variants in their pickers and gallery rows
+  (`__stories__/**` is excluded from the published package).
+
+- 5f71049: Shrink the storybook playground's choice chips
+
+  The shared story harness rendered its `Choice` control (Kind/Size/Shape, mode
+  pickers, and the rest of the playground chrome) at `size="sm"`; it now uses
+  `size="xs"`, so the chips sit at 24px with `text-xs` labels and a 4px gap
+  instead of 36px / `text-sm` / 8px.
+
+  Storybook chrome only — `src/**/__stories__/**` is excluded from the published
+  package, so nothing in the shipped library changes.
+
+- 196398d: Smooth the state icon exit when `StatefulButton` re-arms
+
+  The success (`Check`) and error (`WarningLine`) state icons, plus the idle icon,
+  were rendering through a shared `IconSlot` whose `key` lived on the _inner_
+  `MotiView` rather than on the direct `AnimatePresence` child. Every slot
+  therefore collapsed onto the empty key `''`, so `AnimatePresence` could not tell
+  the icons apart and dropped them abruptly instead of running their exit
+  animation when the press machine re-armed back to `idle` (or swapped
+  success ↔ error).
+
+  `IconSlot` no longer owns the key; each direct `AnimatePresence` child now
+  carries its own stable `key` (`success-icon`, `error-icon`, `idle-icon`), so
+  entering/exiting icons are keyed correctly and fade/scale out smoothly on
+  reset.
+
 ## 7.7.1
 
 ### Patch Changes

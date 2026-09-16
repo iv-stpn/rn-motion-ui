@@ -12,6 +12,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../Button/button-internals';
 import { BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
+import { BUTTON_HOVER_CLASS } from '../Button/button-variants';
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
 
@@ -240,6 +241,7 @@ export function IconButton({
         surfaceClass,
         boxClass,
         isDisabled && !noDisabledOpacity && 'opacity-50',
+        !isDisabled && BUTTON_HOVER_CLASS,
         'overflow-hidden',
         contentClassName,
       )}

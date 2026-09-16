@@ -10,6 +10,7 @@ import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/moti
 import { type ThemeToken, useThemeColors } from '../../../theme/use-theme-color';
 import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
 import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass } from './button-scale';
+import { BUTTON_HOVER_CLASS } from './button-variants';
 
 /**
  * Fill colour + surface style for an ElevatedButton. Most values get the glossy
@@ -417,7 +418,7 @@ export function ElevatedButton({
         onPress={onPress}
         onHoverIn={handleHoverIn}
         onHoverOut={handleHoverOut}
-        className={cn(containerClass, contentClassName)}
+        className={cn(containerClass, !isDisabled && BUTTON_HOVER_CLASS, contentClassName)}
       >
         {/* State backdrop — animates in/out by opacity so the fill shows through
             when idle and the state colour fills it on success/error. */}

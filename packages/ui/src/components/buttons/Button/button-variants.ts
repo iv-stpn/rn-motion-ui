@@ -64,18 +64,27 @@ export const buttonContainer = cva('flex-row items-center justify-center', {
       secondary: 'bg-secondary',
       accent: 'bg-accent',
       neutral: 'bg-surface-3',
-      ghost: 'bg-transparent',
+      ghost: 'bg-transparent hover:bg-surface-hover',
       outline: 'hairline border-border bg-transparent',
       danger: 'bg-danger',
       success: 'bg-success',
       warning: 'bg-warning',
       info: 'bg-info',
       outlineDanger: 'hairline border-danger bg-transparent',
-      ghostDanger: 'bg-transparent',
+      ghostDanger: 'bg-transparent hover:bg-surface-hover',
     },
   },
   defaultVariants: { variant: 'neutral' },
 });
+
+/**
+ * Hover feedback the whole button family shares: a subtle opacity dim on hover.
+ * Web-only in effect — native has no hover, so the class is inert there. The
+ * ghost/ghostDanger plates also gain a `hover:bg-surface-hover` overlay (set on
+ * the variants above) so a transparent button still reads as hovered, since a
+ * lone opacity dim on `bg-transparent` would only fade the label.
+ */
+export const BUTTON_HOVER_CLASS = 'transition-all duration-200 hover:opacity-80';
 
 /**
  * The label: colour per variant, size from the family ramp. Weight is uniform

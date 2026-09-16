@@ -16,6 +16,7 @@ import { Surface } from '../../display/Surface/surface';
 import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
 import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadius } from './button-scale';
 import {
+  BUTTON_HOVER_CLASS,
   type ButtonVariant,
   buttonContainer as container,
   FILLED_FILL_TOKEN,
@@ -207,6 +208,7 @@ export function Button({
         shadowClass,
         BUTTON_BOX[shape][size],
         isDisabled && !noDisabledOpacity && 'opacity-50',
+        !isDisabled && BUTTON_HOVER_CLASS,
         'overflow-hidden',
         contentClassName,
       )}

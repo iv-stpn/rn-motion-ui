@@ -14,7 +14,12 @@ import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/moti
 import { Text, type TextWeight } from '../../typography/Text/text';
 import { type BaseButtonProps, ButtonRipples, pressAnimate, usePressRipples } from './button-internals';
 import { BUTTON_BOX, BUTTON_GAP_CLASSNAME, type ButtonShape, type ButtonSize } from './button-scale';
-import { buttonContainer as container, FILLED_RIPPLE_VARIANTS, buttonLabel as labelClass } from './button-variants';
+import {
+  BUTTON_HOVER_CLASS,
+  buttonContainer as container,
+  FILLED_RIPPLE_VARIANTS,
+  buttonLabel as labelClass,
+} from './button-variants';
 
 // The family's public types, re-exported so a ButtonSwap consumer takes its
 // axes from the same place a Button consumer does.
@@ -371,6 +376,7 @@ export function ButtonSwap({
           floating ? FLOATING_SHADOW_CLASSNAME : elevatedShadow(resolvedElevation),
           BUTTON_BOX[shape][size],
           isDisabled && !noDisabledOpacity && 'opacity-50',
+          !isDisabled && BUTTON_HOVER_CLASS,
           // Clips the swap — a letter rolling in from below must not escape the box.
           'overflow-hidden',
           BUTTON_GAP_CLASSNAME,

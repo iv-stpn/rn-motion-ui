@@ -16,6 +16,20 @@ function setsEqual<T>(a: ReadonlySet<T>, b: ReadonlySet<T>): boolean {
   return true;
 }
 
+/** A copy of `set` with every entry in `keys` added. */
+function withKeysAdded(set: ReadonlySet<string>, keys: readonly string[]): Set<string> {
+  const next = new Set(set);
+  for (const key of keys) next.add(key);
+  return next;
+}
+
+/** A copy of `set` with every entry in `keys` removed. */
+function withKeysRemoved(set: ReadonlySet<string>, keys: readonly string[]): Set<string> {
+  const next = new Set(set);
+  for (const key of keys) next.delete(key);
+  return next;
+}
+
 type KeyClassification = {
   newExits: string[];
   abandonedHeldKeys: string[];
@@ -231,36 +245,20 @@ export function AnimatePresence({ children, custom, initial = true, onExitComple
   if (!setsEqual(prevCurrentKeys, currentKeySet)) setPrevCurrentKeys(currentKeySet);
   if (newExits.length > 0)
     // biome-ignore lint/plugin: intentional derived-state-in-render; only fires when keys actually leave, converging to a stable exiting set
-    setExitingKeys((prev) => {
-      const next = new Set(prev);
-      for (const key of newExits) next.add(key);
-      return next;
-    });
+    setExitingKeys((prev) => withKeysAdded(prev, newExits));
   if (reenteredKeys.length > 0)
     // biome-ignore lint/plugin: intentional derived-state-in-render; only fires when an exiting key re-appears in the tree, converges once the key leaves the exiting set
-    setExitingKeys((prev) => {
-      const next = new Set(prev);
-      for (const key of reenteredKeys) next.delete(key);
-      return next;
-    });
+    setExitingKeys((prev) => withKeysRemoved(prev, reenteredKeys));
   if (abandonedHeldKeys.length > 0)
     // biome-ignore lint/plugin: intentional derived-state-in-render; only fires when a held (never-rendered) key leaves the tree, converges once it is dropped from the held set
-    setHeldKeys((prev) => {
-      const next = new Set(prev);
-      for (const key of abandonedHeldKeys) next.delete(key);
-      return next;
-    });
+    setHeldKeys((prev) => withKeysRemoved(prev, abandonedHeldKeys));
 
   // exitBeforeEnter: hold new entries while exits are in progress. `newExits`
   // must be counted too — on an atomic key swap the exit detected in this very
   // render pass has not been committed to `exitingKeys` yet (Fix B).
   if (exitBeforeEnter && newEntries.length > 0 && (exitingKeys.size > 0 || newExits.length > 0))
     // biome-ignore lint/plugin: intentional derived-state-in-render; guarded so it only fires when new keys arrive while exits are active, converges to stable held set
-    setHeldKeys((prev) => {
-      const next = new Set(prev);
-      for (const key of newEntries) next.add(key);
-      return next;
-    });
+    setHeldKeys((prev) => withKeysAdded(prev, newEntries));
 
   // Release held keys once all exits have completed.
   if (exitBeforeEnter && exitingKeys.size === 0 && heldKeys.size > 0)

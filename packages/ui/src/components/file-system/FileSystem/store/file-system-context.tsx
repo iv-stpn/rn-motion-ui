@@ -564,6 +564,65 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
       set({ entries: next.entries, filters: next.filters, selection: next.selection });
     }
 
+    /**
+     * Page a folder's `loadChildren` results into the store, one cursor at a
+     * time. Folds each page into a fresh index so children arrive incrementally,
+     * and keeps the selection alive exactly as the navigation that opened it did.
+     */
+    async function drainChildrenLoad(folderPath: string, load: NonNullable<ConsumerSlice['loadChildren']>) {
+      let cursor: string | null = null;
+      try {
+        do {
+          // biome-ignore lint/performance/noAwaitInLoops: cursor paging is inherently sequential
+          const result: FileSystemLoadChildrenResult = await withTimeout(
+            load({ cursor, path: folderPath }),
+            CHILDREN_LOAD_TIMEOUT_MS,
+          );
+          if (result.items.length) {
+            const cur = get();
+            const loadedItems = [...cur.navigation.loadedItems, ...result.items];
+            const allItems = [...cur.entries.items, ...loadedItems];
+            // Preserve folders from the previous index that lost all their
+            // children (e.g. every file was dragged out, or the load returned
+            // only files). Without this, an inferred folder vanishes from the
+            // tree when its last child leaves.
+            const index = buildFileSystemIndex(allItems, {
+              preserveFolders: cur.entries.index.folders,
+              previousChildren: cur.entries.index.children,
+            });
+            const next = _recomputeEntries(
+              {
+                ...cur,
+                entries: { ...cur.entries, index },
+                navigation: { ...cur.navigation, loadedItems },
+              },
+              // Child loading is navigation's continuation: the folder just
+              // opened is filling in its children, and the selection must
+              // survive it exactly as it survived the navigation itself.
+              { pruneSelection: false },
+            );
+            set({
+              navigation: { ...cur.navigation, loadedItems },
+              entries: { ...next.entries, items: cur.entries.items, index },
+              filters: next.filters,
+              selection: next.selection,
+            });
+          }
+          cursor = result.nextCursor ?? null;
+        } while (cursor);
+      } catch {
+        requestedFolders.delete(folderPath);
+        const cur = get();
+        const newErrorFolders = new Set(cur.navigation.errorFolders).add(folderPath);
+        set({ navigation: { ...cur.navigation, errorFolders: newErrorFolders } });
+      } finally {
+        const cur = get();
+        const lf = new Set(cur.navigation.loadingFolders);
+        lf.delete(folderPath);
+        set({ navigation: { ...cur.navigation, loadingFolders: lf, isLoading: lf.has(cur.navigation.currentPath) } });
+      }
+    }
+
     return {
       // ── Initial slice state ─────────────────────────────────────────────────
       navigation: {
@@ -679,73 +738,9 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         const isLoading = newLoadingFolders.has(fileSystemStore.navigation.currentPath);
         set({ navigation: { ...fileSystemStore.navigation, loadingFolders: newLoadingFolders, isLoading } });
 
-        const drain = async () => {
-          const load = fileSystemStore.consumer.loadChildren;
-          if (!load) return; // guarded above; this silences the non-null assertion
-          let cursor: string | null = null;
-          try {
-            do {
-              // biome-ignore lint/performance/noAwaitInLoops: cursor paging is inherently sequential
-              const result: FileSystemLoadChildrenResult = await withTimeout(
-                load({ cursor, path: folderPath }),
-                CHILDREN_LOAD_TIMEOUT_MS,
-              );
-              if (result.items.length) {
-                const cur = get();
-                const loadedItems = [...cur.navigation.loadedItems, ...result.items];
-                const allItems = [...cur.entries.items, ...loadedItems];
-                // Preserve folders from the previous index that lost all their
-                // children (e.g. every file was dragged out, or the load returned
-                // only files). Without this, an inferred folder vanishes from the
-                // tree when its last child leaves.
-                const index = buildFileSystemIndex(allItems, {
-                  preserveFolders: cur.entries.index.folders,
-                  previousChildren: cur.entries.index.children,
-                });
-                const next = _recomputeEntries(
-                  {
-                    ...cur,
-                    entries: { ...cur.entries, index },
-                    navigation: { ...cur.navigation, loadedItems },
-                  },
-                  // Child loading is navigation's continuation: the folder just
-                  // opened is filling in its children, and the selection must
-                  // survive it exactly as it survived the navigation itself.
-                  { pruneSelection: false },
-                );
-                set({
-                  navigation: { ...cur.navigation, loadedItems },
-                  entries: { ...next.entries, items: cur.entries.items, index },
-                  filters: next.filters,
-                  selection: next.selection,
-                });
-              }
-              cursor = result.nextCursor ?? null;
-            } while (cursor);
-          } catch {
-            requestedFolders.delete(folderPath);
-            const cur = get();
-            const newErrorFolders = new Set(cur.navigation.errorFolders).add(folderPath);
-            set({
-              navigation: {
-                ...cur.navigation,
-                errorFolders: newErrorFolders,
-              },
-            });
-          } finally {
-            const cur = get();
-            const lf = new Set(cur.navigation.loadingFolders);
-            lf.delete(folderPath);
-            set({
-              navigation: {
-                ...cur.navigation,
-                loadingFolders: lf,
-                isLoading: lf.has(cur.navigation.currentPath),
-              },
-            });
-          }
-        };
-        drain().catch(() => undefined);
+        const load = fileSystemStore.consumer.loadChildren;
+        if (!load) return;
+        drainChildrenLoad(folderPath, load).catch(() => undefined);
       },
 
       // ── Entries actions ───────────────────────────────────────────────────────

@@ -181,6 +181,26 @@ function notifyZone(zoneId: string) {
   for (const listener of subscribers) listener();
 }
 
+/** Whether the published snapshot would change given the current session fields. */
+function snapshotChanged(previous: DragSnapshot, next: DragSnapshot): boolean {
+  return (
+    previous.drag !== next.drag ||
+    previous.overZoneId !== next.overZoneId ||
+    previous.eligibleZoneIds !== next.eligibleZoneIds ||
+    previous.preview !== next.preview
+  );
+}
+
+/** Whether a zone's standing would change given the current drag and position. */
+function standingChanged(
+  previous: DragzoneStanding | undefined,
+  drag: ActiveDrag | null,
+  isEligible: boolean,
+  isOver: boolean,
+): boolean {
+  return previous === undefined || previous.drag !== drag || previous.isEligible !== isEligible || previous.isOver !== isOver;
+}
+
 /**
  * Re-derive the published state and wake exactly the subscribers it moved.
  *
@@ -218,12 +238,7 @@ function publish() {
   // this ("identity is stable while nothing render-visible changes"); before, the
   // unconditional rebuild quietly broke that contract on every call.
   const previousSnapshot = snapshot;
-  if (
-    previousSnapshot.drag !== drag ||
-    previousSnapshot.overZoneId !== overZoneId ||
-    previousSnapshot.eligibleZoneIds !== eligibleIds ||
-    previousSnapshot.preview !== preview
-  )
+  if (snapshotChanged(previousSnapshot, { drag, overZoneId, eligibleZoneIds: eligibleIds, preview }))
     snapshot = session === null ? IDLE : { drag, eligibleZoneIds: eligibleIds, overZoneId, preview };
 
   // An empty set when idle — the same shape either way, so each zone lookup is
@@ -241,7 +256,7 @@ function publish() {
     // the object it has. Building the object inside the guard also skips the
     // allocation for every untouched zone — a crossing publishes to the whole
     // tree, and on a large row list that is most of them.
-    if (previous === undefined || previous.drag !== drag || previous.isEligible !== isEligible || previous.isOver !== isOver) {
+    if (standingChanged(previous, drag, isEligible, isOver)) {
       entry.standing = { drag, isEligible, isOver };
       moved.push(entry.id);
     }

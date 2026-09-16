@@ -20,6 +20,8 @@ import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
+import { fireHapticFeedback } from '../../../lib/haptics';
+import type { HapticFeedbackVariant } from '../../../lib/haptics-types';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
@@ -50,6 +52,11 @@ export type StarRatingProps = {
   showValue?: boolean;
   /** Accessible name of the rating group. Default "Rating" */
   label?: string;
+  /**
+   * Haptic fired when a star is tapped (including the tap that clears it).
+   * Defaults to `'Selection'`. Pass `'None'` to disable.
+   */
+  hapticFeedback?: HapticFeedbackVariant;
   /** Additional UniWind class names merged onto the outer row. */
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -280,6 +287,7 @@ export function StarRating({
   readOnly = false,
   showValue = false,
   label = 'Rating',
+  hapticFeedback = 'Selection',
   className,
   activeStarColor = DEFAULT_ACTIVE_STAR_COLOR,
   inactiveStarColor,
@@ -319,11 +327,12 @@ export function StarRating({
 
   const handleSelect = useCallback(
     (starValue: number) => {
+      if (hapticFeedback !== 'None') fireHapticFeedback(hapticFeedback);
       const next = allowClear && starValue === value ? 0 : starValue;
       commitValue(next);
       if (next > 0 && !reduce) setBurst((prev) => ({ key: (prev?.key ?? 0) + 1, index: starValue - 1 }));
     },
-    [allowClear, value, commitValue, reduce],
+    [allowClear, value, commitValue, reduce, hapticFeedback],
   );
 
   const handleAccessibilityAction = useCallback(

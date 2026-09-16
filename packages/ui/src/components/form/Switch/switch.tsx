@@ -8,6 +8,8 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../../hooks/use-shake-animation';
 import { cn } from '../../../lib/cn';
 import { THUMB_SPRING } from '../../../lib/ease';
+import { fireHapticFeedback } from '../../../lib/haptics';
+import type { HapticFeedbackVariant } from '../../../lib/haptics-types';
 import { MotiView } from '../../../moti/components/view';
 import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
@@ -124,6 +126,11 @@ export type SwitchProps = {
   thumbTransition?: Partial<MotiTransitionProp>;
   /** Size variant — `'sm'`, `'md'` (default), or `'lg'`. */
   size?: SwitchSize;
+  /**
+   * Haptic fired when the switch toggles. Defaults to `'Selection'` — the
+   * discrete on/off cue native switches give. Pass `'None'` to disable.
+   */
+  hapticFeedback?: HapticFeedbackVariant;
   /**
    * Custom children. Pass a render function to receive `{ isSelected, isDisabled }`,
    * or pass React elements. When omitted, a default `<Switch.Thumb />` is rendered.
@@ -282,6 +289,7 @@ function SwitchRoot({
   theme = 'info',
   thumbTransition,
   size = 'md',
+  hapticFeedback = 'Selection',
   children,
   ref,
 }: SwitchProps & { ref?: Ref<View> }) {
@@ -296,8 +304,10 @@ function SwitchRoot({
   useShakeAnimation({ trigger: Boolean(isDisabled && pressed), reduce, shakeX, steps: SWITCH_SHAKE_STEPS, duration: 60 });
 
   const handleToggle = useCallback(() => {
-    if (!isDisabled) onSelectedChange(!isSelected);
-  }, [isDisabled, onSelectedChange, isSelected]);
+    if (isDisabled) return;
+    if (hapticFeedback !== 'None') fireHapticFeedback(hapticFeedback);
+    onSelectedChange(!isSelected);
+  }, [isDisabled, onSelectedChange, isSelected, hapticFeedback]);
 
   // Depends on the three resolved strings rather than the object they came in
   // as, so a `theme` passed as an inline literal doesn't invalidate every render.

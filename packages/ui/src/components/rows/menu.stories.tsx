@@ -326,6 +326,41 @@ export const InDropdown: Story = {
     const disabled = within(menu).getByRole('menuitem', { name: DISABLED_LABEL });
     await expect(disabled).toHaveAttribute('aria-disabled', 'true');
 
+    // Arrow-key roving focus: rows are walked in DOM order, the disabled row is
+    // not offered a stop, and the ends wrap. Focus has to land on a row first —
+    // opening the dropdown leaves it on the backdrop, as any Tab into the list
+    // would.
+    const edit = within(menu).getByRole('menuitem', { name: EDIT_LABEL });
+    const share = within(menu).getByRole('menuitem', { name: 'Share' });
+    const hiddenRow = within(menu).getByRole('menuitem', { name: 'Show hidden files' });
+    const deleteRow = within(menu).getByRole('menuitem', { name: DANGER_LABEL });
+
+    edit.focus();
+    await expect(edit).toHaveFocus();
+
+    await userEvent.keyboard('{ArrowDown}');
+    await expect(share).toHaveFocus();
+
+    // "Move to…" sits between Share and the toggle, but it is disabled, so the
+    // next ArrowDown lands on the toggle rather than on a dead row.
+    await userEvent.keyboard('{ArrowDown}');
+    await expect(hiddenRow).toHaveFocus();
+
+    await userEvent.keyboard('{ArrowDown}');
+    await expect(deleteRow).toHaveFocus();
+
+    await userEvent.keyboard('{ArrowDown}');
+    await expect(edit).toHaveFocus();
+
+    await userEvent.keyboard('{ArrowUp}');
+    await expect(deleteRow).toHaveFocus();
+
+    await userEvent.keyboard('{Home}');
+    await expect(edit).toHaveFocus();
+
+    await userEvent.keyboard('{End}');
+    await expect(deleteRow).toHaveFocus();
+
     // `closeOnSelect: false` — the toggle flips and the panel stays open.
     await userEvent.click(within(menu).getByRole('menuitem', { name: 'Show hidden files' }));
     await expect(await screen.findByRole('menu', { name: MENU_LABEL })).toBeTruthy();

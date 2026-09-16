@@ -239,7 +239,8 @@ export function AdaptiveDropdown({
   });
 
   // ── Content resolution ─────────────────────────────────────────────────────
-  const resolvedTrigger = typeof trigger === 'function' ? trigger({ open, toggle }) : trigger;
+  const isFunctionTrigger = typeof trigger === 'function';
+  const resolvedTrigger = isFunctionTrigger ? trigger({ open, toggle }) : trigger;
   const resolvedContent = typeof children === 'function' ? children({ close }) : children;
 
   const header =
@@ -284,7 +285,10 @@ export function AdaptiveDropdown({
         <Pressable
           onPress={toggle}
           accessibilityLabel={triggerAccessibilityLabel}
-          accessibilityRole="button"
+          // A plain-node trigger is the button this wrapper becomes. A function
+          // trigger hands the press to its own Button, which already announces
+          // itself — claiming `role="button"` here would nest a <button> in it.
+          accessibilityRole={isFunctionTrigger ? undefined : 'button'}
           aria-expanded={open}
         >
           {resolvedTrigger}

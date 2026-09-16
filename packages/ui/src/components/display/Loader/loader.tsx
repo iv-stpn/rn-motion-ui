@@ -86,9 +86,10 @@ function Spinner({ size, speed, color, reduce }: PartProps) {
   // biome-ignore lint/plugin: Reanimated withRepeat loop must be started and cancelled as a side effect — not expressible as derived state
   useEffect(() => {
     if (reduce) {
+      // Settle to a static arc at full opacity — no rotation, no pulse.
       rotation.value = 0;
-      opacity.value = withRepeat(withTiming(0.5, { duration: 700 }), -1, true);
-      return () => cancelAnimation(opacity);
+      opacity.value = 1;
+      return;
     }
     opacity.value = 1;
     rotation.value = withRepeat(withTiming(360, { duration: dur, easing: Easing.linear }), -1, false);
@@ -135,9 +136,10 @@ function Dot({ size, speed, color, reduce, index }: PartProps & { index: number 
   // biome-ignore lint/plugin: the loop animation is an imperative side-effect assigned to a shared value — not expressible as derived state, and must run once per [reduce,size,speed,index] rather than every render
   useEffect(() => {
     if (reduce) {
+      // Settle at rest, full opacity — no bounce, no pulse.
       translateY.value = 0;
-      opacity.value = withRepeat(withTiming(1, { duration: half, easing: EASE_IN_OUT }), -1, true);
-      return () => cancelAnimation(opacity);
+      opacity.value = 1;
+      return;
     }
     opacity.value = withTiming(1, { duration: 240 });
     translateY.value = withDelay(
@@ -184,8 +186,12 @@ function Bar({ size, speed, color, reduce, index }: PartProps & { index: number 
 
   // biome-ignore lint/plugin: the loop animation is an imperative side-effect assigned to a shared value — not expressible as derived state, and must run once per [reduce,size,speed,index] rather than every render
   useEffect(() => {
-    const target = reduce ? 0.6 : 1;
-    scaleY.value = withDelay(delay, withRepeat(withTiming(target, { duration: half }), -1, true));
+    if (reduce) {
+      // Settle at full height — no looping.
+      scaleY.value = 1;
+      return;
+    }
+    scaleY.value = withDelay(delay, withRepeat(withTiming(1, { duration: half }), -1, true));
     return () => cancelAnimation(scaleY);
   }, [reduce, scaleY, half, delay]);
 
@@ -229,9 +235,13 @@ function DotMatrix({ size, speed, color, reduce }: PartProps) {
         return (
           <MotiView
             key={idx}
-            from={{ opacity: 0.2, scale: 0.7 }}
-            animate={reduce ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
-            transition={{ type: 'timing', duration: speed * 500, loop: true, repeatReverse: true, delay }}
+            from={reduce ? { opacity: 1, scale: 1 } : { opacity: 0.2, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={
+              reduce
+                ? { type: 'timing', duration: 0 }
+                : { type: 'timing', duration: speed * 500, loop: true, repeatReverse: true, delay }
+            }
             style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: color }}
           />
         );
@@ -253,15 +263,19 @@ function Dither({ size, speed, color, reduce }: PartProps) {
         <MotiView
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed matrix cells, order never changes
           key={idx}
-          from={{ opacity: 0.1 }}
-          animate={reduce ? { opacity: 1 } : { opacity: 1 }}
-          transition={{
-            type: 'timing',
-            duration: speed * 500,
-            loop: true,
-            repeatReverse: true,
-            delay: (order / BAYER_4.length) * speed * 1000,
-          }}
+          from={reduce ? { opacity: 1 } : { opacity: 0.1 }}
+          animate={{ opacity: 1 }}
+          transition={
+            reduce
+              ? { type: 'timing', duration: 0 }
+              : {
+                  type: 'timing',
+                  duration: speed * 500,
+                  loop: true,
+                  repeatReverse: true,
+                  delay: (order / BAYER_4.length) * speed * 1000,
+                }
+          }
           style={{ width: cell, height: cell, backgroundColor: color }}
         />
       ))}

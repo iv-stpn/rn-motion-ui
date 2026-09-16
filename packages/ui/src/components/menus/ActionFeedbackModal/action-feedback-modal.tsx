@@ -12,13 +12,10 @@ import { Text } from '../../typography/Text/text';
 import { OverlayScrim } from '../Overlay/overlay-scrim';
 import { OverlayShell, type OverlayShellContext } from '../Overlay/overlay-shell';
 import type { OverlayType } from '../Overlay/overlay-type';
-import { MORPH_CONTENT_TRANSITION, RM_TRANSITION } from './action-feedback-motion';
+import { type ActionFeedbackState, MORPH_CONTENT_TRANSITION, RM_TRANSITION } from './action-feedback-motion';
 import { MorphIcon } from './morph-icon';
 
 const SUCCESS_AUTO_CLOSE_MS = 2500;
-
-// biome-ignore lint/style/useExportsLast: the state union heads the module — MORPH_SIZE above and the announcement helper below are both keyed on it
-export type ActionFeedbackState = 'loading' | 'success' | 'error';
 
 type StateContentProps = {
   state: ActionFeedbackState;
@@ -291,3 +288,5 @@ export function ActionFeedbackModal({
     </OverlayShell>
   );
 }
+
+export type { ActionFeedbackState } from './action-feedback-motion';

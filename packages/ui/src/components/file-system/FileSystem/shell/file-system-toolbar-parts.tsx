@@ -15,9 +15,6 @@ import {
   useFileSystemSelectionActions,
 } from '../store/file-system-context';
 
-/** Width band the header lays itself out for. */
-export type HeaderLayout = 'full' | 'compact' | 'minimal';
-
 export type ToolbarIconButtonProps = {
   accessibilityLabel: string;
   onPress: () => void;

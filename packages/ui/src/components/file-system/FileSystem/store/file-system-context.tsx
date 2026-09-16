@@ -27,7 +27,6 @@ import {
 } from '../logic/file-system-selection';
 import { DEFAULT_SORT, defaultSortDirection } from '../logic/file-system-sort';
 import { computeVisiblePaths, fileMatchesFilter, filterIndexToVisible, sortIndexChildren } from '../logic/file-system-visibility';
-import type { HeaderLayout } from '../shell/file-system-toolbar-parts';
 import type {
   FileEntry,
   FileSystemContextMenuAction,
@@ -43,6 +42,7 @@ import type {
   FileSystemLoadChildrenArgs,
   FileSystemLoadChildrenResult,
   FileSystemMoveEvent,
+  FileSystemOpenedFile,
   FileSystemSearchScope,
   FileSystemSortKey,
   FileSystemSortState,
@@ -50,8 +50,8 @@ import type {
   FileSystemViewerArgs,
   FileSystemViewProps,
   FileTypeFilterOption,
+  HeaderLayout,
 } from '../types/file-system.types';
-import type { FileSystemOpenedFile } from '../views/file-system-viewer-modal';
 
 // ── Slice types ───────────────────────────────────────────────────────────────
 

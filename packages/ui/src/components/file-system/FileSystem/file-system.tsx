@@ -11,7 +11,6 @@ import { HoldMenuProvider } from '../../menus/HoldMenu/hold-menu';
 import { buildCrumbs } from './logic/file-system-search';
 import { FileSystemDragScope } from './shell/file-system-drag-scope';
 import { FileSystemHeader } from './shell/file-system-header';
-import type { HeaderLayout } from './shell/file-system-toolbar-parts';
 import { FileSystemStatusBar } from './shell/file-system-toolbar-parts';
 import {
   createFileSystemStore,
@@ -32,7 +31,12 @@ import {
   useFileSystemStoreContext,
   useFileSystemViewActions,
 } from './store/file-system-context';
-import type { FileSystemBreadcrumb, FileSystemProps, ResolvedFileSystemBreakpoints } from './types/file-system.types';
+import type {
+  FileSystemBreadcrumb,
+  FileSystemProps,
+  HeaderLayout,
+  ResolvedFileSystemBreakpoints,
+} from './types/file-system.types';
 import { defaultFileSystemBreakpoints } from './types/file-system.types';
 import { FileSystemBody } from './views/file-system-body';
 import { FileSystemViewerModal } from './views/file-system-viewer-modal';

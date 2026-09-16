@@ -98,6 +98,9 @@ export type FileSystemViewerKind = 'docx' | 'image' | 'pdf' | 'pptx' | 'xlsx';
 
 export type FileSystemViewerArgs = { file: FileSystemFileItem; kind: FileSystemViewerKind | null; url: string | null };
 
+/** A file the viewer modal is presenting once its URL has resolved. */
+export type FileSystemOpenedFile = { file: FileEntry; kind: FileSystemViewerKind; url: string | null };
+
 /** Columns the entry list can be ordered by. */
 export type FileSystemSortKey = 'createdAt' | 'kind' | 'name' | 'size' | 'updatedAt';
 
@@ -343,6 +346,9 @@ export type FileSystemBreakpoints = {
 };
 
 export type ResolvedFileSystemBreakpoints = Required<FileSystemBreakpoints>;
+
+/** Which header band a container width resolves to. */
+export type HeaderLayout = 'full' | 'compact' | 'minimal';
 
 export const defaultFileSystemBreakpoints: ResolvedFileSystemBreakpoints = { minimal: 360, compact: 560, tablet: 768 };
 

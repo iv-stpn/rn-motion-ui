@@ -2,9 +2,9 @@
 // jsdom (the component itself pulls in react-native / moti / svg, which don't
 // resolve under vitest's node env).
 
-import type { OtpInputType } from './otp-input';
-
 const REGEX_MAP: Record<OtpInputType, RegExp> = { alpha: /[^a-zA-Z]/g, numeric: /\D/g, alphanumeric: /[^a-zA-Z\d]/g };
+
+export type OtpInputType = 'alpha' | 'numeric' | 'alphanumeric';
 
 export type OtpEdit = { value: string; caret: number };
 

@@ -20,7 +20,7 @@ import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
-import { applyEdit, sanitize } from './otp-input.logic';
+import { applyEdit, type OtpInputType, sanitize } from './otp-input.logic';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -233,7 +233,7 @@ function OtpSlot({
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type OtpInputType = 'alpha' | 'numeric' | 'alphanumeric';
+export type { OtpInputType } from './otp-input.logic';
 export type OtpInputStatus = 'idle' | 'error' | 'success';
 /** Box side + glyph scale per size — the same `--spacing-interactive-*` ramp
  *  the button family reads, so an OTP row lines up with neighbouring controls. */

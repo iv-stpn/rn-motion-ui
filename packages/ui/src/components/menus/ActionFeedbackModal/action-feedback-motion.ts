@@ -1,5 +1,8 @@
 import { EASE_OUT } from '../../../lib/ease';
 
+/** The feedback states the modal and its morphing icon cycle through. */
+export type ActionFeedbackState = 'loading' | 'success' | 'error';
+
 // The morph timings live together because they are calibrated against each
 // other: the vessel resizes over 300ms while the glyph inside cross-fades over
 // 240ms and the text under it over 180ms, so each layer settles before the one

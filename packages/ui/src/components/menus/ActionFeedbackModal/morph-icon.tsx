@@ -7,8 +7,8 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Loader } from '../../display/Loader/loader';
 import { ThemedIcon } from '../../icon/themed-icon';
-import type { ActionFeedbackState } from './action-feedback-modal';
 import {
+  type ActionFeedbackState,
   MORPH_CONTAINER_TRANSITION,
   MORPH_GLYPH_TRANSITION,
   MORPH_SPINNER_TRANSITION,

@@ -11,7 +11,7 @@ import { useCallback } from 'react';
 import { View } from 'react-native';
 import { AdaptiveModal, type WidePanelSize } from '../../../menus/AdaptiveModal/adaptive-modal';
 import { useFileSystemConsumer, useFileSystemViewer, useFileSystemViewerActions } from '../store/file-system-context';
-import type { FileEntry, FileSystemViewerKind } from '../types/file-system.types';
+import type { FileSystemViewerKind } from '../types/file-system.types';
 import { FileSystemGalleryStage } from './file-system-gallery-stage';
 
 /** Wide-screen panel size per viewer kind, as a share of the window. */
@@ -25,8 +25,6 @@ const VIEWER_PANEL_SIZES: Record<FileSystemViewerKind, WidePanelSize> = {
 
 /** Fallback stage width when the modal has no measured pane yet. */
 const VIEWER_STAGE_WIDTH = 640;
-
-export type FileSystemOpenedFile = { file: FileEntry; kind: FileSystemViewerKind; url: string | null };
 
 /**
  * Hosts one file at a time. The stage is the same component the gallery centre

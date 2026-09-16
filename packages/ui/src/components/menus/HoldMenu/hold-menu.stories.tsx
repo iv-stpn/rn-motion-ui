@@ -1,15 +1,16 @@
 /**
  * Stories for `HoldMenu`, the verbatim port of react-native-hold-menu.
  *
- * These run under react-native-web, where the faithful port keeps upstream's
- * RNGH v2 `Gesture` handlers for every platform — there is no `contextmenu`
- * special-casing like the sibling `HoldMenu`. So on web the interaction is a
- * real press-and-hold (or tap / double-tap, per `activateOn`), which works for
- * a human pointer but not for the synthetic events `play` functions dispatch.
- * The four upstream screens are therefore render-only behind a single
- * `Interactive` toggle, so each one can be held open by hand — the `NestedScroll`
- * story is the exception: it drives the DOM `contextmenu` path (web `'hold'`)
- * to pin the panel's on-screen placement.
+ * These run under react-native-web, where the port drops upstream's RNGH v2
+ * `Gesture` handlers and opens the menu through DOM events instead — a
+ * right-click (`contextmenu`) for `'hold'`, a plain click for `'tap'` /
+ * `'double-tap'` — while the lift, squeeze and travel still run (see
+ * `HoldItem`). The RNGH gesture is the native touch path only. A desktop
+ * pointer therefore opens `'hold'` with a right-click rather than a
+ * click-and-hold, so the four upstream screens are render-only behind a single
+ * `Interactive` toggle for holding open by hand. `NestedScroll` is the
+ * exception: its play drives the DOM `contextmenu` path directly to pin the
+ * panel's on-screen placement.
  *
  * The scenes mirror `example/src/screens`: Clubhouse (a hold menu on the back
  * chevron), Home (the examples index — rows are holdable, and a theme toggle

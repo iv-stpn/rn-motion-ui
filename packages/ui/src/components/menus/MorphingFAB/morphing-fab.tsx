@@ -152,6 +152,13 @@ export type MorphingFABProps = {
   expandedWidth?: number;
   /** Expanded pane height in px. Defaults to 230. */
   expandedHeight?: number;
+  /**
+   * Stretch the expanded pane to the screen width with the same symmetric 16 px
+   * left/right inset the FAB already hugs its corner with, instead of the fixed
+   * `expandedWidth` pane, so left, right and bottom all hug the screen by the
+   * same amount. @default false
+   */
+  hug?: boolean;
   /** Controlled open state. */
   open?: boolean;
   /** Uncontrolled initial open state. */
@@ -218,6 +225,7 @@ export function MorphingFAB({
   intensity,
   expandedWidth = 300,
   expandedHeight = 230,
+  hug = false,
   open: openProp,
   defaultOpen = false,
   onOpenChange,
@@ -387,12 +395,16 @@ export function MorphingFAB({
   // the resting footprint the shell collapses to. A pill rounds to half of it.
   const triggerSize = BUTTON_SIZE[size].px;
   const glass = blurRadius > 0;
-  const shell = fabShellGeometry({ open, expandedWidth, expandedHeight, left, triggerSize });
+  // `hug` stretches the expanded pane to the screen width with the same 16 px
+  // left/right inset the FAB already hugs its bottom and anchored side with, so
+  // every inset edge agrees instead of the fixed `expandedWidth` pane.
+  const resolvedExpandedWidth = hug ? windowWidth - 32 : expandedWidth;
+  const shell = fabShellGeometry({ open, expandedWidth: resolvedExpandedWidth, expandedHeight, left, triggerSize });
 
   // The teleported wrapper's top-left: the fixed root's top-left — its bottom
   // corner (the anchor) minus the expanded size. The root never resizes, so
   // this is constant and the teleported shell can't drift from the inline one.
-  const rootWindow = anchor ? { x: left ? anchor.x : anchor.x - expandedWidth, y: anchor.y - expandedHeight } : null;
+  const rootWindow = anchor ? { x: left ? anchor.x : anchor.x - resolvedExpandedWidth, y: anchor.y - expandedHeight } : null;
 
   // Outside-press backdrop (native): covers the whole window so a tap anywhere
   // outside the pane folds it back — the web path is the document listener
@@ -509,7 +521,7 @@ export function MorphingFAB({
           // `fabShellGeometry`) morphs about its own pinned bottom corner. The
           // constant size also keeps the box non-zero, so Fabric mounts the
           // absolute shell (a 0×0 parent drops it).
-          width: expandedWidth,
+          width: resolvedExpandedWidth,
           height: expandedHeight,
           ...(left ? { left: 16 } : { right: 16 }),
         },
@@ -517,7 +529,7 @@ export function MorphingFAB({
       ]}
     >
       {teleported ? (
-        <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={expandedWidth} height={expandedHeight}>
+        <TeleportedOverlay teleported={teleported} rootWindow={rootWindow} width={resolvedExpandedWidth} height={expandedHeight}>
           <AnimatePresence>{backdrop}</AnimatePresence>
           {shellView}
         </TeleportedOverlay>

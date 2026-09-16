@@ -194,6 +194,7 @@ const PLAYGROUND_HINT = 'Toggle between Feedback (form → sent/error) and Menu 
 function MorphingFABPlayground() {
   const [example, setExample] = useState<Example>('feedback');
   const [size, setSize] = useState<MorphingFABSize>('lg');
+  const [hug, setHug] = useState(false);
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
   const [glass, setGlass] = useState(false);
@@ -206,6 +207,7 @@ function MorphingFABPlayground() {
         <ControlCard title="Example">
           <Choice label="Content" onChange={setExample} options={EXAMPLES} value={example} />
           <Choice label="Size" onChange={setSize} options={FAB_SIZES} value={size} />
+          <Toggle label="Hug" onChange={setHug} value={hug} />
           <Toggle label="Floating" onChange={setFloating} value={floating} />
           <Toggle label="Glass" onChange={setGlass} value={glass} />
           <Choice label="Elevation" onChange={setElevationKey} options={ELEVATION_KEYS} value={elevationKey} />
@@ -236,6 +238,7 @@ function MorphingFABPlayground() {
           expandedWidth={300}
           expandedHeight={230}
           size={size}
+          hug={hug}
           floating={floating}
           elevation={ELEVATIONS[elevationKey]}
           blurRadius={glass ? 24 : 0}
@@ -259,6 +262,7 @@ function MorphingFABPlayground() {
           expandedWidth={232}
           expandedHeight={192}
           size={size}
+          hug={hug}
           floating={floating}
           elevation={ELEVATIONS[elevationKey]}
           blurRadius={glass ? 24 : 0}

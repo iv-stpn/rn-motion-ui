@@ -796,6 +796,11 @@
       "types": "./src/hooks/use-focus-trap.ts",
       "default": "./src/hooks/use-focus-trap.ts"
     },
+    "./hooks/use-menu-keyboard": {
+      "source": "./src/hooks/use-menu-keyboard.ts",
+      "types": "./src/hooks/use-menu-keyboard.ts",
+      "default": "./src/hooks/use-menu-keyboard.ts"
+    },
     "./hooks/direction-provider": {
       "source": "./src/hooks/direction-provider.tsx",
       "types": "./src/hooks/direction-provider.tsx",

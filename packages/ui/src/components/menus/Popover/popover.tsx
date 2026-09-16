@@ -250,7 +250,14 @@ export function PopoverContent({
   const transformOrigin = menuTransformOrigin({ align, side });
 
   return (
-    <Modal transparent={true} visible={rendered} animationType="none" onRequestClose={handleClose} onShow={onShow}>
+    <Modal
+      transparent={true}
+      visible={rendered}
+      animationType="none"
+      onRequestClose={handleClose}
+      onShow={onShow}
+      accessibilityViewIsModal={true}
+    >
       <AnimatePresence onExitComplete={handleExitComplete}>
         {open ? (
           <View key="popover-overlay" className="flex-1">

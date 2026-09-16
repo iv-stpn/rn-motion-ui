@@ -281,7 +281,12 @@ export function AdaptiveDropdown({
   return (
     <>
       <View ref={triggerRef} collapsable={false} className={triggerClassName} testID={testID}>
-        <Pressable onPress={toggle} accessibilityLabel={triggerAccessibilityLabel}>
+        <Pressable
+          onPress={toggle}
+          accessibilityLabel={triggerAccessibilityLabel}
+          accessibilityRole="button"
+          aria-expanded={open}
+        >
           {resolvedTrigger}
         </Pressable>
       </View>
@@ -294,6 +299,7 @@ export function AdaptiveDropdown({
           statusBarTranslucent={true}
           onRequestClose={close}
           onShow={onShow}
+          accessibilityViewIsModal={true}
         >
           <Pressable className="flex-1" onPress={closeOnOutsidePress ? close : undefined}>
             <OverlayScrim type={overlay} dimClassName="bg-black/40" animateDim={true} />

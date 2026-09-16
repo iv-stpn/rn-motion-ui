@@ -99,8 +99,9 @@
  * rounded rows of `'sidebar'` mode.
  */
 
-import { Fragment, isValidElement, type ReactElement, type ReactNode, useCallback } from 'react';
+import { Fragment, isValidElement, type ReactElement, type ReactNode, useCallback, useRef } from 'react';
 import { View } from 'react-native';
+import { useMenuKeyboardNavigation } from '../../hooks/use-menu-keyboard';
 import { useReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/cn';
 import { MotiView } from '../../moti/components/view';
@@ -490,6 +491,12 @@ export function Menu({
   const isMenu = role === 'menu';
   const segmented = variant === 'segmented';
 
+  const listRef = useRef<View>(null);
+  // Arrow-key roving focus between rows, only when the list actually carries the
+  // menu role (`role="none"` is a plain list inside a panel that announces itself
+  // a menu, so there is no menuitem to rove between).
+  useMenuKeyboardNavigation(listRef, isMenu);
+
   const keyed = keyEntries(entries);
   // Reserve the icon slot on iconless rows only when the menu is actually mixed —
   // a list where nothing has an icon should not be indented by a phantom gutter.
@@ -508,6 +515,7 @@ export function Menu({
       accessibilityLabel={accessibilityLabel}
       aria-label={accessibilityLabel}
       className={cn(mode === 'sidebar' && scale.gapClass, !segmented && 'py-(--menu-vertical-padding)', className)}
+      ref={listRef}
       role={isMenu ? 'menu' : undefined}
       testID={testID}
     >

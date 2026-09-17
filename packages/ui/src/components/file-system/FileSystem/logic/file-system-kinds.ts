@@ -12,7 +12,7 @@ import type {
 import { fileExtension } from './file-system-paths';
 
 /** Human "Kind" column labels, keyed by extension. */
-export const FILE_KIND_LABELS: Record<string, string> = {
+const FILE_KIND_LABELS: Record<string, string> = {
   css: 'CSS Stylesheet',
   csv: 'CSV Document',
   doc: 'Word Document',
@@ -66,7 +66,7 @@ export function entryKindLabel(entry: FileSystemEntry): string {
  * MIME types inferred from the extension when a file carries no `contentType`,
  * so the file-type filter can classify every manifest entry.
  */
-export const EXTENSION_MIME_TYPES: Record<string, string> = {
+const EXTENSION_MIME_TYPES: Record<string, string> = {
   css: 'text/css',
   csv: 'text/csv',
   doc: 'application/msword',
@@ -101,7 +101,7 @@ export const EXTENSION_MIME_TYPES: Record<string, string> = {
   zip: 'application/zip',
 };
 
-export const FALLBACK_MIME_TYPE = 'application/octet-stream';
+const FALLBACK_MIME_TYPE = 'application/octet-stream';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';

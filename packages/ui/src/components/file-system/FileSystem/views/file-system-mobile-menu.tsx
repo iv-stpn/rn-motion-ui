@@ -25,9 +25,9 @@ import { type ContextMenuHookReturn, useContextMenu } from '../shell/file-system
 import type { FileSystemContextMenuAction, FileSystemEntry, FileSystemItem } from '../types/file-system.types';
 
 /** Suffix the kebab's `testID` appends to the entry's — `<root>-entry-<path>-kebab`. */
-export const MOBILE_KEBAB_SUFFIX = '-kebab';
+const MOBILE_KEBAB_SUFFIX = '-kebab';
 /** Suffix the checkbox's `testID` appends to the entry's — `<root>-entry-<path>-checkbox`. */
-export const MOBILE_CHECKBOX_SUFFIX = '-checkbox';
+const MOBILE_CHECKBOX_SUFFIX = '-checkbox';
 
 type FileSystemMobileMenuProps = {
   entry: FileSystemEntry;

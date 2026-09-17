@@ -7,17 +7,14 @@
 // MS Office, Flash, AI, Video) drawn full-bleed with no paper.
 
 import { type ComponentType, useId } from 'react';
-import { useColorScheme } from 'react-native';
 import Svg, { Defs, G, LinearGradient, Path, Stop, Text as SvgText } from 'react-native-svg';
 import {
   FILE_BADGE_TRANSFORM,
   type FileIconBrand,
   type FileIconCategory,
-  type FileIconColorToken,
   FOLDER_GLYPH_ASPECT_RATIO,
   fileIconAspectRatio,
   fileIconBadgeColor,
-  fileIconColor,
   isFileIconBrand,
   resolveFileIcon,
 } from './file-icon';
@@ -115,9 +112,6 @@ const FOLDER_PAPER_PATH = 'M17 11.5h30c1.66 0 3 1.34 3 3V18H14v-3.5c0-1.66 1.34-
  * same nominal size. The shadow is inside the box, so nothing is clipped.
  */
 const PAPER_VIEW_BOX = `${FILE_PAPER_INK.x} ${FILE_PAPER_INK.y} ${FILE_PAPER_INK.width} ${FILE_PAPER_INK.height}`;
-
-/** Which surface a file-type colour is read against — drives which half of the pair wins. */
-export type FileIconSurface = 'theme' | 'light' | 'inverted';
 
 /** Whether the folder is drawn holding a sheet of paper. */
 export type FileSystemFolderVariant = 'empty' | 'filled';
@@ -234,14 +228,4 @@ export function FileTypeIcon({ color, fileName, height: heightProp, size = 16 }:
       )}
     </Svg>
   );
-}
-
-/**
- * A file type's colour for anything the icon does not draw itself — a kind
- * label, a tinted chip — resolved against the current scheme.
- */
-// biome-ignore lint/style/useComponentExportOnlyModules: the colour resolver belongs with the palette the icons are drawn from, so the two cannot drift
-export function useFileIconColor(token: FileIconColorToken, surface: FileIconSurface = 'theme'): string {
-  const isDark = useColorScheme() === 'dark';
-  return fileIconColor(token, isDark, surface);
 }

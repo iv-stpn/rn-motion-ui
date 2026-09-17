@@ -5,10 +5,10 @@
 // two must agree exactly — one row-stride of drift and the tile the pointer
 // looks to be over is not the one that commits.
 
+/** Columns are packed at this width or wider — the `auto-fill` floor. */
+const MIN_TILE_WIDTH = 104;
 /** The grid's content-container padding (p-3), on all four sides. */
 export const GRID_PADDING = 12;
-/** Columns are packed at this width or wider — the `auto-fill` floor. */
-export const MIN_TILE_WIDTH = 104;
 export const TILE_GAP = 4;
 export const ROW_GAP = 12;
 /** Fixed tile height: a glyph box plus a reserved two-line label. */

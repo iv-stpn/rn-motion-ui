@@ -42,7 +42,7 @@ const ICON_SIZE = 16;
 /** Shared glyph lane: folders fill it, file icons sit centred with padding. */
 const GLYPH_LANE_WIDTH = 22;
 /** Two-line row: name above, breadcrumb trail below. */
-export const SEARCH_ROW_HEIGHT = 44;
+const SEARCH_ROW_HEIGHT = 44;
 
 /**
  * Fixed yellow rather than a theme token — a match marker reads as a highlighter

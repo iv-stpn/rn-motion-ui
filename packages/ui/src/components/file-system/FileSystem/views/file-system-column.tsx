@@ -48,10 +48,10 @@ const LOADING_LABEL = 'Loading…';
 
 /** Column geometry (px). Rows are uniform so `getItemLayout` stays exact. */
 export const COLUMN_WIDTH = 240;
-export const COLUMN_ROW_HEIGHT = 28;
+const COLUMN_ROW_HEIGHT = 28;
 const COLUMN_ROW_GAP = 1;
 
-export const COLUMN_ROW_STRIDE = COLUMN_ROW_HEIGHT + COLUMN_ROW_GAP;
+const COLUMN_ROW_STRIDE = COLUMN_ROW_HEIGHT + COLUMN_ROW_GAP;
 const COLUMN_GLYPH_SIZE = 22;
 /** Horizontal inset on the folder glyph, so a folder reads slightly narrower than the lane. */
 const COLUMN_FOLDER_PADDING_X = 2;
@@ -62,7 +62,7 @@ const COLUMN_PIN_ICON_SIZE = 10;
 const COLUMN_FAV_ICON_SIZE = 10;
 
 /** Top/bottom padding inside the FlatList's content container (p-1.5 = 6 px). */
-export const COLUMN_PADDING = 6;
+const COLUMN_PADDING = 6;
 
 /** Container-local point → row index, or null for padding / gap / past-last-row. */
 export function columnRowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {

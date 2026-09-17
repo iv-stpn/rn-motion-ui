@@ -17,7 +17,7 @@ type FileSystemSortOption = {
   triggerLabel: string;
 };
 
-export const SORT_OPTIONS: FileSystemSortOption[] = [
+const SORT_OPTIONS: FileSystemSortOption[] = [
   { defaultDirection: 'asc', key: 'name', label: 'Name', triggerLabel: 'Name' },
   { defaultDirection: 'asc', key: 'kind', label: 'Kind', triggerLabel: 'Kind' },
   { defaultDirection: 'desc', key: 'createdAt', label: 'Date created', triggerLabel: 'Created' },

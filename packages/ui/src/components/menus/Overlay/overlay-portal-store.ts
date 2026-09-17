@@ -100,11 +100,6 @@ export function getOverlayStack(): OverlayLayerState {
   return layers;
 }
 
-/** Number of overlay layers currently registered. */
-export function getOverlayDepth(): number {
-  return layers.length;
-}
-
 /**
  * Register a new layer, or refresh an existing one (matched by `input.id`) in
  * place. Returns the layer id and whether it is the bottom (Modal-owning) layer

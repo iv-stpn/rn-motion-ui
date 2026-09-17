@@ -23,6 +23,9 @@ import type { DragBehavior } from './drag-behavior';
 const EMPTY_PATH: readonly string[] = [];
 const NO_GROUPS: DragGroups = [];
 
+/** Outside every `<DragManager>`: valid, and the case a bare `<Draggable>` runs in. */
+const ROOT_DRAG_SCOPE: DragScope = { groups: NO_GROUPS, managerId: null, managerPath: EMPTY_PATH, overlayHostId: null };
+
 export type DragScope = {
   /** Manager ids from the outermost down to the nearest, or `[]` outside every manager. */
   managerPath: readonly string[];
@@ -49,14 +52,6 @@ export type DragScope = {
    * in which case the search continues outward.
    */
   overlayHostId: string | null;
-};
-
-/** Outside every `<DragManager>`: valid, and the case a bare `<Draggable>` runs in. */
-export const ROOT_DRAG_SCOPE: DragScope = {
-  groups: NO_GROUPS,
-  managerId: null,
-  managerPath: EMPTY_PATH,
-  overlayHostId: null,
 };
 
 export const DragScopeContext = createContext<DragScope>(ROOT_DRAG_SCOPE);

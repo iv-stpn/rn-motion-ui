@@ -20,9 +20,6 @@ export const INTERACTIVE_RADIUS = 8;
 /** Corner radius in px for card containers. */
 export const CARD_RADIUS = 24;
 
-/** Tailwind class backed by --radius-interactive. */
-export const ROUNDED_INTERACTIVE = 'rounded-interactive' as const;
-
 /** Tailwind class backed by --radius-card. */
 export const ROUNDED_CARD = 'rounded-card' as const;
 

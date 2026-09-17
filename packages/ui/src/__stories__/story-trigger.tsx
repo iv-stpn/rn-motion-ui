@@ -51,7 +51,7 @@ const PRESSABLE_SHAPE: Record<string, string> = { rounded: 'rounded-interactive'
 export type TriggerKind = 'button' | 'elevated' | 'pressable';
 
 /** Ordered list ready to pass directly to `<Choice options={TRIGGER_KINDS} />`. */
-export const TRIGGER_KINDS: readonly TriggerKind[] = ['button', 'elevated', 'pressable'] as const;
+const TRIGGER_KINDS: readonly TriggerKind[] = ['button', 'elevated', 'pressable'] as const;
 
 // ─── Sizes & Shapes ──────────────────────────────────────────────────────────
 
@@ -59,10 +59,10 @@ export const TRIGGER_KINDS: readonly TriggerKind[] = ['button', 'elevated', 'pre
 export type TriggerSize = Exclude<ButtonSize, 'icon'>;
 
 /** Sizes available in the trigger controls. */
-export const TRIGGER_SIZES: readonly TriggerSize[] = ['sm', 'md', 'lg'] as const;
+const TRIGGER_SIZES: readonly TriggerSize[] = ['sm', 'md', 'lg'] as const;
 
 /** Shapes available in the trigger controls. */
-export const TRIGGER_SHAPES: readonly ButtonShape[] = ['rounded', 'pill'] as const;
+const TRIGGER_SHAPES: readonly ButtonShape[] = ['rounded', 'pill'] as const;
 
 // ─── TriggerButton ───────────────────────────────────────────────────────────
 

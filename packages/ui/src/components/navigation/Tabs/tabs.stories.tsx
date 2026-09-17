@@ -251,6 +251,40 @@ export const Pill: Story = {
   },
 };
 
+export const Keyboard: Story = {
+  name: 'Keyboard: arrow keys rove selection and focus',
+  render: () => <PanelTabs testID="tabs" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const overview = await canvas.findByRole('tab', { name: TAB_OVERVIEW });
+    const activity = await canvas.findByRole('tab', { name: TAB_ACTIVITY });
+    const settings = await canvas.findByRole('tab', { name: TAB_SETTINGS });
+
+    // The `:focus-visible` ring is wired onto the trigger — the keyboard half of
+    // the hover affordance.
+    await expect(overview).toHaveClass('focus-visible:outline-2', 'focus-visible:outline-primary');
+
+    // The selected tab is the roving-tabindex owner; focus it, then rove right.
+    overview.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() => expect(activity).toHaveAttribute('aria-selected', 'true'));
+    await expect(activity).toHaveFocus();
+    await expect(await canvas.findByText(ACTIVITY_EVENTS)).toBeInTheDocument();
+
+    // Rove right again, then wrap from the last tab back to the first.
+    await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() => expect(settings).toHaveAttribute('aria-selected', 'true'));
+    await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() => expect(overview).toHaveAttribute('aria-selected', 'true'));
+    await expect(overview).toHaveFocus();
+
+    // Left reverses the direction.
+    await userEvent.keyboard('{ArrowLeft}');
+    await waitFor(() => expect(settings).toHaveAttribute('aria-selected', 'true'));
+    await expect(settings).toHaveFocus();
+  },
+};
+
 export const PreSelectedTab: Story = {
   name: 'Demo: Pre-selected (non-first tab)',
   render: () => <PanelTabs defaultValue="settings" testID="tabs" />,

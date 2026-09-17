@@ -1,14 +1,16 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: one compound component — root, list, trigger and the three panel animations belong in the same module
 
 import { cva } from 'class-variance-authority';
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, type ReactNode, type RefObject, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { type LayoutRectangle, type NativeSyntheticEvent, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { useArrowRoving } from '../../../hooks/use-arrow-roving';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, springLayout } from '../../../lib/ease';
 import { SURFACE_CLASSNAME } from '../../../lib/elevated';
+import { FOCUS_VISIBLE_RING } from '../../../lib/focus-ring';
 import { H_INTERACTIVE, INTERACTIVE_RADIUS, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../../theme/motion';
@@ -75,6 +77,8 @@ type Ctx = {
   exiting: string | null;
   /** Measured width of the Tabs root — how far a `slide` panel travels. 0 until first layout. */
   panelWidth: number;
+  /** Tab values in DOM order, appended as each trigger mounts — arrow-key roving walks this. */
+  orderRef: RefObject<string[]>;
 };
 
 type TabsTriggerProps = { value: string; children: ReactNode; testID?: string };
@@ -343,6 +347,9 @@ export function Tabs({
   // distance in the same commit it mounts, and its own width isn't known until a
   // layout pass later. Panels stretch to the root's width, so this is that width.
   const [panelWidth, setPanelWidth] = useState(0);
+  // Tab values in DOM order, appended as each trigger mounts. A stable array
+  // (mutated in place, never reassigned) so `useArrowRoving` doesn't re-subscribe.
+  const orderRef = useRef<string[]>([]);
   const controlled = value !== undefined;
   const current = controlled ? value : internal;
 
@@ -389,6 +396,7 @@ export function Tabs({
         direction,
         panelWidth,
         exiting,
+        orderRef,
       }}
     >
       <View testID={testID} className={cn(className)} style={style} onLayout={onLayout}>
@@ -405,9 +413,19 @@ export type TabsListProps = {
 };
 
 export function TabsList({ children, testID }: TabsListProps) {
-  const { variant, value, layouts, reduce, indicatorTransition } = useTabs();
+  const { variant, value, setValue, layouts, reduce, indicatorTransition, orderRef } = useTabs();
   const active = layouts[value];
   const indicatorSpring = mergeTransition(TAB_INDICATOR_SPRING, indicatorTransition);
+  const listRef = useRef<View>(null);
+  // ArrowLeft/Right rove the selection AND focus, per the WAI-ARIA automatic
+  // activation pattern — `useMenuKeyboardNavigation` roves focus only.
+  useArrowRoving(listRef, {
+    role: '[role="tab"]',
+    axis: 'horizontal',
+    values: orderRef.current,
+    selected: value,
+    onSelect: setValue,
+  });
 
   // Track whether the indicator has been placed once so the first render jumps
   // directly to the selected tab instead of animating from wherever MotiView
@@ -425,7 +443,7 @@ export function TabsList({ children, testID }: TabsListProps) {
   else indicatorBorderRadius = 0;
 
   return (
-    <View accessibilityRole="tablist" className={cn(list({ variant }), 'relative self-start')} testID={testID}>
+    <View ref={listRef} accessibilityRole="tablist" className={cn(list({ variant }), 'relative self-start')} testID={testID}>
       {/* Shared-layout indicator: a single MotiView that glides to the active
           trigger's measured rect. Mirrors the web layoutId pill. White for
           pill/segment so trigger text keeps its dark color while the pill is
@@ -456,11 +474,17 @@ export function TabsList({ children, testID }: TabsListProps) {
 }
 
 export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
-  const { value: current, setValue, size, register } = useTabs();
+  const { value: current, setValue, size, register, orderRef } = useTabs();
   const active = current === value;
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const { pressed, pressHandlers } = usePressState();
+
+  // Register in DOM order so arrow-key roving can walk the tabs; deduped so a
+  // remount of the same value never appends twice.
+  useMountEffect(() => {
+    if (!orderRef.current.includes(value)) orderRef.current.push(value);
+  });
 
   const onLayout = useCallback(
     (e: NativeSyntheticEvent<{ layout: Layout }>) => register(value, e.nativeEvent.layout),
@@ -478,6 +502,7 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
     <Pressable
       accessibilityRole="tab"
       aria-selected={active}
+      tabIndex={active ? 0 : -1}
       onPress={onPress}
       onLayout={onLayout}
       onHoverIn={onHoverIn}
@@ -485,7 +510,7 @@ export function TabsTrigger({ value, children, testID }: TabsTriggerProps) {
       onFocus={onFocus}
       onBlur={onBlur}
       {...pressHandlers}
-      className={cn(H_INTERACTIVE[size], PX_INTERACTIVE[size], 'justify-center')}
+      className={cn(H_INTERACTIVE[size], PX_INTERACTIVE[size], 'justify-center', FOCUS_VISIBLE_RING)}
       testID={testID}
     >
       <Text weight="medium" className={cn(highlighted ? 'text-foreground' : 'text-muted-foreground', TEXT_INTERACTIVE[size])}>

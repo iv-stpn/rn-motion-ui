@@ -5,6 +5,7 @@ import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { usePressState } from '../../hooks/use-press-state';
 import { cn } from '../../lib/cn';
 import { SPRING_LAYOUT } from '../../lib/ease';
+import { FOCUS_VISIBLE_RING } from '../../lib/focus-ring';
 import { MotiView } from '../../moti/components/view';
 import { TIMING_INSTANT } from '../../theme/motion';
 import { ThemedIcon } from '../icon/themed-icon';
@@ -353,6 +354,9 @@ export function MenuItem({
         // Dimmed *and* blocked: `disabled` alone would leave the row looking live,
         // and the fills above are already suppressed for it via `canInteract`.
         disabled && 'opacity-40',
+        // No `!disabled` gate — a disabled row is `tabindex="-1"`, so it can't
+        // receive focus and `:focus-visible` never matches it.
+        FOCUS_VISIBLE_RING,
         className,
       )}
       disabled={disabled}

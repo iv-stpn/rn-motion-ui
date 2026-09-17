@@ -5,6 +5,7 @@ import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
+import { FOCUS_VISIBLE_RING } from '../../../lib/focus-ring';
 import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
@@ -244,6 +245,9 @@ export function IconButton({
         boxClass,
         isDisabled && !noDisabledOpacity && 'opacity-50',
         !isDisabled && BUTTON_HOVER_CLASS,
+        // No `!isDisabled` gate — a disabled control can't receive focus, so
+        // `:focus-visible` never matches it (unlike `:hover`, which does).
+        FOCUS_VISIBLE_RING,
         'overflow-hidden',
         contentClassName,
       )}

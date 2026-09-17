@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Section, Toggle } from '../../../__stories__/story-harness';
 import { RadioGroup, RadioGroupItem } from './radio';
 
@@ -75,5 +75,34 @@ export const Default: Story = {
     const starter = await canvas.findByRole('radio', { name: 'Starter — free' });
     await userEvent.click(starter);
     await expect(args.onValueChange).toHaveBeenCalledWith('starter');
+  },
+};
+
+export const Keyboard: Story = {
+  name: 'Keyboard: arrow keys rove selection and focus',
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const starter = await canvas.findByRole('radio', { name: 'Starter — free' });
+    const pro = await canvas.findByRole('radio', { name: 'Pro — $12/mo' });
+    const team = await canvas.findByRole('radio', { name: 'Team — $29/mo' });
+    const legacy = await canvas.findByRole('radio', { name: 'Legacy plan' });
+
+    // The selected radio (pro) is the roving-tabindex owner; focus it, then rove down.
+    pro.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() => expect(team).toHaveAttribute('aria-checked', 'true'));
+    await expect(team).toHaveFocus();
+
+    // Down from the last enabled radio wraps to the first, skipping the disabled
+    // legacy item.
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() => expect(starter).toHaveAttribute('aria-checked', 'true'));
+    await expect(starter).toHaveFocus();
+    await expect(legacy).toHaveAttribute('aria-checked', 'false');
+
+    // Up reverses and wraps from the first back to the last enabled.
+    await userEvent.keyboard('{ArrowUp}');
+    await waitFor(() => expect(team).toHaveAttribute('aria-checked', 'true'));
+    await expect(team).toHaveFocus();
   },
 };

@@ -1,10 +1,13 @@
 import { cva } from 'class-variance-authority';
-import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
+import { createContext, type ReactNode, type RefObject, useCallback, useContext, useRef, useState } from 'react';
 import { type LayoutChangeEvent, type LayoutRectangle, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { useArrowRoving } from '../../../hooks/use-arrow-roving';
+import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
+import { FOCUS_VISIBLE_RING } from '../../../lib/focus-ring';
 import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../../theme/motion';
@@ -18,6 +21,8 @@ type RadioCtx = {
   register: (value: string, layout: LayoutRectangle) => void;
   /** The group's own testID, used to derive per-item ones. */
   testID?: string;
+  /** Item values in DOM order, appended as each item mounts — arrow-key roving walks this. */
+  orderRef: RefObject<string[]>;
 };
 
 const RadioContext = createContext<RadioCtx | null>(null);
@@ -76,14 +81,21 @@ export function RadioGroup({
   const reduce = useReducedMotion();
   const [internal, setInternal] = useState(defaultValue);
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
+  // Item values in DOM order, appended as each item mounts. A stable array
+  // (mutated in place, never reassigned) so `useArrowRoving` doesn't re-subscribe.
+  const orderRef = useRef<string[]>([]);
+  const groupRef = useRef<View>(null);
   const controlled = value !== undefined;
   const current = controlled ? value : internal;
   const indicatorSpring = mergeTransition(MOTION_SNAPPY, transition);
 
-  const setValue = (next: string) => {
-    if (!controlled) setInternal(next);
-    onValueChange?.(next);
-  };
+  const setValue = useCallback(
+    (next: string) => {
+      if (!controlled) setInternal(next);
+      onValueChange?.(next);
+    },
+    [controlled, onValueChange],
+  );
 
   const register = useCallback((v: string, layout: LayoutRectangle) => {
     setLayouts((prev) => {
@@ -93,11 +105,22 @@ export function RadioGroup({
     });
   }, []);
 
+  // Arrow keys rove the selection AND focus (vertical groups: Up/Down;
+  // horizontal: Left/Right), per the WAI-ARIA radio pattern.
+  useArrowRoving(groupRef, {
+    role: '[role="radio"]',
+    axis: orientation === 'horizontal' ? 'horizontal' : 'vertical',
+    values: orderRef.current,
+    selected: current,
+    onSelect: setValue,
+  });
+
   const activeLayout = layouts[current];
 
   return (
-    <RadioContext.Provider value={{ value: current, setValue, reduce, layouts, register, testID }}>
+    <RadioContext.Provider value={{ value: current, setValue, reduce, layouts, register, testID, orderRef }}>
       <View
+        ref={groupRef}
         accessibilityRole="radiogroup"
         testID={testID}
         className={cn(group({ orientation }), className)}
@@ -150,13 +173,19 @@ const control = cva('h-5 w-5 shrink-0 rounded-full hairline', {
 });
 
 export function RadioGroupItem({ value, label, disabled, style, accessibilityLabel, testID }: RadioGroupItemProps) {
-  const { value: groupValue, setValue, reduce, register, testID: groupTestID } = useRadioGroup();
+  const { value: groupValue, setValue, reduce, register, testID: groupTestID, orderRef } = useRadioGroup();
   const { pressed, pressHandlers } = usePressState();
   const selected = groupValue === value;
   // Derive from the group so items are addressable without threading a testID
   // through every child; an explicit prop still wins. Falls back to the
   // component name when the group has no testID.
   const itemTestID = testID ?? `${groupTestID ?? 'radio-group'}-item-${value}`;
+
+  // Register in DOM order so arrow-key roving can walk the group; deduped so a
+  // remount of the same value never appends twice.
+  useMountEffect(() => {
+    if (!orderRef.current.includes(value)) orderRef.current.push(value);
+  });
 
   const handlePress = useCallback(() => {
     if (!disabled) setValue(value);
@@ -172,11 +201,12 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
       accessibilityLabel={accessibilityLabel ?? label}
       testID={itemTestID}
       disabled={disabled}
+      tabIndex={selected ? 0 : -1}
       hitSlop={hitSlopFor(20)}
       {...pressHandlers}
       onPress={handlePress}
       onLayout={onLayout}
-      className="flex-row items-center"
+      className={cn('flex-row items-center', FOCUS_VISIBLE_RING)}
       style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}
     >
       <MotiView

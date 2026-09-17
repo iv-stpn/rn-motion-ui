@@ -5,6 +5,7 @@ import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
+import { FOCUS_VISIBLE_RING } from '../../../lib/focus-ring';
 import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
@@ -182,7 +183,7 @@ export function Checkbox({
       hitSlop={hitSlopFor(20)}
       {...pressHandlers}
       onPress={handlePress}
-      className={cn('flex-row items-center', className)}
+      className={cn('flex-row items-center', FOCUS_VISIBLE_RING, className)}
       style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}
     >
       <CheckboxBox

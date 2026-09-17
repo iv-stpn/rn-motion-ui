@@ -9,6 +9,7 @@ import {
   type SurfaceElevation,
   type SurfaceLevel,
 } from '../../../lib/elevated';
+import { FOCUS_VISIBLE_RING } from '../../../lib/focus-ring';
 import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
@@ -206,6 +207,9 @@ export function Button({
         BUTTON_BOX[shape][size],
         isDisabled && !noDisabledOpacity && 'opacity-50',
         !isDisabled && BUTTON_HOVER_CLASS,
+        // No `!isDisabled` gate — a disabled control can't receive focus, so
+        // `:focus-visible` never matches it (unlike `:hover`, which does).
+        FOCUS_VISIBLE_RING,
         'overflow-hidden',
         contentClassName,
       )}

@@ -117,7 +117,7 @@ export const deepEqual = (array1: MenuItemProps[], array2: MenuItemProps[]): boo
  *
  * Every item is a full `md` row (40 px) — a title is a centred full row now, not
  * the shorter base caption — and a `withSeparator` band (8 px) follows its row,
- * the trailing one included exactly as the list renders it. A 2.5 px hairline
+ * the trailing one included exactly as the list renders it. A 2 px hairline
  * sits below every row but the last. The `'segmented'` list runs its rows flush
  * to the panel edge, so its list-level inset is zero — the
  * `HOLD_MENU_SEGMENTED_LIST_PADDING` term below, kept so the two variants' maths

@@ -21,14 +21,13 @@ export function PickerThumb({ color, x, y }: PickerThumbProps) {
   return (
     <View
       pointerEvents="none"
-      className="absolute rounded-full"
+      className="hairline absolute rounded-full"
       style={{
         width: THUMB_SIZE,
         height: THUMB_SIZE,
         left: x - THUMB_SIZE / 2,
         top: y - THUMB_SIZE / 2,
         backgroundColor: color,
-        borderWidth: 2,
         borderColor: '#fff' /* theme-exempt: white ring stays legible on any colour */,
         boxShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
       }}

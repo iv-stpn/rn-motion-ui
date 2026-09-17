@@ -180,7 +180,7 @@ export type MenuItemProps = Omit<PressableProps, 'children'> & {
    */
   variant?: MenuVariant;
   /**
-   * Draws the 2.5 px hairline below the row — the segmentation of the
+   * Draws the 2 px hairline below the row — the segmentation of the
    * `'segmented'` variant. Omitted on the last row, which ends flush.
    * @default false
    */

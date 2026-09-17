@@ -47,7 +47,7 @@ const DEFAULT_PREVIEW_ASPECT_RATIO = 0.72;
 export const MAX_THUMBNAIL_ELONGATION = 2;
 
 /**
- * Below this width the face keeps its paper but drops its border: a 2.5 px
+ * Below this width the face keeps its paper but drops its border: a 2 px
  * hairline around a row-sized glyph is a fifth of the picture, and the corner
  * has to come down with it or the square reads as a lozenge.
  */

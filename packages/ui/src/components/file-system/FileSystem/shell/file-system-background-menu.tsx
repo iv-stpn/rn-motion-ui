@@ -35,7 +35,7 @@ import {
 
 const MENU_ACCESSIBILITY_LABEL = 'Actions';
 const CLOSE_ACCESSIBILITY_LABEL = 'Close menu';
-const PANEL_ELEVATION = 6;
+const PANEL_ELEVATION = 3;
 
 export type FileSystemBackgroundMenuProps = {
   /** The rows, already translated to `Menu` entries. */

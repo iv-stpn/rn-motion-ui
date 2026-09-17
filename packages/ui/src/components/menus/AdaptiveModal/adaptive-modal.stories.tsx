@@ -105,7 +105,7 @@ function ModalPlayground() {
   const [smallMode, setSmallMode] = useState<SmallScreenMode>('bottomSheet');
   const [sizeKey, setSizeKey] = useState<PanelSizeKey>('auto');
   const [floating, setFloating] = useState(false);
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [withSubtitle, setWithSubtitle] = useState(true);
   const [withClose, setWithClose] = useState(true);
   const [compact, setCompact] = useState(false);

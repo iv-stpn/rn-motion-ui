@@ -163,7 +163,7 @@ export type FullSheetProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation of the sheet (0–8) — drives the background tint and the
+   * Surface elevation of the sheet (0–3) — drives the background tint and the
    * `shadow-elevated-N` recipe (drop shadow + dark-mode rim). `0` is the flat
    * resting surface (no shadow or border). Defaults to `6`.
    */
@@ -217,7 +217,7 @@ export function FullSheet({
   compact = false,
   customLayout = false,
   floating = false,
-  elevation = 6,
+  elevation = 3,
   mode = 'default',
   dismissable = true,
   onAfterClose,

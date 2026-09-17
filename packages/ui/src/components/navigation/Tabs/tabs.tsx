@@ -439,7 +439,7 @@ export function TabsList({ children, testID }: TabsListProps) {
           transition={!hasPositioned.current || reduce ? TIMING_INSTANT : indicatorSpring}
           layout={!hasPositioned.current || reduce ? undefined : INDICATOR_LAYOUT}
           className={cn(
-            variant === 'underline' ? 'bg-primary' : SURFACE_CLASSNAME[5],
+            variant === 'underline' ? 'bg-primary' : SURFACE_CLASSNAME[3],
             'pointer-events-none absolute top-0 left-0',
           )}
           testID={testID ? `${testID}-indicator` : undefined}

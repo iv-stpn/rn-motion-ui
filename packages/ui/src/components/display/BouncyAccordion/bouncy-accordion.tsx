@@ -36,7 +36,7 @@ export type BouncyAccordionProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation of every row (0–8) — drives the background tint and the
+   * Surface elevation of every row (0–3) — drives the background tint and the
    * drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or
    * border). Defaults to `0`.
    */

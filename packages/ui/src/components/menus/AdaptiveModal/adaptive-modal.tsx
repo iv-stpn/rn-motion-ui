@@ -84,7 +84,7 @@ type AdaptiveModalProps = {
    * trades the layered drop for the halo. @default false
    */
   floating?: boolean;
-  /** Surface elevation (0–8) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
+  /** Surface elevation (0–3) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 3. */
   elevation?: SurfaceElevation;
   /**
    * Wrap content in device safe-area insets. Passed through to BottomSheet /
@@ -151,7 +151,7 @@ export function AdaptiveModal({
   smallScreenOverlay,
   closeOnOutsidePress = true,
   floating = false,
-  elevation = 6,
+  elevation = 3,
   safeArea = true,
   testID,
 }: AdaptiveModalProps) {

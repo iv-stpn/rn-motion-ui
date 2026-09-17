@@ -28,7 +28,7 @@ export type DrawerProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation of the drawer panel (0–8) — drives the background tint
+   * Surface elevation of the drawer panel (0–3) — drives the background tint
    * and the `shadow-elevated-N` recipe (drop shadow + dark-mode rim). `0` is the
    * flat resting surface (no shadow or border). Defaults to `6`.
    */
@@ -59,7 +59,7 @@ export function Drawer({
   onOpenChange,
   side = 'right',
   floating = false,
-  elevation = 6,
+  elevation = 3,
   children,
   overlay = 'blur',
   closeOnOutsidePress = true,

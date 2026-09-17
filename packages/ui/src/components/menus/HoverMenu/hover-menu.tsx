@@ -72,7 +72,7 @@ export type HoverMenuProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
-  /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 6 */
+  /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 3 */
   elevation?: SurfaceElevation;
   /**
    * Overrides the shared open/close animation — the same `motion` prop
@@ -285,7 +285,7 @@ export function HoverMenu({
   closeDelay = DEFAULT_CLOSE_DELAY,
   contentClassName,
   floating = false,
-  elevation = 6,
+  elevation = 3,
   motion,
   testID,
   overlay = 'none',

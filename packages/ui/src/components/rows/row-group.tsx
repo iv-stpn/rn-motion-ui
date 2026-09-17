@@ -63,7 +63,7 @@ export function RowGroupContainer({ variant, size, className, style, testID, chi
   if (variant === 'sections') {
     const childArray = Children.toArray(children);
     return (
-      <View testID={testID} className={cn('flex flex-col rounded-card p-4', elevated(3), className)} style={style}>
+      <View testID={testID} className={cn('flex flex-col rounded-card p-4', elevated(0), className)} style={style}>
         {childArray.map((child, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: children array is stable — derived from the parent's fixed items list — and the wrapper fragments are stateless
           <Fragment key={index}>

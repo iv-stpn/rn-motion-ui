@@ -9,11 +9,12 @@
  *
  * ## Surface system
  *
- * Backgrounds are organised as an elevation ladder (surface-1 … surface-8):
+ * Backgrounds are organised as an elevation ladder (surface-1 … surface-3):
  *
- *  - `surface-1` is the page. `surface-3` is the resting level for cards,
- *    popovers and dialogs. Higher levels exist for stacked overlays.
- *  - Light mode keeps the ladder neutral (3+ are pure white) — elevation is
+ *  - `surface-1` is the page. `surface-3` is the resting fill for contained
+ *    content AND the fill modals float on — the two share one tint; only the
+ *    shadow differentiates them.
+ *  - Light mode keeps the ladder neutral (2+ are pure white) — elevation is
  *    carried by the `shadow-surface-N` recipes alone.
  *  - Dark mode steps lightness up per level and adds a subtle neutral tint
  *    (hue 270, chroma 0.004) so the whole stack tracks one brand direction.
@@ -25,9 +26,10 @@
  *    crisp 1px ring plus progressively softer drop layers.
  *
  * Surfaces address the ladder directly — `surface-1` is the page, `surface-3`
- * the resting level for contained content (cards, popovers, dialogs, inputs).
- * Values are spelled out literally (rather than via var() chains) so uniwind
- * can resolve every token on native exactly as written.
+ * the resting level for contained content (cards, inputs) and the float level
+ * for modals and elevated menus. Values are spelled out literally (rather than
+ * via var() chains) so uniwind can resolve every token on native exactly as
+ * written.
  *
  * ## Status colors
  *
@@ -98,16 +100,12 @@
 /* ── Token registration + light values + web :root base ────────────────── */
 
 @theme {
-  /* Surface ladder — page is surface-1; cards/popovers rest at surface-3.
-     Light mode: neutral, clean-canvas; shadows alone carry elevation. */
+  /* Surface ladder — page is surface-1; the resting fill for contained content
+     and the top float both resolve to surface-3. Light mode: neutral,
+     clean-canvas; shadows alone carry elevation. */
   --color-surface-1: oklch(97% 0 0);
   --color-surface-2: oklch(98.5% 0 0);
   --color-surface-3: oklch(100% 0 0);
-  --color-surface-4: oklch(100% 0 0);
-  --color-surface-5: oklch(100% 0 0);
-  --color-surface-6: oklch(100% 0 0);
-  --color-surface-7: oklch(100% 0 0);
-  --color-surface-8: oklch(100% 0 0);
 
   /* State overlays — translucent, composite on any surface level. */
   --color-surface-hover: oklch(0% 0 0 / 0.04);
@@ -176,28 +174,13 @@
 
   /* Surface elevation shadows — a crisp 1px ring at full strength plus drop
      layers whose opacity decays as blur grows (natural light fall-off).
-     Pair shadow-surface-N with bg-surface-N. */
+     Pair shadow-surface-N with bg-surface-N. The top rung (3) carries the full
+     six-layer stack so modals keep their presence on a three-rung ladder. */
   --shadow-surface-1: 0 0 0 1px oklch(0% 0 0 / 0.06);
   --shadow-surface-2: 0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06);
   --shadow-surface-3:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05);
-  --shadow-surface-4:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
-    0 6px 6px -3px oklch(0% 0 0 / 0.05);
-  --shadow-surface-5:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
-    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04);
-  --shadow-surface-6:
     0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
     0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04);
-  --shadow-surface-7:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
-    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04),
-    0 48px 48px -24px oklch(0% 0 0 / 0.03);
-  --shadow-surface-8:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
-    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04),
-    0 48px 48px -24px oklch(0% 0 0 / 0.03), 0 96px 96px -48px oklch(0% 0 0 / 0.03);
 
   /* Input field shadow — the large, diffuse drop for the `floating` variant.
      Zero offset on both axes, so it spreads uniformly on every side (the
@@ -213,20 +196,12 @@
      restate the full set — dark fills them with the real recipe, light mirrors
      these no-ops — so uniwind can extract per-theme maps. */
   --surface-hi-base: transparent;
-  --surface-hi-mid: transparent;
   --surface-hi-high: transparent;
-  --surface-hi-peak: transparent;
   --surface-ring-base: transparent;
-  --surface-ring-mid: transparent;
   --surface-ring-high: transparent;
   --surface-rim-1: 0 0 transparent;
   --surface-rim-2: 0 0 transparent;
   --surface-rim-3: 0 0 transparent;
-  --surface-rim-4: 0 0 transparent;
-  --surface-rim-5: 0 0 transparent;
-  --surface-rim-6: 0 0 transparent;
-  --surface-rim-7: 0 0 transparent;
-  --surface-rim-8: 0 0 transparent;
 
   /* Elevated shadow recipe — the shadow applied by the `elevated()` util and
      the `elevation` prop. Each level composites the surface *rim* (inset
@@ -241,11 +216,6 @@
   --shadow-elevated-1: var(--surface-rim-1), var(--shadow-surface-1);
   --shadow-elevated-2: var(--surface-rim-2), var(--shadow-surface-2);
   --shadow-elevated-3: var(--surface-rim-3), var(--shadow-surface-3);
-  --shadow-elevated-4: var(--surface-rim-4), var(--shadow-surface-4);
-  --shadow-elevated-5: var(--surface-rim-5), var(--shadow-surface-5);
-  --shadow-elevated-6: var(--surface-rim-6), var(--shadow-surface-6);
-  --shadow-elevated-7: var(--surface-rim-7), var(--shadow-surface-7);
-  --shadow-elevated-8: var(--surface-rim-8), var(--shadow-surface-8);
 
   /* Interactive surface family — height, horizontal padding and corner radius
      are the same box for every interactive component (buttons, inputs, tabs,
@@ -373,20 +343,12 @@
        a reliable fallback for web regardless of which variant (if any) matches
        at a given moment. */
     --surface-hi-base: transparent;
-    --surface-hi-mid: transparent;
     --surface-hi-high: transparent;
-    --surface-hi-peak: transparent;
     --surface-ring-base: transparent;
-    --surface-ring-mid: transparent;
     --surface-ring-high: transparent;
     --surface-rim-1: 0 0 transparent;
     --surface-rim-2: 0 0 transparent;
     --surface-rim-3: 0 0 transparent;
-    --surface-rim-4: 0 0 transparent;
-    --surface-rim-5: 0 0 transparent;
-    --surface-rim-6: 0 0 transparent;
-    --surface-rim-7: 0 0 transparent;
-    --surface-rim-8: 0 0 transparent;
   }
 }
 
@@ -436,11 +398,6 @@
   --color-surface-1: oklch(20.5% 0.004 270);
   --color-surface-2: oklch(23.5% 0.004 270);
   --color-surface-3: oklch(26.4% 0.004 270);
-  --color-surface-4: oklch(29.3% 0.004 270);
-  --color-surface-5: oklch(32.1% 0.004 270);
-  --color-surface-6: oklch(34.8% 0.004 270);
-  --color-surface-7: oklch(37.5% 0.004 270);
-  --color-surface-8: oklch(40.2% 0.004 270);
   --color-surface-hover: oklch(100% 0 0 / 0.04);
   --color-surface-selected: oklch(100% 0 0 / 0.08);
   --color-foreground: oklch(94% 0.004 270);
@@ -474,33 +431,14 @@
   --shadow-surface-1: 0 0 0 0 oklch(0% 0 0 / 0);
   --shadow-surface-2: 0 1px 1px -0.5px oklch(0% 0 0 / 0.18);
   --shadow-surface-3:
-    0 0 0 1px oklch(0% 0 0 / 0.12), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16);
-  --shadow-surface-4:
-    0 0 0 1px oklch(0% 0 0 / 0.14), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-    0 6px 6px -3px oklch(0% 0 0 / 0.16);
-  --shadow-surface-5:
-    0 0 0 1px oklch(0% 0 0 / 0.16), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-    0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14);
-  --shadow-surface-6:
     0 0 0 1px oklch(0% 0 0 / 0.18), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
     0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14);
-  --shadow-surface-7:
-    0 0 0 1px oklch(0% 0 0 / 0.2), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-    0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14),
-    0 48px 48px -24px oklch(0% 0 0 / 0.12);
-  --shadow-surface-8:
-    0 0 0 1px oklch(0% 0 0 / 0.22), 0 1px 1px -0.5px oklch(0% 0 0 / 0.18), 0 3px 3px -1.5px oklch(0% 0 0 / 0.16),
-    0 6px 6px -3px oklch(0% 0 0 / 0.16), 0 12px 12px -6px oklch(0% 0 0 / 0.14), 0 24px 24px -12px oklch(0% 0 0 / 0.14),
-    0 48px 48px -24px oklch(0% 0 0 / 0.12), 0 96px 96px -48px oklch(0% 0 0 / 0.12);
 
   /* Rim highlight (top edge) and ring (full perimeter). Both step up with
      elevation and feed the inset --surface-rim-N recipe below. */
   --surface-hi-base: oklch(1 0 0 / 0.01);
-  --surface-hi-mid: oklch(1 0 0 / 0.02);
   --surface-hi-high: oklch(1 0 0 / 0.04);
-  --surface-hi-peak: oklch(1 0 0 / 0.06);
   --surface-ring-base: oklch(1 0 0 / 0.02);
-  --surface-ring-mid: oklch(1 0 0 / 0.04);
   --surface-ring-high: oklch(1 0 0 / 0.06);
 
   /* Inset portion of the dark elevation recipe — the rim highlight + ring that
@@ -509,12 +447,7 @@
      of the drop layers within one box-shadow instead. */
   --surface-rim-1: inset 0 0 0 1px var(--surface-ring-base);
   --surface-rim-2: inset 0 1px 0 0 var(--surface-hi-base), inset 0 0 0 1px var(--surface-ring-base);
-  --surface-rim-3: inset 0 1px 0 0 var(--surface-hi-mid), inset 0 0 0 1px var(--surface-ring-base);
-  --surface-rim-4: inset 0 1px 0 0 var(--surface-hi-mid), inset 0 0 0 1px var(--surface-ring-mid);
-  --surface-rim-5: inset 0 1px 0 0 var(--surface-hi-high), inset 0 0 0 1px var(--surface-ring-mid);
-  --surface-rim-6: inset 0 1px 0 0 var(--surface-hi-high), inset 0 0 0 1px var(--surface-ring-high);
-  --surface-rim-7: inset 0 1px 0 0 var(--surface-hi-peak), inset 0 0 0 1px var(--surface-ring-high);
-  --surface-rim-8: inset 0 1px 0 0 var(--surface-hi-peak), inset 0 0 0 1px var(--surface-ring-high);
+  --surface-rim-3: inset 0 1px 0 0 var(--surface-hi-high), inset 0 0 0 1px var(--surface-ring-high);
 }
 
 /* ── Light mode — the scoped mirror of the @theme defaults ────────────────
@@ -537,11 +470,6 @@
   --color-surface-1: oklch(97% 0 0);
   --color-surface-2: oklch(98.5% 0 0);
   --color-surface-3: oklch(100% 0 0);
-  --color-surface-4: oklch(100% 0 0);
-  --color-surface-5: oklch(100% 0 0);
-  --color-surface-6: oklch(100% 0 0);
-  --color-surface-7: oklch(100% 0 0);
-  --color-surface-8: oklch(100% 0 0);
   --color-surface-hover: oklch(0% 0 0 / 0.04);
   --color-surface-selected: oklch(0% 0 0 / 0.08);
   --color-foreground: oklch(18% 0.004 270);
@@ -575,43 +503,19 @@
   --shadow-surface-1: 0 0 0 1px oklch(0% 0 0 / 0.06);
   --shadow-surface-2: 0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06);
   --shadow-surface-3:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05);
-  --shadow-surface-4:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
-    0 6px 6px -3px oklch(0% 0 0 / 0.05);
-  --shadow-surface-5:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
-    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04);
-  --shadow-surface-6:
     0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
     0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04);
-  --shadow-surface-7:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
-    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04),
-    0 48px 48px -24px oklch(0% 0 0 / 0.03);
-  --shadow-surface-8:
-    0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
-    0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04),
-    0 48px 48px -24px oklch(0% 0 0 / 0.03), 0 96px 96px -48px oklch(0% 0 0 / 0.03);
 
   /* Light mode has no rim — the outer rings alone carry elevation. Declared as
      fully transparent (rather than omitted) because every theme must define the
      same variable set, and because --shadow-elevated-N composites them
      unconditionally. */
   --surface-hi-base: transparent;
-  --surface-hi-mid: transparent;
   --surface-hi-high: transparent;
-  --surface-hi-peak: transparent;
   --surface-ring-base: transparent;
-  --surface-ring-mid: transparent;
   --surface-ring-high: transparent;
 
   --surface-rim-1: 0 0 transparent;
   --surface-rim-2: 0 0 transparent;
   --surface-rim-3: 0 0 transparent;
-  --surface-rim-4: 0 0 transparent;
-  --surface-rim-5: 0 0 transparent;
-  --surface-rim-6: 0 0 transparent;
-  --surface-rim-7: 0 0 transparent;
-  --surface-rim-8: 0 0 transparent;
 }

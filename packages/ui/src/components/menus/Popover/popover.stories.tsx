@@ -73,7 +73,7 @@ function PopoverPlayground() {
   const [align, setAlign] = useState<PopoverAlign>('center');
   const [offsetKey, setOffsetKey] = useState<OffsetKey>('14');
   const [radiusKey, setRadiusKey] = useState<RadiusKey>('16');
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
   const [overlay, setOverlay] = useState<OverlayType>('none');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
@@ -164,10 +164,10 @@ function PopoverPlayground() {
               </PopoverContent>
             </Popover>
           </Sample>
-          <Sample align="center" label="elevation 6">
+          <Sample align="center" label="elevation 3">
             <Popover align="center" side="bottom">
               <PopoverTrigger>{LIFTED_LABEL}</PopoverTrigger>
-              <PopoverContent elevation={6}>
+              <PopoverContent elevation={3}>
                 <Text className="text-foreground text-sm">{LIFTED_DESC}</Text>
               </PopoverContent>
             </Popover>

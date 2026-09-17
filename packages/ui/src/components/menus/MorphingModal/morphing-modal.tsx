@@ -74,7 +74,7 @@ export type MorphingModalProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
-  /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
+  /** Surface elevation (0–3) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 3. */
   elevation?: SurfaceElevation;
   /** When true, renders a close button in the top-right corner of the panel. */
   showClose?: boolean;
@@ -102,7 +102,7 @@ export function MorphingModal({
   placement = 'bottom',
   hug = false,
   floating = false,
-  elevation = 6,
+  elevation = 3,
   showClose,
   accessibilityLabel,
   style,

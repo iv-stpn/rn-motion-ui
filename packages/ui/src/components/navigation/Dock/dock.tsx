@@ -82,7 +82,7 @@ export type DockProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation of the dock bar (0–8) — drives the background tint and the
+   * Surface elevation of the dock bar (0–3) — drives the background tint and the
    * `shadow-elevated-N` recipe (drop + dark-mode rim). `0` is the flat resting
    * surface (no shadow or border). Defaults to `0`.
    */

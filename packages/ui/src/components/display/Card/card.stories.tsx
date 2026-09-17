@@ -14,7 +14,7 @@ const meta = {
   args: { size: 'md', elevation: 0, floating: false, blurRadius: 0, opacity: 1, rim: false },
   argTypes: {
     size: { control: 'select', options: ['compact', 'md', 'lg'] },
-    elevation: { control: { type: 'range', min: 0, max: 8, step: 1 } },
+    elevation: { control: { type: 'range', min: 0, max: 3, step: 1 } },
     floating: { control: 'boolean' },
     blurRadius: { control: { type: 'range', min: 0, max: 40, step: 1 } },
     opacity: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
@@ -27,7 +27,7 @@ type Story = StoryObj<typeof meta>;
 
 const SIZES = ['compact', 'md', 'lg'] as const satisfies readonly CardSize[];
 const SIZE_LABELS: Record<CardSize, string> = { compact: 'Compact', md: 'Medium', lg: 'Large' };
-const ELEVATION_KEYS = ['0', '1', '2', '3', '4', '5', '6', '7', '8'] as const;
+const ELEVATION_KEYS = ['0', '1', '2', '3'] as const;
 const TITLE = 'Card title';
 const BODY = 'A container for grouping related content.';
 
@@ -123,12 +123,12 @@ function CardPlayground(args: ComponentProps<typeof Card>) {
 }
 
 const ladderTestID = (level: SurfaceElevation) => `card-elevation-${level}`;
-const PROBED_LEVELS = [1, 3, 6] as const satisfies readonly SurfaceLevel[];
+const PROBED_LEVELS = [1, 2, 3] as const satisfies readonly SurfaceLevel[];
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
 export default meta;
 
-/** Both axes the card exposes — the 0–8 surface/shadow ladder (0 is flat) and the
+/** Both axes the card exposes — the 0–3 surface/shadow ladder (0 is flat) and the
  *  three padding sizes. Drive the top card with the chips, or compare the rows below. */
 export const Interactive: Story = { render: (args) => <CardPlayground {...args} /> };
 
@@ -199,11 +199,11 @@ export const ElevationPairsSurfaceAndShadow: Story = {
       expect(flat.backgroundColor).toBe(getComputedStyle(probe).backgroundColor);
       expect(flat.boxShadow).toBe('none');
 
-      // …and the rungs are actually distinct, not eight aliases of one recipe.
+      // …and the rungs are actually distinct, not three aliases of one recipe.
       // In light mode every surface from 3 up is pure white, so the shadow is
       // the only thing that moves — a background-only check would pass on a
       // ladder that had stopped laddering.
-      expect(cardStyle(3).boxShadow).not.toBe(cardStyle(6).boxShadow);
+      expect(cardStyle(3).boxShadow).not.toBe(cardStyle(2).boxShadow);
     } finally {
       probe.remove();
     }

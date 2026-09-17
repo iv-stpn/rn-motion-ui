@@ -103,7 +103,7 @@ export type AdaptiveDropdownProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
-  /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 6 */
+  /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 3 */
   elevation?: SurfaceElevation;
   /**
    * Minimum window width for the floating-panel layout; below it the content
@@ -157,7 +157,7 @@ export function AdaptiveDropdown({
   triggerClassName,
   fullSheet = false,
   floating = false,
-  elevation = 6,
+  elevation = 3,
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   motion,
   testID,

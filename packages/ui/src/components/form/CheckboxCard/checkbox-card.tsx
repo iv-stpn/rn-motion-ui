@@ -140,7 +140,7 @@ export type CheckboxCardGroupProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation for every card in the group (0–8). Controls the
+   * Surface elevation for every card in the group (0–3). Controls the
    * background tint (`bg-surface-N`) and the drop shadow (`shadow-elevated-N`).
    * `0` is the flat resting surface — a `surface-3` fill with no shadow or
    * border. Default: `3` (the standard card level). A card can override it with
@@ -180,7 +180,7 @@ export function CheckboxCardGroup({
   testID,
   checkTransition,
   floating = false,
-  elevation = 3,
+  elevation = 0,
 }: CheckboxCardGroupProps) {
   const [internal, setInternal] = useState<string[]>(defaultValue ?? []);
   const controlled = value !== undefined;
@@ -341,7 +341,7 @@ export type CheckboxCardProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation (0–8). Controls the background tint (`bg-surface-N`) and
+   * Surface elevation (0–3). Controls the background tint (`bg-surface-N`) and
    * the drop shadow (`shadow-elevated-N`). `0` is the flat resting surface (a
    * `surface-3` fill, no shadow or border). Inherits the group's value when
    * unset. Default: `3` (the standard card level).

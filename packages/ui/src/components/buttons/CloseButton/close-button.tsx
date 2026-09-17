@@ -39,11 +39,11 @@ export type CloseButtonProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation level (0–8) — drives the background colour and the
+   * Surface elevation level (0–3) — drives the background colour and the
    * `shadow-elevated-N` recipe (drop shadow + dark-mode rim). `0` is the flat
-   * resting surface (no shadow or border). Defaults to 3, the resting level for
-   * cards and popovers, so the button floats just above the page.
-   * @default 3
+   * resting surface (no shadow or border) and the default — a CloseButton rests
+   * flat on the page.
+   * @default 0
    */
   elevation?: SurfaceElevation;
   /** Called when the button is pressed. Wire it to the panel's close handler. */
@@ -77,12 +77,12 @@ export type CloseButtonProps = {
  *
  * @example
  * // Larger, higher float for a full-screen overlay:
- * <CloseButton size="lg" elevation={5} onPress={handleClose} />
+ * <CloseButton size="lg" elevation={3} onPress={handleClose} />
  */
 export function CloseButton({
   size = 'md',
   floating = false,
-  elevation = 3,
+  elevation = 0,
   onPress,
   accessibilityLabel = 'Close',
   className,

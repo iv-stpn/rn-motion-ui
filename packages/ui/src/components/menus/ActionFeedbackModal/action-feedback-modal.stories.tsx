@@ -97,7 +97,7 @@ function FeedbackPlayground() {
   const [withText, setWithText] = useState(true);
   const [withTagline, setWithTagline] = useState(false);
   const [floating, setFloating] = useState(false);
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [overlay, setOverlay] = useState<OverlayType>('blur');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
   const trigger = useTriggerState();

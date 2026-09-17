@@ -11,8 +11,8 @@ import {
 } from '../elevated';
 
 describe('SURFACE_LEVELS', () => {
-  it('enumerates the 1–8 ladder in ascending order', () => {
-    expect(SURFACE_LEVELS).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  it('enumerates the 1–3 ladder in ascending order', () => {
+    expect(SURFACE_LEVELS).toEqual([1, 2, 3]);
   });
 });
 
@@ -39,15 +39,15 @@ describe('clampSurfaceLevel', () => {
     expect(clampSurfaceLevel(1)).toBe(1);
   });
 
-  it('clamps above 8 down to 8', () => {
-    expect(clampSurfaceLevel(9)).toBe(8);
-    expect(clampSurfaceLevel(100)).toBe(8);
+  it('clamps above 3 down to 3', () => {
+    expect(clampSurfaceLevel(4)).toBe(3);
+    expect(clampSurfaceLevel(100)).toBe(3);
   });
 
   it('rounds fractional inputs to the nearest level', () => {
-    expect(clampSurfaceLevel(2.4)).toBe(2);
+    expect(clampSurfaceLevel(1.4)).toBe(1);
+    expect(clampSurfaceLevel(1.6)).toBe(2);
     expect(clampSurfaceLevel(2.5)).toBe(3);
-    expect(clampSurfaceLevel(6.9)).toBe(7);
   });
 
   it('treats NaN as level 1', () => {
@@ -55,39 +55,39 @@ describe('clampSurfaceLevel', () => {
   });
 
   it('clamps ±Infinity to the ladder ends', () => {
-    expect(clampSurfaceLevel(Number.POSITIVE_INFINITY)).toBe(8);
+    expect(clampSurfaceLevel(Number.POSITIVE_INFINITY)).toBe(3);
     expect(clampSurfaceLevel(Number.NEGATIVE_INFINITY)).toBe(1);
   });
 });
 
 describe('elevated', () => {
   it('couples background and shadow at the same level by default', () => {
+    expect(elevated(1)).toBe('bg-surface-1 shadow-elevated-1');
     expect(elevated(3)).toBe('bg-surface-3 shadow-elevated-3');
-    expect(elevated(6)).toBe('bg-surface-6 shadow-elevated-6');
   });
 
   it('floats the shadow independently when a shadowLevel is given', () => {
-    expect(elevated(3, 6)).toBe('bg-surface-3 shadow-elevated-6');
-    expect(elevated(4, 2)).toBe('bg-surface-4 shadow-elevated-2');
+    expect(elevated(2, 3)).toBe('bg-surface-2 shadow-elevated-3');
+    expect(elevated(3, 1)).toBe('bg-surface-3 shadow-elevated-1');
   });
 
   it('swaps the ladder shadow for the input halo when floating', () => {
     expect(elevated(3, 3, true)).toBe('bg-surface-3 shadow-floating');
-    expect(elevated(6, 6, true)).toBe('bg-surface-6 shadow-floating');
+    expect(elevated(1, 1, true)).toBe('bg-surface-1 shadow-floating');
   });
 
   it('keeps the background tint on the ladder while floating', () => {
     // The two shadows are the same CSS property, so floating replaces the rung
     // rather than stacking on it — but the surface keeps its place in the ladder.
-    expect(elevated(3, 6, true)).toBe('bg-surface-3 shadow-floating');
+    expect(elevated(3, 1, true)).toBe('bg-surface-3 shadow-floating');
     expect(elevated(0, 0, true)).toBe('bg-surface-3 shadow-floating');
   });
 });
 
 describe('SurfaceLevel type', () => {
   it('accepts the literal union at compile time', () => {
-    const level: SurfaceLevel = 5;
-    expect(elevatedShadow(level)).toBe('shadow-elevated-5');
+    const level: SurfaceLevel = 3;
+    expect(elevatedShadow(level)).toBe('shadow-elevated-3');
   });
 });
 
@@ -105,8 +105,7 @@ describe('elevation 0 (flat surface)', () => {
   });
 
   it('floats a background above a flat (shadowless) elevation', () => {
-    expect(elevated(3, 0)).toBe('bg-surface-3');
-    expect(elevated(6, 0)).toBe('bg-surface-6');
+    expect(elevated(2, 0)).toBe('bg-surface-2');
   });
 
   it('exposes the flat entry in SURFACE_CLASSNAME', () => {
@@ -115,10 +114,10 @@ describe('elevation 0 (flat surface)', () => {
 });
 
 describe('SurfaceElevation type', () => {
-  it('accepts 0 and the 1–8 union at compile time', () => {
+  it('accepts 0 and the 1–3 union at compile time', () => {
     const flat: SurfaceElevation = 0;
-    const level: SurfaceElevation = 5;
+    const level: SurfaceElevation = 3;
     expect(elevated(flat)).toBe('bg-surface-3');
-    expect(elevated(level)).toBe('bg-surface-5 shadow-elevated-5');
+    expect(elevated(level)).toBe('bg-surface-3 shadow-elevated-3');
   });
 });

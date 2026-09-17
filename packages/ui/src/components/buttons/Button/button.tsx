@@ -40,20 +40,15 @@ function parseRgb(color: string): [number, number, number] {
   return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
-// Dark-neutral drop strength per rung (1–8). The surface ladder's drop is tuned
+// Dark-neutral drop strength per rung (1–3). The surface ladder's drop is tuned
 // for near-white surfaces (5–6% black) and vanishes against a filled variant's
-// opaque fill, so the filled variants graduate a stronger drop (16% → 48%) in
+// opaque fill, so the filled variants graduate a stronger drop (16% → 28%) in
 // its place — the same `rgba(27,28,29,…)` drop ElevatedButton wears at its top
 // strength.
 const FILLED_SHADOW_DROP: Record<SurfaceLevel, string> = {
   1: '0 1px 2px 0 rgba(27, 28, 29, 0.16)' /* theme-exempt: fixed dark-neutral drop */,
   2: '0 1px 2px 0 rgba(27, 28, 29, 0.22)' /* theme-exempt: fixed dark-neutral drop */,
   3: '0 1px 3px 0 rgba(27, 28, 29, 0.28)' /* theme-exempt: fixed dark-neutral drop */,
-  4: '0 2px 4px 0 rgba(27, 28, 29, 0.34)' /* theme-exempt: fixed dark-neutral drop */,
-  5: '0 2px 5px 0 rgba(27, 28, 29, 0.4)' /* theme-exempt: fixed dark-neutral drop */,
-  6: '0 3px 8px 0 rgba(27, 28, 29, 0.44)' /* theme-exempt: fixed dark-neutral drop */,
-  7: '0 3px 10px 0 rgba(27, 28, 29, 0.46)' /* theme-exempt: fixed dark-neutral drop */,
-  8: '0 4px 12px 0 rgba(27, 28, 29, 0.48)' /* theme-exempt: fixed dark-neutral drop */,
 };
 
 /**
@@ -90,7 +85,7 @@ export interface ButtonProps extends VariantProps<typeof container>, BaseButtonP
   floating?: boolean;
 
   /**
-   * Shadow level (0–8) the button casts. Unlike the surface components this
+   * Shadow level (0–3) the button casts. Unlike the surface components this
    * drives the shadow *only* — a Button's background comes from its `variant`,
    * not the surface ladder, so raising `elevation` floats the button without
    * recolouring it. `0` is flat (no shadow). @default 0

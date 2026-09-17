@@ -465,7 +465,7 @@ function ViewSwitcherHeader({ isCompact, setView, view }: Pick<FileSystemHeaderS
           accessibilityState={{ selected: option.value === view }}
           key={option.value}
           onPress={() => setView(option.value)}
-          className={cn('rounded-md px-2.5 py-1', option.value === view && 'bg-surface-5')}
+          className={cn('rounded-md px-2.5 py-1', option.value === view && 'bg-surface-3')}
         >
           <Text size="sm">{option.label}</Text>
         </Pressable>

@@ -148,7 +148,7 @@ export type ActionFeedbackModalProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
-  /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
+  /** Surface elevation (0–3) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 3. */
   elevation?: SurfaceElevation;
   testID?: string;
   /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"blur"`. */
@@ -174,7 +174,7 @@ export function ActionFeedbackModal({
   dismissLabel = 'Dismiss',
   tagline,
   floating = false,
-  elevation = 6,
+  elevation = 3,
   testID,
   overlay = 'blur',
   closeOnOutsidePress = true,

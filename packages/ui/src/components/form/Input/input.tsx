@@ -203,7 +203,7 @@ export type InputProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation level (0–8) — drives the field fill (`bg-surface-N`) and
+   * Surface elevation level (0–3) — drives the field fill (`bg-surface-N`) and
    * the `shadow-elevated-N` recipe. `0` is the flat resting surface — a
    * `surface-3` fill with no shadow — which is what a text field usually wants,
    * so unlike the panel surfaces this one rests at `0` rather than `3`. The

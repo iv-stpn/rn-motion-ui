@@ -41,7 +41,7 @@ function PalettePlayground() {
   const [overlay, setOverlay] = useState<OverlayType>('blur');
   const [smallScreenOverlay, setSmallScreenOverlay] = useState<SmallScreenOverlay>('default');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const trigger = useTriggerState();
   const handleOpen = useCallback(() => setOpen(true), []);
 

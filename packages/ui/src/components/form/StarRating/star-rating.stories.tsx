@@ -105,7 +105,7 @@ function StarRatingPlayground(args: ComponentProps<typeof StarRating>) {
             <StarRating
               activeStarColor={colors.primary}
               defaultValue={4}
-              inactiveStarColor={colors['surface-5']}
+              inactiveStarColor={colors['surface-3']}
               showValue={true}
             />
           </Sample>

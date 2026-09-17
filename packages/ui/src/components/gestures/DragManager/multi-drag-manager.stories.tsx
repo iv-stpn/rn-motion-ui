@@ -83,7 +83,7 @@ type GroupChipProps = { count: number };
 /** The group's ghost: one chip naming the count, since a group has no single name. */
 function GroupChip({ count }: GroupChipProps) {
   return (
-    <View className="hairline self-start rounded-md border-border bg-surface-4 px-2 py-1">
+    <View className="hairline self-start rounded-md border-border bg-surface-3 px-2 py-1">
       <Text size="xs">{count} items</Text>
     </View>
   );

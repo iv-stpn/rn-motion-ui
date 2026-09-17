@@ -56,7 +56,7 @@ export type SwipeableListProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation of every row's draggable surface (0–8) — drives the
+   * Surface elevation of every row's draggable surface (0–3) — drives the
    * background tint and the drop shadow + dark-mode rim. `0` is the flat resting
    * surface (no shadow or border). Defaults to `3`.
    */
@@ -597,7 +597,7 @@ export function SwipeableListImpl({
   revealThreshold = 34,
   closeOnAction = true,
   floating = false,
-  elevation = 3,
+  elevation = 0,
   testID,
   className,
   style,

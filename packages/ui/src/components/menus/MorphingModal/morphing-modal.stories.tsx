@@ -229,7 +229,7 @@ type MorphingModalDemoProps = {
 function MorphingModalDemo({
   placement,
   hug = false,
-  elevation = 6,
+  elevation = 3,
   floating = false,
   kind,
   size,
@@ -277,7 +277,7 @@ function MorphingModalDemo({
 function MorphingModalPlayground() {
   const [placement, setPlacement] = useState<MorphingModalPlacement>('bottom');
   const [hug, setHug] = useState(false);
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
   const [overlay, setOverlay] = useState<OverlayType>('blur');
   const [closeOnOutside, setCloseOnOutside] = useState(true);

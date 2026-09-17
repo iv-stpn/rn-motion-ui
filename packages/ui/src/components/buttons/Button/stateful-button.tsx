@@ -111,7 +111,7 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
    * ring, sized to its fill, and ignores both this and `elevation` rather than
    * writing a second `box-shadow` over it. @default false */
   floating?: boolean;
-  /** Shadow level (0–8) the button casts. Drives the shadow only — the fill
+  /** Shadow level (0–3) the button casts. Drives the shadow only — the fill
    *  comes from `variant` — so raising it floats the button without recolouring
    *  it. Flat button only (see `floating`). @default 0 */
   elevation?: SurfaceElevation;

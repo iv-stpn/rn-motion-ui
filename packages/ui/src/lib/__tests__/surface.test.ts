@@ -3,8 +3,8 @@ import { glassSurface, surface } from '../surface';
 
 describe('surface', () => {
   it('combines the elevation ladder with no radius by default', () => {
+    expect(surface(1)).toBe('bg-surface-1 shadow-elevated-1');
     expect(surface(3)).toBe('bg-surface-3 shadow-elevated-3');
-    expect(surface(6)).toBe('bg-surface-6 shadow-elevated-6');
   });
 
   it('prepends the radius token when one is given', () => {
@@ -20,14 +20,14 @@ describe('surface', () => {
 
   it('swaps the ladder shadow for the input halo when floating', () => {
     expect(surface(3, undefined, true)).toBe('bg-surface-3 shadow-floating');
-    expect(surface(6, 'card', true)).toBe('rounded-card bg-surface-6 shadow-floating');
+    expect(surface(2, 'card', true)).toBe('rounded-card bg-surface-2 shadow-floating');
   });
 });
 
 describe('glassSurface', () => {
   it('keeps the elevation shadow but drops the opaque fill', () => {
     expect(glassSurface(3)).toBe('shadow-elevated-3');
-    expect(glassSurface(6, 'card')).toBe('rounded-card shadow-elevated-6');
+    expect(glassSurface(2, 'card')).toBe('rounded-card shadow-elevated-2');
   });
 
   it('carries only the radius at elevation 0 — the flat glass is the tint alone', () => {

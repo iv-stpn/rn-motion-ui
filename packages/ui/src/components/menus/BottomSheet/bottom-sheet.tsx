@@ -59,7 +59,7 @@ export type BottomSheetProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation of the sheet panel (0–8) — drives the background tint
+   * Surface elevation of the sheet panel (0–3) — drives the background tint
    * and the `shadow-elevated-N` recipe. `0` is the flat resting surface (no
    * shadow or border). Defaults to `6`.
    */
@@ -108,7 +108,7 @@ export function BottomSheet({
   onAfterClose,
   fullSheet,
   floating = false,
-  elevation = 6,
+  elevation = 3,
   overlay = 'blur',
   closeOnOutsidePress = true,
   handleClassName,

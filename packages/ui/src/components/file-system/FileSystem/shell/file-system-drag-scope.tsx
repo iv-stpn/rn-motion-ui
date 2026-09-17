@@ -68,7 +68,7 @@ function FileSystemGroupGhost({ index, items }: FileSystemGroupGhostProps) {
   const visible = items.slice(0, STACK_DEPTH);
 
   return (
-    <View className="hairline flex-row items-center gap-1.5 self-start rounded-md border-border bg-surface-4 px-2 py-1.5">
+    <View className="hairline flex-row items-center gap-1.5 self-start rounded-md border-border bg-surface-3 px-2 py-1.5">
       {/* Stacked icon deck: back-to-front, each offset slightly right of the last. */}
       <View
         className="relative"
@@ -177,7 +177,7 @@ function FileSystemDropHint({ containerRef }: FileSystemDropHintProps) {
       style={{ transform: pos.getTranslateTransform() }}
       testID={FS_DROP_HINT_TEST_ID}
     >
-      <View className="hairline flex-row items-center gap-1.5 self-start rounded-md border-border bg-surface-4 px-1.5 py-0.5">
+      <View className="hairline flex-row items-center gap-1.5 self-start rounded-md border-border bg-surface-3 px-1.5 py-0.5">
         <ArrowRightLine color={colors.info} size={14} />
         <Text className="text-foreground" numberOfLines={1} size="xs">
           {DROP_HINT_PREFIX}

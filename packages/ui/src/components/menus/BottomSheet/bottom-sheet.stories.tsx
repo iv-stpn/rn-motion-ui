@@ -62,7 +62,7 @@ function SheetPlayground() {
   const [overlay, setOverlay] = useState<OverlayType>('blur');
   const [longContent, setLongContent] = useState(false);
   const [floating, setFloating] = useState(false);
-  const [elevationKey, setElevationKey] = useState<ElevationKey>('6');
+  const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [open, setOpen] = useState(false);
   const [closes, setCloses] = useState(0);
   const trigger = useTriggerState();

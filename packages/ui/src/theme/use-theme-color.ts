@@ -8,9 +8,9 @@ import { cssColorToSrgb, oklchToSrgb } from '../lib/color';
  * Each key corresponds to a `--color-<token>` CSS custom property.
  *
  * Surfaces follow an elevation ladder: `surface-1` (the page)
- * through `surface-8`, plus the `surface-hover` / `surface-selected`
+ * through `surface-3`, plus the `surface-hover` / `surface-selected`
  * translucent state overlays. `surface-3` is the resting level for contained
- * content (cards, popovers, dialogs, inputs).
+ * content (cards, inputs) and the float level for modals and elevated menus.
  *
  * Status tokens come in pairs: `danger`, `success`, `warning` and `info` are
  * vivid filled backgrounds; `*-foreground` is white for legible text/icons on
@@ -25,11 +25,6 @@ type ThemeToken =
   | 'surface-1'
   | 'surface-2'
   | 'surface-3'
-  | 'surface-4'
-  | 'surface-5'
-  | 'surface-6'
-  | 'surface-7'
-  | 'surface-8'
   | 'surface-hover'
   | 'surface-selected'
   | 'foreground'
@@ -73,11 +68,6 @@ const LIGHT_OKLCH: Record<ThemeToken, Oklch> = {
   'surface-1': [0.97, 0, 0],
   'surface-2': [0.985, 0, 0],
   'surface-3': [1, 0, 0],
-  'surface-4': [1, 0, 0],
-  'surface-5': [1, 0, 0],
-  'surface-6': [1, 0, 0],
-  'surface-7': [1, 0, 0],
-  'surface-8': [1, 0, 0],
   'surface-hover': [0, 0, 0, 0.04],
   'surface-selected': [0, 0, 0, 0.08],
   foreground: [0.18, 0.004, NEUTRAL_HUE],
@@ -109,11 +99,6 @@ const DARK_OKLCH: Record<ThemeToken, Oklch> = {
   'surface-1': [0.205, 0.004, NEUTRAL_HUE],
   'surface-2': [0.235, 0.004, NEUTRAL_HUE],
   'surface-3': [0.264, 0.004, NEUTRAL_HUE],
-  'surface-4': [0.293, 0.004, NEUTRAL_HUE],
-  'surface-5': [0.321, 0.004, NEUTRAL_HUE],
-  'surface-6': [0.348, 0.004, NEUTRAL_HUE],
-  'surface-7': [0.375, 0.004, NEUTRAL_HUE],
-  'surface-8': [0.402, 0.004, NEUTRAL_HUE],
   'surface-hover': [1, 0, 0, 0.04],
   'surface-selected': [1, 0, 0, 0.08],
   foreground: [0.94, 0.004, NEUTRAL_HUE],

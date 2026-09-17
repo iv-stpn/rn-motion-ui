@@ -152,7 +152,7 @@ export type MorphingSwitcherProps = {
    * dark rim) the resting trigger sits at. Opening lifts it
    * {@link OPEN_ELEVATION_LIFT} rungs higher, so the pane reads as floating over
    * the page it covers. `0` rests flat (no shadow or border) and still lifts on
-   * open. @default 3
+   * open. @default 0
    */
   elevation?: SurfaceElevation;
   /**
@@ -504,7 +504,7 @@ export function MorphingSwitcher({
   fullWidth = false,
   size = 'md',
   floating = false,
-  elevation = 3,
+  elevation = 0,
   blurRadius = 0,
   opacity = 1,
   rim = false,

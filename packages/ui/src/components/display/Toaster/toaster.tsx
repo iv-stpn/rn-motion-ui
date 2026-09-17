@@ -49,7 +49,7 @@ const GLASS_STYLE: CSSProperties = {
 const SOLID_STYLE: CSSProperties = {
   backdropFilter: 'none',
   WebkitBackdropFilter: 'none',
-  backgroundColor: 'var(--color-surface-4)',
+  backgroundColor: 'var(--color-surface-3)',
 };
 
 /**
@@ -59,7 +59,7 @@ const SOLID_STYLE: CSSProperties = {
  */
 // biome-ignore lint/plugin: ts/no-as-cast — CSS custom properties (`--normal-bg`, …) aren't part of the closed `CSSProperties` index
 const THEME_VARS = {
-  '--normal-bg': 'var(--color-surface-4)',
+  '--normal-bg': 'var(--color-surface-3)',
   '--normal-border': 'var(--color-border)',
   '--normal-text': 'var(--color-foreground)',
   '--success-text': 'var(--color-success)',

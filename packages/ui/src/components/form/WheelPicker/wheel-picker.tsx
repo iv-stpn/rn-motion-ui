@@ -325,7 +325,7 @@ export type WheelPickerProps = {
    * layered drop for the halo. Ignored when `variant="plain"`. @default false
    */
   floating?: boolean;
-  /** Surface elevation of the outer Card container (0–8). `0` is the flat resting surface (no shadow or border). Default 3. Ignored when `variant="plain"`. */
+  /** Surface elevation of the outer Card container (0–3). `0` is the flat resting surface (no shadow or border). Default 0. Ignored when `variant="plain"`. */
   elevation?: SurfaceElevation;
   /** Additional UniWind class names forwarded to the container. */
   className?: string;
@@ -356,7 +356,7 @@ export function WheelPicker({
   sound = false,
   variant = 'card',
   floating = false,
-  elevation = 3,
+  elevation = 0,
   className,
   style,
   accessibilityLabel,

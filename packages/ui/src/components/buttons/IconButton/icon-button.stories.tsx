@@ -40,26 +40,16 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const ELEVATIONS = ['0', '1', '2', '3', '4', '5', '6', '7', '8'] as const;
+const ELEVATIONS = ['0', '1', '2', '3'] as const;
 type ElevationLabel = (typeof ELEVATIONS)[number];
-const ELEVATION_LEVEL: Record<ElevationLabel, SurfaceElevation> = {
-  '0': 0,
-  '1': 1,
-  '2': 2,
-  '3': 3,
-  '4': 4,
-  '5': 5,
-  '6': 6,
-  '7': 7,
-  '8': 8,
-};
+const ELEVATION_LEVEL: Record<ElevationLabel, SurfaceElevation> = { '0': 0, '1': 1, '2': 2, '3': 3 };
 const SIZES = ['xs', 'sm', 'md', 'lg'] as const;
 const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
 const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { xs: 'Extra small', sm: 'Small', md: 'Medium', lg: 'Large' };
 
 function IconButtonPlayground(args: IconButtonProps) {
   const [floating, setFloating] = useState(false);
-  const [elevation, setElevation] = useState<ElevationLabel>('3');
+  const [elevation, setElevation] = useState<ElevationLabel>('0');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [shape, setShape] = useState<(typeof SHAPES)[number]>('pill');
   const [loading, setLoading] = useState(false);

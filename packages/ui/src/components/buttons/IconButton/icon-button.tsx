@@ -62,9 +62,9 @@ export type IconButtonProps = {
   floating?: boolean;
 
   /**
-   * Surface elevation level (0–8) — drives the background tint (`bg-surface-N`)
+   * Surface elevation level (0–3) — drives the background tint (`bg-surface-N`)
    * and the `shadow-elevated-N` recipe. `0` is the flat resting surface — a
-   * `surface-3` fill with no shadow or border. @default 3
+   * `surface-3` fill with no shadow or border. @default 0
    */
   elevation?: SurfaceElevation;
 
@@ -166,7 +166,7 @@ export type IconButtonProps = {
 export function IconButton({
   icon: IconComponent,
   floating = false,
-  elevation = 3,
+  elevation = 0,
   size = 'md',
   shape = 'rounded',
   blurRadius = 0,

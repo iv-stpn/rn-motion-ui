@@ -65,7 +65,7 @@ export type CommandPaletteProps = {
   smallScreenOverlay?: OverlayType;
   /** When false, pressing outside the palette will not close it. Defaults to true. */
   closeOnOutsidePress?: boolean;
-  /** Surface elevation (0–8) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 6. */
+  /** Surface elevation (0–3) — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 3. */
   elevation?: SurfaceElevation;
   /**
    * Root testID. Each row derives `-item-<id>` from it and each group heading
@@ -158,7 +158,7 @@ export function CommandPalette({
   overlay = 'blur',
   smallScreenOverlay,
   closeOnOutsidePress = true,
-  elevation = 6,
+  elevation = 3,
   onShow,
 }: CommandPaletteProps) {
   const reduce = useReducedMotion();

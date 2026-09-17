@@ -112,7 +112,7 @@ export interface ButtonSwapProps
   floating?: boolean;
 
   /**
-   * Shadow level (0–8) the button casts. Drives the shadow *only* — the fill
+   * Shadow level (0–3) the button casts. Drives the shadow *only* — the fill
    * comes from `variant`, not the surface ladder — so raising `elevation` floats
    * the button without recolouring it. `0` is flat (no shadow). @default 0
    */

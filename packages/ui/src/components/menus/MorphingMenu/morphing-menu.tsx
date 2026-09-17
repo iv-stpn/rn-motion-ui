@@ -67,7 +67,7 @@ export type MorphingMenuProps = {
    */
   floating?: boolean;
   /**
-   * Surface elevation of the morph card (0–8) — drives the background tint and
+   * Surface elevation of the morph card (0–3) — drives the background tint and
    * the `shadow-elevated-N` recipe. `0` is the flat resting surface (no shadow
    * or border). Defaults to `6`.
    */
@@ -253,7 +253,7 @@ export function MorphingMenu({
   title = 'Create',
   triggerLabel = 'Create',
   floating = false,
-  elevation = 6,
+  elevation = 3,
   className,
   style,
   overlay = 'none',

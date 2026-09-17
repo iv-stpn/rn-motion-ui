@@ -58,7 +58,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
   return (
     <Surface
       as={MotiView}
-      elevation={4}
+      elevation={3}
       radius="menu"
       blurRadius={glass ? GLASS_BLUR : 0}
       rim={glass}

@@ -47,15 +47,15 @@ function buildPeople(count: number): Person[] {
 }
 
 function statusBackgroundClass(status: Person['status']): `bg-[${string}]` {
-  if (status === 'active') return 'bg-[rgba(5,150,105,0.1)]';
-  if (status === 'invited') return 'bg-[rgba(217,119,6,0.1)]';
-  return 'bg-[rgba(220,38,38,0.1)]';
+  if (status === 'active') return 'bg-[rgba(5,150,105,0.1)]'; /* theme-exempt: fixed semantic status tint */
+  if (status === 'invited') return 'bg-[rgba(217,119,6,0.1)]'; /* theme-exempt: fixed semantic status tint */
+  return 'bg-[rgba(220,38,38,0.1)]'; /* theme-exempt: fixed semantic status tint */
 }
 
 function statusTextColorClass(status: Person['status']): `text-[${string}]` {
-  if (status === 'active') return 'text-[#059669]';
-  if (status === 'invited') return 'text-[#d97706]';
-  return 'text-[#dc2626]';
+  if (status === 'active') return 'text-[#059669]'; /* theme-exempt: fixed semantic status colour */
+  if (status === 'invited') return 'text-[#d97706]'; /* theme-exempt: fixed semantic status colour */
+  return 'text-[#dc2626]'; /* theme-exempt: fixed semantic status colour */
 }
 
 type StatusBadgeProps = { status: Person['status'] };

@@ -1,5 +1,82 @@
 # rn-motion-ui
 
+## 7.9.0
+
+### Minor Changes
+
+- eff78b9: Simplify the elevation system to three levels plus flat
+
+  The surface elevation ladder collapses from eight levels to three, keeping
+  `0` as the flat resting surface. `SurfaceLevel` / `SurfaceElevation` narrow
+  to `1 | 2 | 3` (plus `0`), and the `surface-4`…`-8`, `shadow-surface-4`…`-8`,
+  `shadow-elevated-4`…`-8` and `surface-rim-4`…`-8` tokens are removed.
+
+  Breaking changes:
+
+  - Inline controls (Button, IconButton, CloseButton, Card, Input,
+    CheckboxCard, RadioCard, WheelPicker, SwipeableList, MorphingFAB,
+    MorphingSwitcher, row-group) now default to `elevation = 0` — flat, with no
+    shadow or border — instead of `3`. Elevation is reserved for modals and
+    elevated menus.
+  - Menus and modals (AdaptiveDropdown, AdaptiveModal, BottomSheet,
+    CommandPalette, Drawer, FullSheet, HoverMenu, MorphingMenu, MorphingModal,
+    Popover, ActionFeedbackModal) now float at `elevation = 3` instead of `6`.
+    The level-3 shadow is re-tuned to the former level-6 weight, so the top
+    rung still reads as a modal or menu.
+  - Dark-mode surface fills no longer step lighter with elevation — depth in
+    dark mode comes from the shadow alone (`surface-1/2/3` only).
+
+### Patch Changes
+
+- b065456: Add hover feedback to the button family
+
+  Buttons, ButtonSwap, IconButton and ElevatedButton now dim slightly on
+  hover. The `ghost` and `ghostDanger` variants also gain a subtle
+  background on hover so a transparent button still reads as hovered.
+
+- 71f47f3: Colour outline buttons and stateful icons from the foreground token
+
+  The `outline` button variant now draws its border with the `foreground`
+  token — white on dark, black on light — instead of the subtle `border`
+  hairline, so it reads as a high-contrast outline in both themes. The
+  StatefulButton stories now colour the idle icon from the active variant's
+  foreground and expose a Variants gallery plus a variant control.
+
+- 4a03812: Extract FileSystem column hit-test math into a testable module
+
+  The columns view's pane geometry and row-mapping arithmetic move into a
+  pure `logic/file-system-column` module, so the drag hit-test and marquee
+  row-mapping are covered by unit tests rather than only the story play.
+
+- 7c540a9: Add glass mode to Input
+
+  `Input` gains the same frosted-glass surface props `Card` and `Surface`
+  already expose — `blurRadius`, `opacity`, `rim`, `rimWidth`, `intensity` and
+  `inline`. A positive `blurRadius` renders the field through the shared
+  `Surface` primitive (a translucent `glass` tint over a backdrop blur, with
+  the specular edge light when `rim` is set) instead of the solid
+  `bg-surface-N` fill. The default `blurRadius: 0` is unchanged, so existing
+  fields render identically.
+
+- c27c783: Add a `hug` prop to MorphingFAB
+
+  The expanded pane now stretches to the screen width with the same symmetric
+  16px left/right inset the FAB already hugs its corner with, instead of the
+  fixed `expandedWidth` pane. Left, right and bottom all hug the screen by the
+  same amount — the FAB counterpart to MorphingModal's `hug`.
+
+- bd29f0b: Normalize radius and spacing strays to design tokens
+
+  Components that still hardcoded raw `rounded-*` classes now read from the
+  corner-radius tokens. Menu rows, the colour-picker swatches and the command
+  palette adopt `rounded-interactive`, and `RadioCard` / `CheckboxCard` /
+  `SwipeableList` rows use a new `--radius-card-compact` token (16 px) instead
+  of `rounded-2xl`. The `rounded-l-*` / `rounded-r-*` side variants follow the
+  same token. `Radio` and `Checkbox` express their row gap through the `gap-3`
+  utility rather than a raw `gap: 12` style literal, and the `MultiStepMenu`
+  back button expresses its width and padding through classes instead of an
+  inline style.
+
 ## 7.8.0
 
 ### Minor Changes

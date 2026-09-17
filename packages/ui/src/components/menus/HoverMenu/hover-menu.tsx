@@ -15,16 +15,14 @@ import { Surface } from '../../display/Surface/surface';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 import { OverlayScrim } from '../Overlay/overlay-scrim';
 import type { OverlayType } from '../Overlay/overlay-type';
+import type { PanelSize, Rect } from './hover-menu-geometry';
+import { computePanelLayout, DEFAULT_WIDTH } from './hover-menu-geometry';
 
-const DEFAULT_WIDTH = 200;
 const DEFAULT_OFFSET = 4;
 const DEFAULT_OPEN_DELAY = 100;
 const DEFAULT_CLOSE_DELAY = 150;
-const VIEWPORT_PADDING = 8;
 const OPENING_GUARD_MS = 1000;
 
-type Rect = { x: number; y: number; w: number; h: number };
-type PanelSize = { w: number; h: number };
 type TriggerRenderProps = { open: boolean; toggle: () => void };
 type MenuContentRenderProps = { close: () => void };
 
@@ -156,47 +154,6 @@ const POSITION_ABSOLUTE = { position: 'absolute' as const };
 // fixed full-viewport container would cover the trigger and break hover.)
 // biome-ignore lint/plugin: 'fixed' is honoured by react-native-web but absent from RN's LayoutPosition union, so the web-only style is cast
 const WEB_PANEL_POSITION = { position: 'fixed' } as unknown as ViewStyle;
-
-type PanelLayout = { left: number; top: number; openAbove: boolean; panelWidth: number; measured: boolean };
-
-type ComputePanelLayoutOptions = {
-  rect: Rect | null;
-  panelSize: PanelSize;
-  viewportWidth: number;
-  viewportHeight: number;
-  align: 'start' | 'end';
-  offset: number;
-  width: number | 'trigger';
-};
-
-// Pure geometry for the floating panel: clamps it to the viewport and flips it
-// above the trigger when it wouldn't fit below. Pulled out of the component so
-// the math is testable and the render stays readable. The slide direction that
-// follows from `openAbove` is `resolveMenuMotion`'s job.
-function computePanelLayout(options: ComputePanelLayoutOptions): PanelLayout {
-  const { rect, panelSize, viewportWidth, viewportHeight, align, offset, width } = options;
-  const triggerWidth = rect === null ? DEFAULT_WIDTH : rect.w;
-  const panelWidth = width === 'trigger' ? triggerWidth : width;
-  const panelH = panelSize.h;
-  const measured = rect !== null && panelSize.w > 0 && panelSize.h > 0;
-
-  let left = 0;
-  let top = 0;
-  let openAbove = false;
-  if (rect) {
-    const anchoredLeft = align === 'end' ? rect.x + rect.w - panelWidth : rect.x;
-    const maxLeft = Math.max(VIEWPORT_PADDING, viewportWidth - panelWidth - VIEWPORT_PADDING);
-    left = Math.min(Math.max(anchoredLeft, VIEWPORT_PADDING), maxLeft);
-    const spaceBelow = viewportHeight - (rect.y + rect.h) - offset - VIEWPORT_PADDING;
-    const spaceAbove = rect.y - offset - VIEWPORT_PADDING;
-    openAbove = panelH > 0 && panelH > spaceBelow && spaceAbove > spaceBelow;
-    const rawTop = openAbove ? rect.y - offset - panelH : rect.y + rect.h + offset;
-    const maxTop = Math.max(VIEWPORT_PADDING, viewportHeight - panelH - VIEWPORT_PADDING);
-    top = Math.min(Math.max(rawTop, VIEWPORT_PADDING), maxTop);
-  }
-
-  return { left, top, openAbove, panelWidth, measured };
-}
 
 const handlePanelPress = () => undefined;
 

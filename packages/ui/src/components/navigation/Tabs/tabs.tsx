@@ -425,7 +425,7 @@ export function TabsList({ children, testID }: TabsListProps) {
   else indicatorBorderRadius = 0;
 
   return (
-    <View className={cn(list({ variant }), 'relative self-start')} testID={testID}>
+    <View accessibilityRole="tablist" className={cn(list({ variant }), 'relative self-start')} testID={testID}>
       {/* Shared-layout indicator: a single MotiView that glides to the active
           trigger's measured rect. Mirrors the web layoutId pill. White for
           pill/segment so trigger text keeps its dark color while the pill is

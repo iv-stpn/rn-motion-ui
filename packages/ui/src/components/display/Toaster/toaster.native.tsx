@@ -69,9 +69,17 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
       exitTransition={TIMING_FAST}
       className={cn(PILL_CLASSNAME, glass ? undefined : 'hairline border-border')}
       testID={`${testID}-${toast.id}`}
-      accessibilityLiveRegion="polite"
+      accessibilityLiveRegion={toast.variant === 'error' ? 'assertive' : 'polite'}
     >
-      <Pressable className="flex-row items-center gap-2.5 px-3.5 py-2.5" onPress={handleDismiss}>
+      <Pressable
+        className="flex-row items-center gap-2.5 px-3.5 py-2.5"
+        onPress={handleDismiss}
+        // The whole pill dismisses. It is a button only when there is no nested
+        // action button — an action makes the pill a frame around that button,
+        // and nesting one `<button>` in another is invalid DOM on web.
+        accessibilityRole={toast.action ? undefined : 'button'}
+        accessibilityLabel={toast.action ? undefined : 'Dismiss notification'}
+      >
         <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dotColor }} />
         <View className="min-w-0 shrink gap-0.5">
           <Text size="sm" weight="medium">

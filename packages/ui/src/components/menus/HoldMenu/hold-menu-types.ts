@@ -119,6 +119,8 @@ export type HoldItemProps = {
   disabled?: boolean;
   /** Base testID for the trigger wrapper. */
   testID?: string;
+  /** Accessible name for the trigger — announced when it takes focus. */
+  accessibilityLabel?: string;
 };
 
 /** `HoldMenuProvider` props — upstream's `HoldMenuProviderProps`, with `safeAreaInsets` optional. */

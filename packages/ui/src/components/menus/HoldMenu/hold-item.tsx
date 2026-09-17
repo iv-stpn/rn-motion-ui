@@ -70,12 +70,24 @@ const HoldItemComponent = ({
   onOpenChange: onOpenChangeProp,
   disabled = false,
   testID,
+  accessibilityLabel,
   children,
 }: HoldItemProps) => {
   const { state, menuProps, windowSize, rootViewportHeight, rootPageX, rootPageY, safeAreaInsets, rootRef } =
     useHoldMenuInternal();
 
   const isActive = useSharedValue(false);
+  /** Mirrors `isActive` into React state so the trigger can expose `aria-expanded`. */
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  useAnimatedReaction(
+    () => isActive.value,
+    (active, previous) => {
+      // Skip the on-mount fire (previous === null) and no-op transitions.
+      if (previous === null || active === previous) return;
+      runOnJS(setIsMenuOpen)(active);
+    },
+    [isActive],
+  );
   /** Widest-row content width, reported by `MeasureMenuWidth`'s `onLayout` before the first hold. */
   const contentWidth = useSharedValue(0);
   const handleMeasureWidth = useCallback(
@@ -312,11 +324,18 @@ const HoldItemComponent = ({
     return () => node.removeEventListener('contextmenu', handleContextMenu);
   }, [webHold, disabled, containerRef, handleContextMenu]);
 
+  // A focusable, menu-opening trigger is a button with an expanded state. `hasMenu`
+  // gates the semantics: an inert item (empty `items`) is not a control.
+  const hasMenu = !disabled && items.length > 0;
+
   // RNW forwards onClick/tabIndex on View, but RN's core types do not declare
-  // them — the cast keeps the web-only props off the native type.
+  // them — the cast keeps the web-only props off the native type. `aria-haspopup`
+  // rides the same cast: it is not in RN's aria set, but RNW maps it to the
+  // button's "opens a menu" announcement.
   let webOnlyProps: Record<string, unknown> = {};
   if (!disabled && webHold) webOnlyProps = { tabIndex: 0 };
   else if (!disabled && IS_WEB) webOnlyProps = { onClick: handleWebTap, tabIndex: 0 };
+  if (hasMenu && IS_WEB) webOnlyProps['aria-haspopup'] = 'menu';
 
   const wrapper = (
     <Animated.View
@@ -325,6 +344,9 @@ const HoldItemComponent = ({
       onLayout={dragOptions !== undefined && !disabled ? rootProps.onLayout : undefined}
       style={[containerStyles, animatedContainerStyle, rootProps.style]}
       testID={testID}
+      accessibilityRole={hasMenu ? 'button' : undefined}
+      aria-expanded={hasMenu ? isMenuOpen : undefined}
+      accessibilityLabel={accessibilityLabel}
       {...webOnlyProps}
     >
       {children}

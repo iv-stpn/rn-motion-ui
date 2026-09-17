@@ -65,7 +65,7 @@ export const buttonContainer = cva('flex-row items-center justify-center', {
       accent: 'bg-accent',
       neutral: 'bg-surface-3',
       ghost: 'bg-transparent hover:bg-surface-hover',
-      outline: 'hairline border-border bg-transparent',
+      outline: 'hairline border-foreground bg-transparent',
       danger: 'bg-danger',
       success: 'bg-success',
       warning: 'bg-warning',

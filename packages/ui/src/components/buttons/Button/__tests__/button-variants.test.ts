@@ -84,7 +84,7 @@ describe('button plate fill', () => {
     ['accent', 'bg-accent'],
     ['neutral', 'bg-surface-3'],
     ['ghost', 'bg-transparent hover:bg-surface-hover'],
-    ['outline', 'hairline border-border bg-transparent'],
+    ['outline', 'hairline border-foreground bg-transparent'],
     ['danger', 'bg-danger'],
     ['success', 'bg-success'],
     ['warning', 'bg-warning'],

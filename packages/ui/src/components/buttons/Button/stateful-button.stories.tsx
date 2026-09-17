@@ -17,6 +17,7 @@ import {
 } from '../../../__stories__/story-harness';
 import { SURFACE_LEVELS } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { type ButtonVariant, variantIconColorToken } from './button-variants';
 import { StatefulButton } from './stateful-button';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -29,6 +30,23 @@ const meta = {
   argTypes: {
     state: { control: 'select', options: ['idle', 'loading', 'success', 'error'] },
     shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
+    variant: {
+      control: 'select',
+      options: [
+        'primary',
+        'secondary',
+        'accent',
+        'neutral',
+        'ghost',
+        'outline',
+        'danger',
+        'success',
+        'warning',
+        'info',
+        'outlineDanger',
+        'ghostDanger',
+      ],
+    },
   },
 } satisfies Meta<typeof StatefulButton>;
 
@@ -39,6 +57,20 @@ const STATES = ['idle', 'loading', 'success', 'error'] as const;
 const OUTCOMES = ['success', 'error'] as const;
 const SIZES = ['sm', 'md', 'lg'] as const;
 const SHAPES = ['square', 'rounded', 'pill', 'circle'] as const;
+const VARIANTS = [
+  'primary',
+  'secondary',
+  'accent',
+  'neutral',
+  'ghost',
+  'outline',
+  'danger',
+  'success',
+  'warning',
+  'info',
+  'outlineDanger',
+  'ghostDanger',
+] as const satisfies readonly ButtonVariant[];
 const CUSTOM_LABELS = {
   children: 'Upload',
   loadingText: 'Uploading…',
@@ -57,6 +89,7 @@ const WRAPPER_CLASS = 'w-52';
 function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   const colors = useThemeColors();
   const [chip, setChip] = useState<(typeof CHIP_OPTIONS)[number]>('none');
+  const [variant, setVariant] = useState<ButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [withIcon, setWithIcon] = useState(false);
   const [shouldAutoReset, setShouldAutoReset] = useState(true);
@@ -86,14 +119,16 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   // "Reset now" signal — appending to whatever the run last reported.
   const handleAfterReset = useCallback(() => setLastRun((prev) => `${prev} Re-armed.`), []);
 
-  // Icon colour follows the active button style: flat/elevated primary buttons
-  // use `primary-foreground`.
-  const iconColor = colors['primary-foreground'];
+  // Idle icon colour follows the active variant's foreground — the same token the
+  // component uses for its own state icons, so the trailing icon never inverts
+  // against the plate.
+  const iconColor = colors[variantIconColorToken(variant)];
 
   const shared = {
     ...args,
     ...(customLabels ? CUSTOM_LABELS : {}),
     chip: chip === 'none' ? undefined : chip,
+    variant,
     size,
     // Both shadow props are flat-button only — the chip resolves its own coloured
     // drop-shadow ring from its fill, so toggling these with `Chip: elevated`
@@ -112,6 +147,7 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
     <Playground>
       <ControlCard title="Options">
         <Choice label="Chip" onChange={setChip} options={CHIP_OPTIONS} value={chip} />
+        <Choice label="Variant" onChange={setVariant} options={VARIANTS} value={variant} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Toggle label="With icon" onChange={setWithIcon} value={withIcon} />
         <Toggle label="Auto reset" onChange={setShouldAutoReset} value={shouldAutoReset} />
@@ -138,6 +174,23 @@ function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
             shouldReset={resetSignal}
           />
           <Note testID="story-last-run">{lastRun}</Note>
+        </Variants>
+      </Section>
+
+      <View className="h-3" />
+      <Section title="Variants">
+        <Variants align="center">
+          {VARIANTS.map((name) => (
+            <Sample key={name} label={name}>
+              <StatefulButton
+                {...args}
+                variant={name}
+                icon={<ArrowRight size={16} color={colors[variantIconColorToken(name)]} />}
+              >
+                {name}
+              </StatefulButton>
+            </Sample>
+          ))}
         </Variants>
       </Section>
 
@@ -262,7 +315,8 @@ type IconExitDemoProps = { outcome: (typeof OUTCOMES)[number] };
  *  button re-arms back to idle — the exit the per-state icon `key` restores. */
 function IconExitDemo({ outcome }: IconExitDemoProps) {
   const colors = useThemeColors();
-  const iconColor = colors['primary-foreground'];
+  // Neutral buttons here: the idle icon takes the plain foreground.
+  const iconColor = colors.foreground;
   const press = useCallback(async () => {
     await sleep(500);
     if (outcome === 'error') throw new Error('failed');

@@ -29,7 +29,8 @@ export function PickerThumb({ color, x, y }: PickerThumbProps) {
         top: y - THUMB_SIZE / 2,
         backgroundColor: color,
         borderColor: '#fff' /* theme-exempt: white ring stays legible on any colour */,
-        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+        boxShadow:
+          '0 1px 2px rgba(0, 0, 0, 0.3)' /* theme-exempt: fixed handle drop — a small floating element, not a surface elevation */,
       }}
     />
   );

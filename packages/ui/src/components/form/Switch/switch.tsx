@@ -225,8 +225,16 @@ function SwitchThumb({ children, className, style, thumbTransition }: SwitchThum
           backgroundColor: colors.thumb,
           elevation: 3,
           ...Platform.select({
-            default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3 },
-            web: { boxShadow: '0px 2px 3px rgba(0,0,0,0.20)' },
+            // A small floating element needs a drop, not the `shadow-elevated-N`
+            // rim/ring ladder; the drop is fixed pure-black so it reads neutral
+            // over any track fill.
+            default: {
+              shadowColor: '#000' /* theme-exempt: fixed pure-black drop */,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 3,
+            },
+            web: { boxShadow: '0px 2px 3px rgba(0,0,0,0.20)' /* theme-exempt: fixed pure-black drop */ },
           }),
         },
         style,

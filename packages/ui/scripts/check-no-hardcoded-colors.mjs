@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 /**
- * check-no-hardcoded-colors.mjs — fails if any component file contains a raw
+ * check-no-hardcoded-colors.mjs — fails if any source file contains a raw
  * hex/rgba color literal that is not annotated with `theme-exempt`.
  *
  * Usage: node scripts/check-no-hardcoded-colors.mjs
  *
  * Exempt patterns (won't fail):
  *  - Any line containing `theme-exempt` (explicit opt-out with required comment)
- *  - Pure-black shadow values: shadowColor '#000'
  *  - Modal backdrop scrims: rgba(0,0,0,0.4 / 0.45)
  *  - Very subtle stripes: rgba(0,0,0,0.02)
  *  - Standard shadow opacities: rgba(0,0,0,0.2)
@@ -23,13 +22,11 @@ import { resolve, relative, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = new URL('.', import.meta.url).pathname;
-const srcDir = resolve(__dirname, '../src/components');
+const srcDir = resolve(__dirname, '../src');
 
 // Lines matching these patterns are unconditionally exempt.
 const EXEMPT_PATTERNS = [
   /theme-exempt/,                          // explicit opt-out
-  /shadowColor/,                           // RN shadow props
-  /boxShadow/,                             // web shadow
   /rgba\(0,\s*0,\s*0,\s*0\.4/,            // modal scrims 0.4
   /rgba\(0,\s*0,\s*0,\s*0\.45/,           // modal scrims 0.45
   /rgba\(0,\s*0,\s*0,\s*0\.2\b/,          // shadow 0.2
@@ -61,7 +58,11 @@ function walk(dir, out = []) {
                !entry.endsWith('.stories.tsx') &&
                !full.includes('__tests__') &&
                // FileIcon ships a fixed palette (IDE-style colour map) — exempt wholesale
-               !full.includes('/FileIcon/')) {
+               !full.includes('/FileIcon/') &&
+               // color.ts is the colour engine itself — it *produces* rgb()/rgba()
+               // strings from OKLCH, which is the sanctioned API this guard funnels
+               // callers towards. Exempt wholesale, like FileIcon.
+               !full.includes('/lib/color.ts')) {
       out.push(full);
     }
   }
@@ -85,10 +86,10 @@ for (const file of files) {
 }
 
 if (failures > 0) {
-  console.error(`\n✖  ${failures} hardcoded color literal(s) found in src/components.`);
+  console.error(`\n✖  ${failures} hardcoded color literal(s) found in src.`);
   console.error('   Replace with a useThemeColor() / useThemeColors() call, or add');
   console.error('   a "/* theme-exempt */" comment on the line with a brief rationale.\n');
   process.exit(1);
 }
 
-console.log(`✔  No unexempted hardcoded colors in src/components (${files.length} files checked).`);
+console.log(`✔  No unexempted hardcoded colors in src (${files.length} files checked).`);

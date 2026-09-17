@@ -40,6 +40,20 @@ export const ROUNDED_MODAL = 'rounded-modal' as const;
 /** Height in px per interactive size. */
 export const INTERACTIVE_HEIGHT = { xs: 24, sm: 36, md: 48, lg: 64 } as const;
 
+// ── Touch target ─────────────────────────────────────────────────────────────
+
+/** Minimum recommended touch target in px (WCAG 2.5.5 / Apple HIG). */
+export const MIN_TOUCH_TARGET = 44;
+
+/**
+ * `hitSlop` in px per side that lifts a control of `size` px up to the
+ * {@link MIN_TOUCH_TARGET} minimum — without changing its visual footprint.
+ * `0` once the control is already large enough.
+ */
+export function hitSlopFor(size: number): number {
+  return Math.max(0, Math.ceil((MIN_TOUCH_TARGET - size) / 2));
+}
+
 /** Tailwind class: height per interactive size. Static literals so the
  *  uniwind/Tailwind scanner registers them. */
 export const H_INTERACTIVE: Record<InteractiveSize, string> = {

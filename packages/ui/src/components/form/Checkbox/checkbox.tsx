@@ -5,6 +5,7 @@ import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
+import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MotiTransitionProp, mergeTransition, TIMING_FAST, TIMING_INSTANT } from '../../../theme/motion';
@@ -178,6 +179,7 @@ export function Checkbox({
       accessibilityLabel={accessibilityLabel ?? label}
       testID={testID ?? 'checkbox'}
       disabled={disabled}
+      hitSlop={hitSlopFor(20)}
       {...pressHandlers}
       onPress={handlePress}
       className={cn('flex-row items-center', className)}

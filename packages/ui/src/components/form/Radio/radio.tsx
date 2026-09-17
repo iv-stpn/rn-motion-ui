@@ -5,6 +5,7 @@ import { usePressState } from '../../../hooks/use-press-state';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
+import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
@@ -171,6 +172,7 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
       accessibilityLabel={accessibilityLabel ?? label}
       testID={itemTestID}
       disabled={disabled}
+      hitSlop={hitSlopFor(20)}
       {...pressHandlers}
       onPress={handlePress}
       onLayout={onLayout}

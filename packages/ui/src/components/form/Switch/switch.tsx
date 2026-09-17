@@ -10,6 +10,7 @@ import { cn } from '../../../lib/cn';
 import { THUMB_SPRING } from '../../../lib/ease';
 import { fireHapticFeedback } from '../../../lib/haptics';
 import type { HapticFeedbackVariant } from '../../../lib/haptics-types';
+import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { type MotiTransitionProp, mergeTransition, TIMING_INSTANT } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
@@ -27,7 +28,14 @@ const SWITCH_SHAKE_STEPS = [-2, 2, -1, 0] as const;
 /** Available size variants for the switch track. */
 export type SwitchSize = 'sm' | 'md' | 'lg';
 
-type SwitchSizeConfig = { trackClass: string; thumbW: number; thumbOffset: number; travel: number; labelClass: string };
+type SwitchSizeConfig = {
+  trackClass: string;
+  thumbW: number;
+  thumbOffset: number;
+  travel: number;
+  labelClass: string;
+  hitSlop: number;
+};
 
 /**
  * Per-size track geometry; fills are resolved by `theme`, not here.
@@ -44,6 +52,8 @@ const SWITCH_SIZE_CONFIG: Record<SwitchSize, SwitchSizeConfig> = {
     thumbOffset: 2,
     travel: 8,
     labelClass: 'text-xs',
+    // 16px track → lift the touch target to the 44px minimum without resizing.
+    hitSlop: hitSlopFor(16),
   },
   md: {
     trackClass: 'h-5 w-11 items-center justify-center rounded-full overflow-hidden',
@@ -51,6 +61,7 @@ const SWITCH_SIZE_CONFIG: Record<SwitchSize, SwitchSizeConfig> = {
     thumbOffset: 2,
     travel: 14,
     labelClass: 'text-sm',
+    hitSlop: hitSlopFor(20),
   },
   lg: {
     trackClass: 'h-7 w-14 items-center justify-center rounded-full overflow-hidden',
@@ -58,6 +69,7 @@ const SWITCH_SIZE_CONFIG: Record<SwitchSize, SwitchSizeConfig> = {
     thumbOffset: 2,
     travel: 16,
     labelClass: 'text-base',
+    hitSlop: hitSlopFor(28),
   },
 };
 
@@ -297,7 +309,7 @@ function SwitchRoot({
   const { pressed, pressHandlers } = usePressState();
   const shakeX = useRef(new Animated.Value(0)).current;
   const { track, trackOff, thumb } = useSwitchColors(theme);
-  const { trackClass, labelClass } = SWITCH_SIZE_CONFIG[size];
+  const { trackClass, labelClass, hitSlop } = SWITCH_SIZE_CONFIG[size];
   const resolvedTestID = testID ?? 'switch';
 
   // Disabled + pressed → short horizontal shake to signal "can't toggle".
@@ -338,6 +350,7 @@ function SwitchRoot({
           accessibilityLabel={accessibilityLabel ?? label}
           testID={resolvedTestID}
           disabled={isDisabled}
+          hitSlop={hitSlop}
           {...pressHandlers}
           onPress={handleToggle}
         >

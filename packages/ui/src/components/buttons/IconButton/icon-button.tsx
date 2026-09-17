@@ -5,6 +5,7 @@ import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
+import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
 import { MOTION_SNAPPY, mergeTransition } from '../../../theme/motion';
@@ -232,6 +233,7 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       testID={testID ?? 'icon-button'}
       disabled={isDisabled}
+      hitSlop={hitSlopFor(BUTTON_SIZE[size].px)}
       onLayout={onLayout}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}

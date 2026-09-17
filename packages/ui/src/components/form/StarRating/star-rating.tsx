@@ -22,6 +22,7 @@ import { cn } from '../../../lib/cn';
 import { SPRING_PRESS } from '../../../lib/ease';
 import { fireHapticFeedback } from '../../../lib/haptics';
 import type { HapticFeedbackVariant } from '../../../lib/haptics-types';
+import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
@@ -242,6 +243,7 @@ export function StarButton({
       accessibilityRole="radio"
       aria-checked={isSelected}
       accessibilityLabel={`${starValue} ${starValue === 1 ? 'star' : 'stars'}`}
+      hitSlop={hitSlopFor(icon)}
       {...pressHandlers}
       onPress={handlePress}
       className={padClass}

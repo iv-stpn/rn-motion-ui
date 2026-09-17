@@ -9,12 +9,13 @@ import {
   type SurfaceElevation,
   type SurfaceLevel,
 } from '../../../lib/elevated';
+import { hitSlopFor } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
-import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadius } from './button-scale';
+import { BUTTON_BOX, BUTTON_METRICS, type ButtonShape, type ButtonSize, buttonRadius } from './button-scale';
 import {
   BUTTON_HOVER_CLASS,
   type ButtonVariant,
@@ -190,6 +191,7 @@ export function Button({
       accessibilityLabel={accessibilityLabel}
       testID={testID ?? 'button'}
       disabled={isDisabled}
+      hitSlop={hitSlopFor(BUTTON_METRICS[size].height)}
       onLayout={onLayout}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}

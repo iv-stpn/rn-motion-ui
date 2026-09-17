@@ -1,16 +1,7 @@
 import { cva } from 'class-variance-authority';
 import { type ReactNode, type Ref, useCallback, useRef, useState } from 'react';
-import {
-  Animated,
-  type KeyboardTypeOptions,
-  Platform,
-  type StyleProp,
-  TextInput,
-  type TextInputProps,
-  type TextStyle,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import type { KeyboardTypeOptions, StyleProp, TextStyle, ViewStyle } from 'react-native';
+import { Animated, Platform, TextInput, View } from 'react-native';
 import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
@@ -25,14 +16,9 @@ import { useThemeColor } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
+import { type InputType, resolveInputState, resolveInputTypeProps } from './input.logic';
 
 // Success green and placeholder colour are resolved from the theme at runtime.
-
-function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focused' | 'idle' {
-  if (hasError) return 'error';
-  if (focused) return 'focused';
-  return 'idle';
-}
 
 // Resolved corner radius in px for the Rim / blur clip — the field's `shape`
 // class is a CSS token an SVG stroke cannot read back, so the effect layer needs
@@ -88,12 +74,7 @@ const inputBox = cva('flex-1 bg-transparent font-sans-normal text-foreground out
   variants: {
     left: { true: 'pl-8', false: '' },
     right: { true: 'pr-8', false: '' },
-    size: {
-      xs: 'py-0.5 text-xs',
-      sm: 'py-1 text-sm',
-      md: 'py-1.5 text-base',
-      lg: 'py-2 text-lg',
-    },
+    size: { xs: 'py-0.5 text-xs', sm: 'py-1 text-sm', md: 'py-1.5 text-base', lg: 'py-2 text-lg' },
   },
   compoundVariants: [
     { left: false, size: 'xs', class: 'pl-1.5' },
@@ -108,41 +89,7 @@ const inputBox = cva('flex-1 bg-transparent font-sans-normal text-foreground out
   defaultVariants: { left: false, right: false, size: 'md' },
 });
 
-/** Semantic input type — drives keyboard, autoComplete, and textContentType automatically. */
-type InputType = 'text' | 'name' | 'email' | 'number' | 'otp' | 'password' | 'new-password' | 'phone';
-
-const autocompleteMap: Partial<Record<InputType, TextInputProps['autoComplete']>> = {
-  name: 'name',
-  email: 'email',
-  otp: 'one-time-code',
-  'new-password': 'new-password',
-  password: 'password',
-  phone: 'tel',
-};
-
-const keyboardTypeMap: Partial<Record<InputType, KeyboardTypeOptions>> = {
-  number: 'numeric',
-  otp: 'number-pad',
-  email: 'email-address',
-  phone: 'phone-pad',
-};
-
-const textContentTypeMap: Partial<Record<InputType, TextInputProps['textContentType']>> = {
-  name: 'name',
-  email: 'emailAddress',
-  otp: 'oneTimeCode',
-  'new-password': 'newPassword',
-  password: 'password',
-  phone: 'telephoneNumber',
-};
-
-// biome-ignore lint/plugin: 4-field props type is more readable across multiple lines
-type RightElementProps = {
-  success: boolean | undefined;
-  rightSlot: ReactNode;
-  reduce: boolean;
-  successIcon?: ReactNode;
-};
+type RightElementProps = { success?: boolean; rightSlot: ReactNode; reduce: boolean; successIcon?: ReactNode };
 function renderRightElement({ success, rightSlot, reduce, successIcon }: RightElementProps): ReactNode {
   if (success)
     return (
@@ -416,9 +363,10 @@ export function Input({
   }, [onBlur]);
 
   // Resolve inputType-driven props (caller can still override individually).
-  const resolvedKeyboardType = keyboardType ?? keyboardTypeMap[inputType];
-  const resolvedAutoCapitalize = autoCapitalize ?? (inputType === 'name' || inputType === 'text' ? 'sentences' : 'none');
-  const resolvedSecureTextEntry = secureTextEntry ?? (inputType === 'password' || inputType === 'new-password');
+  const semantics = resolveInputTypeProps(inputType);
+  const resolvedKeyboardType = keyboardType ?? semantics.keyboardType;
+  const resolvedAutoCapitalize = autoCapitalize ?? semantics.autoCapitalize;
+  const resolvedSecureTextEntry = secureTextEntry ?? semantics.secureTextEntry;
 
   const rightElement = renderRightElement({ success, rightSlot, reduce, successIcon });
 
@@ -464,8 +412,8 @@ export function Input({
           secureTextEntry={resolvedSecureTextEntry}
           keyboardType={resolvedKeyboardType}
           autoCapitalize={resolvedAutoCapitalize}
-          autoComplete={autocompleteMap[inputType]}
-          textContentType={textContentTypeMap[inputType]}
+          autoComplete={semantics.autoComplete}
+          textContentType={semantics.textContentType}
           multiline={multiline}
           allowFontScaling={true}
           maxFontSizeMultiplier={1.45}

@@ -52,6 +52,24 @@ function cssTokens(source) {
   return out;
 }
 
+// Non-colour tokens (shadows, surface rims/highlights/rings, radius, spacing)
+// can't be compared against the native OKLCH tables — their values are pixel
+// strings or `var()` chains, and light/dark differ by design. But the two
+// variants must still declare the SAME SET of them: `--shadow-elevated-N` lives
+// only in `@theme` and resolves `var(--surface-rim-N)` / `var(--shadow-surface-N)`
+// per theme, so a token missing from one variant silently breaks that theme.
+const EXTRA_DECL_RE = /--([a-z0-9-]+):\s*([^;]+);/g;
+
+/** `--<name>: <value>` pairs for every non-`color` token in a CSS block, keyed by full name. */
+function cssExtraTokens(source) {
+  const out = new Map();
+  for (const [, name, raw] of source.matchAll(EXTRA_DECL_RE)) {
+    if (name.startsWith('color-')) continue;
+    out.set(name, raw.trim().replace(/\s+/g, ' '));
+  }
+  return out;
+}
+
 const OKLCH_RE = /^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?\)$/;
 
 /** Parse a css `oklch(…)` literal to the [L, C, H, alpha?] shape the TS tables use. */
@@ -120,6 +138,17 @@ for (const token of variantLight.keys())
   if (!variantDark.has(token)) problems.push(`@variant dark is missing --color-${token} (present in @variant light)`);
 for (const token of variantDark.keys())
   if (!variantLight.has(token)) problems.push(`@variant light is missing --color-${token} (present in @variant dark)`);
+
+// ── the non-colour tokens must declare the same set per theme ────────────────
+// Values legitimately differ (dark-mode shadows/rims are not light-mode's), so
+// this checks the SET only. `--shadow-elevated-N` in `@theme` composites these
+// via `var()`, so a missing rung in one variant would fail silently at runtime.
+const extraLight = cssExtraTokens(block(css, '\n@variant light {'));
+const extraDark = cssExtraTokens(block(css, '\n@variant dark {'));
+for (const token of extraLight.keys())
+  if (!extraDark.has(token)) problems.push(`@variant dark is missing --${token} (present in @variant light)`);
+for (const token of extraDark.keys())
+  if (!extraLight.has(token)) problems.push(`@variant light is missing --${token} (present in @variant dark)`);
 
 // ── the native tables must match their CSS counterparts ─────────────────────
 const EPSILON = 0.0005;

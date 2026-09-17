@@ -3,21 +3,11 @@ import { Pressable, ScrollView, type StyleProp, View, type ViewStyle } from 'rea
 import { cn } from '../../../lib/cn';
 import { H_INTERACTIVE, PX_INTERACTIVE, TEXT_INTERACTIVE } from '../../../lib/radius';
 import { Text } from '../../typography/Text/text';
+import { SHAPE_RADIUS, shouldSuppressDivider, type ToggleGroupShape, type ToggleGroupSize } from './toggle-group.logic';
 
 // ── types ──────────────────────────────────────────────────────────────────────
 
-type ToggleGroupSize = 'xs' | 'sm' | 'md' | 'lg';
-type ToggleGroupShape = 'square' | 'rounded' | 'pill' | 'circle';
 type ToggleGroupContainerVariant = 'bordered' | 'connected';
-
-// ── shape → radius ─────────────────────────────────────────────────────────────
-
-const SHAPE_RADIUS: Record<ToggleGroupShape, string> = {
-  square: 'rounded-none',
-  rounded: 'rounded-interactive',
-  pill: 'rounded-full',
-  circle: 'rounded-full',
-};
 
 // ── shared text ────────────────────────────────────────────────────────────────
 
@@ -117,7 +107,7 @@ export function ToggleGroup({
     // suppress dividers adjacent to the selected item so it reads as
     // one continuous surface with its neighbours. connected mode has no
     // internal dividers at all.
-    const suppressDivider = isConnected || (selectedIdx !== -1 && (index === selectedIdx || index === selectedIdx - 1));
+    const suppressDivider = shouldSuppressDivider(index, selectedIdx, isConnected);
 
     const itemClass = cn(
       // Horizontal items keep the fixed interactive height; vertical items drop

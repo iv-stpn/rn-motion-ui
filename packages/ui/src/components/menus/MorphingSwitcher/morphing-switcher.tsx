@@ -23,6 +23,7 @@ import { OutsidePressBackdrop, type OutsidePressFrame } from '../Overlay/outside
 import type { OverlayType } from '../Overlay/overlay-type';
 import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
+import { computePaneHeight, mergeTriggerSize, opensUpward, PANE_INSET } from './morphing-switcher-geometry';
 import { type MorphingSwitcherSize, SWITCHER_SCALE, type SwitcherScale } from './morphing-switcher-scale';
 import { SwitcherMotionRow } from './switcher-motion';
 import { CLOSE_LEAD, useSwitcherMotion } from './use-switcher-motion';
@@ -31,10 +32,6 @@ import { CLOSE_LEAD, useSwitcherMotion } from './use-switcher-motion';
 // resolves it so every consumer keeps importing it from `./morphing-switcher`.
 export type { MorphingSwitcherSize } from './morphing-switcher-scale';
 
-/** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
-const VIEWPORT_PADDING = 8;
-/** `p-1` inset between the shell edge and its content, so the trigger and hover pills never run flush to the pane rim. */
-const PANE_INSET = 4;
 /** Fraction of a caret's size to overlap the stacked pair's lower chevron — each
  *  chevron lives in a 24×24 viewBox with dead space top and bottom, so a stacked
  *  pair spreads apart; overlapping the lower one reads as one tight glyph. */
@@ -360,39 +357,6 @@ function MorphingSwitcherRow({ item, onSelect, scale, testID }: MorphingSwitcher
       testID={testID}
     />
   );
-}
-
-/**
- * Whether the pane should open above the trigger. `y`/`h` are the trigger's
- * window-space top and height; the pane opens upward when it does not fit below
- * and there is more room above than below.
- */
-function opensUpward(paneHeight: number, y: number, h: number, windowHeight: number): boolean {
-  const spaceBelow = windowHeight - y - h - VIEWPORT_PADDING;
-  const spaceAbove = y - VIEWPORT_PADDING;
-  return paneHeight > spaceBelow && spaceAbove > spaceBelow;
-}
-
-/**
- * The pane's open height: one row per item stacked on the trigger's height, plus
- * the shell's `p-1` inset on both ends — overridden by `expandedHeight` when the
- * consumer pins an exact height.
- */
-function computePaneHeight(scale: SwitcherScale, itemCount: number, expandedHeight: number | undefined): number {
-  return expandedHeight ?? scale.height + itemCount * scale.height + PANE_INSET * 2;
-}
-
-/** A measured trigger's bounding box. */
-type TriggerSize = { width: number; height: number };
-
-/**
- * Merge a freshly-measured trigger size, returning the previous object unchanged
- * when the dimensions match. `useState` then bails out on identity, so a layout
- * pass that reports the same size does not re-render.
- */
-function mergeTriggerSize(prev: TriggerSize | null, size: TriggerSize): TriggerSize {
-  if (prev && prev.width === size.width && prev.height === size.height) return prev;
-  return size;
 }
 
 /**

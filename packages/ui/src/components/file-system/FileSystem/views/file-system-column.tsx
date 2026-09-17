@@ -26,6 +26,15 @@ import { useFileSystemDragOptions } from '../hooks/use-file-system-drag-options'
 import { useFileSystemDragScroll } from '../hooks/use-file-system-drag-scroll';
 import { useFileSystemRowAnimation } from '../hooks/use-file-system-row-animation';
 import { useFileSystemRowInteraction } from '../hooks/use-file-system-row-interaction';
+import {
+  COLUMN_PADDING,
+  COLUMN_ROW_GAP,
+  COLUMN_ROW_HEIGHT,
+  COLUMN_ROW_STRIDE,
+  COLUMN_WIDTH,
+  columnRowHitAt,
+  columnRowsInRect,
+} from '../logic/file-system-column';
 import { folderHasChildren } from '../logic/file-system-index';
 import type { FileSystemSelectionMode } from '../logic/file-system-selection';
 import { FS_DRAG_CONTAINER_TEST_ID, fileSystemEntryTestID } from '../logic/file-system-test-id';
@@ -46,12 +55,6 @@ import { FileSystemEmptyState } from './file-system-view';
 
 const LOADING_LABEL = 'Loading…';
 
-/** Column geometry (px). Rows are uniform so `getItemLayout` stays exact. */
-export const COLUMN_WIDTH = 240;
-const COLUMN_ROW_HEIGHT = 28;
-const COLUMN_ROW_GAP = 1;
-
-const COLUMN_ROW_STRIDE = COLUMN_ROW_HEIGHT + COLUMN_ROW_GAP;
 const COLUMN_GLYPH_SIZE = 22;
 /** Horizontal inset on the folder glyph, so a folder reads slightly narrower than the lane. */
 const COLUMN_FOLDER_PADDING_X = 2;
@@ -61,42 +64,12 @@ const COLUMN_CHEVRON_SIZE = 14;
 const COLUMN_PIN_ICON_SIZE = 10;
 const COLUMN_FAV_ICON_SIZE = 10;
 
-/** Top/bottom padding inside the FlatList's content container (p-1.5 = 6 px). */
-const COLUMN_PADDING = 6;
-
-/** Container-local point → row index, or null for padding / gap / past-last-row. */
-export function columnRowHitAt(_localX: number, localY: number, scrollOffset: number, rowCount: number): number | null {
-  const contentY = localY + scrollOffset - COLUMN_PADDING;
-  if (contentY < 0) return null;
-  const rowIndex = Math.floor(contentY / COLUMN_ROW_STRIDE);
-  if (rowIndex >= rowCount) return null;
-  const intraRow = contentY - rowIndex * COLUMN_ROW_STRIDE;
-  if (intraRow >= COLUMN_ROW_HEIGHT) return null; // inside the gap
-  return rowIndex;
-}
-
 /**
  * Loses to any row zone it overlaps, so the pane only takes a drop the rows did
  * not want. Negative rather than zero because a row zone nested inside this one
  * would win on depth anyway — the explicit number says so where it is read.
  */
 const COLUMN_ZONE_PRIORITY = -1;
-
-/** Content-frame rect → paths of every row it overlaps. */
-function columnRowsInRect(rect: FileSystemMarqueeRect, entries: FileSystemEntry[]): readonly string[] {
-  const top = rect.y - COLUMN_PADDING;
-  const bottom = rect.y + rect.height - COLUMN_PADDING;
-  const result: string[] = [];
-  for (let i = 0; i < entries.length; i += 1) {
-    const rowTop = i * COLUMN_ROW_STRIDE;
-    if (rowTop >= bottom) break;
-    if (rowTop + COLUMN_ROW_HEIGHT > top) {
-      const entry = entries[i];
-      if (entry) result.push(entry.path);
-    }
-  }
-  return result;
-}
 
 /**
  * The tint a row in flight keeps for the length of the drag — see the list view's

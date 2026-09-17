@@ -52,9 +52,6 @@ export const H_INTERACTIVE: Record<InteractiveSize, string> = {
 
 // ── Padding ──────────────────────────────────────────────────────────────────
 
-/** Horizontal padding in px per interactive size. */
-export const INTERACTIVE_PAD_X = { xs: 8, sm: 12, md: 16, lg: 20 } as const;
-
 /** Tailwind class: horizontal padding per interactive size. Static literals so
  *  the uniwind/Tailwind scanner registers them. */
 export const PX_INTERACTIVE: Record<InteractiveSize, string> = {

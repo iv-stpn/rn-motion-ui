@@ -32,7 +32,7 @@ type DockContextValue = {
 };
 
 const DockContext = createContext<DockContextValue | null>(null);
-const BORDER_WIDTH = 2.5;
+const BORDER_WIDTH = 2;
 
 /** Keep a custom item's layout in the target row and its decoration on the moving frame. */
 function splitItemStyle(style: StyleProp<ViewStyle>) {

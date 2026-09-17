@@ -262,14 +262,14 @@ export const HOLD_MENU_SEPARATOR_HEIGHT = 10;
  */
 export const HOLD_MENU_SEGMENTED_SEPARATOR_HEIGHT = 8;
 /**
- * The 2.5 px hairline the `'segmented'` variant draws below every row but the
+ * The 2 px hairline the `'segmented'` variant draws below every row but the
  * last. A row's border adds to its box, so HoldMenu's `calculateMenuHeight`
  * counts one seam per gap between rows; the source of truth is the
  * `hairline-b` on `MenuItem` in segmented mode.
  */
-export const HOLD_MENU_SEGMENTED_SEAM_HEIGHT = 2.5;
+export const HOLD_MENU_SEGMENTED_SEAM_HEIGHT = 2;
 /** Panel hairline border, top + bottom — `hairline`. */
-export const HOLD_MENU_BORDER_HEIGHT = 5;
+export const HOLD_MENU_BORDER_HEIGHT = 4;
 /**
  * Smallest the panel is ever capped to: border, list inset and one row. A panel
  * clamped below this shows no whole row at all, and the held item is the thing

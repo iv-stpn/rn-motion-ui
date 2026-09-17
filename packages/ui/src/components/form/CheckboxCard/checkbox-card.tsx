@@ -462,7 +462,7 @@ export function CheckboxCard({
             When unchecked both are transparent — no resting outline, and the
             wrapper's surface background shows through; when checked the tone's
             border (and, in dark mode, a wash) overlays it. Checking steps the
-            border from the hairline width to hairline + 0.5px; the half-pixel
+            border from the hairline width to hairline + 1px; the one-pixel
             content shift is negligible. */}
         <View
           className={cn(

@@ -43,7 +43,7 @@ function ColorPickerTrigger({
       onPress={toggle}
       className="hairline flex-row items-center gap-2.5 rounded-interactive border-border bg-surface-3 py-2 pr-2.5 pl-3"
     >
-      <View className="hairline h-5 w-5 rounded-[5px] border-foreground/20" style={{ backgroundColor: hex }} />
+      <View className="hairline h-5 w-5 rounded-interactive border-foreground/20" style={{ backgroundColor: hex }} />
       <Text font="mono" size="sm" className="text-foreground">
         {hex}
       </Text>
@@ -57,7 +57,7 @@ function Preview({ hex, rgb, hsl }: ColorSummary) {
   const detail = `${rgb} · ${hsl}`;
   return (
     <View className="flex-row items-center gap-3">
-      <View className="hairline h-9 w-9 rounded-lg border-foreground/20" style={{ backgroundColor: hex }} />
+      <View className="hairline h-9 w-9 rounded-interactive border-foreground/20" style={{ backgroundColor: hex }} />
       <View className="flex-1 gap-0.5">
         <Text font="mono" size="sm" className="text-foreground">
           {hex}

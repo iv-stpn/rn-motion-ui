@@ -61,6 +61,8 @@
  *
  * - `--radius-interactive` (8 px) — buttons, inputs, tabs, button groups.
  * - `--radius-card` (24 px) — card containers.
+ * - `--radius-card-compact` (16 px) — tight card variant (RadioCard, CheckboxCard,
+ *   SwipeableList rows) that renders below the full card radius.
  * - `--radius-menu` (16 px) — HoverMenu, Dropdown, HoldMenu overlays.
  * - `--radius-modal` (32 px) — Modals, Popovers, MorphingModal, BottomSheet.
  *
@@ -241,6 +243,7 @@
   --radius-menu: 16px;
   --radius-interactive: 8px;
   --radius-card: 24px;
+  --radius-card-compact: 16px;
   --radius-modal: 32px;
 
   /* Typography — per-weight font family tokens. One token per weight so that

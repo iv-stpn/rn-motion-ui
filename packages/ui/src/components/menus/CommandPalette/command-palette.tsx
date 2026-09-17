@@ -142,7 +142,7 @@ function CommandRow({ item, index, isActive, hasIcons, showShortcuts, reduce, on
       trailing={trailing}
       iconPlaceholder={hasIcons && !item.icon}
       reduce={reduce}
-      className="rounded-md"
+      className="rounded-interactive"
     />
   );
 }

@@ -74,7 +74,8 @@ const BASE_ROW_CLASS_WITH_ICON: Record<MenuItemSize, string> = {
   lg: 'gap-3 px-4 py-3',
 };
 
-const ROUNDED_VARIANT: Record<MenuItemSize, string> = { sm: 'rounded', md: 'rounded-md', lg: 'rounded-lg' };
+/** Corner radius for the sidebar-mode row — the shared interactive token, not a per-size raw scale. */
+const SIDEBAR_ROW_RADIUS = 'rounded-interactive';
 
 /**
  * Row layout for the segmented variant — the icon trailing, so the row is
@@ -344,7 +345,7 @@ export function MenuItem({
         segmented
           ? SEGMENTED_ROW_CLASS[size]
           : cn(
-              mode === 'sidebar' && ROUNDED_VARIANT[size],
+              mode === 'sidebar' && SIDEBAR_ROW_RADIUS,
               hasLeadingSlot && !hasIconTile ? BASE_ROW_CLASS_WITH_ICON[size] : scale.rowClass,
             ),
         bottomBorder && 'hairline-b border-border',

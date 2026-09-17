@@ -59,6 +59,25 @@ On Android, also wrap your app root in `BlurProvider` (exported at
 target. On iOS no provider is needed (the `BlurView` is a `UIVisualEffectView`
 that blurs behind itself).
 
+#### Blur constraints (for custom overlays)
+
+The shipped scrims handle three quirks of the peer's `BlurView` for you; a
+custom overlay that renders its own `BlurView` re-discovers them the hard way:
+
+1. **Android blurs a target, not the backdrop.** The peer's `BlurView` blurs the
+   `<BlurTarget>` it is pointed at, which is why Android needs the `BlurProvider`
+   wrapper above — the shipped scrims read its target through the provider
+   context. Without the provider (or the peer) the scrim degrades to the plain
+   dim.
+2. **The wrapper hardcodes `zIndex: 10`.** The peer sets `zIndex: 10` in its
+   container style, lifting the frost above sibling content and "frosting it
+   away" on iOS. Flatten it back to `zIndex: 0` so the pane's content sits above
+   the frost (the shipped `Surface` glass mode does this).
+3. **Never nest a `BlurView` inside its own target on Android.** A `BlurView`
+   that is a descendant of the `BlurTarget` it blurs cycles the RenderNode graph
+   and crashes (SIGSEGV). Render the backdrop outside the target — through the
+   `BlurProvider`'s overlay host — or let the scrim degrade to the dim.
+
 ## Consumer setup
 
 This package **ships TypeScript source** (no prebuilt bundle). Your bundler

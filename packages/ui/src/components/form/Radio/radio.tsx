@@ -206,8 +206,8 @@ export function RadioGroupItem({ value, label, disabled, style, accessibilityLab
       {...pressHandlers}
       onPress={handlePress}
       onLayout={onLayout}
-      className={cn('flex-row items-center', FOCUS_VISIBLE_RING)}
-      style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}
+      className={cn('flex-row items-center gap-3', FOCUS_VISIBLE_RING)}
+      style={[{ opacity: disabled ? 0.6 : 1 }, style]}
     >
       <MotiView
         animate={{ scale: pressed && !disabled && !reduce ? 0.92 : 1 }}

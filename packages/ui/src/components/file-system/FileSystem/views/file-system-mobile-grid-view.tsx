@@ -65,7 +65,7 @@ const FOLDER_INSET = 8;
 
 /** How the tile left behind under a drag reads — and what the lifted ghost copy
  *  carries with it: a card, so the ghost stays visible against the page. */
-const DRAG_SOURCE_CLASSNAME = 'rounded-lg bg-surface-3 shadow-lg';
+const DRAG_SOURCE_CLASSNAME = 'rounded-interactive bg-surface-3 shadow-lg';
 
 /** A tile's content rect, captured via `onLayout` for the scrub's hit-test. */
 type TileRect = { x: number; y: number; width: number; height: number };
@@ -196,7 +196,7 @@ const MobileGridTile = memo(function MobileGridTileComponent({
           testID={testID}
         >
           <View
-            className={cn('overflow-hidden rounded-lg bg-surface-2', showsSelected && 'bg-info/15')}
+            className={cn('overflow-hidden rounded-interactive bg-surface-2', showsSelected && 'bg-info/15')}
             style={{ height: GLYPH_BOX_HEIGHT, width: '100%' }}
           >
             {/* The inset is padding rather than something the glyphs are asked to

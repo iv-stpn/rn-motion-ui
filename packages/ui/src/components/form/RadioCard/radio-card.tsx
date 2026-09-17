@@ -496,7 +496,12 @@ export function RadioCard({
           it lives on a dedicated View rather than on the animated surface below.
           Both `className` and `style` land here so consumer overrides all target
           one element. */}
-      <Surface elevation={resolvedElevation} floating={resolvedFloating} className={cn('rounded-2xl', className)} style={style}>
+      <Surface
+        elevation={resolvedElevation}
+        floating={resolvedFloating}
+        className={cn('rounded-card-compact', className)}
+        style={style}
+      >
         {/* The animated surface. A Pressable can't be animated directly (motify
             is only applied to host primitives, and MotiPressable nests a MotiView
             the same way), so the border/tint live here and the Pressable above
@@ -516,7 +521,7 @@ export function RadioCard({
             backgroundColor: tintAt(accent, selected ? tintAlpha : 0),
           }}
           transition={ct}
-          className={cn('flex-1 gap-3 rounded-2xl p-4', cardBorderWidth(selected), inline && 'flex-row items-start')}
+          className={cn('flex-1 gap-3 rounded-card-compact p-4', cardBorderWidth(selected), inline && 'flex-row items-start')}
         >
           {/* Stacked, the ring leads a row of its own and the badge rides its
               far end. Inline and `variant="card"` have no reason for that row —

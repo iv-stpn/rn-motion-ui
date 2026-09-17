@@ -518,7 +518,7 @@ function SwipeableListRow({
     <View
       ref={rowRef}
       className={cn(
-        'relative overflow-hidden rounded-2xl bg-muted',
+        'relative overflow-hidden rounded-card-compact bg-muted',
         // The elevation shadow lives on the outer wrapper, not the draggable
         // surface: `overflow-hidden` here clips the sliding surface to the
         // rounded row, and that same clip would swallow a shadow on the child.
@@ -536,11 +536,11 @@ function SwipeableListRow({
     >
       {/* Action rail — rendered behind the draggable surface */}
       <View
-        className="absolute inset-0 flex-row overflow-hidden rounded-2xl"
+        className="absolute inset-0 flex-row overflow-hidden rounded-card-compact"
         accessibilityElementsHidden={openSideRef.current === null}
       >
         {/* Left actions */}
-        <View className="h-full flex-row overflow-hidden rounded-l-2xl">
+        <View className="h-full flex-row overflow-hidden rounded-l-card-compact">
           {leftActions.map((action) => (
             <SwipeActionButton
               key={action.id}
@@ -553,7 +553,7 @@ function SwipeableListRow({
           ))}
         </View>
         {/* Right actions */}
-        <View className="ml-auto h-full flex-row overflow-hidden rounded-r-2xl">
+        <View className="ml-auto h-full flex-row overflow-hidden rounded-r-card-compact">
           {rightActions.map((action) => (
             <SwipeActionButton
               key={action.id}
@@ -569,7 +569,7 @@ function SwipeableListRow({
 
       {/* Draggable surface */}
       <Animated.View
-        className={cn('rounded-2xl px-4 py-3', surfaceBackground(elevation))}
+        className={cn('rounded-card-compact px-4 py-3', surfaceBackground(elevation))}
         style={[
           {
             minHeight: 72,

@@ -4,7 +4,10 @@
  * Four radius tokens partition corner curves by surface category:
  * `--radius-interactive` (buttons, inputs, tabs, button groups),
  * `--radius-card` (cards), `--radius-menu` (menus, dropdowns) and
- * `--radius-modal` (modals, popovers, bottom sheets).
+ * `--radius-modal` (modals, popovers, bottom sheets). A fifth token,
+ * `--radius-card-compact` (16 px), is the tight card variant used by
+ * RadioCard/CheckboxCard/SwipeableList — it has no pixel mirror here because no
+ * effect layer traces that curve, so the class is spelled at its call sites.
  *
  * Every class is a static literal so the uniwind/Tailwind scanner picks it up.
  * Pixel constants are the source of truth matching the design tokens in

@@ -183,8 +183,8 @@ export function Checkbox({
       hitSlop={hitSlopFor(20)}
       {...pressHandlers}
       onPress={handlePress}
-      className={cn('flex-row items-center', FOCUS_VISIBLE_RING, className)}
-      style={[{ gap: 12, opacity: disabled ? 0.6 : 1 }, style]}
+      className={cn('flex-row items-center gap-3', FOCUS_VISIBLE_RING, className)}
+      style={[{ opacity: disabled ? 0.6 : 1 }, style]}
     >
       <CheckboxBox
         checked={checked}

@@ -457,7 +457,12 @@ export function CheckboxCard({
           it lives on a dedicated View rather than on the surface below. Both
           `className` and `style` land here so consumer overrides all target one
           element. */}
-      <Surface elevation={resolvedElevation} floating={resolvedFloating} className={cn('rounded-2xl', className)} style={style}>
+      <Surface
+        elevation={resolvedElevation}
+        floating={resolvedFloating}
+        className={cn('rounded-card-compact', className)}
+        style={style}
+      >
         {/* The visual surface carries the border + (dark-mode) selection tint.
             When unchecked both are transparent — no resting outline, and the
             wrapper's surface background shows through; when checked the tone's
@@ -466,7 +471,7 @@ export function CheckboxCard({
             content shift is negligible. */}
         <View
           className={cn(
-            'flex-1 gap-3 rounded-2xl p-4',
+            'flex-1 gap-3 rounded-card-compact p-4',
             cardBorderWidth(checked),
             inline && 'flex-row items-start',
             disabled ? 'opacity-60' : 'opacity-100',

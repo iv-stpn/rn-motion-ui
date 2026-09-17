@@ -321,16 +321,15 @@ export const MultiStepMenu = function MultiStepMenu({
                 {showBack && (
                   <MotiView
                     key="wide-back"
-                    className="overflow-hidden"
+                    className="w-8 overflow-hidden pr-2"
                     from={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={arrowTransition}
                     exitTransition={arrowExitTransition}
                     // Static width + padding hold the button's footprint on Fabric —
-                    // animating `width`/`paddingRight` through `useAnimatedStyle`
-                    // doesn't round-trip Yoga, so the reveal rides the fade.
-                    style={{ width: 32, paddingRight: 8 }}
+                    // animating them through `useAnimatedStyle` doesn't round-trip
+                    // Yoga, so the reveal rides the fade instead.
                   >
                     <Pressable onPress={goBack} accessibilityLabel="Back">
                       <View className="rotate-180">

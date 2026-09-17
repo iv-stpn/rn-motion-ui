@@ -17,10 +17,12 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useShakeAnimation } from '../../../hooks/use-shake-animation';
 import { cn } from '../../../lib/cn';
 import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
+import { INTERACTIVE_HEIGHT, INTERACTIVE_RADIUS } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_BASE } from '../../../theme/motion';
 import { useThemeColor } from '../../../theme/use-theme-color';
+import { Surface } from '../../display/Surface/surface';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { Text } from '../../typography/Text/text';
 
@@ -30,6 +32,17 @@ function resolveInputState(hasError: boolean, focused: boolean): 'error' | 'focu
   if (hasError) return 'error';
   if (focused) return 'focused';
   return 'idle';
+}
+
+// Resolved corner radius in px for the Rim / blur clip — the field's `shape`
+// class is a CSS token an SVG stroke cannot read back, so the effect layer needs
+// the number. A square is sharp (`0`), `rounded` takes the shared interactive
+// radius, and `pill` / `circle` round to half the single-line height — the same
+// curve `rounded-full` draws.
+function inputRadius(shape: 'square' | 'rounded' | 'pill' | 'circle', size: 'xs' | 'sm' | 'md' | 'lg'): number {
+  if (shape === 'square') return 0;
+  if (shape === 'rounded') return INTERACTIVE_RADIUS;
+  return INTERACTIVE_HEIGHT[size] / 2;
 }
 
 // State drives the border colour, not a shadow: the field carries a border
@@ -171,6 +184,60 @@ function renderSubtext({ errorMessage, hint, reduce }: SubtextProps): ReactNode 
   return null;
 }
 
+type FieldHostProps = {
+  /** Pre-composed container classes — `field({size,shape})` + state border + disabled opacity. */
+  className: string;
+  elevation: SurfaceElevation;
+  floating: boolean;
+  blurRadius: number;
+  opacity: number;
+  rim: boolean;
+  rimWidth?: number;
+  intensity?: number;
+  inline: boolean;
+  /** Resolved corner radius in px for the Rim + blur clip (see `inputRadius`). */
+  borderRadius: number;
+  shakeX: Animated.Value;
+  children: ReactNode;
+};
+
+// The field's container host. A frosted field (`blurRadius > 0`) renders through
+// the shared `Surface` primitive, which owns the `glass` tint, backdrop blur and
+// rim; a solid field wears the elevation ladder directly. Both carry the shake
+// transform, so the two hosts stay pixel-identical apart from the frost.
+function FieldHost({
+  className,
+  elevation,
+  floating,
+  blurRadius,
+  opacity,
+  rim,
+  rimWidth,
+  intensity,
+  inline,
+  borderRadius,
+  shakeX,
+  children,
+}: FieldHostProps) {
+  const style = { transform: [{ translateX: shakeX }] };
+  if (blurRadius > 0) {
+    // Spread the glass props as a pre-built object (rather than inline) so the
+    // native-only `inline` prop doesn't trip the web Surface's excess-property
+    // check — the same pattern Card uses.
+    const surfaceProps = { elevation, floating, blurRadius, opacity, rim, rimWidth, intensity, inline, borderRadius };
+    return (
+      <Surface {...surfaceProps} as={Animated.View} className={className} style={style}>
+        {children}
+      </Surface>
+    );
+  }
+  return (
+    <Animated.View className={cn(className, elevatedSurface(elevation, elevation, floating))} style={style}>
+      {children}
+    </Animated.View>
+  );
+}
+
 export type InputProps = {
   /** Ref forwarded to the underlying TextInput (React 19 direct-prop style). */
   ref?: Ref<TextInput>;
@@ -216,6 +283,26 @@ export type InputProps = {
    * for a standard input, `pill` / `circle` for a fully rounded shape.
    */
   shape?: 'square' | 'rounded' | 'pill' | 'circle';
+  /**
+   * Backdrop blur radius in px/dp. `0` keeps the field a solid surface; any
+   * positive value frosts it — a `glass` tint over a backdrop blur, with the
+   * specular edge light when `rim` is also set. @default 0
+   */
+  blurRadius?: number;
+  /** Opacity of the frosted tint (0–1); only thins the fill when `blurRadius` is set. @default 1 */
+  opacity?: number;
+  /** Draw the glass edge light — the `Rim` specular ring around the field. @default false */
+  rim?: boolean;
+  /** Rim width in px/dp. @default 1 */
+  rimWidth?: number;
+  /** Peak alpha (0–1) of the rim's specular highlight — lower is subtler. @default 0.5 */
+  intensity?: number;
+  /**
+   * Set true when the field renders inside the `BlurTarget` it blurs on Android
+   * (a field in the page). An inline pane degrades to the tint fill rather than
+   * crash. @default false
+   */
+  inline?: boolean;
   disabled?: boolean;
   secureTextEntry?: boolean;
   keyboardType?: KeyboardTypeOptions;
@@ -254,6 +341,12 @@ export function Input({
   floating = false,
   elevation = 0,
   shape = 'rounded',
+  blurRadius = 0,
+  opacity = 1,
+  rim = false,
+  rimWidth,
+  intensity,
+  inline = false,
   disabled,
   secureTextEntry,
   keyboardType,
@@ -337,19 +430,24 @@ export function Input({
         </Text>
       ) : null}
 
-      <Animated.View
+      <FieldHost
         className={cn(
           field({ size, shape }),
-          // The fill follows `elevation`; `floating` swaps that rung's shadow
-          // for the diffuse halo. At the default `0` this is a bare
-          // `bg-surface-3` — a flat field, as before. The state border is
-          // drawn only at 0: above it the elevation shadow already carries the
-          // rim, so a border would double up.
+          // The state border is drawn only while flat: above elevation 0 the
+          // shadow rim already carries the edge, so a border would double up.
           elevation === 0 && stateBorder[state],
-          elevatedSurface(elevation, elevation, floating),
           disabled ? 'opacity-60' : 'opacity-100',
         )}
-        style={{ transform: [{ translateX: shakeX }] }}
+        elevation={elevation}
+        floating={floating}
+        blurRadius={blurRadius}
+        opacity={opacity}
+        rim={rim}
+        rimWidth={rimWidth}
+        intensity={intensity}
+        inline={inline}
+        borderRadius={inputRadius(shape, size)}
+        shakeX={shakeX}
       >
         {leftIcon ? (
           <View className="pointer-events-none absolute top-0 bottom-0 left-2.5 z-10 items-center justify-center">
@@ -386,7 +484,7 @@ export function Input({
         />
 
         {rightElement}
-      </Animated.View>
+      </FieldHost>
 
       <AnimatePresence initial={false}>{renderSubtext({ errorMessage, hint, reduce })}</AnimatePresence>
     </View>

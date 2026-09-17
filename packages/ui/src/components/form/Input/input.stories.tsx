@@ -45,6 +45,23 @@ function RevealButton({ shown, onToggle, color }: RevealButtonProps) {
   );
 }
 
+type FrostedFieldProps = { shape: (typeof SHAPES)[number]; label: string };
+function FrostedField({ shape, label }: FrostedFieldProps) {
+  return (
+    <View className="relative w-full overflow-hidden p-2">
+      <View
+        className="absolute"
+        style={{ top: 0, left: 0, width: 56, height: 56, borderRadius: 28, backgroundColor: '#3b82f6' }}
+      />
+      <View
+        className="absolute"
+        style={{ right: 0, bottom: 0, width: 64, height: 64, borderRadius: 32, backgroundColor: '#ec4899' }}
+      />
+      <Input blurRadius={24} label={label} opacity={0.5} rim={true} shape={shape} />
+    </View>
+  );
+}
+
 function InputPlayground(args: ComponentProps<typeof Input>) {
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');
@@ -53,6 +70,7 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
   const [state, setState] = useState<FieldState>('default');
   const [leftIcon, setLeftIcon] = useState(true);
   const [hint, setHint] = useState(false);
+  const [glass, setGlass] = useState(false);
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('hunter2');
   const [shown, setShown] = useState(false);
@@ -75,24 +93,48 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
         <Choice label="State" onChange={setState} options={STATES} value={state} />
         <Toggle label="Left icon" onChange={setLeftIcon} value={leftIcon} />
         <Toggle label="Hint" onChange={setHint} value={hint} />
+        <Toggle label="Glass" onChange={setGlass} value={glass} />
       </ControlCard>
 
-      <Input
-        {...args}
-        disabled={state === 'disabled'}
-        elevation={ELEVATIONS[elevationKey]}
-        error={state === 'error' ? EMAIL_ERROR : typedError}
-        floating={floating}
-        hint={hint ? 'We only use this to sign you in.' : undefined}
-        inputType="email"
-        label="Email"
-        leftIcon={leftIcon ? <Mail color={icon} size={16} /> : undefined}
-        onChange={setEmail}
-        shape={shape}
-        size={size}
-        success={state === 'success'}
-        value={email}
-      />
+      <View className="relative w-full overflow-hidden p-2">
+        {/* Coloured shapes sit behind the field so the frosted glass has a
+            backdrop to blur when the Glass toggle is on. */}
+        {glass ? (
+          <>
+            <View
+              className="absolute"
+              style={{ top: 0, left: 0, width: 56, height: 56, borderRadius: 28, backgroundColor: '#3b82f6' }}
+            />
+            <View
+              className="absolute"
+              style={{ right: 0, bottom: 0, width: 64, height: 64, borderRadius: 32, backgroundColor: '#ec4899' }}
+            />
+            <View
+              className="absolute"
+              style={{ top: 8, left: 64, width: 40, height: 40, borderRadius: 20, backgroundColor: '#f59e0b' }}
+            />
+          </>
+        ) : null}
+        <Input
+          {...args}
+          blurRadius={glass ? 24 : 0}
+          disabled={state === 'disabled'}
+          elevation={ELEVATIONS[elevationKey]}
+          error={state === 'error' ? EMAIL_ERROR : typedError}
+          floating={floating}
+          hint={hint ? 'We only use this to sign you in.' : undefined}
+          inputType="email"
+          label="Email"
+          leftIcon={leftIcon ? <Mail color={icon} size={16} /> : undefined}
+          onChange={setEmail}
+          opacity={glass ? 0.5 : 1}
+          rim={glass}
+          shape={shape}
+          size={size}
+          success={state === 'success'}
+          value={email}
+        />
+      </View>
 
       <View className="h-3" />
       {/* The field reads its fill and float off the same ladder every other
@@ -148,6 +190,16 @@ function InputPlayground(args: ComponentProps<typeof Input>) {
           {SHAPES.map((name) => (
             <Input {...args} key={name} label={name} shape={name} />
           ))}
+        </View>
+      </Section>
+
+      {/* The glass treatment — `blurRadius` frosts the backdrop behind the field,
+          `opacity` thins the tint and `rim` layers the specular edge light, the
+          same trio the Card / Button / Surface stories expose. */}
+      <Section title="Glass">
+        <View className="gap-4">
+          <FrostedField label="Frosted rounded" shape="rounded" />
+          <FrostedField label="Frosted pill" shape="pill" />
         </View>
       </Section>
 

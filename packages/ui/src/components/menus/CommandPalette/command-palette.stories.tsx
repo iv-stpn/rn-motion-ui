@@ -126,3 +126,22 @@ export const Filtered: Story = {
     await expect(onSelect).toHaveBeenCalled();
   },
 };
+
+export const Keyboard: Story = {
+  name: 'Keyboard: arrow keys move the highlight, Enter commits',
+  render: () => <PaletteDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    onSelect.mockClear();
+    await userEvent.click(await canvas.findByRole('button', { name: OPEN_LABEL }));
+    const input = await screen.findByPlaceholderText('Type a command or search…');
+    await userEvent.click(input);
+    // Enter with no highlighted row commits nothing.
+    await userEvent.keyboard('{Enter}');
+    await expect(onSelect).not.toHaveBeenCalled();
+    // ArrowDown highlights the first result; Enter commits it.
+    await userEvent.keyboard('{ArrowDown}');
+    await userEvent.keyboard('{Enter}');
+    await expect(onSelect).toHaveBeenCalledTimes(1);
+  },
+};

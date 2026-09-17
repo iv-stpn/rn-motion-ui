@@ -1,11 +1,12 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
+import { Platform, Pressable, ScrollView, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
 import { useAutoFocusOnShow } from '../../../hooks/use-auto-focus-on-show';
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import type { SurfaceElevation } from '../../../lib/elevated';
+import { isMenuNavKey, nextMenuIndex } from '../../../lib/menu-keyboard';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { ThemedIcon } from '../../icon/themed-icon';
@@ -19,10 +20,12 @@ import type { OverlayType } from '../Overlay/overlay-type';
 // AdaptiveModal supplies the adaptive surface (narrow → fullSheet, wide →
 // centered modal), backdrop, exit animation and mount-gating. The web
 // Cmd/Ctrl+K shortcut has no RN equivalent, so `shortcut` is kept for API
-// parity but is a no-op. Rows are tapped rather than arrow-navigated; the
-// active row highlight tracks the tapped/last-focused item and fades in via
-// moti. On wide screens the `ESC` kbd chip is the close button and rows show
-// their keyboard-shortcut hints; on narrow (touch) screens those shortcuts are
+// parity but is a no-op. Rows are tapped, or — on web — arrow-navigated with
+// the same index math as `useMenuKeyboardNavigation`, but roving the `active`
+// highlight rather than DOM focus so the search input stays focused; the
+// highlight tracks the tapped/last-focused item and fades in via moti. On wide
+// screens the `ESC` kbd chip is the close button and rows show their
+// keyboard-shortcut hints; on narrow (touch) screens those shortcuts are
 // meaningless and a proper close button sits in the top right instead.
 
 const ESC_LABEL = 'ESC';
@@ -238,6 +241,38 @@ export function CommandPalette({
     },
     [setOpen],
   );
+
+  // Keyboard selection (web): ArrowUp/Down/Home/End rove the `active` highlight
+  // and Enter commits it — the same index math as `useMenuKeyboardNavigation`,
+  // but on the *highlight* rather than DOM focus, so the search input stays
+  // focused while the user walks the results. Attached to `document` rather than
+  // the palette node because the rows mount inside a portal that trails `open` by
+  // a tick (`useModalRender` keeps the Modal mounted through its exit animation),
+  // so a ref-backed listener would attach before the node exists. Keydowns bubble
+  // from the autofocused search input up to the document, and the `open` gate
+  // leaves keys pressed while the palette is closed alone.
+  // biome-ignore lint/plugin: keyboard selection is an external DOM side effect — arrow keys and Enter have no declarative RN equivalent.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const key = event.key;
+      if (key === 'Enter') {
+        const item = active >= 0 && active < filtered.length ? filtered[active] : undefined;
+        if (item) {
+          event.preventDefault();
+          handleSelect(item);
+        }
+        return;
+      }
+      if (!isMenuNavKey(key)) return;
+      event.preventDefault();
+      setActive((current) => nextMenuIndex(current, filtered.length, key));
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open, active, filtered, handleSelect]);
 
   let cursor = 0;
 

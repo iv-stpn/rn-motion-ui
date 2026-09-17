@@ -1,5 +1,5 @@
 import type { ComponentType, ReactElement, ReactNode } from 'react';
-import type { ViewStyle } from 'react-native';
+import type { AccessibilityRole, ViewStyle } from 'react-native';
 import type { HapticFeedbackVariant } from '../../../lib/haptics-types';
 import type { DragEffectAllowed, DragEndEvent, DragGroups, DragStartEvent } from '../../gestures/drag.types';
 import type { OverlayType } from '../Overlay/overlay-type';
@@ -121,6 +121,14 @@ export type HoldItemProps = {
   testID?: string;
   /** Accessible name for the trigger — announced when it takes focus. */
   accessibilityLabel?: string;
+  /**
+   * Opt-in trigger role. Defaults to inert: most callers wrap a `<button>`
+   * child (every file-system entry), where a `button` role here would nest one
+   * button inside another — invalid DOM on web. Plain-content triggers (a chat
+   * bubble) pass `"button"` to make the wrapper itself announce as the
+   * menu-opening control, which also enables `aria-expanded` / `aria-haspopup`.
+   */
+  accessibilityRole?: AccessibilityRole;
 };
 
 /** `HoldMenuProvider` props — upstream's `HoldMenuProviderProps`, with `safeAreaInsets` optional. */

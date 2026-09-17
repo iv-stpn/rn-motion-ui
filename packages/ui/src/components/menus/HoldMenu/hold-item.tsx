@@ -71,6 +71,7 @@ const HoldItemComponent = ({
   disabled = false,
   testID,
   accessibilityLabel,
+  accessibilityRole,
   children,
 }: HoldItemProps) => {
   const { state, menuProps, windowSize, rootViewportHeight, rootPageX, rootPageY, safeAreaInsets, rootRef } =
@@ -324,9 +325,14 @@ const HoldItemComponent = ({
     return () => node.removeEventListener('contextmenu', handleContextMenu);
   }, [webHold, disabled, containerRef, handleContextMenu]);
 
-  // A focusable, menu-opening trigger is a button with an expanded state. `hasMenu`
-  // gates the semantics: an inert item (empty `items`) is not a control.
+  // A focusable, menu-opening trigger. `hasMenu` gates the menu semantics: an
+  // inert item (empty `items`) is not a control.
   const hasMenu = !disabled && items.length > 0;
+  // The wrapper is a button only when the consumer opts in. Most shipped callers
+  // wrap a `<button>` child (every file-system entry), where a `button` role here
+  // would nest one button inside another — invalid DOM on web — so the role is
+  // opt-in, not derived from `hasMenu`.
+  const isMenuButton = hasMenu && accessibilityRole === 'button';
 
   // RNW forwards onClick/tabIndex on View, but RN's core types do not declare
   // them — the cast keeps the web-only props off the native type. `aria-haspopup`
@@ -335,7 +341,7 @@ const HoldItemComponent = ({
   let webOnlyProps: Record<string, unknown> = {};
   if (!disabled && webHold) webOnlyProps = { tabIndex: 0 };
   else if (!disabled && IS_WEB) webOnlyProps = { onClick: handleWebTap, tabIndex: 0 };
-  if (hasMenu && IS_WEB) webOnlyProps['aria-haspopup'] = 'menu';
+  if (isMenuButton && IS_WEB) webOnlyProps['aria-haspopup'] = 'menu';
 
   const wrapper = (
     <Animated.View
@@ -344,8 +350,8 @@ const HoldItemComponent = ({
       onLayout={dragOptions !== undefined && !disabled ? rootProps.onLayout : undefined}
       style={[containerStyles, animatedContainerStyle, rootProps.style]}
       testID={testID}
-      accessibilityRole={hasMenu ? 'button' : undefined}
-      aria-expanded={hasMenu ? isMenuOpen : undefined}
+      accessibilityRole={accessibilityRole}
+      aria-expanded={isMenuButton ? isMenuOpen : undefined}
       accessibilityLabel={accessibilityLabel}
       {...webOnlyProps}
     >

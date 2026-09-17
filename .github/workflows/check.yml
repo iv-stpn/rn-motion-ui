@@ -59,6 +59,11 @@ jobs:
       - name: Check hairline convention
         run: node packages/ui/scripts/check-hairline.mjs
 
+      # Infinite Reanimated `withRepeat` loops must be cancelled on unmount,
+      # or they leak and stall the app (a past 15s Storybook hang).
+      - name: Check withRepeat loops are cancelled
+        run: node packages/ui/scripts/check-withRepeat.mjs
+
       # Every colour token is written down three times (tokens.css @theme, the
       # two dark blocks, and the native OKLCH tables). Nothing reconciles them
       # at runtime, so this fails when one of them is edited and another missed.

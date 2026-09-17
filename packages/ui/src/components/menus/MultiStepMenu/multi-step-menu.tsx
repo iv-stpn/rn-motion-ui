@@ -25,6 +25,7 @@ import { MenuItem, type MenuItemIcon } from '../../rows/menu-item';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
 import type { OverlayType } from '../Overlay/overlay-type';
+import { computeDirection, resolveSection } from './multi-step-menu.logic';
 
 // A lightly-damped spring glides the pane into place with a hair of settle at the
 // end instead of the abrupt start/stop a linear tween gives.
@@ -43,24 +44,6 @@ const ARROW_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timi
 const ARROW_EXIT_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
 
 const MultiStepMenuContext = createContext<MultiStepHelpers | null>(null);
-
-function resolveSection(sections: MultiStepSection[], path: string[]): MultiStepSection | null {
-  let nodes = sections;
-  let match: MultiStepSection | null = null;
-  for (const segment of path) {
-    const found = nodes.find((s) => s.path === segment);
-    if (!found) return null;
-    match = found;
-    nodes = found.subsections ?? [];
-  }
-  return match;
-}
-
-function computeDirection(current: string[], next: string[]): 'forward' | 'backward' {
-  if (next.length > current.length) return 'forward';
-  if (next.length < current.length) return 'backward';
-  return 'forward';
-}
 
 /** The pane-motion target objects: any subset of translate/opacity, or `false` for "no enter/exit". */
 type PaneTarget = { translateY?: number; translateX?: number; opacity?: number };

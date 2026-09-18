@@ -31,3 +31,7 @@ if [ $? -ne 0 ]; then
     exit 1
   fi
 fi
+
+# Run the full check suite (check-exports is validated + auto-fixed above, so
+# the remaining scripts gate here). A non-zero exit blocks the commit.
+bun run check

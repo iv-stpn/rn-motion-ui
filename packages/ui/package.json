@@ -550,6 +550,7 @@
       "default": "./src/components/typography/TextRolling/text-rolling.tsx"
     },
     "./toaster": {
+      "react-native": "./src/components/display/Toaster/toaster.native.tsx",
       "source": "./src/components/display/Toaster/toaster.tsx",
       "types": "./src/components/display/Toaster/toaster.tsx",
       "default": "./src/components/display/Toaster/toaster.tsx"

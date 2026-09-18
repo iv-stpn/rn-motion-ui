@@ -137,5 +137,22 @@ function TablePerson(props: TableProps<Person>) {
   return <Table {...CLASSIC_TABLE} {...props} />;
 }
 
+/** Row identity for the shared `Person` rows. */
+function getPersonId(row: Person) {
+  return row.id;
+}
+
 export type { Person };
-export { buildPeople, CLASSIC_TABLE, DEFAULT_COLUMNS, FIRST, LAST, ROLES, renderPersonCard, STATUSES, StatusBadge, TablePerson };
+export {
+  buildPeople,
+  CLASSIC_TABLE,
+  DEFAULT_COLUMNS,
+  FIRST,
+  getPersonId,
+  LAST,
+  ROLES,
+  renderPersonCard,
+  STATUSES,
+  StatusBadge,
+  TablePerson,
+};

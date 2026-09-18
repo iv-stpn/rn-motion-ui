@@ -23,7 +23,12 @@
           },
           "style": {
             "useComponentExportOnlyModules": "off",
-            "noExcessiveLinesPerFile": "off",
+            "noExcessiveLinesPerFile": {
+              "level": "on",
+              "options": {
+                "maxLines": 600
+              }
+            },
             "useExportsLast": "off",
             "noJsxLiterals": "off"
           },

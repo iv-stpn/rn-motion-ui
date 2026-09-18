@@ -17,8 +17,8 @@ import {
 } from '../../../__stories__/story-harness';
 import { SURFACE_LEVELS } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
-import { type ButtonVariant, variantIconColorToken } from './button-variants';
-import { StatefulButton } from './stateful-button';
+import { variantIconColorToken } from './button-variants';
+import { StatefulButton, type StatefulButtonVariant } from './stateful-button';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -32,20 +32,7 @@ const meta = {
     shape: { control: 'select', options: ['square', 'rounded', 'pill', 'circle'] },
     variant: {
       control: 'select',
-      options: [
-        'primary',
-        'secondary',
-        'accent',
-        'neutral',
-        'ghost',
-        'outline',
-        'danger',
-        'success',
-        'warning',
-        'info',
-        'outlineDanger',
-        'ghostDanger',
-      ],
+      options: ['primary', 'secondary', 'accent', 'neutral', 'ghost', 'danger', 'success', 'warning', 'info', 'ghostDanger'],
     },
   },
 } satisfies Meta<typeof StatefulButton>;
@@ -63,14 +50,12 @@ const VARIANTS = [
   'accent',
   'neutral',
   'ghost',
-  'outline',
   'danger',
   'success',
   'warning',
   'info',
-  'outlineDanger',
   'ghostDanger',
-] as const satisfies readonly ButtonVariant[];
+] as const satisfies readonly StatefulButtonVariant[];
 const CUSTOM_LABELS = {
   children: 'Upload',
   loadingText: 'Uploading…',
@@ -89,7 +74,7 @@ const WRAPPER_CLASS = 'w-52';
 function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   const colors = useThemeColors();
   const [chip, setChip] = useState<(typeof CHIP_OPTIONS)[number]>('none');
-  const [variant, setVariant] = useState<ButtonVariant>('neutral');
+  const [variant, setVariant] = useState<StatefulButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [withIcon, setWithIcon] = useState(false);
   const [shouldAutoReset, setShouldAutoReset] = useState(true);

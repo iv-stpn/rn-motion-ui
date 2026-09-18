@@ -1,7 +1,7 @@
 // biome-ignore-all lint/style/noExcessiveLinesPerFile: press machine, text roll, and loader are tightly coupled around one render tree
 // aria-busy is approximated via accessibilityLiveRegion="polite" on the content row.
 
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { CheckLine as Check } from 'rn-motion-ui-icons/icons/check-line';
 import { WarningLine } from 'rn-motion-ui-icons/icons/warning-line';
@@ -12,6 +12,7 @@ import { EASE_IN_OUT, SPRING_SWAP } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
+import { PresenceContext } from '../../../moti/presence/animate-presence-context';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from './button';
@@ -21,8 +22,12 @@ import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './el
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
 
+/** StatefulButton's accepted variants — the shared {@link ButtonVariant} set
+ *  minus the `outline`/`outlineDanger` pair. */
+export type StatefulButtonVariant = Exclude<ButtonVariant, 'outline' | 'outlineDanger'>;
+
 // biome-ignore lint/style/useExportsLast: props interface before layout constants — collocated for readability
-export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loading' | 'onPress'> {
+export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loading' | 'onPress' | 'variant'> {
   /** Async action driven by the button. Pressing runs the built-in machine
    *  idle → loading → success (or error) around the returned promise. */
   onPress?: () => Promise<void>;
@@ -62,6 +67,9 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
    *  is bypassed: timings, `afterSuccess`/`afterError`, `shouldReset`,
    *  `shouldAutoReset` and `afterReset` are ignored (`onPress` still fires on press). */
   state?: ButtonState;
+  /** Plate/fill colour. Same set as the flat {@link Button}, minus the
+   *  `outline`/`outlineDanger` pair. @default 'neutral' */
+  variant?: StatefulButtonVariant;
   children: ReactNode;
   loadingText?: ReactNode;
   successText?: ReactNode;
@@ -144,9 +152,8 @@ function variantIconColor(v: ButtonVariant, c: ReturnType<typeof useThemeColors>
 // status fills (`success`/`warning`/`info`) carry over as themselves (all exist
 // on the elevated union); every remaining variant is monochrome or transparent,
 // so it takes the `neutral` fill.
-const ELEVATED_PALETTE_FOR_VARIANT: Partial<Record<ButtonVariant, ElevatedVariant>> = {
+const ELEVATED_PALETTE_FOR_VARIANT: Partial<Record<StatefulButtonVariant, ElevatedVariant>> = {
   danger: 'danger',
-  outlineDanger: 'danger',
   ghostDanger: 'danger',
   primary: 'primary',
   secondary: 'secondary',
@@ -156,7 +163,7 @@ const ELEVATED_PALETTE_FOR_VARIANT: Partial<Record<ButtonVariant, ElevatedVarian
   info: 'info',
 };
 
-function elevatedPaletteFor(v: ButtonVariant): ElevatedVariant {
+function elevatedPaletteFor(v: StatefulButtonVariant): ElevatedVariant {
   return ELEVATED_PALETTE_FOR_VARIANT[v] ?? 'neutral';
 }
 
@@ -173,7 +180,7 @@ type WrapperResolved = {
 
 type WrapperArgs = {
   chip: 'elevated' | undefined;
-  v: ButtonVariant;
+  v: StatefulButtonVariant;
   state: ButtonState;
   disabled: boolean | undefined;
   colors: ReturnType<typeof useThemeColors>;
@@ -251,11 +258,15 @@ function resolveStateColors({ state, idleIconColor, elevatedVariant, colors }: S
 }
 
 // ---------------------------------------------------------------------------
-// IconSlot — animated width collapse / expand for state icons
+// IconSlot — fade / scale without retaining layout space during exit
 // ---------------------------------------------------------------------------
 
-type IconSlotProps = { children: ReactNode; reduce: boolean; slotWidth: number };
-function IconSlot({ children, reduce, slotWidth }: IconSlotProps) {
+type IconSlotProps = { children: ReactNode; reduce: boolean; slotWidth: number; trailing?: boolean };
+function IconSlot({ children, reduce, slotWidth, trailing = false }: IconSlotProps) {
+  // Only observe presence here: MotiView owns the exit-completion registration.
+  const isPresent = useContext(PresenceContext)?.isPresent ?? true;
+  const exitPosition: ViewStyle = trailing ? { end: 0 } : { start: 0 };
+
   return (
     <MotiView
       from={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7 }}
@@ -263,11 +274,10 @@ function IconSlot({ children, reduce, slotWidth }: IconSlotProps) {
       exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7 }}
       transition={reduce ? { type: 'timing', duration: 150 } : { ...SPRING_SWAP }}
       className="items-center justify-center overflow-hidden"
-      // Static width so the slot paints its full footprint on the first frame —
-      // animating `width` through `useAnimatedStyle` doesn't round-trip Yoga on
-      // Fabric, so the reveal is carried by the fade + scale (style props) and the
-      // slot simply holds its reserved width.
-      style={{ width: slotWidth }}
+      // Keep a static width for Fabric, but pop the exiting icon out of the row:
+      // retaining its width + gap pushes the idle label sideways until unmount.
+      // Anchor each icon to its own edge while the fade + scale finishes.
+      style={[{ width: slotWidth }, !isPresent && { position: 'absolute', ...exitPosition }]}
     >
       {children}
     </MotiView>
@@ -313,7 +323,7 @@ function TextSlot({ value, children, variant = 'neutral', size = 'md', reduce, t
     // animated width springs behind a growing label and `overflow:'hidden'`
     // clips the already-laid-out glyphs mid-spring (the trailing letter loses its
     // right edge). Sizing to the sizer keeps the box wide enough for the current
-    // label on every frame; the icon slot's own width spring carries the morph.
+    // label on every frame; exiting icons no longer reserve space in the row.
     // This box does NOT clip — the vertical roll is masked by the absolute clip
     // layer below, which is open-ended to the right so the trailing glyph is never
     // shaved horizontally (see CLIP_SLACK).
@@ -607,9 +617,7 @@ export function StatefulButton({
     iconColor,
     textColor: resolvedTextColor,
   } = resolveStateColors({ state, idleIconColor, elevatedVariant, colors });
-  // Slot wide enough to contain the icon with 6 px margin on each side, which
-  // also acts as the gap between icon and label without needing an explicit gap
-  // on the outer row (an explicit gap would show during the slot's width spring).
+  // The icon reserves its own width; the row supplies the size-specific gap.
   // In success/error the button shrinks its horizontal padding slightly to
   // compensate for the extra width the icon slot adds. Derived from the family's
   // padding rather than tabulated, so retuning a `--spacing-interactive-pad-*` token
@@ -699,7 +707,7 @@ export function StatefulButton({
 
       <AnimatePresence>
         {state === 'idle' && icon ? (
-          <IconSlot key="idle-icon" reduce={reduce} slotWidth={iconSize}>
+          <IconSlot key="idle-icon" reduce={reduce} slotWidth={iconSize} trailing={true}>
             {icon}
           </IconSlot>
         ) : null}

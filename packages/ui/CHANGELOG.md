@@ -1,5 +1,25 @@
 # rn-motion-ui
 
+## 7.10.0
+
+### Minor Changes
+
+- 16c9867: Default the button family to the pill shape
+
+  `Button`, `ElevatedButton`, `ButtonSwap`, `IconButton` and `StatefulButton`
+  now default to the `pill` shape (fully-rounded) instead of the `rounded`
+  square. The `rounded` shape is unchanged and still available via
+  `shape="rounded"`; only the default has moved. `IconButton`'s square box
+  therefore renders as a circle by default.
+
+### Patch Changes
+
+- ad29d63: Split the oversized `file-system.stories.tsx` and `table.stories.tsx` into focused story files and shared helpers, and reintroduce a 600-line cap for `*.stories.tsx`.
+
+  No public API change: the existing interaction tests carry over unchanged.
+
+- ad7b308: Add the `react-native` condition to the `./toaster` export so native resolves to `toaster.native.tsx`
+
 ## 7.9.0
 
 ### Minor Changes

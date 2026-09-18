@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Action, Playground, Section, Variants } from '../../../__stories__/story-harness';
+import { Button } from '../../buttons/Button/button';
 import type { ToastVariant } from './toast-types';
 import { Toaster, toast } from './toaster';
 
@@ -20,37 +21,26 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
-const VARIANTS: readonly ToastVariant[] = ['default', 'success', 'error', 'warning', 'info'];
+const VARIANTS: readonly ToastVariant[] = ['primary', 'secondary', 'accent', 'neutral', 'danger', 'success', 'warning', 'info'];
 const LABEL: Record<ToastVariant, string> = {
-  default: 'Default',
+  primary: 'Primary',
+  secondary: 'Secondary',
+  accent: 'Accent',
+  neutral: 'Neutral',
+  danger: 'Danger',
   success: 'Success',
-  error: 'Error',
   warning: 'Warning',
   info: 'Info',
 };
 
 function fire(variant: ToastVariant) {
-  switch (variant) {
-    case 'success':
-      toast.success('Saved!', { duration: 0 });
-      break;
-    case 'error':
-      toast.error('Something went wrong.', { duration: 0 });
-      break;
-    case 'warning':
-      toast.warning('Heads up.', { duration: 0 });
-      break;
-    case 'info':
-      toast.info('For your information.', { duration: 0 });
-      break;
-    default:
-      toast('Hello!', { duration: 0 });
-  }
+  toast(LABEL[variant], { variant, duration: 0 });
 }
 
 export default meta;
 
-/** Fire one toast per variant. Each stays until tapped (or `dismiss()`ed). */
+/** One toast per variant, fired from a Button in the matching colour. Each stays
+ *  until tapped (or `dismiss()`ed). */
 export const Interactive: Story = {
   render: (args) => (
     <View>
@@ -59,7 +49,9 @@ export const Interactive: Story = {
         <Section title="Fire a toast (tap to dismiss)">
           <Variants>
             {VARIANTS.map((variant) => (
-              <Action key={variant} label={LABEL[variant]} onPress={() => fire(variant)} />
+              <Button key={variant} variant={variant} onPress={() => fire(variant)}>
+                {LABEL[variant]}
+              </Button>
             ))}
           </Variants>
         </Section>

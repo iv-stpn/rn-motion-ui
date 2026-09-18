@@ -26,7 +26,7 @@ describe('toast-store', () => {
 
     expect(getToasts()).toHaveLength(1);
     expect(getToasts()[0]?.message).toBe('hello');
-    expect(getToasts()[0]?.variant).toBe('default');
+    expect(getToasts()[0]?.variant).toBe('neutral');
     expect(getToasts()[0]?.position).toBe('bottom');
     expect(getToasts()[0]?.duration).toBe(TOAST_DURATION_DEFAULT);
     expect(getToasts()[0]?.glass).toBe(false);
@@ -62,7 +62,7 @@ describe('toast-store', () => {
     toast.warning('careful');
     toast.info('fyi');
 
-    expect(getToasts().map((t) => t.variant)).toEqual(['success', 'error', 'warning', 'info']);
+    expect(getToasts().map((t) => t.variant)).toEqual(['success', 'danger', 'warning', 'info']);
   });
 
   it('dismiss(id) removes only that toast', () => {

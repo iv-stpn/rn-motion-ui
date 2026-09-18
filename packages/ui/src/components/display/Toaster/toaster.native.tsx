@@ -2,16 +2,17 @@ import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
-import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { MOTION_STANDARD, TIMING_FAST } from '../../../theme/motion';
-import { type ThemeToken, useThemeColor } from '../../../theme/use-theme-color';
+import { useThemeColor } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 
+import { TOAST_STATUS_ICON } from './toast-icons';
 import { dismissToast, getToasts, setToastDefaults, subscribeToasts, TOAST_DURATION_DEFAULT } from './toast-store';
-import type { Toast, ToasterProps, ToastPosition, ToastVariant } from './toast-types';
+import type { Toast, ToasterProps, ToastPosition } from './toast-types';
+import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
 
 /**
  * The native twin of the `Toaster` — a custom, Reanimated-driven toast.
@@ -29,15 +30,6 @@ import type { Toast, ToasterProps, ToastPosition, ToastVariant } from './toast-t
  * blur peer is absent).
  */
 
-/** The semantic status colour each variant's dot resolves to. */
-const VARIANT_TOKEN: Record<ToastVariant, ThemeToken> = {
-  default: 'muted-foreground',
-  success: 'success',
-  error: 'danger',
-  warning: 'warning',
-  info: 'info',
-};
-
 /** Backdrop blur radius (dp) the frosted-glass pill applies. */
 const GLASS_BLUR = 12;
 
@@ -50,10 +42,13 @@ const SLIDE = 24;
 type ToastItemProps = { toast: Toast; position: ToastPosition; testID: string };
 
 function ToastItem({ toast, position, testID }: ToastItemProps) {
-  const dotColor = useThemeColor(VARIANT_TOKEN[toast.variant]);
+  const fillColor = useThemeColor(TOAST_FILL_TOKEN[toast.variant]);
+  const inkColor = useThemeColor(TOAST_FOREGROUND_TOKEN[toast.variant]);
   const travel = position === 'top' ? -SLIDE : SLIDE;
   const handleDismiss = useCallback(() => dismissToast(toast.id), [toast.id]);
   const glass = toast.glass;
+  const Icon = TOAST_STATUS_ICON[toast.variant];
+  const iconColor = glass ? fillColor : inkColor;
 
   return (
     <Surface
@@ -67,9 +62,12 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
       exit={{ opacity: 0, translateY: travel }}
       transition={MOTION_STANDARD}
       exitTransition={TIMING_FAST}
-      className={cn(PILL_CLASSNAME, glass ? undefined : 'hairline border-border')}
+      className={PILL_CLASSNAME}
+      // The variant fill tints the pill's background; a glass pill keeps the
+      // frosted tint the Surface applies itself.
+      style={glass ? undefined : { backgroundColor: fillColor }}
       testID={`${testID}-${toast.id}`}
-      accessibilityLiveRegion={toast.variant === 'error' ? 'assertive' : 'polite'}
+      accessibilityLiveRegion={toast.variant === 'danger' ? 'assertive' : 'polite'}
     >
       <Pressable
         className="flex-row items-center gap-2.5 px-3.5 py-2.5"
@@ -80,20 +78,29 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
         accessibilityRole={toast.action ? undefined : 'button'}
         accessibilityLabel={toast.action ? undefined : 'Dismiss notification'}
       >
-        <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dotColor }} />
+        {Icon ? <Icon size={18} color={iconColor} /> : null}
         <View className="min-w-0 shrink gap-0.5">
-          <Text size="sm" weight="medium">
+          <Text size="sm" weight="medium" style={glass ? undefined : { color: inkColor }}>
             {toast.message}
           </Text>
           {toast.description ? (
-            <Text className="text-muted-foreground" size="xs">
+            <Text
+              className={glass ? 'text-muted-foreground' : undefined}
+              size="xs"
+              style={glass ? undefined : { color: inkColor }}
+            >
               {toast.description}
             </Text>
           ) : null}
         </View>
         {toast.action ? (
           <Pressable accessibilityRole="button" className="ml-1" onPress={toast.action.onPress}>
-            <Text className="text-primary" size="sm" weight="semibold">
+            <Text
+              className={glass ? 'text-primary' : undefined}
+              size="sm"
+              weight="semibold"
+              style={glass ? undefined : { color: inkColor }}
+            >
               {toast.action.label}
             </Text>
           </Pressable>

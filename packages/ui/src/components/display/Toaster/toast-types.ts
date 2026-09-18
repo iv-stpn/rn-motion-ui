@@ -8,8 +8,8 @@
  * by both twins, so it stays free of platform coupling.
  */
 
-/** The accent a toast carries — drives its status colour and icon. */
-export type ToastVariant = 'default' | 'success' | 'error' | 'warning' | 'info';
+/** The fill a toast carries — the same palette as a filled Button (see `button-variants.ts`). */
+export type ToastVariant = 'primary' | 'secondary' | 'accent' | 'neutral' | 'danger' | 'success' | 'warning' | 'info';
 
 /** Which screen edge a toast appears against. */
 export type ToastPosition = 'top' | 'bottom';
@@ -19,7 +19,7 @@ export type ToastAction = { label: string; onPress: () => void };
 
 /** Per-toast options passed to {@link toast} and its variant helpers. */
 export type ToastOptions = {
-  /** Accent variant. @default 'default' */
+  /** Fill variant, matching the Button palette. @default 'neutral' */
   variant?: ToastVariant;
   /** Screen edge. @default the mounted `<Toaster>`'s `position` (top on web, bottom on native). */
   position?: ToastPosition;

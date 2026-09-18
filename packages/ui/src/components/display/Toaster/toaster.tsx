@@ -1,8 +1,12 @@
-import type { CSSProperties } from 'react';
+import { type CSSProperties, type ReactNode, useEffect } from 'react';
 import type { ExternalToast } from 'sonner';
 import { Toaster as SonnerToaster, toast as sonnerToast } from 'sonner';
 
-import type { ToastApi, ToasterProps, ToastOptions, ToastPosition } from './toast-types';
+import { ThemedIcon } from '../../icon/themed-icon';
+
+import { TOAST_STATUS_ICON } from './toast-icons';
+import type { ToastApi, ToasterProps, ToastOptions, ToastPosition, ToastVariant } from './toast-types';
+import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
 
 /**
  * The web twin of the `Toaster` — a thin adapter over Sonner.
@@ -15,15 +19,18 @@ import type { ToastApi, ToasterProps, ToastOptions, ToastPosition } from './toas
  * - `position: 'top' | 'bottom'` maps to Sonner's centred corners — the default is
  *   `top` on web (bottom on native)
  * - `duration: 0` (sticky) maps to Sonner's `Infinity`
+ * - `variant` fills the pill with the matching Button colour (see
+ *   {@link ./toast-variants}) — the same palette the native twin uses
  * - `action.onPress` maps to Sonner's `action.onClick`
  * - `onClose` maps to Sonner's `onDismiss`, which fires on auto-, tap- and
  *   programmatic dismissal alike
  * - `glass` maps to a frosted inline style (a `glass` tint over a `backdrop-filter`
  *   blur), mirroring the native `Surface` frost
  *
- * Sonner's surface/foreground/border colours are re-pointed at the repo's theme
- * tokens (see {@link THEME_VARS}), so the web toast follows the active theme and
- * any consumer `@theme` overrides instead of Sonner's hardcoded palette.
+ * Sonner's surface/foreground colours are re-pointed at the repo's theme tokens
+ * (see {@link THEME_VARS}) and its border is dropped, so the web toast follows the
+ * active theme and any consumer `@theme` overrides instead of Sonner's hardcoded
+ * palette.
  *
  * The `testID` prop is ignored here — Sonner owns the DOM on web.
  */
@@ -45,27 +52,18 @@ const GLASS_STYLE: CSSProperties = {
   backgroundColor: 'var(--color-glass)',
 };
 
-/** The explicit solid override for `toast(…, { glass: false })` under a glass default. */
-const SOLID_STYLE: CSSProperties = {
-  backdropFilter: 'none',
-  WebkitBackdropFilter: 'none',
-  backgroundColor: 'var(--color-surface-3)',
-};
-
 /**
  * Sonner's theme vars re-pointed at the repo's semantic tokens, so the toast's
- * surface/foreground/border and status colours adapt to the theme. Custom CSS
- * properties aren't part of `CSSProperties`, hence the cast.
+ * surface/foreground colours adapt to the theme and its border is dropped
+ * (Sonner draws a 1px border with `--normal-border`, so it is keyed to
+ * `transparent`). Custom CSS properties aren't part of `CSSProperties`, hence
+ * the cast.
  */
 // biome-ignore lint/plugin: ts/no-as-cast — CSS custom properties (`--normal-bg`, …) aren't part of the closed `CSSProperties` index
 const THEME_VARS = {
   '--normal-bg': 'var(--color-surface-3)',
-  '--normal-border': 'var(--color-border)',
+  '--normal-border': 'transparent',
   '--normal-text': 'var(--color-foreground)',
-  '--success-text': 'var(--color-success)',
-  '--error-text': 'var(--color-danger)',
-  '--warning-text': 'var(--color-warning)',
-  '--info-text': 'var(--color-info)',
 } as CSSProperties;
 
 /**
@@ -83,43 +81,65 @@ const TOAST_STYLE: CSSProperties = {
   marginRight: 'auto',
 };
 
-/** Resolve a `glass` option to its inline style — frosted, explicit solid, or none. */
-function glassStyle(glass: boolean | undefined): CSSProperties | undefined {
-  if (glass === true) return GLASS_STYLE;
-  if (glass === false) return SOLID_STYLE;
+/**
+ * The solid (non-glass) pill's inline style — the variant's fill and ink,
+ * resolved to the same `--color-*` tokens the native twin reads. Sonner's title
+ * inherits the toast `color`, and `richColors` makes the description inherit it
+ * too.
+ */
+function solidStyle(variant: ToastVariant): CSSProperties {
+  return {
+    backgroundColor: `var(--color-${TOAST_FILL_TOKEN[variant]})`,
+    color: `var(--color-${TOAST_FOREGROUND_TOKEN[variant]})`,
+  };
 }
+
+/** The default status glyph for a semantic variant, themed to the pill. A glass
+ *  pill keeps the variant's hue on the frosted surface; a solid pill uses the
+ *  fill's legible ink. Neutral and the Button fills render no glyph. */
+function statusIcon(variant: ToastVariant, glass: boolean): ReactNode {
+  const Icon = TOAST_STATUS_ICON[variant];
+  if (!Icon) return null;
+  return <ThemedIcon icon={Icon} token={glass ? TOAST_FILL_TOKEN[variant] : TOAST_FOREGROUND_TOKEN[variant]} size={16} />;
+}
+
+/**
+ * The `<Toaster glass>` default, mirrored into a module variable so `toast()`
+ * (which has no access to the mounted `<Toaster>`'s props) can resolve it —
+ * the same hand-off the native twin does through `setToastDefaults`.
+ */
+let defaultGlass = false;
 
 /** Translate a shared {@link ToastOptions} into Sonner's `ExternalToast`. */
 function toSonnerOptions(options?: ToastOptions): ExternalToast {
-  const { variant: _variant, position, duration, description, action, onClose, glass } = options ?? {};
+  const { variant = 'neutral', position, duration, description, action, onClose, glass } = options ?? {};
+  const frosted = glass ?? defaultGlass;
   return {
     position: position === undefined ? undefined : SONNER_POSITION[position],
     duration: duration === 0 ? Number.POSITIVE_INFINITY : duration,
     description,
     action: action === undefined ? undefined : { label: action.label, onClick: () => action.onPress() },
     onDismiss: onClose,
-    style: glassStyle(glass),
+    // Sonner's variant methods (success/error/…) only colour an icon, so every
+    // toast routes through the plain `sonnerToast` and the variant is drawn by
+    // the fill/ink inline style instead — matching the native pill.
+    richColors: true,
+    icon: statusIcon(variant, frosted),
+    style: frosted ? GLASS_STYLE : solidStyle(variant),
   };
 }
 
-/** Route a toast through Sonner, honouring the shared `variant` option. */
+/** Route a toast through Sonner with the shared `variant` fill/ink applied. */
 function show(message: string, options?: ToastOptions): string {
-  const sonnerOptions = toSonnerOptions(options);
-  switch (options?.variant ?? 'default') {
-    case 'success':
-      return String(sonnerToast.success(message, sonnerOptions));
-    case 'error':
-      return String(sonnerToast.error(message, sonnerOptions));
-    case 'warning':
-      return String(sonnerToast.warning(message, sonnerOptions));
-    case 'info':
-      return String(sonnerToast.info(message, sonnerOptions));
-    default:
-      return String(sonnerToast(message, sonnerOptions));
-  }
+  return String(sonnerToast(message, toSonnerOptions(options)));
 }
 
 export function Toaster({ position = 'top', duration, glass = false, offset }: ToasterProps) {
+  // biome-ignore lint/plugin: sync the Toaster's glass default into the module variable toast() reads — an external system whose change only matters post-commit
+  useEffect(() => {
+    defaultGlass = glass;
+  }, [glass]);
+
   return (
     <SonnerToaster
       theme="system"
@@ -127,7 +147,7 @@ export function Toaster({ position = 'top', duration, glass = false, offset }: T
       duration={duration}
       offset={offset}
       style={THEME_VARS}
-      toastOptions={{ style: glass ? { ...TOAST_STYLE, ...GLASS_STYLE } : TOAST_STYLE }}
+      toastOptions={{ style: TOAST_STYLE }}
     />
   );
 }
@@ -135,7 +155,7 @@ export function Toaster({ position = 'top', duration, glass = false, offset }: T
 // biome-ignore lint/style/useComponentExportOnlyModules: `toast` is the imperative half of the toaster's public API and must ship from the same subpath as `<Toaster>`
 export const toast: ToastApi = Object.assign((message: string, options?: ToastOptions) => show(message, options), {
   success: (message: string, options?: ToastOptions) => show(message, { ...options, variant: 'success' }),
-  error: (message: string, options?: ToastOptions) => show(message, { ...options, variant: 'error' }),
+  error: (message: string, options?: ToastOptions) => show(message, { ...options, variant: 'danger' }),
   warning: (message: string, options?: ToastOptions) => show(message, { ...options, variant: 'warning' }),
   info: (message: string, options?: ToastOptions) => show(message, { ...options, variant: 'info' }),
   dismiss: (id?: string) => {

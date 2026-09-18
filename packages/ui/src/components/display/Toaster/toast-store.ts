@@ -71,7 +71,7 @@ export function showToast(message: string, options?: ToastOptions): string {
     id,
     message,
     description: options?.description,
-    variant: options?.variant ?? 'default',
+    variant: options?.variant ?? 'neutral',
     position: options?.position ?? defaultPosition,
     duration,
     action: options?.action,
@@ -128,7 +128,7 @@ export function resetToastStore(): void {
 /** Imperative toast API — see {@link ToastApi}. */
 export const toast: ToastApi = Object.assign((message: string, options?: ToastOptions) => showToast(message, options), {
   success: (message: string, options?: ToastOptions) => showToast(message, { ...options, variant: 'success' }),
-  error: (message: string, options?: ToastOptions) => showToast(message, { ...options, variant: 'error' }),
+  error: (message: string, options?: ToastOptions) => showToast(message, { ...options, variant: 'danger' }),
   warning: (message: string, options?: ToastOptions) => showToast(message, { ...options, variant: 'warning' }),
   info: (message: string, options?: ToastOptions) => showToast(message, { ...options, variant: 'info' }),
   dismiss: (id?: string) => dismissToast(id),

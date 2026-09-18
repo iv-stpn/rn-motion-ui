@@ -634,7 +634,7 @@ export function StatefulButton({
   // the Button branch below picks them up.
   const sharedProps = {
     size: size ?? 'md',
-    shape: shape ?? 'rounded',
+    shape: shape ?? 'pill',
     disabled: disabled || isBusy || machineActive,
     loading: false as const,
     noDisabledOpacity: keepAppearance,

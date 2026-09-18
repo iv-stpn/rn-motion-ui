@@ -110,7 +110,7 @@ function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
 function ButtonPlayground(args: ComponentProps<typeof Button>) {
   const [variant, setVariant] = useState<ButtonVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
-  const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');
+  const [shape, setShape] = useState<(typeof SHAPES)[number]>('pill');
   const [loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [ripple, setRipple] = useState(false);

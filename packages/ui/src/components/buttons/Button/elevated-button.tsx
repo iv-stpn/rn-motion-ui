@@ -333,7 +333,7 @@ export interface ElevatedButtonProps extends BaseButtonProps {
 export function ElevatedButton({
   variant = 'neutral',
   size = 'md',
-  shape = 'rounded',
+  shape = 'pill',
   children,
   leftAdornment,
   rightAdornment,

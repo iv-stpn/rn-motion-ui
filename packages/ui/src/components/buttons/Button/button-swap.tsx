@@ -291,7 +291,7 @@ export function ButtonSwap({
   onValueChange,
   variant = 'neutral',
   size = 'md',
-  shape = 'rounded',
+  shape = 'pill',
   floating = false,
   elevation,
   animation = 'blur',

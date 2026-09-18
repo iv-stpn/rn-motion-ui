@@ -74,7 +74,7 @@ export type IconButtonProps = {
    *  {@link Button}'s height ramp (24/36/48/64px), so the two line up in a row. @default 'md' */
   size?: RampSize;
 
-  /** Corner shape. @default 'rounded' */
+  /** Corner shape. @default 'pill' */
   shape?: ButtonShape;
 
   /**
@@ -170,7 +170,7 @@ export function IconButton({
   floating = false,
   elevation = 0,
   size = 'md',
-  shape = 'rounded',
+  shape = 'pill',
   blurRadius = 0,
   opacity = 1,
   rim = false,

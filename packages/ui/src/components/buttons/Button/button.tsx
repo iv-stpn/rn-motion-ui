@@ -111,7 +111,7 @@ export interface ButtonProps extends VariantProps<typeof container>, BaseButtonP
 export function Button({
   variant = 'neutral',
   size = 'md',
-  shape = 'rounded',
+  shape = 'pill',
   floating = false,
   elevation,
   blurRadius = 0,

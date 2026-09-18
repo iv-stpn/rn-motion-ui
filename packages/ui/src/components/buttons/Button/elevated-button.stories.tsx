@@ -51,7 +51,7 @@ type IconSide = (typeof ICON_SIDES)[number];
 function ElevatedButtonPlayground(args: ComponentProps<typeof ElevatedButton>) {
   const [variant, setVariant] = useState<ElevatedVariant>('neutral');
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
-  const [shape, setShape] = useState<(typeof SHAPES)[number]>('rounded');
+  const [shape, setShape] = useState<(typeof SHAPES)[number]>('pill');
   const [loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [ripple, setRipple] = useState(false);

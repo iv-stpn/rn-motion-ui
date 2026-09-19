@@ -154,6 +154,7 @@ Subpaths are namespaced by category:
 | `/glass`                       | `Glass`                                                                  |
 | `/item-row`                    | `ItemRow`                                                                |
 | `/item-row-group`              | `ItemRowGroup`                                                           |
+| `/modal-presenter` | `ModalPresenter` |
 | `/morphing-dock-switch`        | `MorphingDockSwitch`                                                     |
 | `/morphing-fab`                | `MorphingFAB`                                                            |
 | `/morphing-switcher`           | `MorphingSwitcher`                                                        |

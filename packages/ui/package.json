@@ -859,6 +859,11 @@
       "source": "./src/components/navigation/DetailHeader/detail-header.tsx",
       "types": "./src/components/navigation/DetailHeader/detail-header.tsx",
       "default": "./src/components/navigation/DetailHeader/detail-header.tsx"
+    },
+    "./modal-presenter": {
+      "source": "./src/components/menus/ModalPresenter/modal-presenter.tsx",
+      "types": "./src/components/menus/ModalPresenter/modal-presenter.tsx",
+      "default": "./src/components/menus/ModalPresenter/modal-presenter.tsx"
     }
   },
   "bin": {

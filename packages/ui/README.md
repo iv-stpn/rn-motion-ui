@@ -156,6 +156,7 @@ Subpaths are namespaced by category:
 | `/morphing-dock-switch`        | `MorphingDockSwitch`                                                     |
 | `/morphing-fab`                | `MorphingFAB`                                                            |
 | `/morphing-switcher`           | `MorphingSwitcher`                                                        |
+| `/primary-actions` | `PrimaryActions` |
 | `/sortable-list`               | `SortableList`                                                           |
 | `/stateful-button`             | `StatefulButton`                                                         |
 | `/surface` | `Surface` |

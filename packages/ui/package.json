@@ -839,6 +839,11 @@
       "source": "./src/components/navigation/DockInset/dock-inset.tsx",
       "types": "./src/components/navigation/DockInset/dock-inset.tsx",
       "default": "./src/components/navigation/DockInset/dock-inset.tsx"
+    },
+    "./primary-actions": {
+      "source": "./src/components/navigation/PrimaryActions/primary-actions.tsx",
+      "types": "./src/components/navigation/PrimaryActions/primary-actions.tsx",
+      "default": "./src/components/navigation/PrimaryActions/primary-actions.tsx"
     }
   },
   "bin": {

@@ -14,6 +14,9 @@ const meta = {
   args: { position: 'bottom', duration: 4000, offset: 16, glass: false, pill: false, size: 'md' },
   argTypes: {
     position: { control: 'select', options: ['top', 'bottom'] },
+    smallScreenPosition: { control: 'select', options: ['top', 'bottom'] },
+    largeScreenPosition: { control: 'select', options: ['top', 'bottom'] },
+    wideBreakpoint: { control: 'select', options: ['sm', 'md', 'lg'] },
     duration: { control: { type: 'range', min: 0, max: 12_000, step: 500 } },
     offset: { control: { type: 'range', min: 0, max: 80, step: 4 } },
     glass: { control: 'boolean' },

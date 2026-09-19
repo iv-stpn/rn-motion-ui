@@ -207,7 +207,7 @@ Subpaths are namespaced by category:
 | `/use-draggable`               | `useDraggable` — a drag with no markup attached                          |
 | `/drag-behavior`               | `resolveDragBehavior`, `DRAG_TUNING_DEFAULTS`, the per-OS press timeline |
 | `/use-drag-behavior`           | `useDragBehavior` — that timeline resolved for the running platform      |
-| `/portal`                      | `Portal`, `PortalHost`, `PortalProvider`                                 |
+| `/portal`                      | `Portal`, `PortalHost`, `PortalProvider`, `usePortalAvailable`           |
 | `/popover`                     | `Popover`                                                                |
 | `/drawer`                      | `Drawer`                                                                 |
 | `/bottom-sheet`                | `BottomSheet`                                                            |

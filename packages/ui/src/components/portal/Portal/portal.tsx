@@ -154,3 +154,14 @@ export type PortalProviderProps = {
 export const Portal = memo(PortalComponent);
 export const PortalHost = memo(PortalHostComponent);
 export const PortalProvider = memo(PortalProviderComponent);
+
+/**
+ * Whether a `<PortalProvider>` is mounted above this component, so a `<Portal>`
+ * will resolve a host instead of throwing. Lets a component that *can* float
+ * above the page (e.g. a toast) render through a `Portal` when one is available
+ * and fall back to in-place rendering otherwise — no hard provider requirement.
+ */
+// biome-ignore lint/style/useComponentExportOnlyModules: hook co-located with the Portal components — Portal, PortalHost, PortalProvider and usePortalAvailable form a single cohesive API
+export function usePortalAvailable(): boolean {
+  return useContext(PortalDispatchContext) !== null;
+}

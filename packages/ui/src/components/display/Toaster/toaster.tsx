@@ -2,6 +2,7 @@ import { type CSSProperties, type ReactNode, useEffect } from 'react';
 import type { ExternalToast } from 'sonner';
 import { Toaster as SonnerToaster, toast as sonnerToast } from 'sonner';
 
+import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { ThemedIcon } from '../../icon/themed-icon';
 
 import { TOAST_STATUS_ICON } from './toast-icons';
@@ -180,8 +181,14 @@ export function Toaster({
   glass = false,
   pill = false,
   size = TOAST_SIZE_DEFAULT,
+  smallScreenPosition,
+  largeScreenPosition,
+  wideBreakpoint = 'sm',
   offset,
 }: ToasterProps) {
+  const isWide = useBreakpointAtLeast(wideBreakpoint);
+  const effectivePosition = isWide ? (largeScreenPosition ?? position) : (smallScreenPosition ?? position);
+
   // biome-ignore lint/plugin: sync the Toaster's glass/pill/size defaults into the module variables toast() reads — an external system whose change only matters post-commit
   useEffect(() => {
     defaultGlass = glass;
@@ -194,7 +201,7 @@ export function Toaster({
       <style>{ICON_OVERRIDE_CSS}</style>
       <SonnerToaster
         theme="system"
-        position={SONNER_POSITION[position]}
+        position={SONNER_POSITION[effectivePosition]}
         duration={duration}
         offset={offset}
         style={THEME_VARS}

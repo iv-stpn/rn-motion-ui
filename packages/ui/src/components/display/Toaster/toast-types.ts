@@ -1,3 +1,5 @@
+import type { BreakpointValue } from '../../../lib/breakpoints';
+
 /**
  * Shared public types for the Toaster — the single contract both the web
  * (Sonner-backed) and native (custom) twins conform to, so
@@ -77,6 +79,21 @@ export type ToastApi = {
 export type ToasterProps = {
   /** Default edge for `toast()` calls that omit `position`. @default 'top' on web, 'bottom' on native */
   position?: ToastPosition;
+  /**
+   * Default edge on small screens (narrower than `wideBreakpoint`). Overrides
+   * `position` when set. Falls back to `position` when omitted.
+   */
+  smallScreenPosition?: ToastPosition;
+  /**
+   * Default edge on large screens (`wideBreakpoint` and wider). Overrides
+   * `position` when set. Falls back to `position` when omitted.
+   */
+  largeScreenPosition?: ToastPosition;
+  /**
+   * Width at which `largeScreenPosition` takes over — a breakpoint name or a raw
+   * pixel number. @default 'sm' (640)
+   */
+  wideBreakpoint?: BreakpointValue;
   /** Default duration for toasts that omit `duration`. @default 4000 */
   duration?: number;
   /** Default glass mode for `toast()` calls that omit `glass`. @default false */

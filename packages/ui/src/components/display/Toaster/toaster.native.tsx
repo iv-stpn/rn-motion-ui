@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
@@ -8,6 +9,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { MOTION_STANDARD, TIMING_FAST } from '../../../theme/motion';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
+import { Portal, usePortalAvailable } from '../../portal/Portal/portal';
 import { Text } from '../../typography/Text/text';
 
 import { TOAST_STATUS_ICON } from './toast-icons';
@@ -41,6 +43,15 @@ const PILL_CLASSNAME = 'max-w-[340px]';
 
 /** Px a toast travels from its edge as it enters and leaves. */
 const SLIDE = 24;
+
+/** Vertical gap (px) between stacked toasts, so they don't touch when several
+ *  fire at once. Matches Sonner's default `gap`. */
+const TOAST_STACK_GAP = 8;
+
+/** zIndex for the toast viewport — topmost within the app, so toasts paint above
+ *  page content regardless of where `<Toaster>` is mounted. Native modals are
+ *  separate windows and still paint above this. */
+const TOAST_Z_INDEX = 9999;
 
 /** Corner radius (px) a pill toast uses for its glass rim + blur clip — large
  *  enough that SVG clamps it to half the pill's height, i.e. a capsule. */
@@ -122,25 +133,40 @@ export function Toaster({
   glass = false,
   pill = false,
   size = TOAST_SIZE_DEFAULT,
+  smallScreenPosition,
+  largeScreenPosition,
+  wideBreakpoint = 'sm',
   offset = 16,
   testID = 'toaster',
 }: ToasterProps) {
   const toasts = useSyncExternalStore(subscribeToasts, getToasts);
   const insets = useSafeInsets();
+  const portalAvailable = usePortalAvailable();
+  const isWide = useBreakpointAtLeast(wideBreakpoint);
+  const effectivePosition = isWide ? (largeScreenPosition ?? position) : (smallScreenPosition ?? position);
 
   // biome-ignore lint/plugin: sync the Toaster props into the module-level store defaults — an external system whose change only matters post-commit
   useEffect(() => {
-    setToastDefaults({ position, duration, glass, pill, size });
-  }, [position, duration, glass, pill, size]);
+    setToastDefaults({ position: effectivePosition, duration, glass, pill, size });
+  }, [effectivePosition, duration, glass, pill, size]);
 
   const topToasts = toasts.filter((toast) => toast.position === 'top');
   const bottomToasts = toasts.filter((toast) => toast.position === 'bottom');
 
-  return (
+  const viewport = (
     <>
       <View
         pointerEvents="box-none"
-        style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'flex-start', paddingTop: insets.top + offset }]}
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: TOAST_STACK_GAP,
+            paddingTop: insets.top + offset,
+            zIndex: TOAST_Z_INDEX,
+          },
+        ]}
         testID={testID}
       >
         <AnimatePresence>
@@ -153,7 +179,13 @@ export function Toaster({
         pointerEvents="box-none"
         style={[
           StyleSheet.absoluteFill,
-          { alignItems: 'center', justifyContent: 'flex-end', paddingBottom: insets.bottom + offset },
+          {
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: TOAST_STACK_GAP,
+            paddingBottom: insets.bottom + offset,
+            zIndex: TOAST_Z_INDEX,
+          },
         ]}
         testID={`${testID}-bottom`}
       >
@@ -165,4 +197,10 @@ export function Toaster({
       </View>
     </>
   );
+
+  // Teleport the viewport into the root host when a PortalProvider is mounted, so
+  // toasts anchor to the screen edges and paint above the page regardless of where
+  // `<Toaster>` sits in the tree. Without a provider, render in place (which still
+  // anchors correctly when `<Toaster>` is mounted at the app root).
+  return portalAvailable ? <Portal>{viewport}</Portal> : viewport;
 }

@@ -3,6 +3,7 @@ import { type ComponentProps, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { ArrowRightLine as ArrowRight } from 'rn-motion-ui-icons/icons/arrow-right-line';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { checkRearming, REARMING_ARGS, SUBMIT_LABEL } from '../../../__stories__/stateful-button-rearming';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import {
   Action,
@@ -63,7 +64,6 @@ const CUSTOM_LABELS = {
   errorText: 'Upload failed',
 } as const;
 
-const SUBMIT_LABEL = 'Submit';
 const SUCCESS_LABEL = 'Done';
 // Two properties uniwind maps straight onto the label's computed style, so the
 // LabelClassName play function can read them back off both copies of the label.
@@ -559,4 +559,32 @@ export const HeldResetSignal: Story = {
     await waitFor(() => expect(args.afterReset).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(button).not.toHaveAttribute('aria-disabled', 'true'));
   },
+};
+
+// The re-arm stories pin the icon-exit fix; their shared geometry check and args
+// live in stateful-button-rearming.ts. Storybook's test transform requires the
+// story objects themselves to be defined here (not re-exported), so only the
+// heavy machinery is split out. They stay at the end, after `Interactive`.
+export const RearmingSuccess: Story = {
+  name: 'Demo: Re-arm success keeps the geometry',
+  args: { ...REARMING_ARGS },
+  play: checkRearming,
+};
+
+export const RearmingRejection: Story = {
+  name: 'Demo: Re-arm rejection keeps the geometry',
+  args: { ...REARMING_ARGS, onPress: fn(() => Promise.reject(new Error('Try again'))) },
+  play: checkRearming,
+};
+
+export const RearmingWithIdleIcon: Story = {
+  name: 'Demo: Re-arm with idle icon keeps the geometry',
+  args: { ...REARMING_ARGS, icon: <ArrowRight size={19} /> },
+  play: checkRearming,
+};
+
+export const RearmingElevated: Story = {
+  name: 'Demo: Re-arm elevated chip keeps the geometry',
+  args: { ...REARMING_ARGS, chip: 'elevated' },
+  play: checkRearming,
 };

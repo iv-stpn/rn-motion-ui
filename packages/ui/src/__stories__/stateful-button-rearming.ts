@@ -1,35 +1,36 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { ArrowRightLine } from 'rn-motion-ui-icons/icons/arrow-right-line';
+// Shared machinery for the StatefulButton re-arm stories. Split out of
+// stateful-button.stories.tsx so the heavy geometry check doesn't bury the
+// stories themselves; Storybook's test transform requires stories to be defined
+// in the .stories file, so the four thin story objects stay there and import
+// `checkRearming`/`REARMING_ARGS` back in.
+//
+// The re-arm stories pin the icon-exit fix: on re-arm (terminal → idle) the
+// exiting state icon keeps its fade but drops its width and gap, so the button
+// and its label must hold their geometry. Each runs the machine twice — once to
+// its terminal state and back, once more to prove the re-arm is repeatable.
+import type { StoryObj } from '@storybook/react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { StatefulButton } from './stateful-button';
-
-const meta = {
-  title: 'Buttons/StatefulButton/Rearming',
-  component: StatefulButton,
-  parameters: { layout: 'centered' },
-  args: {
-    children: 'Submit',
-    onPress: fn(() => Promise.resolve()),
-    afterReset: fn(),
-    minLoadingMs: 100,
-    successDurationMs: 650,
-    errorDurationMs: 650,
-    shouldAutoReset: true,
-  },
-} satisfies Meta<typeof StatefulButton>;
+import type meta from '../components/buttons/Button/stateful-button.stories';
 
 type Story = StoryObj<typeof meta>;
 
 function idleGeometry(button: HTMLElement) {
   // The first label is the in-flow sizer, not the rolling decorative copy.
-  const label = within(button).getAllByText('Submit')[0];
+  const label = within(button).getAllByText(SUBMIT_LABEL)[0];
   if (!label) throw new Error('Missing idle label');
   const rect = button.getBoundingClientRect();
   const scale = rect.width / button.offsetWidth;
   return { width: button.offsetWidth, labelX: (label.getBoundingClientRect().x - rect.x) / scale };
 }
 
-const checkRearming: NonNullable<Story['play']> = async ({ canvasElement, args }) => {
+// The idle button's label text. Shared with the non-re-arm stories that also
+// read the "Submit" sizer, so the geometry check and those plays agree on it.
+export const SUBMIT_LABEL = 'Submit';
+
+// Runs the machine twice and asserts the re-arm (terminal → idle) never resizes
+// the button or shifts its label: the exiting state icon keeps its fade but
+// drops its width/gap, so presence must not alter the plate's geometry.
+export const checkRearming: NonNullable<Story['play']> = async ({ canvasElement, args }) => {
   const canvas = within(canvasElement);
   const button = await canvas.findByRole('button');
   await document.fonts.ready;
@@ -71,21 +72,10 @@ const checkRearming: NonNullable<Story['play']> = async ({ canvasElement, args }
   await expect(args.onPress).toHaveBeenCalledTimes(2);
 };
 
-export default meta;
-
-export const Success: Story = { play: checkRearming };
-
-export const Rejection: Story = {
-  args: { onPress: fn(() => Promise.reject(new Error('Try again'))) },
-  play: checkRearming,
-};
-
-export const WithIdleIcon: Story = {
-  args: { icon: <ArrowRightLine size={19} /> },
-  play: checkRearming,
-};
-
-export const Elevated: Story = {
-  args: { chip: 'elevated' },
-  play: checkRearming,
+export const REARMING_ARGS = {
+  afterReset: fn(),
+  minLoadingMs: 100,
+  successDurationMs: 650,
+  errorDurationMs: 650,
+  shouldAutoReset: true,
 };

@@ -147,6 +147,7 @@ Subpaths are namespaced by category:
 | `/button-group`                | `ButtonGroup`                                                            |
 | `/button-swap`                 | `ButtonSwap`, `ButtonSwapText`, `ButtonSwapIcon`                         |
 | `/close-button`                | `CloseButton`                                                            |
+| `/detail-header` | `DetailHeader` |
 | `/dock-inset` | `DockInsetProvider` |
 | `/elevated-button`             | `ElevatedButton`                                                         |
 | `/feedback-fab`                | `FeedbackFAB`                                                            |

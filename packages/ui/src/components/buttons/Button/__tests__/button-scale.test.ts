@@ -6,6 +6,7 @@ import { INTERACTIVE_RADIUS } from '../../../../lib/radius';
 import { SWITCHER_SCALE } from '../../../menus/MorphingSwitcher/morphing-switcher-scale';
 import {
   BUTTON_BOX,
+  BUTTON_ICON_SIZE,
   BUTTON_METRICS,
   BUTTON_SIZE,
   type ButtonShape,
@@ -183,5 +184,23 @@ describe('shared geometry — IconButton, MorphingFAB and MorphingSwitcher read 
     expect(SWITCHER_SCALE[size].height).toBe(BUTTON_SIZE[size].px);
     expect(SWITCHER_SCALE[size].rowClassName).toContain(`h-interactive-${size}`);
     expect(SWITCHER_SCALE[size].rowClassName).toContain('py-0');
+  });
+});
+
+describe('shared adornment icon ramp', () => {
+  it('grows monotonically so an icon scales with its box', () => {
+    const ramp = (['xs', 'sm', 'md', 'lg'] as const).map((size) => BUTTON_ICON_SIZE[size]);
+    expect(ramp).toStrictEqual([...ramp].sort((a, b) => a - b));
+  });
+
+  it('`icon` shares `md`, since it is the `md` box squared', () => {
+    expect(BUTTON_ICON_SIZE.icon).toBe(BUTTON_ICON_SIZE.md);
+  });
+
+  it.each(['xs', 'sm', 'md', 'lg', 'icon'] as const)('%s adornment icon fits inside its box height', (size) => {
+    // A leading/trailing glyph must stay smaller than the box it sits in or the
+    // button's `overflow-hidden` clips it. This is the guard against the ramp
+    // drifting up past the interactive-height tokens.
+    expect(BUTTON_ICON_SIZE[size]).toBeLessThan(BUTTON_METRICS[size].height);
   });
 });

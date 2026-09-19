@@ -10,6 +10,7 @@ import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variant
 import { SURFACE_LEVELS } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button, type ButtonVariant } from './button';
+import { BUTTON_ICON_SIZE } from './button-scale';
 
 const meta = {
   title: 'Buttons/Button',
@@ -141,7 +142,7 @@ function ButtonPlayground(args: ComponentProps<typeof Button>) {
     rim: glass,
     elevation: ELEVATIONS[elevationKey],
   };
-  const icon = <ArrowRight color={iconColor} size={16} />;
+  const icon = <ArrowRight color={iconColor} size={BUTTON_ICON_SIZE[size]} />;
 
   return (
     <Playground>

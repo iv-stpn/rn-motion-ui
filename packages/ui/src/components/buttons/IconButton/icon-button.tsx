@@ -13,13 +13,10 @@ import { MOTION_SNAPPY, mergeTransition } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../Button/button-internals';
-import { BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
+import { BUTTON_ICON_SIZE, BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
 import { BUTTON_HOVER_CLASS } from '../Button/button-variants';
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
-
-/** Icon size in px when rendered without a background tile. */
-const ICON_SIZE: Record<RampSize, number> = { xs: 12, sm: 14, md: 16, lg: 20 };
 
 /**
  * Tile dimensions and inner icon size when `iconBackgroundColor` is set. The
@@ -222,7 +219,7 @@ export function IconButton({
         <IconComponent size={iconSize} color={resolvedIconColor} />
       </View>
     );
-  } else iconElement = <IconComponent size={ICON_SIZE[size]} color={resolvedIconColor} />;
+  } else iconElement = <IconComponent size={BUTTON_ICON_SIZE[size]} color={resolvedIconColor} />;
 
   const pressValue = pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale });
 

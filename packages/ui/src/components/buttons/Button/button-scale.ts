@@ -124,15 +124,32 @@ export const BUTTON_SIZE: Record<RampSize, ButtonSizeGeometry> = {
  * curve, no horizontal padding (the square is the padding).
  */
 export const BUTTON_METRICS: Record<ButtonSize, { height: number; padX: number; radius: number }> = {
-  xs: { height: BUTTON_SIZE.xs.px, padX: 8, radius: INTERACTIVE_RADIUS },
-  sm: { height: BUTTON_SIZE.sm.px, padX: 12, radius: INTERACTIVE_RADIUS },
-  md: { height: BUTTON_SIZE.md.px, padX: 16, radius: INTERACTIVE_RADIUS },
-  lg: { height: BUTTON_SIZE.lg.px, padX: 20, radius: INTERACTIVE_RADIUS },
+  xs: { height: BUTTON_SIZE.xs.px, padX: 12, radius: INTERACTIVE_RADIUS },
+  sm: { height: BUTTON_SIZE.sm.px, padX: 16, radius: INTERACTIVE_RADIUS },
+  md: { height: BUTTON_SIZE.md.px, padX: 20, radius: INTERACTIVE_RADIUS },
+  lg: { height: BUTTON_SIZE.lg.px, padX: 24, radius: INTERACTIVE_RADIUS },
   icon: { height: BUTTON_SIZE.md.px, padX: 0, radius: INTERACTIVE_RADIUS },
 };
 
 /** Space between an adornment (icon, spinner) and the label, at every size. */
 export const BUTTON_GAP_CLASSNAME = 'gap-2';
+
+/**
+ * Icon size (px) for an adornment glyph — a leading/trailing icon next to the
+ * label — at each button size. The one ramp every icon-carrying sibling reads so
+ * an icon scales with the box it sits in: IconButton's bare icon, PrimaryActions'
+ * labelled-row leading icon, and ButtonSwap's leading icon slot all resolve here
+ * rather than copying a per-size number that could drift. Sized to read beside
+ * the label without overpowering it; `icon` is the `md` box squared, so it takes
+ * `md`'s 16.
+ */
+export const BUTTON_ICON_SIZE: Record<ButtonSize, number> = {
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 20,
+  icon: 16,
+};
 
 /**
  * Icon size (px) for success / error / idle state icons in StatefulButton, per

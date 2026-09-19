@@ -13,7 +13,7 @@ import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { Text, type TextWeight } from '../../typography/Text/text';
 import { type BaseButtonProps, ButtonRipples, pressAnimate, usePressRipples } from './button-internals';
-import { BUTTON_BOX, BUTTON_GAP_CLASSNAME, type ButtonShape, type ButtonSize } from './button-scale';
+import { BUTTON_BOX, BUTTON_GAP_CLASSNAME, BUTTON_ICON_SIZE, type ButtonShape, type ButtonSize } from './button-scale';
 import {
   BUTTON_HOVER_CLASS,
   buttonContainer as container,
@@ -50,9 +50,6 @@ const CASCADE_EXIT_DURATION = 160; // ms (web original: 0.16 s)
 // Fallback roll distance before the slot has been measured (px).
 const ROLL_FALLBACK = 18;
 
-/** Square edge (px) of the icon slot, matching the adornment icons a Button carries. */
-const ICON_SLOT_SIZE = 16;
-
 export type ButtonSwapTextProps = {
   value: string;
   children: ReactNode;
@@ -70,7 +67,9 @@ export type ButtonSwapIconProps = {
   value: string;
   children: ReactNode;
   animation?: ButtonSwapAnimation;
-  /** Square edge of the icon slot in px. Default 16. */
+  /** Square edge of the icon slot in px. Defaults to the family's `md` adornment
+   *  icon size ({@link BUTTON_ICON_SIZE.md}); {@link ButtonSwap} always passes its
+   *  own per-`size` value, so this default only serves standalone use. */
   size?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -248,7 +247,7 @@ export function ButtonSwapIcon({
   value,
   children,
   animation = 'blur',
-  size = ICON_SLOT_SIZE,
+  size = BUTTON_ICON_SIZE.md,
   style,
   testID,
 }: ButtonSwapIconProps) {
@@ -391,7 +390,7 @@ export function ButtonSwap({
           style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent', pointerEvents: 'none' }]}
         />
         {hasIcon ? (
-          <ButtonSwapIcon value={activeItem.id} animation={animation} size={ICON_SLOT_SIZE}>
+          <ButtonSwapIcon value={activeItem.id} animation={animation} size={BUTTON_ICON_SIZE[size]}>
             {activeItem.icon ?? null}
           </ButtonSwapIcon>
         ) : null}

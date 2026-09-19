@@ -12,6 +12,7 @@ import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__storie
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { SURFACE_LEVELS } from '../../../lib/elevated';
 import { useThemeColors } from '../../../theme/use-theme-color';
+import { BUTTON_ICON_SIZE } from './button-scale';
 import {
   type ButtonShape,
   type ButtonSize,
@@ -26,13 +27,13 @@ import {
 // vivid or dark background under the icon, so each one resolves the same
 // `*-foreground` token its label wears (see iconColorFor).
 const COPY_ITEMS: ButtonSwapItem[] = [
-  { id: 'copy', label: 'Copy link', icon: <Copy size={16} />, ariaLabel: 'Copy link' },
-  { id: 'copied', label: 'Copied', icon: <Check size={16} />, ariaLabel: 'Copied' },
+  { id: 'copy', label: 'Copy link', icon: <Copy size={BUTTON_ICON_SIZE.md} />, ariaLabel: 'Copy link' },
+  { id: 'copied', label: 'Copied', icon: <Check size={BUTTON_ICON_SIZE.md} />, ariaLabel: 'Copied' },
 ];
 
 const THEME_ITEMS: ButtonSwapItem[] = [
-  { id: 'light', label: 'Light', icon: <Sun size={16} />, ariaLabel: 'Use light theme' },
-  { id: 'dark', label: 'Dark', icon: <Moon size={16} />, ariaLabel: 'Use dark theme' },
+  { id: 'light', label: 'Light', icon: <Sun size={BUTTON_ICON_SIZE.md} />, ariaLabel: 'Use light theme' },
+  { id: 'dark', label: 'Dark', icon: <Moon size={BUTTON_ICON_SIZE.md} />, ariaLabel: 'Use dark theme' },
 ];
 
 const ANIMATIONS = ['blur', 'roll', 'cascade'] as const satisfies readonly ButtonSwapAnimation[];
@@ -72,18 +73,20 @@ function iconColorFor(variant: ButtonVariant, colors: ReturnType<typeof useTheme
   return colors.foreground;
 }
 
-/** Item sets whose icons are tinted for whatever the button fills itself with. */
-function useItems(kind: 'send' | 'copy', variant: ButtonVariant): ButtonSwapItem[] {
+/** Item sets whose icons are tinted for whatever the button fills itself with,
+ *  and sized to the button's `size` so the glyph scales with its box. */
+function useItems(kind: 'send' | 'copy', variant: ButtonVariant, size: ButtonSize = 'md'): ButtonSwapItem[] {
   const colors = useThemeColors();
   const color = iconColorFor(variant, colors);
+  const iconSize = BUTTON_ICON_SIZE[size];
   if (kind === 'send')
     return [
-      { id: 'send', label: 'Send', icon: <Send color={color} size={16} />, ariaLabel: 'Send' },
-      { id: 'sent', label: 'Sent', icon: <Sparkles color={color} size={16} />, ariaLabel: 'Sent' },
+      { id: 'send', label: 'Send', icon: <Send color={color} size={iconSize} />, ariaLabel: 'Send' },
+      { id: 'sent', label: 'Sent', icon: <Sparkles color={color} size={iconSize} />, ariaLabel: 'Sent' },
     ];
   return [
-    { id: 'copy', label: 'Copy link', icon: <Copy color={color} size={16} />, ariaLabel: 'Copy link' },
-    { id: 'copied', label: 'Copied', icon: <Check color={color} size={16} />, ariaLabel: 'Copied' },
+    { id: 'copy', label: 'Copy link', icon: <Copy color={color} size={iconSize} />, ariaLabel: 'Copy link' },
+    { id: 'copied', label: 'Copied', icon: <Check color={color} size={iconSize} />, ariaLabel: 'Copied' },
   ];
 }
 
@@ -101,7 +104,7 @@ type SwapProps = {
 
 // Resolves its own tinted items, so the sample rows can vary variant freely.
 function Swap({ animation, variant, size = 'md', shape, kind = 'copy', iconOnly, ...rest }: SwapProps) {
-  const items = useItems(kind, variant);
+  const items = useItems(kind, variant, size);
   return (
     <ButtonSwap animation={animation} iconOnly={iconOnly} items={items} shape={shape} size={size} variant={variant} {...rest} />
   );
@@ -119,7 +122,7 @@ function ButtonSwapPlayground(args: ComponentProps<typeof ButtonSwap>) {
   const [ripple, setRipple] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [value, setValue] = useState('copy');
-  const items = useItems('copy', variant);
+  const items = useItems('copy', variant, size);
 
   return (
     <Playground>

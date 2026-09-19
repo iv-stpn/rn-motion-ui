@@ -7,7 +7,7 @@ import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import type { BreakpointOverrides, BreakpointValue } from '../../../lib/breakpoints';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { Button } from '../../buttons/Button/button';
-import type { RampSize } from '../../buttons/Button/button-scale';
+import { BUTTON_ICON_SIZE, type RampSize } from '../../buttons/Button/button-scale';
 import { IconButton } from '../../buttons/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MorphingFAB } from '../../menus/MorphingFAB/morphing-fab';
@@ -106,8 +106,6 @@ export type PrimaryActionsProps = {
 
 /** The FAB's resting bottom inset above the dock (or the screen, when no dock). */
 const FAB_INSET = 16;
-/** Leading-icon size for the labelled row, matching {@link IconButton}'s ramp. */
-const LABEL_ICON_SIZE: Record<RampSize, number> = { xs: 12, sm: 14, md: 16, lg: 20 };
 
 /** A press handler that receives the pressed action. */
 type ActionPressHandler = (item: PrimaryActionItem) => void;
@@ -165,7 +163,7 @@ function ActionLabelButton({ item, onPress, testID, size, elevation, floating, b
       rim={rim}
       disabled={item.disabled}
       onPress={handlePress}
-      leftAdornment={item.icon ? <ThemedIcon icon={item.icon} token="foreground" size={LABEL_ICON_SIZE[size]} /> : undefined}
+      leftAdornment={item.icon ? <ThemedIcon icon={item.icon} token="foreground" size={BUTTON_ICON_SIZE[size]} /> : undefined}
       accessibilityLabel={item.accessibilityLabel ?? item.label}
       testID={testID}
     >

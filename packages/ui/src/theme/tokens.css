@@ -230,13 +230,13 @@
      the effect layers. One scheme only: geometry doesn't flip with the theme,
      so there are no dark-mode counterparts below. */
   --spacing-interactive-xs: 24px;
-  --spacing-interactive-sm: 36px;
-  --spacing-interactive-md: 48px;
-  --spacing-interactive-lg: 64px;
-  --spacing-interactive-pad-xs: 8px;
-  --spacing-interactive-pad-sm: 12px;
-  --spacing-interactive-pad-md: 16px;
-  --spacing-interactive-pad-lg: 20px;
+  --spacing-interactive-sm: 32px;
+  --spacing-interactive-md: 42px;
+  --spacing-interactive-lg: 56px;
+  --spacing-interactive-pad-xs: 12px;
+  --spacing-interactive-pad-sm: 16px;
+  --spacing-interactive-pad-md: 20px;
+  --spacing-interactive-pad-lg: 24px;
 
   --menu-vertical-padding: 4px;
 

@@ -14,9 +14,14 @@ import { Text } from '../../typography/Text/text';
 import { type BreadcrumbSlot, collapseBreadcrumbs } from './breadcrumbs-collapse';
 
 const SIZES = {
-  base: { gap: 'gap-1', icon: 14, text: 'base' },
-  sm: { gap: 'gap-0.5', icon: 12, text: 'sm' },
-} as const satisfies Record<BreadcrumbsSize, { gap: string; icon: number; text: 'base' | 'sm' }>;
+  base: { gap: 'gap-1', icon: 14, caret: 16, text: 'base' },
+  sm: { gap: 'gap-0.5', icon: 12, caret: 14, text: 'sm' },
+} as const satisfies Record<BreadcrumbsSize, { gap: string; icon: number; caret: number; text: 'base' | 'sm' }>;
+
+// Touch target for the pressable segments, once their `px-1 py-0.5` padding
+// moved to `hitSlop` so the label keeps a tight visual footprint. Matches the
+// old padding's 4px sides / 2px top and bottom.
+const SEGMENT_HIT_SLOP = { top: 2, bottom: 2, left: 4, right: 4 } as const;
 
 type SegmentProps = {
   item: BreadcrumbItem;
@@ -35,6 +40,7 @@ function BreadcrumbLink({ className, item, iconSize, onNavigate, testID, textSiz
       accessibilityLabel={item.accessibilityLabel ?? `Go to ${item.label}`}
       accessibilityRole="button"
       className={cn('flex-row items-center gap-1', className)}
+      hitSlop={SEGMENT_HIT_SLOP}
       onPress={handlePress}
       testID={testID}
     >
@@ -69,6 +75,7 @@ function BreadcrumbEllipsis({ className, hiddenCount, iconSize, onExpand, testID
       accessibilityLabel={`Show ${hiddenCount} hidden ${noun}`}
       accessibilityRole="button"
       className={cn('flex-row items-center', className)}
+      hitSlop={SEGMENT_HIT_SLOP}
       onPress={onExpand}
       testID={testID}
     >
@@ -149,7 +156,7 @@ export type BreadcrumbsProps = {
   className?: string;
   /** On the row holding the segments — padding and spacing belong here. */
   contentClassName?: string;
-  /** On every segment, pressable or not, so both share one hit shape. */
+  /** On every segment, pressable or not, so both share one visual shape. */
   itemClassName?: string;
   testID?: string;
 };
@@ -191,7 +198,7 @@ export function Breadcrumbs({
   size = 'sm',
   testID,
 }: BreadcrumbsProps) {
-  const { gap, icon: iconSize, text: textSize } = SIZES[size];
+  const { gap, icon: iconSize, caret: caretSize, text: textSize } = SIZES[size];
   // Keyed on the trail itself, so expanding one trail does not leave a later,
   // unrelated one expanded — navigating collapses it again without an effect.
   const trailKey = items.map((item) => item.id).join('\0');
@@ -207,8 +214,8 @@ export function Breadcrumbs({
   if (items.length === 0) return null;
 
   const resolvedCurrentId = currentId === undefined ? items.at(-1)?.id : currentId;
-  const itemClass = cn('rounded px-1 py-0.5', itemClassName);
-  const separatorNode = separator ?? <ThemedIcon icon={ChevronRight} size={iconSize} token="muted-foreground" />;
+  const itemClass = cn('rounded', itemClassName);
+  const separatorNode = separator ?? <ThemedIcon icon={ChevronRight} size={caretSize} token="muted-foreground" />;
 
   const segments = slots.map((slot, index) => (
     <View className={cn('flex-row items-center', gap)} key={slot.type === 'ellipsis' ? 'breadcrumb-ellipsis' : slot.item.id}>
@@ -235,7 +242,7 @@ export function Breadcrumbs({
     </View>
   ));
 
-  const contentClass = cn('flex-row items-center px-3 py-1.5', gap, contentClassName);
+  const contentClass = cn('flex-row items-center', gap, contentClassName);
 
   return (
     <View accessibilityLabel={accessibilityLabel} accessibilityRole="list" className={cn('shrink-0', className)} testID={testID}>

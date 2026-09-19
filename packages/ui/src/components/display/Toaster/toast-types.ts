@@ -14,6 +14,9 @@ export type ToastVariant = 'primary' | 'secondary' | 'accent' | 'neutral' | 'dan
 /** Which screen edge a toast appears against. */
 export type ToastPosition = 'top' | 'bottom';
 
+/** The toast's size ramp — `sm` compact, `md` default, `lg` roomy. */
+export type ToastSize = 'sm' | 'md' | 'lg';
+
 /** An optional trailing action button on a toast. */
 export type ToastAction = { label: string; onPress: () => void };
 
@@ -35,6 +38,8 @@ export type ToastOptions = {
   glass?: boolean;
   /** Render as a fully-rounded capsule instead of a rounded rectangle. @default false */
   pill?: boolean;
+  /** Size variant — compact / default / roomy. @default 'md' */
+  size?: ToastSize;
 };
 
 /** A resolved toast, as held by the store and rendered by the native `<Toaster>`. */
@@ -51,6 +56,8 @@ export type Toast = {
   glass: boolean;
   /** Whether the toast renders as a fully-rounded capsule. */
   pill: boolean;
+  /** Which size ramp the toast renders at. */
+  size: ToastSize;
 };
 
 /**
@@ -76,6 +83,8 @@ export type ToasterProps = {
   glass?: boolean;
   /** Default pill mode for `toast()` calls that omit `pill`. @default false */
   pill?: boolean;
+  /** Default size for `toast()` calls that omit `size`. @default 'md' */
+  size?: ToastSize;
   /** Gap in px between the screen edge (plus safe insets) and the first toast. */
   offset?: number;
   /**

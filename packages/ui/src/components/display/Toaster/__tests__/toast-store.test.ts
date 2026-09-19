@@ -31,6 +31,7 @@ describe('toast-store', () => {
     expect(getToasts()[0]?.duration).toBe(TOAST_DURATION_DEFAULT);
     expect(getToasts()[0]?.glass).toBe(false);
     expect(getToasts()[0]?.pill).toBe(false);
+    expect(getToasts()[0]?.size).toBe('md');
     expect(id).toBe('toast-1');
   });
 
@@ -83,14 +84,15 @@ describe('toast-store', () => {
   });
 
   it('setToastDefaults changes the fallbacks new toasts use', () => {
-    setToastDefaults({ position: 'top', duration: 1000, glass: true, pill: true });
+    setToastDefaults({ position: 'top', duration: 1000, glass: true, pill: true, size: 'lg' });
 
-    expect(getToastDefaults()).toEqual({ position: 'top', duration: 1000, glass: true, pill: true });
+    expect(getToastDefaults()).toEqual({ position: 'top', duration: 1000, glass: true, pill: true, size: 'lg' });
     showToast('x');
     expect(getToasts()[0]?.position).toBe('top');
     expect(getToasts()[0]?.duration).toBe(1000);
     expect(getToasts()[0]?.glass).toBe(true);
     expect(getToasts()[0]?.pill).toBe(true);
+    expect(getToasts()[0]?.size).toBe('lg');
   });
 
   it('a per-toast glass option overrides the default', () => {
@@ -107,5 +109,13 @@ describe('toast-store', () => {
     showToast('rounded', { pill: false });
 
     expect(getToasts().map((t) => t.pill)).toEqual([true, false]);
+  });
+
+  it('a per-toast size option overrides the default', () => {
+    setToastDefaults({ size: 'lg' });
+    showToast('big');
+    showToast('small', { size: 'sm' });
+
+    expect(getToasts().map((t) => t.size)).toEqual(['lg', 'sm']);
   });
 });

@@ -5,6 +5,7 @@ import { Toaster as SonnerToaster, toast as sonnerToast } from 'sonner';
 import { ThemedIcon } from '../../icon/themed-icon';
 
 import { TOAST_STATUS_ICON } from './toast-icons';
+import { TOAST_SIZE, TOAST_SIZE_DEFAULT } from './toast-scale';
 import type { ToastApi, ToasterProps, ToastOptions, ToastPosition, ToastVariant } from './toast-types';
 import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
 
@@ -58,16 +59,13 @@ const GLASS_STYLE: CSSProperties = {
  */
 const PILL_RADIUS = 9999;
 
-/** Edge length (px) of the status glyph on both twins. */
-const ICON_SIZE = 20;
-
 /**
- * Sonner hardcodes the toast's `[data-icon]` box to 16px, so a glyph larger
- * than that overflows its layout box and skews the icon↔text gap. Re-point the
- * box to {@link ICON_SIZE}, using Sonner's own selector specificity so the
- * injected rule (rendered later in the body) wins at equal specificity.
+ * Sonner hardcodes the toast's `[data-icon]` box to 16px. Re-point it to hug its
+ * glyph instead, so the per-toast icon size (see {@link TOAST_SIZE}) drives the
+ * layout box — matching Sonner's selector specificity so the injected rule
+ * (rendered later in the body) wins at equal specificity.
  */
-const ICON_SIZE_CSS = `[data-sonner-toast][data-styled='true'] [data-icon]{width:${ICON_SIZE}px;height:${ICON_SIZE}px}`;
+const ICON_SIZE_CSS = `[data-sonner-toast][data-styled='true'] [data-icon]{width:auto;height:auto}`;
 
 /**
  * Sonner's theme vars re-pointed at the repo's semantic tokens, so the toast's
@@ -96,9 +94,6 @@ const TOAST_STYLE: CSSProperties = {
   right: 0,
   marginLeft: 'auto',
   marginRight: 'auto',
-  padding: '8px 12px',
-  // Tighten Sonner's default 6px icon↔text gap.
-  gap: 4,
 };
 
 /**
@@ -117,26 +112,28 @@ function solidStyle(variant: ToastVariant): CSSProperties {
 /** The default status glyph for a semantic variant, themed to the pill. A glass
  *  pill keeps the variant's hue on the frosted surface; a solid pill uses the
  *  fill's legible ink. Neutral and the Button fills render no glyph. */
-function statusIcon(variant: ToastVariant, glass: boolean): ReactNode {
+function statusIcon(variant: ToastVariant, glass: boolean, size: number): ReactNode {
   const Icon = TOAST_STATUS_ICON[variant];
   if (!Icon) return null;
-  return <ThemedIcon icon={Icon} token={glass ? TOAST_FILL_TOKEN[variant] : TOAST_FOREGROUND_TOKEN[variant]} size={ICON_SIZE} />;
+  return <ThemedIcon icon={Icon} token={glass ? TOAST_FILL_TOKEN[variant] : TOAST_FOREGROUND_TOKEN[variant]} size={size} />;
 }
 
 /**
- * The `<Toaster glass>` and `<Toaster pill>` defaults, mirrored into module
- * variables so `toast()` (which has no access to the mounted `<Toaster>`'s
- * props) can resolve them — the same hand-off the native twin does through
- * `setToastDefaults`.
+ * The `<Toaster glass>`, `<Toaster pill>` and `<Toaster size>` defaults,
+ * mirrored into module variables so `toast()` (which has no access to the
+ * mounted `<Toaster>`'s props) can resolve them — the same hand-off the native
+ * twin does through `setToastDefaults`.
  */
 let defaultGlass = false;
 let defaultPill = false;
+let defaultSize = TOAST_SIZE_DEFAULT;
 
 /** Translate a shared {@link ToastOptions} into Sonner's `ExternalToast`. */
 function toSonnerOptions(options?: ToastOptions): ExternalToast {
-  const { variant = 'neutral', position, duration, description, action, onClose, glass, pill } = options ?? {};
+  const { variant = 'neutral', position, duration, description, action, onClose, glass, pill, size } = options ?? {};
   const frosted = glass ?? defaultGlass;
   const isPill = pill ?? defaultPill;
+  const geometry = TOAST_SIZE[size ?? defaultSize];
   return {
     position: position === undefined ? undefined : SONNER_POSITION[position],
     duration: duration === 0 ? Number.POSITIVE_INFINITY : duration,
@@ -147,8 +144,14 @@ function toSonnerOptions(options?: ToastOptions): ExternalToast {
     // toast routes through the plain `sonnerToast` and the variant is drawn by
     // the fill/ink inline style instead — matching the native pill.
     richColors: true,
-    icon: statusIcon(variant, frosted),
-    style: { ...(frosted ? GLASS_STYLE : solidStyle(variant)), ...(isPill ? { borderRadius: PILL_RADIUS } : {}) },
+    icon: statusIcon(variant, frosted, geometry.icon),
+    style: {
+      ...(frosted ? GLASS_STYLE : solidStyle(variant)),
+      ...(isPill ? { borderRadius: PILL_RADIUS } : {}),
+      fontSize: geometry.message.px,
+      padding: `${geometry.padY}px ${geometry.padX}px`,
+      gap: geometry.gap,
+    },
   };
 }
 
@@ -157,12 +160,20 @@ function show(message: string, options?: ToastOptions): string {
   return String(sonnerToast(message, toSonnerOptions(options)));
 }
 
-export function Toaster({ position = 'top', duration, glass = false, pill = false, offset }: ToasterProps) {
-  // biome-ignore lint/plugin: sync the Toaster's glass/pill defaults into the module variables toast() reads — an external system whose change only matters post-commit
+export function Toaster({
+  position = 'top',
+  duration,
+  glass = false,
+  pill = false,
+  size = TOAST_SIZE_DEFAULT,
+  offset,
+}: ToasterProps) {
+  // biome-ignore lint/plugin: sync the Toaster's glass/pill/size defaults into the module variables toast() reads — an external system whose change only matters post-commit
   useEffect(() => {
     defaultGlass = glass;
     defaultPill = pill;
-  }, [glass, pill]);
+    defaultSize = size;
+  }, [glass, pill, size]);
 
   return (
     <>

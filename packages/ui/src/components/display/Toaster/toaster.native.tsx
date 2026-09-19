@@ -11,6 +11,7 @@ import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 
 import { TOAST_STATUS_ICON } from './toast-icons';
+import { TOAST_SIZE, TOAST_SIZE_DEFAULT } from './toast-scale';
 import { dismissToast, getToasts, setToastDefaults, subscribeToasts, TOAST_DURATION_DEFAULT } from './toast-store';
 import type { Toast, ToasterProps, ToastPosition } from './toast-types';
 import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
@@ -53,6 +54,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
   const handleDismiss = useCallback(() => dismissToast(toast.id), [toast.id]);
   const glass = toast.glass;
   const pill = toast.pill;
+  const geometry = TOAST_SIZE[toast.size];
   const Icon = TOAST_STATUS_ICON[toast.variant];
   const iconColor = glass ? fillColor : inkColor;
 
@@ -77,7 +79,8 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
       accessibilityLiveRegion={toast.variant === 'danger' ? 'assertive' : 'polite'}
     >
       <Pressable
-        className="flex-row items-center gap-2 px-3 py-2"
+        className="flex-row items-center"
+        style={{ gap: geometry.gap, paddingHorizontal: geometry.padX, paddingVertical: geometry.padY }}
         onPress={handleDismiss}
         // The whole pill dismisses. It is a button only when there is no nested
         // action button — an action makes the pill a frame around that button,
@@ -85,15 +88,15 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
         accessibilityRole={toast.action ? undefined : 'button'}
         accessibilityLabel={toast.action ? undefined : 'Dismiss notification'}
       >
-        {Icon ? <Icon size={20} color={iconColor} /> : null}
+        {Icon ? <Icon size={geometry.icon} color={iconColor} /> : null}
         <View className="min-w-0 shrink gap-0.5">
-          <Text size="sm" weight="medium" style={glass ? undefined : { color: inkColor }}>
+          <Text size={geometry.message.token} weight="medium" style={glass ? undefined : { color: inkColor }}>
             {toast.message}
           </Text>
           {toast.description ? (
             <Text
               className={glass ? 'text-muted-foreground' : undefined}
-              size="xs"
+              size={geometry.description}
               style={glass ? undefined : { color: inkColor }}
             >
               {toast.description}
@@ -125,6 +128,7 @@ export function Toaster({
   duration = TOAST_DURATION_DEFAULT,
   glass = false,
   pill = false,
+  size = TOAST_SIZE_DEFAULT,
   offset = 16,
   testID = 'toaster',
 }: ToasterProps) {
@@ -133,8 +137,8 @@ export function Toaster({
 
   // biome-ignore lint/plugin: sync the Toaster props into the module-level store defaults — an external system whose change only matters post-commit
   useEffect(() => {
-    setToastDefaults({ position, duration, glass, pill });
-  }, [position, duration, glass, pill]);
+    setToastDefaults({ position, duration, glass, pill, size });
+  }, [position, duration, glass, pill, size]);
 
   const topToasts = toasts.filter((toast) => toast.position === 'top');
   const bottomToasts = toasts.filter((toast) => toast.position === 'bottom');

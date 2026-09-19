@@ -9,10 +9,11 @@
  * to Sonner and imports only the shared types from `./toast-types`.
  */
 
-import type { Toast, ToastApi, ToastOptions, ToastPosition } from './toast-types';
+import { TOAST_SIZE_DEFAULT } from './toast-scale';
+import type { Toast, ToastApi, ToastOptions, ToastPosition, ToastSize } from './toast-types';
 
-type ToastDefaultsInput = { position?: ToastPosition; duration?: number; glass?: boolean; pill?: boolean };
-type ResolvedToastDefaults = { position: ToastPosition; duration: number; glass: boolean; pill: boolean };
+type ToastDefaultsInput = { position?: ToastPosition; duration?: number; glass?: boolean; pill?: boolean; size?: ToastSize };
+type ResolvedToastDefaults = { position: ToastPosition; duration: number; glass: boolean; pill: boolean; size: ToastSize };
 
 const DEFAULT_DURATION = 4000;
 const POSITION_DEFAULT: ToastPosition = 'bottom';
@@ -25,6 +26,7 @@ let defaultPosition: ToastPosition = POSITION_DEFAULT;
 let defaultDuration = DEFAULT_DURATION;
 let defaultGlass = GLASS_DEFAULT;
 let defaultPill = PILL_DEFAULT;
+let defaultSize = TOAST_SIZE_DEFAULT;
 
 const listeners = new Set<() => void>();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -53,16 +55,17 @@ export function getToasts(): readonly Toast[] {
  * Set the defaults `toast()` falls back to when a call omits `position`/`duration`/`glass`.
  * The native `<Toaster>` writes its props here so `toast()` honours them.
  */
-export function setToastDefaults({ position, duration, glass, pill }: ToastDefaultsInput): void {
+export function setToastDefaults({ position, duration, glass, pill, size }: ToastDefaultsInput): void {
   if (position !== undefined) defaultPosition = position;
   if (duration !== undefined) defaultDuration = duration;
   if (glass !== undefined) defaultGlass = glass;
   if (pill !== undefined) defaultPill = pill;
+  if (size !== undefined) defaultSize = size;
 }
 
 /** The resolved defaults — what a `toast()` call uses when it omits the fields. */
 export function getToastDefaults(): ResolvedToastDefaults {
-  return { position: defaultPosition, duration: defaultDuration, glass: defaultGlass, pill: defaultPill };
+  return { position: defaultPosition, duration: defaultDuration, glass: defaultGlass, pill: defaultPill, size: defaultSize };
 }
 
 /** Push a toast and return its id. Schedules the auto-dismiss timer for `duration > 0`. */
@@ -81,6 +84,7 @@ export function showToast(message: string, options?: ToastOptions): string {
     onClose: options?.onClose,
     glass: options?.glass ?? defaultGlass,
     pill: options?.pill ?? defaultPill,
+    size: options?.size ?? defaultSize,
   };
   toasts = [...toasts, toast];
   if (duration > 0)
@@ -127,6 +131,7 @@ export function resetToastStore(): void {
   defaultDuration = TOAST_DURATION_DEFAULT;
   defaultGlass = GLASS_DEFAULT;
   defaultPill = PILL_DEFAULT;
+  defaultSize = TOAST_SIZE_DEFAULT;
   listeners.clear();
 }
 

@@ -4,20 +4,21 @@ import { View } from 'react-native';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Action, Choice, ControlCard, Playground, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { Button } from '../../buttons/Button/button';
-import type { ToastPosition, ToastVariant } from './toast-types';
+import type { ToastPosition, ToastSize, ToastVariant } from './toast-types';
 import { Toaster, toast } from './toaster';
 
 const meta = {
   title: 'Display/Toaster',
   component: Toaster,
   parameters: { layout: 'centered' },
-  args: { position: 'bottom', duration: 4000, offset: 16, glass: false, pill: false },
+  args: { position: 'bottom', duration: 4000, offset: 16, glass: false, pill: false, size: 'md' },
   argTypes: {
     position: { control: 'select', options: ['top', 'bottom'] },
     duration: { control: { type: 'range', min: 0, max: 12_000, step: 500 } },
     offset: { control: { type: 'range', min: 0, max: 80, step: 4 } },
     glass: { control: 'boolean' },
     pill: { control: 'boolean' },
+    size: { control: 'select', options: ['sm', 'md', 'lg'] },
   },
 } satisfies Meta<typeof Toaster>;
 
@@ -25,6 +26,7 @@ type Story = StoryObj<typeof meta>;
 
 const POSITIONS = ['top', 'bottom'] as const;
 const OFFSETS = ['0', '16', '32', '64'] as const;
+const SIZES = ['sm', 'md', 'lg'] as const;
 const VARIANTS: readonly ToastVariant[] = ['primary', 'secondary', 'accent', 'neutral', 'danger', 'success', 'warning', 'info'];
 const LABEL: Record<ToastVariant, string> = {
   primary: 'Primary',
@@ -43,6 +45,7 @@ const LABEL: Record<ToastVariant, string> = {
 function ToasterPlayground() {
   const [position, setPosition] = useState<ToastPosition>('bottom');
   const [offset, setOffset] = useState<(typeof OFFSETS)[number]>('16');
+  const [size, setSize] = useState<ToastSize>('md');
   const [glass, setGlass] = useState(false);
   const [pill, setPill] = useState(false);
   const [sticky, setSticky] = useState(false);
@@ -51,10 +54,11 @@ function ToasterPlayground() {
 
   return (
     <Playground>
-      <Toaster position={position} offset={Number(offset)} glass={glass} pill={pill} />
+      <Toaster position={position} offset={Number(offset)} glass={glass} pill={pill} size={size} />
       <ControlCard title="Options">
         <Choice label="Position" onChange={setPosition} options={POSITIONS} value={position} />
         <Choice label="Offset" onChange={setOffset} options={OFFSETS} value={offset} />
+        <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
         <Toggle label="Glass" onChange={setGlass} value={glass} />
         <Toggle label="Pill" onChange={setPill} value={pill} />
         <Toggle label="Sticky" onChange={setSticky} value={sticky} />

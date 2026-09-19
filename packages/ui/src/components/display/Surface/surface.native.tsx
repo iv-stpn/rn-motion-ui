@@ -78,6 +78,9 @@ export type SurfaceProps = ViewProps & {
   blurRadius?: number;
   /** Opacity of the frosted tint (0–1); `1` is the full glass tint. @default 1 */
   opacity?: number;
+  /** Resolved color for the frosted tint, overriding the `glass` theme token —
+   *  lets a caller frost in a specific hue (e.g. a status tint). @default the `glass` token */
+  tint?: string;
   /** Draw the glass edge light — the `Rim` specular ring around the surface. @default false */
   rim?: boolean;
   /** Rim width in dp, forwarded to the `Rim` `thickness`. @default 1 */
@@ -127,6 +130,7 @@ export function Surface({
   floating = false,
   blurRadius = 0,
   opacity = 1,
+  tint: tintProp,
   rim = false,
   rimWidth,
   intensity,
@@ -139,7 +143,8 @@ export function Surface({
   ...props
 }: SurfaceProps) {
   const Host = as ?? View;
-  const tint = useThemeColor('glass');
+  const glassTint = useThemeColor('glass');
+  const tint = tintProp ?? glassTint;
   const scheme = useColorScheme();
   const glass = blurRadius > 0;
   const numericRadius = borderRadius ?? (radius ? RADIUS_PX[radius] : 0);

@@ -34,3 +34,10 @@ export const TOAST_FOREGROUND_TOKEN: Record<ToastVariant, ThemeToken> = {
   warning: 'warning-foreground',
   info: 'info-foreground',
 };
+
+/**
+ * Alpha (0–1) the variant fill keeps when a glass toast composites it over its
+ * backdrop blur — translucent enough to read as glass, opaque enough to keep the
+ * variant's hue clearly.
+ */
+export const TOAST_GLASS_ALPHA = 0.8;

@@ -7,7 +7,7 @@ import { ThemedIcon } from '../../icon/themed-icon';
 import { TOAST_STATUS_ICON } from './toast-icons';
 import { TOAST_SIZE, TOAST_SIZE_DEFAULT } from './toast-scale';
 import type { ToastApi, ToasterProps, ToastOptions, ToastPosition, ToastVariant } from './toast-types';
-import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
+import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN, TOAST_GLASS_ALPHA } from './toast-variants';
 
 /**
  * The web twin of the `Toaster` — a thin adapter over Sonner.
@@ -25,8 +25,8 @@ import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
  * - `action.onPress` maps to Sonner's `action.onClick`
  * - `onClose` maps to Sonner's `onDismiss`, which fires on auto-, tap- and
  *   programmatic dismissal alike
- * - `glass` maps to a frosted inline style (a `glass` tint over a `backdrop-filter`
- *   blur), mirroring the native `Surface` frost
+ * - `glass` maps to a frosted inline style — a translucent tint of the variant's
+ *   own fill over a `backdrop-filter` blur — mirroring the native `Surface` frost
  *
  * Sonner's surface/foreground colours are re-pointed at the repo's theme tokens
  * (see {@link THEME_VARS}) and its border is dropped, so the web toast follows the
@@ -42,16 +42,23 @@ const SONNER_POSITION: Record<ToastPosition, 'top-center' | 'bottom-center'> = {
 };
 
 /**
- * The frosted-glass toast style — a translucent `glass` tint over a CSS
- * `backdrop-filter` blur (the same treatment the native `Surface` applies).
- * Set per-toast via `toast(…, { glass: true })`, or as the `<Toaster glass>`
- * default.
+ * The frosted-glass toast style — a translucent tint of the variant's own fill
+ * over a CSS `backdrop-filter` blur, so a glass toast keeps its variant's hue
+ * instead of washing out to the neutral `glass` token. The variant's foreground
+ * ink is re-pointed too, so the label and icon stay legible on the coloured tint
+ * (the same fill + ink a solid toast wears, just translucent). Set per-toast via
+ * `toast(…, { glass: true })`, or as the `<Toaster glass>` default.
  */
-const GLASS_STYLE: CSSProperties = {
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
-  backgroundColor: 'var(--color-glass)',
-};
+function glassStyle(variant: ToastVariant): CSSProperties {
+  return {
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    // `color-mix` thins the variant fill to the shared glass alpha without
+    // knowing its oklch channels — the tokens carry no alpha of their own.
+    backgroundColor: `color-mix(in oklab, var(--color-${TOAST_FILL_TOKEN[variant]}) ${Math.round(TOAST_GLASS_ALPHA * 100)}%, transparent)`,
+    color: `var(--color-${TOAST_FOREGROUND_TOKEN[variant]})`,
+  };
+}
 
 /**
  * Corner radius (px) a pill toast uses — large enough that the browser clamps it
@@ -115,13 +122,14 @@ function solidStyle(variant: ToastVariant): CSSProperties {
   };
 }
 
-/** The default status glyph for a semantic variant, themed to the pill. A glass
- *  pill keeps the variant's hue on the frosted surface; a solid pill uses the
- *  fill's legible ink. Neutral and the Button fills render no glyph. */
-function statusIcon(variant: ToastVariant, glass: boolean, size: number): ReactNode {
+/** The default status glyph for a semantic variant, themed to the pill's ink —
+ *  the same legible foreground on both the solid and frosted fills, since a glass
+ *  pill now keeps its variant's hue in the fill itself. Neutral and the Button
+ *  fills render no glyph. */
+function statusIcon(variant: ToastVariant, size: number): ReactNode {
   const Icon = TOAST_STATUS_ICON[variant];
   if (!Icon) return null;
-  return <ThemedIcon icon={Icon} token={glass ? TOAST_FILL_TOKEN[variant] : TOAST_FOREGROUND_TOKEN[variant]} size={size} />;
+  return <ThemedIcon icon={Icon} token={TOAST_FOREGROUND_TOKEN[variant]} size={size} />;
 }
 
 /**
@@ -150,9 +158,9 @@ function toSonnerOptions(options?: ToastOptions): ExternalToast {
     // toast routes through the plain `sonnerToast` and the variant is drawn by
     // the fill/ink inline style instead — matching the native pill.
     richColors: true,
-    icon: statusIcon(variant, frosted, geometry.icon),
+    icon: statusIcon(variant, geometry.icon),
     style: {
-      ...(frosted ? GLASS_STYLE : solidStyle(variant)),
+      ...(frosted ? glassStyle(variant) : solidStyle(variant)),
       ...(isPill ? { borderRadius: PILL_RADIUS } : {}),
       fontSize: geometry.message.px,
       padding: `${geometry.padY}px ${geometry.padX}px`,

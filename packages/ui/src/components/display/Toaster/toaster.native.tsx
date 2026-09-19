@@ -14,7 +14,7 @@ import { TOAST_STATUS_ICON } from './toast-icons';
 import { TOAST_SIZE, TOAST_SIZE_DEFAULT } from './toast-scale';
 import { dismissToast, getToasts, setToastDefaults, subscribeToasts, TOAST_DURATION_DEFAULT } from './toast-store';
 import type { Toast, ToasterProps, ToastPosition } from './toast-types';
-import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
+import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN, TOAST_GLASS_ALPHA } from './toast-variants';
 
 /**
  * The native twin of the `Toaster` — a custom, Reanimated-driven toast.
@@ -28,8 +28,9 @@ import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
  *
  * The pill is drawn by the shared {@link Surface} primitive, so a `glass` toast
  * trades the opaque `surface` fill for the frosted treatment (backdrop blur +
- * `Rim` specular edge, degrading to the translucent `glass` tint when the optional
- * blur peer is absent).
+ * `Rim` specular edge) tinted with the variant's own fill — a translucent,
+ * on-variant wash rather than the neutral `glass` token (degrading to that tint
+ * when the optional blur peer is absent).
  */
 
 /** Backdrop blur radius (dp) the frosted-glass pill applies. */
@@ -56,7 +57,6 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
   const pill = toast.pill;
   const geometry = TOAST_SIZE[toast.size];
   const Icon = TOAST_STATUS_ICON[toast.variant];
-  const iconColor = glass ? fillColor : inkColor;
 
   return (
     <Surface
@@ -66,14 +66,16 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
       borderRadius={pill ? PILL_RADIUS : undefined}
       blurRadius={glass ? GLASS_BLUR : 0}
       rim={glass}
+      tint={fillColor}
+      opacity={TOAST_GLASS_ALPHA}
       from={{ opacity: 0, translateY: travel }}
       animate={{ opacity: 1, translateY: 0 }}
       exit={{ opacity: 0, translateY: travel }}
       transition={MOTION_STANDARD}
       exitTransition={TIMING_FAST}
       className={cn(PILL_CLASSNAME, pill && 'rounded-full')}
-      // The variant fill tints the pill's background; a glass pill keeps the
-      // frosted tint the Surface applies itself.
+      // The variant fill tints the pill: a solid pill paints it as the opaque
+      // background, a glass pill hands it to the Surface's frost as the `tint`.
       style={glass ? undefined : { backgroundColor: fillColor }}
       testID={`${testID}-${toast.id}`}
       accessibilityLiveRegion={toast.variant === 'danger' ? 'assertive' : 'polite'}
@@ -88,29 +90,20 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
         accessibilityRole={toast.action ? undefined : 'button'}
         accessibilityLabel={toast.action ? undefined : 'Dismiss notification'}
       >
-        {Icon ? <Icon size={geometry.icon} color={iconColor} /> : null}
+        {Icon ? <Icon size={geometry.icon} color={inkColor} /> : null}
         <View className="min-w-0 shrink gap-0.5">
-          <Text size={geometry.message.token} weight="medium" style={glass ? undefined : { color: inkColor }}>
+          <Text size={geometry.message.token} weight="medium" style={{ color: inkColor }}>
             {toast.message}
           </Text>
           {toast.description ? (
-            <Text
-              className={glass ? 'text-muted-foreground' : undefined}
-              size={geometry.description}
-              style={glass ? undefined : { color: inkColor }}
-            >
+            <Text size={geometry.description} style={{ color: inkColor }}>
               {toast.description}
             </Text>
           ) : null}
         </View>
         {toast.action ? (
           <Pressable accessibilityRole="button" className="ml-1" onPress={toast.action.onPress}>
-            <Text
-              className={glass ? 'text-primary' : undefined}
-              size="sm"
-              weight="semibold"
-              style={glass ? undefined : { color: inkColor }}
-            >
+            <Text size="sm" weight="semibold" style={{ color: inkColor }}>
               {toast.action.label}
             </Text>
           </Pressable>

@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
-import { Action, Playground, Section, Variants } from '../../../__stories__/story-harness';
+import { Action, Choice, ControlCard, Playground, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { Button } from '../../buttons/Button/button';
-import type { ToastVariant } from './toast-types';
+import type { ToastPosition, ToastVariant } from './toast-types';
 import { Toaster, toast } from './toaster';
 
 const meta = {
@@ -22,6 +23,8 @@ const meta = {
 
 type Story = StoryObj<typeof meta>;
 
+const POSITIONS = ['top', 'bottom'] as const;
+const OFFSETS = ['0', '16', '32', '64'] as const;
 const VARIANTS: readonly ToastVariant[] = ['primary', 'secondary', 'accent', 'neutral', 'danger', 'success', 'warning', 'info'];
 const LABEL: Record<ToastVariant, string> = {
   primary: 'Primary',
@@ -34,31 +37,48 @@ const LABEL: Record<ToastVariant, string> = {
   info: 'Info',
 };
 
-function fire(variant: ToastVariant) {
-  toast(LABEL[variant], { variant, duration: 0 });
+/** The catalogue: option controls set the `<Toaster>` defaults (position,
+ *  offset, glass, pill) and the per-toast duration, then a row of Buttons fires
+ *  one toast per variant honouring those options. */
+function ToasterPlayground() {
+  const [position, setPosition] = useState<ToastPosition>('bottom');
+  const [offset, setOffset] = useState<(typeof OFFSETS)[number]>('16');
+  const [glass, setGlass] = useState(false);
+  const [pill, setPill] = useState(false);
+  const [sticky, setSticky] = useState(false);
+
+  const fire = (variant: ToastVariant) => toast(LABEL[variant], { variant, duration: sticky ? 0 : undefined });
+
+  return (
+    <Playground>
+      <Toaster position={position} offset={Number(offset)} glass={glass} pill={pill} />
+      <ControlCard title="Options">
+        <Choice label="Position" onChange={setPosition} options={POSITIONS} value={position} />
+        <Choice label="Offset" onChange={setOffset} options={OFFSETS} value={offset} />
+        <Toggle label="Glass" onChange={setGlass} value={glass} />
+        <Toggle label="Pill" onChange={setPill} value={pill} />
+        <Toggle label="Sticky" onChange={setSticky} value={sticky} />
+      </ControlCard>
+
+      <Section title="Variants — fire a toast (tap to dismiss)">
+        <Variants>
+          {VARIANTS.map((variant) => (
+            <Button key={variant} variant={variant} onPress={() => fire(variant)}>
+              {LABEL[variant]}
+            </Button>
+          ))}
+        </Variants>
+      </Section>
+    </Playground>
+  );
 }
 
 export default meta;
 
-/** One toast per variant, fired from a Button in the matching colour. Each stays
- *  until tapped (or `dismiss()`ed). */
+/** Drive position, offset, glass, pill, and duration with the controls, then
+ *  fire any variant from the row below. */
 export const Interactive: Story = {
-  render: (args) => (
-    <View>
-      <Toaster {...args} />
-      <Playground>
-        <Section title="Fire a toast (tap to dismiss)">
-          <Variants>
-            {VARIANTS.map((variant) => (
-              <Button key={variant} variant={variant} onPress={() => fire(variant)}>
-                {LABEL[variant]}
-              </Button>
-            ))}
-          </Variants>
-        </Section>
-      </Playground>
-    </View>
-  ),
+  render: () => <ToasterPlayground />,
 };
 
 /** The imperative API: call `toast.success(...)` and the toast appears, then

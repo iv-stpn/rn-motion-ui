@@ -1,5 +1,52 @@
 # rn-motion-ui
 
+## 7.10.1
+
+### Patch Changes
+
+- 996f1c1: Tighten `Breadcrumbs`' visual footprint without shrinking its touch target.
+
+  Segment padding (`px-1 py-0.5`) moved to a `hitSlop` of the same dimensions, so the label keeps a tight visual shape while the pressable area is unchanged. The content row's `px-3 py-1.5` padding is dropped too. The separator caret now has its own size (16 base / 14 small) instead of sharing the icon size, so a ChevronRight reads independently of the leading glyph.
+
+- 996f1c1: Add a shared `BUTTON_ICON_SIZE` ramp so an adornment icon scales with its button.
+
+  The leading/trailing icon size was copied per sibling — `IconButton` and `PrimaryActions` each kept their own `{ xs: 12, sm: 14, md: 16, lg: 20 }` table, and `ButtonSwap`'s icon slot was pinned at a fixed 16. They now all read the one `BUTTON_ICON_SIZE` ramp in `button-scale`, so an icon grows with the box it sits in and can't drift off its size. `ButtonSwap`'s leading slot now follows the button's `size` instead of staying 16, and `icon` resolves to `md`'s 16 (it's the `md` box squared).
+
+- 996f1c1: Retune the interactive size and padding tokens.
+
+  `--spacing-interactive-sm/md/lg` step down from 36/48/64px to 32/42/56px, and `--spacing-interactive-pad-xs/sm/md/lg` widen from 8/12/16/20px to 12/16/20/24px, tightening the button family's box heights while giving labels more breathing room. The JS pixel mirrors (`INTERACTIVE_HEIGHT` and `BUTTON_METRICS.padX`) follow so the effect layers and the pill/FAB rims stay on the same curve as the boxes they sit in.
+
+- af058f0: Fix `StatefulButton`'s success/error icon exit shifting the label sideways.
+
+  The exiting state icon kept its width and row gap until unmount, so the idle label nudged sideways for the length of the fade. The icon now pops out of the row (absolute positioning) while its fade + scale finishes, leaving the label in place.
+
+  Also add a `variant` prop to `StatefulButton` — the shared `Button` variant set minus the `outline`/`outlineDanger` pair.
+
+- 04663f4: Fix `Toaster` glass mode to keep the toast's variant colour.
+
+  A frosted (`glass`) toast previously washed out to the neutral `glass` tint, losing the variant's hue. It now composites a translucent tint of the variant's own fill (80% opacity) over the backdrop blur — on both the web and native twins — with the label, description and status icon in the variant's foreground ink, so a glass toast reads as a frosted version of the solid variant pill.
+
+- 4d22855: Fix `Toaster` positioning on mobile.
+
+  Toasts now stack with an 8px gap instead of touching, and the native viewport
+  renders through a `Portal` so toasts anchor to the screen edges and paint above
+  page content regardless of where `<Toaster />` is mounted — instead of hugging
+  the nearest container and slipping under their triggers. When no `PortalProvider`
+  is mounted the viewport falls back to in-place rendering, so apps that mount
+  `<Toaster />` at the root keep working unchanged.
+
+  Add `smallScreenPosition` / `largeScreenPosition` (plus a `wideBreakpoint`
+  cutoff, default `'sm'`) so a `<Toaster />` can use a different edge on phones
+  versus tablets/desktop.
+
+- f591759: Rework the `Toaster`: drop the border, match Button colours, and add default status icons.
+
+  The toast pill loses its hairline border and gains a `variant` prop that fills it with the Button family's palette (`primary` / `secondary` / `accent` / `neutral` / `danger` / `success` / `warning` / `info`), with the text taking the fill's legible foreground. `toast.error` now maps to `danger` (the Button rename).
+
+  Semantic variants render a default status glyph — a filled check for `success`, a filled close for `danger`, a warning triangle, and an info mark — coloured to the pill in both solid and frosted modes.
+
+  A new `pill` option (and `<Toaster pill>`) renders the toast as a fully-rounded capsule; the toast padding is tightened, the status icon is enlarged, and the icon-to-text gap is reduced. A `size` option (and `<Toaster size>`) selects `sm` / `md` / `lg` — compact, default and roomy toasts.
+
 ## 7.10.0
 
 ### Minor Changes

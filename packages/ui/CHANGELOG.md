@@ -1,5 +1,21 @@
 # rn-motion-ui
 
+## 7.10.1
+
+### Patch Changes
+
+- af058f0: Fix `StatefulButton`'s success/error icon exit shifting the label sideways.
+
+  The exiting state icon kept its width and row gap until unmount, so the idle label nudged sideways for the length of the fade. The icon now pops out of the row (absolute positioning) while its fade + scale finishes, leaving the label in place.
+
+  Also add a `variant` prop to `StatefulButton` — the shared `Button` variant set minus the `outline`/`outlineDanger` pair.
+
+- f591759: Rework the `Toaster`: drop the border, match Button colours, and add default status icons.
+
+  The toast pill loses its hairline border and gains a `variant` prop that fills it with the Button family's palette (`primary` / `secondary` / `accent` / `neutral` / `danger` / `success` / `warning` / `info`), with the text taking the fill's legible foreground. `toast.error` now maps to `danger` (the Button rename).
+
+  Semantic variants render a default status glyph — a check for `success`, a close for `danger`, a warning triangle, and an info mark — coloured to the pill in both solid and frosted modes.
+
 ## 7.10.0
 
 ### Minor Changes

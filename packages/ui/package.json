@@ -550,7 +550,6 @@
       "default": "./src/components/typography/TextRolling/text-rolling.tsx"
     },
     "./toaster": {
-      "react-native": "./src/components/display/Toaster/toaster.native.tsx",
       "source": "./src/components/display/Toaster/toaster.tsx",
       "types": "./src/components/display/Toaster/toaster.tsx",
       "default": "./src/components/display/Toaster/toaster.tsx"
@@ -835,6 +834,11 @@
       "source": "./src/hooks/use-arrow-roving.ts",
       "types": "./src/hooks/use-arrow-roving.ts",
       "default": "./src/hooks/use-arrow-roving.ts"
+    },
+    "./dock-inset": {
+      "source": "./src/components/navigation/DockInset/dock-inset.tsx",
+      "types": "./src/components/navigation/DockInset/dock-inset.tsx",
+      "default": "./src/components/navigation/DockInset/dock-inset.tsx"
     }
   },
   "bin": {

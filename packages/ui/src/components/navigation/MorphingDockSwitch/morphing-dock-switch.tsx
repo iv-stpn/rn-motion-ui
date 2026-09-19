@@ -30,6 +30,7 @@ import { MenuItem } from '../../rows/menu-item';
 import { DOCK_GAP, DOCK_ICON_SCALE, dockMetrics, dockRowSize } from '../Dock/dock-metrics';
 import { DockContent, DockFrame, DockHighlight } from '../Dock/dock-motion';
 import { DOCK_LAYOUT, DOCK_SPRING, dockSizeMotion } from '../Dock/dock-transition';
+import { useDockInsetReporter } from '../DockInset/dock-inset';
 
 /** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
 const VIEWPORT_PADDING = 8;
@@ -524,6 +525,20 @@ export function MorphingDockSwitch({
   const closedHeight = closedRow.height + PANE_INSET * 2;
   const rootMotion = dockSizeMotion(closedWidth, closedHeight, reduce);
   const openWidth = Math.max(expandedWidth, closedWidth);
+
+  // Report the resting bottom clearance (viewport bottom → dock top) into the
+  // nearest DockInsetProvider so bottom-anchored controls clear the actual dock.
+  // Re-measures when the resting geometry changes — size, labels, dock count or
+  // the window — because a taller dock lifts its own top edge and shifts the
+  // clearance.
+  const reportInset = useDockInsetReporter();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: size/showLabels/dockedCount/items.length are intentional re-measure triggers (the dock's resting top edge moves with them), not body reads
+  // biome-ignore lint/plugin: measuring the dock's window position to report its clearance is a native measure side effect, not derived state
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node) return;
+    node.measureInWindow((_x, y) => reportInset(windowHeight - y));
+  }, [reportInset, windowHeight, size, showLabels, dockedCount, items.length]);
 
   const setOpen = useCallback(
     (next: boolean) => {

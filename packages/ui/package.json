@@ -463,6 +463,16 @@
       "types": "./src/components/scroll/SmoothScroll/smooth-scroll.tsx",
       "default": "./src/components/scroll/SmoothScroll/smooth-scroll.tsx"
     },
+    "./spotlight": {
+      "source": "./src/components/display/Spotlight/spotlight.tsx",
+      "types": "./src/components/display/Spotlight/spotlight.tsx",
+      "default": "./src/components/display/Spotlight/spotlight.tsx"
+    },
+    "./spotlight-target": {
+      "source": "./src/components/display/Spotlight/spotlight-target.tsx",
+      "types": "./src/components/display/Spotlight/spotlight-target.tsx",
+      "default": "./src/components/display/Spotlight/spotlight-target.tsx"
+    },
     "./star-rating": {
       "source": "./src/components/form/StarRating/star-rating.tsx",
       "types": "./src/components/form/StarRating/star-rating.tsx",

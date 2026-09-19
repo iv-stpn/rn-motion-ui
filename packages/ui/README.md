@@ -159,6 +159,8 @@ Subpaths are namespaced by category:
 | `/morphing-switcher`           | `MorphingSwitcher`                                                        |
 | `/primary-actions` | `PrimaryActions` |
 | `/sortable-list`               | `SortableList`                                                           |
+| `/spotlight` | `Spotlight` |
+| `/spotlight-target` | `SpotlightTarget` |
 | `/stateful-button`             | `StatefulButton`                                                         |
 | `/surface` | `Surface` |
 | `/switch`                      | `Switch`                                                                 |

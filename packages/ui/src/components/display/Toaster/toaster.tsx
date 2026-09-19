@@ -60,12 +60,18 @@ const GLASS_STYLE: CSSProperties = {
 const PILL_RADIUS = 9999;
 
 /**
- * Sonner hardcodes the toast's `[data-icon]` box to 16px. Re-point it to hug its
- * glyph instead, so the per-toast icon size (see {@link TOAST_SIZE}) drives the
- * layout box — matching Sonner's selector specificity so the injected rule
- * (rendered later in the body) wins at equal specificity.
+ * Sonner's default CSS adds margins to the toast icon — `[data-icon]` gets a
+ * `-3px`/`4px` start/end margin and its inner `svg` a further `-1px`/`0px` —
+ * which nudges the icon off the toast's padding edge and stacks 4px of extra
+ * space on top of the toast `gap`. Drop those margins so `gap` is the single
+ * source of icon↔text spacing, and re-point the `[data-icon]` box from Sonner's
+ * fixed 16px to hug its glyph instead, so the per-toast icon size (see
+ * {@link TOAST_SIZE}) drives the layout box. Each rule matches Sonner's selector
+ * specificity, so the injected rule — rendered later in the body — wins at equal
+ * specificity.
  */
-const ICON_SIZE_CSS = `[data-sonner-toast][data-styled='true'] [data-icon]{width:auto;height:auto}`;
+const ICON_OVERRIDE_CSS = `[data-sonner-toast][data-styled='true'] [data-icon]{width:auto;height:auto;margin-left:0;margin-right:0}
+[data-sonner-toast][data-styled='true'] [data-icon] svg{margin-left:0;margin-right:0}`;
 
 /**
  * Sonner's theme vars re-pointed at the repo's semantic tokens, so the toast's
@@ -177,7 +183,7 @@ export function Toaster({
 
   return (
     <>
-      <style>{ICON_SIZE_CSS}</style>
+      <style>{ICON_OVERRIDE_CSS}</style>
       <SonnerToaster
         theme="system"
         position={SONNER_POSITION[position]}

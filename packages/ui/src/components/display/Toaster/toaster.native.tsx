@@ -77,7 +77,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
       accessibilityLiveRegion={toast.variant === 'danger' ? 'assertive' : 'polite'}
     >
       <Pressable
-        className="flex-row items-center gap-2.5 px-3 py-2"
+        className="flex-row items-center gap-2 px-3 py-2"
         onPress={handleDismiss}
         // The whole pill dismisses. It is a button only when there is no nested
         // action button — an action makes the pill a frame around that button,
@@ -85,7 +85,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
         accessibilityRole={toast.action ? undefined : 'button'}
         accessibilityLabel={toast.action ? undefined : 'Dismiss notification'}
       >
-        {Icon ? <Icon size={18} color={iconColor} /> : null}
+        {Icon ? <Icon size={20} color={iconColor} /> : null}
         <View className="min-w-0 shrink gap-0.5">
           <Text size="sm" weight="medium" style={glass ? undefined : { color: inkColor }}>
             {toast.message}

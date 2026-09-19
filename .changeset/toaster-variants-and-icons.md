@@ -8,4 +8,4 @@ The toast pill loses its hairline border and gains a `variant` prop that fills i
 
 Semantic variants render a default status glyph — a filled check for `success`, a filled close for `danger`, a warning triangle, and an info mark — coloured to the pill in both solid and frosted modes.
 
-A new `pill` option (and `<Toaster pill>`) renders the toast as a fully-rounded capsule, and the toast padding is tightened.
+A new `pill` option (and `<Toaster pill>`) renders the toast as a fully-rounded capsule; the toast padding is tightened, the status icon is enlarged, and the icon-to-text gap is reduced.

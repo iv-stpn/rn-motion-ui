@@ -58,6 +58,17 @@ const GLASS_STYLE: CSSProperties = {
  */
 const PILL_RADIUS = 9999;
 
+/** Edge length (px) of the status glyph on both twins. */
+const ICON_SIZE = 20;
+
+/**
+ * Sonner hardcodes the toast's `[data-icon]` box to 16px, so a glyph larger
+ * than that overflows its layout box and skews the icon↔text gap. Re-point the
+ * box to {@link ICON_SIZE}, using Sonner's own selector specificity so the
+ * injected rule (rendered later in the body) wins at equal specificity.
+ */
+const ICON_SIZE_CSS = `[data-sonner-toast][data-styled='true'] [data-icon]{width:${ICON_SIZE}px;height:${ICON_SIZE}px}`;
+
 /**
  * Sonner's theme vars re-pointed at the repo's semantic tokens, so the toast's
  * surface/foreground colours adapt to the theme and its border is dropped
@@ -86,6 +97,8 @@ const TOAST_STYLE: CSSProperties = {
   marginLeft: 'auto',
   marginRight: 'auto',
   padding: '8px 12px',
+  // Tighten Sonner's default 6px icon↔text gap.
+  gap: 4,
 };
 
 /**
@@ -107,7 +120,7 @@ function solidStyle(variant: ToastVariant): CSSProperties {
 function statusIcon(variant: ToastVariant, glass: boolean): ReactNode {
   const Icon = TOAST_STATUS_ICON[variant];
   if (!Icon) return null;
-  return <ThemedIcon icon={Icon} token={glass ? TOAST_FILL_TOKEN[variant] : TOAST_FOREGROUND_TOKEN[variant]} size={16} />;
+  return <ThemedIcon icon={Icon} token={glass ? TOAST_FILL_TOKEN[variant] : TOAST_FOREGROUND_TOKEN[variant]} size={ICON_SIZE} />;
 }
 
 /**
@@ -152,14 +165,17 @@ export function Toaster({ position = 'top', duration, glass = false, pill = fals
   }, [glass, pill]);
 
   return (
-    <SonnerToaster
-      theme="system"
-      position={SONNER_POSITION[position]}
-      duration={duration}
-      offset={offset}
-      style={THEME_VARS}
-      toastOptions={{ style: TOAST_STYLE }}
-    />
+    <>
+      <style>{ICON_SIZE_CSS}</style>
+      <SonnerToaster
+        theme="system"
+        position={SONNER_POSITION[position]}
+        duration={duration}
+        offset={offset}
+        style={THEME_VARS}
+        toastOptions={{ style: TOAST_STYLE }}
+      />
+    </>
   );
 }
 

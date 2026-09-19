@@ -2,6 +2,7 @@ import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
+import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { MOTION_STANDARD, TIMING_FAST } from '../../../theme/motion';
@@ -39,6 +40,10 @@ const PILL_CLASSNAME = 'max-w-[340px]';
 /** Px a toast travels from its edge as it enters and leaves. */
 const SLIDE = 24;
 
+/** Corner radius (px) a pill toast uses for its glass rim + blur clip — large
+ *  enough that SVG clamps it to half the pill's height, i.e. a capsule. */
+const PILL_RADIUS = 9999;
+
 type ToastItemProps = { toast: Toast; position: ToastPosition; testID: string };
 
 function ToastItem({ toast, position, testID }: ToastItemProps) {
@@ -47,6 +52,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
   const travel = position === 'top' ? -SLIDE : SLIDE;
   const handleDismiss = useCallback(() => dismissToast(toast.id), [toast.id]);
   const glass = toast.glass;
+  const pill = toast.pill;
   const Icon = TOAST_STATUS_ICON[toast.variant];
   const iconColor = glass ? fillColor : inkColor;
 
@@ -54,7 +60,8 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
     <Surface
       as={MotiView}
       elevation={3}
-      radius="menu"
+      radius={pill ? undefined : 'menu'}
+      borderRadius={pill ? PILL_RADIUS : undefined}
       blurRadius={glass ? GLASS_BLUR : 0}
       rim={glass}
       from={{ opacity: 0, translateY: travel }}
@@ -62,7 +69,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
       exit={{ opacity: 0, translateY: travel }}
       transition={MOTION_STANDARD}
       exitTransition={TIMING_FAST}
-      className={PILL_CLASSNAME}
+      className={cn(PILL_CLASSNAME, pill && 'rounded-full')}
       // The variant fill tints the pill's background; a glass pill keeps the
       // frosted tint the Surface applies itself.
       style={glass ? undefined : { backgroundColor: fillColor }}
@@ -70,7 +77,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
       accessibilityLiveRegion={toast.variant === 'danger' ? 'assertive' : 'polite'}
     >
       <Pressable
-        className="flex-row items-center gap-2.5 px-3.5 py-2.5"
+        className="flex-row items-center gap-2.5 px-3 py-2"
         onPress={handleDismiss}
         // The whole pill dismisses. It is a button only when there is no nested
         // action button — an action makes the pill a frame around that button,
@@ -117,6 +124,7 @@ export function Toaster({
   position = 'bottom',
   duration = TOAST_DURATION_DEFAULT,
   glass = false,
+  pill = false,
   offset = 16,
   testID = 'toaster',
 }: ToasterProps) {
@@ -125,8 +133,8 @@ export function Toaster({
 
   // biome-ignore lint/plugin: sync the Toaster props into the module-level store defaults — an external system whose change only matters post-commit
   useEffect(() => {
-    setToastDefaults({ position, duration, glass });
-  }, [position, duration, glass]);
+    setToastDefaults({ position, duration, glass, pill });
+  }, [position, duration, glass, pill]);
 
   const topToasts = toasts.filter((toast) => toast.position === 'top');
   const bottomToasts = toasts.filter((toast) => toast.position === 'bottom');

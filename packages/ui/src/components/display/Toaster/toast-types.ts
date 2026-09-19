@@ -33,6 +33,8 @@ export type ToastOptions = {
   onClose?: () => void;
   /** Frosted-glass treatment instead of an opaque surface. @default false */
   glass?: boolean;
+  /** Render as a fully-rounded capsule instead of a rounded rectangle. @default false */
+  pill?: boolean;
 };
 
 /** A resolved toast, as held by the store and rendered by the native `<Toaster>`. */
@@ -47,6 +49,8 @@ export type Toast = {
   onClose?: () => void;
   /** Whether the toast renders with the frosted-glass treatment. */
   glass: boolean;
+  /** Whether the toast renders as a fully-rounded capsule. */
+  pill: boolean;
 };
 
 /**
@@ -70,6 +74,8 @@ export type ToasterProps = {
   duration?: number;
   /** Default glass mode for `toast()` calls that omit `glass`. @default false */
   glass?: boolean;
+  /** Default pill mode for `toast()` calls that omit `pill`. @default false */
+  pill?: boolean;
   /** Gap in px between the screen edge (plus safe insets) and the first toast. */
   offset?: number;
   /**

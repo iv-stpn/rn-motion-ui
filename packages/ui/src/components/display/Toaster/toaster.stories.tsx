@@ -10,12 +10,13 @@ const meta = {
   title: 'Display/Toaster',
   component: Toaster,
   parameters: { layout: 'centered' },
-  args: { position: 'bottom', duration: 4000, offset: 16, glass: false },
+  args: { position: 'bottom', duration: 4000, offset: 16, glass: false, pill: false },
   argTypes: {
     position: { control: 'select', options: ['top', 'bottom'] },
     duration: { control: { type: 'range', min: 0, max: 12_000, step: 500 } },
     offset: { control: { type: 'range', min: 0, max: 80, step: 4 } },
     glass: { control: 'boolean' },
+    pill: { control: 'boolean' },
   },
 } satisfies Meta<typeof Toaster>;
 
@@ -91,6 +92,17 @@ export const Glass: Story = {
     <View>
       <Toaster {...args} />
       <Action label="Toast" onPress={() => toast('Frosted glass', { duration: 0 })} />
+    </View>
+  ),
+};
+
+/** The `pill` prop: every toast renders as a fully-rounded capsule. */
+export const Pill: Story = {
+  args: { pill: true },
+  render: (args) => (
+    <View>
+      <Toaster {...args} />
+      <Action label="Toast" onPress={() => toast('Pill capsule', { duration: 0 })} />
     </View>
   ),
 };

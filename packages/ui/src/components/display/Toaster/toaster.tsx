@@ -53,6 +53,12 @@ const GLASS_STYLE: CSSProperties = {
 };
 
 /**
+ * Corner radius (px) a pill toast uses — large enough that the browser clamps it
+ * to half the toast's height, i.e. a capsule (matching the native `Surface`).
+ */
+const PILL_RADIUS = 9999;
+
+/**
  * Sonner's theme vars re-pointed at the repo's semantic tokens, so the toast's
  * surface/foreground colours adapt to the theme and its border is dropped
  * (Sonner draws a 1px border with `--normal-border`, so it is keyed to
@@ -79,6 +85,7 @@ const TOAST_STYLE: CSSProperties = {
   right: 0,
   marginLeft: 'auto',
   marginRight: 'auto',
+  padding: '8px 12px',
 };
 
 /**
@@ -104,16 +111,19 @@ function statusIcon(variant: ToastVariant, glass: boolean): ReactNode {
 }
 
 /**
- * The `<Toaster glass>` default, mirrored into a module variable so `toast()`
- * (which has no access to the mounted `<Toaster>`'s props) can resolve it —
- * the same hand-off the native twin does through `setToastDefaults`.
+ * The `<Toaster glass>` and `<Toaster pill>` defaults, mirrored into module
+ * variables so `toast()` (which has no access to the mounted `<Toaster>`'s
+ * props) can resolve them — the same hand-off the native twin does through
+ * `setToastDefaults`.
  */
 let defaultGlass = false;
+let defaultPill = false;
 
 /** Translate a shared {@link ToastOptions} into Sonner's `ExternalToast`. */
 function toSonnerOptions(options?: ToastOptions): ExternalToast {
-  const { variant = 'neutral', position, duration, description, action, onClose, glass } = options ?? {};
+  const { variant = 'neutral', position, duration, description, action, onClose, glass, pill } = options ?? {};
   const frosted = glass ?? defaultGlass;
+  const isPill = pill ?? defaultPill;
   return {
     position: position === undefined ? undefined : SONNER_POSITION[position],
     duration: duration === 0 ? Number.POSITIVE_INFINITY : duration,
@@ -125,7 +135,7 @@ function toSonnerOptions(options?: ToastOptions): ExternalToast {
     // the fill/ink inline style instead — matching the native pill.
     richColors: true,
     icon: statusIcon(variant, frosted),
-    style: frosted ? GLASS_STYLE : solidStyle(variant),
+    style: { ...(frosted ? GLASS_STYLE : solidStyle(variant)), ...(isPill ? { borderRadius: PILL_RADIUS } : {}) },
   };
 }
 
@@ -134,11 +144,12 @@ function show(message: string, options?: ToastOptions): string {
   return String(sonnerToast(message, toSonnerOptions(options)));
 }
 
-export function Toaster({ position = 'top', duration, glass = false, offset }: ToasterProps) {
-  // biome-ignore lint/plugin: sync the Toaster's glass default into the module variable toast() reads — an external system whose change only matters post-commit
+export function Toaster({ position = 'top', duration, glass = false, pill = false, offset }: ToasterProps) {
+  // biome-ignore lint/plugin: sync the Toaster's glass/pill defaults into the module variables toast() reads — an external system whose change only matters post-commit
   useEffect(() => {
     defaultGlass = glass;
-  }, [glass]);
+    defaultPill = pill;
+  }, [glass, pill]);
 
   return (
     <SonnerToaster

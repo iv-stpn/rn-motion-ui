@@ -11,18 +11,20 @@
 
 import type { Toast, ToastApi, ToastOptions, ToastPosition } from './toast-types';
 
-type ToastDefaultsInput = { position?: ToastPosition; duration?: number; glass?: boolean };
-type ResolvedToastDefaults = { position: ToastPosition; duration: number; glass: boolean };
+type ToastDefaultsInput = { position?: ToastPosition; duration?: number; glass?: boolean; pill?: boolean };
+type ResolvedToastDefaults = { position: ToastPosition; duration: number; glass: boolean; pill: boolean };
 
 const DEFAULT_DURATION = 4000;
 const POSITION_DEFAULT: ToastPosition = 'bottom';
 const GLASS_DEFAULT = false;
+const PILL_DEFAULT = false;
 
 let toasts: Toast[] = [];
 let idSeq = 0;
 let defaultPosition: ToastPosition = POSITION_DEFAULT;
 let defaultDuration = DEFAULT_DURATION;
 let defaultGlass = GLASS_DEFAULT;
+let defaultPill = PILL_DEFAULT;
 
 const listeners = new Set<() => void>();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -51,15 +53,16 @@ export function getToasts(): readonly Toast[] {
  * Set the defaults `toast()` falls back to when a call omits `position`/`duration`/`glass`.
  * The native `<Toaster>` writes its props here so `toast()` honours them.
  */
-export function setToastDefaults({ position, duration, glass }: ToastDefaultsInput): void {
+export function setToastDefaults({ position, duration, glass, pill }: ToastDefaultsInput): void {
   if (position !== undefined) defaultPosition = position;
   if (duration !== undefined) defaultDuration = duration;
   if (glass !== undefined) defaultGlass = glass;
+  if (pill !== undefined) defaultPill = pill;
 }
 
 /** The resolved defaults — what a `toast()` call uses when it omits the fields. */
 export function getToastDefaults(): ResolvedToastDefaults {
-  return { position: defaultPosition, duration: defaultDuration, glass: defaultGlass };
+  return { position: defaultPosition, duration: defaultDuration, glass: defaultGlass, pill: defaultPill };
 }
 
 /** Push a toast and return its id. Schedules the auto-dismiss timer for `duration > 0`. */
@@ -77,6 +80,7 @@ export function showToast(message: string, options?: ToastOptions): string {
     action: options?.action,
     onClose: options?.onClose,
     glass: options?.glass ?? defaultGlass,
+    pill: options?.pill ?? defaultPill,
   };
   toasts = [...toasts, toast];
   if (duration > 0)
@@ -122,6 +126,7 @@ export function resetToastStore(): void {
   defaultPosition = POSITION_DEFAULT;
   defaultDuration = TOAST_DURATION_DEFAULT;
   defaultGlass = GLASS_DEFAULT;
+  defaultPill = PILL_DEFAULT;
   listeners.clear();
 }
 

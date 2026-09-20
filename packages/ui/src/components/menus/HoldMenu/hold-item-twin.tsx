@@ -3,10 +3,10 @@ import { View, type ViewProps } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { type SharedValue, useAnimatedProps, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { Portal } from '../../portal/Portal/portal';
-import { OverlayPortal } from '../Overlay/overlay-host';
 import { overlayHostPageX, overlayHostPageY } from '../Overlay/overlay-host-position';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION } from './constants';
 import { useHoldMenuInternal } from './context';
+import { HoldMenuOverlayPortal } from './hold-menu-overlay-portal';
 import type { HoldItemProps, MenuItemProps, TransformOriginAnchorPosition } from './hold-menu-types';
 import { calculateMenuHeight, calculateTransformValue } from './layout';
 
@@ -171,8 +171,11 @@ const HoldItemTwinComponent = ({
   // Android lifts the twin out of the `BlurTarget` (through the `BlurProvider`
   // overlay host, above the menu's layer) so the target-based blur does not
   // frost it; iOS/web keep the in-tree `Portal` host, which already lifts the
-  // twin above the inline backdrop/menu without leaving the root.
-  return teleported ? <OverlayPortal layer="twin">{twin}</OverlayPortal> : <Portal name={name}>{twin}</Portal>;
+  // twin above the inline backdrop/menu without leaving the root. The teleport
+  // also carries this item's provider value on the node, because `children` is
+  // arbitrary app content that may read it (a `HoldMenuIcon`, say) and the host
+  // renders it outside the provider's React tree — see `hold-menu-overlay-portal`.
+  return teleported ? <HoldMenuOverlayPortal layer="twin">{twin}</HoldMenuOverlayPortal> : <Portal name={name}>{twin}</Portal>;
 };
 
 export const HoldItemTwin = memo(HoldItemTwinComponent);

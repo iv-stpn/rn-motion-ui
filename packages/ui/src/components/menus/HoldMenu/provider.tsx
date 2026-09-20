@@ -11,10 +11,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PortalProvider } from '../../portal/Portal/portal';
 import { useBlurTargetRef } from '../Overlay/blur-context';
-import { OverlayPortal } from '../Overlay/overlay-host';
 import { Backdrop } from './backdrop';
 import { CONTEXT_MENU_STATE } from './constants';
-import { HoldMenuInternalContext, type HoldMenuInternalContextType, setHoldMenuInternalContext } from './context';
+import { HoldMenuInternalContext, type HoldMenuInternalContextType } from './context';
+import { HoldMenuOverlayPortal } from './hold-menu-overlay-portal';
 import type { HoldMenuProviderProps, HoldMenuSafeAreaInsets, MenuInternalProps } from './hold-menu-types';
 import { Menu } from './menu';
 
@@ -190,15 +190,6 @@ const ProviderComponent = ({
     ],
   );
 
-  // Publish the shared values into the module-store mirror (see `context.ts`) so
-  // the overlay content — rendered OUTSIDE this provider's React tree through the
-  // `BlurProvider` overlay host — can still read them (the effect runs post-render).
-  // biome-ignore lint/plugin: prop → shared value sync must run after render, not during it
-  useEffect(() => {
-    setHoldMenuInternalContext(internalContextVariables);
-    return () => setHoldMenuInternalContext(null);
-  }, [internalContextVariables]);
-
   // The always-mounted overlay (backdrop + menu). Kept stable so the
   // `OverlayPortal` (Android) registers it once rather than on every render.
   const overlayContent = useMemo(
@@ -249,8 +240,9 @@ const ProviderShell = ({ contextValue, rootRef, teleported, overlayContent, chil
                 and the menu paints after the blur, crisp on top; a scrim left
                 inside the target would either crash (the peer's RenderNode
                 cycle) or frost the menu. The twins join it at a higher layer
-                from each `HoldItem` (see `hold-item-twin`). */}
-            <OverlayPortal layer="menu">{overlayContent}</OverlayPortal>
+                from each `HoldItem` (see `hold-item-twin`). The teleport carries
+                this provider's value on the node — see `hold-menu-overlay-portal`. */}
+            <HoldMenuOverlayPortal layer="menu">{overlayContent}</HoldMenuOverlayPortal>
           </>
         ) : (
           /* iOS/web, and Android without a `BlurProvider` (no overlay host to

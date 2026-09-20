@@ -1,5 +1,21 @@
 # rn-motion-ui
 
+## 7.11.0
+
+### Minor Changes
+
+- 03ab304: Add a `shape` prop to `AnimatedBadge` — `pill` (the default, a full capsule) or `rounded` (a tight 6px corner).
+
+  The badge previously rendered only as a full capsule. The new `shape="rounded"` swaps the corner to `rounded-md` and trims the horizontal padding to a new `--spacing-interactive-pad-*-tight` token ramp (4px / 6px), so the badge can sit alongside other rounded interactive surfaces instead of always reading as a pill. The loading pulse's corner follows the shape, so its halo matches the plate rather than a hardcoded capsule.
+
+- 417a1c6: Add `scaleUp` / `scaleDown` press modes to the button family, and flip the default press animation to **scale up**.
+
+  The uniform press mode was a single `scale` value that shrank the button to `pressScale` (default `0.93`). It's now two directional modes: `scaleUp` — the new default, which grows the button to `1.05` on press — and `scaleDown`, the previous behaviour. `pressMode="scale"` is renamed to `pressMode="scaleDown"`, and `pressScale` still overrides the settled scale for either direction.
+
+- 417a1c6: Ripple is now on by default for the button family, and the ripple wears the button's own foreground colour instead of a fixed white/dark shimmer.
+
+  Every button (`Button`, `ElevatedButton`, `ButtonSwap`, `IconButton`) now spawns a Material ripple on press unless `ripple={false}`. The ripple's colour is derived from the button's active ink — its `*-foreground` label colour, resolved through the theme — so the wash matches the variant and flips correctly in dark mode (previously a filled `primary` wore a hardcoded white shimmer that vanished against its near-white dark-mode fill). The ripple now blooms out on press-in, holds at full opacity while the button is pressed, and fades on release, instead of dissolving the instant it spawned.
+
 ## 7.10.1
 
 ### Patch Changes

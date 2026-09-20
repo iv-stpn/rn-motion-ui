@@ -60,8 +60,18 @@ export type UpsertOverlayLayerInput = {
   onRequestClose: () => void;
 };
 
-/** Result of {@link upsertOverlayLayer}. */
-export type UpsertOverlayLayerResult = { id: number; isBottom: boolean };
+/**
+ * How one `OverlayShell` participates in the shared layer stack right now,
+ * resolved from the live stack by {@link resolveLayerLifetime}.
+ */
+export type LayerLifetime = {
+  /** Whether this shell mounts the single `Modal` and draws every layer inside it. */
+  isOwner: boolean;
+  /** Whether the layer stays registered in the stack. */
+  keep: boolean;
+  /** Whether this shell draws its own content — false once it is only hosting. */
+  renderOwn: boolean;
+};
 
 // ─── Pure layer-stack transitions (unit-testable without react-native) ────────
 
@@ -85,6 +95,29 @@ export function removeLayer(state: OverlayLayerState, id: number): OverlayLayerS
   return state.filter((item) => item.id !== id);
 }
 
+/**
+ * Resolve one layer's registration lifetime from the live stack.
+ *
+ * The bottom layer owns the single native `Modal`, and every layer above it is
+ * drawn *inside* that `Modal`. So the bottom layer has to outlive its own
+ * content: an owner whose exit finishes while layers are still open above it
+ * stays registered as a host that draws only those layers, which keeps the
+ * `Modal` — and the layers in it — mounted. It leaves once the stack empties,
+ * which is when the `Modal` unmounts.
+ *
+ * Ownership is answered from the stack on every render rather than latched when
+ * the layer registers. That is what lets a bottom layer torn down outright (a
+ * parent unmounting mid-open) promote the layer above it, instead of stranding
+ * every open overlay with no owner to draw it.
+ */
+export function resolveLayerLifetime(depth: number, isBottom: boolean, rendered: boolean): LayerLifetime {
+  return {
+    isOwner: isBottom,
+    keep: rendered || (isBottom && depth > 1),
+    renderOwn: rendered,
+  };
+}
+
 // ─── Layer stack API ───────────────────────────────────────────────────────────
 
 /** Subscribe to layer-stack changes (useSyncExternalStore). Returns an unsubscribe fn. */
@@ -101,23 +134,42 @@ export function getOverlayStack(): OverlayLayerState {
 }
 
 /**
- * Register a new layer, or refresh an existing one (matched by `input.id`) in
- * place. Returns the layer id and whether it is the bottom (Modal-owning) layer
- * — `isBottom` is only meaningful on first registration, where it answers "was
- * the stack empty before I joined".
+ * Whether the layer with `id` is the bottom (Modal-owning) layer **right now**.
+ * Answers `false` for a layer that is not registered (`null`).
+ *
+ * Both this and {@link getLayerDepth} return primitives so a shell can subscribe
+ * with `useSyncExternalStore` and re-render only when its own answer changes —
+ * subscribing to the stack array itself would re-render every open overlay on
+ * every registration change.
  */
-export function upsertOverlayLayer(input: UpsertOverlayLayerInput): UpsertOverlayLayerResult {
+export function isBottomLayer(id: number | null): boolean {
+  return id !== null && layers[0]?.id === id;
+}
+
+/** Number of registered layers. */
+export function getLayerDepth(): number {
+  return layers.length;
+}
+
+/**
+ * Register a new layer, or refresh an existing one (matched by `input.id`) in
+ * place. Returns the layer's id.
+ *
+ * Which layer owns the single `Modal` is deliberately **not** answered here. A
+ * registration-time answer would be latched for the layer's whole life and go
+ * stale the moment the stack changes underneath it — ask {@link isBottomLayer}
+ * instead, which reads the live stack.
+ */
+export function upsertOverlayLayer(input: UpsertOverlayLayerInput): number {
   if (input.id === undefined) nextLayerId += 1;
   const id = input.id ?? nextLayerId;
-  const index = layers.findIndex((layer) => layer.id === id);
-  const isBottom = index === -1 ? layers.length === 0 : layers[0]?.id === id;
   layers = upsertLayer(layers, id, {
     render: input.render,
     onExitComplete: input.onExitComplete,
     onRequestClose: input.onRequestClose,
   });
   notifyLayers();
-  return { id, isBottom };
+  return id;
 }
 
 /** Remove a layer by id. No-op when it is not present. */

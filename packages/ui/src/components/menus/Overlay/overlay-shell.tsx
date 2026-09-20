@@ -4,7 +4,15 @@ import { useFocusTrap } from '../../../hooks/use-focus-trap';
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { OverlayOutlet } from './overlay-portal';
-import { getOverlayStack, removeOverlayLayer, subscribeOverlayStack, upsertOverlayLayer } from './overlay-portal-store';
+import {
+  getLayerDepth,
+  getOverlayStack,
+  isBottomLayer,
+  removeOverlayLayer,
+  resolveLayerLifetime,
+  subscribeOverlayStack,
+  upsertOverlayLayer,
+} from './overlay-portal-store';
 
 // The bottom (Modal-owning) layer fills the window; guest layers overlay it
 // absolutely so they stack on top in document order inside the single Modal.
@@ -112,6 +120,11 @@ export type OverlayShellProps = {
  * VC that is already presenting, so a confirm dialog raised from a settings
  * sheet appears on top of it.
  *
+ * The bottom layer stays registered after its own content has exited, for as long
+ * as layers are still open above it — it becomes a host drawing only those
+ * layers, so the Modal is never unmounted (or remounted) out from under them. It
+ * leaves once the stack empties, which is when the Modal unmounts.
+ *
  * @example
  * <OverlayShell open={open} onClose={onClose} onAfterClose={onAfterClose}>
  *   {({ open, onExitComplete }) => (
@@ -155,10 +168,19 @@ export function OverlayShell({
   const stableClose = useCallback(() => closeRef.current(), []);
 
   const [layerId, setLayerId] = useState<number | null>(null);
-  const [isOwner, setIsOwner] = useState(false);
   // Mirrors `layerId` but stays current inside the mount-only unmount cleanup,
   // where the `layerId` closure would be stale (null from the first render).
   const layerIdRef = useRef<number | null>(null);
+
+  // Ownership and registration lifetime are read from the live stack on every
+  // render, never latched when the layer registers. A latched answer goes stale
+  // the moment the stack changes underneath it: the bottom layer leaving while
+  // layers above it are still open takes the Modal it owns — and everything
+  // drawn inside it — down with it.
+  const getIsBottom = useCallback(() => isBottomLayer(layerId), [layerId]);
+  const isBottom = useSyncExternalStore(subscribeOverlayStack, getIsBottom);
+  const depth = useSyncExternalStore(subscribeOverlayStack, getLayerDepth);
+  const { isOwner, keep, renderOwn } = resolveLayerLifetime(depth, isBottom, rendered);
 
   // The layer's render output. The bottom (owner) layer fills the Modal; guest
   // layers overlay it absolutely so they stack in document order.
@@ -171,11 +193,16 @@ export function OverlayShell({
         <View
           ref={contentRef}
           style={isOwner ? FILL : OVERLAY}
-          role="dialog"
-          aria-modal={true}
-          accessibilityViewIsModal={true}
-          aria-label={accessibilityLabel}
-          accessibilityLabel={accessibilityLabel}
+          // An owner that outlived its own content is only a full-bleed anchor for
+          // the layers it hosts. It keeps its node, so those layers land in exactly
+          // the box they would have, but drops the dialog semantics: an empty
+          // `role="dialog"` would announce a nameless dialog, and
+          // `accessibilityViewIsModal` would mask the very layers it is hosting.
+          role={renderOwn ? 'dialog' : undefined}
+          aria-modal={renderOwn || undefined}
+          accessibilityViewIsModal={renderOwn || undefined}
+          aria-label={renderOwn ? accessibilityLabel : undefined}
+          accessibilityLabel={renderOwn ? accessibilityLabel : undefined}
         >
           {children({ open, onExitComplete: handleExitComplete })}
         </View>
@@ -185,38 +212,38 @@ export function OverlayShell({
         <OverlayOutlet />
       </>
     ),
-    [isOwner, accessibilityLabel, children, open, handleExitComplete],
+    [isOwner, renderOwn, accessibilityLabel, children, open, handleExitComplete],
   );
 
-  // Register the layer while rendered; remove it once the exit finishes. The
-  // bottom layer becomes the owner (it mounts the single Modal); every later
-  // layer is a guest whose content the owner renders.
+  // Register while the layer has a reason to be in the stack, and deregister once
+  // it has none. The bottom layer owns the single Modal; every later layer is a
+  // guest whose content the owner draws. `keep` is what holds a bottom layer in
+  // the stack after its own content has gone — see `resolveLayerLifetime`.
   useLayoutEffect(() => {
-    if (!rendered) {
+    if (!keep) {
       if (layerIdRef.current !== null) {
         removeOverlayLayer(layerIdRef.current);
         layerIdRef.current = null;
         setLayerId(null);
-        setIsOwner(false);
       }
       return;
     }
     if (layerIdRef.current === null) {
-      const { id, isBottom } = upsertOverlayLayer({
+      const id = upsertOverlayLayer({
         render: renderLayer,
         onExitComplete: stableExit,
         onRequestClose: stableClose,
       });
       layerIdRef.current = id;
       setLayerId(id);
-      setIsOwner(isBottom);
     }
-  }, [rendered, renderLayer, stableExit, stableClose]);
+  }, [keep, renderLayer, stableExit, stableClose]);
 
   // Deregister on unmount. If the host unmounts before the exit animation runs
   // (a test file ending, or a parent being torn down mid-open), the layer would
-  // otherwise leak into the module-level stack and strand every later overlay as
-  // a guest with no owner to render it.
+  // otherwise leak into the module-level stack and hold a slot nothing owns. The
+  // layers left above it are not stranded by this: ownership is read from the
+  // live stack, so the next layer down promotes itself and mounts the Modal.
   useMountEffect(() => () => {
     if (layerIdRef.current !== null) {
       removeOverlayLayer(layerIdRef.current);
@@ -224,11 +251,11 @@ export function OverlayShell({
     }
   });
 
-  if (!rendered || layerId === null) return null;
+  if (layerId === null) return null;
 
-  return isOwner ? (
-    <OwnerModal layerId={layerId} renderLayer={renderLayer} onShow={onShow} fallbackClose={stableClose} />
-  ) : (
-    <GuestContent layerId={layerId} render={renderLayer} exit={stableExit} close={stableClose} onShow={onShow} />
-  );
+  // The bottom layer keeps the Modal for as long as it is registered, including
+  // after its own content has exited, so the layers above it stay drawn.
+  if (isOwner) return <OwnerModal layerId={layerId} renderLayer={renderLayer} onShow={onShow} fallbackClose={stableClose} />;
+  if (!rendered) return null;
+  return <GuestContent layerId={layerId} render={renderLayer} exit={stableExit} close={stableClose} onShow={onShow} />;
 }

@@ -18,7 +18,7 @@ export function Loading3Line({ size = 24, color: colorProp, style, accessibility
       accessibilityLabel={accessibilityLabel}
       testID={testID}
     >
-      <SvgCircle cx="12" cy="12" r="9" fill="none" stroke={color} strokeWidth="2" opacity=".1" />
+      <SvgCircle cx="12" cy="12" r="9" fill="none" stroke={color} strokeWidth="2" opacity="0.1" />
       <SvgPath fill="none" stroke={color} strokeLinecap="round" strokeWidth="2" d="M12 3a8.96 8.96 0 0 0-6.225 2.5" />
     </Svg>
   );

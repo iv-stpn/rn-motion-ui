@@ -211,12 +211,38 @@ function parseNodes(body) {
 // 3. JSX emitter
 // ---------------------------------------------------------------------------
 
+/**
+ * Give a number written with a leading dot its leading zero (`.5` → `0.5`).
+ *
+ * react-native-svg parses a gradient stop's `offset` with a regex that demands
+ * a leading digit, so `.5` warns and coerces to `0` — and since the stops are
+ * sorted by offset afterwards, every one collapses onto `0` and the gradient
+ * loses its ramp. Nothing else in the chain minds the leading dot: `Number()`
+ * accepts it, and `d`/`transform` go to parsers implementing the SVG grammar,
+ * which defines a fractional constant as `digits? "." digits`.
+ *
+ * What is rewritten is a value that *begins* with such a number — a whole value
+ * like `offset=".5"`, or the first number of a list like
+ * `strokeDasharray=".5 5"`. `d` and `transform` cannot match, because a path
+ * begins with a command letter and a transform with a function name, never a
+ * bare number; that is deliberate, as the art is full of interior dots
+ * (`1.546-.243`) that are not defects. No mingcute icon ships a dot-leading
+ * `offset` today; this is here because the prop that would break sits beside
+ * ones that don't (`stopOpacity=".55"` on the very next line of `loading-line`).
+ */
+const LEADING_DOT = /^([+-]?)\.(?=\d)/;
+
+const withLeadingDigit = (val) => val.replace(LEADING_DOT, (_, sign) => `${sign}0.`);
+
+/** An attribute value beginning with a dot-leading number, in emitted source. */
+const DOT_LEADING_VALUE = /\b[a-zA-Z]+="[+-]?\.[0-9]/;
+
 /** Serialize one attribute to its JSX form. */
 function serializeAttr(rawKey, val) {
   const key = ATTR_MAP[rawKey] ?? rawKey;
   if (val === 'currentColor') return `${key}={color}`;
   if (val === true) return key; // boolean attr
-  return `${key}="${val}"`;
+  return `${key}="${withLeadingDigit(val)}"`;
 }
 
 /**
@@ -388,6 +414,15 @@ for (const name of allNames) {
     skippedNames.push({ name, reason: 'no renderable nodes' });
     skipped++;
     continue;
+  }
+
+  // Post-condition of the normalisation above: no attribute value in the
+  // emitted file may begin with a dot-leading number. Nothing should reach this
+  // (every attribute goes through `serializeAttr`), which is the point — it is
+  // here to fail loudly if a future emission path bypasses that.
+  const dotLeading = DOT_LEADING_VALUE.exec(src);
+  if (dotLeading) {
+    throw new Error(`${name}.tsx: emitted a dot-leading attribute value ("${dotLeading[0]}")`);
   }
 
   writeFileSync(resolve(outDir, `${name}.tsx`), src, 'utf8');

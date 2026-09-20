@@ -18,7 +18,7 @@ export function LivePhotoLine({ size = 24, color: colorProp, style, accessibilit
       accessibilityLabel={accessibilityLabel}
       testID={testID}
     >
-      <SvgCircle cx="12" cy="12" r="9" fill="none" stroke={color} strokeDasharray=".5 5" strokeLinecap="round" strokeWidth="2" />
+      <SvgCircle cx="12" cy="12" r="9" fill="none" stroke={color} strokeDasharray="0.5 5" strokeLinecap="round" strokeWidth="2" />
       <SvgPath fill="none" stroke={color} strokeWidth="2" d="M17 12a5 5 0 1 1-10 0a5 5 0 0 1 10 0Z" />
       <SvgPath fill="none" stroke={color} strokeWidth="2" d="M13 12a1 1 0 1 1-2 0a1 1 0 0 1 2 0Z" />
     </Svg>

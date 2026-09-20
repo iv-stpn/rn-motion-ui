@@ -30,11 +30,11 @@ export function LoadingLine({ size = 24, color: colorProp, style, accessibilityL
       <SvgDefs>
         <SvgLinearGradient id={`${id}-0`} x1="50%" x2="50%" y1="5.271%" y2="91.793%">
           <SvgStop offset="0%" stopColor={color} />
-          <SvgStop offset="100%" stopColor={color} stopOpacity=".55" />
+          <SvgStop offset="100%" stopColor={color} stopOpacity="0.55" />
         </SvgLinearGradient>
         <SvgLinearGradient id={`${id}-1`} x1="50%" x2="50%" y1="8.877%" y2="90.415%">
           <SvgStop offset="0%" stopColor={color} stopOpacity="0" />
-          <SvgStop offset="100%" stopColor={color} stopOpacity=".55" />
+          <SvgStop offset="100%" stopColor={color} stopOpacity="0.55" />
         </SvgLinearGradient>
       </SvgDefs>
       <SvgG fill="none">

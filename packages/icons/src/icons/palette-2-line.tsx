@@ -24,7 +24,7 @@ export function Palette2Line({ size = 24, color: colorProp, style, accessibility
         strokeWidth="2"
         d="m11 8.05l3.343-3.343a1 1 0 0 1 1.414 0l3.536 3.536a1 1 0 0 1 0 1.414L11 17.95M10 20h9a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1h-3m-5 7V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1z"
       />
-      <SvgCircle cx="7.5" cy="15.5" r=".5" fill={color} stroke={color} strokeWidth="2" />
+      <SvgCircle cx="7.5" cy="15.5" r="0.5" fill={color} stroke={color} strokeWidth="2" />
     </Svg>
   );
 }

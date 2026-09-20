@@ -33,22 +33,22 @@ export function FilePaperGlyph() {
       <SvgDefs>
         <SvgLinearGradient id={`${id}-0`} gradientUnits="userSpaceOnUse" x1="64" y1="6" x2="64" y2="120">
           <SvgStop stopColor="#e5e5e5" />
-          <SvgStop offset=".5" stopColor="#f6f6f6" />
-          <SvgStop offset=".85" stopColor="#ffffff" />
+          <SvgStop offset="0.5" stopColor="#f6f6f6" />
+          <SvgStop offset="0.85" stopColor="#ffffff" />
           <SvgStop offset="1" stopColor="#ffffff" />
         </SvgLinearGradient>
         <SvgLinearGradient id={`${id}-1`} gradientUnits="userSpaceOnUse" x1="97.5" y1="28.4" x2="92.2" y2="33.7">
           <SvgStop stopColor="#d0d0d0" />
-          <SvgStop offset=".55" stopColor="#e6e6e6" />
+          <SvgStop offset="0.55" stopColor="#e6e6e6" />
           <SvgStop offset="1" stopColor="#fbfbfb" />
         </SvgLinearGradient>
         <SvgLinearGradient id={`${id}-2`} gradientUnits="userSpaceOnUse" x1="95.3" y1="31.6" x2="91.8" y2="44.7">
-          <SvgStop stopColor="#000" stopOpacity=".5" />
-          <SvgStop offset=".5" stopColor="#000" stopOpacity=".16" />
+          <SvgStop stopColor="#000" stopOpacity="0.5" />
+          <SvgStop offset="0.5" stopColor="#000" stopOpacity="0.16" />
           <SvgStop offset="1" stopColor="#000" stopOpacity="0" />
         </SvgLinearGradient>
         <SvgFilter id={`${id}-3`} x="-15%" y="-15%" width="130%" height="130%">
-          <SvgFeGaussianBlur stdDeviation=".9" />
+          <SvgFeGaussianBlur stdDeviation="0.9" />
         </SvgFilter>
         <SvgFilter id={`${id}-4`} x="-20%" y="-20%" width="140%" height="140%">
           <SvgFeGaussianBlur stdDeviation="2.2" />
@@ -57,7 +57,7 @@ export function FilePaperGlyph() {
           <SvgFeGaussianBlur stdDeviation="2" />
         </SvgFilter>
         <SvgFilter id={`${id}-6`} x="-30%" y="-30%" width="160%" height="160%">
-          <SvgFeGaussianBlur stdDeviation=".8" />
+          <SvgFeGaussianBlur stdDeviation="0.8" />
         </SvgFilter>
         <SvgFilter id={`${id}-7`} x="-40%" y="-40%" width="180%" height="180%">
           <SvgFeGaussianBlur stdDeviation="1" />
@@ -71,14 +71,14 @@ export function FilePaperGlyph() {
       </SvgDefs>
       <SvgPath
         fill="#000"
-        opacity=".2"
+        opacity="0.2"
         filter={`url(#${id}-4)`}
         d="M21 6H75.1L104.2 35.1Q107 37.9 107 41.9V120H21Z"
         transform="translate(0 2.2)"
       />
       <SvgPath
         fill="#000"
-        opacity=".38"
+        opacity="0.38"
         filter={`url(#${id}-3)`}
         d="M21 6H75.1L104.2 35.1Q107 37.9 107 41.9V120H21Z"
         transform="translate(0 .9)"
@@ -87,7 +87,7 @@ export function FilePaperGlyph() {
       <SvgG clipPath={`url(#${id}-8)`}>
         <SvgPath
           fill="#000"
-          opacity=".32"
+          opacity="0.32"
           filter={`url(#${id}-5)`}
           d="M75.1 6C80 12.4 84.7 23 85.2 30.6 92 30.6 101 32.2 105.46 36.36Z"
           transform="translate(-.8 1.2)"
@@ -104,7 +104,7 @@ export function FilePaperGlyph() {
           fill="none"
           stroke="#fff"
           strokeWidth="3"
-          opacity=".85"
+          opacity="0.85"
           filter={`url(#${id}-7)`}
           d="M75.1 6C80 12.4 84.7 23 85.2 30.6 92 30.6 101 32.2 105.46 36.36"
         />

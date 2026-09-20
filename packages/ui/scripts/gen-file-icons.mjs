@@ -264,10 +264,31 @@ function parseNodes(body) {
 // Emitter
 // ---------------------------------------------------------------------------
 
+/**
+ * Give a number written with a leading dot its leading zero (`.5` → `0.5`).
+ *
+ * SVG allows the leading dot, and every parser in the chain but one is happy
+ * with it: `Number()` accepts `.5`, and `d`/`transform` are handed to grammars
+ * that define a fractional constant as `digits? "." digits`. The exception is a
+ * gradient stop's `offset`, which react-native-svg matches against a regex
+ * demanding a leading digit — miss it and it warns and returns `0`, collapsing
+ * every stop of that gradient onto one position. The paper's page gradient is
+ * flat white on native, rather than shaded, for exactly this reason.
+ *
+ * What is rewritten is a value that *begins* with such a number — here always a
+ * whole one (`offset=".5"`), since the art writes no dot-leading lists. `d` and
+ * `transform` are left as authored: a path begins with a command letter and a
+ * transform with a function name, never a bare number, so the rule cannot reach
+ * them and their interior dots (`1.546-.243`) are not defects.
+ */
+const LEADING_DOT = /^([+-]?)\.(?=\d)/;
+
+const withLeadingDigit = (val) => val.replace(LEADING_DOT, (_, sign) => `${sign}0.`);
+
 function serializeAttr(rawKey, val) {
   const key = ATTR_MAP[rawKey] ?? rawKey;
   if (val === true) return key;
-  return `${key}="${val}"`;
+  return `${key}="${withLeadingDigit(val)}"`;
 }
 
 /** Normalise a node's attributes into JSX prop parts. */

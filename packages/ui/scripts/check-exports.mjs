@@ -11,6 +11,9 @@
  *  - Every declared export path must point at a file that exists on disk.
  *  - Every component/hook/moti/lib/utils source file (excl. stories + tests) must
  *    have a corresponding export entry.
+ *  - Every derived entry must match the one generated from disk, and any declared
+ *    entry whose file has a `.native` sibling must carry a `react-native` condition
+ *    pointing at that sibling (see buildEntry).
  */
 
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
@@ -105,10 +108,29 @@ function deriveExportKey(absPath) {
 }
 
 /**
- * Build the three-field export entry (or four-field for the two platform-twin
- * entries ./moti/hover and ./surface). The convention is source == types ==
- * default; the two exceptions for the react-native platform override are
- * special-cased below.
+ * The `.native` sibling of a TypeScript path: `./src/a/b.tsx` →
+ * `./src/a/b.native.tsx`. Returns null when the path is not TypeScript.
+ *
+ * Metro does NOT apply `.native` platform-extension substitution to a path the
+ * exports map has already resolved to an explicit filename, so a twin only
+ * routes by platform via an explicit `react-native` condition on its entry.
+ */
+function nativeTwin(relFromPkg) {
+  if (!/\.tsx?$/.test(relFromPkg)) return null;
+  return relFromPkg.replace(/\.tsx?$/, (ext) => `.native${ext}`);
+}
+
+/**
+ * Build the export entry for a source file. The convention is source == types ==
+ * default, plus a `react-native` condition when the file has a `.native` twin on
+ * disk (which routes ./surface and ./toaster between their two implementations).
+ *
+ * The twin is *derived*, never listed. A hand-maintained list of twins is blind
+ * to the twins it does not name, so `--write` rewrites those entries without the
+ * condition and silently strips it — which is exactly how ./toaster lost its
+ * native toast (a Reanimated toast on native, a Sonner adapter on web) while
+ * still shipping toaster.native.tsx, leaving every native consumer bundling the
+ * web twin's `<style>` element and crashing on mount.
  */
 function buildEntry(relFromPkg) {
   const entry = {
@@ -116,22 +138,27 @@ function buildEntry(relFromPkg) {
     types: relFromPkg,
     default: relFromPkg,
   };
-  // Special case: moti/hover has a react-native platform override.
-  if (relFromPkg.includes('/pressable/hoverable.tsx')) {
-    return {
-      'react-native': relFromPkg.replace('hoverable.tsx', 'hoverable.native.tsx'),
-      ...entry,
-    };
-  }
-  // Special case: ./surface has a react-native platform override (the guarded
-  // BlurView twin carries the optional peer require).
-  if (relFromPkg.includes('/display/Surface/surface.tsx')) {
-    return {
-      'react-native': relFromPkg.replace('surface.tsx', 'surface.native.tsx'),
-      ...entry,
-    };
+  const twin = nativeTwin(relFromPkg);
+  if (twin && existsSync(resolve(pkgRoot, twin))) {
+    return { 'react-native': twin, ...entry };
   }
   return entry;
+}
+
+/** Field order is not significant — compare two entries as plain mappings. */
+function sameEntry(a, b) {
+  const fieldsA = Object.keys(a).sort();
+  const fieldsB = Object.keys(b).sort();
+  if (fieldsA.length !== fieldsB.length) return false;
+  return fieldsA.every((field, i) => field === fieldsB[i] && a[field] === b[field]);
+}
+
+/** One-line rendering of an entry, for the DRIFTED report. */
+function formatEntry(entry) {
+  const body = Object.entries(entry)
+    .map(([field, value]) => `${field}: ${value}`)
+    .join(', ');
+  return `{ ${body} }`;
 }
 
 // ---------------------------------------------------------------------------
@@ -170,28 +197,66 @@ for (const abs of sourceFiles) {
 // 4. Compare
 // ---------------------------------------------------------------------------
 
-const errors = [];
+/**
+ * Every rule, run against a whole exports map. Both the validate path and the
+ * post-`--write` gate call this, so the two cannot drift apart: a rule --write
+ * cannot satisfy (a hand-curated entry, which it never rewrites) fails the
+ * write path too, instead of being silently reported as fixed.
+ */
+function validateExports(exportsMap) {
+  const problems = [];
 
-// 4a. Dangling: declared in package.json but file doesn't exist
-for (const [key, entry] of Object.entries(existingExports)) {
-  if (key === './tokens.css') continue; // CSS export checked separately
-  if (key === './package.json') continue; // bare self-reference, not a TS source file
-  for (const field of ['source', 'types', 'default', 'react-native']) {
-    const val = entry[field];
-    if (!val) continue;
-    const abs = resolve(pkgRoot, val);
-    if (!existsSync(abs)) {
-      errors.push(`DANGLING  ${key} → ${val}  (file not found)`);
+  for (const [key, entry] of Object.entries(exportsMap)) {
+    if (key === './tokens.css') continue; // CSS export checked separately
+    if (key === './package.json') continue; // bare self-reference, not a TS source file
+
+    // 4a. Dangling: declared in package.json but file doesn't exist
+    for (const field of ['source', 'types', 'default', 'react-native']) {
+      const val = entry[field];
+      if (!val) continue;
+      const abs = resolve(pkgRoot, val);
+      if (!existsSync(abs)) {
+        problems.push(`DANGLING  ${key} → ${val}  (file not found)`);
+      }
+    }
+
+    // 4d. Twin unbound: an entry whose file has a `.native` sibling must carry a
+    // react-native condition pointing at it, or Metro bundles the default/web
+    // file on native — the ./toaster regression. 4c only reaches the keys the
+    // script derives, so this is what guards the hand-curated twins
+    // (./moti/hover, ./overlay/*) that --write never rewrites.
+    const base = entry.source ?? entry.default;
+    const twin = base ? nativeTwin(base) : null;
+    if (twin && existsSync(resolve(pkgRoot, twin)) && entry['react-native'] !== twin) {
+      const found = entry['react-native'] ?? '(no react-native condition)';
+      problems.push(`TWIN      ${key} → ${found}  (expected ${twin})`);
     }
   }
+
+  for (const [key, expected] of expectedEntries) {
+    // 4b. Missing: source file exists but no export declared
+    if (!(key in exportsMap)) {
+      problems.push(`MISSING   ${key}  (no entry in package.json exports)`);
+      continue;
+    }
+
+    // 4c. Drifted: the key is present but its entry is no longer the one the
+    // generator derives. 4b only checks that the key exists, so a field stripped
+    // from a present entry passes it silently — also the ./toaster regression.
+    const actual = exportsMap[key];
+    if (!sameEntry(actual, expected)) {
+      problems.push(
+        `DRIFTED   ${key}\n` +
+          `            expected  ${formatEntry(expected)}\n` +
+          `            found     ${formatEntry(actual)}    (run with --write to regenerate)`,
+      );
+    }
+  }
+
+  return problems;
 }
 
-// 4b. Missing: source file exists but no export declared
-for (const [key] of expectedEntries) {
-  if (!(key in existingExports)) {
-    errors.push(`MISSING   ${key}  (no entry in package.json exports)`);
-  }
-}
+const errors = validateExports(existingExports);
 
 // ---------------------------------------------------------------------------
 // 5. --write: regenerate the exports block
@@ -211,9 +276,10 @@ if (WRITE) {
   //
   // For the keys the script derives from disk, disk is the source of truth, so
   // an existing entry is *rewritten* — that repairs a path left dangling by a
-  // renamed file (a .ts that became .tsx, say). Keys it does not derive —
-  // ./moti/*, ./theme/*, ./overlay/*, the ./table-* helpers, ./package.json —
-  // are never touched, which is what stops --write from wiping them.
+  // renamed file (a .ts that became .tsx, say) and re-derives the react-native
+  // condition from the twin on disk. Keys it does not derive — ./moti/*,
+  // ./theme/*, ./overlay/*, the ./table-* helpers, ./package.json — are never
+  // touched, which is what stops --write from wiping them.
   const merged = new Map(Object.entries(existingExports));
   const added = [...expectedEntries.keys()].filter((key) => !merged.has(key)).sort();
   for (const [key, entry] of expectedEntries) {
@@ -226,20 +292,11 @@ if (WRITE) {
   writeFileSync(pkgJsonPath, `${JSON.stringify(pkg, null, 2)}\n`);
   console.log(`✔  Wrote exports map (${merged.size} entries, ${added.length} added).`);
 
-  // Re-validate after writing
-  const postErrors = [];
-  for (const [key, entry] of Object.entries(newExports)) {
-    if (key === './tokens.css') continue;
-    if (key === './package.json') continue;
-    for (const field of ['source', 'types', 'default', 'react-native']) {
-      const val = entry[field];
-      if (!val) continue;
-      const abs = resolve(pkgRoot, val);
-      if (!existsSync(abs)) {
-        postErrors.push(`DANGLING  ${key} → ${val}  (file not found)`);
-      }
-    }
-  }
+  // The same rules, over what was just written: --write settles every derived
+  // entry, so anything left is a hand-curated one it never touches and cannot
+  // fix. Failing here is what stops the pre-commit hook from staging a
+  // half-repaired map and calling it fixed.
+  const postErrors = validateExports(newExports);
   if (postErrors.length) {
     console.error('\nErrors after rewrite:');
     for (const e of postErrors) console.error(`  ${e}`);

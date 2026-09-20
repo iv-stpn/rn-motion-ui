@@ -49,6 +49,8 @@ type Story = StoryObj<typeof meta>;
 
 const SETTINGS_ROOT_TITLE = 'Settings';
 const OPEN_SETTINGS_LABEL = 'Open settings';
+/** The shell's testID. Its chrome derives `-close` / `-back` from it. */
+const MENU_TEST_ID = 'settings-menu';
 
 // ── Shared fixture data ────────────────────────────────────────────────────
 
@@ -331,6 +333,7 @@ function MultiStepSheetStory({ isWideScreen, defaultPath }: MultiStepSheetStoryP
         sections={sections}
         sidebar={DEFAULT_MENU_RENDERER}
         smallScreenMenu={DEFAULT_MENU_RENDERER}
+        testID={MENU_TEST_ID}
         visible={visible}
         widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
       />
@@ -354,6 +357,11 @@ export const WideScreen: Story = {
     await userEvent.click(await canvas.findByRole('button', { name: OPEN_SETTINGS_LABEL }));
     // FullSheet renders into a Modal portal — query the document, not the canvas.
     await expect(await screen.findByLabelText('Close')).toBeTruthy();
+    // The shell's testID reaches its chrome: the ✕ is named off it. At depth 1
+    // there is nothing to go back to, so the wide back chevron isn't rendered
+    // at all — the id must be absent, not merely hidden.
+    await expect(await screen.findByTestId(`${MENU_TEST_ID}-close`)).toBeTruthy();
+    expect(screen.queryByTestId(`${MENU_TEST_ID}-back`)).toBeNull();
     // Click the Notifications sidebar item by its visible text.
     await userEvent.click(await screen.findByText('Notifications'));
     // Verify the Notifications section body (unique text) is now shown.
@@ -362,12 +370,15 @@ export const WideScreen: Story = {
     await userEvent.click(await screen.findByText('Appearance'));
     await userEvent.click(await screen.findByText(ADVANCED_APPEARANCE_LABEL));
     await expect(await screen.findByText(ADVANCED_BODY)).toBeTruthy();
+    // Two levels deep, so the back chevron is on screen and named.
+    await expect(await screen.findByTestId(`${MENU_TEST_ID}-back`)).toBeTruthy();
     // Back to the first-level menu: the content pane below the title translates
     // along with the title's roll instead of swapping in one step — the old
     // body must leave the tree once the exit slide completes.
     await userEvent.click(await screen.findByLabelText('Back'));
     await expect(await screen.findByText(APPEARANCE_BODY)).toBeTruthy();
     await waitFor(() => expect(screen.queryByText(ADVANCED_BODY)).toBeNull());
+    await waitFor(() => expect(screen.queryByTestId(`${MENU_TEST_ID}-back`)).toBeNull());
   },
 };
 
@@ -378,18 +389,25 @@ export const SmallScreen: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole('button', { name: OPEN_SETTINGS_LABEL }));
-    // Root step: the back arrow is present but the close ✕ isn't yet.
+    // Root step: the back arrow is present but the close ✕ isn't yet. The small
+    // chrome inverts the wide layout's asymmetry — back is the dismissal
+    // affordance at the root, and the ✕ appears only once there's a parent to
+    // return to — so both ids are derived, just on opposite branches.
     await expect(await screen.findByLabelText('Back')).toBeTruthy();
     expect(screen.queryByLabelText('Close')).toBeNull();
+    await expect(await screen.findByTestId(`${MENU_TEST_ID}-back`)).toBeTruthy();
+    expect(screen.queryByTestId(`${MENU_TEST_ID}-close`)).toBeNull();
     // Root menu → Appearance submenu: the close ✕ fades in alongside the body.
     await userEvent.click(await screen.findByText('Appearance', { exact: true }));
     await expect(await screen.findByText(APPEARANCE_BODY)).toBeTruthy();
     await expect(await screen.findByLabelText('Close')).toBeTruthy();
+    await expect(await screen.findByTestId(`${MENU_TEST_ID}-close`)).toBeTruthy();
     // Back to the first menu: the root list must return, the Appearance body
     // leave the tree, and the close ✕ fade back out.
     await userEvent.click(await screen.findByLabelText('Back'));
     await expect(await screen.findByText('Privacy & Security')).toBeTruthy();
     await waitFor(() => expect(screen.queryByText(APPEARANCE_BODY)).toBeNull());
     await waitFor(() => expect(screen.queryByLabelText('Close')).toBeNull());
+    await waitFor(() => expect(screen.queryByTestId(`${MENU_TEST_ID}-close`)).toBeNull());
   },
 };

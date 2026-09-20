@@ -154,6 +154,17 @@ export type MultiStepMenuProps = {
   /** Static size for the wide-screen centered panel (largeScreenMode="modal"). */
   widePanelSize?: WidePanelSize;
   ref?: RefObject<MultiStepMenuHandle | null>;
+  /**
+   * Goes on the modal shell, and the chrome derives its own from it:
+   *
+   * | Control | testID |
+   * | --- | --- |
+   * | close (wide ✕ and small ✕) | `<testID>-close` |
+   * | back (wide chevron and small ←) | `<testID>-back` |
+   *
+   * The wide and small chrome are built by mutually exclusive branches, so each
+   * id names one control at a time. With no `testID` here nothing is named.
+   */
   testID?: string;
   /** The scrim behind the panel: `"blur"`, `"opacity"`, or `"none"`. Defaults to `"blur"`. */
   overlay?: OverlayType;
@@ -331,7 +342,7 @@ export const MultiStepMenu = function MultiStepMenu({
                     // animating them through `useAnimatedStyle` doesn't round-trip
                     // Yoga, so the reveal rides the fade instead.
                   >
-                    <Pressable onPress={goBack} accessibilityLabel="Back">
+                    <Pressable onPress={goBack} accessibilityLabel="Back" testID={testID ? `${testID}-back` : undefined}>
                       <View className="rotate-180">
                         <ChevronRight />
                       </View>
@@ -341,7 +352,11 @@ export const MultiStepMenu = function MultiStepMenu({
               </AnimatePresence>
               <TextRolling text={title} weight="medium" className="flex-1 text-foreground text-lg" />
             </View>
-            <CloseButton className="absolute top-2 right-2" onPress={handleClose} />
+            <CloseButton
+              className="absolute top-2 right-2"
+              onPress={handleClose}
+              testID={testID ? `${testID}-close` : undefined}
+            />
           </View>
           <View className="min-h-0 flex-1 overflow-hidden" onLayout={handleWidePaneLayout}>
             <AnimatePresence>
@@ -391,7 +406,12 @@ export const MultiStepMenu = function MultiStepMenu({
       <View className="flex-1" onLayout={handlePaneLayout}>
         <View className="px-5 pt-6 pb-5">
           <View className="flex-row items-center justify-between">
-            <IconButton icon={ArrowLeftLine} accessibilityLabel="Back" onPress={handleBack} />
+            <IconButton
+              icon={ArrowLeftLine}
+              accessibilityLabel="Back"
+              onPress={handleBack}
+              testID={testID ? `${testID}-back` : undefined}
+            />
             {/* The close ✕ only shows once you've stepped past the root, fading
                 in/out so the header doesn't jump when it leaves. */}
             <AnimatePresence>
@@ -404,7 +424,7 @@ export const MultiStepMenu = function MultiStepMenu({
                   transition={arrowTransition}
                   exitTransition={arrowExitTransition}
                 >
-                  <CloseButton onPress={handleClose} />
+                  <CloseButton onPress={handleClose} testID={testID ? `${testID}-close` : undefined} />
                 </MotiView>
               )}
             </AnimatePresence>

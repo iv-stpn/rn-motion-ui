@@ -129,14 +129,17 @@ function HomeScene({ overlay = 'blur', closeOnOutsidePress = true }: SceneProps)
       ? { bg: '#FFFFFF', secondary: '#F0F0F0', color: '#000000' }
       : { bg: '#131415', secondary: '#2B2D2E', color: '#FFFFFF' };
 
-  const itemsFor = useCallback(
-    (title: string): MenuItemProps[] => [
-      { text: 'Open', onPress: () => setPicked(`Open ${title}`) },
-      { text: 'Share', onPress: () => setPicked(`Share ${title}`), withSeparator: true },
-      { text: 'Delete', isDestructive: true, onPress: () => setPicked(`Delete ${title}`) },
-    ],
-    [],
-  );
+  // Every row's menu carries the same three labels, so `Delete` on its own says
+  // nothing about which menu is open. The per-item `testID` names the owning row
+  // too, which is what makes a row addressable without matching on its text.
+  const itemsFor = useCallback((title: string): MenuItemProps[] => {
+    const owner = title.toLowerCase();
+    return [
+      { text: 'Open', testID: `${owner}-open`, onPress: () => setPicked(`Open ${title}`) },
+      { text: 'Share', testID: `${owner}-share`, onPress: () => setPicked(`Share ${title}`), withSeparator: true },
+      { text: 'Delete', testID: `${owner}-delete`, isDestructive: true, onPress: () => setPicked(`Delete ${title}`) },
+    ];
+  }, []);
 
   return (
     <HoldMenuProvider closeOnOutsidePress={closeOnOutsidePress} iconComponent={IconByName} overlay={overlay} theme={theme}>
@@ -163,7 +166,7 @@ function HomeScene({ overlay = 'blur', closeOnOutsidePress = true }: SceneProps)
           </Pressable>
         </View>
         {HOME_ROWS.map((title, index) => (
-          <HoldItem key={title} items={itemsFor(title)} containerStyles={{ width: '100%' }}>
+          <HoldItem key={title} items={itemsFor(title)} testID={`${title.toLowerCase()}-row`} containerStyles={{ width: '100%' }}>
             <View
               style={{
                 flexDirection: 'row',
@@ -552,6 +555,38 @@ export default meta;
 /** Flip between the four upstream example screens, then press-and-hold to open each menu by hand. */
 export const Interactive: Story = {
   render: () => <InteractiveScene />,
+};
+
+/**
+ * `MenuItemProps.testID` — a menu row addressable by id rather than by its label.
+ *
+ * The Home rows all open menus with the same three labels, so `Delete` identifies
+ * a row only once you know which row owns the open menu. The id carries that.
+ */
+const DELETED_WHATSAPP = /Last action: Delete Whatsapp/;
+
+export const NamedItems: Story = {
+  render: () => <HomeScene />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // The trigger has an id of its own (HomeScene names it off the row title),
+    // so the menu can be opened without reaching for the row's text either.
+    fireEvent.contextMenu(await canvas.findByTestId('whatsapp-row'), { clientX: 60, clientY: 150 });
+    await canvas.findByTestId('hold-menu-panel');
+
+    // All three rows of the held row's menu are named off the owning menu.
+    await expect(await canvas.findByTestId('whatsapp-open')).toBeTruthy();
+    await expect(await canvas.findByTestId('whatsapp-share')).toBeTruthy();
+    const deleteRow = await canvas.findByTestId('whatsapp-delete');
+    // The other rows' menus are not mounted, so their ids must not resolve.
+    expect(canvas.queryByTestId('telegram-delete')).toBeNull();
+
+    // The id reaches the row it names, and the press still runs that row's own
+    // handler — the id identifies the entry, it does not replace the wiring.
+    fireEvent.click(deleteRow);
+    await expect(await canvas.findByText(DELETED_WHATSAPP)).toBeTruthy();
+  },
 };
 
 /** The last card's final row — the bottom-most holdable entry after scrolling (NestedScroll play). */

@@ -30,6 +30,14 @@ export type MenuItemProps = {
   withSeparator?: boolean;
   /** Greys the row out and blocks the press. */
   disabled?: boolean;
+  /**
+   * Names this row so a test can address it directly, e.g. `by.id('open')`.
+   *
+   * Without it a row has no id of its own — the panel's `hold-menu-panel` is the
+   * only handle — so a test has to match the label and scope it to an ancestor,
+   * which breaks as soon as two menus on screen share a label.
+   */
+  testID?: string;
 };
 
 /** The values that drive the menu — upstream's `MenuInternalProps`. */

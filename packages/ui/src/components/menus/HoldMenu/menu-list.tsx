@@ -51,7 +51,7 @@ function toMenuEntries(
 ): MenuEntry[] {
   const entries: MenuEntry[] = [];
   for (const item of items) {
-    if (item.isTitle) entries.push({ type: 'label', label: item.text });
+    if (item.isTitle) entries.push({ type: 'label', label: item.text, testID: item.testID });
     else
       entries.push({
         id: item.text,
@@ -60,6 +60,7 @@ function toMenuEntries(
         disabled: item.disabled,
         icon: toMenuIcon(item.icon, AnimatedIcon),
         onSelect: () => onSelectItem(item),
+        testID: item.testID,
       });
     if (item.withSeparator) entries.push({ type: 'separator' });
   }

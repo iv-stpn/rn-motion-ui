@@ -55,7 +55,11 @@ export type MorphingModalProps = {
   /** Which view is currently shown. `null` closes the modal. */
   viewId: string | null;
   onClose: () => void;
-  /** Called when the modal opens or closes. */
+  /**
+   * Fires when the modal asks to be dismissed — always with `false`. `viewId` is
+   * the consumer's own state and this component cannot open itself, so there is
+   * no open direction to report; use `onShow` for that.
+   */
   onOpenChange?: (open: boolean) => void;
   children: ReactNode;
   /** "bottom" anchors near the bottom (mobile-like). "center" centers vertically. */

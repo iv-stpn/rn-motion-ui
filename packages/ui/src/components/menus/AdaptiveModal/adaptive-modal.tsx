@@ -38,6 +38,10 @@ function useLatchedValue<T>(value: T, active: boolean): T {
 
 type AdaptiveModalProps = {
   open?: boolean;
+  /**
+   * Fires when the modal asks to be dismissed — always with `false`. `open` is
+   * the consumer's own state, so there is no open direction to report.
+   */
   onOpenChange?: (open: boolean) => void;
   children: ReactNode;
   title?: string;

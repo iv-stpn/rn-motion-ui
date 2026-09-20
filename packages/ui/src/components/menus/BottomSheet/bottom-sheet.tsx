@@ -45,6 +45,11 @@ function SheetHandle({ className }: SheetHandleProps) {
 
 export type BottomSheetProps = {
   open?: boolean;
+  /**
+   * Fires when the sheet asks to be dismissed — always with `false` — from the
+   * outside press, a drag down, or Android's back button. `open` is the
+   * consumer's own state, so there is no open direction to report.
+   */
   onOpenChange?: (open: boolean) => void;
   children: ReactNode;
   containerClassName?: string;

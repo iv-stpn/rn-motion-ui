@@ -143,6 +143,10 @@ export type FullSheetHeaderCtx = { close: () => void };
 
 export type FullSheetProps = {
   open?: boolean;
+  /**
+   * Fires when the sheet asks to be dismissed — always with `false`. `open` is
+   * the consumer's own state, so there is no open direction to report.
+   */
   onOpenChange?: (open: boolean) => void;
   children: ReactNode;
   title?: string;

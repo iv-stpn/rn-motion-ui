@@ -132,6 +132,11 @@ function announcementFor(parts: AnnouncementParts): string {
 
 export type ActionFeedbackModalProps = {
   open?: boolean;
+  /**
+   * Fires when the modal asks to be dismissed — always with `false`, whether
+   * from the backdrop, the dismiss button, or the success auto-close. `open` is
+   * the consumer's own state, so there is no open direction to report.
+   */
   onOpenChange?: (open: boolean) => void;
   state: ActionFeedbackState;
   loadingMessage?: string;

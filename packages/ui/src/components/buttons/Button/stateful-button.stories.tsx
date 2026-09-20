@@ -57,6 +57,10 @@ const VARIANTS = [
   'info',
   'ghostDanger',
 ] as const satisfies readonly StatefulButtonVariant[];
+// The plate a StatefulButton renders when the story names no variant, i.e. the
+// component's own default. Kept here so stories that colour something against
+// the plate — the trailing idle icon — derive it instead of assuming a variant.
+const DEFAULT_VARIANT = 'primary' satisfies StatefulButtonVariant;
 const CUSTOM_LABELS = {
   children: 'Upload',
   loadingText: 'Uploading…',
@@ -74,7 +78,7 @@ const WRAPPER_CLASS = 'w-52';
 function StatefulButtonPlayground(args: ComponentProps<typeof StatefulButton>) {
   const colors = useThemeColors();
   const [chip, setChip] = useState<(typeof CHIP_OPTIONS)[number]>('none');
-  const [variant, setVariant] = useState<StatefulButtonVariant>('neutral');
+  const [variant, setVariant] = useState<StatefulButtonVariant>(DEFAULT_VARIANT);
   const [size, setSize] = useState<(typeof SIZES)[number]>('md');
   const [withIcon, setWithIcon] = useState(false);
   const [shouldAutoReset, setShouldAutoReset] = useState(true);
@@ -300,8 +304,10 @@ type IconExitDemoProps = { outcome: (typeof OUTCOMES)[number] };
  *  button re-arms back to idle — the exit the per-state icon `key` restores. */
 function IconExitDemo({ outcome }: IconExitDemoProps) {
   const colors = useThemeColors();
-  // Neutral buttons here: the idle icon takes the plain foreground.
-  const iconColor = colors.foreground;
+  // This demo takes StatefulButton's default plate, so the idle icon has to take
+  // that variant's foreground — the plain `foreground` would vanish into a
+  // filled plate. Same token the component uses for its own state icons.
+  const iconColor = colors[variantIconColorToken(DEFAULT_VARIANT)];
   const press = useCallback(async () => {
     await sleep(500);
     if (outcome === 'error') throw new Error('failed');

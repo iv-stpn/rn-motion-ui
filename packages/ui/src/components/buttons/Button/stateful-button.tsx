@@ -68,7 +68,7 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children' | 'loa
    *  `shouldAutoReset` and `afterReset` are ignored (`onPress` still fires on press). */
   state?: ButtonState;
   /** Plate/fill colour. Same set as the flat {@link Button}, minus the
-   *  `outline`/`outlineDanger` pair. @default 'neutral' */
+   *  `outline`/`outlineDanger` pair. @default 'primary' */
   variant?: StatefulButtonVariant;
   children: ReactNode;
   loadingText?: ReactNode;
@@ -458,7 +458,7 @@ export function StatefulButton({
   stateIconStrokeWidth = 2.5,
   chip,
   disabled,
-  variant = 'neutral',
+  variant = 'primary',
   size = 'md',
   shape,
   className,
@@ -593,7 +593,7 @@ export function StatefulButton({
   // the success/error window, and the terminal hold — so the action can't be
   // double-fired; a reset re-enables the button when it returns to idle.
   const machineActive = !controlled && state !== 'idle';
-  const v = variant ?? 'neutral';
+  const v = variant ?? 'primary';
   const s = size ?? 'md';
   const iconSize = STATE_ICON_SIZE[s];
   const stateGapClass = STATE_BUTTON_GAP_CLASSNAME[s];
@@ -723,7 +723,7 @@ export function StatefulButton({
     );
 
   return (
-    <Button variant={variant} floating={floating} elevation={elevation} {...sharedProps}>
+    <Button variant={v} floating={floating} elevation={elevation} {...sharedProps}>
       {content}
     </Button>
   );

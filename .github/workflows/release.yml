@@ -120,6 +120,15 @@ jobs:
           # compile time. --build-cache reuses task outputs across runs.
           ./gradlew assembleRelease --no-parallel -PreactNativeArchitectures=arm64-v8a --build-cache
 
+      # Runs off the source map gradle emitted beside the bundle, so it asserts
+      # what this very APK is made of. A subpath that lost its react-native
+      # condition resolves to the web twin — which is how 7.10.1–7.11.1 shipped a
+      # `./toaster` whose web half renders a bare <style> element and throws on
+      # Android. Checked here rather than in `check` because it needs a native
+      # bundle; nothing about it is release-specific beyond that.
+      - name: Check the native bundle resolved every platform twin
+        run: node packages/ui/scripts/check-native-bundle.mjs
+
       - name: Upload APK to MEGA S4
         id: upload-s4
         env:

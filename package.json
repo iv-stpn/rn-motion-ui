@@ -12,6 +12,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "check": "node packages/ui/scripts/check-exports.mjs && node packages/ui/scripts/check-readme.mjs && node packages/ui/scripts/check-no-hardcoded-colors.mjs && node packages/ui/scripts/check-hairline.mjs && node packages/ui/scripts/check-withRepeat.mjs && node packages/ui/scripts/check-token-parity.mjs",
+    "check:native-bundle": "node packages/ui/scripts/check-native-bundle.mjs",
     "test": "bun run --cwd packages/ui test && bun run test:storybook",
     "test:storybook": "bun run --cwd storybook/web test",
     "count-stories": "echo \"$(git ls-files '*.stories.tsx' | wc -l) story files, $(git ls-files '*.stories.tsx' | xargs grep -hE '^export const .*: Story' | wc -l) stories.\"",

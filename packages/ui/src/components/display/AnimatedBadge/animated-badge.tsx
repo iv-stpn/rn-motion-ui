@@ -34,25 +34,42 @@ const PULSE_OPACITY_FROM = 0.08;
 const PULSE_OPACITY_TO = 0.16;
 const PULSE_SCALE_FROM = 0.94;
 const PULSE_SCALE_TO = 1.08;
+/** Corner radius (px) of the `rounded` shape — the pixel twin of `rounded-md`. */
+const ROUNDED_RADIUS = 6;
 
-const PULSE_STYLE = { position: 'absolute', inset: 0, borderRadius: 999, pointerEvents: 'none' } as const;
+const PULSE_STYLE = { position: 'absolute', inset: 0, pointerEvents: 'none' } as const;
 
 export type AnimatedBadgeStatus = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'loading';
-// biome-ignore lint/style/useExportsLast: these type aliases are used directly by the cva constants below; moving them after inverts the natural dependency order
 export type AnimatedBadgeSize = 'sm' | 'md';
+// biome-ignore lint/style/useExportsLast: this type alias is used directly by the cva constant below; moving it after inverts the natural dependency order
+export type AnimatedBadgeShape = 'pill' | 'rounded';
 
 // cva drives only the static container/label layout (height, padding, gap,
 // radius). The badge is a solid filled plate — background *colour* animates on
 // the root MotiView (see BADGE_BACKGROUND) — moti interpolates concrete colour
 // values, not a className swap, so the colour lives there rather than here.
-const container = cva('flex-row shrink-0 items-center overflow-hidden rounded-full', {
+const container = cva('flex-row shrink-0 items-center overflow-hidden', {
   variants: {
     size: {
-      sm: 'h-6 gap-1 px-2',
-      md: 'h-7 gap-1 px-3',
+      sm: 'h-6 gap-1',
+      md: 'h-7 gap-1',
+    },
+    shape: {
+      pill: 'rounded-full',
+      rounded: 'rounded-md',
     },
   },
-  defaultVariants: { size: 'md' },
+  // A pill's fully-round ends eat horizontal space beside the label, so it
+  // needs more padding than a rounded rectangle's tight corners. The rounded
+  // inset reads the `--spacing-interactive-pad-*-tight` ramp — its two smallest
+  // values — rather than a raw `px-1` / `px-1.5`.
+  compoundVariants: [
+    { size: 'sm', shape: 'pill', className: 'px-2' },
+    { size: 'md', shape: 'pill', className: 'px-3' },
+    { size: 'sm', shape: 'rounded', className: 'px-interactive-pad-tight-xs' },
+    { size: 'md', shape: 'rounded', className: 'px-interactive-pad-tight-sm' },
+  ],
+  defaultVariants: { size: 'md', shape: 'pill' },
 });
 
 const labelClass = cva('', {
@@ -102,7 +119,7 @@ function useBadgeBackground(colors: ReturnType<typeof useThemeColors>): Record<A
 }
 
 type BadgeSpinnerProps = { children: ReactNode };
-type BadgePulseProps = { color: string };
+type BadgePulseProps = { color: string; radius: number };
 
 /**
  * Continuous 0°→360° rotation, driven imperatively.
@@ -144,7 +161,7 @@ function BadgeSpinner({ children }: BadgeSpinnerProps) {
  * them as two independent properties, and moti defaults `scale` to spring while
  * `opacity` is timing, so they drifted apart as they looped.
  */
-function BadgePulse({ color }: BadgePulseProps) {
+function BadgePulse({ color, radius }: BadgePulseProps) {
   const progress = useSharedValue(0);
 
   // biome-ignore lint/plugin: Reanimated withRepeat loop must be started and cancelled as a side effect — not expressible as derived state
@@ -159,7 +176,7 @@ function BadgePulse({ color }: BadgePulseProps) {
     transform: [{ scale: PULSE_SCALE_FROM + (PULSE_SCALE_TO - PULSE_SCALE_FROM) * progress.value }],
   }));
 
-  return <Animated.View style={[PULSE_STYLE, { backgroundColor: color }, style]} />;
+  return <Animated.View style={[PULSE_STYLE, { backgroundColor: color, borderRadius: radius }, style]} />;
 }
 
 type BadgeIconProps = { size: number; color: string };
@@ -175,6 +192,8 @@ const ICONS: Record<AnimatedBadgeStatus, (p: BadgeIconProps) => ReactNode> = {
 
 export interface AnimatedBadgeProps extends VariantProps<typeof container> {
   status?: AnimatedBadgeStatus;
+  /** Corner preset — `pill` (default) rounds to a full capsule, `rounded` a tight 6px corner. */
+  shape?: AnimatedBadgeShape;
   children?: ReactNode;
   /** Override the leading icon. */
   icon?: ReactNode;
@@ -191,6 +210,7 @@ export interface AnimatedBadgeProps extends VariantProps<typeof container> {
 export function AnimatedBadge({
   status = 'neutral',
   size = 'md',
+  shape = 'pill',
   children,
   icon,
   showIcon = true,
@@ -208,6 +228,11 @@ export function AnimatedBadge({
 
   const doPulse = (pulse ?? status === 'loading') && !reduce;
   const iconSize = size === 'sm' ? 14 : 16;
+  // The pulse is a full-bleed halo clipped by `overflow-hidden`, so its corners
+  // must follow the badge's — a full capsule for `pill`, the 6px corner for
+  // `rounded` (999 rounds to a capsule at any scale, which the pill needs while
+  // it breathes).
+  const pulseRadius = shape === 'rounded' ? ROUNDED_RADIUS : 999;
 
   const Icon = ICONS[status];
   const contentKey = typeof children === 'string' || typeof children === 'number' ? String(children) : status;
@@ -217,14 +242,14 @@ export function AnimatedBadge({
       testID={testID}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="text"
-      className={cn(container({ size }), className)}
+      className={cn(container({ size, shape }), className)}
       style={style}
       animate={{ backgroundColor: BADGE_BACKGROUND[status] }}
       transition={{
         backgroundColor: { type: 'timing', duration: 300 },
       }}
     >
-      {doPulse ? <BadgePulse color={ICON_COLOR[status]} /> : null}
+      {doPulse ? <BadgePulse color={ICON_COLOR[status]} radius={pulseRadius} /> : null}
       {showIcon ? (
         <View className="items-center justify-center" style={{ width: iconSize, height: iconSize }}>
           <AnimatePresence exitBeforeEnter={true}>

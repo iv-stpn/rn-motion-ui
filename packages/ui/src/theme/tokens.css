@@ -52,7 +52,9 @@
  * Button, ElevatedButton, GlossyButton, ActionSwap, Input, OtpInput and Tabs all
  * read the same height per size, so a row of mixed controls lines up.
  * `--spacing-interactive-pad-*` is the shared horizontal padding for the same
- * family. Override a token to retune the whole family at once.
+ * family. `--spacing-interactive-pad-*-tight` is the reduced inset for rounded
+ * or compact surfaces whose corners eat less horizontal space than a pill.
+ * Override a token to retune the whole family at once.
  *
  * ## Corner radius
  *
@@ -237,6 +239,13 @@
   --spacing-interactive-pad-sm: 16px;
   --spacing-interactive-pad-md: 20px;
   --spacing-interactive-pad-lg: 24px;
+  /* Tight horizontal padding — the reduced inset for rounded/compact surfaces
+     whose corners eat less horizontal space than a pill (e.g. AnimatedBadge's
+     `rounded` shape). Mirrors the pad ramp at roughly half the inset. */
+  --spacing-interactive-pad-tight-xs: 4px;
+  --spacing-interactive-pad-tight-sm: 6px;
+  --spacing-interactive-pad-tight-md: 8px;
+  --spacing-interactive-pad-tight-lg: 10px;
 
   --menu-vertical-padding: 4px;
 

@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { expect, waitFor, within } from 'storybook/test';
 import { Choice, ControlCard, Playground, Section, Toggle, Variants } from '../../../__stories__/story-harness';
 import { useInterval } from '../../../hooks/use-interval';
-import { AnimatedBadge, type AnimatedBadgeSize, type AnimatedBadgeStatus } from './animated-badge';
+import { AnimatedBadge, type AnimatedBadgeShape, type AnimatedBadgeSize, type AnimatedBadgeStatus } from './animated-badge';
 
 const meta = {
   title: 'Display/AnimatedBadge',
@@ -14,6 +14,7 @@ const meta = {
   argTypes: {
     status: { control: 'select', options: ['neutral', 'info', 'success', 'warning', 'danger', 'loading'] },
     size: { control: 'select', options: ['sm', 'md'] },
+    shape: { control: 'select', options: ['pill', 'rounded'] },
   },
 } satisfies Meta<typeof AnimatedBadge>;
 
@@ -21,6 +22,7 @@ type Story = StoryObj<typeof meta>;
 
 const STATUSES = ['neutral', 'info', 'success', 'warning', 'danger', 'loading'] as const satisfies readonly AnimatedBadgeStatus[];
 const SIZES = ['sm', 'md'] as const satisfies readonly AnimatedBadgeSize[];
+const SHAPES = ['pill', 'rounded'] as const satisfies readonly AnimatedBadgeShape[];
 
 /** Label each status carries in the catalogue rows — a badge is a word plus a hue. */
 const STATUS_LABELS: Record<AnimatedBadgeStatus, string> = {
@@ -38,6 +40,7 @@ const CYCLE_MS = 1600;
 function AnimatedBadgePlayground(args: ComponentProps<typeof AnimatedBadge>) {
   const [status, setStatus] = useState<AnimatedBadgeStatus>('success');
   const [size, setSize] = useState<AnimatedBadgeSize>('md');
+  const [shape, setShape] = useState<AnimatedBadgeShape>('pill');
   const [showIcon, setShowIcon] = useState(true);
   const [cycling, setCycling] = useState(false);
 
@@ -56,12 +59,13 @@ function AnimatedBadgePlayground(args: ComponentProps<typeof AnimatedBadge>) {
       <ControlCard title="Options">
         <Choice label="Status" onChange={setStatus} options={STATUSES} value={status} />
         <Choice label="Size" onChange={setSize} options={SIZES} value={size} />
+        <Choice label="Shape" onChange={setShape} options={SHAPES} value={shape} />
         <Toggle label="Icon" onChange={setShowIcon} value={showIcon} />
         <Toggle label="Auto-cycle" onChange={setCycling} value={cycling} />
       </ControlCard>
 
       <View className="items-start">
-        <AnimatedBadge {...args} showIcon={showIcon} size={size} status={status}>
+        <AnimatedBadge {...args} showIcon={showIcon} size={size} shape={shape} status={status}>
           {STATUS_LABELS[status]}
         </AnimatedBadge>
       </View>
@@ -71,7 +75,7 @@ function AnimatedBadgePlayground(args: ComponentProps<typeof AnimatedBadge>) {
           <Section key={name} title={name === 'sm' ? 'Small' : 'Medium'}>
             <Variants>
               {STATUSES.map((value) => (
-                <AnimatedBadge {...args} key={value} showIcon={showIcon} size={name} status={value}>
+                <AnimatedBadge {...args} key={value} showIcon={showIcon} size={name} shape={shape} status={value}>
                   {STATUS_LABELS[value]}
                 </AnimatedBadge>
               ))}
@@ -82,8 +86,23 @@ function AnimatedBadgePlayground(args: ComponentProps<typeof AnimatedBadge>) {
         <Section title="Without icons">
           <Variants>
             {STATUSES.map((value) => (
-              <AnimatedBadge {...args} key={value} showIcon={false} size={size} status={value}>
+              <AnimatedBadge {...args} key={value} showIcon={false} size={size} shape={shape} status={value}>
                 {STATUS_LABELS[value]}
+              </AnimatedBadge>
+            ))}
+          </Variants>
+        </Section>
+
+        <Section title="Shapes">
+          <Variants>
+            {SHAPES.map((name) => (
+              <AnimatedBadge {...args} key={name} showIcon={true} size="md" shape={name} status="success">
+                {name}
+              </AnimatedBadge>
+            ))}
+            {SHAPES.map((name) => (
+              <AnimatedBadge {...args} key={`${name}-loading`} showIcon={true} size="md" shape={name} status="loading">
+                {name}
               </AnimatedBadge>
             ))}
           </Variants>

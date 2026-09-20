@@ -1,5 +1,36 @@
 # rn-motion-ui
 
+## 7.11.2
+
+### Patch Changes
+
+- 78cbd43: Let `MultiStepMenu` name its own chrome and `HoldMenuItem` name its rows, so both are addressable by id instead of by matching text.
+
+  `MultiStepMenu` took a `testID` and put it on the modal shell alone, which left its close and back controls reachable only through their `accessibilityLabel` — a query two menus on screen both answer. The shell's `testID` now reaches the chrome as well: `<testID>-close` and `<testID>-back`. The wide and small chrome are built by mutually exclusive branches, so each id names exactly one control at a time, and the split is not symmetric — the wide layout shows its ✕ at every depth and its back chevron only from the second level down, while the small layout shows its back arrow at the root and its ✕ only once there is a parent to return to. The ids follow the controls that actually exist, so an absent one stays absent rather than resolving to something else.
+
+  `HoldMenuItem` had no `testID` at all, which meant the panel's `hold-menu-panel` was the only handle a test had: to press a given row you matched its label and scoped it to an ancestor. That holds only while one menu is open, and a row's menu routinely repeats the same labels across a list — every file-system entry and every chat bubble offers Delete. `MenuItemProps` now takes an optional `testID`, threaded onto the row through the same path the generic `Menu` already honoured, so a row can be named after the item it belongs to (`whatsapp-delete`) rather than after the text it happens to share.
+
+  Both are additive: with no `testID` passed, nothing is named and rendering is unchanged.
+
+- 57e6ce5: Document that the modal family's `onOpenChange` only ever reports the dismiss direction.
+
+  `MorphingModal`, `AdaptiveModal`, `BottomSheet`, `FullSheet` and `ActionFeedbackModal` all accept `onOpenChange`, and all five call it with `false` and never with `true`. That is by design rather than an oversight — each takes `open` as a prop and has no setter for it, so the component cannot open itself and there is no open transition to report. Anchoring the "open" signal is `onShow`'s job, which fires once the surface has fully presented and it is safe to focus content inside it.
+
+  `MorphingModal`'s doc comment said the opposite, describing a callback "fired when the modal opens or closes" and leaving a reader to expect a `true` that never arrives; the other four said nothing at all. All five now state which direction fires and, for `ActionFeedbackModal`, which affordances raise it (backdrop, dismiss button, success auto-close).
+
+  No behaviour change — this is the JSDoc catching up to what the components already do.
+
+- 55fa93a: Restore the `react-native` export condition on `./toaster`, so native builds get the Reanimated toast rather than the Sonner web adapter.
+
+  `./toaster` is a platform twin — `toaster.native.tsx` (Reanimated) on native, `toaster.tsx` (a Sonner adapter) on web — and Metro does not apply `.native` platform-extension substitution to a path the exports map has already resolved to an explicit filename, so the `react-native` condition on the entry is the only thing routing between them. It was dropped in 7.10.1 and has been missing since.
+
+  Nothing failed at build time, because `toaster.native.tsx` still shipped: it was present on disk and simply unreachable. Native consumers on 7.10.1–7.11.1 got the web twin, whose render opens with a bare `<style>` element. That is harmless in a browser, but on native it is an unregistered host component, so mounting `<Toaster>` threw `Invariant Violation: View config getter callback for component 'style' must be a function` before the root view was committed — and with `<Toaster>` mounted at the app root above no error boundary, a toast-library fault took the whole app down instead of one surface.
+
+  `scripts/check-exports.mjs` is both the validator and the `--write` regenerator, and its `buildEntry()` knew exactly two twins, listed by hand (`./moti/hover` and `./surface`). `./toaster` is a derived key, so a `--write` run rewrote it from `buildEntry()` and silently stripped the condition the list did not name. The twin is now derived from disk rather than listed — no maintenance as twins are added — and two checks close the gap that let this ship:
+
+  - a declared entry must now match the one generated from disk, instead of merely existing (the old check compared keys, so a field stripped from a present entry passed it);
+  - any declared entry whose file has a `.native` sibling must carry a `react-native` condition pointing at it, which also guards the hand-curated twins (`./moti/hover`, `./overlay/blur-provider`) that `--write` never rewrites and that nothing had ever validated.
+
 ## 7.11.1
 
 ### Patch Changes

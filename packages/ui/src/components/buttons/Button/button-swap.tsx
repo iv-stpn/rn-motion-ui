@@ -11,14 +11,17 @@ import { MotiText } from '../../../moti/components/text';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
+import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text, type TextWeight } from '../../typography/Text/text';
-import { type BaseButtonProps, ButtonRipples, pressAnimate, usePressRipples } from './button-internals';
+import { type BaseButtonProps, ButtonRipples, usePressRipples } from './button-internals';
+import { pressAnimate } from './button-press';
 import { BUTTON_BOX, BUTTON_GAP_CLASSNAME, BUTTON_ICON_SIZE, type ButtonShape, type ButtonSize } from './button-scale';
 import {
   BUTTON_HOVER_CLASS,
   buttonContainer as container,
   FILLED_RIPPLE_VARIANTS,
   buttonLabel as labelClass,
+  variantIconColorToken,
 } from './button-variants';
 
 // The family's public types, re-exported so a ButtonSwap consumer takes its
@@ -298,9 +301,9 @@ export function ButtonSwap({
   cycle = true,
   onPress,
   disabled,
-  ripple = false,
-  pressScale = 0.93,
-  pressMode = 'scale',
+  ripple = true,
+  pressScale,
+  pressMode = 'scaleUp',
   noDisabledOpacity = false,
   backdropColor,
   pressTransition,
@@ -313,9 +316,13 @@ export function ButtonSwap({
   testID,
 }: ButtonSwapProps) {
   const reduce = useReducedMotion();
+  const colors = useThemeColors();
   const pressSpring = mergeTransition(MOTION_SNAPPY, pressTransition);
   const v = variant ?? 'neutral';
   const isDisabled = Boolean(disabled);
+  // The ripple wears the variant's foreground ink so the wash matches the active
+  // colour and flips with the theme.
+  const rippleColor = colors[variantIconColorToken(v)];
   // The shadow is `elevation`-driven and defaults to flat (`0`); `floating`
   // swaps whichever rung resolves for the halo.
   const resolvedElevation: SurfaceElevation = elevation ?? 0;
@@ -404,7 +411,9 @@ export function ButtonSwap({
             {activeItem.label}
           </ButtonSwapText>
         )}
-        {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}
+        {ripple && !reduce ? (
+          <ButtonRipples ripples={ripples} color={rippleColor} filled={FILLED_RIPPLE_VARIANTS.has(v)} />
+        ) : null}
       </Pressable>
     </MotiView>
   );

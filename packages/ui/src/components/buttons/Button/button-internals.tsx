@@ -17,22 +17,39 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
+import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { cn } from '../../../lib/cn';
-import { EASE_IN_OUT } from '../../../lib/ease';
+import { scaleAlpha } from '../../../lib/color';
+import { EASE_IN_OUT, EASE_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
 import type { MotiTransitionProp } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
+import type { PressMode } from './button-press';
 import { BUTTON_GAP_CLASSNAME } from './button-scale';
 
 // ── module-local types & helpers ────────────────────────────────────────────
 // Kept ahead of the exports (useExportsLast). `Ripple` stays local: consumers
 // destructure `usePressRipples`' return and never name the type themselves.
 
-type Ripple = { id: number; x: number; y: number; size: number };
+type Ripple = { id: number; x: number; y: number; size: number; released: boolean };
 
-type ButtonRipplesProps = { ripples: Ripple[]; filled: boolean; zIndex?: number };
+type ButtonRipplesProps = { ripples: Ripple[]; color: string; filled: boolean; zIndex?: number };
 
 type UsePressRipplesArgs = { ripple: boolean; reduce: boolean; trackDims: boolean };
+
+// Ripple timing: the ink blooms out over GROW, holds at full opacity while the
+// button is pressed, then fades over FADE once the press is released — the
+// ripple no longer evaporates mid-press. The release fade is eased out (a steep
+// start that lingers near transparent) rather than a flat linear dissolve.
+const RIPPLE_GROW_MS = 300;
+const RIPPLE_FADE_MS = 500;
+
+// The translucent "active" alpha a ripple wears, by plate: an opaque fill needs a
+// stronger wash (0.35) for the ink to read against its saturated fill, a light or
+// transparent plate a subtler one (0.12). The colour itself is the button's own
+// foreground ink, resolved per-variant (see ButtonRipples).
+const RIPPLE_ALPHA_FILLED = 0.35;
+const RIPPLE_ALPHA_LIGHT = 0.12;
 
 type BuildContentArgs = {
   loading: boolean | undefined;
@@ -55,33 +72,6 @@ function renderChild(child: ReactNode, className: string, labelClassName?: strin
       </Text>
     );
   return isValidElement(child) ? child : null;
-}
-
-export type PressAnimateOpts = {
-  pressed: boolean;
-  blocked: boolean;
-  pressMode: 'scale' | 'scaleY' | 'scaleX' | 'scaleXFirst' | 'scaleXLast' | 'none';
-  pressScale: number;
-};
-
-/**
- * Resolves the MotiView `animate` value for the press animation. Each button
- * component calls this and spreads the result into its `animate` object.
- */
-// biome-ignore lint/style/useComponentExportOnlyModules: shared press-animation helper consumed by every button component alongside the other machinery already exempted below
-export function pressAnimate(opts: PressAnimateOpts) {
-  const { pressed, blocked, pressMode, pressScale } = opts;
-  if (pressMode === 'none' || blocked) return { scale: 1 };
-  if (!pressed) {
-    if (pressMode === 'scaleY') return { scaleY: 1, translateY: 0 };
-    if (pressMode === 'scaleX' || pressMode === 'scaleXFirst' || pressMode === 'scaleXLast') return { scaleX: 1 };
-    return { scale: 1 };
-  }
-  if (pressMode === 'scaleY') return { scaleY: 0.96, translateY: 2 };
-  if (pressMode === 'scaleX') return { scaleX: 0.96 };
-  if (pressMode === 'scaleXFirst') return { scaleX: 0.96, translateY: -1 };
-  if (pressMode === 'scaleXLast') return { scaleX: 0.96, translateY: 1 };
-  return { scale: pressScale };
 }
 
 // ── exports ─────────────────────────────────────────────────────────────────
@@ -107,20 +97,22 @@ export type BaseButtonProps = {
   onPress?: () => void;
   disabled?: boolean;
   loading?: boolean;
-  /** Spawn a Material-style ripple from the press point. Off by default. */
+  /** Spawn a Material-style ripple from the press point. On by default. */
   ripple?: boolean;
-  /** Scale the button settles to while pressed. */
+  /** Settled scale for the uniform `scaleUp`/`scaleDown` press modes. Omit to
+   *  use the mode's own default (1.05 growing, 0.93 shrinking). */
   pressScale?: number;
   /**
    * Shape of the press animation.
-   * - `scale` (default) — uniform pressScale, the current behaviour.
+   * - `scaleUp` (default) — grows to `pressScale` (uniform, default 1.05).
+   * - `scaleDown` — shrinks to `pressScale` (uniform, default 0.93).
    * - `scaleY` — compresses vertically and nudges down (horizontal segmented controls).
    * - `scaleX` — compresses horizontally (vertical segmented controls, middle buttons).
    * - `scaleXFirst` — compresses horizontally and nudges up (first button in a vertical group).
    * - `scaleXLast` — compresses horizontally and nudges down (last button in a vertical group).
    * - `none` — no press animation at all.
    */
-  pressMode?: 'scale' | 'scaleY' | 'scaleX' | 'scaleXFirst' | 'scaleXLast' | 'none';
+  pressMode?: PressMode;
   /** When true, skip the 0.5 opacity applied to disabled buttons. */
   noDisabledOpacity?: boolean;
   /** Colour shown as an absolutely-positioned overlay behind the button content. */
@@ -144,8 +136,13 @@ export type BaseButtonProps = {
 };
 
 /**
- * Material-style press ripples. `filled` picks a white shimmer for dark filled
- * backgrounds vs a dark shimmer for light ones; both are theme-exempt overlays.
+ * Material-style press ripples. Each ripple wears the button's own foreground
+ * ink (`color`), tinted translucent with `scaleAlpha`, so the wash matches the
+ * active colour and flips with the theme instead of hardcoding a white/dark
+ * shimmer. The ink blooms out on press-in, holds at full opacity while the press
+ * is held, then fades out on release — it no longer dissolves the instant it
+ * spawns. `filled` only picks the alpha strength: 0.35 for opaque fills, 0.12 for
+ * light or transparent plates.
  *
  * Renders a single absolutely-positioned container so every ripple MotiView
  * shares the same coordinate origin (the Pressable it sits inside) and the same
@@ -154,17 +151,23 @@ export type BaseButtonProps = {
  * shifts the origin to the wrapper rather than to the Pressable whose
  * `locationX`/`locationY` the coordinates came from.
  */
-export function ButtonRipples({ ripples, filled, zIndex }: ButtonRipplesProps) {
+export function ButtonRipples({ ripples, color, filled, zIndex }: ButtonRipplesProps) {
   if (ripples.length === 0) return null;
+
+  const tint = scaleAlpha(color, filled ? RIPPLE_ALPHA_FILLED : RIPPLE_ALPHA_LIGHT);
 
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, zIndex === undefined ? null : { zIndex }]}>
       {ripples.map((rp) => (
         <MotiView
           key={rp.id}
-          from={{ scale: 0, opacity: 0.3 }}
-          animate={{ scale: 1, opacity: 0 }}
-          transition={{ type: 'timing', duration: 600 }}
+          from={{ scale: 0, opacity: 1 }}
+          animate={rp.released ? { scale: 1, opacity: 0 } : { scale: 1, opacity: 1 }}
+          transition={
+            rp.released
+              ? { type: 'timing', duration: RIPPLE_FADE_MS, easing: EASE_OUT }
+              : { type: 'timing', duration: RIPPLE_GROW_MS }
+          }
           style={{
             position: 'absolute',
             left: rp.x - rp.size / 2,
@@ -172,9 +175,7 @@ export function ButtonRipples({ ripples, filled, zIndex }: ButtonRipplesProps) {
             width: rp.size,
             height: rp.size,
             borderRadius: rp.size / 2,
-            backgroundColor: filled
-              ? 'rgba(255,255,255,0.35)' /* theme-exempt: white shimmer on filled bg */
-              : 'rgba(0,0,0,0.12)' /* theme-exempt: dark shimmer on light bg */,
+            backgroundColor: tint,
           }}
         />
       ))}
@@ -195,6 +196,9 @@ export function usePressRipples({ ripple, reduce, trackDims }: UsePressRipplesAr
   const [dims, setDims] = useState({ w: 0, h: 0 });
   const nextId = useRef(0);
   const size_ = useRef({ w: 0, h: 0 });
+  // Pending post-release cleanup: clears the faded ripples from state. Held in a
+  // ref so a rapid re-press can cancel it rather than dropping a fresh ripple.
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onLayout = useCallback(
     (e: LayoutChangeEvent) => {
@@ -205,6 +209,12 @@ export function usePressRipples({ ripple, reduce, trackDims }: UsePressRipplesAr
     [trackDims],
   );
 
+  // Cancel any pending cleanup on unmount so a fading ripple can't set state after
+  // the button has gone.
+  useMountEffect(() => () => {
+    if (clearTimer.current !== null) clearTimeout(clearTimer.current);
+  });
+
   const handlePressIn = useCallback(
     (e: GestureResponderEvent) => {
       setPressed(true);
@@ -213,12 +223,28 @@ export function usePressRipples({ ripple, reduce, trackDims }: UsePressRipplesAr
       const r = Math.max(size_.current.w, size_.current.h) * 2;
       const id = nextId.current;
       nextId.current += 1;
-      setRipples((prev) => [...prev, { id, x, y, size: r }]);
-      setTimeout(() => setRipples((prev) => prev.filter((rp) => rp.id !== id)), 650);
+      if (clearTimer.current !== null) {
+        clearTimeout(clearTimer.current);
+        clearTimer.current = null;
+      }
+      // Drop ripples from a previous press that already finished fading, then add
+      // the fresh one — it holds at full opacity until release.
+      setRipples((prev) => [...prev.filter((rp) => !rp.released), { id, x, y, size: r, released: false }]);
     },
     [ripple, reduce],
   );
-  const handlePressOut = useCallback(() => setPressed(false), []);
+  const handlePressOut = useCallback(() => {
+    setPressed(false);
+    if (!ripple || reduce) return;
+    // Mark every live ripple released so it fades, then schedule its removal once
+    // the fade completes.
+    setRipples((prev) => prev.map((rp) => ({ ...rp, released: true })));
+    if (clearTimer.current !== null) clearTimeout(clearTimer.current);
+    clearTimer.current = setTimeout(() => {
+      setRipples((prev) => prev.filter((rp) => !rp.released));
+      clearTimer.current = null;
+    }, RIPPLE_FADE_MS);
+  }, [ripple, reduce]);
 
   return { pressed, ripples, dims, onLayout, handlePressIn, handlePressOut };
 }

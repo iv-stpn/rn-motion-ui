@@ -115,10 +115,13 @@ export const buttonLabel = cva('', {
 });
 
 /**
- * Variants whose background is an opaque, dark-or-vivid fill, so a ripple has to
- * shimmer white to be visible. Everything else (`neutral`'s light surface plate,
- * `secondary`/`accent`'s light fills, ghost/outline's transparency) takes the
- * dark ripple.
+ * Variants whose background is an opaque, dark-or-vivid fill. Their ink is
+ * near-white, so the ripple needs the stronger 0.35 alpha to read against the
+ * saturated fill. Everything else (`neutral`'s light surface plate,
+ * `secondary`/`accent`'s light fills, ghost/outline's transparency) wears a dark
+ * ink that reads with the subtler 0.12 alpha. The ripple colour itself is the
+ * variant's foreground ink (see {@link variantIconColorToken}), not a fixed white
+ * or dark shimmer.
  */
 export const FILLED_RIPPLE_VARIANTS = new Set<ButtonVariant>(['primary', 'danger', 'success', 'warning', 'info']);
 

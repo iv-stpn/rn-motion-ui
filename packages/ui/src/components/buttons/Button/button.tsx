@@ -15,7 +15,8 @@ import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
-import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
+import { type BaseButtonProps, ButtonRipples, buildButtonContent, usePressRipples } from './button-internals';
+import { pressAnimate } from './button-press';
 import { BUTTON_BOX, BUTTON_METRICS, type ButtonShape, type ButtonSize, buttonRadius } from './button-scale';
 import {
   BUTTON_HOVER_CLASS,
@@ -124,9 +125,9 @@ export function Button({
   onPress,
   disabled,
   loading,
-  ripple = false,
-  pressScale = 0.93,
-  pressMode = 'scale',
+  ripple = true,
+  pressScale,
+  pressMode = 'scaleUp',
   noDisabledOpacity = false,
   backdropColor,
   pressTransition,
@@ -171,6 +172,9 @@ export function Button({
     trackDims: false,
   });
 
+  // The button's foreground ink — the label/spinner colour — also tints the
+  // press ripple, so the wash matches the active colour and flips with the theme.
+  const inkColor = buildSpinnerColor(v, colors);
   const buttonContent = buildButtonContent({
     loading,
     reduce,
@@ -178,7 +182,7 @@ export function Button({
     children,
     leftAdornment,
     rightAdornment,
-    spinnerColor: buildSpinnerColor(v, colors),
+    spinnerColor: inkColor,
     labelClassName,
   });
 
@@ -222,7 +226,7 @@ export function Button({
         style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor ?? 'transparent', pointerEvents: 'none' }]}
       />
       {buttonContent}
-      {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}
+      {ripple && !reduce ? <ButtonRipples ripples={ripples} color={inkColor} filled={FILLED_RIPPLE_VARIANTS.has(v)} /> : null}
     </Pressable>
   );
 

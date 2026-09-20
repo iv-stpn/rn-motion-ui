@@ -124,8 +124,8 @@ export const BUTTON_SIZE: Record<RampSize, ButtonSizeGeometry> = {
  * curve, no horizontal padding (the square is the padding).
  */
 export const BUTTON_METRICS: Record<ButtonSize, { height: number; padX: number; radius: number }> = {
-  xs: { height: BUTTON_SIZE.xs.px, padX: 12, radius: INTERACTIVE_RADIUS },
-  sm: { height: BUTTON_SIZE.sm.px, padX: 16, radius: INTERACTIVE_RADIUS },
+  xs: { height: BUTTON_SIZE.xs.px, padX: 8, radius: INTERACTIVE_RADIUS },
+  sm: { height: BUTTON_SIZE.sm.px, padX: 14, radius: INTERACTIVE_RADIUS },
   md: { height: BUTTON_SIZE.md.px, padX: 20, radius: INTERACTIVE_RADIUS },
   lg: { height: BUTTON_SIZE.lg.px, padX: 24, radius: INTERACTIVE_RADIUS },
   icon: { height: BUTTON_SIZE.md.px, padX: 0, radius: INTERACTIVE_RADIUS },

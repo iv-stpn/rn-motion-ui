@@ -235,8 +235,8 @@
   --spacing-interactive-sm: 32px;
   --spacing-interactive-md: 42px;
   --spacing-interactive-lg: 56px;
-  --spacing-interactive-pad-xs: 12px;
-  --spacing-interactive-pad-sm: 16px;
+  --spacing-interactive-pad-xs: 8px;
+  --spacing-interactive-pad-sm: 14px;
   --spacing-interactive-pad-md: 20px;
   --spacing-interactive-pad-lg: 24px;
   /* Tight horizontal padding — the reduced inset for rounded/compact surfaces

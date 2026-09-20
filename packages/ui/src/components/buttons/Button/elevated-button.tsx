@@ -8,7 +8,8 @@ import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
 import { MOTION_SNAPPY, mergeTransition, TIMING_BASE } from '../../../theme/motion';
 import { type ThemeToken, useThemeColors } from '../../../theme/use-theme-color';
-import { type BaseButtonProps, ButtonRipples, buildButtonContent, pressAnimate, usePressRipples } from './button-internals';
+import { type BaseButtonProps, ButtonRipples, buildButtonContent, usePressRipples } from './button-internals';
+import { pressAnimate } from './button-press';
 import { BUTTON_BOX, type ButtonShape, type ButtonSize, buttonRadiusClass } from './button-scale';
 import { BUTTON_HOVER_CLASS } from './button-variants';
 
@@ -104,9 +105,11 @@ const ELEVATED_FILL_TOKEN: Record<Exclude<ElevatedVariant, 'white' | 'gray'>, Th
 // the fill darkened toward black.
 const MONOCHROME_FILL_VARIANTS = new Set<ElevatedVariant>(['primary', 'neutral', 'secondary', 'accent']);
 
-// Light fills that take the dark ripple (a white shimmer would vanish on them):
-// the two flat plates plus the light `secondary`/`accent` fills. Every other chip
-// (`primary`/`neutral`'s dark plate, the vivid status fills) takes the white ripple.
+// Light fills that take the subtler ripple alpha — a strong wash would overwhelm
+// a light plate. These wear a dark ink (muted/secondary/accent foreground), so the
+// faint 0.12 wash reads against them. Every other chip (the dark `primary`/`neutral`
+// plate, the vivid status fills) wears a near-white ink that needs the heavier 0.35
+// wash to read against its saturated fill.
 const LIGHT_RIPPLE_VARIANTS = new Set<ElevatedVariant>(['white', 'gray', 'secondary', 'accent']);
 
 // The white stroke plate: light surface + muted label at rest; on hover it
@@ -341,9 +344,9 @@ export function ElevatedButton({
   disabled,
   loading,
   noDisabledOpacity = false,
-  ripple = false,
-  pressScale = 0.93,
-  pressMode = 'scale',
+  ripple = true,
+  pressScale,
+  pressMode = 'scaleUp',
   backdropColor,
   pressTransition,
   fitWidth,
@@ -371,6 +374,10 @@ export function ElevatedButton({
 
   const appearance = resolveAppearance({ variant, size, shape, hovered, isDisabled: flatten, colors });
   const { containerClass, spinnerColor, showHighlights, radiusClass, boxShadow, wrapperBackground } = appearance;
+
+  // The ripple wears the chip's active ink (its `*-foreground` label colour), not
+  // the muted plate — a disabled chip can't ripple, so resolve against `false`.
+  const rippleColor = spinnerColorFor(variant, false, colors);
 
   const { pressed, ripples, dims, onLayout, handlePressIn, handlePressOut } = usePressRipples({
     ripple,
@@ -434,7 +441,7 @@ export function ElevatedButton({
         ) : null}
         {buttonContent}
         {ripple && !reduce ? (
-          <ButtonRipples ripples={ripples} filled={!LIGHT_RIPPLE_VARIANTS.has(variant)} zIndex={RIPPLE_Z} />
+          <ButtonRipples ripples={ripples} color={rippleColor} filled={!LIGHT_RIPPLE_VARIANTS.has(variant)} zIndex={RIPPLE_Z} />
         ) : null}
       </Pressable>
     </MotiView>

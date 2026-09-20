@@ -12,7 +12,8 @@ import type { MotiTransitionProp } from '../../../theme/motion';
 import { MOTION_SNAPPY, mergeTransition } from '../../../theme/motion';
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
-import { ButtonRipples, ButtonSpinner, pressAnimate, usePressRipples } from '../Button/button-internals';
+import { ButtonRipples, ButtonSpinner, usePressRipples } from '../Button/button-internals';
+import { type PressMode, pressAnimate } from '../Button/button-press';
 import { BUTTON_ICON_SIZE, BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
 import { BUTTON_HOVER_CLASS } from '../Button/button-variants';
 
@@ -94,18 +95,20 @@ export type IconButtonProps = {
   onPress?: () => void;
   disabled?: boolean;
   loading?: boolean;
-  /** Spawn a Material-style ripple from the press point. Off by default. */
+  /** Spawn a Material-style ripple from the press point. On by default. */
   ripple?: boolean;
-  /** Scale the button settles to while pressed. @default 0.93 */
+  /** Settled scale for the uniform `scaleUp`/`scaleDown` press modes. Omit to
+   *  use the mode's own default (1.05 growing, 0.93 shrinking). */
   pressScale?: number;
   /**
    * Shape of the press animation.
-   * - `scale` (default) — uniform pressScale.
+   * - `scaleUp` (default) — grows to `pressScale` (uniform, default 1.05).
+   * - `scaleDown` — shrinks to `pressScale` (uniform, default 0.93).
    * - `scaleY` — compresses vertically and nudges down.
    * - `scaleX` — compresses horizontally.
    * - `none` — no press animation at all.
    */
-  pressMode?: 'scale' | 'scaleY' | 'scaleX' | 'none';
+  pressMode?: PressMode;
   /** When true, skip the 0.5 opacity applied to disabled buttons. */
   noDisabledOpacity?: boolean;
   /** Override the press-scale spring. Partial — only the fields you pass are changed. */
@@ -176,9 +179,9 @@ export function IconButton({
   onPress,
   disabled,
   loading,
-  ripple = false,
-  pressScale = 0.93,
-  pressMode = 'scale',
+  ripple = true,
+  pressScale,
+  pressMode = 'scaleUp',
   noDisabledOpacity = false,
   pressTransition,
   fitWidth,
@@ -250,7 +253,7 @@ export function IconButton({
       )}
     >
       {iconElement}
-      {ripple && !reduce ? <ButtonRipples ripples={ripples} filled={false} /> : null}
+      {ripple && !reduce ? <ButtonRipples ripples={ripples} color={colors.foreground} filled={false} /> : null}
     </Pressable>
   );
 

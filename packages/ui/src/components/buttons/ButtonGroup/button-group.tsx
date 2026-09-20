@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { type StyleProp, View, type ViewStyle } from 'react-native';
 import { cn } from '../../../lib/cn';
+import type { PressMode } from '../Button/button-press';
 import type { ButtonSize } from '../Button/button-scale';
 
 // ── cva container ────────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ function verticalPressMode(isFirst: boolean, isLast: boolean) {
 function isPressableElement(child: ReactNode): child is ReactElement<{
   className?: string;
   contentClassName?: string;
-  pressMode?: 'scale' | 'scaleY' | 'scaleX' | 'scaleXFirst' | 'scaleXLast' | 'none';
+  pressMode?: PressMode;
 }> {
   return isValidElement(child);
 }

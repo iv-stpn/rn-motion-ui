@@ -224,6 +224,7 @@ Subpaths are namespaced by category:
 | `/hold-menu`                   | `HoldMenuProvider`, `HoldItem`, `HoldMenuIcon`                           |
 | `/overflow-actions`            | `OverflowActions`                                                        |
 | `/bouncy-accordion`            | `BouncyAccordion`                                                        |
+| `/activity-island`             | `ActivityIsland`, `ActivityIslandState`                                  |
 | `/dynamic-island`              | `DynamicIsland`                                                          |
 | `/animated-list`               | `AnimatedList`, `AnimatedListItem`                                       |
 | `/swipeable-list`              | `SwipeableList`                                                          |

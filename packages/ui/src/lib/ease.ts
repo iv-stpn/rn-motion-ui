@@ -66,6 +66,20 @@ export const SPRING_LAYOUT = {
   mass: 0.6,
 };
 
+/** The content of an edge panel landing after it unrolls open (ActivityIsland's
+ *  bar). The one spring here tuned to overshoot — about 5% — because the size
+ *  change *is* the gesture: a damped glide reads as a panel being resized, while
+ *  a little bounce reads as something inflating and settling. It rides the
+ *  panel's *content*, not its height: layout transitions are keyframed rather
+ *  than sprung on web, so a spring only survives on style props. Entrances only —
+ *  an exit springs away from the screen and has nothing to settle onto. */
+export const SPRING_UNROLL = {
+  type: 'spring' as const,
+  stiffness: 420,
+  damping: 22,
+  mass: 0.6,
+};
+
 /** Cursor-follow physics for decorative mouse tracking (magnetic, tilt, dock). */
 export const SPRING_MOUSE = {
   stiffness: 200,

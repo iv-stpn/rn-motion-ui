@@ -68,6 +68,11 @@
       "types": "./src/components/menus/ActionFeedbackModal/action-feedback-modal.tsx",
       "default": "./src/components/menus/ActionFeedbackModal/action-feedback-modal.tsx"
     },
+    "./activity-island": {
+      "source": "./src/components/display/ActivityIsland/activity-island.tsx",
+      "types": "./src/components/display/ActivityIsland/activity-island.tsx",
+      "default": "./src/components/display/ActivityIsland/activity-island.tsx"
+    },
     "./adaptive-dropdown": {
       "source": "./src/components/menus/AdaptiveDropdown/adaptive-dropdown.tsx",
       "types": "./src/components/menus/AdaptiveDropdown/adaptive-dropdown.tsx",

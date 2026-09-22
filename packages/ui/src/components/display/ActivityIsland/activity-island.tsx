@@ -1,4 +1,4 @@
-import { type ComponentType, createContext, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { type ComponentType, createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Platform, type StyleProp, View, type ViewStyle } from 'react-native';
 import Animated, { Easing, LinearTransition } from 'react-native-reanimated';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
@@ -87,10 +87,12 @@ function isGiven<T>(value: T | null | undefined): value is T {
 
 /** True while `state` hands off between two activities, not on open/dismiss. */
 function useSwitching(state: string | null) {
-  const [prev, setPrev] = useState(state);
-  const switching = state !== null && prev !== null && prev !== state;
-  // biome-ignore lint/plugin: intentional derived-state-in-render (React's getDerivedStateFromProps equivalent); guarded to converge
-  if (prev !== state) setPrev(state);
+  const prevRef = useRef<string | null>(state);
+  const switching = state !== null && prevRef.current !== null && prevRef.current !== state;
+  // biome-ignore lint/plugin: remembering the previous state across renders has no render-time equivalent
+  useEffect(() => {
+    prevRef.current = state;
+  }, [state]);
   return switching;
 }
 
@@ -108,7 +110,7 @@ function contentMotion(rolling: boolean, rollExit: boolean, reduce: boolean) {
     };
   return {
     from: rolling ? { translateY: ROLL_DISTANCE } : { opacity: 0, translateY: -10 },
-    animate: rolling ? { translateY: 0 } : { opacity: 1, translateY: 0 },
+    animate: { opacity: 1, translateY: 0 },
     exit: rollExit ? { translateY: -ROLL_DISTANCE } : { opacity: 0 },
     transition: rolling ? ROLL : LABEL_ENTER,
     exitTransition: rollExit ? ROLL : LABEL_EXIT,
@@ -251,7 +253,7 @@ export function ActivityIsland({
   const insets = useSafeInsets();
   const inset = safeArea ? insets.top : 0;
   const switching = useSwitching(state);
-  const contextValue = useMemo(() => ({ state, testID, switching }), [state, testID, switching]);
+  const contextValue = { state, testID, switching };
   const idleShowing = state === null && isGiven(idle);
   const showing = state !== null || idleShowing;
   const active = state !== null;

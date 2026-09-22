@@ -16,7 +16,7 @@ import { Text } from '../../typography/Text/text';
 /** The accent of an activity's copy, glyph and progress fill. */
 // biome-ignore lint/style/useExportsLast: the tone union heads the maps it keys
 export type ActivityIslandTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
-type IslandContextValue = { state: string | null; testID?: string; switching: boolean };
+type IslandContextValue = { state: string | null; testID?: string; switching: boolean; rollDistance: number };
 const IslandContext = createContext<IslandContextValue | null>(null);
 const BarView = Platform.OS === 'web' ? View : Animated.View;
 const SurfaceView = Platform.OS === 'web' ? View : MotiView;
@@ -45,6 +45,7 @@ const TONE_FILL: Record<ActivityIslandTone, string> = {
 
 const OPEN_MS = 480;
 const CLOSE_MS = 200;
+const ROLL_MS = 300;
 const LABEL_EXIT_MS = 100;
 const CLOSE_DELAY = LABEL_EXIT_MS + 20;
 const CONTENT_RADIUS = 24;
@@ -53,6 +54,7 @@ const WEB_GROW_EASING = 'cubic-bezier(0.45, 0, 0.55, 1)';
 const WEB_CLOSE_EASING = 'cubic-bezier(0.16, 1, 0.3, 1)';
 const OPEN_LAYOUT = LinearTransition.duration(OPEN_MS).easing(GROW_EASING);
 const CLOSE_LAYOUT = LinearTransition.duration(CLOSE_MS).delay(CLOSE_DELAY).easing(EASE_OUT);
+const ROLL_LAYOUT = LinearTransition.duration(ROLL_MS).easing(GROW_EASING);
 // Drop the row into the opening first, then spread the two groups horizontally.
 const LABEL_ENTER = { type: 'timing', duration: 160, delay: 180, easing: EASE_OUT } as const;
 const COPY_ENTER = { type: 'timing', duration: 360, delay: 340, easing: EASE_OUT } as const;
@@ -63,15 +65,23 @@ const SNAP = { type: 'timing', duration: 0 } as const;
 // Switching between two activities rolls the row instead of re-entering: the
 // outgoing text rolls up out of the clip while the incoming rolls in from below.
 const ROLL_DISTANCE = 24;
-const ROLL = { type: 'timing', duration: 300, easing: GROW_EASING } as const;
+// Always clear the entrance delay when a mounted row becomes the exiting row.
+// Moti merges transition fields, so omitting this made the old row wait on the
+// open animation's delay while the new row had already started rolling in.
+const ROLL = { type: 'timing', duration: ROLL_MS, delay: 0, easing: GROW_EASING } as const;
 
-function islandMotion(active: boolean, reduce: boolean) {
-  const phaseLayout = active ? OPEN_LAYOUT : CLOSE_LAYOUT;
-  const phaseDuration = active ? OPEN_MS : CLOSE_MS;
-  const duration = reduce ? 0 : phaseDuration;
+function islandPhase(active: boolean, switching: boolean) {
+  if (switching) return { layout: ROLL_LAYOUT, duration: ROLL_MS };
+  if (active) return { layout: OPEN_LAYOUT, duration: OPEN_MS };
+  return { layout: CLOSE_LAYOUT, duration: CLOSE_MS };
+}
+
+function islandMotion(active: boolean, switching: boolean, reduce: boolean) {
+  const phase = islandPhase(active, switching);
+  const duration = reduce ? 0 : phase.duration;
   const delay = reduce || active ? 0 : CLOSE_DELAY;
   return {
-    layout: reduce || Platform.OS === 'web' ? undefined : phaseLayout,
+    layout: reduce || Platform.OS === 'web' ? undefined : phase.layout,
     surfaceTransition: { type: 'timing', duration, delay, easing: active ? GROW_EASING : EASE_OUT } as const,
     webTransition: {
       transitionDuration: `${duration}ms`,
@@ -99,7 +109,15 @@ function useSwitching(state: string | null) {
 type SlotProps = { children: ReactNode; className?: string; style?: StyleProp<ViewStyle>; testID?: string; roll?: boolean };
 
 /** The slot's own enter/exit — a switch rolls, an open drops in then spreads. */
-function contentMotion(rolling: boolean, rollExit: boolean, reduce: boolean) {
+type ContentMotionOptions = {
+  rolling: boolean;
+  rollExit: boolean;
+  reduce: boolean;
+  enterDistance: number;
+  exitDistance: number;
+};
+
+function contentMotion({ rolling, rollExit, reduce, enterDistance, exitDistance }: ContentMotionOptions) {
   if (reduce)
     return {
       from: { opacity: 0 },
@@ -109,9 +127,9 @@ function contentMotion(rolling: boolean, rollExit: boolean, reduce: boolean) {
       exitTransition: SNAP,
     };
   return {
-    from: rolling ? { translateY: ROLL_DISTANCE } : { opacity: 0, translateY: -10 },
+    from: rolling ? { translateY: enterDistance } : { opacity: 0, translateY: -10 },
     animate: { opacity: 1, translateY: 0 },
-    exit: rollExit ? { translateY: -ROLL_DISTANCE } : { opacity: 0 },
+    exit: rollExit ? { translateY: -exitDistance } : { opacity: 0 },
     transition: rolling ? ROLL : LABEL_ENTER,
     exitTransition: rollExit ? ROLL : LABEL_EXIT,
   };
@@ -130,7 +148,14 @@ function ContentSlot({ children, className, style, testID, roll = true }: SlotPr
   // strip is dismissed to idle — read live from the incoming state, which stays
   // put for the whole exit.
   const rollExit = roll && exiting && isGiven(ctx?.state);
-  const motion = contentMotion(rolling, rollExit, reduce);
+  // Both rows travel by the outgoing content height. This keeps their edges
+  // together when handing off from a tall custom activity to a compact row.
+  const enterDistance = useRef(ctx?.rollDistance ?? ROLL_DISTANCE).current;
+  const wasExiting = useRef(false);
+  const exitDistance = useRef(ROLL_DISTANCE);
+  if (exiting && !wasExiting.current) exitDistance.current = ctx?.rollDistance ?? ROLL_DISTANCE;
+  wasExiting.current = exiting;
+  const motion = contentMotion({ rolling, rollExit, reduce, enterDistance, exitDistance: exitDistance.current });
   return (
     <MotiView
       testID={testID}
@@ -253,7 +278,6 @@ export function ActivityIsland({
   const insets = useSafeInsets();
   const inset = safeArea ? insets.top : 0;
   const switching = useSwitching(state);
-  const contextValue = { state, testID, switching };
   const idleShowing = state === null && isGiven(idle);
   const showing = state !== null || idleShowing;
   const active = state !== null;
@@ -263,8 +287,10 @@ export function ActivityIsland({
   }, []);
   const [contentHeight, setContentHeight] = useState(0);
   const reservedInset = floating ? 0 : inset;
+  const rollDistance = contentHeight > reservedInset ? contentHeight : ROLL_DISTANCE;
+  const contextValue = { state, testID, switching, rollDistance };
   const height = showing ? Math.max(reservedInset, contentHeight) : reservedInset;
-  const { layout, surfaceTransition, webTransition } = islandMotion(active, reduce);
+  const { layout, surfaceTransition, webTransition } = islandMotion(active, switching, reduce);
   // Web layout keyframes neither hold the old height during a delay nor support
   // this curve. A height transition keeps the flex sibling in flow throughout.
   const barStyle =
@@ -328,6 +354,9 @@ export function ActivityIsland({
             className="absolute inset-x-0 top-0 justify-center px-5 py-1"
             style={{ minHeight: reservedInset }}
           >
+            {/* The animated bar owns clipping. Keeping this holder unclipped lets
+                a taller outgoing row remain visible while the bar smoothly
+                shrinks to the incoming row's height. */}
             <View className="relative">
               <AnimatePresence initial={false}>
                 {idleShowing ? (

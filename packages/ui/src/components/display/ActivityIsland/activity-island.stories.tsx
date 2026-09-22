@@ -28,8 +28,8 @@ const OPTIONS = [
 const CYCLE: State[] = [null, 'charging', 'upload', 'expanded', null];
 const FILES = ['Midnight City.flac', 'Q1-report.pdf', 'Sunset.jpg', 'Archive.zip', 'Notes.txt'];
 const INSET = 36;
-const ROW_HEIGHT = 28;
-const TALL_HEIGHT = 68;
+const ROW_HEIGHT = 24;
+const TALL_HEIGHT = 64;
 
 function IdleBar() {
   return (
@@ -73,11 +73,14 @@ function DownloadsScreen() {
   );
 }
 
-type AppScreenProps = { state: State; idle?: boolean; inset?: number; safeArea?: boolean };
-function AppScreen({ state, idle = false, inset = INSET, safeArea = true }: AppScreenProps) {
+type AppScreenProps = { state: State; idle?: boolean; inset?: number; safeArea?: boolean; wide?: boolean };
+function AppScreen({ state, idle = false, inset = INSET, safeArea = true, wide = false }: AppScreenProps) {
   return (
     <SafeAreaInsetsContext.Provider value={{ top: inset, bottom: 0, left: 0, right: 0 }}>
-      <View className="hairline h-[540px] w-[320px] overflow-hidden rounded-[32px] border-border bg-surface-2">
+      <View
+        className="hairline h-[540px] overflow-hidden rounded-[32px] border-border bg-surface-2"
+        style={{ width: wide ? 900 : 320 }}
+      >
         <ActivityIsland
           accessibilityLabel="Activity"
           idle={idle ? <IdleBar /> : undefined}
@@ -105,7 +108,7 @@ function AppScreen({ state, idle = false, inset = INSET, safeArea = true }: AppS
   );
 }
 
-type DemoProps = { idle?: boolean; inset?: number; safeArea?: boolean };
+type DemoProps = { idle?: boolean; inset?: number; safeArea?: boolean; wide?: boolean };
 function IslandDemo(props: DemoProps) {
   const [state, setState] = useState<State>(null);
   return (
@@ -367,5 +370,31 @@ export const RestingStrip: Story = {
     await userEvent.click(canvas.getByText('Dismiss'));
     await settled(canvasElement, INSET, 0);
     await waitFor(() => expect(canvas.getByText('9:41')).toBeTruthy());
+  },
+};
+
+export const WideScreen: Story = {
+  name: 'Demo: Floating desktop island',
+  render: () => <IslandDemo wide={true} inset={0} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const content = canvas.getByTestId('island-content');
+    const screen = canvas.getByTestId('downloads-scroll');
+    const before = content.getBoundingClientRect();
+    await userEvent.click(canvas.getByText('Charge'));
+    await compactRow(canvasElement, 'charging');
+    const root = canvas.getByTestId('island').getBoundingClientRect();
+    const bar = canvas.getByTestId('island-bar').getBoundingClientRect();
+    expect(bar.width).toBeCloseTo(360, 1);
+    expect(bar.top - root.top).toBeCloseTo(12, 1);
+    expect(bar.left - root.left).toBeCloseTo((root.width - bar.width) / 2, 1);
+    expect(content.getBoundingClientRect().top).toBeCloseTo(before.top, 1);
+    expect(content.getBoundingClientRect().height).toBeCloseTo(before.height, 1);
+    await userEvent.click(canvas.getByText('Expand'));
+    await waitFor(() => expect(canvas.getByTestId('island-bar').getBoundingClientRect().height).toBeCloseTo(TALL_HEIGHT, 1));
+    expect(canvas.getByTestId('downloads-scroll')).toBe(screen);
+    expect(content.getBoundingClientRect().top).toBeCloseTo(before.top, 1);
+    await userEvent.click(canvas.getByText('Dismiss'));
+    await waitFor(() => expect(canvas.getByTestId('island-bar').getBoundingClientRect().height).toBe(0));
   },
 };

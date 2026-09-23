@@ -1,5 +1,5 @@
 import { type ComponentType, createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { type LayoutChangeEvent, Platform, type StyleProp, View, type ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, Platform, Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 import Animated, { Easing, LinearTransition } from 'react-native-reanimated';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
@@ -16,7 +16,14 @@ import { Text } from '../../typography/Text/text';
 /** The accent of an activity's copy, glyph and progress fill. */
 // biome-ignore lint/style/useExportsLast: the tone union heads the maps it keys
 export type ActivityIslandTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
-type IslandContextValue = { state: string | null; testID?: string; switching: boolean; rollDistance: number };
+type IslandContextValue = {
+  state: string | null;
+  testID?: string;
+  switching: boolean;
+  rollDistance: number;
+  reservedInset: number;
+  onPress?: () => void;
+};
 const IslandContext = createContext<IslandContextValue | null>(null);
 const BarView = Platform.OS === 'web' ? View : Animated.View;
 const SurfaceView = Platform.OS === 'web' ? View : MotiView;
@@ -82,6 +89,12 @@ function islandMotion(active: boolean, switching: boolean, reduce: boolean) {
   const delay = reduce || active ? 0 : CLOSE_DELAY;
   return {
     layout: reduce || Platform.OS === 'web' ? undefined : phase.layout,
+    // Android can't host a layout transition on the content wrapper: that
+    // Animated.View is a React-tree ancestor of every Modal, and a reanimated
+    // layout animation there breaks the modal's full-screen layout (the sheet
+    // lays out at content height and clips everything below the fold). The
+    // BarView is a sibling of the modal host, so its height animation is safe.
+    contentLayout: reduce || Platform.OS === 'web' || Platform.OS === 'android' ? undefined : phase.layout,
     surfaceTransition: { type: 'timing', duration, delay, easing: active ? GROW_EASING : EASE_OUT } as const,
     webTransition: {
       transitionDuration: `${duration}ms`,
@@ -175,6 +188,18 @@ function ContentSlot({ children, className, style, testID, roll = true }: SlotPr
   );
 }
 
+type PressSlotProps = { onPress?: () => void; reservedInset: number; children: ReactNode };
+
+/** Full-bar tap target. An activity with no `onPress` falls back to the island's. */
+function PressSlot({ onPress, reservedInset, children }: PressSlotProps) {
+  if (!onPress) return <>{children}</>;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" className="justify-center" style={{ minHeight: reservedInset }}>
+      {children}
+    </Pressable>
+  );
+}
+
 type ProgressTrackProps = { value: number; tone: ActivityIslandTone };
 
 /** Separate transforms keep the text crisp as the two ends spread apart. */
@@ -245,6 +270,8 @@ export type ActivityIslandProps = {
   contentStyle?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   testID?: string;
+  /** Called when the bar is tapped. An activity with its own `onPress` overrides it. */
+  onPress?: () => void;
 };
 
 /**
@@ -257,9 +284,12 @@ export type ActivityIslandProps = {
  * screen farther down. The host app owns native status-bar visibility and must
  * allow drawing behind it if it wants to replace the system status strip.
  *
- * Native holders share a Fabric-safe layout transition; web transitions the bar's
- * height directly so its flex sibling follows without scaling the row's text.
- * The screen stays mounted through state changes and keeps its scroll position.
+ * Native holders share a Fabric-safe layout transition, except the content
+ * surface on Android — that wrapper is an ancestor of every Modal, and a
+ * reanimated layout animation there lays a modal out at content height. Web
+ * transitions the bar's height directly so its flex sibling follows without
+ * scaling the row's text. The screen stays mounted through state changes and
+ * keeps its scroll position.
  */
 export function ActivityIsland({
   state,
@@ -273,6 +303,7 @@ export function ActivityIsland({
   contentStyle,
   accessibilityLabel,
   testID,
+  onPress,
 }: ActivityIslandProps) {
   const reduce = useReducedMotion();
   const insets = useSafeInsets();
@@ -288,9 +319,9 @@ export function ActivityIsland({
   const [contentHeight, setContentHeight] = useState(0);
   const reservedInset = floating ? 0 : inset;
   const rollDistance = contentHeight > reservedInset ? contentHeight : ROLL_DISTANCE;
-  const contextValue = { state, testID, switching, rollDistance };
+  const contextValue = { state, testID, switching, rollDistance, reservedInset, onPress };
   const height = showing ? Math.max(reservedInset, contentHeight) : reservedInset;
-  const { layout, surfaceTransition, webTransition } = islandMotion(active, switching, reduce);
+  const { layout, contentLayout, surfaceTransition, webTransition } = islandMotion(active, switching, reduce);
   // Web layout keyframes neither hold the old height during a delay nor support
   // this curve. A height transition keeps the flex sibling in flow throughout.
   const barStyle =
@@ -361,7 +392,9 @@ export function ActivityIsland({
               <AnimatePresence initial={false}>
                 {idleShowing ? (
                   <ContentSlot key="idle" roll={false}>
-                    {idle}
+                    <PressSlot onPress={onPress} reservedInset={reservedInset}>
+                      {idle}
+                    </PressSlot>
                   </ContentSlot>
                 ) : null}
               </AnimatePresence>
@@ -370,7 +403,7 @@ export function ActivityIsland({
           </View>
         </BarView>
         <SurfaceView
-          layout={layout}
+          layout={contentLayout}
           from={false}
           animate={{ borderTopLeftRadius: radius, borderTopRightRadius: radius }}
           transition={surfaceTransition}
@@ -399,6 +432,8 @@ export type ActivityIslandStateProps = {
   children?: ReactNode;
   className?: string;
   style?: StyleProp<ViewStyle>;
+  /** Called when this activity's row is tapped. Overrides `ActivityIsland`'s `onPress`. */
+  onPress?: () => void;
 };
 
 /** One compact row. Custom trailing content can opt into a taller activity. */
@@ -412,6 +447,7 @@ export function ActivityIslandState({
   children,
   className,
   style,
+  onPress,
 }: ActivityIslandStateProps) {
   const ctx = useContext(IslandContext);
   if (!ctx) throw new Error('ActivityIslandState must be used inside <ActivityIsland>');
@@ -419,27 +455,29 @@ export function ActivityIslandState({
     <AnimatePresence initial={false}>
       {ctx.state === id ? (
         <ContentSlot key={id} testID={ctx.testID ? `${ctx.testID}-${id}` : undefined} className={className} style={style}>
-          <View className="flex-row items-center gap-2">
-            <RowMotion side="leading" className="min-w-0 flex-1">
-              <Text size="xs" weight="semibold" className={TONE_TEXT[tone]} numberOfLines={1}>
-                {title}
-              </Text>
-            </RowMotion>
-            <RowMotion side="trailing" className="min-w-0 max-w-[55%] shrink flex-row items-center justify-end gap-2">
-              {isGiven(detail) ? (
-                <Text size="xs" className={cn('shrink', TONE_TEXT[tone])} numberOfLines={1}>
-                  {detail}
+          <PressSlot onPress={onPress ?? ctx.onPress} reservedInset={ctx.reservedInset}>
+            <View className="flex-row items-center gap-2">
+              <RowMotion side="leading" className="min-w-0 flex-1">
+                <Text size="xs" weight="semibold" className={TONE_TEXT[tone]} numberOfLines={1}>
+                  {title}
                 </Text>
-              ) : null}
-              {isGiven(progress) ? <ProgressTrack tone={tone} value={progress} /> : null}
-              {icon ? (
-                <RowMotion side="icon" className="shrink-0">
-                  <ThemedIcon icon={icon} token={TONE_TOKEN[tone]} size={16} />
-                </RowMotion>
-              ) : null}
-              {children}
-            </RowMotion>
-          </View>
+              </RowMotion>
+              <RowMotion side="trailing" className="min-w-0 max-w-[55%] shrink flex-row items-center justify-end gap-2">
+                {isGiven(detail) ? (
+                  <Text size="xs" className={cn('shrink', TONE_TEXT[tone])} numberOfLines={1}>
+                    {detail}
+                  </Text>
+                ) : null}
+                {isGiven(progress) ? <ProgressTrack tone={tone} value={progress} /> : null}
+                {icon ? (
+                  <RowMotion side="icon" className="shrink-0">
+                    <ThemedIcon icon={icon} token={TONE_TOKEN[tone]} size={16} />
+                  </RowMotion>
+                ) : null}
+                {children}
+              </RowMotion>
+            </View>
+          </PressSlot>
         </ContentSlot>
       ) : null}
     </AnimatePresence>

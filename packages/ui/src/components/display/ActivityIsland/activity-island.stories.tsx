@@ -398,3 +398,75 @@ export const WideScreen: Story = {
     await waitFor(() => expect(canvas.getByTestId('island-bar').getBoundingClientRect().height).toBe(0));
   },
 };
+
+/** Tapping the strip resolves to the activity's own handler, else the island fallback. */
+function TappableDemo() {
+  const [log, setLog] = useState<string[]>([]);
+  const [state, setState] = useState<State>(null);
+  const record = useCallback((label: string) => () => setLog((held) => [...held, label]), []);
+  return (
+    <SafeAreaInsetsContext.Provider value={{ top: INSET, bottom: 0, left: 0, right: 0 }}>
+      <View className="hairline h-[360px] w-[320px] overflow-hidden rounded-[32px] border-border bg-surface-2">
+        <ActivityIsland
+          accessibilityLabel="Activity"
+          idle={<IdleBar />}
+          state={state}
+          testID="tappable"
+          onPress={record('island')}
+          states={
+            <>
+              <ActivityIslandState
+                id="charging"
+                title="Quick charging"
+                detail="26%"
+                icon={Lightning}
+                tone="success"
+                onPress={record('charging')}
+              />
+              <ActivityIslandState id="upload" title="Uploading 3 files" detail="62%" icon={Upload} tone="info" progress={0.62} />
+            </>
+          }
+        >
+          <View className="flex-1 gap-2 p-4">
+            <View testID="tappable-log">
+              <Text size="sm">{log.join(',') || '—'}</Text>
+            </View>
+            <View className="flex-row gap-2">
+              <Button onPress={() => setState('charging')} size="sm">
+                Charge
+              </Button>
+              <Button onPress={() => setState('upload')} size="sm" variant="neutral">
+                Upload
+              </Button>
+              <Button onPress={() => setState(null)} size="sm" variant="ghost">
+                Dismiss
+              </Button>
+            </View>
+          </View>
+        </ActivityIsland>
+      </View>
+    </SafeAreaInsetsContext.Provider>
+  );
+}
+
+export const Tappable: Story = {
+  name: 'Tappable: per-activity + fallback',
+  render: () => <TappableDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const expectLog = (expected: string) => waitFor(() => expect(canvas.getByTestId('tappable-log').textContent).toBe(expected));
+    // Idle strip has no activity, so the island fallback fires.
+    await userEvent.click(canvas.getByText('9:41'));
+    await expectLog('island');
+    // An activity with its own handler overrides the fallback.
+    await userEvent.click(canvas.getByText('Charge'));
+    await canvas.findByText('Quick charging');
+    await userEvent.click(canvas.getByText('Quick charging'));
+    await expectLog('island,charging');
+    // An activity without a handler falls back to the island.
+    await userEvent.click(canvas.getByText('Upload'));
+    await canvas.findByText('Uploading 3 files');
+    await userEvent.click(canvas.getByText('Uploading 3 files'));
+    await expectLog('island,charging,island');
+  },
+};

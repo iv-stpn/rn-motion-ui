@@ -1,5 +1,12 @@
 # rn-motion-ui
 
+## 7.14.1
+
+### Patch Changes
+
+- 3a478c5: `FileSystem`'s hold-menu overlay (the blur/opacity scrim behind an entry or background context menu) now extends across the whole component — header, breadcrumbs, filters and footer included — instead of dimming only the file area. The drag scope still wraps just the body, so a drag ghost still can't float over the toolbar.
+- 648403c: Fixed `PopoverTrigger` nesting a `<button>` inside a `<button>` (and the console warning that comes with it) when its child is already a pressable, such as a `Button` or `IconButton`. The trigger wrapper now steps back from claiming `role="button"` for custom-node children, matching how `AdaptiveDropdown` and `HoverMenu` treat a pressable trigger.
+
 ## 7.14.0
 
 ### Minor Changes

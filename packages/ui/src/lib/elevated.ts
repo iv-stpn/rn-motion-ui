@@ -45,12 +45,11 @@ const SURFACE_ELEVATED_SHADOW_CLASSNAME: Record<SurfaceLevel, string> = {
 const FLAT_SURFACE_CLASSNAME = 'bg-surface-3';
 
 /**
- * The input field's large, diffuse drop (`--shadow-floating`: `0 0 24px` at a
- * fixed black alpha, zero-offset so it spreads evenly on every side). It is a
- * wholly separate recipe from the `shadow-elevated-N` ladder, not a rung of it:
- * the ladder stacks offset drop layers plus a dark-mode rim to place a surface
- * on the depth scale, while this is the soft halo Input's `floating` prop
- * wears.
+ * The floating control drop (`--shadow-floating`) pairs a tight contact shadow
+ * with a wider, downward plume. It is a wholly separate recipe from the
+ * `shadow-elevated-N` ladder, not a rung of it: the ladder stacks offset drop
+ * layers plus a dark-mode rim to place a surface on the depth scale, while this
+ * is the softer detached lift Input's `floating` prop wears.
  * A surface picks one or the other — never both, since they are the same CSS
  * property.
  */

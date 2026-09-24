@@ -24,8 +24,9 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
  * so the ring never draws. Each ring's inward fade is baked into its gradient
  * stops (rather than `strokeOpacity`), so it renders identically on native.
  *
- * The directional falloff (bright opposite corners, transparent between — the
- * `react-glass-rim` "lit corners" look) is a diagonal gradient. It cannot use
+ * The directional falloff is layered over a faint continuous keyline: the
+ * keyline keeps the silhouette legible like Telegram's glass controls, while
+ * the diagonal gradient supplies the brighter directional glint. It cannot use
  * `objectBoundingBox` units: react-native-svg's iOS painter projects that
  * gradient along the raw pixel diagonal, so a wide pane collapses the diagonal
  * toward horizontal and every edge reads uniformly bright. `userSpaceOnUse` with
@@ -96,6 +97,9 @@ export function Rim({
   // wide so fractional widths tile flush against the host edge.
   const ringCount = Math.max(1, Math.round(thickness / SLICE));
   const band = thickness / ringCount;
+  // A quiet full-perimeter reflection keeps the glass edge present even at the
+  // gradient's dimmest points. It is deliberately much weaker than the glint.
+  const keylineAlpha = Math.min(0.16, Math.max(0, intensity * 0.24));
 
   // The gradient's `objectBoundingBox` diagonal is squashed by the iOS painter
   // for non-square hosts, so we draw in `userSpaceOnUse` and correct the endpoint
@@ -127,6 +131,18 @@ export function Rim({
           );
         })}
       </Defs>
+      <Rect
+        x={band / 2}
+        y={band / 2}
+        width={width - band}
+        height={height - band}
+        rx={Math.max(0, borderRadius - band / 2)}
+        ry={Math.max(0, borderRadius - band / 2)}
+        fill="none"
+        stroke={accentColor}
+        strokeOpacity={keylineAlpha}
+        strokeWidth={band}
+      />
       {Array.from({ length: ringCount }, (_, index) => {
         // Each sub-ring sits `band` px further inward; the stroke is centred on
         // the path, so `band / 2` keeps the outermost sub-ring flush with the edge.

@@ -186,12 +186,11 @@
     0 0 0 1px oklch(0% 0 0 / 0.06), 0 1px 1px -0.5px oklch(0% 0 0 / 0.06), 0 3px 3px -1.5px oklch(0% 0 0 / 0.05),
     0 6px 6px -3px oklch(0% 0 0 / 0.05), 0 12px 12px -6px oklch(0% 0 0 / 0.04), 0 24px 24px -12px oklch(0% 0 0 / 0.04);
 
-  /* Input field shadow — the large, diffuse drop for the `floating` variant.
-     Zero offset on both axes, so it spreads uniformly on every side (the
-     shadow-xl recipe made symmetric). Black at a fixed alpha, so it reads
-     identically in both themes and lives only in @theme. `base` / `elevated`
-     carry no shadow — their boundary is the always-on web border instead. */
-  --shadow-floating: 0 0 24px 0 oklch(0% 0 0 / 0.1);
+  /* Floating controls use a Telegram-like two-stage lift: a tight contact
+     shadow keeps the edge crisp while a lower, wider plume separates the
+     material from the content beneath it. Black at a fixed alpha keeps the
+     recipe stable in both themes and lets glass provide its own edge light. */
+  --shadow-floating: 0 1px 2px -1px oklch(0% 0 0 / 0.12), 0 8px 24px -6px oklch(0% 0 0 / 0.14);
 
   /* Elevated shadow ingredients — the inset rim recipe (highlight + ring) that
      composites in front of the drop layers. Declared here in @theme so Tailwind

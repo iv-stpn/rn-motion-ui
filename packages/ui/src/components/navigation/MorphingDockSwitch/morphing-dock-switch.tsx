@@ -27,7 +27,7 @@ import type { OverlayType } from '../../menus/Overlay/overlay-type';
 import { TeleportedOverlay } from '../../menus/Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../../menus/Overlay/web-document';
 import { MenuItem } from '../../rows/menu-item';
-import { DOCK_GAP, DOCK_ICON_SCALE, dockMetrics, dockRowSize } from '../Dock/dock-metrics';
+import { DOCK_GAP, DOCK_ICON_SCALE, dockMetrics } from '../Dock/dock-metrics';
 import { DockContent, DockFrame, DockHighlight } from '../Dock/dock-motion';
 import { DOCK_LAYOUT, DOCK_SPRING, dockSizeMotion } from '../Dock/dock-transition';
 import { useDockInsetReporter } from '../DockInset/dock-inset';
@@ -38,6 +38,25 @@ const VIEWPORT_PADDING = 8;
 const PANE_INSET = 4;
 /** How far the lower chevron overlaps the upper one (fraction of its size). */
 const CARET_OVERLAP = 0.3;
+/** The disclosure reads as part of the dock instead of a separate destination. */
+const CARET_GAP = 2;
+/** Labelled destinations need a clearly horizontal capsule around icon + caption. */
+const LABELLED_DESTINATION_WIDTH_SCALE = 1.18;
+
+function dockBarMetrics(itemPx: number, labelled: boolean, destinationCount: number) {
+  const box = dockMetrics(itemPx, labelled);
+  const destinationWidth = box.width * (labelled ? LABELLED_DESTINATION_WIDTH_SCALE : 1);
+  return {
+    box,
+    destinationWidth,
+    caretWidth: box.width,
+    width:
+      destinationCount * destinationWidth +
+      Math.max(0, destinationCount - 1) * DOCK_GAP +
+      (destinationCount > 0 ? CARET_GAP : 0) +
+      box.width,
+  };
+}
 
 /** Rungs the shell floats above its resting `elevation` while open. */
 const OPEN_ELEVATION_LIFT = 2;
@@ -241,21 +260,24 @@ function DockBar({
   triggerTestID,
 }: DockBarProps) {
   const rtl = useIsRTL();
-  const box = dockMetrics(itemPx, showLabels);
-  const row = dockRowSize(itemPx, showLabels, dockItems.length + 1);
+  const { box, destinationWidth, caretWidth, width } = dockBarMetrics(itemPx, showLabels, dockItems.length);
+  const row = { width, height: box.height };
   const selected = dockItems.findIndex((item) => item.value === activeValue);
-  const rectAt = (index: number) => ({
-    x: (rtl ? dockItems.length - index : index) * (box.width + DOCK_GAP),
+  const destinationRect = (index: number) => ({
+    x: rtl
+      ? caretWidth + CARET_GAP + (dockItems.length - index - 1) * (destinationWidth + DOCK_GAP)
+      : index * (destinationWidth + DOCK_GAP),
     y: 0,
-    width: box.width,
+    width: destinationWidth,
     height: box.height,
   });
+  const caretRect = { x: rtl ? 0 : row.width - caretWidth, y: 0, width: caretWidth, height: box.height };
   const motion = dockSizeMotion(row.width, row.height, reduce);
   return (
     <MotiView {...motion} style={[{ position: 'relative' }, motion.style]}>
-      <DockHighlight rect={selected < 0 ? undefined : rectAt(selected)} reduce={reduce} testID={`${testID}-highlight`} />
+      <DockHighlight rect={selected < 0 ? undefined : destinationRect(selected)} reduce={reduce} testID={`${testID}-highlight`} />
       {dockItems.map((item, index) => (
-        <DockFrame key={item.value} rect={rectAt(index)} reduce={reduce}>
+        <DockFrame key={item.value} rect={destinationRect(index)} reduce={reduce}>
           <DockDestination
             item={item}
             active={item.value === activeValue}
@@ -268,7 +290,7 @@ function DockBar({
           />
         </DockFrame>
       ))}
-      <DockFrame rect={rectAt(dockItems.length)} reduce={reduce}>
+      <DockFrame rect={caretRect} reduce={reduce}>
         <Pressable
           onPress={onToggle}
           accessibilityRole="button"
@@ -520,7 +542,8 @@ export function MorphingDockSwitch({
   const caretSize = scale.stackedCaretSize;
 
   const paneHeight = computePaneHeight(scale, items.length);
-  const closedRow = dockRowSize(itemPx, showLabels, dockItems.length + 1);
+  const closedMetrics = dockBarMetrics(itemPx, showLabels, dockItems.length);
+  const closedRow = { width: closedMetrics.width, height: closedMetrics.box.height };
   const closedWidth = closedRow.width + PANE_INSET * 2;
   const closedHeight = closedRow.height + PANE_INSET * 2;
   const rootMotion = dockSizeMotion(closedWidth, closedHeight, reduce);

@@ -130,8 +130,11 @@ export function Surface({
         // is the inline `backgroundColor` below, which composites over the
         // blurred backdrop instead of hiding it.
         glass
-          ? // biome-ignore lint/plugin: RN's ViewStyle has no backdropFilter — RNW forwards the CSS property at runtime
-            ({ backdropFilter: `blur(${blurRadius}px)` } as unknown as ViewStyle)
+          ? // biome-ignore lint/plugin: RN's ViewStyle has no backdropFilter — RNW forwards the CSS properties at runtime
+            ({
+              backdropFilter: `blur(${blurRadius}px) saturate(1.18)`,
+              WebkitBackdropFilter: `blur(${blurRadius}px) saturate(1.18)`,
+            } as unknown as ViewStyle)
           : null,
         glass ? { backgroundColor: fill ?? tint } : null,
         // Clip the square blur + tint to the rounded silhouette when frosted.

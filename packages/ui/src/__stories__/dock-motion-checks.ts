@@ -29,7 +29,9 @@ export async function checkDockLabelMotion(shell: HTMLElement, item: HTMLElement
   await new Promise((resolve) => setTimeout(resolve, 700));
   const labelled = shell.getBoundingClientRect();
   expect(labelled.width / compact.width).toBeGreaterThan(1.12);
-  expect(labelled.width / compact.width).toBeLessThan(1.23);
+  // Labelled destinations deliberately widen into capsules; keep the overall
+  // dock growth bounded while allowing that stronger horizontal silhouette.
+  expect(labelled.width / compact.width).toBeLessThan(1.4);
   expect(labelled.height).toBeGreaterThan(compact.height);
   expect(frames.some((frame) => frame.width > compact.width + 1 && frame.width < labelled.width - 1)).toBe(true);
   const first = frames[0];

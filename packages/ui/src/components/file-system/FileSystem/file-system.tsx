@@ -360,29 +360,35 @@ export function FileSystem({
   return (
     <FileSystemStoreContext.Provider value={store}>
       <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
-        {renderHeader ? <FileSystemCustomHeader renderHeader={renderHeader} /> : <FileSystemHeader className={headerClassName} />}
-        {renderBreadcrumbs ? (
-          <FileSystemCustomBreadcrumbs renderBreadcrumbs={renderBreadcrumbs} />
-        ) : (
-          <FileSystemBreadcrumbs className={breadcrumbsClassName} />
-        )}
-        {renderFilters ? <FileSystemCustomFilters renderFilters={renderFilters} /> : null}
-        {/* Around the body alone: everything that drags or receives a drop is in
-            there, and the manager's box is the frame its ghost is drawn in — a
-            frame that included the header would let a ghost float over the
-            toolbar, which is not a place anything can be dropped. The hold menu's
-            provider wraps the same region so its portal host (backdrop, twin,
-            panel) anchors to the file area rather than the whole component. */}
-        <FileSystemDragScope>
-          <HoldMenuProvider theme={colorScheme === 'dark' ? 'dark' : 'light'}>
+        <HoldMenuProvider theme={colorScheme === 'dark' ? 'dark' : 'light'}>
+          {renderHeader ? (
+            <FileSystemCustomHeader renderHeader={renderHeader} />
+          ) : (
+            <FileSystemHeader className={headerClassName} />
+          )}
+          {renderBreadcrumbs ? (
+            <FileSystemCustomBreadcrumbs renderBreadcrumbs={renderBreadcrumbs} />
+          ) : (
+            <FileSystemBreadcrumbs className={breadcrumbsClassName} />
+          )}
+          {renderFilters ? <FileSystemCustomFilters renderFilters={renderFilters} /> : null}
+          {/* The drag scope still wraps the body alone: everything that drags or
+              receives a drop is in there, and the manager's box is the frame its
+              ghost is drawn in — a frame that included the header would let a
+              ghost float over the toolbar, which is not a place anything can be
+              dropped. The hold menu's provider wraps the whole component instead,
+              so its backdrop (the blur/opacity scrim) dims the header, breadcrumbs
+              and footer too — not just the file area — while the twin and panel
+              still anchor to the held entry. */}
+          <FileSystemDragScope>
             <FileSystemBody className={bodyClassName} renderBody={renderBody} />
-          </HoldMenuProvider>
-        </FileSystemDragScope>
-        {renderFooter ? (
-          <FileSystemCustomFooter renderFooter={renderFooter} />
-        ) : (
-          <FileSystemStatusBar className={footerClassName} />
-        )}
+          </FileSystemDragScope>
+          {renderFooter ? (
+            <FileSystemCustomFooter renderFooter={renderFooter} />
+          ) : (
+            <FileSystemStatusBar className={footerClassName} />
+          )}
+        </HoldMenuProvider>
         <FileSystemViewerModal />
         <FileSystemSideEffects />
       </View>

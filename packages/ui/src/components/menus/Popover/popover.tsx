@@ -152,6 +152,13 @@ export function PopoverTrigger({ children, accessibilityLabel, className, style,
   const { toggle, setRect, open } = usePopover('PopoverTrigger');
   const ref = useRef<View>(null);
 
+  // A plain-text trigger is the button this wrapper becomes. A custom-node
+  // trigger already announces its own control (the wrapper only measures the
+  // frame and toggles) — claiming `role="button"` here would nest a <button>
+  // inside it, the same way AdaptiveDropdown and HoverMenu step back for a
+  // pressable trigger.
+  const isTextTrigger = typeof children === 'string' || typeof children === 'number';
+
   const onPress = useCallback(() => {
     ref.current?.measureInWindow((x, y, w, h) => {
       setRect({ x, y, w, h });
@@ -162,7 +169,7 @@ export function PopoverTrigger({ children, accessibilityLabel, className, style,
   return (
     <Pressable
       ref={ref}
-      accessibilityRole="button"
+      accessibilityRole={isTextTrigger ? 'button' : undefined}
       aria-expanded={open}
       accessibilityLabel={accessibilityLabel}
       testID={testID}
@@ -170,7 +177,7 @@ export function PopoverTrigger({ children, accessibilityLabel, className, style,
       className={cn('h-10 flex-row items-center justify-center gap-2 self-start rounded-full bg-surface-3 px-5', className)}
       style={style}
     >
-      {typeof children === 'string' || typeof children === 'number' ? (
+      {isTextTrigger ? (
         <Text weight="medium" className="text-foreground text-sm">
           {children}
         </Text>

@@ -59,13 +59,19 @@ export const NarrowOverflow: Story = {
   args: { columns: [], data: [] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const table = (await canvas.findByTestId('table-narrow')).getBoundingClientRect();
-    const row = (await canvas.findByTestId('table-narrow-row-0')).getBoundingClientRect();
+    await canvas.findByTestId('table-narrow');
     // The body row sits under the header (aligned to the table's left edge), not
     // beside it — a horizontal ScrollView would otherwise push it off-screen and
-    // the body reads as empty on a narrow screen.
-    expect(row.left).toBeLessThan(table.left + 2);
-    expect(row.top).toBeGreaterThanOrEqual(table.top + NARROW_ROW_HEIGHT - 1);
+    // the body reads as empty on a narrow screen. `waitFor` gates on the
+    // post-layout render: `onLayout` only flips `needsHorizontalScroll` after the
+    // first frame, and the FlatList then re-measures its content on a timer, so a
+    // first read can still report the pre-layout row `top` of 0.
+    await waitFor(() => {
+      const table = canvas.getByTestId('table-narrow').getBoundingClientRect();
+      const row = canvas.getByTestId('table-narrow-row-0').getBoundingClientRect();
+      expect(row.left).toBeLessThan(table.left + 2);
+      expect(row.top).toBeGreaterThanOrEqual(table.top + NARROW_ROW_HEIGHT - 1);
+    });
   },
 };
 

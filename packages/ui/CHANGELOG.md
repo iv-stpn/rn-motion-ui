@@ -1,5 +1,21 @@
 # rn-motion-ui
 
+## 7.15.0
+
+### Minor Changes
+
+- be39721: Unify lightweight glass menus and notifications using the existing Surface blur and rim, with a compact floating shadow. Add opt-in glass to adaptive, hover, morphing and hold menus, modal sheets and MultiStepMenu. Add neutral glass toasts with separate action/dismiss controls and consistent web close callbacks.
+
+  Keep morphing menu panels on screen near horizontal edges. Keep expanded dock menus inside the viewport and scroll long lists. Add FileSystem menu glass/floating options, action grouping and stable action test IDs, and simplify mobile row timestamps.
+
+### Patch Changes
+
+- 9f0d90f: Refined the glass and floating-control depth, and the dock's labelled silhouette:
+
+  - `Surface` glass now layers a faint full-perimeter keyline beneath its directional glint, so the edge stays legible even at the gradient's dimmest points, and adds a gentle `saturate` boost to its backdrop blur (with the `-webkit-` fallback for Safari).
+  - Floating controls (`Input`'s `floating` variant) now wear a tighter two-stage shadow — a crisp contact shadow over a lower, wider plume — instead of the old zero-offset halo.
+  - `MorphingDockSwitch` labelled destinations now widen into horizontal capsules, separated from the disclosure caret by a small gap, so the caret reads as part of the dock rather than a separate destination.
+
 ## 7.14.1
 
 ### Patch Changes

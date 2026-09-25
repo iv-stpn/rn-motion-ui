@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { FileLine } from 'rn-motion-ui-icons/icons/file-line';
 import { FolderLine } from 'rn-motion-ui-icons/icons/folder-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Button } from '../../buttons/Button/button';
-import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { IconButton } from '../../buttons/IconButton/icon-button';
 import { FileSystem } from '../../file-system/FileSystem/file-system';
 import type { FileSystemContextMenuAction, FileSystemItem } from '../../file-system/FileSystem/types/file-system.types';
@@ -281,7 +281,13 @@ export const CompactControls: Story = {
           placeholder="Search"
           testID="compact-search"
         />
-        <CloseButton testID="compact-close" />
+        <IconButton
+          icon={CloseLine}
+          size="sm"
+          contentClassName="bg-surface-selected hover:bg-surface-hover"
+          accessibilityLabel="Close"
+          testID="compact-close"
+        />
       </View>
       <MenuItem mode="sidebar" active={true} label="Files" icon={FolderLine} testID="pill-row" />
       <MenuItem

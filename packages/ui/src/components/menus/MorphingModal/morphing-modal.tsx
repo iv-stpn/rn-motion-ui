@@ -1,12 +1,13 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, SPRING_PANEL, springLayout } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import { CloseButton } from '../../buttons/CloseButton/close-button';
+import { IconButton } from '../../buttons/IconButton/icon-button';
 import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { OverlayBlur } from '../Overlay/overlay-blur';
@@ -222,7 +223,14 @@ export function MorphingModal({
     <View className={cn('overflow-hidden', panelRadiusClass)}>
       {showClose ? (
         <View className="absolute top-2 right-2 z-10">
-          <CloseButton onPress={handleClose} testID={testID ? `${testID}-close` : undefined} />
+          <IconButton
+            icon={CloseLine}
+            size="sm"
+            contentClassName="bg-surface-selected hover:bg-surface-hover"
+            accessibilityLabel="Close"
+            onPress={handleClose}
+            testID={testID ? `${testID}-close` : undefined}
+          />
         </View>
       ) : null}
       {/*

@@ -206,7 +206,7 @@ export type ItemRowProps = {
  * A two-line static display row: leading adornment, title + optional
  * description, and a trailing adornment. Part of the interactive-surface
  * family, so sizing follows the same `'sm' | 'md' | 'lg'` ramp as
- * {@link MenuItem}, {@link ActionRow}, and {@link CloseButton}.
+ * {@link MenuItem}, {@link ActionRow}, and {@link IconButton}.
  *
  * `ItemRow` is **not** pressable — it renders a plain `View`. For a row
  * where the entire surface is the action (with hover/press overlays and a

@@ -28,9 +28,9 @@ export type ToastSizeGeometry = {
 };
 
 export const TOAST_SIZE: Record<ToastSize, ToastSizeGeometry> = {
-  sm: { icon: 16, message: { token: 'xs', px: 12 }, description: 'xs', gap: 4, padX: 10, padY: 6 },
-  md: { icon: 20, message: { token: 'sm', px: 14 }, description: 'xs', gap: 6, padX: 12, padY: 8 },
-  lg: { icon: 24, message: { token: 'base', px: 16 }, description: 'sm', gap: 8, padX: 16, padY: 10 },
+  sm: { icon: 20, message: { token: 'xs', px: 12 }, description: 'xs', gap: 8, padX: 12, padY: 8 },
+  md: { icon: 24, message: { token: 'sm', px: 14 }, description: 'sm', gap: 10, padX: 14, padY: 10 },
+  lg: { icon: 28, message: { token: 'base', px: 16 }, description: 'sm', gap: 12, padX: 16, padY: 12 },
 };
 
 export const TOAST_SIZE_DEFAULT: ToastSize = 'md';

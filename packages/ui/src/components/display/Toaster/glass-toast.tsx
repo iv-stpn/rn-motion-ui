@@ -20,7 +20,7 @@ export function GlassToast({ message, options, onDismiss, testID }: GlassToastPr
   const fill = useThemeColor(TOAST_FILL_TOKEN[variant]);
   const ink = useThemeColor(neutral ? 'foreground' : TOAST_FOREGROUND_TOKEN[variant]);
   const secondaryInk = useThemeColor(neutral ? 'muted-foreground' : TOAST_FOREGROUND_TOKEN[variant]);
-  const status = useThemeColor(neutral ? TOAST_FILL_TOKEN[variant] : TOAST_FOREGROUND_TOKEN[variant]);
+  const status = useThemeColor(neutral ? 'foreground' : TOAST_FOREGROUND_TOKEN[variant]);
   const geometry = TOAST_SIZE[size];
   const Icon = TOAST_STATUS_ICON[variant];
   const capsule = pill && !description && !action;
@@ -45,7 +45,7 @@ export function GlassToast({ message, options, onDismiss, testID }: GlassToastPr
       >
         {Icon ? <Icon size={geometry.icon} color={status} /> : null}
         <View className="min-w-0 shrink gap-0.5">
-          <Text size={geometry.message.token} weight="medium" style={{ color: ink }}>
+          <Text size={geometry.message.token} weight={description ? 'medium' : 'normal'} style={{ color: ink }}>
             {message}
           </Text>
           {description ? (

@@ -230,7 +230,7 @@ export const AllSizes: Story = {
   ),
 };
 
-/** The row contract: a switcher rests at exactly the height of the `IconButton`
+/** The row contract: a switcher rests at exactly the height of a comfortable `IconButton`
  *  and `Button` beside it, at every size — the shared interactive ramp (24/36/48/64).
  *
  *  The collapsed shell used to wrap the trigger in the pane's `p-1` inset, so a
@@ -259,6 +259,7 @@ export const AlignedWithButtons: Story = {
               />
               <IconButton
                 icon={Home1Line}
+                density="comfortable"
                 size={name}
                 accessibilityLabel={`${SIZE_LABELS[name]} icon`}
                 testID={`aligned-${name}-icon`}

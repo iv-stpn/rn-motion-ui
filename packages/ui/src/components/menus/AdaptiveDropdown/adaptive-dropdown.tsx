@@ -350,7 +350,6 @@ export function AdaptiveDropdown({
         </Modal>
       ) : (
         <BottomSheet
-          glass={glass}
           floating={floating}
           open={open}
           onOpenChange={close}

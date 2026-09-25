@@ -12,16 +12,15 @@ import {
   useRef,
   useState,
 } from 'react';
-import { type LayoutChangeEvent, Pressable, type PressableProps, ScrollView, View } from 'react-native';
+import { type LayoutChangeEvent, type PressableProps, ScrollView, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { ArrowLeftLine } from 'rn-motion-ui-icons/icons/arrow-left-line';
-import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { IconButton } from '../../buttons/IconButton/icon-button';
-import { MenuItem, type MenuItemIcon } from '../../rows/menu-item';
+import { MenuItem, type MenuItemIcon, type MenuItemProps } from '../../rows/menu-item';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
 import type { OverlayType } from '../Overlay/overlay-type';
@@ -96,6 +95,8 @@ export type MultiStepMenuHandle = {
 };
 
 export type MenuRowProps = Omit<PressableProps, 'children'> & {
+  shape?: MenuItemProps['shape'];
+  activeVariant?: MenuItemProps['activeVariant'];
   icon: MenuItemIcon;
   label: ReactNode;
   active?: boolean;
@@ -113,6 +114,7 @@ export type MenuRowProps = Omit<PressableProps, 'children'> & {
 export function MenuRow({ icon, label, active = false, iconBackgroundColor, iconColor = 'white', ...props }: MenuRowProps) {
   return (
     <MenuItem
+      mode="sidebar"
       icon={icon}
       label={label}
       active={active}
@@ -338,7 +340,7 @@ export const MultiStepMenu = function MultiStepMenu({
                 {showBack && (
                   <MotiView
                     key="wide-back"
-                    className="w-8 overflow-hidden pr-2"
+                    className="w-10 pr-2"
                     from={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -348,11 +350,14 @@ export const MultiStepMenu = function MultiStepMenu({
                     // animating them through `useAnimatedStyle` doesn't round-trip
                     // Yoga, so the reveal rides the fade instead.
                   >
-                    <Pressable onPress={goBack} accessibilityLabel="Back" testID={testID ? `${testID}-back` : undefined}>
-                      <View className="rotate-180">
-                        <ChevronRight />
-                      </View>
-                    </Pressable>
+                    <IconButton
+                      icon={ArrowLeftLine}
+                      size="sm"
+                      iconSize={18}
+                      onPress={goBack}
+                      accessibilityLabel="Back"
+                      testID={testID ? `${testID}-back` : undefined}
+                    />
                   </MotiView>
                 )}
               </AnimatePresence>
@@ -414,6 +419,8 @@ export const MultiStepMenu = function MultiStepMenu({
           <View className="flex-row items-center justify-between">
             <IconButton
               icon={ArrowLeftLine}
+              size="sm"
+              iconSize={18}
               accessibilityLabel="Back"
               onPress={handleBack}
               testID={testID ? `${testID}-back` : undefined}

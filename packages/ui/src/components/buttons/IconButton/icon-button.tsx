@@ -53,7 +53,7 @@ export type IconButtonProps = {
   iconColor?: string;
 
   /**
-   * Swap the plate's ladder shadow for the input field's large, diffuse halo
+   * Swap the plate's ladder shadow for the shared compact floating shadow
    * (`shadow-floating`) — the recipe {@link Input}'s `floating` prop wears.
    * It replaces the `shadow-elevated-N` rung rather than adding to it, so the
    * plate keeps its `elevation` tint but trades the layered drop for the halo.
@@ -68,9 +68,12 @@ export type IconButtonProps = {
    */
   elevation?: SurfaceElevation;
 
-  /** Button size — the square, and the icon or tile inside it. Shares
-   *  {@link Button}'s height ramp (24/36/48/64px), so the two line up in a row. @default 'md' */
+  /** Button size — the square, and the icon or tile inside it. Compact uses 24/32/40/48px; comfortable uses Button's 24/36/48/64px ramp. @default 'md' */
   size?: RampSize;
+  /** Compact visual padding, preserving a 44px touch target through hitSlop. @default 'compact' */
+  density?: 'compact' | 'comfortable';
+  /** Override the glyph size without changing the touch target. */
+  iconSize?: number;
 
   /** Corner shape. @default 'pill' */
   shape?: ButtonShape;
@@ -170,6 +173,8 @@ export function IconButton({
   floating = false,
   elevation = 0,
   size = 'md',
+  density = 'compact',
+  iconSize,
   shape = 'pill',
   blurRadius = 0,
   opacity = 1,
@@ -206,6 +211,8 @@ export function IconButton({
     trackDims: false,
   });
 
+  const compactSize = { xs: 24, sm: 32, md: 40, lg: 48 }[size];
+  const side = density === 'compact' ? compactSize : BUTTON_SIZE[size].px;
   const boxClass = BUTTON_SIZE[size].square[shape];
   const hasTile = Boolean(iconBackgroundColor);
 
@@ -216,13 +223,13 @@ export function IconButton({
   let iconElement: React.ReactNode;
   if (loading) iconElement = <ButtonSpinner color={colors.foreground} reduce={reduce} size={SPINNER_SIZE[size]} />;
   else if (hasTile) {
-    const { tileClass, iconSize } = ICON_TILE[size];
+    const { tileClass, iconSize: tileIconSize } = ICON_TILE[size];
     iconElement = (
       <View className={cn('items-center justify-center', tileClass)} style={{ backgroundColor: iconBackgroundColor }}>
-        <IconComponent size={iconSize} color={resolvedIconColor} />
+        <IconComponent size={tileIconSize} color={resolvedIconColor} />
       </View>
     );
-  } else iconElement = <IconComponent size={BUTTON_ICON_SIZE[size]} color={resolvedIconColor} />;
+  } else iconElement = <IconComponent size={iconSize ?? BUTTON_ICON_SIZE[size]} color={resolvedIconColor} />;
 
   const pressValue = pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale });
 
@@ -234,7 +241,8 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       testID={testID ?? 'icon-button'}
       disabled={isDisabled}
-      hitSlop={hitSlopFor(BUTTON_SIZE[size].px)}
+      hitSlop={hitSlopFor(side)}
+      style={{ width: side, height: side }}
       onLayout={onLayout}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}

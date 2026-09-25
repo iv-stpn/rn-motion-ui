@@ -383,7 +383,7 @@ export function Input({
           field({ size, shape }),
           // The state border is drawn only while flat: above elevation 0 the
           // shadow rim already carries the edge, so a border would double up.
-          elevation === 0 && stateBorder[state],
+          elevation === 0 && (!(blurRadius > 0 && rim) || state !== 'idle') && stateBorder[state],
           disabled ? 'opacity-60' : 'opacity-100',
         )}
         elevation={elevation}

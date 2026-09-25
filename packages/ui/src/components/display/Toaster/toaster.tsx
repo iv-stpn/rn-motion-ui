@@ -1,14 +1,14 @@
 import { type CSSProperties, type ReactNode, useEffect } from 'react';
 import type { ExternalToast } from 'sonner';
 import { Toaster as SonnerToaster, toast as sonnerToast } from 'sonner';
-
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { ThemedIcon } from '../../icon/themed-icon';
+import { GlassToast } from './glass-toast';
 
 import { TOAST_STATUS_ICON } from './toast-icons';
 import { TOAST_SIZE, TOAST_SIZE_DEFAULT } from './toast-scale';
 import type { ToastApi, ToasterProps, ToastOptions, ToastPosition, ToastVariant } from './toast-types';
-import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN, TOAST_GLASS_ALPHA } from './toast-variants';
+import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
 
 /**
  * The web twin of the `Toaster` — a thin adapter over Sonner.
@@ -24,10 +24,9 @@ import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN, TOAST_GLASS_ALPHA } from './t
  * - `variant` fills the pill with the matching Button colour (see
  *   {@link ./toast-variants}) — the same palette the native twin uses
  * - `action.onPress` maps to Sonner's `action.onClick`
- * - `onClose` maps to Sonner's `onDismiss`, which fires on auto-, tap- and
- *   programmatic dismissal alike
- * - `glass` maps to a frosted inline style — a translucent tint of the variant's
- *   own fill over a `backdrop-filter` blur — mirroring the native `Surface` frost
+ * - `onClose` follows Sonner's dismissal callbacks
+ * - `glass` uses the same Surface blur, rim, and compact shadow as native;
+ *   `glassTone="neutral"` limits semantic colour to the status icon
  *
  * Sonner's surface/foreground colours are re-pointed at the repo's theme tokens
  * (see {@link THEME_VARS}) and its border is dropped, so the web toast follows the
@@ -41,25 +40,6 @@ const SONNER_POSITION: Record<ToastPosition, 'top-center' | 'bottom-center'> = {
   top: 'top-center',
   bottom: 'bottom-center',
 };
-
-/**
- * The frosted-glass toast style — a translucent tint of the variant's own fill
- * over a CSS `backdrop-filter` blur, so a glass toast keeps its variant's hue
- * instead of washing out to the neutral `glass` token. The variant's foreground
- * ink is re-pointed too, so the label and icon stay legible on the coloured tint
- * (the same fill + ink a solid toast wears, just translucent). Set per-toast via
- * `toast(…, { glass: true })`, or as the `<Toaster glass>` default.
- */
-function glassStyle(variant: ToastVariant): CSSProperties {
-  return {
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    // `color-mix` thins the variant fill to the shared glass alpha without
-    // knowing its oklch channels — the tokens carry no alpha of their own.
-    backgroundColor: `color-mix(in oklab, var(--color-${TOAST_FILL_TOKEN[variant]}) ${Math.round(TOAST_GLASS_ALPHA * 100)}%, transparent)`,
-    color: `var(--color-${TOAST_FOREGROUND_TOKEN[variant]})`,
-  };
-}
 
 /**
  * Corner radius (px) a pill toast uses — large enough that the browser clamps it
@@ -103,7 +83,7 @@ const THEME_VARS = {
  */
 const TOAST_STYLE: CSSProperties = {
   width: 'fit-content',
-  maxWidth: 356,
+  maxWidth: 'min(356px, 100%)',
   left: 0,
   right: 0,
   marginLeft: 'auto',
@@ -140,13 +120,21 @@ function statusIcon(variant: ToastVariant, size: number): ReactNode {
  * twin does through `setToastDefaults`.
  */
 let defaultGlass = false;
+let defaultGlassTone: ToastOptions['glassTone'] = 'variant';
+let sequence = 0;
+const closeCallbacks = new Map<string, () => void>();
+
+function dismiss(id?: string) {
+  const ids = id ? [id] : [...closeCallbacks.keys()];
+  for (const key of ids) closeCallbacks.get(key)?.();
+  sonnerToast.dismiss(id);
+}
 let defaultPill = false;
 let defaultSize = TOAST_SIZE_DEFAULT;
 
 /** Translate a shared {@link ToastOptions} into Sonner's `ExternalToast`. */
 function toSonnerOptions(options?: ToastOptions): ExternalToast {
-  const { variant = 'neutral', position, duration, description, action, onClose, glass, pill, size } = options ?? {};
-  const frosted = glass ?? defaultGlass;
+  const { variant = 'neutral', position, duration, description, action, onClose, pill, size } = options ?? {};
   const isPill = pill ?? defaultPill;
   const geometry = TOAST_SIZE[size ?? defaultSize];
   return {
@@ -161,7 +149,7 @@ function toSonnerOptions(options?: ToastOptions): ExternalToast {
     richColors: true,
     icon: statusIcon(variant, geometry.icon),
     style: {
-      ...(frosted ? glassStyle(variant) : solidStyle(variant)),
+      ...solidStyle(variant),
       ...(isPill ? { borderRadius: PILL_RADIUS } : {}),
       fontSize: geometry.message.px,
       padding: `${geometry.padY}px ${geometry.padX}px`,
@@ -172,13 +160,45 @@ function toSonnerOptions(options?: ToastOptions): ExternalToast {
 
 /** Route a toast through Sonner with the shared `variant` fill/ink applied. */
 function show(message: string, options?: ToastOptions): string {
-  return String(sonnerToast(message, toSonnerOptions(options)));
+  const resolved = {
+    ...options,
+    glass: options?.glass ?? defaultGlass,
+    glassTone: options?.glassTone ?? defaultGlassTone,
+    size: options?.size ?? defaultSize,
+    pill: options?.pill ?? defaultPill,
+  };
+  sequence += 1;
+  const id = `rn-toast-${sequence}`;
+  const onClose = () => {
+    if (!closeCallbacks.delete(id)) return;
+    resolved.onClose?.();
+  };
+  closeCallbacks.set(id, onClose);
+  const handleDismiss = () => dismiss(id);
+  if (resolved.glass) {
+    sonnerToast.custom(
+      // biome-ignore lint/performance/noJsxPropsBind: handleDismiss is allocated once per toast, outside React render
+      () => <GlassToast message={message} options={resolved} onDismiss={handleDismiss} testID={`toaster-${id}`} />,
+      {
+        id,
+        position: resolved.position === undefined ? undefined : SONNER_POSITION[resolved.position],
+        duration: resolved.duration === 0 ? Number.POSITIVE_INFINITY : resolved.duration,
+        onDismiss: onClose,
+        onAutoClose: onClose,
+        style: TOAST_STYLE,
+      },
+    );
+    return id;
+  }
+  sonnerToast(message, { ...toSonnerOptions(options), id, onDismiss: onClose, onAutoClose: onClose });
+  return id;
 }
 
 export function Toaster({
   position = 'top',
   duration,
   glass = false,
+  glassTone = 'variant',
   pill = false,
   size = TOAST_SIZE_DEFAULT,
   smallScreenPosition,
@@ -192,9 +212,10 @@ export function Toaster({
   // biome-ignore lint/plugin: sync the Toaster's glass/pill/size defaults into the module variables toast() reads — an external system whose change only matters post-commit
   useEffect(() => {
     defaultGlass = glass;
+    defaultGlassTone = glassTone;
     defaultPill = pill;
     defaultSize = size;
-  }, [glass, pill, size]);
+  }, [glass, glassTone, pill, size]);
 
   return (
     <>
@@ -217,7 +238,5 @@ export const toast: ToastApi = Object.assign((message: string, options?: ToastOp
   error: (message: string, options?: ToastOptions) => show(message, { ...options, variant: 'danger' }),
   warning: (message: string, options?: ToastOptions) => show(message, { ...options, variant: 'warning' }),
   info: (message: string, options?: ToastOptions) => show(message, { ...options, variant: 'info' }),
-  dismiss: (id?: string) => {
-    sonnerToast.dismiss(id);
-  },
+  dismiss,
 });

@@ -12,8 +12,22 @@
 import { TOAST_SIZE_DEFAULT } from './toast-scale';
 import type { Toast, ToastApi, ToastOptions, ToastPosition, ToastSize } from './toast-types';
 
-type ToastDefaultsInput = { position?: ToastPosition; duration?: number; glass?: boolean; pill?: boolean; size?: ToastSize };
-type ResolvedToastDefaults = { position: ToastPosition; duration: number; glass: boolean; pill: boolean; size: ToastSize };
+type ToastDefaultsInput = {
+  position?: ToastPosition;
+  duration?: number;
+  glass?: boolean;
+  pill?: boolean;
+  size?: ToastSize;
+  glassTone?: ToastOptions['glassTone'];
+};
+type ResolvedToastDefaults = {
+  position: ToastPosition;
+  duration: number;
+  glass: boolean;
+  pill: boolean;
+  size: ToastSize;
+  glassTone?: ToastOptions['glassTone'];
+};
 
 const DEFAULT_DURATION = 4000;
 const POSITION_DEFAULT: ToastPosition = 'bottom';
@@ -25,6 +39,7 @@ let idSeq = 0;
 let defaultPosition: ToastPosition = POSITION_DEFAULT;
 let defaultDuration = DEFAULT_DURATION;
 let defaultGlass = GLASS_DEFAULT;
+let defaultGlassTone: ToastOptions['glassTone'] = 'variant';
 let defaultPill = PILL_DEFAULT;
 let defaultSize = TOAST_SIZE_DEFAULT;
 
@@ -55,9 +70,10 @@ export function getToasts(): readonly Toast[] {
  * Set the defaults `toast()` falls back to when a call omits `position`/`duration`/`glass`.
  * The native `<Toaster>` writes its props here so `toast()` honours them.
  */
-export function setToastDefaults({ position, duration, glass, pill, size }: ToastDefaultsInput): void {
+export function setToastDefaults({ position, duration, glass, pill, size, glassTone }: ToastDefaultsInput): void {
   if (position !== undefined) defaultPosition = position;
   if (duration !== undefined) defaultDuration = duration;
+  if (glassTone !== undefined) defaultGlassTone = glassTone;
   if (glass !== undefined) defaultGlass = glass;
   if (pill !== undefined) defaultPill = pill;
   if (size !== undefined) defaultSize = size;
@@ -65,7 +81,14 @@ export function setToastDefaults({ position, duration, glass, pill, size }: Toas
 
 /** The resolved defaults — what a `toast()` call uses when it omits the fields. */
 export function getToastDefaults(): ResolvedToastDefaults {
-  return { position: defaultPosition, duration: defaultDuration, glass: defaultGlass, pill: defaultPill, size: defaultSize };
+  return {
+    position: defaultPosition,
+    duration: defaultDuration,
+    glass: defaultGlass,
+    glassTone: defaultGlassTone,
+    pill: defaultPill,
+    size: defaultSize,
+  };
 }
 
 /** Push a toast and return its id. Schedules the auto-dismiss timer for `duration > 0`. */
@@ -83,6 +106,7 @@ export function showToast(message: string, options?: ToastOptions): string {
     action: options?.action,
     onClose: options?.onClose,
     glass: options?.glass ?? defaultGlass,
+    glassTone: options?.glassTone ?? defaultGlassTone,
     pill: options?.pill ?? defaultPill,
     size: options?.size ?? defaultSize,
   };
@@ -130,6 +154,7 @@ export function resetToastStore(): void {
   defaultPosition = POSITION_DEFAULT;
   defaultDuration = TOAST_DURATION_DEFAULT;
   defaultGlass = GLASS_DEFAULT;
+  defaultGlassTone = 'variant';
   defaultPill = PILL_DEFAULT;
   defaultSize = TOAST_SIZE_DEFAULT;
   listeners.clear();

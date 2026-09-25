@@ -53,6 +53,12 @@ export function formatTimestamp(value: string | undefined): string | null {
  */
 export function formatFileSystemStats(entry: FileSystemEntry, childCount?: number): string {
   const primary = entry.kind === 'folder' ? itemCountLabel(childCount) : formatByteSize(entry.size);
-  const date = formatTimestamp(entry.updatedAt ?? entry.createdAt);
+  const timestamp = entry.updatedAt ?? entry.createdAt;
+  const parsedDate = timestamp ? new Date(timestamp) : null;
+  // Rows are for scanning; the detail view retains the full timestamp.
+  const date =
+    parsedDate && !Number.isNaN(parsedDate.getTime())
+      ? parsedDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+      : null;
   return [primary, date].filter((part): part is string => part !== null).join(' · ');
 }

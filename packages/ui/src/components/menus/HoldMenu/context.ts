@@ -20,6 +20,8 @@ export type HoldMenuWindowSize = { width: number; height: number; fontScale: num
  * than upstream's module-level `let AnimatedIcon`.
  */
 export type HoldMenuInternalContextType = {
+  glass?: boolean;
+  floating?: boolean;
   state: SharedValue<CONTEXT_MENU_STATE>;
   theme: SharedValue<'light' | 'dark'>;
   menuProps: SharedValue<MenuInternalProps>;

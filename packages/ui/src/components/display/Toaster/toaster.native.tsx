@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
+import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
 import { MotiView } from '../../../moti/components/view';
@@ -11,12 +11,13 @@ import { useThemeColor } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { Portal, usePortalAvailable } from '../../portal/Portal/portal';
 import { Text } from '../../typography/Text/text';
+import { GlassToast } from './glass-toast';
 
 import { TOAST_STATUS_ICON } from './toast-icons';
 import { TOAST_SIZE, TOAST_SIZE_DEFAULT } from './toast-scale';
 import { dismissToast, getToasts, setToastDefaults, subscribeToasts, TOAST_DURATION_DEFAULT } from './toast-store';
 import type { Toast, ToasterProps, ToastPosition } from './toast-types';
-import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN, TOAST_GLASS_ALPHA } from './toast-variants';
+import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
 
 /**
  * The native twin of the `Toaster` — a custom, Reanimated-driven toast.
@@ -34,9 +35,6 @@ import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN, TOAST_GLASS_ALPHA } from './t
  * on-variant wash rather than the neutral `glass` token (degrading to that tint
  * when the optional blur peer is absent).
  */
-
-/** Backdrop blur radius (dp) the frosted-glass pill applies. */
-const GLASS_BLUR = 12;
 
 /** Width cap so a long message wraps instead of stretching the pill full-width. */
 const PILL_CLASSNAME = 'max-w-[340px]';
@@ -62,32 +60,40 @@ type ToastItemProps = { toast: Toast; position: ToastPosition; testID: string };
 function ToastItem({ toast, position, testID }: ToastItemProps) {
   const fillColor = useThemeColor(TOAST_FILL_TOKEN[toast.variant]);
   const inkColor = useThemeColor(TOAST_FOREGROUND_TOKEN[toast.variant]);
-  const travel = position === 'top' ? -SLIDE : SLIDE;
+  const reduced = useReducedMotion();
+  const direction = position === 'top' ? -SLIDE : SLIDE;
+  const travel = reduced ? 0 : direction;
   const handleDismiss = useCallback(() => dismissToast(toast.id), [toast.id]);
   const glass = toast.glass;
   const pill = toast.pill;
   const geometry = TOAST_SIZE[toast.size];
   const Icon = TOAST_STATUS_ICON[toast.variant];
 
+  if (glass)
+    return (
+      <MotiView
+        from={{ opacity: 0, translateY: travel }}
+        animate={{ opacity: 1, translateY: 0 }}
+        exit={{ opacity: 0, translateY: travel }}
+        transition={MOTION_STANDARD}
+        className={PILL_CLASSNAME}
+      >
+        <GlassToast message={toast.message} options={toast} onDismiss={handleDismiss} testID={`${testID}-${toast.id}`} />
+      </MotiView>
+    );
   return (
     <Surface
       as={MotiView}
       elevation={3}
       radius={pill ? undefined : 'menu'}
       borderRadius={pill ? PILL_RADIUS : undefined}
-      blurRadius={glass ? GLASS_BLUR : 0}
-      rim={glass}
-      tint={fillColor}
-      opacity={TOAST_GLASS_ALPHA}
       from={{ opacity: 0, translateY: travel }}
       animate={{ opacity: 1, translateY: 0 }}
       exit={{ opacity: 0, translateY: travel }}
       transition={MOTION_STANDARD}
       exitTransition={TIMING_FAST}
       className={cn(PILL_CLASSNAME, pill && 'rounded-full')}
-      // The variant fill tints the pill: a solid pill paints it as the opaque
-      // background, a glass pill hands it to the Surface's frost as the `tint`.
-      style={glass ? undefined : { backgroundColor: fillColor }}
+      style={{ backgroundColor: fillColor }}
       testID={`${testID}-${toast.id}`}
       accessibilityLiveRegion={toast.variant === 'danger' ? 'assertive' : 'polite'}
     >
@@ -131,6 +137,7 @@ export function Toaster({
   position = 'bottom',
   duration = TOAST_DURATION_DEFAULT,
   glass = false,
+  glassTone = 'variant',
   pill = false,
   size = TOAST_SIZE_DEFAULT,
   smallScreenPosition,
@@ -147,8 +154,8 @@ export function Toaster({
 
   // biome-ignore lint/plugin: sync the Toaster props into the module-level store defaults — an external system whose change only matters post-commit
   useEffect(() => {
-    setToastDefaults({ position: effectivePosition, duration, glass, pill, size });
-  }, [effectivePosition, duration, glass, pill, size]);
+    setToastDefaults({ position: effectivePosition, duration, glass, glassTone, pill, size });
+  }, [effectivePosition, duration, glass, glassTone, pill, size]);
 
   const topToasts = toasts.filter((toast) => toast.position === 'top');
   const bottomToasts = toasts.filter((toast) => toast.position === 'bottom');

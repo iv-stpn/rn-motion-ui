@@ -90,6 +90,8 @@ function menuItems(
   if (actions.length === 0) return [NO_ACTIONS_MENU_ITEM];
   return actions.map((action) => ({
     isDestructive: action.destructive,
+    withSeparator: action.separatorAfter,
+    testID: action.testID ?? `file-action-${action.id}`,
     disabled: action.disabled,
     icon: toMenuItemIcon(action.icon),
     onPress: action.disabled ? undefined : () => onAction(action),
@@ -103,15 +105,21 @@ function backgroundMenuEntries(
   onAction: (action: FileSystemContextMenuAction) => void,
 ): readonly MenuEntry[] {
   if (actions.length === 0) return [NO_ACTIONS_MENU_ENTRY];
-  return actions.map((action) => ({
-    className: HOLD_MENU_ROW_CLASS,
-    destructive: action.destructive,
-    disabled: action.disabled,
-    icon: toMenuIcon(action.icon),
-    id: action.id,
-    label: action.label,
-    onSelect: action.disabled ? undefined : () => onAction(action),
-  }));
+  const entries: MenuEntry[] = [];
+  for (const action of actions) {
+    entries.push({
+      className: HOLD_MENU_ROW_CLASS,
+      destructive: action.destructive,
+      disabled: action.disabled,
+      icon: toMenuIcon(action.icon),
+      id: action.id,
+      label: action.label,
+      testID: action.testID ?? `file-action-${action.id}`,
+      onSelect: action.disabled ? undefined : () => onAction(action),
+    });
+    if (action.separatorAfter) entries.push({ type: 'separator', id: `${action.id}-separator` });
+  }
+  return entries;
 }
 
 // ── Entry context menu ─────────────────────────────────────────────────────────

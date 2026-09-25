@@ -8,7 +8,8 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
-import { type SurfaceElevation, surfaceBackground } from '../../../lib/elevated';
+import type { SurfaceElevation } from '../../../lib/elevated';
+import { GLASS_SURFACE } from '../../../lib/glass';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { CloseButton } from '../../buttons/CloseButton/close-button';
@@ -88,6 +89,8 @@ type AdaptiveModalProps = {
    * trades the layered drop for the halo. @default false
    */
   floating?: boolean;
+  /** Use the shared lightweight blur and glass rim on the panel. @default false */
+  glass?: boolean;
   /** Surface elevation (0–3) for the wide (desktop) panel — drives the drop shadow + dark-mode rim. `0` is the flat resting surface (no shadow or border). Defaults to 3. */
   elevation?: SurfaceElevation;
   /**
@@ -155,6 +158,7 @@ export function AdaptiveModal({
   smallScreenOverlay,
   closeOnOutsidePress = true,
   floating = false,
+  glass = false,
   elevation = 3,
   safeArea = true,
   testID,
@@ -295,8 +299,11 @@ export function AdaptiveModal({
           exitTransition={panelExitTransition}
         >
           <TouchableOpacity activeOpacity={1} className="h-full" style={{ width: drawerWidth }}>
-            <View
-              className={cn('h-full px-8 pt-8 pb-8', surfaceBackground(elevation))}
+            <Surface
+              {...(glass ? GLASS_SURFACE : {})}
+              elevation={elevation}
+              floating={floating}
+              className="h-full px-8 pt-8 pb-8"
               accessibilityViewIsModal={true}
               aria-modal={true}
               role="dialog"
@@ -306,7 +313,7 @@ export function AdaptiveModal({
             >
               {renderHeader()}
               {renderContent()}
-            </View>
+            </Surface>
           </TouchableOpacity>
         </MotiView>
       </View>
@@ -334,6 +341,7 @@ export function AdaptiveModal({
             style={{ width: wideWidth, height: wideHeight, maxWidth: wideMaxWidth, maxHeight: wideMaxHeight }}
           >
             <Surface
+              {...(glass ? GLASS_SURFACE : {})}
               elevation={elevation}
               radius="modal"
               floating={floating}
@@ -400,6 +408,8 @@ export function AdaptiveModal({
 
   return isBottomSheet ? (
     <BottomSheet
+      glass={glass}
+      floating={floating}
       open={open}
       onOpenChange={handleClose}
       containerClassName={containerPaddingClass}
@@ -415,6 +425,8 @@ export function AdaptiveModal({
     </BottomSheet>
   ) : (
     <FullSheet
+      glass={glass}
+      floating={floating}
       open={open}
       onOpenChange={handleClose}
       customLayout={true}

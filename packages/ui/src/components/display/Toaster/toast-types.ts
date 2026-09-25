@@ -38,6 +38,8 @@ export type ToastOptions = {
   onClose?: () => void;
   /** Frosted-glass treatment instead of an opaque surface. @default false */
   glass?: boolean;
+  /** Neutral glass with a semantic icon, or the existing variant-tinted glass. @default 'variant' */
+  glassTone?: 'neutral' | 'variant';
   /** Render as a fully-rounded capsule instead of a rounded rectangle. @default false */
   pill?: boolean;
   /** Size variant — compact / default / roomy. @default 'md' */
@@ -56,6 +58,7 @@ export type Toast = {
   onClose?: () => void;
   /** Whether the toast renders with the frosted-glass treatment. */
   glass: boolean;
+  glassTone?: 'neutral' | 'variant';
   /** Whether the toast renders as a fully-rounded capsule. */
   pill: boolean;
   /** Which size ramp the toast renders at. */
@@ -98,6 +101,8 @@ export type ToasterProps = {
   duration?: number;
   /** Default glass mode for `toast()` calls that omit `glass`. @default false */
   glass?: boolean;
+  /** Neutral glass with a semantic icon, or the existing variant-tinted glass. @default 'variant' */
+  glassTone?: 'neutral' | 'variant';
   /** Default pill mode for `toast()` calls that omit `pill`. @default false */
   pill?: boolean;
   /** Default size for `toast()` calls that omit `size`. @default 'md' */

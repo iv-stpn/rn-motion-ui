@@ -141,6 +141,10 @@ export type HoldItemProps = {
 
 /** `HoldMenuProvider` props — upstream's `HoldMenuProviderProps`, with `safeAreaInsets` optional. */
 export type HoldMenuProviderProps = {
+  /** Lightweight panel blur and rim, independent of the backdrop. @default false */
+  glass?: boolean;
+  /** Compact floating panel shadow. @default false */
+  floating?: boolean;
   /** Theme of the menu — affects the backdrop and panel palette. @default 'light' */
   theme?: 'dark' | 'light';
   /** Vector-icon-like component mapping an icon `name` to an element. */

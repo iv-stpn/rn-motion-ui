@@ -78,6 +78,22 @@ custom overlay that renders its own `BlurView` re-discovers them the hard way:
    and crashes (SIGSEGV). Render the backdrop outside the target — through the
    `BlurProvider`'s overlay host — or let the scrim degrade to the dim.
 
+## Lightweight glass surfaces
+
+Set `glass` and `floating` on `AdaptiveDropdown`, `HoverMenu`, `MorphingMenu`,
+`HoldMenuProvider`, `AdaptiveModal`, `BottomSheet`, `FullSheet`, or `MultiStepMenu`
+for the shared 12px blur, SVG rim, and compact floating shadow. Both options default
+to false. The existing Android blur-target safeguards and tint fallback still apply;
+this recipe adds no refraction renderer or native dependency.
+
+For quiet notifications, use `<Toaster glass glassTone="neutral" />`. Semantic
+status stays in the icon, and actions have a separate dismiss control. The default
+`glassTone="variant"` retains tinted notifications.
+
+`FileSystem` exposes `menuGlass` and `menuFloating` for both entry and background
+menus. Context actions accept `separatorAfter` to group related actions and an
+optional `testID`; otherwise their stable ID is `file-action-${action.id}`.
+
 ## Consumer setup
 
 This package **ships TypeScript source** (no prebuilt bundle). Your bundler

@@ -8,6 +8,7 @@ import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
+import { GLASS_SURFACE } from '../../../lib/glass';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
@@ -70,6 +71,8 @@ export type HoverMenuProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
+  /** Use the shared lightweight blur and glass rim on the panel. @default false */
+  glass?: boolean;
   /** Float level for the panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 3 */
   elevation?: SurfaceElevation;
   /**
@@ -242,6 +245,7 @@ export function HoverMenu({
   closeDelay = DEFAULT_CLOSE_DELAY,
   contentClassName,
   floating = false,
+  glass = false,
   elevation = 3,
   motion,
   testID,
@@ -434,6 +438,7 @@ export function HoverMenu({
 
   const wrapperSemantics = resolveWrapperSemantics(triggerIsPressable, triggerAccessibilityLabel, open, toggle);
 
+  const material = glass ? GLASS_SURFACE : undefined;
   const renderPanel = () =>
     open && rect ? (
       <Pressable
@@ -450,6 +455,7 @@ export function HoverMenu({
         testID={testID ? `${testID}-panel` : undefined}
       >
         <Surface
+          {...material}
           as={MotiView}
           elevation={elevation}
           radius="menu"

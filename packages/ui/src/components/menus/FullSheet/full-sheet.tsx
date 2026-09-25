@@ -7,6 +7,7 @@ import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
+import { GLASS_SURFACE } from '../../../lib/glass';
 import { CARD_RADIUS } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
@@ -166,6 +167,8 @@ export type FullSheetProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
+  /** Use the shared lightweight blur and glass rim on the panel. @default false */
+  glass?: boolean;
   /**
    * Surface elevation of the sheet (0–3) — drives the background tint and the
    * `shadow-elevated-N` recipe (drop shadow + dark-mode rim). `0` is the flat
@@ -221,6 +224,7 @@ export function FullSheet({
   compact = false,
   customLayout = false,
   floating = false,
+  glass = false,
   elevation = 3,
   mode = 'default',
   dismissable = true,
@@ -284,6 +288,7 @@ export function FullSheet({
           <AnimatePresence onExitComplete={onExitComplete}>
             {isAnimOpen ? (
               <Surface
+                {...(glass ? GLASS_SURFACE : {})}
                 as={MotiView}
                 elevation={elevation}
                 floating={floating}

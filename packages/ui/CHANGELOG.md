@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.16.1
+
+### Patch Changes
+
+- ea0fca5: Give icon-only buttons and colored tiles larger glyphs within compact plates, use contrasting inline icon controls in modals with a left-caret back action, and tighten toast icon spacing. The published CloseButton entry remains as a deprecated compatibility wrapper.
+
 ## 7.16.0
 
 ### Minor Changes

@@ -21,14 +21,13 @@ import { BUTTON_HOVER_CLASS } from '../Button/button-variants';
 
 /**
  * Tile dimensions and inner icon size when `iconBackgroundColor` is set. The
- * tile steps 12/16/20/24px against the box's 24/36/48/64px, so every size keeps
- * a ring of breathing room around the plate.
+ * tile stays proportionate to the compact button, leaving only a narrow ring.
  */
 const ICON_TILE: Record<RampSize, { tileClass: string; iconSize: number }> = {
-  xs: { tileClass: 'h-3 w-3 rounded-[3px]', iconSize: 8 },
-  sm: { tileClass: 'h-4 w-4 rounded-sm', iconSize: 10 },
-  md: { tileClass: 'h-5 w-5 rounded-[5px]', iconSize: 12 },
-  lg: { tileClass: 'h-6 w-6 rounded-md', iconSize: 14 },
+  xs: { tileClass: 'h-[18px] w-[18px] rounded-[4px]', iconSize: 12 },
+  sm: { tileClass: 'h-6 w-6 rounded-md', iconSize: 16 },
+  md: { tileClass: 'h-[30px] w-[30px] rounded-lg', iconSize: 20 },
+  lg: { tileClass: 'h-9 w-9 rounded-lg', iconSize: 24 },
 };
 
 /** Spinner diameter per button size. */

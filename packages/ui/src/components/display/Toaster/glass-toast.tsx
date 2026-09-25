@@ -47,7 +47,7 @@ export function GlassToast({ message, options, onDismiss, testID }: GlassToastPr
           paddingVertical: geometry.padY,
         }}
       >
-        {Icon ? <Icon size={geometry.icon} color={status} /> : null}
+        {Icon ? <Icon size={geometry.icon} color={status} style={{ flexShrink: 0 }} /> : null}
         <View className="min-w-0 shrink gap-0.5">
           <Text size={geometry.message.token} weight="semibold" style={{ color: ink }}>
             {message}

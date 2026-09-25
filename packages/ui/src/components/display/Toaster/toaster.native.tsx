@@ -112,7 +112,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
         accessibilityRole={toast.action ? undefined : 'button'}
         accessibilityLabel={toast.action ? undefined : 'Dismiss notification'}
       >
-        {Icon ? <Icon size={geometry.icon} color={inkColor} /> : null}
+        {Icon ? <Icon size={geometry.icon} color={inkColor} style={{ flexShrink: 0 }} /> : null}
         <View className="min-w-0 shrink gap-0.5">
           <Text size={geometry.message.token} weight="semibold" style={{ color: inkColor }}>
             {toast.message}

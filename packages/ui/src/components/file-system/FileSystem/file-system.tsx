@@ -8,6 +8,7 @@ import { Platform, useColorScheme, useWindowDimensions, View } from 'react-nativ
 import { cn } from '../../../lib/cn';
 import { Breadcrumbs } from '../../display/Breadcrumbs/breadcrumbs';
 import { HoldMenuProvider } from '../../menus/HoldMenu/hold-menu';
+import { useFileSystemChromeScroll } from './hooks/use-file-system-chrome-scroll';
 import { buildCrumbs } from './logic/file-system-search';
 import { FileSystemDragScope } from './shell/file-system-drag-scope';
 import { FileSystemHeader } from './shell/file-system-header';
@@ -259,6 +260,8 @@ export function FileSystem({
   views,
   testID,
 }: FileSystemProps) {
+  const rootRef = useRef<View | null>(null);
+  useFileSystemChromeScroll(rootRef);
   // The breadcrumb root falls back to the header title, so the trail names the
   // root the same way the header does unless a consumer says otherwise.
   const resolvedRootLabel = rootLabel ?? title;
@@ -365,7 +368,7 @@ export function FileSystem({
 
   return (
     <FileSystemStoreContext.Provider value={store}>
-      <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
+      <View ref={rootRef} className={cn('overflow-hidden', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
         <HoldMenuProvider
           overlay={Platform.OS === 'web' ? 'none' : 'blur'}
           glass={menuGlass}

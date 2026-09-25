@@ -14,25 +14,26 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { ButtonRipples, ButtonSpinner, usePressRipples } from '../Button/button-internals';
 import { type PressMode, pressAnimate } from '../Button/button-press';
-import { BUTTON_ICON_SIZE, BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
+import { BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
 import { BUTTON_HOVER_CLASS } from '../Button/button-variants';
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
 
 /**
  * Tile dimensions and inner icon size when `iconBackgroundColor` is set. The
- * tile steps 12/16/20/24px against the box's 24/36/48/64px, so every size keeps
- * a ring of breathing room around the plate.
+ * tile stays proportionate to the compact button, leaving only a narrow ring.
  */
 const ICON_TILE: Record<RampSize, { tileClass: string; iconSize: number }> = {
-  xs: { tileClass: 'h-3 w-3 rounded-[3px]', iconSize: 8 },
-  sm: { tileClass: 'h-4 w-4 rounded-sm', iconSize: 10 },
-  md: { tileClass: 'h-5 w-5 rounded-[5px]', iconSize: 12 },
-  lg: { tileClass: 'h-6 w-6 rounded-md', iconSize: 14 },
+  xs: { tileClass: 'h-[18px] w-[18px] rounded-[4px]', iconSize: 12 },
+  sm: { tileClass: 'h-6 w-6 rounded-md', iconSize: 16 },
+  md: { tileClass: 'h-[30px] w-[30px] rounded-lg', iconSize: 20 },
+  lg: { tileClass: 'h-9 w-9 rounded-lg', iconSize: 24 },
 };
 
 /** Spinner diameter per button size. */
 const SPINNER_SIZE: Record<RampSize, number> = { xs: 10, sm: 12, md: 16, lg: 20 };
+/** Icon-only controls need a larger glyph than an icon beside button text. */
+const ICON_BUTTON_GLYPH_SIZE: Record<RampSize, number> = { xs: 18, sm: 24, md: 28, lg: 34 };
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -229,7 +230,7 @@ export function IconButton({
         <IconComponent size={tileIconSize} color={resolvedIconColor} />
       </View>
     );
-  } else iconElement = <IconComponent size={iconSize ?? BUTTON_ICON_SIZE[size]} color={resolvedIconColor} />;
+  } else iconElement = <IconComponent size={iconSize ?? ICON_BUTTON_GLYPH_SIZE[size]} color={resolvedIconColor} />;
 
   const pressValue = pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale });
 

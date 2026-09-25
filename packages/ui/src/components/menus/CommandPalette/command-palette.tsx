@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, type StyleProp, TextInput, View, type ViewStyle } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
+import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { SearchLine as Search } from 'rn-motion-ui-icons/icons/search-line';
 import { useAutoFocusOnShow } from '../../../hooks/use-auto-focus-on-show';
 import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
@@ -8,7 +9,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { isMenuNavKey, nextMenuIndex } from '../../../lib/menu-keyboard';
 import { useThemeColor } from '../../../theme/use-theme-color';
-import { CloseButton } from '../../buttons/CloseButton/close-button';
+import { IconButton } from '../../buttons/IconButton/icon-button';
 import { ThemedIcon } from '../../icon/themed-icon';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
@@ -313,7 +314,13 @@ export function CommandPalette({
               <Text className="text-[10px] text-muted-foreground">{ESC_LABEL}</Text>
             </Pressable>
           ) : (
-            <CloseButton onPress={handleClose} size="sm" />
+            <IconButton
+              icon={CloseLine}
+              size="xs"
+              contentClassName="bg-surface-selected hover:bg-surface-hover"
+              accessibilityLabel="Close"
+              onPress={handleClose}
+            />
           )}
         </View>
         <ScrollView className="max-h-[60vh] px-2 py-2" keyboardShouldPersistTaps="handled">

@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
+import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { Delete2Line as Trash2 } from 'rn-motion-ui-icons/icons/delete-2-line';
 import { FaceidLine as ScanFace } from 'rn-motion-ui-icons/icons/faceid-line';
 import { FileLine as ScrollText } from 'rn-motion-ui-icons/icons/file-line';
 import { ForbidCircleLine as Ban } from 'rn-motion-ui-icons/icons/forbid-circle-line';
+import { LeftLine } from 'rn-motion-ui-icons/icons/left-line';
 import { LockLine as Lock } from 'rn-motion-ui-icons/icons/lock-line';
 import { ShieldLine as ShieldCheck } from 'rn-motion-ui-icons/icons/shield-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
@@ -15,6 +16,7 @@ import { TriggerButton, TriggerControls, type TriggerState, useTriggerState } fr
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { useThemeColor } from '../../../theme/use-theme-color';
 import { Button } from '../../buttons/Button/button';
+import { IconButton } from '../../buttons/IconButton/icon-button';
 import { Text } from '../../typography/Text/text';
 import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import { MorphingModal, type MorphingModalPlacement } from './morphing-modal';
@@ -63,22 +65,6 @@ const RECOVERY_WORDS = [
   'crystal',
 ];
 
-type CloseButtonProps = { label: string; onPress: () => void };
-
-function CloseButton({ label, onPress }: CloseButtonProps) {
-  const mutedForeground = useThemeColor('muted-foreground');
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      className="h-7 w-7 items-center justify-center rounded-full"
-    >
-      <X size={14} color={mutedForeground} />
-    </Pressable>
-  );
-}
-
 type RowProps = { icon: ReactNode; label: string; danger?: boolean; onPress: () => void };
 
 function Row({ icon, label, danger, onPress }: RowProps) {
@@ -120,7 +106,13 @@ function OptionsView({ onPrivateKey, onRecovery, onClose }: OptionsViewProps) {
         <Text weight="semibold" className="text-base text-foreground">
           {OPTIONS_TITLE}
         </Text>
-        <CloseButton label={CLOSE_LABEL} onPress={onClose} />
+        <IconButton
+          icon={CloseLine}
+          size="sm"
+          contentClassName="bg-surface-selected"
+          accessibilityLabel={CLOSE_LABEL}
+          onPress={onClose}
+        />
       </View>
       <View className="gap-2">
         <Row icon={<Lock size={16} />} label={PRIVATE_KEY_LABEL} onPress={onPrivateKey} />
@@ -141,7 +133,13 @@ function PrivateKeyView({ onBack }: PrivateKeyViewProps) {
     <View>
       <View className="mb-3 flex-row items-start justify-between">
         <Lock size={20} color={foreground} />
-        <CloseButton label={BACK_LABEL} onPress={onBack} />
+        <IconButton
+          icon={LeftLine}
+          size="sm"
+          contentClassName="bg-surface-selected"
+          accessibilityLabel={BACK_LABEL}
+          onPress={onBack}
+        />
       </View>
       <Text weight="semibold" className="text-foreground text-xl">
         {PRIVATE_KEY_TITLE}
@@ -174,7 +172,13 @@ function RecoveryView({ onBack }: RecoveryViewProps) {
     <View>
       <View className="mb-3 flex-row items-start justify-between">
         <ScrollText size={20} color={foreground} />
-        <CloseButton label={BACK_LABEL} onPress={onBack} />
+        <IconButton
+          icon={LeftLine}
+          size="sm"
+          contentClassName="bg-surface-selected"
+          accessibilityLabel={BACK_LABEL}
+          onPress={onBack}
+        />
       </View>
       <Text weight="semibold" className="text-foreground text-xl">
         {RECOVERY_TITLE}

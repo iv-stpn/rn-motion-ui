@@ -56,7 +56,7 @@ export type { ItemRowAdornment, ItemRowSize, ItemRowVariant } from './item-row';
  * A two-line pressable list row: leading adornment, title + optional
  * description, and a trailing chevron (overridable). Part of the
  * interactive-surface family, so sizing follows the same `'sm' | 'md' | 'lg'`
- * ramp as {@link MenuItem}, {@link ItemRow}, and {@link CloseButton}.
+ * ramp as {@link MenuItem}, {@link ItemRow}, and {@link IconButton}.
  *
  * `ActionRow` is the interactive counterpart to {@link ItemRow}. It wraps the
  * row in a `Pressable`, shows hover / press overlays

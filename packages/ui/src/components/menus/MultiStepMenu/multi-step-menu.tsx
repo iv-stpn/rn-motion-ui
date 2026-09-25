@@ -14,11 +14,11 @@ import {
 } from 'react';
 import { type LayoutChangeEvent, type PressableProps, ScrollView, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
-import { ArrowLeftLine } from 'rn-motion-ui-icons/icons/arrow-left-line';
+import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
+import { LeftLine } from 'rn-motion-ui-icons/icons/left-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import { CloseButton } from '../../buttons/CloseButton/close-button';
 import { IconButton } from '../../buttons/IconButton/icon-button';
 import { MenuItem, type MenuItemIcon, type MenuItemProps } from '../../rows/menu-item';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';
@@ -351,9 +351,9 @@ export const MultiStepMenu = function MultiStepMenu({
                     // Yoga, so the reveal rides the fade instead.
                   >
                     <IconButton
-                      icon={ArrowLeftLine}
+                      icon={LeftLine}
                       size="sm"
-                      iconSize={18}
+                      contentClassName="bg-surface-selected hover:bg-surface-hover"
                       onPress={goBack}
                       accessibilityLabel="Back"
                       testID={testID ? `${testID}-back` : undefined}
@@ -363,7 +363,11 @@ export const MultiStepMenu = function MultiStepMenu({
               </AnimatePresence>
               <TextRolling text={title} weight="medium" className="flex-1 text-foreground text-lg" />
             </View>
-            <CloseButton
+            <IconButton
+              icon={CloseLine}
+              size="sm"
+              contentClassName="bg-surface-selected hover:bg-surface-hover"
+              accessibilityLabel="Close"
               className="absolute top-2 right-2"
               onPress={handleClose}
               testID={testID ? `${testID}-close` : undefined}
@@ -418,9 +422,9 @@ export const MultiStepMenu = function MultiStepMenu({
         <View className="px-5 pt-6 pb-5">
           <View className="flex-row items-center justify-between">
             <IconButton
-              icon={ArrowLeftLine}
+              icon={LeftLine}
               size="sm"
-              iconSize={18}
+              contentClassName="bg-surface-selected hover:bg-surface-hover"
               accessibilityLabel="Back"
               onPress={handleBack}
               testID={testID ? `${testID}-back` : undefined}
@@ -437,7 +441,14 @@ export const MultiStepMenu = function MultiStepMenu({
                   transition={arrowTransition}
                   exitTransition={arrowExitTransition}
                 >
-                  <CloseButton onPress={handleClose} testID={testID ? `${testID}-close` : undefined} />
+                  <IconButton
+                    icon={CloseLine}
+                    size="sm"
+                    contentClassName="bg-surface-selected hover:bg-surface-hover"
+                    accessibilityLabel="Close"
+                    onPress={handleClose}
+                    testID={testID ? `${testID}-close` : undefined}
+                  />
                 </MotiView>
               )}
             </AnimatePresence>

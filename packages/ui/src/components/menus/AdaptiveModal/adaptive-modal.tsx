@@ -3,6 +3,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Modal, ScrollView, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
+import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { useModalRender } from '../../../hooks/use-modal-render';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
@@ -12,7 +13,7 @@ import type { SurfaceElevation } from '../../../lib/elevated';
 import { GLASS_SURFACE } from '../../../lib/glass';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import { CloseButton } from '../../buttons/CloseButton/close-button';
+import { IconButton } from '../../buttons/IconButton/icon-button';
 import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
@@ -209,7 +210,15 @@ export function AdaptiveModal({
   const isWideOpen = open && isWideScreen;
   const { rendered: isWideMounted, onExitComplete } = useModalRender(isWideOpen);
 
-  const closeButton = showClose ? <CloseButton onPress={handleClose} /> : null;
+  const closeButton = showClose ? (
+    <IconButton
+      icon={CloseLine}
+      size="sm"
+      contentClassName="bg-surface-selected hover:bg-surface-hover"
+      accessibilityLabel="Close"
+      onPress={handleClose}
+    />
+  ) : null;
 
   const handleExitComplete = useCallback(() => {
     onExitComplete();

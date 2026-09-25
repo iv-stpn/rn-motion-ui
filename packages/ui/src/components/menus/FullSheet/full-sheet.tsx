@@ -1,7 +1,8 @@
 import { type ReactNode, useCallback } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
-import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
+import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
+import { LeftLine } from 'rn-motion-ui-icons/icons/left-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
@@ -11,7 +12,7 @@ import { GLASS_SURFACE } from '../../../lib/glass';
 import { CARD_RADIUS } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
-import { CloseButton } from '../../buttons/CloseButton/close-button';
+import { IconButton } from '../../buttons/IconButton/icon-button';
 import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { OverlayShell } from '../Overlay/overlay-shell';
@@ -43,6 +44,19 @@ type BuildBodyArgs = {
 function buildBackButtonBody(args: BuildBodyArgs): ReactNode {
   const { isSmallScreen, title, dismissable, handleClose, children, backIcon } = args;
   const headerHeight = isSmallScreen && title ? BACK_BUTTON_HEADER_HEIGHT : 0;
+  const backControl = backIcon ? (
+    <Pressable onPress={handleClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back" className="p-2">
+      <View className="rotate-180">{backIcon}</View>
+    </Pressable>
+  ) : (
+    <IconButton
+      icon={LeftLine}
+      size="sm"
+      contentClassName="bg-surface-selected hover:bg-surface-hover"
+      accessibilityLabel="Back"
+      onPress={handleClose}
+    />
+  );
   let backOverlay: ReactNode = null;
   if (isSmallScreen && title)
     backOverlay = (
@@ -50,26 +64,13 @@ function buildBackButtonBody(args: BuildBodyArgs): ReactNode {
         className="absolute top-0 right-0 left-0 z-10 flex-row items-center bg-surface-3"
         style={{ height: BACK_BUTTON_HEADER_HEIGHT }}
       >
-        {dismissable ? (
-          <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="ml-2 p-2">
-            <View className="rotate-180">{backIcon ?? <ChevronRight size={20} />}</View>
-          </Pressable>
-        ) : (
-          <View className="ml-2 h-10 w-10" />
-        )}
+        {dismissable ? <View className="ml-2">{backControl}</View> : <View className="ml-2 h-10 w-10" />}
         <Text weight="semibold" className="flex-1 pr-4 pl-2 text-foreground text-xl" numberOfLines={1}>
           {title}
         </Text>
       </View>
     );
-  else if (dismissable)
-    backOverlay = (
-      <View className="absolute top-3 left-4">
-        <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Back" className="p-2">
-          <View className="rotate-180">{backIcon ?? <ChevronRight size={20} />}</View>
-        </Pressable>
-      </View>
-    );
+  else if (dismissable) backOverlay = <View className="absolute top-3 left-4">{backControl}</View>;
   return (
     <>
       <View className="flex-1" style={{ paddingTop: headerHeight }}>
@@ -102,7 +103,17 @@ function resolveDefaultHeader(args: BuildBodyArgs): ReactNode {
         ) : (
           <View className="flex-1" />
         )}
-        {showClose && dismissable ? (closeIcon ?? <CloseButton onPress={handleClose} />) : null}
+        {showClose && dismissable
+          ? (closeIcon ?? (
+              <IconButton
+                icon={CloseLine}
+                size="sm"
+                contentClassName="bg-surface-selected hover:bg-surface-hover"
+                accessibilityLabel="Close"
+                onPress={handleClose}
+              />
+            ))
+          : null}
       </View>
     </View>
   );
@@ -190,9 +201,9 @@ export type FullSheetProps = {
    * When omitted, the existing title/subtitle/showClose props build the header.
    */
   header?: ReactNode | ((ctx: FullSheetHeaderCtx) => ReactNode);
-  /** Replace the entire close button. Default: `<CloseButton onPress={…} />`. */
+  /** Replace the entire close button. Default: a compact `IconButton` with a close glyph. */
   closeIcon?: ReactNode;
-  /** Replace the back-button chevron icon. Default: rotated `<ChevronRight size={20} />`. */
+  /** Replace the back-button chevron icon. Default: `LeftLine` in a compact `IconButton`. */
   backIcon?: ReactNode;
   /**
    * Width at or above which the sheet uses its wide layout. A breakpoint name

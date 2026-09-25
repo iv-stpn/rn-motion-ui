@@ -30,7 +30,7 @@ describe('toast-store', () => {
     expect(getToasts()[0]?.position).toBe('bottom');
     expect(getToasts()[0]?.duration).toBe(TOAST_DURATION_DEFAULT);
     expect(getToasts()[0]?.glass).toBe(false);
-    expect(getToasts()[0]?.pill).toBe(false);
+    expect(getToasts()[0]?.pill).toBe(true);
     expect(getToasts()[0]?.size).toBe('md');
     expect(id).toBe('toast-1');
   });

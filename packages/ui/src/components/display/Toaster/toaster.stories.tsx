@@ -11,7 +11,7 @@ const meta = {
   title: 'Display/Toaster',
   component: Toaster,
   parameters: { layout: 'centered' },
-  args: { position: 'bottom', duration: 4000, offset: 16, glass: false, pill: false, size: 'md' },
+  args: { position: 'bottom', duration: 4000, offset: 16, glass: false, pill: true, size: 'md' },
   argTypes: {
     position: { control: 'select', options: ['top', 'bottom'] },
     smallScreenPosition: { control: 'select', options: ['top', 'bottom'] },
@@ -50,7 +50,7 @@ function ToasterPlayground() {
   const [offset, setOffset] = useState<(typeof OFFSETS)[number]>('16');
   const [size, setSize] = useState<ToastSize>('md');
   const [glass, setGlass] = useState(false);
-  const [pill, setPill] = useState(false);
+  const [pill, setPill] = useState(true);
   const [sticky, setSticky] = useState(false);
 
   const fire = (variant: ToastVariant) => toast(LABEL[variant], { variant, duration: sticky ? 0 : undefined });

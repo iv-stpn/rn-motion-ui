@@ -15,7 +15,7 @@ type GlassToastProps = { message: string; options: ToastOptions; onDismiss: () =
 
 /** The same inexpensive Surface blur + SVG rim on native and web. Sonner still owns web lifecycle. */
 export function GlassToast({ message, options, onDismiss, testID }: GlassToastProps) {
-  const { variant = 'neutral', glassTone = 'variant', size = 'md', pill = false, description, action } = options;
+  const { variant = 'neutral', glassTone = 'variant', size = 'md', pill = true, description, action } = options;
   const neutral = glassTone === 'neutral';
   const fill = useThemeColor(TOAST_FILL_TOKEN[variant]);
   const ink = useThemeColor(neutral ? 'foreground' : TOAST_FOREGROUND_TOKEN[variant]);
@@ -23,7 +23,6 @@ export function GlassToast({ message, options, onDismiss, testID }: GlassToastPr
   const status = useThemeColor(neutral ? 'foreground' : TOAST_FOREGROUND_TOKEN[variant]);
   const geometry = TOAST_SIZE[size];
   const Icon = TOAST_STATUS_ICON[variant];
-  const capsule = pill && !description && !action;
   const handleAction = useCallback(() => {
     action?.onPress();
   }, [action]);
@@ -32,7 +31,7 @@ export function GlassToast({ message, options, onDismiss, testID }: GlassToastPr
       {...GLASS_SURFACE}
       floating={true}
       radius="menu"
-      borderRadius={capsule ? 9999 : undefined}
+      borderRadius={pill ? 9999 : undefined}
       tint={neutral ? undefined : fill}
       opacity={neutral ? 1 : TOAST_GLASS_ALPHA}
       className="max-w-full"

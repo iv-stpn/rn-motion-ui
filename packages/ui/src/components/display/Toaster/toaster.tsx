@@ -133,7 +133,7 @@ function dismiss(id?: string) {
   for (const key of ids) closeCallbacks.get(key)?.();
   sonnerToast.dismiss(id);
 }
-let defaultPill = false;
+let defaultPill = true;
 let defaultSize = TOAST_SIZE_DEFAULT;
 
 /** Translate a shared {@link ToastOptions} into Sonner's `ExternalToast`. */
@@ -204,7 +204,7 @@ export function Toaster({
   duration,
   glass = false,
   glassTone = 'variant',
-  pill = false,
+  pill = true,
   size = TOAST_SIZE_DEFAULT,
   smallScreenPosition,
   largeScreenPosition,

@@ -40,11 +40,16 @@ export function GlassToast({ message, options, onDismiss, testID }: GlassToastPr
     >
       <View
         className="flex-row items-center"
-        style={{ gap: geometry.gap, paddingHorizontal: geometry.padX, paddingVertical: geometry.padY }}
+        style={{
+          gap: geometry.gap,
+          paddingStart: geometry.padX,
+          paddingEnd: pill ? geometry.pillPadEnd : geometry.padX,
+          paddingVertical: geometry.padY,
+        }}
       >
         {Icon ? <Icon size={geometry.icon} color={status} /> : null}
         <View className="min-w-0 shrink gap-0.5">
-          <Text size={geometry.message.token} weight={description ? 'medium' : 'normal'} style={{ color: ink }}>
+          <Text size={geometry.message.token} weight="semibold" style={{ color: ink }}>
             {message}
           </Text>
           {description ? (

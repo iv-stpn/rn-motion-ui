@@ -69,7 +69,7 @@ export type IconButtonProps = {
    */
   elevation?: SurfaceElevation;
 
-  /** Button size — the square, and the icon or tile inside it. Compact uses 24/32/40/48px; comfortable uses Button's 24/36/48/64px ramp. @default 'md' */
+  /** Button size — the square, and the icon or tile inside it. Compact uses 28/36/44/52px; comfortable is at least as large as Button's ramp. @default 'md' */
   size?: RampSize;
   /** Compact visual padding, preserving a 44px touch target through hitSlop. @default 'compact' */
   density?: 'compact' | 'comfortable';
@@ -212,8 +212,8 @@ export function IconButton({
     trackDims: false,
   });
 
-  const compactSize = { xs: 24, sm: 32, md: 40, lg: 48 }[size];
-  const side = density === 'compact' ? compactSize : BUTTON_SIZE[size].px;
+  const compactSize = { xs: 28, sm: 36, md: 44, lg: 52 }[size];
+  const side = density === 'compact' ? compactSize : Math.max(compactSize, BUTTON_SIZE[size].px);
   const boxClass = BUTTON_SIZE[size].square[shape];
   const hasTile = Boolean(iconBackgroundColor);
 

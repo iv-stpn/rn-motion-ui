@@ -22,15 +22,46 @@ export type ToastSizeGeometry = {
   description: 'xs' | 'sm';
   /** Icon↔text gap in px. */
   gap: number;
-  /** Horizontal / vertical padding in px. */
+  /** Compact line height shared by the message and description, in px. */
+  lineHeight: number;
+  /** Leading / vertical padding in px. */
   padX: number;
   padY: number;
+  /** Trailing padding for capsules, giving the text room before the curved edge. */
+  pillPadEnd: number;
 };
 
 export const TOAST_SIZE: Record<ToastSize, ToastSizeGeometry> = {
-  sm: { icon: 20, message: { token: 'xs', px: 12 }, description: 'xs', gap: 6, padX: 10, padY: 8 },
-  md: { icon: 24, message: { token: 'sm', px: 14 }, description: 'sm', gap: 8, padX: 10, padY: 8 },
-  lg: { icon: 28, message: { token: 'base', px: 16 }, description: 'sm', gap: 10, padX: 12, padY: 10 },
+  sm: {
+    icon: 24,
+    message: { token: 'xs', px: 12 },
+    description: 'xs',
+    gap: 10,
+    lineHeight: 15,
+    padX: 10,
+    padY: 8,
+    pillPadEnd: 18,
+  },
+  md: {
+    icon: 28,
+    message: { token: 'sm', px: 14 },
+    description: 'sm',
+    gap: 12,
+    lineHeight: 17,
+    padX: 10,
+    padY: 8,
+    pillPadEnd: 20,
+  },
+  lg: {
+    icon: 32,
+    message: { token: 'base', px: 16 },
+    description: 'sm',
+    gap: 14,
+    lineHeight: 19,
+    padX: 12,
+    padY: 10,
+    pillPadEnd: 24,
+  },
 };
 
 export const TOAST_SIZE_DEFAULT: ToastSize = 'md';

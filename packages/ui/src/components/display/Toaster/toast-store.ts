@@ -32,7 +32,7 @@ type ResolvedToastDefaults = {
 const DEFAULT_DURATION = 4000;
 const POSITION_DEFAULT: ToastPosition = 'bottom';
 const GLASS_DEFAULT = false;
-const PILL_DEFAULT = false;
+const PILL_DEFAULT = true;
 
 let toasts: Toast[] = [];
 let idSeq = 0;

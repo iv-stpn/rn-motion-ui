@@ -40,7 +40,7 @@ export type ToastOptions = {
   glass?: boolean;
   /** Neutral glass with a semantic icon, or the existing variant-tinted glass. @default 'variant' */
   glassTone?: 'neutral' | 'variant';
-  /** Render as a fully-rounded capsule instead of a rounded rectangle. @default false */
+  /** Render as a fully-rounded capsule instead of a rounded rectangle. @default true */
   pill?: boolean;
   /** Size variant — compact / default / roomy. @default 'md' */
   size?: ToastSize;
@@ -103,7 +103,7 @@ export type ToasterProps = {
   glass?: boolean;
   /** Neutral glass with a semantic icon, or the existing variant-tinted glass. @default 'variant' */
   glassTone?: 'neutral' | 'variant';
-  /** Default pill mode for `toast()` calls that omit `pill`. @default false */
+  /** Default pill mode for `toast()` calls that omit `pill`. @default true */
   pill?: boolean;
   /** Default size for `toast()` calls that omit `size`. @default 'md' */
   size?: ToastSize;

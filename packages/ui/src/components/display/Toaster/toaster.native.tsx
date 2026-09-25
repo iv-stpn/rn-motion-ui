@@ -99,7 +99,12 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
     >
       <Pressable
         className="flex-row items-center"
-        style={{ gap: geometry.gap, paddingHorizontal: geometry.padX, paddingVertical: geometry.padY }}
+        style={{
+          gap: geometry.gap,
+          paddingStart: geometry.padX,
+          paddingEnd: pill ? geometry.pillPadEnd : geometry.padX,
+          paddingVertical: geometry.padY,
+        }}
         onPress={handleDismiss}
         // The whole pill dismisses. It is a button only when there is no nested
         // action button — an action makes the pill a frame around that button,
@@ -107,13 +112,13 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
         accessibilityRole={toast.action ? undefined : 'button'}
         accessibilityLabel={toast.action ? undefined : 'Dismiss notification'}
       >
-        {Icon ? <Icon size={geometry.icon} color={inkColor} /> : null}
-        <View className="min-w-0 shrink gap-0.5">
-          <Text size={geometry.message.token} weight="medium" style={{ color: inkColor }}>
+        {Icon ? <Icon size={geometry.icon} color={inkColor} style={{ flexShrink: 0 }} /> : null}
+        <View className="min-w-0 shrink">
+          <Text size={geometry.message.token} weight="semibold" style={{ color: inkColor, lineHeight: geometry.lineHeight }}>
             {toast.message}
           </Text>
           {toast.description ? (
-            <Text size={geometry.description} style={{ color: inkColor }}>
+            <Text size={geometry.description} style={{ color: inkColor, lineHeight: geometry.lineHeight }}>
               {toast.description}
             </Text>
           ) : null}
@@ -138,7 +143,7 @@ export function Toaster({
   duration = TOAST_DURATION_DEFAULT,
   glass = false,
   glassTone = 'variant',
-  pill = false,
+  pill = true,
   size = TOAST_SIZE_DEFAULT,
   smallScreenPosition,
   largeScreenPosition,

@@ -152,6 +152,8 @@ type ConsumerSlice = {
   onViewChange?: (view: FileSystemView) => void;
   /** Custom views keyed by view id; a key matching a built-in replaces it. */
   views?: Record<string, ComponentType<FileSystemViewProps>>;
+  menuGlass?: boolean;
+  menuFloating?: boolean;
   renderEmptyState?: (args: FileSystemEmptyStateArgs) => ReactNode;
   renderEntryIcon?: (entry: FileSystemEntry, size: number) => ReactNode | null | undefined;
   renderFilePreview?: (file: FileSystemFileItem) => ReactNode;
@@ -525,6 +527,8 @@ export type FileSystemStoreInit = {
   initialScrollOffset?: ConsumerSlice['initialScrollOffset'];
   onScrollOffsetChange?: ConsumerSlice['onScrollOffsetChange'];
   views?: ConsumerSlice['views'];
+  menuGlass?: boolean;
+  menuFloating?: boolean;
   renderEmptyState?: ConsumerSlice['renderEmptyState'];
   renderEntryIcon?: ConsumerSlice['renderEntryIcon'];
   renderFilePreview?: ConsumerSlice['renderFilePreview'];
@@ -689,6 +693,8 @@ export function createFileSystemStore(init: FileSystemStoreInit) {
         onSelectionChange: init.onSelectionChange,
         onViewChange: init.onViewChange,
         views: init.views,
+        menuGlass: init.menuGlass,
+        menuFloating: init.menuFloating,
         renderEmptyState: init.renderEmptyState,
         renderEntryIcon: init.renderEntryIcon,
         renderFilePreview: init.renderFilePreview,

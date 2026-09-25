@@ -132,6 +132,10 @@ export function useMultiStepMenu(): MultiStepHelpers {
 }
 
 export type MultiStepMenuProps = {
+  /** Lightweight blur and glass rim on the owning modal/sheet. @default false */
+  glass?: boolean;
+  /** Compact floating shadow on the owning surface. @default false */
+  floating?: boolean;
   isWideScreen: boolean;
   visible: boolean;
   onClose: () => void;
@@ -183,6 +187,8 @@ export type MultiStepMenuProps = {
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: wide and small layouts are tightly coupled to shared state — the line budget is the layout surface count, not branch depth
 export const MultiStepMenu = function MultiStepMenu({
   isWideScreen,
+  glass = false,
+  floating = false,
   visible,
   onClose,
   sections,
@@ -461,6 +467,8 @@ export const MultiStepMenu = function MultiStepMenu({
   // and scrolling to MultiStepMenu; the modal only provides the shell + transitions.
   return wrap(
     <AdaptiveModal
+      glass={glass}
+      floating={floating}
       open={visible}
       onOpenChange={handleClose}
       isWideScreen={isWideScreen}

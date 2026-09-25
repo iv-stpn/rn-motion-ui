@@ -23,6 +23,10 @@ export type FileSystemContextMenuAction = {
   /** Renders the label in the destructive color. */
   destructive?: boolean;
   disabled?: boolean;
+  /** Visually separates the next action group without adding another panel. */
+  separatorAfter?: boolean;
+  /** Stable action test identifier, shared by entry and background menus. */
+  testID?: string;
 };
 
 /** The six built-in presentations — four Finder-style desktop views plus two touch-first mobile views. */
@@ -369,6 +373,10 @@ export type FileSystemIndex = {
 };
 
 export type FileSystemProps = {
+  /** Lightweight blur and rim on entry/background menus. @default false */
+  menuGlass?: boolean;
+  /** Compact shadow on entry/background menus. @default false */
+  menuFloating?: boolean;
   /** Flat manifest. Folders are optional; missing prefixes are inferred from file paths. */
   items: FileSystemItem[];
   /**

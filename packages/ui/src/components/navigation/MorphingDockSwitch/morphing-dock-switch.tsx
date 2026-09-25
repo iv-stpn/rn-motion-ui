@@ -2,13 +2,14 @@
 // biome-ignore-all lint/style/useExportsLast: the public icon/item/props types head the module so the sub-components below read against them
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { DownFill as ChevronDown } from 'rn-motion-ui-icons/icons/down-fill';
 import { UpFill as ChevronUp } from 'rn-motion-ui-icons/icons/up-fill';
 import { useIsRTL } from '../../../hooks/use-direction';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
+import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
 import { springLayout } from '../../../lib/ease';
 import { clampSurfaceLevel, elevated as elevatedSurface, type SurfaceElevation } from '../../../lib/elevated';
@@ -31,9 +32,8 @@ import { DOCK_GAP, DOCK_ICON_SCALE, dockMetrics } from '../Dock/dock-metrics';
 import { DockContent, DockFrame, DockHighlight } from '../Dock/dock-motion';
 import { DOCK_LAYOUT, DOCK_SPRING, dockSizeMotion } from '../Dock/dock-transition';
 import { useDockInsetReporter } from '../DockInset/dock-inset';
+import { resolveDockPane } from './dock-pane';
 
-/** Minimum clearance kept between the open pane and the viewport edge when deciding whether to flip up. */
-const VIEWPORT_PADDING = 8;
 /** `p-1` inset between the shell edge and its content, so the dock icons and open rows never run flush to the rim. */
 const PANE_INSET = 4;
 /** How far the lower chevron overlaps the upper one (fraction of its size). */
@@ -232,6 +232,7 @@ function DockDestination({ item, active, itemPx, iconSize, showLabels, reduce, o
       onPress={handlePress}
       accessibilityRole="button"
       aria-selected={active}
+      accessibilityState={{ selected: active }}
       accessibilityLabel={item.label}
       testID={testID}
       className="relative flex-1 items-center justify-center rounded-full"
@@ -333,6 +334,7 @@ function DockRow({ item, onSelect, scale, selected, highlighted, reduce, testID,
       accessibilityRole="button"
       accessibilityLabel={item.label}
       aria-selected={selected}
+      accessibilityState={{ selected }}
       onPress={handlePress}
       onHoverIn={onInteract}
       onPressIn={onInteract}
@@ -341,13 +343,6 @@ function DockRow({ item, onSelect, scale, selected, highlighted, reduce, testID,
       testID={testID}
     />
   );
-}
-
-/** Whether the pane should open above the dock. */
-function opensUpward(paneHeight: number, y: number, h: number, windowHeight: number): boolean {
-  const spaceBelow = windowHeight - y - h - VIEWPORT_PADDING;
-  const spaceAbove = y - VIEWPORT_PADDING;
-  return paneHeight > spaceBelow && spaceAbove > spaceBelow;
 }
 
 /** One equally sized row per destination, plus the shell inset. */
@@ -366,6 +361,7 @@ function dockSurfaceClass(elevation: SurfaceElevation, open: boolean, floating: 
 type DockShellGeometry = {
   open: boolean;
   openAbove: boolean;
+  offsetX: number;
   scale: SwitcherScale;
   paneHeight: number;
   closedHeight: number;
@@ -424,7 +420,16 @@ function dockMorphLayout(closing: boolean, expanded: boolean, reduce: boolean) {
  * the dock on open. Reversing the column instead would pin them to the fixed
  * bottom edge, leaving the pane to collapse around a list that never moved.
  */
-function dockShellGeometry({ open, openAbove, scale, paneHeight, closedHeight, openWidth, closedWidth }: DockShellGeometry) {
+function dockShellGeometry({
+  open,
+  openAbove,
+  offsetX,
+  scale,
+  paneHeight,
+  closedHeight,
+  openWidth,
+  closedWidth,
+}: DockShellGeometry) {
   const radius = open ? scale.paneRadius : closedHeight / 2;
   // Opening upward anchors the pane's bottom to the dock's bottom edge: shift
   // the shell up by its growth so it extends above instead of below.
@@ -435,8 +440,9 @@ function dockShellGeometry({ open, openAbove, scale, paneHeight, closedHeight, o
         height: open ? paneHeight : closedHeight,
         borderRadius: radius,
         translateY,
+        translateX: open ? offsetX : 0,
       }
-    : { borderRadius: radius, translateY };
+    : { borderRadius: radius, translateY, translateX: open ? offsetX : 0 };
   const style: StyleProp<ViewStyle> = IS_WEB
     ? [open ? { zIndex: 40 } : undefined]
     : [
@@ -496,8 +502,7 @@ export function MorphingDockSwitch({
   const blurTargetRef = useBlurTargetRef();
   const teleported = Platform.OS === 'android' && blurTargetRef !== null;
 
-  /** True while the pane opens upward — the list sits above the dock instead of below. */
-  const [openAbove, setOpenAbove] = useState(false);
+  const insets = useSafeInsets();
   /** Opening highlights the selection until the user interacts with the list. */
   const [anyRowFocused, setAnyRowFocused] = useState(false);
   /** The outside-press backdrop's window-covering frame. Null while closed. */
@@ -510,15 +515,11 @@ export function MorphingDockSwitch({
   const measureRoot = useCallback(() => {
     measureSeq.current += 1;
     const seq = measureSeq.current;
-    if (!teleported) {
-      setRootFrame(null);
-      return;
-    }
     rootRef.current?.measureInWindow((x, y, width, height) => {
       if (seq !== measureSeq.current) return;
       setRootFrame({ x, y, width, height });
     });
-  }, [teleported]);
+  }, []);
 
   // biome-ignore lint/plugin: measuring the root is a native measure side effect, not derived state — the teleported overlay must follow the window
   useEffect(() => {
@@ -541,13 +542,26 @@ export function MorphingDockSwitch({
   // label-mode scale so the trigger reads as part of the same enlarged bar.
   const caretSize = scale.stackedCaretSize;
 
-  const paneHeight = computePaneHeight(scale, items.length);
+  const naturalPaneHeight = computePaneHeight(scale, items.length);
   const closedMetrics = dockBarMetrics(itemPx, showLabels, dockItems.length);
   const closedRow = { width: closedMetrics.width, height: closedMetrics.box.height };
   const closedWidth = closedRow.width + PANE_INSET * 2;
   const closedHeight = closedRow.height + PANE_INSET * 2;
   const rootMotion = dockSizeMotion(closedWidth, closedHeight, reduce);
-  const openWidth = Math.max(expandedWidth, closedWidth);
+  const pane = resolveDockPane({
+    x: rootFrame?.x ?? 8,
+    y: rootFrame?.y ?? insets.top + 8,
+    closedHeight,
+    naturalHeight: naturalPaneHeight,
+    desiredWidth: Math.max(expandedWidth, closedWidth),
+    viewportWidth: windowWidth,
+    viewportHeight: windowHeight,
+    insetTop: insets.top,
+    insetBottom: insets.bottom,
+  });
+  const paneHeight = pane.height;
+  const openWidth = pane.width;
+  const openAbove = pane.openAbove;
 
   // Report the resting bottom clearance (viewport bottom → dock top) into the
   // nearest DockInsetProvider so bottom-anchored controls clear the actual dock.
@@ -572,11 +586,11 @@ export function MorphingDockSwitch({
   );
 
   const handleOpen = useCallback(() => {
-    rootRef.current?.measureInWindow((_x, y, _w, h) => {
-      setOpenAbove(opensUpward(paneHeight, y, h, windowHeight));
+    rootRef.current?.measureInWindow((x, y, width, height) => {
+      setRootFrame({ x, y, width, height });
       setOpen(true);
     });
-  }, [setOpen, windowHeight, paneHeight]);
+  }, [setOpen]);
 
   const handleToggle = useCallback(() => {
     if (open) setOpen(false);
@@ -654,7 +668,16 @@ export function MorphingDockSwitch({
   // retention first is what left the list dissolving in place while an emptied
   // pane collapsed a beat later, the two reading as separate motions.
   const morphTransition = dockMorphTransition(closing, expanded, reduce);
-  const shell = dockShellGeometry({ open, openAbove, scale, paneHeight, closedHeight, openWidth, closedWidth });
+  const shell = dockShellGeometry({
+    open,
+    openAbove,
+    offsetX: pane.offsetX,
+    scale,
+    paneHeight,
+    closedHeight,
+    openWidth,
+    closedWidth,
+  });
 
   const rootWindow = rootFrame ? { x: rootFrame.x, y: rootFrame.y } : null;
   const wrapperWidth = rootFrame?.width ?? 0;
@@ -688,29 +711,35 @@ export function MorphingDockSwitch({
       transition={reduce ? TIMING_INSTANT : CONTENT_FADE}
       testID={`${testID}-content`}
     >
-      {items.map((item, index) => (
-        <SwitcherMotionRow
-          key={item.value}
-          index={index}
-          count={items.length}
-          closing={closing}
-          openAbove={openAbove}
-          exitOrder="bottom"
-          reduce={reduce}
-          testID={`${testID}-row-${item.value}`}
-        >
-          <DockRow
-            item={item}
-            onSelect={handleSelect}
-            scale={scale}
-            selected={item.value === value}
-            highlighted={item.value === value && !anyRowFocused}
+      <ScrollView
+        style={{ maxHeight: Math.max(0, paneHeight - PANE_INSET * 2) }}
+        keyboardShouldPersistTaps="handled"
+        testID={`${testID}-scroll`}
+      >
+        {items.map((item, index) => (
+          <SwitcherMotionRow
+            key={item.value}
+            index={index}
+            count={items.length}
+            closing={closing}
+            openAbove={openAbove}
+            exitOrder="bottom"
             reduce={reduce}
-            testID={item.value === value ? `${testID}-header` : `${testID}-item-${item.value}`}
-            onInteract={handleRowFocus}
-          />
-        </SwitcherMotionRow>
-      ))}
+            testID={`${testID}-row-${item.value}`}
+          >
+            <DockRow
+              item={item}
+              onSelect={handleSelect}
+              scale={scale}
+              selected={item.value === value}
+              highlighted={item.value === value && !anyRowFocused}
+              reduce={reduce}
+              testID={item.value === value ? `${testID}-header` : `${testID}-item-${item.value}`}
+              onInteract={handleRowFocus}
+            />
+          </SwitcherMotionRow>
+        ))}
+      </ScrollView>
     </MotiView>
   ) : (
     <DockBar

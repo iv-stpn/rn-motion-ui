@@ -1,11 +1,20 @@
 import { type ReactNode, useCallback, useRef, useState } from 'react';
-import { type LayoutChangeEvent, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import {
+  type LayoutChangeEvent,
+  Pressable,
+  type StyleProp,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { AddLine as Plus } from 'rn-motion-ui-icons/icons/add-line';
 import { CloseLine as X } from 'rn-motion-ui-icons/icons/close-line';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
 import { EASE_OUT, springLayout } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
+import { GLASS_SURFACE } from '../../../lib/glass';
 import { MENU_RADIUS } from '../../../lib/radius';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
@@ -66,6 +75,8 @@ export type MorphingMenuProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
+  /** Use the shared lightweight blur and glass rim on the panel. @default false */
+  glass?: boolean;
   /**
    * Surface elevation of the morph card (0–3) — drives the background tint and
    * the `shadow-elevated-N` recipe. `0` is the flat resting surface (no shadow
@@ -253,6 +264,7 @@ export function MorphingMenu({
   title = 'Create',
   triggerLabel = 'Create',
   floating = false,
+  glass = false,
   elevation = 3,
   className,
   style,
@@ -262,6 +274,7 @@ export function MorphingMenu({
   testID,
 }: MorphingMenuProps) {
   const reduce = useReducedMotion();
+  const { width: windowWidth } = useWindowDimensions();
   const [open, setOpen] = useState(false);
   // Measured window position of the trigger — the morph card re-anchors here
   // inside the overlay Modal so it grows out of the same spot the trigger sits.
@@ -367,7 +380,7 @@ export function MorphingMenu({
                     styles.stage,
                     {
                       position: 'absolute',
-                      left: anchor.x + STAGE_LEFT,
+                      left: Math.min(Math.max(8, anchor.x + STAGE_LEFT), Math.max(0, windowWidth - PANEL_W - 8)),
                       top: anchor.y + STAGE_TOP,
                       width: PANEL_W,
                       height: BOX_H,
@@ -375,6 +388,7 @@ export function MorphingMenu({
                   ]}
                 >
                   <Surface
+                    {...(glass ? GLASS_SURFACE : {})}
                     as={MotiView}
                     elevation={elevation}
                     radius="menu"

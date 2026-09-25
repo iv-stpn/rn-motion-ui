@@ -86,7 +86,14 @@ describe('toast-store', () => {
   it('setToastDefaults changes the fallbacks new toasts use', () => {
     setToastDefaults({ position: 'top', duration: 1000, glass: true, pill: true, size: 'lg' });
 
-    expect(getToastDefaults()).toEqual({ position: 'top', duration: 1000, glass: true, pill: true, size: 'lg' });
+    expect(getToastDefaults()).toEqual({
+      position: 'top',
+      duration: 1000,
+      glass: true,
+      glassTone: 'variant',
+      pill: true,
+      size: 'lg',
+    });
     showToast('x');
     expect(getToasts()[0]?.position).toBe('top');
     expect(getToasts()[0]?.duration).toBe(1000);
@@ -101,6 +108,13 @@ describe('toast-store', () => {
     showToast('solid', { glass: false });
 
     expect(getToasts().map((t) => t.glass)).toEqual([true, false]);
+  });
+
+  it('a per-toast glass tone overrides the neutral default', () => {
+    setToastDefaults({ glass: true, glassTone: 'neutral' });
+    showToast('neutral');
+    showToast('tinted', { glassTone: 'variant' });
+    expect(getToasts().map((item) => item.glassTone)).toEqual(['neutral', 'variant']);
   });
 
   it('a per-toast pill option overrides the default', () => {

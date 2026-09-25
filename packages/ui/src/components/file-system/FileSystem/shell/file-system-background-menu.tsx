@@ -17,6 +17,7 @@ import { type LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, us
 import { useReducedMotion } from '../../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../../hooks/use-safe-insets';
 import { cn } from '../../../../lib/cn';
+import { GLASS_SURFACE } from '../../../../lib/glass';
 import { MotiView } from '../../../../moti/components/view';
 import { AnimatePresence } from '../../../../moti/presence/animate-presence';
 import { MENU_SCRIM_TRANSITION, resolveMenuMotion } from '../../../../theme/motion';
@@ -32,6 +33,7 @@ import {
   type HoldMenuRect,
   resolveHoldMenuLayout,
 } from '../../../rows/menu-placement';
+import { useFileSystemConsumer } from '../store/file-system-context';
 
 const MENU_ACCESSIBILITY_LABEL = 'Actions';
 const CLOSE_ACCESSIBILITY_LABEL = 'Close menu';
@@ -114,6 +116,7 @@ type PanelProps = {
 };
 
 function BackgroundPanel({ items, layout, menuHeight, onClose, onMenuHeight, reduce, testID }: PanelProps) {
+  const { menuGlass, menuFloating } = useFileSystemConsumer();
   const scrolls = menuHeight > layout.maxHeight;
   // The same open/close every anchored menu in the package uses. `shift` is the
   // travel that keeps the pair on screen, so it is where the panel rests — the
@@ -132,11 +135,13 @@ function BackgroundPanel({ items, layout, menuHeight, onClose, onMenuHeight, red
 
   return (
     <Surface
+      {...(menuGlass ? GLASS_SURFACE : {})}
+      floating={menuFloating}
       as={MotiView}
       elevation={PANEL_ELEVATION}
       radius="menu"
       {...panelMotion}
-      className="hairline absolute overflow-hidden border-border"
+      className={cn('absolute overflow-hidden', !menuGlass && 'hairline border-border')}
       onLayout={onMenuHeight}
       style={{
         left: layout.left,

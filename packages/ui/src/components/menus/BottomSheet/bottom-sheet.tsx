@@ -8,6 +8,8 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { useSafeInsets } from '../../../hooks/use-safe-insets';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
+import { GLASS_SURFACE } from '../../../lib/glass';
+import { MODAL_RADIUS } from '../../../lib/radius';
 import { Surface } from '../../display/Surface/surface';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 import { OverlayScrim } from '../Overlay/overlay-scrim';
@@ -63,6 +65,8 @@ export type BottomSheetProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
+  /** Use the shared lightweight blur and glass rim on the panel. @default false */
+  glass?: boolean;
   /**
    * Surface elevation of the sheet panel (0–3) — drives the background tint
    * and the `shadow-elevated-N` recipe. `0` is the flat resting surface (no
@@ -113,6 +117,7 @@ export function BottomSheet({
   onAfterClose,
   fullSheet,
   floating = false,
+  glass = false,
   elevation = 3,
   overlay = 'blur',
   closeOnOutsidePress = true,
@@ -238,6 +243,8 @@ export function BottomSheet({
           <GestureDetector gesture={handleGesture}>
             <Animated.View renderToHardwareTextureAndroid={IS_ANDROID} style={[sheetStyle, styles.sheetContainer]}>
               <Surface
+                {...(glass ? GLASS_SURFACE : {})}
+                borderRadius={glass && !fullSheet ? MODAL_RADIUS : undefined}
                 elevation={elevation}
                 floating={floating}
                 ref={sheetRef}

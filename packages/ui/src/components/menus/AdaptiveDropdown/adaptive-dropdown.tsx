@@ -4,6 +4,7 @@ import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { type BreakpointValue, isWidthAtLeast } from '../../../lib/breakpoints';
 import { cn } from '../../../lib/cn';
 import type { SurfaceElevation } from '../../../lib/elevated';
+import { GLASS_SURFACE } from '../../../lib/glass';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { type MenuMotion, menuTransformOrigin, resolveMenuMotion } from '../../../theme/motion';
@@ -103,6 +104,8 @@ export type AdaptiveDropdownProps = {
    * layered drop for the halo. @default false
    */
   floating?: boolean;
+  /** Use the shared lightweight blur and glass rim on the panel. @default false */
+  glass?: boolean;
   /** Float level for the wide-screen panel — picks the `shadow-elevated-N` recipe (drop + dark rim). `0` is the flat resting surface (no shadow or border). @default 3 */
   elevation?: SurfaceElevation;
   /**
@@ -157,6 +160,7 @@ export function AdaptiveDropdown({
   triggerClassName,
   fullSheet = false,
   floating = false,
+  glass = false,
   elevation = 3,
   wideBreakpoint = DEFAULT_WIDE_BREAKPOINT,
   motion,
@@ -310,6 +314,7 @@ export function AdaptiveDropdown({
             <AnimatePresence onExitComplete={handlePanelExitComplete}>
               {open && isWideScreen ? (
                 <Surface
+                  {...(glass ? GLASS_SURFACE : {})}
                   as={MotiView}
                   elevation={elevation}
                   radius="menu"
@@ -345,6 +350,8 @@ export function AdaptiveDropdown({
         </Modal>
       ) : (
         <BottomSheet
+          glass={glass}
+          floating={floating}
           open={open}
           onOpenChange={close}
           fullSheet={fullSheet}

@@ -88,6 +88,8 @@ function useMenuOpenClose(state: SharedValue<CONTEXT_MENU_STATE>, onOpen?: () =>
  */
 const ProviderComponent = ({
   children,
+  glass = false,
+  floating = false,
   theme: selectedTheme,
   iconComponent,
   safeAreaInsets,
@@ -172,6 +174,8 @@ const ProviderComponent = ({
       teleported,
       overlay,
       closeOnOutsidePress,
+      glass,
+      floating,
     }),
     [
       state,
@@ -187,6 +191,8 @@ const ProviderComponent = ({
       teleported,
       overlay,
       closeOnOutsidePress,
+      glass,
+      floating,
     ],
   );
 

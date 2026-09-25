@@ -215,6 +215,8 @@ function FileSystemSideEffects() {
 }
 
 export function FileSystem({
+  menuGlass = false,
+  menuFloating = false,
   bodyClassName,
   breadcrumbsClassName,
   breakpoints,
@@ -286,6 +288,8 @@ export function FileSystem({
       onViewChange,
       initialScrollOffset,
       onScrollOffsetChange,
+      menuGlass,
+      menuFloating,
       renderEmptyState,
       renderEntryIcon,
       renderFilePreview,
@@ -325,6 +329,8 @@ export function FileSystem({
       onViewChange,
       initialScrollOffset,
       onScrollOffsetChange,
+      menuGlass,
+      menuFloating,
       renderEmptyState,
       renderEntryIcon,
       renderFilePreview,
@@ -360,7 +366,7 @@ export function FileSystem({
   return (
     <FileSystemStoreContext.Provider value={store}>
       <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
-        <HoldMenuProvider theme={colorScheme === 'dark' ? 'dark' : 'light'}>
+        <HoldMenuProvider glass={menuGlass} floating={menuFloating} theme={colorScheme === 'dark' ? 'dark' : 'light'}>
           {renderHeader ? (
             <FileSystemCustomHeader renderHeader={renderHeader} />
           ) : (

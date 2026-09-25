@@ -8,6 +8,8 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { GLASS_SURFACE } from '../../../lib/glass';
+import { Surface } from '../../display/Surface/surface';
 import { Menu, type MenuEntry } from '../../rows/menu';
 import type { MenuItemIcon } from '../../rows/menu-item';
 import { CONTEXT_MENU_STATE, HOLD_ITEM_TRANSFORM_DURATION, SPRING_CONFIGURATION_MENU } from './constants';
@@ -85,6 +87,7 @@ function toMenuEntries(
  * `deepEqual` sync upstream uses.
  */
 const MenuListComponent = () => {
+  const { glass = false, floating = false } = useHoldMenuInternal();
   const { state, theme, menuProps, windowSize, safeAreaInsets, AnimatedIcon } = useHoldMenuInternal();
 
   const [itemList, setItemList] = useState<MenuItemProps[]>([]);
@@ -179,14 +182,21 @@ const MenuListComponent = () => {
   return (
     <Animated.View
       testID="hold-menu-panel"
-      className="absolute top-0 z-[15] flex-row items-start justify-start overflow-hidden rounded-menu"
+      className="absolute top-0 z-[15] flex-row items-start justify-start rounded-menu"
       style={messageStyles}
     >
-      <Animated.View className="absolute inset-0 flex-col items-center justify-start" style={panelStyle}>
+      <Surface
+        as={Animated.View}
+        {...(glass ? GLASS_SURFACE : {})}
+        floating={floating}
+        radius="menu"
+        className="absolute inset-0 overflow-hidden"
+      >
+        {glass ? null : <Animated.View pointerEvents="none" className="absolute inset-0" style={panelStyle} />}
         <ScrollView bounces={false} showsVerticalScrollIndicator={false} className="absolute inset-0">
           <Menu entries={entries} onClose={closeMenu} iconGutter="off" variant="segmented" />
         </ScrollView>
-      </Animated.View>
+      </Surface>
     </Animated.View>
   );
 };

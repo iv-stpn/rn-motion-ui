@@ -40,7 +40,7 @@ import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
 const PILL_CLASSNAME = 'max-w-[340px]';
 
 /** Px a toast travels from its edge as it enters and leaves. */
-const SLIDE = 24;
+const SLIDE = 12;
 
 /** Vertical gap (px) between stacked toasts, so they don't touch when several
  *  fire at once. Matches Sonner's default `gap`. */
@@ -75,7 +75,7 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
         from={{ opacity: 0, translateY: travel }}
         animate={{ opacity: 1, translateY: 0 }}
         exit={{ opacity: 0, translateY: travel }}
-        transition={MOTION_STANDARD}
+        transition={{ type: 'timing', duration: reduced ? 0 : 220 }}
         className={PILL_CLASSNAME}
       >
         <GlassToast message={toast.message} options={toast} onDismiss={handleDismiss} testID={`${testID}-${toast.id}`} />

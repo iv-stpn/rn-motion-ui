@@ -5,8 +5,11 @@ import { FileLine } from 'rn-motion-ui-icons/icons/file-line';
 import { FolderLine } from 'rn-motion-ui-icons/icons/folder-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Button } from '../../buttons/Button/button';
+import { CloseButton } from '../../buttons/CloseButton/close-button';
+import { IconButton } from '../../buttons/IconButton/icon-button';
 import { FileSystem } from '../../file-system/FileSystem/file-system';
 import type { FileSystemContextMenuAction, FileSystemItem } from '../../file-system/FileSystem/types/file-system.types';
+import { Input } from '../../form/Input/input';
 import { AdaptiveDropdown } from '../../menus/AdaptiveDropdown/adaptive-dropdown';
 import { HoldItem, HoldMenuProvider } from '../../menus/HoldMenu/hold-menu';
 import { HoverMenu } from '../../menus/HoverMenu/hover-menu';
@@ -14,6 +17,7 @@ import { MorphingMenu } from '../../menus/MorphingMenu/morphing-menu';
 import { type MultiStepHelpers, MultiStepMenu } from '../../menus/MultiStepMenu/multi-step-menu';
 import { MorphingDockSwitch } from '../../navigation/MorphingDockSwitch/morphing-dock-switch';
 import { Menu } from '../../rows/menu';
+import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import { Toaster, toast } from '../Toaster/toaster';
 
@@ -138,7 +142,7 @@ function Scene({ kind }: SceneProps) {
               Settings
             </Button>
             <MultiStepMenu
-              {...MATERIAL}
+              floating={true}
               visible={open}
               onClose={hide}
               isWideScreen={true}
@@ -244,8 +248,62 @@ export const FileMenuInteraction: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByTestId('review-files-entry-Project overview.md-kebab'));
     await waitFor(() => expect(screen.getByTestId('file-action-rename')).toBeVisible());
+    const backdrops = screen.getAllByTestId('hold-menu-backdrop');
+    await waitFor(() => {
+      const active = backdrops.filter((backdrop) => getComputedStyle(backdrop).top === '0px');
+      expect(active.length).toBeGreaterThan(0);
+      for (const backdrop of active) expect(backdrop.children.length).toBe(0);
+    });
     await expect(screen.getByTestId('file-action-delete')).toBeVisible();
     await userEvent.click(screen.getByTestId('file-action-rename'));
     await waitFor(() => expect(screen.getByTestId('file-action-rename')).not.toBeVisible());
+  },
+};
+
+export const CompactControls: Story = {
+  render: () => (
+    <View className="gap-4 bg-background p-6">
+      <View className="flex-row items-center gap-2">
+        <IconButton
+          icon={FolderLine}
+          blurRadius={12}
+          rim={true}
+          floating={true}
+          accessibilityLabel="Files"
+          testID="compact-icon"
+        />
+        <Input
+          className="flex-1"
+          shape="pill"
+          blurRadius={12}
+          rim={true}
+          floating={true}
+          placeholder="Search"
+          testID="compact-search"
+        />
+        <CloseButton testID="compact-close" />
+      </View>
+      <MenuItem mode="sidebar" active={true} label="Files" icon={FolderLine} testID="pill-row" />
+      <MenuItem
+        mode="sidebar"
+        active={true}
+        activeVariant="primary"
+        shape="rounded"
+        label="Photos"
+        icon={FileLine}
+        testID="rounded-row"
+      />
+    </View>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.getByTestId('compact-icon').getBoundingClientRect().width).toBe(40);
+    expect(canvas.getByTestId('compact-close').getBoundingClientRect().width).toBe(32);
+    const pill = getComputedStyle(canvas.getByTestId('pill-row'));
+    const rounded = getComputedStyle(canvas.getByTestId('rounded-row'));
+    expect(pill.borderRadius).not.toBe(rounded.borderRadius);
+    expect(pill.backgroundColor).not.toBe(rounded.backgroundColor);
+    await userEvent.click(canvas.getByTestId('compact-search'));
+    await expect(canvas.getByTestId('compact-search')).toHaveFocus();
   },
 };

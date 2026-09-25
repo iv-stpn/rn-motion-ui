@@ -26,7 +26,7 @@ import { TOAST_FILL_TOKEN, TOAST_FOREGROUND_TOKEN } from './toast-variants';
  * - `action.onPress` maps to Sonner's `action.onClick`
  * - `onClose` follows Sonner's dismissal callbacks
  * - `glass` uses the same Surface blur, rim, and compact shadow as native;
- *   `glassTone="neutral"` limits semantic colour to the status icon
+ *   `glassTone="neutral"` uses a neutral surface and high-contrast status glyph
  *
  * Sonner's surface/foreground colours are re-pointed at the repo's theme tokens
  * (see {@link THEME_VARS}) and its border is dropped, so the web toast follows the
@@ -59,7 +59,11 @@ const PILL_RADIUS = 9999;
  * specificity.
  */
 const ICON_OVERRIDE_CSS = `[data-sonner-toast][data-styled='true'] [data-icon]{width:auto;height:auto;margin-left:0;margin-right:0}
-[data-sonner-toast][data-styled='true'] [data-icon] svg{margin-left:0;margin-right:0}`;
+[data-sonner-toast][data-styled='true'] [data-icon] svg{margin-left:0;margin-right:0}
+[data-sonner-toast].rn-glass-toast{transition:transform 220ms ease-out,opacity 180ms ease-out,height 220ms ease-out}
+[data-sonner-toast].rn-glass-toast[data-mounted='false']{transform:translateY(calc(var(--lift) * -12px))}
+[data-sonner-toast].rn-glass-toast[data-removed='true'][data-front='true'][data-swipe-out='false']{transform:translateY(calc(var(--lift) * -12px))}
+@media(prefers-reduced-motion:reduce){[data-sonner-toast].rn-glass-toast{transition:none!important;transform:none!important}}`;
 
 /**
  * Sonner's theme vars re-pointed at the repo's semantic tokens, so the toast's
@@ -186,6 +190,7 @@ function show(message: string, options?: ToastOptions): string {
         onDismiss: onClose,
         onAutoClose: onClose,
         style: TOAST_STYLE,
+        className: 'rn-glass-toast',
       },
     );
     return id;

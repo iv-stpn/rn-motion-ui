@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
-import { useColorScheme, useWindowDimensions, View } from 'react-native';
+import { Platform, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { cn } from '../../../lib/cn';
 import { Breadcrumbs } from '../../display/Breadcrumbs/breadcrumbs';
 import { HoldMenuProvider } from '../../menus/HoldMenu/hold-menu';
@@ -366,7 +366,12 @@ export function FileSystem({
   return (
     <FileSystemStoreContext.Provider value={store}>
       <View className={cn('overflow-hidden bg-background', className)} onLayout={handleLayout} testID={testID} style={{ height }}>
-        <HoldMenuProvider glass={menuGlass} floating={menuFloating} theme={colorScheme === 'dark' ? 'dark' : 'light'}>
+        <HoldMenuProvider
+          overlay={Platform.OS === 'web' ? 'none' : 'blur'}
+          glass={menuGlass}
+          floating={menuFloating}
+          theme={colorScheme === 'dark' ? 'dark' : 'light'}
+        >
           {renderHeader ? (
             <FileSystemCustomHeader renderHeader={renderHeader} />
           ) : (

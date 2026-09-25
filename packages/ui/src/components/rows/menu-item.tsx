@@ -8,6 +8,9 @@ import { SPRING_LAYOUT } from '../../lib/ease';
 import { FOCUS_VISIBLE_RING } from '../../lib/focus-ring';
 import { MotiView } from '../../moti/components/view';
 import { TIMING_INSTANT } from '../../theme/motion';
+import type { ThemeToken } from '../../theme/use-theme-color';
+import type { ButtonShape } from '../buttons/Button/button-scale';
+import { type ButtonVariant, buttonContainer, buttonLabel, variantIconColorToken } from '../buttons/Button/button-variants';
 import { ThemedIcon } from '../icon/themed-icon';
 import { Text, type TextWeight } from '../typography/Text/text';
 
@@ -75,7 +78,12 @@ const BASE_ROW_CLASS_WITH_ICON: Record<MenuItemSize, string> = {
 };
 
 /** Corner radius for the sidebar-mode row — the shared interactive token, not a per-size raw scale. */
-const SIDEBAR_ROW_RADIUS = 'rounded-interactive';
+const SIDEBAR_ROW_RADIUS = {
+  pill: 'rounded-full',
+  circle: 'rounded-full',
+  rounded: 'rounded-interactive',
+  square: 'rounded-none',
+};
 
 /**
  * Row layout for the segmented variant — the icon trailing, so the row is
@@ -134,7 +142,7 @@ function getLabelColorClass({ hasIconTile, mode, active, destructive }: LabelCol
 type IconTokenOptions = Omit<LabelColorOptions, 'hasIconTile'>;
 
 /** The three theme tokens the default variant's leading icon is ever painted in. */
-type MenuItemIconToken = 'danger' | 'foreground' | 'muted-foreground';
+type MenuItemIconToken = ThemeToken;
 
 /**
  * Themed-icon token for the leading icon of the default variant. Tracks the
@@ -174,6 +182,10 @@ export type MenuItemProps = Omit<PressableProps, 'children'> & {
    * @default 'menu'
    */
   mode?: MenuItemMode;
+  /** Sidebar highlight shape, matching Button's default. @default 'pill' */
+  shape?: ButtonShape;
+  /** Sidebar selected fill, using the same variants as Button. @default 'neutral' */
+  activeVariant?: ButtonVariant;
   /**
    * Surface variant. `'segmented'` moves the icon trailing and lays the row out
    * `justify-between` (the hold-menu style); `'base'` keeps it leading.
@@ -266,6 +278,8 @@ function MenuItemIconSlot({ icon: Icon, size, active, token, bgStyle, iconColor,
 export function MenuItem({
   size = 'md',
   mode = 'menu',
+  shape = 'pill',
+  activeVariant = 'neutral',
   variant = 'base',
   bottomBorder = false,
   icon: Icon,
@@ -320,8 +334,11 @@ export function MenuItem({
   // `px` a bare text row needs would only push the label further right.
   const hasLeadingSlot = Boolean(Icon) || iconPlaceholder;
 
-  const labelColorClass = getLabelColorClass({ hasIconTile, mode, active, destructive });
-  const iconToken = getIconToken({ mode, active, destructive });
+  const selectedSidebar = mode === 'sidebar' && active;
+  const labelColorClass = selectedSidebar
+    ? buttonLabel({ variant: activeVariant, size: null })
+    : getLabelColorClass({ hasIconTile, mode, active, destructive });
+  const iconToken = selectedSidebar ? variantIconColorToken(activeVariant) : getIconToken({ mode, active, destructive });
 
   // The leading slot in `'base'`, the trailing one in `'segmented'` — extracted
   // so the single instance can move without duplicating its props.
@@ -345,11 +362,12 @@ export function MenuItem({
         segmented
           ? SEGMENTED_ROW_CLASS[size]
           : cn(
-              mode === 'sidebar' && SIDEBAR_ROW_RADIUS,
+              mode === 'sidebar' && SIDEBAR_ROW_RADIUS[shape],
               hasLeadingSlot && !hasIconTile ? BASE_ROW_CLASS_WITH_ICON[size] : scale.rowClass,
             ),
         bottomBorder && 'hairline-b border-border',
-        hasIconTile && active && 'bg-info',
+        hasIconTile && active && mode !== 'sidebar' && 'bg-info',
+        mode === 'sidebar' && active && buttonContainer({ variant: activeVariant }),
         canInteract && hovered && 'bg-surface-hover',
         canInteract && pressed && 'bg-surface-selected',
         // Dimmed *and* blocked: `disabled` alone would leave the row looking live,
@@ -366,7 +384,7 @@ export function MenuItem({
       {...pressHandlers}
     >
       {/* Animated active highlight — default (non-icon-bg) variant only */}
-      {!hasIconTile && active ? (
+      {!hasIconTile && active && mode !== 'sidebar' ? (
         <MotiView
           key="hl"
           className="pointer-events-none absolute inset-0 bg-surface-selected"

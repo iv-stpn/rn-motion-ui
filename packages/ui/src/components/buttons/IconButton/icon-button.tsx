@@ -32,8 +32,8 @@ const ICON_TILE: Record<RampSize, { tileClass: string; iconSize: number }> = {
 
 /** Spinner diameter per button size. */
 const SPINNER_SIZE: Record<RampSize, number> = { xs: 10, sm: 12, md: 16, lg: 20 };
-/** Icon-only controls need a larger glyph than an icon beside button text. */
-const ICON_BUTTON_GLYPH_SIZE: Record<RampSize, number> = { xs: 18, sm: 24, md: 28, lg: 34 };
+/** Icon-only controls need a larger glyph than an icon beside button text; large buttons retain a little more inset. */
+const ICON_BUTTON_GLYPH_SIZE: Record<RampSize, number> = { xs: 18, sm: 24, md: 28, lg: 32 };
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -85,9 +85,9 @@ export type IconButtonProps = {
    * specular edge light when `rim` is set). @default 0
    */
   blurRadius?: number;
-  /** Opacity of the frosted tint (0–1); only thins the fill when `blurRadius` is set. @default 1 */
+  /** Opacity of the frosted tint (0–1); only thins the fill when `blurRadius` is set. @default 0.8 */
   opacity?: number;
-  /** Draw the glass edge light — the `Rim` specular ring around the plate. @default false */
+  /** Draw the glass edge light — enabled by default for floating plates. @default floating */
   rim?: boolean;
   /** Rim width in px/dp. @default 1 */
   rimWidth?: number;
@@ -178,8 +178,8 @@ export function IconButton({
   iconSize,
   shape = 'pill',
   blurRadius = 0,
-  opacity = 1,
-  rim = false,
+  opacity = 0.8,
+  rim = floating,
   rimWidth,
   intensity,
   onPress,

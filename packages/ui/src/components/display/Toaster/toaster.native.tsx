@@ -113,12 +113,12 @@ function ToastItem({ toast, position, testID }: ToastItemProps) {
         accessibilityLabel={toast.action ? undefined : 'Dismiss notification'}
       >
         {Icon ? <Icon size={geometry.icon} color={inkColor} style={{ flexShrink: 0 }} /> : null}
-        <View className="min-w-0 shrink gap-0.5">
-          <Text size={geometry.message.token} weight="semibold" style={{ color: inkColor }}>
+        <View className="min-w-0 shrink">
+          <Text size={geometry.message.token} weight="semibold" style={{ color: inkColor, lineHeight: geometry.lineHeight }}>
             {toast.message}
           </Text>
           {toast.description ? (
-            <Text size={geometry.description} style={{ color: inkColor }}>
+            <Text size={geometry.description} style={{ color: inkColor, lineHeight: geometry.lineHeight }}>
               {toast.description}
             </Text>
           ) : null}

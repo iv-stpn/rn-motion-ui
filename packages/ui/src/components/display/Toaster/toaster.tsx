@@ -60,7 +60,9 @@ const PILL_RADIUS = 9999;
  */
 const ICON_OVERRIDE_CSS = `[data-sonner-toast][data-styled='true'] [data-icon]{width:auto;height:auto;margin-left:0;margin-right:0}
 [data-sonner-toast][data-styled='true'] [data-icon] svg{margin-left:0;margin-right:0}
-[data-sonner-toast][data-styled='true'] [data-title]{font-weight:600}
+[data-sonner-toast][data-styled='true'] [data-title]{font-weight:600;line-height:inherit}
+[data-sonner-toast][data-styled='true'] [data-description]{line-height:inherit}
+[data-sonner-toast][data-styled='true'] [data-content]{gap:0}
 [data-sonner-toast].rn-glass-toast{transition:transform 220ms ease-out,opacity 180ms ease-out,height 220ms ease-out}
 [data-sonner-toast].rn-glass-toast[data-mounted='false']{transform:translateY(calc(var(--lift) * -12px))}
 [data-sonner-toast].rn-glass-toast[data-removed='true'][data-front='true'][data-swipe-out='false']{transform:translateY(calc(var(--lift) * -12px))}
@@ -157,6 +159,7 @@ function toSonnerOptions(options?: ToastOptions): ExternalToast {
       ...solidStyle(variant),
       ...(isPill ? { borderRadius: PILL_RADIUS } : {}),
       fontSize: geometry.message.px,
+      lineHeight: `${geometry.lineHeight}px`,
       paddingBlock: geometry.padY,
       paddingInlineStart: geometry.padX,
       paddingInlineEnd: isPill ? geometry.pillPadEnd : geometry.padX,

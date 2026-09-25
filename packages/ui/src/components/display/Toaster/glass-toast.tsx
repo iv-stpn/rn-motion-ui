@@ -48,12 +48,12 @@ export function GlassToast({ message, options, onDismiss, testID }: GlassToastPr
         }}
       >
         {Icon ? <Icon size={geometry.icon} color={status} style={{ flexShrink: 0 }} /> : null}
-        <View className="min-w-0 shrink gap-0.5">
-          <Text size={geometry.message.token} weight="semibold" style={{ color: ink }}>
+        <View className="min-w-0 shrink">
+          <Text size={geometry.message.token} weight="semibold" style={{ color: ink, lineHeight: geometry.lineHeight }}>
             {message}
           </Text>
           {description ? (
-            <Text size={geometry.description} style={{ color: secondaryInk }}>
+            <Text size={geometry.description} style={{ color: secondaryInk, lineHeight: geometry.lineHeight }}>
               {description}
             </Text>
           ) : null}

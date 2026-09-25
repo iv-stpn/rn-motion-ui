@@ -353,7 +353,7 @@ export const MultiStepMenu = function MultiStepMenu({
                     <IconButton
                       icon={ArrowLeftLine}
                       size="sm"
-                      iconSize={18}
+                      contentClassName="bg-surface-selected hover:bg-surface-hover"
                       onPress={goBack}
                       accessibilityLabel="Back"
                       testID={testID ? `${testID}-back` : undefined}
@@ -420,7 +420,7 @@ export const MultiStepMenu = function MultiStepMenu({
             <IconButton
               icon={ArrowLeftLine}
               size="sm"
-              iconSize={18}
+              contentClassName="bg-surface-selected hover:bg-surface-hover"
               accessibilityLabel="Back"
               onPress={handleBack}
               testID={testID ? `${testID}-back` : undefined}

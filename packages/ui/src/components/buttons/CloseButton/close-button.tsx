@@ -52,13 +52,14 @@ export function CloseButton({
 }: CloseButtonProps) {
   const iconColor = useThemeColor('muted-foreground');
   const buttonSize = { sm: 'xs', md: 'sm', lg: 'md' } as const;
-  const iconSize = { sm: 14, md: 18, lg: 22 }[size];
+  const iconSize = { sm: 16, md: 20, lg: 26 }[size];
   return (
     <IconButton
       icon={CloseLine}
       size={buttonSize[size]}
       iconSize={iconSize}
       iconColor={iconColor}
+      contentClassName="bg-surface-selected hover:bg-surface-hover"
       density="compact"
       elevation={elevation}
       floating={floating}

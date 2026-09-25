@@ -14,7 +14,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { ButtonRipples, ButtonSpinner, usePressRipples } from '../Button/button-internals';
 import { type PressMode, pressAnimate } from '../Button/button-press';
-import { BUTTON_ICON_SIZE, BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
+import { BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
 import { BUTTON_HOVER_CLASS } from '../Button/button-variants';
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
@@ -33,6 +33,8 @@ const ICON_TILE: Record<RampSize, { tileClass: string; iconSize: number }> = {
 
 /** Spinner diameter per button size. */
 const SPINNER_SIZE: Record<RampSize, number> = { xs: 10, sm: 12, md: 16, lg: 20 };
+/** Icon-only controls need a larger glyph than an icon beside button text. */
+const ICON_BUTTON_GLYPH_SIZE: Record<RampSize, number> = { xs: 18, sm: 24, md: 28, lg: 34 };
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -229,7 +231,7 @@ export function IconButton({
         <IconComponent size={tileIconSize} color={resolvedIconColor} />
       </View>
     );
-  } else iconElement = <IconComponent size={iconSize ?? BUTTON_ICON_SIZE[size]} color={resolvedIconColor} />;
+  } else iconElement = <IconComponent size={iconSize ?? ICON_BUTTON_GLYPH_SIZE[size]} color={resolvedIconColor} />;
 
   const pressValue = pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale });
 

@@ -26,6 +26,9 @@ export type MenuItemSize = 'sm' | 'md' | 'lg';
  */
 export type MenuItemMode = 'menu' | 'sidebar';
 
+/** Active treatment for sidebar rows. The quiet style suits dense navigation trees. */
+export type SidebarSelectionStyle = 'filled' | 'quiet';
+
 /**
  * The surface a menu row is drawn for.
  * - `'base'` — the CommandPalette style: icon leading, no borders between rows.
@@ -155,6 +158,33 @@ function getIconToken({ mode, active, destructive }: IconTokenOptions): MenuItem
   return 'muted-foreground';
 }
 
+type SidebarSelectionOptions = {
+  selected: boolean;
+  quiet: boolean;
+  activeVariant: ButtonVariant;
+  hasIconTile: boolean;
+  mode: MenuItemMode;
+  active: boolean;
+  destructive: boolean;
+};
+
+function sidebarSelectionAppearance(options: SidebarSelectionOptions) {
+  const { selected, quiet, activeVariant, hasIconTile, mode, active, destructive } = options;
+  if (selected && quiet)
+    return { label: 'text-foreground', icon: getIconToken({ mode, active, destructive }), fill: 'bg-surface-selected' };
+  if (selected)
+    return {
+      label: buttonLabel({ variant: activeVariant, size: null }),
+      icon: variantIconColorToken(activeVariant),
+      fill: buttonContainer({ variant: activeVariant }),
+    };
+  return {
+    label: getLabelColorClass({ hasIconTile, mode, active, destructive }),
+    icon: getIconToken({ mode, active, destructive }),
+    fill: null,
+  };
+}
+
 export type MenuItemProps = Omit<PressableProps, 'children'> & {
   /**
    * Row size — controls padding, icon dimensions, and label type ramp.
@@ -186,6 +216,8 @@ export type MenuItemProps = Omit<PressableProps, 'children'> & {
   shape?: ButtonShape;
   /** Sidebar selected fill, using the same variants as Button. @default 'neutral' */
   activeVariant?: ButtonVariant;
+  /** A translucent selected row instead of a filled Button plate in sidebar mode. @default 'filled' */
+  sidebarSelectionStyle?: SidebarSelectionStyle;
   /**
    * Surface variant. `'segmented'` moves the icon trailing and lays the row out
    * `justify-between` (the hold-menu style); `'base'` keeps it leading.
@@ -280,6 +312,7 @@ export function MenuItem({
   mode = 'menu',
   shape = 'pill',
   activeVariant = 'neutral',
+  sidebarSelectionStyle = 'filled',
   variant = 'base',
   bottomBorder = false,
   icon: Icon,
@@ -335,10 +368,15 @@ export function MenuItem({
   const hasLeadingSlot = Boolean(Icon) || iconPlaceholder;
 
   const selectedSidebar = mode === 'sidebar' && active;
-  const labelColorClass = selectedSidebar
-    ? buttonLabel({ variant: activeVariant, size: null })
-    : getLabelColorClass({ hasIconTile, mode, active, destructive });
-  const iconToken = selectedSidebar ? variantIconColorToken(activeVariant) : getIconToken({ mode, active, destructive });
+  const selectionAppearance = sidebarSelectionAppearance({
+    selected: selectedSidebar,
+    quiet: sidebarSelectionStyle === 'quiet',
+    activeVariant,
+    hasIconTile,
+    mode,
+    active,
+    destructive,
+  });
 
   // The leading slot in `'base'`, the trailing one in `'segmented'` — extracted
   // so the single instance can move without duplicating its props.
@@ -347,7 +385,7 @@ export function MenuItem({
       icon={Icon}
       size={size}
       active={active}
-      token={iconToken}
+      token={selectionAppearance.icon}
       bgStyle={backgroundStyle}
       iconColor={iconColor}
       iconPlaceholder={iconPlaceholder}
@@ -367,7 +405,7 @@ export function MenuItem({
             ),
         bottomBorder && 'hairline-b border-border',
         hasIconTile && active && mode !== 'sidebar' && 'bg-info',
-        mode === 'sidebar' && active && buttonContainer({ variant: activeVariant }),
+        selectionAppearance.fill,
         canInteract && hovered && 'bg-surface-hover',
         canInteract && pressed && 'bg-surface-selected',
         // Dimmed *and* blocked: `disabled` alone would leave the row looking live,
@@ -400,7 +438,7 @@ export function MenuItem({
       {/* Label */}
       <Text
         numberOfLines={1}
-        className={cn('flex-1', scale.labelClass, labelColorClass)}
+        className={cn('flex-1', scale.labelClass, selectionAppearance.label)}
         weight={labelWeight ?? (mode === 'sidebar' && !hasIconTile ? 'medium' : 'normal')}
       >
         {label}

@@ -108,6 +108,32 @@ function ModesShowcase() {
   );
 }
 
+function QuietSidebarShowcase() {
+  return (
+    <View className="w-56 gap-0.5 rounded-lg bg-surface-2 p-2">
+      <MenuItem
+        label="All files"
+        icon={User}
+        size="sm"
+        mode="sidebar"
+        shape="rounded"
+        sidebarSelectionStyle="quiet"
+        active={true}
+        onPress={onPress}
+      />
+      <MenuItem
+        label="Favorites"
+        icon={User}
+        size="sm"
+        mode="sidebar"
+        shape="rounded"
+        sidebarSelectionStyle="quiet"
+        onPress={onPress}
+      />
+    </View>
+  );
+}
+
 export default meta;
 
 /** Active toggle, icon, iOS mode, and trailing variants in a single interactive panel. */
@@ -119,4 +145,9 @@ export const Interactive: Story = {
 export const Modes: Story = {
   name: 'Modes: menu vs sidebar',
   render: () => <ModesShowcase />,
+};
+
+/** Subtle selected state for desktop navigation beside a content workspace. */
+export const QuietSidebar: Story = {
+  render: () => <QuietSidebarShowcase />,
 };

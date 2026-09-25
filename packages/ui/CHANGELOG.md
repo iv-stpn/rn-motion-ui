@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.17.1
+
+### Patch Changes
+
+- 841618c: Give large icon buttons a little more inner space and make floating glass icon buttons lighter with a default specular rim.
+
 ## 7.17.0
 
 ### Minor Changes

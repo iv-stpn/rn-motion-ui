@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.16.3
+
+### Patch Changes
+
+- 5d0fac9: Keep FileSystem transparent and allow wheel scrolling over its header and chrome. Add two pixels of padding around compact IconButton glyphs while preserving accessible touch targets.
+
 ## 7.16.2
 
 ### Patch Changes

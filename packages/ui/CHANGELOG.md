@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.17.0
+
+### Minor Changes
+
+- 7a73d2e: Add a quiet selected-row style for sidebar MenuItems, suitable for dense desktop navigation.
+
 ## 7.16.3
 
 ### Patch Changes

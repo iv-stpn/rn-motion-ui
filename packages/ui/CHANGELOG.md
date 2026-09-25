@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.16.0
+
+### Minor Changes
+
+- 01dd8d4: Refine floating controls with compact IconButton density, shared modal close/back controls, pill-shaped sidebar highlights with Button-compatible variants, clearer toast typography and restrained motion. Avoid duplicate glass input borders, keep dropdown sheets opaque, and leave web file context-menu backgrounds undimmed.
+
 ## 7.15.0
 
 ### Minor Changes

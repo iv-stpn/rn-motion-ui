@@ -1,7 +1,7 @@
 // biome-ignore-all lint/style/useExportsLast: the entry type heads the module so the implementation below reads against it
 
 import { type ReactNode, useCallback, useState } from 'react';
-import { Pressable, type PressableProps } from 'react-native';
+import { Pressable, type PressableProps, View } from 'react-native';
 import { RightLine as ChevronRight } from 'rn-motion-ui-icons/icons/right-line';
 import { usePressState } from '../../hooks/use-press-state';
 import { cn } from '../../lib/cn';
@@ -41,6 +41,8 @@ export type ActionRowProps = Omit<PressableProps, 'children'> & {
   size?: ItemRowSize;
   /** Visual flavour of the row surface. @default 'default' */
   variant?: ItemRowVariant;
+  /** Optional subtle hairline at the bottom. `inset` starts 12px inside the leading edge. */
+  separator?: 'inset' | 'full';
   /**
    * URL for link-style navigation (React Native Web extension).
    * When provided alongside or instead of `onPress`, the row shows
@@ -101,6 +103,8 @@ export function ActionRow({
   disabled = false,
   size = 'md',
   variant = 'default',
+  separator,
+  testID,
   className,
   onHoverIn,
   onHoverOut,
@@ -138,6 +142,7 @@ export function ActionRow({
   return (
     <Pressable
       {...props}
+      testID={testID}
       disabled={disabled}
       onPress={onPress}
       // @ts-expect-error RNW extended props
@@ -162,6 +167,15 @@ export function ActionRow({
         rightAdornment={resolvedRightAdornment}
         size={size}
       />
+      {separator ? (
+        <View
+          pointerEvents="none"
+          accessibilityElementsHidden={true}
+          importantForAccessibility="no-hide-descendants"
+          testID={testID ? `${testID}-separator` : undefined}
+          className={cn('hairline-b absolute right-0 bottom-0 border-border/40', separator === 'inset' ? 'left-3' : 'left-0')}
+        />
+      ) : null}
     </Pressable>
   );
 }

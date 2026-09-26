@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { NotificationLine as Notification } from 'rn-motion-ui-icons/icons/notification-line';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
-import { fn } from 'storybook/test';
+import { expect, fn } from 'storybook/test';
 import { Choice, Code, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { ActionRow, type ItemRowSize, type ItemRowVariant } from './action-row';
 
@@ -96,6 +96,23 @@ function CustomRightAdornmentStory() {
           onPress={onPress}
         />
       </View>
+      <View className="w-72 overflow-hidden rounded-[20px] bg-surface-2">
+        <ActionRow
+          testID="inset-profile-row"
+          title="Profile"
+          leftAdornment={{ icon: User }}
+          separator="inset"
+          className="min-h-12 rounded-none"
+          onPress={onPress}
+        />
+        <ActionRow
+          testID="inset-notification-row"
+          title="Notifications"
+          leftAdornment={{ icon: Notification }}
+          className="min-h-12 rounded-none"
+          onPress={onPress}
+        />
+      </View>
       <Note>
         The first row uses the default chevron. The second passes <Code>rightAdornment={'{null}'}</Code> to hide it. The third
         shows a disabled row — it dims and press is suppressed.
@@ -130,4 +147,13 @@ export const Showcase: Story = {
 export const CustomRightAdornment: Story = {
   name: 'Custom right adornment',
   render: () => <CustomRightAdornmentStory />,
+  play: async ({ canvas, userEvent }) => {
+    const row = canvas.getByTestId('inset-profile-row');
+    const separator = canvas.getByTestId('inset-profile-row-separator');
+    expect(separator.getBoundingClientRect().left - row.getBoundingClientRect().left).toBe(12);
+    expect(separator.getBoundingClientRect().right).toBe(row.getBoundingClientRect().right);
+    expect(canvas.queryByTestId('inset-notification-row-separator')).toBeNull();
+    await userEvent.click(row);
+    expect(onPress).toHaveBeenCalled();
+  },
 };

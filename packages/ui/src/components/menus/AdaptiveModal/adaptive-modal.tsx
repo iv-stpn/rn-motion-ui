@@ -48,6 +48,8 @@ type AdaptiveModalProps = {
   children: ReactNode;
   /** Theme class for the narrow full-sheet surface; wide panels keep their own surface. */
   smallScreenSurfaceClassName?: string;
+  /** Theme class for the wide modal or drawer surface. */
+  largeScreenSurfaceClassName?: string;
   title?: string;
   subtitle?: string;
   showClose?: boolean;
@@ -145,6 +147,7 @@ export function AdaptiveModal({
   onOpenChange,
   children,
   smallScreenSurfaceClassName,
+  largeScreenSurfaceClassName,
   title,
   subtitle,
   showClose,
@@ -315,7 +318,7 @@ export function AdaptiveModal({
               {...(glass ? GLASS_SURFACE : {})}
               elevation={elevation}
               floating={floating}
-              className="h-full px-8 pt-8 pb-8"
+              className={cn('h-full px-8 pt-8 pb-8', largeScreenSurfaceClassName)}
               accessibilityViewIsModal={true}
               aria-modal={true}
               role="dialog"
@@ -357,7 +360,7 @@ export function AdaptiveModal({
               elevation={elevation}
               radius="modal"
               floating={floating}
-              className={cn(wideHeight !== undefined && 'flex-1', containerPaddingClass)}
+              className={cn(wideHeight !== undefined && 'flex-1', containerPaddingClass, largeScreenSurfaceClassName)}
               style={wideHeight === undefined ? { maxHeight: maxModalHeight } : undefined}
               accessibilityViewIsModal={true}
               aria-modal={true}

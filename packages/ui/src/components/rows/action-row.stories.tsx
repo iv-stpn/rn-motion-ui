@@ -150,6 +150,11 @@ export const CustomRightAdornment: Story = {
   play: async ({ canvas, userEvent }) => {
     const row = canvas.getByTestId('inset-profile-row');
     const separator = canvas.getByTestId('inset-profile-row-separator');
+    const icon = row.querySelector('svg');
+    if (!icon) throw new Error('Missing leading row icon');
+    const rowBounds = row.getBoundingClientRect();
+    const iconBounds = icon.getBoundingClientRect();
+    expect(Math.abs(iconBounds.top + iconBounds.height / 2 - (rowBounds.top + rowBounds.height / 2))).toBeLessThan(1);
     expect(separator.getBoundingClientRect().left - row.getBoundingClientRect().left).toBe(12);
     expect(separator.getBoundingClientRect().right).toBe(row.getBoundingClientRect().right);
     expect(canvas.queryByTestId('inset-notification-row-separator')).toBeNull();

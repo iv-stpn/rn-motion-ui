@@ -143,8 +143,8 @@ export function RowLayout({ title, description, leftAdornment, rightAdornment, s
 
   return (
     <>
-      {/* Left adornment — pinned to the top so it lines up with the title's first line */}
-      {renderAdornment(leftAdornment, 'muted-foreground', scale.iconSize, 'self-start')}
+      {/* Single-line rows center their icon; descriptions retain first-line alignment. */}
+      {renderAdornment(leftAdornment, 'muted-foreground', scale.iconSize, description ? 'self-start' : 'self-center')}
 
       {/* Title + description column */}
       <View className={cn('flex-1', scale.textGap, className)}>

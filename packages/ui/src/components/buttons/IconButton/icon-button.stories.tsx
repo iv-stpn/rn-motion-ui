@@ -209,6 +209,19 @@ export const AllSizes: Story = {
   ),
 };
 
+/** Compact floating plates show the size progression and shadow together. */
+export const FloatingSizes: Story = {
+  render: (args) => (
+    <Variants align="center">
+      {SIZES.map((name) => (
+        <Sample key={name} label={SIZE_LABELS[name]}>
+          <IconButton {...args} size={name} floating={true} elevation={0} accessibilityLabel={`${SIZE_LABELS[name]} floating`} />
+        </Sample>
+      ))}
+    </Variants>
+  ),
+};
+
 /**
  * The glass treatment — set `blurRadius` to frost the backdrop behind the plate,
  * thin the tint with `opacity`, and draw the `rim` specular edge light. The

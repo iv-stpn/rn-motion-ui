@@ -303,7 +303,7 @@ export const CompactControls: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    expect(canvas.getByTestId('compact-icon').getBoundingClientRect().width).toBe(44);
+    expect(canvas.getByTestId('compact-icon').getBoundingClientRect().width).toBe(40);
     expect(canvas.getByTestId('compact-close').getBoundingClientRect().width).toBe(36);
     const pill = getComputedStyle(canvas.getByTestId('pill-row'));
     const rounded = getComputedStyle(canvas.getByTestId('rounded-row'));

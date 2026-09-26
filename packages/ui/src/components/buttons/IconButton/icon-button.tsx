@@ -14,7 +14,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Surface } from '../../display/Surface/surface';
 import { ButtonRipples, ButtonSpinner, usePressRipples } from '../Button/button-internals';
 import { type PressMode, pressAnimate } from '../Button/button-press';
-import { BUTTON_SIZE, type ButtonShape, buttonRadius, type RampSize } from '../Button/button-scale';
+import { BUTTON_SIZE, type ButtonShape, buttonRadius, FLOATING_ICON_SIDE, type RampSize } from '../Button/button-scale';
 import { BUTTON_HOVER_CLASS } from '../Button/button-variants';
 
 // ── Per-size metrics ─────────────────────────────────────────────────────────
@@ -32,8 +32,12 @@ const ICON_TILE: Record<RampSize, { tileClass: string; iconSize: number }> = {
 
 /** Spinner diameter per button size. */
 const SPINNER_SIZE: Record<RampSize, number> = { xs: 10, sm: 12, md: 16, lg: 20 };
-/** Icon-only controls need a larger glyph than an icon beside button text; large buttons retain a little more inset. */
+/** Floating controls leave more clear space around the glyph than resting icon buttons. */
+const FLOATING_GLYPH_SIZE: Record<RampSize, number> = { xs: 16, sm: 18, md: 20, lg: 24 };
+/** Resting controls keep the original icon scale. */
 const ICON_BUTTON_GLYPH_SIZE: Record<RampSize, number> = { xs: 18, sm: 24, md: 28, lg: 32 };
+
+const COMPACT_SIDE: Record<RampSize, number> = { xs: 28, sm: 36, md: 44, lg: 52 };
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -69,7 +73,7 @@ export type IconButtonProps = {
    */
   elevation?: SurfaceElevation;
 
-  /** Button size — the square, and the icon or tile inside it. Compact uses 28/36/44/52px; comfortable follows Button's shared size ramp. @default 'md' */
+  /** Button size — the square, and the icon or tile inside it. Floating compact uses 28/34/40/48px; comfortable follows Button's shared size ramp. @default 'md' */
   size?: RampSize;
   /** Compact visual padding, preserving a 44px touch target through hitSlop. @default 'compact' */
   density?: 'compact' | 'comfortable';
@@ -212,8 +216,8 @@ export function IconButton({
     trackDims: false,
   });
 
-  const compactSize = { xs: 28, sm: 36, md: 44, lg: 52 }[size];
-  const side = density === 'compact' ? compactSize : BUTTON_SIZE[size].px;
+  const compactSide = floating ? FLOATING_ICON_SIDE[size] : COMPACT_SIDE[size];
+  const side = density === 'comfortable' ? BUTTON_SIZE[size].px : compactSide;
   const boxClass = BUTTON_SIZE[size].square[shape];
   const hasTile = Boolean(iconBackgroundColor);
 
@@ -230,7 +234,13 @@ export function IconButton({
         <IconComponent size={tileIconSize} color={resolvedIconColor} />
       </View>
     );
-  } else iconElement = <IconComponent size={iconSize ?? ICON_BUTTON_GLYPH_SIZE[size]} color={resolvedIconColor} />;
+  } else
+    iconElement = (
+      <IconComponent
+        size={iconSize ?? (floating ? FLOATING_GLYPH_SIZE[size] : ICON_BUTTON_GLYPH_SIZE[size])}
+        color={resolvedIconColor}
+      />
+    );
 
   const pressValue = pressAnimate({ pressed, blocked: reduce || isDisabled, pressMode, pressScale });
 
@@ -281,7 +291,7 @@ export function IconButton({
         rim={rim}
         rimWidth={rimWidth}
         intensity={intensity}
-        borderRadius={buttonRadius(shape, size)}
+        borderRadius={shape === 'pill' || shape === 'circle' ? side / 2 : buttonRadius(shape, size)}
         className={cn(fitWidth && 'w-full', className)}
         style={style}
       >

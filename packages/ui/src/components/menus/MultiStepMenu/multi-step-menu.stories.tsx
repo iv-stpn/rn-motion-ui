@@ -211,6 +211,7 @@ function MenuPlayground() {
   const [withFooter, setWithFooter] = useState(true);
   const [withPlaceholder, setWithPlaceholder] = useState(true);
   const [iosStyle, setIosStyle] = useState(false);
+  const [softSmallSurface, setSoftSmallSurface] = useState(false);
   const [visible, setVisible] = useState(false);
   const [path, setPath] = useState<string[]>([]);
   const [overlay, setOverlay] = useState<OverlayType>('blur');
@@ -246,6 +247,7 @@ function MenuPlayground() {
         <Toggle label="Sidebar footer" onChange={setWithFooter} value={withFooter} />
         <Toggle label="Wide placeholder" onChange={setWithPlaceholder} value={withPlaceholder} />
         <Toggle label="iOS-style rows" onChange={setIosStyle} value={iosStyle} />
+        <Toggle label="Soft small-screen surface" onChange={setSoftSmallSurface} value={softSmallSurface} />
         <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Choice
           label="Small screen overlay"
@@ -291,6 +293,7 @@ function MenuPlayground() {
         sidebar={renderMenu}
         sidebarFooter={withFooter ? SIDEBAR_FOOTER : undefined}
         smallScreenMenu={renderMenu}
+        smallScreenSurfaceClassName={softSmallSurface ? 'bg-surface-1' : undefined}
         widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
         widePlaceholder={withPlaceholder ? WIDE_PLACEHOLDER : undefined}
         visible={visible}

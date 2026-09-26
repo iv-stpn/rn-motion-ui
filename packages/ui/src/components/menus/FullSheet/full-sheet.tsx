@@ -161,6 +161,8 @@ export type FullSheetProps = {
    */
   onOpenChange?: (open: boolean) => void;
   children: ReactNode;
+  /** Optional theme class for the entire sheet, including its safe-area padding. */
+  surfaceClassName?: string;
   title?: string;
   subtitle?: string;
   /** Show a close (X) button in the default-mode header. */
@@ -228,6 +230,7 @@ export function FullSheet({
   open,
   onOpenChange,
   children,
+  surfaceClassName,
   title,
   subtitle,
   showClose,
@@ -304,7 +307,7 @@ export function FullSheet({
                 elevation={elevation}
                 floating={floating}
                 key="fullsheet"
-                className="flex-1"
+                className={cn('flex-1', surfaceClassName)}
                 from={{ translateY: height, borderRadius: CARD_RADIUS }}
                 animate={{ translateY: 0, borderRadius: 0 }}
                 exit={{ translateY: height, borderRadius: CARD_RADIUS }}

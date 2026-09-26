@@ -146,6 +146,8 @@ export type MultiStepMenuProps = {
   sidebar: (helpers: MultiStepHelpers) => ReactNode;
   /** Small-screen depth-0 screen. */
   smallScreenMenu: (helpers: MultiStepHelpers) => ReactNode;
+  /** Theme class for the narrow full-sheet surface, including its safe area. */
+  smallScreenSurfaceClassName?: string;
   rootTitle: string;
   /** Wide-screen initial selection (e.g. `['account']`). */
   defaultPath?: string[];
@@ -196,6 +198,7 @@ export const MultiStepMenu = function MultiStepMenu({
   sections,
   sidebar,
   smallScreenMenu,
+  smallScreenSurfaceClassName,
   rootTitle,
   defaultPath,
   widePlaceholder,
@@ -491,6 +494,7 @@ export const MultiStepMenu = function MultiStepMenu({
       onOpenChange={handleClose}
       isWideScreen={isWideScreen}
       smallScreenMode="fullSheet"
+      smallScreenSurfaceClassName={smallScreenSurfaceClassName}
       largeScreenMode="modal"
       customLayout={true}
       scrollable={false}

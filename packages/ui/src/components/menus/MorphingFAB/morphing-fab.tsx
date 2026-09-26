@@ -10,7 +10,7 @@ import { elevated as elevatedSurface, type SurfaceElevation } from '../../../lib
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
 import { TIMING_INSTANT } from '../../../theme/motion';
-import { BUTTON_SIZE } from '../../buttons/Button/button-scale';
+import { BUTTON_SIZE, FLOATING_ICON_SIDE } from '../../buttons/Button/button-scale';
 import { IconButton } from '../../buttons/IconButton/icon-button';
 import { Surface } from '../../display/Surface/surface';
 import { ThemedIcon } from '../../icon/themed-icon';
@@ -391,9 +391,8 @@ export function MorphingFAB({
   const paneEnterTransition = reduce ? TIMING_INSTANT : { type: 'timing' as const, duration: 200, delay: 150, easing: EASE_OUT };
 
   const resolvedPane = typeof children === 'function' ? children({ close: handleClose }) : children;
-  // The collapsed trigger's px side — the shared ramp entry the `size` names, and
-  // the resting footprint the shell collapses to. A pill rounds to half of it.
-  const triggerSize = BUTTON_SIZE[size].px;
+  // Match the IconButton's visible side so the collapsed shell has no empty rim.
+  const triggerSize = floating ? FLOATING_ICON_SIDE[size] : BUTTON_SIZE[size].px;
   const glass = blurRadius > 0;
   // `hug` stretches the expanded pane to the screen width with the same 16 px
   // left/right inset the FAB already hugs its bottom and anchored side with, so
@@ -458,6 +457,7 @@ export function MorphingFAB({
           floating={floating}
           elevation={elevation}
           size={size}
+          density={floating ? 'compact' : 'comfortable'}
           shape="pill"
           blurRadius={blurRadius}
           opacity={opacity}

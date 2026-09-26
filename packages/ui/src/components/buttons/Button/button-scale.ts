@@ -35,6 +35,9 @@ export type ButtonShape = 'square' | 'rounded' | 'pill' | 'circle';
  *  which is the `md` box squared. */
 export type RampSize = 'xs' | 'sm' | 'md' | 'lg';
 
+/** Visual side for detached icon controls; hitSlop supplies a 44px target below that size. */
+export const FLOATING_ICON_SIDE: Record<RampSize, number> = { xs: 28, sm: 34, md: 40, lg: 48 };
+
 /** What one ramp height gives every control that stands on it. */
 export type ButtonSizeGeometry = {
   /** Pixel side — the label box's height and the square's width. Twin of `--spacing-interactive-*`. */

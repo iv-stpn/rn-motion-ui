@@ -2,4 +2,4 @@
 "rn-motion-ui": patch
 ---
 
-Give large icon buttons a little more inner space and make floating glass icon buttons lighter with a default specular rim.
+Give floating icon buttons a clearer sm/md/lg size ramp and more room around their glyphs. Soften the shared floating shadow, and keep the FAB trigger aligned with its shell.

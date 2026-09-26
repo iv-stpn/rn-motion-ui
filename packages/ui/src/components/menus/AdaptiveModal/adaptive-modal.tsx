@@ -46,6 +46,8 @@ type AdaptiveModalProps = {
    */
   onOpenChange?: (open: boolean) => void;
   children: ReactNode;
+  /** Theme class for the narrow full-sheet surface; wide panels keep their own surface. */
+  smallScreenSurfaceClassName?: string;
   title?: string;
   subtitle?: string;
   showClose?: boolean;
@@ -142,6 +144,7 @@ export function AdaptiveModal({
   open: openProp,
   onOpenChange,
   children,
+  smallScreenSurfaceClassName,
   title,
   subtitle,
   showClose,
@@ -439,6 +442,7 @@ export function AdaptiveModal({
       open={open}
       onOpenChange={handleClose}
       customLayout={true}
+      surfaceClassName={smallScreenSurfaceClassName}
       onAfterClose={onAfterClose}
       onShow={onShow}
       safeArea={safeArea}

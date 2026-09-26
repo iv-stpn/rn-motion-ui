@@ -146,6 +146,10 @@ export type MultiStepMenuProps = {
   sidebar: (helpers: MultiStepHelpers) => ReactNode;
   /** Small-screen depth-0 screen. */
   smallScreenMenu: (helpers: MultiStepHelpers) => ReactNode;
+  /** Theme class for the narrow full-sheet surface, including its safe area. */
+  smallScreenSurfaceClassName?: string;
+  /** Compact, centered title beside the small-screen back control. @default 'prominent' */
+  smallScreenHeaderVariant?: 'prominent' | 'compact';
   rootTitle: string;
   /** Wide-screen initial selection (e.g. `['account']`). */
   defaultPath?: string[];
@@ -196,6 +200,8 @@ export const MultiStepMenu = function MultiStepMenu({
   sections,
   sidebar,
   smallScreenMenu,
+  smallScreenSurfaceClassName,
+  smallScreenHeaderVariant = 'prominent',
   rootTitle,
   defaultPath,
   widePlaceholder,
@@ -398,6 +404,7 @@ export const MultiStepMenu = function MultiStepMenu({
     );
   };
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the compact header shares one navigation and animation path with the prominent layout.
   const buildSmallContent = (): ReactNode => {
     // ── Small screen ──
     const isRoot = path.length === 0;
@@ -419,16 +426,30 @@ export const MultiStepMenu = function MultiStepMenu({
 
     return (
       <View className="flex-1" onLayout={handlePaneLayout}>
-        <View className="px-5 pt-6 pb-5">
+        <View className={smallScreenHeaderVariant === 'compact' ? 'px-5 pt-4 pb-4' : 'px-5 pt-6 pb-5'}>
           <View className="flex-row items-center justify-between">
             <IconButton
               icon={LeftLine}
               size="sm"
-              contentClassName="bg-surface-selected hover:bg-surface-hover"
+              contentClassName={
+                smallScreenHeaderVariant === 'compact'
+                  ? 'bg-surface-3 hover:bg-surface-hover'
+                  : 'bg-surface-selected hover:bg-surface-hover'
+              }
               accessibilityLabel="Back"
               onPress={handleBack}
               testID={testID ? `${testID}-back` : undefined}
             />
+            {smallScreenHeaderVariant === 'compact' ? (
+              <View pointerEvents="none" className="absolute inset-x-12 items-center justify-center">
+                <TextRolling
+                  text={title}
+                  weight="semibold"
+                  className="text-center text-foreground text-sm"
+                  testID={testID ? `${testID}-small-title` : undefined}
+                />
+              </View>
+            ) : null}
             {/* The close ✕ only shows once you've stepped past the root, fading
                 in/out so the header doesn't jump when it leaves. */}
             <AnimatePresence>
@@ -444,7 +465,11 @@ export const MultiStepMenu = function MultiStepMenu({
                   <IconButton
                     icon={CloseLine}
                     size="sm"
-                    contentClassName="bg-surface-selected hover:bg-surface-hover"
+                    contentClassName={
+                      smallScreenHeaderVariant === 'compact'
+                        ? 'bg-surface-3 hover:bg-surface-hover'
+                        : 'bg-surface-selected hover:bg-surface-hover'
+                    }
                     accessibilityLabel="Close"
                     onPress={handleClose}
                     testID={testID ? `${testID}-close` : undefined}
@@ -452,10 +477,13 @@ export const MultiStepMenu = function MultiStepMenu({
                 </MotiView>
               )}
             </AnimatePresence>
+            {isRoot && smallScreenHeaderVariant === 'compact' ? <View className="h-9 w-9" /> : null}
           </View>
-          <View className="mt-2">
-            <TextRolling text={title} weight="bold" className="text-2xl text-foreground" />
-          </View>
+          {smallScreenHeaderVariant === 'prominent' ? (
+            <View className="mt-2">
+              <TextRolling text={title} weight="bold" className="text-2xl text-foreground" />
+            </View>
+          ) : null}
         </View>
         <View className="flex-1 overflow-hidden">
           <AnimatePresence>
@@ -491,6 +519,7 @@ export const MultiStepMenu = function MultiStepMenu({
       onOpenChange={handleClose}
       isWideScreen={isWideScreen}
       smallScreenMode="fullSheet"
+      smallScreenSurfaceClassName={smallScreenSurfaceClassName}
       largeScreenMode="modal"
       customLayout={true}
       scrollable={false}

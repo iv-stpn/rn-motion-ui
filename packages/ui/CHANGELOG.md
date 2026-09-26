@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.19.0
+
+### Minor Changes
+
+- ea43050: Add optional inset and full-width hairline separators to ActionRow. Separators use a subtle theme-aware border color and do not intercept row interactions. AdaptiveModal and MultiStepMenu also accept a wide-screen surface class so grouped rows can share a consistent background at every size.
+
 ## 7.18.0
 
 ### Minor Changes

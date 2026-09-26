@@ -212,6 +212,7 @@ function MenuPlayground() {
   const [withPlaceholder, setWithPlaceholder] = useState(true);
   const [iosStyle, setIosStyle] = useState(false);
   const [softSmallSurface, setSoftSmallSurface] = useState(false);
+  const [compactSmallHeader, setCompactSmallHeader] = useState(false);
   const [visible, setVisible] = useState(false);
   const [path, setPath] = useState<string[]>([]);
   const [overlay, setOverlay] = useState<OverlayType>('blur');
@@ -248,6 +249,7 @@ function MenuPlayground() {
         <Toggle label="Wide placeholder" onChange={setWithPlaceholder} value={withPlaceholder} />
         <Toggle label="iOS-style rows" onChange={setIosStyle} value={iosStyle} />
         <Toggle label="Soft small-screen surface" onChange={setSoftSmallSurface} value={softSmallSurface} />
+        <Toggle label="Compact small-screen header" onChange={setCompactSmallHeader} value={compactSmallHeader} />
         <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Choice
           label="Small screen overlay"
@@ -294,6 +296,7 @@ function MenuPlayground() {
         sidebarFooter={withFooter ? SIDEBAR_FOOTER : undefined}
         smallScreenMenu={renderMenu}
         smallScreenSurfaceClassName={softSmallSurface ? 'bg-surface-1' : undefined}
+        smallScreenHeaderVariant={compactSmallHeader ? 'compact' : 'prominent'}
         widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
         widePlaceholder={withPlaceholder ? WIDE_PLACEHOLDER : undefined}
         visible={visible}
@@ -314,9 +317,9 @@ function MenuPlayground() {
   );
 }
 
-type MultiStepSheetStoryProps = { isWideScreen: boolean; defaultPath?: string[] };
+type MultiStepSheetStoryProps = { isWideScreen: boolean; defaultPath?: string[]; compact?: boolean };
 
-function MultiStepSheetStory({ isWideScreen, defaultPath }: MultiStepSheetStoryProps) {
+function MultiStepSheetStory({ isWideScreen, defaultPath, compact = false }: MultiStepSheetStoryProps) {
   const [visible, setVisible] = useState(false);
   const menuRef = useRef<MultiStepMenuHandle | null>(null);
   const handleOpen = useCallback(() => setVisible(true), []);
@@ -336,6 +339,8 @@ function MultiStepSheetStory({ isWideScreen, defaultPath }: MultiStepSheetStoryP
         sections={sections}
         sidebar={DEFAULT_MENU_RENDERER}
         smallScreenMenu={DEFAULT_MENU_RENDERER}
+        smallScreenHeaderVariant={compact ? 'compact' : 'prominent'}
+        smallScreenSurfaceClassName={compact ? 'bg-surface-1' : undefined}
         testID={MENU_TEST_ID}
         visible={visible}
         widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
@@ -385,10 +390,10 @@ export const WideScreen: Story = {
   },
 };
 
-/** Small-screen layout: full sheet whose panes roll vertically with the title. */
+/** Small-screen layout: a soft full sheet with a compact title and sliding panes. */
 export const SmallScreen: Story = {
   name: 'Demo: Small screen navigation',
-  render: () => <MultiStepSheetStory isWideScreen={false} />,
+  render: () => <MultiStepSheetStory compact={true} isWideScreen={false} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole('button', { name: OPEN_SETTINGS_LABEL }));
@@ -399,10 +404,12 @@ export const SmallScreen: Story = {
     await expect(await screen.findByLabelText('Back')).toBeTruthy();
     expect(screen.queryByLabelText('Close')).toBeNull();
     await expect(await screen.findByTestId(`${MENU_TEST_ID}-back`)).toBeTruthy();
+    await expect(await screen.findByTestId(`${MENU_TEST_ID}-small-title`)).toHaveTextContent(SETTINGS_ROOT_TITLE);
     expect(screen.queryByTestId(`${MENU_TEST_ID}-close`)).toBeNull();
     // Root menu → Appearance submenu: the close ✕ fades in alongside the body.
     await userEvent.click(await screen.findByText('Appearance', { exact: true }));
     await expect(await screen.findByText(APPEARANCE_BODY)).toBeTruthy();
+    await expect(await screen.findByTestId(`${MENU_TEST_ID}-small-title`)).toHaveTextContent('Appearance');
     await expect(await screen.findByLabelText('Close')).toBeTruthy();
     await expect(await screen.findByTestId(`${MENU_TEST_ID}-close`)).toBeTruthy();
     // Back to the first menu: the root list must return, the Appearance body

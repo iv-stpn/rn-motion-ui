@@ -296,6 +296,7 @@ function MenuPlayground() {
         sidebarFooter={withFooter ? SIDEBAR_FOOTER : undefined}
         smallScreenMenu={renderMenu}
         smallScreenSurfaceClassName={softSmallSurface ? 'bg-surface-1' : undefined}
+        largeScreenSurfaceClassName={softSmallSurface ? 'bg-surface-1' : undefined}
         smallScreenHeaderVariant={compactSmallHeader ? 'compact' : 'prominent'}
         widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
         widePlaceholder={withPlaceholder ? WIDE_PLACEHOLDER : undefined}

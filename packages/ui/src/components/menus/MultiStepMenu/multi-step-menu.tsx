@@ -148,6 +148,8 @@ export type MultiStepMenuProps = {
   smallScreenMenu: (helpers: MultiStepHelpers) => ReactNode;
   /** Theme class for the narrow full-sheet surface, including its safe area. */
   smallScreenSurfaceClassName?: string;
+  /** Theme class for the wide menu surface. */
+  largeScreenSurfaceClassName?: string;
   /** Compact, centered title beside the small-screen back control. @default 'prominent' */
   smallScreenHeaderVariant?: 'prominent' | 'compact';
   rootTitle: string;
@@ -201,6 +203,7 @@ export const MultiStepMenu = function MultiStepMenu({
   sidebar,
   smallScreenMenu,
   smallScreenSurfaceClassName,
+  largeScreenSurfaceClassName,
   smallScreenHeaderVariant = 'prominent',
   rootTitle,
   defaultPath,
@@ -520,6 +523,7 @@ export const MultiStepMenu = function MultiStepMenu({
       isWideScreen={isWideScreen}
       smallScreenMode="fullSheet"
       smallScreenSurfaceClassName={smallScreenSurfaceClassName}
+      largeScreenSurfaceClassName={largeScreenSurfaceClassName}
       largeScreenMode="modal"
       customLayout={true}
       scrollable={false}

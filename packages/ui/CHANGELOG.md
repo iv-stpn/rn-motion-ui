@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.19.1
+
+### Patch Changes
+
+- 6552b9a: Center leading adornments in single-line ActionRow and ItemRow layouts, including rows with increased minimum heights. Preserve top alignment for rows with descriptions.
+
 ## 7.19.0
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.18.0
+
+### Minor Changes
+
+- 60e4513: Allow full sheets, adaptive modals, and multi-step menus to use a custom narrow-screen surface class, including the safe area. Multi-step menus can also use a compact centered title on small screens.
+
 ## 7.17.2
 
 ### Patch Changes

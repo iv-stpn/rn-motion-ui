@@ -34,6 +34,7 @@ const ICON_TILE: Record<RampSize, { tileClass: string; iconSize: number }> = {
 const SPINNER_SIZE: Record<RampSize, number> = { xs: 10, sm: 12, md: 16, lg: 20 };
 /** Floating controls leave more clear space around the glyph than resting icon buttons. */
 const FLOATING_GLYPH_SIZE: Record<RampSize, number> = { xs: 16, sm: 18, md: 20, lg: 24 };
+/** Resting controls keep the original icon scale. */
 const ICON_BUTTON_GLYPH_SIZE: Record<RampSize, number> = { xs: 18, sm: 24, md: 28, lg: 32 };
 
 const COMPACT_SIDE: Record<RampSize, number> = { xs: 28, sm: 36, md: 44, lg: 52 };

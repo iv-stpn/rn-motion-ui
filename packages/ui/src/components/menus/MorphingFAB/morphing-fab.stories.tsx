@@ -6,7 +6,7 @@ import { CameraLine } from 'rn-motion-ui-icons/icons/camera-line';
 import { Document2Line } from 'rn-motion-ui-icons/icons/document-2-line';
 import { LinkLine } from 'rn-motion-ui-icons/icons/link-line';
 import { Message1Line as MessageSquare } from 'rn-motion-ui-icons/icons/message-1-line';
-import { expect, screen, userEvent, within } from 'storybook/test';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { ELEVATION_KEYS, ELEVATIONS, type ElevationKey } from '../../../__stories__/story-elevations';
 import { Choice, ControlCard, Sample, Toggle } from '../../../__stories__/story-harness';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
@@ -17,6 +17,7 @@ import { useThemeColors } from '../../../theme/use-theme-color';
 import { Button } from '../../buttons/Button/button';
 import { BUTTON_SIZE } from '../../buttons/Button/button-scale';
 import { ThemedIcon } from '../../icon/themed-icon';
+import { ActionRow } from '../../rows/action-row';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
 import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
@@ -198,7 +199,7 @@ function MorphingFABPlayground() {
   const [elevationKey, setElevationKey] = useState<ElevationKey>('3');
   const [floating, setFloating] = useState(false);
   const [glass, setGlass] = useState(false);
-  const [overlay, setOverlay] = useState<OverlayType>('none');
+  const [overlay, setOverlay] = useState<OverlayType>('opacity');
   const [closeOnOutside, setCloseOnOutside] = useState(true);
 
   return (
@@ -259,8 +260,8 @@ function MorphingFABPlayground() {
         </MorphingFAB>
       ) : (
         <MorphingFAB
-          expandedWidth={232}
-          expandedHeight={192}
+          expandedWidth={320}
+          expandedHeight={328}
           size={size}
           hug={hug}
           floating={floating}
@@ -273,13 +274,7 @@ function MorphingFABPlayground() {
           accessibilityLabel="Open actions"
           triggerTestID="fab-trigger"
         >
-          {({ close }) => (
-            <View className="gap-1 pt-1">
-              <MenuItem icon={CameraLine} label="Take photo" onPress={close} />
-              <MenuItem icon={Document2Line} label="Attach file" onPress={close} />
-              <MenuItem icon={LinkLine} label="Copy link" onPress={close} />
-            </View>
-          )}
+          {({ close }) => <ActionCards close={close} />}
         </MorphingFAB>
       )}
     </AppSurface>
@@ -291,34 +286,83 @@ function MorphingFABPlayground() {
 /** Toggle between Feedback (form → sent/error) and Menu (3-action picker). */
 export const Interactive: Story = { render: () => <MorphingFABPlayground /> };
 
-/** FAB morphs into a 3-action menu. Open, verify the actions, pick one. */
+/** Descriptive action cards share the app's ActionRow primitive. */
+function ActionCards({ close }: FeedbackPaneProps) {
+  return (
+    <View className="gap-2">
+      <ActionRow
+        title="Take photo"
+        description="Capture a moment for your library."
+        leftAdornment={{ icon: CameraLine, iconColor: 'primary-foreground', iconBackgroundColor: 'primary' }}
+        rightAdornment={null}
+        variant="muted"
+        size="lg"
+        className="min-h-20 rounded-2xl"
+        accessibilityRole="button"
+        testID="fab-photo"
+        onPress={close}
+      />
+      <ActionRow
+        title="Attach file"
+        description="Add a file from your device."
+        leftAdornment={{ icon: Document2Line, iconColor: 'success-foreground', iconBackgroundColor: 'success' }}
+        rightAdornment={null}
+        variant="muted"
+        size="lg"
+        className="min-h-20 rounded-2xl"
+        accessibilityRole="button"
+        testID="fab-file"
+        onPress={close}
+      />
+      <ActionRow
+        title="Copy link"
+        description="Share a link to this collection."
+        leftAdornment={{ icon: LinkLine, iconColor: 'accent-foreground', iconBackgroundColor: 'accent' }}
+        rightAdornment={null}
+        variant="muted"
+        size="lg"
+        className="min-h-20 rounded-2xl"
+        accessibilityRole="button"
+        testID="fab-link"
+        onPress={close}
+      />
+    </View>
+  );
+}
+
+/** FAB morphs into descriptive cards over a dimmed background. */
 export const ThreeActionMenu: Story = {
   name: 'Demo: 3-action menu',
   render: () => (
-    <AppSurface hint="Tap the + button — the FAB morphs into a menu of three actions. Picking one closes the menu.">
-      <MorphingFAB expandedWidth={232} expandedHeight={192} accessibilityLabel="Open actions" triggerTestID="fab-trigger">
-        {({ close }) => (
-          <View className="gap-1 pt-1">
-            <MenuItem icon={CameraLine} label="Take photo" onPress={close} />
-            <MenuItem icon={Document2Line} label="Attach file" onPress={close} />
-            <MenuItem icon={LinkLine} label="Copy link" onPress={close} />
-          </View>
-        )}
+    <AppSurface hint="Tap + to unfold the action cards. Choose an action or tap the dimmed background to close.">
+      <MorphingFAB expandedWidth={320} expandedHeight={328} accessibilityLabel="Open actions" triggerTestID="fab-trigger">
+        {({ close }) => <ActionCards close={close} />}
       </MorphingFAB>
     </AppSurface>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const trigger = await canvas.findByTestId('fab-trigger');
-    await userEvent.click(trigger);
-
-    await expect(await screen.findByText('Take photo')).toBeTruthy();
-    await expect(await screen.findByText('Attach file')).toBeTruthy();
-    await expect(await screen.findByText('Copy link')).toBeTruthy();
-
-    await userEvent.click(await screen.findByText('Take photo'));
-    await expect(await canvas.findByTestId('fab-trigger')).toBeTruthy();
-    await expect(screen.queryByText('Attach file')).toBeNull();
+    await userEvent.click(await canvas.findByTestId('fab-trigger'));
+    await waitFor(() => expect(canvas.getByTestId('fab-photo')).toBeVisible());
+    await expect(await canvas.findByTestId('fab-file')).toBeVisible();
+    await expect(await canvas.findByTestId('fab-link')).toBeVisible();
+    await waitFor(() => {
+      const panel = canvas.getByTestId('morphing-fab').getBoundingClientRect();
+      const lastCard = canvas.getByTestId('fab-link').getBoundingClientRect();
+      expect(lastCard.bottom).toBeLessThanOrEqual(panel.bottom - 8);
+    });
+    const backdrop = await canvas.findByTestId('morphing-fab-backdrop');
+    await expect(backdrop).toHaveClass('bg-black/40');
+    await userEvent.click(await canvas.findByTestId('fab-photo'));
+    await expect(await canvas.findByTestId('fab-trigger')).toBeVisible();
+    await expect(canvas.queryByTestId('fab-file')).toBeNull();
+    await userEvent.click(await canvas.findByTestId('fab-trigger'));
+    const reopenedBackdrop = await canvas.findByTestId('morphing-fab-backdrop');
+    await userEvent.click(reopenedBackdrop);
+    await expect(await canvas.findByTestId('fab-trigger')).toBeVisible();
+    await userEvent.click(await canvas.findByTestId('fab-trigger'));
+    await userEvent.click(await canvas.findByTestId('morphing-fab-close'));
+    await expect(await canvas.findByTestId('fab-trigger')).toBeVisible();
   },
 };
 

@@ -20,7 +20,7 @@ import type { OverlayType } from '../Overlay/overlay-type';
 import { TeleportedOverlay } from '../Overlay/teleported-overlay';
 import { getWebDocument, isWebNode, type WebPointerEvent } from '../Overlay/web-document';
 
-const PANE_RADIUS = 20;
+const PANE_RADIUS = 24;
 /** Web animates the size through Moti; Fabric can't round-trip layout props
  *  through `useAnimatedStyle`, so native keeps a static size and drives the
  *  change via this layout transition. */
@@ -183,7 +183,7 @@ export type MorphingFABProps = {
   triggerTestID?: string;
   /**
    * The scrim behind the pane: `"blur"`, `"opacity"`, or `"none"`. Defaults to
-   * `"none"` — like the other morphing menus, it morphs in place with no scrim.
+   * `"opacity"` to dim the content behind the expanded pane. Use `"none"` to opt out.
    */
   overlay?: OverlayType;
   /**
@@ -235,7 +235,7 @@ export function MorphingFAB({
   accessibilityLabel,
   testID = 'morphing-fab',
   triggerTestID = 'morphing-fab-trigger',
-  overlay = 'none',
+  overlay = 'opacity',
   closeOnOutsidePress = true,
 }: MorphingFABProps) {
   const reduce = useReducedMotion();
@@ -397,7 +397,7 @@ export function MorphingFAB({
   // `hug` stretches the expanded pane to the screen width with the same 16 px
   // left/right inset the FAB already hugs its bottom and anchored side with, so
   // every inset edge agrees instead of the fixed `expandedWidth` pane.
-  const resolvedExpandedWidth = hug ? windowWidth - 32 : expandedWidth;
+  const resolvedExpandedWidth = Math.max(triggerSize, hug ? windowWidth - 32 : Math.min(expandedWidth, windowWidth - 32));
   const shell = fabShellGeometry({ open, expandedWidth: resolvedExpandedWidth, expandedHeight, left, triggerSize });
 
   // The teleported wrapper's top-left: the fixed root's top-left — its bottom
@@ -436,6 +436,7 @@ export function MorphingFAB({
                 accessibilityLabel="Close"
                 testID="morphing-fab-close"
                 onPress={handleClose}
+                hitSlop={12}
                 className="h-5 w-5 items-center justify-center rounded-full bg-surface-selected"
               >
                 {closeIcon ?? <ThemedIcon icon={X} variant="ghost" size={12} />}
@@ -446,7 +447,7 @@ export function MorphingFAB({
             from={reduce ? { opacity: 1 } : { opacity: 0, translateY: 6 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={paneEnterTransition}
-            className="p-2"
+            className="gap-2 p-2"
           >
             {resolvedPane}
           </MotiView>

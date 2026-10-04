@@ -84,12 +84,12 @@ describe('button plate fill', () => {
     ['accent', 'bg-accent'],
     ['neutral', 'bg-surface-3'],
     ['ghost', 'bg-transparent hover:bg-surface-hover'],
-    ['outline', 'hairline border-foreground bg-transparent'],
+    ['outline', 'border border-foreground bg-transparent'],
     ['danger', 'bg-danger'],
     ['success', 'bg-success'],
     ['warning', 'bg-warning'],
     ['info', 'bg-info'],
-    ['outlineDanger', 'hairline border-danger bg-transparent'],
+    ['outlineDanger', 'border border-danger bg-transparent'],
     ['ghostDanger', 'bg-transparent hover:bg-surface-hover'],
   ] as const)('%s paints the expected plate', (variant, plate) => {
     expect(buttonContainer({ variant })).toContain(plate);

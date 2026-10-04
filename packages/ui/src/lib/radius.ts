@@ -41,7 +41,7 @@ export const ROUNDED_MODAL = 'rounded-modal' as const;
 // ── Height ────────────────────────────────────────────────────────────────────
 
 /** Height in px per interactive size. */
-export const INTERACTIVE_HEIGHT = { xs: 24, sm: 32, md: 42, lg: 56 } as const;
+export const INTERACTIVE_HEIGHT = { xs: 24, sm: 32, md: 44, lg: 56 } as const;
 
 // ── Touch target ─────────────────────────────────────────────────────────────
 

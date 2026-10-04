@@ -301,11 +301,24 @@ export const TokenFillsResolve: Story = {
       <Button testID={NEUTRAL_KEY} variant="neutral">
         {CONTINUE_LABEL}
       </Button>
+      <Button testID="outline-key" variant="outline">
+        Continue
+      </Button>
+      <Button testID="outline-danger-key" variant="outlineDanger">
+        Delete
+      </Button>
     </View>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const neutralKey = await canvas.findByTestId(NEUTRAL_KEY);
+    for (const testID of ['outline-key', 'outline-danger-key']) {
+      const outlineKey = await canvas.findByTestId(testID);
+      const computed = getComputedStyle(outlineKey);
+      expect(computed.borderTopWidth).toBe('1px');
+      expect(computed.borderBottomWidth).toBe('1px');
+      expect(outlineKey.getBoundingClientRect().height).toBe(44);
+    }
     const labelOf = (key: HTMLElement) => within(key).getByText(CONTINUE_LABEL);
 
     // Resolve each token the same way the browser resolved the class, so the

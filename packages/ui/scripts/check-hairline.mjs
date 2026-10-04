@@ -6,6 +6,7 @@
  * class.
  *
  * Sanctioned exceptions:
+ *  - `border` — the 1px outline / outlineDanger button weight.
  *  - `border-[3px]` — the selected RadioCard / CheckboxCard weight, a second
  *    width so selection reads stronger than the resting hairline.
  *  - `border-*-0` — ButtonGroup's per-side reset (`border-l-0` / `border-t-0`),

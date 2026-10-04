@@ -223,14 +223,14 @@
      button groups) at a given size, so a row of mixed controls lines up.
      Cards have their own `--radius-card`.
 
-     Four heights — `xs` 24, `sm` 36, `md` 48, `lg` 64. `icon` reuses the `md`
+     Four heights — `xs` 24, `sm` 32, `md` 44, `lg` 56. `icon` reuses the `md`
      numbers as a square. A `pill` button ignores the corner radius and takes
      half its height instead. See lib/radius.ts for the pixel constants used by
      the effect layers. One scheme only: geometry doesn't flip with the theme,
      so there are no dark-mode counterparts below. */
   --spacing-interactive-xs: 24px;
   --spacing-interactive-sm: 32px;
-  --spacing-interactive-md: 42px;
+  --spacing-interactive-md: 44px;
   --spacing-interactive-lg: 56px;
   --spacing-interactive-pad-xs: 8px;
   --spacing-interactive-pad-sm: 14px;
@@ -279,8 +279,8 @@
 
 /* ── Hairline border ──────────────────────────────────────────────────────
  *
- * The single border weight in the library. 2px reads at full strength on
- * high-density screens where a bare 1px `border` washes out, so every border
+ * The default border weight in the library. Outline buttons use the lighter
+ * 1px `border` utility; other borders use 2px for stronger separation. The latter
  * is spelled `hairline` (all four sides) or `hairline-t` / `hairline-r` /
  * `hairline-b` / `hairline-l` (one side) instead of an arbitrary
  * `border-[2px]`. The style is `var(--tw-border-style)`, the same variable

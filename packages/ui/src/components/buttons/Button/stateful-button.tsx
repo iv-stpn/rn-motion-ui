@@ -8,7 +8,7 @@ import { WarningLine } from 'rn-motion-ui-icons/icons/warning-line';
 import { useMountEffect } from '../../../hooks/use-mount-effect';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { cn } from '../../../lib/cn';
-import { EASE_IN_OUT, SPRING_SWAP } from '../../../lib/ease';
+import { SPRING_SWAP } from '../../../lib/ease';
 import type { SurfaceElevation } from '../../../lib/elevated';
 import { MotiView } from '../../../moti/components/view';
 import { AnimatePresence } from '../../../moti/presence/animate-presence';
@@ -16,6 +16,7 @@ import { PresenceContext } from '../../../moti/presence/animate-presence-context
 import { useThemeColors } from '../../../theme/use-theme-color';
 import { Text } from '../../typography/Text/text';
 import { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from './button';
+import { ButtonDots } from './button-internals';
 import { STATE_BUTTON_GAP_CLASSNAME, STATE_ICON_SIZE } from './button-scale';
 import { buttonLabel as labelStyle, variantIconColorToken } from './button-variants';
 import { ElevatedButton, type ElevatedVariant, elevatedContentColor } from './elevated-button';
@@ -379,43 +380,6 @@ function TextSlot({ value, children, variant = 'neutral', size = 'md', reduce, t
 }
 
 // ---------------------------------------------------------------------------
-// DotsLoader — three staggered bouncing dots for the loading state
-// ---------------------------------------------------------------------------
-
-const DOT_SIZE = 4;
-const DOT_GAP = 3;
-
-type DotsLoaderProps = { color: string; reduce: boolean };
-
-function DotsLoader({ color, reduce }: DotsLoaderProps) {
-  return (
-    <View className="flex-row items-center" style={{ gap: DOT_GAP }}>
-      {([0, 1, 2] as const).map((i) => (
-        <MotiView
-          key={i}
-          from={{ opacity: 0.5, translateY: 0 }}
-          animate={reduce ? { opacity: 1, translateY: 0 } : { opacity: 1, translateY: -4 }}
-          transition={{
-            type: 'timing',
-            duration: 400,
-            loop: true,
-            repeatReverse: true,
-            easing: EASE_IN_OUT,
-            delay: i * 120,
-          }}
-          style={{
-            width: DOT_SIZE,
-            height: DOT_SIZE,
-            borderRadius: DOT_SIZE / 2,
-            backgroundColor: color,
-          }}
-        />
-      ))}
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // StatefulButton
 // ---------------------------------------------------------------------------
 
@@ -699,7 +663,7 @@ export function StatefulButton({
               transition={{ type: 'timing', duration: 150 }}
               className="pointer-events-none absolute inset-0 items-center justify-center"
             >
-              <DotsLoader color={iconColor} reduce={reduce} />
+              <ButtonDots color={iconColor} reduce={reduce} />
             </MotiView>
           ) : null}
         </AnimatePresence>

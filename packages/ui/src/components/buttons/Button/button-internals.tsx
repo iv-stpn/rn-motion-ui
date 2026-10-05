@@ -4,7 +4,7 @@
 // indicator), so those pieces live here rather than being duplicated per sibling.
 // Nothing here is variant-aware: each component resolves its own colours/classes
 // and passes the results in.
-import { Children, isValidElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { Children, isValidElement, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { GestureResponderEvent, LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
@@ -22,6 +22,7 @@ import { cn } from '../../../lib/cn';
 import { scaleAlpha } from '../../../lib/color';
 import { EASE_IN_OUT, EASE_OUT } from '../../../lib/ease';
 import { MotiView } from '../../../moti/components/view';
+import { PresenceContext } from '../../../moti/presence/animate-presence-context';
 import type { MotiTransitionProp } from '../../../theme/motion';
 import { Text } from '../../typography/Text/text';
 import type { PressMode } from './button-press';
@@ -298,9 +299,8 @@ export function ButtonSpinner({ color, reduce, size = 16 }: ButtonSpinnerProps) 
   );
 }
 
-// Three staggered bouncing dots for the loading state, replacing the rotating
-// circle so Button/ElevatedButton read the same as StatefulButton's DotsLoader
-// while busy. Drive the bounce imperatively (shared value + withRepeat created
+// Three staggered bouncing dots shared by Button, ElevatedButton and StatefulButton.
+// Drive the bounce imperatively (shared value + withRepeat created
 // once in an effect) rather than moti's declarative `loop` — the same failure
 // mode ButtonSpinner's imperative pattern avoids: moti rebuilds its withRepeat on
 // every worklet re-run and a re-render landing at the target (theme toggle,
@@ -313,12 +313,13 @@ const BUTTON_DOT_STAGGER = 120;
 type ButtonDotProps = { color: string; reduce: boolean; index: number };
 
 function ButtonDot({ color, reduce, index }: ButtonDotProps) {
+  const isPresent = useContext(PresenceContext)?.isPresent ?? true;
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(0.5);
 
   // biome-ignore lint/plugin: the loop animation is an imperative side-effect assigned to a shared value — not expressible as derived state, and must run once per [reduce, index] rather than every render
   useEffect(() => {
-    if (reduce) {
+    if (reduce || !isPresent) {
       translateY.value = 0;
       opacity.value = 1;
       return;
@@ -328,8 +329,11 @@ function ButtonDot({ color, reduce, index }: ButtonDotProps) {
       index * BUTTON_DOT_STAGGER,
       withRepeat(withTiming(-BUTTON_DOT_BOUNCE, { duration: 400, easing: EASE_IN_OUT }), -1, true),
     );
-    return () => cancelAnimation(translateY);
-  }, [reduce, index, translateY, opacity]);
+    return () => {
+      cancelAnimation(translateY);
+      cancelAnimation(opacity);
+    };
+  }, [reduce, isPresent, index, translateY, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -353,7 +357,7 @@ function ButtonDot({ color, reduce, index }: ButtonDotProps) {
 
 type ButtonDotsProps = { color: string; reduce: boolean };
 
-function ButtonDots({ color, reduce }: ButtonDotsProps) {
+export function ButtonDots({ color, reduce }: ButtonDotsProps) {
   return (
     <View className="flex-row items-center" style={{ gap: BUTTON_DOT_GAP }}>
       {[0, 1, 2].map((i) => (

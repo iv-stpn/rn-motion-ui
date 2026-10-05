@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.19.4
+
+### Patch Changes
+
+- ba6f5d9: Reuse the cancellable button dots in StatefulButton. Stop loading animations on presence exit and unmount, and respect reduced motion without starting an infinite loop.
+
 ## 7.19.3
 
 ### Patch Changes

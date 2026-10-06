@@ -179,7 +179,16 @@ function FieldHost({
     );
   }
   return (
-    <Animated.View className={cn(className, elevatedSurface(elevation, elevation, floating))} style={style}>
+    <Animated.View
+      className={cn(
+        className,
+        elevatedSurface(elevation, elevation, floating),
+        // Native fields have no outline. Tint the containing surface instead of
+        // painting the same surface-3 fill as a sheet or settings panel.
+        Platform.OS !== 'web' && elevation === 0 && 'bg-foreground/10',
+      )}
+      style={style}
+    >
       {children}
     </Animated.View>
   );
@@ -221,6 +230,7 @@ export type InputProps = {
    * the `shadow-elevated-N` recipe. `0` is the flat resting surface — a
    * `surface-3` fill with no shadow — which is what a text field usually wants,
    * so unlike the panel surfaces this one rests at `0` rather than `3`. The
+   * native flat field uses a foreground tint to remain distinct from its container. The
    * state-tinted web border is drawn only at `0`; above it the elevation shadow
    * already carries the rim. @default 0
    */

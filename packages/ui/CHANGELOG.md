@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.19.5
+
+### Patch Changes
+
+- 5d70589: Give flat native inputs a theme-aware foreground tint so fields remain visible against sheets and settings panels without relying on the web-only outline.
+
 ## 7.19.4
 
 ### Patch Changes

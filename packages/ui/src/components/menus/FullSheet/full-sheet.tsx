@@ -149,6 +149,7 @@ function buildBody(args: BuildBodyArgs): ReactNode {
 }
 
 export type FullSheetMode = 'default' | 'back-button';
+export type FullSheetSlideFrom = 'bottom' | 'left' | 'right';
 
 /** Context passed to the `header` render-prop. */
 export type FullSheetHeaderCtx = { close: () => void };
@@ -163,6 +164,8 @@ export type FullSheetProps = {
   children: ReactNode;
   /** Optional theme class for the entire sheet, including its safe-area padding. */
   surfaceClassName?: string;
+  /** Edge the full-screen surface slides from and returns to. Reduced motion fades instead. @default 'bottom' */
+  slideFrom?: FullSheetSlideFrom;
   title?: string;
   subtitle?: string;
   /** Show a close (X) button in the default-mode header. */
@@ -231,6 +234,7 @@ export function FullSheet({
   onOpenChange,
   children,
   surfaceClassName,
+  slideFrom = 'bottom',
   title,
   subtitle,
   showClose,
@@ -256,6 +260,14 @@ export function FullSheet({
   const isSmallScreen = !isWidthAtLeast(width, wideBreakpoint);
   const reduced = useReducedMotion();
   const insets = useSafeInsets();
+  const offscreen = reduced
+    ? { opacity: 0, translateX: 0, translateY: 0, borderRadius: 0 }
+    : {
+        opacity: 1,
+        translateX: slideFrom === 'bottom' ? 0 : width * (slideFrom === 'left' ? -1 : 1),
+        translateY: slideFrom === 'bottom' ? height : 0,
+        borderRadius: slideFrom === 'bottom' ? CARD_RADIUS : 0,
+      };
 
   const handleClose = useCallback(() => {
     onOpenChange?.(false);
@@ -308,9 +320,9 @@ export function FullSheet({
                 floating={floating}
                 key="fullsheet"
                 className={cn('flex-1', surfaceClassName)}
-                from={{ translateY: height, borderRadius: CARD_RADIUS }}
-                animate={{ translateY: 0, borderRadius: 0 }}
-                exit={{ translateY: height, borderRadius: CARD_RADIUS }}
+                from={offscreen}
+                animate={{ opacity: 1, translateX: 0, translateY: 0, borderRadius: 0 }}
+                exit={offscreen}
                 transition={enterTransition}
                 exitTransition={exitTransition}
                 testID={testID}

@@ -23,6 +23,7 @@ import { IconButton } from '../../buttons/IconButton/icon-button';
 import { MenuItem, type MenuItemIcon, type MenuItemProps } from '../../rows/menu-item';
 import { TextRolling } from '../../typography/TextRolling/text-rolling';
 import { AdaptiveModal, type WidePanelSize } from '../AdaptiveModal/adaptive-modal';
+import type { FullSheetSlideFrom } from '../FullSheet/full-sheet';
 import type { OverlayType } from '../Overlay/overlay-type';
 import { computeDirection, resolveSection } from './multi-step-menu.logic';
 
@@ -148,6 +149,8 @@ export type MultiStepMenuProps = {
   smallScreenMenu: (helpers: MultiStepHelpers) => ReactNode;
   /** Theme class for the narrow full-sheet surface, including its safe area. */
   smallScreenSurfaceClassName?: string;
+  /** Entry/exit edge for the small-screen menu; inner steps keep their horizontal navigation. @default 'bottom' */
+  smallScreenSlideFrom?: FullSheetSlideFrom;
   /** Theme class for the wide menu surface. */
   largeScreenSurfaceClassName?: string;
   /** Compact, centered title beside the small-screen back control. @default 'prominent' */
@@ -203,6 +206,7 @@ export const MultiStepMenu = function MultiStepMenu({
   sidebar,
   smallScreenMenu,
   smallScreenSurfaceClassName,
+  smallScreenSlideFrom,
   largeScreenSurfaceClassName,
   smallScreenHeaderVariant = 'prominent',
   rootTitle,
@@ -523,6 +527,7 @@ export const MultiStepMenu = function MultiStepMenu({
       isWideScreen={isWideScreen}
       smallScreenMode="fullSheet"
       smallScreenSurfaceClassName={smallScreenSurfaceClassName}
+      smallScreenSlideFrom={smallScreenSlideFrom}
       largeScreenSurfaceClassName={largeScreenSurfaceClassName}
       largeScreenMode="modal"
       customLayout={true}

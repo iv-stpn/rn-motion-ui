@@ -23,6 +23,7 @@ import { useBreakpointAtLeast } from '../../../hooks/use-breakpoint';
 import { Button } from '../../buttons/Button/button';
 import { MenuItem } from '../../rows/menu-item';
 import { Text } from '../../typography/Text/text';
+import type { FullSheetSlideFrom } from '../FullSheet/full-sheet';
 import { OVERLAY_OPTIONS, type OverlayType } from '../Overlay/overlay-type';
 import type { MultiStepHelpers, MultiStepMenuHandle, MultiStepSection } from './multi-step-menu';
 import { MenuRow, MultiStepMenu } from './multi-step-menu';
@@ -175,6 +176,8 @@ const PLACEHOLDER_TITLE = 'Pick a section';
 const PLACEHOLDER_BODY = 'Nothing is selected yet.';
 const CLOSED_NOTE = 'Closed';
 
+const SLIDE_EDGES = ['bottom', 'left', 'right'] as const;
+
 const SMALL_SCREEN_OVERLAYS = ['default', 'none', 'blur', 'opacity'] as const;
 type SmallScreenOverlay = (typeof SMALL_SCREEN_OVERLAYS)[number];
 const START_NOTE = 'Initial selection and the panel size only apply to the wide layout.';
@@ -213,6 +216,7 @@ function MenuPlayground() {
   const [iosStyle, setIosStyle] = useState(false);
   const [softSmallSurface, setSoftSmallSurface] = useState(false);
   const [compactSmallHeader, setCompactSmallHeader] = useState(false);
+  const [slideFrom, setSlideFrom] = useState<FullSheetSlideFrom>('bottom');
   const [visible, setVisible] = useState(false);
   const [path, setPath] = useState<string[]>([]);
   const [overlay, setOverlay] = useState<OverlayType>('blur');
@@ -250,6 +254,7 @@ function MenuPlayground() {
         <Toggle label="iOS-style rows" onChange={setIosStyle} value={iosStyle} />
         <Toggle label="Soft small-screen surface" onChange={setSoftSmallSurface} value={softSmallSurface} />
         <Toggle label="Compact small-screen header" onChange={setCompactSmallHeader} value={compactSmallHeader} />
+        <Choice label="Small screen entry" onChange={setSlideFrom} options={SLIDE_EDGES} value={slideFrom} />
         <Choice label="Overlay" onChange={setOverlay} options={OVERLAY_OPTIONS} value={overlay} />
         <Choice
           label="Small screen overlay"
@@ -297,6 +302,7 @@ function MenuPlayground() {
         smallScreenMenu={renderMenu}
         smallScreenSurfaceClassName={softSmallSurface ? 'bg-surface-1' : undefined}
         largeScreenSurfaceClassName={softSmallSurface ? 'bg-surface-1' : undefined}
+        smallScreenSlideFrom={slideFrom}
         smallScreenHeaderVariant={compactSmallHeader ? 'compact' : 'prominent'}
         widePanelSize={isWideScreen ? WIDE_PANEL_SIZE : undefined}
         widePlaceholder={withPlaceholder ? WIDE_PLACEHOLDER : undefined}
@@ -318,9 +324,14 @@ function MenuPlayground() {
   );
 }
 
-type MultiStepSheetStoryProps = { isWideScreen: boolean; defaultPath?: string[]; compact?: boolean };
+type MultiStepSheetStoryProps = {
+  isWideScreen: boolean;
+  defaultPath?: string[];
+  compact?: boolean;
+  slideFrom?: FullSheetSlideFrom;
+};
 
-function MultiStepSheetStory({ isWideScreen, defaultPath, compact = false }: MultiStepSheetStoryProps) {
+function MultiStepSheetStory({ isWideScreen, defaultPath, compact = false, slideFrom }: MultiStepSheetStoryProps) {
   const [visible, setVisible] = useState(false);
   const menuRef = useRef<MultiStepMenuHandle | null>(null);
   const handleOpen = useCallback(() => setVisible(true), []);
@@ -340,6 +351,7 @@ function MultiStepSheetStory({ isWideScreen, defaultPath, compact = false }: Mul
         sections={sections}
         sidebar={DEFAULT_MENU_RENDERER}
         smallScreenMenu={DEFAULT_MENU_RENDERER}
+        smallScreenSlideFrom={slideFrom}
         smallScreenHeaderVariant={compact ? 'compact' : 'prominent'}
         smallScreenSurfaceClassName={compact ? 'bg-surface-1' : undefined}
         testID={MENU_TEST_ID}
@@ -421,4 +433,22 @@ export const SmallScreen: Story = {
     await waitFor(() => expect(screen.queryByLabelText('Close')).toBeNull());
     await waitFor(() => expect(screen.queryByTestId(`${MENU_TEST_ID}-close`)).toBeNull());
   },
+};
+
+/** Both edges keep root dismissal, nested navigation, and the reset-after-close contract. */
+export const FromRight: Story = {
+  ...SmallScreen,
+  name: 'Demo: Slide from right',
+  render: () => <MultiStepSheetStory compact={true} isWideScreen={false} slideFrom="right" />,
+  play: async (context) => {
+    await SmallScreen.play?.(context);
+    await userEvent.click(await screen.findByTestId(`${MENU_TEST_ID}-back`));
+    await waitFor(() => expect(screen.queryByTestId(MENU_TEST_ID)).toBeNull());
+  },
+};
+
+export const FromLeft: Story = {
+  ...FromRight,
+  name: 'Demo: Slide from left',
+  render: () => <MultiStepSheetStory compact={true} isWideScreen={false} slideFrom="left" />,
 };

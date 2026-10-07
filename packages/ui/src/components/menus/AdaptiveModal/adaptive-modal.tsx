@@ -17,7 +17,7 @@ import { IconButton } from '../../buttons/IconButton/icon-button';
 import { Surface } from '../../display/Surface/surface';
 import { Text } from '../../typography/Text/text';
 import { BottomSheet } from '../BottomSheet/bottom-sheet';
-import { FullSheet } from '../FullSheet/full-sheet';
+import { FullSheet, type FullSheetSlideFrom } from '../FullSheet/full-sheet';
 import { OverlayOutlet } from '../Overlay/overlay-portal';
 import { OverlayScrim } from '../Overlay/overlay-scrim';
 import type { OverlayType } from '../Overlay/overlay-type';
@@ -48,6 +48,8 @@ type AdaptiveModalProps = {
   children: ReactNode;
   /** Theme class for the narrow full-sheet surface; wide panels keep their own surface. */
   smallScreenSurfaceClassName?: string;
+  /** Entry/exit edge for the small-screen full sheet. @default 'bottom' */
+  smallScreenSlideFrom?: FullSheetSlideFrom;
   /** Theme class for the wide modal or drawer surface. */
   largeScreenSurfaceClassName?: string;
   title?: string;
@@ -147,6 +149,7 @@ export function AdaptiveModal({
   onOpenChange,
   children,
   smallScreenSurfaceClassName,
+  smallScreenSlideFrom,
   largeScreenSurfaceClassName,
   title,
   subtitle,
@@ -446,6 +449,7 @@ export function AdaptiveModal({
       onOpenChange={handleClose}
       customLayout={true}
       surfaceClassName={smallScreenSurfaceClassName}
+      slideFrom={smallScreenSlideFrom}
       onAfterClose={onAfterClose}
       onShow={onShow}
       safeArea={safeArea}

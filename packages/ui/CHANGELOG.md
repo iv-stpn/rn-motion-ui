@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.20.3
+
+### Patch Changes
+
+- cd47e8f: Recognize multistep menu edge swipes with the native gesture handler so nested scroll views cannot swallow Back. Preserve taps and vertical scrolling outside an active back gesture.
+
 ## 7.20.2
 
 ### Patch Changes

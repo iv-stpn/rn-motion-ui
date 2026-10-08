@@ -1,5 +1,12 @@
 # rn-motion-ui
 
+## 7.20.2
+
+### Patch Changes
+
+- 31542ac: Keep system back and edge swipes inside multistep menus until their root, while preserving explicit close controls. Allow account row avatars to be vertically centered and FAB triggers to use a custom surface and icon color.
+- 31542ac: Keep the small-screen MultiStepMenu close button at the trailing edge while fading out on back navigation to the root menu.
+
 ## 7.20.1
 
 ### Patch Changes

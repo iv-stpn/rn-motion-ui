@@ -362,6 +362,20 @@ function MultiStepSheetStory({ isWideScreen, defaultPath, compact = false, slide
   );
 }
 
+/** Observe the exit itself: checking after AnimatePresence unmounts misses layout jumps. */
+function sampleCloseRight(closeButton: HTMLElement) {
+  return new Promise<number[]>((resolve) => {
+    const positions: number[] = [];
+    const started = performance.now();
+    function sample() {
+      if (closeButton.isConnected) positions.push(closeButton.getBoundingClientRect().right);
+      if (!closeButton.isConnected || performance.now() - started >= 450) resolve(positions);
+      else requestAnimationFrame(sample);
+    }
+    sample();
+  });
+}
+
 export default meta;
 
 // ── Stories ────────────────────────────────────────────────────────────────
@@ -427,7 +441,13 @@ export const SmallScreen: Story = {
     await expect(await screen.findByTestId(`${MENU_TEST_ID}-close`)).toBeTruthy();
     // Back to the first menu: the root list must return, the Appearance body
     // leave the tree, and the close ✕ fade back out.
-    await userEvent.click(await screen.findByLabelText('Back'));
+    // Let the sheet's entry finish before measuring its header in viewport coordinates.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const closePositions = sampleCloseRight(await screen.findByTestId(`${MENU_TEST_ID}-close`));
+    await userEvent.click(await screen.findByTestId(`${MENU_TEST_ID}-back`));
+    const positions = await closePositions;
+    expect(positions.length).toBeGreaterThan(1);
+    expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(1);
     await expect(await screen.findByText('Privacy & Security')).toBeTruthy();
     await waitFor(() => expect(screen.queryByText(APPEARANCE_BODY)).toBeNull());
     await waitFor(() => expect(screen.queryByLabelText('Close')).toBeNull());

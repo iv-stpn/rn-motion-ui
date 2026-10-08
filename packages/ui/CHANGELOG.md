@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.20.1
+
+### Patch Changes
+
+- f94a211: Keep the small-screen MultiStepMenu close button at the trailing edge while fading out on back navigation to the root menu.
+
 ## 7.20.0
 
 ### Minor Changes

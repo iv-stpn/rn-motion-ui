@@ -12,7 +12,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { type LayoutChangeEvent, PanResponder, type PressableProps, ScrollView, View } from 'react-native';
+import { type LayoutChangeEvent, type PressableProps, ScrollView, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Easing } from 'react-native-reanimated';
 import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { LeftLine } from 'rn-motion-ui-icons/icons/left-line';
@@ -42,6 +43,7 @@ const SLIDE_EXIT_TRANSITION = {
 } as const;
 const ARROW_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
 const ARROW_EXIT_TRANSITION = { type: 'timing', duration: 300, opacity: { type: 'timing', duration: 200 } } as const;
+const MENU_ROOT_STYLE = { flex: 1 } as const;
 
 const MultiStepMenuContext = createContext<MultiStepHelpers | null>(null);
 
@@ -304,21 +306,20 @@ export const MultiStepMenu = function MultiStepMenu({
     else goBack();
   }, [path, isWideScreen, handleClose, goBack]);
 
-  // Claim only a deliberate rightward edge swipe, leaving scrolling and inputs alone.
+  // Native recognition keeps the edge swipe available beside the child ScrollView.
+  // Vertical movement fails before activation so scrolling and taps still work.
   const backGesture = useMemo(
     () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponderCapture: (_event, gesture) =>
-          visible &&
-          !isWideScreen &&
-          gesture.numberActiveTouches === 1 &&
-          gesture.x0 <= 32 &&
-          gesture.dx > 12 &&
-          gesture.dx > Math.abs(gesture.dy) * 2,
-        onPanResponderRelease: (_event, gesture) => {
-          if (gesture.dx >= 64 && gesture.dx > Math.abs(gesture.dy) * 2) handleBack();
-        },
-      }),
+      Gesture.Pan()
+        .enabled(visible && !isWideScreen)
+        .hitSlop({ left: 0, width: 32 })
+        .maxPointers(1)
+        .activeOffsetX(12)
+        .failOffsetY([-16, 16])
+        .runOnJS(true)
+        .onEnd((event, success) => {
+          if (success && event.translationX >= 64 && event.translationX > Math.abs(event.translationY) * 2) handleBack();
+        }),
     [visible, isWideScreen, handleBack],
   );
 
@@ -454,90 +455,89 @@ export const MultiStepMenu = function MultiStepMenu({
     const exitTo = computeSmallExitTo(direction, paneWidth);
 
     return (
-      <View
-        className="flex-1"
-        onLayout={handlePaneLayout}
-        testID={testID ? `${testID}-navigation` : undefined}
-        {...backGesture.panHandlers}
-      >
-        <View className={smallScreenHeaderVariant === 'compact' ? 'px-5 pt-4 pb-4' : 'px-5 pt-6 pb-5'}>
-          <View className="flex-row items-center justify-between">
-            <IconButton
-              icon={LeftLine}
-              size="sm"
-              contentClassName={
-                smallScreenHeaderVariant === 'compact'
-                  ? 'bg-surface-3 hover:bg-surface-hover'
-                  : 'bg-surface-selected hover:bg-surface-hover'
-              }
-              accessibilityLabel="Back"
-              onPress={handleBack}
-              testID={testID ? `${testID}-back` : undefined}
-            />
-            {smallScreenHeaderVariant === 'compact' ? (
-              <View pointerEvents="none" className="absolute inset-x-12 items-center justify-center">
-                <TextRolling
-                  text={title}
-                  weight="semibold"
-                  className="text-center text-foreground text-sm"
-                  testID={testID ? `${testID}-small-title` : undefined}
+      <GestureHandlerRootView style={MENU_ROOT_STYLE}>
+        <GestureDetector gesture={backGesture}>
+          <View className="flex-1" onLayout={handlePaneLayout} testID={testID ? `${testID}-navigation` : undefined}>
+            <View className={smallScreenHeaderVariant === 'compact' ? 'px-5 pt-4 pb-4' : 'px-5 pt-6 pb-5'}>
+              <View className="flex-row items-center justify-between">
+                <IconButton
+                  icon={LeftLine}
+                  size="sm"
+                  contentClassName={
+                    smallScreenHeaderVariant === 'compact'
+                      ? 'bg-surface-3 hover:bg-surface-hover'
+                      : 'bg-surface-selected hover:bg-surface-hover'
+                  }
+                  accessibilityLabel="Back"
+                  onPress={handleBack}
+                  testID={testID ? `${testID}-back` : undefined}
                 />
-              </View>
-            ) : null}
-            {/* Keep one trailing slot while AnimatePresence retains the exiting
-                close button, so returning to root cannot redistribute the row. */}
-            <View className="h-9 w-9 items-end justify-center">
-              <AnimatePresence>
-                {!isRoot && (
-                  <MotiView
-                    key="mobile-close"
-                    from={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={arrowTransition}
-                    exitTransition={arrowExitTransition}
-                  >
-                    <IconButton
-                      icon={CloseLine}
-                      size="sm"
-                      contentClassName={
-                        smallScreenHeaderVariant === 'compact'
-                          ? 'bg-surface-3 hover:bg-surface-hover'
-                          : 'bg-surface-selected hover:bg-surface-hover'
-                      }
-                      accessibilityLabel="Close"
-                      onPress={handleClose}
-                      testID={testID ? `${testID}-close` : undefined}
+                {smallScreenHeaderVariant === 'compact' ? (
+                  <View pointerEvents="none" className="absolute inset-x-12 items-center justify-center">
+                    <TextRolling
+                      text={title}
+                      weight="semibold"
+                      className="text-center text-foreground text-sm"
+                      testID={testID ? `${testID}-small-title` : undefined}
                     />
-                  </MotiView>
-                )}
+                  </View>
+                ) : null}
+                {/* Keep one trailing slot while AnimatePresence retains the exiting
+                close button, so returning to root cannot redistribute the row. */}
+                <View className="h-9 w-9 items-end justify-center">
+                  <AnimatePresence>
+                    {!isRoot && (
+                      <MotiView
+                        key="mobile-close"
+                        from={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={arrowTransition}
+                        exitTransition={arrowExitTransition}
+                      >
+                        <IconButton
+                          icon={CloseLine}
+                          size="sm"
+                          contentClassName={
+                            smallScreenHeaderVariant === 'compact'
+                              ? 'bg-surface-3 hover:bg-surface-hover'
+                              : 'bg-surface-selected hover:bg-surface-hover'
+                          }
+                          accessibilityLabel="Close"
+                          onPress={handleClose}
+                          testID={testID ? `${testID}-close` : undefined}
+                        />
+                      </MotiView>
+                    )}
+                  </AnimatePresence>
+                </View>
+              </View>
+              {smallScreenHeaderVariant === 'prominent' ? (
+                <View className="mt-2">
+                  <TextRolling text={title} weight="bold" className="text-2xl text-foreground" />
+                </View>
+              ) : null}
+            </View>
+            <View className="flex-1 overflow-hidden">
+              <AnimatePresence>
+                <MotiView
+                  key={paneKey}
+                  from={enterFrom}
+                  animate={{ translateX: 0 }}
+                  exit={exitTo}
+                  transition={slideTransition}
+                  exitTransition={slideExitTransition}
+                  className="absolute inset-0 px-5"
+                >
+                  <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="pb-6">
+                    {isRoot ? smallScreenMenu(helpers) : activeNode?.render(helpers)}
+                  </ScrollView>
+                </MotiView>
               </AnimatePresence>
             </View>
           </View>
-          {smallScreenHeaderVariant === 'prominent' ? (
-            <View className="mt-2">
-              <TextRolling text={title} weight="bold" className="text-2xl text-foreground" />
-            </View>
-          ) : null}
-        </View>
-        <View className="flex-1 overflow-hidden">
-          <AnimatePresence>
-            <MotiView
-              key={paneKey}
-              from={enterFrom}
-              animate={{ translateX: 0 }}
-              exit={exitTo}
-              transition={slideTransition}
-              exitTransition={slideExitTransition}
-              className="absolute inset-0 px-5"
-            >
-              <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerClassName="pb-6">
-                {isRoot ? smallScreenMenu(helpers) : activeNode?.render(helpers)}
-              </ScrollView>
-            </MotiView>
-          </AnimatePresence>
-        </View>
-      </View>
+        </GestureDetector>
+      </GestureHandlerRootView>
     );
   };
 

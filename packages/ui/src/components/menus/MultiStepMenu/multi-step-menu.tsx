@@ -457,34 +457,35 @@ export const MultiStepMenu = function MultiStepMenu({
                 />
               </View>
             ) : null}
-            {/* The close ✕ only shows once you've stepped past the root, fading
-                in/out so the header doesn't jump when it leaves. */}
-            <AnimatePresence>
-              {!isRoot && (
-                <MotiView
-                  key="mobile-close"
-                  from={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={arrowTransition}
-                  exitTransition={arrowExitTransition}
-                >
-                  <IconButton
-                    icon={CloseLine}
-                    size="sm"
-                    contentClassName={
-                      smallScreenHeaderVariant === 'compact'
-                        ? 'bg-surface-3 hover:bg-surface-hover'
-                        : 'bg-surface-selected hover:bg-surface-hover'
-                    }
-                    accessibilityLabel="Close"
-                    onPress={handleClose}
-                    testID={testID ? `${testID}-close` : undefined}
-                  />
-                </MotiView>
-              )}
-            </AnimatePresence>
-            {isRoot && smallScreenHeaderVariant === 'compact' ? <View className="h-9 w-9" /> : null}
+            {/* Keep one trailing slot while AnimatePresence retains the exiting
+                close button, so returning to root cannot redistribute the row. */}
+            <View className="h-9 w-9 items-end justify-center">
+              <AnimatePresence>
+                {!isRoot && (
+                  <MotiView
+                    key="mobile-close"
+                    from={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={arrowTransition}
+                    exitTransition={arrowExitTransition}
+                  >
+                    <IconButton
+                      icon={CloseLine}
+                      size="sm"
+                      contentClassName={
+                        smallScreenHeaderVariant === 'compact'
+                          ? 'bg-surface-3 hover:bg-surface-hover'
+                          : 'bg-surface-selected hover:bg-surface-hover'
+                      }
+                      accessibilityLabel="Close"
+                      onPress={handleClose}
+                      testID={testID ? `${testID}-close` : undefined}
+                    />
+                  </MotiView>
+                )}
+              </AnimatePresence>
+            </View>
           </View>
           {smallScreenHeaderVariant === 'prominent' ? (
             <View className="mt-2">

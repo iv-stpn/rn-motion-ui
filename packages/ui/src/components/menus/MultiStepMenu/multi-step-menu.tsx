@@ -224,6 +224,7 @@ export const MultiStepMenu = function MultiStepMenu({
   onShow,
 }: MultiStepMenuProps) {
   const [path, setPath] = useState<string[]>(isWideScreen ? (defaultPath ?? []) : []);
+  const [pathRevision, setPathRevision] = useState(0);
   const [direction, setDirection] = useState<MultiStepDirection>(null);
   const [paneWidth, setPaneWidth] = useState(0);
   const [widePaneWidth, setWidePaneWidth] = useState(0);
@@ -255,6 +256,7 @@ export const MultiStepMenu = function MultiStepMenu({
       const next = pendingPath.current;
       pendingPath.current = null;
       setPath(next);
+      setPathRevision((revision) => revision + 1);
       onPathChangeRef.current?.(next);
     }
   }, [navTrigger]);
@@ -354,7 +356,7 @@ export const MultiStepMenu = function MultiStepMenu({
     // selection instead of swapping in one step. `direction` is committed before
     // the path (set-direction-then-commit), so the exiting pane renders its
     // correct `exit` value and the entering pane its `from` on the same render pass.
-    const widePaneKey = effectivePath.length > 0 ? effectivePath.join('/') : '__root__';
+    const widePaneKey = `${pathRevision}:${effectivePath.length > 0 ? effectivePath.join('/') : '__root__'}`;
     const wideEnterFrom = computeWideEnterFrom(direction, widePaneWidth);
     const wideExitTo = computeWideExitTo(direction, widePaneWidth);
 
@@ -435,7 +437,9 @@ export const MultiStepMenu = function MultiStepMenu({
     const isRoot = path.length === 0;
     const activeNode = isRoot ? null : resolveSection(sections, path);
     const title = isRoot ? rootTitle : (activeNode?.title ?? rootTitle);
-    const paneKey = isRoot ? '__root__' : path.join('/');
+    // A quick Back can revisit a pane whose exit is still running. Give the new
+    // visit its own identity so it cannot inherit that exiting pane's hidden state.
+    const paneKey = `${pathRevision}:${isRoot ? '__root__' : path.join('/')}`;
 
     // Content panes slide HORIZONTALLY like tabs on every step — the root
     // included. The only wrinkle is the very first mount: `direction` is null

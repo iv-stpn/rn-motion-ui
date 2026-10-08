@@ -485,7 +485,6 @@ export const SystemBack: Story = {
     await userEvent.click(await screen.findByTestId('menu-entry-appearance'));
     await userEvent.click(await screen.findByTestId('menu-advanced'));
     await waitFor(() => expect(screen.getByTestId('menu-advanced-body')).toBeVisible());
-    await new Promise((resolve) => setTimeout(resolve, 400));
     await userEvent.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByTestId('menu-advanced-body')).toBeNull());
     await waitFor(() => expect(screen.getByTestId('menu-advanced')).toBeVisible());
@@ -501,7 +500,6 @@ export const WideSystemBack: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(await within(canvasElement).findByRole('button', { name: OPEN_SETTINGS_LABEL }));
     await waitFor(() => expect(screen.getByTestId('menu-advanced-body')).toBeVisible());
-    await new Promise((resolve) => setTimeout(resolve, 400));
     await userEvent.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByTestId('menu-advanced-body')).toBeNull());
     await waitFor(() => expect(screen.getByTestId('menu-advanced')).toBeVisible());

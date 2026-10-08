@@ -161,6 +161,8 @@ export type FullSheetProps = {
    * the consumer's own state, so there is no open direction to report.
    */
   onOpenChange?: (open: boolean) => void;
+  /** Handle system back/Escape separately from explicit dismissal. */
+  onRequestClose?: () => void;
   children: ReactNode;
   /** Optional theme class for the entire sheet, including its safe-area padding. */
   surfaceClassName?: string;
@@ -232,6 +234,7 @@ export type FullSheetProps = {
 export function FullSheet({
   open,
   onOpenChange,
+  onRequestClose,
   children,
   surfaceClassName,
   slideFrom = 'bottom',
@@ -289,7 +292,14 @@ export function FullSheet({
   const pb = compact ? 'pb-5' : 'pb-6';
 
   return (
-    <OverlayShell open={isOpen} onClose={handleClose} onAfterClose={onAfterClose} dismissable={dismissable} onShow={onShow}>
+    <OverlayShell
+      open={isOpen}
+      onClose={handleClose}
+      onRequestClose={onRequestClose}
+      onAfterClose={onAfterClose}
+      dismissable={dismissable}
+      onShow={onShow}
+    >
       {({ open: isAnimOpen, onExitComplete }) => {
         const body = buildBody({
           mode,

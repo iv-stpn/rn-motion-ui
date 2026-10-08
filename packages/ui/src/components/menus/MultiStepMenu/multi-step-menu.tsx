@@ -12,7 +12,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { type LayoutChangeEvent, type PressableProps, ScrollView, View } from 'react-native';
+import { type LayoutChangeEvent, PanResponder, type PressableProps, ScrollView, View } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { CloseLine } from 'rn-motion-ui-icons/icons/close-line';
 import { LeftLine } from 'rn-motion-ui-icons/icons/left-line';
@@ -224,6 +224,7 @@ export const MultiStepMenu = function MultiStepMenu({
   onShow,
 }: MultiStepMenuProps) {
   const [path, setPath] = useState<string[]>(isWideScreen ? (defaultPath ?? []) : []);
+  const [pathRevision, setPathRevision] = useState(0);
   const [direction, setDirection] = useState<MultiStepDirection>(null);
   const [paneWidth, setPaneWidth] = useState(0);
   const [widePaneWidth, setWidePaneWidth] = useState(0);
@@ -255,6 +256,7 @@ export const MultiStepMenu = function MultiStepMenu({
       const next = pendingPath.current;
       pendingPath.current = null;
       setPath(next);
+      setPathRevision((revision) => revision + 1);
       onPathChangeRef.current?.(next);
     }
   }, [navTrigger]);
@@ -298,9 +300,27 @@ export const MultiStepMenu = function MultiStepMenu({
   // The back arrow is the dismissal affordance on the root step (there's no
   // parent to pop to) and a step-back on every deeper step.
   const handleBack = useCallback(() => {
-    if (path.length === 0) handleClose();
+    if (path.length <= (isWideScreen ? 1 : 0)) handleClose();
     else goBack();
-  }, [path, handleClose, goBack]);
+  }, [path, isWideScreen, handleClose, goBack]);
+
+  // Claim only a deliberate rightward edge swipe, leaving scrolling and inputs alone.
+  const backGesture = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponderCapture: (_event, gesture) =>
+          visible &&
+          !isWideScreen &&
+          gesture.numberActiveTouches === 1 &&
+          gesture.x0 <= 32 &&
+          gesture.dx > 12 &&
+          gesture.dx > Math.abs(gesture.dy) * 2,
+        onPanResponderRelease: (_event, gesture) => {
+          if (gesture.dx >= 64 && gesture.dx > Math.abs(gesture.dy) * 2) handleBack();
+        },
+      }),
+    [visible, isWideScreen, handleBack],
+  );
 
   const helpers: MultiStepHelpers = useMemo(
     () => ({ navigate: navigateTo, goBack, goBackAfterTimeout, close: handleClose, path, isWideScreen }),
@@ -336,7 +356,7 @@ export const MultiStepMenu = function MultiStepMenu({
     // selection instead of swapping in one step. `direction` is committed before
     // the path (set-direction-then-commit), so the exiting pane renders its
     // correct `exit` value and the entering pane its `from` on the same render pass.
-    const widePaneKey = effectivePath.length > 0 ? effectivePath.join('/') : '__root__';
+    const widePaneKey = `${pathRevision}:${effectivePath.length > 0 ? effectivePath.join('/') : '__root__'}`;
     const wideEnterFrom = computeWideEnterFrom(direction, widePaneWidth);
     const wideExitTo = computeWideExitTo(direction, widePaneWidth);
 
@@ -417,7 +437,9 @@ export const MultiStepMenu = function MultiStepMenu({
     const isRoot = path.length === 0;
     const activeNode = isRoot ? null : resolveSection(sections, path);
     const title = isRoot ? rootTitle : (activeNode?.title ?? rootTitle);
-    const paneKey = isRoot ? '__root__' : path.join('/');
+    // A quick Back can revisit a pane whose exit is still running. Give the new
+    // visit its own identity so it cannot inherit that exiting pane's hidden state.
+    const paneKey = `${pathRevision}:${isRoot ? '__root__' : path.join('/')}`;
 
     // Content panes slide HORIZONTALLY like tabs on every step — the root
     // included. The only wrinkle is the very first mount: `direction` is null
@@ -432,7 +454,12 @@ export const MultiStepMenu = function MultiStepMenu({
     const exitTo = computeSmallExitTo(direction, paneWidth);
 
     return (
-      <View className="flex-1" onLayout={handlePaneLayout}>
+      <View
+        className="flex-1"
+        onLayout={handlePaneLayout}
+        testID={testID ? `${testID}-navigation` : undefined}
+        {...backGesture.panHandlers}
+      >
         <View className={smallScreenHeaderVariant === 'compact' ? 'px-5 pt-4 pb-4' : 'px-5 pt-6 pb-5'}>
           <View className="flex-row items-center justify-between">
             <IconButton
@@ -525,6 +552,7 @@ export const MultiStepMenu = function MultiStepMenu({
       floating={floating}
       open={visible}
       onOpenChange={handleClose}
+      onRequestClose={handleBack}
       isWideScreen={isWideScreen}
       smallScreenMode="fullSheet"
       smallScreenSurfaceClassName={smallScreenSurfaceClassName}

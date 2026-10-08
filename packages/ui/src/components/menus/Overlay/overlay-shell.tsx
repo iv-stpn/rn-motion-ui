@@ -87,6 +87,8 @@ export type OverlayShellContext = {
 export type OverlayShellProps = {
   open: boolean;
   onClose: () => void;
+  /** Handle system back/Escape separately from explicit dismissal. */
+  onRequestClose?: () => void;
   /** Called after the exit animation fully completes. */
   onAfterClose?: () => void;
   /** When false, hardware back-button / request-close is ignored. Default true. */
@@ -137,6 +139,7 @@ export type OverlayShellProps = {
 export function OverlayShell({
   open,
   onClose,
+  onRequestClose,
   onAfterClose,
   dismissable = true,
   accessibilityLabel,
@@ -155,8 +158,8 @@ export function OverlayShell({
   }, [onExitComplete, onAfterClose]);
 
   const handleRequestClose = useCallback(() => {
-    if (dismissable) onClose();
-  }, [dismissable, onClose]);
+    if (dismissable) (onRequestClose ?? onClose)();
+  }, [dismissable, onRequestClose, onClose]);
 
   // Stable wrappers so the store's layer entry (registered once) always reads
   // the current handlers without needing a refresh on every render.

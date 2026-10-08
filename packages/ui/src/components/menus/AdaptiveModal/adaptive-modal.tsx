@@ -45,6 +45,8 @@ type AdaptiveModalProps = {
    * the consumer's own state, so there is no open direction to report.
    */
   onOpenChange?: (open: boolean) => void;
+  /** Handle system back/Escape separately from explicit dismissal. */
+  onRequestClose?: () => void;
   children: ReactNode;
   /** Theme class for the narrow full-sheet surface; wide panels keep their own surface. */
   smallScreenSurfaceClassName?: string;
@@ -147,6 +149,7 @@ export type WidePanelSize = { width?: Dimension; height?: Dimension; maxWidth?: 
 export function AdaptiveModal({
   open: openProp,
   onOpenChange,
+  onRequestClose,
   children,
   smallScreenSurfaceClassName,
   smallScreenSlideFrom,
@@ -396,7 +399,7 @@ export function AdaptiveModal({
         animationType="none"
         statusBarTranslucent={true}
         accessibilityViewIsModal={true}
-        onRequestClose={handleClose}
+        onRequestClose={onRequestClose ?? handleClose}
         onShow={onShow}
       >
         <AnimatePresence onExitComplete={handleExitComplete}>
@@ -430,6 +433,7 @@ export function AdaptiveModal({
       floating={floating}
       open={open}
       onOpenChange={handleClose}
+      onRequestClose={onRequestClose}
       containerClassName={containerPaddingClass}
       onAfterClose={onAfterClose}
       onShow={onShow}
@@ -447,6 +451,7 @@ export function AdaptiveModal({
       floating={floating}
       open={open}
       onOpenChange={handleClose}
+      onRequestClose={onRequestClose}
       customLayout={true}
       surfaceClassName={smallScreenSurfaceClassName}
       slideFrom={smallScreenSlideFrom}

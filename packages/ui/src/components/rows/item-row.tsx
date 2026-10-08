@@ -129,6 +129,8 @@ export type RowLayoutProps = {
   rightAdornment?: ItemRowAdornment;
   /** Row size — controls icon dimensions and the type ramp. */
   size: ItemRowSize;
+  /** Override the leading adornment's automatic first-line alignment in two-line rows. */
+  leftAdornmentAlignment?: 'start' | 'center';
   /** Optional additional classes on the text column. */
   className?: string;
 };
@@ -138,13 +140,22 @@ export type RowLayoutProps = {
  * right adornment. Exported so that {@link ActionRow} can compose it inside a
  * `Pressable` without duplicating the markup.
  */
-export function RowLayout({ title, description, leftAdornment, rightAdornment, size, className }: RowLayoutProps) {
+export function RowLayout({
+  title,
+  description,
+  leftAdornment,
+  rightAdornment,
+  size,
+  leftAdornmentAlignment,
+  className,
+}: RowLayoutProps) {
   const scale = SIZE_SCALE[size];
+  const alignStart = leftAdornmentAlignment ? leftAdornmentAlignment === 'start' : Boolean(description);
 
   return (
     <>
       {/* Single-line rows center their icon; descriptions retain first-line alignment. */}
-      {renderAdornment(leftAdornment, 'muted-foreground', scale.iconSize, description ? 'self-start' : 'self-center')}
+      {renderAdornment(leftAdornment, 'muted-foreground', scale.iconSize, alignStart ? 'self-start' : 'self-center')}
 
       {/* Title + description column */}
       <View className={cn('flex-1', scale.textGap, className)}>

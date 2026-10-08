@@ -20,6 +20,8 @@ export type ActionRowProps = Omit<PressableProps, 'children'> & {
    * `ThemedIcon` tinted `muted-foreground`; any other ReactNode renders as-is.
    */
   leftAdornment?: ItemRowAdornment;
+  /** Center avatars against the full title/description block, or align icons with its first line. */
+  leftAdornmentAlignment?: 'start' | 'center';
   /**
    * Trailing adornment. When `{ icon: ... }`, the icon is wrapped in a
    * `ThemedIcon` tinted `muted-foreground`; any other ReactNode renders as-is.
@@ -98,6 +100,7 @@ export function ActionRow({
   title,
   description,
   leftAdornment,
+  leftAdornmentAlignment,
   rightAdornment,
   onPress,
   disabled = false,
@@ -164,6 +167,7 @@ export function ActionRow({
         title={title}
         description={description}
         leftAdornment={leftAdornment}
+        leftAdornmentAlignment={leftAdornmentAlignment}
         rightAdornment={resolvedRightAdornment}
         size={size}
       />

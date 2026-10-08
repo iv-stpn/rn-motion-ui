@@ -53,6 +53,8 @@ export type BottomSheetProps = {
    * consumer's own state, so there is no open direction to report.
    */
   onOpenChange?: (open: boolean) => void;
+  /** Handle system back/Escape separately from outside presses and drag dismissal. */
+  onRequestClose?: () => void;
   children: ReactNode;
   containerClassName?: string;
   onAfterClose?: () => void;
@@ -112,6 +114,7 @@ export type BottomSheetProps = {
 export function BottomSheet({
   open,
   onOpenChange,
+  onRequestClose,
   children,
   containerClassName,
   onAfterClose,
@@ -206,7 +209,7 @@ export function BottomSheet({
       animationType="none"
       statusBarTranslucent={true}
       hardwareAccelerated={IS_ANDROID}
-      onRequestClose={handleClose}
+      onRequestClose={onRequestClose ?? handleClose}
       onShow={onShow}
       accessibilityViewIsModal={true}
       aria-modal={true}

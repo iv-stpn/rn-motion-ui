@@ -69,7 +69,7 @@ function AppearanceSection({ helpers }: AppearanceSectionProps) {
   return (
     <View className="gap-3">
       <Text className="text-muted-foreground">{APPEARANCE_BODY}</Text>
-      <Button variant="neutral" size="sm" onPress={navigateAdvanced}>
+      <Button variant="neutral" size="sm" onPress={navigateAdvanced} testID="menu-advanced">
         {ADVANCED_APPEARANCE_LABEL}
       </Button>
     </View>
@@ -95,7 +95,11 @@ const sections: MultiStepSection[] = [
       {
         path: 'advanced',
         title: 'Advanced Appearance',
-        render: () => <Text className="text-muted-foreground">{ADVANCED_BODY}</Text>,
+        render: () => (
+          <Text className="text-muted-foreground" testID="menu-advanced-body">
+            {ADVANCED_BODY}
+          </Text>
+        ),
       },
     ],
   },
@@ -127,7 +131,7 @@ type MenuEntryRowProps = { entry: MenuEntry; active?: boolean; iosStyle?: boolea
 function MenuEntryRow({ entry, active = false, iosStyle = false, onNavigate }: MenuEntryRowProps) {
   const handlePress = useCallback(() => onNavigate?.(entry.path), [entry.path, onNavigate]);
   // Everything but the icon treatment is shared, so only that part differs per style.
-  const shared = { icon: entry.icon, label: entry.label, active, onPress: handlePress };
+  const shared = { icon: entry.icon, label: entry.label, active, onPress: handlePress, testID: `menu-entry-${entry.path}` };
   return iosStyle ? <MenuRow {...shared} iconBackgroundColor={entry.color} /> : <MenuItem {...shared} mode="sidebar" />;
 }
 
@@ -471,4 +475,37 @@ export const FromLeft: Story = {
   ...FromRight,
   name: 'Demo: Slide from left',
   render: () => <MultiStepSheetStory compact={true} isWideScreen={false} slideFrom="left" />,
+};
+
+/** Escape exercises the same Modal.onRequestClose path as Android system back. */
+export const SystemBack: Story = {
+  render: () => <MultiStepSheetStory isWideScreen={false} />,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(await within(canvasElement).findByRole('button', { name: OPEN_SETTINGS_LABEL }));
+    await userEvent.click(await screen.findByTestId('menu-entry-appearance'));
+    await userEvent.click(await screen.findByTestId('menu-advanced'));
+    await waitFor(() => expect(screen.getByTestId('menu-advanced-body')).toBeVisible());
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByTestId('menu-advanced-body')).toBeNull());
+    await waitFor(() => expect(screen.getByTestId('menu-advanced')).toBeVisible());
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.getByTestId('menu-entry-appearance')).toBeVisible());
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByTestId(MENU_TEST_ID)).toBeNull());
+  },
+};
+
+export const WideSystemBack: Story = {
+  render: () => <MultiStepSheetStory isWideScreen={true} defaultPath={START_PATHS.advanced} />,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(await within(canvasElement).findByRole('button', { name: OPEN_SETTINGS_LABEL }));
+    await waitFor(() => expect(screen.getByTestId('menu-advanced-body')).toBeVisible());
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByTestId('menu-advanced-body')).toBeNull());
+    await waitFor(() => expect(screen.getByTestId('menu-advanced')).toBeVisible());
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByTestId(MENU_TEST_ID)).toBeNull());
+  },
 };

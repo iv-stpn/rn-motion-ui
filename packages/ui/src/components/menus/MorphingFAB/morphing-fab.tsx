@@ -116,6 +116,10 @@ export type MorphingFABProps = {
   /** Collapsed trigger icon component. Defaults to a plus (`AddLine`). Rendered
    *  through the trigger's IconButton at 20px with the foreground stroke colour. */
   icon?: ComponentType<IconProps>;
+  /** Collapsed trigger glyph color; defaults to the foreground token. */
+  iconColor?: string;
+  /** Classes for the collapsed button surface; the expanded pane keeps its elevation. */
+  triggerClassName?: string;
   position?: 'bottom-right' | 'bottom-left';
   /** Collapsed trigger size — the trigger's IconButton and the shell's resting
    *  footprint stand at the shared interactive ramp, so the FAB lines up with a
@@ -214,6 +218,8 @@ export type MorphingFABProps = {
 export function MorphingFAB({
   children,
   icon,
+  iconColor,
+  triggerClassName,
   position = 'bottom-right',
   size = 'lg',
   floating = false,
@@ -455,6 +461,8 @@ export function MorphingFAB({
       ) : (
         <IconButton
           icon={icon ?? Plus}
+          iconColor={iconColor}
+          contentClassName={triggerClassName}
           floating={floating}
           elevation={elevation}
           size={size}

@@ -40,4 +40,4 @@ export const TOAST_FOREGROUND_TOKEN: Record<ToastVariant, ThemeToken> = {
  * backdrop blur — translucent enough to read as glass, opaque enough to keep the
  * variant's hue clearly.
  */
-export const TOAST_GLASS_ALPHA = 0.8;
+export const TOAST_GLASS_ALPHA = 0.85;

@@ -143,7 +143,7 @@ export function Toaster({
   duration = TOAST_DURATION_DEFAULT,
   glass = false,
   glassTone = 'variant',
-  pill = true,
+  pill = false,
   size = TOAST_SIZE_DEFAULT,
   smallScreenPosition,
   largeScreenPosition,

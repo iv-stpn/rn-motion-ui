@@ -15,7 +15,7 @@ type GlassToastProps = { message: string; options: ToastOptions; onDismiss: () =
 
 /** The same inexpensive Surface blur + SVG rim on native and web. Sonner still owns web lifecycle. */
 export function GlassToast({ message, options, onDismiss, testID }: GlassToastProps) {
-  const { variant = 'neutral', glassTone = 'variant', size = 'md', pill = true, description, action } = options;
+  const { variant = 'neutral', glassTone = 'variant', size = 'md', pill = false, description, action } = options;
   const neutral = glassTone === 'neutral';
   const fill = useThemeColor(TOAST_FILL_TOKEN[variant]);
   const ink = useThemeColor(neutral ? 'foreground' : TOAST_FOREGROUND_TOKEN[variant]);

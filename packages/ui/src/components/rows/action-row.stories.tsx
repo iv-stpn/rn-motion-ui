@@ -162,3 +162,35 @@ export const CustomRightAdornment: Story = {
     expect(onPress).toHaveBeenCalled();
   },
 };
+
+/** Detail views can reveal long values while compact lists retain their original limits. */
+export const WrappedDetails: Story = {
+  render: () => (
+    <View className="w-64 gap-4">
+      <ActionRow
+        testID="compact-detail"
+        title="24 Market Street, San Francisco, California, United States"
+        description="Home address with delivery instructions: enter through the garden gate and ring the bell next to the blue door."
+        leftAdornment={{ icon: User }}
+        accessibilityRole="button"
+        onPress={onPress}
+      />
+      <ActionRow
+        testID="wrapped-detail"
+        title="24 Market Street, San Francisco, California, United States"
+        description="Home address with delivery instructions: enter through the garden gate and ring the bell next to the blue door."
+        titleNumberOfLines={0}
+        descriptionNumberOfLines={0}
+        leftAdornment={{ icon: User }}
+        accessibilityRole="button"
+        onPress={onPress}
+      />
+    </View>
+  ),
+  play: ({ canvas }) => {
+    const compact = canvas.getByTestId('compact-detail');
+    const wrapped = canvas.getByTestId('wrapped-detail');
+    expect(wrapped.getBoundingClientRect().height).toBeGreaterThan(compact.getBoundingClientRect().height + 20);
+    expect(wrapped.scrollWidth).toBeLessThanOrEqual(wrapped.clientWidth);
+  },
+};

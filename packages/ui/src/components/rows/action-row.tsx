@@ -15,6 +15,10 @@ export type ActionRowProps = Omit<PressableProps, 'children'> & {
   title: ReactNode;
   /** Optional secondary text, rendered below the title in a muted colour. */
   description?: ReactNode;
+  /** Maximum title lines. Use 0 to wrap without truncation. @default 1 */
+  titleNumberOfLines?: number;
+  /** Maximum description lines. Use 0 to wrap without truncation. @default 2 */
+  descriptionNumberOfLines?: number;
   /**
    * Leading adornment. When `{ icon: ... }`, the icon is wrapped in a
    * `ThemedIcon` tinted `muted-foreground`; any other ReactNode renders as-is.
@@ -99,6 +103,8 @@ export type { ItemRowAdornment, ItemRowSize, ItemRowVariant } from './item-row';
 export function ActionRow({
   title,
   description,
+  titleNumberOfLines,
+  descriptionNumberOfLines,
   leftAdornment,
   leftAdornmentAlignment,
   rightAdornment,
@@ -166,6 +172,8 @@ export function ActionRow({
       <RowLayout
         title={title}
         description={description}
+        titleNumberOfLines={titleNumberOfLines}
+        descriptionNumberOfLines={descriptionNumberOfLines}
         leftAdornment={leftAdornment}
         leftAdornmentAlignment={leftAdornmentAlignment}
         rightAdornment={resolvedRightAdornment}

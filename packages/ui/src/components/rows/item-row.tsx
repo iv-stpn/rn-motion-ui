@@ -117,6 +117,10 @@ export type RowLayoutProps = {
   title: ReactNode;
   /** Optional secondary text, rendered below the title in a muted colour. */
   description?: ReactNode;
+  /** Maximum title lines. Use 0 to wrap without truncation. @default 1 */
+  titleNumberOfLines?: number;
+  /** Maximum description lines. Use 0 to wrap without truncation. @default 2 */
+  descriptionNumberOfLines?: number;
   /**
    * Leading adornment. When `{ icon: ... }`, the icon is wrapped in a
    * `ThemedIcon` tinted `muted-foreground`; any other ReactNode renders as-is.
@@ -143,6 +147,8 @@ export type RowLayoutProps = {
 export function RowLayout({
   title,
   description,
+  titleNumberOfLines = 1,
+  descriptionNumberOfLines = 2,
   leftAdornment,
   rightAdornment,
   size,
@@ -158,12 +164,12 @@ export function RowLayout({
       {renderAdornment(leftAdornment, 'muted-foreground', scale.iconSize, alignStart ? 'self-start' : 'self-center')}
 
       {/* Title + description column */}
-      <View className={cn('flex-1', scale.textGap, className)}>
-        <Text numberOfLines={1} weight="medium" className={cn(scale.titleClass, 'text-foreground')}>
+      <View className={cn('min-w-0 flex-1', scale.textGap, className)}>
+        <Text numberOfLines={titleNumberOfLines} weight="medium" className={cn(scale.titleClass, 'text-foreground')}>
           {title}
         </Text>
         {description ? (
-          <Text numberOfLines={2} className={cn(scale.descClass, 'text-muted-foreground')}>
+          <Text numberOfLines={descriptionNumberOfLines} className={cn(scale.descClass, 'text-muted-foreground')}>
             {description}
           </Text>
         ) : null}
@@ -184,6 +190,10 @@ export type ItemRowProps = {
   title: ReactNode;
   /** Optional secondary text, rendered below the title in a muted colour. */
   description?: ReactNode;
+  /** Maximum title lines. Use 0 to wrap without truncation. @default 1 */
+  titleNumberOfLines?: number;
+  /** Maximum description lines. Use 0 to wrap without truncation. @default 2 */
+  descriptionNumberOfLines?: number;
   /**
    * Leading adornment. When `{ icon: ... }`, the icon is wrapped in a
    * `ThemedIcon` tinted `muted-foreground`; any other ReactNode renders as-is.
@@ -246,6 +256,8 @@ export type ItemRowProps = {
 export function ItemRow({
   title,
   description,
+  titleNumberOfLines = 1,
+  descriptionNumberOfLines = 2,
   leftAdornment,
   rightAdornment,
   size = 'md',
@@ -266,6 +278,8 @@ export function ItemRow({
       <RowLayout
         title={title}
         description={description}
+        titleNumberOfLines={titleNumberOfLines}
+        descriptionNumberOfLines={descriptionNumberOfLines}
         leftAdornment={leftAdornment}
         rightAdornment={rightAdornment}
         size={size}

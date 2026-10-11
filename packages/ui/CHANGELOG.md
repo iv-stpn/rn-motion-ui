@@ -1,5 +1,11 @@
 # rn-motion-ui
 
+## 7.21.1
+
+### Patch Changes
+
+- 694acba: Allow ItemRow and ActionRow titles and descriptions to wrap using optional line limits. Existing compact rows keep their one-line titles and two-line descriptions; detail views can use zero to display the full value.
+
 ## 7.21.0
 
 ### Minor Changes

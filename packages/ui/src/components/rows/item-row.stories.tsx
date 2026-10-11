@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { User2Line as User } from 'rn-motion-ui-icons/icons/user-2-line';
-import { fn } from 'storybook/test';
+import { expect, fn } from 'storybook/test';
 import { Choice, ControlCard, Note, Playground, Sample, Section, Toggle, Variants } from '../../__stories__/story-harness';
 import { Button } from '../buttons/Button/button';
 import { Switch } from '../form/Switch/switch';
@@ -132,4 +132,32 @@ export const Interactive: Story = {
 export const Showcase: Story = {
   name: 'Showcase: variants × sizes',
   render: () => <ShowcasePlayground />,
+};
+
+/** Detail views can reveal long values while compact lists retain their original limits. */
+export const WrappedDetails: Story = {
+  render: () => (
+    <View className="w-64 gap-4">
+      <ItemRow
+        testID="compact-detail"
+        title="24 Market Street, San Francisco, California, United States"
+        description="Home address with delivery instructions: enter through the garden gate and ring the bell next to the blue door."
+        leftAdornment={{ icon: User }}
+      />
+      <ItemRow
+        testID="wrapped-detail"
+        title="24 Market Street, San Francisco, California, United States"
+        description="Home address with delivery instructions: enter through the garden gate and ring the bell next to the blue door."
+        titleNumberOfLines={0}
+        descriptionNumberOfLines={0}
+        leftAdornment={{ icon: User }}
+      />
+    </View>
+  ),
+  play: ({ canvas }) => {
+    const compact = canvas.getByTestId('compact-detail');
+    const wrapped = canvas.getByTestId('wrapped-detail');
+    expect(wrapped.getBoundingClientRect().height).toBeGreaterThan(compact.getBoundingClientRect().height + 20);
+    expect(wrapped.scrollWidth).toBeLessThanOrEqual(wrapped.clientWidth);
+  },
 };

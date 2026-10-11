@@ -22,7 +22,9 @@
 
 import type { ComponentType, RefObject } from 'react';
 import { Platform, StyleSheet, type View } from 'react-native';
+import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
+import { TIMING_BASE, TIMING_INSTANT } from '../../../theme/motion';
 import { useBlurTargetRef } from './blur-context';
 
 /**
@@ -103,6 +105,7 @@ type OverlayBlurProps = { inline?: boolean };
 
 export function OverlayBlur({ inline = false }: OverlayBlurProps) {
   const blurTargetRef = useBlurTargetRef();
+  const reduce = useReducedMotion();
   if (!BlurView) return null;
 
   // An inline scrim inside the target it blurs would cycle the RenderNode graph
@@ -115,7 +118,7 @@ export function OverlayBlur({ inline = false }: OverlayBlurProps) {
       from={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ type: 'timing', duration: 200 }}
+      transition={reduce ? TIMING_INSTANT : TIMING_BASE}
       style={StyleSheet.absoluteFill}
     >
       <BlurView

@@ -19,7 +19,9 @@
  * render.
  */
 import { StyleSheet, type ViewStyle } from 'react-native';
+import { useReducedMotion } from '../../../hooks/use-reduced-motion';
 import { MotiView } from '../../../moti/components/view';
+import { TIMING_BASE, TIMING_INSTANT } from '../../../theme/motion';
 
 /**
  * The web blur layer under an overlay scrim. Absolute-fills its parent, never
@@ -35,13 +37,14 @@ import { MotiView } from '../../../moti/components/view';
 type OverlayBlurProps = { inline?: boolean };
 
 export function OverlayBlur(_props: OverlayBlurProps = {}) {
+  const reduce = useReducedMotion();
   return (
     <MotiView
       pointerEvents="none"
       from={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ type: 'timing', duration: 200 }}
+      transition={reduce ? TIMING_INSTANT : TIMING_BASE}
       // biome-ignore lint/plugin: RN's ViewStyle has no backdropFilter — RNW forwards the CSS property at runtime
       style={[StyleSheet.absoluteFill, { backdropFilter: 'blur(12px)' } as unknown as ViewStyle]}
     />

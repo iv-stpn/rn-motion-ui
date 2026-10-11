@@ -157,6 +157,7 @@ Subpaths are namespaced by category:
 
 | Subpath                        | Component / hook                                                         |
 | ------------------------------ | ------------------------------------------------------------------------ |
+| `/action-fab` | `ActionFAB` |
 | `/action-row`                  | `ActionRow`                                                              |
 | `/action-row-group`            | `ActionRowGroup`                                                         |
 | `/button`                      | `Button`                                                                 |
@@ -679,3 +680,39 @@ panel of your own that should match —
 ## License
 
 [MIT](./LICENSE) © Ivan Stepanian
+
+## Mobile action stacks
+
+`ActionFAB` (`rn-motion-ui/action-fab`) keeps its circular trigger in place and
+reveals separate, content-width pills above it, starting with the nearest action.
+There is no expanding panel. Choose it for mobile creation and quick-action menus;
+`MorphingFAB` remains available for content that needs a panel.
+
+```tsx
+<ActionFAB
+  title="Create"
+  overlay="blur"
+  items={[
+    { id: 'note', label: 'New note', onPress: createNote },
+    { id: 'folder', label: 'New folder', onPress: createFolder },
+  ]}
+/>
+```
+
+Place it in a positioned, bounded content stage. `bottomInset` defaults to 16;
+include safe-area clearance if the parent does not already own it. `position`
+accepts `bottom-right` or `bottom-left`. `menuWidth` caps each pill's width at 280
+by default; long lists scroll within the stage. Items accept an optional `icon`,
+`selected`, `disabled`, `destructive`, and `testID`. One item runs directly unless
+`directSingleAction={false}`. An empty list renders nothing.
+
+`overlay` accepts `opacity` (default), `blur`, or `none`. Blur softens the page and
+trigger while the action pills stay sharp. Native blur uses the existing optional
+`@danielsaraldi/react-native-blur-view` peer; Android also needs `BlurProvider`
+around the app. Android's pills and scrim render outside its blur target to avoid
+recursive capture. Without the peer, the tint remains as a fallback.
+
+The stack supports controlled `open`/`onOpenChange`, Escape, Android Back, outside
+tap dismissal, arrow/Home/End navigation, focus restoration, and reduced motion.
+The transparent close target occupies the original trigger's position and has an
+accessible name. Selecting an item closes the stack before calling `onPress`.

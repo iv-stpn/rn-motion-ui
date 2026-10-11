@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { AccessibilityState, StyleProp, ViewStyle } from 'react-native';
 import { Pressable, View } from 'react-native';
 import type { IconProps } from 'rn-motion-ui-icons/icon-props';
 import { useReducedMotion } from '../../../hooks/use-reduced-motion';
@@ -139,6 +139,11 @@ export type IconButtonProps = {
    * button without a label is invisible to screen readers.
    */
   accessibilityLabel: string;
+  /** State of a controlled surface, such as an expanded action menu. */
+  accessibilityState?: AccessibilityState;
+  /** Web relationship to a menu or dialog opened by this button. */
+  'aria-haspopup'?: 'menu' | 'dialog';
+  'aria-controls'?: string;
   testID?: string;
 };
 
@@ -201,6 +206,9 @@ export function IconButton({
   iconColor,
   iconBackgroundColor,
   accessibilityLabel,
+  accessibilityState,
+  'aria-haspopup': ariaHasPopup,
+  'aria-controls': ariaControls,
   testID,
 }: IconButtonProps) {
   const reduce = useReducedMotion();
@@ -247,6 +255,10 @@ export function IconButton({
   const pressable = (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ ...accessibilityState, disabled: isDisabled, busy: Boolean(loading) }}
+      aria-expanded={accessibilityState?.expanded}
+      aria-haspopup={ariaHasPopup}
+      aria-controls={ariaControls}
       aria-disabled={Boolean(isDisabled)}
       aria-busy={Boolean(loading)}
       accessibilityLabel={accessibilityLabel}

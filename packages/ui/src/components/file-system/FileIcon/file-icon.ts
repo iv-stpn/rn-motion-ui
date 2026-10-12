@@ -7,7 +7,7 @@
 // RN-free: returns a name plus a light/dark colour pair, and the render layer
 // (file-icons.tsx) turns that into react-native-svg.
 
-import { fileExtension } from '../FileSystem/logic/file-system-paths';
+import { fileExtension } from '../../../lib/path';
 import { FILE_BADGE_SHEET, FILE_BRAND_INK, FILE_PAPER_INK, FILE_PAPER_SHEET } from './file-icon-metrics';
 
 /** Category glyphs the render layer draws as a tintable badge over the paper. */

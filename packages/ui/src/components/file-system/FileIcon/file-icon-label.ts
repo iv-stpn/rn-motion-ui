@@ -8,7 +8,7 @@
 // RN-free, like `file-icon.ts`: this solves the geometry in the paper's own
 // coordinates and the render layer draws it.
 
-import { fileExtension } from '../FileSystem/logic/file-system-paths';
+import { fileExtension } from '../../../lib/path';
 import { FILE_PAPER_INK, FILE_PAPER_SHEET } from './file-icon-metrics';
 
 /**

@@ -35,7 +35,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 > `node packages/ui/scripts/check-readme.mjs --fix`, which CI re-runs on every push.
 
 <!-- generated:components -->
-`action-fab` · `action-feedback-modal` · `action-row` · `action-row-group` · `activity-island` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `button-group` · `button-swap` · `card` · `checkbox` · `checkbox-card` · `choice-group` · `close-button` · `color-picker` · `command-palette` · `cylinder-carousel` · `detail-header` · `dock` · `dock-inset` · `drag-behavior` · `drag-manager` · `drag-store` · `drag-types` · `draggable` · `dragzone` · `drawer` · `dynamic-island` · `elevated-button` · `file-icon` · `file-system` · `full-sheet` · `hold-draggable` · `hold-menu` · `holdable` · `hover-menu` · `icon` · `icon-button` · `input` · `item-row` · `item-row-group` · `loader` · `menu` · `menu-item` · `modal-presenter` · `morphing-dock-switch` · `morphing-fab` · `morphing-menu` · `morphing-modal` · `morphing-switcher` · `multi-drag` · `multi-drag-manager` · `multi-drag-scope` · `multi-draggable` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `portal` · `primary-actions` · `radio` · `radio-card` · `range-slider` · `reorderable-list` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `sortable-list` · `spotlight` · `spotlight-target` · `star-rating` · `stateful-button` · `surface` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `toaster` · `toggle-group` · `use-drag-behavior` · `use-drag-store` · `use-draggable` · `wheel-picker`
+`action-fab` · `action-feedback-modal` · `action-row` · `action-row-group` · `activity-island` · `adaptive-dropdown` · `adaptive-modal` · `animated-badge` · `animated-list` · `bottom-sheet` · `bouncy-accordion` · `breadcrumbs` · `button` · `button-group` · `button-swap` · `card` · `checkbox` · `checkbox-card` · `choice-group` · `close-button` · `color-picker` · `command-palette` · `cylinder-carousel` · `detail-header` · `dock` · `dock-inset` · `drag-behavior` · `drag-geometry` · `drag-manager` · `drag-scope` · `drag-store` · `drag-transfer` · `drag-types` · `draggable` · `dragzone` · `drawer` · `dynamic-island` · `elevated-button` · `file-icon` · `file-icons` · `full-sheet` · `hold-draggable` · `hold-menu` · `holdable` · `hover-menu` · `icon` · `icon-button` · `input` · `item-row` · `item-row-group` · `loader` · `menu` · `menu-item` · `menu-placement` · `modal-presenter` · `morphing-dock-switch` · `morphing-fab` · `morphing-menu` · `morphing-modal` · `morphing-switcher` · `multi-drag` · `multi-drag-manager` · `multi-drag-scope` · `multi-draggable` · `multi-step-menu` · `otp-input` · `overflow-actions` · `popover` · `portal` · `primary-actions` · `radio` · `radio-card` · `range-slider` · `reorderable-list` · `scroll-progress` · `scroll-reveal` · `scroll-to` · `skeleton` · `smooth-scroll` · `sortable-list` · `spotlight` · `spotlight-target` · `star-rating` · `stateful-button` · `surface` · `swipeable-list` · `switch` · `table` · `tabs` · `text` · `text-cascade` · `text-number-ticker` · `text-reveal` · `text-rolling` · `text-shimmer` · `toaster` · `toggle-group` · `use-drag-behavior` · `use-drag-store` · `use-draggable` · `wheel-picker`
 <!-- /generated:components -->
 
 <details>
@@ -54,7 +54,7 @@ import { useInView } from 'rn-motion-ui/hooks/use-in-view'
 Pure helpers and the theme layer — tokens, easings, the surface ladder, and the runtime colour resolvers. Icons live in [`rn-motion-ui-icons`](./packages/icons/).
 
 <!-- generated:utilities -->
-`breakpoints` · `calendar` · `calendar-format` · `calendar-props` · `calendar-selection` · `color` · `date-field` · `date-picker-props` · `ease` · `elevated` · `lib/cn` · `lib/typeguards` · `theme/motion` · `theme/use-theme-color`
+`breakpoints` · `calendar` · `calendar-format` · `calendar-props` · `calendar-selection` · `color` · `date-field` · `date-picker-props` · `ease` · `elevated` · `lib/cn` · `lib/glass` · `lib/haptics` · `lib/haptics-types` · `lib/typeguards` · `theme/motion` · `theme/use-theme-color`
 <!-- /generated:utilities -->
 </details>
 
@@ -86,7 +86,7 @@ Types / constants: `moti/types` · `moti/color-keys`
 The shell and presence hook the sheet family (`bottom-sheet`, `full-sheet`, `drawer`, `adaptive-modal`) is built on. Exported so a consumer can build a sheet of their own on the same primitives — but they are infrastructure, not a component API, and they change with the components that use them rather than on their own deprecation cycle.
 
 <!-- generated:internal -->
-`overlay/blur-provider` · `overlay/overlay-portal` · `overlay/overlay-shell` · `overlay/use-sheet-presence`
+`overlay/blur-provider` · `overlay/overlay-blur` · `overlay/overlay-portal` · `overlay/overlay-shell` · `overlay/use-sheet-presence`
 <!-- /generated:internal -->
 </details>
 
@@ -219,7 +219,7 @@ bun run test          # Vitest + Playwright interaction tests (real Chromium)
 ```
 
 <!-- generated:counts -->
-98 story files, 390 stories.
+87 story files, 332 stories.
 <!-- /generated:counts -->
 
 Every story runs as a vitest test; those with a `play` function run their interaction assertions in a real Chromium browser via `@storybook/addon-vitest`. `packages/ui` also carries a jsdom unit suite over the pure layers (Moti worklets, `lib/`, and the OTP edit logic).

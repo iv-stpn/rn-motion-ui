@@ -3,11 +3,9 @@ import { ScrollView, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Button } from 'rn-motion-ui/button';
 import { BlurProvider } from 'rn-motion-ui/overlay/blur-provider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from 'rn-motion-ui/tabs';
 import { Text } from 'rn-motion-ui/text';
 import { type ThemeName, Uniwind, useUniwind } from 'uniwind';
 import { Row } from './demos/demo-chrome';
-import { FileSystemDemo } from './demos/file-system-demo';
 import { TintControl } from './tint-control';
 import './global.css';
 
@@ -22,12 +20,9 @@ const SET_THEME: Record<(typeof THEMES)[number], () => void> = {
 
 // Hoisted so no bare string literals land in JSX (the repo's noJsxLiterals rule).
 const TITLE = 'rn-motion-ui';
-const SUBTITLE = 'Three components, one Expo app — web and native off the same source.';
+const SUBTITLE = 'Shared UI primitives — web and native off the same source.';
 const THEME_LABEL = 'Theme';
 const THEME_LABELS = { light: 'Light', dark: 'Dark' } as const;
-
-/** One tab per component. `value` also names the panel it shows. */
-const TABS = [{ value: 'file-system', label: 'FileSystem' }] as const;
 
 /**
  * Light/dark switcher.
@@ -64,8 +59,7 @@ function ThemeSwitcher() {
 
 export default function App() {
   return (
-    // BlurProvider wraps the app so overlay scrims (e.g. FileSystem's background
-    // menu) can frost the page behind them — on Android the peer's BlurView blurs
+    // BlurProvider wraps the app so overlay scrims can frost the page behind them — on Android the peer's BlurView blurs
     // the BlurTarget here, not whatever sits behind it.
     <BlurProvider>
       <SafeAreaProvider>
@@ -82,22 +76,6 @@ export default function App() {
             <ThemeSwitcher />
 
             <TintControl />
-
-            {/* The tab panels are unmounted while hidden, so each component starts
-              fresh on a switch — a FileSystem manifest rewritten by a drop resets
-              when you come back to it. */}
-            <Tabs defaultValue="file-system" variant="segment">
-              <TabsList>
-                {TABS.map((tab) => (
-                  <TabsTrigger key={tab.value} value={tab.value}>
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <TabsContent value="file-system">
-                <FileSystemDemo />
-              </TabsContent>
-            </Tabs>
           </ScrollView>
         </View>
       </SafeAreaProvider>

@@ -90,9 +90,13 @@ For quiet notifications, use `<Toaster glass glassTone="neutral" />`. Semantic
 status stays in the icon, and actions have a separate dismiss control. The default
 `glassTone="variant"` retains tinted notifications.
 
-`FileSystem` exposes `menuGlass` and `menuFloating` for both entry and background
-menus. Context actions accept `separatorAfter` to group related actions and an
-optional `testID`; otherwise their stable ID is `file-action-${action.id}`.
+## Migrating to version 8
+
+The `rn-motion-ui/file-system` entry point, its component, hooks and types have been removed.
+File browsing now belongs to the consuming application; Offkeep owns its explorer screens,
+state, layouts and domain actions. The independent file icons, drag primitives, menus,
+previews and overlays remain available. Replace FileSystem imports with your app-owned
+implementation before upgrading.
 
 ## Consumer setup
 
@@ -166,11 +170,16 @@ Subpaths are namespaced by category:
 | `/close-button`                | `CloseButton`                                                            |
 | `/detail-header` | `DetailHeader` |
 | `/dock-inset` | `DockInsetProvider` |
+| `/drag-geometry` | <!-- TODO: fill in symbols --> |
+| `/drag-scope` | `DragScopeContext` |
+| `/drag-transfer` | <!-- TODO: fill in symbols --> |
 | `/elevated-button`             | `ElevatedButton`                                                         |
 | `/feedback-fab`                | `FeedbackFAB`                                                            |
+| `/file-icons` | `FileSystemFolderGlyph`, `FileTypeIcon` |
 | `/glass`                       | `Glass`                                                                  |
 | `/item-row`                    | `ItemRow`                                                                |
 | `/item-row-group`              | `ItemRowGroup`                                                           |
+| `/menu-placement` | `HOLD_MENU_ROW_HEIGHT`, `HOLD_MENU_ROW_CLASS`, `HOLD_MENU_HEADING_HEIGHT`, `HOLD_MENU_LIST_PADDING`, `HOLD_MENU_LIST_CLASS`, `HOLD_MENU_SEGMENTED_LIST_PADDING`, `HOLD_MENU_SEPARATOR_HEIGHT`, `HOLD_MENU_SEGMENTED_SEPARATOR_HEIGHT`, `HOLD_MENU_SEGMENTED_SEAM_HEIGHT`, `HOLD_MENU_BORDER_HEIGHT`, `HOLD_MENU_MIN_PANEL_HEIGHT`, `HOLD_MENU_GAP`, `HOLD_MENU_VIEWPORT_PADDING`, `HOLD_MENU_DEFAULT_WIDTH` |
 | `/modal-presenter` | `ModalPresenter` |
 | `/morphing-dock-switch`        | `MorphingDockSwitch`                                                     |
 | `/morphing-fab`                | `MorphingFAB`                                                            |
@@ -259,7 +268,6 @@ Subpaths are namespaced by category:
 | `/table-utils`                 | sorting / filtering helpers                                              |
 | `/use-table`                   | `useTable`                                                               |
 | `/use-column-reorder`          | `useColumnReorder`                                                       |
-| `/file-system`                 | `FileSystem`                                                             |
 | `/file-icon`                   | `FileTypeIcon`, `FileSystemFolderGlyph`                                  |
 | `/icon`                        | `ThemedIcon`                                                             |
 | `/icon-button`                 | `IconButton`                                                             |
@@ -334,14 +342,6 @@ Components that pick a layout from the window width take a `wideBreakpoint` prop
 
 `AdaptiveModal` also keeps `isWideScreen` to bypass width entirely, and
 `MultiStepMenu` still receives `isWideScreen` from its caller.
-
-`FileSystem` is the exception: it adapts to its **own measured width**, not the
-window's, so it collapses inside a narrow parent too. Its tiers are container
-widths and are overridden as a group:
-
-```tsx
-<FileSystem breakpoints={{ minimal: 320, compact: 520, tablet: 720 }} … />
-```
 
 ### Measuring your own container
 

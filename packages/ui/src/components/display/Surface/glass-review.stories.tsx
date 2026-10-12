@@ -7,8 +7,6 @@ import { FolderLine } from 'rn-motion-ui-icons/icons/folder-line';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Button } from '../../buttons/Button/button';
 import { IconButton } from '../../buttons/IconButton/icon-button';
-import { FileSystem } from '../../file-system/FileSystem/file-system';
-import type { FileSystemContextMenuAction, FileSystemItem } from '../../file-system/FileSystem/types/file-system.types';
 import { Input } from '../../form/Input/input';
 import { AdaptiveDropdown } from '../../menus/AdaptiveDropdown/adaptive-dropdown';
 import { HoldItem, HoldMenuProvider } from '../../menus/HoldMenu/hold-menu';
@@ -39,13 +37,6 @@ const ACTIONS = [
   { id: 'move', label: 'Move to folder', icon: FolderLine, separatorAfter: true },
   { id: 'delete', label: 'Delete', destructive: true },
 ];
-const FILES: FileSystemItem[] = [
-  { kind: 'folder', path: 'Projects/', name: 'Projects' },
-  { kind: 'file', path: 'Project overview.md', size: 2048, updatedAt: '2026-09-20T12:00:00Z' },
-  { kind: 'file', path: 'Meeting notes.txt', size: 4200, updatedAt: '2026-09-20T12:00:00Z' },
-  { kind: 'file', path: 'Quarterly report.pdf', size: 234_000, updatedAt: '2026-09-20T12:00:00Z' },
-];
-const fileActions = (): FileSystemContextMenuAction[] => ACTIONS;
 type ReviewTriggerProps = { toggle: () => void };
 const renderTrigger = ({ toggle }: ReviewTriggerProps) => (
   <Button testID="review-trigger" onPress={toggle}>
@@ -155,19 +146,6 @@ function Scene({ kind }: SceneProps) {
             />
           </>
         ) : null}
-        {kind === 'files' ? (
-          <HoldMenuProvider {...MATERIAL}>
-            <FileSystem
-              menuGlass={true}
-              menuFloating={true}
-              items={FILES}
-              view="mobile-list"
-              height={400}
-              getContextMenuActions={fileActions}
-              testID="review-files"
-            />
-          </HoldMenuProvider>
-        ) : null}
       </View>
     </View>
   );
@@ -179,7 +157,6 @@ export const Hover: Story = { render: () => <Scene kind="hover" /> };
 export const Morphing: Story = { render: () => <Scene kind="morphing" /> };
 export const Hold: Story = { render: () => <Scene kind="hold" /> };
 export const Settings: Story = { render: () => <Scene kind="settings" /> };
-export const Files: Story = { render: () => <Scene kind="files" /> };
 
 /** Verify controls remain separate and the shared material is actually rendered. */
 export const ToastInteraction: Story = {
@@ -239,24 +216,6 @@ export const DockOverflow: Story = {
     });
     await userEvent.click(canvas.getByTestId('long-dock-item-space-23'));
     await expect(await canvas.findByTestId('long-dock-trigger')).toHaveAttribute('aria-expanded', 'false');
-  },
-};
-
-export const FileMenuInteraction: Story = {
-  render: () => <Scene kind="files" />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByTestId('review-files-entry-Project overview.md-kebab'));
-    await waitFor(() => expect(screen.getByTestId('file-action-rename')).toBeVisible());
-    const backdrops = screen.getAllByTestId('hold-menu-backdrop');
-    await waitFor(() => {
-      const active = backdrops.filter((backdrop) => getComputedStyle(backdrop).top === '0px');
-      expect(active.length).toBeGreaterThan(0);
-      for (const backdrop of active) expect(backdrop.children.length).toBe(0);
-    });
-    await expect(screen.getByTestId('file-action-delete')).toBeVisible();
-    await userEvent.click(screen.getByTestId('file-action-rename'));
-    await waitFor(() => expect(screen.getByTestId('file-action-rename')).not.toBeVisible());
   },
 };
 

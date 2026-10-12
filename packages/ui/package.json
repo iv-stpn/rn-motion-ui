@@ -288,11 +288,6 @@
       "types": "./src/components/buttons/Button/elevated-button.tsx",
       "default": "./src/components/buttons/Button/elevated-button.tsx"
     },
-    "./file-system": {
-      "source": "./src/components/file-system/FileSystem/file-system.tsx",
-      "types": "./src/components/file-system/FileSystem/file-system.tsx",
-      "default": "./src/components/file-system/FileSystem/file-system.tsx"
-    },
     "./file-icon": {
       "source": "./src/components/file-system/FileIcon/file-icon.ts",
       "types": "./src/components/file-system/FileIcon/file-icon.ts",
@@ -875,6 +870,53 @@
       "source": "./src/components/menus/ModalPresenter/modal-presenter.tsx",
       "types": "./src/components/menus/ModalPresenter/modal-presenter.tsx",
       "default": "./src/components/menus/ModalPresenter/modal-presenter.tsx"
+    },
+    "./drag-scope": {
+      "source": "./src/components/gestures/drag-scope.ts",
+      "types": "./src/components/gestures/drag-scope.ts",
+      "default": "./src/components/gestures/drag-scope.ts"
+    },
+    "./drag-geometry": {
+      "source": "./src/components/gestures/drag-geometry.ts",
+      "types": "./src/components/gestures/drag-geometry.ts",
+      "default": "./src/components/gestures/drag-geometry.ts"
+    },
+    "./drag-transfer": {
+      "source": "./src/components/gestures/drag-transfer.ts",
+      "types": "./src/components/gestures/drag-transfer.ts",
+      "default": "./src/components/gestures/drag-transfer.ts"
+    },
+    "./file-icons": {
+      "source": "./src/components/file-system/FileIcon/file-icons.tsx",
+      "types": "./src/components/file-system/FileIcon/file-icons.tsx",
+      "default": "./src/components/file-system/FileIcon/file-icons.tsx"
+    },
+    "./menu-placement": {
+      "source": "./src/components/rows/menu-placement.ts",
+      "types": "./src/components/rows/menu-placement.ts",
+      "default": "./src/components/rows/menu-placement.ts"
+    },
+    "./overlay/overlay-blur": {
+      "react-native": "./src/components/menus/Overlay/overlay-blur.native.tsx",
+      "source": "./src/components/menus/Overlay/overlay-blur.tsx",
+      "types": "./src/components/menus/Overlay/overlay-blur.tsx",
+      "default": "./src/components/menus/Overlay/overlay-blur.tsx"
+    },
+    "./lib/glass": {
+      "source": "./src/lib/glass.ts",
+      "types": "./src/lib/glass.ts",
+      "default": "./src/lib/glass.ts"
+    },
+    "./lib/haptics": {
+      "react-native": "./src/lib/haptics.native.ts",
+      "source": "./src/lib/haptics.ts",
+      "types": "./src/lib/haptics.ts",
+      "default": "./src/lib/haptics.ts"
+    },
+    "./lib/haptics-types": {
+      "source": "./src/lib/haptics-types.ts",
+      "types": "./src/lib/haptics-types.ts",
+      "default": "./src/lib/haptics-types.ts"
     }
   },
   "bin": {
